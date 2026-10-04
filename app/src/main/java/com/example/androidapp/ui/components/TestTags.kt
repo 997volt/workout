@@ -160,6 +160,30 @@ object TestTags {
     const val READINESS_SAVE = "readiness_save"
     const val READINESS_DISMISS = "readiness_dismiss"
 
+    /**
+     * The sore-muscle list beside that note (ROADMAP N62), grouped so this object stays under its
+     * ceiling: every control is addressed by the muscle's own enum name rather than by position.
+     */
+    object Readiness {
+        /** The control that opens the muscle picker. */
+        const val SORE_ADD = "readiness_sore_add"
+
+        /** The block history draws the picked list in (ROADMAP N62). */
+        const val SORE_LIST = "readiness_sore_list"
+
+        /** One option of the picker, addressed by the `MuscleGroup` name. */
+        fun soreOption(muscle: String) = "readiness_sore_option_$muscle"
+
+        /** One picked muscle's row, and that row's own score controls. */
+        fun soreRow(muscle: String) = "readiness_sore_row_$muscle"
+        fun soreScore(muscle: String) = "readiness_sore_score_$muscle"
+        fun soreDecrease(muscle: String) = "readiness_sore_decrease_$muscle"
+        fun soreIncrease(muscle: String) = "readiness_sore_increase_$muscle"
+
+        /** Takes the muscle off the list. */
+        fun soreRemove(muscle: String) = "readiness_sore_remove_$muscle"
+    }
+
     /** The workout comment asked for on Finish (ROADMAP N11), and its row in history. */
     const val WORKOUT_NOTE = "workout_note"
     const val WORKOUT_NOTE_SAVE = "workout_note_save"

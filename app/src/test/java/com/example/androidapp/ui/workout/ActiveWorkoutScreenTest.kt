@@ -92,7 +92,7 @@ class ActiveWorkoutScreenTest {
                 onDismissUndo = {},
                 onSkipRest = {},
                 onAdjustRest = {},
-                onSaveReadinessNote = {},
+                onSaveReadinessNote = { _, _ -> },
                 onDismissReadinessPrompt = {},
                 onUndoFinishExercise = {},
                 onDismissFinishUndo = {},

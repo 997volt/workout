@@ -4,6 +4,7 @@ import com.example.androidapp.domain.model.PersonalRecordMoment
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.SoreMuscle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -167,7 +168,7 @@ fun ActiveWorkoutScreen(
     onDismissUndo: () -> Unit,
     onSkipRest: () -> Unit,
     onAdjustRest: (Int) -> Unit,
-    onSaveReadinessNote: (String?) -> Unit,
+    onSaveReadinessNote: (String?, List<SoreMuscle>) -> Unit,
     onDismissReadinessPrompt: () -> Unit,
     onFinishExercise: (String, Int?, Int?, String?) -> Unit,
     onRateExercise: (String, Int?, Int?, String?) -> Unit,
@@ -570,7 +571,7 @@ private fun WorkoutBody(
     onDeleteSet: (String) -> Unit,
     onSkipRest: () -> Unit,
     onAdjustRest: (Int) -> Unit,
-    onSaveReadinessNote: (String?) -> Unit,
+    onSaveReadinessNote: (String?, List<SoreMuscle>) -> Unit,
     onDismissReadinessPrompt: () -> Unit,
     onFinishExercise: (String, Int?, Int?, String?) -> Unit,
     onRateExercise: (String, Int?, Int?, String?) -> Unit,
@@ -605,6 +606,7 @@ private fun WorkoutBody(
                 WorkoutHeader(startedAt = state.startedAt, clock = clock)
                 ReadinessSection(
                     note = state.readinessNote,
+                    soreMuscles = state.readinessSoreMuscles,
                     promptVisible = state.isReadinessPromptVisible,
                     onDismissPrompt = onDismissReadinessPrompt,
                     onSave = onSaveReadinessNote,
@@ -725,39 +727,46 @@ private fun WorkoutHeader(
 @Composable
 private fun ReadinessSection(
     note: String?,
+    soreMuscles: List<SoreMuscle>,
     promptVisible: Boolean,
     onDismissPrompt: () -> Unit,
-    onSave: (String?) -> Unit,
+    onSave: (String?, List<SoreMuscle>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var editing by remember { mutableStateOf(false) }
 
-    ReadinessRow(note = note, onEdit = { editing = true }, modifier = modifier)
+    ReadinessRow(note = note, soreMuscles = soreMuscles, onEdit = { editing = true }, modifier = modifier)
     if (promptVisible || editing) {
         ReadinessNoteDialog(
             initialNote = note.orEmpty(),
+            initialSoreMuscles = soreMuscles,
             isPrompt = promptVisible,
             onDismiss = {
                 editing = false
                 onDismissPrompt()
             },
-            onSave = { written ->
+            onSave = { written, sore ->
                 editing = false
-                onSave(written)
+                onSave(written, sore)
             },
         )
     }
 }
 
 /**
- * The readiness note in the workout header (ROADMAP N4).
+ * The readiness note in the workout header (ROADMAP N4), with the sore-muscle list beside it (N62).
  *
  * Always present, so the field the prompt introduces stays reachable after the
  * prompt is skipped — a passive field nobody can find again is the failure that
  * made this a prompt in the first place.
  */
 @Composable
-private fun ReadinessRow(note: String?, onEdit: () -> Unit, modifier: Modifier = Modifier) {
+private fun ReadinessRow(
+    note: String?,
+    soreMuscles: List<SoreMuscle>,
+    onEdit: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val editLabel = stringResource(R.string.readiness_edit_action)
     Column(
         modifier = modifier
@@ -780,6 +789,16 @@ private fun ReadinessRow(note: String?, onEdit: () -> Unit, modifier: Modifier =
                 MaterialTheme.colorScheme.onSurface
             },
         )
+        // The soreness is a fact of the same readiness, so it is read in the same place — one line
+        // per muscle, because "quads 8, calves 3" is what the row is for.
+        soreMuscles.forEach { sore ->
+            Text(
+                text = stringResource(R.string.readiness_sore_line, sore.muscle.label, sore.score),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.testTag(TestTags.Readiness.soreRow(sore.muscle.name)),
+            )
+        }
     }
 }
 
@@ -849,7 +868,7 @@ private fun ActiveWorkoutScreenPreview() {
             onDismissUndo = {},
             onSkipRest = {},
             onAdjustRest = {},
-            onSaveReadinessNote = {},
+            onSaveReadinessNote = { _, _ -> },
             onDismissReadinessPrompt = {},
             onFinishExercise = { _, _, _, _ -> },
             onRateExercise = { _, _, _, _ -> },

@@ -40,6 +40,15 @@ data class WorkoutSession(
      */
     val readinessNote: String? = null,
     /**
+     * The muscles today's readiness note reported sore, each with its own score (ROADMAP N62).
+     *
+     * Beside [readinessNote] rather than replacing it: the note stays the free-text line for what a
+     * list cannot say, and this is the structured fact — "quads 8, calves 3" — that can be read one
+     * muscle at a time later. Empty means nothing was reported, which is also what a skipped prompt
+     * writes.
+     */
+    val soreMuscles: List<SoreMuscle> = emptyList(),
+    /**
      * The zone the session was performed in, in minutes from UTC, or null when it is not known
      * (ROADMAP N25).
      *

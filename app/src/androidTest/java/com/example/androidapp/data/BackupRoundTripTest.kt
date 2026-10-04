@@ -10,6 +10,7 @@ import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
 import com.example.androidapp.data.local.ProgramSlotExerciseEntity
 import com.example.androidapp.data.local.ProgramSlotSetEntity
+import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.WorkoutDatabase
@@ -484,6 +485,51 @@ class BackupRoundTripTest {
         val deload = database.programBackupDao().allProgramDeloads().single()
         assertEquals("the deloaded week survives", 20_305L, deload.weekStart)
         assertEquals("p1", deload.programId)
+    }
+
+    @Test
+    fun aSessionsSoreMuscles_surviveTheRoundTrip() = runTest {
+        // ROADMAP N62: the list is the lifter's own record, and the codec is hand-written — a table
+        // it is not told about is dropped on export and lost on restore, in silence. The order and
+        // the score are what a re-read one muscle at a time depends on.
+        val session = database.workoutDao()
+            .findOrCreateActiveSession(id = "session-1", now = 1_000L, zoneOffsetMinutes = 0)
+            .session
+        database.sessionSoreMuscleDao().insertAll(
+            listOf(
+                SessionSoreMuscleEntity(
+                    id = "sore-1",
+                    sessionId = session.id,
+                    muscle = MuscleGroup.QUADS,
+                    score = 8,
+                    position = 0,
+                    createdAt = 1_000L,
+                    updatedAt = 1_000L,
+                    deletedAt = null,
+                ),
+                SessionSoreMuscleEntity(
+                    id = "sore-2",
+                    sessionId = session.id,
+                    muscle = MuscleGroup.CALVES,
+                    score = 3,
+                    position = 1,
+                    createdAt = 1_000L,
+                    updatedAt = 1_000L,
+                    deletedAt = null,
+                ),
+            ),
+        )
+
+        val json = exportedJson()
+        database.clearAllTables()
+        repository.import(json)
+
+        val restored = database.sessionSoreMuscleDao().allForBackup().sortedBy { it.position }
+        assertEquals(2, restored.size)
+        assertEquals(MuscleGroup.QUADS, restored[0].muscle)
+        assertEquals(8, restored[0].score)
+        assertEquals(MuscleGroup.CALVES, restored[1].muscle)
+        assertEquals(3, restored[1].score)
     }
 
     @Test

@@ -37,6 +37,14 @@ data class BackupFile(
     val sessionExercises: List<SessionExerciseDto>,
     val sets: List<SetDto>,
     /**
+     * The muscles each session reported sore, each with its own score (ROADMAP N62).
+     *
+     * Defaulted like every added collection: a file written before the list existed still decodes,
+     * and its sessions simply report no soreness. It must be here in the same change as the table,
+     * or an export would silently carry none of it.
+     */
+    val sessionSoreMuscles: List<SessionSoreMuscleDto> = emptyList(),
+    /**
      * Templates and their exercises (ROADMAP N3).
      *
      * Defaulted so a file written before templates existed still decodes — the same
@@ -214,6 +222,25 @@ data class SessionExerciseDto(
      * reads: an ungrouped exercise is what every exercise used to be.
      */
     val supersetGroup: Int? = null,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+)
+
+/**
+ * One muscle a session reported sore, and its score (ROADMAP N62).
+ *
+ * [muscle] travels as the enum name, like every other enum in this file, and [position] is the
+ * order the lifter picked them in — data, not a presentational detail.
+ */
+@Serializable
+data class SessionSoreMuscleDto(
+    val id: String,
+    val sessionId: String,
+    val muscle: MuscleGroup,
+    /** 1–10, on `TenPointScale`. */
+    val score: Int,
+    val position: Int,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

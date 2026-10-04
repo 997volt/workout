@@ -606,6 +606,33 @@ val MIGRATION_23_24 = object : Migration(23, 24) {
     }
 }
 
+/**
+ * v25 -> v26: the muscles a session reported sore, each with its own score (ROADMAP N62).
+ *
+ * One new table, and what it deliberately does *not* do is the point: the readiness note it sits
+ * beside is untouched, and a session that reported nothing gets no rows — which is exactly the
+ * state it was in, because one free-text line was all there was to write. The SQL is Room's own,
+ * copied from the exported `26.json` rather than hand-written as an equivalent.
+ */
+val MIGRATION_25_26 = object : Migration(25, 26) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(CREATE_SESSION_SORE_MUSCLES)
+        db.execSQL(CREATE_SESSION_SORE_MUSCLES_SESSION_INDEX)
+    }
+}
+
+private const val CREATE_SESSION_SORE_MUSCLES =
+    "CREATE TABLE IF NOT EXISTS `session_sore_muscles` (" +
+        "`id` TEXT NOT NULL, `sessionId` TEXT NOT NULL, `muscle` TEXT NOT NULL, " +
+        "`score` INTEGER NOT NULL, `position` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, " +
+        "`updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), " +
+        "FOREIGN KEY(`sessionId`) REFERENCES `workout_sessions`(`id`) " +
+        "ON UPDATE NO ACTION ON DELETE CASCADE )"
+
+private const val CREATE_SESSION_SORE_MUSCLES_SESSION_INDEX =
+    "CREATE INDEX IF NOT EXISTS `index_session_sore_muscles_sessionId` " +
+        "ON `session_sore_muscles` (`sessionId`)"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -741,4 +768,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_22_23,
     MIGRATION_23_24,
     MIGRATION_24_25,
+    MIGRATION_25_26,
 )

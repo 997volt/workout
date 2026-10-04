@@ -4,6 +4,7 @@ import com.example.androidapp.data.local.MeasurementEntity
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.domain.model.Rpe
@@ -153,6 +154,28 @@ internal fun SessionExerciseDto.toEntity() = SessionExerciseEntity(
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
     supersetGroup = supersetGroup,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt,
+)
+
+internal fun SessionSoreMuscleEntity.toDto() = SessionSoreMuscleDto(
+    id = id,
+    sessionId = sessionId,
+    muscle = muscle,
+    score = score,
+    position = position,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt,
+)
+
+internal fun SessionSoreMuscleDto.toEntity() = SessionSoreMuscleEntity(
+    id = id,
+    sessionId = sessionId,
+    muscle = muscle,
+    score = score,
+    position = position,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,

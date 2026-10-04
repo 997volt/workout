@@ -10,6 +10,7 @@ import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
@@ -57,16 +58,21 @@ class RoomWorkoutSessionTest {
     }
 
     @Test
-    fun aFreshlyOpenedSession_isNew_andKeepsItsReadinessNote() = runTest {
+    fun aFreshlyOpenedSession_isNew_andKeepsItsReadiness() = runTest {
         val started = start()
         assertTrue(started.isNew)
 
-        assertTrue(repository.setReadinessNote(started.id, "Shoulders still sore") is DataResult.Success)
-
-        assertEquals(
-            "Shoulders still sore",
-            repository.observeSession(started.id).first()?.readinessNote,
+        assertTrue(
+            repository.setReadiness(
+                started.id,
+                "Shoulders still sore",
+                listOf(SoreMuscle(MuscleGroup.SHOULDERS, 7)),
+            ) is DataResult.Success,
         )
+
+        val stored = repository.observeSession(started.id).first()
+        assertEquals("Shoulders still sore", stored?.readinessNote)
+        assertEquals(listOf(SoreMuscle(MuscleGroup.SHOULDERS, 7)), stored?.soreMuscles)
     }
 
     @Test
@@ -81,13 +87,13 @@ class RoomWorkoutSessionTest {
     @Test
     fun aBlankNote_isStoredAsNull_ratherThanAnEmptyString() = runTest {
         val started = start()
-        repository.setReadinessNote(started.id, "Shoulders sore")
+        repository.setReadiness(started.id, "Shoulders sore", emptyList())
         assertEquals(
             "Shoulders sore",
             repository.observeSession(started.id).first()?.readinessNote,
         )
 
-        repository.setReadinessNote(started.id, "   ")
+        repository.setReadiness(started.id, "   ", emptyList())
 
         assertNull(
             "clearing the field must leave one representation of nothing",
@@ -96,10 +102,65 @@ class RoomWorkoutSessionTest {
     }
 
     @Test
-    fun setReadinessNote_onAGoneSession_isNotFound() = runTest {
-        val failure = repository.setReadinessNote("no-such-session", "x") as DataResult.Failure
+    fun savingTheSoreMuscles_replacesTheList_ratherThanMergingIntoIt() = runTest {
+        // ROADMAP N62: a save is what the editor shows. Removing a muscle has to reach the
+        // database, or removing one would silently do nothing.
+        val started = start()
+        repository.setReadiness(
+            started.id,
+            null,
+            listOf(SoreMuscle(MuscleGroup.QUADS, 8), SoreMuscle(MuscleGroup.CALVES, 3)),
+        )
+        assertEquals(
+            listOf(SoreMuscle(MuscleGroup.QUADS, 8), SoreMuscle(MuscleGroup.CALVES, 3)),
+            repository.observeSession(started.id).first()?.soreMuscles,
+        )
+
+        repository.setReadiness(started.id, null, listOf(SoreMuscle(MuscleGroup.QUADS, 9)))
+
+        assertEquals(
+            "the list is replaced, so the calf is gone rather than kept",
+            listOf(SoreMuscle(MuscleGroup.QUADS, 9)),
+            repository.observeSession(started.id).first()?.soreMuscles,
+        )
+    }
+
+    @Test
+    fun aScoreOffTheScale_isRefused_andNothingIsWritten() = runTest {
+        val started = start()
+
+        val failure = repository.setReadiness(
+            started.id,
+            "Sore all over",
+            listOf(SoreMuscle(MuscleGroup.QUADS, 11)),
+        ) as DataResult.Failure
+
+        assertTrue(failure.error is DataError.Invalid)
+        val stored = repository.observeSession(started.id).first()
+        assertNull("a refused save must not write the note either", stored?.readinessNote)
+        assertEquals(emptyList<SoreMuscle>(), stored?.soreMuscles)
+    }
+
+    @Test
+    fun setReadiness_onAGoneSession_isNotFound() = runTest {
+        val failure = repository.setReadiness("no-such-session", "x", emptyList()) as DataResult.Failure
 
         assertEquals(DataError.NotFound, failure.error)
+    }
+
+    @Test
+    fun deletingASession_hidesItsSoreMuscles_too() = runTest {
+        // "everything in it" is the delete's contract (N62): a soft-deleted workout must not leave
+        // its soreness live for the next read to find.
+        val started = start()
+        repository.setReadiness(started.id, null, listOf(SoreMuscle(MuscleGroup.CORE, 4)))
+
+        repository.deleteSession(started.id)
+
+        assertEquals(
+            emptyList<SoreMuscle>(),
+            repository.observeSession(started.id).first()?.soreMuscles,
+        )
     }
 
     @Test

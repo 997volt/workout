@@ -1104,4 +1104,48 @@ class WorkoutDatabaseMigrationTest {
 
         migrated.close()
     }
+
+    @Test
+    fun migration25To26_addsTheSoreMuscles_withoutInventingOne() {
+        // ROADMAP N62. A session that reported nothing gets no rows, which is exactly the state it
+        // was in — one free-text note was all there was to write — and the session already there
+        // survives with its note untouched.
+        helper.createDatabase(TEST_DB, 25).apply {
+            execSQL(
+                """
+                INSERT INTO workout_sessions
+                    (id, startedAt, finishedAt, notes, restEndsAt, readinessNote,
+                     zoneOffsetMinutes, createdAt, updatedAt, deletedAt, templateId)
+                VALUES ('s1', 100, 200, NULL, NULL, 'Slept badly', 0, 100, 200, NULL, NULL)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 26, true, MIGRATION_25_26)
+
+        migrated.query("SELECT id, readinessNote FROM workout_sessions").use { cursor ->
+            assertTrue("the session already there survived", cursor.moveToFirst())
+            assertEquals("s1", cursor.getString(0))
+            assertEquals("and its note is untouched", "Slept badly", cursor.getString(1))
+        }
+        migrated.query("SELECT COUNT(*) FROM session_sore_muscles").use { cursor ->
+            cursor.moveToFirst()
+            assertEquals("no sore muscle is invented by the upgrade", 0, cursor.getInt(0))
+        }
+        // A row the migrated schema accepts, with the name the converter writes and the session it
+        // belongs to — the foreign key is what makes the table's rows belong to that workout.
+        migrated.execSQL(
+            "INSERT INTO session_sore_muscles " +
+                "(id, sessionId, muscle, score, position, createdAt, updatedAt, deletedAt) " +
+                "VALUES ('sm1', 's1', 'QUADS', 8, 0, 100, 100, NULL)",
+        )
+        migrated.query("SELECT muscle, score FROM session_sore_muscles").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("QUADS", cursor.getString(0))
+            assertEquals(8, cursor.getInt(1))
+        }
+
+        migrated.close()
+    }
 }

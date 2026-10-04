@@ -7,6 +7,7 @@ import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import java.time.Instant
@@ -155,10 +156,19 @@ interface WorkoutRepository {
     suspend fun finishSession(sessionId: String): DataResult<Unit>
 
     /**
-     * Sets or clears the session's readiness note (ROADMAP N4). A blank note is
-     * stored as null, so "nothing written" has one representation.
+     * Writes the session's readiness: the free-text note (ROADMAP N4) and the muscles it reported
+     * sore (ROADMAP N62). A blank note is stored as null, so "nothing written" has one
+     * representation; an empty [soreMuscles] clears the list, and a non-empty one **replaces** it
+     * rather than merging, because the editor shows exactly what is stored.
+     *
+     * A score outside `TenPointScale` is refused as `Invalid` before anything is written, so a bad
+     * list cannot half-land.
      */
-    suspend fun setReadinessNote(sessionId: String, note: String?): DataResult<Unit>
+    suspend fun setReadiness(
+        sessionId: String,
+        note: String?,
+        soreMuscles: List<SoreMuscle>,
+    ): DataResult<Unit>
 
     /** Soft-deletes the session and everything in it. */
     suspend fun deleteSession(sessionId: String): DataResult<Unit>

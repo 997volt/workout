@@ -3,8 +3,11 @@ package com.example.androidapp.ui.history
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertTextContains
 import org.junit.Assert.assertEquals
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SoreMuscle
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -153,6 +156,42 @@ class WorkoutDetailScreenTest {
         setScreen()
 
         composeTestRule.onNodeWithText("Readiness").assertDoesNotExist()
+    }
+
+    @Test
+    fun theSoreMuscles_rideThroughHistory_besideTheNote() {
+        // ROADMAP N62: the list is a fact about the session, so history shows it with the note it
+        // was captured beside — one line per muscle, each with its own score.
+        setScreen(
+            uiState = state.copy(
+                session = state.session?.copy(
+                    readinessNote = "Slept badly",
+                    soreMuscles = listOf(
+                        SoreMuscle(MuscleGroup.QUADS, 8),
+                        SoreMuscle(MuscleGroup.CALVES, 3),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Readiness.soreRow("QUADS"))
+            .assertTextContains("Quads 8/10")
+        composeTestRule.onNodeWithTag(TestTags.Readiness.soreRow("CALVES"))
+            .assertTextContains("Calves 3/10")
+    }
+
+    @Test
+    fun sorenessWithoutANote_stillDrawsTheBlock() {
+        // Either half can stand alone: a lifter who names the muscles but writes nothing still
+        // reported something, and hiding it would lose what they said.
+        setScreen(
+            uiState = state.copy(
+                session = state.session?.copy(soreMuscles = listOf(SoreMuscle(MuscleGroup.CORE, 4))),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Readiness.soreRow("CORE"))
+            .assertTextContains("Core 4/10")
     }
 
     @Test

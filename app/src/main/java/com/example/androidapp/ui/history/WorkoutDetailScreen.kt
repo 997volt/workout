@@ -3,6 +3,7 @@ package com.example.androidapp.ui.history
 import androidx.compose.material3.OutlinedTextField
 import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.SoreMuscle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -306,15 +307,14 @@ private fun DetailContent(
                 Totals(state)
                 HorizontalDivider()
             }
-            // The readiness note rides through history (ROADMAP N4). Only shown
-            // when there is one: an empty block on every past workout would be
-            // noise, not information.
-            state.session?.readinessNote?.let { note ->
+            // The readiness the workout opened with rides through history (ROADMAP N4, N62): its
+            // free-text note and the muscles it named sore. Only shown when there is one of the
+            // two — an empty block on every past workout would be noise, not information.
+            val readinessNote = state.session?.readinessNote
+            val soreMuscles = state.session?.soreMuscles.orEmpty()
+            if (readinessNote != null || soreMuscles.isNotEmpty()) {
                 item(key = "readiness") {
-                    NoteBlock(
-                        title = stringResource(R.string.readiness_label),
-                        note = note,
-                    )
+                    ReadinessBlock(note = readinessNote, soreMuscles = soreMuscles)
                     HorizontalDivider()
                 }
             }
@@ -368,7 +368,7 @@ private fun DeleteWorkoutDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     )
 }
 
-/** A free-text note on the workout: its readiness note (N4) or its comment (N11). */
+/** A free-text note on the workout: its comment (N11). */
 @Composable
 private fun NoteBlock(title: String, note: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -378,6 +378,36 @@ private fun NoteBlock(title: String, note: String, modifier: Modifier = Modifier
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(text = note, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+/**
+ * What the workout opened with (ROADMAP N4, N62): its readiness note and the muscles it named sore.
+ *
+ * One block rather than two, because they answered the same question and were captured in the same
+ * dialog. Either half may be absent — a note with no soreness, or soreness with no note — and each
+ * is simply not drawn, exactly as the note alone used to be.
+ */
+@Composable
+private fun ReadinessBlock(
+    note: String?,
+    soreMuscles: List<SoreMuscle>,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(
+            text = stringResource(R.string.readiness_label),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        note?.let { Text(text = it, style = MaterialTheme.typography.bodyLarge) }
+        soreMuscles.forEach { sore ->
+            Text(
+                text = stringResource(R.string.readiness_sore_line, sore.muscle.label, sore.score),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.testTag(TestTags.Readiness.soreRow(sore.muscle.name)),
+            )
+        }
     }
 }
 

@@ -14,6 +14,7 @@ import com.example.androidapp.data.local.ProgramSlotExerciseEntity
 import com.example.androidapp.data.local.ProgramSlotSetEntity
 import com.example.androidapp.data.local.ProgramSubstitutionEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.TemplateSetEntity
@@ -222,6 +223,25 @@ class BackupCodecRoundTripTest {
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,
+        )
+
+        assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aSessionSoreMuscle_survivesTheCodec() {
+        // ROADMAP N62: the muscle and its score are a fact the lifter wrote, and the codec is
+        // hand-written — a field it is not told about comes back as its default instead, which is
+        // an export that looks complete and is not.
+        val entity = SessionSoreMuscleEntity(
+            id = "sore1",
+            sessionId = "s1",
+            muscle = MuscleGroup.HAMSTRINGS,
+            score = 7,
+            position = 2,
+            createdAt = 1_600_000_000_000L,
+            updatedAt = 1_600_000_000_001L,
+            deletedAt = 1_600_000_000_002L,
         )
 
         assertThat(entity.toDto().toEntity()).isEqualTo(entity)

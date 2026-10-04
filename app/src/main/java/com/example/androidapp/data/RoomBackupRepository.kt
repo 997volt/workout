@@ -42,6 +42,9 @@ class RoomBackupRepository @Inject constructor(
     /** The program tables' half of the same job, split out to keep both DAOs under the ceiling. */
     private val programBackup = database.programBackupDao()
 
+    /** The sore-muscle rows (ROADMAP N62), whose own DAO carries their backup queries. */
+    private val soreMuscles = database.sessionSoreMuscleDao()
+
     override suspend fun export(): DataResult<String> = dataResultOf {
         BackupCodec.encode(
             BackupFile(
@@ -51,6 +54,9 @@ class RoomBackupRepository @Inject constructor(
                 sessions = dao.allSessions().map { it.toDto() },
                 sessionExercises = dao.allSessionExercises().map { it.toDto() },
                 sets = dao.allSets().map { it.toDto() },
+                // The muscles each session reported sore (ROADMAP N62): a fact the lifter wrote,
+                // so a restore that dropped it would lose work in silence.
+                sessionSoreMuscles = soreMuscles.allForBackup().map { it.toDto() },
                 // A template is a plan, and the plan is the user's work too (N3).
                 templates = dao.allTemplates().map { it.toDto() },
                 templateExercises = dao.allTemplateExercises().map { it.toDto() },
@@ -162,6 +168,7 @@ class RoomBackupRepository @Inject constructor(
         val hiddenTemplates = dao.softDeletedTemplateIds().toSet()
         val hiddenTemplateExercises = dao.softDeletedTemplateExerciseIds().toSet()
         val hiddenTemplateSets = dao.softDeletedTemplateSetIds().toSet()
+        val hiddenSoreMuscles = soreMuscles.softDeletedIds().toSet()
 
         val exercises = file.exercises.filter { it.id in hiddenExercises }
         val sessions = file.sessions.filter { it.id in hiddenSessions }
@@ -170,6 +177,7 @@ class RoomBackupRepository @Inject constructor(
         val templates = file.templates.filter { it.id in hiddenTemplates }
         val templateExercises = file.templateExercises.filter { it.id in hiddenTemplateExercises }
         val templateSets = file.templateSets.filter { it.id in hiddenTemplateSets }
+        val soreMuscleRows = file.sessionSoreMuscles.filter { it.id in hiddenSoreMuscles }
 
         dao.restoreExercises(exercises.map { it.toEntity() })
         dao.restoreSessions(sessions.map { it.toEntity() })
@@ -178,6 +186,7 @@ class RoomBackupRepository @Inject constructor(
         dao.restoreTemplates(templates.map { it.toEntity() })
         dao.restoreTemplateExercises(templateExercises.map { it.toEntity() })
         dao.restoreTemplateSets(templateSets.map { it.toEntity() })
+        soreMuscles.restore(soreMuscleRows.map { it.toEntity() })
 
         return exercises.count { it.deletedAt == null } +
             sessions.count { it.deletedAt == null } +
@@ -185,7 +194,8 @@ class RoomBackupRepository @Inject constructor(
             sets.count { it.deletedAt == null } +
             templates.count { it.deletedAt == null } +
             templateExercises.count { it.deletedAt == null } +
-            templateSets.count { it.deletedAt == null }
+            templateSets.count { it.deletedAt == null } +
+            soreMuscleRows.count { it.deletedAt == null }
     }
 
     /**
@@ -199,6 +209,8 @@ class RoomBackupRepository @Inject constructor(
         dao.insertExercises(file.exercises.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertSessions(file.sessions.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertSessionExercises(file.sessionExercises.map { it.toEntity() }).count { it != SKIPPED } +
+            // The sore-muscle rows go in after their sessions, which the lines above already wrote (N62).
+            soreMuscles.insert(file.sessionSoreMuscles.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertSets(file.sets.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertTemplates(file.templates.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertTemplateExercises(file.templateExercises.map { it.toEntity() }).count { it != SKIPPED } +

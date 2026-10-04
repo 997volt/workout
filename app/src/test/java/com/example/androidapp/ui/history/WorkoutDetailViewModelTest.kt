@@ -240,8 +240,11 @@ class WorkoutDetailViewModelTest {
         }
 
         override suspend fun finishSession(sessionId: String): DataResult<Unit> = unused()
-        override suspend fun setReadinessNote(sessionId: String, note: String?): DataResult<Unit> =
-            unused()
+        override suspend fun setReadiness(
+            sessionId: String,
+            note: String?,
+            soreMuscles: List<com.example.androidapp.domain.model.SoreMuscle>,
+        ): DataResult<Unit> = unused()
 
         override suspend fun setWorkoutNotes(sessionId: String, note: String?): DataResult<Unit> =
             unused()

@@ -25,21 +25,6 @@ is a product in its own right.
 
 ### What the body reported
 
-- **N62 — the readiness note grows a sore-muscle list, each muscle with its own score.** The note (N4)
-  stays what it is — one free-text line for what a list cannot say, "slept badly", "travel day" — and the
-  soreness is a *structured* addition beside it rather than a second prose box: the lifter picks from the
-  taxonomy's own
-  [`MuscleGroup`](app/src/main/java/com/example/androidapp/domain/model/ExerciseTaxonomy.kt) (the named
-  groups; `OTHER` is the "not specified" value and is not offered), and each picked muscle carries a score
-  on the existing
-  [`TenPointScale`](app/src/main/java/com/example/androidapp/domain/model/TenPointScale.kt), because
-  "quads 8, calves 3" is the fact and one number for the whole body is not. Several muscles, several
-  scores, added and removed one at a time. It is stored as rows keyed to the session rather than a
-  serialized column, so one muscle's score can be read on its own later — the shape the per-exercise
-  ratings already use — which means a migration numbered as it ships and the new rows joining the backup
-  codec in the same change (N24's rule), with the readiness block in history (N4) rendering the list. A
-  blank pick and a skipped prompt still write nothing.
-
 - **N63 — the joint location is picked, not typed: more than one joint, left and right apart.** N9 made
   "which joints" free text on the argument that it is not a set of values the app can check; that was
   right for a note and wrong for a fact the charts are asked about, so the box becomes a pick from the

@@ -7,6 +7,7 @@ import com.example.androidapp.data.local.ExerciseTrendRowEntity
 import androidx.room.withTransaction
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.WorkoutDao
 import com.example.androidapp.data.local.toDomain
@@ -22,6 +23,7 @@ import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.nowEpochMillis
@@ -31,7 +33,11 @@ import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 /**
@@ -56,8 +62,24 @@ class RoomWorkoutRepository @Inject constructor(
     /** Read only when a workout is started from a template (ROADMAP N3). */
     private val templateDao = database.templateDao()
 
+    /** The session's sore-muscle rows (ROADMAP N62), and their half of the backup. */
+    private val soreMuscleDao = database.sessionSoreMuscleDao()
+
+    /**
+     * The active session with its sore-muscle list (ROADMAP N62).
+     *
+     * `flatMapLatest` because the rows belong to whichever session is open, which changes when a
+     * workout starts or finishes; `combine` would need the id before the query exists.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeActiveSession(): Flow<WorkoutSession?> =
-        dao.observeActiveSession().map { it?.toDomain() }
+        dao.observeActiveSession().flatMapLatest { entity ->
+            if (entity == null) {
+                flowOf(null)
+            } else {
+                soreMuscleDao.observeForSession(entity.id).map { entity.toDomain(it) }
+            }
+        }
 
     override fun observeSessionExercises(sessionId: String): Flow<List<SessionExercise>> =
         dao.observeSessionExerciseDetails(sessionId).map { rows -> rows.map { it.toDomain() } }
@@ -69,7 +91,10 @@ class RoomWorkoutRepository @Inject constructor(
         dao.observeHistory().map { rows -> rows.map { it.toDomain() } }
 
     override fun observeSession(sessionId: String): Flow<WorkoutSession?> =
-        dao.observeSession(sessionId).map { it?.toDomain() }
+        combine(
+            dao.observeSession(sessionId),
+            soreMuscleDao.observeForSession(sessionId),
+        ) { entity, soreMuscles -> entity?.toDomain(soreMuscles) }
 
     override suspend fun startOrResumeSession(
         templateId: String?,
@@ -268,18 +293,49 @@ class RoomWorkoutRepository @Inject constructor(
         dao.updateRestTimer(id = sessionId, restEndsAt = null, at = now)
     }
 
-    override suspend fun setReadinessNote(sessionId: String, note: String?): DataResult<Unit> =
-        dataResultOf {
-            // Blank is stored as null rather than "": two representations of "nothing
-            // written" would show up differently on the workout header.
-            val cleaned = note?.trim()?.ifEmpty { null }
-            val updated = dao.updateReadinessNote(
-                id = sessionId,
-                note = cleaned,
-                at = timeSource.nowEpochMillis(),
+    override suspend fun setReadiness(
+        sessionId: String,
+        note: String?,
+        soreMuscles: List<SoreMuscle>,
+    ): DataResult<Unit> = dataResultOf {
+        // The same 1–10 scale as a set's RPE and the per-exercise ratings, so the one validator
+        // covers them (ROADMAP N8, N62). Checked before any write, so a bad score cannot leave a
+        // save half-landed.
+        if (soreMuscles.any { !TenPointScale.isValid(it.score) }) {
+            throw InvalidInputException(
+                "A sore-muscle score must be between ${TenPointScale.MIN} and ${TenPointScale.MAX}.",
             )
-            if (updated == 0) throw NotFoundException("session $sessionId")
         }
+        // Blank is stored as null rather than "": two representations of "nothing
+        // written" would show up differently on the workout header.
+        val cleaned = note?.trim()?.ifEmpty { null }
+        val now = timeSource.nowEpochMillis()
+        val updated = dao.updateReadinessNote(id = sessionId, note = cleaned, at = now)
+        if (updated == 0) throw NotFoundException("session $sessionId")
+
+        // A save **replaces** the list (N62): the editor shows exactly what is stored, so a muscle
+        // missing from it was removed by the lifter. The two statements are not wrapped in a
+        // transaction, the shape `deleteSession` already uses — the session write above has already
+        // refused a dead session, so the only failure window hides the old list and shows the new
+        // one empty rather than mixing the two.
+        soreMuscleDao.softDeleteForSession(sessionId = sessionId, at = now)
+        if (soreMuscles.isNotEmpty()) {
+            soreMuscleDao.insertAll(
+                soreMuscles.mapIndexed { index, sore ->
+                    SessionSoreMuscleEntity(
+                        id = UUID.randomUUID().toString(),
+                        sessionId = sessionId,
+                        muscle = sore.muscle,
+                        score = sore.score,
+                        position = index,
+                        createdAt = now,
+                        updatedAt = now,
+                        deletedAt = null,
+                    )
+                },
+            )
+        }
+    }
 
     override suspend fun deleteSession(sessionId: String): DataResult<Unit> = dataResultOf {
         if (dao.findSession(sessionId) == null) {
@@ -288,6 +344,9 @@ class RoomWorkoutRepository @Inject constructor(
         // Children first, then the parent, so a partial failure cannot leave the
         // session invisible but its exercises still live.
         val now = timeSource.nowEpochMillis()
+        // The sore-muscle rows go with the session they describe (N62): leaving them live would
+        // show a deleted workout's soreness to the restore the export offers.
+        soreMuscleDao.softDeleteForSession(sessionId = sessionId, at = now)
         dao.softDeleteSessionExercises(sessionId = sessionId, at = now)
         dao.softDeleteSession(id = sessionId, at = now)
     }

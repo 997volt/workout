@@ -31,8 +31,9 @@ import androidx.room.TypeConverters
         ProgramSlotSetEntity::class,
         ProgramDeloadEntity::class,
         ProgramSubstitutionEntity::class,
+        SessionSoreMuscleEntity::class,
     ],
-    version = 25,
+    version = 26,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -68,6 +69,9 @@ abstract class WorkoutDatabase : RoomDatabase() {
 
     /** The workouts that stood in for a slot's own, one week at a time (ROADMAP P3.11). */
     abstract fun programSubstitutionDao(): ProgramSubstitutionDao
+
+    /** The muscles a session reported sore, each with its own score (ROADMAP N62). */
+    abstract fun sessionSoreMuscleDao(): SessionSoreMuscleDao
 
     /** Whole-table reads and additive inserts for backup/restore (P1.12). */
     abstract fun backupDao(): BackupDao

@@ -361,6 +361,16 @@
     <string name="readiness_add">Tap to add</string>
     <string name="readiness_edit_action">Edit readiness note</string>
 
+    <!-- The sore-muscle list beside that note (ROADMAP N62). The note stays the free text; this is
+         the structured half, one score per picked muscle. -->
+    <string name="readiness_sore_title">Sore muscles</string>
+    <string name="readiness_sore_add">Add sore muscle</string>
+    <string name="readiness_sore_score">%1$d/10</string>
+    <string name="readiness_sore_decrease">Lower %1$s soreness</string>
+    <string name="readiness_sore_increase">Raise %1$s soreness</string>
+    <string name="readiness_sore_remove">Remove %1$s</string>
+    <string name="readiness_sore_line">%1$s %2$d/10</string>
+
     <!-- Set logging (P1.3). The next set is stated by the fields on the workout screen, and this is
          the button that writes them (ROADMAP N59) — so the label carries no values: the values are
          the fields beside it. -->

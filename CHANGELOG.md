@@ -12,6 +12,15 @@ repeated here.
 
 ## [Unreleased]
 
+### Added
+
+- **The readiness note records which muscles are still sore, and how sore** (N62). The note was one
+  free-text line — the right shape for "slept badly" and the wrong one for "quads 8, calves 3". The prompt
+  a new workout opens with now offers the taxonomy's own muscle groups beside the note, each picked one
+  carrying its own 1–10, and a save replaces the list so a muscle taken off it is gone rather than merged
+  with the old rows. The note itself is unchanged and the whole capture is still skippable; the rows ride
+  in the backup with the session they describe, and history draws them under the readiness line.
+
 ### Changed
 
 - **The next set is stated on the workout screen, not behind *Log set*** (N59). N51 had put the set
