@@ -127,6 +127,38 @@ repeated here.
   an assisted set (stored as `0` kg) and a working weight too light to load a step below both
   offered a button that then returned success without writing. The shared predicate makes that
   silent path unreachable, and the repository's own failure is no longer swallowed.
+- **A loaded program is honest about an exercise this device has deleted** (B51). The load asked
+  whether an exercise was present with a query that filters soft-deleted rows, while the insert
+  beside it ignored an id that already existed — so a lift the user deleted here was skipped *and*
+  judged absent: its movements were dropped and reported as exercises "not on this device", which is
+  untrue, because the device has the row and is hiding it. Dropping stays the answer, since
+  un-deleting a lift is a write to the library that "overwrites nothing" refuses to make; the
+  sentence now reads "not in your library", which is true whether the row is absent or hidden.
+- **A loaded prescription must be one its template actually trains** (B56). The interactive writes
+  enforce P3.8 through `requireExerciseInTemplate`, but the import writes raw rows — so a slot whose
+  template id already existed on the receiving device, and had since diverged, could be given a
+  prescription for a movement that template no longer holds, which no screen would ever show. The
+  load now reads what each template trains, after the carried exercises have landed.
+- **The program document's export and load are required callbacks** (B52). Both were
+  `(() -> Unit)? = null`, so a route that forgot one drew no control and failed nothing — the shape
+  B49 was recorded against, re-introduced by the change that recorded it. The two screens now
+  require them, so the next forgotten wire-up is a compile error.
+- **The Storage Access Framework's document IO is written once** (B53). The backup and the program
+  document each carried their own read, write, MIME type and `DataError`-to-sentence mapping, which
+  is two copies of a rule about cancellation, free to drift. They share `ui/transfer/DocumentFiles`.
+- **The new shared components lost three parameters nothing passed** (B54): `SectionHeader`'s
+  trailing slot and test tag, and `IconTile`'s content description. The slot was the vestige of
+  "See all workouts", which N42 removed from the heading it sat on.
+- **An icon tile's glyph reads on the accent behind it** (B55). Every glyph was white, which is
+  2.5:1 on `Amber`, 2.9:1 on `Teal` and 3.0:1 on `Coral` — under the contrast a graphic needs, and a
+  tile whose glyph cannot be read has stopped doing its one job. Each accent names an `onColor` now,
+  asserted at 3:1 or better by a test rather than eyeballed.
+- **A load that added only templates no longer says the program was already here** (B57). The
+  sentence asked the program count alone, and a program whose id is already present can still bring
+  templates the device did not have.
+- **A negative rest is refused in one sentence, in one place** (B58). The refusal repeated the hint
+  that sits under every rest field, so one instruction lived in two files; the constant now says
+  only what is wrong and the hint says what to do.
 
 ## [1.10] — 2026-10-03 (versionCode 11)
 

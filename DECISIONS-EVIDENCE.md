@@ -369,6 +369,13 @@ on a callback a screen cannot work without converts a forgotten wire-up from a c
 into a silent no-op, so the default goes and the next omission fails the build. Optional
 callbacks may still default; required ones may not.
 
+**B52 is the same rule tested on the next change that could break it.** The program document's
+export and load were added as `(() -> Unit)? = null` on `ProgramEditorScreen` and `ProgramsScreen`
+— the very shape this section was written about, introduced by the change that wrote it. A route
+that forgot one would have drawn no control and failed nothing, and the screens' tests could not
+have caught it, because they pass the callback in rather than going through the route. Both are
+required now, and the reason is recorded at the parameter so the next one is not a judgement call.
+
 ## B50
 
 Found while diagnosing B49: the guard asked whether a non-warm-up set had a weight *typed*
@@ -387,6 +394,21 @@ One predicate, `warmUpRampFor(sets)`, now decides both the guard and the action,
 the silent path unreachable. The test that appeared to cover the light case asserted
 `all { it.weightGrams < 5_000L }` — vacuously true on exactly the empty list the bug produced —
 and is now an assertion on the list itself.
+
+## B55
+
+`IconTile` drew every glyph in `Color.White`, which is what the reference screenshot shows and what
+the component's own doc said. Ratios are where a screenshot stops being evidence: white is 2.5:1
+against `Amber`, 2.9:1 against `Teal` and 3.0:1 against `Coral`, under the 3:1 a graphic needs.
+`Indigo` is the one accent dark enough that white is the better half of the pair; on the other four
+the page's own ink reads at 5:1 or better.
+
+The tile is decorative — a headline beside it names the row — so this was never a WCAG failure, and
+a fix was not urgent. It is still the tile's whole job: the colour is what lets a list be recognised
+before it is read, and a glyph nobody can make out is that job half done. So the accent names an
+`onColor` instead of assuming white, and `TileAccentTest` computes the ratios and holds every pair at
+3:1 or better. Asserting it rather than eyeballing it is the point: the palette will be edited again,
+and this is the one property of it that a screenshot cannot show.
 
 ## N41
 
@@ -572,6 +594,36 @@ the user (P3.12). And a movement whose exercise is neither carried nor present o
 **dropped**, because the foreign key would otherwise roll the whole document back — one missing
 exercise is not a reason to refuse a program. The load reports the counts, including what it
 dropped, so the outcome is said rather than guessed.
+
+**B51 — "present" had to mean one thing.** The presence read was `ExerciseDao.findById`, which
+filters `deletedAt IS NULL`, and the insert beside it was `INSERT OR IGNORE`, which skips an id that
+exists *including* a soft-deleted one. A row the device held but had deleted therefore failed both
+tests: the insert skipped it and the read could not see it, so every movement naming it was dropped
+and the sentence told the user the exercise was "not on this device" — false, and false in the one
+way that matters, because the user could look at their library, remember deleting it, and have no
+idea whether the file or the app was wrong.
+
+The backup answers the identical question the other way. `restoreSoftDeleted` reads
+`softDeletedExerciseIds` and `@Update`s those rows back, because a backup is a *restore*: it exists
+to reproduce the source database, and a row the file has live is one the target should have live
+too. A program document is not a restore. It is an additive share, and the rule it was built on is
+that it "overwrites nothing" and can never cost the user something they wrote — so resurrecting a
+lift they deliberately deleted is exactly the write that rule refuses. The movement is dropped, and
+the message says the library rather than the device, which is true whether the row is absent or
+merely hidden. The alternative — restore it, as the backup does — was rejected on that rule rather
+than on effort; the cost of dropping is a visibly thinner program, which the count reports.
+
+**B56 — the invariant the interactive writes kept and the import did not.** P3.8 holds that a slot
+prescribes only what its template trains, and `setSlotExercisePlan` enforces it with
+`requireExerciseInTemplate`. The import writes through the *backup* DAOs, which are deliberately
+raw, so nothing re-checked it. The case that reaches this is narrow but real: two devices that once
+shared a template id (a restore, or an earlier load of the same document) and then diverged, where
+the document's prescription names a movement the local template has since dropped. The result is a
+prescription row no screen can show, waiting to become visible and wrong if the template ever gains
+that exercise again. The load now asks the same question the interactive path asks, against what
+each template holds *after* the carried exercises have landed — so a template that travelled in the
+document is judged on what it just received, and one that was already here is judged on what it
+holds now. The pure predicate exists so the rule is held by a JVM test rather than by a device.
 
 ## P3.3
 

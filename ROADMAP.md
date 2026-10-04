@@ -25,65 +25,18 @@ work lives, *Later* for what is self-contained and *Parked* for what is a produc
 
 ## Later (still self-contained)
 
-Every candidate that stood here has shipped — the defects found in use, the workout screen's
+Empty. Every candidate that stood here has shipped — the defects found in use, the workout screen's
 discard, the workouts tab cut back, repeat-last in History, Settings' data section and rest-timer
-switch, a rest of zero, the planned-set prefill, and the program document — each with its entry in
-[CHANGELOG.md](CHANGELOG.md). What stands here now is not another candidate from using the app: it
-is a reading of that work, taken line by line after it was written rather than by using it. A
-candidate graduates to *Next* — gaining an id and a spelled-out decision — when it is picked up,
-so an empty queue is a state rather than a gap, and *Parked* below is where deliberate non-work
-lives.
+switch, a rest of zero, the planned-set prefill, the program document, and the eight defects a
+review of that batch found and closed (B51-B58) — each with its entry in
+[CHANGELOG.md](CHANGELOG.md). A candidate graduates to *Next* — gaining an id and a spelled-out
+decision — when it is picked up, so an empty queue is a state rather than a gap, and *Parked* below
+is where deliberate non-work lives.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what
 they named that is not a feature is a settled decision: no dated instances (N16), nothing
 automatic (N22's "the app suggests; it never writes"), a weekday-less slot that is never missed
 and is order-only, and more than one active program, which P3.12 allowed.
-
-### Defects found in review
-
-The N41-N48 batch and the restyle were read line by line, and the reading found these. All but
-the first are small; the first is the only one that loses anything, and it loses it while saying
-something untrue about why.
-
-- **A program document calls an exercise the device has deleted "not on this device"** (B51).
-  `mergeProgramDocument` asks whether an exercise is present with `ExerciseDao.findById`, which
-  filters `deletedAt IS NULL`, and the insert beside it is `INSERT OR IGNORE`. So a row the device
-  holds but has *soft*-deleted is skipped by the insert *and* judged absent by the read: its
-  movements are dropped and reported as exercises "not on this device", which is false. The backup's
-  own import answers the same question the other way — `restoreSoftDeleted` un-deletes what the file
-  has live — so the two paths disagree about what a hidden row means, and neither the disagreement
-  nor the drop is written down. Whatever is chosen has to be true in the sentence and argued in
-  DECISIONS: resurrecting a lift the user deleted is a write to their library, so the likely answer
-  is that the movement is dropped and *said* accurately.
-- **The document's export and load callbacks default to null** (B52). `ProgramEditorScreen`'s
-  `onExportProgram` and `ProgramsScreen`'s `onLoadProgram` are `(() -> Unit)? = null`, so a route
-  that forgets to wire one draws no control and fails nothing. That is the shape B49 was written
-  against in this same batch — "a callback a screen cannot work without has no default" — and the
-  screen tests pass the callback in rather than going through the route, so they cannot catch it.
-- **The Storage Access Framework document IO is written twice** (B53). `ui/transfer`'s
-  `DataTransferActions` and `ui/programs`' `ProgramFileActions` each carry their own
-  `writeText`/`readText`, their own `JSON_MIME_TYPE` and their own `DataError`-to-sentence mapping.
-  This is the second caller the rule says to extract at — the same rule the restyle applied to
-  `FailureMessage` one file over.
-- **The new shared components carry parameters nothing passes** (B54). `SectionHeader`'s `trailing`
-  slot and `testTag`, and `IconTile`'s `contentDescription`, are referenced by no caller. `trailing`
-  is the vestige of the "See all workouts" control N42 removed; `contentDescription` is documented
-  as the exception case, and no tile is one.
-- **A tile's glyph is white on accents where white does not read** (B55). `IconTile` tints every
-  icon `Color.White`, which against `Amber` is 2.5:1, `Teal` 2.9:1 and `Coral` 3.0:1 — under the
-  contrast a graphic needs, and less legible than the dark glyph the same tile would take.
-- **A loaded prescription is never checked against what its template trains** (B56). The
-  interactive writes enforce P3.8 through `requireExerciseInTemplate`; the import writes raw rows
-  through the backup DAOs, so a slot whose template id already exists on the receiver — and has
-  since diverged — can be given a prescription for a movement that template no longer holds.
-- **"That program is already here" is decided from the program count alone** (B57).
-  `importSentence` asks `summary.programs > 0`, so a load that added templates or exercises but not
-  the program row itself — its id already present, its templates not — is announced as having added
-  nothing.
-- **A negative rest is refused with a sentence that repeats the field's hint** (B58).
-  `RestTimer.NEGATIVE_REST_REFUSAL` carries "Leave it empty for the default, or 0 for none." while
-  its own doc says the hint carries the construction, and `rest_edit_hint` says the same thing — one
-  rule stated in two files, free to drift apart.
 
 ## Parked — deliberately not planned
 

@@ -403,7 +403,13 @@ the rule; that one argues it.
   receiver creates what it lacks. Loading **merges by id and overwrites nothing**, so the same file
   twice is a no-op, and the program arrives **inactive and last**, because following one is a choice
   (P3.3) and the authored order is the user's (P3.12). A movement whose exercise is nowhere is
-  dropped rather than failing the foreign key and rolling the document back.
+  dropped rather than failing the foreign key and rolling the document back — and **"nowhere"
+  includes a row this device has deleted** (B51): a hidden row is not one the load may resurrect,
+  because un-deleting a lift is a write to the library, so the movement is dropped and the count is
+  worded "not in your library", which is true of both cases. A prescription is placed only where the
+  slot's template actually trains its exercise (B56), the rule the interactive writes already
+  enforced through `requireExerciseInTemplate` — the import writes raw rows, so it re-asks the
+  question against what the template holds *after* the carried exercises land.
   ([evidence](DECISIONS-EVIDENCE.md#n47))
 
 ## Adherence
@@ -515,7 +521,10 @@ the rule; that one argues it.
   every time one retires. The window theme and the system-bar styles are part of the rule rather
   than decoration on it: a dark app whose window is light flashes white on every cold start, and
   bars tinted from the *system's* light/dark setting draw dark icons onto a black bar on a
-  light-mode device.
+  light-mode device. A coloured surface also names the colour that reads *on* it rather than
+  assuming white (B55): white is 2.5:1 on `Amber` and 2.9:1 on `Teal`, under the contrast a graphic
+  needs, so each accent carries an `onColor` and a test holds every pair at 3:1 or better.
+  ([evidence](DECISIONS-EVIDENCE.md#b55))
 - **Privacy: local-only.** No `INTERNET` permission, no ads, no analytics. Crash logs stay
   in app-private storage and leave only in an export the user chose to make.
 - **No Google Play services at runtime.** Firebase, `play-services-*`, Play Billing and
@@ -535,12 +544,17 @@ the rule; that one argues it.
   `truth-android`. Most files still use JUnit and migrate **as they are touched**, never in
   a sweep and never left half-converted — a preference about failure messages, not a
   correctness gate. ([evidence](DECISIONS-EVIDENCE.md#truth-turbine))
-- **No dead weight.** Extract a shared component at its second caller, not its first;
-  delete an API the moment nothing calls it.
-- **A callback a screen cannot work without has no default** (B49). A default empty lambda turns a
+- **No dead weight** (B53, B54). Extract a shared component at its second caller, not its first;
+  delete an API the moment nothing calls it — a component's parameter nothing passes included,
+  which is how `SectionHeader`'s trailing slot and `IconTile`'s content description survived the
+  restyle that created them.
+- **A callback a screen cannot work without has no default** (B49, B52). A default empty lambda turns a
   forgotten wire-up into a silent no-op instead of a compile error, which is how "Add warm-ups"
   shipped dead while its ViewModel method passed every test; optional callbacks may default,
-  required ones may not. ([evidence](DECISIONS-EVIDENCE.md#b49))
+  required ones may not. The program document's export and load are the second telling — both were
+  `(() -> Unit)? = null`, so the same omission would have hidden a control rather than failed the
+  build, and only the screens' own tests, which pass the callback in, could have caught it.
+  ([evidence](DECISIONS-EVIDENCE.md#b49))
 - **Schema changes are migration-numbered as they ship.** Do not add columns or tables
   ahead of the code that reads them; copy the SQL from Room's generated `createSql`,
   register the migration in `ALL_MIGRATIONS`, and never edit one that has shipped. Every
