@@ -1,7 +1,6 @@
 package com.example.androidapp.ui.exercises
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,12 +14,9 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.SnackbarHostState
@@ -34,9 +30,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -67,7 +61,6 @@ import com.example.androidapp.ui.theme.TileAccent
 fun ExerciseLibraryRoute(
     onExerciseClick: (String) -> Unit,
     onBack: () -> Unit,
-    onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ExerciseLibraryViewModel = hiltViewModel(),
 ) {
@@ -79,7 +72,6 @@ fun ExerciseLibraryRoute(
         onBack = onBack,
         onQueryChange = viewModel::onQueryChange,
         onExerciseClick = onExerciseClick,
-        onOpenHistory = onOpenHistory,
         modifier = modifier,
     )
 }
@@ -101,7 +93,6 @@ fun ExerciseLibraryScreen(
     onExerciseClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
-    onOpenHistory: (() -> Unit)? = null,
     message: String? = null,
     onDismissMessage: () -> Unit = {},
     onNewExercise: (() -> Unit)? = null,
@@ -137,15 +128,6 @@ fun ExerciseLibraryScreen(
                                 contentDescription = stringResource(R.string.nav_back),
                             )
                         }
-                    }
-                },
-                actions = {
-                    // Only the real library offers this menu; the picker reuses the
-                    // screen with no callback, so no menu appears there. Export and
-                    // import are *not* here any more: they belong with the app's
-                    // other data management at home (ROADMAP B1).
-                    if (onOpenHistory != null) {
-                        LibraryMenu(onOpenHistory = onOpenHistory)
                     }
                 },
             )
@@ -211,39 +193,6 @@ private fun EmptyState(
             textStyle = MaterialTheme.typography.bodyLarge,
             modifier = modifier.testTag(TestTags.LIBRARY_NO_MATCH),
         )
-    }
-}
-
-/** The library's overflow. History only: the data menu moved home (ROADMAP B1). */
-@Composable
-private fun LibraryMenu(
-    onOpenHistory: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var open by remember { mutableStateOf(false) }
-
-    // Boxed so the menu anchors to the button: a composable emitting two siblings
-    // at the top level has no defined anchor for the popup.
-    Box(modifier = modifier) {
-        IconButton(
-            onClick = { open = true },
-            modifier = Modifier.testTag(TestTags.LIBRARY_MENU),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = stringResource(R.string.transfer_more),
-            )
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.history_title)) },
-                onClick = {
-                    open = false
-                    onOpenHistory()
-                },
-                modifier = Modifier.testTag(TestTags.LIBRARY_HISTORY),
-            )
-        }
     }
 }
 

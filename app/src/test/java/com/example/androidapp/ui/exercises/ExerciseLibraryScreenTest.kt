@@ -71,7 +71,6 @@ class ExerciseLibraryScreenTest {
         onQueryChange: (String) -> Unit = {},
         onExerciseClick: (String) -> Unit = {},
         onNewExercise: (() -> Unit)? = null,
-        onOpenHistory: (() -> Unit)? = null,
     ) {
         composeTestRule.setContent {
             ExerciseLibraryScreen(
@@ -80,7 +79,6 @@ class ExerciseLibraryScreenTest {
                 onQueryChange = onQueryChange,
                 onExerciseClick = onExerciseClick,
                 onNewExercise = onNewExercise,
-                onOpenHistory = onOpenHistory,
             )
         }
     }
@@ -156,15 +154,16 @@ class ExerciseLibraryScreenTest {
     }
 
     @Test
-    fun theLibrarysMenu_noLongerOffersExportOrImport() {
-        // ROADMAP B1: they moved to the home overflow, and leaving a second copy
-        // here is the drift the fix exists to remove — one path, not two.
-        setScreen(ExerciseLibraryUiState(isLoading = false), onOpenHistory = {})
-        composeTestRule.onNodeWithTag(TestTags.LIBRARY_MENU).performClick()
+    fun theLibrary_offersNoExportImportOrHistoryLink() {
+        // ROADMAP B1: export and import moved out of here, and leaving a second copy is the drift
+        // the fix exists to remove — one path, not two. The overflow went with the history link it
+        // last held: History is the tab beside this screen, so a menu whose one item opens a room you
+        // are already standing next to is a second door rather than a shortcut.
+        setScreen(ExerciseLibraryUiState(isLoading = false))
 
         composeTestRule.onNodeWithTag(TestTags.DATA_EXPORT).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.DATA_IMPORT).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.LIBRARY_HISTORY).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Workout history").assertDoesNotExist()
     }
 
     @Test

@@ -130,10 +130,6 @@ object TestTags {
     const val LIBRARY_READ_ERROR = "library_read_error"
     const val EXERCISE_READ_ERROR = "exercise_read_error"
 
-    /** The library's overflow and the one entry left in it after B1. */
-    const val LIBRARY_MENU = "library_menu"
-    const val LIBRARY_HISTORY = "library_history"
-
     /**
      * The picker's "new exercise" action (ROADMAP N2) and the dialog it opens.
      * The library destination never renders these, so their presence is itself

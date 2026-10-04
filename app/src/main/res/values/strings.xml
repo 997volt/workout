@@ -412,8 +412,6 @@
     <string name="workout_error_not_found">That workout is no longer open.</string>
     <string name="workout_error_storage">Couldn’t save that. Your last change may not be stored.</string>
 
-    <!-- Backup and restore (ROADMAP P1.12) -->
-    <string name="transfer_more">More options</string>
     <!-- Starting over (ROADMAP N18). The order is fixed: export, then type, then go. -->
     <string name="clear_title">Delete everything?</string>
     <string name="clear_body">This removes every workout, set, template, rating and comment, and the crash logs. The seeded exercise library stays.</string>

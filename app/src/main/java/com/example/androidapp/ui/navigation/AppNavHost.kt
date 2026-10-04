@@ -132,7 +132,6 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
             onExerciseClick = { exerciseId ->
                 navController.navigate(ExerciseDetail(exerciseId))
             },
-            onOpenHistory = { navController.navigate(WorkoutHistory) },
             onBack = { navController.popBackStack() },
         )
     }

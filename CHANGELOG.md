@@ -47,6 +47,13 @@ repeated here.
   starts the workout, and one pill is drawn per next-up row because more than one program may be active
   (P3.12).
 
+### Removed
+
+- **The library's overflow menu is gone, and with it the *Workout history* link** (no feature id). The
+  link was the menu's only entry, and History is the tab beside this screen — drawn in the bar on every
+  library screen — so it was a second door to a room one tap away. B1 had already taken export and import
+  out of the menu, which is why nothing was left to keep it for.
+
 ## [1.12] — 2026-10-04 (versionCode 13)
 
 ### Added
