@@ -257,6 +257,14 @@ object TestTags {
     /** The one-tap log itself (ROADMAP N19 gave it a companion, and it needed a name). */
     const val SET_LOG = "set_log"
 
+    /**
+     * The notice that an exercise's planned sets are all written (ROADMAP N52).
+     *
+     * Beside [SET_LOG], because the two answer one question: the label says the next set is extra,
+     * and this says why.
+     */
+    const val EXERCISE_PLAN_DONE = "exercise_plan_done"
+
     /** The role armed for the next one-tap log (ROADMAP N19). */
     /** Starting over (ROADMAP N18): the menu entry, the field and the confirm button. */
     const val HOME_CLEAR_DATA = "home_clear_data"

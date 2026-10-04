@@ -14,6 +14,16 @@ repeated here.
 
 ### Changed
 
+- **An exercise says when its planned work is done** (N52). Past the last planned set the exercise
+  kept accepting sets with nothing to say the work the plan asked for was finished —
+  `comparePlanToActual` said so only in the review, after *Finish*. The plan is the template the
+  workout was started from, so the moment its last set is written *Log set* becomes **Log extra
+  set** and a notice says the planned work is done. Nothing closes: logging an extra set is what
+  the control still does, the exercise stays open, and the way to end it is the **Done** already in
+  its header (N7). It is per exercise and it is the control rather than a dialog, because N51
+  already puts a dialog in front of every set and a second one would interrupt the next exercise's
+  first set. An exercise with no plan behind it — an empty workout, or one added by hand — is never
+  called done.
 - **The palette's second filled role and its links were replaced, so both read** (N49). *Log set* is a
   filled tonal button, which draws its label in `onSecondaryContainer` on `secondaryContainer`; that
   container was the category Teal, and white on it measures 2.9:1 — the loudest thing on the workout

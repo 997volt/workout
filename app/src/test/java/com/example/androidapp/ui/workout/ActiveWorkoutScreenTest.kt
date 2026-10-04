@@ -654,4 +654,50 @@ class ActiveWorkoutScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.SUGGESTION_ACCEPT).assertDoesNotExist()
     }
+
+    @Test
+    fun pastTheLastPlannedSet_theControlSaysTheNextOneIsExtra() {
+        // ROADMAP N52: the plan is the template the workout was started from, so the moment its last
+        // set is written is the moment the app can say the planned work is done — rather than only in
+        // the review, after Finish.
+        setScreen(state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 3, planned = 3))))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_DONE).assertExists()
+        composeTestRule.onNodeWithText("Log extra set").assertExists()
+        // The label no longer describes a set, because the plan does not: it drops the values
+        // rather than naming the last planned one again.
+        composeTestRule.onNodeWithText("Log set · 100 kg × 5").assertDoesNotExist()
+    }
+
+    @Test
+    fun withAPlannedSetStillToWrite_theControlHasNothingToNotice() {
+        // One short of the plan is not done: a notice here would appear a set early.
+        setScreen(state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 2, planned = 3))))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_DONE).assertDoesNotExist()
+        composeTestRule.onNodeWithText("Log set · 100 kg × 5").assertExists()
+    }
+
+    @Test
+    fun anExerciseWithNoPlan_isNeverCalledDone() {
+        // An empty workout's exercise has no plan behind it, so there is no work to have finished —
+        // and a null count is not zero.
+        setScreen(state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 9, planned = null))))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_DONE).assertDoesNotExist()
+        composeTestRule.onNodeWithText("Log set · 100 kg × 5").assertExists()
+    }
+
+    /** One exercise with a plan behind it and [logged] sets already written. */
+    private fun plannedRow(logged: Int, planned: Int?): SessionExerciseRow = SessionExerciseRow(
+        id = "se1",
+        exerciseId = "back-squat",
+        name = "Back Squat",
+        subtitle = "Quads · Barbell",
+        plannedSetCount = planned,
+        sets = List(logged) { index ->
+            SetRow(id = "set$index", number = index + 1, reps = 5, weightGrams = 100_000)
+        },
+        suggestion = SetSuggestion(reps = 5, weightGrams = 100_000),
+    )
 }

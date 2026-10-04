@@ -60,6 +60,17 @@ import com.example.androidapp.ui.components.rpeMarker
 /** How far a done exercise's sets are faded (ROADMAP N7). */
 private const val DIMMED = 0.45f
 
+/**
+ * True once this exercise has written every set its plan asked for (ROADMAP N52).
+ *
+ * Every set rather than more than every set, because the moment the last planned one lands is the
+ * moment the notice is worth reading: the next set is the extra one. A null `plannedSetCount` is
+ * "no plan", which is never past it — an empty workout, or an exercise added by hand, has nothing
+ * to be done with and must not be told its work is finished.
+ */
+internal val SessionExerciseRow.isPastPlan: Boolean
+    get() = plannedSetCount != null && sets.size >= plannedSetCount
+
 @Composable
 internal fun ExerciseList(
     rows: List<SessionExerciseRow>,
@@ -336,6 +347,7 @@ private fun ExerciseSets(
         // instead of log-then-edit three times (ROADMAP N19).
         if (!row.isFinished) {
             row.suggestion.offer?.let { offer -> SuggestionOffer(offer = offer, onAccept = onAcceptOffer) }
+            PlanDoneNotice(row = row)
             Row(
                 modifier = Modifier.padding(top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -356,20 +368,57 @@ private fun ExerciseSets(
                 },
                 modifier = Modifier.testTag(TestTags.SET_LOG),
             ) {
-                Text(
-                    text = stringResource(
-                        R.string.set_log,
-                        stringResource(
-                            R.string.set_summary,
-                            Weight.display(row.suggestion.weightGrams, row.suggestion.assistanceGrams),
-                            row.suggestion.reps,
+                // The plan's work is done, so the label stops describing values the app no longer
+                // offers a target for (ROADMAP N52). Logging an extra set is what the control
+                // still does — nothing closes, and the way to end the exercise is Done.
+                if (row.isPastPlan) {
+                    Text(stringResource(R.string.set_log_extra))
+                } else {
+                    Text(
+                        text = stringResource(
+                            R.string.set_log,
+                            stringResource(
+                                R.string.set_summary,
+                                Weight.display(
+                                    row.suggestion.weightGrams,
+                                    row.suggestion.assistanceGrams,
+                                ),
+                                row.suggestion.reps,
+                            ),
                         ),
-                    ),
-                )
+                    )
+                }
             }
             }
         }
     }
+}
+
+/**
+ * The plan's work is done for this exercise (ROADMAP N52).
+ *
+ * Past the last planned set the exercise keeps accepting sets with nothing to say the work the plan
+ * asked for is finished — `comparePlanToActual` says so only in the review, after *Finish*. This is
+ * the moment it happens: the last planned set has just been written, so the notice appears beside
+ * the control that would write one more.
+ *
+ * It is per exercise and it is a notice rather than a dialog, deliberately. N51 already puts a
+ * dialog in front of every set, and a second one would interrupt the next exercise's first set; and
+ * nothing closes, because accepting the notice is the header's **Done** (N7) — logging an extra set
+ * is what the control still does, which is why the label changes rather than the action.
+ */
+@Composable
+private fun PlanDoneNotice(row: SessionExerciseRow, modifier: Modifier = Modifier) {
+    if (!row.isPastPlan) return
+
+    Text(
+        text = stringResource(R.string.set_plan_done),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+            .padding(top = 8.dp)
+            .testTag(TestTags.EXERCISE_PLAN_DONE),
+    )
 }
 
 /**

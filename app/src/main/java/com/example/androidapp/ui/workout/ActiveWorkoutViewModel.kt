@@ -90,6 +90,16 @@ data class SessionExerciseRow(
     /** This exercise's own rest, or null for the app default (ROADMAP N5). */
     val restSeconds: Int? = null,
     /**
+     * How many sets the plan behind this workout writes for this exercise, or null when there is no
+     * plan (ROADMAP N52).
+     *
+     * Null is not zero: an empty workout, or one whose exercise was added by hand, has nothing to
+     * be done with, so the control never turns into *Log extra set* on a plan that does not exist.
+     * A number here is the whole plan for the exercise — a program's slot and a template chosen
+     * directly arrive as the same `templateId`, so both count.
+     */
+    val plannedSetCount: Int? = null,
+    /**
      * True once this exercise has been marked done (ROADMAP N7): its Log set button
      * is hidden, its sets are dimmed and not editable, and Reopen restores both.
      */
@@ -1237,6 +1247,15 @@ private fun SessionExercise.toRow(
         supersetGroup = supersetGroup,
         supersetLabel = supersetLabels[id],
         restSeconds = restSeconds,
+        // What "the exercise's plan is done" is measured against (ROADMAP N52). The slot wins where
+        // it speaks, so the plan is the longer of the two rather than either one: a slot may override
+        // a later set the template left alone, and counting only the template would call the work
+        // done a set early. No plan at all leaves the count null rather than zero, so an empty
+        // workout's control never says the work is finished before it has started.
+        plannedSetCount = maxOf(
+            plan.prescription?.sets?.size ?: 0,
+            plan.planned.firstOrNull { it.position == position }?.sets?.size ?: 0,
+        ).takeIf { it > 0 },
         isFinished = isFinished,
         muscleFeel = muscleFeel,
         jointPain = jointPain,

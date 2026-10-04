@@ -352,6 +352,13 @@
     <!-- Set logging (P1.3) -->
     <string name="set_use_suggestion">Use it</string>
     <string name="set_log">Log set · %1$s</string>
+    <!-- Past the last planned set the exercise keeps accepting sets, and the control says so
+         (ROADMAP N52): logging one is still what it does, so the label loses the values it no
+         longer describes rather than becoming a second Finish. -->
+    <string name="set_log_extra">Log extra set</string>
+    <!-- The notice beside that label: the plan's own work is done, and the next set is extra.
+         Nothing closes, and accepting it is the header's Done (ROADMAP N52). -->
+    <string name="set_plan_done">Planned work done — log extra sets if you want them.</string>
     <string name="set_number">%1$d</string>
     <string name="set_summary">%1$s kg × %2$d</string>
     <string name="set_edit_title">Edit set</string>
