@@ -35,6 +35,34 @@ automatic (N22's "the app suggests; it never writes"), a weekday-less slot that 
 and is order-only, and more than one active program, which P3.12 allowed. What waits now came
 from using the built app rather than from either queue.
 
+### Defects found in use
+
+- **A template's warm-up arrives as a working set.** A template can hold a ramp — planned sets
+  whose role is *warm-up* — but the role does not survive being run. `startOrResumeSession` seeds
+  the template's *exercises* and never its sets, and the pending set the user logs arms its role at
+  `SetType.NORMAL`, resetting to `NORMAL` after every set; the plan's next planned role is read, but
+  only to compare plan against actual in the review. So a template that opens with a ramp records
+  its warm-ups as working sets unless the picker is tapped on each one by hand, and the comparison
+  the review draws then reads as a plan the user ignored. It is not only untidy: warm-ups are
+  excluded from records and from progression *on purpose*, so a ramp recorded as working can set a
+  personal record and inflate volume against a bar it never cleared. The fix is that the pending
+  set's armed role follows the plan's next unlogged set, carried the way reps and weight already
+  are, with the picker still overriding it for the one set.
+
+### The workout screen: an exit that is not *Finish*
+
+- **Discard an ongoing workout, behind a prompt.** Today the only way out of a workout that has
+  anything in it is *Finish*, which files it in history; a workout that has *nothing* in it can
+  already be discarded, and with no prompt — which is right, because there is nothing to lose. The
+  ask is the third case: a workout holding logged sets that the user wants gone, which has no exit
+  at all. The prompt is the point of the change rather than a courtesy, and it should key off the
+  same emptiness that decides today whether a discard is offered — the empty one keeps behaving as
+  it does, and the one that would delete logged sets asks first and says what goes. One thing to
+  settle when it is taken: a discard is a *soft* delete, and a workout started from a program's
+  slot that is never finished is recorded as a **miss** (P3.5's rule that only a finished session
+  settles an occurrence), so the prompt has to be honest that dropping out is counted against the
+  program rather than as no workout at all.
+
 ### The workouts tab, cut back to the question it answers
 
 Three changes to one screen, and they are one argument: the tab that starts a workout should
@@ -81,6 +109,22 @@ to somewhere the app already goes.
   timer is genuinely not running rather than a countdown hidden behind a static number, so the
   decision this needs when it is taken is whether the end instant is simply never written while the
   switch is off.
+
+### Programs: loading one from a file
+
+- **Load a program, with its templates, from a file.** Programs and their templates already ride in
+  the backup, and import already merges rather than overwrites — so what is missing is not a reader
+  but a *document*: there is no way to carry one program to another device, or to accept one
+  somebody else wrote, without moving the whole database. Two things make it more than a file
+  picker bolted to the Programs screen. The format has to survive being partial — four collections
+  in the backup are required rather than defaulted, so a program-only file cannot simply be a small
+  backup — and it has to name its exercises portably: a template references exercise ids, the
+  seeded library's ids are permanent slugs that are the same everywhere, and an exercise the *user*
+  created carries a generated id that means nothing on the receiving device. So the candidate
+  carries two decisions: a program document with a version of its own, reusing the backup's DTOs
+  and mappers where they fit, and a rule for an exercise the receiving device does not have. Both
+  are why this is the largest of the three, and both are worth paying: a program is the part of
+  this app a lifter would actually want to hand to someone.
 
 ## Parked — deliberately not planned
 
