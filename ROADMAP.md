@@ -131,6 +131,33 @@ to somewhere the app already goes.
   decision this needs when it is taken is whether the end instant is simply never written while the
   switch is off.
 
+### Rest: making "no rest" expressible
+
+- **A rest of zero becomes a valid, deliberate answer.** The field has two states today and needs
+  three: empty means *inherit* (an exercise takes the app default, a template takes the library's,
+  a slot takes the template's), a positive number is that rest, and zero is **refused** — in three
+  repositories, with two different sentences for one rule ("Rest must be a positive number of
+  seconds." twice, "A prescribed rest must be at least a second." once), and as a red field in the
+  library editor, the template plan editor and the slot prescription dialog. So "this exercise
+  needs no rest" cannot be written down at all, and a zero reads as an error when it is a perfectly
+  ordinary intention. The ask is that zero is a value: the field stops calling it one, and it keeps
+  meaning what it already means downstream — `startRest` computes an end instant at *now*, so a zero
+  rest simply never runs, and nothing collapses zero into "absent", because both `?:` and the DAO's
+  `COALESCE` test null rather than falsiness. That makes this a validation-and-wording change rather
+  than plumbing, which is also why it is small enough to be worth doing properly.
+- **What it has to settle when it is taken.** The rule it reverses is written down — N5 says "a rest
+  of zero is not a rest; leaving it unset is how 'use the default' is expressed" — so that decision
+  moves rather than being quietly broken, and the three sentences above collapse into one. The hint
+  under the field has to carry both halves ("leave empty for the default, 0 for none"), and the
+  *display* needs a word rather than a number: a stored zero renders as `0:00` today, which reads as
+  a rest that has run out instead of one that was never wanted.
+- **It is not the rest-timer switch, and the two should stay distinct.** The switch above is "stop
+  counting me down, but show me the prescription"; a zero is "this exercise has no rest to count".
+  One is a preference about the timer, the other a fact about the exercise. For the same reason zero
+  stays out of the *default* rest's choices, where the Settings screen already refuses to offer it
+  and says why in a comment — a typed zero there would be an alarm that fires instantly, and an
+  app-wide zero would take the rest out of every exercise at once, which is the switch's job.
+
 ### Templates and plans: how a planned set gets written
 
 One screen's problem, and this candidate removes a feature rather than adding one.
