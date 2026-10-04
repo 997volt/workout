@@ -216,8 +216,9 @@ fun prescribedTargetFor(
         // A weight the slot wrote wins over a percentage; the two are alternatives, not a sum.
         weightGrams = if (slotNamesLoad) slotWeight else template?.weightGrams,
         assistanceGrams = if (slotNamesLoad) prescribed.targetAssistanceGrams else template?.assistanceGrams,
-        // The slot's own role wins where the slot speaks at all, and the template answers the rest (B48).
-        role = prescribed.role ?: template?.role,
+        // The slot's own role wins wherever the slot speaks at all: its sets carry the plan's
+        // vocabulary and default to a working set, so there is no "left alone" to fall back for (B48).
+        role = prescribed.role,
     )
 }
 

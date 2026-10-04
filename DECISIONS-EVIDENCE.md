@@ -388,6 +388,25 @@ the silent path unreachable. The test that appeared to cover the light case asse
 `all { it.weightGrams < 5_000L }` — vacuously true on exactly the empty list the bug produced —
 and is now an assertion on the list itself.
 
+## N41
+
+A workout with logged sets had no exit but Finish, which files it in history; only a workout with
+*nothing* in it could be discarded. So the third case — sets the user wants gone — had no answer.
+
+The prompt keys off the same emptiness that already decided whether a discard was offered:
+`isEmpty` keeps its prompt-free button because there is nothing to lose, and anything else asks
+first and names the count. The second half is the part worth writing down: a discard is a *soft*
+delete, but a workout started from a program slot that is never finished is a **miss**, because
+P3.5 holds that only a finished session settles an occurrence. A prompt that said "delete this
+workout?" would therefore be lying by omission, so it says that dropping out is counted against
+the program. The signal is the route's slot id — a session started from an unscheduled template is
+not an occurrence and gets no such warning.
+
+The action lives behind the top bar's overflow rather than beside Finish, because the visible slot
+is the one a lifter reaches for mid-set and a destructive action does not belong under a thumb.
+An undo was rejected: the row is soft-deleted, but an undo would have to reopen a workout the user
+asked to be gone and would say nothing about the occurrence it settled.
+
 ## P3.3
 
 Programs. The shape was decided before the code, and the interesting part is what each

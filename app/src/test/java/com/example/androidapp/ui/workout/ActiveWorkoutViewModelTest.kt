@@ -1316,6 +1316,17 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun onlyAWorkoutStartedFromASlot_countsAgainstTheProgram() {
+        // ROADMAP N41: the discard prompt says dropping out is a miss only when the session
+        // followed a program slot (P3.5). An unscheduled template is not an occurrence.
+        val fromSlot = viewModelFor(FakeWorkoutRepository(), templateId = "t1", slotId = "slot-1")
+        val fromTemplate = viewModelFor(FakeWorkoutRepository(), templateId = "t1")
+
+        assertTrue("a slot start is a scheduled occurrence", fromSlot.startedFromProgram)
+        assertTrue("a plain template start is not", !fromTemplate.startedFromProgram)
+    }
+
+    @Test
     fun aPlansWarmUp_armsThePendingSetAsAWarmUp() = runTest(dispatcher) {
         // ROADMAP B48: the pending set's role follows the plan's next unlogged set. A template that
         // opens with a ramp used to record its warm-ups as working sets unless the picker was tapped

@@ -35,20 +35,6 @@ automatic (N22's "the app suggests; it never writes"), a weekday-less slot that 
 and is order-only, and more than one active program, which P3.12 allowed. What waits now came
 from using the built app rather than from either queue.
 
-### The workout screen: an exit that is not *Finish*
-
-- **Discard an ongoing workout, behind a prompt.** Today the only way out of a workout that has
-  anything in it is *Finish*, which files it in history; a workout that has *nothing* in it can
-  already be discarded, and with no prompt — which is right, because there is nothing to lose. The
-  ask is the third case: a workout holding logged sets that the user wants gone, which has no exit
-  at all. The prompt is the point of the change rather than a courtesy, and it should key off the
-  same emptiness that decides today whether a discard is offered — the empty one keeps behaving as
-  it does, and the one that would delete logged sets asks first and says what goes. One thing to
-  settle when it is taken: a discard is a *soft* delete, and a workout started from a program's
-  slot that is never finished is recorded as a **miss** (P3.5's rule that only a finished session
-  settles an occurrence), so the prompt has to be honest that dropping out is counted against the
-  program rather than as no workout at all.
-
 ### The workouts tab, cut back to the question it answers
 
 Three changes to one screen, and they are one argument: the tab that starts a workout should

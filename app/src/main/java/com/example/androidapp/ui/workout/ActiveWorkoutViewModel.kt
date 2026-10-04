@@ -209,6 +209,16 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val slotId: String? = savedStateHandle.toRoute<ActiveWorkout>().slotId
 
     /**
+     * True when this workout was started from a program's slot (ROADMAP N41).
+     *
+     * The discard prompt says so, because only a finished session settles a scheduled occurrence
+     * (P3.5): dropping out of a scheduled slot is recorded as a miss rather than as no workout at
+     * all. A session started from an unscheduled template is not a program occurrence, so it gets
+     * no such warning.
+     */
+    val startedFromProgram: Boolean get() = slotId != null
+
+    /**
      * The plan this workout was started from, or empty (ROADMAP N14).
      *
      * Nothing is stored on the session to link it: the route already carries the

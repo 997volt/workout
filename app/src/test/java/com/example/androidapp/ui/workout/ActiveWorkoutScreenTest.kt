@@ -47,12 +47,14 @@ class ActiveWorkoutScreenTest {
         val onFinish: (String?) -> Unit = {},
         val onLogSet: (String, SetType) -> Unit = { _, _ -> },
         val onAcceptOffer: (String) -> Unit = {},
+        val onDiscard: () -> Unit = {},
     )
 
     private fun setScreen(
         state: ActiveWorkoutUiState,
         actions: Actions = Actions(),
         personalRecord: PersonalRecordMoment? = null,
+        countsAgainstProgram: Boolean = false,
     ) {
         composeTestRule.setContent {
             ActiveWorkoutScreen(
@@ -77,8 +79,9 @@ class ActiveWorkoutScreenTest {
                 onDismissReadinessPrompt = {},
                 onUndoFinishExercise = {},
                 onDismissFinishUndo = {},
-                onDiscard = {},
+                onDiscard = actions.onDiscard,
                 onBack = {},
+                countsAgainstProgram = countsAgainstProgram,
             )
         }
     }
@@ -313,6 +316,76 @@ class ActiveWorkoutScreenTest {
 
         assert(removed == null) { "cancelling removed the exercise anyway" }
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_REMOVE_CONFIRM).assertDoesNotExist()
+    }
+
+    @Test
+    fun aWorkoutWithSets_discardsOnlyAfterAConfirmedPrompt() {
+        // ROADMAP N41: a workout holding logged sets had no exit but Finish, which files it in
+        // history. The destructive path now asks first and says what goes.
+        var discarded = false
+        setScreen(state(isFinished = false), actions = Actions(onDiscard = { discarded = true }))
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD).performClick()
+
+        assertTrue("the tap discarded the workout before asking", !discarded)
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_TEXT).assertExists()
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_CONFIRM).performClick()
+
+        assertTrue("confirming did not discard the workout", discarded)
+    }
+
+    @Test
+    fun dismissingTheDiscardPrompt_keepsTheWorkout() {
+        var discarded = false
+        setScreen(state(isFinished = false), actions = Actions(onDiscard = { discarded = true }))
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_CANCEL).performClick()
+
+        assertTrue("cancelling discarded the workout anyway", !discarded)
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_CONFIRM).assertDoesNotExist()
+    }
+
+    @Test
+    fun discardingAProgramWorkout_saysItCountsAsAMiss() {
+        // P3.5: only a finished session settles an occurrence, so the prompt has to be honest that
+        // dropping out is counted against the program rather than as no workout at all.
+        setScreen(state = state(isFinished = false), countsAgainstProgram = true)
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_PROGRAM).assertExists()
+    }
+
+    @Test
+    fun discardingANonProgramWorkout_doesNotClaimAMiss() {
+        setScreen(state = state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_PROGRAM).assertDoesNotExist()
+    }
+
+    @Test
+    fun theEmptyWorkout_discardsWithoutAPrompt() {
+        // N41 deliberately leaves the empty state alone: there is nothing to lose, so the
+        // prompt-free discard keeps behaving as it does.
+        var discarded = false
+        setScreen(
+            ActiveWorkoutUiState(isLoading = false, sessionId = "s1", exercises = emptyList()),
+            actions = Actions(onDiscard = { discarded = true }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_TEXT).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_EMPTY).performClick()
+
+        assertTrue("the empty workout's discard did not reach the action", discarded)
     }
 
     @Test

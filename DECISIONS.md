@@ -235,6 +235,17 @@ the rule; that one argues it.
   tooling, which is what an annotation meant for tooling is for.
   ([evidence](DECISIONS-EVIDENCE.md#n38))
 
+## The workout screen
+
+- **A workout with something in it is discarded behind a prompt, and the prompt says what it costs**
+  (N41). The empty workout keeps its prompt-free discard because there is nothing to lose; a workout
+  holding sets asks first and names the count, and when it was started from a program slot it says
+  the second consequence: only a *finished* session settles an occurrence (P3.5), so dropping out is
+  a miss rather than no workout at all. The action sits behind the top bar's overflow rather than
+  beside *Finish*, which is the control a lifter reaches for mid-set. An undo was rejected: the
+  session is soft-deleted, but restoring one would have to un-settle nothing and re-open a workout
+  the user asked to be gone. ([evidence](DECISIONS-EVIDENCE.md#n41))
+
 ## Programs
 
 - **A program orders templates; a slot is a template plus an optional weekday** (P3.3). It is

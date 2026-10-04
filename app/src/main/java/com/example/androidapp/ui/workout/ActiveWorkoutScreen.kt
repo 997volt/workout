@@ -6,6 +6,7 @@ import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.domain.model.SetType
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -46,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -118,6 +124,7 @@ fun ActiveWorkoutRoute(
         onFinish = viewModel::onFinish,
         onDiscard = viewModel::onDiscard,
         onBack = onBack,
+        countsAgainstProgram = viewModel.startedFromProgram,
         modifier = modifier,
     )
 }
@@ -171,6 +178,12 @@ fun ActiveWorkoutScreen(
     summary: WorkoutReview? = null,
     onDismissSummary: () -> Unit = {},
     personalRecord: PersonalRecordMoment? = null,
+    /**
+     * True when dropping out is recorded against a program rather than reading as no workout at
+     * all (ROADMAP N41): the discard prompt says so, because only a finished session settles a
+     * scheduled occurrence (P3.5).
+     */
+    countsAgainstProgram: Boolean = false,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -190,7 +203,13 @@ fun ActiveWorkoutScreen(
         topBar = {
             WorkoutTopBar(
                 canFinish = state.exercises.any { it.sets.isNotEmpty() },
+                // The empty workout already offers a prompt-free discard inside its own body; this
+                // is the exit for a workout that holds something (ROADMAP N41).
+                canDiscard = state.sessionId != null && !state.isEmpty,
+                setCount = state.exercises.sumOf { it.sets.size },
+                countsAgainstProgram = countsAgainstProgram,
                 onFinish = onFinish,
+                onDiscard = onDiscard,
                 onBack = onBack,
             )
         },
@@ -367,10 +386,21 @@ private fun ShowFinishSnackbar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WorkoutTopBar(canFinish: Boolean, onFinish: (String?) -> Unit, onBack: () -> Unit) {
+private fun WorkoutTopBar(
+    canFinish: Boolean,
+    canDiscard: Boolean,
+    setCount: Int,
+    countsAgainstProgram: Boolean,
+    onFinish: (String?) -> Unit,
+    onDiscard: () -> Unit,
+    onBack: () -> Unit,
+) {
     // Whether the finish prompt is up. Dismissing it finishes without a comment
     // (ROADMAP N11): the user asked to finish, and the comment is optional.
     var commenting by remember { mutableStateOf(false) }
+    // The discard lives behind the overflow rather than beside Finish: it is the destructive
+    // action, and the top bar's visible slot is the one the user reaches for mid-workout.
+    var confirmingDiscard by remember { mutableStateOf(false) }
 
     TopAppBar(
         title = { Text(stringResource(R.string.active_workout_title)) },
@@ -391,8 +421,23 @@ private fun WorkoutTopBar(canFinish: Boolean, onFinish: (String?) -> Unit, onBac
             ) {
                 Text(stringResource(R.string.active_workout_finish))
             }
+            if (canDiscard) {
+                DiscardMenu(onDiscard = { confirmingDiscard = true })
+            }
         },
     )
+
+    if (confirmingDiscard) {
+        DiscardWorkoutDialog(
+            setCount = setCount,
+            countsAgainstProgram = countsAgainstProgram,
+            onDismiss = { confirmingDiscard = false },
+            onConfirm = {
+                confirmingDiscard = false
+                onDiscard()
+            },
+        )
+    }
 
     if (commenting) {
         WorkoutNoteDialog(
@@ -406,6 +451,97 @@ private fun WorkoutTopBar(canFinish: Boolean, onFinish: (String?) -> Unit, onBac
             },
         )
     }
+}
+
+/**
+ * The overflow that holds the discard, split out because the top bar around it is at the length
+ * this project allows and because the menu's open state belongs with the button that opens it.
+ */
+@Composable
+private fun DiscardMenu(onDiscard: () -> Unit) {
+    var menuOpen by remember { mutableStateOf(false) }
+
+    Box {
+        IconButton(
+            onClick = { menuOpen = true },
+            modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_MENU),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.MoreVert,
+                contentDescription = stringResource(R.string.active_workout_more),
+            )
+        }
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.active_workout_discard)) },
+                onClick = {
+                    menuOpen = false
+                    onDiscard()
+                },
+                modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD),
+            )
+        }
+    }
+}
+
+/**
+ * The prompt a discard asks before it deletes anything (ROADMAP N41).
+ *
+ * It says what goes — the count, because the user is deciding whether it is worth keeping — and
+ * when the workout came from a program it says the second consequence too: only a *finished*
+ * session settles a scheduled occurrence (P3.5), so abandoning this one is recorded as a miss
+ * rather than as no workout at all. The empty workout never reaches this dialog, because there is
+ * nothing to lose and its prompt-free discard is right.
+ */
+@Composable
+private fun DiscardWorkoutDialog(
+    setCount: Int,
+    countsAgainstProgram: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.active_workout_discard_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = if (setCount > 0) {
+                        pluralStringResource(
+                            R.plurals.active_workout_discard_text,
+                            setCount,
+                            setCount,
+                        )
+                    } else {
+                        stringResource(R.string.active_workout_discard_text_no_sets)
+                    },
+                    modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD_TEXT),
+                )
+                if (countsAgainstProgram) {
+                    Text(
+                        text = stringResource(R.string.active_workout_discard_program),
+                        modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD_PROGRAM),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD_CONFIRM),
+            ) {
+                Text(stringResource(R.string.active_workout_discard))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD_CANCEL),
+            ) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        },
+    )
 }
 
 @Composable
@@ -625,7 +761,10 @@ private fun EmptyWorkout(onDiscard: () -> Unit, modifier: Modifier = Modifier) {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp),
         )
-        TextButton(onClick = onDiscard, modifier = Modifier.padding(top = 16.dp)) {
+        TextButton(
+            onClick = onDiscard,
+            modifier = Modifier.padding(top = 16.dp).testTag(TestTags.ACTIVE_WORKOUT_DISCARD_EMPTY),
+        ) {
             Text(stringResource(R.string.active_workout_discard))
         }
     }

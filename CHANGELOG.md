@@ -34,6 +34,12 @@ repeated here.
 
 ### Added
 
+- **An ongoing workout can be discarded, behind a prompt** (N41). A workout holding logged sets
+  previously had no exit but *Finish*, which files it in history. The workout screen's top bar now
+  offers *Discard workout*, and the prompt says what goes — how many sets are logged — and, when
+  the workout came from a program slot, the second consequence too: only a finished session settles
+  a scheduled occurrence (P3.5), so dropping out is recorded as a miss rather than as no workout at
+  all. The empty workout keeps its prompt-free discard, because there is nothing to lose.
 - **`AppCard`, `AppRow`, `IconTile`, `SectionHeader`, `TopBarTitle` and `AppFilterChip`** are
   the shared pieces the restyle is built from. `AppRow` is deliberately built on Material's
   `ListItem` rather than a hand-rolled `Row`: the drawn result would be the same and the

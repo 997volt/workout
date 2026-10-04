@@ -69,6 +69,17 @@
     <string name="active_workout_add_exercise">Add exercise</string>
     <string name="active_workout_finish">Finish</string>
     <string name="active_workout_discard">Discard workout</string>
+    <!-- Leaving a workout that has something in it (ROADMAP N41). The empty workout keeps its
+         prompt-free discard; this is the one that would delete logged sets, so it asks first and
+         says what goes. -->
+    <string name="active_workout_more">More actions</string>
+    <string name="active_workout_discard_title">Discard this workout?</string>
+    <plurals name="active_workout_discard_text">
+        <item quantity="one">This deletes the workout and its %1$d logged set. There is no undo in the app — only an exported backup would bring it back.</item>
+        <item quantity="other">This deletes the workout and its %1$d logged sets. There is no undo in the app — only an exported backup would bring it back.</item>
+    </plurals>
+    <string name="active_workout_discard_text_no_sets">This deletes the workout and the exercises you added. There is no undo in the app.</string>
+    <string name="active_workout_discard_program">It was started from a program, so leaving it unfinished counts as a missed session.</string>
     <string name="active_workout_empty">No exercises yet</string>
     <string name="active_workout_empty_hint">Add your first exercise to start tracking this workout.</string>
     <string name="active_workout_remove">Remove %1$s</string>

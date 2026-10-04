@@ -45,6 +45,20 @@ object TestTags {
     /** The workout's Finish action, and the comment prompt behind it (ROADMAP N11). */
     const val ACTIVE_WORKOUT_FINISH = "active_workout_finish"
 
+    /**
+     * Leaving a workout that has something in it (ROADMAP N41): the overflow that holds the
+     * destructive action, the action itself, and the prompt it asks before deleting anything.
+     */
+    const val ACTIVE_WORKOUT_MENU = "active_workout_menu"
+    const val ACTIVE_WORKOUT_DISCARD = "active_workout_discard"
+    const val ACTIVE_WORKOUT_DISCARD_TEXT = "active_workout_discard_text"
+    const val ACTIVE_WORKOUT_DISCARD_PROGRAM = "active_workout_discard_program"
+    const val ACTIVE_WORKOUT_DISCARD_CONFIRM = "active_workout_discard_confirm"
+    const val ACTIVE_WORKOUT_DISCARD_CANCEL = "active_workout_discard_cancel"
+
+    /** The empty workout's prompt-free discard, which N41 deliberately leaves alone. */
+    const val ACTIVE_WORKOUT_DISCARD_EMPTY = "active_workout_discard_empty"
+
     /** Removing an exercise, and the confirmation it now asks for (ROADMAP B2). */
     const val EXERCISE_REMOVE = "exercise_remove"
     const val EXERCISE_REMOVE_CONFIRM = "exercise_remove_confirm"
