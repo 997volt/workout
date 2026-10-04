@@ -32,7 +32,7 @@ class ProgramsScreenTest {
         onOpen: (String) -> Unit = {},
         onSetActive: (String) -> Unit = {},
         onMoveProgram: (String, Int) -> Unit = { _, _ -> },
-        onLoadProgram: (() -> Unit)? = null,
+        onLoadProgram: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             ProgramsScreen(

@@ -139,12 +139,13 @@ fun ProgramEditorScreen(
     onRemoveSlot: (String) -> Unit,
     onDeleteProgram: () -> Unit,
     onBack: () -> Unit,
+    /** Required rather than defaulted, so a route that forgets it fails the build (B49, B52). */
+    onExportProgram: () -> Unit,
     modifier: Modifier = Modifier,
     onDismissMessage: () -> Unit = {},
     onEditPrescription: (String) -> Unit = {},
     onClosePrescription: () -> Unit = {},
     prescriptionActions: PrescriptionActions = PrescriptionActions(),
-    onExportProgram: (() -> Unit)? = null,
     transferMessage: String? = null,
     onDismissTransferMessage: () -> Unit = {},
 ) {
@@ -287,7 +288,7 @@ private fun ProgramEditorTopBar(
     name: String?,
     onBack: () -> Unit,
     onDelete: () -> Unit,
-    onExport: (() -> Unit)? = null,
+    onExport: () -> Unit,
 ) {
     TopAppBar(
         title = { Text(name ?: stringResource(R.string.program_edit_title)) },
@@ -301,13 +302,11 @@ private fun ProgramEditorTopBar(
         },
         actions = {
             // Export is per program, so it is here rather than on the list (ROADMAP N47).
-            onExport?.let { export ->
-                TextButton(
-                    onClick = export,
-                    modifier = Modifier.testTag(TestTags.Programs.EXPORT),
-                ) {
-                    Text(stringResource(R.string.program_export))
-                }
+            TextButton(
+                onClick = onExport,
+                modifier = Modifier.testTag(TestTags.Programs.EXPORT),
+            ) {
+                Text(stringResource(R.string.program_export))
             }
             IconButton(
                 onClick = onDelete,
@@ -708,6 +707,7 @@ private fun ProgramEditorScreenPreview() {
             onRemoveSlot = {},
             onDeleteProgram = {},
             onBack = {},
+            onExportProgram = {},
         )
     }
 }

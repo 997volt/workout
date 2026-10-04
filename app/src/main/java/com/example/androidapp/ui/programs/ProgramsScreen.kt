@@ -103,10 +103,11 @@ fun ProgramsScreen(
     onCreateProgram: (String) -> Unit,
     onOpenProgram: (String) -> Unit,
     onBack: () -> Unit,
+    /** Required rather than defaulted, so a route that forgets it fails the build (B49, B52). */
+    onLoadProgram: () -> Unit,
     modifier: Modifier = Modifier,
     onSetActive: (String) -> Unit = {},
     onMoveProgram: (String, Int) -> Unit = { _, _ -> },
-    onLoadProgram: (() -> Unit)? = null,
     transferMessage: String? = null,
     onDismissTransferMessage: () -> Unit = {},
     onDismissMessage: () -> Unit = {},
@@ -143,13 +144,11 @@ fun ProgramsScreen(
                 actions = {
                     // Loading a document is the file's way in (ROADMAP N47). Export is per program,
                     // so it lives in the editor rather than here.
-                    onLoadProgram?.let { load ->
-                        TextButton(
-                            onClick = load,
-                            modifier = Modifier.testTag(TestTags.Programs.LOAD),
-                        ) {
-                            Text(stringResource(R.string.program_load))
-                        }
+                    TextButton(
+                        onClick = onLoadProgram,
+                        modifier = Modifier.testTag(TestTags.Programs.LOAD),
+                    ) {
+                        Text(stringResource(R.string.program_load))
                     }
                 },
             )
@@ -299,6 +298,7 @@ private fun ProgramsScreenPreview() {
             onCreateProgram = {},
             onOpenProgram = {},
             onBack = {},
+            onLoadProgram = {},
         )
     }
 }

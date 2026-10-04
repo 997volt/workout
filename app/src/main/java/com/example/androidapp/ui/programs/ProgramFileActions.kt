@@ -102,9 +102,11 @@ fun rememberProgramImport(
  * What a load did, in one sentence.
  *
  * "Already here" is the idempotent case rather than a failure: a document's rows are never written
- * twice, so loading the same file again legitimately adds nothing. A dropped movement is appended
- * because it is the one thing a successful load can be missing. [dropped] resolves the plural, which
- * needs the count and so cannot be read during composition.
+ * twice, so loading the same file again legitimately adds nothing. It is asked of the whole summary
+ * rather than of the program count (B57), because a load can add templates for a program whose id is
+ * already present. A dropped movement is appended because it is the one thing a successful load can
+ * be missing. [dropped] resolves the plural, which needs the count and so cannot be read during
+ * composition.
  */
 private fun importSentence(
     summary: ProgramImportSummary,
@@ -113,7 +115,7 @@ private fun importSentence(
     dropped: (Int) -> String,
 ): String {
     val droppedText = if (summary.droppedMovements > 0) dropped(summary.droppedMovements) else null
-    val first = if (summary.programs > 0) loaded else alreadyLoaded
+    val first = if (summary.addedNothing) alreadyLoaded else loaded
     return listOfNotNull(first, droppedText).joinToString(" ")
 }
 

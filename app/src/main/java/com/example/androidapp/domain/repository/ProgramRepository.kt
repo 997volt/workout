@@ -208,15 +208,23 @@ interface ProgramRepository {
  * What loading a program document brought in (ROADMAP N47).
  *
  * Counts rather than a sentence: the screen words them. [droppedMovements] is the number of planned
- * exercises whose exercise the device neither had nor received, which is the honest shape of "the
- * program arrived, minus what could not".
+ * exercises whose exercise the device neither had **in its library** nor received — one it deleted
+ * here is one of those, so the sentence says the library rather than the device (B51).
  */
 data class ProgramImportSummary(
     val programs: Int,
     val templates: Int,
     val exercises: Int,
     val droppedMovements: Int,
-)
+) {
+    /**
+     * True when the load added no row at all, which is the same file loaded a second time (B57).
+     *
+     * The whole summary rather than `programs` alone: a program whose id is already here but whose
+     * templates are not does add templates, and calling that "already here" would be false.
+     */
+    val addedNothing: Boolean get() = programs == 0 && templates == 0 && exercises == 0
+}
 
 /**
  * The editable targets of one set a slot prescribes (ROADMAP P3.8).

@@ -40,7 +40,7 @@ class ProgramEditorScreenTest {
         onRemoveSlot: (String) -> Unit = {},
         onDeleteProgram: () -> Unit = {},
         onEditPrescription: (String) -> Unit = {},
-        onExportProgram: (() -> Unit)? = null,
+        onExportProgram: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             ProgramEditorScreen(
