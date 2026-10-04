@@ -429,6 +429,27 @@ preference about the timer; that one is a fact about the exercise. An app-wide z
 rest out of every exercise at once, which is this switch's job, so zero stays out of the default
 rest's choices.
 
+## N45
+
+The rest field had two states and needed three. Empty meant *inherit*; a positive number was that
+rest; and **zero was refused** — in three repositories, with two different sentences for one rule,
+and as a red field in the library editor, the template plan editor and the slot prescription dialog.
+So "this exercise needs no rest" could not be written down at all, and a zero read as an error when
+it is a perfectly ordinary intention.
+
+The change is validation and wording rather than plumbing, which is why the three sentences collapse
+into one (`RestTimer.NEGATIVE_REST_REFUSAL`) and the floor moves from one to
+`RestTimer.MIN_PRESCRIBED_SECONDS`. Nothing downstream needed touching: `startRest` computes an end
+instant at *now*, so a zero rest never runs, and nothing collapses zero into "absent" — both the
+`?:` fallbacks and the DAO's `COALESCE` test null rather than falsiness.
+
+Two things stay deliberately unchanged. The **default rest** keeps its 5–3600 bound (N21), because a
+typed zero there would be an app-wide "no rest" — the switch's job (N44) — and the settings screen
+already says so in a comment. And the **display** gained a word: a stored zero renders as "None"
+rather than `0:00`, because `0:00` reads as a rest that has run out rather than one that was never
+wanted. That is a `restLabel` helper beside `RestTimer.format`, used by the library detail and the
+workout screen's static prescription.
+
 ## N42
 
 Three changes to the workouts tab, one argument: the tab that starts a workout should answer "what

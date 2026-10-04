@@ -50,6 +50,7 @@ import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.restLabel
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 /** Stateful entry point for the detail destination; reads its id from the route. */
@@ -222,11 +223,12 @@ private fun ExerciseDetails(exercise: Exercise, modifier: Modifier = Modifier) {
         AttributeRow(
             label = stringResource(R.string.exercise_detail_rest),
             // Unset means "use the app default", shown as such rather than as a
-            // dash: the user needs to know what will actually happen (N5).
-            value = exercise.restSeconds?.let { RestTimer.format(it) }
+            // dash: the user needs to know what will actually happen (N5). A stored
+            // zero is the other state again, and reads as a word (N45).
+            value = exercise.restSeconds?.let { restLabel(it) }
                 ?: stringResource(
                     R.string.exercise_detail_rest_default,
-                    RestTimer.format(RestTimer.DEFAULT_SECONDS),
+                    restLabel(RestTimer.DEFAULT_SECONDS),
                 ),
         )
         HorizontalDivider()
@@ -252,7 +254,8 @@ private fun ExerciseDetails(exercise: Exercise, modifier: Modifier = Modifier) {
  *
  * The rest is held as raw text, not as an `Int?`: a half-typed value must not be
  * silently coerced into a rest the user did not type. Empty means "the app
- * default", and anything else has to parse as a positive number of seconds.
+ * default", a number — **zero included** — is the rest (N45), and only a negative
+ * or unparseable value keeps Save disabled.
  */
 private data class ExerciseDraft(
     val name: String,
@@ -268,7 +271,7 @@ private data class ExerciseDraft(
         get() {
             if (restText.isBlank()) return true
             val seconds = restSeconds ?: return false
-            return seconds > 0
+            return seconds >= RestTimer.MIN_PRESCRIBED_SECONDS
         }
 
     val canSave: Boolean get() = name.isNotBlank() && restIsValid
@@ -411,7 +414,7 @@ private fun ExercisePrescriptionFields(
             modifier = Modifier.fillMaxWidth().testTag(TestTags.EXERCISE_EDIT_REST),
             singleLine = true,
             label = { Text(stringResource(R.string.exercise_detail_rest)) },
-            supportingText = { Text(stringResource(R.string.exercise_edit_rest_hint)) },
+            supportingText = { Text(stringResource(R.string.rest_edit_hint)) },
             isError = draft.restText.isNotBlank() && !draft.restIsValid,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )

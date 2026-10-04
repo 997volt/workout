@@ -34,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.Load
+import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
@@ -487,7 +488,8 @@ private fun SlotRestCueDialog(
     }
     var cue by rememberSaveable(exerciseName) { mutableStateOf(techniqueNote.orEmpty()) }
     val seconds = rest.trim().ifEmpty { null }?.toIntOrNull()
-    val restIsValid = rest.isBlank() || (seconds != null && seconds > 0)
+    val restIsValid = rest.isBlank() ||
+        (seconds != null && seconds >= RestTimer.MIN_PRESCRIBED_SECONDS)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -504,6 +506,7 @@ private fun SlotRestCueDialog(
                     singleLine = true,
                     isError = !restIsValid,
                     label = { Text(stringResource(R.string.template_rest_label)) },
+                    supportingText = { Text(stringResource(R.string.rest_edit_hint)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
                 OutlinedTextField(

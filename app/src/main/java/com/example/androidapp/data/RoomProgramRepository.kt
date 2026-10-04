@@ -20,6 +20,7 @@ import com.example.androidapp.data.local.toRunSession
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.NotFoundException
+import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.nowEpochMillis
@@ -239,8 +240,10 @@ class RoomProgramRepository @Inject constructor(
     ): DataResult<Unit> = dataResultOf {
         val slot = dao.findSlot(slotId) ?: throw NotFoundException("program slot $slotId")
         requireExerciseInTemplate(database, slot.templateId, exerciseId)
-        if (restSeconds != null && restSeconds < 1) {
-            throw InvalidInputException("A prescribed rest must be at least a second.")
+        // Zero is a value — "this slot prescribes no rest" — so only a negative is refused, with the
+        // one sentence the library and the template already refuse it with (ROADMAP N45).
+        if (restSeconds != null && restSeconds < RestTimer.MIN_PRESCRIBED_SECONDS) {
+            throw InvalidInputException(RestTimer.NEGATIVE_REST_REFUSAL)
         }
 
         val now = timeSource.nowEpochMillis()

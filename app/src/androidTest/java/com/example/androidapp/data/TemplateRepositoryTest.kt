@@ -364,13 +364,21 @@ class TemplateRepositoryTest {
         assertEquals(180, written.restSeconds)
         assertEquals("Slow descent", written.techniqueNote)
 
-        // Blank is "use the library's" (N5), and a rest of zero is not a rest.
+        // Blank is "use the library's" (N5); zero is a value — no rest — and only a negative is
+        // refused (N45).
         repository.setExercisePlan(exercise, restSeconds = null, techniqueNote = "   ")
         val cleared = repository.observeExercises(template).first().single()
         assertNull(cleared.restSeconds)
         assertNull(cleared.techniqueNote)
+
         assertTrue(
             repository.setExercisePlan(exercise, restSeconds = 0, techniqueNote = null) is
+                DataResult.Success,
+        )
+        assertEquals(0, repository.observeExercises(template).first().single().restSeconds)
+
+        assertTrue(
+            repository.setExercisePlan(exercise, restSeconds = -5, techniqueNote = null) is
                 DataResult.Failure,
         )
     }

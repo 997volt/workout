@@ -6,6 +6,7 @@ import com.example.androidapp.R
 import androidx.test.core.app.ApplicationProvider
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -200,6 +201,37 @@ class ExerciseDetailScreenTest {
         show(ExerciseDetailUiState(isLoading = false, exercise = seeded.copy(restSeconds = 180)))
 
         composeTestRule.onNodeWithText("3:00").assertIsDisplayed()
+    }
+
+    @Test
+    fun anExercisesZeroRest_readsAsNone_ratherThanARestThatRanOut() {
+        // ROADMAP N45: a stored zero is a deliberate "no rest", and 0:00 would read as one that
+        // ended instead — two intentions, two words.
+        // A cue is set so the only "None" on screen is the rest's: the cue's own empty state uses
+        // the same word.
+        show(
+            ExerciseDetailUiState(
+                isLoading = false,
+                exercise = seeded.copy(restSeconds = 0, techniqueNote = "Brace"),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("None").assertIsDisplayed()
+    }
+
+    @Test
+    fun aZeroRest_isAccepted_asNoRest() {
+        // ROADMAP N45: the field stops calling zero an error. It is a value, and Save takes it.
+        var saved: ExerciseEdit? = null
+        show(
+            ExerciseDetailUiState(isLoading = false, isEditing = true, exercise = seeded),
+            onSave = { saved = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_REST).performTextInput("0")
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).assertIsEnabled().performClick()
+
+        assertEquals(0, saved?.restSeconds)
     }
 
     @Test

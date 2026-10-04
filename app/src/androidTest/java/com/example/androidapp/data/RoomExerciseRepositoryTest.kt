@@ -123,10 +123,19 @@ class RoomExerciseRepositoryTest {
             ?: error("exercise $id should exist")
 
     @Test
-    fun updateExercise_refusesANonPositiveRest() = runTest {
+    fun updateExercise_storesAZeroRest_asADeliberateNone() = runTest {
+        // ROADMAP N45: zero is a value — "this exercise has no rest" — not input to refuse.
         val created = created("Sled Push")
 
-        val failure = repository.updateExercise(created.copy(restSeconds = 0)) as DataResult.Failure
+        assertTrue(repository.updateExercise(created.copy(restSeconds = 0)) is DataResult.Success)
+        assertEquals(0, stored(created.id).restSeconds)
+    }
+
+    @Test
+    fun updateExercise_refusesANegativeRest() = runTest {
+        val created = created("Sled Push")
+
+        val failure = repository.updateExercise(created.copy(restSeconds = -1)) as DataResult.Failure
 
         assertTrue(failure.error is DataError.Invalid)
         // Nothing was written, so the exercise still reads as "use the default".

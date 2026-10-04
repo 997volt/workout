@@ -45,6 +45,14 @@ the rule; that one argues it.
   prefill; writing targets onto the session would freeze them and make "living" false.
 - **The plan's rest and cue win over the library's; null means "the library's"** (N14,
   extending N5) — copied onto the session exercise when it is seeded from a plan.
+- **A prescribed rest of zero is a value — "no rest" — and only a negative is refused** (N45,
+  amending N5). The field has three states: empty inherits, a positive number is that rest, and
+  zero means the exercise has none; downstream `startRest` already computes an end instant at *now*,
+  so a zero rest simply never runs. It is deliberately not the rest-timer switch (N44): one is a
+  fact about the exercise, the other a preference about the timer. The **default** rest keeps its
+  5–3600 bound (N21) — an app-wide zero would take the rest out of every exercise at once, which is
+  the switch's job — and a stored zero is displayed as a word rather than `0:00`, which reads as a
+  rest that has run out. ([evidence](DECISIONS-EVIDENCE.md#n45))
 
 - **Assistance is a magnitude in its own column, never a signed weight** (N15).
   `weightGrams` stays non-negative so volume stays `weight * reps` and contributes nothing

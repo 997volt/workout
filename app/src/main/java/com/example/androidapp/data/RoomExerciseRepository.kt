@@ -7,6 +7,7 @@ import com.example.androidapp.data.local.toEntity
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.NotFoundException
+import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.toDataError
@@ -85,11 +86,10 @@ class RoomExerciseRepository @Inject constructor(
     override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> = dataResultOf {
         val trimmed = exercise.name.trim()
         if (trimmed.isEmpty()) throw InvalidInputException("Give the exercise a name.")
-        // A rest of zero is not a rest, and leaving it unset is how "use the app
-        // default" is expressed — so a non-positive value is input we cannot use
-        // rather than something to coerce silently (ROADMAP N5).
-        if (exercise.restSeconds != null && exercise.restSeconds <= 0) {
-            throw InvalidInputException("Rest must be a positive number of seconds.")
+        // Zero is a value — "this exercise has no rest" — and leaving it unset is how "use the app
+        // default" is expressed, so only a negative is input we cannot use (ROADMAP N5, N45).
+        if (exercise.restSeconds != null && exercise.restSeconds < RestTimer.MIN_PRESCRIBED_SECONDS) {
+            throw InvalidInputException(RestTimer.NEGATIVE_REST_REFUSAL)
         }
 
         // Read the stored row first. The domain type deliberately carries no

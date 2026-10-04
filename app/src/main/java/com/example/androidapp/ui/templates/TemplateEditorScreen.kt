@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.TemplateExercise
@@ -486,7 +487,7 @@ private fun RestAndCue(
     }
     var cue by rememberSaveable(exercise.id) { mutableStateOf(exercise.techniqueNote.orEmpty()) }
     val restSeconds = rest.trim().ifEmpty { null }?.toIntOrNull()
-    val restIsValid = rest.isBlank() || (restSeconds != null && restSeconds > 0)
+    val restIsValid = rest.isBlank() || (restSeconds != null && restSeconds >= RestTimer.MIN_PRESCRIBED_SECONDS)
     val changed = restSeconds != exercise.restSeconds || cue.trim().ifEmpty { null } != exercise.techniqueNote
 
     Row(
@@ -501,6 +502,7 @@ private fun RestAndCue(
             singleLine = true,
             isError = !restIsValid,
             label = { Text(stringResource(R.string.template_rest_label)) },
+            supportingText = { Text(stringResource(R.string.rest_edit_hint)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
         OutlinedTextField(

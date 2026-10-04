@@ -43,6 +43,7 @@ import com.example.androidapp.ui.components.ExerciseRatingDialog
 import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.SetRoleSelector
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.restLabel
 import com.example.androidapp.ui.components.rpeMarker
 
 
@@ -417,7 +418,7 @@ private fun ExerciseNames(
             Text(
                 text = stringResource(
                     R.string.active_workout_rest_prescription,
-                    RestTimer.format(row.restSeconds ?: defaultRestSeconds),
+                    restLabel(row.restSeconds ?: defaultRestSeconds),
                 ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

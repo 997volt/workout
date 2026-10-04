@@ -54,7 +54,10 @@
     <string name="exercise_detail_rest">Rest between sets</string>
     <string name="exercise_detail_rest_default">Default (%1$s)</string>
     <string name="exercise_detail_cue">Technique cue</string>
-    <string name="exercise_edit_rest_hint">Seconds. Leave empty for the default.</string>
+    <!-- The rest field's two ways of saying "not a number": empty inherits, zero means none
+         (ROADMAP N45). One string, wherever a rest is authored. -->
+    <string name="rest_edit_hint">Empty for the default, 0 for none.</string>
+    <string name="rest_none">None</string>
     <string name="exercise_detail_not_found">That exercise is no longer in the library.</string>
     <string name="exercise_detail_history_planned">Per-exercise history and personal records are planned (ROADMAP P2.1).</string>
     <!-- Custom exercises are editable afterwards (ROADMAP N2). -->

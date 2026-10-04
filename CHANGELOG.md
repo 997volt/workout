@@ -31,6 +31,16 @@ repeated here.
 - **Home's primary action is a full-width pill in a bottom bar**, not an extended floating
   button, and the tab bar separates from the page by tone with an accent wash behind the
   selected item.
+- **A rest of zero is a valid, deliberate answer** (N45). The rest field had two states and needs
+  three — empty inherits, a positive number is that rest, and zero means the exercise has none —
+  where zero used to be refused in three repositories with two different sentences for one rule, and
+  shown as a red field in the library editor, the template plan editor and the slot prescription
+  dialog. The floor moves to zero, the three sentences collapse into one, and the hint under every
+  rest field now carries both halves. Nothing downstream changed: `startRest` already computes an
+  end instant at *now*, so a zero rest never runs. A stored zero now displays as **None** rather
+  than `0:00`, which read as a rest that had run out. The **default** rest keeps its 5–3600 bound:
+  an app-wide zero would take the rest out of every exercise at once, which is the new switch's job
+  (N44).
 - **The workouts tab answers one question and gets out of the way** (N42). "See all workouts"
   is gone from the *Recent* heading — History is the tab beside it, one tap away and always
   visible, so a section heading carrying a way out of its own section was a second path to
