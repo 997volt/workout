@@ -33,3 +33,18 @@ val TileAccent.color: Color
         TileAccent.Amber -> Amber
         TileAccent.Sky -> Sky
     }
+
+/**
+ * The colour a glyph draws in *on* each accent (ROADMAP B55).
+ *
+ * Not a blanket white, which is what this used to be: white against `Amber` is 2.5:1, against
+ * `Teal` 2.9:1 and against `Coral` 3.0:1 — under the contrast a graphic needs, and a tile whose
+ * glyph cannot be read is a tile that has stopped doing its one job. The page's own ink reads at
+ * 5:1 or better on all four of those, and `Indigo` is the one accent dark enough that white is the
+ * better half of the pair. The split is asserted rather than eyeballed, by `TileAccentTest`.
+ */
+val TileAccent.onColor: Color
+    get() = when (this) {
+        TileAccent.Indigo -> Color.White
+        TileAccent.Teal, TileAccent.Coral, TileAccent.Amber, TileAccent.Sky -> Ink
+    }
