@@ -34,6 +34,7 @@ import com.example.androidapp.domain.model.SlotSet
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.repository.StartedSession
+import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.domain.repository.WorkoutRepository
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
@@ -139,6 +140,30 @@ class ActiveWorkoutViewModelTest {
         activeWorkoutRoute(templateId, repeatSessionId, slotId),
         settings,
     )
+
+    /**
+     * The set the logging dialog opens on and Save commits (ROADMAP N51).
+     *
+     * The one-tap path went, so a call to `onLogSet` is now "Save was tapped on what the dialog
+     * showed" — which is the row's own offer unless a test deliberately overrides a field to say the
+     * user typed something else.
+     */
+    private fun offeredSet(
+        viewModel: ActiveWorkoutViewModel,
+        reps: Int? = null,
+        weightGrams: Long? = null,
+        setType: SetType = SetType.NORMAL,
+    ): SetEdit {
+        val suggestion = viewModel.uiState.value.exercises.first().suggestion
+        return SetEdit(
+            reps = reps ?: suggestion.reps,
+            weightGrams = weightGrams ?: suggestion.weightGrams,
+            rpeHalves = null,
+            note = null,
+            setType = setType,
+            assistanceGrams = suggestion.assistanceGrams,
+        )
+    }
 
     @Test
     fun startsASessionOnEntry_soNothingCanBeLostBeforeItExists() = runTest(dispatcher) {
@@ -566,7 +591,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         viewModel.onFinish(note = "Good session")
@@ -616,7 +641,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
 
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         val logged = repository.sets.value.single()
@@ -635,7 +660,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         val logged = repository.sets.value.single()
@@ -668,7 +693,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
 
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         // N5: the exercise's own rest replaces the 90 s app default, which is
@@ -688,7 +713,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
 
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         assertNull("nothing was started", repository.lastRestSeconds)
@@ -720,7 +745,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
 
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         assertEquals(RestTimer.DEFAULT_SECONDS, repository.lastRestSeconds)
@@ -749,7 +774,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
 
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         // The suggestion for set 2 must echo set 1, not fall back to the default.
@@ -836,7 +861,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         val logged = repository.sets.value.single()
@@ -895,7 +920,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
         val exerciseId = viewModel.uiState.value.exercises.single().id
-        viewModel.onLogSet(exerciseId)
+        viewModel.onLogSet(exerciseId, offeredSet(viewModel))
         settle()
         viewModel.onDeleteSet(repository.sets.value.single().id)
         settle()
@@ -923,7 +948,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
         val exerciseId = viewModel.uiState.value.exercises.single().id
-        viewModel.onLogSet(exerciseId)
+        viewModel.onLogSet(exerciseId, offeredSet(viewModel))
         settle()
         viewModel.onDeleteSet(repository.sets.value.single().id)
         settle()
@@ -974,7 +999,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         viewModel.onFinish(note = "Slept badly, but the squats moved")
@@ -1001,7 +1026,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         viewModel.onFinish()
@@ -1026,7 +1051,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
         repository.failWrites = true
 
@@ -1480,7 +1505,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
         // The user adjusted the first set away from the plan, which is expected: a
         // logged set is its own row and nothing verifies it against the plan.
@@ -1612,7 +1637,7 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         val shown = viewModel.uiState.value.exercises.single().suggestion
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         val written = repository.sets.value.single()
@@ -1631,7 +1656,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
         val exerciseId = viewModel.uiState.value.exercises.single().id
-        viewModel.onLogSet(exerciseId)
+        viewModel.onLogSet(exerciseId, offeredSet(viewModel))
         settle()
         val logged = repository.sets.value.single()
         viewModel.onUpdateSet(
@@ -1667,7 +1692,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         viewModel.onFinish()
@@ -1695,7 +1720,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
 
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         assertEquals("the configured default, not the constant", 45, repository.lastRestSeconds)
@@ -1712,7 +1737,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
 
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         assertEquals(180, repository.lastRestSeconds)
@@ -1732,7 +1757,7 @@ class ActiveWorkoutViewModelTest {
 
         settings.setDefaultRestSeconds(30)
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         assertEquals(30, repository.lastRestSeconds)
@@ -1753,7 +1778,7 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
         // The prefill is 20 kg × 8, which beats the 17.5 kg recorded at eight reps.
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
         val moment = viewModel.personalRecord.value
         assertNotNull(moment)
@@ -1772,7 +1797,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
         assertNull(viewModel.personalRecord.value)
     }
@@ -1787,10 +1812,10 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
         assertNotNull(viewModel.personalRecord.value)
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
         assertNull("the second set repeats the first, and repeats are not records", viewModel.personalRecord.value)
     }
@@ -1868,12 +1893,12 @@ class ActiveWorkoutViewModelTest {
         repository.lastRestSeconds = null
 
         // The first exercise of the pair: the second has not logged this round yet.
-        viewModel.onLogSet(viewModel.uiState.value.exercises.first().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.first().id, offeredSet(viewModel))
         settle()
         assertNull("no rest until the round is finished", repository.lastRestSeconds)
         // The second logs the same round, which is the round complete.
         repository.lastRestSeconds = null
-        viewModel.onLogSet(viewModel.uiState.value.exercises.last().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.last().id, offeredSet(viewModel))
         settle()
         assertNotNull("now the round is done, so it rests", repository.lastRestSeconds)
     }
@@ -1886,7 +1911,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
         assertNotNull(repository.lastRestSeconds)
     }
@@ -1909,12 +1934,12 @@ class ActiveWorkoutViewModelTest {
         settle()
         viewModel.onToggleSuperset(viewModel.uiState.value.exercises.last().id)
         settle()
-        viewModel.onLogSet(viewModel.uiState.value.exercises.first().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.first().id, offeredSet(viewModel))
         settle()
 
         // The 90-second member closes the round, and the group still rests for 180.
         repository.lastRestSeconds = null
-        viewModel.onLogSet(viewModel.uiState.value.exercises.last().id)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.last().id, offeredSet(viewModel))
         settle()
 
         assertEquals(180, repository.lastRestSeconds)
@@ -1935,8 +1960,8 @@ class ActiveWorkoutViewModelTest {
 
         // The prefill is 20 kg × 8, above the recorded 17.5 — but as a warm-up.
         viewModel.onLogSet(
-            sessionExerciseId = viewModel.uiState.value.exercises.single().id,
-            setType = SetType.WARMUP,
+            viewModel.uiState.value.exercises.single().id,
+            offeredSet(viewModel, setType = SetType.WARMUP),
         )
         settle()
 
@@ -1972,13 +1997,13 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         // Set one: a record over history.
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, SetType.NORMAL)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
         assertEquals(17_500L, viewModel.personalRecord.value?.previousBestGrams)
 
         // Set two: the plan's 22.5 beats the 20 *this session* already logged, so that is what the
         // banner must name — history's 17.5 is no longer the bar.
-        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, SetType.NORMAL)
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
         settle()
 
         val moment = viewModel.personalRecord.value

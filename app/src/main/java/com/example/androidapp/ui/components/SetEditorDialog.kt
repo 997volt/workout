@@ -57,6 +57,24 @@ fun SetEditorDialog(
     initialNote: String? = null,
     initialSetType: SetType = SetType.NORMAL,
     initialAssistanceGrams: Long = 0,
+    /**
+     * The title the dialog wears (ROADMAP N51).
+     *
+     * Logging a set opens this dialog, and "Edit set" over a set that does not exist yet was the one
+     * word the shared dialog could not supply. Defaulted rather than required: the history detail
+     * screen and the workout screen's own edit path both edit an existing set, and neither should
+     * have to restate that.
+     */
+    title: String = stringResource(R.string.set_edit_title),
+    /**
+     * Tags for the role selector, so a caller can address it (ROADMAP N51).
+     *
+     * The control moved inside this dialog with the logging flow, and a test has to be able to pick
+     * a role through the flow it actually takes. The defaults are the editor's own tags, which is
+     * what the history screen and the edit path keep answering to.
+     */
+    roleTag: String = TestTags.SET_ROLE,
+    roleOptionTag: (String) -> String = TestTags::setRole,
 ) {
     var draft by remember {
         mutableStateOf(
@@ -77,6 +95,9 @@ fun SetEditorDialog(
         onDraftChange = { draft = it },
         onDismiss = onDismiss,
         onSave = onSave,
+        title = title,
+        roleTag = roleTag,
+        roleOptionTag = roleOptionTag,
         modifier = modifier,
     )
 }
@@ -97,6 +118,9 @@ private fun SetEditorDialogContent(
     onDismiss: () -> Unit,
     onSave: (SetEdit) -> Unit,
     modifier: Modifier = Modifier,
+    title: String = stringResource(R.string.set_edit_title),
+    roleTag: String = TestTags.SET_ROLE,
+    roleOptionTag: (String) -> String = TestTags::setRole,
 ) {
     val parsedReps = draft.repsText.toIntOrNull()?.takeIf { it > 0 }
     // One field, two columns: a leading minus is assistance (ROADMAP N15).
@@ -109,12 +133,14 @@ private fun SetEditorDialogContent(
     AlertDialog(
         modifier = modifier,
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.set_edit_title)) },
+        title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SetRoleSelector(
                     role = draft.setType,
                     onSelect = { onDraftChange(draft.copy(setType = it)) },
+                    testTag = roleTag,
+                    optionTag = roleOptionTag,
                 )
                 SetEditorNumbers(draft = draft, onDraftChange = onDraftChange)
                 RpeAndNoteFields(

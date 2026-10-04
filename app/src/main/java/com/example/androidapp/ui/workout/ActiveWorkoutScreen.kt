@@ -60,6 +60,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.SetEditorDialog
 import com.example.androidapp.ui.components.WorkoutNoteDialog
 import com.example.androidapp.ui.components.ReadinessNoteDialog
@@ -158,7 +159,7 @@ fun ActiveWorkoutScreen(
     state: ActiveWorkoutUiState,
     clock: State<WorkoutClock>,
     onAddExercise: () -> Unit,
-    onLogSet: (String, SetType) -> Unit,
+    onLogSet: (String, SetEdit) -> Unit,
     onAcceptOffer: (String) -> Unit,
     onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit,
     onRemoveExercise: (String) -> Unit,
@@ -561,7 +562,7 @@ private fun DiscardWorkoutDialog(
 private fun WorkoutBody(
     state: ActiveWorkoutUiState,
     clock: State<WorkoutClock>,
-    onLogSet: (String, SetType) -> Unit,
+    onLogSet: (String, SetEdit) -> Unit,
     onAcceptOffer: (String) -> Unit,
     onRemoveExercise: (String) -> Unit,
     onEditSet: (SetRow) -> Unit,

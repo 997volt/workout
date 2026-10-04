@@ -14,6 +14,15 @@ repeated here.
 
 ### Changed
 
+- **Logging a set is the editor, prefilled and committed on Save** (N51). *Log set* wrote the offered
+  set in one tap, so a set that differed from the prefill was logged and then edited — the same
+  `SetEditorDialog`, one step later, with the first step having decided something the user did not
+  mean. Logging *is* that dialog now, and the one-tap path is gone rather than kept beside it: the
+  button carries no values, its role picker moved inside the dialog with it, and the plan's next
+  unlogged set is what the dialog opens on (B48). That retires B7 for this button — it no longer
+  writes the set its label describes, because the label no longer describes one — and N19's rule is
+  unchanged by the move: a role is still a decision about one set, made before the write, and it still
+  clears itself.
 - **An exercise says when its planned work is done** (N52). Past the last planned set the exercise
   kept accepting sets with nothing to say the work the plan asked for was finished —
   `comparePlanToActual` said so only in the review, after *Finish*. The plan is the template the

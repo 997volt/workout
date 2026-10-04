@@ -12,8 +12,10 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -45,7 +47,7 @@ class ActiveWorkoutScreenTest {
         val onRemoveExercise: (String) -> Unit = {},
         val onRateExercise: (String, Int?, Int?, String?) -> Unit = { _, _, _, _ -> },
         val onFinish: (String?) -> Unit = {},
-        val onLogSet: (String, SetType) -> Unit = { _, _ -> },
+        val onLogSet: (String, SetEdit) -> Unit = { _, _ -> },
         val onAcceptOffer: (String) -> Unit = {},
         val onDiscard: () -> Unit = {},
     )
@@ -447,32 +449,79 @@ class ActiveWorkoutScreenTest {
     )
 
     @Test
-    fun choosingARole_thenLogging_writesThatRole() {
-        // ROADMAP N19: the picker used to be behind the editor, so three warm-ups cost
-        // three log-then-edit round trips. One tap each way now.
+    fun loggingASet_opensTheEditorOnTheOfferedValues_andSavesOnSave() {
+        // ROADMAP N51: the one-tap path went. Logging *is* the dialog the edit path opens, so a set
+        // that differs from the prefill is corrected before it is written rather than after.
+        val logged = mutableListOf<Pair<String, SetEdit>>()
+        setScreen(
+            state = state(isFinished = false),
+            actions = Actions(onLogSet = { id, edit -> logged += id to edit }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performScrollTo().performClick()
+
+        // Nothing is written by the tap that opened the dialog.
+        assertEquals(emptyList<Pair<String, SetEdit>>(), logged)
+        // The dialog opens on what the row offered, and the edit path's own fields are all there.
+        composeTestRule.onNodeWithTag(TestTags.SET_REPS_FIELD).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertExists()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+
+        assertEquals(1, logged.size)
+        assertEquals("se1", logged.single().first)
+        assertEquals(5, logged.single().second.reps)
+        assertEquals(100_000L, logged.single().second.weightGrams)
+    }
+
+    @Test
+    fun choosingARoleInTheLoggingDialog_writesThatRole() {
+        // ROADMAP N19's role picker moved with the one-tap path: the choice is still made before the
+        // set is written, it is just made inside the dialog that writes it (N51).
         val logged = mutableListOf<Pair<String, SetType>>()
         setScreen(
             state = state(isFinished = false),
-            actions = Actions(onLogSet = { id, role -> logged += id to role }),
+            actions = Actions(onLogSet = { id, edit -> logged += id to edit.setType }),
         )
 
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performScrollTo().performClick()
         composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1")).performClick()
         composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1", "WARMUP")).performClick()
-        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
 
         assertEquals(listOf("se1" to SetType.WARMUP), logged)
     }
 
     @Test
-    fun theChosenRole_isShownOnTheControl() {
-        // The control has to say what the next tap will write, or arming it is a guess.
-        setScreen(state = state(isFinished = false))
+    fun cancellingTheLoggingDialog_writesNothing() {
+        var logged = false
+        setScreen(
+            state = state(isFinished = false),
+            actions = Actions(onLogSet = { _, _ -> logged = true }),
+        )
 
-        composeTestRule.onNodeWithText("Role: Working").assertExists()
-        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1")).performClick()
-        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1", "WARMUP")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_CANCEL).performClick()
 
-        composeTestRule.onNodeWithText("Role: Warm-up").assertExists()
+        assertTrue("cancelling the dialog logged the set anyway", !logged)
+    }
+
+    @Test
+    fun pastThePlannedWork_theLoggingDialog_stillOpens() {
+        // N52 changes the label and adds a notice; logging an extra set is what the control still
+        // does, so the dialog behind it has to be the same one.
+        var logged = false
+        setScreen(
+            state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 3, planned = 3))),
+            actions = Actions(onLogSet = { _, _ -> logged = true }),
+        )
+
+        // Scrolled into view first: this exercise has three logged sets above the control, so on
+        // this test's surface the button starts below the fold and a tap would never land on it.
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+
+        assertTrue("the extra set was never written", logged)
     }
 
     @Test

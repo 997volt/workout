@@ -89,7 +89,6 @@ class TestTagCoverageTest {
             "SETTINGS_REST_CUE",
             "SETTINGS_REST_CURRENT",
             "SETTINGS_SCREEN",
-            "SET_CANCEL",
             "SET_INCREASE_REPS",
             "SUMMARY_DIALOG",
             "TAB_BAR",

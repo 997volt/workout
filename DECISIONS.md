@@ -80,9 +80,17 @@ the rule; that one argues it.
   would add a plan-per-date entity, plan generation and skipped-week handling for a
   comparison the logged sets already allow; several plans may share a day.
   ([evidence](DECISIONS-EVIDENCE.md#n16))
-- **One-tap "Log set" writes the set its button describes** (D3, B7). Withholding
-  knowledge so that display and storage agree is worse; a logged set may differ from the
-  plan, never from the button.
+- **Logging a set is the set editor, prefilled and committed on Save** (N51, amending D3 and B7).
+  The one-tap path wrote the set the button described and left a set that differed from the prefill to
+  be edited afterwards — the same `SetEditorDialog`, one step later, with the first step having decided
+  something the user did not mean. So the button no longer writes the set its label describes, because
+  the label no longer describes one: it carries no values, and the dialog the edit path already opens is
+  where the set is stated. B7's rule is not contradicted but retired for this button — the display and
+  the storage still agree, because the display is now the dialog. The role picker (N19) moved with it,
+  so arming a warm-up is still one decision made before the write, and N19's "clears itself" holds: the
+  dialog opens on the plan's next unlogged role (B48) and a write re-arms it. The cost accepted is one
+  extra confirmation between sets; what it buys is that a set is written once, as stated.
+  ([evidence](DECISIONS-EVIDENCE.md#n51))
 - **"No dead weight" is strict about APIs that exist to be tested, lenient about tests'
   instruments** (D2). `Weight.step`, `DataResult.map` and `successUnit` went, with the
   tests that only exercised them; `ExerciseDao.insertAll`, `softDelete` and
@@ -107,10 +115,13 @@ the rule; that one argues it.
   control is deleted on sight. The backlog's size is deliberately not recorded: it drifts.
   ([evidence](DECISIONS-EVIDENCE.md#d4))
 
-- **The role for the next set is armed at the button, and clears itself** (N19). The
-  pending-role-per-exercise alternative made transient UI state part of a database-driven
-  flow and broke the detekt function ceiling; the composable is smaller and survives state
-  rebuilds. ([evidence](DECISIONS-EVIDENCE.md#n19))
+- **The role for the next set is armed in the logging dialog, and clears itself** (N19, moved by
+  N51). The picker used to sit beside the button that wrote the set in one tap; with logging *being*
+  the dialog, the same choice is made inside it, before the write — so N19's rule (a role is a decision
+  about one set, and nothing lingers past it) survives the move unchanged. The pending-role-per-exercise
+  alternative stays rejected for the same reason it was: it makes transient UI state part of a
+  database-driven flow, and a composable holding the armed role is smaller than a store would be.
+  ([evidence](DECISIONS-EVIDENCE.md#n19))
 - **The pending set's role follows the plan, and the picker overrides it for one set** (B48,
   amending N19). The plan's next unlogged set arms the role the way its reps and weight already
   prefill, so a template that opens with a ramp records warm-ups as warm-ups; N19's "clears

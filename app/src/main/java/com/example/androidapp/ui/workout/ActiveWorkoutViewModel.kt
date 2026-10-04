@@ -33,6 +33,7 @@ import com.example.androidapp.domain.model.taxonomySubtitle
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.navigation.ActiveWorkout
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Duration
@@ -656,13 +657,16 @@ class ActiveWorkoutViewModel @Inject constructor(
 
 
     /**
-     * Logs a set using the prefilled values, then starts the rest (P1.4).
+     * Logs one set, exactly as the dialog that collected it says (ROADMAP N51, amending B7).
      *
-     * The role comes from the caller (ROADMAP N19): it is a choice about *this* set, made
-     * at the button, so it lives with the button rather than in this screen's state — and
-     * nothing here has to remember to clear it afterwards.
+     * The one-tap path wrote the offered set and left a set that differed from the prefill to be
+     * edited afterwards — the same dialog, one step later, with the first step having decided
+     * something the user did not mean. Logging *is* that dialog now, so this takes the values it was
+     * committed with rather than the ones the row happened to offer: the button no longer writes the
+     * set its label describes, because the label no longer describes one. The role travels in the
+     * same value (N19, N14) — a set is what it was performed as, and one field carries that.
      */
-    fun onLogSet(sessionExerciseId: String, setType: SetType = SetType.NORMAL) {
+    fun onLogSet(sessionExerciseId: String, edit: SetEdit) {
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId } ?: return
         viewModelScope.launch {
             // Read *before* the set is written, and excluding this session (ROADMAP N23): a
@@ -695,12 +699,10 @@ class ActiveWorkoutViewModel @Inject constructor(
 
             val result = workoutRepository.logSet(
                 sessionExerciseId = sessionExerciseId,
-                reps = row.suggestion.reps,
-                weightGrams = row.suggestion.weightGrams,
-                setType = setType,
-                // The button reads "-20 kg × 8"; a set written without the help would
-                // be a different set from the one it just described (ROADMAP B7, D3).
-                assistanceGrams = row.suggestion.assistanceGrams,
+                reps = edit.reps,
+                weightGrams = edit.weightGrams,
+                setType = edit.setType,
+                assistanceGrams = edit.assistanceGrams,
             )
             handle(result)
             if (result is DataResult.Success) {
@@ -711,13 +713,13 @@ class ActiveWorkoutViewModel @Inject constructor(
                 // while claiming a record over that very set (B18).
                 if (
                     against != null &&
-                    against.isRecord(row.suggestion.reps, row.suggestion.weightGrams, setType)
+                    against.isRecord(edit.reps, edit.weightGrams, edit.setType)
                 ) {
                     _personalRecord.value = PersonalRecordMoment(
                         exerciseName = row.name,
-                        reps = row.suggestion.reps,
-                        weightGrams = row.suggestion.weightGrams,
-                        previousBestGrams = against.bestAt(row.suggestion.reps),
+                        reps = edit.reps,
+                        weightGrams = edit.weightGrams,
+                        previousBestGrams = against.bestAt(edit.reps),
                     )
                 }
 

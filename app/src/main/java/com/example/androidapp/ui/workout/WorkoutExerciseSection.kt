@@ -41,7 +41,8 @@ import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.ExerciseRatingDialog
 import com.example.androidapp.ui.components.ExerciseRatingSection
-import com.example.androidapp.ui.components.SetRoleSelector
+import com.example.androidapp.ui.components.SetEdit
+import com.example.androidapp.ui.components.SetEditorDialog
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.restLabel
 import com.example.androidapp.ui.components.rpeMarker
@@ -74,7 +75,7 @@ internal val SessionExerciseRow.isPastPlan: Boolean
 @Composable
 internal fun ExerciseList(
     rows: List<SessionExerciseRow>,
-    onLogSet: (String, SetType) -> Unit,
+    onLogSet: (String, SetEdit) -> Unit,
     onRemoveExercise: (String) -> Unit,
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
@@ -96,7 +97,7 @@ internal fun ExerciseList(
         itemsIndexed(items = rows, key = { _, row -> row.id }) { index, row ->
             ExerciseSection(
                 row = row,
-                onLogSet = { role -> onLogSet(row.id, role) },
+                onLogSet = { edit -> onLogSet(row.id, edit) },
                 onRemoveExercise = { onRemoveExercise(row.id) },
                 onEditSet = onEditSet,
                 onDeleteSet = onDeleteSet,
@@ -128,7 +129,7 @@ internal fun ExerciseList(
 @Composable
 private fun ExerciseSection(
     row: SessionExerciseRow,
-    onLogSet: (SetType) -> Unit,
+    onLogSet: (SetEdit) -> Unit,
     onRemoveExercise: () -> Unit,
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
@@ -309,25 +310,12 @@ private fun RemoveExerciseAction(
 @Composable
 private fun ExerciseSets(
     row: SessionExerciseRow,
-    onLogSet: (SetType) -> Unit,
+    onLogSet: (SetEdit) -> Unit,
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
     modifier: Modifier = Modifier,
     onAcceptOffer: (() -> Unit)? = null,
 ) {
-    // The armed role belongs here rather than in the screen's state: it is a choice about
-    // the set the button below is about to write, and it clears itself afterwards
-    // (ROADMAP N19). A role is a decision about one set — leaving it armed would mark the
-    // next one without the user asking.
-    //
-    // The resting value is the plan's own next unlogged role (B48): a template that opens with a
-    // ramp used to record its warm-ups as working sets unless the picker was tapped on each one.
-    // Keying on the logged count re-arms from the plan the moment a set is written, so the picker
-    // still overrides the one set it is about to log and nothing lingers past it.
-    var armedRole by rememberSaveable(row.id, row.sets.size) {
-        mutableStateOf(row.suggestion.setType)
-    }
-
     Column(modifier = modifier) {
         // Dimmed rather than hidden: the sets stay visible as a record of what was
         // done, and `editable` is what actually stops the taps.
@@ -342,55 +330,100 @@ private fun ExerciseSets(
             }
         }
 
-        // No Log set button once the exercise is done: that is the accident N7
-        // exists to prevent. The role picker beside it is what makes a warm-up one tap
-        // instead of log-then-edit three times (ROADMAP N19).
+        // No Log set button once the exercise is done: that is the accident N7 exists to prevent.
         if (!row.isFinished) {
             row.suggestion.offer?.let { offer -> SuggestionOffer(offer = offer, onAccept = onAcceptOffer) }
-            PlanDoneNotice(row = row)
-            Row(
-                modifier = Modifier.padding(top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-            SetRoleSelector(
-                role = armedRole,
-                onSelect = { armedRole = it },
-                testTag = TestTags.exercisePendingRole(row.id),
-                optionTag = { role -> TestTags.exercisePendingRole(row.id, role) },
-            )
-            FilledTonalButton(
-                onClick = {
-                    // No explicit reset: logging changes the set count, which re-arms the role
-                    // from the plan's next unlogged set above — which is the "clears itself" rule
-                    // with the plan, rather than a hard-coded working set, as the resting value.
-                    onLogSet(armedRole)
-                },
-                modifier = Modifier.testTag(TestTags.SET_LOG),
-            ) {
-                // The plan's work is done, so the label stops describing values the app no longer
-                // offers a target for (ROADMAP N52). Logging an extra set is what the control
-                // still does — nothing closes, and the way to end the exercise is Done.
-                if (row.isPastPlan) {
-                    Text(stringResource(R.string.set_log_extra))
-                } else {
-                    Text(
-                        text = stringResource(
-                            R.string.set_log,
-                            stringResource(
-                                R.string.set_summary,
-                                Weight.display(
-                                    row.suggestion.weightGrams,
-                                    row.suggestion.assistanceGrams,
-                                ),
-                                row.suggestion.reps,
-                            ),
+            LogSetAction(row = row, onLogSet = onLogSet)
+        }
+    }
+}
+
+/**
+ * The set the app offers next, as the logging dialog opens on it (ROADMAP N51).
+ *
+ * The role is the plan's own next unlogged one (B48), carried the way reps and weight already are,
+ * so a template that opens with a ramp is logged as warm-ups rather than as working sets. The
+ * resting value lives here rather than on the dialog so it re-arms from the plan the moment a set is
+ * written: keyed on the logged count, logging a set re-reads the plan's next set, which is the
+ * "clears itself" rule (N19) with the plan as the resting value.
+ */
+private data class LoggingValues(
+    val role: SetType,
+    val reps: Int,
+    val weightGrams: Long,
+    val assistanceGrams: Long,
+)
+
+/**
+ * **Log set**, and the dialog it opens (ROADMAP N51).
+ *
+ * Logging *is* the dialog the edit path opens, prefilled from the same offer and committed on Save.
+ * The one-tap path went: it decided something the user did not mean — a set that differed from the
+ * prefill was written first and corrected afterwards — and the decision is that it is not wanted any
+ * more rather than a cost to weigh. That inverts B7 for this button: it no longer writes the set its
+ * label describes, because the label no longer describes one.
+ *
+ * Opening the dialog is a local state here, next to the button that opens it, and the values it opens
+ * on still come from the row — so a write that lands while the dialog is open cannot desync a draft
+ * from the plan it was prefilled from.
+ */
+@Composable
+private fun LogSetAction(
+    row: SessionExerciseRow,
+    onLogSet: (SetEdit) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var logging by rememberSaveable(row.id, row.sets.size) { mutableStateOf(false) }
+    val values = LoggingValues(
+        role = row.suggestion.setType,
+        reps = row.suggestion.reps,
+        weightGrams = row.suggestion.weightGrams,
+        assistanceGrams = row.suggestion.assistanceGrams,
+    )
+
+    Column(modifier = modifier) {
+        PlanDoneNotice(row = row)
+        FilledTonalButton(
+            onClick = { logging = true },
+            modifier = Modifier.padding(top = 8.dp).testTag(TestTags.SET_LOG),
+        ) {
+            // The plan's work is done, so the label stops describing values the app no longer
+            // offers a target for (ROADMAP N52). Logging an extra set is what the control still
+            // does — nothing closes, and the way to end the exercise is Done.
+            if (row.isPastPlan) {
+                Text(stringResource(R.string.set_log_extra))
+            } else {
+                Text(
+                    text = stringResource(
+                        R.string.set_log,
+                        stringResource(
+                            R.string.set_summary,
+                            Weight.display(values.weightGrams, values.assistanceGrams),
+                            values.reps,
                         ),
-                    )
-                }
-            }
+                    ),
+                )
             }
         }
+    }
+
+    if (logging) {
+        SetEditorDialog(
+            initialReps = values.reps,
+            initialWeightGrams = values.weightGrams,
+            initialSetType = values.role,
+            initialAssistanceGrams = values.assistanceGrams,
+            title = stringResource(R.string.set_log_title),
+            // Tagged for this row: the flow under test is "the control opens the dialog the edit path
+            // opens", and a test has to reach the role selector through the flow it actually takes.
+            roleTag = TestTags.exercisePendingRole(row.id),
+            roleOptionTag = { role -> TestTags.exercisePendingRole(row.id, role) },
+            onDismiss = { logging = false },
+            onSave = { edit ->
+                logging = false
+                onLogSet(edit)
+            },
+        )
     }
 }
 
