@@ -168,15 +168,6 @@ interface TemplateDao {
     @Query("SELECT * FROM template_sets WHERE id = :id AND deletedAt IS NULL")
     suspend fun findTemplateSet(id: String): TemplateSetEntity?
 
-    @Query(
-        """
-        SELECT * FROM template_sets
-        WHERE templateExerciseId = :templateExerciseId AND deletedAt IS NULL
-        ORDER BY setIndex ASC
-        """,
-    )
-    suspend fun findSetsForExercise(templateExerciseId: String): List<TemplateSetEntity>
-
         /**
      * Moves every set of one planned exercise down by [by], making room at the head (ROADMAP B34).
      *

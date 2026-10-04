@@ -112,7 +112,6 @@ fun TemplateEditorRoute(
         onAddSet = viewModel::onAddSet,
         onUpdateSet = viewModel::onUpdateSet,
         onRemoveSet = viewModel::onRemoveSet,
-        onDuplicateSets = viewModel::onDuplicateSets,
         onAddWarmUpSets = viewModel::onAddWarmUpSets,
         onSaveExercisePlan = viewModel::onSaveExercisePlan,
         onDismissMessage = viewModel::onErrorShown,
@@ -138,7 +137,6 @@ fun TemplateEditorScreen(
     onAddSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
     onUpdateSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
     onRemoveSet: (String) -> Unit = {},
-    onDuplicateSets: (String) -> Unit = {},
     onToggleSuperset: (String) -> Unit = {},
     onSaveExercisePlan: (String, Int?, String?) -> Unit = { _, _, _ -> },
 ) {
@@ -183,7 +181,6 @@ fun TemplateEditorScreen(
             onAddSet = onAddSet,
             onUpdateSet = onUpdateSet,
             onRemoveSet = onRemoveSet,
-            onDuplicateSets = onDuplicateSets,
             onAddWarmUpSets = onAddWarmUpSets,
             onSaveExercisePlan = onSaveExercisePlan,
             modifier = Modifier.padding(innerPadding),
@@ -244,7 +241,6 @@ private fun TemplateEditorBody(
     onAddSet: (String, TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
-    onDuplicateSets: (String) -> Unit,
     onSaveExercisePlan: (String, Int?, String?) -> Unit,
     onAddWarmUpSets: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -299,7 +295,6 @@ private fun TemplateEditorBody(
                         onAddSet = { edit -> onAddSet(exercise.id, edit) },
                         onUpdateSet = onUpdateSet,
                         onRemoveSet = onRemoveSet,
-                        onDuplicateSets = { onDuplicateSets(exercise.id) },
                         onAddWarmUpSets = { onAddWarmUpSets(exercise.id) },
                         onSavePlan = { rest, cue -> onSaveExercisePlan(exercise.id, rest, cue) },
                     )
@@ -373,7 +368,6 @@ private fun TemplateExerciseBlock(
     onAddSet: (TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
-    onDuplicateSets: () -> Unit,
     onSavePlan: (Int?, String?) -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,
@@ -410,7 +404,6 @@ private fun TemplateExerciseBlock(
             onAddSet = { adding = true },
             onEditSet = { editing = it.id },
             onDeleteSet = onRemoveSet,
-            onDuplicate = onDuplicateSets,
             onDismiss = { planOpen = false },
             // Offered only where a ramp can actually be built, which is the same predicate the
             // action itself reads (ROADMAP N28, B50): asking whether a weight was merely *typed*
@@ -427,7 +420,14 @@ private fun TemplateExerciseBlock(
     val edited = exercise.sets.firstOrNull { it.id == editing }
     if (adding || edited != null) {
         TemplateSetDialog(
-            initial = edited?.let { it.toEdit() } ?: TemplateSetEdit(),
+            // Add set starts from the last planned set rather than from nothing (ROADMAP N46): a
+            // set is nearly always the one before it again, and Duplicate — which doubled the whole
+            // plan and left the odd counts to manual adds — is gone. Blank only while there is no
+            // set to start from, and the role prefills too, which is safe because Add warm-ups
+            // *prepends*: the last set is the last working set.
+            initial = edited?.let { it.toEdit() }
+                ?: exercise.sets.lastOrNull()?.toEdit()
+                ?: TemplateSetEdit(),
             isNew = edited == null,
             onDismiss = {
                 adding = false

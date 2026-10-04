@@ -53,6 +53,15 @@ the rule; that one argues it.
   5–3600 bound (N21) — an app-wide zero would take the rest out of every exercise at once, which is
   the switch's job — and a stored zero is displayed as a word rather than `0:00`, which reads as a
   rest that has run out. ([evidence](DECISIONS-EVIDENCE.md#n45))
+- **A new planned set starts from the last one, and there is no Duplicate** (N46). The two surfaces
+  that author sets — a template's plan dialog and a slot's prescription dialog — take the same
+  prefill, so a plan is extended by confirming rather than retyping and *any* count is reachable.
+  Duplicate doubled (1, 2, 4, 8), left the odd counts to manual adds, and appended the whole plan,
+  ramp included, into an order `setIndex` exists to keep. The accepted cost is that prefilled values
+  look like saved ones, so "Add set" then Save without touching a field is a plausible accidental
+  double-add; the title says it is adding and the list behind it shows the count, and a set-*count*
+  control would be the more honest affordance if that ever needs revisiting.
+  ([evidence](DECISIONS-EVIDENCE.md#n46))
 
 - **Assistance is a magnitude in its own column, never a signed weight** (N15).
   `weightGrams` stays non-negative so volume stays `weight * reps` and contributes nothing

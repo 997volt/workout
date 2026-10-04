@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
 import java.time.DayOfWeek
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -17,6 +18,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
@@ -207,6 +209,35 @@ class TemplateEditorScreenTest {
                 ),
             ),
         )
+    }
+
+    @Test
+    fun addSet_startsFromTheLastPlannedSet() {
+        // ROADMAP N46: Duplicate is gone and Add set prefills from the set before it, so a plan is
+        // extended by confirming rather than by retyping — and any count, not just a doubling.
+        setScreen(
+            state = twoExercises.copy(
+                exercises = listOf(
+                    twoExercises.exercises.first().copy(
+                        sets = listOf(
+                            TemplateSet(
+                                id = "s1",
+                                templateExerciseId = "te1",
+                                setIndex = 0,
+                                targetWeightGrams = 100_000L,
+                                targetRepsMax = 3,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).assertTextContains("100")
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MAX).assertTextContains("3")
     }
 
     @Test

@@ -135,11 +135,6 @@ class TemplateEditorViewModel @Inject constructor(
 
     fun onRemoveSet(templateSetId: String) = write { repository.removeSet(templateSetId) }
 
-    /** Copy forward: the same shape again, to adjust (ROADMAP N14). */
-    fun onDuplicateSets(templateExerciseId: String) = write {
-        repository.duplicateSets(templateExerciseId)
-    }
-
     /** The rest and cue this exercise's plan prescribes, over the library's (N14). */
     fun onSaveExercisePlan(
         templateExerciseId: String,

@@ -93,7 +93,13 @@ fun SlotPrescriptionDialog(
 
     editingSet?.let { current ->
         SlotSetDialog(
-            initial = current.set?.toEdit() ?: SlotSetEdit(),
+            // Add set starts from the last set this exercise already prescribes (ROADMAP N46), the
+            // same rule as the template's plan dialog. This side needs a lookup rather than one
+            // expression: its sets hang off the editor rather than sitting in local scope, so the
+            // last one is read back through the exercise's prescription.
+            initial = current.set?.toEdit()
+                ?: editor.forExercise(current.exerciseId)?.sets?.lastOrNull()?.toEdit()
+                ?: SlotSetEdit(),
             isNew = current.set == null,
             onDismiss = { editingSet = null },
             onSave = { edit ->

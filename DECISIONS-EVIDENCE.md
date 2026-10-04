@@ -450,6 +450,33 @@ rather than `0:00`, because `0:00` reads as a rest that has run out rather than 
 wanted. That is a `restLabel` helper beside `RestTimer.format`, used by the library detail and the
 workout screen's static prescription.
 
+## N46
+
+The *Planned sets* dialog offered a blank **Add set** beside **Duplicate**. Duplicate appended a
+copy of every set the exercise already had, which is a loop wearing a button: it doubles (1, 2, 4,
+8), so three or five sets always end in manual adds, and what it stood in for was a *prefill* rather
+than an operation of its own. It also appended the whole plan — ramp included — into an order this
+app went out of its way to make reliable: `setIndex` is stored rather than inferred, and B34 exists
+because a generated ramp once landed after the work it was written to prepare for.
+
+So the button and its whole path go — the repository method, the DAO read behind it, the tag, the
+string, and the test that only exercised it — and Add set starts from the last set instead: blank
+only while the exercise has none. It is strictly better than what it replaced. Any count including
+the odd ones, appended in place after the work, with the ramp left where Add warm-ups put it. The
+role prefills too, which is safe precisely because Add warm-ups *prepends*: the last set is the last
+working set.
+
+The two surfaces that author sets disagreed, and removing the button from only one would have moved
+the inconsistency rather than settled it. A slot's prescription dialog never had the button but did
+have the blank form, so it takes the same prefill — one rule, two call sites. It needs a lookup
+rather than a one-liner because its sets hang off the editor rather than sitting in local scope; the
+last one is read back through the exercise's prescription.
+
+The cost is accepted rather than marked: prefilled values look exactly like saved ones, so "Add set"
+then Save without touching a field is a plausible accidental double-add. The title already says it
+is adding and the list behind it shows the count; a set-*count* control would be the more honest
+affordance if it ever needs revisiting.
+
 ## N42
 
 Three changes to the workouts tab, one argument: the tab that starts a workout should answer "what

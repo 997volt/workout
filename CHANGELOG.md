@@ -41,6 +41,15 @@ repeated here.
   than `0:00`, which read as a rest that had run out. The **default** rest keeps its 5–3600 bound:
   an app-wide zero would take the rest out of every exercise at once, which is the new switch's job
   (N44).
+- **Duplicate is gone, and Add set starts from the last planned set** (N46). The *Planned sets*
+  dialog offered a blank Add set beside Duplicate, which appended a copy of every set the exercise
+  already had — a loop wearing a button, since it doubles (1, 2, 4, 8) and leaves the odd counts to
+  manual adds. Both authoring surfaces now take the prefill, so a plan is extended by confirming
+  rather than retyping and any count is reachable: the template's plan dialog reads the last set in
+  local scope, and the slot's prescription dialog looks it up through the exercise's prescription.
+  The role prefills too, which is safe because Add warm-ups *prepends* — the last set is the last
+  working set. The whole path goes with the button: the repository method, its DAO read, its tag and
+  string, and the test that only exercised it.
 - **The workouts tab answers one question and gets out of the way** (N42). "See all workouts"
   is gone from the *Recent* heading — History is the tab beside it, one tap away and always
   visible, so a section heading carrying a way out of its own section was a second path to

@@ -35,39 +35,6 @@ automatic (N22's "the app suggests; it never writes"), a weekday-less slot that 
 and is order-only, and more than one active program, which P3.12 allowed. What waits now came
 from using the built app rather than from either queue.
 
-### Templates and plans: how a planned set gets written
-
-One screen's problem, and this candidate removes a feature rather than adding one.
-
-- **The Duplicate button goes; Add set prefills from the exercise's last planned set.** The
-  *Planned sets* dialog offers Add set — a blank form — beside Duplicate, which appends a copy of
-  every set that exercise already has. Duplicate is a loop wearing a button: it doubles (1, 2, 4,
-  8), so three sets or five sets always end in manual adds, and what it stands in for is a
-  *prefill* rather than an operation of its own. It also appends the whole plan, ramp included,
-  into an order this app went out of its way to make reliable — `setIndex` is stored rather than
-  inferred, and B34 exists because a generated ramp once landed after the work it was written to
-  prepare for. So it is deleted, and Add set starts from the last set instead of from nothing,
-  blank only while the exercise has no sets. That is one expression at the call site, because the
-  dialog already takes an initial value and the conversion already exists; and it is strictly
-  better than what it replaces — any count including the odd ones, appended in place after the
-  work, with the ramp left where Add warm-ups put it. The role prefills too, which is safe
-  precisely because Add warm-ups *prepends*: the last set is the last working set, and a user who
-  authored a warm-up last is asking for continuity rather than being surprised by it. The removal
-  is a whole path rather than one button — the repository method, its DAO read, the tag, the
-  string, and the test that only exercises it — and the empty-plan sentence that advertises the
-  button has to be reworded with it.
-- **The same rule on the prescription side, or the inconsistency simply moves.** Sets are authored
-  in two places and they disagree today: a template's plan dialog has the blank form *and* the
-  button, while a slot's prescription dialog has the blank form and no button at all. Removing the
-  button and prefilling only the template side leaves the worse half of that — neither surface can
-  bulk-copy, and one of them still makes the user retype. Both take the prefill, which makes it one
-  rule: a new set starts from the last set. That side needs a lookup rather than a one-liner,
-  because its sets hang off the editor instead of sitting in local scope.
-- **The cost, accepted.** Prefilled values look exactly like saved ones, so "Add set" then Save
-  without touching a field is a plausible accidental double-add. The title already says it is
-  adding and the list behind it shows the count, so this is accepted rather than marked; a
-  set-*count* control would be the more honest affordance if it ever needs revisiting.
-
 ### Programs: loading one from a file
 
 - **Load a program, with its templates, from a file.** Programs and their templates already ride in

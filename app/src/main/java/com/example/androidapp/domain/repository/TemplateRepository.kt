@@ -106,15 +106,6 @@ interface TemplateRepository {
     suspend fun removeSet(templateSetId: String): DataResult<Unit>
 
     /**
-     * **Copy forward**: duplicates an exercise's planned sets after themselves, so a
-     * shape authored once becomes four or five sets in two taps (ROADMAP N14).
-     *
-     * Without it, a plan of six exercises and thirty sets is thirty forms on a phone,
-     * which is where a plan stops being written down at all.
-     */
-    suspend fun duplicateSets(templateExerciseId: String): DataResult<Unit>
-
-    /**
      * Writes what a plan prescribes for one exercise: a rest and a cue, either of
      * which may be null to fall back to the library's (N5).
      */

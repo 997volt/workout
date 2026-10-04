@@ -53,7 +53,6 @@ fun TemplatePlanDialog(
     onAddSet: () -> Unit,
     onEditSet: (TemplateSet) -> Unit,
     onDeleteSet: (String) -> Unit,
-    onDuplicate: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     /**
@@ -105,7 +104,6 @@ fun TemplatePlanDialog(
         dismissButton = {
             PlanDialogButtons(
                 onAddWarmUpSets = onAddWarmUpSets,
-                onDuplicate = onDuplicate,
                 onAddSet = onAddSet,
             )
         },
@@ -374,11 +372,10 @@ private fun TemplateSet.summary(): String {
     return listOfNotNull(weight, reps, rpeHalves, note).joinToString(" · ")
 }
 
-/** The dialog's three optional actions, together so the dialog itself stays readable. */
+/** The dialog's two optional actions, together so the dialog itself stays readable. */
 @Composable
 private fun PlanDialogButtons(
     onAddWarmUpSets: (() -> Unit)?,
-    onDuplicate: () -> Unit,
     onAddSet: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -390,12 +387,6 @@ private fun PlanDialogButtons(
             ) {
                 Text(stringResource(R.string.template_add_warmups))
             }
-        }
-        TextButton(
-            onClick = onDuplicate,
-            modifier = Modifier.testTag(TestTags.TEMPLATE_PLAN_DUPLICATE),
-        ) {
-            Text(stringResource(R.string.template_plan_duplicate))
         }
         TextButton(
             onClick = onAddSet,

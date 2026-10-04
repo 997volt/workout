@@ -247,7 +247,6 @@ class TemplateEditorViewModelTest {
         val moved = mutableListOf<Pair<String, Int>>()
         val deleted = mutableListOf<String>()
         val addedSets = mutableListOf<Pair<String, TemplateSetEdit>>()
-        val duplicated = mutableListOf<String>()
         val savedPlans = mutableListOf<Triple<String, Int?, String?>>()
         var failWrites = false
         /** Every group write, as the ids it covered — one entry per call, which is the point. */
@@ -286,10 +285,6 @@ class TemplateEditorViewModelTest {
 
         override suspend fun removeSet(templateSetId: String): DataResult<Unit> =
             DataResult.Success(Unit)
-        override suspend fun duplicateSets(templateExerciseId: String): DataResult<Unit> {
-            duplicated += templateExerciseId
-            return DataResult.Success(Unit)
-        }
         override suspend fun setExercisePlan(
             templateExerciseId: String,
             restSeconds: Int?,
@@ -382,19 +377,6 @@ class TemplateEditorViewModelTest {
         assertEquals(140_000L, edit.targetWeightGrams)
         assertEquals(2, edit.targetRepsMax)
         assertEquals(9, edit.targetRpeHalves)
-    }
-
-    @Test
-    fun duplicatingAPlan_asksTheRepositoryForTheExercise() = runTest(dispatcher) {
-        val repository = FakeTemplateRepository()
-        val viewModel = viewModelFor(repository)
-        observe(viewModel)
-        advanceUntilIdle()
-
-        viewModel.onDuplicateSets("te1")
-        advanceUntilIdle()
-
-        assertEquals(listOf("te1"), repository.duplicated)
     }
 
     @Test

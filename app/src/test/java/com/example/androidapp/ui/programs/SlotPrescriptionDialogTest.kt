@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.programs
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -104,6 +105,30 @@ class SlotPrescriptionDialogTest {
         // 8 RPE is 16 half-points (N6).
         assertThat(edit?.targetRpeHalves).isEqualTo(16)
         assertThat(edit?.note).isEqualTo("grind")
+    }
+
+    @Test
+    fun addingASet_startsFromTheLastPrescribedSet() {
+        // ROADMAP N46: Add set prefills here too, through this side's own lookup — the sets hang
+        // off the editor rather than sitting in local scope.
+        setDialog(
+            listOf(
+                SlotPrescription(
+                    exerciseId = "back-squat",
+                    sets = listOf(
+                        SlotSet(id = "ps1", setIndex = 0, targetWeightGrams = 90_000L, targetRepsMax = 3),
+                        SlotSet(id = "ps2", setIndex = 1, targetWeightGrams = 100_000L, targetRepsMax = 5),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.prescriptionAddSet("back-squat")).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_SET_WEIGHT)
+            .assertTextContains("100")
+        composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_SET_REPS_MAX)
+            .assertTextContains("5")
     }
 
     @Test

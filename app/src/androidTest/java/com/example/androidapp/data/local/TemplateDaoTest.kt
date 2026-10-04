@@ -211,7 +211,6 @@ class TemplateDaoTest {
         dao.softDeleteTemplateSet("s1", at = 500L)
 
         assertEquals(listOf("s2"), dao.observeTemplateSets("t1").first().map { it.id })
-        assertEquals(listOf("s2"), dao.findSetsForExercise("te1").map { it.id })
         assertNull("a soft-deleted set is not found by id", dao.findTemplateSet("s1"))
     }
 

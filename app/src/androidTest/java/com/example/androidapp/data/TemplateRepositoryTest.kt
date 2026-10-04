@@ -297,24 +297,6 @@ class TemplateRepositoryTest {
     }
 
     @Test
-    fun copyForward_duplicatesTheSets_soTheyCanBeAdjusted() = runTest {
-        // The clause that makes a plan usable on a phone: one set authored, then
-        // doubled twice, rather than thirty forms (ROADMAP N14).
-        val template = create("Legs")
-        val exercise = plannedExercise(template)
-        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L, targetRepsMax = 3))
-
-        repository.duplicateSets(exercise)
-        repository.duplicateSets(exercise)
-
-        val sets = repository.observeExercises(template).first().single().sets
-        assertEquals(4, sets.size)
-        assertEquals("appended in order", listOf(0, 1, 2, 3), sets.map { it.setIndex })
-        assertTrue("the copies carry the targets", sets.all { it.targetWeightGrams == 100_000L })
-        assertEquals("copies are their own rows", 4, sets.map { it.id }.toSet().size)
-    }
-
-    @Test
     fun updatingAPlannedSet_keepsItsPlace_andCanClearATarget() = runTest {
         val template = create("Legs")
         val exercise = plannedExercise(template)

@@ -1574,7 +1574,6 @@ class ActiveWorkoutViewModelTest {
         ): DataResult<Unit> = notUsed()
 
         override suspend fun removeSet(templateSetId: String): DataResult<Unit> = notUsed()
-        override suspend fun duplicateSets(templateExerciseId: String): DataResult<Unit> = notUsed()
         override suspend fun setExercisePlan(
             templateExerciseId: String,
             restSeconds: Int?,

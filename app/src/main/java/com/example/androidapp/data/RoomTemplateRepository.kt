@@ -273,26 +273,6 @@ class RoomTemplateRepository @Inject constructor(
         if (updated == 0) throw NotFoundException("template set $templateSetId")
     }
 
-    override suspend fun duplicateSets(templateExerciseId: String): DataResult<Unit> =
-        dataResultOf {
-            val existing = dao.findSetsForExercise(templateExerciseId)
-            if (existing.isEmpty()) throw NotFoundException("no planned sets to duplicate")
-            var index = dao.maxSetIndex(templateExerciseId) + 1
-            val now = timeSource.nowEpochMillis()
-            // Copies rather than references: the whole point is to adjust them
-            // afterwards, and sharing a row would edit both.
-            existing.forEach { original ->
-                dao.insertTemplateSet(
-                    original.copy(
-                        id = UUID.randomUUID().toString(),
-                        setIndex = index++,
-                        createdAt = now,
-                        updatedAt = now,
-                    ),
-                )
-            }
-        }
-
     override suspend fun setExercisePlan(
         templateExerciseId: String,
         restSeconds: Int?,

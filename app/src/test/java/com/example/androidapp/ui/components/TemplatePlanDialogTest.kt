@@ -33,7 +33,6 @@ class TemplatePlanDialogTest {
                 onAddSet = {},
                 onEditSet = {},
                 onDeleteSet = {},
-                onDuplicate = {},
                 onDismiss = {},
                 onAddWarmUpSets = onAddWarmUpSets,
             )
