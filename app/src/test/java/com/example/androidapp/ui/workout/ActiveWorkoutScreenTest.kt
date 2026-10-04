@@ -697,7 +697,9 @@ class ActiveWorkoutScreenTest {
         setScreen(
             state = base.copy(
                 exercises = base.exercises.map { it.copy(supersetGroup = 1, supersetLabel = "A1") } +
-                    base.exercises.map { it.copy(id = "se2", name = "Bench Press", supersetGroup = 1, supersetLabel = "A2") },
+                    base.exercises.map {
+                        it.copy(id = "se2", name = "Bench Press", supersetGroup = 1, supersetLabel = "A2")
+                    },
             ),
             actions = Actions(onToggleSuperset = { toggled = it }),
         )

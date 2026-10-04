@@ -36,11 +36,11 @@ fun PlannedWorkoutDialog(
     val workout = planned ?: return
 
     AlertDialog(
-        modifier = Modifier.testTag(TestTags.HOME_PLANNED_WORKOUT),
+        modifier = Modifier.testTag(TestTags.Home.PLANNED_WORKOUT),
         onDismissRequest = onDismiss,
         title = {
             Column {
-                Text(workout.plan.name, modifier = Modifier.testTag(TestTags.HOME_PLANNED_WORKOUT_TITLE))
+                Text(workout.plan.name, modifier = Modifier.testTag(TestTags.Home.PLANNED_WORKOUT_TITLE))
                 Text(
                     text = workout.programName,
                     style = MaterialTheme.typography.bodySmall,
@@ -57,7 +57,7 @@ fun PlannedWorkoutDialog(
             } else if (workout.exercises.isEmpty()) {
                 Text(
                     text = stringResource(R.string.home_planned_empty),
-                    modifier = Modifier.testTag(TestTags.HOME_PLANNED_WORKOUT_EMPTY),
+                    modifier = Modifier.testTag(TestTags.Home.PLANNED_WORKOUT_EMPTY),
                 )
             } else {
                 LazyColumn {
@@ -73,7 +73,7 @@ fun PlannedWorkoutDialog(
         confirmButton = {
             TextButton(
                 onClick = onDismiss,
-                modifier = Modifier.testTag(TestTags.HOME_PLANNED_WORKOUT_CLOSE),
+                modifier = Modifier.testTag(TestTags.Home.PLANNED_WORKOUT_CLOSE),
             ) {
                 Text(stringResource(R.string.action_close))
             }

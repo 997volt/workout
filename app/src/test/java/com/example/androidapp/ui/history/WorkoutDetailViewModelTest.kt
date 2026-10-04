@@ -1,6 +1,5 @@
 package com.example.androidapp.ui.history
 
-import java.time.DayOfWeek
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -309,7 +308,6 @@ private class FakeTemplateRepository(
     override suspend fun createTemplate(name: String): DataResult<String> = unused()
     override suspend fun renameTemplate(templateId: String, name: String): DataResult<Unit> = unused()
     override suspend fun deleteTemplate(templateId: String): DataResult<Unit> = unused()
-    override suspend fun setWeekday(templateId: String, weekday: DayOfWeek?): DataResult<Unit> = unused()
     override suspend fun setSupersetGroup(
         templateExerciseIds: List<String>,
         group: Int?,

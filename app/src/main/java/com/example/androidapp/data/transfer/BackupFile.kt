@@ -250,8 +250,6 @@ data class SetDto(
 data class TemplateDto(
     val id: String,
     val name: String,
-    /** The weekday this plan is pinned to, or null (ROADMAP N16). */
-    val weekday: DayOfWeek? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

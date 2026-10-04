@@ -93,6 +93,9 @@ object TestTags {
     const val HOME_TITLE = "home_title"
     const val HOME_START = "home_start"
     const val HOME_RESUME = "home_resume"
+    const val HOME_START_FROM_TEMPLATE = "home_start_from_template"
+    /** The way into programs, in the action row rather than the overflow (ROADMAP P3.3, N42). */
+    const val HOME_PROGRAMS = "home_programs"
 
     /**
      * Export and import (ROADMAP B1, N43). Tagged generically because the point is *which screen*
@@ -103,10 +106,6 @@ object TestTags {
     const val DATA_EXPORT = "data_export"
     const val DATA_IMPORT = "data_import"
 
-    /** The other half of the start action (ROADMAP N3): begin from a template. */
-    const val HOME_START_FROM_TEMPLATE = "home_start_from_template"
-    /** The way into programs, in the action row rather than the overflow (ROADMAP P3.3, N42). */
-    const val HOME_PROGRAMS = "home_programs"
     const val DETAIL_SAVE_AS_PLAN = "detail_save_as_plan"
     const val DETAIL_PLAN_NAME = "detail_plan_name"
     const val DETAIL_PLAN_CONFIRM = "detail_plan_confirm"
@@ -197,26 +196,6 @@ object TestTags {
     fun templateMove(id: String, up: Boolean) = "template_move_${if (up) "up" else "down"}_$id"
 
     fun templateRemove(id: String) = "template_remove_$id"
-
-    /** Today's plan on home (ROADMAP N16). */
-    fun homeStartPlan(id: String) = "home_start_plan_$id"
-
-    /**
-     * The run's next-up field on home (ROADMAP P3.9, N55).
-     *
-     * It tags the *field*, which opens what is planned, and [homeNextUpStart] tags the separate start
-     * beside it: looking and starting stopped being the same gesture, so a test has to say which one
-     * it means.
-     */
-    fun homeNextUp(id: String) = "home_next_up_$id"
-
-    fun homeNextUpStart(id: String) = "home_next_up_start_$id"
-
-    /** What is planned, opened from that field (ROADMAP N55). */
-    const val HOME_PLANNED_WORKOUT = "home_planned_workout"
-    const val HOME_PLANNED_WORKOUT_TITLE = "home_planned_workout_title"
-    const val HOME_PLANNED_WORKOUT_EMPTY = "home_planned_workout_empty"
-    const val HOME_PLANNED_WORKOUT_CLOSE = "home_planned_workout_close"
 
     /** A plan's sets (ROADMAP N14): the list, one target, and its rest and cue. */
     const val TEMPLATE_PLAN_ROW = "template_plan_row"
@@ -331,8 +310,31 @@ object TestTags {
      */
     fun historyRepeat(sessionId: String) = "history_repeat_$sessionId"
 
-    /** Pinning a plan to a weekday (ROADMAP N16). */
-    fun templateWeekday(day: String) = "template_weekday_$day"
+    /**
+     * Home's own tags (ROADMAP N16, P3.9, N55), grouped so this object stays under its ceiling —
+     * the same reason Programs, Measurements and Statistics are objects.
+     */
+    object Home {
+        /** Today's plan on home (ROADMAP N16). */
+        fun startPlan(id: String) = "home_start_plan_$id"
+
+        /**
+         * The run's next-up field (ROADMAP P3.9, N55).
+         *
+         * It tags the *field*, which opens what is planned, and [nextUpStart] tags the separate start
+         * beside it: looking and starting stopped being the same gesture, so a test has to say which
+         * one it means.
+         */
+        fun nextUp(id: String) = "home_next_up_$id"
+
+        fun nextUpStart(id: String) = "home_next_up_start_$id"
+
+        /** What is planned, opened from that field (ROADMAP N55). */
+        const val PLANNED_WORKOUT = "home_planned_workout"
+        const val PLANNED_WORKOUT_TITLE = "home_planned_workout_title"
+        const val PLANNED_WORKOUT_EMPTY = "home_planned_workout_empty"
+        const val PLANNED_WORKOUT_CLOSE = "home_planned_workout_close"
+    }
 
     /**
      * Programs (ROADMAP P3.3), grouped so this object stays under its ceiling.

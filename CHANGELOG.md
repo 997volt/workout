@@ -12,6 +12,23 @@ repeated here.
 
 ## [Unreleased]
 
+### Removed
+
+- **A template carries no weekday; the day belongs to a program's slot** (N56). A template is a
+  reusable workout, and it also held an N16 weekday pin of its own — its editor offered a day picker,
+  `templates.weekday` stored it, and *Today* on home fell back to those pins whenever no program was
+  active. That was two places answering "what am I doing on Tuesday", and the template's copy was the
+  weaker one: a template has no order, no next-up and no adherence to belong to. The pin goes, with its
+  column (v25 rebuilds the table and copies the columns that survive), the `setWeekday` path through
+  DAO, repository and editor, the picker, and the `pinnedFor` fallback — leaving a program's slots as
+  the only source of a dated plan. With no active program there is then no *Today* list, which is the
+  point rather than a regression: a day is a scheduling fact, and scheduling is what a program is for.
+  The loss is accepted rather than mitigated — a template pinned to a day today comes out of the
+  migration with no day at all, and getting the schedule back means putting it in a program — which is
+  the rule being stated rather than a migration that failed. The backup carries the same field, and it
+  goes with the column: the codec ignores keys this build does not know, so a file written before the
+  change still decodes and the pin is simply not read.
+
 ### Added
 
 - **A program's *Next up* moved into the bottom bar and opens what is planned** (N55). The next-up card

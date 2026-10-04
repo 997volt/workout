@@ -1,10 +1,8 @@
 package com.example.androidapp.ui.home
 
 import com.google.common.truth.Truth.assertThat
-import java.time.DayOfWeek
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -16,6 +14,7 @@ import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.workout.WorkoutClock
+import java.time.DayOfWeek
 import java.time.Instant
 import org.junit.Rule
 import com.example.androidapp.ui.history.HistoryFormat
@@ -221,7 +220,7 @@ class WorkoutsHomeScreenTest {
 
         composeTestRule.onNodeWithText("Today · Friday").assertExists()
         composeTestRule.onNodeWithText("Heavy lower").assertExists()
-        composeTestRule.onNodeWithTag(TestTags.homeStartPlan("slot-1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Home.startPlan("slot-1")).performClick()
 
         // The row's identity is the slot's; what starts is the template it points at, and the
         // slot travels with it (P3.3, P3.8).
@@ -263,7 +262,7 @@ class WorkoutsHomeScreenTest {
 
         composeTestRule.onNodeWithText("Next up").assertExists()
         composeTestRule.onNodeWithText("Upper/Lower · 5 exercises").assertExists()
-        composeTestRule.onNodeWithTag(TestTags.homeNextUpStart("slot-2")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).performClick()
 
         // The slot travels with the start, so its prescription seeds the workout (P3.8).
         assertThat(started.single().slotId).isEqualTo("slot-2")
@@ -294,7 +293,7 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.homeNextUp("slot-2")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Home.nextUp("slot-2")).performClick()
 
         assertThat(opened.single()).isEqualTo(nextUp)
         assertThat(started).isEmpty()
@@ -325,15 +324,15 @@ class WorkoutsHomeScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_PLANNED_WORKOUT).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.HOME_PLANNED_WORKOUT_TITLE).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Home.PLANNED_WORKOUT).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Home.PLANNED_WORKOUT_TITLE).assertExists()
         composeTestRule.onNodeWithText("Push").assertExists()
         composeTestRule.onNodeWithText("Upper/Lower").assertExists()
         composeTestRule.onNodeWithText("Bench Press").assertExists()
         composeTestRule.onNodeWithText("Overhead Press").assertExists()
-        composeTestRule.onNodeWithTag(TestTags.HOME_PLANNED_WORKOUT_EMPTY).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Home.PLANNED_WORKOUT_EMPTY).assertDoesNotExist()
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_PLANNED_WORKOUT_CLOSE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Home.PLANNED_WORKOUT_CLOSE).performClick()
 
         assertThat(dismissed).isTrue()
     }
@@ -358,7 +357,7 @@ class WorkoutsHomeScreenTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_PLANNED_WORKOUT_EMPTY).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Home.PLANNED_WORKOUT_EMPTY).assertExists()
     }
 
     @Test
@@ -393,8 +392,8 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.homeStartPlan("slot-1")).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.homeStartPlan("slot-2")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Home.startPlan("slot-1")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Home.startPlan("slot-2")).assertExists()
     }
 
     @Test

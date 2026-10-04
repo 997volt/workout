@@ -285,7 +285,6 @@ class WorkoutsHomeViewModel @Inject constructor(
             todaysPlan = todaysPlanFor(
                 programs = programs.programs,
                 slots = programs.slots,
-                templates = templates,
                 day = today,
             ),
             nextUp = nextUpFor(
@@ -353,9 +352,10 @@ class WorkoutsHomeViewModel @Inject constructor(
 /**
  * What is scheduled for [day] (ROADMAP P3.3, unioned by P3.12).
  *
- * With anything active the union of the active programs is the schedule, even on a day they
- * schedule nothing — an empty day is rest, not a fallback. Only **no active program** returns
- * the N16 pins, which is the rule the roadmap states and the reason the pins stay editable.
+ * The union of the active programs' slots, even on a day they schedule nothing — an empty day is
+ * rest, not a fallback. The N16 weekday pins were the other branch of this and went with the column
+ * they read (ROADMAP N56): with no active program there is then no *Today* list, which is the change
+ * stating that a day is a scheduling fact and scheduling is what a program is for.
  *
  * File-level and pure so the union and the fallback can be tested without a database or a
  * ViewModel.
@@ -363,13 +363,12 @@ class WorkoutsHomeViewModel @Inject constructor(
 internal fun todaysPlanFor(
     programs: List<WorkoutProgram>,
     slots: List<ProgramSlot>,
-    templates: List<WorkoutTemplate>,
     day: DayOfWeek,
-): List<TodayPlan> = if (programs.isNotEmpty()) {
-    slots.scheduledFor(day, programs)
-} else {
-    templates.pinnedFor(day)
-}
+): List<TodayPlan> =
+    // No active program, no dated plan (ROADMAP N56). An orphaned slot — a program that was
+    // deactivated after its slots were written — is not a schedule either: the slots belong to the
+    // program that follows them.
+    if (programs.isEmpty()) emptyList() else slots.scheduledFor(day, programs)
 
 /**
  * Where each active program's run is, as home's next-up rows (ROADMAP P3.9).
@@ -402,22 +401,6 @@ internal fun nextUpFor(
         isAtStart = run.isAtStart,
     )
 }
-
-/**
- * The plans pinned to [day], as home rows — the fallback when no program is active
- * (ROADMAP N16, kept by P3.3).
- */
-private fun List<WorkoutTemplate>.pinnedFor(day: DayOfWeek): List<TodayPlan> =
-    filter { it.weekday == day }.map { template ->
-        TodayPlan(
-            id = template.id,
-            templateId = template.id,
-            name = template.name,
-            exerciseCount = template.exerciseCount,
-            // A pin is not a slot, so there is no prescription to carry (P3.8).
-            slotId = null,
-        )
-    }
 
 /**
  * The active programs' slots that fall on [day], in the union's order (ROADMAP P3.12).

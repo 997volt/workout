@@ -1208,6 +1208,20 @@ private data class PlanContext(
 )
 
 /**
+ * How many sets the plan behind this workout writes for the exercise at [position], or null
+ * (ROADMAP N52).
+ *
+ * The slot wins where it speaks, so the plan is the **longer** of the two rather than either one: a
+ * slot may override a later set the template left alone, and counting only the template would call the
+ * work done a set early. No plan at all is null rather than zero, so an empty workout's control never
+ * says the work is finished before it has started.
+ */
+private fun PlanContext.plannedSetCountFor(position: Int): Int? = maxOf(
+    prescription?.sets?.size ?: 0,
+    planned.firstOrNull { it.position == position }?.sets?.size ?: 0,
+).takeIf { it > 0 }
+
+/**
  * An offer the user accepted, and the set count it was accepted at (ROADMAP N33).
  *
  * The count is what keeps it honest: rows are rebuilt from the database after every write, so an
@@ -1235,22 +1249,7 @@ private fun SessionExercise.toRow(
     supersetLabels: Map<String, String>,
     accepted: AcceptedPrefill?,
 ): SessionExerciseRow {
-    val loggedSets = sets.filter { it.sessionExerciseId == id }
-        .sortedBy { it.setIndex }
-        .mapIndexed { index, set ->
-            SetRow(
-                id = set.id,
-                // Displayed 1-based and renumbered, so deleting the first set
-                // leaves the rest reading 1, 2, 3 rather than 2, 3, 4.
-                number = index + 1,
-                reps = set.reps,
-                weightGrams = set.weightGrams,
-                rpeHalves = set.rpeHalves,
-                note = set.note,
-                setType = set.setType,
-                assistanceGrams = set.assistanceGrams,
-            )
-        }
+    val loggedSets = sets.loggedRowsFor(id)
 
     return SessionExerciseRow(
         id = id,
@@ -1261,42 +1260,13 @@ private fun SessionExercise.toRow(
         supersetGroup = supersetGroup,
         supersetLabel = supersetLabels[id],
         restSeconds = restSeconds,
-        // What "the exercise's plan is done" is measured against (ROADMAP N52). The slot wins where
-        // it speaks, so the plan is the longer of the two rather than either one: a slot may override
-        // a later set the template left alone, and counting only the template would call the work
-        // done a set early. No plan at all leaves the count null rather than zero, so an empty
-        // workout's control never says the work is finished before it has started.
-        plannedSetCount = maxOf(
-            plan.prescription?.sets?.size ?: 0,
-            plan.planned.firstOrNull { it.position == position }?.sets?.size ?: 0,
-        ).takeIf { it > 0 },
+        plannedSetCount = plan.plannedSetCountFor(position),
         isFinished = isFinished,
         muscleFeel = muscleFeel,
         jointPain = jointPain,
         jointPainNote = jointPainNote,
         sets = loggedSets,
-        suggestion = suggestionForNextSet(
-            loggedSets = loggedSets,
-            previous = previous,
-            // The slot wins where it speaks; the template fills whatever it leaves alone (P3.8, N14).
-            planned = prescribedTargetFor(
-                prescription = plan.prescription,
-                nextIndex = loggedSets.size,
-                estimatedOneRepMaxGrams = plan.estimatedOneRepMaxGrams,
-                template = plannedTargetFor(plan.planned, position = position, nextIndex = loggedSets.size),
-            ),
-        ).let { suggestion ->
-            // An accepted offer wins over the rule, but only while it still applies: once a set is
-            // logged the count moves on and the offer is spent.
-            accepted?.takeIf { it.setCount == loggedSets.size }?.let { taken ->
-                suggestion.copy(
-                    reps = taken.reps,
-                    weightGrams = taken.weightGrams,
-                    assistanceGrams = taken.assistanceGrams,
-                    offer = null,
-                )
-            } ?: suggestion
-        },
+        suggestion = suggestionFor(loggedSets, previous, plan, accepted),
         lastTime = previous?.sets?.firstOrNull()?.let { first ->
             SetRow(
                 id = first.id,
@@ -1307,6 +1277,57 @@ private fun SessionExercise.toRow(
             )
         },
     )
+}
+
+/** The sets logged against one session exercise, displayed 1-based and renumbered (N54's neighbours). */
+private fun List<SetEntry>.loggedRowsFor(sessionExerciseId: String): List<SetRow> =
+    filter { it.sessionExerciseId == sessionExerciseId }
+        .sortedBy { it.setIndex }
+        .mapIndexed { index, set ->
+            SetRow(
+                id = set.id,
+                // Displayed 1-based and renumbered, so deleting the first set leaves the rest
+                // reading 1, 2, 3 rather than 2, 3, 4.
+                number = index + 1,
+                reps = set.reps,
+                weightGrams = set.weightGrams,
+                rpeHalves = set.rpeHalves,
+                note = set.note,
+                setType = set.setType,
+                assistanceGrams = set.assistanceGrams,
+            )
+        }
+
+/**
+ * What the next set is offered as: the plan's target where it speaks, then history, and the app's own
+ * proposal carried separately so it is applied only when it is accepted (ROADMAP N14, N33, P3.8).
+ */
+private fun SessionExercise.suggestionFor(
+    loggedSets: List<SetRow>,
+    previous: PreviousPerformance?,
+    plan: PlanContext,
+    accepted: AcceptedPrefill?,
+): SetSuggestion = suggestionForNextSet(
+    loggedSets = loggedSets,
+    previous = previous,
+    // The slot wins where it speaks; the template fills whatever it leaves alone (P3.8, N14).
+    planned = prescribedTargetFor(
+        prescription = plan.prescription,
+        nextIndex = loggedSets.size,
+        estimatedOneRepMaxGrams = plan.estimatedOneRepMaxGrams,
+        template = plannedTargetFor(plan.planned, position = position, nextIndex = loggedSets.size),
+    ),
+).let { suggestion ->
+    // An accepted offer wins over the rule, but only while it still applies: once a set is logged the
+    // count moves on and the offer is spent.
+    accepted?.takeIf { it.setCount == loggedSets.size }?.let { taken ->
+        suggestion.copy(
+            reps = taken.reps,
+            weightGrams = taken.weightGrams,
+            assistanceGrams = taken.assistanceGrams,
+            offer = null,
+        )
+    } ?: suggestion
 }
 
 private fun supersetLabelsFor(exercises: List<SessionExercise>): Map<String, String> {

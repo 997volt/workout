@@ -372,40 +372,6 @@ class TemplateRepositoryTest {
     }
 
 
-    @Test
-    fun pinningAPlanToADay_andUnpinningIt() = runTest {
-        // ROADMAP N16: a living template with a day, not a dated instance.
-        val template = create("Legs")
-
-        repository.setWeekday(template, DayOfWeek.FRIDAY)
-        assertEquals(
-            DayOfWeek.FRIDAY,
-            repository.observeTemplates().first().single().weekday,
-        )
-
-        repository.setWeekday(template, null)
-        assertNull(repository.observeTemplates().first().single().weekday)
-    }
-
-    @Test
-    fun severalPlans_canShareADay() = runTest {
-        // Training twice on a Friday is a thing people do, so the day is not unique.
-        val first = create("Legs")
-        val second = create("Push")
-        repository.setWeekday(first, DayOfWeek.FRIDAY)
-        repository.setWeekday(second, DayOfWeek.FRIDAY)
-
-        val friday = repository.observeTemplates().first().filter { it.weekday == DayOfWeek.FRIDAY }
-
-        assertEquals(listOf("Legs", "Push"), friday.map { it.name })
-    }
-
-    @Test
-    fun pinningAPlanThatIsGone_isNotFound() = runTest {
-        assertTrue(
-            repository.setWeekday("nope", DayOfWeek.MONDAY) is DataResult.Failure,
-        )
-    }
 
     @Test
     fun aWarmUpRamp_writtenToAPlan_comesBackWithItsRolesAndWeights() = runTest {

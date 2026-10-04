@@ -3,12 +3,9 @@ package com.example.androidapp.ui.templates
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
-import java.time.DayOfWeek
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.assertIsNotSelected
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -45,7 +42,6 @@ class TemplateEditorScreenTest {
      */
     private data class Actions(
         val onRename: (String) -> Unit = {},
-        val onSetWeekday: (DayOfWeek?) -> Unit = {},
         val onRemoveExercise: (String) -> Unit = {},
         val onMoveExercise: (String, Int) -> Unit = { _, _ -> },
         val onDeleteTemplate: () -> Unit = {},
@@ -61,7 +57,6 @@ class TemplateEditorScreenTest {
             TemplateEditorScreen(
                 state = state,
                 onRename = actions.onRename,
-                onSetWeekday = actions.onSetWeekday,
                 onRemoveExercise = actions.onRemoveExercise,
                 onMoveExercise = actions.onMoveExercise,
                 onDeleteTemplate = actions.onDeleteTemplate,
@@ -240,29 +235,4 @@ class TemplateEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MAX).assertTextContains("3")
     }
 
-    @Test
-    fun theWeekdayPicker_pinsThePlanToADay() {
-        // ROADMAP N16: a plan belongs to a day, and "not scheduled" is a value.
-        val chosen = mutableListOf<DayOfWeek?>()
-        setScreen(actions = Actions(onSetWeekday = { chosen += it }))
-
-        composeTestRule.onNodeWithTag(TestTags.templateWeekday("FRIDAY")).performClick()
-        composeTestRule.onNodeWithTag(TestTags.templateWeekday("NONE")).performClick()
-
-        assertEquals(listOf<DayOfWeek?>(DayOfWeek.FRIDAY, null), chosen)
-    }
-
-    @Test
-    fun aScheduledPlan_showsItsDaySelected() {
-        setScreen(
-            state = twoExercises.copy(
-                template = twoExercises.template?.copy(weekday = DayOfWeek.FRIDAY),
-            ),
-        )
-
-        // `WeekdayPicker` composes every chip unconditionally, so asserting existence passes even
-        // if the plan's weekday is ignored — the test could not fail (ROADMAP B29).
-        composeTestRule.onNodeWithTag(TestTags.templateWeekday("FRIDAY")).assertIsSelected()
-        composeTestRule.onNodeWithTag(TestTags.templateWeekday("MONDAY")).assertIsNotSelected()
-    }
 }

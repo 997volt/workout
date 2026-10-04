@@ -300,87 +300,23 @@ private fun ExerciseOverflow(
                 contentDescription = stringResource(R.string.active_workout_exercise_more, row.name),
             )
         }
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            // Order first: it is the entry most likely to be reached for mid-session, and it is the
-            // one that changes what everything below it means (ROADMAP N54). A move at the top or the
-            // bottom is refused by the repository rather than by the menu, because the row does not
-            // know how long the list is and a disabled entry that looks the same is worse than one
-            // that does nothing.
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.active_workout_move_up)) },
-                onClick = {
-                    menuOpen = false
-                    onMove(-1)
-                },
-                modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = true)),
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.active_workout_move_down)) },
-                onClick = {
-                    menuOpen = false
-                    onMove(1)
-                },
-                modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = false)),
-            )
-            if (onToggleSuperset != null && !row.isFinished) {
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            stringResource(
-                                if (row.supersetGroup == null) {
-                                    R.string.superset_pair
-                                } else {
-                                    R.string.superset_unpair
-                                },
-                            ),
-                        )
-                    },
-                    onClick = {
-                        menuOpen = false
-                        onToggleSuperset()
-                    },
-                    modifier = Modifier.testTag(TestTags.supersetToggle(row.id)),
-                )
-            }
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        text = stringResource(R.string.active_workout_remove_action),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                },
-                onClick = {
-                    menuOpen = false
-                    confirmingRemoval = true
-                },
-                modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE),
-            )
-        }
+        ExerciseMenuItems(
+            row = row,
+            expanded = menuOpen,
+            onDismiss = { menuOpen = false },
+            onToggleSuperset = onToggleSuperset,
+            onMove = onMove,
+            onRemove = { confirmingRemoval = true },
+        )
     }
 
     if (confirmingRemoval) {
-        AlertDialog(
-            onDismissRequest = { confirmingRemoval = false },
-            title = { Text(stringResource(R.string.active_workout_remove_confirm_title)) },
-            text = { Text(stringResource(R.string.active_workout_remove_confirm_text, row.name)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        confirmingRemoval = false
-                        onRemove()
-                    },
-                    modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE_CONFIRM),
-                ) {
-                    Text(stringResource(R.string.active_workout_remove_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { confirmingRemoval = false },
-                    modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE_CANCEL),
-                ) {
-                    Text(stringResource(R.string.action_cancel))
-                }
+        ConfirmRemovalDialog(
+            name = row.name,
+            onDismiss = { confirmingRemoval = false },
+            onConfirm = {
+                confirmingRemoval = false
+                onRemove()
             },
         )
     }
@@ -699,6 +635,113 @@ private fun SetExtrasMarker(set: SetRow, modifier: Modifier = Modifier) {
             modifier = modifier,
         )
     }
+}
+
+/**
+ * The entries one exercise's overflow offers (ROADMAP N53, N54).
+ *
+ * Its own composable for the reason the project keeps splitting them: the button, the dialog and the
+ * menu were one function at ninety-odd lines, and each of the three is a thing that can be read on its
+ * own. Order comes first — it is the entry most likely to be reached for mid-session, and the one that
+ * changes what everything below it means — and a move at the top or the bottom is refused by the
+ * repository rather than by the menu, because the row does not know how long the list is.
+ */
+@Composable
+private fun ExerciseMenuItems(
+    row: SessionExerciseRow,
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onToggleSuperset: (() -> Unit)?,
+    onMove: (Int) -> Unit,
+    onRemove: () -> Unit,
+) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.active_workout_move_up)) },
+            onClick = {
+                onDismiss()
+                onMove(-1)
+            },
+            modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = true)),
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.active_workout_move_down)) },
+            onClick = {
+                onDismiss()
+                onMove(1)
+            },
+            modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = false)),
+        )
+        if (onToggleSuperset != null && !row.isFinished) {
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(
+                            if (row.supersetGroup == null) {
+                                R.string.superset_pair
+                            } else {
+                                R.string.superset_unpair
+                            },
+                        ),
+                    )
+                },
+                onClick = {
+                    onDismiss()
+                    onToggleSuperset()
+                },
+                modifier = Modifier.testTag(TestTags.supersetToggle(row.id)),
+            )
+        }
+        DropdownMenuItem(
+            text = {
+                Text(
+                    text = stringResource(R.string.active_workout_remove_action),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            },
+            onClick = {
+                onDismiss()
+                onRemove()
+            },
+            modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE),
+        )
+    }
+}
+
+/**
+ * The question a removal asks before it takes anything (ROADMAP B2, moved by N53).
+ *
+ * Its own composable because the overflow around it is at the length this project allows, and because
+ * the guard is the part worth reading on its own: removing an exercise takes its sets with it and has
+ * no undo to reach for.
+ */
+@Composable
+private fun ConfirmRemovalDialog(
+    name: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.active_workout_remove_confirm_title)) },
+        text = { Text(stringResource(R.string.active_workout_remove_confirm_text, name)) },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE_CONFIRM),
+            ) {
+                Text(stringResource(R.string.active_workout_remove_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE_CANCEL),
+            ) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        },
+    )
 }
 
 /**

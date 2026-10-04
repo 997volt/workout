@@ -147,7 +147,7 @@ private fun TodayPlanCard(
                 onClick = onStart,
                 modifier = Modifier
                     .padding(start = 4.dp)
-                    .testTag(TestTags.homeStartPlan(plan.id)),
+                    .testTag(TestTags.Home.startPlan(plan.id)),
             ) {
                 Text(stringResource(R.string.home_plan_start))
             }

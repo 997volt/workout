@@ -1065,4 +1065,43 @@ class WorkoutDatabaseMigrationTest {
 
         migrated.close()
     }
+
+    @Test
+    fun migration24To25_dropsTheTemplateWeekday_andKeepsWhatBelongedToIt() {
+        // ROADMAP N56: the column goes, the template stays — its name, its timestamps and every
+        // foreign key pointing at its id. A pinned plan comes out with no day at all, which is the
+        // rule being stated rather than a migration that failed.
+        helper.createDatabase(TEST_DB, 24).apply {
+            execSQL(
+                """
+                INSERT INTO templates (id, name, weekday, createdAt, updatedAt, deletedAt)
+                VALUES ('t1', 'Heavy lower', 'FRIDAY', 100, 100, NULL)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO template_exercises
+                    (id, templateId, exerciseId, position, createdAt, updatedAt, deletedAt)
+                VALUES ('te1', 't1', 'back-squat', 0, 100, 100, NULL)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 25, true, MIGRATION_24_25)
+
+        migrated.query("SELECT id, name, createdAt FROM templates").use { cursor ->
+            assertTrue("the template survived with the column", cursor.moveToFirst())
+            assertEquals("t1", cursor.getString(0))
+            assertEquals("Heavy lower", cursor.getString(1))
+            assertEquals(100L, cursor.getLong(2))
+        }
+        // The foreign key into `templates` still resolves, which is what the rebuild had to preserve.
+        migrated.query("SELECT id FROM template_exercises WHERE templateId = 't1'").use { cursor ->
+            assertTrue("the planned exercise still points at its template", cursor.moveToFirst())
+            assertEquals("te1", cursor.getString(0))
+        }
+
+        migrated.close()
+    }
 }

@@ -164,8 +164,6 @@ fun ActiveWorkoutScreen(
     onAcceptOffer: (String) -> Unit,
     onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit,
     onRemoveExercise: (String) -> Unit,
-    /** Moves one exercise one place in the session's own order (ROADMAP N54). */
-    onMoveExercise: (String, Int) -> Unit = { _, _ -> },
     onDeleteSet: (String) -> Unit,
     onUndoDelete: () -> Unit,
     onDismissUndo: () -> Unit,
@@ -182,6 +180,8 @@ fun ActiveWorkoutScreen(
     onDiscard: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Moves one exercise one place in the session's own order (ROADMAP N54). */
+    onMoveExercise: (String, Int) -> Unit = { _, _ -> },
     onToggleSuperset: (String) -> Unit = {},
     summary: WorkoutReview? = null,
     onDismissSummary: () -> Unit = {},

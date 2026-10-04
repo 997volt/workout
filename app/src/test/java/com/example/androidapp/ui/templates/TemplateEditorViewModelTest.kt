@@ -1,6 +1,5 @@
 package com.example.androidapp.ui.templates
 
-import java.time.DayOfWeek
 import com.example.androidapp.domain.model.SetType
 import kotlinx.coroutines.flow.flowOf
 import com.example.androidapp.domain.repository.TemplateSetEdit
@@ -319,10 +318,6 @@ class TemplateEditorViewModelTest {
             return DataResult.Success(Unit)
         }
 
-        override suspend fun setWeekday(
-            templateId: String,
-            weekday: DayOfWeek?,
-        ): DataResult<Unit> = error("these tests do not schedule a plan")
 
         override suspend fun deleteTemplate(templateId: String): DataResult<Unit> {
             if (failWrites) return failure()

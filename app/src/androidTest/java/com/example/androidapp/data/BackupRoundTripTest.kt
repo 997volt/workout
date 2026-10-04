@@ -414,7 +414,6 @@ class BackupRoundTripTest {
                 programId = "p1",
                 templateId = "t1",
                 position = 0,
-                weekday = DayOfWeek.MONDAY,
                 createdAt = 1L,
                 updatedAt = 1L,
                 deletedAt = null,

@@ -518,7 +518,7 @@ private fun NextUpRow(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .testTag(TestTags.homeNextUp(nextUp.plan.id))
+                .testTag(TestTags.Home.nextUp(nextUp.plan.id))
                 .clickable(onClickLabel = openLabel, onClick = onOpen),
         ) {
             Text(
@@ -547,7 +547,7 @@ private fun NextUpRow(
         )
         TextButton(
             onClick = onStart,
-            modifier = Modifier.testTag(TestTags.homeNextUpStart(nextUp.plan.id)),
+            modifier = Modifier.testTag(TestTags.Home.nextUpStart(nextUp.plan.id)),
         ) {
             Text(stringResource(R.string.home_plan_start))
         }

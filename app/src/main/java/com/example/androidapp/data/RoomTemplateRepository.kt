@@ -5,7 +5,6 @@ import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.TemplateDao
 import androidx.room.withTransaction
 import com.example.androidapp.domain.model.Rpe
-import java.time.DayOfWeek
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.TemplateSetEntity
@@ -125,16 +124,6 @@ class RoomTemplateRepository @Inject constructor(
             if (dao.rename(id = templateId, name = requireName(name), at = timeSource.nowEpochMillis()) == 0) {
                 throw NotFoundException("template $templateId")
             }
-        }
-
-    override suspend fun setWeekday(templateId: String, weekday: DayOfWeek?): DataResult<Unit> =
-        dataResultOf {
-            val updated = dao.setWeekday(
-                id = templateId,
-                weekday = weekday,
-                at = timeSource.nowEpochMillis(),
-            )
-            if (updated == 0) throw NotFoundException("template $templateId")
         }
 
     override suspend fun deleteTemplate(templateId: String): DataResult<Unit> = dataResultOf {

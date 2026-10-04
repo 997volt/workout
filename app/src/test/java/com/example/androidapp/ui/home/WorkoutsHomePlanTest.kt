@@ -3,7 +3,6 @@ package com.example.androidapp.ui.home
 import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
-import com.example.androidapp.domain.model.WorkoutTemplate
 import com.google.common.truth.Truth.assertThat
 import java.time.DayOfWeek
 import org.junit.Test
@@ -35,9 +34,6 @@ class WorkoutsHomePlanTest {
         exerciseCount = position + 1,
     )
 
-    private fun pinned(id: String, weekday: DayOfWeek?) =
-        WorkoutTemplate(id = id, name = "Plan $id", exerciseCount = 3, weekday = weekday)
-
     @Test
     fun withAProgramActive_theSlotsDayIsThePlan_inProgramOrder() {
         val slots = listOf(
@@ -46,7 +42,7 @@ class WorkoutsHomePlanTest {
             slot("s3", DayOfWeek.MONDAY, position = 2, templateId = "t3"),
         )
 
-        val plan = todaysPlanFor(listOf(program), slots, templates = emptyList(), day = DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(listOf(program), slots, day = DayOfWeek.FRIDAY)
 
         assertThat(plan.map { it.id }).containsExactly("s1", "s2").inOrder()
         assertThat(plan.map { it.templateId }).containsExactly("t1", "t2").inOrder()
@@ -61,7 +57,7 @@ class WorkoutsHomePlanTest {
             slot("s2", DayOfWeek.FRIDAY, position = 1, templateId = "t1"),
         )
 
-        val plan = todaysPlanFor(listOf(program), slots, emptyList(), DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(listOf(program), slots, DayOfWeek.FRIDAY)
 
         assertThat(plan.map { it.id }).containsExactly("s1", "s2")
         assertThat(plan.map { it.templateId }).containsExactly("t1", "t1")
@@ -77,34 +73,30 @@ class WorkoutsHomePlanTest {
             slot("a0", DayOfWeek.FRIDAY, position = 0, templateId = "ta0", programId = "p1"),
         )
 
-        val plan = todaysPlanFor(listOf(program, second), slots, emptyList(), DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(listOf(program, second), slots, DayOfWeek.FRIDAY)
 
         assertThat(plan.map { it.id }).containsExactly("a0", "a1", "b1").inOrder()
     }
 
     @Test
-    fun withAProgramActive_aDayItSchedulesNothing_isRest_notThePins() {
+    fun aDayNoProgramSchedules_isRest_ratherThanAFallback() {
+        // N56 left this as the only branch: with nothing scheduled the list is empty, and the screen
+        // says so rather than reaching for a template's old pin.
         val slots = listOf(slot("s1", DayOfWeek.MONDAY, position = 0, templateId = "t1"))
-        val pins = listOf(pinned("pin", DayOfWeek.FRIDAY))
 
-        val plan = todaysPlanFor(listOf(program), slots, pins, DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(listOf(program), slots, DayOfWeek.FRIDAY)
 
         assertThat(plan).isEmpty()
     }
 
     @Test
-    fun withNoProgramActive_thePinsAreThePlan() {
-        val pins = listOf(
-            pinned("a", DayOfWeek.FRIDAY),
-            pinned("b", DayOfWeek.MONDAY),
-            pinned("c", DayOfWeek.FRIDAY),
-        )
+    fun withNoProgramActive_thereIsNoDatedPlan() {
+        // The rule N56 states: a day is a scheduling fact, and scheduling is what a program is for.
+        val slots = listOf(slot("s1", DayOfWeek.FRIDAY, position = 0, templateId = "t1"))
 
-        val plan = todaysPlanFor(programs = emptyList(), slots = emptyList(), templates = pins, day = DayOfWeek.FRIDAY)
+        val plan = todaysPlanFor(programs = emptyList(), slots = slots, day = DayOfWeek.FRIDAY)
 
-        assertThat(plan.map { it.id }).containsExactly("a", "c")
-        // A pinned plan starts itself, so the row's own id is also its template.
-        assertThat(plan.map { it.templateId }).containsExactly("a", "c")
+        assertThat(plan).isEmpty()
     }
 
     @Test

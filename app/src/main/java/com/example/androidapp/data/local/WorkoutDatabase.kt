@@ -32,7 +32,7 @@ import androidx.room.TypeConverters
         ProgramDeloadEntity::class,
         ProgramSubstitutionEntity::class,
     ],
-    version = 24,
+    version = 25,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

@@ -13,7 +13,6 @@ import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.SlotSetEdit
 import kotlinx.coroutines.flow.asStateFlow
 import com.example.androidapp.domain.repository.SettingsRepository
-import java.time.DayOfWeek
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -40,6 +39,7 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import java.io.IOException
+import java.time.DayOfWeek
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -1651,11 +1651,6 @@ class ActiveWorkoutViewModelTest {
         override suspend fun createTemplate(name: String): DataResult<String> = notUsed()
         override suspend fun renameTemplate(templateId: String, name: String): DataResult<Unit> =
             notUsed()
-
-        override suspend fun setWeekday(
-            templateId: String,
-            weekday: DayOfWeek?,
-        ): DataResult<Unit> = error("these tests do not schedule a plan")
 
         override suspend fun deleteTemplate(templateId: String): DataResult<Unit> = notUsed()
         override suspend fun addExercise(templateId: String, exerciseId: String): DataResult<Unit> =

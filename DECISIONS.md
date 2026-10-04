@@ -78,8 +78,20 @@ the rule; that one argues it.
 
 - **A scheduled plan is a living template, not a dated instance** (N16). Dated instances
   would add a plan-per-date entity, plan generation and skipped-week handling for a
-  comparison the logged sets already allow; several plans may share a day.
+  comparison the logged sets already allow; several plans may share a day. Its *scheduled thing* is a
+  program's slot, and the template's own weekday pin is gone (N56) — a template has no order, no
+  next-up and no adherence to belong to, so the day lives where the schedule does.
   ([evidence](DECISIONS-EVIDENCE.md#n16))
+- **A day is a scheduling fact, and a template carries none** (N56). The N16 pin was the weaker of two
+  places answering "what am I doing on Tuesday", so it goes with its column, the `setWeekday` path
+  through DAO, repository and editor, and the `pinnedFor` fallback. A program's slots are the only
+  source of a dated plan; with no active program there is then **no *Today* list**, which is the point
+  rather than a regression. The backup DTO's `weekday` goes with the column rather than staying for
+  older files' sake: the codec already ignores keys this build does not know, so a file written before
+  the change still decodes and the pin is simply not read. The loss is accepted rather than mitigated —
+  a template pinned to a day comes out of the migration with no day, and getting the schedule back
+  means putting it in a program, which is the rule being stated.
+  ([evidence](DECISIONS-EVIDENCE.md#n56))
 - **Looking at a planned workout and starting it are two gestures** (N55). A program's next-up row is
   the one place a workout can be seen before it is begun, and it used to offer only the start. The row
   moves to the bottom bar — the edge of the screen the thumb is already at, and off the list it shared

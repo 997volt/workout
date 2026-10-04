@@ -712,6 +712,41 @@ ratio is absent, and the screen says which of the two absences it is.
 is a pure function over them, so the arithmetic worth arguing about is a JVM test rather than a
 device one.
 
+## N56
+
+The pin was a decent answer to a question the app has since answered better. N16 added it when a
+template was the only thing that could be scheduled: *Today* meant "the plans that name this weekday",
+and with no program in the picture that was the whole schedule. P3.3 then introduced the program and
+P3.12 allowed more than one, so a day gained an owner that has an order, a next-up and an adherence —
+and the template's own pin became the fallback branch of `todaysPlanFor`, reached only when nothing was
+active. A fallback that answers a scheduling question with a non-scheduling object is the definition of
+the weaker copy, and the roadmap's own rule ("a day is a scheduling fact, and scheduling is what a
+program is for") is the argument for deleting it rather than keeping both.
+
+**What "no *Today* list" means.** With no active program, home shows the recent workouts and no
+scheduled section. That is a visible behaviour change and it is the intended one: before, a user with a
+pinned template saw it under *Today*, and after the change they see nothing until they put it in a
+program. The alternative — keeping the pins as a fallback "so nothing is lost" — was rejected because
+it is exactly the second answer this change exists to remove, and because it would leave two code paths
+deciding what Tuesday is. The accepted cost is stated in the changelog rather than hidden behind a
+migration that tries to invent the schedule back.
+
+**The column goes, and the migration rebuilds the table.** SQLite has supported `DROP COLUMN` since
+3.35 and Room's bundled version is newer, but the rebuild is what the other table-shaped migrations
+here do and it states the surviving columns explicitly: `id`, `name`, `createdAt`, `updatedAt`,
+`deletedAt`. The rows keep their `id`, so every foreign key into `templates` — `template_exercises`,
+`program_slots`, `program_substitutions` — still resolves, and the migration test asserts the planned
+exercise still points at its template after the upgrade. Dropping a column ahead of the code that
+stops reading it is what the project's own migration rule forbids; here the code and the migration
+ship together, and nothing reads `weekday` afterwards.
+
+**The backup DTO's field goes with it.** The two candidates were keeping `weekday` in `TemplateDto` so
+older *and newer* files could carry a pin the app ignores, or deleting it with the column. Keeping it
+was rejected: an exported file is a statement about this app's data, and a field no version reads is a
+promise the format cannot keep. `BackupCodec` already sets `ignoreUnknownKeys` (for a file from a newer
+build), so a file written before the change decodes with the pin skipped — which is the same thing the
+column removal does to the database — and the codec test now asserts exactly that.
+
 ## N55
 
 The row's two jobs were fused into one control: the card's only action was *Start*, so the only way to

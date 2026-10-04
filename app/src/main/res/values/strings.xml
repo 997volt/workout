@@ -84,7 +84,6 @@
     <string name="active_workout_discard_program">It was started from a program, so leaving it unfinished counts as a missed session.</string>
     <string name="active_workout_empty">No exercises yet</string>
     <string name="active_workout_empty_hint">Add your first exercise to start tracking this workout.</string>
-    <string name="active_workout_remove">Remove %1$s</string>
     <!-- One exercise's rare actions live behind its own overflow (ROADMAP N53): the content
          description names the exercise the menu belongs to, and the entry names the action. -->
     <string name="active_workout_exercise_more">%1$s actions</string>
@@ -309,7 +308,6 @@
     <string name="weekday_saturday">Saturday</string>
     <string name="weekday_sunday">Sunday</string>
     <string name="template_weekday">Training day</string>
-    <string name="template_weekday_none">Not scheduled</string>
     <!-- The trends screen (ROADMAP N13): what the app collected, read back. -->
     <!-- The workout's own comment, asked once on Finish (ROADMAP N11). -->
     <string name="workout_note_title">How did it go?</string>

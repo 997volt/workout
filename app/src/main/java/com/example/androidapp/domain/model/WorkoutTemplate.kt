@@ -1,25 +1,20 @@
 package com.example.androidapp.domain.model
 
-import java.time.DayOfWeek
-
 /**
  * A named, reusable workout (ROADMAP N3): a name and an ordered list of exercises,
  * started in one tap.
  *
  * [exerciseCount] is carried on the list rather than derived from [TemplateExercise]s
  * so the list screen can show "5 exercises" without loading the join table.
+ *
+ * It carries **no weekday** (ROADMAP N56). The N16 pin lived here and was the weaker of two places
+ * answering "what am I doing on Tuesday": a template has no order, no next-up and no adherence to
+ * belong to. The day belongs to a program's slot, and the column went with the field in v25.
  */
 data class WorkoutTemplate(
     val id: String,
     val name: String,
     val exerciseCount: Int = 0,
-    /**
-     * The weekday this plan belongs to, or null when it is not scheduled (ROADMAP N16).
-     *
-     * A *living* template rather than a dated instance: editing this plan changes every
-     * future occurrence of its day, and what was performed is the record.
-     */
-    val weekday: DayOfWeek? = null,
 )
 
 /**

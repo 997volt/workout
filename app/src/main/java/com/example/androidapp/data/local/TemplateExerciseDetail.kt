@@ -1,6 +1,5 @@
 package com.example.androidapp.data.local
 
-import java.time.DayOfWeek
 
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
@@ -65,5 +64,4 @@ data class TemplateSummaryRow(
     val id: String,
     val name: String,
     val exerciseCount: Int,
-    val weekday: DayOfWeek?,
 )

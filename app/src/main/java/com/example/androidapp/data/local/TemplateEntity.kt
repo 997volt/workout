@@ -1,7 +1,5 @@
 package com.example.androidapp.data.local
 
-import java.time.DayOfWeek
-
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -19,14 +17,10 @@ import androidx.room.PrimaryKey
 data class TemplateEntity(
     @PrimaryKey val id: String,
     val name: String,
-    /**
-     * The weekday this plan belongs to, or null for an unscheduled one (ROADMAP N16).
-     *
-     * Stored by name like every other enum: reordering `DayOfWeek` could never
-     * reinterpret a row, and a name is what a person reading the database expects.
-     * Several templates may share a day.
-     */
-    val weekday: DayOfWeek? = null,
+    // A template carries no weekday (ROADMAP N56). The pin lived here from N16, and it was the weaker
+    // of two places answering "what am I doing on Tuesday" — a template has no order, no next-up and
+    // no adherence to belong to. The day belongs to a program's slot, and the column was dropped in
+    // v25 rather than left unread.
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

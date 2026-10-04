@@ -559,6 +559,38 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
 }
 
 /**
+ * v24 -> v25: a template loses the weekday pin (ROADMAP N56).
+ *
+ * The pin was the weaker of two places answering "what am I doing on Tuesday" — a template has no
+ * order, no next-up and no adherence to belong to — so a program's slots are the only source of a
+ * dated plan now. The loss is accepted rather than mitigated: a template pinned to a day today comes
+ * out of this with no day at all, and getting the schedule back means putting it in a program, which
+ * is the rule being stated rather than a migration that failed.
+ *
+ * **The table is rebuilt rather than `ALTER TABLE ... DROP COLUMN`ed.** SQLite has supported the drop
+ * since 3.35 and Room's bundled version is newer, but the rebuild is what Room's own schema validation
+ * compares against and what the other table-shaped migrations here do; and the copy states the
+ * surviving columns explicitly, so a template's name and its timestamps cannot be silently reshaped by
+ * the change. The `id` is the primary key and the rows keep it, so every foreign key into `templates`
+ * (`template_exercises`, `program_slots`, `program_substitutions`) still resolves.
+ */
+val MIGRATION_24_25 = object : Migration(24, 25) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `templates_new` (" +
+                "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, " +
+                "`updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "INSERT INTO `templates_new` (`id`, `name`, `createdAt`, `updatedAt`, `deletedAt`) " +
+                "SELECT `id`, `name`, `createdAt`, `updatedAt`, `deletedAt` FROM `templates`",
+        )
+        db.execSQL("DROP TABLE `templates`")
+        db.execSQL("ALTER TABLE `templates_new` RENAME TO `templates`")
+    }
+}
+
+/**
  * v23 -> v24: the workouts that stood in for a slot's own, one week at a time (ROADMAP P3.11).
  *
  * One new table. A program with no substitution gets no rows, which is exactly the state it was
@@ -708,4 +740,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_21_22,
     MIGRATION_22_23,
     MIGRATION_23_24,
+    MIGRATION_24_25,
 )
