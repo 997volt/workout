@@ -25,16 +25,23 @@ lives, *Later* for what is self-contained and *Parked* for what is a product in 
 
 ### The active workout's look
 
-- **N49 — the Log set button and the screen's links are re-coloured against the one theme.** *Log set* is
-  a `FilledTonalButton`, and on the dark page it reads as the loudest thing on a screen where it is only
-  the next step; the clickable text beside and above it — *Done*, *Reopen*, *Use suggestion* — sits at the
-  other end, too dim to read as tappable. The complaint is the pair, so both move: the log action to a
-  quieter container than the primary pill, the links to a contrast that can be read without hunting.
-  *Superset with above* is deliberately absent from that list: N53 moves it into the exercise's overflow
-  menu, so what it looks like afterwards is a menu item's colour and belongs to that change, not this one.
-  Rejected: restyling only one of the two, which would move the imbalance rather than settle it, and
-  editing the palette itself, because the palette is the app's and the defect is which token these controls
-  reach for.
+- **N49 — the Log set button and the screen's links are re-coloured by replacing the palette entries they
+  read.** *Log set* is a `FilledTonalButton` whose container is the palette's `secondaryContainer` (Teal):
+  against the near-black page that is the loudest thing on the screen while being only the next step (6.8:1
+  against the page), and its label is worse than the problem — `onSecondaryContainer` is white, and white on
+  Teal measures 2.9:1. The links are the opposite end: a `TextButton` draws in `primary` (Indigo), which
+  measures 4.07:1 against the page and 3.77:1 on a raised card — under the 4.5:1 that body-size text needs.
+  Both entries are **replaced in the palette**, not worked around by pointing the two call sites at another
+  existing token: the palette is where the colour is wrong, and a patch at the call site leaves the next
+  control that reads the same role wrong again. `secondary` and `TileAccent.Teal` are separate entries and
+  stay as they are, so the category colour does not move with the button. *Superset with above* is not among
+  the links this entry touches: N53 turns it into an overflow menu entry, so its colour is that change's to
+  answer for. Two constraints on the replacement: `secondaryContainer` is also the rest timer's surface, so
+  a quieter container moves that bar too (its label is white on the same Teal, the same 2.9:1), and
+  `primary` is the app's own colour — the Start pill, the selected tab, the charts — so if the violet stays
+  for filled surfaces, the links get a role of their own rather than `primary` being redefined under the
+  pill. The complaint is the pair, so both move, and the contrast is asserted rather than eyeballed, the way
+  `TileAccent.onColor` already is (B55).
 
 ### Logging a set
 
