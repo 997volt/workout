@@ -17,41 +17,79 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Nothing.** The batch that stood here — the palette's two roles and the end of an exercise's plan
-(N49, N52), logging through the editor (N51), an exercise's own menu (N53), its order during a session
-(N54), *Next up* in the bottom bar (N55), the template's weekday going to the program (N56), and the
-weekday and template name in history (N57, N58) — is built, and each entry is in
-[CHANGELOG.md](CHANGELOG.md). A candidate graduates to this section — gaining an id and a spelled-out
-decision rather than a wish — when it is picked up, so what stands here is committed work; the two
-queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what is a
-product in its own right.
+One batch, taken from using the app: what a session records about the body it was trained with, and what
+the app says when an exercise is done. A candidate graduates to this section — gaining an id and a
+spelled-out decision rather than a wish — when it is picked up, so what stands here is committed work;
+the two queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what
+is a product in its own right.
+
+### What the body reported
+
+- **N62 — the readiness note grows a sore-muscle list, each muscle with its own score.** The note (N4)
+  stays what it is — one free-text line for what a list cannot say, "slept badly", "travel day" — and the
+  soreness is a *structured* addition beside it rather than a second prose box: the lifter picks from the
+  taxonomy's own
+  [`MuscleGroup`](app/src/main/java/com/example/androidapp/domain/model/ExerciseTaxonomy.kt) (the named
+  groups; `OTHER` is the "not specified" value and is not offered), and each picked muscle carries a score
+  on the existing
+  [`TenPointScale`](app/src/main/java/com/example/androidapp/domain/model/TenPointScale.kt), because
+  "quads 8, calves 3" is the fact and one number for the whole body is not. Several muscles, several
+  scores, added and removed one at a time. It is stored as rows keyed to the session rather than a
+  serialized column, so one muscle's score can be read on its own later — the shape the per-exercise
+  ratings already use — which means a migration numbered as it ships and the new rows joining the backup
+  codec in the same change (N24's rule), with the readiness block in history (N4) rendering the list. A
+  blank pick and a skipped prompt still write nothing.
+
+- **N63 — the joint location is picked, not typed: more than one joint, left and right apart.** N9 made
+  "which joints" free text on the argument that it is not a set of values the app can check; that was
+  right for a note and wrong for a fact the charts are asked about, so the box becomes a pick from the
+  body's joints — shoulder, elbow, wrist, hip, knee, ankle, and the central neck and lower back — with
+  **left and right as separate entries** for the paired ones, because "knee 6" is half a sentence. More
+  than one at a time, and each picked joint carries its own pain score on the same shape as N62's
+  soreness list: one picked-list-of-sites-with-a-score component, extracted at this second caller rather
+  than built twice. What this owes the rest of the app: the joint-pain trend reads one number per exercise
+  today, so it reads the **worst** joint that session rather than an average of two sides, and a session
+  rated before the change keeps reading the free text it wrote — history is not rewritten, and free text
+  is not parsed into structure it never had. The single *Joint pain (1–10)* field and its note box go, the
+  migration is numbered as it ships, and the new rows join the backup codec.
+
+### What the app says when an exercise is done
+
+- **N50 — the app's progression comes back as a decision at *Done*, earned by the plan and its target
+  RPE.** N59 withdrew the offer rather than the question: the next set's values are now fields the lifter
+  reads and edits, so a chip beside them had nothing to add. What it left was *where* a proposal could
+  live and *what* would earn one, and this is both. *Done* (N7) stops opening *How did that feel?* first:
+  it opens a **progression prompt** that states what the plan asked and what was done and — when it was
+  earned — offers the next step as the lifter's choice: **a load increase** (the smallest loadable step,
+  [`DEFAULT_PROGRESSION_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/model/ProgressionSuggestion.kt))
+  **or a rep**, with doing neither equally available. The rating is not lost: the prompt carries a *How did
+  that feel?* action into the dialog N8 already ships, and the inline rating row (N10) stays where it is.
+  **Earned** means the exercise came from a plan — a template's planned set or a program slot's
+  prescription, both of which carry `targetRpeHalves` — and every prescribed working set was performed
+  with its reps met at an RPE **at or under** the target, so the plan was fulfilled with room in hand;
+  warm-ups are excluded (N17, N20, N22), and a session with no recorded RPE or no target RPE suggests
+  nothing rather than guessing. **The accepted step is written to the plan**, not to the session that just
+  happened — the slot's prescription for a program start (P3.8), so it stays per slot, and the
+  template's planned set for a direct one — because the plan is what the next run reads and N16 already
+  makes a template living. Reading the slot's *history* (P3.8's extension of N22) goes with the rule it
+  extended. Rejected: a
+  stored "next target" on the session, which is the forward view N16 removed; and restoring N22's rule,
+  which computed from the plan's rep ceiling alone and offered itself beside the next set, where this one
+  is conditioned on the session's own effort and waits to be asked. It suggests, and it never writes.
 
 ## Later (still self-contained)
 
-One candidate waits here with an id rather than as a bullet: the *one more rep than last time* rework
-(N50). It was put back while the batch was still settling the machinery it touches, and N59 has since
-withdrawn the offer it described along with the rule that computed it — so what is left is a proposal to
-design rather than a wording to adjust. Everything else that stood here has shipped — the defects found in use, the
-workout screen's discard, the workouts tab cut back, repeat-last in History, Settings' data section and
-rest-timer switch, a rest of zero, the planned-set prefill, the program document, and the eight defects a
-review of that batch found and closed (B51-B58) — each with its entry in
-[CHANGELOG.md](CHANGELOG.md). A candidate graduates to *Next* — gaining an id and a spelled-out
-decision — when it is picked up, so this queue is where unplanned work waits, and *Parked* below
-is where deliberate non-work lives.
+Everything that stood here has shipped — the defects found in use, the workout screen's discard, the
+workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch, a rest of
+zero, the planned-set prefill, the program document, and the eight defects a review of that batch found
+and closed (B51-B58) — each with its entry in [CHANGELOG.md](CHANGELOG.md). A candidate graduates to
+*Next* — gaining an id and a spelled-out decision — when it is picked up, so this queue is where
+unplanned work waits, and *Parked* below is where deliberate non-work lives.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what
 they named that is not a feature is a settled decision: no dated instances (N16), nothing
 automatic (the app states what happened; it never writes what it decided), a weekday-less slot that is never missed
 and is order-only, and more than one active program, which P3.12 allowed.
-
-### The proposal to progress
-
-- **N50 — "one more rep than last time" is reworked.** The proposal and the sentence that carried it
-  (N22, N33) are gone: N59 withdrew the offer, its *Use it* link and the double-progression rule behind
-  it, because the next set's values are now fields the lifter reads and edits before committing. What
-  the app should propose instead — a number beside those fields, a chip, nothing at all — is
-  deliberately not decided here and is spelled out when this is picked up; what is committed now is that
-  the withdrawn shape is not the one to restore.
 
 ### One request from use
 
