@@ -19,11 +19,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 One batch, taken from using the app rather than from either queue: the tab that starts a session, the
 screen one runs on, how a set is written from it, where a weekday lives, and what history shows. A
-candidate
-graduates to this section — gaining an id and a spelled-out
-decision rather than a wish — when it is picked up, so what stands here is committed work; the two
-queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what is a
-product in its own right.
+candidate graduates to this section — gaining an id and a spelled-out decision rather than a wish —
+when it is picked up, so what stands here is committed work; the two queues below are where the rest
+lives, *Later* for what is self-contained and *Parked* for what is a product in its own right.
 
 ### The active workout's look
 
