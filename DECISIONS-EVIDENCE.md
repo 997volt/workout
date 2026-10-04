@@ -914,6 +914,40 @@ Retiring B7 for this one control is deliberate rather than an oversight. B7's ow
 set may differ from the plan, never from the button"; the second half exists so that display and
 storage cannot disagree. With the dialog as the display, they still cannot.
 
+**Superseded by [N59](#n59).** The dialog-as-display kept display and storage in agreement, but it put
+a confirmation between every set and made the button mute about what it would write. N59 draws the same
+values on the screen the lifter is already reading, which is the display and storage agreeing *before*
+the write rather than at it.
+
+## N59
+
+The problem N51 solved was real — a set that differed from the prefill was written first and corrected
+afterwards, so the user paid the dialog anyway and paid it on top of a wrong row. The shape it chose
+paid for that with a step between every set, and with a button that could no longer say what it wrote:
+the label went from "Log set · 100 kg × 5" to "Log set", and the values moved into a dialog nobody sees
+until they open it. N51's own evidence named that cost — "the label becomes 'Log set'" — and accepted
+it because the alternative was a control that decided for the lifter. There was a third shape.
+
+Putting the values on the workout screen as fields reconciles both: they are visible and editable
+before anything is committed, so the write states what the lifter read, and the button beside them
+carries no values because the fields *are* the values. B7's rule is restored rather than retired, and
+the editor keeps its other job — correcting a set that already exists, which is the case N51's dialog
+was originally built for.
+
+What this costs is screen space: every open exercise now carries a role picker, two steppers and an
+RPE field, where before it carried one button. That was accepted deliberately, because the values are
+what the lifter is deciding about at that moment, and the alternative — a compact summary that opens
+into fields — hides them behind the same tap the dialog did.
+
+The offer (N33) went with the dialog, and that is the part worth arguing rather than assuming. It was
+built on the premise that a proposal which *is* the prefill is a suggestion only until the next tap
+commits it. With visible, editable fields that premise no longer holds in the same way: the prefill is
+read before it is committed, so a proposal folded into it is not silently committed — but it is also no
+longer a *proposal*, because nothing distinguishes the app's arithmetic from last time's numbers. Since
+a proposal with no way to tell it apart from history is not a proposal, and ROADMAP N50 owns reworking
+what the app should suggest, the honest move was to withdraw it rather than keep a rule nothing calls.
+Its tests went with it; the loadable step it shared with the warm-up ramp (N28) stayed.
+
 ## Truth, Turbine
 
 New and touched tests assert with Truth, and assert Flow sequences with Turbine.

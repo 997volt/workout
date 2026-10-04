@@ -124,17 +124,16 @@ the rule; that one argues it.
   a moved exercise would otherwise read its new neighbour's targets and its neighbour's count for
   whether the planned work is done (N52).
   ([evidence](DECISIONS-EVIDENCE.md#n54))
-- **Logging a set is the set editor, prefilled and committed on Save** (N51, amending D3 and B7).
-  The one-tap path wrote the set the button described and left a set that differed from the prefill to
-  be edited afterwards — the same `SetEditorDialog`, one step later, with the first step having decided
-  something the user did not mean. So the button no longer writes the set its label describes, because
-  the label no longer describes one: it carries no values, and the dialog the edit path already opens is
-  where the set is stated. B7's rule is not contradicted but retired for this button — the display and
-  the storage still agree, because the display is now the dialog. The role picker (N19) moved with it,
-  so arming a warm-up is still one decision made before the write, and N19's "clears itself" holds: the
-  dialog opens on the plan's next unlogged role (B48) and a write re-arms it. The cost accepted is one
-  extra confirmation between sets; what it buys is that a set is written once, as stated.
-  ([evidence](DECISIONS-EVIDENCE.md#n51))
+- **The next set is stated on the workout screen, and *Log set* writes what is on it** (N59, superseding
+  N51 and restoring B7 for this path). N51 put the set editor in front of every set so that a set
+  differing from the prefill was corrected before it was written; the cost was a dialog between every
+  set and a button whose label could not describe what it wrote. The values the plan and history
+  prefill are now the exercise block's own fields — weight, reps, RPE and the role picker — so they are
+  read and changed before anything is committed, the button beside them carries no values because the
+  fields beside it *are* the values, and the editor is what correcting an already-logged set still
+  opens. N19's role picker moved out of the dialog rather than away: it is still one set's decision
+  made before the write, and it still clears itself, because the fields are keyed on the logged-set
+  count and re-arm from the plan's next unlogged set (B48). ([evidence](DECISIONS-EVIDENCE.md#n59))
 - **An exercise's rare actions live behind its own overflow, and what cannot be done is not offered**
   (N53). *Superset with above* was a text link in every exercise header and *Delete* an icon beside
   *Done*; both are rarely used, and the header is read constantly mid-session, so the two of them cost
@@ -148,8 +147,9 @@ the rule; that one argues it.
   `comparePlanToActual` said so only in the review, after *Finish*. The plan is the template the
   workout was started from, so the moment its last set is written *Log set* becomes **Log extra set**
   beside a notice. Nothing closes — logging another set is still what the control does, and ending the
-  exercise is the **Done** already in its header (N7) — because N51 has already put a dialog in front
-  of every set, and a second one would interrupt the next exercise's first set. The rule is "no plan
+  exercise is the **Done** already in its header (N7) — because the extra set is stated by the same
+  fields as any other, and a modal would interrupt the next exercise's first set for something the
+  lifter may simply read and walk past. The rule is "no plan
   never says done": an empty workout, or an exercise added by hand, has no plan to have finished, which
   is why the count is null rather than zero, and why it is read from the plan the session was seeded
   from rather than from whatever the row now sits beside (N54).
@@ -177,10 +177,11 @@ the rule; that one argues it.
   control is deleted on sight. The backlog's size is deliberately not recorded: it drifts.
   ([evidence](DECISIONS-EVIDENCE.md#d4))
 
-- **The role for the next set is armed in the logging dialog, and clears itself** (N19, moved by
-  N51). The picker used to sit beside the button that wrote the set in one tap; with logging *being*
-  the dialog, the same choice is made inside it, before the write — so N19's rule (a role is a decision
-  about one set, and nothing lingers past it) survives the move unchanged. The pending-role-per-exercise
+- **The role for the next set is armed in the fields that state it, and clears itself** (N19, moved by
+  N51 and again by N59). The picker used to sit beside the button that wrote the set in one tap; with
+  logging stated by the next set's own fields, the same choice is made among them, before the write —
+  so N19's rule (a role is a decision about one set, and nothing lingers past it) survives the move
+  unchanged. The pending-role-per-exercise
   alternative stays rejected for the same reason it was: it makes transient UI state part of a
   database-driven flow, and a composable holding the armed role is smaller than a store would be.
   ([evidence](DECISIONS-EVIDENCE.md#n19))
@@ -220,14 +221,18 @@ the rule; that one argues it.
   outside 5–3600 seconds as `DataError.Invalid`. (It used to argue from the value becoming an
   alarm; the alert is gone with N26, and the bounds are still right.)
 
-- **Progression is double progression, and it only ever suggests** (N22). Add reps to the
-  plan's rep ceiling, then the smallest loadable step (2.5 kg) and start the range again;
+- **Progression was double progression, and it only ever suggested** (N22, withdrawn by N59). Add reps
+  to the plan's rep ceiling, then the smallest loadable step (2.5 kg) and start the range again;
   a percentage rule needs a true one-rep max this app estimates rather than measures, and
   a linear weekly add ignores missed sessions. Assisted work inverts the direction, and
-  with no plan there is no ceiling. ([evidence](DECISIONS-EVIDENCE.md#n22))
-- **A suggestion carries its reason, and null means "nothing to explain"** (N22). Only the
-  three progression reasons draw a line; a line on a plain prefill would train the user to
-  ignore the line that matters. ([evidence](DECISIONS-EVIDENCE.md#n22))
+  with no plan there is no ceiling. **Withdrawn**: N59 states the next set on the screen and leaves the
+  step to the lifter, so nothing computes a progression any more, and ROADMAP N50 owns what the app
+  should propose instead. ([evidence](DECISIONS-EVIDENCE.md#n22))
+- **A suggestion carried its reason, and null meant "nothing to explain"** (N22, withdrawn by N59).
+  Only the three progression reasons drew a line; a line on a plain prefill would have trained the user
+  to ignore the line that mattered. With the offer withdrawn the lines are gone: nothing on the screen
+  is explained, because nothing on it was chosen by the app.
+  ([evidence](DECISIONS-EVIDENCE.md#n22))
 - **The app suggests; it never writes.** A silently applied suggestion is a programme
   decision taken without the person training, and this app is a log, not a coach.
 - **Warm-ups are excluded from progression too** (N17, N20, N22) — a warm-up is not the
@@ -279,10 +284,12 @@ the rule; that one argues it.
   indistinguishable from a measurement and draws a flat line through a site nobody
   measured.
 
-- **One tap logs what happened; the app's idea of what should happen is an offer** (N33).
-  Prefill and progression proposal are separate fields, so a suggestion is not committed by
-  the next tap; the rule is global, not program-only, because how a workout was started
-  says nothing about whether its lifter progresses by hand.
+- **One tap logs what happened; the app's idea of what should happen was an offer** (N33, withdrawn by
+  N59). Prefill and progression proposal were separate fields, so a suggestion was not committed by
+  the next tap; the rule was global, not program-only, because how a workout was started
+  says nothing about whether its lifter progresses by hand. **Withdrawn**: N59 makes the next set's
+  values fields the lifter reads and changes before committing, so a separate proposal had nothing left
+  to add and there was no button left to accept one on.
   ([evidence](DECISIONS-EVIDENCE.md#n33))
 
 - **CI runs nightly and before a release, not on every push** (N30). The emulator is the

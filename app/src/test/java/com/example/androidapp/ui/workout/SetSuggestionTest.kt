@@ -2,7 +2,6 @@ package com.example.androidapp.ui.workout
 
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.PreviousPerformance
-import com.example.androidapp.domain.model.ProgressionReason
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.SlotPrescription
 import com.example.androidapp.domain.model.SlotSet
@@ -165,11 +164,10 @@ class SetSuggestionTest {
     }
 
     @Test
-    fun aPlanThatNamesRepsAndNoLoad_isProgressedFromHistory() {
-        // ROADMAP B24's gap, and the N22 branch it names: a plan that says "2 reps" and no bar,
-        // with nothing logged yet this session — so the rule, not the fallback, has to decide
-        // whether that means one more rep or one more step. History says 100 kg × 2, which is the
-        // ceiling, so it is a step.
+    fun aPlanThatNamesRepsAndNoLoad_takesTheLoadFromHistory() {
+        // A plan that says "2 reps" and no bar still has to show a load, and history is the honest
+        // answer: the bar is what it was, and stepping it is the lifter's click, not the app's
+        // arithmetic (N59 withdrew the proposal N33 used to carry beside it).
         val suggestion = suggestionForNextSet(
             loggedSets = emptyList(),
             previous = PreviousPerformance(
@@ -186,17 +184,14 @@ class SetSuggestionTest {
             planned = PlannedTarget(reps = 2, weightGrams = null),
         )
 
-        // N33: the prefill is what you did last time, unchanged — the step is an offer beside it, so a
-        // lifter who progresses by hand is not undoing the app's arithmetic on every first set.
         assertEquals("last time's bar, unchanged", 100_000L, suggestion.weightGrams)
         assertEquals("at the reps the plan asked for", 2, suggestion.reps)
-        assertEquals("and the step is proposed", 102_500L, suggestion.offer?.weightGrams)
-        assertEquals(ProgressionReason.MORE_WEIGHT, suggestion.offer?.reason)
     }
 
     @Test
-    fun aPlanThatNamesRepsAndNoLoad_belowTheCeiling_addsARep() {
-        // The same branch, on the other side of the ceiling: 90 kg for 2 against a plan of 5.
+    fun aPlanThatNamesRepsAndNoLoad_keepsTheRepsThePlanAskedFor() {
+        // The same branch, on the other side of the old ceiling: 90 kg for 2 against a plan of 5.
+        // The reps are the plan's to decide and the load is history's, unchanged (N59).
         val suggestion = suggestionForNextSet(
             loggedSets = emptyList(),
             previous = PreviousPerformance(
@@ -215,10 +210,31 @@ class SetSuggestionTest {
 
         assertEquals("the same bar as last time", 90_000L, suggestion.weightGrams)
         assertEquals("the reps are the plan's to decide", 5, suggestion.reps)
-        // The proposal is a rep, and it is still only a proposal (N33).
-        assertEquals("one more rep offered, not applied", 3, suggestion.offer?.reps)
-        assertEquals(90_000L, suggestion.offer?.weightGrams)
-        assertEquals(ProgressionReason.MORE_REPS, suggestion.offer?.reason)
+    }
+
+    @Test
+    fun thePlansTargetRpe_travelsBesideTheValues() {
+        // ROADMAP N59: the plan's RPE is carried for the screen to caption, and it never becomes a
+        // value — a suggestion holds no RPE field at all, which is what keeps a prescription out of
+        // the record of how hard the set actually was.
+        val suggestion = suggestionForNextSet(
+            loggedSets = emptyList(),
+            previous = null,
+            planned = PlannedTarget(reps = 5, weightGrams = 100_000L, rpeHalves = 16),
+        )
+
+        assertEquals(16, suggestion.targetRpeHalves)
+    }
+
+    @Test
+    fun withNoPlannedRpe_thereIsNothingToCaption() {
+        val suggestion = suggestionForNextSet(
+            loggedSets = emptyList(),
+            previous = null,
+            planned = PlannedTarget(reps = 5, weightGrams = 100_000L),
+        )
+
+        assertNull(suggestion.targetRpeHalves)
     }
 
     @Test
@@ -323,6 +339,32 @@ class SetSuggestionTest {
 
         assertEquals("the slot's reps win", 3, target?.reps)
         assertEquals("the slot said nothing about the bar", 100_000L, target?.weightGrams)
+    }
+
+    @Test
+    fun aSlotsRpe_winsWhereItSpeaks_andTheTemplatesStandsWhereItDoesNot() {
+        // ROADMAP N59: the target RPE follows the same "wins where it speaks" rule as reps (N14).
+        val slotNamesOne = prescribedTargetFor(
+            prescription = SlotPrescription(
+                exerciseId = "back-squat",
+                sets = listOf(SlotSet(id = "x", setIndex = 0, targetRpeHalves = 18)),
+            ),
+            nextIndex = 0,
+            estimatedOneRepMaxGrams = null,
+            template = PlannedTarget(reps = 5, weightGrams = 100_000L, rpeHalves = 16),
+        )
+        assertEquals(18, slotNamesOne?.rpeHalves)
+
+        val slotNamesNone = prescribedTargetFor(
+            prescription = SlotPrescription(
+                exerciseId = "back-squat",
+                sets = listOf(SlotSet(id = "x", setIndex = 0, targetRepsMin = 3)),
+            ),
+            nextIndex = 0,
+            estimatedOneRepMaxGrams = null,
+            template = PlannedTarget(reps = 5, weightGrams = 100_000L, rpeHalves = 16),
+        )
+        assertEquals("the template's RPE stands where the slot is silent", 16, slotNamesNone?.rpeHalves)
     }
 
     @Test

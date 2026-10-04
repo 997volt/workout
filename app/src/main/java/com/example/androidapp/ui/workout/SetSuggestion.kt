@@ -1,10 +1,6 @@
 package com.example.androidapp.ui.workout
 
-import com.example.androidapp.domain.model.ProgressionReason
-import com.example.androidapp.domain.model.suggestProgression
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.PlannedSetSpec
-import com.example.androidapp.domain.model.PerformedSetSpec
 import com.example.androidapp.domain.model.SlotPrescription
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
@@ -13,11 +9,12 @@ import com.example.androidapp.domain.model.TemplateExercise
 import kotlin.math.roundToLong
 
 /**
- * The values a new set will be logged with, before the user adjusts them.
+ * The values the next set is shown with, before the lifter changes anything (ROADMAP N59).
  *
- * These are what one tap of **Log set** commits, so the rule for choosing them is "what did I do, or
- * what does the plan say" — never "what does the app think I should do next" (ROADMAP N33). The app's
- * proposal travels in [offer], shown and applied only when it is accepted.
+ * These are what the workout screen's **Log set** commits, so the rule for choosing them is "what did I
+ * do, or what does the plan say" — never "what does the app think I should do next" (ROADMAP N33). The
+ * fields that show them *are* the editor (N59), so there is nothing separate to accept: what is on
+ * screen is what is written, and disagreeing with it is editing a field.
  */
 data class SetSuggestion(
     val reps: Int,
@@ -31,38 +28,25 @@ data class SetSuggestion(
      * template that opens with a ramp would otherwise record its warm-ups as working sets, which
      * both inflates volume and can set a personal record against a bar nobody cleared. With no
      * plan — or a plan that names nothing for this set — the old default stands, and the picker
-     * beside the button still overrides it for the one set.
+     * beside the fields still overrides it for the one set.
      */
     val setType: SetType = SetType.NORMAL,
     /**
-     * The progression the app proposes, or null (ROADMAP N33).
+     * What the plan asks this set to feel like, in half-points, or null (ROADMAP N59).
      *
-     * Separate from the values above rather than folded into them, which is what this field exists to
-     * stop: a proposal that *is* the prefill is a suggestion only until the user notices it, because the
-     * next tap commits it. Null means there is nothing to propose — the plan already said, or there is
-     * no last time — and never "no reason", which is [SetOffer.reason]'s job.
+     * **Shown, never prefilled.** The RPE a set is logged with is a record of how hard the set
+     * actually was, so seeding that field with the plan's number would record a prescription as a
+     * measurement. It travels beside the field instead, which is what "know the planned RPE of the
+     * next one" asks for; a plan that names none leaves the field with nothing beside it.
      */
-    val offer: SetOffer? = null,
-)
-
-/**
- * A progression the app proposes, with why (ROADMAP N22, N33).
- *
- * Shown beside the set and applied only when accepted, so a lifter who progresses by hand is no longer
- * undoing the app's step on every first set.
- */
-data class SetOffer(
-    val reps: Int,
-    val weightGrams: Long,
-    val assistanceGrams: Long,
-    val reason: ProgressionReason?,
+    val targetRpeHalves: Int? = null,
 )
 
 /**
  * What a plan prescribes for one set, or nulls where it prescribes nothing
  * (ROADMAP N14).
  *
- * Both fields nullable, because a plan may say "work up to a heavy single" and mean
+ * Every field nullable, because a plan may say "work up to a heavy single" and mean
  * it: there is no weight to prefill, and a zero would be a claim.
  */
 data class PlannedTarget(
@@ -72,17 +56,18 @@ data class PlannedTarget(
     val assistanceGrams: Long? = null,
     /** The role the plan gives this set, or null when there is no plan (ROADMAP B48). */
     val role: SetType? = null,
+    /** The RPE the plan asks for, in half-points, or null (ROADMAP N59). */
+    val rpeHalves: Int? = null,
 )
 
 /**
- * Chooses what to prefill the next set with, and what to propose beside it (ROADMAP P1.3, N14, N33).
+ * Chooses what the next set is shown with (ROADMAP P1.3, N14, N59).
  *
  * **The prefill is history, not a proposal.** A plan's target for *this* set wins where it says
  * something — a ramp of 100/105/110 kg only works if the second and third sets take their numbers from
  * the plan — then what you just did in this session, then **what you did last time, unchanged**, and only
- * then a default. The app's own idea of the next step travels in [SetSuggestion.offer] and is applied
- * only when it is accepted; folding it in here is what made a suggestion into a decision, because one tap
- * committed it.
+ * then a default. The plan's RPE is the one part carried beside the values rather than in them, because
+ * it is a target for how hard the set should feel rather than a value to load.
  *
  * Pure, so the precedence is covered by fast JVM tests rather than by tapping.
  */
@@ -112,19 +97,6 @@ fun suggestionForNextSet(
     // signed weight was rejected for (ROADMAP N15).
     val plannedLoad = planned?.let { plannedLoadFor(it) }
 
-    // What to propose. A plan that names the load has already decided, so there is nothing to offer; a
-    // plan that writes reps but no load leaves the load open, and the history is what answers.
-    val proposal = when {
-        !previous.hasSets() -> null
-        planned != null && plannedLoad == null -> progressionFrom(
-            previous = previous!!,
-            target = PlannedSetSpec(role = SetType.NORMAL, minReps = null, maxReps = planned.reps),
-        )
-
-        planned == null -> progressionFrom(previous!!)
-        else -> null
-    }
-
     return SetSuggestion(
         // The upper bound is the one that matters in a written plan (`max 2`).
         reps = planned?.reps ?: prefill.reps,
@@ -133,7 +105,7 @@ fun suggestionForNextSet(
         // The armed role follows the plan, so a template's ramp is recorded as warm-ups without a
         // tap per set (B48); with no plan the pending set stays a working set.
         setType = planned?.role ?: prefill.setType,
-        offer = proposal,
+        targetRpeHalves = planned?.rpeHalves,
     )
 }
 
@@ -161,6 +133,8 @@ fun plannedTargetFor(
             assistanceGrams = set.targetAssistanceGrams,
             // A planned set's role travels with its targets, so the ramp is armed, not retyped (B48).
             role = set.role,
+            // The target RPE travels too, and is shown rather than prefilled (N59).
+            rpeHalves = set.targetRpeHalves,
         )
     }
 
@@ -220,6 +194,9 @@ fun prescribedTargetFor(
         // The slot's own role wins wherever the slot speaks at all: its sets carry the plan's
         // vocabulary and default to a working set, so there is no "left alone" to fall back for (B48).
         role = prescribed.role,
+        // The RPE follows the same "wins where it speaks" rule as reps: the slot's target where it
+        // names one, the template's otherwise (N59).
+        rpeHalves = prescribed.targetRpeHalves ?: template?.rpeHalves,
     )
 }
 
@@ -228,38 +205,6 @@ private const val MAX_PERCENT = 100
 
 /** A percentage as the fraction of the estimate it names. */
 private const val PERCENT = 100.0
-
-/** True when there is a last time worth progressing from. */
-private fun PreviousPerformance?.hasSets(): Boolean = this != null && sets.isNotEmpty()
-
-/**
- * The next step from the last session, as an offer (ROADMAP N22, N33).
- *
- * One place, because the offer is the same question in two situations: with no plan at all, and with a
- * plan that writes reps but no load.
- */
-private fun progressionFrom(
-    previous: PreviousPerformance,
-    target: PlannedSetSpec? = null,
-): SetOffer {
-    val proposed = suggestProgression(
-        lastTime = previous.sets.map {
-            PerformedSetSpec(
-                role = it.setType,
-                weightGrams = it.weightGrams,
-                assistanceGrams = it.assistanceGrams,
-                reps = it.reps,
-            )
-        },
-        target = target,
-    )
-    return SetOffer(
-        reps = proposed.reps,
-        weightGrams = proposed.weightGrams,
-        assistanceGrams = proposed.assistanceGrams,
-        reason = proposed.reason,
-    )
-}
 
 /**
  * The load a plan names, as the split the app stores.

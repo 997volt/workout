@@ -29,9 +29,9 @@ product in its own right.
 ## Later (still self-contained)
 
 One candidate waits here with an id rather than as a bullet: the *one more rep than last time* rework
-(N50). It was put back while the batch was still settling the machinery it touches, and N51 has since
-moved half of it — the offer is no longer the prefill the next tap commits — so what is left is the
-proposal's own shape and wording. Everything else that stood here has shipped — the defects found in use, the
+(N50). It was put back while the batch was still settling the machinery it touches, and N59 has since
+withdrawn the offer it described along with the rule that computed it — so what is left is a proposal to
+design rather than a wording to adjust. Everything else that stood here has shipped — the defects found in use, the
 workout screen's discard, the workouts tab cut back, repeat-last in History, Settings' data section and
 rest-timer switch, a rest of zero, the planned-set prefill, the program document, and the eight defects a
 review of that batch found and closed (B51-B58) — each with its entry in
@@ -41,64 +41,45 @@ is where deliberate non-work lives.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what
 they named that is not a feature is a settled decision: no dated instances (N16), nothing
-automatic (N22's "the app suggests; it never writes"), a weekday-less slot that is never missed
+automatic (the app states what happened; it never writes what it decided), a weekday-less slot that is never missed
 and is order-only, and more than one active program, which P3.12 allowed.
 
 ### The proposal to progress
 
-- **N50 — "one more rep than last time" is reworked.** The proposal and the sentence that carries it (N22,
-  N33) are confusing as they stand, and N51 moved the ground under them: the offer's *Use it* link now fills
-  the dialog's opening state rather than being the next tap, so the mechanism the sentence explains has
-  already changed. What the offer should say, and whether a sentence is the right way to say it, is
+- **N50 — "one more rep than last time" is reworked.** The proposal and the sentence that carried it
+  (N22, N33) are gone: N59 withdrew the offer, its *Use it* link and the double-progression rule behind
+  it, because the next set's values are now fields the lifter reads and edits before committing. What
+  the app should propose instead — a number beside those fields, a chip, nothing at all — is
   deliberately not decided here and is spelled out when this is picked up; what is committed now is that
-  the current shape does not survive it.
+  the withdrawn shape is not the one to restore.
 
-### Three requests from use
+### Two requests from use
 
 Self-contained enough for this queue, and each small enough that its decision is spelled out when it is
-picked up rather than now — so each is a wish, and gains an id when it graduates. The first one's shape
-is settled; the other two are not.
+picked up rather than now — so each is a wish, and gains an id when it graduates.
 
-- **The rest field stops explaining itself — everywhere.** The sentence under every rest field —
-  `rest_edit_hint` in [strings.xml](app/src/main/res/values/strings.xml), "Empty for the default, 0 for
-  none." — reads as noise, so it goes, and "everywhere" is the decision: off the template's field
+- **The rest field stops explaining itself, except where the exercise is edited.** The sentence under
+  every rest field — `rest_edit_hint` in [strings.xml](app/src/main/res/values/strings.xml), "Empty for
+  the default, 0 for none." — reads as noise on the template's field
   ([TemplateEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateEditorScreen.kt))
-  and equally off the exercise's ([ExerciseDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseDetailScreen.kt))
-  and a program slot's ([SlotPrescriptionDialog.kt](app/src/main/java/com/example/androidapp/ui/programs/SlotPrescriptionDialog.kt)),
-  because one string serves all three. The string goes with them, and so does the comment in
-  [RestTimer.kt](app/src/main/java/com/example/androidapp/domain/RestTimer.kt) that names it as the place
-  the rule is taught — after which "empty means the default, 0 means none" is taught by no label anywhere.
-  That consequence is the chosen shape, not a gap to fill here.
+  and on a program slot's
+  ([SlotPrescriptionDialog.kt](app/src/main/java/com/example/androidapp/ui/programs/SlotPrescriptionDialog.kt)),
+  so it comes off those two. It **stays on the exercise's own field**
+  ([ExerciseDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseDetailScreen.kt)),
+  which is where a rest is defined rather than restated, and that is the whole decision: one string under
+  three fields becomes one string under one, and the comment in
+  [RestTimer.kt](app/src/main/java/com/example/androidapp/domain/RestTimer.kt) that calls it the hint
+  under *every* rest field is updated with it.
 
 - **An exercise's own default weight change.** 2.5 kg is one global constant rather than a property of
-  the movement: [`DEFAULT_PROGRESSION_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/model/ProgressionSuggestion.kt)
-  feeds the progression suggestion and the warm-up ramp, and
-  [`Weight.DEFAULT_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/Weight.kt) steps the set
-  editor's +/− buttons, so a machine that jumps 5 kg (or 1 kg) is always edited against a step it does
-  not have. The request is a per-exercise value beside `restSeconds` and `techniqueNote` on
+  the movement: [`Weight.DEFAULT_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/Weight.kt)
+  steps the fields' +/− buttons, and
+  [`DEFAULT_PROGRESSION_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/model/ProgressionSuggestion.kt)
+  is what the warm-up ramp rounds to, so a machine that jumps 5 kg (or 1 kg) is always edited against a
+  step it does not have. The request is a per-exercise value beside `restSeconds` and `techniqueNote` on
   [Exercise.kt](app/src/main/java/com/example/androidapp/domain/model/Exercise.kt), still 2.5 kg unless
-  it is set. Whether all three callers follow it, or only the suggestion, is the decision; the value is
-  whole grams and its column is a migration numbered as it ships.
-
-- **The next set is edited on the screen, with *Log set* a button beside it — not behind it.** The workout
-  screen says one thing about the next set: a button carrying its summary (`Log set · 60 kg × 8`) that opens
-  [SetEditorDialog](app/src/main/java/com/example/androidapp/ui/components/SetEditorDialog.kt), prefilled
-  from the offer — N51's shape, where logging *is* the dialog. The request inverts it: the next set's
-  values — weight, reps, the role picker and, where the plan prescribes one, its target RPE — sit in the
-  exercise's block and are editable before anything is written, with **Log set** beside them committing
-  exactly what is on screen. That puts B7's display-agrees-with-storage back on this path and leaves the
-  editor as the way to correct a set already written, so it **amends N51** — and the three entries that
-  lean on it: N19's picker, N52's notice, and B48's role arming. The planned RPE is one of the fields
-  rather than a separate ask, and none of it reaches a session today: a template set and a slot both
-  prescribe `targetRpeHalves` ([WorkoutTemplate.kt](app/src/main/java/com/example/androidapp/domain/model/WorkoutTemplate.kt)
-  and [SlotPrescription.kt](app/src/main/java/com/example/androidapp/domain/model/SlotPrescription.kt)), and
-  the plan a workout is held against drops the field
-  ([`PlannedSetSpec`](app/src/main/java/com/example/androidapp/domain/model/PlanComparison.kt)). Decided
-  when this is picked up: whether the fields are always there or open in place; where N19's "a role is one
-  set's decision" picker lives once it is not inside a dialog; what a set shows when the plan prescribes no
-  RPE; how N33/N50's *Use it* offer reads when the value it offers is already on screen; and what N52's
-  **Log extra set** becomes. [DECISIONS.md](DECISIONS.md) is amended as part of the change, because three
-  settled entries name N51's dialog as the reason for their shape.
+  it is set. Whether the ramp follows it too, or only the steppers, is the decision; the value is whole
+  grams and its column is a migration numbered as it ships.
 
 ## Parked — deliberately not planned
 

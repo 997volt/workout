@@ -227,12 +227,6 @@ object TestTags {
     /** The record just set (ROADMAP N23). */
     const val PERSONAL_RECORD = "personal_record"
 
-    /** Why the next set is what it is (ROADMAP N22). */
-    const val SUGGESTION_REASON = "suggestion_reason"
-
-    /** Taking the app's proposal, which is the only way it becomes the prefill (ROADMAP N33). */
-    const val SUGGESTION_ACCEPT = "suggestion_accept"
-
     /** The bottom bar's five roots (ROADMAP N34). */
     const val TAB_BAR = "tab_bar"
     const val TAB_WORKOUTS = "tab_workouts"
@@ -262,7 +256,11 @@ object TestTags {
     const val SUMMARY_DIALOG = "summary_dialog"
     const val SUMMARY_DONE = "summary_done"
 
-    /** The one-tap log itself (ROADMAP N19 gave it a companion, and it needed a name). */
+    /**
+     * The button that writes the next set (ROADMAP N59).
+     *
+     * It sits beside the fields stating that set, so what it commits is what is on screen.
+     */
     const val SET_LOG = "set_log"
 
     /**

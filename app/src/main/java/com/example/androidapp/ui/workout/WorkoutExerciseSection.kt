@@ -1,7 +1,5 @@
 package com.example.androidapp.ui.workout
 
-import com.example.androidapp.domain.model.ProgressionReason
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,10 +43,15 @@ import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.ExerciseRatingDialog
 import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.SetEdit
-import com.example.androidapp.ui.components.SetEditorDialog
+import com.example.androidapp.ui.components.SetEntryDraft
+import com.example.androidapp.ui.components.SetEntryNumbers
+import com.example.androidapp.ui.components.SetRoleSelector
+import com.example.androidapp.ui.components.SetRpeField
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.restLabel
 import com.example.androidapp.ui.components.rpeMarker
+import com.example.androidapp.ui.components.toEdit
+import com.example.androidapp.ui.components.values
 import com.example.androidapp.ui.components.AppTextButton
 
 
@@ -90,7 +93,6 @@ internal fun ExerciseList(
     onReopenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (String) -> Unit = {},
-    onAcceptOffer: (String) -> Unit = {},
     /** Whether a rest is counted down, and the fallback its static label uses (ROADMAP N44). */
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
@@ -119,7 +121,6 @@ internal fun ExerciseList(
                 // comes out null and the write would rewrite every ungrouped row, churning
                 // `updatedAt` for no change (ROADMAP B28).
                 onToggleSuperset = if (index == 0) null else { { onToggleSuperset(row.id) } },
-                onAcceptOffer = { onAcceptOffer(row.id) },
                 restTimerEnabled = restTimerEnabled,
                 defaultRestSeconds = defaultRestSeconds,
             )
@@ -134,7 +135,7 @@ internal fun ExerciseList(
  *
  * ROADMAP N7 adds the third state this renders — open, or done. A done exercise
  * keeps its sets on screen, dimmed and non-editable, offers **Reopen** instead of
- * **Done**, and loses its Log set button; the wording avoids *Finish*, which is the
+ * **Done**, and loses its next-set fields; the wording avoids *Finish*, which is the
  * workout-level action.
  */
 @Composable
@@ -153,7 +154,6 @@ private fun ExerciseSection(
     onReopenExercise: () -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,
-    onAcceptOffer: (() -> Unit)? = null,
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
 ) {
@@ -201,7 +201,6 @@ private fun ExerciseSection(
             onLogSet = onLogSet,
             onEditSet = onEditSet,
             onDeleteSet = onDeleteSet,
-            onAcceptOffer = onAcceptOffer,
         )
 
         // N10: the ratings can be given while the exercise is still in front of you,
@@ -358,7 +357,7 @@ private fun ExerciseOverflow(
 
 /**
  * A done exercise's sets stay on screen, dimmed and non-editable, and it loses its
- * Log set button entirely (ROADMAP N7). Split from [ExerciseSection] so the section
+ * next-set fields entirely (ROADMAP N7). Split from [ExerciseSection] so the section
  * stays a header plus its two blocks rather than one long function.
  */
 @Composable
@@ -368,7 +367,6 @@ private fun ExerciseSets(
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
     modifier: Modifier = Modifier,
-    onAcceptOffer: (() -> Unit)? = null,
 ) {
     Column(modifier = modifier) {
         // Dimmed rather than hidden: the sets stay visible as a record of what was
@@ -384,100 +382,96 @@ private fun ExerciseSets(
             }
         }
 
-        // No Log set button once the exercise is done: that is the accident N7 exists to prevent.
+        // No next-set fields once the exercise is done: that is the accident N7 exists to prevent.
         if (!row.isFinished) {
-            row.suggestion.offer?.let { offer -> SuggestionOffer(offer = offer, onAccept = onAcceptOffer) }
-            LogSetAction(row = row, onLogSet = onLogSet)
+            NextSetEditor(row = row, onLogSet = onLogSet)
         }
     }
 }
 
 /**
- * The set the app offers next, as the logging dialog opens on it (ROADMAP N51).
+ * The next set, stated on the screen and committed by the *Log set* beside it (ROADMAP N59).
  *
- * The role is the plan's own next unlogged one (B48), carried the way reps and weight already are,
- * so a template that opens with a ramp is logged as warm-ups rather than as working sets. The
- * resting value lives here rather than on the dialog so it re-arms from the plan the moment a set is
- * written: keyed on the logged count, logging a set re-reads the plan's next set, which is the
- * "clears itself" rule (N19) with the plan as the resting value.
- */
-private data class LoggingValues(
-    val role: SetType,
-    val reps: Int,
-    val weightGrams: Long,
-    val assistanceGrams: Long,
-)
-
-/**
- * **Log set**, and the dialog it opens (ROADMAP N51).
+ * This replaces N51's shape — *Log set* opened the editor, and logging *was* the dialog — with the
+ * one visible fields make possible: the values the plan and history prefill are already on screen,
+ * so they can be read and changed before anything is written, and the button writes exactly what is
+ * under it. B7's rule is back on this path, because the button carries the values it commits.
  *
- * Logging *is* the dialog the edit path opens, prefilled from the same offer and committed on Save.
- * The one-tap path went: it decided something the user did not mean — a set that differed from the
- * prefill was written first and corrected afterwards — and the decision is that it is not wanted any
- * more rather than a cost to weigh. That inverts B7 for this button: it no longer writes the set its
- * label describes, because the label no longer describes one.
+ * **The role** is the plan's own next unlogged one (B48), carried the way reps and weight are, so a
+ * template that opens with a ramp is logged as warm-ups rather than as working sets; it stays a
+ * picker so one set can still be overridden (N19). **The plan's RPE** is shown beside the RPE field
+ * and never written into it: what a set is logged at is what it felt like, not what the plan asked.
  *
- * Opening the dialog is a local state here, next to the button that opens it, and the values it opens
- * on still come from the row — so a write that lands while the dialog is open cannot desync a draft
- * from the plan it was prefilled from.
+ * The draft is keyed on `row.sets.size`, so writing a set re-reads the plan's next one and the fields
+ * re-arm — N19's "clears itself", with the plan as the resting value. Re-arming rather than surviving
+ * is the point: a value typed for a set that was then written would otherwise become the next set's.
  */
 @Composable
-private fun LogSetAction(
+private fun NextSetEditor(
     row: SessionExerciseRow,
     onLogSet: (SetEdit) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var logging by rememberSaveable(row.id, row.sets.size) { mutableStateOf(false) }
-    val values = LoggingValues(
-        role = row.suggestion.setType,
-        reps = row.suggestion.reps,
-        weightGrams = row.suggestion.weightGrams,
-        assistanceGrams = row.suggestion.assistanceGrams,
-    )
+    val suggestion = row.suggestion
+    var draft by remember(row.id, row.sets.size) {
+        mutableStateOf(
+            SetEntryDraft(
+                repsText = suggestion.reps.toString(),
+                // Shown as one signed number: -20 is 20 kg of assistance (N15).
+                weightText = Weight.display(suggestion.weightGrams, suggestion.assistanceGrams),
+                // Empty: the field records what the set felt like, and the plan's target is a
+                // caption rather than a value (N59).
+                rpeText = "",
+                setType = suggestion.setType,
+            ),
+        )
+    }
+    val values = draft.values()
 
     Column(modifier = modifier) {
         PlanDoneNotice(row = row)
-        FilledTonalButton(
-            onClick = { logging = true },
-            modifier = Modifier.padding(top = 8.dp).testTag(TestTags.SET_LOG),
+        Column(
+            modifier = Modifier.padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // The plan's work is done, so the label stops describing values the app no longer
-            // offers a target for (ROADMAP N52). Logging an extra set is what the control still
-            // does — nothing closes, and the way to end the exercise is Done.
-            if (row.isPastPlan) {
-                Text(stringResource(R.string.set_log_extra))
-            } else {
-                Text(
-                    text = stringResource(
-                        R.string.set_log,
-                        stringResource(
-                            R.string.set_summary,
-                            Weight.display(values.weightGrams, values.assistanceGrams),
-                            values.reps,
-                        ),
-                    ),
+            SetRoleSelector(
+                role = draft.setType,
+                onSelect = { draft = draft.copy(setType = it) },
+                // Tagged for this row: a test reaches the picker through the flow it actually takes.
+                testTag = TestTags.exercisePendingRole(row.id),
+                optionTag = { role -> TestTags.exercisePendingRole(row.id, role) },
+            )
+            SetEntryNumbers(draft = draft, onDraftChange = { draft = it })
+            // The button sits beside the last field, so the values it writes are the ones under the
+            // thumb that taps it.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SetRpeField(
+                    draft = draft,
+                    onDraftChange = { draft = it },
+                    rpeIsValid = values.rpeValid,
+                    targetRpeHalves = suggestion.targetRpeHalves,
+                    modifier = Modifier.weight(1f),
                 )
+                FilledTonalButton(
+                    onClick = { onLogSet(draft.toEdit()) },
+                    enabled = values.isComplete,
+                    modifier = Modifier.testTag(TestTags.SET_LOG),
+                ) {
+                    // The plan's work is done, so the label stops promising a target the plan no
+                    // longer names (ROADMAP N52). Logging an extra set is what the control still
+                    // does — nothing closes, and the way to end the exercise is Done.
+                    Text(
+                        stringResource(
+                            if (row.isPastPlan) R.string.set_log_extra else R.string.set_log,
+                        ),
+                    )
+                }
             }
         }
-    }
-
-    if (logging) {
-        SetEditorDialog(
-            initialReps = values.reps,
-            initialWeightGrams = values.weightGrams,
-            initialSetType = values.role,
-            initialAssistanceGrams = values.assistanceGrams,
-            title = stringResource(R.string.set_log_title),
-            // Tagged for this row: the flow under test is "the control opens the dialog the edit path
-            // opens", and a test has to reach the role selector through the flow it actually takes.
-            roleTag = TestTags.exercisePendingRole(row.id),
-            roleOptionTag = { role -> TestTags.exercisePendingRole(row.id, role) },
-            onDismiss = { logging = false },
-            onSave = { edit ->
-                logging = false
-                onLogSet(edit)
-            },
-        )
     }
 }
 
@@ -489,10 +483,11 @@ private fun LogSetAction(
  * the moment it happens: the last planned set has just been written, so the notice appears beside
  * the control that would write one more.
  *
- * It is per exercise and it is a notice rather than a dialog, deliberately. N51 already puts a
- * dialog in front of every set, and a second one would interrupt the next exercise's first set; and
- * nothing closes, because accepting the notice is the header's **Done** (N7) — logging an extra set
- * is what the control still does, which is why the label changes rather than the action.
+ * It is per exercise and it is a notice rather than a dialog, deliberately. Nothing closes, because
+ * accepting the notice is the header's **Done** (N7) — logging an extra set is what the control
+ * still does, which is why the label changes rather than the action. N59 removed the dialog this
+ * once had to avoid; the notice stays a notice because a modal over the next set is still the wrong
+ * shape for something the lifter may simply read and walk past.
  */
 @Composable
 private fun PlanDoneNotice(row: SessionExerciseRow, modifier: Modifier = Modifier) {
@@ -784,47 +779,3 @@ private fun ConfirmRemovalDialog(
     )
 }
 
-/**
- * How the rule explains itself (ROADMAP N22).
- *
- * A number the app chose is an instruction unless it says why, and every one of these is a
- * sentence a lifter would say to themselves between sets.
- */
-private fun ProgressionReason.explanationRes(): Int = when (this) {
-    ProgressionReason.MORE_REPS -> R.string.suggestion_more_reps
-    ProgressionReason.MORE_WEIGHT -> R.string.suggestion_more_weight
-    ProgressionReason.LESS_ASSISTANCE -> R.string.suggestion_less_assistance
-    // Nothing recorded yet: the plan (or nothing) is being echoed, not progressed, so there
-    // is no step to explain — the line is only drawn for the three above.
-    ProgressionReason.NO_HISTORY -> R.string.suggestion_more_reps
-}
-
-/**
- * The app's proposal, and the way to take it (ROADMAP N33).
- *
- * Shown with its reason and applied only when accepted — which is the whole change: while the proposal
- * *was* the prefill, the next tap logged the app's arithmetic whether or not it was wanted, and a lifter
- * who progresses by hand had to undo it on every first set.
- */
-@Composable
-private fun SuggestionOffer(offer: SetOffer, onAccept: (() -> Unit)? = null) {
-    // One source at the top level, which is what the rule asks for and what reads better: the reason and
-    // the way to take it belong together.
-    Column {
-    offer.reason?.let { reason ->
-        Text(
-            text = stringResource(reason.explanationRes()),
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.testTag(TestTags.SUGGESTION_REASON),
-        )
-    }
-    if (onAccept != null) {
-        AppTextButton(
-            onClick = onAccept,
-            modifier = Modifier.testTag(TestTags.SUGGESTION_ACCEPT),
-        ) {
-            Text(stringResource(R.string.set_use_suggestion))
-        }
-    }
-    }
-}

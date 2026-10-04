@@ -387,14 +387,6 @@ class ActiveWorkoutViewModel @Inject constructor(
         val oneRepMax: Map<String, Long?>,
     )
 
-    /** Offers the user has taken (ROADMAP N33), keyed by the exercise row. */
-    private val acceptedPrefill = MutableStateFlow<Map<String, AcceptedPrefill>>(emptyMap())
-
-    private val rowOverrides: Flow<RowOverrides> =
-        combine(pendingFinishedExercise, acceptedPrefill) { finished, accepted ->
-            RowOverrides(pendingFinishedExerciseId = finished, acceptedPrefill = accepted)
-        }
-
     private val snapshots: Flow<Snapshot> = combine(
         combine(activeSession, sessionExercises, setsState) { session, exercises, logged ->
             SessionPart(session, exercises, logged)
@@ -432,14 +424,13 @@ class ActiveWorkoutViewModel @Inject constructor(
         lastError,
         pendingUndo,
         readinessPromptVisible,
-        rowOverrides,
-    ) { snapshot, error, undo, promptVisible, overrides ->
+        pendingFinishedExercise,
+    ) { snapshot, error, undo, promptVisible, finished ->
         snapshot.toUiState(
             error = error,
             undo = undo,
             readinessPromptVisible = promptVisible,
-            pendingFinishedExerciseId = overrides.pendingFinishedExerciseId,
-            acceptedPrefill = overrides.acceptedPrefill,
+            pendingFinishedExerciseId = finished,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -1008,31 +999,11 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Takes the offer on a row, so the prefill becomes the proposal (ROADMAP N33).
-     *
-     * This is the only way a proposal becomes a value, which is the point: it used to *be* the value, so
-     * one tap logged the app's arithmetic whether the lifter wanted it or not.
-     */
-    fun onAcceptOffer(sessionExerciseId: String) {
-        val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId } ?: return
-        val offer = row.suggestion.offer ?: return
-        acceptedPrefill.value = acceptedPrefill.value + (
-            sessionExerciseId to AcceptedPrefill(
-                setCount = row.sets.size,
-                reps = offer.reps,
-                weightGrams = offer.weightGrams,
-                assistanceGrams = offer.assistanceGrams,
-            )
-            )
-    }
-
     private fun Snapshot.toUiState(
         error: DataError?,
         undo: SetEntry?,
         readinessPromptVisible: Boolean,
         pendingFinishedExerciseId: String?,
-        acceptedPrefill: Map<String, AcceptedPrefill>,
     ): ActiveWorkoutUiState {
         // Which plan entry each row follows is resolved once, by movement (ROADMAP N54), rather than
         // per row from the slot it happens to occupy.
@@ -1055,7 +1026,6 @@ class ActiveWorkoutViewModel @Inject constructor(
                         estimatedOneRepMaxGrams = oneRepMax[it.exerciseId],
                     ),
                     supersetLabels = supersetLabelsFor(exercises),
-                    accepted = acceptedPrefill[it.id],
                 )
             },
             pendingUndo = undo,
@@ -1248,33 +1218,11 @@ internal fun planEntriesFor(
     }
 }
 
-/**
- * An offer the user accepted, and the set count it was accepted at (ROADMAP N33).
- *
- * The count is what keeps it honest: rows are rebuilt from the database after every write, so an
- * accepted prefill must be applied on top of what the rule would otherwise say — and dropped the
- * moment a set is logged, because then "what you just did" is the better answer and the offer that
- * was taken is no longer a proposal.
- */
-private data class AcceptedPrefill(
-    val setCount: Int,
-    val reps: Int,
-    val weightGrams: Long,
-    val assistanceGrams: Long,
-)
-
-/** The two pieces of state that are overlaid on a snapshot rather than coming from it. */
-private data class RowOverrides(
-    val pendingFinishedExerciseId: String?,
-    val acceptedPrefill: Map<String, AcceptedPrefill>,
-)
-
 private fun SessionExercise.toRow(
     sets: List<SetEntry>,
     previous: PreviousPerformance?,
     plan: PlanContext,
     supersetLabels: Map<String, String>,
-    accepted: AcceptedPrefill?,
 ): SessionExerciseRow {
     val loggedSets = sets.loggedRowsFor(id)
 
@@ -1293,7 +1241,7 @@ private fun SessionExercise.toRow(
         jointPain = jointPain,
         jointPainNote = jointPainNote,
         sets = loggedSets,
-        suggestion = suggestionFor(loggedSets, previous, plan, accepted),
+        suggestion = suggestionFor(loggedSets, previous, plan),
         lastTime = previous?.sets?.firstOrNull()?.let { first ->
             SetRow(
                 id = first.id,
@@ -1326,14 +1274,14 @@ private fun List<SetEntry>.loggedRowsFor(sessionExerciseId: String): List<SetRow
         }
 
 /**
- * What the next set is offered as: the plan's target where it speaks, then history, and the app's own
- * proposal carried separately so it is applied only when it is accepted (ROADMAP N14, N33, P3.8).
+ * What the next set is shown with: the plan's target where it speaks, then history (ROADMAP N14, N59,
+ * P3.8). The plan's RPE travels with it rather than in it, so the screen can say what the set is
+ * meant to feel like without recording that as what it felt like.
  */
 private fun SessionExercise.suggestionFor(
     loggedSets: List<SetRow>,
     previous: PreviousPerformance?,
     plan: PlanContext,
-    accepted: AcceptedPrefill?,
 ): SetSuggestion = suggestionForNextSet(
     loggedSets = loggedSets,
     previous = previous,
@@ -1344,18 +1292,7 @@ private fun SessionExercise.suggestionFor(
         estimatedOneRepMaxGrams = plan.estimatedOneRepMaxGrams,
         template = plannedTargetFor(plan.plannedEntry, nextIndex = loggedSets.size),
     ),
-).let { suggestion ->
-    // An accepted offer wins over the rule, but only while it still applies: once a set is logged the
-    // count moves on and the offer is spent.
-    accepted?.takeIf { it.setCount == loggedSets.size }?.let { taken ->
-        suggestion.copy(
-            reps = taken.reps,
-            weightGrams = taken.weightGrams,
-            assistanceGrams = taken.assistanceGrams,
-            offer = null,
-        )
-    } ?: suggestion
-}
+)
 
 /**
  * `A1`, `A2` … for a grouped exercise, or null (ROADMAP N24).

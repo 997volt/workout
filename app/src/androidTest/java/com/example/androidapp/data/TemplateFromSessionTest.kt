@@ -2,7 +2,6 @@ package com.example.androidapp.data
 
 import com.example.androidapp.ui.workout.suggestionForNextSet
 import com.example.androidapp.ui.workout.plannedTargetFor
-import org.junit.Assert.assertNull
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.androidapp.data.local.ExerciseEntity
@@ -256,10 +255,6 @@ class TemplateFromSessionTest {
 
         assertEquals("the plan's reps are the prefill", 5, prefill.reps)
         assertEquals("and the plan's load, not last time's", 102_500L, prefill.weightGrams)
-        assertNull(
-            "with the plan naming the load there is nothing to propose (N33)",
-            prefill.offer,
-        )
     }
 
     /** Saves the seeded workout as a plan and returns its id. */

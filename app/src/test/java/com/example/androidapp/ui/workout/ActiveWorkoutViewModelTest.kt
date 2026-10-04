@@ -1,7 +1,6 @@
 package com.example.androidapp.ui.workout
 
 import com.example.androidapp.domain.model.StatisticsRange
-import com.example.androidapp.domain.model.ProgressionReason
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.ProgramRun
@@ -887,7 +886,7 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
-    fun previousPerformance_isProgressed_notRepeated() = runTest(dispatcher) {
+    fun previousPerformance_isRepeated_unchanged() = runTest(dispatcher) {
         val repository = FakeWorkoutRepository().apply {
             previous = PreviousPerformance(
                 listOf(
@@ -908,51 +907,11 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         val row = viewModel.uiState.value.exercises.single()
-        // N33 changed what this asserts, on purpose: the prefill is last time *unchanged*, and the step
-        // the app proposes is offered beside it. Before, this number was what one tap logged, so a
-        // lifter who progresses by hand had to undo the app's arithmetic on every first set.
+        // N59 withdrew the step the app used to propose beside these values: what the fields show is
+        // what was done last time, and stepping it is the lifter's edit rather than the app's offer.
         assertEquals("the same reps as last time", 5, row.suggestion.reps)
         assertEquals(100_000, row.suggestion.weightGrams)
-        assertEquals("and one more rep is offered", 6, row.suggestion.offer?.reps)
-        assertEquals(100_000L, row.suggestion.offer?.weightGrams)
-        assertEquals(ProgressionReason.MORE_REPS, row.suggestion.offer?.reason)
         assertEquals("last time is still shown as itself, not as the target", 100_000L, row.lastTime?.weightGrams)
-    }
-
-    @Test
-    fun acceptingTheOffer_makesItThePrefill_andonlyThen() = runTest(dispatcher) {
-        // ROADMAP N33, the half a user can act on: the proposal is shown, and taking it is what puts its
-        // numbers where one tap will log them.
-        val repository = FakeWorkoutRepository().apply {
-            previous = PreviousPerformance(
-                listOf(
-                    SetEntry(
-                        id = "old",
-                        sessionExerciseId = "old-ex",
-                        setIndex = 0,
-                        reps = 5,
-                        weightGrams = 100_000,
-                    ),
-                ),
-            )
-        }
-        val viewModel = viewModelFor(repository)
-        observe(viewModel)
-        settle()
-        viewModel.onAddExercise("back-squat")
-        settle()
-
-        val offered = viewModel.uiState.value.exercises.single()
-        assertEquals("the prefill is what was done", 5, offered.suggestion.reps)
-        assertEquals("and one more rep is offered", 6, offered.suggestion.offer?.reps)
-
-        viewModel.onAcceptOffer(offered.id)
-        settle()
-
-        val accepted = viewModel.uiState.value.exercises.single()
-        assertEquals("taking it makes the proposal the prefill", 6, accepted.suggestion.reps)
-        assertEquals(100_000L, accepted.suggestion.weightGrams)
-        assertNull("and it is no longer a proposal", accepted.suggestion.offer)
     }
 
     @Test

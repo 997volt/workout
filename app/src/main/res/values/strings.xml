@@ -359,9 +359,10 @@
     <string name="readiness_add">Tap to add</string>
     <string name="readiness_edit_action">Edit readiness note</string>
 
-    <!-- Set logging (P1.3) -->
-    <string name="set_use_suggestion">Use it</string>
-    <string name="set_log">Log set · %1$s</string>
+    <!-- Set logging (P1.3). The next set is stated by the fields on the workout screen, and this is
+         the button that writes them (ROADMAP N59) — so the label carries no values: the values are
+         the fields beside it. -->
+    <string name="set_log">Log set</string>
     <!-- Past the last planned set the exercise keeps accepting sets, and the control says so
          (ROADMAP N52): logging one is still what it does, so the label loses the values it no
          longer describes rather than becoming a second Finish. -->
@@ -372,20 +373,20 @@
     <string name="set_number">%1$d</string>
     <string name="set_summary">%1$s kg × %2$d</string>
     <string name="set_edit_title">Edit set</string>
-    <!-- Logging opens the same dialog the edit path opens, on the offered values and committed on
-         Save (ROADMAP N51). The title says which of the two the user is doing. -->
-    <string name="set_log_title">Log set</string>
     <!-- Tap action for a set row (P1.17): announces what tapping does. -->
     <string name="set_edit_action">Edit set</string>
     <string name="set_weight_label">Weight (kg)</string>
     <string name="set_reps_label">Reps</string>
     <string name="set_save">Save</string>
     <string name="set_cancel">Cancel</string>
-    <!-- RPE and comment per set (ROADMAP N6). Both optional: the one-tap log path
-         writes neither, so an empty field is the normal case. -->
+    <!-- RPE and comment per set (ROADMAP N6). Both optional: RPE is skippable by design,
+         so an empty field is the normal case. -->
     <string name="set_rpe_label">RPE (1–10)</string>
     <string name="set_role_marker">%1$s</string>
     <string name="set_rpe_hint">Optional</string>
+    <!-- What the plan asks this set to feel like, shown beside the field and never written into it
+         (ROADMAP N59): the field records what the set actually was. -->
+    <string name="set_rpe_target">Plan: RPE %1$s</string>
     <string name="set_note_label">Comment</string>
     <!-- The marker on a logged set that carries either (ROADMAP N6). -->
     <!-- Formatted from halves, so this can be 9.5 (ROADMAP N6). -->
@@ -465,10 +466,6 @@
     <string name="settings_data_export_hint">Write a backup file, choosing where it goes.</string>
     <string name="settings_data_import_hint">Merge a backup into this device. Nothing is overwritten.</string>
     <string name="settings_data_clear_hint">Delete every workout, measurement and target. This cannot be undone.</string>
-    <!-- Why the prefilled set says what it says (ROADMAP N22). -->
-    <string name="suggestion_more_reps">One more rep than last time</string>
-    <string name="suggestion_more_weight">A step heavier than last time</string>
-    <string name="suggestion_less_assistance">Less help than last time</string>
     <!-- The record just set (ROADMAP N23). -->
     <string name="personal_record_title">Personal record: %2$s kg × %1$d</string>
     <string name="personal_record_beats">%1$s — your best before was %2$s kg</string>

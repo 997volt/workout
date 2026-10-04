@@ -12,6 +12,24 @@ repeated here.
 
 ## [Unreleased]
 
+### Changed
+
+- **The next set is stated on the workout screen, not behind *Log set*** (N59). N51 had put the set
+  editor in front of every set so a set that differed from the prefill was corrected before it was
+  written; the cost was a dialog between every set and a button whose label could not describe what it
+  wrote. The values the plan and history prefill are now the exercise block's own fields — weight,
+  reps, the role picker, and the plan's target RPE shown *beside* the RPE field rather than written
+  into it — so they are read and changed before anything is committed, and *Log set* is a button beside
+  them that writes exactly what is on screen. B7's display-agrees-with-storage is back on this path,
+  and the editor is what correcting an already-logged set still opens. The fields are keyed on the
+  logged-set count, so a write re-arms them from the plan's next unlogged set (B48) — N19's "a role is
+  one set's decision" holding without a dialog.
+- **The app's progression proposal is withdrawn** (N33, N22). With the next set's values visible and
+  editable before the write, a separate proposal to accept had nothing left to add, so the *Use it*
+  link and the double-progression rule that computed it are gone; what the fields start from is what
+  was done last time, unchanged. ROADMAP N50 still owns what the app should propose instead, and the
+  warm-up ramp keeps the loadable step the rule had defined (N28).
+
 ## [1.12] — 2026-10-04 (versionCode 13)
 
 ### Added

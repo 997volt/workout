@@ -1,20 +1,23 @@
 package com.example.androidapp.ui.workout
 
 import com.example.androidapp.domain.model.PersonalRecordMoment
-import com.example.androidapp.domain.model.ProgressionReason
 import com.example.androidapp.domain.model.SetType
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.ui.components.SetEdit
@@ -51,7 +54,6 @@ class ActiveWorkoutScreenTest {
         val onRateExercise: (String, Int?, Int?, String?) -> Unit = { _, _, _, _ -> },
         val onFinish: (String?) -> Unit = {},
         val onLogSet: (String, SetEdit) -> Unit = { _, _ -> },
-        val onAcceptOffer: (String) -> Unit = {},
         val onToggleSuperset: (String) -> Unit = {},
         val onDiscard: () -> Unit = {},
     )
@@ -76,7 +78,6 @@ class ActiveWorkoutScreenTest {
                 clock = remember { mutableStateOf(WorkoutClock()) },
                 onAddExercise = {},
                 onLogSet = actions.onLogSet,
-                onAcceptOffer = actions.onAcceptOffer,
                 onToggleSuperset = onToggleSuperset,
                 personalRecord = personalRecord,
                 onUpdateSet = { _, _, _, _, _, _, _ -> },
@@ -129,7 +130,9 @@ class ActiveWorkoutScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_REOPEN).assertDoesNotExist()
-        composeTestRule.onNodeWithText("Log set · 100 kg × 5").assertIsDisplayed()
+        // The fields stating the next set, and the button that writes them (N59).
+        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertExists()
+        composeTestRule.onNodeWithText("Log set").assertExists()
         // N5's cue, on the screen it was added for.
         composeTestRule.onNodeWithText("Brace, sit back").assertIsDisplayed()
     }
@@ -141,8 +144,9 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_REOPEN).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_FINISHED_LABEL).assertIsDisplayed()
-        // The accident N7 exists to prevent: no way to add another set.
-        composeTestRule.onNodeWithText("Log set · 100 kg × 5").assertDoesNotExist()
+        // The accident N7 exists to prevent: no way to add another set, and no fields stating one.
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertDoesNotExist()
     }
 
     /** What the screen reports when an exercise is finished (N7, N8, N9). */
@@ -231,6 +235,7 @@ class ActiveWorkoutScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_RATING_ROW, useUnmergedTree = true)
+            .performScrollTo()
             .performClick()
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("7")
         composeTestRule.onNodeWithTag(TestTags.RATING_JOINT_FIELD).performTextInput("3")
@@ -445,6 +450,19 @@ class ActiveWorkoutScreenTest {
             .assertHasClickAction()
     }
 
+    @Test
+    fun theSetEditor_opensOnALoggedSet_andCancelClosesIt() {
+        // The editor is the *correction* path now that logging has its own fields (N59): tapping a
+        // logged set still opens it, and Cancel still means nothing is written.
+        setScreen(state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.SET_ROW, useUnmergedTree = true).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertExists()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_CANCEL).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertDoesNotExist()
+    }
+
     private fun state(isFinished: Boolean) = ActiveWorkoutUiState(
         isLoading = false,
         sessionId = "s1",
@@ -464,24 +482,26 @@ class ActiveWorkoutScreenTest {
     )
 
     @Test
-    fun loggingASet_opensTheEditorOnTheOfferedValues_andSavesOnSave() {
-        // ROADMAP N51: the one-tap path went. Logging *is* the dialog the edit path opens, so a set
-        // that differs from the prefill is corrected before it is written rather than after.
+    fun theNextSet_isStatedByFields_andLogSetWritesThem() {
+        // ROADMAP N59: the values are on screen before anything is written, and the button beside
+        // them writes exactly those values — B7's display-agrees-with-storage, back on this path.
         val logged = mutableListOf<Pair<String, SetEdit>>()
         setScreen(
             state = state(isFinished = false),
             actions = Actions(onLogSet = { id, edit -> logged += id to edit }),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performScrollTo().performClick()
-
-        // Nothing is written by the tap that opened the dialog.
-        assertEquals(emptyList<Pair<String, SetEdit>>(), logged)
-        // The dialog opens on what the row offered, and the edit path's own fields are all there.
+        // Stated before any tap, and nothing is written by looking at them.
+        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertExists()
         composeTestRule.onNodeWithTag(TestTags.SET_REPS_FIELD).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertExists()
+        assertEquals(emptyList<Pair<String, SetEdit>>(), logged)
 
-        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+        // The button is the whole of the commit, so the click is sent as its own action rather than
+        // as a touch: the fields put it at the fold of this test's small surface, where a touch at
+        // its centre lands outside the list's viewport and is dropped.
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).assertIsEnabled()
+            .performSemanticsAction(SemanticsActions.OnClick)
 
         assertEquals(1, logged.size)
         assertEquals("se1", logged.single().first)
@@ -490,90 +510,80 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun choosingARoleInTheLoggingDialog_writesThatRole() {
-        // ROADMAP N19's role picker moved with the one-tap path: the choice is still made before the
-        // set is written, it is just made inside the dialog that writes it (N51).
+    fun editingAField_beforeLogging_writesTheEditedValue() {
+        // The point of stating the set on the screen: a set that differs from the prefill is changed
+        // *before* the write, so nothing is logged and then corrected (N59).
+        val logged = mutableListOf<SetEdit>()
+        setScreen(
+            state = state(isFinished = false),
+            actions = Actions(onLogSet = { _, edit -> logged += edit }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.SET_REPS_FIELD).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.SET_REPS_FIELD).performTextInput("7")
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performSemanticsAction(SemanticsActions.OnClick)
+
+        assertEquals(listOf(7), logged.map { it.reps })
+    }
+
+    @Test
+    fun theRole_isChosenInline_beforeTheWrite() {
+        // N19's picker moved out of the dialog rather than away: the role is still one set's
+        // decision, still made before the set is written, and still cleared by the write.
         val logged = mutableListOf<Pair<String, SetType>>()
         setScreen(
             state = state(isFinished = false),
             actions = Actions(onLogSet = { id, edit -> logged += id to edit.setType }),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performScrollTo().performClick()
-        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1")).performScrollTo().performClick()
         composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1", "WARMUP")).performClick()
-        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performSemanticsAction(SemanticsActions.OnClick)
 
         assertEquals(listOf("se1" to SetType.WARMUP), logged)
     }
 
     @Test
-    fun cancellingTheLoggingDialog_writesNothing() {
-        var logged = false
-        setScreen(
-            state = state(isFinished = false),
-            actions = Actions(onLogSet = { _, _ -> logged = true }),
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performScrollTo().performClick()
-        composeTestRule.onNodeWithTag(TestTags.SET_CANCEL).performClick()
-
-        assertTrue("cancelling the dialog logged the set anyway", !logged)
-    }
-
-    @Test
-    fun pastThePlannedWork_theLoggingDialog_stillOpens() {
-        // N52 changes the label and adds a notice; logging an extra set is what the control still
-        // does, so the dialog behind it has to be the same one.
+    fun pastThePlannedWork_theControlStillLogs_theExtraSet() {
+        // N52 changes the label and adds a notice; writing an extra set is what the control still
+        // does, so nothing about it closes.
         var logged = false
         setScreen(
             state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 3, planned = 3))),
             actions = Actions(onLogSet = { _, _ -> logged = true }),
         )
 
-        // Scrolled into view first: this exercise has three logged sets above the control, so on
-        // this test's surface the button starts below the fold and a tap would never land on it.
-        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performScrollTo().performClick()
-        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+        composeTestRule.onNodeWithText("Log extra set").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).performSemanticsAction(SemanticsActions.OnClick)
 
         assertTrue("the extra set was never written", logged)
     }
 
     @Test
-    fun aProgressedSuggestion_saysWhy() {
-        // ROADMAP N22: a number the app chose is an instruction unless it explains itself,
-        // and this sentence is the difference between a smart app and a surprising one.
+    fun thePlansTargetRpe_isShownBesideTheField_ratherThanWrittenIntoIt() {
+        // ROADMAP N59: "know the planned RPE of the next one" is a caption, not a prefill. The field
+        // records what the set actually was, so the plan's number is shown and the hint it replaces
+        // is gone.
         val base = state(isFinished = false)
         setScreen(
             state = base.copy(
                 exercises = base.exercises.map {
-                    it.copy(
-                        suggestion = SetSuggestion(
-                            reps = 9,
-                            weightGrams = 20_000L,
-                            // The caption explains an offer (N33), so an offer is what makes one appear.
-                            offer = SetOffer(
-                                reps = 9,
-                                weightGrams = 20_000L,
-                                assistanceGrams = 0L,
-                                reason = ProgressionReason.MORE_REPS,
-                            ),
-                        ),
-                    )
+                    it.copy(suggestion = it.suggestion.copy(targetRpeHalves = 16))
                 },
             ),
         )
 
-        composeTestRule.onNodeWithText("One more rep than last time").assertExists()
+        composeTestRule.onNodeWithText("Plan: RPE 8").assertExists()
+        composeTestRule.onNodeWithText("Optional").assertDoesNotExist()
     }
 
     @Test
-    fun aSuggestionThatIsJustThePlan_hasNothingToExplain() {
-        // Null is not "no reason" — it is "nothing to explain", and a line here would train
-        // the user to ignore the line that matters.
+    fun withNoPlannedRpe_theFieldKeepsItsOwnHint() {
+        // Nothing to say is said by saying nothing (N37's rule, in one field): a plan that names no
+        // RPE does not get a dash or a zero, it gets the field's own hint.
         setScreen(state = state(isFinished = false))
 
-        composeTestRule.onNodeWithTag(TestTags.SUGGESTION_REASON).assertDoesNotExist()
+        composeTestRule.onNodeWithText("Optional").assertExists()
     }
 
     @Test
@@ -766,43 +776,6 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun anOfferIsTakeable_andNamesItsOwnRow() {
-        // ROADMAP N33: the button is the only way a proposal becomes the prefill, so what it reports is
-        // the row it was about.
-        var accepted: String? = null
-        val base = state(isFinished = false)
-        val offered = base.copy(
-            exercises = base.exercises.map {
-                it.copy(
-                    suggestion = SetSuggestion(
-                        reps = 5,
-                        weightGrams = 100_000L,
-                        offer = SetOffer(
-                            reps = 6,
-                            weightGrams = 100_000L,
-                            assistanceGrams = 0L,
-                            reason = ProgressionReason.MORE_REPS,
-                        ),
-                    ),
-                )
-            },
-        )
-
-        setScreen(offered, actions = Actions(onAcceptOffer = { accepted = it }))
-        composeTestRule.onNodeWithTag(TestTags.SUGGESTION_ACCEPT).performClick()
-
-        assertEquals(base.exercises.single().id, accepted)
-    }
-
-    @Test
-    fun withNoOffer_thereIsNothingToTake() {
-        // The button is not decoration: with nothing proposed there is no action to offer.
-        setScreen(state(isFinished = false))
-
-        composeTestRule.onNodeWithTag(TestTags.SUGGESTION_ACCEPT).assertDoesNotExist()
-    }
-
-    @Test
     fun pastTheLastPlannedSet_theControlSaysTheNextOneIsExtra() {
         // ROADMAP N52: the plan is the template the workout was started from, so the moment its last
         // set is written is the moment the app can say the planned work is done — rather than only in
@@ -811,9 +784,9 @@ class ActiveWorkoutScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_DONE).assertExists()
         composeTestRule.onNodeWithText("Log extra set").assertExists()
-        // The label no longer describes a set, because the plan does not: it drops the values
-        // rather than naming the last planned one again.
-        composeTestRule.onNodeWithText("Log set · 100 kg × 5").assertDoesNotExist()
+        // The label no longer promises the plan's next set, because the plan does not name one: it
+        // drops back to the plain label rather than naming the last planned one again.
+        composeTestRule.onNodeWithText("Log set").assertDoesNotExist()
     }
 
     @Test
@@ -822,7 +795,7 @@ class ActiveWorkoutScreenTest {
         setScreen(state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 2, planned = 3))))
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_DONE).assertDoesNotExist()
-        composeTestRule.onNodeWithText("Log set · 100 kg × 5").assertExists()
+        composeTestRule.onNodeWithText("Log set").assertExists()
     }
 
     @Test
@@ -832,7 +805,7 @@ class ActiveWorkoutScreenTest {
         setScreen(state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 9, planned = null))))
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_DONE).assertDoesNotExist()
-        composeTestRule.onNodeWithText("Log set · 100 kg × 5").assertExists()
+        composeTestRule.onNodeWithText("Log set").assertExists()
     }
 
     /** One exercise with a plan behind it and [logged] sets already written. */
