@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v1.9** is shipped and installed. Last reviewed against the code: 2026-10-03.
+> **v1.10** is shipped and installed. Last reviewed against the code: 2026-10-04.
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -29,11 +29,58 @@ Post-MVP on the same local-only premise, grouped by theme and ordered by value i
 candidate graduates to *Next* — gaining an id and a spelled-out decision — when it is picked
 up, and leaves for [CHANGELOG.md](CHANGELOG.md) when it ships.
 
-Nothing is waiting here. Both paragraphs of deferred scope — P3.3's and P3.5's — are built as
-P3.8-P3.16, and what they named that is not a feature is a settled decision: no dated instances
-(N16), nothing automatic (N22's "the app suggests; it never writes"), a weekday-less slot that is
-never missed and is order-only, and more than one active program, which P3.12 allowed. The next
-candidate comes from a parked row's trigger or a new reason, not from this queue.
+The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what
+they named that is not a feature is a settled decision: no dated instances (N16), nothing
+automatic (N22's "the app suggests; it never writes"), a weekday-less slot that is never missed
+and is order-only, and more than one active program, which P3.12 allowed. What waits now came
+from using the built app rather than from either queue.
+
+### The workouts tab, cut back to the question it answers
+
+Three changes to one screen, and they are one argument: the tab that starts a workout should
+answer "what am I training today" and get out of the way. Everything else on it is a second path
+to somewhere the app already goes.
+
+- **"See all workouts" goes.** It is a text button on the *Recent* heading whose only job is to
+  open History — the tab beside it, one tap away and always visible. A section heading that
+  carries a way out of its own section duplicates the tab bar, and *Recent* is not a thing the
+  user needs to leave; History keeps the entry points it already has.
+- **"Repeat last workout" gives its slot to Programs.** That link and *Start from template* sit
+  as a pair above the start pill, and Programs — the screen the whole scheduling half is edited
+  from — is reachable only from the overflow menu today. A destination belongs in the action row;
+  the menu is where it got lost. Repeat-last is not deleted with its button (see *History*),
+  because dropping the entry point to a shipped feature is not the same as deciding against it.
+- **The overflow menu goes, and its three data actions move to Settings.** With Programs out of it
+  the menu holds only export, import and delete-everything — not actions on a workout at all, but
+  on the whole database, which is what Settings is about. This settles a placement that has moved
+  twice: the library held them, B1 moved them to the home overflow as "back where you start", and
+  Settings is a third and better answer rather than a return to the first — B1's argument was that
+  the library sat two menus from where the user starts, not that a data action belongs beside
+  *Start workout*.
+
+### History: what a finished workout can carry
+
+- **Repeat-last becomes an action on a finished workout in History**, which is the entry point its
+  home-screen button gives up. It is the same one-tap copy of the last workout's exercises and
+  order, addressed to the workout the user is looking at rather than to "the last one" — which is
+  all that a button on the home screen could ever mean. The row already opens the workout, so the
+  second action needs a home that reads as one.
+
+### Settings: the app's data, and the rest timer
+
+- **A Data section: export, import, delete everything** — the destination of the move above, each
+  keeping what it does today. Delete-everything stays last and coloured, because it is still the
+  one entry that can cost the user something.
+- **A rest-timer switch, with the rest still on screen.** A rest is a countdown today: the session
+  holds an end instant, the workout screen counts it down with ±15s controls, a rest that ends
+  chimes (N27), and the default is editable (N21). The ask is the opposite preference — someone who
+  rests by feel and would rather not be counted at — as a switch rather than a removal, because the
+  prescription is still worth reading: with the timer off the screen shows **that exercise's own
+  rest as a fixed label**, the same value the timer would have counted, falling back to the default
+  rest when the exercise has none, with no countdown, no ±15s and no chime. Off has to mean the
+  timer is genuinely not running rather than a countdown hidden behind a static number, so the
+  decision this needs when it is taken is whether the end instant is simply never written while the
+  switch is off.
 
 ## Parked — deliberately not planned
 
