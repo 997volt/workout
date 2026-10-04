@@ -13,7 +13,6 @@ import androidx.compose.ui.res.stringResource
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.repository.ImportSummary
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 /** The two actions the data menu offers, ready to invoke from `onClick`. */
@@ -30,8 +29,8 @@ class DataTransferActions(
  * is no storage permission to ask for and nothing else to ask for either. It also means the backup can live
  * somewhere that survives uninstalling the app, which is the entire point.
  *
- * The file IO lives here, in the composable, because it needs a `Context` and a
- * user-chosen `Uri`; the ViewModel only ever sees strings.
+ * The file IO itself lives in [writeDocument] and [readDocument], shared with the program document
+ * (ROADMAP B53); what is here is the picker, which needs a `Context` and a user-chosen `Uri`.
  */
 @Composable
 fun rememberDataTransferActions(
@@ -76,22 +75,7 @@ private suspend fun writeBackup(
 ) {
     when (val outcome = viewModel.export()) {
         is ExportOutcome.Ready -> {
-            // Rethrowing CancellationException is the reason this is not `runCatching`,
-            // which catches Throwable and so swallows it too. See the note on
-            // `DataResult.dataResultOf`: this coroutine belongs to the composable's
-            // scope, so a cancelled write means "this screen is gone", not "the file
-            // could not be written" — reporting the latter would be a lie, and the
-            // coroutine would refuse to finish cancelling.
-            val written = try {
-                context.contentResolver.openOutputStream(uri)?.use { stream ->
-                    stream.write(outcome.json.toByteArray())
-                    true
-                } ?: error("openOutputStream returned null for $uri")
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (_: Throwable) {
-                false
-            }
+            val written = writeDocument(context, uri, outcome.json)
             onMessage(if (written) messages.exported else messages.exportFailed)
         }
 
@@ -106,17 +90,7 @@ private suspend fun readBackup(
     messages: TransferMessages,
     onMessage: (String) -> Unit,
 ) {
-    val text = try {
-        // `null` here is a readable file that is simply empty, which is a failed read
-        // rather than a failure — the same message either way.
-        context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
-    } catch (cancellation: CancellationException) {
-        // Not a failure, for the reason spelled out in `writeBackup`. Without this the
-        // cancellation would surface as "couldn't read that file".
-        throw cancellation
-    } catch (_: Throwable) {
-        null
-    }
+    val text = readDocument(context, uri)
 
     if (text == null) {
         onMessage(messages.readFailed)
@@ -145,12 +119,7 @@ class TransferMessages(
         importedFormat(summary.total)
     }
 
-    fun forError(error: DataError): String = when (error) {
-        // Already written for the user by the layer that rejected the file.
-        is DataError.Invalid -> error.message
-        DataError.NotFound -> storageError
-        is DataError.Storage -> storageError
-    }
+    fun forError(error: DataError): String = documentErrorMessage(error, storageError)
 }
 
 @Composable
@@ -181,5 +150,4 @@ private fun rememberTransferMessages(): TransferMessages {
     }
 }
 
-private const val JSON_MIME_TYPE = "application/json"
 private const val DEFAULT_FILE_NAME = "workout-backup.json"

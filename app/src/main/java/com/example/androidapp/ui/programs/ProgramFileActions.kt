@@ -1,7 +1,5 @@
 package com.example.androidapp.ui.programs
 
-import android.content.Context
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -11,18 +9,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import com.example.androidapp.R
-import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.repository.ProgramImportSummary
-import kotlinx.coroutines.CancellationException
+import com.example.androidapp.ui.transfer.JSON_MIME_TYPE
+import com.example.androidapp.ui.transfer.documentErrorMessage
+import com.example.androidapp.ui.transfer.readDocument
+import com.example.androidapp.ui.transfer.writeDocument
 import kotlinx.coroutines.launch
 
 /**
  * The two directions a program document travels, wired to the Storage Access Framework (ROADMAP N47).
  *
  * SAF for the backup's reason (P1.12): the user picks where the file goes, and the app declares
- * **no permissions at all**. The file IO lives here, in the composable, because it needs a `Context`
- * and a user-chosen `Uri`; the ViewModels only ever see strings.
+ * **no permissions at all**. The file IO itself is [writeDocument] and [readDocument], shared with
+ * the backup (ROADMAP B53); what is here is the picker, which needs a `Context` and a user-chosen
+ * `Uri`, and the sentences a result is reported with.
  */
 
 /** Launches a create-document picker and writes the program the editor has open. */
@@ -44,10 +45,14 @@ fun rememberProgramExport(
         scope.launch {
             when (val result = viewModel.exportDocument()) {
                 is DataResult.Success -> {
-                    onMessage(if (writeText(context, uri, result.data)) exported else writeFailed)
+                    onMessage(
+                        if (writeDocument(context, uri, result.data)) exported else writeFailed,
+                    )
                 }
 
-                is DataResult.Failure -> onMessage(programMessageFor(result.error, storageError))
+                is DataResult.Failure -> onMessage(
+                    documentErrorMessage(result.error, storageError),
+                )
             }
         }
     }
@@ -76,7 +81,7 @@ fun rememberProgramImport(
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
-            val text = readText(context, uri)
+            val text = readDocument(context, uri)
             if (text == null) {
                 onMessage(readFailed)
                 return@launch
@@ -88,7 +93,9 @@ fun rememberProgramImport(
                     },
                 )
 
-                is DataResult.Failure -> onMessage(programMessageFor(result.error, storageError))
+                is DataResult.Failure -> onMessage(
+                    documentErrorMessage(result.error, storageError),
+                )
             }
         }
     }
@@ -119,35 +126,4 @@ private fun importSentence(
     return listOfNotNull(first, droppedText).joinToString(" ")
 }
 
-private fun programMessageFor(error: DataError, storageError: String): String = when (error) {
-    // Already written for the user by the layer that rejected the file.
-    is DataError.Invalid -> error.message
-    DataError.NotFound -> storageError
-    is DataError.Storage -> storageError
-}
-
-private suspend fun writeText(context: Context, uri: Uri, text: String): Boolean = try {
-    context.contentResolver.openOutputStream(uri)?.use { stream ->
-        stream.write(text.toByteArray())
-        true
-    } ?: false
-} catch (cancellation: CancellationException) {
-    // A cancelled write means "this screen is gone", not "the file could not be written" —
-    // reporting the latter would be a lie, and the coroutine would refuse to finish cancelling.
-    throw cancellation
-} catch (_: Throwable) {
-    false
-}
-
-private suspend fun readText(context: Context, uri: Uri): String? = try {
-    // Null here is a readable file that is simply empty, which is a failed read rather than a
-    // failure — the same message either way.
-    context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
-} catch (cancellation: CancellationException) {
-    throw cancellation
-} catch (_: Throwable) {
-    null
-}
-
-private const val JSON_MIME_TYPE = "application/json"
 private const val DEFAULT_PROGRAM_FILE_NAME = "workout-program.json"
