@@ -98,6 +98,56 @@ class WorkoutHistoryQueryTest {
         assertEquals(listOf("newer", "older"), dao.observeHistory().first().map { it.id })
     }
 
+    @Test
+    fun aSessionStartedFromATemplate_carriesItsName() = runTest {
+        // ROADMAP N58: the name is the half of the row that says what the session *was*, and a
+        // finished Push A and a finished empty workout were indistinguishable without it.
+        database.templateDao().insertTemplate(
+            TemplateEntity(id = "t1", name = "Push A", createdAt = 0L, updatedAt = 0L, deletedAt = null),
+        )
+        val session = dao.findOrCreateActiveSession(id = "s1", now = 1_000L, templateId = "t1").session
+        dao.markFinished(id = session.id, at = 2_000L)
+
+        assertEquals("Push A", dao.observeHistory().first().single().templateName)
+    }
+
+    @Test
+    fun theNameIsReadLive_soARenameRelabelsThePast() = runTest {
+        // N16's living template, seen from history: the accepted half of N58's decision, and the
+        // reason the name is a join rather than a column on the session.
+        database.templateDao().insertTemplate(
+            TemplateEntity(id = "t1", name = "Push A", createdAt = 0L, updatedAt = 0L, deletedAt = null),
+        )
+        val session = dao.findOrCreateActiveSession(id = "s1", now = 1_000L, templateId = "t1").session
+        dao.markFinished(id = session.id, at = 2_000L)
+
+        database.templateDao().rename(id = "t1", name = "Push A (heavy)", at = 3_000L)
+
+        assertEquals("Push A (heavy)", dao.observeHistory().first().single().templateName)
+    }
+
+    @Test
+    fun aDeletedTemplate_stillNamesTheWorkoutItWas() = runTest {
+        // `deleteTemplate` is a soft delete, so the row and its name are still there: hiding it from
+        // history would take an explicit filter this change does not add.
+        database.templateDao().insertTemplate(
+            TemplateEntity(id = "t1", name = "Push A", createdAt = 0L, updatedAt = 0L, deletedAt = null),
+        )
+        val session = dao.findOrCreateActiveSession(id = "s1", now = 1_000L, templateId = "t1").session
+        dao.markFinished(id = session.id, at = 2_000L)
+        database.templateDao().softDeleteTemplate(id = "t1", at = 3_000L)
+
+        assertEquals("Push A", dao.observeHistory().first().single().templateName)
+    }
+
+    @Test
+    fun aWorkoutStartedByHand_hasNoNameToShow() = runTest {
+        val session = dao.findOrCreateActiveSession(id = "s1", now = 1_000L).session
+        dao.markFinished(id = session.id, at = 2_000L)
+
+        assertEquals(null, dao.observeHistory().first().single().templateName)
+    }
+
     private suspend fun seedExercise(id: String) {
         database.exerciseDao().insertAll(
             listOf(

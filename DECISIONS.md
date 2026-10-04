@@ -82,6 +82,15 @@ the rule; that one argues it.
   program's slot, and the template's own weekday pin is gone (N56) — a template has no order, no
   next-up and no adherence to belong to, so the day lives where the schedule does.
   ([evidence](DECISIONS-EVIDENCE.md#n16))
+- **A history row is headed by the weekday and the date, and says which plan it was** (N57, N58). The
+  headline is the locale's short weekday plus the `MEDIUM` date, read in the session's own zone: the
+  weekday is what a lifter navigates by, and the month heading above already carries the month. The
+  template's name joins the supporting line, read **live** from the template row rather than
+  snapshotted onto the session — so a rename relabels the past and a soft-deleted template still names
+  the workout it was. A column on the session was rejected: it costs a migration and changes only the
+  half (a rename) that is already accepted. The line therefore **wraps** rather than truncating, since
+  the name is the part that cannot be inferred from the workout.
+  ([evidence](DECISIONS-EVIDENCE.md#n57))
 - **A day is a scheduling fact, and a template carries none** (N56). The N16 pin was the weaker of two
   places answering "what am I doing on Tuesday", so it goes with its column, the `setWeekday` path
   through DAO, repository and editor, and the `pinnedFor` fallback. A program's slots are the only

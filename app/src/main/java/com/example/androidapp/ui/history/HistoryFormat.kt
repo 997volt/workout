@@ -35,6 +35,29 @@ object HistoryFormat {
         .withZone(zone)
         .format(instant)
 
+    /**
+     * The headline a history row carries: the short weekday, then the date (ROADMAP N57).
+     *
+     * e.g. `Sun, Oct 4, 2026`. The weekday is the part a lifter navigates by — which day of the week
+     * this was — while the month heading above the row already carries the month the date repeats,
+     * which is why the short form is enough. Built from the **locale's own names** ([TextStyle.SHORT],
+     * the way [month] uses [TextStyle.FULL]) rather than a hard-coded English pattern, so a
+     * non-English device reads its own abbreviation; the comma between them is the one piece that is
+     * punctuation rather than a word.
+     *
+     * Shared by the history list and home's Recent row, so one finished workout reads the same way
+     * wherever it is listed.
+     */
+    fun historyHeadline(
+        instant: Instant,
+        zone: ZoneId,
+        locale: Locale = Locale.getDefault(),
+    ): String {
+        val weekday = instant.atZone(zone).dayOfWeek
+            .getDisplayName(java.time.format.TextStyle.SHORT, locale)
+        return "$weekday, ${date(instant, zone, locale)}"
+    }
+
     /** e.g. `September 2026`, in the user's language. */
     fun month(month: YearMonth, locale: Locale = Locale.getDefault()): String {
         val name = month.month.getDisplayName(java.time.format.TextStyle.FULL, locale)

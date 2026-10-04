@@ -41,6 +41,16 @@ data class WorkoutSummary(
     val zoneOffsetMinutes: Int? = null,
     /** Exercises still in the library, which is what a repeat would copy (ROADMAP B43's tail). */
     val repeatableExerciseCount: Int = 0,
+    /**
+     * The template this session was started from, or null (ROADMAP N58).
+     *
+     * Read **live** from the template row rather than snapshotted onto the session, so renaming a
+     * template relabels the past — accepted, because N16's template is living and the workout's own
+     * identity is when it happened, which the headline carries. Deletion is the softer case and the
+     * same read answers it: `deleteTemplate` is a soft delete, so the row and its name are still there
+     * and a past workout goes on saying which workout it was.
+     */
+    val templateName: String? = null,
 ) {
     /** Null while the workout is still open; history only holds finished ones. */
     val duration: Duration? get() = finishedAt?.let { Duration.between(startedAt, it) }

@@ -214,11 +214,15 @@ internal fun RecentWorkoutRow(
         // The session's own zone, like history and the workout detail (ROADMAP B33). Omitting it
         // here was a dropped argument rather than missing data, and it made one workout read as
         // two different dates on two screens.
-        headline = HistoryFormat.date(
+        headline = HistoryFormat.historyHeadline(
             workout.startedAt,
             zone = workout.zoneIdOrNull() ?: ZoneId.systemDefault(),
         ),
-        supporting = listOf(duration, setCount, volume).filter { it.isNotEmpty() }.joinToString(" · "),
+        // The template's name comes first, because it is the half of the row that says what the
+        // session *was* (ROADMAP N58); a workout with no plan behind it contributes nothing.
+        supporting = listOf(workout.templateName, duration, setCount, volume)
+            .filter { !it.isNullOrEmpty() }
+            .joinToString(" · "),
         leading = { IconTile(icon = Icons.Filled.History, accent = TileAccent.Sky) },
         trailing = { DiscloseChevron() },
         onClick = onClick,

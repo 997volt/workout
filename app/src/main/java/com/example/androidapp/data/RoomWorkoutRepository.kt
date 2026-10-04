@@ -125,13 +125,17 @@ class RoomWorkoutRepository @Inject constructor(
     override suspend fun repeatSession(sessionId: String): DataResult<StartedSession> =
         dataResultOf {
             database.withTransaction {
-                if (dao.findSession(sessionId) == null) {
-                    throw NotFoundException("session $sessionId")
-                }
+                val source = dao.findSession(sessionId)
+                    ?: throw NotFoundException("session $sessionId")
                 val start = dao.findOrCreateActiveSession(
                     id = UUID.randomUUID().toString(),
                     now = timeSource.nowEpochMillis(),
                     zoneOffsetMinutes = zoneOffsetSource.offsetMinutes(),
+                    // The repeat carries its source's provenance (ROADMAP N58): a repeated *Push A* is
+                    // still a Push A, so history goes on saying which workout it was instead of showing
+                    // an unnamed session. It is provenance and not prescription, exactly as it is for a
+                    // template start (P3.3), and the targets are not copied with it.
+                    templateId = source.templateId,
                 )
                 if (start.created) {
                     // The same append path every other start uses (ROADMAP N3, N29), so a repeated

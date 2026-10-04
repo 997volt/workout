@@ -712,6 +712,84 @@ ratio is absent, and the screen says which of the two absences it is.
 is a pure function over them, so the arithmetic worth arguing about is a JVM test rather than a
 device one.
 
+## N57
+
+The headline becomes `Sun, Oct 4, 2026` — the locale's short weekday, then the `MEDIUM` date the row
+already showed. The month heading above already says the month, so repeating it in full
+(`Sunday, October 4, 2026`) would spend the headline on the one part the reader already has; the part
+a lifter navigates by — "the Sunday session", "two days after Monday" — is the weekday. The name is
+the locale's own (`TextStyle.SHORT`) rather than an English pattern, for the same reason
+`HistoryFormat.month` uses `TextStyle.FULL`: the app is local-only but not English-only, and a
+hard-coded `EEE` would be right in exactly one language. The test pins the locale it asserts
+(`Locale.UK`) so it reads as "the locale's abbreviation" rather than as an English string — and it
+caught that `en_GB` writes September as `Sept`, which is the point of using the locale's names at all.
+One formatter serves home's *Recent* row too, because the two are the same question about the same
+object.
+
+## N58
+
+A session started from a template has carried `templateId` since P3.3, and the history projection never
+selected it — so *Push A* on a Tuesday and an empty workout on a Tuesday read identically. The name is
+the half of the row that says what the session *was*.
+
+**Live, not snapshot.** The alternative was a `templateName` column on the session, written when it
+started. It costs a migration for a copy of a string that already exists one join away, and what it
+buys is only the *rename* half of the problem — a renamed template would keep the old name in history.
+The other half, deletion, the live read already answers: `deleteTemplate` is a soft delete (P1.12), so
+the row is still there and the workout still says which workout it was. The accepted cost is that
+renaming a template relabels the past, which N16 already accepts as the meaning of a living template:
+the workout's own identity is when it happened, and that is the headline.
+
+**The line wraps rather than truncating.** The roadmap asks for that, and the reason is worth stating:
+`AppRow`'s supporting `Text` carries no `maxLines` today, so the four items — name, duration, sets,
+volume — wrap onto a second line on a phone. An ellipsis would hide the one item that cannot be
+inferred from the rest of the row. A fifth item would be the point at which the line stops being
+scannable, and that is a change to make deliberately rather than by accumulation.
+
+**The repeat's edge.** N48's repeat starts a session from a finished workout's exercises and left
+`templateId` null, so a repeated *Push A* would have been the one history row that lost its name. The
+repeat now copies its *source's* template id, which is provenance rather than prescription: the targets
+still come from the exercises the session copies, and nothing about N16's "a session reads the plan at
+the start" changes. Carrying the source's session id instead — a second provenance column — was
+rejected as a much larger change for a label.
+
+Two changes to one row, and the row's job is the argument for both. A history row has to answer "when
+was this" and "what was it", and it answered the first with a date inside a month heading and the
+second with nothing at all — a session started from a template carried `templateId` from P3.3 and the
+projection never selected it, so *Push A* on a Tuesday and an empty workout on a Tuesday read
+identically.
+
+**The weekday rather than a longer date.** The headline becomes `Sun, Oct 4, 2026`. The month heading
+above already says the month, so repeating it in full (`Sunday, October 4, 2026`) would spend the
+headline on the one part the reader already has, and the part a lifter actually navigates by — "the
+Sunday session", "two days after Monday" — is the weekday. The name is the locale's own
+(`TextStyle.SHORT`) rather than an English pattern, for the same reason `HistoryFormat.month` uses
+`TextStyle.FULL`: the app is local-only but not English-only, and a hard-coded `EEE` would be right in
+exactly one language. The test pins the locale it asserts (`Locale.UK`) so it reads as "the locale's
+abbreviation" rather than as an English string — and it caught that `en_GB` writes September as
+`Sept`, which is the point of using the locale's names at all.
+
+**Live, not snapshot.** The alternative was a `templateName` column on the session, written when it
+started. It costs a migration for a copy of a string that already exists one join away, and what it
+buys is only the *rename* half of the problem — a renamed template would keep the old name in history.
+The other half, deletion, the live read already answers: `deleteTemplate` is a soft delete (P1.12), so
+the row is still there and the workout still says which workout it was. The accepted cost is that
+renaming a template relabels the past, which N16 already accepts as the meaning of a living template:
+the workout's own identity is when it happened, and that is the headline.
+
+**Read once, by two surfaces.** Home's *Recent* row and the history row are the same question about the
+same object, so they share one formatter and one supporting line. The roadmap asks for a name that
+"wraps rather than truncates", and the reason is worth stating: `AppRow`'s supporting `Text` carries no
+`maxLines` today, so the four items — name, duration, sets, volume — wrap onto a second line on a phone.
+An ellipsis would hide the one item that cannot be inferred from the rest of the row.
+
+**The repeat's edge.** N48's repeat starts a session from a finished workout's exercises, and it left
+`templateId` null — so a repeated *Push A* would have been the one history row that lost its name. The
+repeat now copies its *source's* template id, which is provenance rather than prescription: the targets
+still come from the exercises the session copies, and nothing about N16's "a session reads the plan at
+the start" changes. Carrying the source's session id instead — a second provenance column — was
+rejected as a much larger change for a label.
+
 ## N56
 
 The pin was a decent answer to a question the app has since answered better. N16 added it when a

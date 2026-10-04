@@ -4,6 +4,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.WorkoutSessionEntity
 import com.example.androidapp.domain.DataError
@@ -20,6 +21,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.runner.RunWith
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Before
 import org.junit.Test
 
@@ -236,5 +239,21 @@ class RepeatSessionTest {
             copied.map { it.techniqueNote },
         )
         assertEquals("still a superset", listOf(1, 1), copied.map { it.supersetGroup })
+    }
+    @Test
+    fun aRepeatKeepsTheWorkoutsName() = runTest {
+        // ROADMAP N58's edge, settled: a repeat starts a session with the *source's* template id, so a
+        // repeated Push A is still a Push A in history rather than an unnamed session. The targets are
+        // not copied with it — this is provenance (P3.3), not prescription.
+        database.templateDao().insertTemplate(
+            TemplateEntity(id = "t1", name = "Push A", createdAt = 0L, updatedAt = 0L, deletedAt = null),
+        )
+        val session = database.workoutDao()
+            .findOrCreateActiveSession(id = "past", now = 1_000L, templateId = "t1").session
+        database.workoutDao().markFinished(id = session.id, at = 2_000L)
+
+        val repeated = opened("past")
+
+        assertEquals("t1", database.workoutDao().findSession(repeated)?.templateId)
     }
 }

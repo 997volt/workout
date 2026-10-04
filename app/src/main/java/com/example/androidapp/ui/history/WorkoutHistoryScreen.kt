@@ -183,12 +183,16 @@ private fun WorkoutRow(
     val volume = stringResource(R.string.history_volume, Weight.kilograms(workout.volumeGrams))
 
     AppRow(
-        headline = HistoryFormat.date(
+        headline = HistoryFormat.historyHeadline(
             workout.startedAt,
             // The zone it was performed in, not the one it is being read in (ROADMAP N25).
             zone = workout.zoneIdOrNull() ?: ZoneId.systemDefault(),
         ),
-        supporting = listOf(duration, setCount, volume).filter { it.isNotEmpty() }.joinToString(" · "),
+        // The template's name comes first, because it is the half of the row that says what the
+        // session *was* (ROADMAP N58); a workout with no plan behind it contributes nothing.
+        supporting = listOf(workout.templateName, duration, setCount, volume)
+            .filter { !it.isNullOrEmpty() }
+            .joinToString(" · "),
         leading = { IconTile(icon = Icons.Filled.History, accent = TileAccent.Sky) },
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {

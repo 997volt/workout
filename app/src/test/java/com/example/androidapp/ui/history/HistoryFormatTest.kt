@@ -2,6 +2,7 @@ package com.example.androidapp.ui.history
 
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
@@ -24,6 +25,35 @@ class HistoryFormatTest {
             "the same instant is a different day in Tokyo",
             HistoryFormat.date(nearMidnight, ZoneOffset.UTC),
             HistoryFormat.date(nearMidnight, ZoneOffset.ofHours(9)),
+        )
+    }
+
+    @Test
+    fun theHeadline_leadsWithTheLocalesOwnShortWeekday() {
+        // ROADMAP N57: the weekday is the part a lifter navigates by, and it is the locale's name
+        // rather than a hard-coded English pattern — so the assertion names the locale it expects.
+        assertEquals(
+            "Sun, 4 Oct 2026",
+            HistoryFormat.historyHeadline(
+                Instant.parse("2026-10-04T07:00:00Z"),
+                ZoneOffset.UTC,
+                Locale.UK,
+            ),
+        )
+    }
+
+    @Test
+    fun theHeadline_readsTheWeekdayInTheSessionsZone_notTheReaders() {
+        // N25/B38's rule applied to the new headline: 20:00 UTC on 30 September is still Wednesday
+        // in London and already Thursday the 1st in Tokyo, and the row has to say which day of the
+        // week it was *there*.
+        assertEquals(
+            "Thu, 1 Oct 2026",
+            HistoryFormat.historyHeadline(nearMidnight, ZoneOffset.ofHours(9), Locale.UK),
+        )
+        assertEquals(
+            "Wed, 30 Sept 2026",
+            HistoryFormat.historyHeadline(nearMidnight, ZoneOffset.UTC, Locale.UK),
         )
     }
 

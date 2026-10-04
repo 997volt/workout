@@ -84,8 +84,13 @@ interface WorkoutDao {
                    SELECT COUNT(*) FROM session_exercises se
                    JOIN exercises e ON e.id = se.exerciseId
                    WHERE se.sessionId = ws.id AND se.deletedAt IS NULL AND e.deletedAt IS NULL
-               ) AS repeatableExerciseCount
+               ) AS repeatableExerciseCount,
+               -- Live, and a LEFT JOIN because provenance is optional: a session started by hand has
+               -- no template, and one started from a template deleted since keeps its name, because
+               -- the template row is a soft delete and is still there (ROADMAP N58, P1.12).
+               t.name AS templateName
         FROM workout_sessions ws
+        LEFT JOIN templates t ON t.id = ws.templateId
         WHERE ws.finishedAt IS NOT NULL AND ws.deletedAt IS NULL
         ORDER BY ws.finishedAt DESC
         """,

@@ -20,6 +20,8 @@ data class WorkoutSummaryRow(
     val zoneOffsetMinutes: Int?,
     /** Exercises still in the library, which is what a repeat would copy (ROADMAP B43's tail). */
     val repeatableExerciseCount: Int,
+    /** The template this session was started from, read live, or null (ROADMAP N58). */
+    val templateName: String?,
 )
 
 internal fun WorkoutSummaryRow.toDomain(): WorkoutSummary = WorkoutSummary(
@@ -31,4 +33,5 @@ internal fun WorkoutSummaryRow.toDomain(): WorkoutSummary = WorkoutSummary(
     volumeGrams = volumeGrams,
     zoneOffsetMinutes = zoneOffsetMinutes,
     repeatableExerciseCount = repeatableExerciseCount,
+    templateName = templateName,
 )

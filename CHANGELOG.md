@@ -12,6 +12,29 @@ repeated here.
 
 ## [Unreleased]
 
+### Changed
+
+- **A history row leads with the weekday, and home's Recent rows with it** (N57). The headline is
+  `Sun, Oct 4, 2026`: the short weekday and then the `MEDIUM` date the row already showed. The weekday
+  is the part a lifter navigates by — which day of the week this was — while the month heading above
+  the row already carries the month the date repeats, which is why the short form is enough. It is
+  built from the locale's own names (`TextStyle.SHORT`, the way the month heading uses `TextStyle.FULL`)
+  rather than a hard-coded English pattern, and read in the session's own zone (N25, B38). One
+  formatter serves both surfaces, so a finished workout reads the same way wherever it is listed.
+- **A workout started from a template says which one in history** (N58). The session already stored
+  `templateId` — a program's slot included — but the history projection never selected it, so a
+  finished *Push A* and a finished empty workout were indistinguishable in the list. The template's
+  name now joins the supporting line beside the duration, sets and volume, and **wraps** rather than
+  truncating: four items are more than that line holds on a phone, and an ellipsis on the one part that
+  cannot be inferred from the workout would hide exactly what the change is for. The name is read
+  **live** from the template row, so renaming a template relabels the past — accepted, because N16's
+  template is living and the workout's own identity is when it happened, which the headline carries.
+  That read also answers deletion: `deleteTemplate` is a soft delete, so the name is still there and a
+  past workout goes on saying which workout it was. Snapshotting the name onto the session was rejected
+  — it costs a column and a migration and changes only what a *rename* does. A **repeat** now carries
+  its source's template id, so a repeated *Push A* is still a Push A in history rather than an unnamed
+  session; the targets are still not copied with it, which is provenance rather than prescription.
+
 ### Removed
 
 - **A template carries no weekday; the day belongs to a program's slot** (N56). A template is a
