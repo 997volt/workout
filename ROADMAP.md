@@ -42,16 +42,18 @@ lives, *Later* for what is self-contained and *Parked* for what is a product in 
   stays for filled surfaces, the links get a role of their own rather than `primary` being redefined under
   the pill.
 
-  The same control carries the end of the exercise's plan. Past the last planned set the exercise keeps
-  accepting sets with nothing to say its work is done, and `comparePlanToActual` says so only in the review,
-  after *Finish* — so the moment the last of that exercise's planned sets is written, *Log set* becomes
-  **Log extra set** and a notice says the planned work is done. Nothing closes: logging an extra set is what
-  the button still does. Accepting the notice is the **Done** button already in the exercise's header (N7),
-  so there is no second "finish" and no dismissal of its own. It is per exercise, and it is the control
-  rather than a dialog: N51 already puts a dialog in front of every set, and a second one would interrupt
-  the next exercise's first set. The notice stays in-app: the app declares no notification permission and
-  B37 removed the channel it used to create. The contrast is asserted rather than eyeballed, the way
-  `TileAccent.onColor` already is (B55).
+  The same control carries the end of the exercise's plan. The plan is the template the workout was started
+  from — a program's slot and a template chosen directly arrive as the same `templateId` — so a workout
+  started from a template of either kind gets the notice, and an empty workout, with no plan behind it, has
+  nothing to notice. Past the last planned set the exercise keeps accepting sets with nothing to say its
+  work is done, and `comparePlanToActual` says so only in the review, after *Finish* — so the moment the
+  last of that exercise's planned sets is written, *Log set* becomes **Log extra set** and a notice says the
+  planned work is done. Nothing closes: logging an extra set is what the button still does. Accepting the
+  notice is the **Done** button already in the exercise's header (N7), so there is no second "finish" and no
+  dismissal of its own. It is per exercise, and it is the control rather than a dialog: N51 already puts a
+  dialog in front of every set, and a second one would interrupt the next exercise's first set. The notice
+  stays in-app: the app declares no notification permission and B37 removed the channel it used to create.
+  The contrast is asserted rather than eyeballed, the way `TileAccent.onColor` already is (B55).
 
 ### Logging a set
 
