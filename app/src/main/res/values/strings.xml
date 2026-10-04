@@ -13,7 +13,6 @@
     <!-- Home (ROADMAP N1) -->
     <string name="home_title">Workouts</string>
     <string name="home_recent">Recent</string>
-    <string name="home_see_all">See all workouts</string>
     <string name="home_first_run">No workouts yet</string>
     <string name="home_first_run_hint">Tap Start workout to log your first one.</string>
     <string name="home_no_recent">Nothing recent</string>
@@ -161,7 +160,6 @@
     <string name="template_delete_confirm_title">Delete this template?</string>
     <string name="template_delete_confirm_text">The plan goes away. Workouts you already did with it stay in your history.</string>
     <string name="home_start_from_template">Start from template</string>
-    <string name="home_repeat_last">Repeat last workout</string>
     <string name="detail_save_as_plan">Save as plan</string>
     <string name="detail_plan_name">Plan name</string>
     <string name="detail_saved_as_plan">Saved as a plan</string>
@@ -432,6 +430,12 @@
     <string name="settings_rest_cue_hint">A tone and a short buzz, in the app. Nothing is scheduled in the background.</string>
     <string name="settings_keep_screen_on">Keep the screen on</string>
     <string name="settings_keep_screen_on_hint">While a workout is open, so the rest timer stays visible.</string>
+    <!-- The app's data (ROADMAP N43): export, import and delete everything, moved here from the
+         home overflow, which is where the app's database is what the screen is about. -->
+    <string name="settings_data_title">Data</string>
+    <string name="settings_data_export_hint">Write a backup file, choosing where it goes.</string>
+    <string name="settings_data_import_hint">Merge a backup into this device. Nothing is overwritten.</string>
+    <string name="settings_data_clear_hint">Delete every workout, measurement and target. This cannot be undone.</string>
     <!-- Why the prefilled set says what it says (ROADMAP N22). -->
     <string name="suggestion_more_reps">One more rep than last time</string>
     <string name="suggestion_more_weight">A step heavier than last time</string>

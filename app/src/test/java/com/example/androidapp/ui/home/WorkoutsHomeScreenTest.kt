@@ -45,16 +45,10 @@ class WorkoutsHomeScreenTest {
     private data class Actions(
         val onStartWorkout: () -> Unit = {},
         val onStartFromTemplate: () -> Unit = {},
-        val onRepeatLast: () -> Unit = {},
         val onStartTemplate: (TodayPlan) -> Unit = {},
         val onSubstituteTemplate: (TodayPlan, String?) -> Unit = { _, _ -> },
         val onOpenWorkout: (String) -> Unit = {},
-        val onOpenHistory: () -> Unit = {},
         val onOpenPrograms: () -> Unit = {},
-        // Null by default, mirroring the screen: a host that wired no transfer
-        // actions gets no dead menu entries (ROADMAP B1).
-        val onExportData: (() -> Unit)? = null,
-        val onImportData: (() -> Unit)? = null,
     )
 
     private fun setScreen(
@@ -69,14 +63,10 @@ class WorkoutsHomeScreenTest {
                     clock = remember { mutableStateOf(WorkoutClock()) },
                     onStartWorkout = actions.onStartWorkout,
                     onStartFromTemplate = actions.onStartFromTemplate,
-                    onRepeatLast = actions.onRepeatLast,
                     onStartTemplate = actions.onStartTemplate,
                     onSubstituteTemplate = actions.onSubstituteTemplate,
                     onOpenWorkout = actions.onOpenWorkout,
-                    onOpenHistory = actions.onOpenHistory,
                     onOpenPrograms = actions.onOpenPrograms,
-                    onExportData = actions.onExportData,
-                    onImportData = actions.onImportData,
                     message = message,
                 )
             }
@@ -143,49 +133,30 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun theOverflowMenu_offersExportAndImport() {
-        // ROADMAP B1: these used to be two menus deep — home, then the library.
-        var exported = false
-        var imported = false
-        setScreen(
-            WorkoutsHomeUiState(isLoading = false),
-            Actions(onExportData = { exported = true }, onImportData = { imported = true }),
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.HOME_MENU).performClick()
-        composeTestRule.onNodeWithTag(TestTags.DATA_EXPORT).performClick()
-        assertThat(exported).isTrue()
-
-        composeTestRule.onNodeWithTag(TestTags.HOME_MENU).performClick()
-        composeTestRule.onNodeWithTag(TestTags.DATA_IMPORT).performClick()
-        assertThat(imported).isTrue()
-    }
-
-    @Test
-    fun withoutTransferActions_theMenuDoesNotOfferThem() {
-        // A preview or a host that wired none; the entries must not appear dead.
-        setScreen(WorkoutsHomeUiState(isLoading = false))
-
-        composeTestRule.onNodeWithTag(TestTags.HOME_MENU).performClick()
-
-        composeTestRule.onNodeWithTag(TestTags.DATA_EXPORT).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.DATA_IMPORT).assertDoesNotExist()
-    }
-
-    @Test
-    fun theOverflowMenu_offersPrograms() {
-        // ROADMAP P3.3: the schedule the today's-plan section is read from is one tap from it.
+    fun theActionRow_offersProgramsBesideStartFromTemplate() {
+        // ROADMAP N42: Programs took the slot the repeat-last link gave up, so the screen the whole
+        // scheduling half is edited from is in the action row rather than behind an overflow.
         var opened = false
         setScreen(WorkoutsHomeUiState(isLoading = false), Actions(onOpenPrograms = { opened = true }))
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_MENU).performClick()
-        composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).performClick()
+        composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).assertIsDisplayed().performClick()
 
         assertThat(opened).isTrue()
     }
 
     @Test
-    fun aTransferMessage_isShown() {
+    fun theDataActions_areNoLongerOnHome() {
+        // ROADMAP N43: export, import and delete-everything act on the whole database, so they
+        // moved to Settings. Home must not still offer a second path to them.
+        setScreen(WorkoutsHomeUiState(isLoading = false))
+
+        composeTestRule.onNodeWithTag(TestTags.DATA_EXPORT).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.DATA_IMPORT).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_CLEAR_DATA).assertDoesNotExist()
+    }
+
+    @Test
+    fun aMessage_isShown() {
         setScreen(WorkoutsHomeUiState(isLoading = false), message = "Exported 42 rows")
 
         composeTestRule.onNodeWithText("Exported 42 rows").assertIsDisplayed()
@@ -205,17 +176,12 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun seeAll_leadsToTheFullHistory() {
-        // Home is a home-sized view; the month-grouped history is still the full one.
-        var openedHistory = false
-        setScreen(
-            WorkoutsHomeUiState(isLoading = false, recent = listOf(summary("session-1"))),
-            Actions(onOpenHistory = { openedHistory = true }),
-        )
+    fun theRecentHeading_carriesNoWayOut() {
+        // ROADMAP N42: "See all workouts" duplicated the History tab, which is one tap away and
+        // always visible; the heading now names the section and nothing else.
+        setScreen(WorkoutsHomeUiState(isLoading = false, recent = listOf(summary("session-1"))))
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_SEE_ALL).performClick()
-
-        assertThat(openedHistory).isTrue()
+        composeTestRule.onNodeWithText("See all workouts").assertDoesNotExist()
     }
 
     private fun summary(id: String) = WorkoutSummary(
@@ -338,31 +304,6 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun withNoFinishedWorkout_theRepeatAction_isNotOffered() {
-        // ROADMAP N29: there is nothing to repeat, so the control is absent rather than disabled —
-        // a button that does nothing invites a tap and teaches the wrong thing.
-        setScreen(WorkoutsHomeUiState(isLoading = false, recent = emptyList()))
-
-        composeTestRule.onNodeWithTag(TestTags.HOME_REPEAT_LAST).assertDoesNotExist()
-    }
-
-    @Test
-    fun withAFinishedWorkout_itIsOffered_andTapsThrough() {
-        var repeated = 0
-        setScreen(
-            state = WorkoutsHomeUiState(
-                isLoading = false,
-                recent = listOf(summary("session-1")),
-                canRepeatLast = true,
-            ),
-            actions = Actions(onRepeatLast = { repeated++ }),
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.HOME_REPEAT_LAST).assertIsDisplayed().performClick()
-        assertThat(repeated).isEqualTo(1)
-    }
-
-    @Test
     fun aPastWorkoutsDate_isRenderedInItsOwnZone() {
         // ROADMAP B33 and B39: grouping was well covered while the rendering was not, and the
         // rendering is where the bug was. Home and history now agree — and the expected string is
@@ -382,9 +323,9 @@ class WorkoutsHomeScreenTest {
 
     @Test
     fun whileAWorkoutIsOpen_neitherStartChoiceIsOffered() {
-        // ROADMAP B43's last gap. The absence test above passes an empty history, which is the *other*
-        // rule; this one has history and an open session, and asserts the pair is gone either way — a
-        // second way to start a workout while one is running is not a choice, it is a way to lose one.
+        // ROADMAP B43's last gap. This one has history and an open session, and asserts the pair is
+        // gone either way — a second way to start a workout while one is running is not a choice,
+        // it is a way to lose one. The pair is Programs and Start from template since N42.
         setScreen(
             state = WorkoutsHomeUiState(
                 isLoading = false,
@@ -396,7 +337,7 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_REPEAT_LAST).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.HOME_START_FROM_TEMPLATE).assertDoesNotExist()
     }
 

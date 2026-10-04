@@ -35,29 +35,6 @@ automatic (N22's "the app suggests; it never writes"), a weekday-less slot that 
 and is order-only, and more than one active program, which P3.12 allowed. What waits now came
 from using the built app rather than from either queue.
 
-### The workouts tab, cut back to the question it answers
-
-Three changes to one screen, and they are one argument: the tab that starts a workout should
-answer "what am I training today" and get out of the way. Everything else on it is a second path
-to somewhere the app already goes.
-
-- **"See all workouts" goes.** It is a text button on the *Recent* heading whose only job is to
-  open History — the tab beside it, one tap away and always visible. A section heading that
-  carries a way out of its own section duplicates the tab bar, and *Recent* is not a thing the
-  user needs to leave; History keeps the entry points it already has.
-- **"Repeat last workout" gives its slot to Programs.** That link and *Start from template* sit
-  as a pair above the start pill, and Programs — the screen the whole scheduling half is edited
-  from — is reachable only from the overflow menu today. A destination belongs in the action row;
-  the menu is where it got lost. Repeat-last is not deleted with its button (see *History*),
-  because dropping the entry point to a shipped feature is not the same as deciding against it.
-- **The overflow menu goes, and its three data actions move to Settings.** With Programs out of it
-  the menu holds only export, import and delete-everything — not actions on a workout at all, but
-  on the whole database, which is what Settings is about. This settles a placement that has moved
-  twice: the library held them, B1 moved them to the home overflow as "back where you start", and
-  Settings is a third and better answer rather than a return to the first — B1's argument was that
-  the library sat two menus from where the user starts, not that a data action belongs beside
-  *Start workout*.
-
 ### History: what a finished workout can carry
 
 - **Repeat-last becomes an action on a finished workout in History**, which is the entry point its
@@ -66,11 +43,8 @@ to somewhere the app already goes.
   all that a button on the home screen could ever mean. The row already opens the workout, so the
   second action needs a home that reads as one.
 
-### Settings: the app's data, and the rest timer
+### Settings: the rest timer
 
-- **A Data section: export, import, delete everything** — the destination of the move above, each
-  keeping what it does today. Delete-everything stays last and coloured, because it is still the
-  one entry that can cost the user something.
 - **A rest-timer switch, with the rest still on screen.** A rest is a countdown today: the session
   holds an end instant, the workout screen counts it down with ±15s controls, a rest that ends
   chimes (N27), and the default is editable (N21). The ask is the opposite preference — someone who

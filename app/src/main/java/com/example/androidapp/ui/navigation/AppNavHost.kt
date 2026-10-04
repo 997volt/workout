@@ -101,7 +101,6 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
     composable<WorkoutsHome> {
         WorkoutsHomeRoute(
             onStartWorkout = { navController.navigate(ActiveWorkout()) },
-            onRepeatLast = { navController.navigate(ActiveWorkout(repeatLast = true)) },
             // The start action's other half: home offers the choice, the template
             // list makes it (ROADMAP N3).
             onStartFromTemplate = { navController.navigate(WorkoutTemplates) },
@@ -111,8 +110,8 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
                 navController.navigate(ActiveWorkout(templateId = templateId, slotId = slotId))
             },
             onOpenWorkout = { sessionId -> navController.navigate(WorkoutDetail(sessionId)) },
-            onOpenHistory = { navController.navigate(WorkoutHistory) },
-            // The schedule the today's-plan section is read from (ROADMAP P3.3).
+            // The schedule the today's-plan section is read from (ROADMAP P3.3), now in the action
+            // row rather than the overflow it got lost in (N42).
             onOpenPrograms = { navController.navigate(Programs) },
         )
     }

@@ -407,6 +407,41 @@ is the one a lifter reaches for mid-set and a destructive action does not belong
 An undo was rejected: the row is soft-deleted, but an undo would have to reopen a workout the user
 asked to be gone and would say nothing about the occurrence it settled.
 
+## N42
+
+Three changes to the workouts tab, one argument: the tab that starts a workout should answer "what
+am I training today" and get out of the way.
+
+**"See all workouts" went.** It was a text button on the *Recent* heading whose only job was to
+open History — the tab beside it. A heading that carries a way out of its own section duplicates
+the tab bar, and it read as one more row rather than as navigation the moment it sat with the
+section's name. History keeps every entry point it already has.
+
+**Repeat-last gave its slot to Programs.** Programs is the screen the whole scheduling half is
+edited from and it was reachable only from the overflow. A destination belongs in the action row;
+the menu is where it got lost. Repeat-last is not deleted with its button — the feature keeps its
+one-tap copy and gains a better address (N48, a finished workout in History), because dropping an
+entry point to a shipped feature is not the same as deciding against the feature.
+
+**The overflow went.** With Programs out of it, it held only export, import and delete-everything
+— actions on the whole database rather than on a workout (N43). Keeping a three-dot menu for zero
+workout actions is the "control that would do nothing" the ramp rule already rejects, and the
+placement had already moved twice: the library held these actions, B1 moved them to the home
+overflow as "back where you start". Settings is a third and better answer rather than a return to
+the first, because B1's complaint was that the library sat two menus from where the user starts,
+not that a data action belongs beside *Start workout*.
+
+## N43
+
+Export, import and delete-everything act on everything the user has recorded, so the screen about
+the app is where they belong. Each keeps what it does today — the SAF pickers, the additive import,
+the typed confirmation with the export inside it (N18) — and delete-everything stays last and
+coloured, because it is still the one entry that can cost the user something.
+
+The move needed one shared piece rather than a copy: the held-failure-to-snackbar conversion the
+home route used was extracted to `FailureMessage` when Settings became its second caller, so the
+two screens cannot drift in how a failed write is reported.
+
 ## P3.3
 
 Programs. The shape was decided before the code, and the interesting part is what each

@@ -27,7 +27,6 @@ import kotlinx.coroutines.launch
  */
 data class StartIntent(
     val templateId: String? = null,
-    val repeatLast: Boolean = false,
     val label: String? = null,
     /**
      * The program slot the start came from, if any (ROADMAP P3.8).

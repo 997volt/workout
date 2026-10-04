@@ -246,6 +246,22 @@ the rule; that one argues it.
   session is soft-deleted, but restoring one would have to un-settle nothing and re-open a workout
   the user asked to be gone. ([evidence](DECISIONS-EVIDENCE.md#n41))
 
+- **A destination belongs in the action row, and a heading does not carry a way out of itself**
+  (N42). Programs moved from the home overflow into the pair above the start pill, and "See all
+  workouts" left the *Recent* heading: a control that leaves a section duplicates the tab bar, and
+  the screen the whole scheduling half is edited from does not belong behind a menu. Keeping both
+  entry points "just in case" was rejected — it is what made the tab a second path to everywhere
+  else. ([evidence](DECISIONS-EVIDENCE.md#n42))
+
+## The app's data
+
+- **An action on the whole database lives in Settings** (N43). Export, import and
+  delete-everything had moved from the library to the home overflow (B1) on the argument that home
+  is "where you start"; that placed them beside *Start workout*, which is an action on one workout
+  rather than on the database. Settings is about the app, so they are rows there, in the order that
+  matters: export, import, and the one that cannot be undone last and coloured.
+  ([evidence](DECISIONS-EVIDENCE.md#n43))
+
 ## Programs
 
 - **A program orders templates; a slot is a template plus an optional weekday** (P3.3). It is

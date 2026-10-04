@@ -40,6 +40,13 @@ fun AppRow(
      */
     onClickLabel: String? = null,
     testTag: String? = null,
+    /**
+     * The headline's colour, for the one row that has to read as destructive (ROADMAP N43).
+     *
+     * Unspecified by default, which is what makes the headline follow the list item's own
+     * content colour rather than a colour a caller guessed.
+     */
+    headlineColor: Color = Color.Unspecified,
 ) {
     // Clipped *before* the click, not after: the surface clips its own content to the rounded
     // shape, but a clickable applied to the outer modifier ripples as a rectangle over it.
@@ -60,7 +67,11 @@ fun AppRow(
     ) {
         ListItem(
             headlineContent = {
-                Text(text = headline, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = headline,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = headlineColor,
+                )
             },
             supportingContent = supporting?.let { line ->
                 {

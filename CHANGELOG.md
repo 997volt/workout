@@ -30,10 +30,21 @@ repeated here.
   status-bar icons onto near-black bars, so the clock and the battery vanish.
 - **Home's primary action is a full-width pill in a bottom bar**, not an extended floating
   button, and the tab bar separates from the page by tone with an accent wash behind the
-  selected item. "See all workouts" moved off the list and onto the heading it belongs to.
+  selected item.
+- **The workouts tab answers one question and gets out of the way** (N42). "See all workouts"
+  is gone from the *Recent* heading — History is the tab beside it, one tap away and always
+  visible, so a section heading carrying a way out of its own section was a second path to
+  somewhere the app already goes. "Repeat last workout" gives its slot in the action row to
+  *Programs*, the screen the scheduling half is edited from, which the overflow menu had got
+  lost in; and the overflow itself is gone, because with Programs out of it, it held only
+  actions on the whole database rather than on a workout.
 
 ### Added
 
+- **Settings has a Data section** (N43): export, import and delete-everything, moved from the
+  home overflow, each keeping what it does today. They act on the whole database, which is what
+  Settings is about; delete-everything stays last and coloured, behind the same typed
+  confirmation, because it is still the one entry that can cost the user something.
 - **An ongoing workout can be discarded, behind a prompt** (N41). A workout holding logged sets
   previously had no exit but *Finish*, which files it in history. The workout screen's top bar now
   offers *Discard workout*, and the prompt says what goes — how many sets are logged — and, when

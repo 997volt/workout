@@ -80,25 +80,23 @@ object TestTags {
     const val HOME_RESUME = "home_resume"
 
     /**
-     * Export and import (ROADMAP B1). Tagged generically because the point of the
-     * fix is *which screen* offers them, so a test asserts presence at home and
-     * absence in the library using the same two tags.
+     * Export and import (ROADMAP B1, N43). Tagged generically because the point is *which screen*
+     * offers them: a test asserts presence in Settings and absence in the library, using the same
+     * two tags. They moved here from the home overflow (N43), which is where the app's data is
+     * what the screen is about.
      */
     const val DATA_EXPORT = "data_export"
     const val DATA_IMPORT = "data_import"
 
     /** The other half of the start action (ROADMAP N3): begin from a template. */
     const val HOME_START_FROM_TEMPLATE = "home_start_from_template"
-    /** The way into programs, one tap from the plan they schedule (ROADMAP P3.3). */
+    /** The way into programs, in the action row rather than the overflow (ROADMAP P3.3, N42). */
     const val HOME_PROGRAMS = "home_programs"
-    const val HOME_REPEAT_LAST = "home_repeat_last"
     const val DETAIL_SAVE_AS_PLAN = "detail_save_as_plan"
     const val DETAIL_PLAN_NAME = "detail_plan_name"
     const val DETAIL_PLAN_CONFIRM = "detail_plan_confirm"
     const val DETAIL_OPEN_NEW_PLAN = "detail_open_new_plan"
-    const val HOME_MENU = "home_menu"
     const val HOME_RECENT_ROW = "home_recent_row"
-    const val HOME_SEE_ALL = "home_see_all"
     const val HOME_FIRST_RUN = "home_first_run"
     const val HOME_NO_RECENT = "home_no_recent"
 
@@ -242,6 +240,8 @@ object TestTags {
     const val SETTINGS_REST_CURRENT = "settings_rest_current"
     const val SETTINGS_REST_CUE = "settings_rest_cue"
     const val SETTINGS_KEEP_SCREEN_ON = "settings_keep_screen_on"
+    /** The row that opens the typed delete-everything confirmation (ROADMAP N43). */
+    const val SETTINGS_CLEAR_DATA = "settings_clear_data"
 
     fun settingRest(seconds: Int) = "setting_rest_$seconds"
 
