@@ -17,8 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-One batch, taken from using the app rather than from either queue, and all of it about the workout
-screen while a session runs. A candidate graduates to this section — gaining an id and a spelled-out
+One batch, taken from using the app rather than from either queue, and all of it the workouts half:
+the tab that starts a session, the screen one runs on, and how a set is written from it. A candidate
+graduates to this section — gaining an id and a spelled-out
 decision rather than a wish — when it is picked up, so what stands here is committed work; the two
 queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what is a
 product in its own right.
@@ -73,6 +74,20 @@ product in its own right.
   template is living, and a session reads it at the start") applied to order rather than to targets.
   Whether the new order is persisted with the session, and what it does to an exercise inside a superset
   group, is settled when it is picked up.
+
+### The workouts tab
+
+- **N55 — a program's *Next up* moves to the bottom, under *Start workout*, and the field itself opens
+  what is planned.** The next-up card sits in the scrolling list between today's plans and *Recent*, so a
+  program with nothing scheduled today is something the user has to scroll to, and the only thing in it
+  that responds is the *Start* button. It moves into the bottom bar beneath the start pill — the edge of
+  the screen the thumb is already at, where the primary action lives — and leaves the list, because one
+  program's next run shown twice is two answers to one question. Tapping the field opens the planned
+  workout; *Start* keeps starting it, so looking and starting stop being the same gesture. What the field
+  opens is settled when it is picked up: a template's only destination today is its **editor**, so the
+  change chooses between a read-only preview and opening that editor, and more than one active program
+  (P3.12) means the bar may have several next-up rows to fit — which is why the row stays compact rather
+  than a card.
 
 ## Later (still self-contained)
 
