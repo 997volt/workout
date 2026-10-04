@@ -240,6 +240,9 @@ object TestTags {
     const val SETTINGS_REST_CURRENT = "settings_rest_current"
     const val SETTINGS_REST_CUE = "settings_rest_cue"
     const val SETTINGS_KEEP_SCREEN_ON = "settings_keep_screen_on"
+    /** The rest-timer switch (ROADMAP N44), and the workout screen's static prescription it turns on. */
+    const val SETTINGS_REST_TIMER = "settings_rest_timer"
+    const val EXERCISE_REST_PRESCRIPTION = "exercise_rest_prescription"
     /** The row that opens the typed delete-everything confirmation (ROADMAP N43). */
     const val SETTINGS_CLEAR_DATA = "settings_clear_data"
 

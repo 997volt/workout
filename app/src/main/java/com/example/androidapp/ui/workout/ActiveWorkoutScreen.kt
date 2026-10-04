@@ -89,7 +89,9 @@ fun ActiveWorkoutRoute(
     val clock = viewModel.clock.collectAsStateWithLifecycle()
     val restCueEnabled by viewModel.restCueEnabled.collectAsStateWithLifecycle()
     val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()
-    RestCueAndScreenOn(clock, restCueEnabled, keepScreenOn)
+    val restTimerEnabled by viewModel.restTimerEnabled.collectAsStateWithLifecycle()
+    val defaultRestSeconds by viewModel.defaultRestSeconds.collectAsStateWithLifecycle()
+    RestCueAndScreenOn(clock, restCueEnabled, keepScreenOn, restTimerEnabled)
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
 
@@ -125,6 +127,8 @@ fun ActiveWorkoutRoute(
         onDiscard = viewModel::onDiscard,
         onBack = onBack,
         countsAgainstProgram = viewModel.startedFromProgram,
+        restTimerEnabled = restTimerEnabled,
+        defaultRestSeconds = defaultRestSeconds,
         modifier = modifier,
     )
 }
@@ -184,6 +188,13 @@ fun ActiveWorkoutScreen(
      * scheduled occurrence (P3.5).
      */
     countsAgainstProgram: Boolean = false,
+    /**
+     * Whether a rest is counted down (ROADMAP N44). Off shows each exercise's own prescription as a
+     * fixed label instead — no countdown, no ±15s, no chime.
+     */
+    restTimerEnabled: Boolean = true,
+    /** The fallback the static prescription label uses when an exercise prescribes no rest (N44). */
+    defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -239,6 +250,8 @@ fun ActiveWorkoutScreen(
             onDiscard = onDiscard,
             personalRecord = personalRecord,
             onToggleSuperset = onToggleSuperset,
+            restTimerEnabled = restTimerEnabled,
+            defaultRestSeconds = defaultRestSeconds,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -564,6 +577,8 @@ private fun WorkoutBody(
     modifier: Modifier = Modifier,
     personalRecord: PersonalRecordMoment? = null,
     onToggleSuperset: (String) -> Unit = {},
+    restTimerEnabled: Boolean = true,
+    defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         // The record sits above the work, not in a dialog: it happens *between* sets, and
@@ -592,7 +607,14 @@ private fun WorkoutBody(
                     onDismissPrompt = onDismissReadinessPrompt,
                     onSave = onSaveReadinessNote,
                 )
-                RestBar(clock = clock, onSkip = onSkipRest, onAdjust = onAdjustRest)
+                RestBar(
+                    clock = clock,
+                    onSkip = onSkipRest,
+                    onAdjust = onAdjustRest,
+                    // Off means no countdown at all (N44): the per-exercise prescription is drawn
+                    // in the list instead, so the timer is genuinely not running.
+                    enabled = restTimerEnabled,
+                )
                 HorizontalDivider()
 
                 if (state.isEmpty) {
@@ -609,6 +631,8 @@ private fun WorkoutBody(
                         onRateExercise = onRateExercise,
                         onReopenExercise = onReopenExercise,
                         onToggleSuperset = onToggleSuperset,
+                        restTimerEnabled = restTimerEnabled,
+                        defaultRestSeconds = defaultRestSeconds,
                     )
                 }
             }
@@ -622,11 +646,13 @@ private fun RestBar(
     onSkip: () -> Unit,
     onAdjust: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    /** False when the timer is switched off (ROADMAP N44), so nothing is counted or adjusted. */
+    enabled: Boolean = true,
 ) {
     // Deciding whether to show this bar in the *parent* would recompose the exercise
     // list once a second. Returning early here keeps the tick inside this composable.
     val remaining = clock.value.restSecondsRemaining
-    if (remaining <= 0) return
+    if (!enabled || remaining <= 0) return
 
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -878,6 +904,7 @@ private fun RestCueAndScreenOn(
     clock: State<WorkoutClock>,
     restCueEnabled: Boolean,
     keepScreenOn: Boolean,
+    restTimerEnabled: Boolean,
 ) {
     val view = LocalView.current
     DisposableEffect(keepScreenOn) {
@@ -893,7 +920,10 @@ private fun RestCueAndScreenOn(
     var wasResting by remember { mutableStateOf(false) }
     LaunchedEffect(clock) {
         snapshotFlow { clock.value.isResting }.collect { resting ->
-            if (!resting && wasResting && restCueEnabled) {
+            // Split, because four tests in one condition is where a reader stops counting: the rest
+            // ended, and both switches can silence it.
+            val restEnded = !resting && wasResting
+            if (restEnded && restCueEnabled && restTimerEnabled) {
                 tone.startTone(ToneGenerator.TONE_PROP_BEEP, TONE_MILLIS)
                 // `CONFIRM` is API 30 and this app supports 26; lint's InlinedApi rule caught that,
                 // which is what it is for. `VIRTUAL_KEY` is the same short tick and has existed since

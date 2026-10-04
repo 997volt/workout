@@ -75,6 +75,23 @@ class SettingsViewModelTest {
         assertEquals("still what is stored", 90, viewModel.uiState.value.defaultRestSeconds)
         assertEquals(DataError.Invalid("refused"), viewModel.uiState.value.error)
     }
+
+    @Test
+    fun theRestTimerSwitch_readsAndWritesTheStoredFlag() = runTest(dispatcher) {
+        // ROADMAP N44: the switch is stored like the rest sound, and the screen shows what is in
+        // force rather than what was tapped.
+        val repository = FakeSettingsRepository(stored = 90)
+        val viewModel = SettingsViewModel(repository)
+        advanceUntilIdle()
+
+        assertEquals("on by default", true, viewModel.uiState.value.restTimerEnabled)
+
+        viewModel.onSetRestTimer(false)
+        advanceUntilIdle()
+
+        assertEquals(false, viewModel.uiState.value.restTimerEnabled)
+        assertEquals(listOf(false), repository.timerWrites)
+    }
 }
 
 /** Hand-written, like every fake here: there is no mocking framework in this project. */
@@ -112,6 +129,22 @@ private class FakeSettingsRepository(
 
     override suspend fun setKeepScreenOn(enabled: Boolean): DataResult<Unit> =
         DataResult.Success(Unit)
+
+    /** N44: the switch reads back what was stored, so a refused write cannot look applied. */
+    private val timer = MutableStateFlow(true)
+    val timerWrites = mutableListOf<Boolean>()
+
+    override fun observeRestTimerEnabled(): Flow<Boolean> = timer.asStateFlow()
+
+    override suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit> {
+        timerWrites += enabled
+        return if (refuseWrites) {
+            DataResult.Failure(DataError.Invalid("refused"))
+        } else {
+            timer.value = enabled
+            DataResult.Success(Unit)
+        }
+    }
 
     override fun observeStatisticsRange(): Flow<StatisticsRange> = flowOf(StatisticsRange())
 

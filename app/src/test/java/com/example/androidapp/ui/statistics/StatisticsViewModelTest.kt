@@ -333,6 +333,9 @@ private class FakeSettingsRepository(
     override suspend fun setRestCueEnabled(enabled: Boolean): DataResult<Unit> = DataResult.Success(Unit)
     override fun observeKeepScreenOn(): Flow<Boolean> = flowOf(true)
     override suspend fun setKeepScreenOn(enabled: Boolean): DataResult<Unit> = DataResult.Success(Unit)
+    override fun observeRestTimerEnabled(): Flow<Boolean> = flowOf(true)
+    override suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit> =
+        DataResult.Success(Unit)
     override fun observeStatisticsRange(): Flow<StatisticsRange> = stored
     override suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit> {
         stored.value = range

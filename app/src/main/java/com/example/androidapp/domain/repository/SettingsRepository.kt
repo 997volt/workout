@@ -45,6 +45,18 @@ interface SettingsRepository {
     fun observeKeepScreenOn(): Flow<Boolean>
 
     suspend fun setKeepScreenOn(enabled: Boolean): DataResult<Unit>
+
+    /**
+     * Whether a rest between sets is counted down at all (ROADMAP N44).
+     *
+     * On by default: a rest *is* a countdown, and the switch is for someone who rests by feel.
+     * Off means the end instant is never written, so the timer is genuinely not running rather
+     * than a countdown hidden behind a static number; the workout screen shows the exercise's own
+     * prescription as a fixed label instead, and nothing chimes.
+     */
+    fun observeRestTimerEnabled(): Flow<Boolean>
+
+    suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit>
     /**
      * The window the Statistics screen is showing (ROADMAP N35).
      *

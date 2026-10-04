@@ -61,6 +61,11 @@ class PreferencesSettingsRepository @Inject constructor(
     override suspend fun setKeepScreenOn(enabled: Boolean): DataResult<Unit> =
         writeFlag(KEY_KEEP_SCREEN_ON, enabled)
 
+    override fun observeRestTimerEnabled(): Flow<Boolean> = observeFlag(KEY_REST_TIMER_ENABLED, true)
+
+    override suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit> =
+        writeFlag(KEY_REST_TIMER_ENABLED, enabled)
+
     /** A boolean preference, defaulted rather than null: these flags have always had a meaning. */
     private fun observeFlag(key: String, default: Boolean): Flow<Boolean> = callbackFlow {
         trySend(preferences.getBoolean(key, default))
@@ -186,6 +191,7 @@ class PreferencesSettingsRepository @Inject constructor(
         const val KEY_DEFAULT_REST_SECONDS = "default_rest_seconds"
         const val KEY_REST_CUE_ENABLED = "rest_cue_enabled"
         const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
+        const val KEY_REST_TIMER_ENABLED = "rest_timer_enabled"
         const val KEY_RANGE_KIND = "statistics_range_kind"
         const val KEY_RANGE_FROM = "statistics_range_from"
         const val KEY_RANGE_TO = "statistics_range_to"

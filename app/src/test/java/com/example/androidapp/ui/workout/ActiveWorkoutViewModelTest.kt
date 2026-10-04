@@ -676,6 +676,41 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun withTheRestTimerOff_loggingASet_startsNoRest() = runTest(dispatcher) {
+        // ROADMAP N44: off means the end instant is never written, so there is no countdown hidden
+        // behind a static number — the screen shows the prescription instead.
+        val repository = FakeWorkoutRepository().apply { restSecondsForNextExercise = 180 }
+        val settings = FakeSettingsRepository().apply { restTimer.value = false }
+        val viewModel = viewModelFor(repository, settings = settings)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id)
+        settle()
+
+        assertNull("nothing was started", repository.lastRestSeconds)
+        assertEquals("the set was still logged", 1, viewModel.uiState.value.exercises.single().sets.size)
+    }
+
+    @Test
+    fun turningTheRestTimerOff_clearsARunningRest() = runTest(dispatcher) {
+        // The switch is a preference about the timer, so off must stop one already running rather
+        // than only the next one (N44).
+        val repository = FakeWorkoutRepository()
+        val settings = FakeSettingsRepository()
+        val viewModel = viewModelFor(repository, settings = settings)
+        observe(viewModel)
+        settle()
+
+        settings.restTimer.value = false
+        settle()
+
+        assertTrue("the running rest is cleared", repository.restCleared)
+    }
+
+    @Test
     fun loggingASet_fallsBackToTheAppDefault_whenNoRestIsSet() = runTest(dispatcher) {
         val repository = FakeWorkoutRepository()
         val viewModel = viewModelFor(repository)
@@ -2021,6 +2056,16 @@ private class FakeSettingsRepository(
 
     override suspend fun setKeepScreenOn(enabled: Boolean): DataResult<Unit> =
         DataResult.Success(Unit)
+
+    /** N44: settable before the ViewModel is built, so a test can start with the timer off. */
+    val restTimer = MutableStateFlow(true)
+
+    override fun observeRestTimerEnabled(): Flow<Boolean> = restTimer.asStateFlow()
+
+    override suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit> {
+        restTimer.value = enabled
+        return DataResult.Success(Unit)
+    }
 
     override fun observeStatisticsRange(): Flow<StatisticsRange> = flowOf(StatisticsRange())
 

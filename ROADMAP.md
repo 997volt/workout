@@ -35,19 +35,6 @@ automatic (N22's "the app suggests; it never writes"), a weekday-less slot that 
 and is order-only, and more than one active program, which P3.12 allowed. What waits now came
 from using the built app rather than from either queue.
 
-### Settings: the rest timer
-
-- **A rest-timer switch, with the rest still on screen.** A rest is a countdown today: the session
-  holds an end instant, the workout screen counts it down with ±15s controls, a rest that ends
-  chimes (N27), and the default is editable (N21). The ask is the opposite preference — someone who
-  rests by feel and would rather not be counted at — as a switch rather than a removal, because the
-  prescription is still worth reading: with the timer off the screen shows **that exercise's own
-  rest as a fixed label**, the same value the timer would have counted, falling back to the default
-  rest when the exercise has none, with no countdown, no ±15s and no chime. Off has to mean the
-  timer is genuinely not running rather than a countdown hidden behind a static number, so the
-  decision this needs when it is taken is whether the end instant is simply never written while the
-  switch is off.
-
 ### Rest: making "no rest" expressible
 
 - **A rest of zero becomes a valid, deliberate answer.** The field has two states today and needs

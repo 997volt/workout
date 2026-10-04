@@ -45,6 +45,13 @@ repeated here.
   home overflow, each keeping what it does today. They act on the whole database, which is what
   Settings is about; delete-everything stays last and coloured, behind the same typed
   confirmation, because it is still the one entry that can cost the user something.
+- **The rest timer can be switched off, without losing the prescription** (N44). Settings gains
+  *Count the rest down*: on it behaves as before, and off the workout screen shows each exercise's
+  own rest as a fixed label — falling back to the default rest when it has none — with no
+  countdown, no ±15s controls and no chime. Off is genuinely off rather than a countdown hidden
+  behind a static number: the end instant is never written while the switch is off, and a rest
+  already running is cleared when it goes off. It is a preference about the timer, not a fact about
+  the exercise, which is why it is not the same thing as a rest of zero (N45).
 - **A finished workout can be repeated from its History row** (N48). This is the entry point the
   home screen's "Repeat last workout" button gave up, addressed to the workout the row names rather
   than to "the last one": the copy is that workout's exercises and order (never its loads), and the

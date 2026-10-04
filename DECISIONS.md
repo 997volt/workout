@@ -245,6 +245,13 @@ the rule; that one argues it.
   beside *Finish*, which is the control a lifter reaches for mid-set. An undo was rejected: the
   session is soft-deleted, but restoring one would have to un-settle nothing and re-open a workout
   the user asked to be gone. ([evidence](DECISIONS-EVIDENCE.md#n41))
+- **The rest timer can be switched off, and off means it never runs** (N44, extending N21 and N27).
+  A rest is still shown — the exercise's own prescription as a fixed label, falling back to the
+  default rest — with no countdown, no ±15s and no chime. The end instant is simply never written
+  while the switch is off, and a rest already running is cleared when it goes off; hiding a live
+  countdown behind a static number would be the timer still running, which is the reading this
+  rejects. It is a preference about the timer, not a fact about the exercise, so it stays distinct
+  from a prescribed rest of zero. ([evidence](DECISIONS-EVIDENCE.md#n44))
 
 - **A destination belongs in the action row, and a heading does not carry a way out of itself**
   (N42). Programs moved from the home overflow into the pair above the start pill, and "See all

@@ -55,6 +55,8 @@ class ActiveWorkoutScreenTest {
         actions: Actions = Actions(),
         personalRecord: PersonalRecordMoment? = null,
         countsAgainstProgram: Boolean = false,
+        restTimerEnabled: Boolean = true,
+        defaultRestSeconds: Int = 90,
     ) {
         composeTestRule.setContent {
             ActiveWorkoutScreen(
@@ -82,8 +84,29 @@ class ActiveWorkoutScreenTest {
                 onDiscard = actions.onDiscard,
                 onBack = {},
                 countsAgainstProgram = countsAgainstProgram,
+                restTimerEnabled = restTimerEnabled,
+                defaultRestSeconds = defaultRestSeconds,
             )
         }
+    }
+
+    @Test
+    fun withTheRestTimerOff_theRestIsAFixedPrescription() {
+        // ROADMAP N44: off is not "hide the number" — the exercise's own rest is shown as a fact,
+        // with no countdown behind it.
+        setScreen(state(isFinished = false), restTimerEnabled = false, defaultRestSeconds = 120)
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_REST_PRESCRIPTION).assertExists()
+        composeTestRule.onNodeWithText("Rest 2:00").assertExists()
+    }
+
+    @Test
+    fun withTheRestTimerOn_thePrescriptionLabelIsNotDrawn() {
+        // On, the countdown bar is the display; a second static copy of the same number would be
+        // two answers to one question.
+        setScreen(state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_REST_PRESCRIPTION).assertDoesNotExist()
     }
 
     @Test

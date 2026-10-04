@@ -93,6 +93,7 @@ fun SettingsRoute(
         onSetDefaultRest = viewModel::onSetDefaultRest,
         onSetRestCue = viewModel::onSetRestCue,
         onSetKeepScreenOn = viewModel::onSetKeepScreenOn,
+        onSetRestTimer = viewModel::onSetRestTimer,
         onExportData = transferActions.export,
         onImportData = transferActions.import,
         onClearData = {
@@ -119,6 +120,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onSetRestCue: (Boolean) -> Unit = {},
     onSetKeepScreenOn: (Boolean) -> Unit = {},
+    onSetRestTimer: (Boolean) -> Unit = {},
     onExportData: () -> Unit = {},
     onImportData: () -> Unit = {},
     onClearData: () -> Unit = {},
@@ -161,6 +163,7 @@ fun SettingsScreen(
             onSetDefaultRest = onSetDefaultRest,
             onSetRestCue = onSetRestCue,
             onSetKeepScreenOn = onSetKeepScreenOn,
+            onSetRestTimer = onSetRestTimer,
             onExportData = onExportData,
             onImportData = onImportData,
             onClearData = { confirmingClear = true },
@@ -181,6 +184,7 @@ private fun SettingsBody(
     onSetDefaultRest: (Int) -> Unit,
     onSetRestCue: (Boolean) -> Unit,
     onSetKeepScreenOn: (Boolean) -> Unit,
+    onSetRestTimer: (Boolean) -> Unit,
     onExportData: () -> Unit,
     onImportData: () -> Unit,
     onClearData: () -> Unit,
@@ -196,10 +200,11 @@ private fun SettingsBody(
             state = state,
             onSetDefaultRest = onSetDefaultRest,
         )
-        RestCueSwitches(
+        WorkoutSwitches(
             state = state,
             onSetRestCue = onSetRestCue,
             onSetKeepScreenOn = onSetKeepScreenOn,
+            onSetRestTimer = onSetRestTimer,
         )
         DataSection(
             onExport = onExportData,
@@ -338,15 +343,24 @@ private fun SettingSwitch(
     }
 }
 
-/** The two switches this screen exists for as much as the rest choices (ROADMAP N27). */
+/** The switches that change how a workout behaves (ROADMAP N27, N44). */
 @Composable
-private fun RestCueSwitches(
+private fun WorkoutSwitches(
     state: SettingsUiState,
     onSetRestCue: (Boolean) -> Unit,
     onSetKeepScreenOn: (Boolean) -> Unit,
+    onSetRestTimer: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AppCard(modifier = modifier) {
+        SettingSwitch(
+            label = stringResource(R.string.settings_rest_timer),
+            hint = stringResource(R.string.settings_rest_timer_hint),
+            checked = state.restTimerEnabled,
+            onCheckedChange = onSetRestTimer,
+            testTag = TestTags.SETTINGS_REST_TIMER,
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         SettingSwitch(
             label = stringResource(R.string.settings_rest_cue),
             hint = stringResource(R.string.settings_rest_cue_hint),

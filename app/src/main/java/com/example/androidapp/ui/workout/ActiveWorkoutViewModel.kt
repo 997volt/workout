@@ -262,8 +262,24 @@ class ActiveWorkoutViewModel @Inject constructor(
      * Collected rather than read once: a change made in settings must reach a workout that
      * is already running, which is the reason the store exposes a `Flow` at all.
      */
-    private val defaultRestSeconds = settingsRepository.observeDefaultRestSeconds()
+    /**
+     * The app-wide default rest, kept current while the screen is open (ROADMAP N21).
+     *
+     * Collected rather than read once: a change made in settings must reach a workout that is
+     * already running, which is the reason the store exposes a `Flow` at all. Public since N44:
+     * with the countdown off the screen shows what an exercise prescribes, falling back to this.
+     */
+    val defaultRestSeconds = settingsRepository.observeDefaultRestSeconds()
         .stateIn(viewModelScope, SharingStarted.Eagerly, RestTimer.DEFAULT_SECONDS)
+
+    /**
+     * Whether the rest between sets is counted down at all (ROADMAP N44).
+     *
+     * Read from settings rather than held as its own state: turning it off must stop a rest that is
+     * already running, not only the next one.
+     */
+    val restTimerEnabled: StateFlow<Boolean> = settingsRepository.observeRestTimerEnabled()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     /**
      * The record just set, if the last logged set was one (ROADMAP N23).
@@ -461,6 +477,14 @@ class ActiveWorkoutViewModel @Inject constructor(
                 }
 
                 is DataResult.Failure -> lastError.value = result.error
+            }
+        }
+
+        // "Off" means the timer is genuinely not running (N44): a rest already counted down is
+        // cleared when the switch goes off, rather than left ticking behind a static label.
+        viewModelScope.launch {
+            restTimerEnabled.collect { enabled ->
+                if (!enabled) workoutRepository.clearRest()
             }
         }
 
@@ -700,7 +724,9 @@ class ActiveWorkoutViewModel @Inject constructor(
                     val rest = uiState.value.longestRestInRound(row)
                         ?: row.restSeconds
                         ?: defaultRestSeconds.value
-                    startRest(rest)
+                    // Off means the timer is genuinely not running (N44): the end instant is simply
+                    // never written, and the screen shows the prescription as a fixed label instead.
+                    if (restTimerEnabled.value) startRest(rest)
                 }
             }
         }

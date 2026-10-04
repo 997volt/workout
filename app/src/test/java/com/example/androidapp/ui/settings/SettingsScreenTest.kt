@@ -34,6 +34,7 @@ class SettingsScreenTest {
     private var exported = 0
     private var imported = 0
     private var cleared = 0
+    private val restTimerWrites = mutableListOf<Boolean>()
 
     private fun show(state: SettingsUiState, message: String? = null) {
         composeTestRule.setContent {
@@ -41,6 +42,7 @@ class SettingsScreenTest {
                 state = state,
                 onSetDefaultRest = { chosen += it },
                 onBack = { backs++ },
+                onSetRestTimer = { restTimerWrites += it },
                 onExportData = { exported++ },
                 onImportData = { imported++ },
                 onClearData = { cleared++ },
@@ -78,6 +80,18 @@ class SettingsScreenTest {
         )
 
         composeTestRule.onNodeWithText("a rest must be between 5 seconds and an hour").assertExists()
+    }
+
+    @Test
+    fun theRestTimerSwitch_sendsItsChoice() {
+        // ROADMAP N44: the switch is on by default, so a tap turns the countdown off.
+        show(SettingsUiState())
+
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_REST_TIMER)
+            .performScrollTo()
+            .performClick()
+
+        assertEquals(listOf(false), restTimerWrites)
     }
 
     @Test

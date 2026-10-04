@@ -407,6 +407,28 @@ is the one a lifter reaches for mid-set and a destructive action does not belong
 An undo was rejected: the row is soft-deleted, but an undo would have to reopen a workout the user
 asked to be gone and would say nothing about the occurrence it settled.
 
+## N44
+
+The rest timer had one behaviour: log a set, an end instant is written, the screen counts it down
+with ±15s controls, and the end chimes (N27). The ask is the opposite preference — someone who
+rests by feel and would rather not be counted at — but the prescription is still worth reading, so
+the answer is a switch rather than a removal.
+
+**Off shows the exercise's own rest as a fixed label**, falling back to the app default where the
+exercise has none: the same number the timer would have counted, drawn as a fact about the exercise
+instead of a countdown.
+
+**Off has to mean the timer is genuinely not running.** The rejected alternative was to keep writing
+the end instant and simply not draw the bar; that is a countdown hidden behind a static number, and
+the interval would still be burning — a rest that "ended" silently, or chimed if the cue were on.
+So the end instant is never written while the switch is off, and a rest already running is cleared
+when the switch goes off.
+
+That is also why this is not the same feature as a prescribed rest of zero (N45). This one is a
+preference about the timer; that one is a fact about the exercise. An app-wide zero would take the
+rest out of every exercise at once, which is this switch's job, so zero stays out of the default
+rest's choices.
+
 ## N42
 
 Three changes to the workouts tab, one argument: the tab that starts a workout should answer "what

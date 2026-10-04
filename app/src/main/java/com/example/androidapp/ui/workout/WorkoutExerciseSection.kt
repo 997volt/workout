@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.ExerciseRatingDialog
@@ -71,6 +72,9 @@ internal fun ExerciseList(
     modifier: Modifier = Modifier,
     onToggleSuperset: (String) -> Unit = {},
     onAcceptOffer: (String) -> Unit = {},
+    /** Whether a rest is counted down, and the fallback its static label uses (ROADMAP N44). */
+    restTimerEnabled: Boolean = true,
+    defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -92,6 +96,8 @@ internal fun ExerciseList(
                 // `updatedAt` for no change (ROADMAP B28).
                 onToggleSuperset = if (index == 0) null else { { onToggleSuperset(row.id) } },
                 onAcceptOffer = { onAcceptOffer(row.id) },
+                restTimerEnabled = restTimerEnabled,
+                defaultRestSeconds = defaultRestSeconds,
             )
             HorizontalDivider()
         }
@@ -120,6 +126,8 @@ private fun ExerciseSection(
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,
     onAcceptOffer: (() -> Unit)? = null,
+    restTimerEnabled: Boolean = true,
+    defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
 ) {
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Row(
@@ -127,7 +135,12 @@ private fun ExerciseSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top,
         ) {
-            ExerciseNames(row = row, modifier = Modifier.weight(1f))
+            ExerciseNames(
+                row = row,
+                restTimerEnabled = restTimerEnabled,
+                defaultRestSeconds = defaultRestSeconds,
+                modifier = Modifier.weight(1f),
+            )
             if (onToggleSuperset != null && !row.isFinished) {
                 SupersetToggle(row = row, onToggle = onToggleSuperset)
             }
@@ -366,7 +379,18 @@ private fun ExerciseSets(
  * too, and mixing the two made one function carry the whole row.
  */
 @Composable
-private fun ExerciseNames(row: SessionExerciseRow, modifier: Modifier = Modifier) {
+private fun ExerciseNames(
+    row: SessionExerciseRow,
+    modifier: Modifier = Modifier,
+    /**
+     * Whether a rest is counted down, and the fallback its static label uses (ROADMAP N44).
+     *
+     * Off is not "hide the number": the prescription is still worth reading, so it is drawn here as
+     * a fact about the exercise rather than a countdown that never moves.
+     */
+    restTimerEnabled: Boolean = true,
+    defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
+) {
     Column(modifier = modifier) {
         Text(
             text = row.supersetLabel?.let { "$it · ${row.name}" } ?: row.name,
@@ -387,6 +411,17 @@ private fun ExerciseNames(row: SessionExerciseRow, modifier: Modifier = Modifier
                 style = MaterialTheme.typography.bodySmall,
                 fontStyle = FontStyle.Italic,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (!restTimerEnabled) {
+            Text(
+                text = stringResource(
+                    R.string.active_workout_rest_prescription,
+                    RestTimer.format(row.restSeconds ?: defaultRestSeconds),
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag(TestTags.EXERCISE_REST_PRESCRIPTION),
             )
         }
         row.lastTime?.let { last ->

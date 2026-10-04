@@ -44,6 +44,11 @@ class SettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(keepScreenOn = enabled) }
             }
         }
+        viewModelScope.launch {
+            settingsRepository.observeRestTimerEnabled().collect { enabled ->
+                _uiState.update { it.copy(restTimerEnabled = enabled) }
+            }
+        }
     }
 
     fun onSetRestCue(enabled: Boolean) {
@@ -52,6 +57,10 @@ class SettingsViewModel @Inject constructor(
 
     fun onSetKeepScreenOn(enabled: Boolean) {
         write { settingsRepository.setKeepScreenOn(enabled) }
+    }
+
+    fun onSetRestTimer(enabled: Boolean) {
+        write { settingsRepository.setRestTimerEnabled(enabled) }
     }
 
     /** One place where a failed write becomes the error the screen shows. */
@@ -81,6 +90,13 @@ data class SettingsUiState(
     val restCueEnabled: Boolean = true,
     /** Whether a workout keeps the screen awake (ROADMAP N27). */
     val keepScreenOn: Boolean = true,
+    /**
+     * Whether a rest is counted down at all (ROADMAP N44).
+     *
+     * Off means the rest is still shown — the exercise's own prescription as a fixed label — but
+     * nothing is counted, nothing is adjusted and nothing chimes.
+     */
+    val restTimerEnabled: Boolean = true,
     val error: DataError? = null,
 ) {
     val choices: List<Int> get() = REST_CHOICES
