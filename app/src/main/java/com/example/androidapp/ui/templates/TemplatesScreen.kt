@@ -19,7 +19,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +41,7 @@ import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.programs.programStartGate
 import com.example.androidapp.ui.programs.StartIntent
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -226,7 +226,7 @@ private fun TemplateRow(
             )
         },
         trailingContent = {
-            TextButton(
+            AppTextButton(
                 onClick = onStart,
                 // Starting is the point of a template, so it gets the row's own
                 // button; tapping the row itself edits it instead.

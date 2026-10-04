@@ -7,7 +7,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,7 +80,7 @@ fun ExerciseRatingDialog(
             )
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 modifier = Modifier.testTag(TestTags.RATING_SAVE),
                 enabled = muscleIsValid && jointIsValid,
                 onClick = { onSave(muscleFeel, jointPain, noteText.trim().ifEmpty { null }) },
@@ -90,7 +89,7 @@ fun ExerciseRatingDialog(
             }
         },
         dismissButton = {
-            TextButton(
+            AppTextButton(
                 modifier = Modifier.testTag(TestTags.RATING_DISMISS),
                 onClick = onDismiss,
             ) {

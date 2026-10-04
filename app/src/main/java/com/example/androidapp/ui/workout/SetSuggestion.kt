@@ -138,18 +138,19 @@ fun suggestionForNextSet(
 }
 
 /**
- * What the plan prescribes for the next set of the exercise at [position] (N14).
+ * What one entry of the plan prescribes for the next set of its exercise (N14, N54).
  *
- * Matched by position rather than by exercise id: a plan may contain the same movement
- * twice, and the order is what the session was seeded from. A plan that has nothing to
- * say about this set — or no plan at all — is null, which leaves the older rule below
- * to decide.
+ * Takes the entry the caller has **already resolved** to this exercise rather than a position: the
+ * session's order is its own once N54 lets it be edited, so a position stopped being a name for a
+ * plan entry, and matching on it pointed a moved exercise at its neighbour's targets. Pairing a
+ * session's rows with the plan's is [planEntriesFor]'s one job, and it matches by movement instead.
+ * A plan that has nothing to say about this set — or no entry at all — is null, which leaves the
+ * older rule below to decide.
  */
 fun plannedTargetFor(
-    planned: List<TemplateExercise>,
-    position: Int,
+    planned: TemplateExercise?,
     nextIndex: Int,
-): PlannedTarget? = planned.firstOrNull { it.position == position }
+): PlannedTarget? = planned
     ?.sets
     ?.firstOrNull { it.setIndex == nextIndex }
     ?.let { set ->

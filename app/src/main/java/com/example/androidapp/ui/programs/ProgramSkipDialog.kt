@@ -3,7 +3,6 @@ package com.example.androidapp.ui.programs
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -11,6 +10,7 @@ import androidx.compose.ui.res.stringResource
 import com.example.androidapp.R
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.longLabel
+import com.example.androidapp.ui.components.AppTextButton
 
 /**
  * The point-of-start question (ROADMAP P3.3).
@@ -54,7 +54,7 @@ fun ProgramSkipDialog(
             )
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onDoItNow,
                 modifier = Modifier.testTag(TestTags.Programs.SKIP_DO_NOW),
             ) {
@@ -62,7 +62,7 @@ fun ProgramSkipDialog(
             }
         },
         dismissButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onContinue,
                 modifier = Modifier.testTag(TestTags.Programs.SKIP_CONTINUE),
             ) {

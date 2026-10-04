@@ -28,7 +28,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -54,6 +53,7 @@ import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.programs.programStartGate
 import com.example.androidapp.ui.programs.StartIntent
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -286,7 +286,7 @@ private fun SubstituteDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.action_cancel))
             }
         },
@@ -401,13 +401,13 @@ private fun StartActions(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(
+                AppTextButton(
                     onClick = onOpenPrograms,
                     modifier = Modifier.testTag(TestTags.HOME_PROGRAMS),
                 ) {
                     Text(stringResource(R.string.home_programs))
                 }
-                TextButton(
+                AppTextButton(
                     onClick = onStartFromTemplate,
                     modifier = Modifier.testTag(TestTags.HOME_START_FROM_TEMPLATE),
                 ) {
@@ -490,7 +490,7 @@ private val BUTTON_HEIGHT = 52.dp
  * One program's next run, in the bottom bar (ROADMAP N55).
  *
  * Compact rather than a card, because the bar may hold several rows — more than one program can be
- * active (P3.12) — and because it now sits beside the start pill rather than in a scrolling list.
+ * active (P3.12) — and because it now sits above the start pill rather than in a scrolling list.
  * Where [NextUpRow]'s old card put the name first and the button under it, this puts the *field* on
  * the row and the start beside it: tapping the field opens what is planned, and tapping *Start* starts
  * it, so looking and starting stopped being the same gesture.
@@ -545,7 +545,7 @@ private fun NextUpRow(
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        TextButton(
+        AppTextButton(
             onClick = onStart,
             modifier = Modifier.testTag(TestTags.Home.nextUpStart(nextUp.plan.id)),
         ) {
@@ -554,15 +554,6 @@ private fun NextUpRow(
     }
 }
 
-/**
- * What a next-up row has planned, read on the tap that opened it (ROADMAP N55).
- *
- * A dialog rather than the template's editor, which is the only destination a template had: the
- * question the field answers is "what is in this workout", and opening the editor to answer it would
- * put every target in the plan one mis-tap from being rewritten on the way to reading it. It is also
- * a dialog rather than a screen because the answer is short — the workout's ordered exercises — and a
- * destination for a list of names would be a screen with a back button and nothing to do on it.
- */
 @Preview(showBackground = true)
 @Composable
 private fun WorkoutsHomeScreenPreview() {

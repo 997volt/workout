@@ -18,7 +18,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +36,7 @@ import com.example.androidapp.ui.components.IconTile
 import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.longLabel
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.theme.TileAccent
 import com.example.androidapp.ui.workout.WorkoutFormat
@@ -134,7 +134,7 @@ private fun TodayPlanCard(
             // Only a program slot can be substituted: the event is keyed by slot and week
             // (P3.11), and a pinned plan has no slot to key it by.
             if (plan.slotId != null) {
-                TextButton(
+                AppTextButton(
                     onClick = onSubstitute,
                     modifier = Modifier.testTag(TestTags.homeSubstitute(plan.id)),
                 ) {

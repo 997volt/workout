@@ -26,7 +26,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -53,6 +52,7 @@ import com.example.androidapp.ui.components.SetEditorDialog
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.rpeMarker
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.workout.WorkoutFormat
 import java.time.ZoneId
@@ -113,7 +113,7 @@ private fun SaveAsPlanDialog(
             )
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = { onConfirm(name) },
                 // A blank name is refused by the repository too; disabling the button says so before
                 // the tap rather than after it.
@@ -124,7 +124,7 @@ private fun SaveAsPlanDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
 }
@@ -139,7 +139,7 @@ private fun SavedAsPlanDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.detail_saved_as_plan)) },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onOpen,
                 modifier = Modifier.testTag(TestTags.DETAIL_OPEN_NEW_PLAN),
             ) {
@@ -147,7 +147,7 @@ private fun SavedAsPlanDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
+            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
         },
     )
 }
@@ -258,7 +258,7 @@ private fun DetailTopBar(
         },
         actions = {
             onSaveAsPlan?.let { save ->
-                TextButton(
+                AppTextButton(
                     onClick = save,
                     modifier = Modifier.testTag(TestTags.DETAIL_SAVE_AS_PLAN),
                 ) {
@@ -356,12 +356,12 @@ private fun DeleteWorkoutDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
         title = { Text(stringResource(R.string.history_delete_confirm_title)) },
         text = { Text(stringResource(R.string.history_delete_confirm_text)) },
         confirmButton = {
-            TextButton(onClick = onConfirm) {
+            AppTextButton(onClick = onConfirm) {
                 Text(stringResource(R.string.history_delete_confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.history_cancel))
             }
         },

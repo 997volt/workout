@@ -64,9 +64,9 @@ data class ActiveWorkoutInfo(
 /**
  * One row of today's plan (ROADMAP P3.3).
  *
- * [id] is the row's own identity — a program slot's id when a program is active, a
- * template's id under the weekday pins. It is deliberately not [templateId]: a program may
- * put the same template in two slots, and a list keyed by template would collide.
+ * [id] is the row's own identity — a program slot's id, since a program's slots are the only source
+ * of a dated plan (N56). It is deliberately not [templateId]: a program may put the same template in
+ * two slots, and a list keyed by template would collide.
  *
  * [slotId] is set only for a program slot, and it is what carries the slot's prescription into
  * the workout (P3.8): the template is what is started, the slot is what it was scheduled as.
@@ -357,8 +357,7 @@ class WorkoutsHomeViewModel @Inject constructor(
  * they read (ROADMAP N56): with no active program there is then no *Today* list, which is the change
  * stating that a day is a scheduling fact and scheduling is what a program is for.
  *
- * File-level and pure so the union and the fallback can be tested without a database or a
- * ViewModel.
+ * File-level and pure so the union can be tested without a database or a ViewModel.
  */
 internal fun todaysPlanFor(
     programs: List<WorkoutProgram>,

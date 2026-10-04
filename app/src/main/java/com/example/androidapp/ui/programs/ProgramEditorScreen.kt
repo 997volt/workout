@@ -37,7 +37,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -67,6 +66,7 @@ import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.shortLabel
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import java.time.DayOfWeek
 
@@ -302,7 +302,7 @@ private fun ProgramEditorTopBar(
         },
         actions = {
             // Export is per program, so it is here rather than on the list (ROADMAP N47).
-            TextButton(
+            AppTextButton(
                 onClick = onExport,
                 modifier = Modifier.testTag(TestTags.Programs.EXPORT),
             ) {
@@ -423,8 +423,10 @@ private fun ProgramNameField(
 /**
  * Whether home follows this program (P3.3).
  *
- * A switch rather than a button because it is a state with two directions: off is the
- * fallback to each plan's own weekday, which is a real answer and not an absence.
+ * A switch rather than a button because it is a state with two directions: on means home follows
+ * this program's days, off means it does not. It used to fall back to each template's own weekday
+ * when no program was active, and that fallback went with the column it read (N56) — so a program
+ * with nothing active is a home with no dated plan at all, which is the rule rather than an absence.
  */
 @Composable
 private fun ActiveSwitch(
@@ -642,7 +644,7 @@ private fun TemplatePickerDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.action_cancel))
             }
         },
@@ -656,7 +658,7 @@ private fun DeleteProgramDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
         title = { Text(stringResource(R.string.program_delete_confirm_title)) },
         text = { Text(stringResource(R.string.program_delete_confirm_text)) },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onConfirm,
                 modifier = Modifier.testTag(TestTags.Programs.DELETE_CONFIRM),
             ) {
@@ -664,7 +666,7 @@ private fun DeleteProgramDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            AppTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.action_cancel))
             }
         },

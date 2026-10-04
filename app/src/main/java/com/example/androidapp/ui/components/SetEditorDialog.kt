@@ -10,7 +10,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -151,7 +150,7 @@ private fun SetEditorDialogContent(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 modifier = Modifier.testTag(TestTags.SET_SAVE),
                 enabled = parsedReps != null && parsedLoad != null && rpeIsValid,
                 onClick = {
@@ -172,7 +171,7 @@ private fun SetEditorDialogContent(
             }
         },
         dismissButton = {
-            TextButton(
+            AppTextButton(
                 modifier = Modifier.testTag(TestTags.SET_CANCEL),
                 onClick = onDismiss,
             ) {

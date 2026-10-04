@@ -1033,8 +1033,11 @@ class ActiveWorkoutViewModel @Inject constructor(
         readinessPromptVisible: Boolean,
         pendingFinishedExerciseId: String?,
         acceptedPrefill: Map<String, AcceptedPrefill>,
-    ): ActiveWorkoutUiState =
-        ActiveWorkoutUiState(
+    ): ActiveWorkoutUiState {
+        // Which plan entry each row follows is resolved once, by movement (ROADMAP N54), rather than
+        // per row from the slot it happens to occupy.
+        val planEntries = planEntriesFor(exercises, planned)
+        return ActiveWorkoutUiState(
             isLoading = false,
             sessionId = session?.id,
             startedAt = session?.let {
@@ -1047,7 +1050,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                     // The slot's prescription wins where it speaks; the template answers the rest
                     // (ROADMAP P3.8, N14).
                     plan = PlanContext(
-                        planned = planned,
+                        plannedEntry = planEntries[it.id],
                         prescription = prescriptions[it.exerciseId],
                         estimatedOneRepMaxGrams = oneRepMax[it.exerciseId],
                     ),
@@ -1061,6 +1064,7 @@ class ActiveWorkoutViewModel @Inject constructor(
             isReadinessPromptVisible = readinessPromptVisible,
             error = error,
         )
+    }
 
     private companion object {
         /**
@@ -1188,38 +1192,61 @@ private fun ActiveWorkoutUiState.roundIsCompleteFor(row: SessionExerciseRow): Bo
 }
 
 /**
- * `A1`, `A2` … for a grouped exercise, or null (ROADMAP N24).
- *
- * Giant-set notation, and the group letter follows the order the groups appear in the workout
- * so the first pair the user makes is always A — a label that changed as exercises moved would
- * be worse than no label.
- */
-/**
- * What the plan says for one exercise: the template's targets, the slot's prescription where it
- * speaks, and the estimate a percentage resolves against (ROADMAP N14, P3.8).
+ * What the plan says for one exercise: the plan entry resolved to it, the slot's prescription where
+ * it speaks, and the estimate a percentage resolves against (ROADMAP N14, P3.8).
  *
  * The three travel together because they are one question — "what is this set supposed to be" —
  * and the percentage is meaningless without the estimate beside it.
  */
 private data class PlanContext(
-    val planned: List<TemplateExercise>,
+    val plannedEntry: TemplateExercise?,
     val prescription: SlotPrescription?,
     val estimatedOneRepMaxGrams: Long?,
 )
 
 /**
- * How many sets the plan behind this workout writes for the exercise at [position], or null
- * (ROADMAP N52).
+ * How many sets the plan behind this workout writes for this exercise, or null (ROADMAP N52).
  *
  * The slot wins where it speaks, so the plan is the **longer** of the two rather than either one: a
  * slot may override a later set the template left alone, and counting only the template would call the
  * work done a set early. No plan at all is null rather than zero, so an empty workout's control never
  * says the work is finished before it has started.
  */
-private fun PlanContext.plannedSetCountFor(position: Int): Int? = maxOf(
-    prescription?.sets?.size ?: 0,
-    planned.firstOrNull { it.position == position }?.sets?.size ?: 0,
-).takeIf { it > 0 }
+private val PlanContext.plannedSetCount: Int?
+    get() = maxOf(
+        prescription?.sets?.size ?: 0,
+        plannedEntry?.sets?.size ?: 0,
+    ).takeIf { it > 0 }
+
+/**
+ * The plan entry each session exercise follows, keyed by the session exercise's own id (ROADMAP N54).
+ *
+ * Matched by **movement and occurrence** rather than by position. A session's order is its own once
+ * N54 lets it be edited, so the slot a row occupies says nothing about which plan entry it came from,
+ * and matching on position is what pointed a moved exercise at its neighbour's targets. The movement
+ * is the stable half; the occurrence count keeps a plan that names the same movement twice working,
+ * with the first row of that movement following the plan's first entry and the second its second. A
+ * row the plan has nothing for — added by hand, or the extra row of a movement the plan names once —
+ * is simply absent, which is what leaves an improvised workout with no plan at all.
+ *
+ * File-level and pure, so the pairing can be tested without a database or a ViewModel: the shape
+ * `todaysPlanFor` and `nextUpFor` already use.
+ */
+internal fun planEntriesFor(
+    exercises: List<SessionExercise>,
+    planned: List<TemplateExercise>,
+): Map<String, TemplateExercise> {
+    if (planned.isEmpty()) return emptyMap()
+    val byMovement = planned.groupBy { it.exerciseId }
+    val taken = mutableMapOf<String, Int>()
+    return buildMap {
+        exercises.forEach { exercise ->
+            val occurrence = taken.getOrDefault(exercise.exerciseId, 0)
+            taken[exercise.exerciseId] = occurrence + 1
+            byMovement[exercise.exerciseId]?.getOrNull(occurrence)?.let { put(exercise.id, it) }
+        }
+    }
+}
 
 /**
  * An offer the user accepted, and the set count it was accepted at (ROADMAP N33).
@@ -1260,7 +1287,7 @@ private fun SessionExercise.toRow(
         supersetGroup = supersetGroup,
         supersetLabel = supersetLabels[id],
         restSeconds = restSeconds,
-        plannedSetCount = plan.plannedSetCountFor(position),
+        plannedSetCount = plan.plannedSetCount,
         isFinished = isFinished,
         muscleFeel = muscleFeel,
         jointPain = jointPain,
@@ -1315,7 +1342,7 @@ private fun SessionExercise.suggestionFor(
         prescription = plan.prescription,
         nextIndex = loggedSets.size,
         estimatedOneRepMaxGrams = plan.estimatedOneRepMaxGrams,
-        template = plannedTargetFor(plan.planned, position = position, nextIndex = loggedSets.size),
+        template = plannedTargetFor(plan.plannedEntry, nextIndex = loggedSets.size),
     ),
 ).let { suggestion ->
     // An accepted offer wins over the rule, but only while it still applies: once a set is logged the
@@ -1330,6 +1357,13 @@ private fun SessionExercise.suggestionFor(
     } ?: suggestion
 }
 
+/**
+ * `A1`, `A2` … for a grouped exercise, or null (ROADMAP N24).
+ *
+ * Giant-set notation, and the group letter follows the order the groups appear in the workout
+ * so the first pair the user makes is always A — a label that changed as exercises moved would
+ * be worse than no label.
+ */
 private fun supersetLabelsFor(exercises: List<SessionExercise>): Map<String, String> {
     val groups = exercises.mapNotNull { it.supersetGroup }.distinct().sorted()
     return exercises.mapNotNull { exercise ->

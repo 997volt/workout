@@ -2,7 +2,6 @@ package com.example.androidapp.ui.adherence
 
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.OccurrenceState
 import androidx.compose.foundation.background
@@ -53,6 +52,7 @@ import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.shortLabel
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.history.HistoryFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -195,7 +195,7 @@ private fun DayCorrectionDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onDismiss,
                 modifier = Modifier.testTag(TestTags.Adherence.DAY_CLOSE),
             ) {

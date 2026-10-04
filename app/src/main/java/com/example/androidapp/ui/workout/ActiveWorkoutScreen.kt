@@ -32,7 +32,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -67,6 +66,7 @@ import com.example.androidapp.ui.components.ReadinessNoteDialog
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 @Composable
@@ -432,7 +432,7 @@ private fun WorkoutTopBar(
         },
         actions = {
             // Nothing to finish until at least one set is logged.
-            TextButton(
+            AppTextButton(
                 onClick = { commenting = true },
                 enabled = canFinish,
                 modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_FINISH),
@@ -544,7 +544,7 @@ private fun DiscardWorkoutDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onConfirm,
                 modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD_CONFIRM),
             ) {
@@ -552,7 +552,7 @@ private fun DiscardWorkoutDialog(
             }
         },
         dismissButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onDismiss,
                 modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD_CANCEL),
             ) {
@@ -675,13 +675,24 @@ private fun RestBar(
                 style = MaterialTheme.typography.titleMedium,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { onAdjust(-RestTimer.ADJUST_STEP_SECONDS) }) {
+                // The one surface whose links are drawn *on* the filled container: the readable role
+                // here is the container's own content colour, not the page's link colour (ROADMAP N49).
+                AppTextButton(
+                    onClick = { onAdjust(-RestTimer.ADJUST_STEP_SECONDS) },
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ) {
                     Text(stringResource(R.string.rest_subtract))
                 }
-                TextButton(onClick = { onAdjust(RestTimer.ADJUST_STEP_SECONDS) }) {
+                AppTextButton(
+                    onClick = { onAdjust(RestTimer.ADJUST_STEP_SECONDS) },
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ) {
                     Text(stringResource(R.string.rest_add))
                 }
-                TextButton(onClick = onSkip) {
+                AppTextButton(
+                    onClick = onSkip,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ) {
                     Text(stringResource(R.string.rest_skip))
                 }
             }
@@ -794,7 +805,7 @@ private fun EmptyWorkout(onDiscard: () -> Unit, modifier: Modifier = Modifier) {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp),
         )
-        TextButton(
+        AppTextButton(
             onClick = onDiscard,
             modifier = Modifier.padding(top = 16.dp).testTag(TestTags.ACTIVE_WORKOUT_DISCARD_EMPTY),
         ) {

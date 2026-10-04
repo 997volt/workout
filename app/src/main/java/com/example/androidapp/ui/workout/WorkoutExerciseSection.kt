@@ -26,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +49,7 @@ import com.example.androidapp.ui.components.SetEditorDialog
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.restLabel
 import com.example.androidapp.ui.components.rpeMarker
+import com.example.androidapp.ui.components.AppTextButton
 
 
 
@@ -106,6 +106,10 @@ internal fun ExerciseList(
                 onLogSet = { edit -> onLogSet(row.id, edit) },
                 onRemoveExercise = { onRemoveExercise(row.id) },
                 onMoveExercise = { delta -> onMoveExercise(row.id, delta) },
+                // A row's neighbours are the list's own knowledge, so the entries that would write
+                // nothing are simply not offered (ROADMAP N54, the shape B28's row-0 exclusion uses).
+                canMoveUp = index > 0,
+                canMoveDown = index < rows.lastIndex,
                 onEditSet = onEditSet,
                 onDeleteSet = onDeleteSet,
                 onFinishExercise = onFinishExercise,
@@ -139,6 +143,9 @@ private fun ExerciseSection(
     onLogSet: (SetEdit) -> Unit,
     onRemoveExercise: () -> Unit,
     onMoveExercise: (Int) -> Unit,
+    /** Whether the exercise above/below exists to swap with (ROADMAP N54). */
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
     onFinishExercise: (String, Int?, Int?, String?) -> Unit,
@@ -162,28 +169,19 @@ private fun ExerciseSection(
                 defaultRestSeconds = defaultRestSeconds,
                 modifier = Modifier.weight(1f),
             )
-            if (row.isFinished) {
-                TextButton(
-                    onClick = onReopenExercise,
-                    modifier = Modifier.testTag(TestTags.EXERCISE_REOPEN),
-                ) {
-                    Text(stringResource(R.string.active_workout_reopen))
-                }
-            } else {
-                FinishExerciseAction(
-                    exerciseId = row.id,
-                    muscleFeel = row.muscleFeel,
-                    jointPain = row.jointPain,
-                    jointPainNote = row.jointPainNote,
-                    onFinish = onFinishExercise,
-                )
-            }
+            ExerciseStateAction(
+                row = row,
+                onReopenExercise = onReopenExercise,
+                onFinishExercise = onFinishExercise,
+            )
             // The rare actions moved in here rather than sitting on the header (ROADMAP N53): the
             // header is read constantly mid-session, and a text link in every one of them cost more
             // attention than the action earned.
             ExerciseOverflow(
                 row = row,
                 onToggleSuperset = onToggleSuperset,
+                canMoveUp = canMoveUp,
+                canMoveDown = canMoveDown,
                 onMove = onMoveExercise,
                 onRemove = onRemoveExercise,
             )
@@ -219,6 +217,36 @@ private fun ExerciseSection(
 }
 
 /**
+ * The header's state action: **Reopen** on a done exercise, **Done** on an open one (ROADMAP N7).
+ *
+ * Split out of [ExerciseSection] because the choice belongs to the row's *state* rather than to its
+ * content, and because the section around it is at the length this project allows.
+ */
+@Composable
+private fun ExerciseStateAction(
+    row: SessionExerciseRow,
+    onReopenExercise: () -> Unit,
+    onFinishExercise: (String, Int?, Int?, String?) -> Unit,
+) {
+    if (row.isFinished) {
+        AppTextButton(
+            onClick = onReopenExercise,
+            modifier = Modifier.testTag(TestTags.EXERCISE_REOPEN),
+        ) {
+            Text(stringResource(R.string.active_workout_reopen))
+        }
+    } else {
+        FinishExerciseAction(
+            exerciseId = row.id,
+            muscleFeel = row.muscleFeel,
+            jointPain = row.jointPain,
+            jointPainNote = row.jointPainNote,
+            onFinish = onFinishExercise,
+        )
+    }
+}
+
+/**
  * The **Done** button for one exercise, and the rating prompt behind it (ROADMAP
  * N7, N8).
  *
@@ -237,7 +265,7 @@ private fun FinishExerciseAction(
 ) {
     var rating by remember { mutableStateOf(false) }
 
-    TextButton(
+    AppTextButton(
         onClick = { rating = true },
         modifier = Modifier.testTag(TestTags.EXERCISE_DONE),
     ) {
@@ -278,11 +306,15 @@ private fun FinishExerciseAction(
  *   exercise, which has nothing above it, so the entry is simply not offered rather than writing a
  *   group that would rewrite every ungrouped row. A done exercise is out of the round as well (N7),
  *   which is why the item goes with its Log set button.
+ * - Order (N54) offers only the direction that exists, for the same reason: the list knows which row
+ *   it is drawing, so the first exercise has no *Move up* rather than one that writes nothing.
  */
 @Composable
 private fun ExerciseOverflow(
     row: SessionExerciseRow,
     onToggleSuperset: (() -> Unit)?,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
@@ -305,6 +337,8 @@ private fun ExerciseOverflow(
             expanded = menuOpen,
             onDismiss = { menuOpen = false },
             onToggleSuperset = onToggleSuperset,
+            canMoveUp = canMoveUp,
+            canMoveDown = canMoveDown,
             onMove = onMove,
             onRemove = { confirmingRemoval = true },
         )
@@ -643,8 +677,8 @@ private fun SetExtrasMarker(set: SetRow, modifier: Modifier = Modifier) {
  * Its own composable for the reason the project keeps splitting them: the button, the dialog and the
  * menu were one function at ninety-odd lines, and each of the three is a thing that can be read on its
  * own. Order comes first — it is the entry most likely to be reached for mid-session, and the one that
- * changes what everything below it means — and a move at the top or the bottom is refused by the
- * repository rather than by the menu, because the row does not know how long the list is.
+ * changes what everything below it means — and each direction is offered only where it exists, because
+ * the list this menu is drawn from knows a row's neighbours (N54, B28's shape).
  */
 @Composable
 private fun ExerciseMenuItems(
@@ -652,26 +686,32 @@ private fun ExerciseMenuItems(
     expanded: Boolean,
     onDismiss: () -> Unit,
     onToggleSuperset: (() -> Unit)?,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.active_workout_move_up)) },
-            onClick = {
-                onDismiss()
-                onMove(-1)
-            },
-            modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = true)),
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.active_workout_move_down)) },
-            onClick = {
-                onDismiss()
-                onMove(1)
-            },
-            modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = false)),
-        )
+        if (canMoveUp) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.active_workout_move_up)) },
+                onClick = {
+                    onDismiss()
+                    onMove(-1)
+                },
+                modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = true)),
+            )
+        }
+        if (canMoveDown) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.active_workout_move_down)) },
+                onClick = {
+                    onDismiss()
+                    onMove(1)
+                },
+                modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = false)),
+            )
+        }
         if (onToggleSuperset != null && !row.isFinished) {
             DropdownMenuItem(
                 text = {
@@ -726,7 +766,7 @@ private fun ConfirmRemovalDialog(
         title = { Text(stringResource(R.string.active_workout_remove_confirm_title)) },
         text = { Text(stringResource(R.string.active_workout_remove_confirm_text, name)) },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onConfirm,
                 modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE_CONFIRM),
             ) {
@@ -734,7 +774,7 @@ private fun ConfirmRemovalDialog(
             }
         },
         dismissButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onDismiss,
                 modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE_CANCEL),
             ) {
@@ -779,7 +819,7 @@ private fun SuggestionOffer(offer: SetOffer, onAccept: (() -> Unit)? = null) {
         )
     }
     if (onAccept != null) {
-        TextButton(
+        AppTextButton(
             onClick = onAccept,
             modifier = Modifier.testTag(TestTags.SUGGESTION_ACCEPT),
         ) {

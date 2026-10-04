@@ -7,7 +7,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,7 +69,7 @@ fun NewExerciseDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 modifier = Modifier.testTag(TestTags.NEW_EXERCISE_SAVE),
                 enabled = trimmed.isNotEmpty(),
                 onClick = { onCreate(trimmed) },
@@ -79,7 +78,7 @@ fun NewExerciseDialog(
             }
         },
         dismissButton = {
-            TextButton(
+            AppTextButton(
                 modifier = Modifier.testTag(TestTags.NEW_EXERCISE_CANCEL),
                 onClick = onDismiss,
             ) {

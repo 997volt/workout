@@ -118,7 +118,11 @@ the rule; that one argues it.
   order rather than the plan's, and a process death mid-session keeps the order that was arranged, which
   is the same "the session exists before anything is logged" rule P1.8 rests on. The alternative, an
   in-memory order that is written at *Finish*, was rejected: it would show one order and store another
-  if the app died, and a repeat would silently disagree with the workout it repeats.
+  if the app died, and a repeat would silently disagree with the workout it repeats. Where the plan is
+  read, it is paired by **movement** rather than by the slot a row occupies: the order was what the
+  session was seeded from, and letting that order be edited is exactly what stopped that being true, so
+  a moved exercise would otherwise read its new neighbour's targets and its neighbour's count for
+  whether the planned work is done (N52).
   ([evidence](DECISIONS-EVIDENCE.md#n54))
 - **Logging a set is the set editor, prefilled and committed on Save** (N51, amending D3 and B7).
   The one-tap path wrote the set the button described and left a set that differed from the prefill to
@@ -131,6 +135,24 @@ the rule; that one argues it.
   dialog opens on the plan's next unlogged role (B48) and a write re-arms it. The cost accepted is one
   extra confirmation between sets; what it buys is that a set is written once, as stated.
   ([evidence](DECISIONS-EVIDENCE.md#n51))
+- **An exercise's rare actions live behind its own overflow, and what cannot be done is not offered**
+  (N53). *Superset with above* was a text link in every exercise header and *Delete* an icon beside
+  *Done*; both are rarely used, and the header is read constantly mid-session, so the two of them cost
+  more attention than they earned. The action moved rather than changed: Delete keeps its confirmation
+  (B2), because removing an exercise takes its sets with it and has no undo, and pairing keeps its
+  row-0 exclusion (B28) and its absence on a done exercise (N7) — the exclusion is now the *entry* not
+  being offered rather than a control that writes nothing, which is the same rule N54's move entries
+  follow at either end of the list.
+- **An exercise says when the plan's work is done, and the control goes on logging** (N52). Past the
+  last planned set the exercise kept accepting sets with nothing to say the plan had been answered;
+  `comparePlanToActual` said so only in the review, after *Finish*. The plan is the template the
+  workout was started from, so the moment its last set is written *Log set* becomes **Log extra set**
+  beside a notice. Nothing closes — logging another set is still what the control does, and ending the
+  exercise is the **Done** already in its header (N7) — because N51 has already put a dialog in front
+  of every set, and a second one would interrupt the next exercise's first set. The rule is "no plan
+  never says done": an empty workout, or an exercise added by hand, has no plan to have finished, which
+  is why the count is null rather than zero, and why it is read from the plan the session was seeded
+  from rather than from whatever the row now sits beside (N54).
 - **"No dead weight" is strict about APIs that exist to be tested, lenient about tests'
   instruments** (D2). `Weight.step`, `DataResult.map` and `successUnit` went, with the
   tests that only exercised them; `ExerciseDao.insertAll`, `softDelete` and
@@ -576,6 +598,16 @@ the rule; that one argues it.
   assuming white (B55): white is 2.5:1 on `Amber` and 2.9:1 on `Teal`, under the contrast a graphic
   needs, so each accent carries an `onColor` and a test holds every pair at 3:1 or better.
   ([evidence](DECISIONS-EVIDENCE.md#b55))
+- **The app's colour fills; a link has a role of its own** (N49). `primary` is the app's own colour and
+  it *fills* — the Start pill, the selected tab, a chip that is on — and as a label it is Indigo at
+  4.07:1 on the page and 3.77:1 on a raised card, under the 4.5:1 body-size text needs. So a text
+  action draws `IndigoLink` through `AppTextButton` rather than inheriting the component's default, and
+  the one surface whose links are drawn *on* a filled container — the rest bar — uses that container's
+  own content colour instead. The filled tonal role moved for the same reason: `secondaryContainer` was
+  the category Teal, which cannot carry a white label at all (2.9:1), and is now the same hue taken
+  down to a surface (`TealDeep`, 5.94:1). What holds this is a source scan, not a ratio: a contrast
+  assertion on a constant no control reads is how the first attempt shipped the role while every label
+  went on drawing the fill colour.
 - **Privacy: local-only.** No `INTERNET` permission, no ads, no analytics. Crash logs stay
   in app-private storage and leave only in an export the user chose to make.
 - **No Google Play services at runtime.** Firebase, `play-services-*`, Play Billing and

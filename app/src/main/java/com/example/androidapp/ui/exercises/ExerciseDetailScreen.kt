@@ -25,7 +25,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,6 +50,7 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.restLabel
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 /** Stateful entry point for the detail destination; reads its id from the route. */
@@ -103,7 +103,7 @@ fun ExerciseDetailScreen(
                     // The lift's own trends (ROADMAP N17): the narrow question a lifter
                     // asks is about one movement, not about everything at once.
                     state.exercise?.let { exercise ->
-                        TextButton(
+                        AppTextButton(
                             onClick = { onOpenTrends(exercise.id) },
                             modifier = Modifier.testTag(TestTags.EXERCISE_TRENDS),
                         ) {
@@ -113,7 +113,7 @@ fun ExerciseDetailScreen(
                     // Only a custom exercise is editable here (ROADMAP N2), and the
                     // action disappears while the form is already open.
                     if (state.canEdit) {
-                        TextButton(
+                        AppTextButton(
                             onClick = onEdit,
                             modifier = Modifier.testTag(TestTags.EXERCISE_EDIT),
                         ) {
@@ -439,7 +439,7 @@ private fun ExerciseEditActions(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
     ) {
-        TextButton(
+        AppTextButton(
             onClick = onCancel,
             modifier = Modifier.testTag(TestTags.EXERCISE_EDIT_CANCEL),
         ) {

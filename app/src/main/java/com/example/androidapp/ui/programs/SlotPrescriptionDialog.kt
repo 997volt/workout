@@ -18,7 +18,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +44,7 @@ import com.example.androidapp.domain.repository.SlotSetEdit
 import com.example.androidapp.ui.components.SetRoleSelector
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.rpeMarker
+import com.example.androidapp.ui.components.AppTextButton
 
 /**
  * What one program slot prescribes, per exercise (ROADMAP P3.8).
@@ -82,7 +82,7 @@ fun SlotPrescriptionDialog(
             )
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onDismiss,
                 modifier = Modifier.testTag(TestTags.Programs.PRESCRIPTION_CLOSE),
             ) {
@@ -190,7 +190,7 @@ private fun PrescriptionExercise(
                 text = exercise.exerciseName,
                 style = MaterialTheme.typography.titleSmall,
             )
-            TextButton(
+            AppTextButton(
                 onClick = onEditRestCue,
                 modifier = Modifier.testTag(TestTags.Programs.prescriptionRestCue(exercise.exerciseId)),
             ) {
@@ -214,7 +214,7 @@ private fun PrescriptionExercise(
                 onRemove = { onRemoveSet(set.id) },
             )
         }
-        TextButton(
+        AppTextButton(
             onClick = onAddSet,
             modifier = Modifier.testTag(TestTags.Programs.prescriptionAddSet(exercise.exerciseId)),
         ) {
@@ -291,7 +291,7 @@ private fun SlotSetDialog(
         },
         text = { SlotSetFields(draft = draft, onChange = { draft = it }) },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 enabled = draft.isValid,
                 modifier = Modifier.testTag(TestTags.Programs.PRESCRIPTION_SET_SAVE),
                 onClick = { onSave(draft.toEdit()) },
@@ -300,7 +300,7 @@ private fun SlotSetDialog(
             }
         },
         dismissButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onDismiss,
                 modifier = Modifier.testTag(TestTags.Programs.PRESCRIPTION_SET_CANCEL),
             ) {
@@ -527,7 +527,7 @@ private fun SlotRestCueDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 enabled = restIsValid,
                 onClick = { onSave(seconds, cue.trim().ifEmpty { null }) },
                 modifier = Modifier.testTag(TestTags.Programs.REST_CUE_SAVE),
@@ -536,7 +536,7 @@ private fun SlotRestCueDialog(
             }
         },
         dismissButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onDismiss,
                 modifier = Modifier.testTag(TestTags.Programs.REST_CUE_CANCEL),
             ) {

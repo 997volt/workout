@@ -35,7 +35,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +58,7 @@ import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.TrendChartFrame
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.EyebrowStyle
 
 /** The Statistics tab (ROADMAP N35). */
@@ -284,7 +284,7 @@ private fun MetricPicker(selected: MetricKey, onSelectMetric: (MetricKey) -> Uni
     val selectedEntry = MetricRegistry.entryFor(selected)
 
     Column {
-        TextButton(
+        AppTextButton(
             onClick = { open = true },
             modifier = Modifier.testTag(TestTags.Statistics.METRIC),
         ) {
@@ -373,7 +373,7 @@ private fun ReadingsSection(series: MetricSeries, metric: MetricEntry) {
     var expanded by rememberSaveable { mutableStateOf(false) }
 
     Column {
-        TextButton(
+        AppTextButton(
             onClick = { expanded = !expanded },
             modifier = Modifier.testTag(TestTags.Statistics.READINGS_TOGGLE),
         ) {
@@ -616,7 +616,7 @@ private fun CustomRangeDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = { onConfirm(StatisticsRange(RangeKind.CUSTOM, from = from, to = to)) },
                 enabled = from != null && to != null,
                 modifier = Modifier.testTag(TestTags.Statistics.CUSTOM_APPLY),
@@ -625,7 +625,7 @@ private fun CustomRangeDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
 
@@ -655,7 +655,7 @@ private fun DatePrompt(initial: Long?, onDismiss: () -> Unit, onPick: (LocalDate
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = {
                     state.selectedDateMillis?.let { millis ->
                         onPick(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
@@ -667,7 +667,7 @@ private fun DatePrompt(initial: Long?, onDismiss: () -> Unit, onPick: (LocalDate
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     ) {
         DatePicker(state = state)
@@ -677,7 +677,7 @@ private fun DatePrompt(initial: Long?, onDismiss: () -> Unit, onPick: (LocalDate
 /** One end of a custom range: what it is, what it currently says, and the way to change it. */
 @Composable
 private fun DateRow(labelRes: Int, date: LocalDate?, testTag: String, onClick: () -> Unit) {
-    TextButton(onClick = onClick, modifier = Modifier.testTag(testTag)) {
+    AppTextButton(onClick = onClick, modifier = Modifier.testTag(testTag)) {
         Text(stringResource(labelRes) + ": " + (date?.toString() ?: stringResource(R.string.statistics_custom_no_date)))
     }
 }
@@ -694,7 +694,7 @@ private fun LiftPicker(lifts: List<Exercise>, selectedId: String?, onSelectExerc
     val selected = lifts.firstOrNull { it.id == selectedId }
 
     Column {
-        TextButton(
+        AppTextButton(
             onClick = { open = true },
             modifier = Modifier.testTag(TestTags.Statistics.LIFT),
         ) {

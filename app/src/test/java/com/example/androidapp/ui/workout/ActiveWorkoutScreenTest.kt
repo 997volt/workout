@@ -729,12 +729,40 @@ class ActiveWorkoutScreenTest {
             actions = Actions(onMoveExercise = { id, delta -> moved += id to delta }),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
-        composeTestRule.onNodeWithTag(TestTags.exerciseMove("se1", up = true)).performClick()
+        // Each direction is taken from the row that has one: the first moves down, the second moves up.
+        // The second row is below the fold, so its menu only exists once the list is scrolled to it.
         composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
         composeTestRule.onNodeWithTag(TestTags.exerciseMove("se1", up = false)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.exerciseMenu("se2")))
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se2")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exerciseMove("se2", up = true)).performClick()
 
-        assertEquals(listOf("se1" to -1, "se1" to 1), moved)
+        assertEquals(listOf("se1" to 1, "se2" to -1), moved)
+    }
+
+    @Test
+    fun aMoveWithNowhereToGo_isNotOffered() {
+        // The first row has nothing above it and the last nothing below. An entry that writes nothing
+        // is the control B28's row-0 exclusion exists to avoid, so it is not drawn at all (N54).
+        val base = state(isFinished = false)
+        setScreen(
+            state = base.copy(
+                exercises = base.exercises +
+                    base.exercises.map { it.copy(id = "se2", name = "Bench Press") },
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exerciseMove("se1", up = true)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.exerciseMove("se1", up = false)).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.exerciseMove("se1", up = false)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.exerciseMenu("se2")))
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se2")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exerciseMove("se2", up = false)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.exerciseMove("se2", up = true)).assertExists()
     }
 
     @Test

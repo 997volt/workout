@@ -7,7 +7,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +18,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.example.androidapp.R
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.AppTextButton
 
 /**
  * The target line, and the one place a target is set (ROADMAP N39).
@@ -51,7 +51,7 @@ fun GoalRow(
             text = stringResource(R.string.statistics_goal),
             style = MaterialTheme.typography.bodyMedium,
         )
-        TextButton(
+        AppTextButton(
             onClick = { editing = true },
             modifier = Modifier.testTag(TestTags.Statistics.GOAL_SET),
         ) {
@@ -98,7 +98,7 @@ private fun GoalDialog(metric: MetricEntry, goal: Double?, onSet: (Double?) -> U
             )
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = {
                     // A number that cannot be read sets nothing rather than a zero: the field keeps what was
                     // typed so the mistake is visible instead of silently becoming a target.
@@ -111,7 +111,7 @@ private fun GoalDialog(metric: MetricEntry, goal: Double?, onSet: (Double?) -> U
         },
         dismissButton = {
             if (goal != null) {
-                TextButton(
+                AppTextButton(
                     onClick = { onSet(null) },
                     modifier = Modifier.testTag(TestTags.Statistics.GOAL_CLEAR),
                 ) {

@@ -21,7 +21,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +40,7 @@ import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.at
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.history.HistoryFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -137,7 +137,7 @@ private fun MeasurementRow(entry: BodyMeasurement, onDelete: () -> Unit) {
         headlineContent = { Text(HistoryFormat.date(entry.measuredAt, zone = ZoneId.systemDefault())) },
         supportingContent = { Text(summary(entry)) },
         trailingContent = {
-            TextButton(
+            AppTextButton(
                 onClick = onDelete,
                 modifier = Modifier.testTag(TestTags.Measurements.delete(entry.id)),
             ) {
@@ -188,7 +188,7 @@ private fun MeasurementDialog(
             )
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = {
                     onConfirm(
                         BodyMeasurement(
@@ -212,7 +212,7 @@ private fun MeasurementDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
 }

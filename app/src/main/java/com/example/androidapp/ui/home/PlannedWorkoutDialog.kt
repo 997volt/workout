@@ -10,7 +10,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +17,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.example.androidapp.R
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.AppTextButton
 
 /**
  * What a next-up row has planned, read on the tap that opened it (ROADMAP N55).
@@ -71,7 +71,7 @@ fun PlannedWorkoutDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onDismiss,
                 modifier = Modifier.testTag(TestTags.Home.PLANNED_WORKOUT_CLOSE),
             ) {

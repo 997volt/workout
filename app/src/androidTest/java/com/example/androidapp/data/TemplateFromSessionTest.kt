@@ -251,7 +251,7 @@ class TemplateFromSessionTest {
         val prefill = suggestionForNextSet(
             loggedSets = emptyList(),
             previous = previous.data,
-            planned = plannedTargetFor(planned, position = 0, nextIndex = 0),
+            planned = plannedTargetFor(planned.single(), nextIndex = 0),
         )
 
         assertEquals("the plan's reps are the prefill", 5, prefill.reps)

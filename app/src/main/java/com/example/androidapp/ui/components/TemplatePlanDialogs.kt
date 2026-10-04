@@ -17,7 +17,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -94,7 +93,7 @@ fun TemplatePlanDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onDismiss,
                 modifier = Modifier.testTag(TestTags.TEMPLATE_PLAN_CLOSE),
             ) {
@@ -192,7 +191,7 @@ fun TemplateSetDialog(
         },
         text = { TargetFields(draft = draft, onChange = { draft = it }) },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 enabled = draft.isValid,
                 modifier = Modifier.testTag(TestTags.TEMPLATE_SET_SAVE),
                 onClick = { onSave(draft.toEdit()) },
@@ -201,7 +200,7 @@ fun TemplateSetDialog(
             }
         },
         dismissButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onDismiss,
                 modifier = Modifier.testTag(TestTags.TEMPLATE_SET_CANCEL),
             ) {
@@ -381,14 +380,14 @@ private fun PlanDialogButtons(
 ) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         onAddWarmUpSets?.let { addWarmUps ->
-            TextButton(
+            AppTextButton(
                 onClick = addWarmUps,
                 modifier = Modifier.testTag(TestTags.TEMPLATE_ADD_WARMUPS),
             ) {
                 Text(stringResource(R.string.template_add_warmups))
             }
         }
-        TextButton(
+        AppTextButton(
             onClick = onAddSet,
             modifier = Modifier.testTag(TestTags.TEMPLATE_PLAN_ADD),
         ) {

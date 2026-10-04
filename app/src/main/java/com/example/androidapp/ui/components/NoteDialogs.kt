@@ -7,7 +7,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,7 +69,7 @@ fun NoteDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 modifier = Modifier.testTag(saveTag),
                 onClick = { onSave(note.trim().ifEmpty { null }) },
             ) {
@@ -78,7 +77,7 @@ fun NoteDialog(
             }
         },
         dismissButton = {
-            TextButton(modifier = Modifier.testTag(dismissTag), onClick = onDismiss) {
+            AppTextButton(modifier = Modifier.testTag(dismissTag), onClick = onDismiss) {
                 Text(stringResource(if (isPrompt) R.string.readiness_skip else R.string.action_cancel))
             }
         },

@@ -23,7 +23,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +46,7 @@ import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 /**
@@ -144,7 +144,7 @@ fun ProgramsScreen(
                 actions = {
                     // Loading a document is the file's way in (ROADMAP N47). Export is per program,
                     // so it lives in the editor rather than here.
-                    TextButton(
+                    AppTextButton(
                         onClick = onLoadProgram,
                         modifier = Modifier.testTag(TestTags.Programs.LOAD),
                     ) {
@@ -268,7 +268,7 @@ private fun ProgramRow(
                         color = MaterialTheme.colorScheme.primary,
                     )
                 } else {
-                    TextButton(
+                    AppTextButton(
                         onClick = onUse,
                         modifier = Modifier.testTag(TestTags.Programs.use(program.id)),
                     ) {

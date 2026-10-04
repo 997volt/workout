@@ -12,6 +12,35 @@ repeated here.
 
 ## [Unreleased]
 
+### Added
+
+- **A program's *Next up* moved into the bottom bar and opens what is planned** (N55). The next-up card
+  sat in the scrolling list between today's plans and *Recent*, so a program with nothing scheduled
+  today was something to scroll to, and the only thing in it that responded was *Start*. It now sits in
+  the bottom bar above the start pill — the edge of the screen the thumb is already at — and leaves the
+  list, because one program's next run shown twice was two answers to one question. The field is its
+  own target and *Start* is a separate one beside it: tapping the field opens what is planned, and
+  tapping *Start* starts it, so looking and starting stopped being the same gesture. What it opens is a
+  read-only dialog of the workout's ordered exercises rather than the template's editor, which is the
+  only destination a template had: the question is "what is in this workout", and opening the editor to
+  answer it would put every target one mis-tap from being rewritten on the way to reading it. The row
+  stays compact rather than a card, because more than one active program (P3.12) means the bar may
+  carry several.
+- **A running workout's exercises can be reordered** (N54). Order matters mid-session — a rack taken,
+  equipment moved — and the only way to change it was editing the template, which rewrote every future
+  run for a reason that belonged to one afternoon. Each exercise's own ⋮ menu (N53) offers *Move up*
+  or *Move down*, whichever direction exists — the list knows which row it is drawing, so the entry
+  that would write nothing is simply not offered, the shape B28's row-0 exclusion already uses — and
+  the order written is the **session's**: the template is never touched, which is N16's "a session
+  reads it at the start" applied to order rather than to targets. The order is persisted as it changes,
+  so it survives a process death and a repeat copies the session's own order rather than the plan's.
+  The two rows' positions swap in one transaction (B27's rule about a write that must not half-land),
+  and a move with nowhere to go is still a no-op reported as success rather than a failure the user
+  cannot act on. A superset member moves as itself, which keeps a round adjacent because adjacency is
+  what the grouping means. The plan follows the **exercise** rather than the slot it now occupies, so a
+  moved row reads its own targets — and its own count for whether the planned work is done (N52) —
+  instead of its new neighbour's.
+
 ### Changed
 
 - **A history row leads with the weekday, and home's Recent rows with it** (N57). The headline is
@@ -24,9 +53,10 @@ repeated here.
 - **A workout started from a template says which one in history** (N58). The session already stored
   `templateId` — a program's slot included — but the history projection never selected it, so a
   finished *Push A* and a finished empty workout were indistinguishable in the list. The template's
-  name now joins the supporting line beside the duration, sets and volume, and **wraps** rather than
-  truncating: four items are more than that line holds on a phone, and an ellipsis on the one part that
-  cannot be inferred from the workout would hide exactly what the change is for. The name is read
+  name now joins the supporting line beside the duration, sets and volume, and that line **wraps**
+  rather than truncating — as it already did, which is what lets a fourth item be read in full: four
+  items are more than the line holds on a phone, and an ellipsis on the one part that cannot be
+  inferred from the workout would hide exactly what the change is for. The name is read
   **live** from the template row, so renaming a template relabels the past — accepted, because N16's
   template is living and the workout's own identity is when it happened, which the headline carries.
   That read also answers deletion: `deleteTemplate` is a soft delete, so the name is still there and a
@@ -34,50 +64,6 @@ repeated here.
   — it costs a column and a migration and changes only what a *rename* does. A **repeat** now carries
   its source's template id, so a repeated *Push A* is still a Push A in history rather than an unnamed
   session; the targets are still not copied with it, which is provenance rather than prescription.
-
-### Removed
-
-- **A template carries no weekday; the day belongs to a program's slot** (N56). A template is a
-  reusable workout, and it also held an N16 weekday pin of its own — its editor offered a day picker,
-  `templates.weekday` stored it, and *Today* on home fell back to those pins whenever no program was
-  active. That was two places answering "what am I doing on Tuesday", and the template's copy was the
-  weaker one: a template has no order, no next-up and no adherence to belong to. The pin goes, with its
-  column (v25 rebuilds the table and copies the columns that survive), the `setWeekday` path through
-  DAO, repository and editor, the picker, and the `pinnedFor` fallback — leaving a program's slots as
-  the only source of a dated plan. With no active program there is then no *Today* list, which is the
-  point rather than a regression: a day is a scheduling fact, and scheduling is what a program is for.
-  The loss is accepted rather than mitigated — a template pinned to a day today comes out of the
-  migration with no day at all, and getting the schedule back means putting it in a program — which is
-  the rule being stated rather than a migration that failed. The backup carries the same field, and it
-  goes with the column: the codec ignores keys this build does not know, so a file written before the
-  change still decodes and the pin is simply not read.
-
-### Added
-
-- **A program's *Next up* moved into the bottom bar and opens what is planned** (N55). The next-up card
-  sat in the scrolling list between today's plans and *Recent*, so a program with nothing scheduled
-  today was something to scroll to, and the only thing in it that responded was *Start*. It now sits in
-  the bottom bar under the start pill — the edge of the screen the thumb is already at — and leaves the
-  list, because one program's next run shown twice was two answers to one question. The field is its
-  own target and *Start* is a separate one beside it: tapping the field opens what is planned, and
-  tapping *Start* starts it, so looking and starting stopped being the same gesture. What it opens is a
-  read-only dialog of the workout's ordered exercises rather than the template's editor, which is the
-  only destination a template had: the question is "what is in this workout", and opening the editor to
-  answer it would put every target one mis-tap from being rewritten on the way to reading it. The row
-  stays compact rather than a card, because more than one active program (P3.12) means the bar may
-  carry several.
-- **A running workout's exercises can be reordered** (N54). Order matters mid-session — a rack taken,
-  equipment moved — and the only way to change it was editing the template, which rewrote every future
-  run for a reason that belonged to one afternoon. Each exercise's own ⋮ menu (N53) offers *Move up*
-  and *Move down*, and the order written is the **session's**: the template is never touched, which is
-  N16's "a session reads it at the start" applied to order rather than to targets. The order is
-  persisted as it changes, so it survives a process death and a repeat copies the session's own order
-  rather than the plan's. The two rows' positions swap in one transaction (B27's rule about a write
-  that must not half-land), and a move with nowhere to go is a no-op reported as success rather than a
-  failure the user cannot act on. A superset member moves as itself, which keeps a round adjacent
-  because adjacency is what the grouping means.
-
-### Changed
 
 - **One exercise's rare actions live in its own ⋮ menu** (N53). *Superset with above* was a text link in
   every exercise header and *Delete* an icon beside *Done*; both are rarely used and the header is read
@@ -90,8 +76,9 @@ repeated here.
   set in one tap, so a set that differed from the prefill was logged and then edited — the same
   `SetEditorDialog`, one step later, with the first step having decided something the user did not
   mean. Logging *is* that dialog now, and the one-tap path is gone rather than kept beside it: the
-  button carries no values, its role picker moved inside the dialog with it, and the plan's next
-  unlogged set is what the dialog opens on (B48). That retires B7 for this button — it no longer
+  button no longer *writes* the values it names, though it still reads them and the dialog opens on
+  them, its role picker moved inside the dialog with it, and the plan's next unlogged set is what the
+  dialog opens on (B48). That retires B7 for this button — it no longer
   writes the set its label describes, because the label no longer describes one — and N19's rule is
   unchanged by the move: a role is still a decision about one set, made before the write, and it still
   clears itself.
@@ -110,12 +97,32 @@ repeated here.
   container was the category Teal, and white on it measures 2.9:1 — the loudest thing on the workout
   screen carrying the least readable label. The links beside it are `TextButton`s, whose label is
   `primary` — Indigo at 4.07:1 against the page and 3.77:1 on a raised card, under the 4.5:1
-  body-size text needs. Both roles changed in the palette rather than at the two call sites: the
-  container is now the same hue taken down to a surface (`TealDeep`), and the links have a role of
-  their own (`IndigoLink`) so `primary` goes on filling the Start pill, the selected tab and the
-  chips. Teal itself stays the category accent a row's tile wears, so the rest bar — which draws on
-  the same container — moved with the button rather than being left as the one white-on-teal label.
-  `PaletteContrastTest` asserts every pair, the way `TileAccentTest` already asserts the tiles (B55).
+  body-size text needs. The container changed in the palette: it is now the
+  same hue taken down to a surface (`TealDeep`), so white on it reads at 5.94:1. The links did not —
+  a link's colour is `primary`, which is also what *fills* the Start pill, the selected tab and the
+  chips, and one role cannot be both — so every link in the app now draws through `AppTextButton`,
+  which carries the link colour (`IndigoLink`: 8.85:1 on the page, 8.22:1 on a raised card). The rest
+  bar draws its links on the filled container itself, so those use `onSecondaryContainer` instead.
+  Teal itself stays the category accent a row's tile wears. `PaletteContrastTest` asserts the pairs
+  this app draws, and scans the sources so a bare `TextButton` cannot put the fill colour back under
+  a label, the way `TileAccentTest` already holds the tiles (B55).
+
+### Removed
+
+- **A template carries no weekday; the day belongs to a program's slot** (N56). A template is a
+  reusable workout, and it also held an N16 weekday pin of its own — its editor offered a day picker,
+  `templates.weekday` stored it, and *Today* on home fell back to those pins whenever no program was
+  active. That was two places answering "what am I doing on Tuesday", and the template's copy was the
+  weaker one: a template has no order, no next-up and no adherence to belong to. The pin goes, with its
+  column (v25 rebuilds the table and copies the columns that survive), the `setWeekday` path through
+  DAO, repository and editor, the picker, and the `pinnedFor` fallback — leaving a program's slots as
+  the only source of a dated plan. With no active program there is then no *Today* list, which is the
+  point rather than a regression: a day is a scheduling fact, and scheduling is what a program is for.
+  The loss is accepted rather than mitigated — a template pinned to a day today comes out of the
+  migration with no day at all, and getting the schedule back means putting it in a program — which is
+  the rule being stated rather than a migration that failed. The backup carries the same field, and it
+  goes with the column: the codec ignores keys this build does not know, so a file written before the
+  change still decodes and the pin is simply not read.
 
 ## [1.11] — 2026-10-04 (versionCode 12)
 

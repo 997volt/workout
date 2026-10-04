@@ -9,7 +9,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -19,6 +18,7 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.model.PlanComparison
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.AppTextButton
 
 /**
  * The review a finished workout gets (ROADMAP N20).
@@ -79,7 +79,7 @@ fun WorkoutReviewDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            AppTextButton(
                 onClick = onDismiss,
                 modifier = Modifier.testTag(TestTags.SUMMARY_DONE),
             ) {

@@ -658,6 +658,43 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun afterAMove_thePlanFollowsTheExerciseRatherThanTheSlot() = runTest(dispatcher) {
+        // The invariant N54 had to keep: the plan is paired by movement, so a row that moves keeps its
+        // own targets. Pairing by the slot it now occupies is the regression — bench, moved above the
+        // squat, would read the squat's 140 kg and offer it as the next set.
+        val repository = FakeWorkoutRepository()
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    exerciseId = "back-squat",
+                    sets = listOf(plannedSet(index = 0, reps = 3, weightGrams = 140_000L)),
+                ),
+                plannedExercise(
+                    position = 1,
+                    exerciseId = "bench-press",
+                    sets = listOf(plannedSet(index = 0, reps = 8, weightGrams = 60_000L)),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        viewModel.onAddExercise("bench-press")
+        settle()
+
+        viewModel.onMoveExercise("row-1", delta = -1)
+        settle()
+
+        val state = viewModel.uiState.value
+        assertEquals("bench is first now", listOf("row-1", "row-0"), state.exercises.map { it.id })
+        val moved = state.exercises.first()
+        assertEquals("its own plan's reps, not the squat's", 8, moved.suggestion.reps)
+        assertEquals("its own plan's load, not the squat's", 60_000L, moved.suggestion.weightGrams)
+    }
+
+    @Test
     fun movingPastEitherEnd_writesNothingAndIsNotAnError() = runTest(dispatcher) {
         // "Nothing to do" rather than a failure: a menu entry at the top or the bottom is still a
         // legal tap, and reporting it as a write that failed would be a lie (ROADMAP N54).
@@ -1608,11 +1645,15 @@ class ActiveWorkoutViewModelTest {
         assertEquals(100_000L, suggestion.weightGrams)
     }
 
-    /** One exercise of a plan, at a position in the session. */
-    private fun plannedExercise(position: Int, sets: List<TemplateSet>) = TemplateExercise(
+    /** One exercise of a plan, at a position in the template. */
+    private fun plannedExercise(
+        position: Int,
+        sets: List<TemplateSet>,
+        exerciseId: String = "back-squat",
+    ) = TemplateExercise(
         id = "te-$position",
         templateId = "t1",
-        exerciseId = "back-squat",
+        exerciseId = exerciseId,
         position = position,
         exerciseName = "Back Squat",
         primaryMuscle = MuscleGroup.QUADS,
