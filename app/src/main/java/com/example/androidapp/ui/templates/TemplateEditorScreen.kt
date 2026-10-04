@@ -59,11 +59,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
-import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.warmUpRampFor
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.CenteredMessage
@@ -112,6 +112,7 @@ fun TemplateEditorRoute(
         onUpdateSet = viewModel::onUpdateSet,
         onRemoveSet = viewModel::onRemoveSet,
         onDuplicateSets = viewModel::onDuplicateSets,
+        onAddWarmUpSets = viewModel::onAddWarmUpSets,
         onSaveExercisePlan = viewModel::onSaveExercisePlan,
         onDismissMessage = viewModel::onErrorShown,
         onBack = onBack,
@@ -130,6 +131,7 @@ fun TemplateEditorScreen(
     onDeleteTemplate: () -> Unit,
     onAddExercise: () -> Unit,
     onBack: () -> Unit,
+    onAddWarmUpSets: (String) -> Unit,
     modifier: Modifier = Modifier,
     onDismissMessage: () -> Unit = {},
     onAddSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
@@ -137,7 +139,6 @@ fun TemplateEditorScreen(
     onRemoveSet: (String) -> Unit = {},
     onDuplicateSets: (String) -> Unit = {},
     onToggleSuperset: (String) -> Unit = {},
-    onAddWarmUpSets: (String) -> Unit = {},
     onSaveExercisePlan: (String, Int?, String?) -> Unit = { _, _, _ -> },
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -244,9 +245,9 @@ private fun TemplateEditorBody(
     onRemoveSet: (String) -> Unit,
     onDuplicateSets: (String) -> Unit,
     onSaveExercisePlan: (String, Int?, String?) -> Unit,
+    onAddWarmUpSets: (String) -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (String) -> Unit = {},
-    onAddWarmUpSets: (String) -> Unit = {},
 ) {
     if (state.isLoading) {
         CenteredMessage(
@@ -410,11 +411,11 @@ private fun TemplateExerciseBlock(
             onDeleteSet = onRemoveSet,
             onDuplicate = onDuplicateSets,
             onDismiss = { planOpen = false },
-            // Offered only where there is a weight to ramp from: the action computes the ramp from
-            // the plan's own working weight (ROADMAP N28).
-            onAddWarmUpSets = if (
-                exercise.sets.any { it.role != SetType.WARMUP && it.targetWeightGrams != null }
-            ) {
+            // Offered only where a ramp can actually be built, which is the same predicate the
+            // action itself reads (ROADMAP N28, B50): asking whether a weight was merely *typed*
+            // offered the button for an assisted set (0 kg) and for one too light to load, and a
+            // press then reported success while writing nothing.
+            onAddWarmUpSets = if (warmUpRampFor(exercise.sets).isNotEmpty()) {
                 onAddWarmUpSets
             } else {
                 null
@@ -659,6 +660,7 @@ private fun TemplateEditorScreenPreview() {
             onDeleteTemplate = {},
             onAddExercise = {},
             onBack = {},
+            onAddWarmUpSets = {},
         )
     }
 }

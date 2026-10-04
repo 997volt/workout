@@ -1316,6 +1316,32 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aPlansWarmUp_armsThePendingSetAsAWarmUp() = runTest(dispatcher) {
+        // ROADMAP B48: the pending set's role follows the plan's next unlogged set. A template that
+        // opens with a ramp used to record its warm-ups as working sets unless the picker was tapped
+        // on each one by hand.
+        val repository = FakeWorkoutRepository()
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = listOf(
+                        plannedSet(index = 0, reps = 5, weightGrams = 40_000L)
+                            .copy(role = SetType.WARMUP),
+                    ),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+
+        assertEquals(SetType.WARMUP, viewModel.uiState.value.exercises.single().suggestion.setType)
+    }
+
+    @Test
     fun aSlotsPrescription_prefillsOverTheTemplatesTarget() = runTest(dispatcher) {
         // ROADMAP P3.8: the slot's prescription wins where it speaks, so two slots pointing at one
         // template train it differently.

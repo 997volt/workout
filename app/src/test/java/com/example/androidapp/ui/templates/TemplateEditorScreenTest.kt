@@ -48,6 +48,7 @@ class TemplateEditorScreenTest {
         val onMoveExercise: (String, Int) -> Unit = { _, _ -> },
         val onDeleteTemplate: () -> Unit = {},
         val onAddExercise: () -> Unit = {},
+        val onAddWarmUpSets: (String) -> Unit = {},
     )
 
     private fun setScreen(
@@ -63,6 +64,7 @@ class TemplateEditorScreenTest {
                 onMoveExercise = actions.onMoveExercise,
                 onDeleteTemplate = actions.onDeleteTemplate,
                 onAddExercise = actions.onAddExercise,
+                onAddWarmUpSets = actions.onAddWarmUpSets,
                 onBack = {},
             )
         }

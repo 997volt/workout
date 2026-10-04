@@ -460,6 +460,30 @@ class TemplateEditorViewModelTest {
         assertTrue("nothing written", repository.prependedSets.none { it.first == "te1" })
     }
 
+    @Test
+    fun addingWarmUps_writesNothing_whenTheWeightIsAssistance() = runTest(dispatcher) {
+        // An assisted set stores 0 kg of added weight and 20 kg of help (N15), so there is no load
+        // to ramp from. The old guard asked whether a weight was *typed*, offered the button, and
+        // then wrote nothing while reporting success (B50).
+        val repository = FakeTemplateRepository().apply {
+            exercises.value = listOf(
+                exercise("te1", 0, "Assisted Pull-up").copy(
+                    sets = listOf(
+                        planSet(weightGrams = 0L).copy(targetAssistanceGrams = 20_000L),
+                    ),
+                ),
+            )
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onAddWarmUpSets("te1")
+        advanceUntilIdle()
+
+        assertTrue("nothing written", repository.prependedSets.none { it.first == "te1" })
+    }
+
     /** One planned working set, at [weightGrams] or bodyweight. */
     private fun planSet(weightGrams: Long?) = TemplateSet(
         id = "ts1",

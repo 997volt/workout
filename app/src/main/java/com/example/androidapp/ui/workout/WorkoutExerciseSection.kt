@@ -294,7 +294,14 @@ private fun ExerciseSets(
     // the set the button below is about to write, and it clears itself afterwards
     // (ROADMAP N19). A role is a decision about one set — leaving it armed would mark the
     // next one without the user asking.
-    var armedRole by rememberSaveable(row.id) { mutableStateOf(SetType.NORMAL) }
+    //
+    // The resting value is the plan's own next unlogged role (B48): a template that opens with a
+    // ramp used to record its warm-ups as working sets unless the picker was tapped on each one.
+    // Keying on the logged count re-arms from the plan the moment a set is written, so the picker
+    // still overrides the one set it is about to log and nothing lingers past it.
+    var armedRole by rememberSaveable(row.id, row.sets.size) {
+        mutableStateOf(row.suggestion.setType)
+    }
 
     Column(modifier = modifier) {
         // Dimmed rather than hidden: the sets stay visible as a record of what was
@@ -328,8 +335,10 @@ private fun ExerciseSets(
             )
             FilledTonalButton(
                 onClick = {
+                    // No explicit reset: logging changes the set count, which re-arms the role
+                    // from the plan's next unlogged set above — which is the "clears itself" rule
+                    // with the plan, rather than a hard-coded working set, as the resting value.
                     onLogSet(armedRole)
-                    armedRole = SetType.NORMAL
                 },
                 modifier = Modifier.testTag(TestTags.SET_LOG),
             ) {

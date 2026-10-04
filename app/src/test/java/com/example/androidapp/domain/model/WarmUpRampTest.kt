@@ -67,11 +67,60 @@ class WarmUpRampTest {
     }
 
     @Test
-    fun aVeryLightWorkingWeight_stillProducesSomethingLoadable() {
-        // 5 kg working weight: the fractions all round below one step, so the ramp is empty rather
-        // than a row of 2.5 kg warm-ups for a 5 kg set — which would be a ramp that warms nothing.
+    fun aVeryLightWorkingWeight_keepsOnlyTheStepsBelowIt() {
+        // 5 kg: the heavier fractions round up onto the work itself, and only the lightest warm-up
+        // survives — a bar is never warmed up at the weight it is about to work at.
         val ramp = warmUpRamp(workingWeightGrams = 5_000L)
 
-        assertTrue("nothing loadable below the work", ramp.all { it.weightGrams < 5_000L })
+        assertEquals(listOf(2_500L), ramp.map { it.weightGrams })
+        assertTrue("nothing warms up at or above the work", ramp.all { it.weightGrams < 5_000L })
     }
+
+    @Test
+    fun aPlansHeaviestWorkingSet_setsTheRamp() {
+        // B50's one predicate: the working weight is the heaviest non-warm-up set the plan names.
+        val ramp = warmUpRampFor(listOf(planSet(60_000L), planSet(100_000L)))
+
+        assertEquals(listOf(40_000L, 60_000L, 75_000L, 85_000L), ramp.map { it.weightGrams })
+    }
+
+    @Test
+    fun aPlansWarmUps_areNotTheWorkingWeight() {
+        // Otherwise a second press would ramp from the first ramp's heaviest step.
+        val ramp = warmUpRampFor(
+            listOf(planSet(85_000L, role = SetType.WARMUP), planSet(100_000L)),
+        )
+
+        assertEquals(listOf(40_000L, 60_000L, 75_000L, 85_000L), ramp.map { it.weightGrams })
+    }
+
+    @Test
+    fun aPlanWithNoWeight_getsNoRampAtAll() {
+        // The predicate the button's guard and the action share (B50): blank means nothing to take
+        // a fraction of, so there is no control and no write either.
+        assertTrue(warmUpRampFor(listOf(planSet(null))).isEmpty())
+    }
+
+    @Test
+    fun anAssistedPlan_getsNoRamp() {
+        // -20 kg is stored as 0 kg of added weight and 20 kg of help (N15): the number is the
+        // machine's assistance, not a load to take 40% of. The old guard asked whether a weight was
+        // *typed*, so this case offered a button that wrote nothing.
+        assertTrue(warmUpRampFor(listOf(planSet(0L))).isEmpty())
+    }
+
+    @Test
+    fun aPlanTooLightToLoadAStepBelow_getsNoRamp() {
+        // 2.5 kg: every fraction collapses onto the working weight, which is never a warm-up, so the
+        // list is empty — the second case the old guard let through.
+        assertTrue(warmUpRampFor(listOf(planSet(2_500L))).isEmpty())
+    }
+
+    private fun planSet(weightGrams: Long?, role: SetType = SetType.NORMAL) = TemplateSet(
+        id = "ts-${weightGrams ?: "none"}",
+        templateExerciseId = "te1",
+        setIndex = 0,
+        role = role,
+        targetWeightGrams = weightGrams,
+    )
 }

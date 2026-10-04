@@ -56,6 +56,25 @@ fun warmUpRamp(
         .distinctBy { it.weightGrams }
 }
 
+/**
+ * The ramp a plan's own sets can be given, or empty (ROADMAP N28, B50).
+ *
+ * **One predicate for the guard and the action**, so the two cannot disagree: the working weight is
+ * the heaviest non-warm-up set that names one, and a plan with none gets no ramp. That covers the
+ * three shapes a weight field can have — blank (nothing to take a fraction of), an assisted set
+ * whose number is the machine's help rather than a load, and one too light for any fraction to
+ * reach a loadable step below it — so a control that would do nothing is not offered, and a call
+ * that would write nothing cannot happen either.
+ */
+fun warmUpRampFor(sets: List<TemplateSet>): List<WarmUpTarget> {
+    val workingWeight = sets
+        .filterNot { it.role == SetType.WARMUP }
+        .mapNotNull { it.targetWeightGrams }
+        .maxOrNull()
+        ?: return emptyList()
+    return warmUpRamp(workingWeight)
+}
+
 /** The ramp's shape: a fraction of the working weight, and the reps to do at it. */
 private val WARM_UP_SHAPE: List<RampStep> = listOf(
     WARM_UP_FIRST to FIVE_REPS,

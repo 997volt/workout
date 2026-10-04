@@ -3,6 +3,7 @@ package com.example.androidapp.ui.workout
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgressionReason
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.SlotPrescription
 import com.example.androidapp.domain.model.SlotSet
 import com.example.androidapp.domain.Weight
@@ -19,6 +20,44 @@ import org.junit.Test
  * exercise, which is where a ramp lives.
  */
 class SetSuggestionTest {
+
+    @Test
+    fun thePlansRole_isCarriedIntoTheArmedSet() {
+        // ROADMAP B48: a plan that opens with a ramp arms warm-up, so the logged set is a warm-up
+        // rather than a working set that inflates volume and can claim a record.
+        val suggestion = suggestionForNextSet(
+            loggedSets = emptyList(),
+            previous = null,
+            planned = PlannedTarget(reps = 5, weightGrams = 40_000L, role = SetType.WARMUP),
+        )
+
+        assertEquals(SetType.WARMUP, suggestion.setType)
+    }
+
+    @Test
+    fun withNoPlan_theArmedSetIsAWorkingSet() {
+        // The old default stands where there is nothing to follow: N19's role is a choice, and the
+        // app does not invent one.
+        val suggestion = suggestionForNextSet(loggedSets = emptyList(), previous = null)
+
+        assertEquals(SetType.NORMAL, suggestion.setType)
+    }
+
+    @Test
+    fun theSlotsRole_winsOverTheTemplates() {
+        // The slot overrides only what it says (P3.8), and its role is part of that.
+        val target = prescribedTargetFor(
+            prescription = SlotPrescription(
+                exerciseId = "back-squat",
+                sets = listOf(SlotSet(id = "x", setIndex = 0, role = SetType.TOP_SET)),
+            ),
+            nextIndex = 0,
+            estimatedOneRepMaxGrams = null,
+            template = PlannedTarget(reps = 5, weightGrams = 100_000L, role = SetType.WARMUP),
+        )
+
+        assertEquals(SetType.TOP_SET, target?.role)
+    }
 
     @Test
     fun withNothingToGoOn_itFallsBackToTheDefault() {

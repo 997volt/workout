@@ -44,6 +44,26 @@ repeated here.
   was and not what it would do. This is the per-screen accessibility rule the project already
   states, applied to the rows the restyle created.
 
+### Fixed
+
+- **A template's planned warm-ups are armed as warm-ups when the workout is run** (B48). The
+  pending set's role now follows the plan's next unlogged set, carried the way its reps and weight
+  already were, so a template that opens with a ramp records warm-ups as warm-ups rather than as
+  working sets. That mattered beyond tidiness: warm-ups are excluded from records and progression
+  on purpose, so a ramp recorded as working could inflate volume and set a personal record against
+  a bar nobody cleared. The picker beside the button still overrides the role for the one set it is
+  about to log.
+- **"Add warm-ups" writes the ramp it offers** (B49). The template editor's route never passed the
+  action to the screen, so the button fell back to a default empty lambda and a tap wrote nothing,
+  reported nothing and changed nothing — while the ViewModel method underneath was implemented and
+  tested, which is why it shipped green. The callback's default is gone rather than kept, so the
+  next forgotten wire-up is a compile error instead of a silent no-op.
+- **"Add warm-ups" is offered exactly when a ramp can be built** (B50). One predicate now decides
+  the guard and the action together, where the guard had asked only whether a weight was *typed*:
+  an assisted set (stored as `0` kg) and a working weight too light to load a step below both
+  offered a button that then returned success without writing. The shared predicate makes that
+  silent path unreachable, and the repository's own failure is no longer swallowed.
+
 ## [1.10] — 2026-10-03 (versionCode 11)
 
 ### Added

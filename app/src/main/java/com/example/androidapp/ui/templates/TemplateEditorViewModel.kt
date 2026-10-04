@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.warmUpRamp
+import com.example.androidapp.domain.model.warmUpRampFor
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -102,20 +102,16 @@ class TemplateEditorViewModel @Inject constructor(
      * Writes a warm-up ramp in front of what the plan already prescribes (ROADMAP N28).
      *
      * The working weight is the heaviest the plan names for this exercise, so the ramp is derived from
-     * the plan rather than from a number typed twice. Nothing is written when there is no weight to
-     * take a fraction of — a bodyweight exercise gets no ramp, and the app does not invent one
-     * (N15's rule about what a bodyweight set carries, applied to generating one).
+     * the plan rather than from a number typed twice. **The predicate that decides the ramp is the same
+     * one the button's guard reads** (B50): a plan with no weight to take a fraction of — bodyweight,
+     * assisted, or too light to load a step below the work — gets no ramp, and the call writes nothing
+     * rather than reporting a success over no change.
      */
     fun onAddWarmUpSets(templateExerciseId: String) = write {
         val exercise = uiState.value.exercises.firstOrNull { it.id == templateExerciseId }
-            ?: return@write DataError.NotFound.let { DataResult.Failure(it) }
+            ?: return@write DataResult.Failure(DataError.NotFound)
 
-        val workingWeight = exercise.sets
-            .filter { it.role != SetType.WARMUP }
-            .mapNotNull { it.targetWeightGrams }
-            .maxOrNull() ?: 0L
-
-        val ramp = warmUpRamp(workingWeight).map { target ->
+        val ramp = warmUpRampFor(exercise.sets).map { target ->
             TemplateSetEdit(
                 role = SetType.WARMUP,
                 targetWeightGrams = target.weightGrams,
@@ -128,9 +124,9 @@ class TemplateEditorViewModel @Inject constructor(
         if (ramp.isEmpty()) return@write DataResult.Success(Unit)
 
         // One call, in front of the work: appending the ramp put the warm-ups after the sets they
-        // exist to prepare for (ROADMAP B34), and one call also makes it atomic (B27's rule).
+        // exist to prepare for (ROADMAP B34), and one call also makes it atomic (B27's rule). Its
+        // failure is the caller's rather than a success reported over a failed write.
         repository.prependSets(templateExerciseId, ramp)
-        DataResult.Success(Unit)
     }
 
     fun onUpdateSet(templateSetId: String, edit: TemplateSetEdit) = write {

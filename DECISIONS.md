@@ -94,6 +94,19 @@ the rule; that one argues it.
   pending-role-per-exercise alternative made transient UI state part of a database-driven
   flow and broke the detekt function ceiling; the composable is smaller and survives state
   rebuilds. ([evidence](DECISIONS-EVIDENCE.md#n19))
+- **The pending set's role follows the plan, and the picker overrides it for one set** (B48,
+  amending N19). The plan's next unlogged set arms the role the way its reps and weight already
+  prefill, so a template that opens with a ramp records warm-ups as warm-ups; N19's "clears
+  itself" still holds, with the plan rather than a hard-coded working set as the resting value.
+  A second pass that rewrote the logged sets from the plan was rejected, because N14 holds that
+  a logged set is the record of what happened and may differ.
+  ([evidence](DECISIONS-EVIDENCE.md#b48))
+- **One predicate decides whether a ramp can be built, and the guard and the action both read it**
+  (B50, N28). A weight merely *typed* is not a weight a ramp can be taken from — an assisted set
+  stores `0` kg, and a working weight at or below one loadable step has no lighter warm-up — so one
+  `warmUpRampFor` call hides the button and refuses the write together. A guard predicate beside an
+  action predicate was rejected: it is what produced a control that reported success over no change.
+  ([evidence](DECISIONS-EVIDENCE.md#b50))
 
 - **A plan is compared against the work, not the warm-ups** (N20). Warm-ups are excluded
   from both sides for N17's reason; a plan naming no weight leaves the delta *null*, not
@@ -454,6 +467,10 @@ the rule; that one argues it.
   correctness gate. ([evidence](DECISIONS-EVIDENCE.md#truth-turbine))
 - **No dead weight.** Extract a shared component at its second caller, not its first;
   delete an API the moment nothing calls it.
+- **A callback a screen cannot work without has no default** (B49). A default empty lambda turns a
+  forgotten wire-up into a silent no-op instead of a compile error, which is how "Add warm-ups"
+  shipped dead while its ViewModel method passed every test; optional callbacks may default,
+  required ones may not. ([evidence](DECISIONS-EVIDENCE.md#b49))
 - **Schema changes are migration-numbered as they ship.** Do not add columns or tables
   ahead of the code that reads them; copy the SQL from Room's generated `createSql`,
   register the migration in `ALL_MIGRATIONS`, and never edit one that has shipped. Every

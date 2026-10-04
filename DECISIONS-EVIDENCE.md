@@ -338,6 +338,56 @@ companion object freezes the zone at class load, so a process that outlives a ti
 change keeps computing "today" in a zone the device no longer has. Every screen reads it at
 the point of use, and the statistics view model now does too.
 
+## B48
+
+A template's ramp did not survive being run. `startOrResumeSession` seeds a template's
+exercises and never its sets, and the pending set was armed at `SetType.NORMAL` and reset to
+`NORMAL` after every set — the plan's role was read only to compare plan against actual in the
+review. So a ramp was recorded as working sets unless the picker was tapped once per set, and
+the review then drew a plan the user appeared to have ignored.
+
+The fix carries the role the way reps and weight are already carried: `PlannedTarget` gained a
+`role`, filled from the plan's next unlogged set (the slot's where a slot speaks), and
+`SetSuggestion.setType` is what the picker rests at. N19's rule that the role "clears itself"
+is unchanged; what changed is the resting value. It is not tidiness: warm-ups are excluded
+from records and progression on purpose (N17, N20, N22), so a ramp recorded as working could
+set a personal record and inflate volume against a bar nobody cleared.
+
+The rejected alternative — a second "apply the plan's role" pass over the logged sets after
+the fact — would rewrite the record from the plan, which is the opposite of N14's rule that a
+logged set may differ from the plan and is the record of what happened.
+
+## B49
+
+"Add warm-ups" was fully implemented in the ViewModel, fully unit-tested, and never called.
+`TemplateEditorRoute` passed every callback except `onAddWarmUpSets`, so the screen used the
+parameter's default empty lambda: a tap wrote nothing, reported nothing and changed nothing.
+The logic under test was right, which is exactly why nothing failed.
+
+The repair is one line at the route, plus the removal of that default. A default empty lambda
+on a callback a screen cannot work without converts a forgotten wire-up from a compile error
+into a silent no-op, so the default goes and the next omission fails the build. Optional
+callbacks may still default; required ones may not.
+
+## B50
+
+Found while diagnosing B49: the guard asked whether a non-warm-up set had a weight *typed*
+(`targetWeightGrams != null`), while the action needed a weight a ramp could be taken *from*.
+
+Three cases slipped between them. An assisted set is stored as `0` kg of added weight and `20`
+kg of help (N15), so `-20` offered the button. A `0` kg or `2.5` kg working weight offered it
+too, because every fraction rounds up to at least one 2.5 kg step, the filter `1 until
+workingWeightGrams` drops them all, and the ramp comes back empty. In both, the action returned
+success without writing — silent by construction, where the dialog's own comment already held
+that a control which would do nothing is worse than no control. Pressing twice was the opposite
+failure: the guard stayed true and `prependSets` shifted the plan down, stacking a second ramp
+in front of the first.
+
+One predicate, `warmUpRampFor(sets)`, now decides both the guard and the action, which makes
+the silent path unreachable. The test that appeared to cover the light case asserted
+`all { it.weightGrams < 5_000L }` — vacuously true on exactly the empty list the bug produced —
+and is now an assertion on the list itself.
+
 ## P3.3
 
 Programs. The shape was decided before the code, and the interesting part is what each

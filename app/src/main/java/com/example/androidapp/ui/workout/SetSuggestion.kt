@@ -25,6 +25,16 @@ data class SetSuggestion(
     /** The assistance to prefill, or 0 for none (ROADMAP N15). */
     val assistanceGrams: Long = 0,
     /**
+     * The role the pending set is armed with (ROADMAP B48).
+     *
+     * The plan's next unlogged set decides it, carried the way reps and weight already are: a
+     * template that opens with a ramp would otherwise record its warm-ups as working sets, which
+     * both inflates volume and can set a personal record against a bar nobody cleared. With no
+     * plan — or a plan that names nothing for this set — the old default stands, and the picker
+     * beside the button still overrides it for the one set.
+     */
+    val setType: SetType = SetType.NORMAL,
+    /**
      * The progression the app proposes, or null (ROADMAP N33).
      *
      * Separate from the values above rather than folded into them, which is what this field exists to
@@ -60,6 +70,8 @@ data class PlannedTarget(
     val weightGrams: Long?,
     /** The assistance the plan prescribes, or null (ROADMAP N15). */
     val assistanceGrams: Long? = null,
+    /** The role the plan gives this set, or null when there is no plan (ROADMAP B48). */
+    val role: SetType? = null,
 )
 
 /**
@@ -118,6 +130,9 @@ fun suggestionForNextSet(
         reps = planned?.reps ?: prefill.reps,
         weightGrams = plannedLoad?.weightGrams ?: prefill.weightGrams,
         assistanceGrams = plannedLoad?.assistanceGrams ?: prefill.assistanceGrams,
+        // The armed role follows the plan, so a template's ramp is recorded as warm-ups without a
+        // tap per set (B48); with no plan the pending set stays a working set.
+        setType = planned?.role ?: prefill.setType,
         offer = proposal,
     )
 }
@@ -143,6 +158,8 @@ fun plannedTargetFor(
             reps = set.targetRepsMax ?: set.targetRepsMin,
             weightGrams = set.targetWeightGrams,
             assistanceGrams = set.targetAssistanceGrams,
+            // A planned set's role travels with its targets, so the ramp is armed, not retyped (B48).
+            role = set.role,
         )
     }
 
@@ -199,6 +216,8 @@ fun prescribedTargetFor(
         // A weight the slot wrote wins over a percentage; the two are alternatives, not a sum.
         weightGrams = if (slotNamesLoad) slotWeight else template?.weightGrams,
         assistanceGrams = if (slotNamesLoad) prescribed.targetAssistanceGrams else template?.assistanceGrams,
+        // The slot's own role wins where the slot speaks at all, and the template answers the rest (B48).
+        role = prescribed.role ?: template?.role,
     )
 }
 
