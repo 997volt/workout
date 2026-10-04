@@ -15,6 +15,8 @@ import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.transfer.ProgramDocument
 import com.example.androidapp.data.transfer.ProgramDocumentCodec
+import com.example.androidapp.data.transfer.ProgramSlotDto
+import com.example.androidapp.data.transfer.ProgramSlotExerciseDto
 import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
 import com.example.androidapp.data.local.toDomain
@@ -610,6 +612,13 @@ private suspend fun buildProgramDocument(
  * because following a program is a choice rather than something a file makes, and a movement whose
  * exercise is neither carried nor present is dropped rather than allowed to fail the foreign key
  * and roll the whole document back — one missing exercise is not a reason to refuse a program.
+ *
+ * **A row the device holds but has soft-deleted counts as absent** (B51). The presence read filters
+ * `deletedAt` and the insert ignores an id that is already there, so such an exercise is neither
+ * carried nor found and its movements are dropped. Dropping is the deliberate answer rather than
+ * restoring it: un-deleting a lift is a write to the user's library, which is what "overwrites
+ * nothing" refuses, and the load's sentence says "not in your library" so that it is true whether
+ * the row is absent or merely hidden.
  */
 private suspend fun mergeProgramDocument(
     database: WorkoutDatabase,
@@ -646,17 +655,13 @@ private suspend fun mergeProgramDocument(
     val program = document.program.toEntity().copy(
         isActive = false,
         position = programDao.maxProgramPosition() + 1,
-        updatedAt = document.program.updatedAt,
     )
     val programsAdded = programBackup.insertPrograms(listOf(program)).count { it != IGNORED_ROW }
 
     val slots = document.slots.filter { it.templateId in knownTemplates }
     programBackup.insertProgramSlots(slots.map { it.toEntity() })
-    val slotIds = slots.map { it.id }.toSet()
-    val prescribed = document.slotExercises.filter {
-        it.slotId in slotIds && it.exerciseId in presentExercises
-    }
-    programBackup.insertProgramSlotExercises(prescribed.map { it.toEntity() })
+    val prescribed = placeablePrescriptions(database, document, slots, presentExercises)
+    programBackup.insertProgramSlotExercises(prescribed)
     val prescribedIds = prescribed.map { it.id }.toSet()
     programBackup.insertProgramSlotSets(
         document.slotSets.filter { it.slotExerciseId in prescribedIds }.map { it.toEntity() },
@@ -669,6 +674,45 @@ private suspend fun mergeProgramDocument(
         droppedMovements = document.templateExercises.size - planned.size,
     )
 }
+
+/**
+ * The prescriptions a load may place, against what each template actually trains (ROADMAP P3.8, B56).
+ *
+ * The interactive writes check this with [requireExerciseInTemplate]; the import writes raw rows, so
+ * it checks the same rule here instead. Read **after** the carried exercises are inserted, so a
+ * template that travelled in the document is judged on what it just received, and one whose id
+ * already existed on this device is judged on what it holds now — which may have diverged from the
+ * document's copy since the two shared an id. A prescription for a movement the template does not
+ * train is invisible on every screen, which is what P3.8 exists to prevent.
+ */
+private suspend fun placeablePrescriptions(
+    database: WorkoutDatabase,
+    document: ProgramDocument,
+    slots: List<ProgramSlotDto>,
+    presentExercises: Set<String>,
+): List<ProgramSlotExerciseEntity> {
+    val templateOfSlot = slots.associate { it.id to it.templateId }
+    val trained = templateOfSlot.values.distinct().associateWith { templateId ->
+        database.templateDao().findTemplateExercises(templateId).map { it.exerciseId }.toSet()
+    }
+    return document.slotExercises
+        .filter { prescriptionFits(it, templateOfSlot, trained, presentExercises) }
+        .map { it.toEntity() }
+}
+
+/**
+ * Whether a document's prescription may be placed at all (ROADMAP P3.8, B56).
+ *
+ * Pure, and `internal` rather than private so a JVM test can hold the rule: a prescription survives
+ * only when its exercise is present *and* the template its slot names actually trains it.
+ */
+internal fun prescriptionFits(
+    prescription: ProgramSlotExerciseDto,
+    templateOfSlot: Map<String, String>,
+    trainedByTemplate: Map<String, Set<String>>,
+    presentExercises: Set<String>,
+): Boolean = prescription.exerciseId in presentExercises &&
+    prescription.exerciseId in trainedByTemplate[templateOfSlot[prescription.slotId]].orEmpty()
 
 /**
  * A slot prescribes only what its template trains (ROADMAP P3.8).

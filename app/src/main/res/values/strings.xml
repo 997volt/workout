@@ -506,9 +506,12 @@
     <string name="program_export">Export</string>
     <string name="program_loaded">Program loaded.</string>
     <string name="program_already_loaded">That program is already here.</string>
+    <!-- What a load could not place (ROADMAP B51). "Not in your library" rather than "not on this
+         device": an exercise the user deleted here is still held as a hidden row, and saying the
+         device does not have it would be false. -->
     <plurals name="program_load_dropped">
-        <item quantity="one">%1$d movement was skipped: its exercise is not on this device.</item>
-        <item quantity="other">%1$d movements were skipped: their exercises are not on this device.</item>
+        <item quantity="one">%1$d movement was skipped: its exercise is not in your library.</item>
+        <item quantity="other">%1$d movements were skipped: their exercises are not in your library.</item>
     </plurals>
     <string name="program_exported">Program file written.</string>
     <string name="program_export_failed">Couldn’t write the program file.</string>

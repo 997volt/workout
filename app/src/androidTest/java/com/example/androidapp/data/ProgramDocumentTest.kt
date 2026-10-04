@@ -126,6 +126,27 @@ class ProgramDocumentTest {
         assertTrue(templates.observeExercises(template.id).first().isEmpty())
     }
 
+    @Test
+    fun aMovementWhoseExerciseWasDeletedHere_isDroppedRatherThanResurrected() = runTest {
+        // B51: the device holds the exercise, but as a soft-deleted row. The insert ignores an id
+        // that exists and the presence read filters `deletedAt`, so the movement is dropped — and
+        // the exercise stays deleted, because un-deleting a lift is a write to the library that
+        // "overwrites nothing" refuses to make.
+        val file = exportOf(seedProgram())
+        wipe()
+        database.exerciseDao().insertAll(listOf(exercise("back-squat").copy(deletedAt = 1L)))
+
+        val summary = importOf(file)
+
+        assertEquals("the program still arrives", 1, summary.programs)
+        assertEquals("the exercise the document carried was not resurrected", 0, summary.exercises)
+        assertEquals("and its movement could not be placed", 1, summary.droppedMovements)
+        assertTrue(
+            "the row is still the device's deleted one",
+            "back-squat" in database.backupDao().softDeletedExerciseIds(),
+        )
+    }
+
     /** A program with one template, one planned set and one slot, ready to export. */
     private suspend fun seedProgram(): String {
         val programId = (programs.createProgram("Heavy lower") as DataResult.Success).data
