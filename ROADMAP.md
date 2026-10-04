@@ -18,7 +18,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 ## Next
 
 One batch, taken from using the app rather than from either queue, and all of it the workouts half:
-the tab that starts a session, the screen one runs on, and how a set is written from it. A candidate
+the tab that starts a session, the screen one runs on, how a set is written from it, and where a
+weekday lives. A candidate
 graduates to this section — gaining an id and a spelled-out
 decision rather than a wish — when it is picked up, so what stands here is committed work; the two
 queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what is a
@@ -89,6 +90,22 @@ product in its own right.
   change chooses between a read-only preview and opening that editor, and more than one active program
   (P3.12) means the bar may have several next-up rows to fit — which is why the row stays compact rather
   than a card.
+
+### Templates and programs: where a day lives
+
+- **N56 — a template carries no weekday; the day belongs to a program's slot.** A template is a reusable
+  workout, and today it also holds an N16 weekday pin of its own: its editor offers a day picker,
+  `templates.weekday` stores it, and *Today* on home falls back to those pins whenever no program is
+  active. That is two places answering "what am I doing on Tuesday", and the template's copy is the
+  weaker one — a template has no order, no next-up and no adherence to belong to. The pin goes, with its
+  column, the `setWeekday` path through DAO, repository and editor, and the `pinnedFor` fallback in
+  `todaysPlanFor`, leaving a program's slots as the only source of a dated plan. With no active program
+  there is then no *Today* list, which is the point rather than a regression: a day is a scheduling fact,
+  and scheduling is what a program is for. Nothing settled is contradicted — N16's "a scheduled plan is a
+  living template" survives with the *slot* as the scheduled thing, and P3.3's weekday-less, order-only
+  slot is untouched. Two edges are settled when it is taken: dropping the column is a migration that
+  ships with the code that stops reading it (never ahead of it), and the backup DTO carries the same
+  weekday, so whether that field stays for older files' sake or leaves with the column is decided there.
 
 ## Later (still self-contained)
 
