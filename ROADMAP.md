@@ -54,11 +54,12 @@ product in its own right.
 - **N52 — the workout says when the planned work is done.** Starting from a program's slot seeds the
   plan's exercises and their planned sets, and logging has no ceiling: past the last planned set the user
   can keep logging with nothing to notice the day is complete, and `comparePlanToActual` says so only in
-  the review, after *Finish*. The notice arrives the moment the last planned set is written, in the app's
-  own in-app terms — a chime and a line on the screen, the way a finished rest already behaves, never a
-  system notification: the app declares no notification permission and B37 removed the channel it used to
-  create. What the notice then offers — finishing the workout, or standing there as information — is
-  settled when it is picked up.
+  the review, after *Finish*. The notice is a **popup** — the app's own in-app dialog, the shape *Done*'s
+  rating prompt and the remove-exercise confirmation already use — raised the moment the last planned set
+  is written, never a system notification: the app declares no notification permission and B37 removed the
+  channel it used to create. It says the planned work is done, and what it offers — finish the workout,
+  keep logging, or nothing but a dismissal — is settled when it is picked up, as is whether the rest
+  chime's tone accompanies it.
 
 - **N53 — an exercise's rare actions move into its own overflow menu.** *Superset with above* is a text
   button in every exercise header and *Delete* an icon beside *Done*; both are rarely used, and the header
