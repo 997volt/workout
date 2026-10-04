@@ -208,6 +208,11 @@ private fun NavGraphBuilder.programDestinations(navController: NavHostController
 private fun NavGraphBuilder.historyDestinations(navController: NavHostController) {    composable<WorkoutHistory> {
         WorkoutHistoryRoute(
             onOpenWorkout = { sessionId -> navController.navigate(WorkoutDetail(sessionId)) },
+            // The entry point the home-screen repeat button gave up (ROADMAP N48): the workout the
+            // row names, copied into a fresh session.
+            onRepeatWorkout = { sessionId ->
+                navController.navigate(ActiveWorkout(repeatSessionId = sessionId))
+            },
             onBack = { navController.popBackStack() },
         )
     }

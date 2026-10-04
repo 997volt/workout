@@ -252,6 +252,13 @@ the rule; that one argues it.
   the screen the whole scheduling half is edited from does not belong behind a menu. Keeping both
   entry points "just in case" was rejected — it is what made the tab a second path to everywhere
   else. ([evidence](DECISIONS-EVIDENCE.md#n42))
+- **A repeat is addressed to a workout, and a row's second action is an icon** (N48, amending N29).
+  The one-tap copy of exercises and order is the same; what changed is that it names its source, so
+  a History row repeats *that* workout rather than whatever is newest, and the repository reports a
+  row deleted since rather than opening a blank session. The action sits in the row's trailing slot
+  beside the open, because a row is one thing you tap and an action on it is an icon; and because a
+  repeat is a start, it still goes through P3.3's missed-day question.
+  ([evidence](DECISIONS-EVIDENCE.md#n48))
 
 ## The app's data
 

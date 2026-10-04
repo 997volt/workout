@@ -205,7 +205,7 @@ class WorkoutDetailViewModelTest {
         ): DataResult<StartedSession> =
             unused()
 
-        override suspend fun repeatLastSession(): DataResult<StartedSession> = unused()
+        override suspend fun repeatSession(sessionId: String): DataResult<StartedSession> = unused()
 
         override suspend fun addExercise(sessionId: String, exerciseId: String): DataResult<Unit> =
             unused()

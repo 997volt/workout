@@ -45,6 +45,12 @@ repeated here.
   home overflow, each keeping what it does today. They act on the whole database, which is what
   Settings is about; delete-everything stays last and coloured, behind the same typed
   confirmation, because it is still the one entry that can cost the user something.
+- **A finished workout can be repeated from its History row** (N48). This is the entry point the
+  home screen's "Repeat last workout" button gave up, addressed to the workout the row names rather
+  than to "the last one": the copy is that workout's exercises and order (never its loads), and the
+  action is offered only where there is still something to copy. A repeat is a start, so it goes
+  through the program's missed-day question like every other one, and the repository names the
+  workout it is given — a row deleted since is reported rather than opening a blank session.
 - **An ongoing workout can be discarded, behind a prompt** (N41). A workout holding logged sets
   previously had no exit but *Finish*, which files it in history. The workout screen's top bar now
   offers *Discard workout*, and the prompt says what goes — how many sets are logged — and, when

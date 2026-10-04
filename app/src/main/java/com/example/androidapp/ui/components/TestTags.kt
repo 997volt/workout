@@ -276,6 +276,14 @@ object TestTags {
 
     fun historyExerciseTrends(id: String) = "history_exercise_trends_$id"
 
+    /**
+     * Repeating one finished workout from a History row (ROADMAP N48).
+     *
+     * Per row, because the action is addressed to the workout the row names: a tag that named the
+     * screen would not tell a test *which* workout a tap would repeat.
+     */
+    fun historyRepeat(sessionId: String) = "history_repeat_$sessionId"
+
     /** Pinning a plan to a weekday (ROADMAP N16). */
     fun templateWeekday(day: String) = "template_weekday_$day"
 

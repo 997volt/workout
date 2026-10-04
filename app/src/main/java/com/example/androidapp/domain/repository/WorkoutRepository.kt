@@ -78,7 +78,7 @@ interface WorkoutRepository {
     ): DataResult<StartedSession>
 
     /**
-     * Starts a session holding the exercises of the last finished one, in their order (ROADMAP N29).
+     * Starts a session holding [sessionId]'s exercises, in their order (ROADMAP N29, N48).
      *
      * **Exercises and order only — not the loads.** Copying last session's weights as targets is the
      * obvious wrong turn: progression (N22) and the "last time" prefill already answer what to lift
@@ -88,12 +88,17 @@ interface WorkoutRepository {
      * An exercise whose library row has been deleted since is skipped and the rest repeat; the same
      * exercise performed twice repeats twice, because that is what was performed.
      *
+     * **The workout is addressed rather than "the last one"** (N48): History offers the action on the
+     * row the user is looking at, so the source session is a parameter. A non-existent one is a
+     * `NotFound` rather than an empty session, because silently opening a blank workout from a row
+     * that named another would be worse than saying the row is gone.
+     *
      * **An already-open session is resumed, not seeded and not refused** — it comes back with
      * `isNew = false` and whatever it already holds, which is the same rule every other start path
      * follows. Said plainly because the obvious reading of "a session is already open" is that the
      * call fails, and it does not.
      */
-    suspend fun repeatLastSession(): DataResult<StartedSession>
+    suspend fun repeatSession(sessionId: String): DataResult<StartedSession>
 
     /** Appends [exerciseId] to the end of the session. */
     suspend fun addExercise(sessionId: String, exerciseId: String): DataResult<Unit>

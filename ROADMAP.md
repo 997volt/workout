@@ -35,14 +35,6 @@ automatic (N22's "the app suggests; it never writes"), a weekday-less slot that 
 and is order-only, and more than one active program, which P3.12 allowed. What waits now came
 from using the built app rather than from either queue.
 
-### History: what a finished workout can carry
-
-- **Repeat-last becomes an action on a finished workout in History**, which is the entry point its
-  home-screen button gives up. It is the same one-tap copy of the last workout's exercises and
-  order, addressed to the workout the user is looking at rather than to "the last one" — which is
-  all that a button on the home screen could ever mean. The row already opens the workout, so the
-  second action needs a home that reads as one.
-
 ### Settings: the rest timer
 
 - **A rest-timer switch, with the rest still on screen.** A rest is a countdown today: the session

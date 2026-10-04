@@ -35,6 +35,13 @@ data class StartIntent(
      * prescription, and one that carries on from a row seeds that row's.
      */
     val slotId: String? = null,
+    /**
+     * A finished workout to repeat instead of starting something new (ROADMAP N48).
+     *
+     * Carried through the question like every other start: a repeat *is* a start, and P3.3 asks at
+     * the point of starting rather than somewhere the answer would already be stale.
+     */
+    val repeatSessionId: String? = null,
 )
 
 /** The missed day the prompt names, and the name of what was being started instead. */

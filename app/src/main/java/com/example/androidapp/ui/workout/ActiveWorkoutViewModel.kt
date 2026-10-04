@@ -196,8 +196,13 @@ class ActiveWorkoutViewModel @Inject constructor(
      */
     private val templateId: String? = savedStateHandle.toRoute<ActiveWorkout>().templateId
 
-    /** Whether this session should open with the last workout's exercises (ROADMAP N29). */
-    private val repeatLast: Boolean = savedStateHandle.toRoute<ActiveWorkout>().repeatLast
+    /**
+     * The finished workout whose exercises this session opens with, or null (ROADMAP N29, N48).
+     *
+     * A start argument like the template: it is consumed once, when the session is opened, and a
+     * resumed session ignores it.
+     */
+    private val repeatSessionId: String? = savedStateHandle.toRoute<ActiveWorkout>().repeatSessionId
 
     /**
      * The program slot this workout was started from, or null (ROADMAP P3.8).
@@ -437,12 +442,12 @@ class ActiveWorkoutViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            // Repeating is the same open, with the last workout's exercises as the seed instead of a
-            // plan's — both go through the one append path (ROADMAP N3, N29). The slot travels with
-            // the template so its prescription is what the session is seeded from (P3.8).
+            // Repeating is the same open, with one finished workout's exercises as the seed instead
+            // of a plan's — both go through the one append path (ROADMAP N3, N29, N48). The slot
+            // travels with the template so its prescription is what the session is seeded from (P3.8).
             val opened =
-                if (repeatLast) {
-                    workoutRepository.repeatLastSession()
+                if (repeatSessionId != null) {
+                    workoutRepository.repeatSession(repeatSessionId)
                 } else {
                     workoutRepository.startOrResumeSession(templateId, slotId)
                 }

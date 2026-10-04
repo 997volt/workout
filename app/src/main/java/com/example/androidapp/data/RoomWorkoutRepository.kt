@@ -119,9 +119,12 @@ class RoomWorkoutRepository @Inject constructor(
             }
         }
 
-    override suspend fun repeatLastSession(): DataResult<StartedSession> =
+    override suspend fun repeatSession(sessionId: String): DataResult<StartedSession> =
         dataResultOf {
             database.withTransaction {
+                if (dao.findSession(sessionId) == null) {
+                    throw NotFoundException("session $sessionId")
+                }
                 val start = dao.findOrCreateActiveSession(
                     id = UUID.randomUUID().toString(),
                     now = timeSource.nowEpochMillis(),
@@ -130,7 +133,7 @@ class RoomWorkoutRepository @Inject constructor(
                 if (start.created) {
                     // The same append path every other start uses (ROADMAP N3, N29), so a repeated
                     // exercise is an ordinary one — its rest, note and grouping rules included.
-                    database.sessionExerciseDao().lastFinishedSessionExercises()
+                    database.sessionExerciseDao().findLiveSessionExercises(sessionId)
                         .forEach { past ->
                             appendExercise(
                                 dao = dao,

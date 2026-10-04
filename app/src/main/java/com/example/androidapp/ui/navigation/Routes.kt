@@ -77,12 +77,14 @@ data object Adherence
 data class ActiveWorkout(
     val templateId: String? = null,
     /**
-     * Start from the last finished workout's exercises instead of an empty session (ROADMAP N29).
+     * Start from one finished workout's exercises instead of an empty session (ROADMAP N29, N48).
      *
-     * A flag on this route rather than a route of its own: the screen, the ViewModel and the whole
-     * workout flow are the same either way, and the only difference is what the session opens with.
+     * The *workout* is named rather than a "repeat last" flag: History offers the action on the row
+     * the user is looking at, so the source is an argument like any other start argument, consumed
+     * once when the session is opened. A flag would have said "the newest one", which is all a
+     * button on the home screen could ever mean and is not what a History row says.
      */
-    val repeatLast: Boolean = false,
+    val repeatSessionId: String? = null,
     /**
      * The program slot this workout was started from, if any (ROADMAP P3.8).
      *

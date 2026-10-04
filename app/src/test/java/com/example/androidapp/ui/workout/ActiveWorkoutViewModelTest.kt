@@ -112,10 +112,14 @@ class ActiveWorkoutViewModelTest {
      */
     private fun activeWorkoutRoute(
         templateId: String? = null,
-        repeatLast: Boolean = false,
+        repeatSessionId: String? = null,
         slotId: String? = null,
     ) = SavedStateHandle(
-        mapOf("templateId" to templateId, "repeatLast" to repeatLast, "slotId" to slotId),
+        mapOf(
+            "templateId" to templateId,
+            "repeatSessionId" to repeatSessionId,
+            "slotId" to slotId,
+        ),
     )
 
     private fun viewModelFor(
@@ -123,7 +127,7 @@ class ActiveWorkoutViewModelTest {
         templateId: String? = null,
         templates: FakeTemplateRepository = FakeTemplateRepository(),
         settings: FakeSettingsRepository = FakeSettingsRepository(),
-        repeatLast: Boolean = false,
+        repeatSessionId: String? = null,
         programs: FakeProgramRepository = FakeProgramRepository(),
         slotId: String? = null,
     ) = ActiveWorkoutViewModel(
@@ -131,7 +135,7 @@ class ActiveWorkoutViewModelTest {
         clock,
         templates,
         programs,
-        activeWorkoutRoute(templateId, repeatLast, slotId),
+        activeWorkoutRoute(templateId, repeatSessionId, slotId),
         settings,
     )
 
@@ -1081,8 +1085,8 @@ class ActiveWorkoutViewModelTest {
             return DataResult.Success(StartedSession(created.id, isNew = true))
         }
 
-        /** ROADMAP N29: the same shape as starting, since a repeat is a start with exercises. */
-        override suspend fun repeatLastSession(): DataResult<StartedSession> {
+        /** ROADMAP N29, N48: the same shape as starting, since a repeat is a start with exercises. */
+        override suspend fun repeatSession(sessionId: String): DataResult<StartedSession> {
             sessions.value?.let { return DataResult.Success(StartedSession(it.id, isNew = false)) }
             val created = WorkoutSession(id = "s1", startedAt = Instant.parse("2026-09-28T07:00:00Z"))
             sessions.value = created
@@ -1949,13 +1953,14 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
-    fun repeatLast_opensTheSessionHoldingTheLastWorkoutsExercises() = runTest(dispatcher) {
-        // ROADMAP B43: the SavedStateHandle never set `repeatLast`, so this branch was never entered by
-        // any test and the fake's `repeatedExerciseIds` was never assigned — the whole path went
-        // unexercised while each of its parts was tested separately.
+    fun repeatingAWorkout_opensTheSessionHoldingItsExercises() = runTest(dispatcher) {
+        // ROADMAP B43, N48: the SavedStateHandle never set the repeat argument, so this branch was
+        // never entered by any test and the fake's `repeatedExerciseIds` was never assigned — the
+        // whole path went unexercised while each of its parts was tested separately. The argument is
+        // the workout the row named, which is what History addresses (N48).
         val repository = FakeWorkoutRepository()
         repository.repeatedExerciseIds = listOf("back-squat", "bench-press")
-        val viewModel = viewModelFor(repository, repeatLast = true)
+        val viewModel = viewModelFor(repository, repeatSessionId = "past-1")
         observe(viewModel)
         settle()
 
@@ -1967,12 +1972,12 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
-    fun startingNormally_doesNotRepeatTheLastWorkout() = runTest(dispatcher) {
-        // The other direction: the flag decides, so the test above cannot be passing because the fake
-        // seeds something regardless.
+    fun startingNormally_doesNotRepeatAWorkout() = runTest(dispatcher) {
+        // The other direction: the argument decides, so the test above cannot be passing because the
+        // fake seeds something regardless.
         val repository = FakeWorkoutRepository()
         repository.repeatedExerciseIds = listOf("back-squat")
-        val viewModel = viewModelFor(repository, repeatLast = false)
+        val viewModel = viewModelFor(repository, repeatSessionId = null)
         observe(viewModel)
         settle()
 

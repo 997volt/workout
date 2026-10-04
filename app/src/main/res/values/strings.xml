@@ -469,6 +469,9 @@
     <string name="history_volume">%1$s kg</string>
     <string name="history_detail_title">Workout</string>
     <string name="history_detail_missing">That workout is no longer stored.</string>
+    <!-- Repeating one finished workout (ROADMAP N48): the entry point the home button gave up, now
+         addressed to the workout the row names rather than to "the last one". -->
+    <string name="history_repeat">Repeat workout</string>
     <plurals name="history_sets">
         <item quantity="one">%1$d set</item>
         <item quantity="other">%1$d sets</item>

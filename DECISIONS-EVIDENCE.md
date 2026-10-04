@@ -442,6 +442,30 @@ The move needed one shared piece rather than a copy: the held-failure-to-snackba
 home route used was extracted to `FailureMessage` when Settings became its second caller, so the
 two screens cannot drift in how a failed write is reported.
 
+## N48
+
+The repeat was "the last workout's, or nothing": a boolean on the route, and a repository query
+whose SQL picked the newest finished session. That is all a button on the home screen could mean,
+and N42 removed the button — but the feature was not deleted with it.
+
+The action moves to the row that names the workout. So the address becomes an argument: the route
+carries the session id, and the repository copies *that* session's live exercises. The SQL that
+picked "the last one" goes with it; the query that serves the repeat is the one N31 already uses to
+build a template from a session, which carries the same two rules (a library row deleted since is
+skipped, and the same exercise twice stays twice) and the columns B41 needs for rest, note and
+grouping.
+
+Two consequences worth stating. **A row deleted since the list was drawn is reported** rather than
+opening a blank session: the user asked for a specific workout, and an empty one would be a silent
+lie. And **a repeat is still a start**, so it goes through P3.3's missed-day question like every
+other start; the History screen hosts the gate for it, and a skip that could not be recorded is
+shown on that screen's own host because the workout still starts.
+
+The row's second action is an icon in the trailing slot rather than a second full-width target,
+because a row is one thing you tap. It is offered only where `isRepeatable` says a repeat would
+copy something — the helper B43's tail added for exactly this question, which is why it stayed
+through N42 while its only caller was gone.
+
 ## P3.3
 
 Programs. The shape was decided before the code, and the interesting part is what each

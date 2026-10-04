@@ -372,7 +372,7 @@ class ExercisePickerViewModelTest {
         ): DataResult<StartedSession> = unused()
 
         /** The one fake that models repeating: it records the call, since its tests ask what it did. */
-        override suspend fun repeatLastSession(): DataResult<StartedSession> = unused()
+        override suspend fun repeatSession(sessionId: String): DataResult<StartedSession> = unused()
         override suspend fun removeExercise(sessionExerciseId: String): DataResult<Unit> = unused()
         override suspend fun finishExercise(sessionExerciseId: String): DataResult<Unit> = unused()
         override suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit> = unused()
