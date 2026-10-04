@@ -512,7 +512,6 @@ private fun SlotRestCueDialog(
                     singleLine = true,
                     isError = !restIsValid,
                     label = { Text(stringResource(R.string.template_rest_label)) },
-                    supportingText = { Text(stringResource(R.string.rest_edit_hint)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
                 OutlinedTextField(

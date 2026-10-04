@@ -29,6 +29,11 @@ repeated here.
   link and the double-progression rule that computed it are gone; what the fields start from is what
   was done last time, unchanged. ROADMAP N50 still owns what the app should propose instead, and the
   warm-up ramp keeps the loadable step the rule had defined (N28).
+- **The rest field's "Empty for the default, 0 for none." hint is gone but for one field** (N60). It sat
+  under the template editor's rest field and under a program slot's as well as under the exercise's, and
+  the two plan editors *restate* a rest rather than define one, so there the sentence was noise read on
+  every edit. It stays on the exercise's own rest field, which is where a rest is defined and where the
+  rule belongs.
 
 ## [1.12] — 2026-10-04 (versionCode 13)
 

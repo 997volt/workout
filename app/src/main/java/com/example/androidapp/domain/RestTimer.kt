@@ -36,7 +36,8 @@ object RestTimer {
      *
      * It replaces three sentences for one rule, written in three repositories, each of which also
      * called zero a mistake. It says only what is *wrong*: how to say what was meant is the hint
-     * under every rest field (`rest_edit_hint`), and repeating that instruction here was two copies
+     * under the exercise's own rest field (`rest_edit_hint`), which is the one place a rest is
+     * defined rather than restated (N60), and repeating that instruction here was two copies
      * of one rule, free to drift — which its own doc already claimed this constant did not do.
      */
     const val NEGATIVE_REST_REFUSAL = "A rest cannot be negative."

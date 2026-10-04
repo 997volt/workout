@@ -53,23 +53,10 @@ and is order-only, and more than one active program, which P3.12 allowed.
   deliberately not decided here and is spelled out when this is picked up; what is committed now is that
   the withdrawn shape is not the one to restore.
 
-### Two requests from use
+### One request from use
 
-Self-contained enough for this queue, and each small enough that its decision is spelled out when it is
-picked up rather than now — so each is a wish, and gains an id when it graduates.
-
-- **The rest field stops explaining itself, except where the exercise is edited.** The sentence under
-  every rest field — `rest_edit_hint` in [strings.xml](app/src/main/res/values/strings.xml), "Empty for
-  the default, 0 for none." — reads as noise on the template's field
-  ([TemplateEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateEditorScreen.kt))
-  and on a program slot's
-  ([SlotPrescriptionDialog.kt](app/src/main/java/com/example/androidapp/ui/programs/SlotPrescriptionDialog.kt)),
-  so it comes off those two. It **stays on the exercise's own field**
-  ([ExerciseDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseDetailScreen.kt)),
-  which is where a rest is defined rather than restated, and that is the whole decision: one string under
-  three fields becomes one string under one, and the comment in
-  [RestTimer.kt](app/src/main/java/com/example/androidapp/domain/RestTimer.kt) that calls it the hint
-  under *every* rest field is updated with it.
+Self-contained enough for this queue, and small enough that its decision is spelled out when it is
+picked up rather than now — so it is a wish, and gains an id when it graduates.
 
 - **An exercise's own default weight change.** 2.5 kg is one global constant rather than a property of
   the movement: [`Weight.DEFAULT_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/Weight.kt)
