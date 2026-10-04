@@ -25,21 +25,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -49,10 +49,14 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.StatisticsRange
+import com.example.androidapp.ui.components.AppCard
+import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.CenteredMessage
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.TrendChartFrame
+import com.example.androidapp.ui.theme.EyebrowStyle
 
 /** The Statistics tab (ROADMAP N35). */
 @Composable
@@ -134,7 +138,7 @@ fun StatisticsScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             RangeChips(
@@ -238,11 +242,11 @@ private fun RangeChips(
                             // Custom is a chip like the others, but choosing it asks a question first: the
                             // dates. It is selected whenever the range *is* custom, so the bar still says
                             // which window is on screen.
-                            FilterChip(
+                            AppFilterChip(
                                 selected = range.kind == RangeKind.CUSTOM,
                                 onClick = onChooseDates,
-                                label = { Text(stringResource(kind.labelRes)) },
-                                modifier = Modifier.testTag(TestTags.Statistics.range(kind.name)),
+                                label = stringResource(kind.labelRes),
+                                testTag = TestTags.Statistics.range(kind.name),
                             )
                         } else {
                             RangeChip(
@@ -262,11 +266,11 @@ private const val CHIPS_PER_ROW = 3
 
 @Composable
 private fun RangeChip(kind: RangeKind, selected: Boolean, onSelectRange: (StatisticsRange) -> Unit) {
-    FilterChip(
+    AppFilterChip(
         selected = selected,
         onClick = { onSelectRange(StatisticsRange(kind)) },
-        label = { Text(stringResource(kind.labelRes)) },
-        modifier = Modifier.testTag(TestTags.Statistics.range(kind.name)),
+        label = stringResource(kind.labelRes),
+        testTag = TestTags.Statistics.range(kind.name),
     )
 }
 
@@ -307,32 +311,48 @@ private fun MetricPicker(selected: MetricKey, onSelectMetric: (MetricKey) -> Uni
 /** The three numbers, and no more (ROADMAP N35). */
 @Composable
 private fun Overview(overview: StatisticsOverview) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Number(
-            labelRes = R.string.statistics_overview_workouts,
-            value = overview.workouts.toString(),
-            testTag = TestTags.Statistics.OVERVIEW_WORKOUTS,
-        )
-        Number(
-            labelRes = R.string.statistics_overview_volume,
-            value = Weight.kilograms(overview.volumeGrams),
-            testTag = TestTags.Statistics.OVERVIEW_VOLUME,
-        )
-        Number(
-            labelRes = R.string.statistics_overview_records,
-            // A dash rather than a zero: "not counted yet" and "you set none" are different statements
-            // (see StatisticsOverview.personalRecords).
-            value = overview.personalRecords?.toString() ?: stringResource(R.string.statistics_not_counted),
-            testTag = TestTags.Statistics.OVERVIEW_RECORDS,
-        )
+    AppCard {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Number(
+                labelRes = R.string.statistics_overview_workouts,
+                value = overview.workouts.toString(),
+                testTag = TestTags.Statistics.OVERVIEW_WORKOUTS,
+            )
+            Number(
+                labelRes = R.string.statistics_overview_volume,
+                value = Weight.kilograms(overview.volumeGrams),
+                testTag = TestTags.Statistics.OVERVIEW_VOLUME,
+            )
+            Number(
+                labelRes = R.string.statistics_overview_records,
+                // A dash rather than a zero: "not counted yet" and "you set none" are different statements
+                // (see StatisticsOverview.personalRecords).
+                value = overview.personalRecords?.toString() ?: stringResource(R.string.statistics_not_counted),
+                testTag = TestTags.Statistics.OVERVIEW_RECORDS,
+            )
+        }
     }
 }
 
 @Composable
 private fun Number(labelRes: Int, value: String, testTag: String) {
     Column {
-        Text(text = stringResource(labelRes), style = MaterialTheme.typography.labelMedium)
-        Text(text = value, style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag(testTag))
+        // The label is tracked out small caps and the value is large: the pair reads as a
+        // figure with a caption rather than two lines of the same sentence, which is what makes
+        // three numbers side by side scannable instead of merely present.
+        Text(
+            text = stringResource(labelRes).uppercase(LocalConfiguration.current.locales[0]),
+            style = EyebrowStyle,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .testTag(testTag),
+        )
     }
 }
 
@@ -405,11 +425,21 @@ private fun ReadingRow(label: String, value: String, testTag: String) {
         modifier = Modifier
             .fillMaxWidth()
             .testTag(testTag)
-            .padding(vertical = 4.dp),
+            .padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(text = label, style = MaterialTheme.typography.bodyMedium)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+        // The label is the quiet half: a date or "Average" names the row, and the reading is
+        // what someone opened this for.
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 
@@ -426,7 +456,10 @@ private fun SeriesChart(series: MetricSeries, metric: MetricEntry, goal: Double?
     var period by rememberSaveable { mutableStateOf(DAYS) }
     val overlay = chartOverlay(series, metric, goal, period)
 
-    Column {
+    // The chart, the window it is averaged over and the axis in words are one card: they are one
+    // reading of one series, and separating the picker from the line it changes would make the
+    // control look like a setting rather than part of the figure.
+    AppCard {
         TrendChartFrame(
             points = overlay.projected,
             goal = goal,
@@ -687,8 +720,8 @@ private fun StatisticsTopBar(
     onOpenMeasurements: (() -> Unit)?,
     onOpenAdherence: (() -> Unit)?,
 ) {
-    TopAppBar(
-        title = { Text(stringResource(R.string.tab_statistics)) },
+    CenterAlignedTopAppBar(
+        title = { TopBarTitle(text = stringResource(R.string.tab_statistics)) },
         actions = {
             if (onOpenAdherence != null) {
                 TextButton(
@@ -728,11 +761,11 @@ private fun MovingAveragePicker(period: Int, onSelect: (Int) -> Unit) {
             modifier = Modifier.testTag(TestTags.Statistics.MOVING_AVERAGE),
         )
         MOVING_AVERAGE_PERIODS.forEach { option ->
-            FilterChip(
+            AppFilterChip(
                 selected = period == option,
                 onClick = { onSelect(option) },
-                label = { Text(option.toString()) },
-                modifier = Modifier.testTag(TestTags.Statistics.movingAveragePeriod(option)),
+                label = option.toString(),
+                testTag = TestTags.Statistics.movingAveragePeriod(option),
             )
         }
     }

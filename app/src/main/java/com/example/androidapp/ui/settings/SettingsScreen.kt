@@ -10,19 +10,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Switch
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -31,7 +30,10 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.ui.components.AppCard
+import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 
 /** Five chips fit a phone's width; a sixth runs off it. */
@@ -74,8 +76,8 @@ fun SettingsScreen(
     Scaffold(
         modifier = modifier.fillMaxSize().testTag(TestTags.SETTINGS_SCREEN),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.settings_title)) },
+            CenterAlignedTopAppBar(
+                title = { TopBarTitle(text = stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -91,8 +93,8 @@ fun SettingsScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             RestDefaultSection(
                 state = state,
@@ -103,6 +105,8 @@ fun SettingsScreen(
                 onSetRestCue = onSetRestCue,
                 onSetKeepScreenOn = onSetKeepScreenOn,
             )
+            // Outside the cards: a write that failed is not part of the setting it failed on,
+            // and inside a card it would read as the value.
             state.error?.let { error ->
                 Text(
                     text = dataErrorMessage(error),
@@ -124,11 +128,11 @@ private fun RestChoiceRow(
 ) {
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         choices.forEach { seconds ->
-            FilterChip(
+            AppFilterChip(
                 selected = seconds == selected,
                 onClick = { onSelect(seconds) },
-                label = { Text(RestTimer.format(seconds)) },
-                modifier = Modifier.testTag(TestTags.settingRest(seconds)),
+                label = RestTimer.format(seconds),
+                testTag = TestTags.settingRest(seconds),
             )
         }
     }
@@ -144,7 +148,7 @@ private fun SettingSwitch(
     testTag: String,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
+    Column(modifier = modifier.padding(vertical = 12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -157,7 +161,11 @@ private fun SettingSwitch(
                 modifier = Modifier.testTag(testTag),
             )
         }
-        Text(hint, style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = hint,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -169,8 +177,7 @@ private fun RestCueSwitches(
     onSetKeepScreenOn: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier) {
-        HorizontalDivider()
+    AppCard(modifier = modifier) {
         SettingSwitch(
             label = stringResource(R.string.settings_rest_cue),
             hint = stringResource(R.string.settings_rest_cue_hint),
@@ -178,6 +185,7 @@ private fun RestCueSwitches(
             onCheckedChange = onSetRestCue,
             testTag = TestTags.SETTINGS_REST_CUE,
         )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         SettingSwitch(
             label = stringResource(R.string.settings_keep_screen_on),
             hint = stringResource(R.string.settings_keep_screen_on_hint),
@@ -195,29 +203,41 @@ private fun RestDefaultSection(
     onSetDefaultRest: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    AppCard(modifier = modifier) {
         Text(
             text = stringResource(R.string.settings_rest_title),
             style = MaterialTheme.typography.titleMedium,
         )
+        // The current value is the loudest thing in the card: it is the answer to the question
+        // the section's title asks, and the chips below are only how you change it.
         Text(
             text = stringResource(
                 R.string.settings_rest_current,
                 RestTimer.format(state.defaultRestSeconds),
             ),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.testTag(TestTags.SETTINGS_REST_CURRENT),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .padding(top = 4.dp)
+                .testTag(TestTags.SETTINGS_REST_CURRENT),
         )
         Text(
             text = stringResource(R.string.settings_rest_explainer),
             style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
         )
-        state.choices.chunked(CHOICES_PER_ROW).forEach { row ->
-            RestChoiceRow(
-                choices = row,
-                selected = state.defaultRestSeconds,
-                onSelect = onSetDefaultRest,
-            )
+        Column(
+            modifier = Modifier.padding(top = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            state.choices.chunked(CHOICES_PER_ROW).forEach { row ->
+                RestChoiceRow(
+                    choices = row,
+                    selected = state.defaultRestSeconds,
+                    onSelect = onSetDefaultRest,
+                )
+            }
         }
     }
 }

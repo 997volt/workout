@@ -1,6 +1,5 @@
 package com.example.androidapp.ui.exercises
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,26 +11,27 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,11 +47,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.ui.components.AppRow
 import com.example.androidapp.ui.components.CenteredMessage
+import com.example.androidapp.ui.components.IconTile
 import com.example.androidapp.ui.components.MessageSnackbar
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
+import com.example.androidapp.ui.theme.TileAccent
 
 /**
  * Stateful entry point: wires the ViewModel to the stateless screen.
@@ -120,8 +125,10 @@ fun ExerciseLibraryScreen(
             }
         },
         topBar = {
-            TopAppBar(
-                title = { Text(title, modifier = Modifier.testTag(TestTags.LIBRARY_TITLE)) },
+            CenterAlignedTopAppBar(
+                title = {
+                    TopBarTitle(text = title, testTag = TestTags.LIBRARY_TITLE)
+                },
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) {
@@ -253,7 +260,11 @@ private fun LibrarySearchField(
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    OutlinedTextField(
+    // Filled rather than outlined: on the near-black page an outline is a bright rectangle
+    // competing with the rows under it, while a filled field reads as a surface you type into.
+    // The indicator is transparent for the same reason — a coloured underline is a second
+    // emphasis the field does not need when it already has its own tone.
+    TextField(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier
@@ -273,6 +284,14 @@ private fun LibrarySearchField(
                 }
             }
         },
+        shape = MaterialTheme.shapes.medium,
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+        ),
     )
 }
 
@@ -284,18 +303,31 @@ private fun ExerciseList(
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        // Leaves room for the "start workout" button so it cannot cover the last row.
-        contentPadding = PaddingValues(bottom = 96.dp),
+        // Horizontal insets, because the rows are cards now and a card that runs to the screen
+        // edge is not a card. Bottom leaves room for the "start workout" button so it cannot
+        // cover the last row.
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(items = items, key = { it.id }) { item ->
-            ListItem(
-                headlineContent = { Text(item.name) },
+            AppRow(
+                headline = item.name,
                 // Null while an unedited custom exercise has no taxonomy: the row
                 // shows its name alone rather than "Other · Other" (N2).
-                supportingContent = item.subtitle?.let { subtitle -> { Text(subtitle) } },
-                modifier = Modifier.clickable { onExerciseClick(item.id) },
+                supporting = item.subtitle,
+                leading = { IconTile(icon = Icons.Filled.FitnessCenter, accent = TileAccent.Teal) },
+                trailing = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                onClick = { onExerciseClick(item.id) },
+                // The headline is a lift's name, which names the thing but not the tap; the row
+                // would otherwise announce "Back Squat, button".
+                onClickLabel = stringResource(R.string.library_open_exercise, item.name),
             )
-            HorizontalDivider()
         }
     }
 }

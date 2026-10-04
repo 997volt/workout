@@ -283,7 +283,7 @@ internal fun RecentWorkoutRow(
         onClick = onClick,
         // The headline is a date, which names the workout but not the tap: without this the
         // row announces "Monday 28 September, button".
-        onClickLabel = stringResource(R.string.home_open_workout),
+        onClickLabel = stringResource(R.string.action_open_workout),
         testTag = TestTags.HOME_RECENT_ROW,
         modifier = modifier,
     )

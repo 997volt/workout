@@ -17,9 +17,6 @@
     <string name="home_first_run">No workouts yet</string>
     <string name="home_first_run_hint">Tap Start workout to log your first one.</string>
     <string name="home_no_recent">Nothing recent</string>
-    <!-- What tapping a workout row does. The row's own headline is a date, which names the
-         workout but not the action, so a row that navigates must say where to. -->
-    <string name="home_open_workout">Open workout</string>
 
     <string name="library_start_workout">Start workout</string>
     <string name="library_resume_workout">Resume workout</string>
@@ -27,6 +24,10 @@
         <item quantity="one">%1$d exercise</item>
         <item quantity="other">%1$d exercises</item>
     </plurals>
+
+    <!-- What tapping an exercise row does, with the lift's own name in it: "Open Back Squat"
+         rather than "Open exercise", so a screen-reader user knows which row they are on. -->
+    <string name="library_open_exercise">Open %1$s</string>
 
     <!-- Custom exercises (ROADMAP N2). Creation asks for the name only, so the
          dialog says so rather than presenting empty taxonomy fields. -->
@@ -36,6 +37,10 @@
     <string name="exercise_new_hint">You can set the muscle, equipment and pattern later.</string>
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>
+    <!-- What tapping a workout row does, wherever one is listed. A workout row's headline is a
+         date, which names the session but not the action, so a row that navigates has to say
+         where to or a screen reader announces "Monday 28 September, button". -->
+    <string name="action_open_workout">Open workout</string>
 
     <!-- Exercise detail -->
     <string name="exercise_detail_title">Exercise</string>

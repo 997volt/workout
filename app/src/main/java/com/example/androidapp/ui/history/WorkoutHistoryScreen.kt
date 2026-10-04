@@ -1,23 +1,21 @@
 package com.example.androidapp.ui.history
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -32,7 +30,12 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.ui.components.AppRow
+import com.example.androidapp.ui.components.IconTile
+import com.example.androidapp.ui.components.SectionHeader
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.theme.AndroidAppTheme
+import com.example.androidapp.ui.theme.TileAccent
 import com.example.androidapp.ui.workout.WorkoutFormat
 import java.time.ZoneId
 import java.time.Instant
@@ -65,8 +68,10 @@ fun WorkoutHistoryScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.history_title)) },
+            CenterAlignedTopAppBar(
+                title = {
+                    TopBarTitle(text = stringResource(R.string.history_title))
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -93,7 +98,8 @@ fun WorkoutHistoryScreen(
 
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentPadding = PaddingValues(bottom = 16.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 state.groups.forEach { group ->
                     item(key = "month-${group.month}") {
@@ -101,7 +107,6 @@ fun WorkoutHistoryScreen(
                     }
                     items(items = group.workouts, key = { it.id }) { workout ->
                         WorkoutRow(workout = workout, onClick = { onOpenWorkout(workout.id) })
-                        HorizontalDivider()
                     }
                 }
             }
@@ -111,14 +116,7 @@ fun WorkoutHistoryScreen(
 
 @Composable
 private fun MonthHeader(month: YearMonth, modifier: Modifier = Modifier) {
-    Text(
-        text = HistoryFormat.month(month),
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-    )
+    SectionHeader(text = HistoryFormat.month(month), modifier = modifier)
 }
 
 @Composable
@@ -128,21 +126,29 @@ private fun WorkoutRow(
     modifier: Modifier = Modifier,
 ) {
     val setCount = pluralStringResource(R.plurals.history_sets, workout.setCount, workout.setCount)
+    val duration = workout.duration?.let { WorkoutFormat.elapsed(it) }.orEmpty()
+    val volume = stringResource(R.string.history_volume, Weight.kilograms(workout.volumeGrams))
 
-    ListItem(
-        // The zone it was performed in, not the one it is being read in (ROADMAP N25).
-        headlineContent = {
-            Text(HistoryFormat.date(workout.startedAt, zone = workout.zoneIdOrNull() ?: ZoneId.systemDefault()))
-        },
-        supportingContent = {
-            val duration = workout.duration?.let { WorkoutFormat.elapsed(it) }.orEmpty()
-            val volume = stringResource(
-                R.string.history_volume,
-                Weight.kilograms(workout.volumeGrams),
+    AppRow(
+        headline = HistoryFormat.date(
+            workout.startedAt,
+            // The zone it was performed in, not the one it is being read in (ROADMAP N25).
+            zone = workout.zoneIdOrNull() ?: ZoneId.systemDefault(),
+        ),
+        supporting = listOf(duration, setCount, volume).filter { it.isNotEmpty() }.joinToString(" · "),
+        leading = { IconTile(icon = Icons.Filled.History, accent = TileAccent.Sky) },
+        trailing = {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(listOf(duration, setCount, volume).filter { it.isNotEmpty() }.joinToString(" · "))
         },
-        modifier = modifier.clickable(onClick = onClick),
+        onClick = onClick,
+        // The headline is a date: it names the workout but not the tap, so the row would
+        // otherwise announce "Monday 28 September, button".
+        onClickLabel = stringResource(R.string.action_open_workout),
+        modifier = modifier,
     )
 }
 
