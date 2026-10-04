@@ -12,6 +12,8 @@ repeated here.
 
 ## [Unreleased]
 
+## [1.12] — 2026-10-04 (versionCode 13)
+
 ### Added
 
 - **A program's *Next up* moved into the bottom bar and opens what is planned** (N55). The next-up card
