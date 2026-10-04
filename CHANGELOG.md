@@ -38,11 +38,14 @@ repeated here.
   *Next up*, the *Programs* / *Start from template* links, then *Start workout*, so the app's own
   suggestion came before the choice of how to begin and the next-up start was the smallest target on the
   screen. It now reads, top to bottom: *Programs* beside *Templates* (the template list the old link
-  already opened), the empty start — renamed *Start empty workout* so the two full-width pills do not
-  read as the same action — and last the next-up block at the bottom edge, whose *Start* grew from a text
-  button into the same full-width pill and reads *Start planned workout*. N55's split is untouched: the
-  field still opens the read-only planned-workout dialog and the pill beside it starts the workout, and
-  one pill is drawn per next-up row because more than one program may be active (P3.12).
+  already opened), the empty start — renamed *Start empty workout* and drawn on the deep indigo
+  container rather than the accent, so the two full-width pills do not read as the same action and the
+  planned one is the app's suggestion — and last the next-up block at the bottom edge, set a size
+  larger than before, whose
+  *Start* grew from a text button into the same full-width pill and reads *Start planned workout*. N55's
+  split is untouched: the field still opens the read-only planned-workout dialog and the pill beside it
+  starts the workout, and one pill is drawn per next-up row because more than one program may be active
+  (P3.12).
 
 ## [1.12] — 2026-10-04 (versionCode 13)
 

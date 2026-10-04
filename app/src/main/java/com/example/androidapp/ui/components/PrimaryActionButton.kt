@@ -3,10 +3,13 @@ package com.example.androidapp.ui.components
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -25,6 +28,9 @@ private val PRIMARY_ACTION_HEIGHT = 52.dp
  * bar: the reference's own call to action is a wide violet pill resting on the bottom of the
  * screen, and it is the one shape a user reads as "this is the thing to do here". The glyph is
  * decorative — the caption already names the action — so it carries no description.
+ *
+ * [containerColor] and [contentColor] default to the accent pair; the lesser of two pills beside
+ * each other passes a container taken down a step (ROADMAP N61), so the primary one keeps the fill.
  */
 @Composable
 fun PrimaryActionButton(
@@ -32,10 +38,16 @@ fun PrimaryActionButton(
     icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.primary,
+    contentColor: Color = MaterialTheme.colorScheme.onPrimary,
 ) {
     Button(
         modifier = modifier.heightIn(min = PRIMARY_ACTION_HEIGHT),
         onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        ),
     ) {
         Icon(
             imageVector = icon,

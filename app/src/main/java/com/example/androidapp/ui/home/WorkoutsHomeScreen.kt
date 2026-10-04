@@ -463,6 +463,14 @@ private fun StartOrResumeButton(
         },
         icon = if (resuming) Icons.Filled.PlayArrow else Icons.Filled.Add,
         onClick = onClick,
+        // The empty start is the lesser of the screen's two pills, so it recedes to the palette's
+        // deep indigo while the planned one keeps the accent (N61). Resuming is the only thing to do,
+        // so it stays loud.
+        containerColor = if (resuming) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.primaryContainer
+        },
         // Tagged by state, not caption: which of the two shows is the behaviour under test, and the
         // captions are user-visible text a translation changes.
         modifier = modifier.testTag(if (resuming) TestTags.HOME_RESUME else TestTags.HOME_START),
@@ -504,12 +512,12 @@ private fun NextUpRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(R.string.home_next_up),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     text = nextUp.plan.name,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -517,7 +525,7 @@ private fun NextUpRow(
                     // The program's name is here because more than one program may be active
                     // (P3.12), so two rows have to be tellable apart.
                     text = listOf(nextUp.programName, exercises).joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

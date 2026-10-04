@@ -56,6 +56,16 @@ class PaletteContrastTest {
     }
 
     @Test
+    fun theDeepIndigoContainer_carriesItsLabel() {
+        // The lesser of the two start pills (N61): Indigo taken down to the theme's `primaryContainer`,
+        // so the planned pill is the one that reads as the app's suggestion. Only the label pair is
+        // held here — unlike the teal container, this one is a recessed tone beside the accent rather
+        // than a quiet stand-alone control, so it is the white caption, not the extent, that names it.
+        assertThat(contrast(WorkoutColors.onPrimaryContainer, WorkoutColors.primaryContainer))
+            .isAtLeast(BODY_TEXT_MINIMUM)
+    }
+
+    @Test
     fun theAppColour_stillCarriesWhiteWhereItFills() {
         // N49 leaves primary filling the Start pill, the selected tab and the chips, so the pair
         // it fills with is asserted here rather than assumed from the links' change.
