@@ -12,6 +12,38 @@ repeated here.
 
 ## [Unreleased]
 
+### Changed
+
+- **The app has one dark theme, and the five tabs are drawn in it.** The look is taken from
+  M.E. Me, the patient-held health record the reference screenshots came from: a near-black
+  page, cards separated by *tone* rather than by shadow, a solid coloured square leading each
+  row, a wide violet pill for the primary action, and screen titles set as tracked small
+  capitals above content that is left to be the loudest thing on the screen.
+  `dynamicColor` is gone rather than defaulted — a scheme read from the launcher's wallpaper
+  cannot produce this palette, and it hands the app's identity to a setting the user chose for
+  a different reason. `AndroidAppTheme` now takes no arguments, because the `darkTheme` and
+  `dynamicColor` pair picked between four schemes and there is now one.
+- **The window moved with the theme.** `Theme.AndroidApp` is a dark parent with an explicit
+  `windowBackground`, and `enableEdgeToEdge` is given dark system-bar styles. Both are load-
+  bearing on a light-mode device: without the first, every cold start flashes white, and
+  without the second the no-argument form reads the *system* light/dark setting and draws dark
+  status-bar icons onto near-black bars, so the clock and the battery vanish.
+- **Home's primary action is a full-width pill in a bottom bar**, not an extended floating
+  button, and the tab bar separates from the page by tone with an accent wash behind the
+  selected item. "See all workouts" moved off the list and onto the heading it belongs to.
+
+### Added
+
+- **`AppCard`, `AppRow`, `IconTile`, `SectionHeader`, `TopBarTitle` and `AppFilterChip`** are
+  the shared pieces the restyle is built from. `AppRow` is deliberately built on Material's
+  `ListItem` rather than a hand-rolled `Row`: the drawn result would be the same and the
+  semantics would not, because `ListItem` is what tells a screen reader that a headline and
+  its supporting line are one item.
+- **Row-navigation now carries an `onClickLabel`** — "Open workout", "Open Back Squat". A row's
+  headline names the *thing* and never the action, so without one the control announced what it
+  was and not what it would do. This is the per-screen accessibility rule the project already
+  states, applied to the rows the restyle created.
+
 ## [1.10] — 2026-10-03 (versionCode 11)
 
 ### Added

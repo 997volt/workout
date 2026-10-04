@@ -9,6 +9,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EventAvailable
+import androidx.compose.material.icons.filled.Straighten
 import com.example.androidapp.domain.model.Exercise
 import java.time.ZoneOffset
 import java.time.LocalDate
@@ -29,6 +31,7 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -720,23 +723,33 @@ private fun StatisticsTopBar(
     onOpenMeasurements: (() -> Unit)?,
     onOpenAdherence: (() -> Unit)?,
 ) {
+    // Icon actions rather than the two text buttons this used to have. A centred title and two
+    // word-length actions want the same pixels, and on a phone the title loses: "STATISTICS"
+    // ran into "Adherence" and overlapped it. The glyphs carry the meaning and their
+    // descriptions carry it for a screen reader; the words were only ever doing the second job.
     CenterAlignedTopAppBar(
         title = { TopBarTitle(text = stringResource(R.string.tab_statistics)) },
         actions = {
             if (onOpenAdherence != null) {
-                TextButton(
+                IconButton(
                     onClick = onOpenAdherence,
                     modifier = Modifier.testTag(TestTags.Statistics.ADHERENCE),
                 ) {
-                    Text(stringResource(R.string.adherence_title))
+                    Icon(
+                        imageVector = Icons.Filled.EventAvailable,
+                        contentDescription = stringResource(R.string.adherence_title),
+                    )
                 }
             }
             if (onOpenMeasurements != null) {
-                TextButton(
+                IconButton(
                     onClick = onOpenMeasurements,
                     modifier = Modifier.testTag(TestTags.Statistics.MEASUREMENTS),
                 ) {
-                    Text(stringResource(R.string.measurements_title))
+                    Icon(
+                        imageVector = Icons.Filled.Straighten,
+                        contentDescription = stringResource(R.string.measurements_title),
+                    )
                 }
             }
         },

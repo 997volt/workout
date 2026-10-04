@@ -12,7 +12,7 @@ longer case against the rejected option — is in
 [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md), one entry per feature id. This file states
 the rule; that one argues it.
 
-> Reviewed against the code: 2026-10-03. Bump the date when this file is checked, the way
+> Reviewed against the code: 2026-10-04. Bump the date when this file is checked, the way
 > [ROADMAP.md](ROADMAP.md) does, so the next reader knows how old these rules are.
 
 ## Data model
@@ -418,6 +418,21 @@ the rule; that one argues it.
 - **Accessibility accompanies each screen**; it is not a later phase. Name what a control
   does (`onClickLabel`), *announce* state changes rather than only drawing them, and tag
   things so tests do not assert on English literals.
+- **The app is dark, and its colours are its own.** One fixed scheme — the palette in
+  [`Color.kt`](app/src/main/java/com/example/androidapp/ui/theme/Color.kt) reached through the
+  roles in [`Theme.kt`](app/src/main/java/com/example/androidapp/ui/theme/Theme.kt) — and not
+  `isSystemInDarkTheme`, not `dynamicColor`. Material You was rejected because a palette derived
+  from the launcher's wallpaper cannot be *this* app's palette, and following the system would
+  mean designing, testing and maintaining two schemes to say one thing. Separation is by
+  **tone**, never by elevation: a shadow is invisible on a near-black page, which is why the
+  scheme fills in Material's whole `surfaceContainer` ladder rather than three roles, the rest
+  of which would otherwise stay at the baseline purples. Accents (`TileAccent`) are named by
+  colour and handed out per row, never bound to a meaning — binding a hue to a concept means
+  inventing one the day a new kind of row appears and reusing a colour, losing the distinction,
+  every time one retires. The window theme and the system-bar styles are part of the rule rather
+  than decoration on it: a dark app whose window is light flashes white on every cold start, and
+  bars tinted from the *system's* light/dark setting draw dark icons onto a black bar on a
+  light-mode device.
 - **Privacy: local-only.** No `INTERNET` permission, no ads, no analytics. Crash logs stay
   in app-private storage and leave only in an export the user chose to make.
 - **No Google Play services at runtime.** Firebase, `play-services-*`, Play Billing and
