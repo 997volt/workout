@@ -53,10 +53,10 @@ and is order-only, and more than one active program, which P3.12 allowed.
   deliberately not decided here and is spelled out when this is picked up; what is committed now is that
   the withdrawn shape is not the one to restore.
 
-### Two requests from use
+### One request from use
 
-Self-contained enough for this queue, and each small enough that its decision is spelled out when it
-is picked up rather than now — so each is a wish, and gains an id when it graduates.
+Self-contained enough for this queue, and small enough that its decision is spelled out when it is
+picked up rather than now — so it is a wish, and gains an id when it graduates.
 
 - **An exercise's own default weight change.** 2.5 kg is one global constant rather than a property of
   the movement: [`Weight.DEFAULT_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/Weight.kt)
@@ -67,22 +67,6 @@ is picked up rather than now — so each is a wish, and gains an id when it grad
   [Exercise.kt](app/src/main/java/com/example/androidapp/domain/model/Exercise.kt), still 2.5 kg unless
   it is set. Whether the ramp follows it too, or only the steppers, is the decision; the value is whole
   grams and its column is a migration numbered as it ships.
-
-- **Home's start bar becomes one stack: Programs and Templates, the empty start, then what is planned.**
-  The bar today reads *Next up*, the *Programs* and *Start from template* links, and the full-width
-  *Start workout* pill, top to bottom
-  ([WorkoutsHomeScreen.kt](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeScreen.kt)).
-  It is reordered into one stack: **Programs** beside **Templates** — the destination *Start from
-  template* already opens, under the name of what it shows — then the empty start, renamed **Start empty
-  workout** so the bar's two primary actions read apart, then the next-up block at the bottom, whose
-  *Start* is promoted from a text button to a full-width pill of the same height and reads **Start
-  planned workout**. What does not change is the split N55 settled: the field still opens the read-only
-  planned-workout dialog, and the pill starts the workout. More than one active program (P3.12) draws one
-  big pill per next-up row, stacked, so the bar grows with the programs rather than hiding a start behind
-  a compact button. Two things are left to the decision that comes with the id: what the bar does about
-  its own height — two 52dp pills, a next-up field and a links row already stand above the five-tab bar —
-  and whether the planned pill is offered at all while a workout is already running, which B43's rule
-  says a second way to start one is not.
 
 ## Parked — deliberately not planned
 

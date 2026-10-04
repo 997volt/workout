@@ -93,7 +93,8 @@ object TestTags {
     const val HOME_TITLE = "home_title"
     const val HOME_START = "home_start"
     const val HOME_RESUME = "home_resume"
-    const val HOME_START_FROM_TEMPLATE = "home_start_from_template"
+    /** The way into the template list, in the action row (ROADMAP N3, N42). */
+    const val HOME_TEMPLATES = "home_templates"
     /** The way into programs, in the action row rather than the overflow (ROADMAP P3.3, N42). */
     const val HOME_PROGRAMS = "home_programs"
 

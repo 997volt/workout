@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -44,7 +45,7 @@ class WorkoutsHomeScreenTest {
      */
     private data class Actions(
         val onStartWorkout: () -> Unit = {},
-        val onStartFromTemplate: () -> Unit = {},
+        val onOpenTemplates: () -> Unit = {},
         val onStartTemplate: (TodayPlan) -> Unit = {},
         val onSubstituteTemplate: (TodayPlan, String?) -> Unit = { _, _ -> },
         val onOpenWorkout: (String) -> Unit = {},
@@ -63,7 +64,7 @@ class WorkoutsHomeScreenTest {
                     state = state,
                     clock = remember { mutableStateOf(WorkoutClock()) },
                     onStartWorkout = actions.onStartWorkout,
-                    onStartFromTemplate = actions.onStartFromTemplate,
+                    onOpenTemplates = actions.onOpenTemplates,
                     onStartTemplate = actions.onStartTemplate,
                     onOpenPlannedWorkout = actions.onOpenPlannedWorkout,
                     onSubstituteTemplate = actions.onSubstituteTemplate,
@@ -107,16 +108,16 @@ class WorkoutsHomeScreenTest {
     fun theStartAction_offersBothWaysToBegin() {
         // N3: the start action presents the choice — empty, or from a plan set up
         // in advance. With a workout already open there is no choice to make.
-        var fromTemplate = false
+        var templates = false
         setScreen(
             WorkoutsHomeUiState(isLoading = false),
-            Actions(onStartFromTemplate = { fromTemplate = true }),
+            Actions(onOpenTemplates = { templates = true }),
         )
 
         composeTestRule.onNodeWithTag(TestTags.HOME_START).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.HOME_START_FROM_TEMPLATE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).performClick()
 
-        assertThat(fromTemplate).isTrue()
+        assertThat(templates).isTrue()
     }
 
     @Test
@@ -131,19 +132,26 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_START_FROM_TEMPLATE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).assertDoesNotExist()
     }
 
     @Test
-    fun theActionRow_offersProgramsBesideStartFromTemplate() {
+    fun theActionRow_offersProgramsBesideTemplates() {
         // ROADMAP N42: Programs took the slot the repeat-last link gave up, so the screen the whole
-        // scheduling half is edited from is in the action row rather than behind an overflow.
+        // scheduling half is edited from is in the action row rather than behind an overflow. The
+        // link beside it is Templates, the destination "Start from template" used to open.
         var opened = false
-        setScreen(WorkoutsHomeUiState(isLoading = false), Actions(onOpenPrograms = { opened = true }))
+        var templates = false
+        setScreen(
+            WorkoutsHomeUiState(isLoading = false),
+            Actions(onOpenPrograms = { opened = true }, onOpenTemplates = { templates = true }),
+        )
 
         composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).assertIsDisplayed().performClick()
-
         assertThat(opened).isTrue()
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).assertIsDisplayed().performClick()
+        assertThat(templates).isTrue()
     }
 
     @Test
@@ -261,12 +269,45 @@ class WorkoutsHomeScreenTest {
         )
 
         composeTestRule.onNodeWithText("Next up").assertExists()
+        // The small Start became the screen's second full-width pill, named apart from the empty one.
+        composeTestRule.onNodeWithText("Start planned workout").assertExists()
         composeTestRule.onNodeWithText("Upper/Lower · 5 exercises").assertExists()
         composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).performClick()
 
         // The slot travels with the start, so its prescription seeds the workout (P3.8).
         assertThat(started.single().slotId).isEqualTo("slot-2")
         assertThat(started.single().templateId).isEqualTo("t2")
+    }
+
+    @Test
+    fun theNextUpBlock_sitsBelowTheStartPill() {
+        // The start bar reads top to bottom: the links, the empty start, then the next-up block, so
+        // the app's own suggestion is the last thing the thumb reaches. Checked by position rather
+        // than by the order things happen to be composed in, which a rearranged Column would not show.
+        setScreen(
+            state = WorkoutsHomeUiState(
+                isLoading = false,
+                nextUp = listOf(
+                    NextUp(
+                        plan = TodayPlan(
+                            id = "slot-2",
+                            templateId = "t2",
+                            name = "Push",
+                            exerciseCount = 5,
+                            slotId = "slot-2",
+                        ),
+                        programName = "Upper/Lower",
+                        isAtStart = true,
+                    ),
+                ),
+            ),
+        )
+
+        val start = composeTestRule.onNodeWithTag(TestTags.HOME_START).getUnclippedBoundsInRoot()
+        val nextUp = composeTestRule.onNodeWithTag(TestTags.Home.nextUp("slot-2"))
+            .getUnclippedBoundsInRoot()
+
+        assertThat(nextUp.top).isGreaterThan(start.bottom)
     }
 
     @Test
@@ -431,7 +472,7 @@ class WorkoutsHomeScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.HOME_START_FROM_TEMPLATE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).assertDoesNotExist()
     }
 
     @Test

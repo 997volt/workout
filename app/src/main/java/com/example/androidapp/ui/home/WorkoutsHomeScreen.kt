@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,7 +18,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -50,6 +48,7 @@ import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.FailureMessage
 import com.example.androidapp.ui.components.MessageSnackbar
+import com.example.androidapp.ui.components.PrimaryActionButton
 import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
@@ -63,7 +62,7 @@ import java.time.Instant
 @Composable
 fun WorkoutsHomeRoute(
     onStartWorkout: () -> Unit,
-    onStartFromTemplate: () -> Unit,
+    onOpenTemplates: () -> Unit,
     /**
      * The navigation target: the template to start, and the slot it was scheduled as, if any
      * (ROADMAP P3.3, P3.8).
@@ -113,7 +112,7 @@ fun WorkoutsHomeRoute(
         state = state,
         clock = clock,
         onStartWorkout = { requestStart(StartIntent()) },
-        onStartFromTemplate = onStartFromTemplate,
+        onOpenTemplates = onOpenTemplates,
         onStartTemplate = { plan ->
             requestStart(
                 StartIntent(
@@ -150,7 +149,7 @@ fun WorkoutsHomeScreen(
     onStartWorkout: () -> Unit,
     onOpenWorkout: (String) -> Unit,
     modifier: Modifier = Modifier,
-    onStartFromTemplate: () -> Unit = {},
+    onOpenTemplates: () -> Unit = {},
     onStartTemplate: (TodayPlan) -> Unit = {},
     onOpenPrograms: () -> Unit = {},
     /**
@@ -193,7 +192,7 @@ fun WorkoutsHomeScreen(
                 clock = clock,
                 nextUp = state.nextUp,
                 onStartWorkout = onStartWorkout,
-                onStartFromTemplate = onStartFromTemplate,
+                onOpenTemplates = onOpenTemplates,
                 // A next-up row starts the workout the same way a scheduled one does, so the slot's
                 // prescription travels with it (ROADMAP P3.8).
                 onStartTemplate = onStartTemplate,
@@ -355,11 +354,16 @@ private fun HomeContent(
 }
 
 /**
- * The home start action: **Start workout** for an empty session, and — while no
- * workout is open — **Start from template** beneath it (ROADMAP N3).
+ * The home start bar: the ways to begin, then where a program's run is up to (ROADMAP N3, P3.9, N55).
  *
- * Resuming offers no such choice: there is exactly one workout in progress, so the
- * button means one thing. The pair only appears when the user is actually choosing.
+ * Read top to bottom, it is the choice — *Programs* and *Templates*, while no workout is open — the
+ * screen's primary action, and last the next-up block, so the thing the app is telling you to do next
+ * sits at the very edge the thumb is already at. The empty start names itself **Start empty workout**
+ * so the bar's two full-width pills do not read as the same action.
+ *
+ * Resuming offers no choice: there is exactly one workout in progress, so the button means one thing.
+ * The pair of links only appears when the user is actually choosing, and repeat-last gave its slot to
+ * Programs (ROADMAP N42) — the entry point it gave up is an action on a finished workout, in History.
  */
 @Composable
 private fun StartActions(
@@ -367,7 +371,7 @@ private fun StartActions(
     clock: State<WorkoutClock>,
     nextUp: List<NextUp>,
     onStartWorkout: () -> Unit,
-    onStartFromTemplate: () -> Unit,
+    onOpenTemplates: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onOpenPlannedWorkout: (NextUp) -> Unit,
     onOpenPrograms: () -> Unit,
@@ -379,23 +383,9 @@ private fun StartActions(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Where each active program's run is, at the edge of the screen the thumb is already at
-        // (ROADMAP N55). It moved out of the scrolling list, where a program with nothing scheduled
-        // today was something to scroll to, and off the card it used to be: one program's next run
-        // shown twice was two answers to one question, and more than one active program (P3.12) means
-        // this row can repeat.
-        nextUp.forEach { nextUpRow ->
-            NextUpRow(
-                nextUp = nextUpRow,
-                onOpen = { onOpenPlannedWorkout(nextUpRow) },
-                onStart = { onStartTemplate(nextUpRow.plan) },
-            )
-        }
         if (activeWorkout == null) {
-            // The pair is a row of links above the pill, not a second pill: with a workout
-            // already open there is no choice to make, and while there is one, only the start
-            // itself is the primary act. Repeat-last gave this slot to Programs (ROADMAP N42):
-            // the entry point it gave up is an action on a finished workout, in History.
+            // A row of links above the pill, not a second pill: with a workout already open there is
+            // no choice to make, and while there is one, only the start itself is the primary act.
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -408,10 +398,10 @@ private fun StartActions(
                     Text(stringResource(R.string.home_programs))
                 }
                 AppTextButton(
-                    onClick = onStartFromTemplate,
-                    modifier = Modifier.testTag(TestTags.HOME_START_FROM_TEMPLATE),
+                    onClick = onOpenTemplates,
+                    modifier = Modifier.testTag(TestTags.HOME_TEMPLATES),
                 ) {
-                    Text(stringResource(R.string.home_start_from_template))
+                    Text(stringResource(R.string.home_templates))
                 }
             }
         }
@@ -421,14 +411,26 @@ private fun StartActions(
             onClick = onStartWorkout,
             modifier = Modifier.fillMaxWidth(),
         )
+        // Where each active program's run is, at the bottom edge of the screen the thumb is already
+        // at (ROADMAP P3.9, N55). It sits under the start pill so the thing the app says is next is
+        // the last thing the thumb reaches, and the field stays compact above its own full-width pill
+        // because more than one active program (P3.12) means the bar can carry several.
+        nextUp.forEach { nextUpRow ->
+            NextUpRow(
+                nextUp = nextUpRow,
+                onOpen = { onOpenPlannedWorkout(nextUpRow) },
+                onStart = { onStartTemplate(nextUpRow.plan) },
+            )
+        }
     }
 }
 
 /**
  * The home screen's primary action (P1.16, moved here by N1).
  *
- * Reads the clock — and is the only composable here that does, so the one-second
- * tick stops at this button instead of rebuilding the list beneath it.
+ * Reads the clock — and is the only composable here that does, so the one-second tick stops at this
+ * button instead of rebuilding the list beneath it — and hands the shape to [PrimaryActionButton],
+ * which the next-up pill shares.
  */
 @Composable
 private fun StartOrResumeButton(
@@ -449,51 +451,31 @@ private fun StartOrResumeButton(
         ""
     }
 
-    // A filled pill rather than the extended floating button this used to be, and full width in
-    // its bar: the reference's own call to action is a wide violet pill resting on the bottom of
-    // the screen, and it is the one shape a user reads as "this is the thing to do here".
-    Button(
-        // Tagged by state, not caption: which of the two shows is the behaviour
-        // under test, and the captions are user-visible text a translation changes.
-        modifier = modifier
-            .heightIn(min = BUTTON_HEIGHT)
-            .testTag(if (resuming) TestTags.HOME_RESUME else TestTags.HOME_START),
+    PrimaryActionButton(
+        text = if (resuming) {
+            listOf(
+                stringResource(R.string.library_resume_workout),
+                elapsed,
+                exercises,
+            ).filter { it.isNotEmpty() }.joinToString(" · ")
+        } else {
+            stringResource(R.string.home_start_empty_workout)
+        },
+        icon = if (resuming) Icons.Filled.PlayArrow else Icons.Filled.Add,
         onClick = onClick,
-    ) {
-        Icon(
-            imageVector = if (resuming) Icons.Filled.PlayArrow else Icons.Filled.Add,
-            contentDescription = null,
-            modifier = Modifier.padding(end = 8.dp),
-        )
-        Text(
-            text = if (resuming) {
-                listOf(
-                    stringResource(R.string.library_resume_workout),
-                    elapsed,
-                    exercises,
-                ).filter { it.isNotEmpty() }.joinToString(" · ")
-            } else {
-                stringResource(R.string.library_start_workout)
-            },
-            // A resumed session's caption carries an elapsed time and an exercise count, so it
-            // is the one that can outgrow the bar; the label must not push the icon out.
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
+        // Tagged by state, not caption: which of the two shows is the behaviour under test, and the
+        // captions are user-visible text a translation changes.
+        modifier = modifier.testTag(if (resuming) TestTags.HOME_RESUME else TestTags.HOME_START),
+    )
 }
 
-/** Comfortably over the 48dp minimum target, and the height the reference's pill reads at. */
-private val BUTTON_HEIGHT = 52.dp
-
 /**
- * One program's next run, in the bottom bar (ROADMAP N55).
+ * One program's next run, at the bottom of the bar (ROADMAP P3.9, N55).
  *
- * Compact rather than a card, because the bar may hold several rows — more than one program can be
- * active (P3.12) — and because it now sits above the start pill rather than in a scrolling list.
- * Where [NextUpRow]'s old card put the name first and the button under it, this puts the *field* on
- * the row and the start beside it: tapping the field opens what is planned, and tapping *Start* starts
- * it, so looking and starting stopped being the same gesture.
+ * The field opens what is planned and the full-width pill under it starts it, so looking and starting
+ * stay two gestures (N55). The pill is the same shape as the empty start above the bar — the screen's
+ * two primary actions — while the field above it stays compact, because more than one program can be
+ * active (P3.12) and the bar may carry several.
  */
 @Composable
 private fun NextUpRow(
@@ -508,49 +490,51 @@ private fun NextUpRow(
         nextUp.plan.exerciseCount,
     )
     val openLabel = stringResource(R.string.home_next_up_open, nextUp.plan.name)
-    Row(
-        modifier = modifier.fillMaxWidth().padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // The field is the whole left-hand half of the row, so the target is the row rather than a
-        // caption inside it. `clickable` carries an `onClickLabel` because the headline names the
-        // workout and never the action (the rule the restyle's rows follow).
-        Column(
+    Column(modifier = modifier.fillMaxWidth().padding(top = 8.dp)) {
+        // The whole line is the field, so the target is the row rather than a caption inside it.
+        // `clickable` carries an `onClickLabel` because the headline names the workout and never the
+        // action (the rule the restyle's rows follow).
+        Row(
             modifier = Modifier
-                .weight(1f)
+                .fillMaxWidth()
                 .testTag(TestTags.Home.nextUp(nextUp.plan.id))
                 .clickable(onClickLabel = openLabel, onClick = onOpen),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = stringResource(R.string.home_next_up),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = nextUp.plan.name,
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                // The program's name is here because more than one program may be active (P3.12), so
-                // two rows have to be tellable apart.
-                text = listOf(nextUp.programName, exercises).joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.home_next_up),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = nextUp.plan.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    // The program's name is here because more than one program may be active
+                    // (P3.12), so two rows have to be tellable apart.
+                    text = listOf(nextUp.programName, exercises).joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        AppTextButton(
+        PrimaryActionButton(
+            text = stringResource(R.string.home_start_planned_workout),
+            icon = Icons.Filled.PlayArrow,
             onClick = onStart,
-            modifier = Modifier.testTag(TestTags.Home.nextUpStart(nextUp.plan.id)),
-        ) {
-            Text(stringResource(R.string.home_plan_start))
-        }
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(TestTags.Home.nextUpStart(nextUp.plan.id)),
+        )
     }
 }
 
@@ -574,7 +558,7 @@ private fun WorkoutsHomeScreenPreview() {
             ),
             clock = remember { mutableStateOf(WorkoutClock()) },
             onStartWorkout = {},
-            onStartFromTemplate = {},
+            onOpenTemplates = {},
             onOpenWorkout = {},
         )
     }
