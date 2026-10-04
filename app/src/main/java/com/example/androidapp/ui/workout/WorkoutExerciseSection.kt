@@ -4,6 +4,7 @@ import com.example.androidapp.domain.model.ProgressionReason
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.AlertDialog
@@ -90,7 +94,7 @@ internal fun ExerciseList(
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
 ) {
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().testTag(TestTags.EXERCISE_LIST),
         // Leaves room for the extended FAB so it cannot cover the last row.
         contentPadding = PaddingValues(bottom = 96.dp),
     ) {
@@ -154,9 +158,6 @@ private fun ExerciseSection(
                 defaultRestSeconds = defaultRestSeconds,
                 modifier = Modifier.weight(1f),
             )
-            if (onToggleSuperset != null && !row.isFinished) {
-                SupersetToggle(row = row, onToggle = onToggleSuperset)
-            }
             if (row.isFinished) {
                 TextButton(
                     onClick = onReopenExercise,
@@ -173,7 +174,14 @@ private fun ExerciseSection(
                     onFinish = onFinishExercise,
                 )
             }
-            RemoveExerciseAction(name = row.name, onRemove = onRemoveExercise)
+            // The rare actions moved in here rather than sitting on the header (ROADMAP N53): the
+            // header is read constantly mid-session, and a text link in every one of them cost more
+            // attention than the action earned.
+            ExerciseOverflow(
+                row = row,
+                onToggleSuperset = onToggleSuperset,
+                onRemove = onRemoveExercise,
+            )
         }
 
         if (row.isFinished) {
@@ -250,39 +258,88 @@ private fun FinishExerciseAction(
 }
 
 /**
- * The remove control, and the confirmation behind it (ROADMAP B2).
+ * One exercise's rare actions, behind its own ⋮ menu (ROADMAP N53).
  *
- * Removing an exercise soft-deletes it *and* takes its sets out of the session, and
- * — unlike deleting a set or marking one done — there is no undo to reach for. So
- * the guard is a question rather than a way back: a rare action, and easier to
- * reason about than restoring a row whose sets went with it.
+ * *Superset with above* was a text link in every exercise header and *Delete* an icon beside *Done*.
+ * Both are rarely used and the header is read constantly mid-session, so the two of them cost more
+ * attention than they earned. They moved into a per-exercise overflow — the shape the workout-level
+ * actions used until N42 removed the one that no longer had a reason to exist — because the action
+ * moved rather than changed:
+ *
+ * - Delete keeps its confirmation (B2). Removing an exercise soft-deletes it *and* takes its sets out
+ *   of the session, and unlike deleting a set or marking one done there is no undo to reach for, so
+ *   the guard is a question rather than a way back.
+ * - Pairing keeps its row-0 exclusion (B28): the caller passes a null [onToggleSuperset] for the first
+ *   exercise, which has nothing above it, so the entry is simply not offered rather than writing a
+ *   group that would rewrite every ungrouped row. A done exercise is out of the round as well (N7),
+ *   which is why the item goes with its Log set button.
  */
 @Composable
-private fun RemoveExerciseAction(
-    name: String,
+private fun ExerciseOverflow(
+    row: SessionExerciseRow,
+    onToggleSuperset: (() -> Unit)?,
     onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    var confirming by remember { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
+    var confirmingRemoval by remember { mutableStateOf(false) }
 
-    IconButton(
-        onClick = { confirming = true },
-        modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE),
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Delete,
-            contentDescription = stringResource(R.string.active_workout_remove, name),
-        )
+    Box(modifier = modifier) {
+        IconButton(
+            onClick = { menuOpen = true },
+            modifier = Modifier.testTag(TestTags.exerciseMenu(row.id)),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.MoreVert,
+                contentDescription = stringResource(R.string.active_workout_exercise_more, row.name),
+            )
+        }
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            if (onToggleSuperset != null && !row.isFinished) {
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            stringResource(
+                                if (row.supersetGroup == null) {
+                                    R.string.superset_pair
+                                } else {
+                                    R.string.superset_unpair
+                                },
+                            ),
+                        )
+                    },
+                    onClick = {
+                        menuOpen = false
+                        onToggleSuperset()
+                    },
+                    modifier = Modifier.testTag(TestTags.supersetToggle(row.id)),
+                )
+            }
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        text = stringResource(R.string.active_workout_remove_action),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                },
+                onClick = {
+                    menuOpen = false
+                    confirmingRemoval = true
+                },
+                modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE),
+            )
+        }
     }
 
-    if (confirming) {
+    if (confirmingRemoval) {
         AlertDialog(
-            onDismissRequest = { confirming = false },
+            onDismissRequest = { confirmingRemoval = false },
             title = { Text(stringResource(R.string.active_workout_remove_confirm_title)) },
-            text = { Text(stringResource(R.string.active_workout_remove_confirm_text, name)) },
+            text = { Text(stringResource(R.string.active_workout_remove_confirm_text, row.name)) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        confirming = false
+                        confirmingRemoval = false
                         onRemove()
                     },
                     modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE_CONFIRM),
@@ -292,7 +349,7 @@ private fun RemoveExerciseAction(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { confirming = false },
+                    onClick = { confirmingRemoval = false },
                     modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE_CANCEL),
                 ) {
                     Text(stringResource(R.string.action_cancel))
@@ -630,31 +687,6 @@ private fun ProgressionReason.explanationRes(): Int = when (this) {
     // Nothing recorded yet: the plan (or nothing) is being echoed, not progressed, so there
     // is no step to explain — the line is only drawn for the three above.
     ProgressionReason.NO_HISTORY -> R.string.suggestion_more_reps
-}
-
-/**
- * Joining or leaving the superset above (ROADMAP N24).
- *
- * Its own composable because the section around it is already at the length this project
- * allows, and because the word changes with the state: "pair" when it is on its own, "leave"
- * when it is not.
- */
-@Composable
-private fun SupersetToggle(
-    row: SessionExerciseRow,
-    onToggle: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    TextButton(
-        onClick = onToggle,
-        modifier = modifier.testTag(TestTags.supersetToggle(row.id)),
-    ) {
-        Text(
-            stringResource(
-                if (row.supersetGroup == null) R.string.superset_pair else R.string.superset_unpair,
-            ),
-        )
-    }
 }
 
 /**

@@ -712,6 +712,34 @@ ratio is absent, and the screen says which of the two absences it is.
 is a pure function over them, so the arithmetic worth arguing about is a JVM test rather than a
 device one.
 
+## N51
+
+The one-tap path was D3/B7's rule stated as a feature: *Log set* wrote the set its button described,
+because withholding knowledge so that display and storage agree was judged worse than the alternative.
+The alternative it was compared against was an app that quietly wrote something other than what it
+said — which is not the choice N51 makes. The choice is between one step that decides and one step
+that states, and the evidence for the second is what happened in use: a set that differed from the
+prefill was *logged and then edited*, so the user paid the same dialog anyway and paid it after a wrong
+row existed. The role picker was the clearest case — three warm-ups meant three log-then-edit round
+trips, which is why N19 exists, and with the dialog doing the writing it is one tap per warm-up still.
+
+What the button loses is its values, and that is the honest half of the change. A label reading
+"Log set · 100 kg × 5" described the row's offer; the row's offer is now the dialog's *initial* state,
+which is a different claim — it is a starting point the user can change, not a statement of what the
+tap writes. Keeping the values on the label while the dialog decided the write would have been the D3
+problem inverted: a control that says one thing and does another. So the label becomes "Log set" and
+the notice beside it still answers "what am I about to write" for the plan's own last set (N52).
+
+N19's rule survives the move unchanged, and that is worth stating because the picker changed hands. A
+role is still a decision about *this* set, made at the moment it is written, and clearing itself is now
+structural rather than remembered: the dialog is keyed on the row's logged-set count, so a write
+re-reads the plan's next unlogged set (B48) for the next dialog. Nothing lingers because there is no
+longer a value left lying around to linger.
+
+Retiring B7 for this one control is deliberate rather than an oversight. B7's own rule was "a logged
+set may differ from the plan, never from the button"; the second half exists so that display and
+storage cannot disagree. With the dialog as the display, they still cannot.
+
 ## Truth, Turbine
 
 New and touched tests assert with Truth, and assert Flow sequences with Turbine.

@@ -12,7 +12,9 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.ui.components.SetEdit
@@ -49,6 +51,7 @@ class ActiveWorkoutScreenTest {
         val onFinish: (String?) -> Unit = {},
         val onLogSet: (String, SetEdit) -> Unit = { _, _ -> },
         val onAcceptOffer: (String) -> Unit = {},
+        val onToggleSuperset: (String) -> Unit = {},
         val onDiscard: () -> Unit = {},
     )
 
@@ -59,6 +62,12 @@ class ActiveWorkoutScreenTest {
         countsAgainstProgram: Boolean = false,
         restTimerEnabled: Boolean = true,
         defaultRestSeconds: Int = 90,
+        /**
+         * The superset callback, passed directly rather than through [Actions] because the screen
+         * silences it for the first row (B28): a test that needs the entry on row 0 has to be able to
+         * say so, which is what N53's move into the overflow made worth asserting.
+         */
+        onToggleSuperset: (String) -> Unit = actions.onToggleSuperset,
     ) {
         composeTestRule.setContent {
             ActiveWorkoutScreen(
@@ -67,6 +76,7 @@ class ActiveWorkoutScreenTest {
                 onAddExercise = {},
                 onLogSet = actions.onLogSet,
                 onAcceptOffer = actions.onAcceptOffer,
+                onToggleSuperset = onToggleSuperset,
                 personalRecord = personalRecord,
                 onUpdateSet = { _, _, _, _, _, _, _ -> },
                 onRemoveExercise = actions.onRemoveExercise,
@@ -316,10 +326,12 @@ class ActiveWorkoutScreenTest {
 
     @Test
     fun removingAnExercise_asksFirst_andWritesNothingUntilConfirmed() {
-        // ROADMAP B2: the removal has no undo, so the dialog is the guard.
+        // ROADMAP B2: the removal has no undo, so the dialog is the guard — and N53 moved the action
+        // into the exercise's own overflow without changing that.
         var removed: String? = null
         setScreen(state(isFinished = false), actions = Actions(onRemoveExercise = { removed = it }))
 
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_REMOVE).performClick()
 
         assert(removed == null) { "the tap removed the exercise before asking" }
@@ -335,6 +347,7 @@ class ActiveWorkoutScreenTest {
         var removed: String? = null
         setScreen(state(isFinished = false), actions = Actions(onRemoveExercise = { removed = it }))
 
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_REMOVE).performClick()
         // The dialog's other button: backing out must not remove anything.
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_REMOVE_CANCEL).performClick()
@@ -651,12 +664,15 @@ class ActiveWorkoutScreenTest {
     @Test
     fun theSupersetTap_isNotDrawnOnTheFirstExercise() {
         // ROADMAP B28: the first exercise has nothing above it to pair with, and drawing the control
-        // there was a no-op whose write rewrote every ungrouped row. Its presence from the second row
-        // on is lazy-list territory — a node that is not composed cannot be asserted — and is covered
-        // by the template editor's own list and by the device.
+        // there was a no-op whose write rewrote every ungrouped row. N53 moved it into the overflow,
+        // and the exclusion moves with it: the entry is not offered rather than writing nothing.
         setScreen(state = state(isFinished = false))
 
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
+
         composeTestRule.onNodeWithTag(TestTags.supersetToggle("se1")).assertDoesNotExist()
+        // The menu itself is still there: the exclusion is the entry, not the whole overflow.
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_REMOVE).assertExists()
     }
 
     @Test
@@ -664,7 +680,35 @@ class ActiveWorkoutScreenTest {
         // Same rule as its Log set button: a done exercise is out of the round (N7).
         setScreen(state = state(isFinished = true))
 
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
+
         composeTestRule.onNodeWithTag(TestTags.supersetToggle("se1")).assertDoesNotExist()
+    }
+
+    @Test
+    fun aGroupedExercise_isOfferedTheWayOut_ofItsSuperset() {
+        // The entry moved into the overflow rather than changing (N53), so the word still follows the
+        // state — and finding it here is what proves the menu is where the action went. It is the
+        // *second* row: B28 silences the action on the first, which has nothing above it to pair with.
+        var toggled: String? = null
+        val base = state(isFinished = false)
+        setScreen(
+            state = base.copy(
+                exercises = base.exercises.map { it.copy(supersetGroup = 1, supersetLabel = "A1") } +
+                    base.exercises.map { it.copy(id = "se2", name = "Bench Press", supersetGroup = 1, supersetLabel = "A2") },
+            ),
+            actions = Actions(onToggleSuperset = { toggled = it }),
+        )
+
+        // The list is the scrollable: the second row, and its menu with it, is only composed once it
+        // is brought into view.
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.exerciseMenu("se2")))
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se2")).performClick()
+        composeTestRule.onNodeWithText("Leave the superset").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.supersetToggle("se2")).performClick()
+
+        assertEquals("se2", toggled)
     }
 
     @Test

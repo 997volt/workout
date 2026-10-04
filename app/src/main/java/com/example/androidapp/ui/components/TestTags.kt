@@ -65,6 +65,13 @@ object TestTags {
     const val EXERCISE_REMOVE_CANCEL = "exercise_remove_cancel"
 
     /**
+     * One exercise's own overflow menu (ROADMAP N53), which is where [EXERCISE_REMOVE] and
+     * [supersetToggle] now live: the rare actions moved rather than changed, so a test reaches them
+     * through the menu the way a thumb does.
+     */
+    fun exerciseMenu(id: String) = "exercise_menu_$id"
+
+    /**
      * How an exercise felt (ROADMAP N8): the dialog's two fields and the workout
      * detail's row that reaches it.
      */
@@ -256,6 +263,14 @@ object TestTags {
 
     /** The one-tap log itself (ROADMAP N19 gave it a companion, and it needed a name). */
     const val SET_LOG = "set_log"
+
+    /**
+     * The workout screen's scrolling exercise list (ROADMAP N53).
+     *
+     * Tagged so a test can reach a row that is below the fold — an exercise's own overflow is only
+     * composed once the row is — rather than asserting on whatever happens to fit.
+     */
+    const val EXERCISE_LIST = "exercise_list"
 
     /**
      * The notice that an exercise's planned sets are all written (ROADMAP N52).

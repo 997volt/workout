@@ -14,6 +14,13 @@ repeated here.
 
 ### Changed
 
+- **One exercise's rare actions live in its own ⋮ menu** (N53). *Superset with above* was a text link in
+  every exercise header and *Delete* an icon beside *Done*; both are rarely used and the header is read
+  constantly mid-session, so the two of them cost more attention than they earned. They moved into a
+  per-exercise overflow — the shape the workout-level actions used until N42 removed the one that no
+  longer had a reason to exist. Nothing about either changed: Delete keeps its confirmation (B2), and
+  pairing keeps its row-0 exclusion and its absence on a done exercise (B28, N7), because the exclusion
+  is now the *entry* not being offered rather than a control that writes nothing.
 - **Logging a set is the editor, prefilled and committed on Save** (N51). *Log set* wrote the offered
   set in one tap, so a set that differed from the prefill was logged and then edited — the same
   `SetEditorDialog`, one step later, with the first step having decided something the user did not
