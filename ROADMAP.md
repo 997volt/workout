@@ -68,14 +68,14 @@ is a product in its own right.
   prescription, both of which carry `targetRpeHalves` — and every prescribed working set was performed
   with its reps met at an RPE **at or under** the target, so the plan was fulfilled with room in hand;
   warm-ups are excluded (N17, N20, N22), and a session with no recorded RPE or no target RPE suggests
-  nothing rather than guessing. **The accepted step is written to the plan**, not to the session that just
-  happened — the slot's prescription for a program start (P3.8), so it stays per slot, and the
-  template's planned set for a direct one — because the plan is what the next run reads and N16 already
+  nothing rather than guessing. **The accepted step changes the plan**, not just the session's record: it
+  is written to the slot's prescription for a program start (P3.8), so it stays per slot, and to the
+  template's planned set for a direct one, because the plan is what the next run reads and N16 already
   makes a template living. Reading the slot's *history* (P3.8's extension of N22) goes with the rule it
-  extended. Rejected: a
-  stored "next target" on the session, which is the forward view N16 removed; and restoring N22's rule,
-  which computed from the plan's rep ceiling alone and offered itself beside the next set, where this one
-  is conditioned on the session's own effort and waits to be asked. It suggests, and it never writes.
+  extended. Rejected: a stored "next target" on the session, which is the forward view N16 removed; and
+  restoring N22's rule, which computed from the plan's rep ceiling alone and offered itself beside the
+  next set, where this one is conditioned on the session's own effort and waits to be asked. It suggests,
+  and it writes only what the lifter accepts.
 
 ## Later (still self-contained)
 
