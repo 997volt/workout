@@ -12,6 +12,8 @@ repeated here.
 
 ## [Unreleased]
 
+## [1.11] — 2026-10-04 (versionCode 12)
+
 ### Changed
 
 - **The app has one dark theme, and the five tabs are drawn in it.** The look is taken from
@@ -159,6 +161,11 @@ repeated here.
 - **A negative rest is refused in one sentence, in one place** (B58). The refusal repeated the hint
   that sits under every rest field, so one instruction lived in two files; the constant now says
   only what is wrong and the hint says what to do.
+- **The statistics title no longer collides with its actions.** `CenterAlignedTopAppBar` gives the
+  centred title and its trailing actions the same pixels once the actions are word-length, so
+  "STATISTICS" ran into "Adherence" and the title lost. Both actions are icon buttons now, which is
+  what a bar with a centred title can hold; the words move into `contentDescription`, where a screen
+  reader was already reading them, and both keep their test tags.
 
 ## [1.10] — 2026-10-03 (versionCode 11)
 
