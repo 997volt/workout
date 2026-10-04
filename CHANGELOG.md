@@ -12,6 +12,19 @@ repeated here.
 
 ## [Unreleased]
 
+### Added
+
+- **A running workout's exercises can be reordered** (N54). Order matters mid-session — a rack taken,
+  equipment moved — and the only way to change it was editing the template, which rewrote every future
+  run for a reason that belonged to one afternoon. Each exercise's own ⋮ menu (N53) offers *Move up*
+  and *Move down*, and the order written is the **session's**: the template is never touched, which is
+  N16's "a session reads it at the start" applied to order rather than to targets. The order is
+  persisted as it changes, so it survives a process death and a repeat copies the session's own order
+  rather than the plan's. The two rows' positions swap in one transaction (B27's rule about a write
+  that must not half-land), and a move with nowhere to go is a no-op reported as success rather than a
+  failure the user cannot act on. A superset member moves as itself, which keeps a round adjacent
+  because adjacency is what the grouping means.
+
 ### Changed
 
 - **One exercise's rare actions live in its own ⋮ menu** (N53). *Superset with above* was a text link in

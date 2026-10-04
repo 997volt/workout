@@ -106,6 +106,17 @@ interface WorkoutRepository {
     suspend fun removeExercise(sessionExerciseId: String): DataResult<Unit>
 
     /**
+     * Moves one session exercise one place in the session's own order (ROADMAP N54).
+     *
+     * [delta] is -1 for up and +1 for down, matching the template editor's own gesture. The order is
+     * the **session's**: the template the workout was started from is never written, which is N16's
+     * "a session reads it at the start" applied to order rather than to targets. A move from the top
+     * or the bottom is nothing to do rather than a failure, and the two positions swap in one
+     * transaction so a failure cannot leave the list half-moved.
+     */
+    suspend fun moveExercise(sessionExerciseId: String, delta: Int): DataResult<Unit>
+
+    /**
      * Marks a session exercise done (ROADMAP N7): no more sets can be logged, its
      * existing sets stop being editable, and any running rest is cleared.
      *

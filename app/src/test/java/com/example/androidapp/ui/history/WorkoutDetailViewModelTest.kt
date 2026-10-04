@@ -211,6 +211,7 @@ class WorkoutDetailViewModelTest {
             unused()
 
         override suspend fun removeExercise(sessionExerciseId: String): DataResult<Unit> = unused()
+        override suspend fun moveExercise(sessionExerciseId: String, delta: Int): DataResult<Unit> = unused()
         override suspend fun finishExercise(sessionExerciseId: String): DataResult<Unit> = unused()
         override suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit> = unused()
         override suspend fun rateExercise(

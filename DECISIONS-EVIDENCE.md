@@ -712,6 +712,37 @@ ratio is absent, and the screen says which of the two absences it is.
 is a pure function over them, so the arithmetic worth arguing about is a JVM test rather than a
 device one.
 
+## N54
+
+The session's list is already stored in an order — `session_exercises.position` — and that is the
+whole reason this is a small change rather than a new concept. What it was for is provenance: the
+positions are written when a plan seeds the workout, and a repeat copies them (N48, B41). Nothing
+reads them as something the user owns. N54 is the statement that they are the session's, not the
+plan's: the write swaps two rows' positions and the template's `template_exercises.position` is a
+different column that is never touched.
+
+**Persist as it changes, not at the end.** The alternative considered was holding a draft order in the
+ViewModel and writing it when the workout finishes. That is what makes the reorder "free" — one write,
+and nothing to undo if the user changes their mind — but it fails on two counts that matter more. The
+workout screen is the one screen that exists to survive a process death (P1.8: the session is in the
+database before anything is logged), so an order that lives only in memory is the one piece of the
+screen that could vanish. And a repeat copies the *stored* order, so a workout that was rearranged and
+then repeated would repeat in an order the lifter never chose. The cost of writing as it changes is one
+transaction per tap, which is the same cost `removeExercise` already pays.
+
+**A swap, not a renumbering.** Both rows' positions are written in one transaction, the shape B27
+established for a superset group: a failure cannot leave two exercises claiming one position, which is
+an order that no longer means anything. At the top or the bottom there is no neighbour, and that is
+reported as success — a menu entry that is legal to tap and does nothing is not an error the user can
+act on, and the alternative (disabling the entry) is a state the row would have to know the length of
+the list to compute.
+
+**A superset member moves as itself.** Swapping with the neighbour keeps a round adjacent, because
+adjacency *is* what the grouping means on this screen — N24's round logic compares set counts within a
+group, and reordering never splits one. Moving a whole group as a unit was rejected as a rule nobody
+asked for: it would make the two entries mean something different depending on a grouping the user set
+up earlier, which is exactly the kind of hidden state N19 and N24 both avoid.
+
 ## N51
 
 The one-tap path was D3/B7's rule stated as a feature: *Log set* wrote the set its button described,

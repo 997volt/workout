@@ -89,6 +89,10 @@
          description names the exercise the menu belongs to, and the entry names the action. -->
     <string name="active_workout_exercise_more">%1$s actions</string>
     <string name="active_workout_remove_action">Remove exercise</string>
+    <!-- Reordering this session's own exercises (ROADMAP N54). The words name the effect on the
+         list, not a direction on screen, so they read the same way in a right-to-left layout. -->
+    <string name="active_workout_move_up">Move up</string>
+    <string name="active_workout_move_down">Move down</string>
     <!-- The rest an exercise prescribes, shown as a fixed label when the timer is switched off
          (ROADMAP N44): the same value the countdown would have used, with nothing running. -->
     <string name="active_workout_rest_prescription">Rest %1$s</string>

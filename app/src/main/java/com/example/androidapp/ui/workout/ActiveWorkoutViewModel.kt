@@ -554,6 +554,18 @@ class ActiveWorkoutViewModel @Inject constructor(
     }
 
     /**
+     * Moves one exercise one place in the session's own order (ROADMAP N54).
+     *
+     * Order matters mid-session — a rack taken, equipment moved — and the only way to change it used
+     * to be editing the template, which rewrote every future run for a reason that belonged to one
+     * afternoon. [delta] is -1 for up and +1 for down, the template editor's own gesture; the template
+     * is never written, which is N16's "a session reads it at the start" applied to order.
+     */
+    fun onMoveExercise(sessionExerciseId: String, delta: Int) = write {
+        workoutRepository.moveExercise(sessionExerciseId, delta)
+    }
+
+    /**
      * Marks an exercise done (ROADMAP N7) and offers an undo, because the mis-tap
      * this prevents is also the mis-tap it can cause.
      *

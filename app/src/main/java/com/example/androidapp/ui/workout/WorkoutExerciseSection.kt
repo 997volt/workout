@@ -81,6 +81,8 @@ internal fun ExerciseList(
     rows: List<SessionExerciseRow>,
     onLogSet: (String, SetEdit) -> Unit,
     onRemoveExercise: (String) -> Unit,
+    /** Moves one exercise one place in the session's own order (ROADMAP N54). */
+    onMoveExercise: (String, Int) -> Unit,
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
     onFinishExercise: (String, Int?, Int?, String?) -> Unit,
@@ -103,6 +105,7 @@ internal fun ExerciseList(
                 row = row,
                 onLogSet = { edit -> onLogSet(row.id, edit) },
                 onRemoveExercise = { onRemoveExercise(row.id) },
+                onMoveExercise = { delta -> onMoveExercise(row.id, delta) },
                 onEditSet = onEditSet,
                 onDeleteSet = onDeleteSet,
                 onFinishExercise = onFinishExercise,
@@ -135,6 +138,7 @@ private fun ExerciseSection(
     row: SessionExerciseRow,
     onLogSet: (SetEdit) -> Unit,
     onRemoveExercise: () -> Unit,
+    onMoveExercise: (Int) -> Unit,
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
     onFinishExercise: (String, Int?, Int?, String?) -> Unit,
@@ -180,6 +184,7 @@ private fun ExerciseSection(
             ExerciseOverflow(
                 row = row,
                 onToggleSuperset = onToggleSuperset,
+                onMove = onMoveExercise,
                 onRemove = onRemoveExercise,
             )
         }
@@ -278,6 +283,7 @@ private fun FinishExerciseAction(
 private fun ExerciseOverflow(
     row: SessionExerciseRow,
     onToggleSuperset: (() -> Unit)?,
+    onMove: (Int) -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -295,6 +301,27 @@ private fun ExerciseOverflow(
             )
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            // Order first: it is the entry most likely to be reached for mid-session, and it is the
+            // one that changes what everything below it means (ROADMAP N54). A move at the top or the
+            // bottom is refused by the repository rather than by the menu, because the row does not
+            // know how long the list is and a disabled entry that looks the same is worse than one
+            // that does nothing.
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.active_workout_move_up)) },
+                onClick = {
+                    menuOpen = false
+                    onMove(-1)
+                },
+                modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = true)),
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.active_workout_move_down)) },
+                onClick = {
+                    menuOpen = false
+                    onMove(1)
+                },
+                modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = false)),
+            )
             if (onToggleSuperset != null && !row.isFinished) {
                 DropdownMenuItem(
                     text = {

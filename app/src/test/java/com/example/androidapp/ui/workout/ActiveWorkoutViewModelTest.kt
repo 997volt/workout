@@ -633,6 +633,71 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun movingAnExercise_swapsItWithTheOneItPasses() = runTest(dispatcher) {
+        // ROADMAP N54: order matters mid-session — a rack taken, equipment moved — and the only way to
+        // change it used to be editing the template, which rewrote every future run.
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        viewModel.onAddExercise("bench-press")
+        settle()
+
+        assertEquals(listOf("row-0", "row-1"), viewModel.uiState.value.exercises.map { it.id })
+
+        // Up and down are one swap each way, and the row that comes up is the one whose position
+        // moved — not a renumbering of everything below it.
+        viewModel.onMoveExercise("row-1", delta = -1)
+        settle()
+        assertEquals(listOf("row-1", "row-0"), viewModel.uiState.value.exercises.map { it.id })
+
+        viewModel.onMoveExercise("row-1", delta = 1)
+        settle()
+        assertEquals(listOf("row-0", "row-1"), viewModel.uiState.value.exercises.map { it.id })
+    }
+
+    @Test
+    fun movingPastEitherEnd_writesNothingAndIsNotAnError() = runTest(dispatcher) {
+        // "Nothing to do" rather than a failure: a menu entry at the top or the bottom is still a
+        // legal tap, and reporting it as a write that failed would be a lie (ROADMAP N54).
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val only = viewModel.uiState.value.exercises.single().id
+
+        viewModel.onMoveExercise(only, delta = -1)
+        viewModel.onMoveExercise(only, delta = 1)
+        settle()
+
+        assertEquals(listOf("row-0"), viewModel.uiState.value.exercises.map { it.id })
+        assertNull(viewModel.uiState.value.error)
+    }
+
+    @Test
+    fun aMoveThatFails_isReported_ratherThanLeavingTheListQuietlyWrong() = runTest(dispatcher) {
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        viewModel.onAddExercise("bench-press")
+        settle()
+        val rowId = viewModel.uiState.value.exercises.first().id
+
+        // Arm the failure after the rows exist: what is under test is the move's failure, not the
+        // add's.
+        repository.failWrites = true
+        viewModel.onMoveExercise(rowId, delta = 1)
+        settle()
+
+        assertNotNull(viewModel.uiState.value.error)
+    }
+
+    @Test
     fun loggingASet_storesTheSuggestion_andArmsTheRestAlert() = runTest(dispatcher) {
         val repository = FakeWorkoutRepository()
         val viewModel = viewModelFor(repository)
@@ -1181,6 +1246,24 @@ class ActiveWorkoutViewModelTest {
 
         override suspend fun removeExercise(sessionExerciseId: String): DataResult<Unit> {
             exercises.value = exercises.value.filterNot { it.id == sessionExerciseId }
+            return DataResult.Success(Unit)
+        }
+
+        /** ROADMAP N54: the session's own order, swapped with the neighbour [delta] names. */
+        override suspend fun moveExercise(sessionExerciseId: String, delta: Int): DataResult<Unit> {
+            if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
+            val ordered = exercises.value
+            val index = ordered.indexOfFirst { it.id == sessionExerciseId }
+            val neighbour = ordered.getOrNull(index + delta)
+            if (index >= 0 && neighbour != null) {
+                // The positions swap with the rows, which is what the DAO's own transaction does: a
+                // fake that only reordered the list would pass while the real reader still sorted by
+                // the stale position.
+                exercises.value = ordered.toMutableList().apply {
+                    this[index] = neighbour.copy(position = ordered[index].position)
+                    this[index + delta] = ordered[index].copy(position = neighbour.position)
+                }
+            }
             return DataResult.Success(Unit)
         }
 

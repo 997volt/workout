@@ -184,6 +184,42 @@ class RoomWorkoutSessionTest {
         )
     }
 
+    /** ROADMAP N54: the session's order is editable, and the template's is not the session's. */
+    @Test
+    fun movingAnExercise_reordersTheSession_andLeavesTheTemplateAlone() = runTest {
+        seedTemplate("t1", listOf("back-squat", "bench-press", "deadlift"))
+        val started = start(templateId = "t1")
+        val benchPress = repository.observeSessionExercises(started.id).first()[1]
+
+        repository.moveExercise(benchPress.id, delta = -1)
+
+        assertEquals(
+            listOf("bench-press", "back-squat", "deadlift"),
+            repository.observeSessionExercises(started.id).first().map { it.exerciseId },
+        )
+        // The reason N54 is a change at all: a reason that belonged to one afternoon must not rewrite
+        // every future run.
+        assertEquals(
+            listOf("back-squat", "bench-press", "deadlift"),
+            database.templateDao().findExerciseIdsInOrder("t1"),
+        )
+    }
+
+    @Test
+    fun movingPastEitherEnd_leavesTheOrderAndReportsSuccess() = runTest {
+        seedTemplate("t1", listOf("back-squat", "bench-press"))
+        val started = start(templateId = "t1")
+        val first = repository.observeSessionExercises(started.id).first().first()
+
+        val up = repository.moveExercise(first.id, delta = -1)
+
+        assertTrue("a move with nowhere to go is not a failure", up is DataResult.Success)
+        assertEquals(
+            listOf("back-squat", "bench-press"),
+            repository.observeSessionExercises(started.id).first().map { it.exerciseId },
+        )
+    }
+
     private suspend fun seedTemplate(
         templateId: String,
         exerciseIds: List<String>,

@@ -80,6 +80,15 @@ the rule; that one argues it.
   would add a plan-per-date entity, plan generation and skipped-week handling for a
   comparison the logged sets already allow; several plans may share a day.
   ([evidence](DECISIONS-EVIDENCE.md#n16))
+- **A session's exercise order is its own, and it is written as it changes** (N54). The template is
+  never touched: N16's "a template is living, and a session reads it at the start" applies to order the
+  same way it applies to targets, so a rack taken on one afternoon cannot rewrite every future run.
+  Persisting the order with the session is the decision — a repeat (N48) copies the session's own
+  order rather than the plan's, and a process death mid-session keeps the order that was arranged, which
+  is the same "the session exists before anything is logged" rule P1.8 rests on. The alternative, an
+  in-memory order that is written at *Finish*, was rejected: it would show one order and store another
+  if the app died, and a repeat would silently disagree with the workout it repeats.
+  ([evidence](DECISIONS-EVIDENCE.md#n54))
 - **Logging a set is the set editor, prefilled and committed on Save** (N51, amending D3 and B7).
   The one-tap path wrote the set the button described and left a set that differed from the prefill to
   be edited afterwards — the same `SetEditorDialog`, one step later, with the first step having decided

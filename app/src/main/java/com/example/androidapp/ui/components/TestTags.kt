@@ -72,6 +72,14 @@ object TestTags {
     fun exerciseMenu(id: String) = "exercise_menu_$id"
 
     /**
+     * Moving one exercise in the session's own order (ROADMAP N54).
+     *
+     * One helper for both directions, the shape [templateMove] already uses, because up and down are
+     * one idea and two names for a pair of entries is how they drift.
+     */
+    fun exerciseMove(id: String, up: Boolean) = "exercise_move_${if (up) "up" else "down"}_$id"
+
+    /**
      * How an exercise felt (ROADMAP N8): the dialog's two fields and the workout
      * detail's row that reaches it.
      */

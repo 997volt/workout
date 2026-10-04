@@ -2,6 +2,7 @@ package com.example.androidapp.data.local
 
 import androidx.room.Dao
 import androidx.room.Query
+import androidx.room.Transaction
 
 /**
  * The queries about a session *exercise* — the row joining a workout to one movement.
@@ -72,4 +73,48 @@ interface SessionExerciseDao {
         """,
     )
     suspend fun findLiveSetsForSession(sessionId: String): List<SetEntryEntity>
+
+    /**
+     * One session exercise, or null when it is gone (ROADMAP N54).
+     *
+     * The reorder needs the row's own session and position, and reading them from the row is what
+     * makes the swap a single transaction rather than two reads that could disagree.
+     */
+    @Query("SELECT * FROM session_exercises WHERE id = :id AND deletedAt IS NULL")
+    suspend fun findSessionExercise(id: String): SessionExerciseEntity?
+
+    /** The session's live exercises in their stored order (ROADMAP N54). */
+    @Query(
+        """
+        SELECT * FROM session_exercises
+        WHERE sessionId = :sessionId AND deletedAt IS NULL
+        ORDER BY position
+        """,
+    )
+    suspend fun findSessionExercisesInOrder(sessionId: String): List<SessionExerciseEntity>
+
+    @Query(
+        """
+        UPDATE session_exercises
+        SET position = :position, updatedAt = :at
+        WHERE id = :id AND deletedAt IS NULL
+        """,
+    )
+    suspend fun setPosition(id: String, position: Int, at: Long): Int
+
+    /**
+     * Swaps two rows' positions in one transaction, so a reorder cannot leave the list half-moved if
+     * the second write fails (ROADMAP N54, B27's rule about a group moving as one).
+     */
+    @Transaction
+    suspend fun swapPositions(
+        firstId: String,
+        firstPosition: Int,
+        secondId: String,
+        secondPosition: Int,
+        at: Long,
+    ) {
+        setPosition(id = firstId, position = firstPosition, at = at)
+        setPosition(id = secondId, position = secondPosition, at = at)
+    }
 }

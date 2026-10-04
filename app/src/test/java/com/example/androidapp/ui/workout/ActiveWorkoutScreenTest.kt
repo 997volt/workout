@@ -45,6 +45,7 @@ class ActiveWorkoutScreenTest {
      */
     private data class Actions(
         val onFinishExercise: (String, Int?, Int?, String?) -> Unit = { _, _, _, _ -> },
+        val onMoveExercise: (String, Int) -> Unit = { _, _ -> },
         val onReopenExercise: (String) -> Unit = {},
         val onRemoveExercise: (String) -> Unit = {},
         val onRateExercise: (String, Int?, Int?, String?) -> Unit = { _, _, _, _ -> },
@@ -80,6 +81,7 @@ class ActiveWorkoutScreenTest {
                 personalRecord = personalRecord,
                 onUpdateSet = { _, _, _, _, _, _, _ -> },
                 onRemoveExercise = actions.onRemoveExercise,
+                onMoveExercise = actions.onMoveExercise,
                 onRateExercise = actions.onRateExercise,
                 onFinish = actions.onFinish,
                 onFinishExercise = actions.onFinishExercise,
@@ -709,6 +711,28 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.supersetToggle("se2")).performClick()
 
         assertEquals("se2", toggled)
+    }
+
+    @Test
+    fun anExerciseCanBeMovedUpAndDown_fromItsMenu() {
+        // ROADMAP N54: the session's own order is editable, and both directions live in the exercise's
+        // overflow beside the other rare actions.
+        val moved = mutableListOf<Pair<String, Int>>()
+        val base = state(isFinished = false)
+        setScreen(
+            state = base.copy(
+                exercises = base.exercises +
+                    base.exercises.map { it.copy(id = "se2", name = "Bench Press") },
+            ),
+            actions = Actions(onMoveExercise = { id, delta -> moved += id to delta }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exerciseMove("se1", up = true)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exerciseMove("se1", up = false)).performClick()
+
+        assertEquals(listOf("se1" to -1, "se1" to 1), moved)
     }
 
     @Test
