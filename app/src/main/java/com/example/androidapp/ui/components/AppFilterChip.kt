@@ -12,9 +12,10 @@ import androidx.compose.ui.platform.testTag
  * A chip that means "this is one of the choices, and this one is on".
  *
  * Explicitly coloured rather than left to the component's defaults. Material's stock selected
- * chip is `secondaryContainer`, which in this palette is Teal — the accent kept for a category
- * of *row*, not for "the state you are in". Selecting is the app's own colour, so it is the
- * app's own colour here too, and a screen with five of them does not read as five categories.
+ * chip is `secondaryContainer` — the filled tonal slot the palette fills with a muted teal
+ * (ROADMAP N49), which is a *surface* rather than the accent a category of row wears. Selecting
+ * is the app's own colour, so it is the app's own colour here too, and a screen with five of them
+ * does not read as five categories.
  *
  * Its own component because two screens pick from a fixed set of options — the default rest and
  * the statistics range — and a chip that looked different in one of them would be the kind of

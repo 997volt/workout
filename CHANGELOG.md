@@ -12,6 +12,20 @@ repeated here.
 
 ## [Unreleased]
 
+### Changed
+
+- **The palette's second filled role and its links were replaced, so both read** (N49). *Log set* is a
+  filled tonal button, which draws its label in `onSecondaryContainer` on `secondaryContainer`; that
+  container was the category Teal, and white on it measures 2.9:1 — the loudest thing on the workout
+  screen carrying the least readable label. The links beside it are `TextButton`s, whose label is
+  `primary` — Indigo at 4.07:1 against the page and 3.77:1 on a raised card, under the 4.5:1
+  body-size text needs. Both roles changed in the palette rather than at the two call sites: the
+  container is now the same hue taken down to a surface (`TealDeep`), and the links have a role of
+  their own (`IndigoLink`) so `primary` goes on filling the Start pill, the selected tab and the
+  chips. Teal itself stays the category accent a row's tile wears, so the rest bar — which draws on
+  the same container — moved with the button rather than being left as the one white-on-teal label.
+  `PaletteContrastTest` asserts every pair, the way `TileAccentTest` already asserts the tiles (B55).
+
 ## [1.11] — 2026-10-04 (versionCode 12)
 
 ### Changed

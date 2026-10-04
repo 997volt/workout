@@ -53,6 +53,30 @@ val Coral = Color(0xFFE8735A)
 val Amber = Color(0xFFD09A4E)
 val Sky = Color(0xFF5B7CDE)
 
+// --- Roles a component reads rather than a category it hands out ---
+
+/**
+ * The filled slot that is *not* the primary action (ROADMAP N49).
+ *
+ * Deliberately not [Teal], which stays the category accent a row's tile wears. This is the same
+ * hue taken down to a surface: it is what `secondaryContainer` was reaching for, and Teal itself
+ * could not be it — white on Teal measures 2.9:1, so every control that filled with the category
+ * colour carried a label under the contrast body text needs. The pair is asserted by
+ * `PaletteContrastTest` rather than eyeballed, the way `TileAccent.onColor` already is (B55).
+ */
+val TealDeep = Color(0xFF1E6F6A)
+
+/**
+ * The link colour: a text action inside a screen (ROADMAP N49).
+ *
+ * Not [Indigo]. Primary is the app's own colour and it *fills* things — the Start pill, the
+ * selected tab, a chip that is on — and Indigo measures 4.07:1 against the page and 3.77:1 on a
+ * raised card, both under the 4.5:1 body-size text needs. Redefining primary under the pill
+ * would have dragged every filled surface down with the links, so the links get a role of their
+ * own and [Indigo] keeps filling.
+ */
+val IndigoLink = Color(0xFFB0A4F0)
+
 /** Destructive only. Deliberately redder than [Coral], which is a category and not a warning. */
 val Crimson = Color(0xFFF2555A)
 

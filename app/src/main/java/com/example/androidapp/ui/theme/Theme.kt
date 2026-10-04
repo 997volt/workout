@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
  * purples in every component nobody thought about — an error container here, a chip outline
  * there — which is how a themed app ends up looking half-themed.
  */
-private val WorkoutColors = darkColorScheme(
+internal val WorkoutColors = darkColorScheme(
     // The app's colour: primary actions, the selected tab, section headings that must lead.
     primary = Indigo,
     onPrimary = Color.White,
@@ -25,10 +25,12 @@ private val WorkoutColors = darkColorScheme(
     inversePrimary = IndigoDeep,
 
     // Teal and coral are category accents rather than second and third brands; a component
-    // that reaches for `secondary` unthinkingly still lands on the palette.
+    // that reaches for `secondary` unthinkingly still lands on the palette. The *container* is
+    // the same hue taken down to a surface (ROADMAP N49): it is what a filled tonal control and
+    // the rest bar draw on, and the category Teal is far too light to carry a label.
     secondary = Teal,
     onSecondary = Color.White,
-    secondaryContainer = Teal,
+    secondaryContainer = TealDeep,
     onSecondaryContainer = Color.White,
     tertiary = Coral,
     onTertiary = Color.White,
