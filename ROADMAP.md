@@ -53,6 +53,53 @@ and is order-only, and more than one active program, which P3.12 allowed.
   deliberately not decided here and is spelled out when this is picked up; what is committed now is that
   the current shape does not survive it.
 
+### Three requests from use
+
+Self-contained enough for this queue, and each small enough that its decision is spelled out when it is
+picked up rather than now — so each is a wish, and gains an id when it graduates. The first one's shape
+is settled; the other two are not.
+
+- **The rest field stops explaining itself — everywhere.** The sentence under every rest field —
+  `rest_edit_hint` in [strings.xml](app/src/main/res/values/strings.xml), "Empty for the default, 0 for
+  none." — reads as noise, so it goes, and "everywhere" is the decision: off the template's field
+  ([TemplateEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateEditorScreen.kt))
+  and equally off the exercise's ([ExerciseDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseDetailScreen.kt))
+  and a program slot's ([SlotPrescriptionDialog.kt](app/src/main/java/com/example/androidapp/ui/programs/SlotPrescriptionDialog.kt)),
+  because one string serves all three. The string goes with them, and so does the comment in
+  [RestTimer.kt](app/src/main/java/com/example/androidapp/domain/RestTimer.kt) that names it as the place
+  the rule is taught — after which "empty means the default, 0 means none" is taught by no label anywhere.
+  That consequence is the chosen shape, not a gap to fill here.
+
+- **An exercise's own default weight change.** 2.5 kg is one global constant rather than a property of
+  the movement: [`DEFAULT_PROGRESSION_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/model/ProgressionSuggestion.kt)
+  feeds the progression suggestion and the warm-up ramp, and
+  [`Weight.DEFAULT_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/Weight.kt) steps the set
+  editor's +/− buttons, so a machine that jumps 5 kg (or 1 kg) is always edited against a step it does
+  not have. The request is a per-exercise value beside `restSeconds` and `techniqueNote` on
+  [Exercise.kt](app/src/main/java/com/example/androidapp/domain/model/Exercise.kt), still 2.5 kg unless
+  it is set. Whether all three callers follow it, or only the suggestion, is the decision; the value is
+  whole grams and its column is a migration numbered as it ships.
+
+- **The next set is edited on the screen, with *Log set* a button beside it — not behind it.** The workout
+  screen says one thing about the next set: a button carrying its summary (`Log set · 60 kg × 8`) that opens
+  [SetEditorDialog](app/src/main/java/com/example/androidapp/ui/components/SetEditorDialog.kt), prefilled
+  from the offer — N51's shape, where logging *is* the dialog. The request inverts it: the next set's
+  values — weight, reps, the role picker and, where the plan prescribes one, its target RPE — sit in the
+  exercise's block and are editable before anything is written, with **Log set** beside them committing
+  exactly what is on screen. That puts B7's display-agrees-with-storage back on this path and leaves the
+  editor as the way to correct a set already written, so it **amends N51** — and the three entries that
+  lean on it: N19's picker, N52's notice, and B48's role arming. The planned RPE is one of the fields
+  rather than a separate ask, and none of it reaches a session today: a template set and a slot both
+  prescribe `targetRpeHalves` ([WorkoutTemplate.kt](app/src/main/java/com/example/androidapp/domain/model/WorkoutTemplate.kt)
+  and [SlotPrescription.kt](app/src/main/java/com/example/androidapp/domain/model/SlotPrescription.kt)), and
+  the plan a workout is held against drops the field
+  ([`PlannedSetSpec`](app/src/main/java/com/example/androidapp/domain/model/PlanComparison.kt)). Decided
+  when this is picked up: whether the fields are always there or open in place; where N19's "a role is one
+  set's decision" picker lives once it is not inside a dialog; what a set shows when the plan prescribes no
+  RPE; how N33/N50's *Use it* offer reads when the value it offers is already on screen; and what N52's
+  **Log extra set** becomes. [DECISIONS.md](DECISIONS.md) is amended as part of the change, because three
+  settled entries name N51's dialog as the reason for their shape.
+
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
