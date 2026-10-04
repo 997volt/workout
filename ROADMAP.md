@@ -48,6 +48,27 @@ from using the built app rather than from either queue.
   personal record and inflate volume against a bar it never cleared. The fix is that the pending
   set's armed role follows the plan's next unlogged set, carried the way reps and weight already
   are, with the picker still overriding it for the one set.
+- **"Add warm-ups" does nothing, because the screen was never given the action.** The template
+  editor's route wires every callback to the ViewModel except this one, so the screen falls back to
+  the parameter's default — an empty lambda — and a tap writes nothing, reports nothing and changes
+  nothing. The ViewModel method is fully implemented and unit-tested, which is exactly why this
+  shipped green: the logic under test is right, and only the connection to it is missing. The repair
+  is one line, and the reason it was invisible is worth repairing with it — a default empty lambda
+  on a callback the screen cannot work without turns a forgotten wire-up into a silent no-op rather
+  than a compile error, so the default goes and the next omission fails the build.
+- **The same button has two more ways to fail, found while diagnosing that one.** Its guard asks
+  whether a non-warm-up set has a weight *typed* (`targetWeightGrams != null`), while the action
+  needs a weight a ramp can be taken *from*: an assisted set stores its weight as `0` rather than
+  null, so `-20` offers the button and then builds no ramp, and a 0 kg or 2.5 kg working weight does
+  the same because every fraction rounds up to at least one 2.5 kg step and the filter drops them
+  all. The action then returns success without writing, so that press is silent by construction —
+  where the dialog's own comment already says a control that would do nothing is worse than no
+  control, and the ramp rule already holds that assisted work gets no ramp. Pressing twice is the
+  opposite failure: the guard stays true and `prependSets` shifts everything down, so a second press
+  stacks another ramp in front of the first. One predicate — whether a ramp can be built at all —
+  should decide the guard and the action together, which also makes the silent path unreachable. The
+  light-weight case is untested in practice: the test that names it asserts `all { … }`, which is
+  vacuously true on exactly the empty list the bug produces.
 
 ### The workout screen: an exit that is not *Finish*
 
