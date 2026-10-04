@@ -712,6 +712,36 @@ ratio is absent, and the screen says which of the two absences it is.
 is a pure function over them, so the arithmetic worth arguing about is a JVM test rather than a
 device one.
 
+## N55
+
+The row's two jobs were fused into one control: the card's only action was *Start*, so the only way to
+find out what a workout contained was to begin it. That is F16's and N16's old problem in a smaller
+place — a screen answering a question nobody asked — and the fix is the one N42 already made at the
+other end of this screen: put the thing where the thumb is and let each target mean one thing.
+
+**The field opens a read-only dialog, not the editor.** A template had exactly one destination, its
+editor, and the roadmap named the choice. The editor was rejected because reading a plan is not
+editing it: every target in the plan would sit one mis-tap from being rewritten while the user was
+only looking, and the app's own safeguard against that — the deliberate save on the name field, the
+per-set dialogs — is a cost paid for a browse that did not need it. A preview screen of its own was
+rejected second: the answer is a short ordered list of exercise names, so a destination with a back
+button, a route and a ViewModel would be scaffolding around a dialog. What a preview *should* show
+beyond the names — targets, rest, cues — is not decided here; the dialog is the smallest thing that
+answers "what is in this one", and a screen can replace it if looking turns out to want more.
+
+**The read is per tap, not a flow per row.** The dialog holds one plan for as long as it is open, and
+the read goes through the same repository the editor uses, so a rename shows here too — N16's living
+template seen from the other end. A flow per next-up row would be a live query behind a field nobody
+has tapped: with more than one active program (P3.12) that is one query per program per home screen,
+for a look that most sessions never take. The cost is that a template edited on another screen while
+the dialog is open is not reflected until it is reopened, which is the same staleness the rest of the
+screen's own snapshot has.
+
+**Compact, because the bar repeats.** The row is a label, a name, a supporting line and a start, not a
+card with a tile: more than one program may be active, so the bar may hold several next-up rows above
+the start pill, and cards would push the primary action off the screen. The *Today* rows stay cards
+because there is one day and a card is the shape a scheduled workout reads as.
+
 ## N54
 
 The session's list is already stored in an order — `session_exercises.position` — and that is the

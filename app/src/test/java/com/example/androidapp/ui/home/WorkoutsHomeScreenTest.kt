@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import java.time.DayOfWeek
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -49,6 +50,7 @@ class WorkoutsHomeScreenTest {
         val onSubstituteTemplate: (TodayPlan, String?) -> Unit = { _, _ -> },
         val onOpenWorkout: (String) -> Unit = {},
         val onOpenPrograms: () -> Unit = {},
+        val onOpenPlannedWorkout: (NextUp) -> Unit = {},
     )
 
     private fun setScreen(
@@ -64,6 +66,7 @@ class WorkoutsHomeScreenTest {
                     onStartWorkout = actions.onStartWorkout,
                     onStartFromTemplate = actions.onStartFromTemplate,
                     onStartTemplate = actions.onStartTemplate,
+                    onOpenPlannedWorkout = actions.onOpenPlannedWorkout,
                     onSubstituteTemplate = actions.onSubstituteTemplate,
                     onOpenWorkout = actions.onOpenWorkout,
                     onOpenPrograms = actions.onOpenPrograms,
@@ -260,11 +263,102 @@ class WorkoutsHomeScreenTest {
 
         composeTestRule.onNodeWithText("Next up").assertExists()
         composeTestRule.onNodeWithText("Upper/Lower · 5 exercises").assertExists()
-        composeTestRule.onNodeWithTag(TestTags.homeNextUp("slot-2")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.homeNextUpStart("slot-2")).performClick()
 
         // The slot travels with the start, so its prescription seeds the workout (P3.8).
         assertThat(started.single().slotId).isEqualTo("slot-2")
         assertThat(started.single().templateId).isEqualTo("t2")
+    }
+
+    @Test
+    fun theNextUpField_opensWhatIsPlanned_insteadOfStartingIt() {
+        // ROADMAP N55: looking and starting stop being the same gesture.
+        val opened = mutableListOf<NextUp>()
+        val started = mutableListOf<TodayPlan>()
+        val nextUp = NextUp(
+            plan = TodayPlan(
+                id = "slot-2",
+                templateId = "t2",
+                name = "Push",
+                exerciseCount = 5,
+                slotId = "slot-2",
+            ),
+            programName = "Upper/Lower",
+            isAtStart = true,
+        )
+        setScreen(
+            state = WorkoutsHomeUiState(isLoading = false, nextUp = listOf(nextUp)),
+            actions = Actions(
+                onStartTemplate = { started += it },
+                onOpenPlannedWorkout = { opened += it },
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.homeNextUp("slot-2")).performClick()
+
+        assertThat(opened.single()).isEqualTo(nextUp)
+        assertThat(started).isEmpty()
+    }
+
+    @Test
+    fun thePlannedWorkoutDialog_listsWhatIsPlanned_inOrder() {
+        // ROADMAP N55: the field opens the plan rather than the editor, so what it shows is the
+        // workout's ordered exercises — the answer to "what is in this one".
+        var dismissed = false
+        composeTestRule.setContent {
+            AndroidAppTheme {
+                PlannedWorkoutDialog(
+                    planned = PlannedWorkout(
+                        plan = TodayPlan(
+                            id = "slot-2",
+                            templateId = "t2",
+                            name = "Push",
+                            exerciseCount = 2,
+                            slotId = "slot-2",
+                        ),
+                        programName = "Upper/Lower",
+                        exercises = listOf("Bench Press", "Overhead Press"),
+                        isLoading = false,
+                    ),
+                    onDismiss = { dismissed = true },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_PLANNED_WORKOUT).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.HOME_PLANNED_WORKOUT_TITLE).assertExists()
+        composeTestRule.onNodeWithText("Push").assertExists()
+        composeTestRule.onNodeWithText("Upper/Lower").assertExists()
+        composeTestRule.onNodeWithText("Bench Press").assertExists()
+        composeTestRule.onNodeWithText("Overhead Press").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.HOME_PLANNED_WORKOUT_EMPTY).assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_PLANNED_WORKOUT_CLOSE).performClick()
+
+        assertThat(dismissed).isTrue()
+    }
+
+    @Test
+    fun aPlanWithNothingInIt_saysSo_ratherThanShowingAnEmptyList() {
+        composeTestRule.setContent {
+            AndroidAppTheme {
+                PlannedWorkoutDialog(
+                    planned = PlannedWorkout(
+                        plan = TodayPlan(
+                            id = "slot-2",
+                            templateId = "t2",
+                            name = "Push",
+                            exerciseCount = 0,
+                        ),
+                        programName = "Upper/Lower",
+                        isLoading = false,
+                    ),
+                    onDismiss = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_PLANNED_WORKOUT_EMPTY).assertExists()
     }
 
     @Test

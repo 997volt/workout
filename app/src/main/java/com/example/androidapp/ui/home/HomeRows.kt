@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -74,7 +73,6 @@ internal fun TodayAndRecent(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         todayPlanItems(state = state, onStartTemplate = onStartTemplate, onSubstitute = onSubstitute)
-        nextUpItems(state = state, onStartTemplate = onStartTemplate)
         recentItems(state = state, onOpenWorkout = onOpenWorkout)
     }
 }
@@ -181,63 +179,6 @@ private fun PlanHeading(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-    }
-}
-
-/** Where each active program's run is, for a program with nothing scheduled today (ROADMAP P3.9). */
-private fun LazyListScope.nextUpItems(
-    state: WorkoutsHomeUiState,
-    onStartTemplate: (TodayPlan) -> Unit,
-) {
-    if (state.nextUp.isEmpty()) return
-    item(key = "next-up") {
-        SectionHeader(text = stringResource(R.string.home_next_up))
-    }
-    items(state.nextUp.size, key = { state.nextUp[it].plan.id }) { index ->
-        val nextUp = state.nextUp[index]
-        NextUpRow(nextUp = nextUp, onStart = { onStartTemplate(nextUp.plan) })
-    }
-}
-
-/**
- * One program's next-up row (ROADMAP P3.9).
- *
- * The program's name is part of the supporting line because more than one program may be active
- * (P3.12), so two next-up rows have to be tellable apart.
- */
-@Composable
-private fun NextUpRow(
-    nextUp: NextUp,
-    onStart: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val exercises = pluralStringResource(
-        R.plurals.home_plan_exercises,
-        nextUp.plan.exerciseCount,
-        nextUp.plan.exerciseCount,
-    )
-    AppCard(modifier = modifier) {
-        PlanHeading(
-            name = nextUp.plan.name,
-            supporting = listOf(nextUp.programName, exercises).joinToString(" · "),
-            // A different glyph and accent from a scheduled plan: "what is next" and "what is
-            // today" are different answers, and the tile is what says so before the text is read.
-            icon = Icons.Filled.Insights,
-            accent = TileAccent.Amber,
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-            horizontalArrangement = Arrangement.End,
-        ) {
-            Button(
-                onClick = onStart,
-                modifier = Modifier.testTag(TestTags.homeNextUp(nextUp.plan.id)),
-            ) {
-                Text(stringResource(R.string.home_plan_start))
-            }
         }
     }
 }

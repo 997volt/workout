@@ -27,13 +27,18 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * How many recent workouts the home screen shows (ROADMAP N1).
@@ -88,6 +93,20 @@ data class NextUp(
     val isAtStart: Boolean,
 )
 
+/**
+ * What is planned for one next-up row, read when the field is tapped (ROADMAP N55).
+ *
+ * [exercises] is empty while the read is in flight and after one that returned nothing — the two are
+ * told apart by [isLoading], because "the plan is empty" and "the plan is not read yet" would
+ * otherwise read the same on screen.
+ */
+data class PlannedWorkout(
+    val plan: TodayPlan,
+    val programName: String,
+    val exercises: List<String> = emptyList(),
+    val isLoading: Boolean = true,
+)
+
 data class WorkoutsHomeUiState(
     val isLoading: Boolean = true,
     val recent: List<WorkoutSummary> = emptyList(),
@@ -127,12 +146,52 @@ data class WorkoutsHomeUiState(
 @HiltViewModel
 class WorkoutsHomeViewModel @Inject constructor(
     workoutRepository: WorkoutRepository,
-    templateRepository: TemplateRepository,
+    private val templateRepository: TemplateRepository,
     private val programRepository: ProgramRepository,
     private val timeSource: TimeSource,
 ) : ViewModel() {
 
     private val activeSession = workoutRepository.observeActiveSession()
+
+    /**
+     * The next-up row whose plan is being looked at, or null (ROADMAP N55).
+     *
+     * Separate from [uiState] because it is a transient question about *one* row: folding it in would
+     * rebuild the whole list every time a dialog opens, and the list is what the field sits under.
+     */
+    private val _plannedWorkout = MutableStateFlow<PlannedWorkout?>(null)
+    val plannedWorkout: StateFlow<PlannedWorkout?> = _plannedWorkout.asStateFlow()
+
+    /**
+     * Reads what one next-up row has planned, and holds it until the dialog closes (ROADMAP N55).
+     *
+     * A read per tap rather than a flow per row: the dialog is a look at one plan, and keeping a flow
+     * open for every active program would be a live query behind a field nobody has tapped. The
+     * template is read through the same repository the editor uses, so a rename shows here too — N16's
+     * living template, seen from the other end.
+     */
+    fun onOpenPlannedWorkout(nextUp: NextUp) {
+        _plannedWorkout.value = PlannedWorkout(
+            plan = nextUp.plan,
+            programName = nextUp.programName,
+        )
+        viewModelScope.launch {
+            val exercises = templateRepository.observeExercises(nextUp.plan.templateId).first()
+            // Only the row that opened it may fill it in: a dialog closed while the read was in
+            // flight must not come back.
+            _plannedWorkout.update { current ->
+                current?.takeIf { it.plan.id == nextUp.plan.id }?.copy(
+                    exercises = exercises.map { it.exerciseName },
+                    isLoading = false,
+                )
+            }
+        }
+    }
+
+    /** Closes the preview (ROADMAP N55). */
+    fun onDismissPlannedWorkout() {
+        _plannedWorkout.value = null
+    }
 
     private val activeWorkout: Flow<ActiveWorkoutInfo?> = activeSession
         .flatMapLatest { session ->

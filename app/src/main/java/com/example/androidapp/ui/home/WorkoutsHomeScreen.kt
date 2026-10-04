@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -75,6 +77,7 @@ fun WorkoutsHomeRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     // Not unwrapped with `by`: reading it here would rebuild the list every second.
     val clock = viewModel.clock.collectAsStateWithLifecycle()
+    val plannedWorkout by viewModel.plannedWorkout.collectAsStateWithLifecycle()
 
     // The substitute pick is the one write this screen still makes, and a failure has to be said
     // rather than swallowed (F7). The data actions that used to share this host now live in
@@ -99,6 +102,11 @@ fun WorkoutsHomeRoute(
             }
         },
         onError = { message = it },
+    )
+
+    PlannedWorkoutDialog(
+        planned = plannedWorkout,
+        onDismiss = viewModel::onDismissPlannedWorkout,
     )
 
     WorkoutsHomeScreen(
@@ -127,6 +135,7 @@ fun WorkoutsHomeRoute(
         ),
         onOpenWorkout = onOpenWorkout,
         onOpenPrograms = onOpenPrograms,
+        onOpenPlannedWorkout = viewModel::onOpenPlannedWorkout,
         message = message,
         onDismissMessage = { message = null },
         modifier = modifier,
@@ -144,6 +153,13 @@ fun WorkoutsHomeScreen(
     onStartFromTemplate: () -> Unit = {},
     onStartTemplate: (TodayPlan) -> Unit = {},
     onOpenPrograms: () -> Unit = {},
+    /**
+     * Opens what a program's next run has planned, without starting it (ROADMAP N55).
+     *
+     * Looking and starting stopped being the same gesture: the field opens the plan, and *Start* keeps
+     * starting it.
+     */
+    onOpenPlannedWorkout: (NextUp) -> Unit = {},
     message: String? = null,
     onDismissMessage: () -> Unit = {},
     /**
@@ -175,8 +191,13 @@ fun WorkoutsHomeScreen(
             StartActions(
                 activeWorkout = state.activeWorkout,
                 clock = clock,
+                nextUp = state.nextUp,
                 onStartWorkout = onStartWorkout,
                 onStartFromTemplate = onStartFromTemplate,
+                // A next-up row starts the workout the same way a scheduled one does, so the slot's
+                // prescription travels with it (ROADMAP P3.8).
+                onStartTemplate = onStartTemplate,
+                onOpenPlannedWorkout = onOpenPlannedWorkout,
                 // Programs took the slot the repeat-last link gave up (ROADMAP N42): the screen
                 // the whole scheduling half is edited from belongs in the action row rather than
                 // behind the overflow it got lost in.
@@ -293,8 +314,9 @@ private fun HomeContent(
                 modifier = modifier,
             )
 
-            // First run: an empty list with no explanation tells the user nothing.
-            state.todaysPlan.isNotEmpty() || state.nextUp.isNotEmpty() -> TodayAndRecent(
+            // First run: an empty list with no explanation tells the user nothing. A next-up row no
+            // longer counts here — it lives in the bottom bar (ROADMAP N55), which is not this list.
+            state.todaysPlan.isNotEmpty() -> TodayAndRecent(
                 state = state,
                 onOpenWorkout = onOpenWorkout,
                 onStartTemplate = onStartTemplate,
@@ -343,8 +365,11 @@ private fun HomeContent(
 private fun StartActions(
     activeWorkout: ActiveWorkoutInfo?,
     clock: State<WorkoutClock>,
+    nextUp: List<NextUp>,
     onStartWorkout: () -> Unit,
     onStartFromTemplate: () -> Unit,
+    onStartTemplate: (TodayPlan) -> Unit,
+    onOpenPlannedWorkout: (NextUp) -> Unit,
     onOpenPrograms: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -354,6 +379,18 @@ private fun StartActions(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Where each active program's run is, at the edge of the screen the thumb is already at
+        // (ROADMAP N55). It moved out of the scrolling list, where a program with nothing scheduled
+        // today was something to scroll to, and off the card it used to be: one program's next run
+        // shown twice was two answers to one question, and more than one active program (P3.12) means
+        // this row can repeat.
+        nextUp.forEach { nextUpRow ->
+            NextUpRow(
+                nextUp = nextUpRow,
+                onOpen = { onOpenPlannedWorkout(nextUpRow) },
+                onStart = { onStartTemplate(nextUpRow.plan) },
+            )
+        }
         if (activeWorkout == null) {
             // The pair is a row of links above the pill, not a second pill: with a workout
             // already open there is no choice to make, and while there is one, only the start
@@ -449,6 +486,83 @@ private fun StartOrResumeButton(
 /** Comfortably over the 48dp minimum target, and the height the reference's pill reads at. */
 private val BUTTON_HEIGHT = 52.dp
 
+/**
+ * One program's next run, in the bottom bar (ROADMAP N55).
+ *
+ * Compact rather than a card, because the bar may hold several rows — more than one program can be
+ * active (P3.12) — and because it now sits beside the start pill rather than in a scrolling list.
+ * Where [NextUpRow]'s old card put the name first and the button under it, this puts the *field* on
+ * the row and the start beside it: tapping the field opens what is planned, and tapping *Start* starts
+ * it, so looking and starting stopped being the same gesture.
+ */
+@Composable
+private fun NextUpRow(
+    nextUp: NextUp,
+    onOpen: () -> Unit,
+    onStart: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val exercises = pluralStringResource(
+        R.plurals.home_plan_exercises,
+        nextUp.plan.exerciseCount,
+        nextUp.plan.exerciseCount,
+    )
+    val openLabel = stringResource(R.string.home_next_up_open, nextUp.plan.name)
+    Row(
+        modifier = modifier.fillMaxWidth().padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // The field is the whole left-hand half of the row, so the target is the row rather than a
+        // caption inside it. `clickable` carries an `onClickLabel` because the headline names the
+        // workout and never the action (the rule the restyle's rows follow).
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .testTag(TestTags.homeNextUp(nextUp.plan.id))
+                .clickable(onClickLabel = openLabel, onClick = onOpen),
+        ) {
+            Text(
+                text = stringResource(R.string.home_next_up),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = nextUp.plan.name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                // The program's name is here because more than one program may be active (P3.12), so
+                // two rows have to be tellable apart.
+                text = listOf(nextUp.programName, exercises).joinToString(" · "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        TextButton(
+            onClick = onStart,
+            modifier = Modifier.testTag(TestTags.homeNextUpStart(nextUp.plan.id)),
+        ) {
+            Text(stringResource(R.string.home_plan_start))
+        }
+    }
+}
+
+/**
+ * What a next-up row has planned, read on the tap that opened it (ROADMAP N55).
+ *
+ * A dialog rather than the template's editor, which is the only destination a template had: the
+ * question the field answers is "what is in this workout", and opening the editor to answer it would
+ * put every target in the plan one mis-tap from being rewritten on the way to reading it. It is also
+ * a dialog rather than a screen because the answer is short — the workout's ordered exercises — and a
+ * destination for a list of names would be a screen with a back button and nothing to do on it.
+ */
 @Preview(showBackground = true)
 @Composable
 private fun WorkoutsHomeScreenPreview() {

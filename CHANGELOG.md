@@ -14,6 +14,18 @@ repeated here.
 
 ### Added
 
+- **A program's *Next up* moved into the bottom bar and opens what is planned** (N55). The next-up card
+  sat in the scrolling list between today's plans and *Recent*, so a program with nothing scheduled
+  today was something to scroll to, and the only thing in it that responded was *Start*. It now sits in
+  the bottom bar under the start pill — the edge of the screen the thumb is already at — and leaves the
+  list, because one program's next run shown twice was two answers to one question. The field is its
+  own target and *Start* is a separate one beside it: tapping the field opens what is planned, and
+  tapping *Start* starts it, so looking and starting stopped being the same gesture. What it opens is a
+  read-only dialog of the workout's ordered exercises rather than the template's editor, which is the
+  only destination a template had: the question is "what is in this workout", and opening the editor to
+  answer it would put every target one mis-tap from being rewritten on the way to reading it. The row
+  stays compact rather than a card, because more than one active program (P3.12) means the bar may
+  carry several.
 - **A running workout's exercises can be reordered** (N54). Order matters mid-session — a rack taken,
   equipment moved — and the only way to change it was editing the template, which rewrote every future
   run for a reason that belonged to one afternoon. Each exercise's own ⋮ menu (N53) offers *Move up*

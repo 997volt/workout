@@ -80,6 +80,16 @@ the rule; that one argues it.
   would add a plan-per-date entity, plan generation and skipped-week handling for a
   comparison the logged sets already allow; several plans may share a day.
   ([evidence](DECISIONS-EVIDENCE.md#n16))
+- **Looking at a planned workout and starting it are two gestures** (N55). A program's next-up row is
+  the one place a workout can be seen before it is begun, and it used to offer only the start. The row
+  moves to the bottom bar — the edge of the screen the thumb is already at, and off the list it shared
+  with today's plans and recent history — with the field and *Start* as separate targets. What the field
+  opens is a **read-only dialog of the workout's ordered exercises**, which settles the choice the
+  roadmap left: a template's only destination was its editor, and reading a plan does not need the
+  power to rewrite it. Reusing the editor with a read-only flag and previewing on a screen of its own
+  were both rejected — the first for putting every target one mis-tap from a rewrite, the second for a
+  destination holding a handful of names with nothing to do on it.
+  ([evidence](DECISIONS-EVIDENCE.md#n55))
 - **A session's exercise order is its own, and it is written as it changes** (N54). The template is
   never touched: N16's "a template is living, and a session reads it at the start" applies to order the
   same way it applies to targets, so a rack taken on one afternoon cannot rewrite every future run.

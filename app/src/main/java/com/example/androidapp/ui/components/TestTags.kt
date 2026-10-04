@@ -201,8 +201,22 @@ object TestTags {
     /** Today's plan on home (ROADMAP N16). */
     fun homeStartPlan(id: String) = "home_start_plan_$id"
 
-    /** The run's next-up row on home (ROADMAP P3.9). */
+    /**
+     * The run's next-up field on home (ROADMAP P3.9, N55).
+     *
+     * It tags the *field*, which opens what is planned, and [homeNextUpStart] tags the separate start
+     * beside it: looking and starting stopped being the same gesture, so a test has to say which one
+     * it means.
+     */
     fun homeNextUp(id: String) = "home_next_up_$id"
+
+    fun homeNextUpStart(id: String) = "home_next_up_start_$id"
+
+    /** What is planned, opened from that field (ROADMAP N55). */
+    const val HOME_PLANNED_WORKOUT = "home_planned_workout"
+    const val HOME_PLANNED_WORKOUT_TITLE = "home_planned_workout_title"
+    const val HOME_PLANNED_WORKOUT_EMPTY = "home_planned_workout_empty"
+    const val HOME_PLANNED_WORKOUT_CLOSE = "home_planned_workout_close"
 
     /** A plan's sets (ROADMAP N14): the list, one target, and its rest and cue. */
     const val TEMPLATE_PLAN_ROW = "template_plan_row"
