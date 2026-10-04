@@ -32,13 +32,14 @@ object RestTimer {
     const val MIN_PRESCRIBED_SECONDS = 0
 
     /**
-     * The one sentence a negative rest is refused with (ROADMAP N45).
+     * The one sentence a negative rest is refused with (ROADMAP N45, B58).
      *
      * It replaces three sentences for one rule, written in three repositories, each of which also
-     * called zero a mistake. The field's hint carries the construction that should be used instead.
+     * called zero a mistake. It says only what is *wrong*: how to say what was meant is the hint
+     * under every rest field (`rest_edit_hint`), and repeating that instruction here was two copies
+     * of one rule, free to drift — which its own doc already claimed this constant did not do.
      */
-    const val NEGATIVE_REST_REFUSAL =
-        "A rest cannot be negative. Leave it empty for the default, or 0 for none."
+    const val NEGATIVE_REST_REFUSAL = "A rest cannot be negative."
 
     /** Whole seconds left, never negative. 0 means the rest is over or not running. */
     fun remainingSeconds(restEndsAt: Instant?, now: Instant): Int {
