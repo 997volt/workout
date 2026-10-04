@@ -17,9 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-One batch, taken from using the app rather than from either queue, and all of it the workouts half:
-the tab that starts a session, the screen one runs on, how a set is written from it, and where a
-weekday lives. A candidate
+One batch, taken from using the app rather than from either queue: the tab that starts a session, the
+screen one runs on, how a set is written from it, where a weekday lives, and what history shows. A
+candidate
 graduates to this section — gaining an id and a spelled-out
 decision rather than a wish — when it is picked up, so what stands here is committed work; the two
 queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what is a
@@ -106,6 +106,27 @@ product in its own right.
   slot is untouched. Two edges are settled when it is taken: dropping the column is a migration that
   ships with the code that stops reading it (never ahead of it), and the backup DTO carries the same
   weekday, so whether that field stays for older files' sake or leaves with the column is decided there.
+
+### History
+
+- **N57 — a history row carries the weekday, not only the date.** The row's headline is a `MEDIUM` date
+  ("Oct 4, 2026"), and the weekday is the part a lifter navigates by — which day of the week this was —
+  while the month header above already carries the month the date repeats. The headline becomes the date
+  *with* its weekday, in the user's language, the way `HistoryFormat.month` already does it: a display name
+  rather than a hard-coded pattern, read in the session's own zone (N25, B38). One edge: `HistoryFormat.date`
+  is shared with home's *Recent* row, so the change either moves both or gives history a formatter of its
+  own — settled with the change, since the ask names history.
+
+- **N58 — a workout started from a template shows that template's name in history.** The session already
+  stores `templateId` when it starts from a template — a program's slot included — but the history
+  projection never selects it, so a finished *Push A* and a finished empty workout are indistinguishable in
+  the list, and the name is the half of the row that says what the session *was*. The row keeps the weekday
+  and date as its headline (N57), and the name joins the supporting line beside the duration, sets and
+  volume. The edge is where the name comes from: reading the live template relabels the past when the
+  template is renamed (a deleted one still reads, because the delete is soft), while snapshotting the name
+  onto the session makes it part of the record at the cost of a column and a migration. That choice is
+  taken with the change — it is N16's question ("a template is living, and a session reads it at the
+  start") asked about the name rather than about targets.
 
 ## Later (still self-contained)
 
