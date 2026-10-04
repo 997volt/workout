@@ -28,8 +28,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -42,6 +44,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.ui.components.CenteredMessage
+import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -64,6 +67,11 @@ fun ProgramsRoute(
     val created by viewModel.createdProgramId.collectAsStateWithLifecycle()
     val currentOnOpenProgram by rememberUpdatedState(onOpenProgram)
 
+    // Loading a program document reports through the screen's own host (ROADMAP N47). The file
+    // read is the composable's, because it holds the `Uri`; the sentence is resolved here.
+    var transferMessage by remember { mutableStateOf<String?>(null) }
+    val loadProgram = rememberProgramImport(viewModel) { transferMessage = it }
+
     // A newly created program opens straight into its editor: it has no slots yet and its
     // name is still the default, so there is nothing to see in a row.
     LaunchedEffect(created) {
@@ -79,6 +87,9 @@ fun ProgramsRoute(
         onOpenProgram = onOpenProgram,
         onSetActive = viewModel::onSetActive,
         onMoveProgram = viewModel::onMoveProgram,
+        onLoadProgram = loadProgram,
+        transferMessage = transferMessage,
+        onDismissTransferMessage = { transferMessage = null },
         onDismissMessage = viewModel::onErrorShown,
         onBack = onBack,
         modifier = modifier,
@@ -95,11 +106,15 @@ fun ProgramsScreen(
     modifier: Modifier = Modifier,
     onSetActive: (String) -> Unit = {},
     onMoveProgram: (String, Int) -> Unit = { _, _ -> },
+    onLoadProgram: (() -> Unit)? = null,
+    transferMessage: String? = null,
+    onDismissTransferMessage: () -> Unit = {},
     onDismissMessage: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val defaultName = stringResource(R.string.program_default_name)
     val currentOnDismissMessage by rememberUpdatedState(onDismissMessage)
+    MessageSnackbar(transferMessage, snackbarHostState, onDismissTransferMessage)
 
     // The message is resolved during composition and shown from the effect, because a
     // string resource cannot be read inside LaunchedEffect.
@@ -123,6 +138,18 @@ fun ProgramsScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.nav_back),
                         )
+                    }
+                },
+                actions = {
+                    // Loading a document is the file's way in (ROADMAP N47). Export is per program,
+                    // so it lives in the editor rather than here.
+                    onLoadProgram?.let { load ->
+                        TextButton(
+                            onClick = load,
+                            modifier = Modifier.testTag(TestTags.Programs.LOAD),
+                        ) {
+                            Text(stringResource(R.string.program_load))
+                        }
                     }
                 },
             )

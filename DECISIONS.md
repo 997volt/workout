@@ -393,6 +393,18 @@ the rule; that one argues it.
   settles an occurrence in **both** and advances both runs. Telling them apart would need the
   session to record the slot, which P3.8 deliberately did not do; it is recorded here so the
   overlap is a known limit rather than a surprise.
+- **A program document is its own format, and every exercise it names travels with it** (N47). The
+  backup is a restore of a whole database, so it cannot be the way one program is handed over; this
+  is a document with a **version of its own**, carrying the program's *definition* — slots, the
+  templates they name, their planned work, what each slot prescribes — and not its history, because
+  skips, deloads and substitutions belong to the device that trained them. Exercise ids are why it
+  carries more than references: a seeded slug means the same thing everywhere, but a user's own
+  exercise id means nothing on the receiving device, so the definition travels whole and the
+  receiver creates what it lacks. Loading **merges by id and overwrites nothing**, so the same file
+  twice is a no-op, and the program arrives **inactive and last**, because following one is a choice
+  (P3.3) and the authored order is the user's (P3.12). A movement whose exercise is nowhere is
+  dropped rather than failing the foreign key and rolling the document back.
+  ([evidence](DECISIONS-EVIDENCE.md#n47))
 
 ## Adherence
 

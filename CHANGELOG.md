@@ -60,6 +60,21 @@ repeated here.
 
 ### Added
 
+- **A program, with its templates, can be carried to another device as a file** (N47). Programs and
+  their templates already rode in the backup, but there was no way to hand one to somebody or move
+  one without moving the whole database — import merges a backup rather than accepting a program.
+  The document is its own format with a **version of its own** (a new backup column does not make an
+  old program file wrong), reusing the backup's DTOs because they are already the raw-storage shape
+  the mappers speak. It carries the program's *definition* — slots, the templates they name, their
+  planned exercises and sets, and what each slot prescribes — and deliberately not history: skips,
+  deload weeks and substitutions belong to the device that trained them. Every exercise a template
+  names travels **whole**, because a user's own exercise id means nothing elsewhere; the receiver
+  creates whatever it does not already have. Loading merges and overwrites nothing, so the same file
+  twice is a no-op, and the imported program arrives inactive at the end of the list, because
+  following a program is a choice rather than something a file makes. A movement whose exercise is
+  neither carried nor present is skipped, and the rest of the program still arrives. Export is per
+  program in its editor; *Load* is on the Programs list, both through the Storage Access Framework,
+  so the app still declares no permissions.
 - **Settings has a Data section** (N43): export, import and delete-everything, moved from the
   home overflow, each keeping what it does today. They act on the whole database, which is what
   Settings is about; delete-everything stays last and coloured, behind the same typed

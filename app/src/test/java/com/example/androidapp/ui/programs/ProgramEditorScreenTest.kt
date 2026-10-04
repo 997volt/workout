@@ -40,6 +40,7 @@ class ProgramEditorScreenTest {
         onRemoveSlot: (String) -> Unit = {},
         onDeleteProgram: () -> Unit = {},
         onEditPrescription: (String) -> Unit = {},
+        onExportProgram: (() -> Unit)? = null,
     ) {
         composeTestRule.setContent {
             ProgramEditorScreen(
@@ -52,9 +53,21 @@ class ProgramEditorScreenTest {
                 onRemoveSlot = onRemoveSlot,
                 onDeleteProgram = onDeleteProgram,
                 onEditPrescription = onEditPrescription,
+                onExportProgram = onExportProgram,
                 onBack = {},
             )
         }
+    }
+
+    @Test
+    fun theExportAction_writesThisProgramToAFile() {
+        // ROADMAP N47: export is per program, so it lives in the editor rather than on the list.
+        var exported = false
+        setScreen(onExportProgram = { exported = true })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.EXPORT).performClick()
+
+        assertThat(exported).isTrue()
     }
 
     @Test

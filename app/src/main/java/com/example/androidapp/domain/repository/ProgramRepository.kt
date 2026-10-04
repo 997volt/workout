@@ -182,7 +182,41 @@ interface ProgramRepository {
      * Idempotent, so a repeated continue cannot double-record.
      */
     suspend fun skipOccurrences(slotIds: List<String>, weekStart: LocalDate): DataResult<Unit>
+
+    /**
+     * One program as a shareable document, or a failure when it is gone (ROADMAP N47).
+     *
+     * The program's **definition**: its slots, the templates they name, their planned work, what
+     * each slot prescribes, and the definition of every exercise those templates reference. History
+     * — skips, deload weeks, substitutions — stays behind, because it belongs to the device that
+     * trained it.
+     */
+    suspend fun exportProgramDocument(programId: String): DataResult<String>
+
+    /**
+     * Merges a program document: adds what it holds and overwrites nothing (ROADMAP N47).
+     *
+     * A row whose id is already present is left alone, so loading the same file twice is a no-op
+     * rather than a second copy, and a document can never cost the user a program they wrote. An
+     * exercise the device does not have is created from the definition the document carries; a
+     * planned exercise whose exercise is nowhere is dropped, and the rest of the program arrives.
+     */
+    suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary>
 }
+
+/**
+ * What loading a program document brought in (ROADMAP N47).
+ *
+ * Counts rather than a sentence: the screen words them. [droppedMovements] is the number of planned
+ * exercises whose exercise the device neither had nor received, which is the honest shape of "the
+ * program arrived, minus what could not".
+ */
+data class ProgramImportSummary(
+    val programs: Int,
+    val templates: Int,
+    val exercises: Int,
+    val droppedMovements: Int,
+)
 
 /**
  * The editable targets of one set a slot prescribes (ROADMAP P3.8).

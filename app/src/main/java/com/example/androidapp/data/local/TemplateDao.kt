@@ -136,6 +136,34 @@ interface TemplateDao {
     )
     suspend fun findPlannedExercises(templateId: String): List<PlannedExercise>
 
+    /**
+     * A plan's exercise rows, raw and in order (ROADMAP N47).
+     *
+     * The entity rather than [PlannedExercise]: a program document carries every column, and the
+     * projection drops the ids and timestamps the document needs.
+     */
+    @Query(
+        """
+        SELECT * FROM template_exercises
+        WHERE templateId = :templateId AND deletedAt IS NULL
+        ORDER BY position ASC
+        """,
+    )
+    suspend fun findTemplateExercises(templateId: String): List<TemplateExerciseEntity>
+
+    /** Every live planned set of a plan's live exercises, in order (ROADMAP N47). */
+    @Query(
+        """
+        SELECT s.* FROM template_sets s
+        JOIN template_exercises e ON e.id = s.templateExerciseId
+        WHERE e.templateId = :templateId
+          AND e.deletedAt IS NULL
+          AND s.deletedAt IS NULL
+        ORDER BY s.setIndex ASC
+        """,
+    )
+    suspend fun findTemplateSets(templateId: String): List<TemplateSetEntity>
+
     /** One exercise of a plan, as seeding needs it. */
     @Suppress("LongParameterList")
     data class PlannedExercise(

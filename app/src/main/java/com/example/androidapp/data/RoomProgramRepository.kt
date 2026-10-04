@@ -13,6 +13,10 @@ import com.example.androidapp.data.local.ProgramSubstitutionDao
 import com.example.androidapp.data.local.ProgramSubstitutionEntity
 import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.transfer.ProgramDocument
+import com.example.androidapp.data.transfer.ProgramDocumentCodec
+import com.example.androidapp.data.transfer.toDto
+import com.example.androidapp.data.transfer.toEntity
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.data.local.toExerciseTrendRow
 import com.example.androidapp.data.local.toProgramSession
@@ -38,6 +42,7 @@ import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.latestValue
 import com.example.androidapp.domain.model.programRun
 import com.example.androidapp.domain.model.toExerciseTrendPoints
+import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.SlotSetEdit
 import java.time.DayOfWeek
@@ -534,12 +539,135 @@ class RoomProgramRepository @Inject constructor(
         }
     }
 
+    override suspend fun exportProgramDocument(programId: String): DataResult<String> = dataResultOf {
+        ProgramDocumentCodec.encode(buildProgramDocument(database, timeSource, programId))
+    }
+
+    override suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary> =
+        dataResultOf {
+            // Throws InvalidInputException for a file we cannot use, before touching anything: a
+            // rejected document must leave the database exactly as it was.
+            val document = ProgramDocumentCodec.decode(text)
+            database.withTransaction { mergeProgramDocument(database, dao, document) }
+        }
+
     private companion object {
         /** One day of slack at each end of the week, for sessions in another zone. */
         const val SLACK_DAYS = 1L
 
         const val DAYS_IN_WEEK = 7L
     }
+}
+
+/** Room reports an ignored insert — a row whose id was already present — as this rowid. */
+private const val IGNORED_ROW = -1L
+
+/**
+ * One program's definition as a document (ROADMAP N47).
+ *
+ * File-level because the repository is at the function ceiling this project enforces, and because
+ * this is a read that assembles a value rather than a decision the repository owns.
+ */
+private suspend fun buildProgramDocument(
+    database: WorkoutDatabase,
+    timeSource: TimeSource,
+    programId: String,
+): ProgramDocument {
+    val programDao = database.programDao()
+    val program = programDao.findProgram(programId) ?: throw NotFoundException("program $programId")
+    val slots = programDao.findSlots(programId)
+    val templateIds = slots.map { it.templateId }.distinct()
+    val templates = templateIds.mapNotNull { database.templateDao().findById(it) }
+    val templateExercises = templateIds.flatMap { database.templateDao().findTemplateExercises(it) }
+    val templateSets = templateIds.flatMap { database.templateDao().findTemplateSets(it) }
+    val slotExercises = slots.flatMap { database.programPrescriptionDao().findSlotExercises(it.id) }
+    val slotSets = slots.flatMap { database.programPrescriptionDao().findSlotSets(it.id) }
+    // The definition of every exercise the plan names, so a receiving device can create the ones it
+    // has never seen — a user's own exercise id means nothing anywhere else (N47).
+    val exercises = templateExercises.map { it.exerciseId }.distinct()
+        .mapNotNull { database.exerciseDao().findById(it) }
+
+    return ProgramDocument(
+        formatVersion = ProgramDocumentCodec.CURRENT_FORMAT_VERSION,
+        exportedAt = timeSource.nowEpochMillis(),
+        program = program.toDto(),
+        slots = slots.map { it.toDto() },
+        templates = templates.map { it.toDto() },
+        templateExercises = templateExercises.map { it.toDto() },
+        templateSets = templateSets.map { it.toDto() },
+        slotExercises = slotExercises.map { it.toDto() },
+        slotSets = slotSets.map { it.toDto() },
+        exercises = exercises.map { it.toDto() },
+    )
+}
+
+/**
+ * Adds what [document] holds and overwrites nothing (ROADMAP N47).
+ *
+ * Every insert ignores a row whose id is already present, so loading one file twice is a no-op
+ * rather than a second copy and a document can never cost the user a program they wrote. Two
+ * defences are deliberate: the imported program arrives **inactive** at the **end** of the list,
+ * because following a program is a choice rather than something a file makes, and a movement whose
+ * exercise is neither carried nor present is dropped rather than allowed to fail the foreign key
+ * and roll the whole document back — one missing exercise is not a reason to refuse a program.
+ */
+private suspend fun mergeProgramDocument(
+    database: WorkoutDatabase,
+    programDao: ProgramDao,
+    document: ProgramDocument,
+): ProgramImportSummary {
+    val backupDao = database.backupDao()
+    val programBackup = database.programBackupDao()
+
+    val exercisesAdded = backupDao.insertExercises(document.exercises.map { it.toEntity() })
+        .count { it != IGNORED_ROW }
+
+    val carriedTemplates = document.templates.map { it.id }.toSet()
+    val knownTemplates = (carriedTemplates + document.slots.map { it.templateId }).filter {
+        it in carriedTemplates || database.templateDao().findById(it) != null
+    }.toSet()
+    val referenced = (document.templateExercises.map { it.exerciseId } +
+        document.slotExercises.map { it.exerciseId }).toSet()
+    val presentExercises = referenced.filter { database.exerciseDao().findById(it) != null }.toSet()
+
+    val templatesAdded = backupDao.insertTemplates(document.templates.map { it.toEntity() })
+        .count { it != IGNORED_ROW }
+    val planned = document.templateExercises.filter {
+        it.templateId in knownTemplates && it.exerciseId in presentExercises
+    }
+    backupDao.insertTemplateExercises(planned.map { it.toEntity() })
+    val plannedIds = planned.map { it.id }.toSet()
+    backupDao.insertTemplateSets(
+        document.templateSets.filter { it.templateExerciseId in plannedIds }.map { it.toEntity() },
+    )
+
+    // Inactive and last: a document adds a program, it does not decide which one home follows
+    // (P3.3's "a new program is not made active"), and the authored order stays the user's (P3.12).
+    val program = document.program.toEntity().copy(
+        isActive = false,
+        position = programDao.maxProgramPosition() + 1,
+        updatedAt = document.program.updatedAt,
+    )
+    val programsAdded = programBackup.insertPrograms(listOf(program)).count { it != IGNORED_ROW }
+
+    val slots = document.slots.filter { it.templateId in knownTemplates }
+    programBackup.insertProgramSlots(slots.map { it.toEntity() })
+    val slotIds = slots.map { it.id }.toSet()
+    val prescribed = document.slotExercises.filter {
+        it.slotId in slotIds && it.exerciseId in presentExercises
+    }
+    programBackup.insertProgramSlotExercises(prescribed.map { it.toEntity() })
+    val prescribedIds = prescribed.map { it.id }.toSet()
+    programBackup.insertProgramSlotSets(
+        document.slotSets.filter { it.slotExerciseId in prescribedIds }.map { it.toEntity() },
+    )
+
+    return ProgramImportSummary(
+        programs = programsAdded,
+        templates = templatesAdded,
+        exercises = exercisesAdded,
+        droppedMovements = document.templateExercises.size - planned.size,
+    )
 }
 
 /**

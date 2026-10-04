@@ -25,31 +25,17 @@ work lives, *Later* for what is self-contained and *Parked* for what is a produc
 
 ## Later (still self-contained)
 
-Post-MVP on the same local-only premise, grouped by theme and ordered by value inside each: a
-candidate graduates to *Next* — gaining an id and a spelled-out decision — when it is picked
-up, and leaves for [CHANGELOG.md](CHANGELOG.md) when it ships.
+Empty. Every candidate that stood here has shipped — the defects found in use, the workout screen's
+discard, the workouts tab cut back, repeat-last in History, Settings' data section and rest-timer
+switch, a rest of zero, the planned-set prefill, and the program document — each with its entry in
+[CHANGELOG.md](CHANGELOG.md). A candidate graduates to *Next* — gaining an id and a spelled-out
+decision — when it is picked up, so an empty queue is a state rather than a gap, and *Parked* below
+is where deliberate non-work lives.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what
 they named that is not a feature is a settled decision: no dated instances (N16), nothing
 automatic (N22's "the app suggests; it never writes"), a weekday-less slot that is never missed
-and is order-only, and more than one active program, which P3.12 allowed. What waits now came
-from using the built app rather than from either queue.
-
-### Programs: loading one from a file
-
-- **Load a program, with its templates, from a file.** Programs and their templates already ride in
-  the backup, and import already merges rather than overwrites — so what is missing is not a reader
-  but a *document*: there is no way to carry one program to another device, or to accept one
-  somebody else wrote, without moving the whole database. Two things make it more than a file
-  picker bolted to the Programs screen. The format has to survive being partial — four collections
-  in the backup are required rather than defaulted, so a program-only file cannot simply be a small
-  backup — and it has to name its exercises portably: a template references exercise ids, the
-  seeded library's ids are permanent slugs that are the same everywhere, and an exercise the *user*
-  created carries a generated id that means nothing on the receiving device. So the candidate
-  carries two decisions: a program document with a version of its own, reusing the backup's DTOs
-  and mappers where they fit, and a rule for an exercise the receiving device does not have. Both
-  are why this is the largest of the three, and both are worth paying: a program is the part of
-  this app a lifter would actually want to hand to someone.
+and is order-only, and more than one active program, which P3.12 allowed.
 
 ## Parked — deliberately not planned
 

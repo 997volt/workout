@@ -159,6 +159,14 @@ class ProgramEditorViewModel @Inject constructor(
     fun onRename(name: String) = write { repository.renameProgram(programId, name) }
 
     /**
+     * This program as a document, for the file picker to write (ROADMAP N47).
+     *
+     * Suspending and returned rather than pushed into state: the file write belongs to the
+     * composable, which holds the `Uri`, and the screen words the result.
+     */
+    suspend fun exportDocument(): DataResult<String> = repository.exportProgramDocument(programId)
+
+    /**
      * Starts or stops following this program (P3.3, amended by P3.12).
      *
      * Off stops following **this** one and leaves the others alone; more than one may be

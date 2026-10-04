@@ -40,6 +40,19 @@ interface ProgramPrescriptionDao {
     )
     fun observeSlotSets(slotId: String): Flow<List<ProgramSlotSetEntity>>
 
+    /** The same rows, one shot — what a program document carries (ROADMAP N47). */
+    @Query(
+        """
+        SELECT s.* FROM program_slot_sets s
+        JOIN program_slot_exercises e ON e.id = s.slotExerciseId
+        WHERE e.slotId = :slotId
+          AND e.deletedAt IS NULL
+          AND s.deletedAt IS NULL
+        ORDER BY s.setIndex ASC
+        """,
+    )
+    suspend fun findSlotSets(slotId: String): List<ProgramSlotSetEntity>
+
     @Query(
         """
         SELECT * FROM program_slot_exercises

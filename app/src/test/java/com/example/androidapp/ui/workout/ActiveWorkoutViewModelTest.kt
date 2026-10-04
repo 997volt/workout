@@ -8,6 +8,7 @@ import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.SlotPrescription
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.SlotSetEdit
 import kotlinx.coroutines.flow.asStateFlow
@@ -2176,5 +2177,11 @@ private class FakeProgramRepository : ProgramRepository {
         slotIds: List<String>,
         weekStart: java.time.LocalDate,
     ): DataResult<Unit> = error("the workout screen does not record a skip")
+
+    override suspend fun exportProgramDocument(programId: String): DataResult<String> =
+        error("the workout screen does not carry a program")
+
+    override suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary> =
+        error("the workout screen does not carry a program")
 
 }

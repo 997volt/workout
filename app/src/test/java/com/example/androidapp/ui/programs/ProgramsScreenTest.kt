@@ -32,6 +32,7 @@ class ProgramsScreenTest {
         onOpen: (String) -> Unit = {},
         onSetActive: (String) -> Unit = {},
         onMoveProgram: (String, Int) -> Unit = { _, _ -> },
+        onLoadProgram: (() -> Unit)? = null,
     ) {
         composeTestRule.setContent {
             ProgramsScreen(
@@ -41,8 +42,20 @@ class ProgramsScreenTest {
                 onBack = {},
                 onSetActive = onSetActive,
                 onMoveProgram = onMoveProgram,
+                onLoadProgram = onLoadProgram,
             )
         }
+    }
+
+    @Test
+    fun theLoadAction_opensTheProgramFilePicker() {
+        // ROADMAP N47: the file's way in, beside the list it adds to.
+        var loaded = false
+        setScreen(onLoadProgram = { loaded = true })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.LOAD).performClick()
+
+        assertThat(loaded).isTrue()
     }
 
     @Test

@@ -9,6 +9,7 @@ import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.SlotPrescription
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.SlotSetEdit
 import com.google.common.truth.Truth.assertThat
@@ -269,6 +270,12 @@ class ProgramStartGateViewModelTest {
                 DataResult.Success(Unit)
             }
         }
+
+        override suspend fun exportProgramDocument(programId: String): DataResult<String> =
+            error("the start gate does not carry a program")
+
+        override suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary> =
+            error("the start gate does not carry a program")
 
         override suspend fun createProgram(name: String): DataResult<String> =
             error("these tests do not create a program")

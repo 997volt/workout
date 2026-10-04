@@ -129,6 +129,21 @@ interface ProgramDao {
     suspend fun findProgram(id: String): ProgramEntity?
 
     /**
+     * A program's own slots as rows, in order (ROADMAP N47).
+     *
+     * The entity rather than [ProgramSlotDetail]: a program document carries the slot's raw
+     * columns, and the projection joins a template name it does not need.
+     */
+    @Query(
+        """
+        SELECT * FROM program_slots
+        WHERE programId = :programId AND deletedAt IS NULL
+        ORDER BY position ASC
+        """,
+    )
+    suspend fun findSlots(programId: String): List<ProgramSlotEntity>
+
+    /**
      * A program's slots with their templates, in the program's own order (P3.3).
      *
      * A slot whose template has been deleted drops out with it: the join is the rule that

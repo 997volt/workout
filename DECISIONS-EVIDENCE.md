@@ -536,6 +536,43 @@ because a row is one thing you tap. It is offered only where `isRepeatable` says
 copy something — the helper B43's tail added for exactly this question, which is why it stayed
 through N42 while its only caller was gone.
 
+## N47
+
+Programs and their templates already rode in the backup, and import already merged rather than
+overwrote — so what was missing was not a reader but a *document*. There was no way to carry one
+program to another device, or to accept one somebody else wrote, without moving the whole database.
+
+**A format of its own, with a version of its own.** A [BackupFile] cannot be trimmed into a program
+document: four of its collections are required rather than defaulted, so a program-only file cannot
+be a small backup. [ProgramDocument] reuses the backup's DTOs because they are already the
+raw-storage shape the mappers speak, but its `formatVersion` is separate from `schemaVersion` — the
+two change for different reasons, and a new backup column does not make an old program file wrong.
+The same explicit gate applies: a document from a newer build is refused rather than partially read.
+
+**What travels is the definition, not the history.** The program, its slots, the templates those
+slots name, their planned exercises and sets, and what each slot prescribes. Skips, deload weeks and
+substitutions are keyed by week and are the lifter's record; a received program starts with no past
+rather than with somebody else's.
+
+**Every exercise the document names travels whole.** This is the decision the format forced. A
+template references exercises by id. The seeded library's ids are permanent slugs that mean the same
+thing on every device, so those would resolve anywhere — but an exercise the *user* created carries
+a generated id that means nothing on the receiver. Rather than branch on seeded-versus-custom (which
+would need a list of slugs and would still lose a user's exercise the moment a seed changed), the
+document carries the definition of **every** exercise its templates name. The receiver inserts what
+it does not already have, keyed by the id the document used, so a seeded row simply finds itself
+present and a user's exercise is recreated.
+
+**Loading merges and overwrites nothing.** Every insert ignores a row whose id is already present,
+which makes loading the same file twice a no-op rather than a second copy and means a document can
+never cost the user a program they wrote. Two consequences are deliberate. The imported program
+arrives **inactive and at the end of the list**, because following a program is a choice rather than
+something a file makes (P3.3's "a new program is not made active") and the authored order belongs to
+the user (P3.12). And a movement whose exercise is neither carried nor present on the device is
+**dropped**, because the foreign key would otherwise roll the whole document back — one missing
+exercise is not a reason to refuse a program. The load reports the counts, including what it
+dropped, so the outcome is said rather than guessed.
+
 ## P3.3
 
 Programs. The shape was decided before the code, and the interesting part is what each

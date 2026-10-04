@@ -63,6 +63,7 @@ import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.CenteredMessage
+import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.shortLabel
@@ -86,6 +87,11 @@ fun ProgramEditorRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     val currentOnBack by rememberUpdatedState(onBack)
+
+    // Exporting reports through the editor's own host (ROADMAP N47). The file write is the
+    // composable's, because it holds the `Uri`.
+    var transferMessage by remember { mutableStateOf<String?>(null) }
+    val exportProgram = rememberProgramExport(viewModel) { transferMessage = it }
 
     // Deleting — or opening a program that is already gone — leaves the editor, rather than
     // leaving an empty shell behind with a live Delete button.
@@ -112,6 +118,9 @@ fun ProgramEditorRoute(
                 viewModel.onSetSlotExercisePlan(slotId, exerciseId, rest, cue)
             },
         ),
+        onExportProgram = exportProgram,
+        transferMessage = transferMessage,
+        onDismissTransferMessage = { transferMessage = null },
         onDismissMessage = viewModel::onErrorShown,
         onBack = onBack,
         modifier = modifier,
@@ -135,6 +144,9 @@ fun ProgramEditorScreen(
     onEditPrescription: (String) -> Unit = {},
     onClosePrescription: () -> Unit = {},
     prescriptionActions: PrescriptionActions = PrescriptionActions(),
+    onExportProgram: (() -> Unit)? = null,
+    transferMessage: String? = null,
+    onDismissTransferMessage: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
@@ -145,6 +157,7 @@ fun ProgramEditorScreen(
         snackbarHostState = snackbarHostState,
         onDismiss = onDismissMessage,
     )
+    MessageSnackbar(transferMessage, snackbarHostState, onDismissTransferMessage)
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -154,6 +167,7 @@ fun ProgramEditorScreen(
                 name = state.program?.name,
                 onBack = onBack,
                 onDelete = { confirmingDelete = true },
+                onExport = onExportProgram,
             )
         },
         floatingActionButton = {
@@ -273,6 +287,7 @@ private fun ProgramEditorTopBar(
     name: String?,
     onBack: () -> Unit,
     onDelete: () -> Unit,
+    onExport: (() -> Unit)? = null,
 ) {
     TopAppBar(
         title = { Text(name ?: stringResource(R.string.program_edit_title)) },
@@ -285,6 +300,15 @@ private fun ProgramEditorTopBar(
             }
         },
         actions = {
+            // Export is per program, so it is here rather than on the list (ROADMAP N47).
+            onExport?.let { export ->
+                TextButton(
+                    onClick = export,
+                    modifier = Modifier.testTag(TestTags.Programs.EXPORT),
+                ) {
+                    Text(stringResource(R.string.program_export))
+                }
+            }
             IconButton(
                 onClick = onDelete,
                 modifier = Modifier.testTag(TestTags.Programs.DELETE),

@@ -308,6 +308,10 @@ object TestTags {
         const val PICKER = "program_template_picker"
         const val PICKER_EMPTY = "program_template_picker_empty"
 
+        /** Carrying a program as a file (ROADMAP N47): the load action and the export action. */
+        const val LOAD = "program_load"
+        const val EXPORT = "program_export"
+
         /** The point-of-start question (P3.3): the missed day, and the two answers. */
         const val SKIP_PROMPT = "program_skip_prompt"
         const val SKIP_DO_NOW = "program_skip_do_now"

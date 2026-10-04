@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -82,6 +83,15 @@ class ProgramsViewModel @Inject constructor(
     fun onCreatedHandled() {
         _created.value = null
     }
+
+    /**
+     * Loads one program document (ROADMAP N47).
+     *
+     * Suspending and returned rather than pushed into state: the file read belongs to the
+     * composable, which holds the `Uri`, and the screen words the summary.
+     */
+    suspend fun importDocument(text: String): DataResult<ProgramImportSummary> =
+        repository.importProgramDocument(text)
 
     fun onErrorShown() {
         error.value = null

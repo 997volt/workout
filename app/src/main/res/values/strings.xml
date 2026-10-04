@@ -500,6 +500,18 @@
     <string name="programs_empty_hint">A program is your workouts in the order you train them, with a day for each.</string>
     <string name="program_new">New program</string>
     <string name="program_default_name">New program</string>
+    <!-- Carrying one program to another device (ROADMAP N47): a document holding the program, its
+         templates and their planned work, plus the definition of every exercise it names. -->
+    <string name="program_load">Load</string>
+    <string name="program_export">Export</string>
+    <string name="program_loaded">Program loaded.</string>
+    <string name="program_already_loaded">That program is already here.</string>
+    <plurals name="program_load_dropped">
+        <item quantity="one">%1$d movement was skipped: its exercise is not on this device.</item>
+        <item quantity="other">%1$d movements were skipped: their exercises are not on this device.</item>
+    </plurals>
+    <string name="program_exported">Program file written.</string>
+    <string name="program_export_failed">Couldn’t write the program file.</string>
     <string name="program_use">Use</string>
     <string name="program_in_use">In use</string>
     <string name="program_edit_title">Program</string>
