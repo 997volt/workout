@@ -17,11 +17,62 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-Nothing is planned. The deferred scope of the last two rounds — P3.3's and P3.5's, programmed as
-P3.8-P3.16 — was built and shipped at 1.10, with its entries in [CHANGELOG.md](CHANGELOG.md). A candidate
-graduates to this section — gaining an id and a spelled-out decision rather than a wish — when it is
-picked up, so an empty *Next* is a state rather than a gap: the two queues below are where unplanned
-work lives, *Later* for what is self-contained and *Parked* for what is a product in its own right.
+One batch, taken from using the app rather than from either queue, and all of it about the workout
+screen while a session runs. A candidate graduates to this section — gaining an id and a spelled-out
+decision rather than a wish — when it is picked up, so what stands here is committed work; the two
+queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what is a
+product in its own right.
+
+### The active workout's look
+
+- **N49 — the Log set button and the screen's links are re-coloured against the one theme.** *Log set* is
+  a `FilledTonalButton`, and on the dark page it reads as the loudest thing on a screen where it is only
+  the next step; the clickable text beside and above it — *Done*, *Reopen*, *Superset with above*, *Use
+  suggestion* — sits at the other end, too dim to read as tappable. The complaint is the pair, so both
+  move: the log action to a quieter container than the primary pill, the links to a contrast that can be
+  read without hunting. Rejected: restyling only one of the two, which would move the imbalance rather
+  than settle it, and editing the palette itself, because the palette is the app's and the defect is
+  which token these controls reach for.
+
+### Logging a set
+
+- **N50 — "one more rep than last time" is reworked.** The proposal and the sentence that carries it
+  (N22, N33) are confusing as they stand. The replacement is deliberately not decided here and is spelled
+  out when this is picked up; what is committed now is that the current shape does not survive it.
+
+- **N51 — logging a set opens the dialog that editing one opens.** *Log set* writes the offered set in one
+  tap, so a set that differs from the prefill is logged and then edited — the same `SetEditorDialog`
+  reached one step later, with the first step having decided something the user did not mean. The button
+  opens that dialog prefilled from the same offer and commits on Save. The one-tap path goes with it, and
+  the cost is accepted rather than marked: every set takes a confirmation now, because the set is the
+  record and the record is worth reading before it is written. That inverts B7 for this button — it no
+  longer writes the set its label describes, because the label no longer describes one.
+
+### Running a workout
+
+- **N52 — the workout says when the planned work is done.** Starting from a program's slot seeds the
+  plan's exercises and their planned sets, and logging has no ceiling: past the last planned set the user
+  can keep logging with nothing to notice the day is complete, and `comparePlanToActual` says so only in
+  the review, after *Finish*. The notice arrives the moment the last planned set is written, in the app's
+  own in-app terms — a chime and a line on the screen, the way a finished rest already behaves, never a
+  system notification: the app declares no notification permission and B37 removed the channel it used to
+  create. What the notice then offers — finishing the workout, or standing there as information — is
+  settled when it is picked up.
+
+- **N53 — an exercise's rare actions move into its own overflow menu.** *Superset with above* is a text
+  button in every exercise header and *Delete* an icon beside *Done*; both are rarely used, and the header
+  is read constantly mid-session, so the two of them cost more attention than they earn. They move into a
+  per-exercise ⋮ menu, the shape the workout-level actions used until N42 removed the one that no longer
+  had a reason to exist. Delete keeps its confirmation (B2) and pairing with the exercise above keeps its
+  row-0 exclusion (B28), because the action moved rather than changed.
+
+- **N54 — exercises can be reordered while the workout runs, without touching the template.** Order
+  matters mid-session — a rack taken, equipment moved — and today the only way to change it is to edit the
+  template, which rewrites every future run for a reason that belonged to one afternoon. The session's own
+  order becomes editable from the workout screen and the template is never written, which is N16 ("a
+  template is living, and a session reads it at the start") applied to order rather than to targets.
+  Whether the new order is persisted with the session, and what it does to an exercise inside a superset
+  group, is settled when it is picked up.
 
 ## Later (still self-contained)
 
