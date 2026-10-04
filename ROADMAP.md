@@ -42,23 +42,26 @@ lives, *Later* for what is self-contained and *Parked* for what is a product in 
 
 - **N51 — logging a set opens the dialog that editing one opens.** *Log set* writes the offered set in one
   tap, so a set that differs from the prefill is logged and then edited — the same `SetEditorDialog`
-  reached one step later, with the first step having decided something the user did not mean. The button
-  opens that dialog prefilled from the same offer and commits on Save. The one-tap path goes with it, and
-  the cost is accepted rather than marked: every set takes a confirmation now, because the set is the
-  record and the record is worth reading before it is written. That inverts B7 for this button — it no
-  longer writes the set its label describes, because the label no longer describes one.
+  reached one step later, with the first step having decided something the user did not mean. Logging *is*
+  that dialog, prefilled from the same offer and committed on Save, and the one-tap path goes: it is not
+  wanted any more, which is the decision rather than a cost to weigh. The dialog already carries the role
+  selector (N14), so the armed-role picker beside the button goes with the one-tap path, and the plan's
+  next unlogged set becomes the dialog's initial role the way B48 already arms it. That inverts B7 for this
+  button — it no longer writes the set its label describes, because the label no longer describes one.
 
 ### Running a workout
 
-- **N52 — the workout says when the planned work is done.** Starting from a program's slot seeds the
-  plan's exercises and their planned sets, and logging has no ceiling: past the last planned set the user
-  can keep logging with nothing to notice the day is complete, and `comparePlanToActual` says so only in
-  the review, after *Finish*. The notice is a **popup** — the app's own in-app dialog, the shape *Done*'s
-  rating prompt and the remove-exercise confirmation already use — raised the moment the last planned set
-  is written, never a system notification: the app declares no notification permission and B37 removed the
-  channel it used to create. It says the planned work is done, and what it offers — finish the workout,
-  keep logging, or nothing but a dismissal — is settled when it is picked up, as is whether the rest
-  chime's tone accompanies it.
+- **N52 — an exercise with a plan behind it notices when its planned sets are all written.** Starting from
+  a program's slot seeds the plan's exercises and their planned sets, and logging has no ceiling: past the
+  last planned set the exercise keeps accepting sets with nothing to say its work is done, and
+  `comparePlanToActual` says so only in the review, after *Finish*. The notice is **per exercise**, raised
+  the moment the last of *that* exercise's planned sets is written — not one popup for the whole workout —
+  and it is the **Log set control itself that changes** rather than a dialog: N51 already puts a dialog in
+  front of every set, and a second one would interrupt the next exercise's first set. How the control
+  changes is deliberately left open, because the ask was that it is not yet settled: a tick and a *Done*
+  word, a quieter "log an extra set", a line beside it saying the plan is met, or the rest chime's tone
+  marking it. It stays in-app whatever shape it takes: the app declares no notification permission and B37
+  removed the channel it used to create.
 
 - **N53 — an exercise's rare actions move into its own overflow menu.** *Superset with above* is a text
   button in every exercise header and *Delete* an icon beside *Done*; both are rarely used, and the header
@@ -107,13 +110,13 @@ lives, *Later* for what is self-contained and *Parked* for what is a product in 
 
 ### History
 
-- **N57 — a history row carries the weekday, not only the date.** The row's headline is a `MEDIUM` date
-  ("Oct 4, 2026"), and the weekday is the part a lifter navigates by — which day of the week this was —
-  while the month header above already carries the month the date repeats. The headline becomes the date
-  *with* its weekday, in the user's language, the way `HistoryFormat.month` already does it: a display name
-  rather than a hard-coded pattern, read in the session's own zone (N25, B38). One edge: `HistoryFormat.date`
-  is shared with home's *Recent* row, so the change either moves both or gives history a formatter of its
-  own — settled with the change, since the ask names history.
+- **N57 — a history row carries the weekday, not only the date, and home's recent rows with it.** The row's
+  headline is a `MEDIUM` date ("Oct 4, 2026"), and the weekday is the part a lifter navigates by — which
+  day of the week this was — while the month header above already carries the month the date repeats. The
+  headline becomes the date *with* its weekday, in the user's language, the way `HistoryFormat.month`
+  already does it: a display name rather than a hard-coded pattern, read in the session's own zone (N25,
+  B38). The formatter is shared with home's *Recent* row, so one change moves both surfaces and a finished
+  workout reads the same way wherever it is listed.
 
 - **N58 — a workout started from a template shows that template's name in history.** The session already
   stores `templateId` when it starts from a template — a program's slot included — but the history
