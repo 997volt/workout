@@ -27,12 +27,14 @@ lives, *Later* for what is self-contained and *Parked* for what is a product in 
 
 - **N49 — the Log set button and the screen's links are re-coloured against the one theme.** *Log set* is
   a `FilledTonalButton`, and on the dark page it reads as the loudest thing on a screen where it is only
-  the next step; the clickable text beside and above it — *Done*, *Reopen*, *Superset with above*, *Use
-  suggestion* — sits at the other end, too dim to read as tappable. The complaint is the pair, so both
-  move: the log action to a quieter container than the primary pill, the links to a contrast that can be
-  read without hunting. Rejected: restyling only one of the two, which would move the imbalance rather
-  than settle it, and editing the palette itself, because the palette is the app's and the defect is
-  which token these controls reach for.
+  the next step; the clickable text beside and above it — *Done*, *Reopen*, *Use suggestion* — sits at the
+  other end, too dim to read as tappable. The complaint is the pair, so both move: the log action to a
+  quieter container than the primary pill, the links to a contrast that can be read without hunting.
+  *Superset with above* is deliberately absent from that list: N53 moves it into the exercise's overflow
+  menu, so what it looks like afterwards is a menu item's colour and belongs to that change, not this one.
+  Rejected: restyling only one of the two, which would move the imbalance rather than settle it, and
+  editing the palette itself, because the palette is the app's and the defect is which token these controls
+  reach for.
 
 ### Logging a set
 
@@ -68,7 +70,9 @@ lives, *Later* for what is self-contained and *Parked* for what is a product in 
   is read constantly mid-session, so the two of them cost more attention than they earn. They move into a
   per-exercise ⋮ menu, the shape the workout-level actions used until N42 removed the one that no longer
   had a reason to exist. Delete keeps its confirmation (B2) and pairing with the exercise above keeps its
-  row-0 exclusion (B28), because the action moved rather than changed.
+  row-0 exclusion (B28), because the action moved rather than changed. The moved superset item becomes a
+  menu entry rather than a link, so its colour is this change's to answer for — N49 recolours only the
+  links that stay on the screen.
 
 - **N54 — exercises can be reordered while the workout runs, without touching the template.** Order
   matters mid-session — a rack taken, equipment moved — and today the only way to change it is to edit the
@@ -102,11 +106,14 @@ lives, *Later* for what is self-contained and *Parked* for what is a product in 
   column, the `setWeekday` path through DAO, repository and editor, and the `pinnedFor` fallback in
   `todaysPlanFor`, leaving a program's slots as the only source of a dated plan. With no active program
   there is then no *Today* list, which is the point rather than a regression: a day is a scheduling fact,
-  and scheduling is what a program is for. Nothing settled is contradicted — N16's "a scheduled plan is a
-  living template" survives with the *slot* as the scheduled thing, and P3.3's weekday-less, order-only
-  slot is untouched. Two edges are settled when it is taken: dropping the column is a migration that
-  ships with the code that stops reading it (never ahead of it), and the backup DTO carries the same
-  weekday, so whether that field stays for older files' sake or leaves with the column is decided there.
+  and scheduling is what a program is for. The loss is accepted rather than mitigated: a template pinned to
+  a day today comes out of the migration with no day at all, and getting the schedule back means putting it
+  in a program — which is the rule being stated, not a migration that failed. Nothing settled is
+  contradicted — N16's "a scheduled plan is a living template" survives with the *slot* as the scheduled
+  thing, and P3.3's weekday-less, order-only slot is untouched. Two edges are settled when it is taken:
+  dropping the column is a migration that ships with the code that stops reading it (never ahead of it),
+  and the backup DTO carries the same weekday, so whether that field stays for older files' sake or leaves
+  with the column is decided there.
 
 ### History
 
@@ -123,11 +130,15 @@ lives, *Later* for what is self-contained and *Parked* for what is a product in 
   projection never selects it, so a finished *Push A* and a finished empty workout are indistinguishable in
   the list, and the name is the half of the row that says what the session *was*. The row keeps the weekday
   and date as its headline (N57), and the name joins the supporting line beside the duration, sets and
-  volume. The edge is where the name comes from: reading the live template relabels the past when the
-  template is renamed (a deleted one still reads, because the delete is soft), while snapshotting the name
-  onto the session makes it part of the record at the cost of a column and a migration. That choice is
-  taken with the change — it is N16's question ("a template is living, and a session reads it at the
-  start") asked about the name rather than about targets.
+  volume. It is read **live** from the template row, so renaming a template relabels the past — accepted,
+  because N16's template is living and the workout's own identity is when it happened, which the headline
+  carries. Deletion is the softer case and the same read answers it: `deleteTemplate` is a soft delete, so
+  the row and its name are still there and a past workout goes on saying which workout it was — the app
+  already keeps a deleted template for the export (P1.12), and hiding it from history would take an
+  explicit filter this change does not add. Snapshotting the name onto the session is rejected: it costs a
+  column and a migration and changes only what a *rename* does, which is the half already accepted. One
+  edge: a *repeat* (N48) starts a session with no `templateId` today, so a repeated workout shows no name —
+  whether the repeat should carry its source's template id is settled with the change.
 
 ## Later (still self-contained)
 
