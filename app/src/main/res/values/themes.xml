@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Compose supplies the real theming; this XML theme only dresses the window. -->
-    <style name="Theme.AndroidApp" parent="@android:style/Theme.Material.Light.NoActionBar" />
+    <!--
+      Compose supplies the real theming; this XML theme only dresses the window.
+
+      The dark parent and the explicit `windowBackground` are not cosmetic. This app is dark
+      wherever it runs, so a light window background shows a white flash on every cold start for
+      anyone whose device is in light mode — the one frame where the app looks broken.
+    -->
+    <style name="Theme.AndroidApp" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/ink</item>
+    </style>
 </resources>

@@ -6,8 +6,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.Box
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import com.example.androidapp.ui.navigation.AppNavHost
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -23,7 +26,14 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Dark bars, unconditionally. `enableEdgeToEdge()` with no arguments picks the status
+        // bar's icon tint from the *system* light/dark setting, which on a light-mode device
+        // draws dark icons onto this app's near-black bars — the clock and the battery simply
+        // vanish. The app has one theme, so the bars have one setting.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
+            navigationBarStyle = SystemBarStyle.dark(Color.Transparent.toArgb()),
+        )
         setContent {
             AndroidAppTheme {
                 // Test tags as resource ids, so a device-side tool can address a control by *identity* rather

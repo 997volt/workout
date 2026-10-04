@@ -17,6 +17,9 @@
     <string name="home_first_run">No workouts yet</string>
     <string name="home_first_run_hint">Tap Start workout to log your first one.</string>
     <string name="home_no_recent">Nothing recent</string>
+    <!-- What tapping a workout row does. The row's own headline is a date, which names the
+         workout but not the action, so a row that navigates must say where to. -->
+    <string name="home_open_workout">Open workout</string>
 
     <string name="library_start_workout">Start workout</string>
     <string name="library_resume_workout">Resume workout</string>

@@ -7,14 +7,17 @@ import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import com.example.androidapp.R
@@ -120,7 +123,14 @@ fun AppTabBar(
     onSelect: (AppTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    NavigationBar(modifier = modifier.testTag(TestTags.TAB_BAR)) {
+    NavigationBar(
+        modifier = modifier.testTag(TestTags.TAB_BAR),
+        // The raised tone, so the bar separates from the page by colour rather than by a rule:
+        // a 1dp line under a bar that is already the width of the screen is a second way of
+        // saying what the tone already said.
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 0.dp,
+    ) {
         AppTab.entries.forEach { tab ->
             NavigationBarItem(
                 selected = tab == selected,
@@ -128,12 +138,36 @@ fun AppTabBar(
                 // Null, because the label below already says it: a description here would make TalkBack
                 // read "Workouts, Workouts, tab".
                 icon = { Icon(imageVector = tab.icon, contentDescription = null) },
-                label = { Text(stringResource(tab.labelRes)) },
+                label = {
+                    Text(
+                        text = stringResource(tab.labelRes),
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    // White, not the accent. The pill behind the selected icon is already the
+                    // accent, and a screen whose fifth of the bar is tinted reads as a button;
+                    // the reference tints the shape and leaves the glyph alone.
+                    selectedIconColor = MaterialTheme.colorScheme.onSurface,
+                    selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = SELECTED_WASH),
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
                 modifier = Modifier.testTag(tab.testTag),
             )
         }
     }
 }
+
+/**
+ * How much of the accent survives behind a selected tab.
+ *
+ * A wash rather than the colour itself: at full strength the indicator out-weighs the screen
+ * title and reads as a call to action, and the bar is a map, not a prompt.
+ */
+private const val SELECTED_WASH = 0.22f
+
 
 /**
  * Switches tabs (ROADMAP N34).

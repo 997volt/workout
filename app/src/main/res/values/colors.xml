@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The window colour, before Compose has drawn anything.
+
+      Kept in step with `Ink` in ui/theme/Color.kt by hand: this file is read by the window
+      manager before the process has a Kotlin runtime, so it cannot be the same declaration.
+    -->
+    <color name="ink">#FF0A0A0F</color>
+</resources>

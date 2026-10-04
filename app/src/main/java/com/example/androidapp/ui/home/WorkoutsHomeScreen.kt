@@ -7,25 +7,26 @@ import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.transfer.ClearOutcome
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -35,7 +36,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -49,29 +49,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
-import com.example.androidapp.domain.Weight
-import com.example.androidapp.domain.model.zoneIdOrNull
-import java.time.ZoneId
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.ClearEverythingDialog
 import com.example.androidapp.ui.components.MessageSnackbar
+import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.longLabel
-import com.example.androidapp.ui.history.HistoryFormat
+import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.programs.programStartGate
 import com.example.androidapp.ui.programs.StartIntent
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.transfer.DataTransferViewModel
 import com.example.androidapp.ui.transfer.rememberDataTransferActions
 import com.example.androidapp.ui.workout.WorkoutClock
-import com.example.androidapp.ui.workout.WorkoutFormat
 import java.time.Instant
 
 @Composable
@@ -229,7 +226,10 @@ fun WorkoutsHomeScreen(
                 onClear = onClearData?.let { { confirmingClear = true } },
             )
         },
-        floatingActionButton = {
+        // A bottom bar rather than a floating button. The primary action on this screen is the
+        // one thing the reference never floats: it is a full-width pill resting on the bar,
+        // because the thing you came to do should not be a target you have to aim at.
+        bottomBar = {
             StartActions(
                 activeWorkout = state.activeWorkout,
                 clock = clock,
@@ -357,156 +357,11 @@ private fun SubstituteDialog(
 
 
 /**
- * Today's plans and the recent workouts, in one list (ROADMAP N16).
+ * The list body, split out so the screen itself stays a scaffold and a state.
  *
- * Split out of the body because the two lists together are long enough to be their own
- * composable — and because "today" and "recent" are different questions that happen to
- * share a scroll.
+ * Lives here rather than beside the rows it draws because it is a decision about *state* — which
+ * of the four things the screen can be showing — and the rows are only one of the four.
  */
-@Composable
-private fun TodayAndRecent(
-    state: WorkoutsHomeUiState,
-    onOpenWorkout: (String) -> Unit,
-    onStartTemplate: (TodayPlan) -> Unit,
-    onSubstitute: (TodayPlan) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 88.dp), // clear the FAB
-    ) {
-        todayPlanItems(state = state, onStartTemplate = onStartTemplate, onSubstitute = onSubstitute)
-        nextUpItems(state = state, onStartTemplate = onStartTemplate)
-        recentItems(state = state, onOpenWorkout = onOpenWorkout)
-    }
-}
-
-/** Today's scheduled plans, headed by the weekday (ROADMAP N16, P3.3, P3.11). */
-private fun LazyListScope.todayPlanItems(
-    state: WorkoutsHomeUiState,
-    onStartTemplate: (TodayPlan) -> Unit,
-    onSubstitute: (TodayPlan) -> Unit,
-) {
-    if (state.todaysPlan.isEmpty()) return
-    item(key = "today") {
-        SectionHeader(text = stringResource(R.string.home_today, state.today.longLabel()))
-    }
-    items(state.todaysPlan.size, key = { state.todaysPlan[it].id }) { index ->
-        val plan = state.todaysPlan[index]
-        ListItem(
-            headlineContent = { Text(plan.name) },
-            supportingContent = {
-                Text(
-                    pluralStringResource(
-                        R.plurals.home_plan_exercises,
-                        plan.exerciseCount,
-                        plan.exerciseCount,
-                    ),
-                )
-            },
-            trailingContent = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Only a program slot can be substituted: the event is keyed by slot and week
-                    // (P3.11), and a pinned plan has no slot to key it by.
-                    if (plan.slotId != null) {
-                        TextButton(
-                            onClick = { onSubstitute(plan) },
-                            modifier = Modifier.testTag(TestTags.homeSubstitute(plan.id)),
-                        ) {
-                            Text(stringResource(R.string.home_substitute))
-                        }
-                    }
-                    TextButton(
-                        // The row's identity is the slot's, and the whole row travels: what starts
-                        // is the template, and the slot carries its prescription (P3.3, P3.8).
-                        onClick = { onStartTemplate(plan) },
-                        modifier = Modifier.testTag(TestTags.homeStartPlan(plan.id)),
-                    ) {
-                        Text(stringResource(R.string.home_plan_start))
-                    }
-                }
-            },
-        )
-        HorizontalDivider()
-    }
-}
-
-/** Where each active program's run is, for a program with nothing scheduled today (ROADMAP P3.9). */
-private fun LazyListScope.nextUpItems(
-    state: WorkoutsHomeUiState,
-    onStartTemplate: (TodayPlan) -> Unit,
-) {
-    if (state.nextUp.isEmpty()) return
-    item(key = "next-up") {
-        SectionHeader(text = stringResource(R.string.home_next_up))
-    }
-    items(state.nextUp.size, key = { state.nextUp[it].plan.id }) { index ->
-        val nextUp = state.nextUp[index]
-        NextUpRow(nextUp = nextUp, onStart = { onStartTemplate(nextUp.plan) })
-        HorizontalDivider()
-    }
-}
-
-/** The recent workouts, newest first (ROADMAP N1). */
-private fun LazyListScope.recentItems(
-    state: WorkoutsHomeUiState,
-    onOpenWorkout: (String) -> Unit,
-) {
-    if (state.recent.isEmpty()) return
-    item(key = "recent") {
-        SectionHeader(text = stringResource(R.string.home_recent))
-    }
-    items(state.recent.size, key = { state.recent[it].id }) { index ->
-        RecentWorkoutRow(
-            workout = state.recent[index],
-            onClick = { onOpenWorkout(state.recent[index].id) },
-        )
-    }
-}
-
-@Composable
-private fun SectionHeader(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-    )
-}
-
-/**
- * One program's next-up row (ROADMAP P3.9).
- *
- * The program's name is part of the supporting line because more than one program may be active
- * (P3.12), so two next-up rows have to be tellable apart.
- */
-@Composable
-private fun NextUpRow(
-    nextUp: NextUp,
-    onStart: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val exercises = pluralStringResource(
-        R.plurals.home_plan_exercises,
-        nextUp.plan.exerciseCount,
-        nextUp.plan.exerciseCount,
-    )
-    ListItem(
-        headlineContent = { Text(nextUp.plan.name) },
-        supportingContent = { Text(listOf(nextUp.programName, exercises).joinToString(" · ")) },
-        trailingContent = {
-            TextButton(
-                onClick = onStart,
-                modifier = Modifier.testTag(TestTags.homeNextUp(nextUp.plan.id)),
-            ) {
-                Text(stringResource(R.string.home_plan_start))
-            }
-        },
-        modifier = modifier,
-    )
-}
-
-/** The list body, split out so the screen itself stays a scaffold and a state. */
 @Composable
 private fun HomeContent(
     state: WorkoutsHomeUiState,
@@ -544,60 +399,31 @@ private fun HomeContent(
 
             else -> LazyColumn(
                 modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 88.dp), // clear the FAB
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 item(key = "header") {
-                    Text(
+                    // "See all" moved onto the heading it belongs to. It was a row of the list,
+                    // which made it read as one more workout; it is a way out of the section, so
+                    // it sits with the section's name.
+                    SectionHeader(
                         text = stringResource(R.string.home_recent),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        trailing = {
+                            TextButton(
+                                onClick = onOpenHistory,
+                                modifier = Modifier.testTag(TestTags.HOME_SEE_ALL),
+                            ) {
+                                Text(stringResource(R.string.home_see_all))
+                            }
+                        },
                     )
                 }
                 items(state.recent.size, key = { state.recent[it].id }) { index ->
                     val workout = state.recent[index]
                     RecentWorkoutRow(workout = workout, onClick = { onOpenWorkout(workout.id) })
-                    HorizontalDivider()
-                }
-                item(key = "see-all") {
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.home_see_all)) },
-                        modifier = Modifier
-                            .testTag(TestTags.HOME_SEE_ALL)
-                            .clickable(onClick = onOpenHistory),
-                    )
                 }
             }
         }
-}
-
-@Composable
-private fun RecentWorkoutRow(
-    workout: WorkoutSummary,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val setCount = pluralStringResource(R.plurals.history_sets, workout.setCount, workout.setCount)
-
-    ListItem(
-        headlineContent = {
-            // The session's own zone, like history and the workout detail (ROADMAP B33). Omitting it
-            // here was a dropped argument rather than missing data, and it made one workout read as
-            // two different dates on two screens.
-            Text(
-                HistoryFormat.date(
-                    workout.startedAt,
-                    zone = workout.zoneIdOrNull() ?: ZoneId.systemDefault(),
-                ),
-            )
-        },
-        supportingContent = {
-            val duration = workout.duration?.let { WorkoutFormat.elapsed(it) }.orEmpty()
-            val volume = stringResource(R.string.history_volume, Weight.kilograms(workout.volumeGrams))
-            Text(listOf(duration, setCount, volume).filter { it.isNotEmpty() }.joinToString(" · "))
-        },
-        modifier = modifier.testTag(TestTags.HOME_RECENT_ROW).clickable(onClick = onClick),
-    )
 }
 
 /**
@@ -619,33 +445,41 @@ private fun StartActions(
     onRepeatLast: () -> Unit = {},
 ) {
     Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.End,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (activeWorkout == null) {
-            if (canRepeat) {
-                TextButton(
-                    onClick = onRepeatLast,
-                    modifier = Modifier
-                        .padding(bottom = 8.dp)
-                        .testTag(TestTags.HOME_REPEAT_LAST),
-                ) {
-                    Text(stringResource(R.string.home_repeat_last))
-                }
-            }
-            FilledTonalButton(
-                onClick = onStartFromTemplate,
-                modifier = Modifier
-                    .padding(bottom = 8.dp)
-                    .testTag(TestTags.HOME_START_FROM_TEMPLATE),
+            // The pair is a row of links above the pill, not a second pill: with a workout
+            // already open there is no choice to make, and while there is one, only the start
+            // itself is the primary act.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(stringResource(R.string.home_start_from_template))
+                if (canRepeat) {
+                    TextButton(
+                        onClick = onRepeatLast,
+                        modifier = Modifier.testTag(TestTags.HOME_REPEAT_LAST),
+                    ) {
+                        Text(stringResource(R.string.home_repeat_last))
+                    }
+                }
+                TextButton(
+                    onClick = onStartFromTemplate,
+                    modifier = Modifier.testTag(TestTags.HOME_START_FROM_TEMPLATE),
+                ) {
+                    Text(stringResource(R.string.home_start_from_template))
+                }
             }
         }
         StartOrResumeButton(
             activeWorkout = activeWorkout,
             clock = clock,
             onClick = onStartWorkout,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -675,34 +509,42 @@ private fun StartOrResumeButton(
         ""
     }
 
-    ExtendedFloatingActionButton(
+    // A filled pill rather than the extended floating button this used to be, and full width in
+    // its bar: the reference's own call to action is a wide violet pill resting on the bottom of
+    // the screen, and it is the one shape a user reads as "this is the thing to do here".
+    Button(
         // Tagged by state, not caption: which of the two shows is the behaviour
         // under test, and the captions are user-visible text a translation changes.
-        modifier = modifier.testTag(
-            if (resuming) TestTags.HOME_RESUME else TestTags.HOME_START,
-        ),
+        modifier = modifier
+            .heightIn(min = BUTTON_HEIGHT)
+            .testTag(if (resuming) TestTags.HOME_RESUME else TestTags.HOME_START),
         onClick = onClick,
-        text = {
-            Text(
-                text = if (resuming) {
-                    listOf(
-                        stringResource(R.string.library_resume_workout),
-                        elapsed,
-                        exercises,
-                    ).filter { it.isNotEmpty() }.joinToString(" · ")
-                } else {
-                    stringResource(R.string.library_start_workout)
-                },
-            )
-        },
-        icon = {
-            Icon(
-                imageVector = if (resuming) Icons.Filled.PlayArrow else Icons.Filled.Add,
-                contentDescription = null,
-            )
-        },
-    )
+    ) {
+        Icon(
+            imageVector = if (resuming) Icons.Filled.PlayArrow else Icons.Filled.Add,
+            contentDescription = null,
+            modifier = Modifier.padding(end = 8.dp),
+        )
+        Text(
+            text = if (resuming) {
+                listOf(
+                    stringResource(R.string.library_resume_workout),
+                    elapsed,
+                    exercises,
+                ).filter { it.isNotEmpty() }.joinToString(" · ")
+            } else {
+                stringResource(R.string.library_start_workout)
+            },
+            // A resumed session's caption carries an elapsed time and an exercise count, so it
+            // is the one that can outgrow the bar; the label must not push the icon out.
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
+
+/** Comfortably over the 48dp minimum target, and the height the reference's pill reads at. */
+private val BUTTON_HEIGHT = 52.dp
 
 @Preview(showBackground = true)
 @Composable
@@ -748,12 +590,17 @@ private fun HomeTopBar(
 ) {
     var menuOpen by remember { mutableStateOf(false) }
 
-    TopAppBar(
+    // Centred, and the title is an eyebrow rather than a headline: the reference puts the
+    // screen's name in small tracked capitals and lets the content be the loudest thing on the
+    // screen. `CenterAlignedTopAppBar` and not `TopAppBar`, because a small tracked title
+    // hanging off the left edge under a back arrow is the one arrangement that looks like a
+    // mistake rather than a decision.
+    CenterAlignedTopAppBar(
         modifier = modifier,
         title = {
-            Text(
+            TopBarTitle(
                 text = stringResource(R.string.home_title),
-                modifier = Modifier.testTag(TestTags.HOME_TITLE),
+                testTag = TestTags.HOME_TITLE,
             )
         },
         actions = {
