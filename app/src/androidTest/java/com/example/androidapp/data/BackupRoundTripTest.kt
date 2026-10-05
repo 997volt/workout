@@ -299,11 +299,12 @@ class BackupRoundTripTest {
                 templateId = "template-1",
                 exerciseId = "back-squat",
                 position = 0,
-                // The plan's rest and cue, and the plan's sets: N14's table is the one
+                // The plan's rest, cue and one target RPE, and the plan's sets: N14's table is the one
                 // most easily forgotten, because a plan that loses its sets still
                 // restores as a template with the right exercises in it.
                 restSeconds = 180,
                 techniqueNote = "Slow descent",
+                targetRpeHalves = 17,
                 createdAt = 1_000L,
                 updatedAt = 1_000L,
                 deletedAt = null,
@@ -390,6 +391,7 @@ class BackupRoundTripTest {
         val exercise = database.backupDao().allTemplateExercises().single()
         assertEquals(180, exercise.restSeconds)
         assertEquals("Slow descent", exercise.techniqueNote)
+        assertEquals("the exercise's one target RPE survives (N59, amended)", 17, exercise.targetRpeHalves)
     }
 
     @Test
@@ -442,6 +444,7 @@ class BackupRoundTripTest {
                 exerciseId = "back-squat",
                 restSeconds = 150,
                 techniqueNote = "brace hard",
+                targetRpeHalves = 16,
                 createdAt = 1L,
                 updatedAt = 1L,
                 deletedAt = null,
@@ -477,6 +480,7 @@ class BackupRoundTripTest {
         val exercise = database.programPrescriptionDao().observeSlotExercises("slot1").first().single()
         assertEquals(150, exercise.restSeconds)
         assertEquals("brace hard", exercise.techniqueNote)
+        assertEquals("the slot's one target RPE survives (N59, amended)", 16, exercise.targetRpeHalves)
 
         val set = database.programPrescriptionDao().observeSlotSets("slot1").first().single()
         assertEquals(SetType.TOP_SET, set.role)

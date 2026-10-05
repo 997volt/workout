@@ -59,7 +59,7 @@ fun SlotPrescriptionDialog(
     onAddSet: (String, SlotSetEdit) -> Unit,
     onUpdateSet: (String, SlotSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
-    onSetRestCue: (String, Int?, String?) -> Unit,
+    onSetRestCue: (String, Int?, String?, Int?) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -92,38 +92,27 @@ fun SlotPrescriptionDialog(
     )
 
     editingSet?.let { current ->
-        SlotSetDialog(
-            // Add set starts from the last set this exercise already prescribes (ROADMAP N46), the
-            // same rule as the template's plan dialog. This side needs a lookup rather than one
-            // expression: its sets hang off the editor rather than sitting in local scope, so the
-            // last one is read back through the exercise's prescription.
-            initial = current.set?.toEdit()
-                ?: editor.forExercise(current.exerciseId)?.sets?.lastOrNull()?.toEdit()
-                ?: SlotSetEdit(),
-            isNew = current.set == null,
+        SlotSetForm(
+            editor = editor,
+            current = current,
+            onAddSet = onAddSet,
+            onUpdateSet = onUpdateSet,
             onDismiss = { editingSet = null },
-            onSave = { edit ->
-                if (current.set == null) {
-                    onAddSet(current.exerciseId, edit)
-                } else {
-                    onUpdateSet(current.set.id, edit)
-                }
-                editingSet = null
-            },
         )
     }
 
     restCueFor?.let { exerciseId ->
         val prescribed = editor.forExercise(exerciseId)
-        SlotRestCueDialog(
+        SlotExercisePlanDialog(
             exerciseName = editor.exercises
                 .firstOrNull { it.exerciseId == exerciseId }
                 ?.exerciseName
                 .orEmpty(),
             restSeconds = prescribed?.restSeconds,
             techniqueNote = prescribed?.techniqueNote,
-            onSave = { rest, cue ->
-                onSetRestCue(exerciseId, rest, cue)
+            targetRpeHalves = prescribed?.targetRpeHalves,
+            onSave = { rest, cue, rpe ->
+                onSetRestCue(exerciseId, rest, cue, rpe)
                 restCueFor = null
             },
             onDismiss = { restCueFor = null },
@@ -133,6 +122,39 @@ fun SlotPrescriptionDialog(
 
 /** The set whose form is open, and the exercise it belongs to (P3.8). */
 private data class SetBeingEdited(val exerciseId: String, val set: SlotSet?)
+
+/**
+ * The open set's form, looked up through the exercise's own prescription (P3.8, N46).
+ *
+ * Add set starts from the last set this exercise already prescribes, the same rule as the template's
+ * plan dialog. This side needs a lookup rather than one expression: its sets hang off the editor
+ * rather than sitting in local scope, so the last one is read back through the prescription. File
+ * level so the dialog that opens it stays the length this project allows.
+ */
+@Composable
+private fun SlotSetForm(
+    editor: SlotPrescriptionEditor,
+    current: SetBeingEdited,
+    onAddSet: (String, SlotSetEdit) -> Unit,
+    onUpdateSet: (String, SlotSetEdit) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    SlotSetDialog(
+        initial = current.set?.toEdit()
+            ?: editor.forExercise(current.exerciseId)?.sets?.lastOrNull()?.toEdit()
+            ?: SlotSetEdit(),
+        isNew = current.set == null,
+        onDismiss = onDismiss,
+        onSave = { edit ->
+            if (current.set == null) {
+                onAddSet(current.exerciseId, edit)
+            } else {
+                onUpdateSet(current.set.id, edit)
+            }
+            onDismiss()
+        },
+    )
+}
 
 /** The template's exercises and what the slot prescribes for each, scrolled as one list (P3.8). */
 @Composable
@@ -316,13 +338,19 @@ private fun SlotSetDialog(
  * A holder rather than six `remember`s for the reason the template's own draft is: the parsing
  * and the validation are the same thing read twice, and keeping them together is what stops the
  * Save button enabling on a number the repository would refuse.
+ *
+ * [targetRpeHalves] is carried but **not edited** (N59, amended): the slot's target RPE is one number
+ * per exercise now and lives in the plan dialog behind this one, while a per-set value a
+ * prescription may still hold from before the change is a legacy fallback — so the form round-trips
+ * it untouched rather than clearing a value it no longer shows.
  */
 private data class SlotSetDraft(
     val role: SetType = SetType.NORMAL,
     val weightText: String = "",
     val repsMinText: String = "",
     val repsMaxText: String = "",
-    val rpeText: String = "",
+    /** The slot's legacy per-set target RPE, passed through unchanged, or null (N59). */
+    val targetRpeHalves: Int? = null,
     val percentText: String = "",
     val note: String = "",
 ) {
@@ -335,7 +363,7 @@ private data class SlotSetDraft(
         },
         repsMinText = edit.targetRepsMin?.toString().orEmpty(),
         repsMaxText = edit.targetRepsMax?.toString().orEmpty(),
-        rpeText = edit.targetRpeHalves?.let(Rpe::format).orEmpty(),
+        targetRpeHalves = edit.targetRpeHalves,
         percentText = edit.targetPercentOf1Rm?.toString().orEmpty(),
         note = edit.note.orEmpty(),
     )
@@ -343,7 +371,6 @@ private data class SlotSetDraft(
     val load: Load? get() = Weight.parseLoad(weightText)
     val repsMin: Int? get() = repsMinText.trim().ifEmpty { null }?.toIntOrNull()
     val repsMax: Int? get() = repsMaxText.trim().ifEmpty { null }?.toIntOrNull()
-    val rpeHalves: Int? get() = rpeText.trim().ifEmpty { null }?.let(Rpe::parse)
     val percent: Int? get() = percentText.trim().ifEmpty { null }?.toIntOrNull()
 
     val weightIsValid: Boolean get() = weightText.isBlank() || load != null
@@ -355,10 +382,9 @@ private data class SlotSetDraft(
                 (repsMaxText.isBlank() || (max != null && max >= 1)) &&
                 !(min != null && max != null && min > max)
         }
-    val rpeIsValid: Boolean get() = rpeText.isBlank() || rpeHalves != null
     val percentIsValid: Boolean
         get() = percentText.isBlank() || (percent != null && percent in 1..MAX_PERCENT)
-    val isValid: Boolean get() = weightIsValid && repsAreValid && rpeIsValid && percentIsValid
+    val isValid: Boolean get() = weightIsValid && repsAreValid && percentIsValid
 
     fun toEdit() = SlotSetEdit(
         role = role,
@@ -366,7 +392,7 @@ private data class SlotSetDraft(
         targetAssistanceGrams = load?.assistanceGrams?.takeIf { it > 0L },
         targetRepsMin = repsMin,
         targetRepsMax = repsMax,
-        targetRpeHalves = rpeHalves,
+        targetRpeHalves = targetRpeHalves,
         targetPercentOf1Rm = percent,
         note = note.trim().ifEmpty { null },
     )
@@ -427,7 +453,7 @@ private fun SlotSetLoadFields(
     }
 }
 
-/** The reps, the RPE target and the note — how hard, rather than how heavy (P3.8, N14). */
+/** The reps and the note — how much work, rather than how heavy (P3.8, N14). */
 @Composable
 private fun SlotSetEffortFields(
     draft: SlotSetDraft,
@@ -456,15 +482,6 @@ private fun SlotSetEffortFields(
             )
         }
         OutlinedTextField(
-            value = draft.rpeText,
-            onValueChange = { onChange(draft.copy(rpeText = it)) },
-            modifier = Modifier.fillMaxWidth().testTag(TestTags.Programs.PRESCRIPTION_SET_RPE),
-            singleLine = true,
-            isError = !draft.rpeIsValid,
-            label = { Text(stringResource(R.string.set_rpe_label)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        )
-        OutlinedTextField(
             value = draft.note,
             onValueChange = { onChange(draft.copy(note = it)) },
             modifier = Modifier.fillMaxWidth().testTag(TestTags.Programs.PRESCRIPTION_SET_NOTE),
@@ -475,17 +492,20 @@ private fun SlotSetEffortFields(
 }
 
 /**
- * The rest and cue a slot prescribes for one exercise, over the template's (ROADMAP P3.8, N14).
+ * The effort, rest and cue a slot prescribes for one exercise, over the template's (P3.8, N14, N59).
  *
- * Both blank means "use the template's, then the library's", which is the state a slot is in until
- * someone writes one — so the fields are empty rather than zero.
+ * The **target RPE is one number for the exercise**, beside the rest and cue the slot already carried
+ * rather than on every prescribed set. All three blank means "use the template's, then the library's,
+ * and name no effort", which is the state a slot is in until someone writes one — so the fields are
+ * empty rather than zero.
  */
 @Composable
-private fun SlotRestCueDialog(
+private fun SlotExercisePlanDialog(
     exerciseName: String,
     restSeconds: Int?,
     techniqueNote: String?,
-    onSave: (Int?, String?) -> Unit,
+    targetRpeHalves: Int?,
+    onSave: (Int?, String?, Int?) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -493,42 +513,35 @@ private fun SlotRestCueDialog(
         mutableStateOf(restSeconds?.toString().orEmpty())
     }
     var cue by rememberSaveable(exerciseName) { mutableStateOf(techniqueNote.orEmpty()) }
+    var rpe by rememberSaveable(exerciseName) {
+        mutableStateOf(targetRpeHalves?.let(Rpe::format).orEmpty())
+    }
     val seconds = rest.trim().ifEmpty { null }?.toIntOrNull()
     val restIsValid = rest.isBlank() ||
         (seconds != null && seconds >= RestTimer.MIN_PRESCRIBED_SECONDS)
+    val rpeHalves = rpe.trim().ifEmpty { null }?.let(Rpe::parse)
+    val rpeIsValid = rpe.isBlank() || rpeHalves != null
 
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = modifier.testTag(TestTags.Programs.REST_CUE_DIALOG),
         title = { Text(stringResource(R.string.program_rest_cue_title, exerciseName)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = rest,
-                    onValueChange = { rest = it },
-                    modifier = Modifier
-                        .width(160.dp)
-                        .testTag(TestTags.Programs.REST_FIELD),
-                    singleLine = true,
-                    isError = !restIsValid,
-                    label = { Text(stringResource(R.string.template_rest_label)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                )
-                OutlinedTextField(
-                    value = cue,
-                    onValueChange = { cue = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(TestTags.Programs.CUE_FIELD),
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.template_cue_label)) },
-                )
-            }
+            SlotExercisePlanFields(
+                rest = rest,
+                onRestChange = { rest = it },
+                restIsValid = restIsValid,
+                rpe = rpe,
+                onRpeChange = { rpe = it },
+                rpeIsValid = rpeIsValid,
+                cue = cue,
+                onCueChange = { cue = it },
+            )
         },
         confirmButton = {
             AppTextButton(
-                enabled = restIsValid,
-                onClick = { onSave(seconds, cue.trim().ifEmpty { null }) },
+                enabled = restIsValid && rpeIsValid,
+                onClick = { onSave(seconds, cue.trim().ifEmpty { null }, rpeHalves) },
                 modifier = Modifier.testTag(TestTags.Programs.REST_CUE_SAVE),
             ) {
                 Text(stringResource(R.string.template_rest_cue_save))
@@ -543,6 +556,54 @@ private fun SlotRestCueDialog(
             }
         },
     )
+}
+
+/** The rest, the exercise's one target RPE and the cue, as the slot's dialog edits them (P3.8, N59). */
+@Composable
+private fun SlotExercisePlanFields(
+    rest: String,
+    onRestChange: (String) -> Unit,
+    restIsValid: Boolean,
+    rpe: String,
+    onRpeChange: (String) -> Unit,
+    rpeIsValid: Boolean,
+    cue: String,
+    onCueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = rest,
+            onValueChange = onRestChange,
+            modifier = Modifier
+                .width(160.dp)
+                .testTag(TestTags.Programs.REST_FIELD),
+            singleLine = true,
+            isError = !restIsValid,
+            label = { Text(stringResource(R.string.template_rest_label)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        )
+        OutlinedTextField(
+            value = rpe,
+            onValueChange = onRpeChange,
+            modifier = Modifier
+                .width(160.dp)
+                .testTag(TestTags.Programs.PRESCRIPTION_RPE),
+            singleLine = true,
+            isError = !rpeIsValid,
+            label = { Text(stringResource(R.string.set_rpe_label)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        )
+        OutlinedTextField(
+            value = cue,
+            onValueChange = onCueChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(TestTags.Programs.CUE_FIELD),
+            singleLine = true,
+            label = { Text(stringResource(R.string.template_cue_label)) },
+        )
+    }
 }
 
 /** `100 kg × 3`, `× 3–5`, `85%`, `RPE 8` — whatever the slot wrote, in one line. */

@@ -89,6 +89,14 @@ repeated here.
   point at a time and stop at 1 and 10, so a logged set always carries an RPE, and the caption under it
   says where the number came from. The plan editors keep their text field: there the RPE is a target
   being authored, not a set being recorded.
+- **A plan's RPE is one number per exercise, not one per planned set** (N14, N59). Authoring a plan
+  meant typing an effort into every set, and the plan was saying the same thing each time; the target
+  now sits beside the rest and cue the exercise already carries, in both the template editor and a
+  program slot's prescription, while a *logged* set keeps its own RPE — a plan asks for an effort, and
+  the set records what it actually felt like. Migration 27→28 adds the columns and seeds each exercise
+  from the last set that named one; the per-set columns stay, so a plan set through a set's dialog
+  keeps its value and a backup written before the change still restores whole. A reader prefers the
+  exercise's number and falls back to the set's, so an old file behaves as it did.
 
 ### Removed
 

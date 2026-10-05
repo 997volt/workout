@@ -6,8 +6,8 @@ package com.example.androidapp.domain.model
  * N59 withdrew the app's proposal rather than the question: with the next set's values already fields
  * on the screen, a chip beside them had nothing to add. What it left was *where* a proposal belongs
  * and *what* earns one. **Done** is where — the work is over, and what comes next is the decision
- * that remains — and the plan's own targets are what: the offer exists only where the plan asked for
- * a target RPE on every working set and the session met it, so the app states a step it can read out
+ * that remains — and the plan's own targets are what: the offer exists only where the plan named a
+ * target RPE for the exercise and every working set met it, so the app states a step it can read out
  * of the plan and the log rather than guessing from history.
  *
  * **The app still only suggests.** The offer is inert until the lifter accepts one of its directions,
@@ -30,6 +30,11 @@ data class ProgressionStep<T>(val from: T, val to: T)
  * raised, and a set that names no reps cannot have its work checked. [source] rides along because the
  * two plans are written through different repositories (N14, P3.8), and [targetPercentOf1Rm] is a
  * slot's alone — carried so accepting a rep does not silently drop a percentage the set stated.
+ *
+ * [targetRpeHalves] is the **exercise's one number**, carried onto every prescribed set by the
+ * caller (N59, amended): the rule measures each set against the plan's single target, and a plan that
+ * names none leaves every set here null. A set's own stored value is the caller's fallback for a plan
+ * imported from a backup written before the effort moved to the exercise.
  */
 data class ProgressionPlanSet(
     val setId: String,
@@ -128,18 +133,19 @@ fun progressionPromptFor(
 /**
  * The next step one exercise earned, or null (ROADMAP N50).
  *
- * **Earned** means the plan asked for a target RPE on every prescribed working set, and every one of
- * them was performed with its reps met at or under that RPE, so the plan was answered with room in
- * hand. The plan's Nth working set is paired with the session's Nth working set: **the exercise's
- * logged order**, with warm-ups removed from both sides first (N17, N20, N22). Matching on `setIndex`
- * would break the moment a plan's warm-up went unlogged — every later index would shift and honest
- * work would read as unattempted — while the order of the work itself is the pairing the plan already
- * means. A prescribed set with no performed counterpart is work not done, and one rep short or one
- * RPE above target earns nothing: this is the app saying it is sure, so it says nothing otherwise.
+ * **Earned** means the plan named a target RPE for the exercise — one number, carried onto every
+ * prescribed working set by the caller — and every one of them was performed with its reps met at or
+ * under that RPE, so the plan was answered with room in hand. The plan's Nth working set is paired
+ * with the session's Nth working set: **the exercise's logged order**, with warm-ups removed from both
+ * sides first (N17, N20, N22). Matching on `setIndex` would break the moment a plan's warm-up went
+ * unlogged — every later index would shift and honest work would read as unattempted — while the order
+ * of the work itself is the pairing the plan already means. A prescribed set with no performed
+ * counterpart is work not done, and one rep short or one RPE above target earns nothing: this is the
+ * app saying it is sure, so it says nothing otherwise.
  *
  * The same holds for the two things it cannot check — a plan that names no target RPE, or a session
  * that recorded none — which is why an unrated session suggests nothing rather than guessing (N59
- * shows the plan's RPE beside the field rather than writing it).
+ * shows the plan's RPE in the field rather than recording it).
  *
  * [stepGrams] is the smallest loadable step, so a barbell that jumps 2.5 kg is moved by one it has.
  */

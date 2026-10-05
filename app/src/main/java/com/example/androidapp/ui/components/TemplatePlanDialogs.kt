@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
-import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.repository.TemplateSetEdit
@@ -216,13 +215,19 @@ fun TemplateSetDialog(
  * A holder rather than five `remember`s in the dialog: the parsing and the validation
  * are the same thing read twice, and keeping them together is what stops the Save
  * button enabling on a number the repository would refuse.
+ *
+ * [targetRpeHalves] is carried but **not edited** (N59, amended): a plan's target RPE is one number
+ * per exercise now and lives in the editor behind this dialog, while the per-set value a plan may
+ * still hold from before the change is a legacy fallback — so the dialog round-trips it untouched
+ * rather than clearing a value it no longer shows.
  */
 data class TemplateSetDraft(
     val role: SetType = SetType.NORMAL,
     val weightText: String = "",
     val repsMinText: String = "",
     val repsMaxText: String = "",
-    val rpeText: String = "",
+    /** The plan's legacy per-set target RPE, passed through unchanged, or null (N59). */
+    val targetRpeHalves: Int? = null,
     val note: String = "",
 ) {
     constructor(edit: TemplateSetEdit) : this(
@@ -234,7 +239,7 @@ data class TemplateSetDraft(
         },
         repsMinText = edit.targetRepsMin?.toString().orEmpty(),
         repsMaxText = edit.targetRepsMax?.toString().orEmpty(),
-        rpeText = edit.targetRpeHalves?.let(Rpe::format).orEmpty(),
+        targetRpeHalves = edit.targetRpeHalves,
         note = edit.note.orEmpty(),
     )
 
@@ -245,7 +250,6 @@ data class TemplateSetDraft(
     val assistanceGrams: Long? get() = load?.assistanceGrams
     val repsMin: Int? get() = repsMinText.trim().ifEmpty { null }?.toIntOrNull()
     val repsMax: Int? get() = repsMaxText.trim().ifEmpty { null }?.toIntOrNull()
-    val rpeHalves: Int? get() = rpeText.trim().ifEmpty { null }?.let(Rpe::parse)
 
     // Blank is allowed everywhere; anything typed has to be a usable number, and a
     // range that runs backwards is refused rather than silently swapped.
@@ -260,8 +264,7 @@ data class TemplateSetDraft(
                 (repsMaxText.isBlank() || (max != null && max >= 1)) &&
                 !(min != null && max != null && min > max)
         }
-    val rpeIsValid: Boolean get() = rpeText.isBlank() || rpeHalves != null
-    val isValid: Boolean get() = weightIsValid && repsAreValid && rpeIsValid
+    val isValid: Boolean get() = weightIsValid && repsAreValid
 
     fun toEdit() = TemplateSetEdit(
         role = role,
@@ -269,7 +272,7 @@ data class TemplateSetDraft(
         targetAssistanceGrams = assistanceGrams?.takeIf { it > 0L },
         targetRepsMin = repsMin,
         targetRepsMax = repsMax,
-        targetRpeHalves = rpeHalves,
+        targetRpeHalves = targetRpeHalves,
         note = note.trim().ifEmpty { null },
     )
 }
@@ -315,15 +318,6 @@ private fun TargetFields(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             )
         }
-        OutlinedTextField(
-            value = draft.rpeText,
-            onValueChange = { onChange(draft.copy(rpeText = it)) },
-            modifier = Modifier.fillMaxWidth().testTag(TestTags.TEMPLATE_SET_RPE),
-            singleLine = true,
-            isError = !draft.rpeIsValid,
-            label = { Text(stringResource(R.string.set_rpe_label)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        )
         OutlinedTextField(
             value = draft.note,
             onValueChange = { onChange(draft.copy(note = it)) },

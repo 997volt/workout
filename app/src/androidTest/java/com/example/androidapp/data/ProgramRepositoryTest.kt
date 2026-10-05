@@ -443,18 +443,54 @@ class ProgramRepositoryTest {
         repository.addSlot(program, template, DayOfWeek.MONDAY)
         val slotId = slot(program).id
 
-        repository.setSlotExercisePlan(slotId, "back-squat", restSeconds = 150, techniqueNote = "brace")
+        repository.setSlotExercisePlan(
+            slotId,
+            "back-squat",
+            restSeconds = 150,
+            techniqueNote = "brace",
+            targetRpeHalves = 16,
+        )
 
         val prescribed = repository.observeSlotPrescriptions(slotId).first().single()
         assertEquals(150, prescribed.restSeconds)
         assertEquals("brace", prescribed.techniqueNote)
+        assertEquals("the slot's one target RPE (N59, amended)", 16, prescribed.targetRpeHalves)
 
-        repository.setSlotExercisePlan(slotId, "back-squat", restSeconds = null, techniqueNote = null)
+        repository.setSlotExercisePlan(
+            slotId,
+            "back-squat",
+            restSeconds = null,
+            techniqueNote = null,
+            targetRpeHalves = null,
+        )
 
         assertTrue(
             "a prescription with nothing left to say is absent, not an empty row",
             repository.observeSlotPrescriptions(slotId).first().isEmpty(),
         )
+    }
+
+    @Test
+    fun aSlotNamingOnlyAnEffort_isAPrescription_ratherThanAnAbsentOne() = runTest {
+        // The effort is the third thing a slot can say about an exercise (N59, amended), so a row
+        // carrying it alone is not an empty prescription to be dropped.
+        val program = create("Upper/Lower")
+        val template = createTemplate("Heavy lower")
+        repository.addSlot(program, template, DayOfWeek.MONDAY)
+        val slotId = slot(program).id
+
+        repository.setSlotExercisePlan(
+            slotId,
+            "back-squat",
+            restSeconds = null,
+            techniqueNote = null,
+            targetRpeHalves = 18,
+        )
+
+        val prescribed = repository.observeSlotPrescriptions(slotId).first().single()
+        assertEquals("the slot's one number survives on its own", 18, prescribed.targetRpeHalves)
+        assertNull(prescribed.restSeconds)
+        assertNull(prescribed.techniqueNote)
     }
 
     @Test

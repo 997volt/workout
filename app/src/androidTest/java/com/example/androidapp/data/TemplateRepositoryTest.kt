@@ -337,31 +337,60 @@ class TemplateRepositoryTest {
     }
 
     @Test
-    fun aPlansRestAndCue_reachTheExercise_andBlankBecomesUnset() = runTest {
+    fun aPlansEffortRestAndCue_reachTheExercise_andBlankBecomesUnset() = runTest {
         val template = create("Legs")
         val exercise = plannedExercise(template)
 
-        repository.setExercisePlan(exercise, restSeconds = 180, techniqueNote = "  Slow descent  ")
+        repository.setExercisePlan(
+            exercise,
+            restSeconds = 180,
+            techniqueNote = "  Slow descent  ",
+            targetRpeHalves = 16,
+        )
         val written = repository.observeExercises(template).first().single()
         assertEquals(180, written.restSeconds)
         assertEquals("Slow descent", written.techniqueNote)
+        assertEquals("the exercise's one target RPE (N59, amended)", 16, written.targetRpeHalves)
 
         // Blank is "use the library's" (N5); zero is a value — no rest — and only a negative is
         // refused (N45).
-        repository.setExercisePlan(exercise, restSeconds = null, techniqueNote = "   ")
+        repository.setExercisePlan(
+            exercise,
+            restSeconds = null,
+            techniqueNote = "   ",
+            targetRpeHalves = null,
+        )
         val cleared = repository.observeExercises(template).first().single()
         assertNull(cleared.restSeconds)
         assertNull(cleared.techniqueNote)
+        assertNull("no effort named is no effort", cleared.targetRpeHalves)
 
         assertTrue(
-            repository.setExercisePlan(exercise, restSeconds = 0, techniqueNote = null) is
-                DataResult.Success,
+            repository.setExercisePlan(
+                exercise,
+                restSeconds = 0,
+                techniqueNote = null,
+                targetRpeHalves = null,
+            ) is DataResult.Success,
         )
         assertEquals(0, repository.observeExercises(template).first().single().restSeconds)
 
         assertTrue(
-            repository.setExercisePlan(exercise, restSeconds = -5, techniqueNote = null) is
-                DataResult.Failure,
+            repository.setExercisePlan(
+                exercise,
+                restSeconds = -5,
+                techniqueNote = null,
+                targetRpeHalves = null,
+            ) is DataResult.Failure,
+        )
+        assertTrue(
+            "an RPE off the scale is refused like a set's",
+            repository.setExercisePlan(
+                exercise,
+                restSeconds = null,
+                techniqueNote = null,
+                targetRpeHalves = 21,
+            ) is DataResult.Failure,
         )
     }
 

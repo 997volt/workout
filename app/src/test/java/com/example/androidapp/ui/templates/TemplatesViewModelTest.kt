@@ -187,6 +187,7 @@ class TemplatesViewModelTest {
             templateExerciseId: String,
             restSeconds: Int?,
             techniqueNote: String?,
+            targetRpeHalves: Int?,
         ): DataResult<Unit> {
             error("these tests do not write a plan")
         }

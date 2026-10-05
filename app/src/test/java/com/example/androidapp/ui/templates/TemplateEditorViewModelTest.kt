@@ -246,7 +246,7 @@ class TemplateEditorViewModelTest {
         val moved = mutableListOf<Pair<String, Int>>()
         val deleted = mutableListOf<String>()
         val addedSets = mutableListOf<Pair<String, TemplateSetEdit>>()
-        val savedPlans = mutableListOf<Triple<String, Int?, String?>>()
+        val savedPlans = mutableListOf<SavedExercisePlan>()
         var failWrites = false
         /** Every group write, as the ids it covered — one entry per call, which is the point. */
         val supersetGroups = mutableListOf<List<String>>()
@@ -288,8 +288,9 @@ class TemplateEditorViewModelTest {
             templateExerciseId: String,
             restSeconds: Int?,
             techniqueNote: String?,
+            targetRpeHalves: Int?,
         ): DataResult<Unit> {
-            savedPlans += Triple(templateExerciseId, restSeconds, techniqueNote)
+            savedPlans += SavedExercisePlan(templateExerciseId, restSeconds, techniqueNote, targetRpeHalves)
             return DataResult.Success(Unit)
         }
 
@@ -375,17 +376,22 @@ class TemplateEditorViewModelTest {
     }
 
     @Test
-    fun savingARestAndCue_passesBothThrough() = runTest(dispatcher) {
+    fun savingARestCueAndRpe_passesAllThreeThrough() = runTest(dispatcher) {
         val repository = FakeTemplateRepository()
         val viewModel = viewModelFor(repository)
         observe(viewModel)
         advanceUntilIdle()
 
-        viewModel.onSaveExercisePlan("te1", restSeconds = 180, techniqueNote = "Slow descent")
+        viewModel.onSaveExercisePlan(
+            "te1",
+            restSeconds = 180,
+            techniqueNote = "Slow descent",
+            targetRpeHalves = 16,
+        )
         advanceUntilIdle()
 
         assertEquals(
-            listOf(Triple("te1", 180, "Slow descent")),
+            listOf(SavedExercisePlan("te1", 180, "Slow descent", 16)),
             repository.savedPlans,
         )
     }
@@ -471,3 +477,11 @@ class TemplateEditorViewModelTest {
         targetRepsMax = 5,
     )
 }
+
+/** What [TemplateEditorViewModelTest]'s fake recorded for one exercise's plan write (N14, N59). */
+private data class SavedExercisePlan(
+    val templateExerciseId: String,
+    val restSeconds: Int?,
+    val techniqueNote: String?,
+    val targetRpeHalves: Int?,
+)

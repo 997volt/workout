@@ -1214,4 +1214,127 @@ class WorkoutDatabaseMigrationTest {
 
         migrated.close()
     }
+
+    @Test
+    fun migration27To28_consolidatesEachExercisesTargetRpe_andLeavesTheSetValuesAlone() {
+        // ROADMAP N59, amended: the plan's effort moves from one per prescribed set to one per
+        // exercise, and the backfill is a *consolidation* — the last set that names one, in setIndex
+        // order, warm-ups included. The per-set values stay for a backup written before the change to
+        // carry, and the exercise's row is the only thing rewritten.
+        helper.createDatabase(TEST_DB, 27).apply {
+            execSQL(
+                """
+                INSERT INTO templates (id, name, createdAt, updatedAt, deletedAt)
+                VALUES ('t1', 'Legs', 1, 1, NULL)
+                """.trimIndent(),
+            )
+            // te1: a ramp whose top set is the plan's target — 8, not the ramp's 5. te2: nothing named.
+            // te3: only a warm-up names one, which still counts (a ramp's last set is the top set).
+            execSQL(
+                """
+                INSERT INTO template_exercises
+                    (id, templateId, exerciseId, position, restSeconds, techniqueNote,
+                     supersetGroup, createdAt, updatedAt, deletedAt)
+                VALUES ('te1', 't1', 'back-squat', 0, NULL, NULL, NULL, 1, 1, NULL),
+                       ('te2', 't1', 'bench-press', 1, NULL, NULL, NULL, 1, 1, NULL),
+                       ('te3', 't1', 'overhead-press', 2, NULL, NULL, NULL, 1, 1, NULL)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO template_sets
+                    (id, templateExerciseId, setIndex, role, targetWeightGrams, targetAssistanceGrams,
+                     targetRepsMin, targetRepsMax, targetRpeHalves, note, createdAt, updatedAt, deletedAt)
+                VALUES ('ts1', 'te1', 0, 'WARMUP', 40000, NULL, 5, 5, 5, NULL, 1, 1, NULL),
+                       ('ts2', 'te1', 1, 'NORMAL', 100000, NULL, 5, 5, 8, NULL, 1, 1, NULL),
+                       ('ts3', 'te2', 0, 'NORMAL', 80000, NULL, 5, 5, NULL, NULL, 1, 1, NULL),
+                       ('ts4', 'te3', 0, 'WARMUP', 50000, NULL, 5, 5, 6, NULL, 1, 1, NULL),
+                       ('ts5', 'te3', 1, 'NORMAL', 90000, NULL, 5, 5, NULL, NULL, 1, 1, NULL)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO programs (id, name, isActive, position, createdAt, updatedAt, deletedAt)
+                VALUES ('p1', 'Upper/Lower', 0, 0, 1, 1, NULL)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO program_slots
+                    (id, programId, templateId, position, weekday, createdAt, updatedAt, deletedAt)
+                VALUES ('slot1', 'p1', 't1', 0, NULL, 1, 1, NULL)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO program_slot_exercises
+                    (id, slotId, exerciseId, restSeconds, techniqueNote, createdAt, updatedAt, deletedAt)
+                VALUES ('pse1', 'slot1', 'back-squat', NULL, NULL, 1, 1, NULL),
+                       ('pse2', 'slot1', 'bench-press', NULL, NULL, 1, 1, NULL)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO program_slot_sets
+                    (id, slotExerciseId, setIndex, role, targetWeightGrams, targetAssistanceGrams,
+                     targetRepsMin, targetRepsMax, targetRpeHalves, targetPercentOf1Rm, note,
+                     createdAt, updatedAt, deletedAt)
+                VALUES ('pss1', 'pse1', 0, 'NORMAL', 100000, NULL, 3, 3, 16, NULL, NULL, 1, 1, NULL),
+                       ('pss2', 'pse1', 1, 'NORMAL', 100000, NULL, 3, 3, 18, NULL, NULL, 1, 1, NULL),
+                       ('pss3', 'pse2', 0, 'NORMAL', 80000, NULL, 5, 5, NULL, NULL, NULL, 1, 1, NULL)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 28, true, MIGRATION_27_28)
+
+        migrated.query(
+            "SELECT id, targetRpeHalves FROM template_exercises ORDER BY position",
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("te1", cursor.getString(0))
+            assertEquals("the top set wins over the ramp's 5", 8, cursor.getInt(1))
+            assertTrue(cursor.moveToNext())
+            assertEquals("te2", cursor.getString(0))
+            assertTrue("an exercise that named nothing stays empty", cursor.isNull(1))
+            assertTrue(cursor.moveToNext())
+            assertEquals("te3", cursor.getString(0))
+            assertEquals("a warm-up's value counts, and it is the last one", 6, cursor.getInt(1))
+        }
+        // The per-set values are left in place rather than cleared: a pre-change backup still needs
+        // them, and the reader falls back to them where the exercise names nothing.
+        migrated.query(
+            "SELECT id, targetRpeHalves FROM template_sets ORDER BY id",
+        ).use { cursor ->
+            val values = buildList {
+                while (cursor.moveToNext()) add(cursor.getString(0) to cursor.getInt(1).takeIf { !cursor.isNull(1) })
+            }
+            assertEquals(
+                listOf("ts1" to 5, "ts2" to 8, "ts3" to null, "ts4" to 6, "ts5" to null),
+                values,
+            )
+        }
+
+        migrated.query(
+            "SELECT id, targetRpeHalves FROM program_slot_exercises ORDER BY id",
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("pse1", cursor.getString(0))
+            assertEquals("the last prescribed set that named one", 18, cursor.getInt(1))
+            assertTrue(cursor.moveToNext())
+            assertEquals("pse2", cursor.getString(0))
+            assertTrue("a slot that named nothing stays empty", cursor.isNull(1))
+        }
+        migrated.query(
+            "SELECT id, targetRpeHalves FROM program_slot_sets ORDER BY id",
+        ).use { cursor ->
+            val values = buildList {
+                while (cursor.moveToNext()) add(cursor.getString(0) to cursor.getInt(1).takeIf { !cursor.isNull(1) })
+            }
+            assertEquals(listOf("pss1" to 16, "pss2" to 18, "pss3" to null), values)
+        }
+
+        migrated.close()
+    }
 }

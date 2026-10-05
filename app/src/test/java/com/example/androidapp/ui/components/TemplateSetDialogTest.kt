@@ -3,6 +3,7 @@ package com.example.androidapp.ui.components
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.SetType
@@ -46,15 +47,28 @@ class TemplateSetDialogTest {
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).performTextInput("140")
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MIN).performTextInput("1")
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MAX).performTextInput("2")
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_RPE).performTextInput("9")
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_NOTE).performTextInput("grind")
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).performClick()
 
         assertEquals(140_000L, saved?.targetWeightGrams)
         assertEquals(1, saved?.targetRepsMin)
         assertEquals(2, saved?.targetRepsMax)
-        assertEquals("9 is 18 halves", 18, saved?.targetRpeHalves)
         assertEquals("grind", saved?.note)
+    }
+
+    @Test
+    fun aLegacyPerSetRpe_isRoundTripped_thoughTheDialogNoLongerShowsIt() {
+        // ROADMAP N59, amended: the effort is one number per exercise now, so this form has no RPE
+        // field — but a set that still carries a value from before the change must come back from an
+        // edit with it intact rather than silently wiped.
+        show(initial = TemplateSetEdit(targetWeightGrams = 60_000L, targetRpeHalves = 19), isNew = false)
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).performTextInput("65")
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).performClick()
+
+        assertEquals(65_000L, saved?.targetWeightGrams)
+        assertEquals("the legacy per-set RPE is carried, not cleared", 19, saved?.targetRpeHalves)
     }
 
     @Test

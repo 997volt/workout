@@ -56,6 +56,7 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.warmUpRampFor
@@ -130,7 +131,7 @@ fun TemplateEditorScreen(
     onUpdateSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
     onRemoveSet: (String) -> Unit = {},
     onToggleSuperset: (String) -> Unit = {},
-    onSaveExercisePlan: (String, Int?, String?) -> Unit = { _, _, _ -> },
+    onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
@@ -231,7 +232,7 @@ private fun TemplateEditorBody(
     onAddSet: (String, TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
-    onSaveExercisePlan: (String, Int?, String?) -> Unit,
+    onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit,
     onAddWarmUpSets: (String) -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (String) -> Unit = {},
@@ -282,7 +283,7 @@ private fun TemplateEditorBody(
                         onUpdateSet = onUpdateSet,
                         onRemoveSet = onRemoveSet,
                         onAddWarmUpSets = { onAddWarmUpSets(exercise.id) },
-                        onSavePlan = { rest, cue -> onSaveExercisePlan(exercise.id, rest, cue) },
+                        onSavePlan = { rest, cue, rpe -> onSaveExercisePlan(exercise.id, rest, cue, rpe) },
                     )
                     HorizontalDivider()
                 }
@@ -354,7 +355,7 @@ private fun TemplateExerciseBlock(
     onAddSet: (TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
-    onSavePlan: (Int?, String?) -> Unit,
+    onSavePlan: (Int?, String?, Int?) -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,
     onAddWarmUpSets: (() -> Unit)? = null,
@@ -377,7 +378,7 @@ private fun TemplateExerciseBlock(
             supersetLabels = supersetLabels,
         )
         PlanRow(exercise = exercise, onClick = { planOpen = true })
-        RestAndCue(
+        ExercisePlanFields(
             exercise = exercise,
             onSave = onSavePlan,
         )
@@ -457,24 +458,33 @@ private fun PlanRow(
 }
 
 /**
- * The rest and cue this exercise's plan prescribes (N14), over the library's (N5).
+ * The effort, the rest and the cue this exercise's plan prescribes (N14, N59).
  *
- * Both blank means "use the library's", which is the state a plan is in until someone
- * writes one — so the fields are empty rather than zero.
+ * The **target RPE is one number for the exercise**, beside the rest and cue the plan already
+ * carried rather than on every planned set. All three blank means "the plan says nothing" — the
+ * library's rest and cue show through, and the workout's RPE stepper opens on its default — so the
+ * fields are empty rather than zero.
  */
 @Composable
-private fun RestAndCue(
+private fun ExercisePlanFields(
     exercise: TemplateExercise,
-    onSave: (Int?, String?) -> Unit,
+    onSave: (Int?, String?, Int?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var rest by rememberSaveable(exercise.id) {
         mutableStateOf(exercise.restSeconds?.toString().orEmpty())
     }
     var cue by rememberSaveable(exercise.id) { mutableStateOf(exercise.techniqueNote.orEmpty()) }
+    var rpe by rememberSaveable(exercise.id) {
+        mutableStateOf(exercise.targetRpeHalves?.let(Rpe::format).orEmpty())
+    }
     val restSeconds = rest.trim().ifEmpty { null }?.toIntOrNull()
     val restIsValid = rest.isBlank() || (restSeconds != null && restSeconds >= RestTimer.MIN_PRESCRIBED_SECONDS)
-    val changed = restSeconds != exercise.restSeconds || cue.trim().ifEmpty { null } != exercise.techniqueNote
+    val rpeHalves = rpe.trim().ifEmpty { null }?.let(Rpe::parse)
+    val rpeIsValid = rpe.isBlank() || rpeHalves != null
+    val changed = restSeconds != exercise.restSeconds ||
+        cue.trim().ifEmpty { null } != exercise.techniqueNote ||
+        rpeHalves != exercise.targetRpeHalves
 
     Row(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
@@ -484,10 +494,19 @@ private fun RestAndCue(
         OutlinedTextField(
             value = rest,
             onValueChange = { rest = it },
-            modifier = Modifier.width(120.dp).testTag(TestTags.TEMPLATE_REST_FIELD),
+            modifier = Modifier.width(110.dp).testTag(TestTags.TEMPLATE_REST_FIELD),
             singleLine = true,
             isError = !restIsValid,
             label = { Text(stringResource(R.string.template_rest_label)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        )
+        OutlinedTextField(
+            value = rpe,
+            onValueChange = { rpe = it },
+            modifier = Modifier.width(90.dp).testTag(TestTags.TEMPLATE_EXERCISE_RPE),
+            singleLine = true,
+            isError = !rpeIsValid,
+            label = { Text(stringResource(R.string.set_rpe_label)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
         OutlinedTextField(
@@ -498,8 +517,8 @@ private fun RestAndCue(
             label = { Text(stringResource(R.string.template_cue_label)) },
         )
         IconButton(
-            onClick = { onSave(restSeconds, cue.trim().ifEmpty { null }) },
-            enabled = changed && restIsValid,
+            onClick = { onSave(restSeconds, cue.trim().ifEmpty { null }, rpeHalves) },
+            enabled = changed && restIsValid && rpeIsValid,
             modifier = Modifier.testTag(TestTags.TEMPLATE_REST_CUE_SAVE),
         ) {
             Icon(

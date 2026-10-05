@@ -432,11 +432,14 @@ the rule; that one argues it.
   the moment one was moved.
 - **A slot prescribes its own intensity, and an empty prescription leaves the template's targets
   standing** (P3.8, extending N14). The prescribed sets are rows of their own — a
-  `program_slot_exercises` row for the rest and cue, `program_slot_sets` for the sets — so two slots
-  pointing at one template can train it differently, which naming a template alone could not. The
-  vocabulary is the plan's (role, the split load, the rep range, the RPE, a note) plus one a
-  template's planned set cannot carry: a percentage of the estimated one-rep max. Every target is
-  nullable and nothing verifies it, for N14's reason.
+  `program_slot_exercises` row for the rest, the **one RPE** and the cue, `program_slot_sets` for the
+  sets — so two slots pointing at one template can train it differently, which naming a template alone
+  could not. The vocabulary is the plan's (role, the split load, the rep range, a note) plus one a
+  template's planned set cannot carry: a percentage of the estimated one-rep max. **The planned RPE is
+  the exercise's, one number for every set it prescribes** — a plan asks for an effort, while the set
+  logged against it records what that set actually felt like, one per set (N6, N59) — and a migration
+  seeds it from the per-set values a plan already carried, which stay in their columns so an older
+  backup still restores whole. Every target is nullable and nothing verifies it, for N14's reason.
 - **A percentage is derived, never assumed** (P3.8, from N17). The kilograms are Epley's estimate of
   the exercise's heaviest working set, rounded to the loadable step. An exercise with nothing
   estimable leaves the load open and history prefills it, which is "no number" said honestly rather

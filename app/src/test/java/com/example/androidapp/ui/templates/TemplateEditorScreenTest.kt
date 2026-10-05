@@ -47,6 +47,7 @@ class TemplateEditorScreenTest {
         val onDeleteTemplate: () -> Unit = {},
         val onAddExercise: () -> Unit = {},
         val onAddWarmUpSets: (String) -> Unit = {},
+        val onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
     )
 
     private fun setScreen(
@@ -62,6 +63,7 @@ class TemplateEditorScreenTest {
                 onDeleteTemplate = actions.onDeleteTemplate,
                 onAddExercise = actions.onAddExercise,
                 onAddWarmUpSets = actions.onAddWarmUpSets,
+                onSaveExercisePlan = actions.onSaveExercisePlan,
                 onBack = {},
             )
         }
@@ -204,6 +206,26 @@ class TemplateEditorScreenTest {
                 ),
             ),
         )
+    }
+
+    @Test
+    fun oneRpeTargetPerExercise_isEdited_besideTheRestAndCue() {
+        // ROADMAP N59, amended: the effort is one number for the exercise, shown next to the rest and
+        // cue — not a field on each planned set. 9.5 is 19 half-points (N6).
+        var saved: Triple<Int?, String?, Int?>? = null
+        setScreen(
+            state = twoExercises.copy(
+                exercises = listOf(twoExercises.exercises.first().copy(targetRpeHalves = 16)),
+            ),
+            actions = Actions(onSaveExercisePlan = { _, rest, cue, rpe -> saved = Triple(rest, cue, rpe) }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).assertTextContains("8")
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).performTextInput("9.5")
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_CUE_SAVE).performClick()
+
+        assertEquals(Triple(null, null, 19), saved)
     }
 
     @Test

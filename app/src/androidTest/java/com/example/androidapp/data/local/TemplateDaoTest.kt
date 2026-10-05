@@ -226,20 +226,34 @@ class TemplateDaoTest {
     }
 
     @Test
-    fun aPlansRestAndCue_areWrittenAndCanBeCleared() = runTest {
-        // Clearing matters: null is "use the library's", not zero (ROADMAP N14, N5).
+    fun aPlansEffortRestAndCue_areWrittenAndCanBeCleared() = runTest {
+        // Clearing matters: null is "use the library's" and "no effort named", not zero (N14, N5, N59).
         dao.insertTemplate(template("t1", "Legs"))
         dao.insertTemplateExercise(templateExercise("te1", "t1", "back-squat", 0))
 
-        dao.setExerciseRestAndCue("te1", restSeconds = 180, techniqueNote = "Slow descent", at = 2L)
+        dao.setExercisePlan(
+            "te1",
+            restSeconds = 180,
+            techniqueNote = "Slow descent",
+            targetRpeHalves = 16,
+            at = 2L,
+        )
         val written = dao.findTemplateExercise("te1")!!
         assertEquals(180, written.restSeconds)
         assertEquals("Slow descent", written.techniqueNote)
+        assertEquals("the exercise's one target RPE", 16, written.targetRpeHalves)
 
-        dao.setExerciseRestAndCue("te1", restSeconds = null, techniqueNote = null, at = 3L)
+        dao.setExercisePlan(
+            "te1",
+            restSeconds = null,
+            techniqueNote = null,
+            targetRpeHalves = null,
+            at = 3L,
+        )
         val cleared = dao.findTemplateExercise("te1")!!
         assertNull(cleared.restSeconds)
         assertNull(cleared.techniqueNote)
+        assertNull(cleared.targetRpeHalves)
     }
 
     private fun plannedSet(

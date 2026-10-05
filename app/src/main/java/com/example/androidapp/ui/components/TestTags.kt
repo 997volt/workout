@@ -263,12 +263,13 @@ object TestTags {
     const val TEMPLATE_SET_WEIGHT = "template_set_weight"
     const val TEMPLATE_SET_REPS_MIN = "template_set_reps_min"
     const val TEMPLATE_SET_REPS_MAX = "template_set_reps_max"
-    const val TEMPLATE_SET_RPE = "template_set_rpe"
     const val TEMPLATE_SET_NOTE = "template_set_note"
     const val TEMPLATE_SET_SAVE = "template_set_save"
     const val TEMPLATE_SET_CANCEL = "template_set_cancel"
     const val TEMPLATE_REST_FIELD = "template_rest_field"
     const val TEMPLATE_CUE_FIELD = "template_cue_field"
+    /** The exercise's one target RPE, beside the rest and cue it carries (N59, amended). */
+    const val TEMPLATE_EXERCISE_RPE = "template_exercise_rpe"
     const val TEMPLATE_REST_CUE_SAVE = "template_rest_cue_save"
 
     fun templatePlanSet(id: String) = "template_plan_set_$id"
@@ -427,13 +428,14 @@ object TestTags {
         const val PRESCRIPTION_SET_PERCENT = "program_set_percent"
         const val PRESCRIPTION_SET_REPS_MIN = "program_set_reps_min"
         const val PRESCRIPTION_SET_REPS_MAX = "program_set_reps_max"
-        const val PRESCRIPTION_SET_RPE = "program_set_rpe"
         const val PRESCRIPTION_SET_NOTE = "program_set_note"
         const val PRESCRIPTION_SET_SAVE = "program_set_save"
         const val PRESCRIPTION_SET_CANCEL = "program_set_cancel"
         const val REST_CUE_DIALOG = "program_rest_cue_dialog"
         const val REST_FIELD = "program_rest_field"
         const val CUE_FIELD = "program_cue_field"
+        /** The exercise's one target RPE, beside the rest and cue it carries (N59, amended). */
+        const val PRESCRIPTION_RPE = "program_prescription_rpe"
         const val REST_CUE_SAVE = "program_rest_cue_save"
         const val REST_CUE_CANCEL = "program_rest_cue_cancel"
 

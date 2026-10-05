@@ -1348,17 +1348,30 @@ private fun List<SetEntry>.loggedRowsFor(sessionExerciseId: String): List<SetRow
  * template's planned sets are the plan otherwise — the same "wins where it speaks" the prefill uses
  * (P3.8, N14), read whole rather than field by field because an accepted step has to be written back
  * to one of them, and a merged offer would have two homes.
+ *
+ * The **target RPE is one number for the exercise** (N59, amended), so every set here carries it
+ * rather than its own: the slot's value over the template's where the slot prescribes the sets, and a
+ * set's stored value only as the fallback a pre-change plan arrives with. That is what lets the rule
+ * check every working set against the exercise's single target.
  */
 private fun PlanContext.progressionSets(): List<ProgressionPlanSet> {
     val prescribed = prescription?.sets.orEmpty()
+    val exerciseRpe = plannedEntry?.targetRpeHalves
     return if (prescribed.isNotEmpty()) {
-        prescribed.map { it.toProgressionSet() }
+        val slotRpe = prescription?.targetRpeHalves ?: exerciseRpe
+        prescribed.map { it.toProgressionSet(rpeTarget = slotRpe) }
     } else {
-        plannedEntry?.sets.orEmpty().map { it.toProgressionSet() }
+        plannedEntry?.sets.orEmpty().map { it.toProgressionSet(rpeTarget = exerciseRpe) }
     }
 }
 
-private fun SlotSet.toProgressionSet(): ProgressionPlanSet = ProgressionPlanSet(
+/**
+ * One prescribed set as the rule reads it, with the exercise's one target RPE riding on it (N59).
+ *
+ * [rpeTarget] is the exercise-level value — the slot's or the template's, whichever planned the sets
+ * — and a set's own stored value stands only where the plan names none.
+ */
+private fun SlotSet.toProgressionSet(rpeTarget: Int?): ProgressionPlanSet = ProgressionPlanSet(
     setId = id,
     setIndex = setIndex,
     source = ProgressionSource.SLOT,
@@ -1367,12 +1380,12 @@ private fun SlotSet.toProgressionSet(): ProgressionPlanSet = ProgressionPlanSet(
     targetAssistanceGrams = targetAssistanceGrams,
     targetRepsMin = targetRepsMin,
     targetRepsMax = targetRepsMax,
-    targetRpeHalves = targetRpeHalves,
+    targetRpeHalves = rpeTarget ?: targetRpeHalves,
     targetPercentOf1Rm = targetPercentOf1Rm,
     note = note,
 )
 
-private fun TemplateSet.toProgressionSet(): ProgressionPlanSet = ProgressionPlanSet(
+private fun TemplateSet.toProgressionSet(rpeTarget: Int?): ProgressionPlanSet = ProgressionPlanSet(
     setId = id,
     setIndex = setIndex,
     source = ProgressionSource.TEMPLATE,
@@ -1381,7 +1394,7 @@ private fun TemplateSet.toProgressionSet(): ProgressionPlanSet = ProgressionPlan
     targetAssistanceGrams = targetAssistanceGrams,
     targetRepsMin = targetRepsMin,
     targetRepsMax = targetRepsMax,
-    targetRpeHalves = targetRpeHalves,
+    targetRpeHalves = rpeTarget ?: targetRpeHalves,
     note = note,
 )
 

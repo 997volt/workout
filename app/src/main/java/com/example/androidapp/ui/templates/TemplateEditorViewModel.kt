@@ -134,13 +134,19 @@ class TemplateEditorViewModel @Inject constructor(
 
     fun onRemoveSet(templateSetId: String) = write { repository.removeSet(templateSetId) }
 
-    /** The rest and cue this exercise's plan prescribes, over the library's (N14). */
+    /**
+     * The rest, cue and one target RPE this exercise's plan prescribes, over the library's (N14, N59).
+     *
+     * The RPE is the exercise's single number rather than a per-set one: the plan states what it
+     * builds to, and the stepper in a workout opens on it.
+     */
     fun onSaveExercisePlan(
         templateExerciseId: String,
         restSeconds: Int?,
         techniqueNote: String?,
+        targetRpeHalves: Int?,
     ) = write {
-        repository.setExercisePlan(templateExerciseId, restSeconds, techniqueNote)
+        repository.setExercisePlan(templateExerciseId, restSeconds, techniqueNote, targetRpeHalves)
     }
 
     /**

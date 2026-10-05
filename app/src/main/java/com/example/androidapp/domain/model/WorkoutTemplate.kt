@@ -36,6 +36,14 @@ data class TemplateExercise(
     /** A cue this exercise prescribes, or null to use the library's (N14). */
     val techniqueNote: String? = null,
     /**
+     * The effort this exercise's plan builds to, in half-points, or null (N59, amended).
+     *
+     * One number per exercise rather than one per set: the plan states a single effort to reach, and
+     * a legacy per-set [TemplateSet.targetRpeHalves] is only a fallback for a plan imported from a
+     * backup written before the change.
+     */
+    val targetRpeHalves: Int? = null,
+    /**
      * The superset or circuit this exercise is planned in, or null (ROADMAP N24, B16).
      *
      * The same ordinal a session carries, so starting a workout from this plan groups the

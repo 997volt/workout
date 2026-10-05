@@ -2,6 +2,7 @@ package com.example.androidapp.ui.workout
 
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.SlotPrescription
+import com.example.androidapp.domain.model.SlotSet
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.PreviousPerformance
@@ -133,8 +134,9 @@ fun plannedTargetFor(
             assistanceGrams = set.targetAssistanceGrams,
             // A planned set's role travels with its targets, so the ramp is armed, not retyped (B48).
             role = set.role,
-            // The target RPE travels too, and is what the stepper opens on (N59).
-            rpeHalves = set.targetRpeHalves,
+            // The exercise's one target RPE is what the stepper opens on (N59); a set's own value is
+            // only the fallback for a plan written before the effort moved to the exercise.
+            rpeHalves = planned.targetRpeHalves ?: set.targetRpeHalves,
         )
     }
 
@@ -169,6 +171,10 @@ fun prescribedWeightGrams(percentOf1Rm: Int, estimatedOneRepMaxGrams: Long?): Lo
  * as volume while the machine did the work (N15). [template] is the template's own target for the
  * same set, or null when it has none.
  *
+ * The **target RPE is one number for the whole exercise** (N59, amended), so the slot's own value
+ * stands over the template's even for a set the slot prescribed no row for: an exercise-level target
+ * is not per-set, and a set's own stored value is only the fallback a pre-change plan arrives with.
+ *
  * A percentage resolves through [prescribedWeightGrams], so an exercise with no estimate leaves the
  * load open and, with no template load to fall back to either, the prefill takes history rather than
  * inventing a number.
@@ -179,7 +185,32 @@ fun prescribedTargetFor(
     estimatedOneRepMaxGrams: Long?,
     template: PlannedTarget? = null,
 ): PlannedTarget? {
-    val prescribed = prescription?.sets?.firstOrNull { it.setIndex == nextIndex } ?: return template
+    val prescribed = prescription?.sets?.firstOrNull { it.setIndex == nextIndex }
+    // The slot's one RPE covers the whole exercise, so a set it wrote no row for still takes the
+    // slot's number over the template's rather than quietly keeping the template's (N59). With no
+    // slot RPE either, the slot says nothing about this set and the template stands whole.
+    val slotRpe = prescription?.targetRpeHalves
+    return when {
+        prescribed != null -> mergedTargetFor(prescribed, slotRpe, estimatedOneRepMaxGrams, template)
+        slotRpe != null -> (template ?: PlannedTarget(reps = null, weightGrams = null))
+            .copy(rpeHalves = slotRpe)
+
+        else -> template
+    }
+}
+
+/**
+ * A prescribed set merged with the template's targets, field by field (N14, P3.8, N59).
+ *
+ * Its own function so [prescribedTargetFor] reads as the one decision it is — whether the slot speaks
+ * at all — rather than as the merge arithmetic too.
+ */
+private fun mergedTargetFor(
+    prescribed: SlotSet,
+    slotRpe: Int?,
+    estimatedOneRepMaxGrams: Long?,
+    template: PlannedTarget?,
+): PlannedTarget {
     val percentWeight = prescribed.targetPercentOf1Rm?.let {
         prescribedWeightGrams(it, estimatedOneRepMaxGrams)
     }
@@ -190,13 +221,17 @@ fun prescribedTargetFor(
         reps = prescribed.targetRepsMax ?: prescribed.targetRepsMin ?: template?.reps,
         // A weight the slot wrote wins over a percentage; the two are alternatives, not a sum.
         weightGrams = if (slotNamesLoad) slotWeight else template?.weightGrams,
-        assistanceGrams = if (slotNamesLoad) prescribed.targetAssistanceGrams else template?.assistanceGrams,
+        assistanceGrams = if (slotNamesLoad) {
+            prescribed.targetAssistanceGrams
+        } else {
+            template?.assistanceGrams
+        },
         // The slot's own role wins wherever the slot speaks at all: its sets carry the plan's
         // vocabulary and default to a working set, so there is no "left alone" to fall back for (B48).
         role = prescribed.role,
-        // The RPE follows the same "wins where it speaks" rule as reps: the slot's target where it
-        // names one, the template's otherwise (N59).
-        rpeHalves = prescribed.targetRpeHalves ?: template?.rpeHalves,
+        // The slot's one RPE where it names one, the set's own where only that was written, and the
+        // template's where the slot is silent (N59, N14).
+        rpeHalves = slotRpe ?: prescribed.targetRpeHalves ?: template?.rpeHalves,
     )
 }
 

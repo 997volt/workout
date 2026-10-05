@@ -8,11 +8,27 @@ import org.junit.Test
  * The next step an exercise earned (ROADMAP N50).
  *
  * The rule is where "earned" is decided, so what matters here is every way it can say no: a rep
- * short, an RPE at the target and one over it, no RPE recorded, no target RPE written, a plan of
- * warm-ups only, and no plan at all. A wrong yes is the app telling a lifter to add weight they have
- * not earned, which is the failure the whole rule exists to avoid.
+ * short, an RPE at the target and one over it, no RPE recorded, no target RPE written for the
+ * exercise, a plan of warm-ups only, and no plan at all. A wrong yes is the app telling a lifter to
+ * add weight they have not earned, which is the failure the whole rule exists to avoid.
  */
 class ProgressionOfferTest {
+
+    @Test
+    fun everyWorkingSet_isCheckedAgainstTheExercisesOneTargetRpe() {
+        // ROADMAP N59, amended: the plan names one RPE for the exercise, and the caller carries it
+        // onto every prescribed set. Meeting it on one set and exceeding it on the next is not the
+        // plan answered, so nothing is offered.
+        val offer = progressionOfferFor(
+            planned = listOf(
+                planSet(id = "ts-0", index = 0, rpe = 8),
+                planSet(id = "ts-1", index = 1, rpe = 8),
+            ),
+            performed = listOf(done(rpe = 8), done(rpe = 9)),
+        )
+
+        assertThat(offer).isNull()
+    }
 
     @Test
     fun anAnsweredPlan_offersBothDirections() {
@@ -318,6 +334,7 @@ class ProgressionOfferTest {
         assistance: Long? = null,
         repsMin: Int? = null,
         repsMax: Int? = 5,
+        /** The exercise's one target RPE, which the caller carries onto each set (N59, amended). */
         rpe: Int? = 8,
         percentOf1Rm: Int? = null,
         note: String? = null,

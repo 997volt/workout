@@ -109,15 +109,16 @@ interface ProgramRepository {
     fun observeSlotPrescriptions(slotId: String): Flow<List<SlotPrescription>>
 
     /**
-     * Writes the rest and cue a slot prescribes for one exercise (P3.8), creating the row on the
-     * first write. Clearing both when the exercise has no set left removes the row, so an empty
-     * prescription does not linger as an empty row.
+     * Writes the rest, cue and target RPE a slot prescribes for one exercise (P3.8, N59), creating
+     * the row on the first write. Clearing all three when the exercise has no set left removes the
+     * row, so an empty prescription does not linger as an empty row.
      */
     suspend fun setSlotExercisePlan(
         slotId: String,
         exerciseId: String,
         restSeconds: Int?,
         techniqueNote: String?,
+        targetRpeHalves: Int?,
     ): DataResult<Unit>
 
     /** Appends a prescribed set to a slot's exercise, creating its row on the first write (P3.8). */

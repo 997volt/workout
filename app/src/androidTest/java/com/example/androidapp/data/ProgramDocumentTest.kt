@@ -157,7 +157,7 @@ class ProgramDocumentTest {
             planned,
             TemplateSetEdit(role = SetType.WARMUP, targetWeightGrams = 60_000L, targetRepsMax = 5),
         )
-        templates.setExercisePlan(planned, restSeconds = 0, techniqueNote = null)
+        templates.setExercisePlan(planned, restSeconds = 0, techniqueNote = null, targetRpeHalves = null)
         programs.addSlot(programId, templateId, DayOfWeek.MONDAY)
         return programId
     }

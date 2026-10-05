@@ -114,8 +114,8 @@ fun ProgramEditorRoute(
             onAddSet = viewModel::onAddSlotSet,
             onUpdateSet = viewModel::onUpdateSlotSet,
             onRemoveSet = viewModel::onRemoveSlotSet,
-            onSetRestCue = { slotId, exerciseId, rest, cue ->
-                viewModel.onSetSlotExercisePlan(slotId, exerciseId, rest, cue)
+            onSetRestCue = { slotId, exerciseId, rest, cue, rpe ->
+                viewModel.onSetSlotExercisePlan(slotId, exerciseId, rest, cue, rpe)
             },
         ),
         onExportProgram = exportProgram,
@@ -274,8 +274,8 @@ private fun ProgramEditorDialogs(
             },
             onUpdateSet = prescriptionActions.onUpdateSet,
             onRemoveSet = prescriptionActions.onRemoveSet,
-            onSetRestCue = { exerciseId, rest, cue ->
-                prescriptionActions.onSetRestCue(editor.slotId, exerciseId, rest, cue)
+            onSetRestCue = { exerciseId, rest, cue, rpe ->
+                prescriptionActions.onSetRestCue(editor.slotId, exerciseId, rest, cue, rpe)
             },
             onDismiss = onClosePrescription,
         )

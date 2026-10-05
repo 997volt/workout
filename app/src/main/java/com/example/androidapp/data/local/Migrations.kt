@@ -662,6 +662,57 @@ private const val CREATE_SESSION_EXERCISE_JOINTS_EXERCISE_INDEX =
     "CREATE INDEX IF NOT EXISTS `index_session_exercise_joints_sessionExerciseId` " +
         "ON `session_exercise_joints` (`sessionExerciseId`)"
 
+/**
+ * v27 -> v28: a plan's target RPE moves from one per prescribed set to one per exercise
+ * (ROADMAP N59, amended).
+ *
+ * **This is a consolidation, not a copy.** A plan used to name an effort on every planned set; it now
+ * names one number for the exercise, beside the rest and cue it already carried, so the two editors
+ * each show a single RPE field. The backfill takes **the last set that names one, in `setIndex`
+ * order**, warm-ups included — a ramp's last set is the top set, which is what the plan builds to.
+ *
+ * **The per-set values are left in place rather than cleared.** Nothing reads them once the exercise
+ * names a value, but they are what a backup file written before this change carries, and a reader
+ * falls back to them where the exercise-level value is absent — which is exactly the state a
+ * pre-change backup imported after this is in. Clearing them would make that fallback pointless and
+ * would silently discard data the export still holds.
+ *
+ * Both columns are nullable and unset on an exercise with no prescribed RPE, so "the plan names no
+ * effort" stays a state rather than becoming a zero. The SQL is Room's own ALTER shape, and the two
+ * backfills are plain correlated subqueries; the migration test validates the result against the
+ * exported `28.json`.
+ */
+val MIGRATION_27_28 = object : Migration(27, 28) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(ADD_TEMPLATE_EXERCISE_TARGET_RPE)
+        db.execSQL(ADD_SLOT_EXERCISE_TARGET_RPE)
+        db.execSQL(SEED_TEMPLATE_EXERCISE_TARGET_RPE)
+        db.execSQL(SEED_SLOT_EXERCISE_TARGET_RPE)
+    }
+}
+
+private const val ADD_TEMPLATE_EXERCISE_TARGET_RPE =
+    "ALTER TABLE `template_exercises` ADD COLUMN `targetRpeHalves` INTEGER"
+
+private const val ADD_SLOT_EXERCISE_TARGET_RPE =
+    "ALTER TABLE `program_slot_exercises` ADD COLUMN `targetRpeHalves` INTEGER"
+
+/** The last set that named an effort is what the plan builds to; a ramp's last set is the top set. */
+private const val SEED_TEMPLATE_EXERCISE_TARGET_RPE =
+    "UPDATE `template_exercises` SET `targetRpeHalves` = (" +
+        "SELECT s.`targetRpeHalves` FROM `template_sets` s " +
+        "WHERE s.`templateExerciseId` = `template_exercises`.`id` " +
+        "AND s.`targetRpeHalves` IS NOT NULL AND s.`deletedAt` IS NULL " +
+        "ORDER BY s.`setIndex` DESC LIMIT 1)"
+
+/** The same consolidation for a slot's prescription: its own sets seed its own exercise row. */
+private const val SEED_SLOT_EXERCISE_TARGET_RPE =
+    "UPDATE `program_slot_exercises` SET `targetRpeHalves` = (" +
+        "SELECT s.`targetRpeHalves` FROM `program_slot_sets` s " +
+        "WHERE s.`slotExerciseId` = `program_slot_exercises`.`id` " +
+        "AND s.`targetRpeHalves` IS NOT NULL AND s.`deletedAt` IS NULL " +
+        "ORDER BY s.`setIndex` DESC LIMIT 1)"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -799,4 +850,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_24_25,
     MIGRATION_25_26,
     MIGRATION_26_27,
+    MIGRATION_27_28,
 )

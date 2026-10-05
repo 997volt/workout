@@ -46,9 +46,20 @@ data class SlotPrescription(
     val restSeconds: Int? = null,
     /** A cue this slot prescribes, or null to use the template's and then the library's (N14). */
     val techniqueNote: String? = null,
+    /**
+     * The effort this slot prescribes for the whole exercise, in half-points, or null (N59, amended).
+     *
+     * One number per exercise rather than one per set, beside the rest and cue above. A legacy
+     * per-set [SlotSet.targetRpeHalves] is only a fallback for a prescription imported from a backup
+     * written before the change.
+     */
+    val targetRpeHalves: Int? = null,
     val sets: List<SlotSet> = emptyList(),
 ) {
     /** True when the slot says nothing about this exercise, so the template's targets stand. */
     val isEmpty: Boolean
-        get() = restSeconds == null && techniqueNote == null && sets.isEmpty()
+        get() = restSeconds == null &&
+            techniqueNote == null &&
+            targetRpeHalves == null &&
+            sets.isEmpty()
 }

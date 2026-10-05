@@ -244,6 +244,7 @@ class RoomProgramRepository @Inject constructor(
         exerciseId: String,
         restSeconds: Int?,
         techniqueNote: String?,
+        targetRpeHalves: Int?,
     ): DataResult<Unit> = dataResultOf {
         val slot = dao.findSlot(slotId) ?: throw NotFoundException("program slot $slotId")
         requireExerciseInTemplate(database, slot.templateId, exerciseId)
@@ -252,10 +253,13 @@ class RoomProgramRepository @Inject constructor(
         if (restSeconds != null && restSeconds < RestTimer.MIN_PRESCRIBED_SECONDS) {
             throw InvalidInputException(RestTimer.NEGATIVE_REST_REFUSAL)
         }
+        if (!Rpe.isValid(targetRpeHalves)) {
+            throw InvalidInputException("Target RPE must be between 1 and 10, in half steps.")
+        }
 
         val now = timeSource.nowEpochMillis()
         val existing = prescriptionDao.findSlotExercise(slotId, exerciseId)
-        val saysNothing = restSeconds == null && techniqueNote == null
+        val saysNothing = restSeconds == null && techniqueNote == null && targetRpeHalves == null
         when {
             // Nothing is said and there is no row: there is nothing to write.
             existing == null && saysNothing -> Unit
@@ -266,6 +270,7 @@ class RoomProgramRepository @Inject constructor(
                     exerciseId = exerciseId,
                     restSeconds = restSeconds,
                     techniqueNote = techniqueNote,
+                    targetRpeHalves = targetRpeHalves,
                     createdAt = now,
                     updatedAt = now,
                     deletedAt = null,
@@ -280,6 +285,7 @@ class RoomProgramRepository @Inject constructor(
                 existing.copy(
                     restSeconds = restSeconds,
                     techniqueNote = techniqueNote,
+                    targetRpeHalves = targetRpeHalves,
                     updatedAt = now,
                 ),
             )
@@ -351,7 +357,11 @@ class RoomProgramRepository @Inject constructor(
         // it goes too, so an emptied prescription leaves no row behind.
         val parent = prescriptionDao.findSlotExerciseById(existing.slotExerciseId)
         if (parent != null) {
-            val saysNothing = parent.restSeconds == null && parent.techniqueNote == null
+            // The row speaks through its rest, its cue and its one target RPE (N59): a slot that
+            // names any of them must survive its last set going.
+            val saysNothing = parent.restSeconds == null &&
+                parent.techniqueNote == null &&
+                parent.targetRpeHalves == null
             if (saysNothing && prescriptionDao.countSlotSets(parent.id) == 0) {
                 prescriptionDao.softDeleteSlotExercise(parent.id, now)
             }

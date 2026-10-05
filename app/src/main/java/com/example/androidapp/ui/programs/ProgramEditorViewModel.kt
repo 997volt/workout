@@ -196,13 +196,21 @@ class ProgramEditorViewModel @Inject constructor(
         prescriptionSlotId.value = null
     }
 
-    /** Writes the rest and cue the slot prescribes for one exercise (P3.8). */
+    /**
+     * Writes the rest, cue and one target RPE the slot prescribes for one exercise (P3.8, N59).
+     *
+     * The RPE is the exercise's single number rather than a per-set one: the slot states what it
+     * builds to, and the workout's stepper opens on it.
+     */
     fun onSetSlotExercisePlan(
         slotId: String,
         exerciseId: String,
         restSeconds: Int?,
         techniqueNote: String?,
-    ) = write { repository.setSlotExercisePlan(slotId, exerciseId, restSeconds, techniqueNote) }
+        targetRpeHalves: Int?,
+    ) = write {
+        repository.setSlotExercisePlan(slotId, exerciseId, restSeconds, techniqueNote, targetRpeHalves)
+    }
 
     fun onAddSlotSet(slotId: String, exerciseId: String, edit: SlotSetEdit) = write {
         repository.addSlotSet(slotId, exerciseId, edit)

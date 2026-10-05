@@ -1,10 +1,14 @@
 package com.example.androidapp.ui.workout
 
 import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.SlotPrescription
 import com.example.androidapp.domain.model.SlotSet
+import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.Weight
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -368,6 +372,72 @@ class SetSuggestionTest {
     }
 
     @Test
+    fun aTemplatesOneTargetRpe_winsOverItsSetsLegacyValue() {
+        // ROADMAP N59, amended: the exercise's number is the plan's target, and a set's own value is
+        // only what a plan written before the change arrives with.
+        val target = plannedTargetFor(planned = plannedExercise(exerciseRpe = 18, setRpe = 16), nextIndex = 0)
+
+        assertEquals(18, target?.rpeHalves)
+    }
+
+    @Test
+    fun aSetsLegacyRpe_isTheFallback_whenTheExerciseNamesNone() {
+        // The `?:` a pre-change backup relies on: the plan has no exercise-level value, so the set's
+        // stands and the plan behaves exactly as it did before the effort moved.
+        val target = plannedTargetFor(planned = plannedExercise(exerciseRpe = null, setRpe = 16), nextIndex = 0)
+
+        assertEquals(16, target?.rpeHalves)
+    }
+
+    @Test
+    fun aSlotsOneTargetRpe_winsOverItsSetsLegacyValue() {
+        val target = prescribedTargetFor(
+            prescription = SlotPrescription(
+                exerciseId = "back-squat",
+                targetRpeHalves = 18,
+                sets = listOf(SlotSet(id = "x", setIndex = 0, targetRpeHalves = 16)),
+            ),
+            nextIndex = 0,
+            estimatedOneRepMaxGrams = null,
+        )
+
+        assertEquals(18, target?.rpeHalves)
+    }
+
+    @Test
+    fun aSlotsSetsLegacyRpe_isTheFallback_whenTheExerciseNamesNone() {
+        val target = prescribedTargetFor(
+            prescription = SlotPrescription(
+                exerciseId = "back-squat",
+                sets = listOf(SlotSet(id = "x", setIndex = 0, targetRpeHalves = 16)),
+            ),
+            nextIndex = 0,
+            estimatedOneRepMaxGrams = null,
+        )
+
+        assertEquals(16, target?.rpeHalves)
+    }
+
+    @Test
+    fun aSlotsOneTargetRpe_coversASetItWroteNoRowFor() {
+        // One number for the exercise means the slot's value is not withheld from a set it prescribed
+        // no row for: the template still supplies the targets, and the slot supplies the effort.
+        val target = prescribedTargetFor(
+            prescription = SlotPrescription(
+                exerciseId = "back-squat",
+                targetRpeHalves = 18,
+                sets = listOf(SlotSet(id = "x", setIndex = 0, targetRpeHalves = 16)),
+            ),
+            nextIndex = 1,
+            estimatedOneRepMaxGrams = null,
+            template = PlannedTarget(reps = 5, weightGrams = 100_000L, rpeHalves = 14),
+        )
+
+        assertEquals("the slot's one number, not the template's", 18, target?.rpeHalves)
+        assertEquals("the template still supplies the targets", 100_000L, target?.weightGrams)
+    }
+
+    @Test
     fun aSlotSetThatNamesALoad_doesNotAlsoInheritTheTemplatesAssistance() {
         // The load is *one* number (N15): taking the slot's kilograms and the template's assistance
         // would build a set that is both, and count the kilograms as volume on an assisted set.
@@ -409,4 +479,27 @@ class SetSuggestionTest {
         assertNull("nothing estimable has no number", prescribedWeightGrams(85, null))
         assertNull(prescribedWeightGrams(85, 0L))
     }
+
+    /** One planned exercise with one planned set, for the exercise-versus-set RPE fallback (N59). */
+    private fun plannedExercise(exerciseRpe: Int?, setRpe: Int?) = TemplateExercise(
+        id = "te1",
+        templateId = "t1",
+        exerciseId = "back-squat",
+        position = 0,
+        exerciseName = "Back Squat",
+        primaryMuscle = MuscleGroup.QUADS,
+        equipment = Equipment.BARBELL,
+        targetRpeHalves = exerciseRpe,
+        sets = listOf(
+            TemplateSet(
+                id = "ts1",
+                templateExerciseId = "te1",
+                setIndex = 0,
+                targetWeightGrams = 100_000L,
+                targetRepsMax = 5,
+                // The value a plan written before the effort moved to the exercise carries.
+                targetRpeHalves = setRpe,
+            ),
+        ),
+    )
 }

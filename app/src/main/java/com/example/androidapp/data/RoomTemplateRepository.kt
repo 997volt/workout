@@ -266,16 +266,21 @@ class RoomTemplateRepository @Inject constructor(
         templateExerciseId: String,
         restSeconds: Int?,
         techniqueNote: String?,
+        targetRpeHalves: Int?,
     ): DataResult<Unit> = dataResultOf {
         // Zero is a value — "this exercise has no rest" — and leaving it unset is how "use the
         // library's" is expressed (the same rule N5 applies to the library itself, amended by N45).
         if (restSeconds != null && restSeconds < RestTimer.MIN_PRESCRIBED_SECONDS) {
             throw InvalidInputException(RestTimer.NEGATIVE_REST_REFUSAL)
         }
-        val updated = dao.setExerciseRestAndCue(
+        if (!Rpe.isValid(targetRpeHalves)) {
+            throw InvalidInputException("Target RPE must be between 1 and 10, in half steps.")
+        }
+        val updated = dao.setExercisePlan(
             id = templateExerciseId,
             restSeconds = restSeconds,
             techniqueNote = techniqueNote?.trim()?.ifEmpty { null },
+            targetRpeHalves = targetRpeHalves,
             at = timeSource.nowEpochMillis(),
         )
         if (updated == 0) throw NotFoundException("template exercise $templateExerciseId")
@@ -392,6 +397,10 @@ private suspend fun copyExerciseInto(
             // grouping is what makes a copied superset arrive together (N24).
             restSeconds = exercise.restSeconds,
             techniqueNote = exercise.techniqueNote,
+            // One target RPE per exercise now, and the session's last set that named one is what the
+            // copy builds to (N59) — the same consolidation migration 27→28 made for plans already
+            // stored. The sets keep their own values below, as a plan imported from before does.
+            targetRpeHalves = sets.lastOrNull { it.rpeHalves != null }?.rpeHalves,
             supersetGroup = exercise.supersetGroup,
             createdAt = plan.now,
             updatedAt = plan.now,

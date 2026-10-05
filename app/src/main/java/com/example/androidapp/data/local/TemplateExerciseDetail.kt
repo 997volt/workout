@@ -22,6 +22,8 @@ data class TemplateExerciseDetail(
     val equipment: Equipment,
     val restSeconds: Int?,
     val techniqueNote: String?,
+    /** The effort the plan builds to, in half-points, or null (N59, amended). */
+    val targetRpeHalves: Int?,
     val supersetGroup: Int?,
 )
 
@@ -37,6 +39,7 @@ internal fun TemplateExerciseDetail.toDomain(
     equipment = equipment,
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
+    targetRpeHalves = targetRpeHalves,
     supersetGroup = supersetGroup,
     sets = sets,
 )

@@ -47,6 +47,15 @@ data class TemplateExerciseEntity(
     val restSeconds: Int? = null,
     /** A cue this exercise prescribes, or null to fall back to the library's (N5). */
     val techniqueNote: String? = null,
+    /**
+     * The effort this exercise's plan builds to, in half-points, or null.
+     *
+     * **One per exercise rather than one per set** (ROADMAP N59, amended): a plan states a single
+     * number to reach, so it lives where the rest and cue already do. A `template_sets` row may
+     * still carry a legacy [TemplateSetEntity.targetRpeHalves], left for a backup written before
+     * the change to carry; a reader prefers this value and falls back to the set's.
+     */
+    val targetRpeHalves: Int? = null,
     /** The superset or circuit this exercise is planned in, or null (ROADMAP N24, B16). */
     val supersetGroup: Int? = null,
     val createdAt: Long,

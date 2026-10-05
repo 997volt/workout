@@ -13,5 +13,6 @@ data class PrescriptionActions(
     val onAddSet: (String, String, SlotSetEdit) -> Unit = { _, _, _ -> },
     val onUpdateSet: (String, SlotSetEdit) -> Unit = { _, _ -> },
     val onRemoveSet: (String) -> Unit = {},
-    val onSetRestCue: (String, String, Int?, String?) -> Unit = { _, _, _, _ -> },
+    /** The slot, its exercise, and the rest, cue and one target RPE it prescribes (P3.8, N59). */
+    val onSetRestCue: (String, String, Int?, String?, Int?) -> Unit = { _, _, _, _, _ -> },
 )

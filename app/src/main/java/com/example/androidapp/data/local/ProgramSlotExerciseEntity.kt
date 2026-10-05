@@ -10,9 +10,9 @@ import androidx.room.PrimaryKey
  * (ROADMAP P3.8).
  *
  * The parent of a slot's [ProgramSlotSetEntity] rows, mirroring the template's
- * `template_exercises`/`template_sets` split: the rest and cue belong to the exercise, the
- * targets belong to the set, and denormalising the former onto every set row would make one
- * idea live in several places. The exercise is named by [exerciseId] rather than by a
+ * `template_exercises`/`template_sets` split: the rest, the prescribed RPE and the cue belong to the
+ * exercise, the set-by-set targets belong to the set, and denormalising the former onto every set row
+ * would make one idea live in several places. The exercise is named by [exerciseId] rather than by a
  * `template_exercises` row, so the prescription survives editing the template (N16's living
  * template) — an exercise the template no longer has simply goes unread.
  */
@@ -36,6 +36,15 @@ data class ProgramSlotExerciseEntity(
     val restSeconds: Int? = null,
     /** The cue this slot prescribes, or null (P3.8). */
     val techniqueNote: String? = null,
+    /**
+     * The effort this slot prescribes for the whole exercise, in half-points, or null (P3.8).
+     *
+     * **One per exercise rather than one per set** (ROADMAP N59, amended): the target belongs beside
+     * the rest and cue this row already carries, not on every prescribed set. A
+     * [ProgramSlotSetEntity.targetRpeHalves] is left in place for a backup written before the change;
+     * a reader prefers this value and falls back to the set's.
+     */
+    val targetRpeHalves: Int? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

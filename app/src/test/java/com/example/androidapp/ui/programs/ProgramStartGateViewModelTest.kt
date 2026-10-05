@@ -236,6 +236,7 @@ class ProgramStartGateViewModelTest {
             exerciseId: String,
             restSeconds: Int?,
             techniqueNote: String?,
+            targetRpeHalves: Int?,
         ): DataResult<Unit> = error("these tests do not prescribe an exercise")
 
         override suspend fun addSlotSet(

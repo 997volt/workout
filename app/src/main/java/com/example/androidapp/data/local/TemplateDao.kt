@@ -92,6 +92,7 @@ interface TemplateDao {
                e.equipment AS equipment,
                te.restSeconds AS restSeconds,
                te.techniqueNote AS techniqueNote,
+               te.targetRpeHalves AS targetRpeHalves,
                te.supersetGroup AS supersetGroup
         FROM template_exercises te
         JOIN exercises e ON e.id = te.exerciseId
@@ -231,18 +232,20 @@ interface TemplateDao {
     )
     suspend fun softDeleteTemplateSet(id: String, at: Long): Int
 
-    /** Writes a template exercise's prescribed rest and cue (ROADMAP N14). */
+    /** Writes a template exercise's prescribed rest, cue and target effort (ROADMAP N14, N59). */
     @Query(
         """
         UPDATE template_exercises
-        SET restSeconds = :restSeconds, techniqueNote = :techniqueNote, updatedAt = :at
+        SET restSeconds = :restSeconds, techniqueNote = :techniqueNote,
+            targetRpeHalves = :targetRpeHalves, updatedAt = :at
         WHERE id = :id AND deletedAt IS NULL
         """,
     )
-    suspend fun setExerciseRestAndCue(
+    suspend fun setExercisePlan(
         id: String,
         restSeconds: Int?,
         techniqueNote: String?,
+        targetRpeHalves: Int?,
         at: Long,
     ): Int
 

@@ -50,9 +50,10 @@ interface TemplateRepository {
      * from a plan, in the other direction.
      *
      * Copies the exercises in order and **their performed sets as targets** — role, weight, assistance,
-     * reps and RPE — so a copied warm-up ramp is a ramp and a copied superset stays paired. It copies
-     * neither the readiness note, the ratings nor the workout comment: those describe that day rather
-     * than the plan. The source workout is untouched and stays independent of the copy.
+     * reps and RPE — so a copied warm-up ramp is a ramp and a copied superset stays paired. The
+     * exercise's own target RPE is the last set that named one, which is what the plan builds to
+     * (N59). It copies neither the readiness note, the ratings nor the workout comment: those describe
+     * that day rather than the plan. The source workout is untouched and stays independent of the copy.
      *
      * A workout with nothing to copy is refused rather than turned into an empty plan.
      */
@@ -97,13 +98,14 @@ interface TemplateRepository {
     suspend fun removeSet(templateSetId: String): DataResult<Unit>
 
     /**
-     * Writes what a plan prescribes for one exercise: a rest and a cue, either of
-     * which may be null to fall back to the library's (N5).
+     * Writes what a plan prescribes for one exercise: a rest, a cue and the target RPE it builds to,
+     * any of which may be null to fall back to the library's (N5) or to name no effort (N59).
      */
     suspend fun setExercisePlan(
         templateExerciseId: String,
         restSeconds: Int?,
         techniqueNote: String?,
+        targetRpeHalves: Int?,
     ): DataResult<Unit>
 
     /**

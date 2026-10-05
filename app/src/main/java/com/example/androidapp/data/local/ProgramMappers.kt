@@ -47,6 +47,7 @@ internal fun ProgramSlotExerciseEntity.toDomain(sets: List<ProgramSlotSetEntity>
         exerciseId = exerciseId,
         restSeconds = restSeconds,
         techniqueNote = techniqueNote,
+        targetRpeHalves = targetRpeHalves,
         sets = sets.map { it.toDomain() },
     )
 

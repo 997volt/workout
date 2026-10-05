@@ -322,6 +322,14 @@ data class TemplateExerciseDto(
     /** The rest and cue the plan prescribes, or null to use the library's (N14). */
     val restSeconds: Int? = null,
     val techniqueNote: String? = null,
+    /**
+     * The effort the plan builds to, in half-points, or null (N59, amended).
+     *
+     * Defaulted for the same reason every column added here is: a file written before the effort
+     * moved from the set to the exercise still decodes, and its per-set
+     * [TemplateSetDto.targetRpeHalves] stays the fallback a reader uses.
+     */
+    val targetRpeHalves: Int? = null,
     /** The superset this exercise is planned in, or null (ROADMAP N24, B16). */
     val supersetGroup: Int? = null,
     val createdAt: Long,
@@ -418,7 +426,7 @@ data class ProgramSubstitutionDto(
     val deletedAt: Long? = null,
 )
 
-/** One exercise of one slot, and the rest and cue that slot prescribes for it (ROADMAP P3.8). */
+/** One exercise of one slot, and the rest, cue and target effort that slot prescribes (ROADMAP P3.8). */
 @Serializable
 data class ProgramSlotExerciseDto(
     val id: String,
@@ -426,6 +434,13 @@ data class ProgramSlotExerciseDto(
     val exerciseId: String,
     val restSeconds: Int? = null,
     val techniqueNote: String? = null,
+    /**
+     * The effort the slot prescribes for the exercise, in half-points, or null (N59, amended).
+     *
+     * Defaulted so a file written before the effort moved from the set to the exercise still
+     * decodes; a reader falls back to [ProgramSlotSetDto.targetRpeHalves] for those.
+     */
+    val targetRpeHalves: Int? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

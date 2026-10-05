@@ -18,6 +18,7 @@ import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.repository.SlotSetEdit
 import com.example.androidapp.ui.components.TestTags
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,8 +39,16 @@ class SlotPrescriptionDialogTest {
     private var added: Pair<String, SlotSetEdit>? = null
     private var updated: Pair<String, SlotSetEdit>? = null
     private var removed: String? = null
-    private var restCue: Triple<String, Int?, String?>? = null
+    private var restCue: SlotExercisePlan? = null
     private var dismissed = false
+
+    /** What the rest/cue/RPE dialog reported for one exercise (P3.8, N59). */
+    private data class SlotExercisePlan(
+        val exerciseId: String,
+        val restSeconds: Int?,
+        val techniqueNote: String?,
+        val targetRpeHalves: Int?,
+    )
 
     private fun setDialog(prescriptions: List<SlotPrescription> = emptyList()) {
         composeTestRule.setContent {
@@ -63,7 +72,9 @@ class SlotPrescriptionDialogTest {
                 onAddSet = { exerciseId, edit -> added = exerciseId to edit },
                 onUpdateSet = { id, edit -> updated = id to edit },
                 onRemoveSet = { removed = it },
-                onSetRestCue = { exerciseId, rest, cue -> restCue = Triple(exerciseId, rest, cue) },
+                onSetRestCue = { exerciseId, rest, cue, rpe ->
+                    restCue = SlotExercisePlan(exerciseId, rest, cue, rpe)
+                },
                 onDismiss = { dismissed = true },
             )
         }
@@ -91,7 +102,6 @@ class SlotPrescriptionDialogTest {
         composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_SET_PERCENT).performTextInput("85")
         composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_SET_REPS_MIN).performTextInput("3")
         composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_SET_REPS_MAX).performTextInput("5")
-        composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_SET_RPE).performTextInput("8")
         composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_SET_NOTE).performTextInput("grind")
         composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_SET_SAVE).performClick()
 
@@ -102,11 +112,32 @@ class SlotPrescriptionDialogTest {
         assertThat(edit?.targetPercentOf1Rm).isEqualTo(85)
         assertThat(edit?.targetRepsMin).isEqualTo(3)
         assertThat(edit?.targetRepsMax).isEqualTo(5)
-        // 8 RPE is 16 half-points (N6).
-        assertThat(edit?.targetRpeHalves).isEqualTo(16)
         assertThat(edit?.note).isEqualTo("grind")
     }
 
+    @Test
+    fun aLegacyPerSetRpe_isRoundTripped_thoughTheSetFormNoLongerShowsIt() {
+        // ROADMAP N59, amended: a slot's target RPE is one number per exercise now, so this form has
+        // no RPE field — but a set that still carries a value from before the change must come back
+        // from an edit with it intact rather than silently wiped.
+        setDialog(
+            listOf(
+                SlotPrescription(
+                    exerciseId = "back-squat",
+                    sets = listOf(SlotSet(id = "ps1", setIndex = 0, targetRpeHalves = 19)),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.prescriptionSet("ps1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_SET_WEIGHT).performTextInput("100")
+        composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_SET_SAVE).performClick()
+
+        assertThat(updated?.second?.targetWeightGrams).isEqualTo(100_000L)
+        assertWithMessage("the legacy per-set RPE is carried, not cleared")
+            .that(updated?.second?.targetRpeHalves)
+            .isEqualTo(19)
+    }
     @Test
     fun addingASet_startsFromTheLastPrescribedSet() {
         // ROADMAP N46: Add set prefills here too, through this side's own lookup — the sets hang
@@ -162,21 +193,24 @@ class SlotPrescriptionDialogTest {
     }
 
     @Test
-    fun theRestAndCue_savesWhatWasTyped_andBackingOutSavesNothing() {
+    fun theRestCueAndOneRpePerExercise_savesWhatWasTyped_andBackingOutSavesNothing() {
+        // ROADMAP N59, amended: the effort is one number for the whole exercise, so it is edited
+        // beside the rest and cue the slot already carried rather than on each prescribed set.
         setDialog()
 
         composeTestRule.onNodeWithTag(TestTags.Programs.prescriptionRestCue("back-squat")).performClick()
         composeTestRule.onNodeWithTag(TestTags.Programs.REST_CUE_DIALOG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.Programs.REST_FIELD).performTextInput("150")
+        composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_RPE).performTextInput("8")
         composeTestRule.onNodeWithTag(TestTags.Programs.CUE_FIELD).performTextInput("brace hard")
         composeTestRule.onNodeWithTag(TestTags.Programs.REST_CUE_SAVE).performClick()
 
-        assertThat(restCue).isEqualTo(Triple("back-squat", 150, "brace hard"))
+        assertThat(restCue).isEqualTo(SlotExercisePlan("back-squat", 150, "brace hard", 16))
 
         // A second visit that is cancelled reports nothing, so the cancel control is not a write.
         composeTestRule.onNodeWithTag(TestTags.Programs.prescriptionRestCue("back-squat")).performClick()
         composeTestRule.onNodeWithTag(TestTags.Programs.REST_CUE_CANCEL).performClick()
-        assertThat(restCue).isEqualTo(Triple("back-squat", 150, "brace hard"))
+        assertThat(restCue).isEqualTo(SlotExercisePlan("back-squat", 150, "brace hard", 16))
 
         composeTestRule.onNodeWithTag(TestTags.Programs.PRESCRIPTION_CLOSE).performClick()
         assertThat(dismissed).isTrue()

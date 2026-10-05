@@ -205,7 +205,9 @@ class ActiveWorkoutViewModelTest {
         planned = listOf(
             plannedExercise(
                 position = 0,
-                sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = 8)),
+                // The plan's one target RPE now lives on the exercise, not the set (N59, amended).
+                targetRpeHalves = 8,
+                sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = null)),
             ),
         ),
     )
@@ -664,13 +666,14 @@ class ActiveWorkoutViewModelTest {
             prescriptions = listOf(
                 SlotPrescription(
                     exerciseId = "back-squat",
+                    // The slot's one target RPE for the exercise (N59, amended).
+                    targetRpeHalves = 8,
                     sets = listOf(
                         SlotSet(
                             id = "ps0",
                             setIndex = 0,
                             targetWeightGrams = 100_000L,
                             targetRepsMax = 5,
-                            targetRpeHalves = 8,
                         ),
                     ),
                 ),
@@ -749,6 +752,61 @@ class ActiveWorkoutViewModelTest {
         viewModel.onAddExercise("back-squat")
         settle()
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        assertNull(viewModel.uiState.value.exercises.single().progression.offer)
+    }
+
+    @Test
+    fun theExercisesOneTargetRpe_isWhatEarnsTheStep() = runTest(dispatcher) {
+        // ROADMAP N59, amended: the plan names one RPE for the exercise and the planned set carries
+        // none of its own. The exercise's 8 is the target, so doing 5 at RPE 7 answers the plan.
+        val repository = FakeWorkoutRepository()
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    targetRpeHalves = 8,
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = null)),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        val prompt = viewModel.uiState.value.exercises.single().progression
+        assertNotNull(prompt.offer)
+        assertNotNull("the prompt states the plan's own RPE", prompt.planned?.targetRpeHalves)
+        assertEquals(8, prompt.planned?.targetRpeHalves)
+    }
+
+    @Test
+    fun oneSetAboveTheExercisesOneTargetRpe_earnsNothing() = runTest(dispatcher) {
+        // Every working set is measured against the same number (N59, amended): meeting it once and
+        // exceeding it once is not the plan answered, and a wrong yes is what the rule exists to stop.
+        val repository = FakeWorkoutRepository()
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    targetRpeHalves = 8,
+                    sets = listOf(
+                        plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = null),
+                        plannedSet(index = 1, reps = 5, weightGrams = 100_000L, rpe = null),
+                    ),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 9)
 
         assertNull(viewModel.uiState.value.exercises.single().progression.offer)
     }
@@ -1878,6 +1936,8 @@ class ActiveWorkoutViewModelTest {
         position: Int,
         sets: List<TemplateSet>,
         exerciseId: String = "back-squat",
+        /** The exercise's one target RPE, or null (N59, amended). */
+        targetRpeHalves: Int? = null,
     ) = TemplateExercise(
         id = "te-$position",
         templateId = "t1",
@@ -1886,6 +1946,7 @@ class ActiveWorkoutViewModelTest {
         exerciseName = "Back Squat",
         primaryMuscle = MuscleGroup.QUADS,
         equipment = Equipment.BARBELL,
+        targetRpeHalves = targetRpeHalves,
         sets = sets,
     )
 
@@ -1966,6 +2027,7 @@ class ActiveWorkoutViewModelTest {
             templateExerciseId: String,
             restSeconds: Int?,
             techniqueNote: String?,
+            targetRpeHalves: Int?,
         ): DataResult<Unit> = notUsed()
 
         private fun notUsed(): Nothing = error("this test does not write a plan")
@@ -2547,6 +2609,7 @@ private class FakeProgramRepository : ProgramRepository {
         exerciseId: String,
         restSeconds: Int?,
         techniqueNote: String?,
+        targetRpeHalves: Int?,
     ): DataResult<Unit> = error("the workout screen does not prescribe an exercise")
 
     override suspend fun addSlotSet(

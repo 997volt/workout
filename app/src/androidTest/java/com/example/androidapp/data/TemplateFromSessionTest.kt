@@ -237,6 +237,9 @@ class TemplateFromSessionTest {
         assertEquals(102_500L, target.targetWeightGrams)
         assertEquals(5, target.targetRepsMax)
         assertEquals(16, target.targetRpeHalves)
+        // The plan's one target RPE is the last set that named one (N59, amended): set index 1 named
+        // none, so the first set's 16 is what the new plan builds to as well.
+        assertEquals(16, planned.single().targetRpeHalves)
 
         // Then: starting that plan puts them where the first tap will log them.
         val started = workouts.startOrResumeSession(templateId) as DataResult.Success

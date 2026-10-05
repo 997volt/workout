@@ -105,6 +105,9 @@ class BackupCodecRoundTripTest {
             supersetGroup = 4,
             restSeconds = 90,
             techniqueNote = "pause at the bottom",
+            // The column N59's amendment added: the plan's one target RPE per exercise. A hand-written
+            // codec that forgets it restores the effort as absent, which is the whole trap this file is.
+            targetRpeHalves = 17,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,
@@ -273,13 +276,14 @@ class BackupCodecRoundTripTest {
     @Test
     fun aProgramSlotExercise_survivesTheCodec() {
         // The row P3.8 added: a slot's rest and cue for one exercise, which a hand-written codec
-        // loses first when it is not told about the table.
+        // loses first when it is not told about the table. The effort is N59's amendment to it.
         val entity = ProgramSlotExerciseEntity(
             id = "pse1",
             slotId = "slot1",
             exerciseId = "back-squat",
             restSeconds = 150,
             techniqueNote = "brace hard",
+            targetRpeHalves = 16,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,

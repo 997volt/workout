@@ -343,6 +343,28 @@ class BackupCodecTest {
     }
 
     @Test
+    fun aFileWrittenBeforeTheExerciseTargetRpe_stillDecodes_keepingTheSetsOwnValue() {
+        // ROADMAP N59, amended: the effort moved from the set to the exercise, and the new field is
+        // defaulted so a file from before it decodes. What such a plan still reads is the per-set
+        // value it carries — the fallback that keeps a restored plan behaving as it did.
+        val json = Json { prettyPrint = false }
+        val tree = json.parseToJsonElement(BackupCodec.encode(sample)).jsonObject
+        val exercises = tree["templateExercises"]!!.jsonArray.map { element ->
+            JsonObject(element.jsonObject - "targetRpeHalves")
+        }
+        val olderFile = JsonObject(tree + ("templateExercises" to JsonArray(exercises)))
+
+        val restored = BackupCodec.decode(olderFile.toString())
+
+        assertNull(restored.templateExercises.single().targetRpeHalves)
+        assertEquals(
+            "the set's own value is what a pre-change plan still reads",
+            9,
+            restored.templateSets.single().targetRpeHalves,
+        )
+    }
+
+    @Test
     fun aPlanWithNoTargets_survivesTheRoundTrip_asNulls() {
         // Nullable targets are the point: an absent weight is not a zero (N14).
         val bare = sample.copy(
