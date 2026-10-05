@@ -12,6 +12,8 @@ repeated here.
 
 ## [Unreleased]
 
+## [1.13] — 2026-10-05 (versionCode 14)
+
 ### Added
 
 - **The joint rating is picked from the body's joints, left and right apart, each with its own score**

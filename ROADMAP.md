@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v1.12** is shipped and installed. Last reviewed against the code: 2026-10-05.
+> **v1.13** is shipped and installed. Last reviewed against the code: 2026-10-05.
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
