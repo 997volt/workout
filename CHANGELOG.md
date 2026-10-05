@@ -12,6 +12,8 @@ repeated here.
 
 ## [Unreleased]
 
+## [1.14] — 2026-10-05 (versionCode 15)
+
 ### Added
 
 - **The progression question at *Done* can be turned off** (N66). It has opened since N50 wherever a
