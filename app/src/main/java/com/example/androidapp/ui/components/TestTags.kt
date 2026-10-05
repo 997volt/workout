@@ -375,9 +375,13 @@ object TestTags {
      * The notice that an exercise's planned sets are all written (ROADMAP N52).
      *
      * Beside [SET_LOG], because the two answer one question: the label says the next set is extra,
-     * and this says why.
+     * and this says why. The same line states the remainder while there is one (N70), and that state
+     * answers to [EXERCISE_PLAN_LEFT] instead: one tag cannot mean "finished" and "not finished yet".
      */
     const val EXERCISE_PLAN_DONE = "exercise_plan_done"
+
+    /** How many planned sets are still to write (ROADMAP N70). */
+    const val EXERCISE_PLAN_LEFT = "exercise_plan_left"
 
     /** The role armed for the next one-tap log (ROADMAP N19). */
     /** Starting over (ROADMAP N18): the menu entry, the field and the confirm button. */
@@ -469,6 +473,14 @@ object TestTags {
         const val PREVIEW = "program_preview"
         const val PREVIEW_EMPTY = "program_preview_empty"
         const val PREVIEW_CLOSE = "program_preview_close"
+
+        /**
+         * The slot name that opens that view (ROADMAP N72).
+         *
+         * A tag as well as the `onClickLabel`: the label is what a screen reader announces, while a
+         * test has to address the control by identity rather than by the English it happens to show.
+         */
+        fun previewOpen(id: String) = "program_preview_open_$id"
 
         /** The question behind a slot's remove (ROADMAP N72). */
         const val SLOT_REMOVE_CONFIRM = "program_slot_remove_confirm"

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +19,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.Load
@@ -255,12 +255,19 @@ internal fun SetRpeField(
             )
             Text(
                 text = valueText,
-                // The number is what the control is for, so it is the largest thing in the row and
-                // keeps a fixed column even when it reads *Not recorded* (N68).
+                // The number is what the control is for, so it is the largest thing in the row. It
+                // shares the row's spare width with the label (N68): `widthIn(min = …)` only held the
+                // ± pair still while the value was a number, and *Not recorded* is wider than any
+                // number, so the buttons moved whenever a set had no effort. Two equal weights make
+                // both columns fixed, whatever either one reads.
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
+                // The column is fixed, so a very large font scale has nowhere to grow: ellipsis says
+                // "there is more" rather than slicing a glyph in half.
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
-                    .widthIn(min = 56.dp)
+                    .weight(1f)
                     .testTag(tags.rpe)
                     .semantics { contentDescription = spokenValue },
             )

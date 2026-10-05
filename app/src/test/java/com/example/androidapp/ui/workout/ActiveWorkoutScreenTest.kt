@@ -9,6 +9,7 @@ import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionPrompt
 import com.example.androidapp.domain.model.ProgressionStep
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.jointSiteKey
@@ -578,6 +579,51 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertDoesNotExist()
     }
 
+    @Test
+    fun anExerciseReadInPounds_prefillsTheWeightInPounds() {
+        // ROADMAP N64: the field is seeded in the unit it is later parsed in. Seeding kilograms and
+        // parsing pounds turned a 60 kg plan into 60 lb — 27,216 g written to the log from a set the
+        // lifter never touched, which is the one thing the unit was supposed never to change.
+        setScreen(
+            state(
+                isFinished = false,
+                suggestion = SetSuggestion(reps = 5, weightGrams = 60_000L),
+                weightUnit = WeightUnit.POUNDS,
+            ),
+        )
+
+        // 60 kg read in pounds, which is what *Log set* then parses back out of the field.
+        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertTextContains("132.3")
+    }
+
+    @Test
+    fun aPlannedWarmUp_promotedToAWorkingSet_statesThePlansEffortAgain() {
+        // ROADMAP N67 with N59: the effort field is withheld for a warm-up, so returning the role to
+        // one that records an effort has to state the plan's number again rather than leave *Not
+        // recorded* under a caption that names it — and rather than log the set with no effort.
+        setScreen(
+            state(
+                isFinished = false,
+                suggestion = SetSuggestion(
+                    reps = 5,
+                    weightGrams = 100_000L,
+                    setType = SetType.WARMUP,
+                    targetRpeHalves = 16,
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1")).performClick()
+        composeTestRule.onNodeWithTag(
+            TestTags.exercisePendingRole("se1", SetType.NORMAL.name),
+        ).performClick()
+
+        // 16 halves, written the way a lifter writes it.
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextContains("8")
+    }
+
     private fun state(
         isFinished: Boolean,
         /**
@@ -590,6 +636,8 @@ class ActiveWorkoutScreenTest {
         suggestion: SetSuggestion = SetSuggestion(reps = 5, weightGrams = 100_000),
         /** What the exercise has logged; empty is the state *Done* is withheld in (N69). */
         sets: List<SetRow> = listOf(SetRow(id = "set1", number = 1, reps = 5, weightGrams = 100_000)),
+        /** The unit this exercise's numbers read in (ROADMAP N64). */
+        weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
     ) = ActiveWorkoutUiState(
         isLoading = false,
         sessionId = "s1",
@@ -605,6 +653,7 @@ class ActiveWorkoutScreenTest {
                 sets = sets,
                 suggestion = suggestion,
                 progression = progression,
+                weightUnit = weightUnit,
             ),
         ),
     )
@@ -1039,6 +1088,10 @@ class ActiveWorkoutScreenTest {
         // of the session the count would have been useful in completely silent.
         setScreen(state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 2, planned = 3))))
 
+        // The remainder answers to its own tag: one tag cannot mean "the plan is done" and "there is
+        // still work to write" at once (N70).
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_LEFT).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_DONE).assertDoesNotExist()
         composeTestRule.onNodeWithText("1 planned set left").assertExists()
         composeTestRule.onNodeWithText("Log set").assertExists()
     }
@@ -1047,6 +1100,7 @@ class ActiveWorkoutScreenTest {
     fun severalPlannedSetsLeft_areCountedInThePlural() {
         setScreen(state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 1, planned = 3))))
 
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_LEFT).assertExists()
         composeTestRule.onNodeWithText("2 planned sets left").assertExists()
     }
 
@@ -1057,6 +1111,7 @@ class ActiveWorkoutScreenTest {
         setScreen(state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 9, planned = null))))
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_DONE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_LEFT).assertDoesNotExist()
         composeTestRule.onNodeWithText("Log set").assertExists()
     }
 

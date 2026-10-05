@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -359,7 +360,9 @@ private fun FinishExerciseAction(
     progressionPromptEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    var prompting by remember { mutableStateOf(false) }
+    // `rememberSaveable`: the activity declares no `configChanges`, so a rotation mid-prompt would
+    // otherwise dismiss the question the lifter was answering (nothing is written until they answer).
+    var prompting by rememberSaveable { mutableStateOf(false) }
     // A plan is what the progression prompt reads (N50), and the setting is what asks for it (N66).
     val prompts = progressionPromptEnabled && row.progression.planned != null
 
@@ -422,6 +425,27 @@ private fun ExerciseSets(
 }
 
 /**
+ * The draft after the role picker says something else (ROADMAP N59, N67).
+ *
+ * A planned warm-up opens with **no** effort (N67), so returning the role to one that records an
+ * effort has to state the plan's number again rather than leave *Not recorded* under a caption that
+ * names it: the picker is what brings the field back, and the field it brings back should be the
+ * plan's. Effort the lifter already stated stands, so going to *Warm-up* and back does not discard a
+ * number they typed.
+ *
+ * File-level and pure, the shape [planEntriesFor] uses, so the rule can be tested without composing
+ * the screen.
+ */
+internal fun SetEntryDraft.withRole(role: SetType, planRpeHalves: Int?): SetEntryDraft {
+    val effort = if (role.recordsEffort && rpeText.isBlank()) {
+        Rpe.format(planRpeHalves ?: DEFAULT_RPE_HALVES)
+    } else {
+        rpeText
+    }
+    return copy(setType = role, rpeText = effort)
+}
+
+/**
  * The next set, stated on the screen and committed by the *Log set* beside it (ROADMAP N59).
  *
  * This replaces N51's shape — *Log set* opened the editor, and logging *was* the dialog — with the
@@ -448,12 +472,21 @@ private fun NextSetEditor(
     modifier: Modifier = Modifier,
 ) {
     val suggestion = row.suggestion
+    // The exercise's own unit, resolved once for this block (ROADMAP N64). Read *before* the draft
+    // because the field is seeded in it: a prefill shown in kilograms and parsed in pounds wrote the
+    // wrong weight the moment *Log set* was pressed without touching it.
+    val unit = row.weightUnit
     var draft by remember(row.id, row.sets.size) {
         mutableStateOf(
             SetEntryDraft(
                 repsText = suggestion.reps.toString(),
-                // Shown as one signed number: -20 is 20 kg of assistance (N15).
-                weightText = Weight.display(suggestion.weightGrams, suggestion.assistanceGrams),
+                // Shown as one signed number, in this exercise's unit: -20 is 20 kg of assistance
+                // (N15), or the pound equivalent where the exercise reads in pounds (N64).
+                weightText = Weight.display(
+                    suggestion.weightGrams,
+                    suggestion.assistanceGrams,
+                    unit,
+                ),
                 // The plan's own target, or 9.0 where it names none: the stepper always shows a
                 // number, so a logged set always carries one (N59). A planned warm-up opens it
                 // empty instead, because a warm-up carries no effort to show (N67).
@@ -466,8 +499,6 @@ private fun NextSetEditor(
             ),
         )
     }
-    // The exercise's own unit, resolved once for this block (ROADMAP N64).
-    val unit = row.weightUnit
     val values = draft.values(unit)
 
     Column(modifier = modifier) {
@@ -478,7 +509,9 @@ private fun NextSetEditor(
         ) {
             SetRoleSelector(
                 role = draft.setType,
-                onSelect = { draft = draft.copy(setType = it) },
+                // A planned warm-up opens with no effort at all (N67), so the picker is what states
+                // the plan's number again when the role comes back to one that records an effort.
+                onSelect = { role -> draft = draft.withRole(role, suggestion.targetRpeHalves) },
                 // Tagged for this row: a test reaches the picker through the flow it actually takes.
                 testTag = TestTags.exercisePendingRole(row.id),
                 optionTag = { role -> TestTags.exercisePendingRole(row.id, role) },
@@ -545,7 +578,11 @@ private fun PlanProgressNotice(row: SessionExerciseRow, modifier: Modifier = Mod
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier
             .padding(top = 8.dp)
-            .testTag(TestTags.EXERCISE_PLAN_DONE),
+            // The two states answer to two tags (N70): one tag cannot mean "the plan is done" and
+            // "the plan is not done yet" at once, which is what a test would have to read it as.
+            .testTag(
+                if (left == 0) TestTags.EXERCISE_PLAN_DONE else TestTags.EXERCISE_PLAN_LEFT,
+            ),
     )
 }
 

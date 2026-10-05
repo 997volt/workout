@@ -290,7 +290,7 @@ private fun SetEditorSection(
         initialReps = set.reps,
         initialWeightGrams = set.weightGrams,
         initialRpe = set.rpeHalves,
-    initialUnit = set.weightUnit,
+        initialUnit = set.weightUnit,
         initialNote = set.note,
         // Without these the draft starts at a plain working set with no help, and saving
         // writes that over the stored row — a one-rep correction silently destroying the role

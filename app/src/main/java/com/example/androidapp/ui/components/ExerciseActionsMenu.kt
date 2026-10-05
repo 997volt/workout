@@ -17,7 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -75,8 +75,11 @@ fun ExerciseActionsMenu(
     tags: ExerciseMenuTags,
     modifier: Modifier = Modifier,
 ) {
-    var menuOpen by remember { mutableStateOf(false) }
-    var confirmingRemoval by remember { mutableStateOf(false) }
+    // `rememberSaveable`, like the program slot's own menu (N72): the activity declares no
+    // `configChanges`, so rotation rebuilds it, and a confirmation the lifter had open would
+    // otherwise vanish mid-decision. Nothing is written here, so this is only about the question.
+    var menuOpen by rememberSaveable { mutableStateOf(false) }
+    var confirmingRemoval by rememberSaveable { mutableStateOf(false) }
 
     Box(modifier = modifier) {
         IconButton(

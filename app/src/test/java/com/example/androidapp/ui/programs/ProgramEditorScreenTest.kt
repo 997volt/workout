@@ -222,7 +222,9 @@ class ProgramEditorScreenTest {
         var asked: Pair<String, String>? = null
         setScreen(onPreviewSlot = { id, name -> asked = id to name })
 
-        composeTestRule.onNodeWithText("Heavy lower").performClick()
+        // Addressed by tag rather than by the name it shows (AGENTS.md): the control is the slot's,
+        // and its label is content rather than identity.
+        composeTestRule.onNodeWithTag(TestTags.Programs.previewOpen("s1")).performClick()
 
         assertThat(asked).isEqualTo("t1" to "Heavy lower")
     }

@@ -460,13 +460,20 @@ private fun ProgramSlotBlock(
         ListItem(
             // The name is the way in: a slot is a schedule, so "what does this day actually do" is
             // the question the row raises, and it is answered without leaving the program (N72).
+            // The `onClickLabel` is what a screen reader announces; the tag is how a test reaches
+            // the control by identity rather than by the English it shows.
             headlineContent = {
                 Text(
                     text = slot.templateName,
-                    modifier = Modifier.clickable(
-                        onClickLabel = stringResource(R.string.program_preview_open, slot.templateName),
-                        onClick = onOpenPreview,
-                    ),
+                    modifier = Modifier
+                        .testTag(TestTags.Programs.previewOpen(slot.id))
+                        .clickable(
+                            onClickLabel = stringResource(
+                                R.string.program_preview_open,
+                                slot.templateName,
+                            ),
+                            onClick = onOpenPreview,
+                        ),
                 )
             },
             supportingContent = {
