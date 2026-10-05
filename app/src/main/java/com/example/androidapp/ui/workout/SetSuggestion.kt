@@ -1,13 +1,10 @@
 package com.example.androidapp.ui.workout
 
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.SlotPrescription
-import com.example.androidapp.domain.model.SlotSet
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.TemplateExercise
-import kotlin.math.roundToLong
 
 /**
  * The values the next set is shown with, before the lifter changes anything (ROADMAP N59).
@@ -142,104 +139,6 @@ fun plannedTargetFor(
 
 /** Typical working-set reps when there is nothing to go on. */
 const val DEFAULT_REPS = 8
-
-/**
- * The weight a percentage of an estimated one-rep max prescribes, or null (ROADMAP P3.8).
- *
- * The estimate is N17's Epley figure. An exercise with nothing estimable has **no number**, and
- * this says so by returning null rather than borrowing one — the caller then falls back to
- * history, which is the honest answer. The result is rounded to the smallest loadable step
- * (N22's 2.5 kg), because a prescription is a target to load rather than a formula's output.
- */
-fun prescribedWeightGrams(percentOf1Rm: Int, estimatedOneRepMaxGrams: Long?): Long? {
-    val estimate = estimatedOneRepMaxGrams?.takeIf { it > 0L && percentOf1Rm in 1..MAX_PERCENT }
-        ?: return null
-    val raw = estimate.toDouble() * percentOf1Rm / PERCENT
-    return (raw / Weight.DEFAULT_STEP_GRAMS).roundToLong() * Weight.DEFAULT_STEP_GRAMS
-}
-
-/**
- * What a slot prescribes for the next set of one exercise, merged with the template (ROADMAP P3.8).
- *
- * The slot wins **where it speaks** (N14), field by field: a set that writes reps but no load keeps
- * the template's load, and one that writes only a note leaves the template's target standing rather
- * than shadowing it with nulls. That is what "anything you leave alone uses the workout's own
- * targets" promises on the dialog.
- *
- * The **load is one number**, though, so it is taken whole from one source or the other: a slot that
- * names 100 kg must not also inherit the template's assistance, or the set would count the kilograms
- * as volume while the machine did the work (N15). [template] is the template's own target for the
- * same set, or null when it has none.
- *
- * The **target RPE is one number for the whole exercise** (N59, amended), so the slot's own value
- * stands over the template's even for a set the slot prescribed no row for: an exercise-level target
- * is not per-set, and a set's own stored value is only the fallback a pre-change plan arrives with.
- *
- * A percentage resolves through [prescribedWeightGrams], so an exercise with no estimate leaves the
- * load open and, with no template load to fall back to either, the prefill takes history rather than
- * inventing a number.
- */
-fun prescribedTargetFor(
-    prescription: SlotPrescription?,
-    nextIndex: Int,
-    estimatedOneRepMaxGrams: Long?,
-    template: PlannedTarget? = null,
-): PlannedTarget? {
-    val prescribed = prescription?.sets?.firstOrNull { it.setIndex == nextIndex }
-    // The slot's one RPE covers the whole exercise, so a set it wrote no row for still takes the
-    // slot's number over the template's rather than quietly keeping the template's (N59). With no
-    // slot RPE either, the slot says nothing about this set and the template stands whole.
-    val slotRpe = prescription?.targetRpeHalves
-    return when {
-        prescribed != null -> mergedTargetFor(prescribed, slotRpe, estimatedOneRepMaxGrams, template)
-        slotRpe != null -> (template ?: PlannedTarget(reps = null, weightGrams = null))
-            .copy(rpeHalves = slotRpe)
-
-        else -> template
-    }
-}
-
-/**
- * A prescribed set merged with the template's targets, field by field (N14, P3.8, N59).
- *
- * Its own function so [prescribedTargetFor] reads as the one decision it is — whether the slot speaks
- * at all — rather than as the merge arithmetic too.
- */
-private fun mergedTargetFor(
-    prescribed: SlotSet,
-    slotRpe: Int?,
-    estimatedOneRepMaxGrams: Long?,
-    template: PlannedTarget?,
-): PlannedTarget {
-    val percentWeight = prescribed.targetPercentOf1Rm?.let {
-        prescribedWeightGrams(it, estimatedOneRepMaxGrams)
-    }
-    val slotWeight = prescribed.targetWeightGrams ?: percentWeight
-    val slotNamesLoad = slotWeight != null || prescribed.targetAssistanceGrams != null
-    return PlannedTarget(
-        // The upper bound is the one a written prescription means (`max 2`).
-        reps = prescribed.targetRepsMax ?: prescribed.targetRepsMin ?: template?.reps,
-        // A weight the slot wrote wins over a percentage; the two are alternatives, not a sum.
-        weightGrams = if (slotNamesLoad) slotWeight else template?.weightGrams,
-        assistanceGrams = if (slotNamesLoad) {
-            prescribed.targetAssistanceGrams
-        } else {
-            template?.assistanceGrams
-        },
-        // The slot's own role wins wherever the slot speaks at all: its sets carry the plan's
-        // vocabulary and default to a working set, so there is no "left alone" to fall back for (B48).
-        role = prescribed.role,
-        // The slot's one RPE where it names one, the set's own where only that was written, and the
-        // template's where the slot is silent (N59, N14).
-        rpeHalves = slotRpe ?: prescribed.targetRpeHalves ?: template?.rpeHalves,
-    )
-}
-
-/** Above this, a "percentage of the max" is no longer a percentage of a max. */
-private const val MAX_PERCENT = 100
-
-/** A percentage as the fraction of the estimate it names. */
-private const val PERCENT = 100.0
 
 /**
  * The load a plan names, as the split the app stores.

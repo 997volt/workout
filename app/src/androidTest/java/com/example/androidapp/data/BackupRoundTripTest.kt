@@ -8,8 +8,6 @@ import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.ProgramDeloadEntity
 import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
-import com.example.androidapp.data.local.ProgramSlotExerciseEntity
-import com.example.androidapp.data.local.ProgramSlotSetEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
 import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.TemplateEntity
@@ -437,37 +435,6 @@ class BackupRoundTripTest {
                 deletedAt = null,
             ),
         )
-        database.programPrescriptionDao().insertSlotExercise(
-            ProgramSlotExerciseEntity(
-                id = "pse1",
-                slotId = "slot1",
-                exerciseId = "back-squat",
-                restSeconds = 150,
-                techniqueNote = "brace hard",
-                targetRpeHalves = 16,
-                createdAt = 1L,
-                updatedAt = 1L,
-                deletedAt = null,
-            ),
-        )
-        database.programPrescriptionDao().insertSlotSet(
-            ProgramSlotSetEntity(
-                id = "pss1",
-                slotExerciseId = "pse1",
-                setIndex = 0,
-                role = SetType.TOP_SET,
-                targetAssistanceGrams = 20_000L,
-                targetRepsMin = 1,
-                targetRepsMax = 2,
-                targetRpeHalves = 18,
-                targetPercentOf1Rm = 85,
-                note = "grind",
-                createdAt = 1L,
-                updatedAt = 1L,
-                deletedAt = null,
-            ),
-        )
-
         val json = exportedJson()
         database.clearAllTables()
         // The import must *succeed*, not roll back: a slot names a template through a foreign key,
@@ -476,18 +443,6 @@ class BackupRoundTripTest {
         // reads below, so the failure is the import and not a puzzling empty list.
         val imported = repository.import(json)
         assertTrue("a restore into an empty database must not roll back: $imported", imported is DataResult.Success)
-
-        val exercise = database.programPrescriptionDao().observeSlotExercises("slot1").first().single()
-        assertEquals(150, exercise.restSeconds)
-        assertEquals("brace hard", exercise.techniqueNote)
-        assertEquals("the slot's one target RPE survives (N59, amended)", 16, exercise.targetRpeHalves)
-
-        val set = database.programPrescriptionDao().observeSlotSets("slot1").first().single()
-        assertEquals(SetType.TOP_SET, set.role)
-        assertEquals(20_000L, set.targetAssistanceGrams)
-        assertEquals(18, set.targetRpeHalves)
-        assertEquals("the one target a template's planned set cannot carry", 85, set.targetPercentOf1Rm)
-        assertEquals("grind", set.note)
 
         val deload = database.programBackupDao().allProgramDeloads().single()
         assertEquals("the deloaded week survives", 20_305L, deload.weekStart)

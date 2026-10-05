@@ -7,12 +7,9 @@ import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.ProgramSlot
-import com.example.androidapp.domain.model.SlotPrescription
-import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.repository.ProgramRepository
-import com.example.androidapp.domain.repository.SlotSetEdit
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.ui.navigation.ProgramEditor
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,24 +20,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-
-/** The slot whose prescription the dialog is authoring, and what it needs to draw (P3.8). */
-data class SlotPrescriptionEditor(
-    val slotId: String,
-    val templateName: String,
-    /** The template's exercises, in their order — the exercises a prescription can name. */
-    val exercises: List<TemplateExercise>,
-    /** What the slot already prescribes, keyed by exercise. */
-    val prescriptions: List<SlotPrescription>,
-) {
-    /** What the slot prescribes for one exercise, or null when the template's targets stand. */
-    fun forExercise(exerciseId: String): SlotPrescription? =
-        prescriptions.firstOrNull { it.exerciseId == exerciseId }
-}
 
 data class ProgramEditorUiState(
     val isLoading: Boolean = true,
@@ -48,8 +29,6 @@ data class ProgramEditorUiState(
     val slots: List<ProgramSlot> = emptyList(),
     /** The templates a slot can point at, in the list the picker shows. */
     val templates: List<WorkoutTemplate> = emptyList(),
-    /** The slot whose prescription is open for editing, or null (ROADMAP P3.8). */
-    val prescription: SlotPrescriptionEditor? = null,
     /**
      * The slot the program's run is at, or null (ROADMAP P3.9).
      *
@@ -86,68 +65,20 @@ class ProgramEditorViewModel @Inject constructor(
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted
 
-    /** The slot whose prescription is open, or null (P3.8). */
-    private val prescriptionSlotId = MutableStateFlow<String?>(null)
-
-    /**
-     * What the open prescription dialog needs: the slot's template exercises and what the slot
-     * already prescribes for them (ROADMAP P3.8).
-     *
-     * Read only while a slot is open, so a program with many slots costs nothing until one is
-     * edited. The slot is looked up from the same slots flow the screen draws, so a removed slot
-     * closes the dialog rather than leaving it authoring a slot that is gone.
-     */
-    private val prescription: kotlinx.coroutines.flow.Flow<SlotPrescriptionEditor?> =
-        combine(repository.observeSlots(programId), prescriptionSlotId) { slots, slotId ->
-            slots.firstOrNull { it.id == slotId }
-        }.flatMapLatest { slot ->
-            if (slot == null) {
-                flowOf(null)
-            } else {
-                combine(
-                    templateRepository.observeExercises(slot.templateId),
-                    repository.observeSlotPrescriptions(slot.id),
-                ) { exercises, prescriptions ->
-                    SlotPrescriptionEditor(
-                        slotId = slot.id,
-                        templateName = slot.templateName,
-                        exercises = exercises,
-                        prescriptions = prescriptions,
-                    )
-                }
-            }
-        }
-
-    /**
-     * The two things the editor overlays on the program: the open prescription and the run's place
-     * (ROADMAP P3.8, P3.9).
-     *
-     * Kept together so the state combine stays at the arity the rest of the screen uses.
-     */
-    private data class EditorExtras(
-        val prescription: SlotPrescriptionEditor?,
-        val runSlotId: String?,
-    )
-
-    private val extras: kotlinx.coroutines.flow.Flow<EditorExtras> =
-        combine(prescription, repository.observeProgramRun(programId)) { open, run ->
-            EditorExtras(prescription = open, runSlotId = run?.slot?.id)
-        }
-
+    /** The program, its slots, the templates to add, and where the run is (ROADMAP P3.3, P3.9). */
     val uiState: StateFlow<ProgramEditorUiState> = combine(
         repository.observeProgram(programId),
         repository.observeSlots(programId),
         templateRepository.observeTemplates(),
         error,
-        extras,
-    ) { program, slots, templates, currentError, openExtras ->
+        repository.observeProgramRun(programId),
+    ) { program, slots, templates, currentError, run ->
         ProgramEditorUiState(
             isLoading = false,
             program = program,
             slots = slots,
             templates = templates,
-            prescription = openExtras.prescription,
-            runSlotId = openExtras.runSlotId,
+            runSlotId = run?.slot?.id,
             error = currentError,
         )
     }.stateIn(
@@ -186,41 +117,6 @@ class ProgramEditorViewModel @Inject constructor(
     fun onMoveSlot(slotId: String, delta: Int) = write { repository.moveSlot(slotId, delta) }
 
     fun onRemoveSlot(slotId: String) = write { repository.removeSlot(slotId) }
-
-    /** Opens the prescription dialog for one slot (ROADMAP P3.8). */
-    fun onEditPrescription(slotId: String) {
-        prescriptionSlotId.value = slotId
-    }
-
-    fun onClosePrescription() {
-        prescriptionSlotId.value = null
-    }
-
-    /**
-     * Writes the rest, cue and one target RPE the slot prescribes for one exercise (P3.8, N59).
-     *
-     * The RPE is the exercise's single number rather than a per-set one: the slot states what it
-     * builds to, and the workout's stepper opens on it.
-     */
-    fun onSetSlotExercisePlan(
-        slotId: String,
-        exerciseId: String,
-        restSeconds: Int?,
-        techniqueNote: String?,
-        targetRpeHalves: Int?,
-    ) = write {
-        repository.setSlotExercisePlan(slotId, exerciseId, restSeconds, techniqueNote, targetRpeHalves)
-    }
-
-    fun onAddSlotSet(slotId: String, exerciseId: String, edit: SlotSetEdit) = write {
-        repository.addSlotSet(slotId, exerciseId, edit)
-    }
-
-    fun onUpdateSlotSet(slotSetId: String, edit: SlotSetEdit) = write {
-        repository.updateSlotSet(slotSetId, edit)
-    }
-
-    fun onRemoveSlotSet(slotSetId: String) = write { repository.removeSlotSet(slotSetId) }
 
     fun onDeleteProgram() {
         viewModelScope.launch {

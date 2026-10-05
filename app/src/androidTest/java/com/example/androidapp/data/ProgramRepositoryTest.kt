@@ -18,7 +18,6 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.repository.SlotSetEdit
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -405,157 +404,6 @@ class ProgramRepositoryTest {
     }
 
     @Test
-    fun aSlotPrescribesItsOwnSets_inOrder_andTheTemplateStandsWhereItSaysNothing() = runTest {
-        // ROADMAP P3.8: two slots pointing at one template can train it differently, because the
-        // prescription belongs to the slot. An empty one is absent, not an empty row.
-        val program = create("Upper/Lower")
-        val template = createTemplate("Heavy lower")
-        repository.addSlot(program, template, DayOfWeek.MONDAY)
-        val slotId = slot(program).id
-
-        assertTrue(repository.observeSlotPrescriptions(slotId).first().isEmpty())
-
-        repository.addSlotSet(
-            slotId,
-            "back-squat",
-            SlotSetEdit(targetWeightGrams = 100_000L, targetRepsMin = 3, targetRepsMax = 5),
-        )
-        repository.addSlotSet(
-            slotId,
-            "back-squat",
-            SlotSetEdit(role = SetType.TOP_SET, targetPercentOf1Rm = 85, targetRepsMin = 1),
-        )
-
-        val prescription = repository.observeSlotPrescriptions(slotId).first().single()
-        assertEquals("back-squat", prescription.exerciseId)
-        assertEquals(listOf(0, 1), prescription.sets.map { it.setIndex })
-        assertEquals(100_000L, prescription.sets[0].targetWeightGrams)
-        assertEquals(3, prescription.sets[0].targetRepsMin)
-        // The percentage is the one target a template's planned set cannot carry.
-        assertEquals(85, prescription.sets[1].targetPercentOf1Rm)
-        assertEquals(SetType.TOP_SET, prescription.sets[1].role)
-    }
-
-    @Test
-    fun aRestTheSlotPrescribes_isReadBack_andClearingItWithNoSetsRemovesTheRow() = runTest {
-        val program = create("Upper/Lower")
-        val template = createTemplate("Heavy lower")
-        repository.addSlot(program, template, DayOfWeek.MONDAY)
-        val slotId = slot(program).id
-
-        repository.setSlotExercisePlan(
-            slotId,
-            "back-squat",
-            restSeconds = 150,
-            techniqueNote = "brace",
-            targetRpeHalves = 16,
-        )
-
-        val prescribed = repository.observeSlotPrescriptions(slotId).first().single()
-        assertEquals(150, prescribed.restSeconds)
-        assertEquals("brace", prescribed.techniqueNote)
-        assertEquals("the slot's one target RPE (N59, amended)", 16, prescribed.targetRpeHalves)
-
-        repository.setSlotExercisePlan(
-            slotId,
-            "back-squat",
-            restSeconds = null,
-            techniqueNote = null,
-            targetRpeHalves = null,
-        )
-
-        assertTrue(
-            "a prescription with nothing left to say is absent, not an empty row",
-            repository.observeSlotPrescriptions(slotId).first().isEmpty(),
-        )
-    }
-
-    @Test
-    fun clearingTheSlotsEffort_clearsItsPrescribedSetsLegacyValue_too() = runTest {
-        // The same clear as a template's (N59): the per-set column is the fallback, so it has to go
-        // with the exercise-level number or the reader resurrects what the lifter just removed.
-        val program = create("Upper/Lower")
-        val template = createTemplate("Heavy lower")
-        repository.addSlot(program, template, DayOfWeek.MONDAY)
-        val slotId = slot(program).id
-        repository.setSlotExercisePlan(slotId, "back-squat", null, null, targetRpeHalves = 16)
-        repository.addSlotSet(
-            slotId,
-            "back-squat",
-            SlotSetEdit(targetWeightGrams = 100_000L, targetRepsMax = 5, targetRpeHalves = 8),
-        )
-
-        repository.setSlotExercisePlan(slotId, "back-squat", null, null, targetRpeHalves = null)
-
-        val set = repository.observeSlotPrescriptions(slotId).first().single().sets.single()
-        assertNull("the prescribed set's legacy value goes with the slot's", set.targetRpeHalves)
-    }
-
-    @Test
-    fun aSlotNamingOnlyAnEffort_isAPrescription_ratherThanAnAbsentOne() = runTest {
-        // The effort is the third thing a slot can say about an exercise (N59, amended), so a row
-        // carrying it alone is not an empty prescription to be dropped.
-        val program = create("Upper/Lower")
-        val template = createTemplate("Heavy lower")
-        repository.addSlot(program, template, DayOfWeek.MONDAY)
-        val slotId = slot(program).id
-
-        repository.setSlotExercisePlan(
-            slotId,
-            "back-squat",
-            restSeconds = null,
-            techniqueNote = null,
-            targetRpeHalves = 18,
-        )
-
-        val prescribed = repository.observeSlotPrescriptions(slotId).first().single()
-        assertEquals("the slot's one number survives on its own", 18, prescribed.targetRpeHalves)
-        assertNull(prescribed.restSeconds)
-        assertNull(prescribed.techniqueNote)
-    }
-
-    @Test
-    fun removingTheLastPrescribedSet_leavesTheSlotSayingNothing() = runTest {
-        val program = create("Upper/Lower")
-        val template = createTemplate("Heavy lower")
-        repository.addSlot(program, template, DayOfWeek.MONDAY)
-        val slotId = slot(program).id
-        repository.addSlotSet(slotId, "back-squat", SlotSetEdit(targetRepsMin = 5))
-        val setId = repository.observeSlotPrescriptions(slotId).first().single().sets.single().id
-
-        repository.removeSlotSet(setId)
-
-        assertTrue(repository.observeSlotPrescriptions(slotId).first().isEmpty())
-    }
-
-    @Test
-    fun prescribingAnExerciseTheTemplateDoesNotTrain_isRefused() = runTest {
-        // A prescription for an exercise the template does not have would be invisible on every
-        // screen the moment it was written.
-        val program = create("Upper/Lower")
-        val template = createTemplate("Heavy lower")
-        repository.addSlot(program, template, DayOfWeek.MONDAY)
-        val slotId = slot(program).id
-
-        val result = repository.addSlotSet(slotId, "front-squat", SlotSetEdit(targetRepsMin = 5))
-
-        assertTrue(result is DataResult.Failure)
-        assertTrue(repository.observeSlotPrescriptions(slotId).first().isEmpty())
-    }
-
-    @Test
-    fun aPercentageOutsideTheScale_isRefused() = runTest {
-        val program = create("Upper/Lower")
-        val template = createTemplate("Heavy lower")
-        repository.addSlot(program, template, DayOfWeek.MONDAY)
-        val slotId = slot(program).id
-
-        val result = repository.addSlotSet(slotId, "back-squat", SlotSetEdit(targetPercentOf1Rm = 120))
-
-        assertTrue(result is DataResult.Failure)
-    }
-
-    @Test
     fun aSlotsOwnHistory_isWhatThatSlotProgressesFrom() = runTest {
         // ROADMAP P3.8: one template in two slots, and the heavy Monday and the light Friday
         // progress apart. A session names only the template, so which slot it belongs to is
@@ -630,20 +478,6 @@ class ProgramRepositoryTest {
                 deletedAt = null,
             ),
         )
-    }
-
-    @Test
-    fun estimatedOneRepMax_comesFromTheHeaviestWorkingSet_andIsNullWhenNothingIs() = runTest {
-        // ROADMAP P3.8: a percentage prescription resolves against N17's estimate, and an exercise
-        // with nothing estimable has no number rather than a borrowed one.
-        val program = create("Upper/Lower")
-        val template = createTemplate("Heavy lower")
-        repository.addSlot(program, template, DayOfWeek.MONDAY)
-        insertSessionWithSet("heavy", "2026-09-28T09:00:00Z", template, weightGrams = 100_000L)
-
-        // Epley: 100 kg for 5 is 100 * (1 + 5/30) = 116.67 kg, rounded to the nearest half-kilo.
-        assertEquals(116_500L, repository.estimatedOneRepMax("back-squat").getOrNull())
-        assertNull(repository.estimatedOneRepMax("front-squat").getOrNull())
     }
 
     @Test

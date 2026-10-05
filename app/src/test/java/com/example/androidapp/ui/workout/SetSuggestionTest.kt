@@ -5,8 +5,6 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.SlotPrescription
-import com.example.androidapp.domain.model.SlotSet
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.Weight
@@ -44,22 +42,6 @@ class SetSuggestionTest {
         val suggestion = suggestionForNextSet(loggedSets = emptyList(), previous = null)
 
         assertEquals(SetType.NORMAL, suggestion.setType)
-    }
-
-    @Test
-    fun theSlotsRole_winsOverTheTemplates() {
-        // The slot overrides only what it says (P3.8), and its role is part of that.
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                sets = listOf(SlotSet(id = "x", setIndex = 0, role = SetType.TOP_SET)),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = null,
-            template = PlannedTarget(reps = 5, weightGrams = 100_000L, role = SetType.WARMUP),
-        )
-
-        assertEquals(SetType.TOP_SET, target?.role)
     }
 
     @Test
@@ -242,136 +224,6 @@ class SetSuggestionTest {
     }
 
     @Test
-    fun aSlotsPercentage_resolvesThroughTheEstimatedOneRepMax() {
-        // ROADMAP P3.8: the one load a template's planned set cannot express. 100 kg estimated at
-        // 85% is 85 kg, rounded to the loadable step.
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                sets = listOf(SlotSet(id = "x", setIndex = 0, targetPercentOf1Rm = 85, targetRepsMin = 3)),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = 100_000L,
-        )
-
-        assertEquals(3, target?.reps)
-        assertEquals(85_000L, target?.weightGrams)
-    }
-
-    @Test
-    fun aSlotsPercentage_withoutAnEstimate_hasNoNumber() {
-        // Nothing estimable means no kilograms rather than a borrowed one; the caller falls back to
-        // history, which is the honest answer (P3.8).
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                sets = listOf(SlotSet(id = "x", setIndex = 0, targetPercentOf1Rm = 85, targetRepsMin = 3)),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = null,
-        )
-
-        assertEquals(3, target?.reps)
-        assertNull(target?.weightGrams)
-    }
-
-    @Test
-    fun aSlotsWeight_winsOverItsPercentage() {
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                sets = listOf(
-                    SlotSet(
-                        id = "x",
-                        setIndex = 0,
-                        targetWeightGrams = 90_000L,
-                        targetPercentOf1Rm = 85,
-                    ),
-                ),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = 100_000L,
-        )
-
-        assertEquals(90_000L, target?.weightGrams)
-    }
-
-    @Test
-    fun aSetTheSlotDoesNotMention_isLeftToTheTemplate() {
-        // The slot overrides only what it says: a prescription with no set at this index hands the
-        // template's own target straight back (N14, P3.8).
-        val template = PlannedTarget(reps = 5, weightGrams = 100_000L)
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(exerciseId = "back-squat", sets = emptyList()),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = 100_000L,
-            template = template,
-        )
-
-        assertEquals(template, target)
-    }
-
-    @Test
-    fun aSlotSetThatNamesNothing_keepsTheTemplatesTarget() {
-        // A set carrying only a note speaks about the note, not the load: the dialog promises that
-        // anything left alone uses the workout's own targets (P3.8).
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                sets = listOf(SlotSet(id = "x", setIndex = 0, note = "slow descent")),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = 100_000L,
-            template = PlannedTarget(reps = 5, weightGrams = 100_000L),
-        )
-
-        assertEquals("the template's reps still stand", 5, target?.reps)
-        assertEquals("and its bar", 100_000L, target?.weightGrams)
-    }
-
-    @Test
-    fun aSlotSetThatNamesRepsOnly_keepsTheTemplatesLoad() {
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                sets = listOf(SlotSet(id = "x", setIndex = 0, targetRepsMin = 3, targetRepsMax = 3)),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = 100_000L,
-            template = PlannedTarget(reps = 5, weightGrams = 100_000L),
-        )
-
-        assertEquals("the slot's reps win", 3, target?.reps)
-        assertEquals("the slot said nothing about the bar", 100_000L, target?.weightGrams)
-    }
-
-    @Test
-    fun aSlotsRpe_winsWhereItSpeaks_andTheTemplatesStandsWhereItDoesNot() {
-        // ROADMAP N59: the target RPE follows the same "wins where it speaks" rule as reps (N14).
-        val slotNamesOne = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                sets = listOf(SlotSet(id = "x", setIndex = 0, targetRpeHalves = 18)),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = null,
-            template = PlannedTarget(reps = 5, weightGrams = 100_000L, rpeHalves = 16),
-        )
-        assertEquals(18, slotNamesOne?.rpeHalves)
-
-        val slotNamesNone = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                sets = listOf(SlotSet(id = "x", setIndex = 0, targetRepsMin = 3)),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = null,
-            template = PlannedTarget(reps = 5, weightGrams = 100_000L, rpeHalves = 16),
-        )
-        assertEquals("the template's RPE stands where the slot is silent", 16, slotNamesNone?.rpeHalves)
-    }
-
-    @Test
     fun aTemplatesOneTargetRpe_winsOverItsSetsLegacyValue() {
         // ROADMAP N59, amended: the exercise's number is the plan's target, and a set's own value is
         // only what a plan written before the change arrives with.
@@ -387,97 +239,6 @@ class SetSuggestionTest {
         val target = plannedTargetFor(planned = plannedExercise(exerciseRpe = null, setRpe = 16), nextIndex = 0)
 
         assertEquals(16, target?.rpeHalves)
-    }
-
-    @Test
-    fun aSlotsOneTargetRpe_winsOverItsSetsLegacyValue() {
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                targetRpeHalves = 18,
-                sets = listOf(SlotSet(id = "x", setIndex = 0, targetRpeHalves = 16)),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = null,
-        )
-
-        assertEquals(18, target?.rpeHalves)
-    }
-
-    @Test
-    fun aSlotsSetsLegacyRpe_isTheFallback_whenTheExerciseNamesNone() {
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                sets = listOf(SlotSet(id = "x", setIndex = 0, targetRpeHalves = 16)),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = null,
-        )
-
-        assertEquals(16, target?.rpeHalves)
-    }
-
-    @Test
-    fun aSlotsOneTargetRpe_coversASetItWroteNoRowFor() {
-        // One number for the exercise means the slot's value is not withheld from a set it prescribed
-        // no row for: the template still supplies the targets, and the slot supplies the effort.
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                targetRpeHalves = 18,
-                sets = listOf(SlotSet(id = "x", setIndex = 0, targetRpeHalves = 16)),
-            ),
-            nextIndex = 1,
-            estimatedOneRepMaxGrams = null,
-            template = PlannedTarget(reps = 5, weightGrams = 100_000L, rpeHalves = 14),
-        )
-
-        assertEquals("the slot's one number, not the template's", 18, target?.rpeHalves)
-        assertEquals("the template still supplies the targets", 100_000L, target?.weightGrams)
-    }
-
-    @Test
-    fun aSlotSetThatNamesALoad_doesNotAlsoInheritTheTemplatesAssistance() {
-        // The load is *one* number (N15): taking the slot's kilograms and the template's assistance
-        // would build a set that is both, and count the kilograms as volume on an assisted set.
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "assisted-pull-up",
-                sets = listOf(SlotSet(id = "x", setIndex = 0, targetWeightGrams = 100_000L)),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = null,
-            template = PlannedTarget(reps = 5, weightGrams = null, assistanceGrams = 20_000L),
-        )
-
-        assertEquals(100_000L, target?.weightGrams)
-        assertNull("the template's assistance must not ride along", target?.assistanceGrams)
-    }
-
-    @Test
-    fun aSlotPercentageWithNoEstimate_fallsBackToTheTemplatesLoad() {
-        val target = prescribedTargetFor(
-            prescription = SlotPrescription(
-                exerciseId = "back-squat",
-                sets = listOf(SlotSet(id = "x", setIndex = 0, targetPercentOf1Rm = 85, targetRepsMin = 3)),
-            ),
-            nextIndex = 0,
-            estimatedOneRepMaxGrams = null,
-            template = PlannedTarget(reps = 5, weightGrams = 100_000L),
-        )
-
-        assertEquals(3, target?.reps)
-        assertEquals("no estimate means the template's bar, not an invented one", 100_000L, target?.weightGrams)
-    }
-
-    @Test
-    fun prescribedWeight_roundsToTheLoadableStep() {
-        assertEquals(85_000L, prescribedWeightGrams(85, 100_000L))
-        // 82% of 100 kg is 82 kg, which is not a loadable step: it lands on the nearest one.
-        assertEquals(82_500L, prescribedWeightGrams(82, 100_000L))
-        assertNull("nothing estimable has no number", prescribedWeightGrams(85, null))
-        assertNull(prescribedWeightGrams(85, 0L))
     }
 
     /** One planned exercise with one planned set, for the exercise-versus-set RPE fallback (N59). */

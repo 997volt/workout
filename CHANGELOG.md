@@ -21,6 +21,16 @@ repeated here.
 
 ### Changed
 
+- **A program is a schedule over templates, and nothing else** (N73). A slot used to carry its own
+  prescriptions — sets, rest, cue and target effort that overrode its template's — so two slots naming
+  one workout could train it differently, edited behind a pencil on every program row. A program now
+  **uses** the template: the workout is seeded from it, the next set is prefilled from it, and
+  accepting a progression step writes **the template**. A slot is a template and a weekday. The two
+  tables that held the overrides are dropped on upgrade and what they held is discarded, which is the
+  point of the change rather than a side effect; templates, planned sets and every logged workout are
+  untouched. Two slots naming one template now share its plan *and* its progression — the deliberate
+  reversal of P3.8's "the slot wins where it speaks" — while the last-time prefill stays that slot's
+  own history.
 - **A warm-up records no RPE** (N67). The set editor offered the effort field for every role, so a
   ramp could be written with a number the plan never asked of it — and read back as though the set had
   been judged against one. The field is now absent while the role is *Warm-up*, what a save writes

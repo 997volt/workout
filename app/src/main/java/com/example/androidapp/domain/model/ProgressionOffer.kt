@@ -14,9 +14,6 @@ package com.example.androidapp.domain.model
  * and accepting writes the plan and nothing else (DECISIONS.md's "the app suggests; it never writes").
  */
 
-/** The plan an offer's set came from, so the accepted step is written back to the right one (N50). */
-enum class ProgressionSource { TEMPLATE, SLOT }
-
 /** The directions a lifter can accept (N50). Enums by name, never ordinal. */
 enum class ProgressionDirection { LOAD, REPS }
 
@@ -27,9 +24,8 @@ data class ProgressionStep<T>(val from: T, val to: T)
  * One prescribed set, reduced to what progression reads and what the accepted write must keep (N50).
  *
  * Every target is nullable, exactly as it is on the plan: a set that names no load cannot have one
- * raised, and a set that names no reps cannot have its work checked. [source] rides along because the
- * two plans are written through different repositories (N14, P3.8), and [targetPercentOf1Rm] is a
- * slot's alone — carried so accepting a rep does not silently drop a percentage the set stated.
+ * raised, and a set that names no reps cannot have its work checked. There is one plan to write back
+ * to since N73 — the template's — so nothing here says which one it came from.
  *
  * [targetRpeHalves] is the **exercise's one number**, carried onto every prescribed set by the
  * caller (N59, amended): the rule measures each set against the plan's single target, and a plan that
@@ -39,14 +35,12 @@ data class ProgressionStep<T>(val from: T, val to: T)
 data class ProgressionPlanSet(
     val setId: String,
     val setIndex: Int,
-    val source: ProgressionSource,
     val role: SetType = SetType.NORMAL,
     val targetWeightGrams: Long? = null,
     val targetAssistanceGrams: Long? = null,
     val targetRepsMin: Int? = null,
     val targetRepsMax: Int? = null,
     val targetRpeHalves: Int? = null,
-    val targetPercentOf1Rm: Int? = null,
     val note: String? = null,
     /**
      * The set's **own** stored value of the legacy per-set RPE column, or null (N59).
@@ -95,9 +89,8 @@ data class ProgressionPrompt(
  *
  * [reps] is always there when there is an offer at all: the work can only be checked against a rep
  * target, so a set that names none earns nothing. [load] is absent where the plan names no **added**
- * weight to raise — an assisted set's number is the machine's help rather than a load (N15), and a
- * percentage prescription's kilograms are derived rather than written (P3.8), so neither has a
- * target a step can move.
+ * weight to raise — an assisted set's number is the machine's help rather than a load (N15), so it
+ * has no target a step can move.
  */
 data class ProgressionOffer(
     val set: ProgressionPlanSet,

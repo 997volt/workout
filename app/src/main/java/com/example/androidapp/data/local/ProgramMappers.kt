@@ -5,8 +5,6 @@ import com.example.androidapp.domain.model.ExerciseTrendRow
 import com.example.androidapp.domain.model.ProgramSession
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.SlotPrescription
-import com.example.androidapp.domain.model.SlotSet
 import com.example.androidapp.domain.model.WorkoutProgram
 import java.time.Instant
 import java.time.ZoneId
@@ -37,34 +35,6 @@ internal fun ProgramSlotDetail.toDomain(): ProgramSlot = ProgramSlot(
 )
 
 /**
- * What one slot prescribes for one exercise, with the sets read alongside it (ROADMAP P3.8).
- *
- * The sets are passed in rather than gathered here so the repository can group one read of all
- * of a slot's sets by their exercise row, which is a join the mapper should not be repeating.
- */
-internal fun ProgramSlotExerciseEntity.toDomain(sets: List<ProgramSlotSetEntity>): SlotPrescription =
-    SlotPrescription(
-        exerciseId = exerciseId,
-        restSeconds = restSeconds,
-        techniqueNote = techniqueNote,
-        targetRpeHalves = targetRpeHalves,
-        sets = sets.map { it.toDomain() },
-    )
-
-internal fun ProgramSlotSetEntity.toDomain(): SlotSet = SlotSet(
-    id = id,
-    setIndex = setIndex,
-    role = role,
-    targetWeightGrams = targetWeightGrams,
-    targetAssistanceGrams = targetAssistanceGrams,
-    targetRepsMin = targetRepsMin,
-    targetRepsMax = targetRepsMax,
-    targetRpeHalves = targetRpeHalves,
-    targetPercentOf1Rm = targetPercentOf1Rm,
-    note = note,
-)
-
-/**
  * A finished session as the run reads it, or null when it carries no template (ROADMAP P3.9).
  *
  * The run is a rotation of slots, and a session started by hand named none — it moves no run.
@@ -88,8 +58,7 @@ internal fun FinishedSessionRow.toRunSession(fallbackZone: ZoneId): ProgramSessi
  *
  * The projection keeps `setType` as its stored name — a database column, not an entity — so it is
  * resolved here; null stays null, because a row that left-joined no set has no role to resolve.
- * The repository reads the series this way to take the estimated one-rep max a slot's percentage
- * prescription resolves against.
+ * The trends screen reads the series through this.
  */
 internal fun ExerciseTrendRowEntity.toExerciseTrendRow(): ExerciseTrendRow = ExerciseTrendRow(
     sessionId = sessionId,

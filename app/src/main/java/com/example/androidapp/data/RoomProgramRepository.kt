@@ -2,35 +2,27 @@ package com.example.androidapp.data
 
 import androidx.room.withTransaction
 import com.example.androidapp.data.local.ProgramDao
-import com.example.androidapp.data.local.ProgramPrescriptionDao
 import com.example.androidapp.data.local.ProgramRunDao
 import com.example.androidapp.data.local.ProgramSkipDao
 import com.example.androidapp.data.local.ProgramSkipEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
-import com.example.androidapp.data.local.ProgramSlotExerciseEntity
-import com.example.androidapp.data.local.ProgramSlotSetEntity
 import com.example.androidapp.data.local.ProgramSubstitutionDao
 import com.example.androidapp.data.local.ProgramSubstitutionEntity
 import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.transfer.ProgramDocument
 import com.example.androidapp.data.transfer.ProgramDocumentCodec
-import com.example.androidapp.data.transfer.ProgramSlotDto
-import com.example.androidapp.data.transfer.ProgramSlotExerciseDto
 import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
 import com.example.androidapp.data.local.toDomain
-import com.example.androidapp.data.local.toExerciseTrendRow
 import com.example.androidapp.data.local.toProgramSession
 import com.example.androidapp.data.local.toRunSession
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.NotFoundException
-import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.nowEpochMillis
-import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgramRun
@@ -38,22 +30,16 @@ import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.RecordedSkip
 import com.example.androidapp.domain.model.RecordedSubstitution
-import com.example.androidapp.domain.model.Rpe
-import com.example.androidapp.domain.model.SlotPrescription
 import com.example.androidapp.domain.model.WorkoutProgram
-import com.example.androidapp.domain.model.latestValue
 import com.example.androidapp.domain.model.programRun
-import com.example.androidapp.domain.model.toExerciseTrendPoints
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
-import com.example.androidapp.domain.repository.SlotSetEdit
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.roundToLong
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -77,8 +63,6 @@ class RoomProgramRepository @Inject constructor(
 ) : ProgramRepository {
 
     private val dao: ProgramDao = database.programDao()
-
-    private val prescriptionDao: ProgramPrescriptionDao = database.programPrescriptionDao()
 
     private val runDao: ProgramRunDao = database.programRunDao()
 
@@ -227,158 +211,6 @@ class RoomProgramRepository @Inject constructor(
         }
     }
 
-    override fun observeSlotPrescriptions(slotId: String): Flow<List<SlotPrescription>> =
-        combine(
-            prescriptionDao.observeSlotExercises(slotId),
-            prescriptionDao.observeSlotSets(slotId),
-        ) { exercises, sets ->
-            val byExercise = sets.groupBy { it.slotExerciseId }
-            exercises
-                .map { it.toDomain(byExercise[it.id].orEmpty()) }
-                // A row with nothing to say is not a prescription: the template's targets stand.
-                .filterNot { it.isEmpty }
-        }
-
-    override suspend fun setSlotExercisePlan(
-        slotId: String,
-        exerciseId: String,
-        restSeconds: Int?,
-        techniqueNote: String?,
-        targetRpeHalves: Int?,
-    ): DataResult<Unit> = dataResultOf {
-        val slot = dao.findSlot(slotId) ?: throw NotFoundException("program slot $slotId")
-        requireExerciseInTemplate(database, slot.templateId, exerciseId)
-        // Zero is a value — "this slot prescribes no rest" — so only a negative is refused, with the
-        // one sentence the library and the template already refuse it with (ROADMAP N45).
-        if (restSeconds != null && restSeconds < RestTimer.MIN_PRESCRIBED_SECONDS) {
-            throw InvalidInputException(RestTimer.NEGATIVE_REST_REFUSAL)
-        }
-        if (!Rpe.isValid(targetRpeHalves)) {
-            throw InvalidInputException("Target RPE must be between 1 and 10, in half steps.")
-        }
-
-        val now = timeSource.nowEpochMillis()
-        val existing = prescriptionDao.findSlotExercise(slotId, exerciseId)
-        val saysNothing = restSeconds == null && techniqueNote == null && targetRpeHalves == null
-        // A clear has to reach the reader, exactly as it does for a template (N59): the per-set column
-        // is the fallback, and a clear that left it behind would be undone. Only a transition to null
-        // clears, so a pre-change prescription keeps its sets' value.
-        val legacyEffortCleared = targetRpeHalves == null && existing?.targetRpeHalves != null
-        when {
-            // Nothing is said and there is no row: there is nothing to write.
-            existing == null && saysNothing -> Unit
-            existing == null -> prescriptionDao.insertSlotExercise(
-                ProgramSlotExerciseEntity(
-                    id = UUID.randomUUID().toString(),
-                    slotId = slotId,
-                    exerciseId = exerciseId,
-                    restSeconds = restSeconds,
-                    techniqueNote = techniqueNote,
-                    targetRpeHalves = targetRpeHalves,
-                    createdAt = now,
-                    updatedAt = now,
-                    deletedAt = null,
-                ),
-            )
-
-            // The row was only holding sets, and it has none: an empty prescription is absent.
-            saysNothing && prescriptionDao.countSlotSets(existing.id) == 0 ->
-                prescriptionDao.softDeleteSlotExercise(existing.id, now)
-
-            else -> database.withTransaction {
-                prescriptionDao.updateSlotExercise(
-                    existing.copy(
-                        restSeconds = restSeconds,
-                        techniqueNote = techniqueNote,
-                        targetRpeHalves = targetRpeHalves,
-                        updatedAt = now,
-                    ),
-                )
-                prescriptionDao.clearSlotSetTargetRpe(
-                    slotExerciseId = existing.id,
-                    clear = legacyEffortCleared,
-                    at = now,
-                )
-            }
-        }
-    }
-
-    override suspend fun addSlotSet(
-        slotId: String,
-        exerciseId: String,
-        edit: SlotSetEdit,
-    ): DataResult<Unit> = dataResultOf {
-        val slot = dao.findSlot(slotId) ?: throw NotFoundException("program slot $slotId")
-        requireExerciseInTemplate(database, slot.templateId, exerciseId)
-        validateSlotSet(edit)
-
-        val now = timeSource.nowEpochMillis()
-        val parent = ensureSlotExercise(prescriptionDao, slotId, exerciseId, now)
-        prescriptionDao.insertSlotSet(
-            ProgramSlotSetEntity(
-                id = UUID.randomUUID().toString(),
-                slotExerciseId = parent.id,
-                setIndex = prescriptionDao.maxSetIndex(parent.id) + 1,
-                role = edit.role,
-                targetWeightGrams = edit.targetWeightGrams,
-                targetAssistanceGrams = edit.targetAssistanceGrams,
-                targetRepsMin = edit.targetRepsMin,
-                targetRepsMax = edit.targetRepsMax,
-                targetRpeHalves = edit.targetRpeHalves,
-                targetPercentOf1Rm = edit.targetPercentOf1Rm,
-                note = edit.note,
-                createdAt = now,
-                updatedAt = now,
-                deletedAt = null,
-            ),
-        )
-    }
-
-    override suspend fun updateSlotSet(
-        slotSetId: String,
-        edit: SlotSetEdit,
-    ): DataResult<Unit> = dataResultOf {
-        validateSlotSet(edit)
-        val existing = prescriptionDao.findSlotSet(slotSetId)
-            ?: throw NotFoundException("prescribed set $slotSetId")
-        val updated = prescriptionDao.updateSlotSet(
-            existing.copy(
-                role = edit.role,
-                targetWeightGrams = edit.targetWeightGrams,
-                targetAssistanceGrams = edit.targetAssistanceGrams,
-                targetRepsMin = edit.targetRepsMin,
-                targetRepsMax = edit.targetRepsMax,
-                targetRpeHalves = edit.targetRpeHalves,
-                targetPercentOf1Rm = edit.targetPercentOf1Rm,
-                note = edit.note,
-                updatedAt = timeSource.nowEpochMillis(),
-            ),
-        )
-        if (updated == 0) throw NotFoundException("prescribed set $slotSetId")
-    }
-
-    override suspend fun removeSlotSet(slotSetId: String): DataResult<Unit> = dataResultOf {
-        val now = timeSource.nowEpochMillis()
-        val existing = prescriptionDao.findSlotSet(slotSetId)
-            ?: throw NotFoundException("prescribed set $slotSetId")
-        if (prescriptionDao.softDeleteSlotSet(slotSetId, now) == 0) {
-            throw NotFoundException("prescribed set $slotSetId")
-        }
-        // The parent exercise row exists to carry the sets: with none left and nothing else said,
-        // it goes too, so an emptied prescription leaves no row behind.
-        val parent = prescriptionDao.findSlotExerciseById(existing.slotExerciseId)
-        if (parent != null) {
-            // The row speaks through its rest, its cue and its one target RPE (N59): a slot that
-            // names any of them must survive its last set going.
-            val saysNothing = parent.restSeconds == null &&
-                parent.techniqueNote == null &&
-                parent.targetRpeHalves == null
-            if (saysNothing && prescriptionDao.countSlotSets(parent.id) == 0) {
-                prescriptionDao.softDeleteSlotExercise(parent.id, now)
-            }
-        }
-    }
-
     override suspend fun slotPreviousPerformance(
         slotId: String,
         exerciseId: String,
@@ -400,17 +232,6 @@ class RoomProgramRepository @Inject constructor(
             sets = database.workoutDao().findSetsFor(settled.first.sessionId, exerciseId)
                 .map { it.toDomain() },
         )
-    }
-
-    override suspend fun estimatedOneRepMax(exerciseId: String): DataResult<Long?> = dataResultOf {
-        // The exercise's whole history, for the reason a record reads all of it: an estimate is a
-        // fact about the lifter, and a chart's window would forget a heavy old set (N17, P3.8).
-        database.trendsDao().observeExerciseTrendRows(exerciseId, limit = ALL_TREND_SESSIONS)
-            .first()
-            .map { it.toExerciseTrendRow() }
-            .toExerciseTrendPoints()
-            .latestValue(ExerciseTrendMetric.ESTIMATED_1RM)
-            ?.roundToLong()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -603,8 +424,6 @@ private suspend fun buildProgramDocument(
     val templates = templateIds.mapNotNull { database.templateDao().findById(it) }
     val templateExercises = templateIds.flatMap { database.templateDao().findTemplateExercises(it) }
     val templateSets = templateIds.flatMap { database.templateDao().findTemplateSets(it) }
-    val slotExercises = slots.flatMap { database.programPrescriptionDao().findSlotExercises(it.id) }
-    val slotSets = slots.flatMap { database.programPrescriptionDao().findSlotSets(it.id) }
     // The definition of every exercise the plan names, so a receiving device can create the ones it
     // has never seen — a user's own exercise id means nothing anywhere else (N47).
     val exercises = templateExercises.map { it.exerciseId }.distinct()
@@ -618,8 +437,6 @@ private suspend fun buildProgramDocument(
         templates = templates.map { it.toDto() },
         templateExercises = templateExercises.map { it.toDto() },
         templateSets = templateSets.map { it.toDto() },
-        slotExercises = slotExercises.map { it.toDto() },
-        slotSets = slotSets.map { it.toDto() },
         exercises = exercises.map { it.toDto() },
     )
 }
@@ -656,8 +473,7 @@ private suspend fun mergeProgramDocument(
     val knownTemplates = (carriedTemplates + document.slots.map { it.templateId }).filter {
         it in carriedTemplates || database.templateDao().findById(it) != null
     }.toSet()
-    val referenced = (document.templateExercises.map { it.exerciseId } +
-        document.slotExercises.map { it.exerciseId }).toSet()
+    val referenced = document.templateExercises.map { it.exerciseId }.toSet()
     val presentExercises = referenced.filter { database.exerciseDao().findById(it) != null }.toSet()
 
     val templatesAdded = backupDao.insertTemplates(document.templates.map { it.toEntity() })
@@ -681,12 +497,6 @@ private suspend fun mergeProgramDocument(
 
     val slots = document.slots.filter { it.templateId in knownTemplates }
     programBackup.insertProgramSlots(slots.map { it.toEntity() })
-    val prescribed = placeablePrescriptions(database, document, slots, presentExercises)
-    programBackup.insertProgramSlotExercises(prescribed)
-    val prescribedIds = prescribed.map { it.id }.toSet()
-    programBackup.insertProgramSlotSets(
-        document.slotSets.filter { it.slotExerciseId in prescribedIds }.map { it.toEntity() },
-    )
 
     return ProgramImportSummary(
         programs = programsAdded,
@@ -696,140 +506,9 @@ private suspend fun mergeProgramDocument(
     )
 }
 
-/**
- * The prescriptions a load may place, against what each template actually trains (ROADMAP P3.8, B56).
- *
- * The interactive writes check this with [requireExerciseInTemplate]; the import writes raw rows, so
- * it checks the same rule here instead. Read **after** the carried exercises are inserted, so a
- * template that travelled in the document is judged on what it just received, and one whose id
- * already existed on this device is judged on what it holds now — which may have diverged from the
- * document's copy since the two shared an id. A prescription for a movement the template does not
- * train is invisible on every screen, which is what P3.8 exists to prevent.
- */
-private suspend fun placeablePrescriptions(
-    database: WorkoutDatabase,
-    document: ProgramDocument,
-    slots: List<ProgramSlotDto>,
-    presentExercises: Set<String>,
-): List<ProgramSlotExerciseEntity> {
-    val templateOfSlot = slots.associate { it.id to it.templateId }
-    val trained = templateOfSlot.values.distinct().associateWith { templateId ->
-        database.templateDao().findTemplateExercises(templateId).map { it.exerciseId }.toSet()
-    }
-    return document.slotExercises
-        .filter { prescriptionFits(it, templateOfSlot, trained, presentExercises) }
-        .map { it.toEntity() }
-}
-
-/**
- * Whether a document's prescription may be placed at all (ROADMAP P3.8, B56).
- *
- * Pure, and `internal` rather than private so a JVM test can hold the rule: a prescription survives
- * only when its exercise is present *and* the template its slot names actually trains it.
- */
-internal fun prescriptionFits(
-    prescription: ProgramSlotExerciseDto,
-    templateOfSlot: Map<String, String>,
-    trainedByTemplate: Map<String, Set<String>>,
-    presentExercises: Set<String>,
-): Boolean = prescription.exerciseId in presentExercises &&
-    prescription.exerciseId in trainedByTemplate[templateOfSlot[prescription.slotId]].orEmpty()
-
-/**
- * A slot prescribes only what its template trains (ROADMAP P3.8).
- *
- * Checked rather than trusted: a prescription for an exercise the template does not have is
- * invisible on every screen the moment it is written, which is the same trap `addSlot` guards a
- * slot against. File-level because the repository is at the function ceiling this project
- * enforces, and this reads one table rather than owning any state.
- */
-private suspend fun requireExerciseInTemplate(
-    database: WorkoutDatabase,
-    templateId: String,
-    exerciseId: String,
-) {
-    val planned = database.templateDao().findPlannedExercises(templateId)
-    if (planned.none { it.exerciseId == exerciseId }) {
-        throw NotFoundException("$exerciseId is not in the slot's template")
-    }
-}
-
-/**
- * A prescribed set's targets use the plan's vocabulary, plus the percentage (ROADMAP P3.8).
- *
- * Two functions rather than one `when` for the reason the template repository states its own
- * validation apart: a load rule and an effort rule are different questions, and one of them
- * growing should not push the other past the complexity ceiling.
- */
-private fun validateSlotSet(edit: SlotSetEdit) {
-    validateSlotSetLoad(edit)
-    validateSlotSetEffort(edit)
-}
-
-/** A prescribed load is a weight or a magnitude of assistance, never a negative either way. */
-private fun validateSlotSetLoad(edit: SlotSetEdit) {
-    val problem = when {
-        edit.targetWeightGrams != null && edit.targetWeightGrams < 0 ->
-            "A target weight cannot be negative."
-
-        edit.targetAssistanceGrams != null && edit.targetAssistanceGrams < 0 ->
-            "Assistance is a magnitude, not a negative weight."
-
-        else -> null
-    }
-    if (problem != null) throw InvalidInputException(problem)
-}
-
-/** Reps, RPE and the percentage all sit on a scale, and the scale is checked (P3.8). */
-private fun validateSlotSetEffort(edit: SlotSetEdit) {
-    val problem = when {
-        edit.targetRepsMin != null && edit.targetRepsMin < 1 -> "Target reps must be at least 1."
-        edit.targetRepsMax != null && edit.targetRepsMax < 1 -> "Target reps must be at least 1."
-        edit.targetRepsMin != null && edit.targetRepsMax != null &&
-            edit.targetRepsMin > edit.targetRepsMax ->
-            "The low end of a rep range cannot exceed the high end."
-
-        !Rpe.isValid(edit.targetRpeHalves) ->
-            "Target RPE must be between 1 and 10, in half steps."
-
-        edit.targetPercentOf1Rm != null && edit.targetPercentOf1Rm !in 1..MAX_SLOT_PERCENT ->
-            "A percentage of the estimated one-rep max must be between 1 and $MAX_SLOT_PERCENT."
-
-        else -> null
-    }
-    if (problem != null) throw InvalidInputException(problem)
-}
-
-/** Above this, a "percentage of the max" is no longer a percentage of a max. */
-private const val MAX_SLOT_PERCENT = 100
-
 /** A program with no name is a list row nobody can tell apart from the next (ROADMAP P3.3). */
 private fun requireName(name: String): String {
     val trimmed = name.trim()
     if (trimmed.isEmpty()) throw InvalidInputException("Give the program a name.")
     return trimmed
 }
-
-/** A stand-in for "all of them": no exercise has anywhere near this many sessions (N17). */
-private const val ALL_TREND_SESSIONS = 100_000
-
-/**
- * The slot's prescription row for one exercise, created on the first write (ROADMAP P3.8).
- *
- * File-level because the repository is at the function ceiling this project enforces, and this is
- * a read-or-insert of one row rather than a decision the repository owns.
- */
-private suspend fun ensureSlotExercise(
-    dao: ProgramPrescriptionDao,
-    slotId: String,
-    exerciseId: String,
-    now: Long,
-): ProgramSlotExerciseEntity =
-    dao.findSlotExercise(slotId, exerciseId) ?: ProgramSlotExerciseEntity(
-        id = UUID.randomUUID().toString(),
-        slotId = slotId,
-        exerciseId = exerciseId,
-        createdAt = now,
-        updatedAt = now,
-        deletedAt = null,
-    ).also { dao.insertSlotExercise(it) }

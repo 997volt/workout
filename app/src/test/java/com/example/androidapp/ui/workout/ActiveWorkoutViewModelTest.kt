@@ -5,11 +5,9 @@ import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSlot
-import com.example.androidapp.domain.model.SlotPrescription
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
-import com.example.androidapp.domain.repository.SlotSetEdit
 import kotlinx.coroutines.flow.asStateFlow
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
@@ -33,7 +31,6 @@ import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
-import com.example.androidapp.domain.model.SlotSet
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
@@ -659,45 +656,6 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
-    fun acceptingTheRepStep_writesTheSlotsPrescription_thenFinishes() = runTest(dispatcher) {
-        // A program start writes the slot, so two slots naming one template progress apart (P3.8).
-        val repository = FakeWorkoutRepository()
-        val programs = FakeProgramRepository().apply {
-            prescriptions = listOf(
-                SlotPrescription(
-                    exerciseId = "back-squat",
-                    // The slot's one target RPE for the exercise (N59, amended).
-                    targetRpeHalves = 8,
-                    sets = listOf(
-                        SlotSet(
-                            id = "ps0",
-                            setIndex = 0,
-                            targetWeightGrams = 100_000L,
-                            targetRepsMax = 5,
-                        ),
-                    ),
-                ),
-            )
-        }
-        val viewModel = viewModelFor(repository, templateId = "t1", programs = programs, slotId = "slot-1")
-        observe(viewModel)
-        settle()
-        viewModel.onAddExercise("back-squat")
-        settle()
-        val id = viewModel.uiState.value.exercises.single().id
-        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
-
-        viewModel.onAcceptProgression(id, ProgressionDirection.REPS)
-        settle()
-
-        val written = programs.slotSetUpdates.single()
-        assertEquals("ps0", written.first)
-        assertEquals(6, written.second.targetRepsMax)
-        assertEquals("the step raises the reps, not the load", 100_000L, written.second.targetWeightGrams)
-        assertTrue(viewModel.uiState.value.exercises.single().isFinished)
-    }
-
-    @Test
     fun acceptingAStep_writesTheSetsOwnRpe_notTheExercisesNumber() = runTest(dispatcher) {
         // N59: the exercise's one number rides on every set for the rule to read, but the set's own
         // legacy value is what travels back. Copying the exercise's number into the set column would
@@ -726,101 +684,6 @@ class ActiveWorkoutViewModelTest {
         val written = templates.updates.single()
         assertEquals("the set's own legacy value, not the exercise's 9.0", 6, written.second.targetRpeHalves)
         assertEquals(6, written.second.targetRepsMax)
-    }
-
-    @Test
-    fun aSlotThatOverridesOneSet_stillChecksTheTemplatesOthers() = runTest(dispatcher) {
-        // N50's "every prescribed working set" is the merged plan the screen shows (P3.8): the slot's
-        // set wins at index 0, and the template's set at index 1 still has to be answered — a session
-        // that failed it earns nothing. Reading only the slot's rows offered a step on half the work.
-        val repository = FakeWorkoutRepository()
-        val templates = FakeTemplateRepository(
-            planned = listOf(
-                plannedExercise(
-                    position = 0,
-                    targetRpeHalves = 8,
-                    sets = listOf(
-                        plannedSet(index = 0, reps = 5, weightGrams = 100_000L),
-                        plannedSet(index = 1, reps = 5, weightGrams = 100_000L),
-                    ),
-                ),
-            ),
-        )
-        val programs = FakeProgramRepository().apply {
-            prescriptions = listOf(
-                SlotPrescription(
-                    exerciseId = "back-squat",
-                    targetRpeHalves = 8,
-                    sets = listOf(
-                        SlotSet(id = "ps0", setIndex = 0, targetWeightGrams = 100_000L, targetRepsMax = 5),
-                    ),
-                ),
-            )
-        }
-        val viewModel = viewModelFor(
-            repository,
-            templateId = "t1",
-            templates = templates,
-            programs = programs,
-            slotId = "slot-1",
-        )
-        observe(viewModel)
-        settle()
-        viewModel.onAddExercise("back-squat")
-        settle()
-        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 8)
-        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 10)
-
-        assertNull(
-            "the template's second set was performed above the target, so nothing is earned",
-            viewModel.uiState.value.exercises.single().progression.offer,
-        )
-    }
-
-    @Test
-    fun aSlotsOwnRpe_coversTheTemplatesSets_itWroteNoRowFor() = runTest(dispatcher) {
-        // P3.8/N59: the slot wins where it speaks field by field, and its one target RPE covers the
-        // whole exercise — including a set it wrote no row for. The prefill and the rule have to read
-        // the same number, or the stepper opens on one target and the prompt is judged against another.
-        val repository = FakeWorkoutRepository()
-        val templates = FakeTemplateRepository(
-            planned = listOf(
-                plannedExercise(
-                    position = 0,
-                    // The template names 10.0, the slot 6.0: reading the template's would earn a step.
-                    targetRpeHalves = 20,
-                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
-                ),
-            ),
-        )
-        val programs = FakeProgramRepository().apply {
-            prescriptions = listOf(
-                SlotPrescription(exerciseId = "back-squat", targetRpeHalves = 12, sets = emptyList()),
-            )
-        }
-        val viewModel = viewModelFor(
-            repository,
-            templateId = "t1",
-            templates = templates,
-            programs = programs,
-            slotId = "slot-1",
-        )
-        observe(viewModel)
-        settle()
-        viewModel.onAddExercise("back-squat")
-        settle()
-
-        assertEquals(
-            "the slot's 6 is what the stepper opens on",
-            12,
-            viewModel.uiState.value.exercises.single().suggestion.targetRpeHalves,
-        )
-
-        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 16)
-
-        val prompt = viewModel.uiState.value.exercises.single().progression
-        assertEquals("and the plan the rule states is the same number", 12, prompt.planned?.targetRpeHalves)
-        assertNull("8 is above the slot's 6, so nothing is earned", prompt.offer)
     }
 
     @Test
@@ -1649,7 +1512,6 @@ class ActiveWorkoutViewModelTest {
 
         override suspend fun startOrResumeSession(
             templateId: String?,
-            slotId: String?,
         ): DataResult<StartedSession> {
             sessions.value?.let { return DataResult.Success(StartedSession(it.id, isNew = false)) }
             val created = WorkoutSession(id = "s1", startedAt = Instant.parse("2026-09-28T07:00:00Z"))
@@ -1954,77 +1816,6 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         assertEquals(SetType.WARMUP, viewModel.uiState.value.exercises.single().suggestion.setType)
-    }
-
-    @Test
-    fun aSlotsPrescription_prefillsOverTheTemplatesTarget() = runTest(dispatcher) {
-        // ROADMAP P3.8: the slot's prescription wins where it speaks, so two slots pointing at one
-        // template train it differently.
-        val repository = FakeWorkoutRepository()
-        val templates = FakeTemplateRepository(
-            planned = listOf(
-                plannedExercise(
-                    position = 0,
-                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 90_000L)),
-                ),
-            ),
-        )
-        val programs = FakeProgramRepository().apply {
-            prescriptions = listOf(
-                SlotPrescription(
-                    exerciseId = "back-squat",
-                    sets = listOf(
-                        SlotSet(id = "ps0", setIndex = 0, targetWeightGrams = 110_000L, targetRepsMin = 2),
-                    ),
-                ),
-            )
-        }
-        val viewModel = viewModelFor(
-            repository,
-            templateId = "t1",
-            templates = templates,
-            programs = programs,
-            slotId = "slot-1",
-        )
-        observe(viewModel)
-        settle()
-        viewModel.onAddExercise("back-squat")
-        settle()
-
-        val suggestion = viewModel.uiState.value.exercises.single().suggestion
-        assertEquals("the slot's reps, not the template's", 2, suggestion.reps)
-        assertEquals(110_000L, suggestion.weightGrams)
-    }
-
-    @Test
-    fun aSlotsPercentage_prefillsTheWeightDerivedFromTheEstimate() = runTest(dispatcher) {
-        // The one target a template's planned set cannot carry (P3.8): 85% of a 100 kg estimate.
-        val repository = FakeWorkoutRepository()
-        val programs = FakeProgramRepository().apply {
-            oneRepMax = 100_000L
-            prescriptions = listOf(
-                SlotPrescription(
-                    exerciseId = "back-squat",
-                    sets = listOf(
-                        SlotSet(id = "ps0", setIndex = 0, targetPercentOf1Rm = 85, targetRepsMin = 3),
-                    ),
-                ),
-            )
-        }
-        val viewModel = viewModelFor(
-            repository,
-            templateId = "t1",
-            programs = programs,
-            slotId = "slot-1",
-        )
-        observe(viewModel)
-        settle()
-        viewModel.onAddExercise("back-squat")
-        settle()
-
-        val suggestion = viewModel.uiState.value.exercises.single().suggestion
-        assertEquals(3, suggestion.reps)
-        assertEquals(85_000L, suggestion.weightGrams)
     }
 
     @Test
@@ -2680,18 +2471,6 @@ private class FakeProgramRepository : ProgramRepository {
 
     override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = flowOf(emptyList())
 
-    /** What the started slot prescribes; empty unless a test sets one (ROADMAP P3.8). */
-    var prescriptions: List<SlotPrescription> = emptyList()
-
-    /** Every prescribed set the ViewModel rewrote, as the id and the edit it sent (ROADMAP N50). */
-    val slotSetUpdates = mutableListOf<Pair<String, SlotSetEdit>>()
-
-    /** Set to refuse the next write, so a dropped step can be asserted (N50). */
-    var failSlotSetUpdates = false
-
-    override fun observeSlotPrescriptions(slotId: String): Flow<List<SlotPrescription>> =
-        flowOf(prescriptions)
-
     override fun observeProgramRun(programId: String): Flow<ProgramRun?> = flowOf(null)
 
 
@@ -2700,12 +2479,6 @@ private class FakeProgramRepository : ProgramRepository {
         weekStart: java.time.LocalDate,
         templateId: String?,
     ): DataResult<Unit> = error("these tests do not substitute an occurrence")
-
-    /** N17's estimate a slot's percentage resolves against (ROADMAP P3.8). */
-    var oneRepMax: Long? = null
-
-    override suspend fun estimatedOneRepMax(exerciseId: String): DataResult<Long?> =
-        DataResult.Success(oneRepMax)
 
     override suspend fun slotPreviousPerformance(
         slotId: String,
@@ -2746,29 +2519,6 @@ private class FakeProgramRepository : ProgramRepository {
 
     override suspend fun removeSlot(slotId: String): DataResult<Unit> =
         error("the workout screen does not remove a slot")
-
-    override suspend fun setSlotExercisePlan(
-        slotId: String,
-        exerciseId: String,
-        restSeconds: Int?,
-        techniqueNote: String?,
-        targetRpeHalves: Int?,
-    ): DataResult<Unit> = error("the workout screen does not prescribe an exercise")
-
-    override suspend fun addSlotSet(
-        slotId: String,
-        exerciseId: String,
-        edit: SlotSetEdit,
-    ): DataResult<Unit> = error("the workout screen does not prescribe a set")
-
-    override suspend fun updateSlotSet(slotSetId: String, edit: SlotSetEdit): DataResult<Unit> {
-        if (failSlotSetUpdates) return DataResult.Failure(DataError.Storage(IOException("disk full")))
-        slotSetUpdates += slotSetId to edit
-        return DataResult.Success(Unit)
-    }
-
-    override suspend fun removeSlotSet(slotSetId: String): DataResult<Unit> =
-        error("the workout screen does not remove a prescribed set")
 
     override suspend fun pendingOccurrences(
         today: java.time.LocalDate,

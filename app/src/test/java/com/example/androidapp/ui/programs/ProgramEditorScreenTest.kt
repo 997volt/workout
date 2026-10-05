@@ -39,7 +39,6 @@ class ProgramEditorScreenTest {
         onMoveSlot: (String, Int) -> Unit = { _, _ -> },
         onRemoveSlot: (String) -> Unit = {},
         onDeleteProgram: () -> Unit = {},
-        onEditPrescription: (String) -> Unit = {},
         onExportProgram: () -> Unit = {},
     ) {
         composeTestRule.setContent {
@@ -52,7 +51,6 @@ class ProgramEditorScreenTest {
                 onMoveSlot = onMoveSlot,
                 onRemoveSlot = onRemoveSlot,
                 onDeleteProgram = onDeleteProgram,
-                onEditPrescription = onEditPrescription,
                 onExportProgram = onExportProgram,
                 onBack = {},
             )
@@ -77,18 +75,6 @@ class ProgramEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Programs.slot("s1")).assertIsDisplayed()
         composeTestRule.onNodeWithText("Heavy lower").assertIsDisplayed()
         composeTestRule.onNodeWithText("4 exercises").assertIsDisplayed()
-    }
-
-    @Test
-    fun thePrescriptionButton_opensThatSlotsOwnPrescription() {
-        // ROADMAP P3.8: a slot that names only a template is a schedule; this is where it says
-        // what to do, and the button names the slot it belongs to.
-        var asked: String? = null
-        setScreen(onEditPrescription = { asked = it })
-
-        composeTestRule.onNodeWithTag(TestTags.Programs.prescription("s2")).performClick()
-
-        assertThat(asked).isEqualTo("s2")
     }
 
     @Test

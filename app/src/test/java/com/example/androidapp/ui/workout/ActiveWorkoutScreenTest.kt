@@ -8,7 +8,6 @@ import com.example.androidapp.domain.model.ProgressionOffer
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionPrompt
-import com.example.androidapp.domain.model.ProgressionSource
 import com.example.androidapp.domain.model.ProgressionStep
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
@@ -618,7 +617,6 @@ class ActiveWorkoutScreenTest {
         planned = ProgressionPlanSet(
             setId = "ts-0",
             setIndex = 0,
-            source = ProgressionSource.TEMPLATE,
             targetWeightGrams = 100_000L,
             targetRepsMax = 5,
             targetRpeHalves = 8,
@@ -631,7 +629,6 @@ class ActiveWorkoutScreenTest {
         val planned = ProgressionPlanSet(
             setId = "ts-0",
             setIndex = 0,
-            source = ProgressionSource.TEMPLATE,
             targetWeightGrams = 100_000L,
             targetRepsMax = 5,
             targetRpeHalves = 8,

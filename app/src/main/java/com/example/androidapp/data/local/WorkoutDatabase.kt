@@ -27,14 +27,12 @@ import androidx.room.TypeConverters
         ProgramEntity::class,
         ProgramSlotEntity::class,
         ProgramSkipEntity::class,
-        ProgramSlotExerciseEntity::class,
-        ProgramSlotSetEntity::class,
         ProgramDeloadEntity::class,
         ProgramSubstitutionEntity::class,
         SessionSoreMuscleEntity::class,
         SessionExerciseJointEntity::class,
     ],
-    version = 29,
+    version = 30,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -58,9 +56,6 @@ abstract class WorkoutDatabase : RoomDatabase() {
 
     /** The occurrences a lifter consciously passed over (ROADMAP P3.3, P3.13). */
     abstract fun programSkipDao(): ProgramSkipDao
-
-    /** What each slot prescribes, per exercise (ROADMAP P3.8). */
-    abstract fun programPrescriptionDao(): ProgramPrescriptionDao
 
     /** The sessions and skips a program's run is derived from (ROADMAP P3.9). */
     abstract fun programRunDao(): ProgramRunDao

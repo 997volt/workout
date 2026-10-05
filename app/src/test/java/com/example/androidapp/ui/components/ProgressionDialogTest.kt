@@ -15,7 +15,6 @@ import com.example.androidapp.domain.model.ProgressionOffer
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionPrompt
-import com.example.androidapp.domain.model.ProgressionSource
 import com.example.androidapp.domain.model.ProgressionStep
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -153,7 +152,6 @@ class ProgressionDialogTest {
     private fun planSet() = ProgressionPlanSet(
         setId = "ts-0",
         setIndex = 0,
-        source = ProgressionSource.TEMPLATE,
         targetWeightGrams = 100_000L,
         targetRepsMax = 5,
         targetRpeHalves = 8,

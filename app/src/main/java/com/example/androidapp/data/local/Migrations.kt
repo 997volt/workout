@@ -746,6 +746,33 @@ private const val CLEAR_SLOT_PLANNED_WARM_UP_RPE =
     "UPDATE `program_slot_sets` SET `targetRpeHalves` = NULL " +
         "WHERE `role` = 'WARMUP' AND `targetRpeHalves` IS NOT NULL"
 
+/**
+ * A program is a schedule over templates, and nothing else (ROADMAP N73).
+ *
+ * P3.8 let a slot prescribe its own sets, rest, cue and effort over its template's — the same
+ * template trained differently on a Monday and a Friday. The lifter's own decision was that a
+ * program must always **use** what the template says and never hold a second copy of it, so the two
+ * tables that carried the overrides are dropped: the app reads the template, and progression writes
+ * the template.
+ *
+ * This **discards** every prescription already stored, which is the point of the change rather than a
+ * side effect of it. Templates, planned sets and every logged workout are untouched, and the child
+ * table goes first so the drop cannot fail on a foreign key.
+ *
+ * The migration test seeds a prescription on each side and asserts the tables are gone while the
+ * template and its slot survive, validated against the exported `30.json`.
+ */
+val MIGRATION_29_30 = object : Migration(29, 30) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(DROP_PROGRAM_SLOT_SETS)
+        db.execSQL(DROP_PROGRAM_SLOT_EXERCISES)
+    }
+}
+
+private const val DROP_PROGRAM_SLOT_SETS = "DROP TABLE IF EXISTS `program_slot_sets`"
+
+private const val DROP_PROGRAM_SLOT_EXERCISES = "DROP TABLE IF EXISTS `program_slot_exercises`"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -885,4 +912,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_26_27,
     MIGRATION_27_28,
     MIGRATION_28_29,
+    MIGRATION_29_30,
 )

@@ -432,6 +432,16 @@ the rule; that one argues it.
 
 ## Programs
 
+- **A program is a schedule over templates; a slot is a template plus an optional weekday, and it
+  prescribes nothing of its own** (N73, reversing P3.8). P3.8 let a slot override its template — its
+  sets, its rest, its cue and its target effort — so two slots naming one workout could train it
+  differently, and progression wrote *the slot* for a program start. The lifter's decision is that a
+  program always **uses** what the template says: there is one plan, it is the template's, and
+  accepting a progression step writes it. Two slots naming one template therefore share its plan
+  **and** its progression, which is the point rather than a loss. The two override tables are dropped
+  and their contents discarded on upgrade; templates, planned sets and every logged workout stay. The
+  **prefill history** is still the slot's own (`slotPreviousPerformance`), because that is what the
+  lifter did rather than what the plan says.
 - **A program orders templates; a slot is a template plus an optional weekday** (P3.3). It is
   the container N16's pins cannot be on their own: a pin says what happens on a Tuesday, but
   nothing orders the pins against each other, so "which one is next" has no answer. A

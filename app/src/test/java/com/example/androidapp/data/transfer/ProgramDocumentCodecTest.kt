@@ -86,8 +86,6 @@ class ProgramDocumentCodecTest {
         ),
         templateExercises = listOf(templateExercise()),
         templateSets = listOf(templateSet()),
-        slotExercises = listOf(slotExercise()),
-        slotSets = listOf(slotSet()),
         exercises = listOf(exercise()),
     )
 
@@ -108,25 +106,6 @@ class ProgramDocumentCodecTest {
         role = SetType.WARMUP,
         targetWeightGrams = 60_000L,
         targetRepsMax = 5,
-        createdAt = 10L,
-        updatedAt = 20L,
-    )
-
-    private fun slotExercise() = ProgramSlotExerciseDto(
-        id = "se-1",
-        slotId = "slot-1",
-        exerciseId = "back-squat",
-        restSeconds = 0,
-        createdAt = 10L,
-        updatedAt = 20L,
-    )
-
-    private fun slotSet() = ProgramSlotSetDto(
-        id = "ss-1",
-        slotExerciseId = "se-1",
-        setIndex = 0,
-        role = SetType.TOP_SET,
-        targetPercentOf1Rm = 85,
         createdAt = 10L,
         updatedAt = 20L,
     )

@@ -296,28 +296,14 @@ class ProgressionOfferTest {
     }
 
     @Test
-    fun aPercentagePrescription_keepsItWhenARepIsAccepted() {
-        // The percentage is the slot's own way of naming a load (P3.8): a rep step must not drop it.
+    fun theAcceptedSet_keepsEverythingTheStepDidNotMove() {
         val offer = progressionOfferFor(
-            planned = listOf(planSet(percentOf1Rm = 85, weight = null)),
-            performed = listOf(done()),
-        )!!
-
-        val accepted = offer.accepted(ProgressionDirection.REPS)
-
-        assertThat(accepted!!.targetPercentOf1Rm).isEqualTo(85)
-    }
-
-    @Test
-    fun theAcceptedSet_keepsItsSource_andEverythingElse() {
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(source = ProgressionSource.SLOT, assistance = null, note = "belt on")),
+            planned = listOf(planSet(assistance = null, note = "belt on")),
             performed = listOf(done()),
         )!!
 
         val accepted = offer.accepted(ProgressionDirection.LOAD)!!
 
-        assertThat(accepted.source).isEqualTo(ProgressionSource.SLOT)
         assertThat(accepted.setId).isEqualTo("ts-0")
         assertThat(accepted.note).isEqualTo("belt on")
         assertThat(accepted.targetRpeHalves).isEqualTo(8)
@@ -361,7 +347,6 @@ class ProgressionOfferTest {
     private fun planSet(
         id: String = "ts-0",
         index: Int = 0,
-        source: ProgressionSource = ProgressionSource.TEMPLATE,
         role: SetType = SetType.NORMAL,
         weight: Long? = 100_000L,
         assistance: Long? = null,
@@ -371,19 +356,16 @@ class ProgressionOfferTest {
         rpe: Int? = 8,
         /** The set's own legacy per-set value, which an accepted write puts back (N59). */
         legacyRpe: Int? = null,
-        percentOf1Rm: Int? = null,
         note: String? = null,
     ) = ProgressionPlanSet(
         setId = id,
         setIndex = index,
-        source = source,
         role = role,
         targetWeightGrams = weight,
         targetAssistanceGrams = assistance,
         targetRepsMin = repsMin,
         targetRepsMax = repsMax,
         targetRpeHalves = rpe,
-        targetPercentOf1Rm = percentOf1Rm,
         note = note,
         legacyRpeHalves = legacyRpe,
     )

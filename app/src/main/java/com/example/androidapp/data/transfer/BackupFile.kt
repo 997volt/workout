@@ -82,14 +82,6 @@ data class BackupFile(
      */
     val programSkips: List<ProgramSkipDto> = emptyList(),
     /**
-     * What each program slot prescribes, per exercise (ROADMAP P3.8).
-     *
-     * Defaulted like every added collection: a file written before a slot could prescribe still
-     * decodes, and its slots simply leave the template's targets standing.
-     */
-    val programSlotExercises: List<ProgramSlotExerciseDto> = emptyList(),
-    val programSlotSets: List<ProgramSlotSetDto> = emptyList(),
-    /**
      * The weeks a program was deliberately backed off (ROADMAP P3.10).
      *
      * Authored setup rather than something the app can recompute: without these rows a restored
@@ -421,50 +413,6 @@ data class ProgramSubstitutionDto(
     /** Monday of the week, as `LocalDate.toEpochDay()`. */
     val weekStart: Long,
     val templateId: String,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null,
-)
-
-/** One exercise of one slot, and the rest, cue and target effort that slot prescribes (ROADMAP P3.8). */
-@Serializable
-data class ProgramSlotExerciseDto(
-    val id: String,
-    val slotId: String,
-    val exerciseId: String,
-    val restSeconds: Int? = null,
-    val techniqueNote: String? = null,
-    /**
-     * The effort the slot prescribes for the exercise, in half-points, or null (N59, amended).
-     *
-     * Defaulted so a file written before the effort moved from the set to the exercise still
-     * decodes; a reader falls back to [ProgramSlotSetDto.targetRpeHalves] for those.
-     */
-    val targetRpeHalves: Int? = null,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val deletedAt: Long? = null,
-)
-
-/**
- * One set a slot prescribes (ROADMAP P3.8).
- *
- * [targetPercentOf1Rm] is the one target a template's planned set cannot carry; every other field
- * is the plan's own vocabulary, written raw exactly as the database holds it.
- */
-@Serializable
-data class ProgramSlotSetDto(
-    val id: String,
-    val slotExerciseId: String,
-    val setIndex: Int,
-    val role: SetType,
-    val targetWeightGrams: Long? = null,
-    val targetAssistanceGrams: Long? = null,
-    val targetRepsMin: Int? = null,
-    val targetRepsMax: Int? = null,
-    val targetRpeHalves: Int? = null,
-    val targetPercentOf1Rm: Int? = null,
-    val note: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

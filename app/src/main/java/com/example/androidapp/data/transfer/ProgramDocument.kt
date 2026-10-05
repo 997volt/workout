@@ -33,9 +33,6 @@ data class ProgramDocument(
     val templates: List<TemplateDto> = emptyList(),
     val templateExercises: List<TemplateExerciseDto> = emptyList(),
     val templateSets: List<TemplateSetDto> = emptyList(),
-    /** What each slot prescribes, per exercise (ROADMAP P3.8). */
-    val slotExercises: List<ProgramSlotExerciseDto> = emptyList(),
-    val slotSets: List<ProgramSlotSetDto> = emptyList(),
     /**
      * The definition of every exercise the templates name (ROADMAP N47).
      *

@@ -26,18 +26,14 @@ import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.SlotPrescription
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.SetEntry
-import com.example.androidapp.domain.model.SlotSet
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionPrompt
-import com.example.androidapp.domain.model.ProgressionSource
 import com.example.androidapp.domain.model.progressionPromptFor
-import com.example.androidapp.domain.repository.SlotSetEdit
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutSession
@@ -246,8 +242,8 @@ class ActiveWorkoutViewModel @Inject constructor(
      * The program slot this workout was started from, or null (ROADMAP P3.8).
      *
      * A start argument rather than a stored fact: the session still records only the template
-     * (P3.3). It matters twice — the slot's prescription seeds the rest and cue, and the offer the
-     * lifter sees is made from *that slot's* history rather than the exercise's.
+     * (P3.3). Since N73 it matters once — the offer the lifter sees is made from *that slot's*
+     * history rather than the exercise's — because the plan itself is the template's.
      */
     private val slotId: String? = savedStateHandle.toRoute<ActiveWorkout>().slotId
 
@@ -271,17 +267,6 @@ class ActiveWorkoutViewModel @Inject constructor(
      */
     private val plannedExercises: Flow<List<TemplateExercise>> =
         templateId?.let { templateRepository.observeExercises(it) } ?: flowOf(emptyList())
-
-    /**
-     * What the started slot prescribes, keyed by exercise, or empty (ROADMAP P3.8).
-     *
-     * The slot this workout was started from is the slot this session follows, so it is read once
-     * rather than re-derived per set.
-     */
-    private val slotPrescriptions: Flow<Map<String, SlotPrescription>> = slotId
-        ?.let { slot -> programRepository.observeSlotPrescriptions(slot) }
-        ?.map { prescriptions -> prescriptions.associateBy { it.exerciseId } }
-        ?: flowOf(emptyMap())
 
     private val lastError = MutableStateFlow<DataError?>(null)
 
@@ -357,15 +342,6 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val pendingUndo = MutableStateFlow<SetEntry?>(null)
     private val previousByExercise = MutableStateFlow<Map<String, PreviousPerformance>>(emptyMap())
 
-    /**
-     * Each exercise's estimated one-rep max, or null when N17 cannot estimate one (ROADMAP P3.8).
-     *
-     * A key present with a null value means "read, and there is nothing estimable", so it is not
-     * read again; a missing key has not been read. Only a slot's percentage prescription uses it,
-     * and it is read with the previous performance rather than eagerly on every screen.
-     */
-    private val oneRepMaxByExercise = MutableStateFlow<Map<String, Long?>>(emptyMap())
-
     /** True while a just-opened session is asking what was not recovered today (N4). */
     private val readinessPromptVisible = MutableStateFlow(false)
 
@@ -405,8 +381,6 @@ class ActiveWorkoutViewModel @Inject constructor(
         val sets: List<SetEntry>,
         val previous: Map<String, PreviousPerformance>,
         val planned: List<TemplateExercise>,
-        val prescriptions: Map<String, SlotPrescription>,
-        val oneRepMax: Map<String, Long?>,
     )
 
     /** The three session-shaped sources, kept together so the combine below stays three deep. */
@@ -416,25 +390,18 @@ class ActiveWorkoutViewModel @Inject constructor(
         val sets: List<SetEntry>,
     )
 
-    /** What the plan and the slot say, and what history answers (ROADMAP P3.8). */
+    /** What the plan says and what history answers (ROADMAP N73: the plan is the template's). */
     private data class PlanPart(
         val planned: List<TemplateExercise>,
-        val prescriptions: Map<String, SlotPrescription>,
         val previous: Map<String, PreviousPerformance>,
-        val oneRepMax: Map<String, Long?>,
     )
 
     private val snapshots: Flow<Snapshot> = combine(
         combine(activeSession, sessionExercises, setsState) { session, exercises, logged ->
             SessionPart(session, exercises, logged)
         },
-        combine(
-            previousByExercise,
-            oneRepMaxByExercise,
-            plannedExercises,
-            slotPrescriptions,
-        ) { previous, oneRepMax, planned, prescriptions ->
-            PlanPart(planned, prescriptions, previous, oneRepMax)
+        combine(previousByExercise, plannedExercises) { previous, planned ->
+            PlanPart(planned, previous)
         },
     ) { session, plan ->
         Snapshot(
@@ -443,8 +410,6 @@ class ActiveWorkoutViewModel @Inject constructor(
             sets = session.sets,
             previous = plan.previous,
             planned = plan.planned,
-            prescriptions = plan.prescriptions,
-            oneRepMax = plan.oneRepMax,
         )
     }
 
@@ -498,13 +463,13 @@ class ActiveWorkoutViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             // Repeating is the same open, with one finished workout's exercises as the seed instead
-            // of a plan's — both go through the one append path (ROADMAP N3, N29, N48). The slot
-            // travels with the template so its prescription is what the session is seeded from (P3.8).
+            // of a plan's — both go through the one append path (ROADMAP N3, N29, N48). The template
+            // is the whole plan, so nothing else travels with it (N73).
             val opened =
                 if (repeatSessionId != null) {
                     workoutRepository.repeatSession(repeatSessionId)
                 } else {
-                    workoutRepository.startOrResumeSession(templateId, slotId)
+                    workoutRepository.startOrResumeSession(templateId)
                 }
             when (val result = opened) {
                 is DataResult.Success -> {
@@ -556,21 +521,6 @@ class ActiveWorkoutViewModel @Inject constructor(
             }
         }
 
-        // N17's estimate, once per exercise, for the one prescription a template cannot write: a
-        // percentage of the estimated one-rep max (P3.8). A null value is a recorded answer.
-        viewModelScope.launch {
-            sessionExercises.collect { exercises ->
-                exercises
-                    .map { it.exerciseId }
-                    .distinct()
-                    .filterNot { it in oneRepMaxByExercise.value }
-                    .forEach { exerciseId ->
-                        val estimate = (programRepository.estimatedOneRepMax(exerciseId) as? DataResult.Success)
-                            ?.data
-                        oneRepMaxByExercise.update { it + (exerciseId to estimate) }
-                    }
-            }
-        }
     }
 
     fun onAddExercise(exerciseId: String) = write { sessionId ->
@@ -626,17 +576,8 @@ class ActiveWorkoutViewModel @Inject constructor(
         // this is the same answer if a tap somehow arrives after the plan changed under it.
         val raised = offer.accepted(direction) ?: return
         viewModelScope.launch {
-            val written = when (raised.source) {
-                ProgressionSource.TEMPLATE -> templateRepository.updateSet(
-                    raised.setId,
-                    raised.toTemplateEdit(),
-                )
-
-                ProgressionSource.SLOT -> programRepository.updateSlotSet(
-                    raised.setId,
-                    raised.toSlotEdit(),
-                )
-            }
+            // The plan is the template's, so this is the only place a step can be written (N73).
+            val written = templateRepository.updateSet(raised.setId, raised.toTemplateEdit())
             if (written is DataResult.Failure) {
                 lastError.value = written.error
                 return@launch
@@ -1086,13 +1027,8 @@ class ActiveWorkoutViewModel @Inject constructor(
                 it.toRow(
                     sets = sets,
                     previous = previous[it.exerciseId],
-                    // The slot's prescription wins where it speaks; the template answers the rest
-                    // (ROADMAP P3.8, N14).
-                    plan = PlanContext(
-                        plannedEntry = planEntries[it.id],
-                        prescription = prescriptions[it.exerciseId],
-                        estimatedOneRepMaxGrams = oneRepMax[it.exerciseId],
-                    ),
+                    // The plan is the template's, whole (ROADMAP N73).
+                    plan = PlanContext(plannedEntry = planEntries[it.id]),
                     supersetLabels = supersetLabelsFor(exercises),
                 )
             },
@@ -1240,31 +1176,24 @@ private fun ActiveWorkoutUiState.roundIsCompleteFor(row: SessionExerciseRow): Bo
 }
 
 /**
- * What the plan says for one exercise: the plan entry resolved to it, the slot's prescription where
- * it speaks, and the estimate a percentage resolves against (ROADMAP N14, P3.8).
+ * What the plan says for one exercise: the template's entry resolved to it (ROADMAP N14, N73).
  *
- * The three travel together because they are one question — "what is this set supposed to be" —
- * and the percentage is meaningless without the estimate beside it.
+ * One field since N73. A slot's prescription used to sit beside it, merging set by set for the
+ * prefill, the plan count and the progression rule; the program is a schedule over the template now,
+ * so there is nothing to merge.
  */
 private data class PlanContext(
     val plannedEntry: TemplateExercise?,
-    val prescription: SlotPrescription?,
-    val estimatedOneRepMaxGrams: Long?,
 )
 
 /**
  * How many sets the plan behind this workout writes for this exercise, or null (ROADMAP N52).
  *
- * The slot wins where it speaks, so the plan is the **longer** of the two rather than either one: a
- * slot may override a later set the template left alone, and counting only the template would call the
- * work done a set early. No plan at all is null rather than zero, so an empty workout's control never
- * says the work is finished before it has started.
+ * No plan at all is null rather than zero, so an empty workout's control never says the work is
+ * finished before it has started.
  */
 private val PlanContext.plannedSetCount: Int?
-    get() = maxOf(
-        prescription?.sets?.size ?: 0,
-        plannedEntry?.sets?.size ?: 0,
-    ).takeIf { it > 0 }
+    get() = plannedEntry?.sets?.size?.takeIf { it > 0 }
 
 /**
  * The plan entry each session exercise follows, keyed by the session exercise's own id (ROADMAP N54).
@@ -1349,70 +1278,24 @@ private fun List<SetEntry>.loggedRowsFor(sessionExerciseId: String): List<SetRow
         }
 
 /**
- * The plan's sets for one exercise, reduced for the progression rule (ROADMAP N50).
+ * The plan's sets for one exercise, reduced for the progression rule (ROADMAP N50, N73).
  *
- * **The same plan the screen shows.** A slot wins where it speaks, so the plan is the two sets of
- * rows merged per index — the slot's prescribed set where it wrote one, the template's where it did
- * not — and the slot's one target RPE stands over the template's even for a set it wrote no row for
- * (P3.8, N14, N59). Reading only the slot's rows once it prescribed any, as this first did, dropped
- * the template's remaining sets from the check: a slot overriding one of three made "every
- * prescribed working set" mean one, and paired it with the wrong performance. Each index keeps the
- * source of the row that supplies it, because an accepted step is written back to the plan that
- * stated the set.
+ * The template's own sets, whole. N73 removed the slot's prescription, which used to be merged in
+ * here set by set, so the plan the rule reads is the same plan the screen shows with nothing to
+ * reconcile.
  *
- * The **target RPE is one number for the exercise** (N59, amended), so every set here carries it
- * rather than its own: the slot's value over the template's where the slot prescribes the sets, and a
- * set's stored value only as the fallback a pre-change plan arrives with. That is what lets the rule
- * check every working set against the exercise's single target.
+ * The **target RPE is one number for the exercise** (N59), so every set carries it rather than its
+ * own; a set's stored value is only the fallback a plan written before N59 arrives with. That is
+ * what lets the rule check every working set against the exercise's single target.
  */
-private fun PlanContext.progressionSets(): List<ProgressionPlanSet> {
-    val prescribed = prescription?.sets.orEmpty()
-    val planned = plannedEntry?.sets.orEmpty()
-    val slotRpe = prescription?.targetRpeHalves
-    val exerciseRpe = plannedEntry?.targetRpeHalves
-    val slotByIndex = prescribed.associateBy { it.setIndex }
-    val plannedByIndex = planned.associateBy { it.setIndex }
-    return (slotByIndex.keys + plannedByIndex.keys).sorted().mapNotNull { index ->
-        val slotSet = slotByIndex[index]
-        val plannedSet = plannedByIndex[index]
-        when {
-            // The slot's own set: its number wins, then the exercise-level values in the order the
-            // prefill applies them.
-            slotSet != null -> slotSet.toProgressionSet(
-                rpeTarget = slotRpe ?: slotSet.targetRpeHalves ?: exerciseRpe ?: plannedSet?.targetRpeHalves,
-            )
-            // A set only the template wrote: the slot's exercise-level RPE still covers it (N59).
-            plannedSet != null -> plannedSet.toProgressionSet(rpeTarget = slotRpe ?: exerciseRpe)
-            else -> null
-        }
+private fun PlanContext.progressionSets(): List<ProgressionPlanSet> =
+    plannedEntry?.sets.orEmpty().map { set ->
+        set.toProgressionSet(rpeTarget = plannedEntry?.targetRpeHalves ?: set.targetRpeHalves)
     }
-}
-
-/**
- * One prescribed set as the rule reads it, with the exercise's one target RPE riding on it (N59).
- *
- * [rpeTarget] is the exercise-level value — the slot's or the template's, whichever planned the sets
- * — and a set's own stored value stands only where the plan names none.
- */
-private fun SlotSet.toProgressionSet(rpeTarget: Int?): ProgressionPlanSet = ProgressionPlanSet(
-    setId = id,
-    setIndex = setIndex,
-    source = ProgressionSource.SLOT,
-    role = role,
-    targetWeightGrams = targetWeightGrams,
-    targetAssistanceGrams = targetAssistanceGrams,
-    targetRepsMin = targetRepsMin,
-    targetRepsMax = targetRepsMax,
-    targetRpeHalves = rpeTarget ?: targetRpeHalves,
-    targetPercentOf1Rm = targetPercentOf1Rm,
-    note = note,
-    legacyRpeHalves = targetRpeHalves,
-)
 
 private fun TemplateSet.toProgressionSet(rpeTarget: Int?): ProgressionPlanSet = ProgressionPlanSet(
     setId = id,
     setIndex = setIndex,
-    source = ProgressionSource.TEMPLATE,
     role = role,
     targetWeightGrams = targetWeightGrams,
     targetAssistanceGrams = targetAssistanceGrams,
@@ -1450,18 +1333,6 @@ private fun ProgressionPlanSet.toTemplateEdit(): TemplateSetEdit = TemplateSetEd
     note = note,
 )
 
-/** The same for a slot's prescribed set, which alone carries the percentage (P3.8). */
-private fun ProgressionPlanSet.toSlotEdit(): SlotSetEdit = SlotSetEdit(
-    role = role,
-    targetWeightGrams = targetWeightGrams,
-    targetAssistanceGrams = targetAssistanceGrams,
-    targetRepsMin = targetRepsMin,
-    targetRepsMax = targetRepsMax,
-    targetRpeHalves = legacyRpeHalves,
-    targetPercentOf1Rm = targetPercentOf1Rm,
-    note = note,
-)
-
 /**
  * What the next set is shown with: the plan's target where it speaks, then history (ROADMAP N14, N59,
  * P3.8). The plan's RPE rides in the value rather than beside it: the stepper opens on it, the lifter
@@ -1475,13 +1346,8 @@ private fun SessionExercise.suggestionFor(
 ): SetSuggestion = suggestionForNextSet(
     loggedSets = loggedSets,
     previous = previous,
-    // The slot wins where it speaks; the template fills whatever it leaves alone (P3.8, N14).
-    planned = prescribedTargetFor(
-        prescription = plan.prescription,
-        nextIndex = loggedSets.size,
-        estimatedOneRepMaxGrams = plan.estimatedOneRepMaxGrams,
-        template = plannedTargetFor(plan.plannedEntry, nextIndex = loggedSets.size),
-    ),
+    // The template is the plan, whole (ROADMAP N73).
+    planned = plannedTargetFor(plan.plannedEntry, nextIndex = loggedSets.size),
 )
 
 /**

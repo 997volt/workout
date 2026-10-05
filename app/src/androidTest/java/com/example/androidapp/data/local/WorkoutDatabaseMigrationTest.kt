@@ -1466,4 +1466,84 @@ class WorkoutDatabaseMigrationTest {
 
         migrated.close()
     }
+
+    @Test
+    fun migration29To30_dropsTheSlotsPrescriptions_andLeavesTheScheduleStanding() {
+        // ROADMAP N73: a program is a schedule over templates and nothing else. The two tables that
+        // carried a slot's own sets, rest, cue and effort are dropped, and the data in them goes with
+        // them — that is the change, not a side effect of it. The program, its slot, the template and
+        // the template's own planned set are all untouched.
+        helper.createDatabase(TEST_DB, 29).apply {
+            execSQL(
+                """
+                INSERT INTO templates (id, name, createdAt, updatedAt)
+                VALUES ('t1', 'Legs', 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO template_exercises (id, templateId, exerciseId, position, createdAt, updatedAt)
+                VALUES ('te1', 't1', 'back-squat', 0, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO template_sets
+                    (id, templateExerciseId, setIndex, role, targetWeightGrams, targetRepsMin,
+                     targetRepsMax, createdAt, updatedAt)
+                VALUES ('ts1', 'te1', 0, 'NORMAL', 100000, 5, 5, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO programs (id, name, isActive, position, createdAt, updatedAt)
+                VALUES ('p1', 'Upper/Lower', 0, 0, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO program_slots (id, programId, templateId, position, weekday, createdAt, updatedAt)
+                VALUES ('slot1', 'p1', 't1', 0, 'MONDAY', 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO program_slot_exercises
+                    (id, slotId, exerciseId, restSeconds, techniqueNote, targetRpeHalves,
+                     createdAt, updatedAt)
+                VALUES ('pse1', 'slot1', 'back-squat', 150, 'brace hard', 16, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO program_slot_sets
+                    (id, slotExerciseId, setIndex, role, targetWeightGrams, targetRepsMin,
+                     targetRepsMax, targetRpeHalves, targetPercentOf1Rm, createdAt, updatedAt)
+                VALUES ('pss1', 'pse1', 0, 'TOP_SET', 120000, 1, 2, 18, 85, 1, 1)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 30, true, MIGRATION_29_30)
+
+        migrated.query(
+            "SELECT name FROM sqlite_master WHERE type = 'table' " +
+                "AND name IN ('program_slot_exercises', 'program_slot_sets')",
+        ).use { cursor ->
+            assertFalse("both prescription tables must be gone", cursor.moveToFirst())
+        }
+        migrated.query("SELECT id, templateId, weekday FROM program_slots").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("slot1", cursor.getString(0))
+            assertEquals("the slot still names its template", "t1", cursor.getString(1))
+            assertEquals("and keeps its day", "MONDAY", cursor.getString(2))
+        }
+        migrated.query("SELECT id, targetWeightGrams FROM template_sets").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("the template's own planned work is untouched", 100_000L, cursor.getLong(1))
+        }
+
+        migrated.close()
+    }
 }

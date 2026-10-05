@@ -69,14 +69,11 @@ interface WorkoutRepository {
      * [addExercise] uses. A resumed session is left alone: it already has the
      * exercises it was started with, and seeding it again would duplicate them.
      *
-     * When [slotId] is also given, the slot's prescription wins over the template's for each
-     * exercise's rest and cue (ROADMAP P3.8): a slot that says "3m break" is the plan being
-     * followed, and the template is what it falls back to. The slot is not stored on the session
-     * — P3.3's rule stands, and the session still records only the template.
+     * The template is the whole plan since N73: a program slot used to prescribe its own rest, cue
+     * and sets over it, and that feature is gone, so there is nothing here to reconcile.
      */
     suspend fun startOrResumeSession(
         templateId: String? = null,
-        slotId: String? = null,
     ): DataResult<StartedSession>
 
     /**

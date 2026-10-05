@@ -108,16 +108,6 @@ fun ProgramEditorRoute(
         onMoveSlot = viewModel::onMoveSlot,
         onRemoveSlot = viewModel::onRemoveSlot,
         onDeleteProgram = viewModel::onDeleteProgram,
-        onEditPrescription = viewModel::onEditPrescription,
-        onClosePrescription = viewModel::onClosePrescription,
-        prescriptionActions = PrescriptionActions(
-            onAddSet = viewModel::onAddSlotSet,
-            onUpdateSet = viewModel::onUpdateSlotSet,
-            onRemoveSet = viewModel::onRemoveSlotSet,
-            onSetRestCue = { slotId, exerciseId, rest, cue, rpe ->
-                viewModel.onSetSlotExercisePlan(slotId, exerciseId, rest, cue, rpe)
-            },
-        ),
         onExportProgram = exportProgram,
         transferMessage = transferMessage,
         onDismissTransferMessage = { transferMessage = null },
@@ -143,9 +133,6 @@ fun ProgramEditorScreen(
     onExportProgram: () -> Unit,
     modifier: Modifier = Modifier,
     onDismissMessage: () -> Unit = {},
-    onEditPrescription: (String) -> Unit = {},
-    onClosePrescription: () -> Unit = {},
-    prescriptionActions: PrescriptionActions = PrescriptionActions(),
     transferMessage: String? = null,
     onDismissTransferMessage: () -> Unit = {},
 ) {
@@ -187,7 +174,6 @@ fun ProgramEditorScreen(
             onSetSlotWeekday = onSetSlotWeekday,
             onMoveSlot = onMoveSlot,
             onRemoveSlot = onRemoveSlot,
-            onEditPrescription = onEditPrescription,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -206,8 +192,6 @@ fun ProgramEditorScreen(
             confirmingDelete = false
             onDeleteProgram()
         },
-        onClosePrescription = onClosePrescription,
-        prescriptionActions = prescriptionActions,
     )
 }
 
@@ -249,8 +233,6 @@ private fun ProgramEditorDialogs(
     onDismissPicker: () -> Unit,
     onDismissDelete: () -> Unit,
     onConfirmDelete: () -> Unit,
-    onClosePrescription: () -> Unit,
-    prescriptionActions: PrescriptionActions,
 ) {
     if (pickingTemplate) {
         TemplatePickerDialog(
@@ -264,22 +246,6 @@ private fun ProgramEditorDialogs(
         DeleteProgramDialog(onDismiss = onDismissDelete, onConfirm = onConfirmDelete)
     }
 
-    // What the open slot prescribes (P3.8). The dialog addresses one exercise at a time; the
-    // screen knows which slot it belongs to, so the callbacks carry the slot id.
-    state.prescription?.let { editor ->
-        SlotPrescriptionDialog(
-            editor = editor,
-            onAddSet = { exerciseId, edit ->
-                prescriptionActions.onAddSet(editor.slotId, exerciseId, edit)
-            },
-            onUpdateSet = prescriptionActions.onUpdateSet,
-            onRemoveSet = prescriptionActions.onRemoveSet,
-            onSetRestCue = { exerciseId, rest, cue, rpe ->
-                prescriptionActions.onSetRestCue(editor.slotId, exerciseId, rest, cue, rpe)
-            },
-            onDismiss = onClosePrescription,
-        )
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -329,7 +295,6 @@ private fun ProgramEditorBody(
     onSetSlotWeekday: (String, DayOfWeek?) -> Unit,
     onMoveSlot: (String, Int) -> Unit,
     onRemoveSlot: (String) -> Unit,
-    onEditPrescription: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.isLoading) {
@@ -373,7 +338,6 @@ private fun ProgramEditorBody(
                         onMoveDown = { onMoveSlot(slot.id, 1) },
                         onRemove = { onRemoveSlot(slot.id) },
                         onSetWeekday = { weekday -> onSetSlotWeekday(slot.id, weekday) },
-                        onEditPrescription = { onEditPrescription(slot.id) },
                     )
                     HorizontalDivider()
                 }
@@ -468,7 +432,6 @@ private fun ProgramSlotBlock(
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
     onSetWeekday: (DayOfWeek?) -> Unit,
-    onEditPrescription: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -498,7 +461,6 @@ private fun ProgramSlotBlock(
                     slot = slot,
                     isFirst = isFirst,
                     isLast = isLast,
-                    onEditPrescription = onEditPrescription,
                     onMoveUp = onMoveUp,
                     onMoveDown = onMoveDown,
                     onRemove = onRemove,
@@ -516,24 +478,12 @@ private fun SlotActions(
     slot: ProgramSlot,
     isFirst: Boolean,
     isLast: Boolean,
-    onEditPrescription: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-        // A slot that names only a template is a schedule; this is where it says what to do
-        // (ROADMAP P3.8). An icon rather than a word, because the row already carries three.
-        IconButton(
-            onClick = onEditPrescription,
-            modifier = Modifier.testTag(TestTags.Programs.prescription(slot.id)),
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.List,
-                contentDescription = stringResource(R.string.program_prescription_for, slot.templateName),
-            )
-        }
         IconButton(
             onClick = onMoveUp,
             enabled = !isFirst,
