@@ -39,6 +39,12 @@ repeated here.
   sets and the rating, and an exercise with nothing logged has no action at all — the way past a
   movement you did not do is the overflow's *Remove*, which asks first. *Reopen* keeps the same place,
   so the foot of the block is where its state is decided either way.
+- **The plan's line states how many sets are left** (N70). It only spoke once the last planned set had
+  landed, so the stretch of the session the count would have been useful in — the sets still to write
+  — said nothing at all. It now reads *"2 planned sets left"* while one remains and falls back to
+  N52's *"Planned work done — log extra sets if you want them."* at zero, which is the state that
+  sentence was written for. The count and the *Log extra set* label share one rule, so they cannot
+  disagree about when the plan's work is finished.
 
 ### Removed
 

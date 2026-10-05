@@ -1024,10 +1024,12 @@ class ActiveWorkoutScreenTest {
     fun pastTheLastPlannedSet_theControlSaysTheNextOneIsExtra() {
         // ROADMAP N52: the plan is the template the workout was started from, so the moment its last
         // set is written is the moment the app can say the planned work is done — rather than only in
-        // the review, after Finish.
+        // the review, after Finish. N70 kept the same line for exactly that state.
         setScreen(state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 3, planned = 3))))
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_DONE).assertExists()
+        composeTestRule.onNodeWithText("Planned work done — log extra sets if you want them.")
+            .assertExists()
         composeTestRule.onNodeWithText("Log extra set").assertExists()
         // The label no longer promises the plan's next set, because the plan does not name one: it
         // drops back to the plain label rather than naming the last planned one again.
@@ -1035,12 +1037,20 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun withAPlannedSetStillToWrite_theControlHasNothingToNotice() {
-        // One short of the plan is not done: a notice here would appear a set early.
+    fun withAPlannedSetStillToWrite_theLineStatesTheRemainder() {
+        // ROADMAP N70: the notice used to say nothing until the plan was complete, which left the part
+        // of the session the count would have been useful in completely silent.
         setScreen(state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 2, planned = 3))))
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_PLAN_DONE).assertDoesNotExist()
+        composeTestRule.onNodeWithText("1 planned set left").assertExists()
         composeTestRule.onNodeWithText("Log set").assertExists()
+    }
+
+    @Test
+    fun severalPlannedSetsLeft_areCountedInThePlural() {
+        setScreen(state(isFinished = false).copy(exercises = listOf(plannedRow(logged = 1, planned = 3))))
+
+        composeTestRule.onNodeWithText("2 planned sets left").assertExists()
     }
 
     @Test

@@ -414,8 +414,13 @@
          (ROADMAP N52): logging one is still what it does, so the label loses the values it no
          longer describes rather than becoming a second Finish. -->
     <string name="set_log_extra">Log extra set</string>
-    <!-- The notice beside that label: the plan's own work is done, and the next set is extra.
-         Nothing closes, and accepting it is the header's Done (ROADMAP N52). -->
+    <!-- The notice beside that label: where the plan stands. While sets remain it states how many
+         (ROADMAP N70); at zero it says the plan's own work is done and the next set is extra (N52).
+         Nothing closes, and accepting it is the exercise's own Done (N7, N69). -->
+    <plurals name="set_plan_left">
+        <item quantity="one">%1$d planned set left</item>
+        <item quantity="other">%1$d planned sets left</item>
+    </plurals>
     <string name="set_plan_done">Planned work done — log extra sets if you want them.</string>
     <string name="set_number">%1$d</string>
     <string name="set_summary">%1$s kg × %2$d</string>

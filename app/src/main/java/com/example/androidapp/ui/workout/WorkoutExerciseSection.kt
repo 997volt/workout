@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
@@ -82,6 +83,18 @@ private const val DIMMED = 0.45f
  */
 internal val SessionExerciseRow.isPastPlan: Boolean
     get() = plannedSetCount != null && sets.size >= plannedSetCount
+
+/**
+ * How many of the plan's own sets this exercise has still to write, or null when there is no plan
+ * (ROADMAP N70).
+ *
+ * Counted exactly as [isPastPlan] counts — every logged set against every planned one — so the line
+ * and the label can never disagree: at zero the plan's work is done, which is the sentence that
+ * replaces the count. A null plan stays null rather than reading zero, because "nothing planned" and
+ * "all of it done" are different things to say to somebody.
+ */
+internal val SessionExerciseRow.plannedSetsLeft: Int?
+    get() = plannedSetCount?.let { (it - sets.size).coerceAtLeast(0) }
 
 @Composable
 internal fun ExerciseList(
@@ -475,7 +488,7 @@ private fun NextSetEditor(
     val values = draft.values()
 
     Column(modifier = modifier) {
-        PlanDoneNotice(row = row)
+        PlanProgressNotice(row = row)
         Column(
             modifier = Modifier.padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -521,25 +534,30 @@ private fun NextSetEditor(
 }
 
 /**
- * The plan's work is done for this exercise (ROADMAP N52).
+ * Where this exercise is against the plan: the sets still to write, or that the plan's work is done
+ * (ROADMAP N52, N70).
  *
- * Past the last planned set the exercise keeps accepting sets with nothing to say the work the plan
- * asked for is finished — `comparePlanToActual` says so only in the review, after *Finish*. This is
- * the moment it happens: the last planned set has just been written, so the notice appears beside
- * the control that would write one more.
+ * N52's notice could only speak once the last planned set had landed, so the part of the session
+ * where the count would have been useful — the sets still to write — said nothing at all. It now
+ * states the remainder while there is one (*"2 planned sets left"*) and falls back to the same
+ * sentence N52 shipped once there is none, because "none left" is the moment that sentence is for.
  *
  * It is per exercise and it is a notice rather than a dialog, deliberately. Nothing closes, because
- * accepting the notice is the header's **Done** (N7) — logging an extra set is what the control
- * still does, which is why the label changes rather than the action. N59 removed the dialog this
- * once had to avoid; the notice stays a notice because a modal over the next set is still the wrong
- * shape for something the lifter may simply read and walk past.
+ * accepting it is the exercise's own **Done** (N7, N69) — logging an extra set is what the control
+ * still does, which is why the label changes rather than the action. N59 removed the dialog this once
+ * had to avoid; the notice stays a notice because a modal over the next set is still the wrong shape
+ * for something the lifter may simply read and walk past.
  */
 @Composable
-private fun PlanDoneNotice(row: SessionExerciseRow, modifier: Modifier = Modifier) {
-    if (!row.isPastPlan) return
+private fun PlanProgressNotice(row: SessionExerciseRow, modifier: Modifier = Modifier) {
+    val left = row.plannedSetsLeft ?: return
 
     Text(
-        text = stringResource(R.string.set_plan_done),
+        text = if (left == 0) {
+            stringResource(R.string.set_plan_done)
+        } else {
+            pluralStringResource(R.plurals.set_plan_left, left, left)
+        },
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier

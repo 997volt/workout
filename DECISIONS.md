@@ -393,6 +393,12 @@ the rule; that one argues it.
   The action sits below the sets and the rating rather than in the header, where it read as part of the
   title instead of the last thing about the exercise. *Reopen* keeps the same place on a done one, so
   one position answers "what is this exercise's state" rather than two.
+- **The plan's line states the remainder, and the finished sentence only at zero** (N70). N52's notice
+  could speak only once the plan was complete, which left the sets still to write — the part of the
+  session a count is for — with nothing to read. The remainder and the *Log extra set* label are
+  computed from **one** rule (every logged set against every planned one), so the line cannot say work
+  is done while the button still promises the plan's next set; a null plan stays null rather than
+  reading zero, because "nothing was planned" and "all of it is done" are different statements.
 
 - **A destination belongs in the action row, and a heading does not carry a way out of itself**
   (N42). Programs moved from the home overflow into the pair above the start pill, and "See all

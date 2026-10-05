@@ -71,6 +71,28 @@ class PlanEntriesTest {
         equipment = Equipment.BARBELL,
     )
 
+    @Test
+    fun plannedSetsLeft_countsTheRemainder_andIsNullWithoutAPlan() {
+        // ROADMAP N70: the line the workout screen draws beside the next-set fields. Null and zero are
+        // different statements — "nothing was planned" is not "the plan is finished" — and more logged
+        // than planned owes nothing rather than a negative.
+        assertThat(loggedRow(planned = 3, logged = 1).plannedSetsLeft).isEqualTo(2)
+        assertThat(loggedRow(planned = 3, logged = 3).plannedSetsLeft).isEqualTo(0)
+        assertThat(loggedRow(planned = 3, logged = 4).plannedSetsLeft).isEqualTo(0)
+        assertThat(loggedRow(planned = null, logged = 2).plannedSetsLeft).isNull()
+    }
+
+    private fun loggedRow(planned: Int?, logged: Int) = SessionExerciseRow(
+        id = "se1",
+        exerciseId = "back-squat",
+        name = "Back Squat",
+        subtitle = null,
+        plannedSetCount = planned,
+        sets = List(logged) { index ->
+            SetRow(id = "s$index", number = index + 1, reps = 5, weightGrams = 100_000)
+        },
+    )
+
     private fun entry(id: String, exerciseId: String, position: Int) = TemplateExercise(
         id = id,
         templateId = "t1",
