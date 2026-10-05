@@ -35,11 +35,11 @@ import com.example.androidapp.domain.model.SetType
  * and failure since the beginning with no way to reach them, and a plan that can say
  * "top set" while a logged set cannot is two vocabularies for one idea.
  *
- * RPE and the comment are always shown but may be left empty — an RPE is skippable
- * by design (N6), so an empty field is a normal value rather than an error. Save
- * stays disabled while a field is not a usable value; in particular a typed RPE
- * outside 1–10 is refused rather than clamped, because a silent 11 → 10 would be
- * a lie about the set.
+ * RPE and the comment are always shown, but only the comment may be left empty: the **RPE is a
+ * stepper** now (N59), so it always shows a number — the set's own where it recorded one, 9.0
+ * otherwise — and a set saved without touching it still records what it was performed at. Save stays
+ * disabled while reps or the load is not a usable value; the stepper cannot leave 1–10, so there is
+ * no off-scale RPE left to refuse or to clamp.
  */
 @Composable
 fun SetEditorDialog(
@@ -59,8 +59,9 @@ fun SetEditorDialog(
                 repsText = initialReps.toString(),
                 // Shown as one signed number: -20 is 20 kg of assistance (N15).
                 weightText = Weight.display(initialWeightGrams, initialAssistanceGrams),
-                // Shown as a lifter writes it, so an existing 9.5 comes back as 9.5.
-                rpeText = initialRpe?.let(Rpe::format).orEmpty(),
+                // The halves the set recorded, shown as a lifter writes them; a set that recorded
+                // none opens on the default the stepper always shows (N59).
+                rpeText = initialRpe?.let(Rpe::format) ?: Rpe.format(DEFAULT_RPE_HALVES),
                 noteText = initialNote.orEmpty(),
                 setType = initialSetType,
             ),
@@ -83,7 +84,6 @@ fun SetEditorDialog(
                 SetRpeField(
                     draft = draft,
                     onDraftChange = { draft = it },
-                    rpeIsValid = values.rpeValid,
                 )
                 OutlinedTextField(
                     value = draft.noteText,

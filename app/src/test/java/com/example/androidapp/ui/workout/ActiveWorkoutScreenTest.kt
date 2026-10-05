@@ -19,6 +19,7 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -681,10 +682,9 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun thePlansTargetRpe_isShownBesideTheField_ratherThanWrittenIntoIt() {
-        // ROADMAP N59: "know the planned RPE of the next one" is a caption, not a prefill. The field
-        // records what the set actually was, so the plan's number is shown and the hint it replaces
-        // is gone.
+    fun thePlansTargetRpe_prefillsTheStepper() {
+        // ROADMAP N59 reversed: the plan's number is what the stepper opens on, so the lifter reads
+        // the plan and changes it when the set felt different rather than starting from a blank field.
         val base = state(isFinished = false)
         setScreen(
             state = base.copy(
@@ -694,17 +694,37 @@ class ActiveWorkoutScreenTest {
             ),
         )
 
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("8")
         composeTestRule.onNodeWithText("Plan: RPE 8").assertExists()
-        composeTestRule.onNodeWithText("Optional").assertDoesNotExist()
     }
 
     @Test
-    fun withNoPlannedRpe_theFieldKeepsItsOwnHint() {
-        // Nothing to say is said by saying nothing (N37's rule, in one field): a plan that names no
-        // RPE does not get a dash or a zero, it gets the field's own hint.
+    fun withNoPlannedRpe_theStepperStartsAtNine() {
+        // A stepper always shows a number, so an exercise with no plan target opens on 9.0, and that
+        // is what a logged set records if it is never touched (N59).
         setScreen(state = state(isFinished = false))
 
-        composeTestRule.onNodeWithText("Optional").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("9")
+        composeTestRule.onNodeWithText("Starts at 9").assertExists()
+    }
+
+    @Test
+    fun steppingTheRpe_isWhatTheLoggedSetCarries() {
+        // Half-point stepping on the screen (N6): 9.0 → 9.5, and the button beside the stepper
+        // writes the value it shows.
+        val logged = mutableListOf<SetEdit>()
+        setScreen(
+            state = state(isFinished = false),
+            actions = Actions(onLogSet = { _, edit -> logged += edit }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.SET_INCREASE_RPE)
+            .performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("9.5")
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG)
+            .performSemanticsAction(SemanticsActions.OnClick)
+
+        assertEquals(listOf(19), logged.map { it.rpeHalves })
     }
 
     @Test

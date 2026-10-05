@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -23,7 +24,8 @@ import org.junit.runner.RunWith
  *
  * `Weight.step` already had unit tests and no callers. These are about the wiring
  * the unit tests cannot see: that a tap actually moves the field, that the floors
- * hold at the extremes, and that an RPE outside the scale blocks Save.
+ * hold at the extremes, and that the RPE stepper records the number it shows — the
+ * default included, now that a set always carries one (N59).
  */
 @RunWith(AndroidJUnit4::class)
 class SetEditorDialogTest {
@@ -83,7 +85,7 @@ class SetEditorDialogTest {
 
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertIsEnabled().performClick()
 
-        assertEquals(SetEdit(reps = 5, weightGrams = 0L, rpeHalves = null, note = null), saved)
+        assertEquals(SetEdit(reps = 5, weightGrams = 0L, rpeHalves = 18, note = null), saved)
     }
 
     @Test
@@ -128,9 +130,9 @@ class SetEditorDialogTest {
     }
 
     @Test
-    fun theRpeAndCommentFields_areAlwaysOffered_butMayStayEmpty() {
-        // N6's decision: RPE is visible on every edit, and the one-tap log path
-        // writes neither, so saving without them has to be the normal case.
+    fun theRpeStepperAndCommentField_areAlwaysOffered() {
+        // N6's decision: RPE is visible on every edit. It is a stepper now (N59), so there is no
+        // blank state to leave it in; the comment is the field that may stay empty.
         //
         // Existence rather than "displayed": the editor is taller than
         // Robolectric's default window, and what matters is that the fields are
@@ -139,17 +141,28 @@ class SetEditorDialogTest {
 
         composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertExists()
         composeTestRule.onNodeWithTag(TestTags.SET_NOTE_FIELD).assertExists()
+    }
+
+    @Test
+    fun withNoPlanTarget_theStepperStartsAtNine_andSaveCarriesIt() {
+        // A stepper always shows a number, so a set with no plan target records the default rather
+        // than nothing: 9.0 is 18 halves (N59).
+        show()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("9")
 
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
 
-        assertEquals(SetEdit(reps = 5, weightGrams = 100_000L, rpeHalves = null, note = null), saved)
+        assertEquals(SetEdit(reps = 5, weightGrams = 100_000L, rpeHalves = 18, note = null), saved)
     }
 
     @Test
     fun anRpeAndComment_areReportedOnSave() {
         show()
 
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).performTextInput("8")
+        // Two steps down from 9.0 is 8.
+        composeTestRule.onNodeWithTag(TestTags.SET_DECREASE_RPE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_DECREASE_RPE).performClick()
         composeTestRule.onNodeWithTag(TestTags.SET_NOTE_FIELD).performTextInput("Felt heavy")
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
 
@@ -158,22 +171,29 @@ class SetEditorDialogTest {
     }
 
     @Test
-    fun anRpeOutsideTheScale_disablesSave_ratherThanClampingIt() {
-        // Silently turning 11 into 10 would be a lie about the set.
+    fun steppingTheRpeUp_movesByAHalfPoint() {
+        // ROADMAP N6 extended: the step is half a point, so 9 → 9.5 (19 halves).
         show()
 
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).performTextInput("11")
+        composeTestRule.onNodeWithTag(TestTags.SET_INCREASE_RPE).performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("9.5")
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+
+        assertEquals(19, saved?.rpeHalves)
     }
 
     @Test
-    fun anUnparseableRpe_disablesSave() {
+    fun theRpeStepper_stopsAtBothEndsOfTheScale() {
+        // Clamped rather than wrapped: holding either button cannot leave 1–10, so there is no
+        // off-scale value left to refuse (the shape the reps stepper's floor at 1 uses).
         show()
 
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).performTextInput("hard")
+        repeat(20) { composeTestRule.onNodeWithTag(TestTags.SET_DECREASE_RPE).performClick() }
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("1")
 
-        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertIsNotEnabled()
+        repeat(20) { composeTestRule.onNodeWithTag(TestTags.SET_INCREASE_RPE).performClick() }
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("10")
     }
 
     @Test
@@ -219,27 +239,8 @@ class SetEditorDialogTest {
     }
 
     @Test
-    fun aHalfStepRpe_isAccepted_andAHalfIsNot() {
-        // ROADMAP N6 extended: 9.5 is a value, 9.3 is not a claim about the set.
-        show()
-
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).performTextInput("9.5")
-        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
-
-        assertEquals(19, saved?.rpeHalves)
-    }
-
-    @Test
-    fun anRpeFinerThanAHalf_isRefused_ratherThanRounded() {
-        show()
-
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).performTextInput("9.3")
-
-        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertIsNotEnabled()
-    }
-
-    @Test
-    fun anExistingHalfStepRpe_opensAsATyped() {
+    fun anExistingHalfStepRpe_opensWhereItWasRecorded() {
+        // An existing set keeps the RPE it recorded (N59), halves included: 19 halves is 9.5.
         composeTestRule.setContent {
             SetEditorDialog(
                 initialReps = 5,
@@ -250,6 +251,10 @@ class SetEditorDialogTest {
             )
         }
 
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextContains("9.5")
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("9.5")
+
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+
+        assertEquals(19, saved?.rpeHalves)
     }
 }

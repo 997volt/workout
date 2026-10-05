@@ -12,8 +12,10 @@ object TestTags {
     const val SET_WEIGHT_FIELD = "set_weight_field"
     const val SET_REPS_FIELD = "set_reps_field"
 
-    /** RPE and the set comment (ROADMAP N6). Both may be left empty. */
+    /** RPE and the set comment (ROADMAP N6). The RPE is a stepper that always shows a number (N59). */
     const val SET_RPE_FIELD = "set_rpe_field"
+    const val SET_DECREASE_RPE = "set_decrease_rpe"
+    const val SET_INCREASE_RPE = "set_increase_rpe"
     const val SET_NOTE_FIELD = "set_note_field"
 
     /** A logged set, tappable to edit it. */

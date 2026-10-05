@@ -41,7 +41,9 @@ import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.ProgressionDirection
+import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
 import com.example.androidapp.ui.components.ExerciseRatingDialog
 import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.ProgressionDialog
@@ -433,8 +435,10 @@ private fun ExerciseSets(
  *
  * **The role** is the plan's own next unlogged one (B48), carried the way reps and weight are, so a
  * template that opens with a ramp is logged as warm-ups rather than as working sets; it stays a
- * picker so one set can still be overridden (N19). **The plan's RPE** is shown beside the RPE field
- * and never written into it: what a set is logged at is what it felt like, not what the plan asked.
+ * picker so one set can still be overridden (N19). **The plan's RPE** now *fills* the RPE stepper —
+ * N59's original "shown beside the field, never written into it" is deliberately reversed: the lifter
+ * reads the plan's own number and changes it when the set felt different, and a plan that names none
+ * starts at 9.0 so a logged set always carries one.
  *
  * The draft is keyed on `row.sets.size`, so writing a set re-reads the plan's next one and the fields
  * re-arm — N19's "clears itself", with the plan as the resting value. Re-arming rather than surviving
@@ -453,9 +457,9 @@ private fun NextSetEditor(
                 repsText = suggestion.reps.toString(),
                 // Shown as one signed number: -20 is 20 kg of assistance (N15).
                 weightText = Weight.display(suggestion.weightGrams, suggestion.assistanceGrams),
-                // Empty: the field records what the set felt like, and the plan's target is a
-                // caption rather than a value (N59).
-                rpeText = "",
+                // The plan's own target, or 9.0 where it names none: the stepper always shows a
+                // number, so a logged set always carries one (N59).
+                rpeText = Rpe.format(suggestion.targetRpeHalves ?: DEFAULT_RPE_HALVES),
                 setType = suggestion.setType,
             ),
         )
@@ -486,7 +490,6 @@ private fun NextSetEditor(
                 SetRpeField(
                     draft = draft,
                     onDraftChange = { draft = it },
-                    rpeIsValid = values.rpeValid,
                     targetRpeHalves = suggestion.targetRpeHalves,
                     modifier = Modifier.weight(1f),
                 )

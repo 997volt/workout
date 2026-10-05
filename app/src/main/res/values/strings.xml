@@ -423,14 +423,14 @@
     <string name="set_reps_label">Reps</string>
     <string name="set_save">Save</string>
     <string name="set_cancel">Cancel</string>
-    <!-- RPE and comment per set (ROADMAP N6). Both optional: RPE is skippable by design,
-         so an empty field is the normal case. -->
+    <!-- RPE and comment per set (ROADMAP N6). The comment may be empty; the RPE is a stepper that
+         always shows a number (N59), so a logged set always carries one. -->
     <string name="set_rpe_label">RPE (1–10)</string>
     <string name="set_role_marker">%1$s</string>
-    <string name="set_rpe_hint">Optional</string>
-    <!-- What the plan asks this set to feel like, shown beside the field and never written into it
-         (ROADMAP N59): the field records what the set actually was. -->
+    <!-- Where the stepper's starting number came from, because it is now in the field rather than
+         beside it (ROADMAP N59): the plan's own target where it names one, the default otherwise. -->
     <string name="set_rpe_target">Plan: RPE %1$s</string>
+    <string name="set_rpe_default">Starts at %1$s</string>
     <string name="set_note_label">Comment</string>
     <!-- The marker on a logged set that carries either (ROADMAP N6). -->
     <!-- Formatted from halves, so this can be 9.5 (ROADMAP N6). -->

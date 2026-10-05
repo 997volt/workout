@@ -34,12 +34,27 @@ import com.example.androidapp.domain.model.SetType
 internal data class SetEntryDraft(
     val repsText: String,
     val weightText: String,
-    /** Empty is the normal case: RPE is skippable by design (ROADMAP N6). */
+    /**
+     * The RPE as text — the halves [values] parses back out of it.
+     *
+     * It is no longer blank: the field is a stepper now (ROADMAP N59), so it always holds a number
+     * and the stepper only ever writes text [Rpe.parse] reads as the halves it stepped to.
+     */
     val rpeText: String,
     /** Only the dialog edits the comment; the inline fields leave it empty. */
     val noteText: String = "",
     val setType: SetType = SetType.NORMAL,
 )
+
+/**
+ * The RPE a set starts at when no plan names one (ROADMAP N59).
+ *
+ * 9.0. A stepper always shows a number, so this is what a logged set records when the plan asks for
+ * nothing and the lifter never touches it — the same direction the muscle-feel stepper took (N8).
+ * It is not the middle of the scale but the working end of it, where a hard set that was not taken
+ * to failure lands.
+ */
+internal const val DEFAULT_RPE_HALVES = 18
 
 /** What a [SetEntryDraft]'s text says, and whether each field is a usable value. */
 internal data class SetEntryValues(
@@ -48,7 +63,7 @@ internal data class SetEntryValues(
     val rpeHalves: Int?,
     val rpeValid: Boolean,
 ) {
-    /** A set needs reps and a load; RPE and the comment are optional (ROADMAP N6). */
+    /** A set needs reps and a load; the comment stays optional, and the RPE is always stated (N6, N59). */
     val isComplete: Boolean get() = reps != null && load != null && rpeValid
 }
 
@@ -133,37 +148,87 @@ internal fun SetEntryNumbers(
 }
 
 /**
- * The optional RPE, and what the plan asks the set to feel like (ROADMAP N6, N59).
+ * The RPE a set is logged at, as a −/+ stepper (ROADMAP N6, N59).
  *
- * [targetRpeHalves] is the plan's own number and is **shown, never written into the field**: the RPE
- * a set is logged with records how hard it actually was, so seeding the field with the plan's target
- * would record a prescription as a measurement. A plan that names none shows the field's own hint.
+ * It opens on the plan's own target where there is one ([targetRpeHalves]) and on
+ * [DEFAULT_RPE_HALVES] otherwise, and it always shows a number. N59 first kept the plan's value
+ * *beside* an optional field, so a prescription could never be recorded as a measurement; that is
+ * reversed here because the two were never in conflict — the lifter reads the plan's number, changes
+ * it when the set felt different, and what is recorded is still what the set was.
+ *
+ * A step is half a point, so the field steps 9 → 9.5 → 10, and the ends are **clamped** to
+ * [Rpe.MIN_HALVES]…[Rpe.MAX_HALVES] rather than wrapped, so holding a button down cannot leave the
+ * scale (the shape the reps stepper's floor at 1 uses).
  */
 @Composable
 internal fun SetRpeField(
     draft: SetEntryDraft,
     onDraftChange: (SetEntryDraft) -> Unit,
-    rpeIsValid: Boolean,
     modifier: Modifier = Modifier,
     targetRpeHalves: Int? = null,
 ) {
-    OutlinedTextField(
-        value = draft.rpeText,
-        onValueChange = { onDraftChange(draft.copy(rpeText = it)) },
-        modifier = modifier.fillMaxWidth().testTag(TestTags.SET_RPE_FIELD),
-        singleLine = true,
-        label = { Text(stringResource(R.string.set_rpe_label)) },
-        supportingText = {
+    // The draft's text stays the source of truth — `values()` parses it — and the stepper only ever
+    // writes halves that parse back to the number it is showing.
+    val halves = Rpe.parse(draft.rpeText) ?: DEFAULT_RPE_HALVES
+    val decreaseDescription = stringResource(R.string.set_stepper_decrease, RPE_STEPPER_NAME)
+    val increaseDescription = stringResource(R.string.set_stepper_increase, RPE_STEPPER_NAME)
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
-                text = targetRpeHalves?.let { target ->
-                    stringResource(R.string.set_rpe_target, Rpe.format(target))
-                } ?: stringResource(R.string.set_rpe_hint),
+                text = stringResource(R.string.set_rpe_label),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
             )
-        },
-        isError = draft.rpeText.isNotBlank() && !rpeIsValid,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-    )
+            StepButton(
+                glyph = "\u2212",
+                description = decreaseDescription,
+                testTag = TestTags.SET_DECREASE_RPE,
+                onClick = {
+                    onDraftChange(
+                        draft.copy(rpeText = Rpe.format((halves - 1).coerceAtLeast(Rpe.MIN_HALVES))),
+                    )
+                },
+            )
+            Text(
+                text = Rpe.format(halves),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.testTag(TestTags.SET_RPE_FIELD),
+            )
+            StepButton(
+                glyph = "+",
+                description = increaseDescription,
+                testTag = TestTags.SET_INCREASE_RPE,
+                onClick = {
+                    onDraftChange(
+                        draft.copy(rpeText = Rpe.format((halves + 1).coerceAtMost(Rpe.MAX_HALVES))),
+                    )
+                },
+            )
+        }
+        // Where the number came from, because it is now *in* the field rather than beside it: the
+        // plan's own target where it names one, the default it started at otherwise.
+        Text(
+            text = stringResource(
+                if (targetRpeHalves == null) R.string.set_rpe_default else R.string.set_rpe_target,
+                Rpe.format(targetRpeHalves ?: DEFAULT_RPE_HALVES),
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
+
+/**
+ * The name the RPE stepper's buttons announce: "Decrease RPE" / "Increase RPE".
+ *
+ * "RPE" rather than the field's own label, which carries the scale in brackets — a screen reader
+ * saying "Decrease RPE (1–10)" is reading the caption, not naming the control.
+ */
+private const val RPE_STEPPER_NAME = "RPE"
 
 /**
  * A labelled number field with a −/+ pair either side (ROADMAP P1.3a).

@@ -82,6 +82,13 @@ repeated here.
   soreness and joint lists use, starting at 7 — a set worked hard without being taken to failure —
   rather than blank, so *Save* always carries the number the dialog shows. The ends are still named
   beneath it (N12), and the dialog as a whole is skipped the way it always was.
+- **A set's RPE is a stepped number, prefilled from the plan** (N6, N59). It was the workout screen's
+  last typed field, and it was left blank on purpose — N59 showed the plan's target *beside* it rather
+  than writing a target into a record of what happened. The lifter now reads the plan's own RPE in the
+  field and changes it if the set felt different; with no plan the stepper opens on 9. Halves step half a
+  point at a time and stop at 1 and 10, so a logged set always carries an RPE, and the caption under it
+  says where the number came from. The plan editors keep their text field: there the RPE is a target
+  being authored, not a set being recorded.
 
 ### Removed
 

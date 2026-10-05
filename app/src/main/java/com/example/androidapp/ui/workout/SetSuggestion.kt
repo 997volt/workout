@@ -34,10 +34,10 @@ data class SetSuggestion(
     /**
      * What the plan asks this set to feel like, in half-points, or null (ROADMAP N59).
      *
-     * **Shown, never prefilled.** The RPE a set is logged with is a record of how hard the set
-     * actually was, so seeding that field with the plan's number would record a prescription as a
-     * measurement. It travels beside the field instead, which is what "know the planned RPE of the
-     * next one" asks for; a plan that names none leaves the field with nothing beside it.
+     * **The value the RPE stepper opens on.** N59 first kept it beside an optional field so a
+     * prescription could not be recorded as a measurement; it is now written into the field, because
+     * the lifter reads the plan's own number and changes it when the set felt different — what is
+     * recorded is still what the set was. A plan that names none leaves the field on 9.0.
      */
     val targetRpeHalves: Int? = null,
 )
@@ -66,8 +66,8 @@ data class PlannedTarget(
  * **The prefill is history, not a proposal.** A plan's target for *this* set wins where it says
  * something — a ramp of 100/105/110 kg only works if the second and third sets take their numbers from
  * the plan — then what you just did in this session, then **what you did last time, unchanged**, and only
- * then a default. The plan's RPE is the one part carried beside the values rather than in them, because
- * it is a target for how hard the set should feel rather than a value to load.
+ * then a default. The plan's RPE is carried the same way (N59's reversal): it fills the RPE stepper,
+ * which the lifter changes when the set felt different rather than starting from a blank field.
  *
  * Pure, so the precedence is covered by fast JVM tests rather than by tapping.
  */
@@ -133,7 +133,7 @@ fun plannedTargetFor(
             assistanceGrams = set.targetAssistanceGrams,
             // A planned set's role travels with its targets, so the ramp is armed, not retyped (B48).
             role = set.role,
-            // The target RPE travels too, and is shown rather than prefilled (N59).
+            // The target RPE travels too, and is what the stepper opens on (N59).
             rpeHalves = set.targetRpeHalves,
         )
     }
