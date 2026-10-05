@@ -1341,4 +1341,129 @@ class WorkoutDatabaseMigrationTest {
 
         migrated.close()
     }
+
+    @Test
+    fun migration28To29_clearsEveryWarmUpsEffort_andLeavesTheWorkingSetsAlone() {
+        // ROADMAP N67: a warm-up carries no effort. The rule is new, so a logged warm-up can hold an
+        // RPE and a *planned* one the legacy per-set target N59 left as a fallback. Both are cleared,
+        // because the editor no longer offers the field and a number nothing can show is dead weight.
+        // The working sets keep theirs on both sides, and so does the exercise-level target, which
+        // belongs to the exercise's working sets rather than to any one row.
+        helper.createDatabase(TEST_DB, 28).apply {
+            execSQL(
+                """
+                INSERT INTO workout_sessions (id, startedAt, createdAt, updatedAt)
+                VALUES ('s1', 1, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO session_exercises (id, sessionId, exerciseId, position, createdAt, updatedAt)
+                VALUES ('se1', 's1', 'back-squat', 0, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO set_entries
+                    (id, sessionExerciseId, setIndex, reps, weightGrams, assistanceGrams, setType,
+                     rpeHalves, createdAt, updatedAt)
+                VALUES ('e1', 'se1', 0, 5, 60000, 0, 'WARMUP', 12, 1, 1),
+                       ('e2', 'se1', 1, 5, 100000, 0, 'NORMAL', 18, 1, 1),
+                       ('e3', 'se1', 2, 8, 80000, 0, 'WARMUP', NULL, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO templates (id, name, createdAt, updatedAt)
+                VALUES ('t1', 'Legs', 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO template_exercises
+                    (id, templateId, exerciseId, position, targetRpeHalves, createdAt, updatedAt)
+                VALUES ('te1', 't1', 'back-squat', 0, 8, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO template_sets
+                    (id, templateExerciseId, setIndex, role, targetRepsMin, targetRepsMax,
+                     targetRpeHalves, createdAt, updatedAt)
+                VALUES ('ts1', 'te1', 0, 'WARMUP', 5, 5, 5, 1, 1),
+                       ('ts2', 'te1', 1, 'NORMAL', 5, 5, 8, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO programs (id, name, isActive, position, createdAt, updatedAt)
+                VALUES ('p1', 'Upper/Lower', 0, 0, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO program_slots (id, programId, templateId, position, createdAt, updatedAt)
+                VALUES ('slot1', 'p1', 't1', 0, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO program_slot_exercises
+                    (id, slotId, exerciseId, targetRpeHalves, createdAt, updatedAt)
+                VALUES ('pse1', 'slot1', 'back-squat', 9, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO program_slot_sets
+                    (id, slotExerciseId, setIndex, role, targetRepsMin, targetRepsMax,
+                     targetRpeHalves, createdAt, updatedAt)
+                VALUES ('pss1', 'pse1', 0, 'WARMUP', 5, 5, 5, 1, 1),
+                       ('pss2', 'pse1', 1, 'NORMAL', 3, 3, 16, 1, 1)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 29, true, MIGRATION_28_29)
+
+        migrated.query("SELECT id, rpeHalves FROM set_entries ORDER BY id").use { cursor ->
+            val values = buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getString(0) to cursor.getInt(1).takeIf { !cursor.isNull(1) })
+                }
+            }
+            assertEquals("only the working set keeps an effort", listOf("e1" to null, "e2" to 18, "e3" to null), values)
+        }
+        migrated.query("SELECT id, targetRpeHalves FROM template_sets ORDER BY id").use { cursor ->
+            val values = buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getString(0) to cursor.getInt(1).takeIf { !cursor.isNull(1) })
+                }
+            }
+            assertEquals(listOf("ts1" to null, "ts2" to 8), values)
+        }
+        migrated.query("SELECT id, targetRpeHalves FROM program_slot_sets ORDER BY id").use { cursor ->
+            val values = buildList {
+                while (cursor.moveToNext()) {
+                    add(cursor.getString(0) to cursor.getInt(1).takeIf { !cursor.isNull(1) })
+                }
+            }
+            assertEquals(listOf("pss1" to null, "pss2" to 16), values)
+        }
+        migrated.query("SELECT id, targetRpeHalves FROM template_exercises").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(
+                "the exercise-level target belongs to the working sets and is left alone",
+                8,
+                cursor.getInt(1),
+            )
+        }
+        migrated.query("SELECT id, targetRpeHalves FROM program_slot_exercises").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("the slot's exercise-level target is left alone too", 9, cursor.getInt(1))
+        }
+
+        migrated.close()
+    }
 }

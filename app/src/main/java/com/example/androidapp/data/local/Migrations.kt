@@ -713,6 +713,39 @@ private const val SEED_SLOT_EXERCISE_TARGET_RPE =
         "AND s.`targetRpeHalves` IS NOT NULL AND s.`deletedAt` IS NULL " +
         "ORDER BY s.`setIndex` DESC LIMIT 1)"
 
+/**
+ * A warm-up carries no effort (ROADMAP N67).
+ *
+ * The rule is new, so rows already on disk can hold a number that is no longer a fact about
+ * anything: the RPE a logged warm-up recorded, and the legacy per-set target a *planned* warm-up
+ * still carries (N59 moved the plan's effort to the exercise, and this column is the fallback a
+ * pre-change plan arrives with). Both are cleared, because the editor no longer offers the field
+ * and a stored value nothing can show is dead weight rather than history. The exercise-level
+ * `targetRpeHalves` is deliberately left alone: that one belongs to the exercise's working sets.
+ *
+ * The migration test seeds a warm-up and a working set on each side and asserts that only the
+ * working one keeps its number, validated against the exported `29.json`.
+ */
+val MIGRATION_28_29 = object : Migration(28, 29) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(CLEAR_WARM_UP_RPE)
+        db.execSQL(CLEAR_PLANNED_WARM_UP_RPE)
+        db.execSQL(CLEAR_SLOT_PLANNED_WARM_UP_RPE)
+    }
+}
+
+private const val CLEAR_WARM_UP_RPE =
+    "UPDATE `set_entries` SET `rpeHalves` = NULL " +
+        "WHERE `setType` = 'WARMUP' AND `rpeHalves` IS NOT NULL"
+
+private const val CLEAR_PLANNED_WARM_UP_RPE =
+    "UPDATE `template_sets` SET `targetRpeHalves` = NULL " +
+        "WHERE `role` = 'WARMUP' AND `targetRpeHalves` IS NOT NULL"
+
+private const val CLEAR_SLOT_PLANNED_WARM_UP_RPE =
+    "UPDATE `program_slot_sets` SET `targetRpeHalves` = NULL " +
+        "WHERE `role` = 'WARMUP' AND `targetRpeHalves` IS NOT NULL"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -851,4 +884,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_25_26,
     MIGRATION_26_27,
     MIGRATION_27_28,
+    MIGRATION_28_29,
 )

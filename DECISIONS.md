@@ -380,6 +380,13 @@ the rule; that one argues it.
   says so, and off means the exercise simply finishes: the prompt exists to change the *plan*, so
   somebody who does not want the app editing the plan is not asked about it. Hiding the prompt but
   still writing the step was rejected — the write is the only thing the question is for.
+- **A warm-up carries no effort** (N67). It is preparation rather than work, so an RPE on it measures
+  nothing the plan asked of it and reads as a number the set was judged against. The rule is a
+  property of the role (`SetType.recordsEffort`) rather than a check repeated at each caller, because
+  the editor, the write boundary and the row all have to agree about what a warm-up is. The field is
+  **absent** for a warm-up rather than disabled: a control that cannot write invites a tap that does
+  nothing. Migration 28→29 clears the numbers already stored — logged and planned alike — while the
+  plan's exercise-level target stays, because it belongs to the exercise's working sets.
 
 - **A destination belongs in the action row, and a heading does not carry a way out of itself**
   (N42). Programs moved from the home overflow into the pair above the start pill, and "See all

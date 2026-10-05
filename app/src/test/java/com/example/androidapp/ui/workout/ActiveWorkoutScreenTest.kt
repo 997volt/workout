@@ -497,6 +497,30 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun aWarmUpSet_isNotOfferedTheRpeField() {
+        // ROADMAP N67: a warm-up carries no effort, so the field is absent rather than disabled — a
+        // control that cannot write is worse than no control — and the role picker is what brings it
+        // back.
+        setScreen(
+            state(
+                isFinished = false,
+                suggestion = SetSuggestion(reps = 5, weightGrams = 60_000, setType = SetType.WARMUP),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.SET_INCREASE_RPE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).assertExists()
+    }
+
+    @Test
+    fun aWorkingSet_isStillOfferedTheRpeField() {
+        setScreen(state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertExists()
+    }
+
+    @Test
     fun theSetEditor_opensOnALoggedSet_andCancelClosesIt() {
         // The editor is the *correction* path now that logging has its own fields (N59): tapping a
         // logged set still opens it, and Cancel still means nothing is written.
@@ -517,6 +541,8 @@ class ActiveWorkoutScreenTest {
          * — [plannedPrompt] or [earnedPrompt].
          */
         progression: ProgressionPrompt = ProgressionPrompt(),
+        /** What the next-set fields open on (N59); a warm-up role withholds the RPE field (N67). */
+        suggestion: SetSuggestion = SetSuggestion(reps = 5, weightGrams = 100_000),
     ) = ActiveWorkoutUiState(
         isLoading = false,
         sessionId = "s1",
@@ -530,7 +556,7 @@ class ActiveWorkoutScreenTest {
                 techniqueNote = "Brace, sit back",
                 isFinished = isFinished,
                 sets = listOf(SetRow(id = "set1", number = 1, reps = 5, weightGrams = 100_000)),
-                suggestion = SetSuggestion(reps = 5, weightGrams = 100_000),
+                suggestion = suggestion,
                 progression = progression,
             ),
         ),

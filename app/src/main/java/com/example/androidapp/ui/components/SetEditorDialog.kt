@@ -35,7 +35,8 @@ import com.example.androidapp.domain.model.SetType
  * and failure since the beginning with no way to reach them, and a plan that can say
  * "top set" while a logged set cannot is two vocabularies for one idea.
  *
- * RPE and the comment are always shown, but **neither is invented**: the RPE is a stepper (N59), so
+ * RPE and the comment are always shown — except for a warm-up, which records no effort at all and so
+ * is not offered the field (N67) — and **neither is invented**: the RPE is a stepper (N59), so
  * it shows the set's own number where it recorded one and reads *Not recorded* where it did not, and
  * a save that does not touch it keeps that absence. Correcting a set's weight must not turn an
  * unrecorded effort into a 9.0 measurement. Save stays disabled while reps or the load is not a
@@ -110,7 +111,11 @@ private fun SetEditingFields(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SetRoleSelector(role = draft.setType, onSelect = { onDraftChange(draft.copy(setType = it)) })
         SetEntryNumbers(draft = draft, onDraftChange = onDraftChange, tags = SetFieldTags.Editing)
-        SetRpeField(draft = draft, onDraftChange = onDraftChange, tags = SetFieldTags.Editing)
+        // A warm-up records no effort, so the field is not offered for one (ROADMAP N67). The role
+        // picker above is what brings it back, and the save drops whatever the draft held.
+        if (draft.setType.recordsEffort) {
+            SetRpeField(draft = draft, onDraftChange = onDraftChange, tags = SetFieldTags.Editing)
+        }
         OutlinedTextField(
             value = draft.noteText,
             onValueChange = { onDraftChange(draft.copy(noteText = it)) },

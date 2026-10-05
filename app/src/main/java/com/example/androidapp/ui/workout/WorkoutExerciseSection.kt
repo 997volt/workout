@@ -423,7 +423,8 @@ private fun ExerciseSets(
  * picker so one set can still be overridden (N19). **The plan's RPE** now *fills* the RPE stepper —
  * N59's original "shown beside the field, never written into it" is deliberately reversed: the lifter
  * reads the plan's own number and changes it when the set felt different, and a plan that names none
- * starts at 9.0 so a logged set always carries one.
+ * starts at 9.0 so a logged set always carries one. **A warm-up carries none** (N67), so the field is
+ * not offered at all while the role picker says warm-up, and the plan's number is not put into it.
  *
  * The draft is keyed on `row.sets.size`, so writing a set re-reads the plan's next one and the fields
  * re-arm — N19's "clears itself", with the plan as the resting value. Re-arming rather than surviving
@@ -443,8 +444,13 @@ private fun NextSetEditor(
                 // Shown as one signed number: -20 is 20 kg of assistance (N15).
                 weightText = Weight.display(suggestion.weightGrams, suggestion.assistanceGrams),
                 // The plan's own target, or 9.0 where it names none: the stepper always shows a
-                // number, so a logged set always carries one (N59).
-                rpeText = Rpe.format(suggestion.targetRpeHalves ?: DEFAULT_RPE_HALVES),
+                // number, so a logged set always carries one (N59). A planned warm-up opens it
+                // empty instead, because a warm-up carries no effort to show (N67).
+                rpeText = if (suggestion.setType.recordsEffort) {
+                    Rpe.format(suggestion.targetRpeHalves ?: DEFAULT_RPE_HALVES)
+                } else {
+                    ""
+                },
                 setType = suggestion.setType,
             ),
         )
@@ -472,12 +478,17 @@ private fun NextSetEditor(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                SetRpeField(
-                    draft = draft,
-                    onDraftChange = { draft = it },
-                    targetRpeHalves = suggestion.targetRpeHalves,
-                    modifier = Modifier.weight(1f),
-                )
+                // A warm-up has no effort to state, so the field is not offered at all rather than
+                // shown disabled: a control that cannot write is worse than no control (N67). The
+                // role picker above is what brings it back.
+                if (draft.setType.recordsEffort) {
+                    SetRpeField(
+                        draft = draft,
+                        onDraftChange = { draft = it },
+                        targetRpeHalves = suggestion.targetRpeHalves,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 FilledTonalButton(
                     onClick = { onLogSet(draft.toEdit()) },
                     enabled = values.isComplete,
@@ -633,7 +644,8 @@ private fun SetLine(
             )
             // What a set was is reps, load *and* effort, so the RPE reads on the line rather than as a
             // marker (N6): the stepper records one per set (N59), and the row has to say it back.
-            set.rpeHalves?.let { halves ->
+            // A warm-up recorded none, so it has none to say (N67).
+            set.rpeHalves?.takeIf { set.setType.recordsEffort }?.let { halves ->
                 Text(
                     text = rpeMarker(halves),
                     style = MaterialTheme.typography.bodyLarge,

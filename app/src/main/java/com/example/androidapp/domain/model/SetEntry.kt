@@ -51,6 +51,17 @@ enum class SetType(val label: String) {
     TOP_SET("Top set"),
     DROP("Drop"),
     FAILURE("Failure"),
+    ;
+
+    /**
+     * Whether a set of this role records an effort (ROADMAP N67).
+     *
+     * A warm-up does not. It is preparation rather than work, so an RPE beside it measures
+     * nothing the plan asked for and reads as a number the set was judged against. The rule lives
+     * on the role so the write boundary, the editor and the row all read the same one, rather than
+     * each deciding for itself what a warm-up is.
+     */
+    val recordsEffort: Boolean get() = this != WARMUP
 }
 
 /**

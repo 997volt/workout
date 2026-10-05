@@ -231,6 +231,49 @@ class WorkoutEditingTest {
     }
 
     @Test
+    fun aWarmUpSet_recordsNoEffort_whateverTheWriteWasGiven() = runTest {
+        // ROADMAP N67: a warm-up carries no effort. The editor no longer offers the field, and this is
+        // the boundary behind it — a stale screen, or any future caller, cannot put a number on a set
+        // the role says was never work.
+        seedOpenWorkoutWithASet()
+
+        val result = repository.logSet(
+            sessionExerciseId = "se1",
+            reps = 5,
+            weightGrams = 60_000L,
+            rpeHalves = 19,
+            note = null,
+            setType = SetType.WARMUP,
+        )
+
+        assertTrue(result is DataResult.Success)
+        val logged = database.backupDao().allSets().single { it.setIndex == 1 }
+        assertNull("a warm-up records none", logged.rpeHalves)
+    }
+
+    @Test
+    fun reRollingASetToWarmUp_dropsTheEffortItCarried() = runTest {
+        // The same rule on the correction path (N67): the editor hides the field for a warm-up, so a
+        // save has to drop the number rather than keep it behind a control the lifter cannot see.
+        seedOpenWorkoutWithASet()
+
+        val result = repository.updateSet(
+            setId = "set1",
+            reps = 5,
+            weightGrams = 60_000L,
+            rpeHalves = 19,
+            note = null,
+            setType = SetType.WARMUP,
+        )
+
+        assertTrue(result is DataResult.Success)
+        assertNull(
+            "the recorded effort is dropped, not hidden",
+            database.workoutDao().findSetById("set1")?.rpeHalves,
+        )
+    }
+
+    @Test
     fun anRpeOffTheScale_isRefusedRatherThanStored() = runTest {
         // The field is the real guard; this is the boundary behind it (N6).
         seedOpenWorkoutWithASet()

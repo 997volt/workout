@@ -19,6 +19,16 @@ repeated here.
   template on the way out of an exercise had no way to say so. Settings now carries *Ask about
   progression*, on by default. Off, *Done* just finishes the exercise; nothing is written to the plan.
 
+### Changed
+
+- **A warm-up records no RPE** (N67). The set editor offered the effort field for every role, so a
+  ramp could be written with a number the plan never asked of it — and read back as though the set had
+  been judged against one. The field is now absent while the role is *Warm-up*, what a save writes
+  drops the number even if the draft still held it, and the set's row and History stop printing one.
+  Migration 28→29 clears what was already stored: every logged warm-up's RPE, and the per-set target a
+  plan written before N59 still carries as its fallback. The plan's exercise-level target is left
+  alone, because that one belongs to the exercise's working sets.
+
 ### Removed
 
 - **The workout screen's "Last time" line is gone** (N65). It printed the *first* set of the previous

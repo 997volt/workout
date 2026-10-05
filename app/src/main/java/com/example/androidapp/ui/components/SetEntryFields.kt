@@ -94,7 +94,10 @@ internal fun SetEntryDraft.toEdit(): SetEdit {
         weightGrams = values.load?.weightGrams ?: 0L,
         assistanceGrams = values.load?.assistanceGrams ?: 0L,
         setType = setType,
-        rpeHalves = values.rpeHalves,
+        // A warm-up states no effort, whatever the draft still holds from before the role was
+        // changed (ROADMAP N67). The write boundary holds the same rule, so this is the first of
+        // two places rather than the only one.
+        rpeHalves = if (setType.recordsEffort) values.rpeHalves else null,
         note = noteText.trim().ifEmpty { null },
     )
 }

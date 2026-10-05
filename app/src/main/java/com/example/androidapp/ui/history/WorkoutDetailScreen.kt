@@ -507,8 +507,8 @@ private fun HistorySetRow(
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     // The detail is where the full text lives (N6); the workout
-                    // row only carries a marker.
-                    set.rpeHalves?.let { rpeHalves ->
+                    // row only carries a marker. A warm-up carries no effort to read back (N67).
+                    set.rpeHalves?.takeIf { set.setType.recordsEffort }?.let { rpeHalves ->
                         Text(
                             text = rpeMarker(rpeHalves),
                             style = MaterialTheme.typography.labelSmall,

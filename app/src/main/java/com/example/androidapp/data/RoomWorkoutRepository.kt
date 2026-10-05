@@ -427,7 +427,8 @@ class RoomWorkoutRepository @Inject constructor(
                 // What the set felt like, written with the set rather than after it: the
                 // inline fields are on screen before *Log set*, so they are part of what it
                 // commits (N59), and an undo puts back what the deleted row carried (N6).
-                rpeHalves = rpeHalves,
+                // A warm-up records none of it, whatever a stale screen sent (N67).
+                rpeHalves = if (setType.recordsEffort) rpeHalves else null,
                 // A cleared comment is null, not "": one representation of nothing.
                 note = note?.trim()?.ifEmpty { null },
                 completedAt = now,
@@ -462,7 +463,10 @@ class RoomWorkoutRepository @Inject constructor(
             val updated = stored.copy(
                 reps = reps.coerceAtLeast(1),
                 weightGrams = weightGrams.coerceAtLeast(0L),
-                rpeHalves = rpeHalves,
+                // The same rule the log path holds (N67): a warm-up carries no effort, so an
+                // edit that re-roles a set to warm-up drops the number rather than keeping it
+                // behind a field the editor no longer offers.
+                rpeHalves = if (setType.recordsEffort) rpeHalves else null,
                 // The role is part of what the set was (ROADMAP N14), and so is
                 // what the machine took off (N15).
                 setType = setType,

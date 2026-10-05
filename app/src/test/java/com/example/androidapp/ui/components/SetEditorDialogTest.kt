@@ -36,12 +36,18 @@ class SetEditorDialogTest {
 
     private var saved: SetEdit? = null
 
-    private fun show(reps: Int = 5, weightGrams: Long = 100_000L, rpe: Int? = null) {
+    private fun show(
+        reps: Int = 5,
+        weightGrams: Long = 100_000L,
+        rpe: Int? = null,
+        setType: SetType = SetType.NORMAL,
+    ) {
         composeTestRule.setContent {
             SetEditorDialog(
                 initialReps = reps,
                 initialWeightGrams = weightGrams,
                 initialRpe = rpe,
+                initialSetType = setType,
                 onDismiss = {},
                 onSave = { saved = it },
             )
@@ -141,8 +147,9 @@ class SetEditorDialogTest {
     }
 
     @Test
-    fun theRpeStepperAndCommentField_areAlwaysOffered() {
-        // N6's decision: RPE is visible on every edit. It is a stepper now (N59), and a set that
+    fun theRpeStepperAndCommentField_areOfferedForAWorkingSet() {
+        // N6's decision: RPE is visible on every edit — except a warm-up, which records no effort
+        // and is not offered the field at all (N67). It is a stepper now (N59), and a set that
         // recorded no effort says so rather than opening on a number nobody gave; the comment is the
         // other field that may stay empty.
         //
@@ -153,6 +160,22 @@ class SetEditorDialogTest {
 
         composeTestRule.onNodeWithTag(TestTags.SET_EDIT_RPE_FIELD).assertExists()
         composeTestRule.onNodeWithTag(TestTags.SET_NOTE_FIELD).assertExists()
+    }
+
+    @Test
+    fun aWarmUpSet_isNotOfferedTheRpeField_andSavesWithoutOne() {
+        // ROADMAP N67: a warm-up carries no effort. The editor does not show the field, and a save
+        // drops the number the set happened to carry rather than keeping it behind a control the
+        // lifter cannot see. The comment stays: what a warm-up *was* is still worth writing down.
+        show(rpe = 18, setType = SetType.WARMUP)
+
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_RPE_FIELD).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.SET_NOTE_FIELD).assertExists()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+
+        assertEquals(SetType.WARMUP, saved?.setType)
+        assertEquals("the recorded effort is dropped, not hidden", null, saved?.rpeHalves)
     }
 
     @Test
