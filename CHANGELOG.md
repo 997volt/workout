@@ -59,7 +59,7 @@ repeated here.
   question rather than a tap.
 - **The plan's line states how many sets are left** (N70). It only spoke once the last planned set had
   landed, so the stretch of the session the count would have been useful in — the sets still to write
-  — said nothing at all. It now reads *"2 planned sets left"* while one remains and falls back to
+  — said nothing at all. It now reads *"2 planned sets left"* while sets remain and falls back to
   N52's *"Planned work done — log extra sets if you want them."* at zero, which is the state that
   sentence was written for. The count and the *Log extra set* label share one rule, so they cannot
   disagree about when the plan's work is finished.
@@ -78,6 +78,9 @@ repeated here.
   ramp could be written with a number the plan never asked of it — and read back as though the set had
   been judged against one. The field is now absent while the role is *Warm-up*, what a save writes
   drops the number even if the draft still held it, and the set's row and History stop printing one.
+  The same rule holds on the plan side and at the import boundary: a planned warm-up prints no target
+  effort and drops the legacy per-set value when it is next written, and a backup written before the
+  rule cannot put one back.
   Migration 28→29 clears what was already stored: every logged warm-up's RPE, and the per-set target a
   plan written before N59 still carries as its fallback. The plan's exercise-level target is left
   alone, because that one belongs to the exercise's working sets.
