@@ -516,7 +516,7 @@ private fun PlanDoneNotice(row: SessionExerciseRow, modifier: Modifier = Modifie
 
 /**
  * The exercise's name and the small print under it: taxonomy, the technique cue
- * (ROADMAP N5) and what was lifted last time.
+ * (ROADMAP N5), and the rest prescription when the timer is off (N44).
  *
  * Split out of [ExerciseSection] because that section has a set list and a button
  * too, and mixing the two made one function carry the whole row.
@@ -565,20 +565,6 @@ private fun ExerciseNames(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.testTag(TestTags.EXERCISE_REST_PRESCRIPTION),
-            )
-        }
-        row.lastTime?.let { last ->
-            Text(
-                text = stringResource(
-                    R.string.set_last_time,
-                    stringResource(
-                        R.string.set_summary,
-                        Weight.display(last.weightGrams, last.assistanceGrams),
-                        last.reps,
-                    ),
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

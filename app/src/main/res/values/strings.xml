@@ -450,7 +450,6 @@
     <string name="set_deleted">Set deleted</string>
     <string name="set_delete">Delete set</string>
     <string name="set_undo">Undo</string>
-    <string name="set_last_time">Last time: %1$s</string>
 
     <!-- Rest timer (P1.4) -->
     <string name="rest_remaining">Rest %1$s</string>

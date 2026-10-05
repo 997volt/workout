@@ -1356,9 +1356,9 @@ class ActiveWorkoutViewModelTest {
         val row = viewModel.uiState.value.exercises.single()
         // N59 withdrew the step the app used to propose beside these values: what the fields show is
         // what was done last time, and stepping it is the lifter's edit rather than the app's offer.
+        // N65 removed the separate "Last time" line, so the prefill is the only place history shows.
         assertEquals("the same reps as last time", 5, row.suggestion.reps)
         assertEquals(100_000, row.suggestion.weightGrams)
-        assertEquals("last time is still shown as itself, not as the target", 100_000L, row.lastTime?.weightGrams)
     }
 
     @Test

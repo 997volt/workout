@@ -12,6 +12,15 @@ repeated here.
 
 ## [Unreleased]
 
+### Removed
+
+- **The workout screen's "Last time" line is gone** (N65). It printed the *first* set of the previous
+  session while the next-set fields prefill from the *last* one, so the line and the fields under it
+  routinely disagreed about the same workout, and neither said which set it was quoting. The prefill
+  already answers "what should this set be" (P1.3, N59) with the number the fields actually start from,
+  which is where the answer belongs; a second, differently-chosen quote beside it was noise that could
+  be wrong.
+
 ## [1.13] — 2026-10-05 (versionCode 14)
 
 ### Added

@@ -131,7 +131,6 @@ data class SessionExerciseRow(
     val jointPainNote: String? = null,
     val sets: List<SetRow> = emptyList(),
     val suggestion: SetSuggestion = SetSuggestion(DEFAULT_REPS, Weight.DEFAULT_GRAMS),
-    val lastTime: SetRow? = null,
     /**
      * What *Done* opens with (ROADMAP N50): the plan's target for the last working set, what was done
      * there, and the step those two earned.
@@ -519,7 +518,7 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
 
         // Load each exercise's previous performance once, when it first appears.
-        // Doing it here rather than per recomposition keeps the "last time" label
+        // Doing it here rather than per recomposition keeps the next-set prefill
         // from re-querying on every tick of the elapsed clock.
         viewModelScope.launch {
             sessionExercises.collect { exercises ->
@@ -1317,15 +1316,6 @@ private fun SessionExercise.toRow(
             planned = plan.progressionSets(),
             performed = loggedSets.map { it.toProgressionPerformance() },
         ),
-        lastTime = previous?.sets?.firstOrNull()?.let { first ->
-            SetRow(
-                id = first.id,
-                number = 1,
-                reps = first.reps,
-                weightGrams = first.weightGrams,
-                assistanceGrams = first.assistanceGrams,
-            )
-        },
     )
 }
 

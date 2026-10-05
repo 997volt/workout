@@ -860,7 +860,6 @@ private fun ActiveWorkoutScreenPreview() {
                             SetRow("s2", 2, reps = 8, weightGrams = 60_000),
                         ),
                         suggestion = SetSuggestion(reps = 8, weightGrams = 60_000),
-                        lastTime = SetRow("p1", 1, reps = 8, weightGrams = 57_500),
                     ),
                 ),
             ),
