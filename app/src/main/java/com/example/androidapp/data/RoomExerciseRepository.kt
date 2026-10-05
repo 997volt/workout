@@ -109,6 +109,11 @@ class RoomExerciseRepository @Inject constructor(
             // A cleared cue is stored as null, not as an empty string: two
             // representations of "nothing" would show up differently on screen.
             techniqueNote = exercise.techniqueNote?.trim()?.ifEmpty { null },
+            // The exercise's own display unit, by name, or null for "follow the app" (ROADMAP N64).
+            // Rebuilt rows write every column, so leaving this out silently discarded the choice the
+            // form had just made — the screen showed the new value from its own state while the row
+            // kept null, and the unit reverted on the next read.
+            weightUnit = exercise.weightUnit?.name,
             updatedAt = timeSource.nowEpochMillis(),
         )
         if (dao.update(updated) == 0) throw NotFoundException("exercise ${exercise.id}")

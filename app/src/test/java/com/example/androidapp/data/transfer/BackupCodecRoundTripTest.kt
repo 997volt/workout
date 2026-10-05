@@ -317,6 +317,9 @@ class BackupCodecRoundTripTest {
             isCustom = true,
             restSeconds = 150,
             techniqueNote = "elbows up",
+            // The column N64 added: the exercise's own display unit. This is the field the codec
+            // dropped, which is why it is set here rather than left at its null default.
+            weightUnit = "POUNDS",
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,

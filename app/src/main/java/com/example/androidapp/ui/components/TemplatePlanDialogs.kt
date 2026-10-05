@@ -225,8 +225,10 @@ fun TemplateSetDialog(
  *
  * [targetRpeHalves] is carried but **not edited** (N59, amended): a plan's target RPE is one number
  * per exercise now and lives in the editor behind this dialog, while the per-set value a plan may
- * still hold from before the change is a legacy fallback — so the dialog round-trips it untouched
- * rather than clearing a value it no longer shows.
+ * still hold from before the change is a legacy fallback — so the dialog round-trips it rather than
+ * inventing one. It *is* dropped when the role is one that records no effort (ROADMAP N67): a
+ * planned warm-up carries no target, which is what migration 28→29 cleared, so re-roling a set to
+ * *Warm-up* has to be able to clear it as well.
  */
 data class TemplateSetDraft(
     val role: SetType = SetType.NORMAL,
@@ -282,7 +284,9 @@ data class TemplateSetDraft(
         targetAssistanceGrams = assistanceGrams?.takeIf { it > 0L },
         targetRepsMin = repsMin,
         targetRepsMax = repsMax,
-        targetRpeHalves = targetRpeHalves,
+        // A warm-up carries no effort, whatever the draft still held from before the role changed
+        // (ROADMAP N67) — the rule the logged set's own write boundary holds, for the plan side.
+        targetRpeHalves = targetRpeHalves.takeIf { role.recordsEffort },
         note = note.trim().ifEmpty { null },
     )
 }
@@ -377,7 +381,10 @@ internal fun TemplateSet.summary(unit: WeightUnit): String {
         )
         else -> null
     }
-    val rpeHalves = targetRpeHalves?.let { rpeMarker(it) }
+    // A planned warm-up shows no effort, the rule a logged warm-up already holds (ROADMAP N67): the
+    // per-set target is the fallback a pre-change plan arrives with, and printing it beside
+    // *Warm-up* reads as a number the ramp was judged against.
+    val rpeHalves = if (role.recordsEffort) targetRpeHalves?.let { rpeMarker(it) } else null
     return listOfNotNull(weight, reps, rpeHalves, note).joinToString(" · ")
 }
 

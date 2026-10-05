@@ -110,7 +110,10 @@ class BackupCodecTest {
                 setIndex = 0,
                 reps = 5,
                 weightGrams = 100_000,
-                setType = SetType.WARMUP,
+                // A role that records an effort, which is what the RPE below belongs to: since N67 a
+                // warm-up carries none, so a fixture that gave one an RPE would model a file this app
+                // can no longer produce.
+                setType = SetType.NORMAL,
                 rpeHalves = 19,
                 note = "Felt heavy",
                 completedAt = 11L,
@@ -184,7 +187,8 @@ class BackupCodecTest {
         val text = BackupCodec.encode(sample)
 
         assertTrue("expected the enum name in the file", text.contains("\"QUADS\""))
-        assertTrue(text.contains("\"WARMUP\""))
+        // A role that is not the enum's first constant, so an ordinal writer could not match it.
+        assertTrue(text.contains("\"TOP_SET\""))
         // A picked joint travels as its names too (ROADMAP N63), left and right apart.
         assertTrue(text.contains("\"KNEE\""))
         assertTrue(text.contains("\"LEFT\""))

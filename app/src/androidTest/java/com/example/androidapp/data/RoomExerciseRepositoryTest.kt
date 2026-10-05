@@ -7,6 +7,7 @@ import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
@@ -152,6 +153,25 @@ class RoomExerciseRepositoryTest {
 
         // Two representations of "nothing" would render differently on screen.
         assertNull(stored(created.id).techniqueNote)
+    }
+
+    @Test
+    fun updateExercise_storesTheExercisesOwnWeightUnit_andCanClearItBackToTheApp() = runTest {
+        // ROADMAP N64: the exercise's own display unit is a property of the row like its rest or its
+        // cue, so an edit has to write it. It was the one field a rebuilt row dropped, which made the
+        // choice look saved until the screen was reopened and re-read the row.
+        val created = created("Lat Pulldown")
+
+        assertTrue(
+            repository.updateExercise(created.copy(weightUnit = WeightUnit.POUNDS))
+                is DataResult.Success,
+        )
+        assertEquals(WeightUnit.POUNDS, stored(created.id).weightUnit)
+
+        // Null is a real answer — "follow the app setting" — not a missing one.
+        val pounds = stored(created.id)
+        assertTrue(repository.updateExercise(pounds.copy(weightUnit = null)) is DataResult.Success)
+        assertNull(stored(created.id).weightUnit)
     }
 
     @Test

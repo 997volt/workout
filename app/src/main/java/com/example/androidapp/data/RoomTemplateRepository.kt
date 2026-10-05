@@ -194,7 +194,7 @@ class RoomTemplateRepository @Inject constructor(
                         targetAssistanceGrams = edit.targetAssistanceGrams,
                         targetRepsMin = edit.targetRepsMin,
                         targetRepsMax = edit.targetRepsMax,
-                        targetRpeHalves = edit.targetRpeHalves,
+                        targetRpeHalves = edit.effortOrNull,
                         note = edit.note,
                         createdAt = now,
                         updatedAt = now,
@@ -225,7 +225,7 @@ class RoomTemplateRepository @Inject constructor(
                 targetAssistanceGrams = edit.targetAssistanceGrams,
                 targetRepsMin = edit.targetRepsMin,
                 targetRepsMax = edit.targetRepsMax,
-                targetRpeHalves = edit.targetRpeHalves,
+                targetRpeHalves = edit.effortOrNull,
                 note = edit.note?.trim()?.ifEmpty { null },
                 createdAt = now,
                 updatedAt = now,
@@ -246,7 +246,7 @@ class RoomTemplateRepository @Inject constructor(
                     targetAssistanceGrams = edit.targetAssistanceGrams,
                     targetRepsMin = edit.targetRepsMin,
                     targetRepsMax = edit.targetRepsMax,
-                    targetRpeHalves = edit.targetRpeHalves,
+                    targetRpeHalves = edit.effortOrNull,
                     note = edit.note?.trim()?.ifEmpty { null },
                     updatedAt = timeSource.nowEpochMillis(),
                 ),
@@ -381,6 +381,17 @@ class RoomTemplateRepository @Inject constructor(
 }
 
 /**
+ * The plan's per-set effort, or null for a role that records none (ROADMAP N67).
+ *
+ * A planned warm-up carries no target effort, so every write path takes the number through here
+ * rather than each remembering the rule — the shape the logged set's own write boundary uses. A
+ * value written before the rule existed (or restored from a file written then) is dropped the next
+ * time the set is written, which is what migration 28→29 did for the rows already on disk.
+ */
+private val TemplateSetEdit.effortOrNull: Int?
+    get() = targetRpeHalves.takeIf { role.recordsEffort }
+
+/**
  * Copies one performed exercise and its sets into a plan being built (ROADMAP N31).
  *
  * File-level rather than a private member, for the same reason the workout repository's append helper
@@ -413,8 +424,11 @@ private suspend fun copyExerciseInto(
             techniqueNote = exercise.techniqueNote,
             // One target RPE per exercise now, and the session's last set that named one is what the
             // copy builds to (N59) — the same consolidation migration 27→28 made for plans already
-            // stored. The sets keep their own values below, as a plan imported from before does.
-            targetRpeHalves = sets.lastOrNull { it.rpeHalves != null }?.rpeHalves,
+            // stored. The sets keep their own values below, as a plan imported from before does. A
+            // warm-up's effort is not a target for the exercise's working sets (N67), so it is not
+            // the one this reads.
+            targetRpeHalves = sets.lastOrNull { it.rpeHalves != null && it.setType.recordsEffort }
+                ?.rpeHalves,
             supersetGroup = exercise.supersetGroup,
             createdAt = plan.now,
             updatedAt = plan.now,
@@ -434,7 +448,8 @@ private suspend fun copyExerciseInto(
                 targetAssistanceGrams = set.assistanceGrams.takeIf { it > 0L },
                 targetRepsMin = set.reps,
                 targetRepsMax = set.reps,
-                targetRpeHalves = set.rpeHalves,
+                // A copied warm-up carries no effort, the rule the set itself already holds (N67).
+                targetRpeHalves = set.rpeHalves.takeIf { set.setType.recordsEffort },
                 note = set.note,
                 createdAt = plan.now,
                 updatedAt = plan.now,

@@ -80,6 +80,9 @@ internal fun ExerciseDto.toEntity() = ExerciseEntity(
     isCustom = isCustom,
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
+    // The exercise's own display unit (ROADMAP N64). A restore that dropped it silently reverted
+    // every exercise to the app setting, which is the whole thing that field exists to override.
+    weightUnit = weightUnit,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,
@@ -184,8 +187,14 @@ internal fun SetDto.toEntity() = SetEntryEntity(
     assistanceGrams = assistanceGrams,
     setType = setType,
     // `rpe` is the pre-half-step field: a file written then carries 8 where this app
-    // now means 8.0, which is 16 halves.
-    rpeHalves = rpeHalves ?: rpe?.times(Rpe.HALVES_PER_POINT),
+    // now means 8.0, which is 16 halves. A warm-up carries no effort at all (ROADMAP N67),
+    // so a file written before that rule cannot put one back: migration 28→29 clears the
+    // rows already on disk, and this is the same rule for the other way in.
+    rpeHalves = if (setType.recordsEffort) {
+        rpeHalves ?: rpe?.times(Rpe.HALVES_PER_POINT)
+    } else {
+        null
+    },
     note = note,
     completedAt = completedAt,
     createdAt = createdAt,
@@ -262,8 +271,13 @@ internal fun TemplateSetDto.toEntity() = TemplateSetEntity(
     targetAssistanceGrams = targetAssistanceGrams,
     targetRepsMin = targetRepsMin,
     targetRepsMax = targetRepsMax,
-    // A pre-half-step plan target carries whole numbers; 7 is 7.0, 14 halves.
-    targetRpeHalves = targetRpeHalves ?: targetRpe?.times(Rpe.HALVES_PER_POINT),
+    // A pre-half-step plan target carries whole numbers; 7 is 7.0, 14 halves. A planned warm-up
+    // carries no effort (ROADMAP N67), the same rule the editor and the write path hold.
+    targetRpeHalves = if (role.recordsEffort) {
+        targetRpeHalves ?: targetRpe?.times(Rpe.HALVES_PER_POINT)
+    } else {
+        null
+    },
     note = note,
     createdAt = createdAt,
     updatedAt = updatedAt,

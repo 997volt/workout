@@ -56,15 +56,27 @@ class TemplatePlanDialogTest {
     private fun plannedSet(
         targetRpeHalves: Int? = null,
         targetWeightGrams: Long? = 140_000L,
+        role: SetType = SetType.TOP_SET,
     ) = TemplateSet(
         id = "ts1",
         templateExerciseId = "te1",
         setIndex = 0,
-        role = SetType.TOP_SET,
+        role = role,
         targetWeightGrams = targetWeightGrams,
         targetRepsMax = 2,
         targetRpeHalves = targetRpeHalves,
     )
+
+    @Test
+    fun aPlannedWarmUp_printsNoEffort_evenThoughTheRowStillCarriesOne() {
+        // ROADMAP N67: a warm-up records no effort, and a plan written before that rule can still
+        // carry a legacy per-set target. Printing it beside *Warm-up* read as a number the ramp had
+        // been judged against, so the line leaves it off; the editor is what clears the stored value
+        // on the next write.
+        show(plannedSet(targetRpeHalves = 17, role = SetType.WARMUP))
+
+        composeTestRule.onNodeWithText("RPE 8.5", substring = true).assertDoesNotExist()
+    }
 
     @Test
     fun theWarmUpRamp_isOffered_whenTheCallerSaysThereIsAWeight() {

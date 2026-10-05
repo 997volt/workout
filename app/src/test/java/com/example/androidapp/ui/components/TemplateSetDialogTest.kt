@@ -72,6 +72,29 @@ class TemplateSetDialogTest {
     }
 
     @Test
+    fun reRolingASetToWarmUp_clearsTheLegacyPerSetEffort() {
+        // ROADMAP N67: a planned warm-up carries no effort. Migration 28→29 cleared the value off the
+        // rows already stored, so the one way it could come back is an edit that re-roles a set — and
+        // there the dialog has to drop it rather than round-trip it (the case above still holds for a
+        // role that records an effort).
+        show(
+            initial = TemplateSetEdit(
+                role = SetType.NORMAL,
+                targetWeightGrams = 60_000L,
+                targetRpeHalves = 19,
+            ),
+            isNew = false,
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateSetRole("WARMUP")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).performClick()
+
+        assertEquals(SetType.WARMUP, saved?.role)
+        assertEquals("a planned warm-up carries no target effort", null, saved?.targetRpeHalves)
+    }
+
+    @Test
     fun everyFieldCanBeLeftEmpty() {
         // A plan may say "work up to a heavy single" and mean it (N14).
         show()

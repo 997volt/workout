@@ -24,6 +24,10 @@ interface TrendsDao {
      * The join filters `rpeHalves IS NOT NULL`, so a workout with nothing rated does not
      * appear at all rather than appearing as null: a gap in the chart should mean
      * "not recorded", and a row of nulls is harder to tell apart from a bug.
+     *
+     * **A warm-up is excluded** (ROADMAP N67): it records no effort, so an average that counted one
+     * would read a ramp as work. The literal is the stored name the `SetType` converter writes, the
+     * same way the migrations name a role; a row that somehow carries one is ignored here too.
      */
     @Query(
         """
@@ -34,7 +38,9 @@ interface TrendsDao {
         JOIN session_exercises se
           ON se.sessionId = ws.id AND se.deletedAt IS NULL
         JOIN set_entries s
-          ON s.sessionExerciseId = se.id AND s.deletedAt IS NULL AND s.rpeHalves IS NOT NULL
+          ON s.sessionExerciseId = se.id AND s.deletedAt IS NULL
+         AND s.rpeHalves IS NOT NULL
+         AND s.setType != 'WARMUP'
         WHERE ws.deletedAt IS NULL AND ws.finishedAt IS NOT NULL
         GROUP BY ws.id
         ORDER BY ws.startedAt DESC

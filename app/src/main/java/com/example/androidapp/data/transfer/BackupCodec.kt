@@ -15,8 +15,13 @@ object BackupCodec {
     /**
      * The version this build writes, and the newest it will read.
      *
-     * Bump it whenever a [BackupFile] field changes meaning or is removed, so an
-     * older app refuses the file instead of dropping data it cannot represent.
+     * Bump it whenever a [BackupFile] field changes **meaning** or a newer file could otherwise carry
+     * data an older build cannot represent, so that build refuses the file rather than silently
+     * dropping what it does not understand. Adding a field does not need a bump — an unknown key is
+     * ignored and the field is simply absent — and neither does *removing* one: the value is not in
+     * the file at all, so an older build's default for it is the truth rather than a loss. N64 added
+     * `weightUnit` and N73 removed the two prescription collections on exactly those grounds, which is
+     * why this is still 1.
      */
     const val CURRENT_SCHEMA_VERSION = 1
 

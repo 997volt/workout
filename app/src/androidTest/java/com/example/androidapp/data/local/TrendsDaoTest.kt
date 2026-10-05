@@ -79,6 +79,24 @@ class TrendsDaoTest {
     }
 
     @Test
+    fun aWarmUpsEffort_isLeftOutOfTheAverage() = runTest {
+        // ROADMAP N67: a warm-up records no effort, so an average that counted one would read a ramp
+        // as work. The write boundary and the importer both drop it, but a row can still carry one —
+        // restored from an older file, or written before the rule existed — so the query ignores it.
+        val sessionId = "s1"
+        database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
+        exercise(sessionId, "se1")
+        database.workoutDao().insertSet(
+            set("warm", "se1", rpeHalves = 4, setType = SetType.WARMUP),
+        )
+        database.workoutDao().insertSet(set("work", "se1", rpeHalves = 16))
+
+        val row = dao.observeRpeTrend(limit = 10).first().single()
+
+        assertEquals("only the working set counts", 16.0, row.averageRpe!!, 0.0001)
+    }
+
+    @Test
     fun aWorkoutWithNothingRated_doesNotAppear() = runTest {
         seedWorkout(sessionId = "s1", startedAt = 1_000L, rpes = emptyList())
         seedWorkout(sessionId = "s2", startedAt = 2_000L, rpes = listOf(7))
@@ -307,13 +325,18 @@ class TrendsDaoTest {
     }
 
     /** A set for the RPE average; the exercise it hangs off is created by the caller. */
-    private fun set(id: String, sessionExerciseId: String, rpeHalves: Int?) = SetEntryEntity(
+    private fun set(
+        id: String,
+        sessionExerciseId: String,
+        rpeHalves: Int?,
+        setType: SetType = SetType.NORMAL,
+    ) = SetEntryEntity(
         id = id,
         sessionExerciseId = sessionExerciseId,
         setIndex = 0,
         reps = 5,
         weightGrams = 100_000L,
-        setType = SetType.NORMAL,
+        setType = setType,
         rpeHalves = rpeHalves,
         note = null,
         completedAt = 1_000L,
