@@ -163,11 +163,14 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun tappingDone_opensTheProgressionPrompt_andWritesNothingUntilItIsAnswered() {
-        // ROADMAP N50: Done stops opening "How did that feel?" first. The question is now what the
-        // plan and the session earned, and answering it is what finishes the exercise.
+    fun withAPlan_tappingDone_opensTheProgressionPrompt_andWritesNothingUntilItIsAnswered() {
+        // ROADMAP N50: where a plan can answer it, Done opens the progression prompt, and answering
+        // it is what finishes the exercise.
         var finished: String? = null
-        setScreen(state(isFinished = false), actions = Actions(onFinishExercise = { finished = it }))
+        setScreen(
+            state(isFinished = false, progression = plannedPrompt()),
+            actions = Actions(onFinishExercise = { finished = it }),
+        )
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
 
@@ -176,6 +179,54 @@ class ActiveWorkoutScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).performClick()
 
+        assertEquals("se1", finished)
+    }
+
+    @Test
+    fun withNoPlan_tappingDone_isTheRatingPrompt_thatFinishesOnSave() {
+        // ROADMAP N50: no plan means no next step to decide, so Done stays the rating prompt it has
+        // always been (N8) rather than a prompt whose only answer is that it has nothing to say.
+        var rated: Rounding? = null
+        var finished: String? = null
+        setScreen(
+            state(isFinished = false),
+            actions = Actions(
+                onRateExercise = { id, feel, joints -> rated = Rounding(id, feel, joints) },
+                onFinishExercise = { finished = it },
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertExists()
+        assertEquals("nothing is written before the rating is settled", null, finished)
+
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("8")
+        composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
+
+        assertEquals(Rounding("se1", 8, emptyList()), rated)
+        assertEquals("se1", finished)
+    }
+
+    @Test
+    fun withNoPlan_skippingTheRating_stillFinishes() {
+        // Skipping the capture is what *Skip* says, and with no progression prompt behind it there is
+        // nothing left to answer.
+        var rated: Rounding? = null
+        var finished: String? = null
+        setScreen(
+            state(isFinished = false),
+            actions = Actions(
+                onRateExercise = { id, feel, joints -> rated = Rounding(id, feel, joints) },
+                onFinishExercise = { finished = it },
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.RATING_DISMISS).performClick()
+
+        assertEquals("skipping writes nothing", null, rated)
         assertEquals("se1", finished)
     }
 
@@ -488,8 +539,9 @@ class ActiveWorkoutScreenTest {
     private fun state(
         isFinished: Boolean,
         /**
-         * What *Done* opens with (ROADMAP N50). Empty by default, which is the no-plan case: the
-         * prompt still opens and says so, so every Done test goes through the same flow.
+         * What *Done* opens with (ROADMAP N50). Empty by default, which is the no-plan case: Done is
+         * then the rating prompt (N8). A test that wants the progression prompt passes one with a plan
+         * — [plannedPrompt] or [earnedPrompt].
          */
         progression: ProgressionPrompt = ProgressionPrompt(),
     ) = ActiveWorkoutUiState(
@@ -509,6 +561,22 @@ class ActiveWorkoutScreenTest {
                 progression = progression,
             ),
         ),
+    )
+
+    /**
+     * One exercise whose plan exists but earned no step: the prompt states it and offers nothing, so a
+     * test that wants the prompt can pass this rather than the earned one (N50).
+     */
+    private fun plannedPrompt(): ProgressionPrompt = ProgressionPrompt(
+        planned = ProgressionPlanSet(
+            setId = "ts-0",
+            setIndex = 0,
+            source = ProgressionSource.TEMPLATE,
+            targetWeightGrams = 100_000L,
+            targetRepsMax = 5,
+            targetRpeHalves = 8,
+        ),
+        performed = ProgressionPerformance(reps = 5, weightGrams = 100_000L, rpeHalves = 8),
     )
 
     /** One exercise whose plan asked 5 reps at RPE 8 and whose session answered at 7 (N50). */

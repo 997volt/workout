@@ -226,8 +226,9 @@ the rule; that one argues it.
   a percentage rule needs a true one-rep max this app estimates rather than measures, and
   a linear weekly add ignores missed sessions. Assisted work inverts the direction, and
   with no plan there is no ceiling. **Withdrawn**: N59 states the next set on the screen and leaves the
-  step to the lifter, so nothing computes a progression any more, and ROADMAP N50 owns what the app
-  should propose instead. ([evidence](DECISIONS-EVIDENCE.md#n22))
+  step to the lifter, so nothing computed a progression at the time; **N50 has since put one back at
+  *Done*, earned from the plan's own target RPE rather than from the rep ceiling** (below).
+  ([evidence](DECISIONS-EVIDENCE.md#n22))
 - **A suggestion carried its reason, and null meant "nothing to explain"** (N22, withdrawn by N59).
   Only the three progression reasons drew a line; a line on a plain prefill would have trained the user
   to ignore the line that mattered. With the offer withdrawn the lines are gone: nothing on the screen
@@ -237,6 +238,17 @@ the rule; that one argues it.
   decision taken without the person training, and this app is a log, not a coach.
 - **Warm-ups are excluded from progression too** (N17, N20, N22) — a warm-up is not the
   work a target is measured against.
+- **The progression is asked at *Done*, and the plan's own target RPE is what earns it** (N50). A plan's
+  working set carries a target RPE (N14, P3.8), and where **every** prescribed working set was performed
+  with its reps met at or under that target the session had room in hand, so *Done* offers the next step
+  as the lifter's choice: the smallest loadable step, or a rep. It is not N22's rule restored — that
+  computed from the rep ceiling alone and offered itself beside the next set, where this one is
+  conditioned on the session's own effort and waits to be asked. An unrated session or a plan with no
+  target RPE suggests nothing rather than guessing. **Where there is no plan there is no prompt at all**:
+  a next step is something only a plan can ask, so *Done* stays the rating prompt it has always been
+  (N8). **Accepting writes the plan** — the slot's prescription for a program start (P3.8), the
+  template's planned set for a direct one — because the plan is what the next run reads; a "next target"
+  stored on the session was rejected as the forward view N16 removed.
 
 - **A superset is a group of exercises performed in rounds** (N24). The model is a
   nullable `supersetGroup: Int?` ordinal on `session_exercises` and `template_exercises`; a

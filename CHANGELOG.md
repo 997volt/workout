@@ -69,7 +69,9 @@ repeated here.
   one — and this answers both. *Done* opens a **progression prompt** that states what the plan asked and
   what was done and, where the plan was answered with room in hand, offers the next step as the lifter's
   choice: the smallest loadable step, or a rep. *How did that feel?* is one action away on the same
-  prompt, and the inline rating row is untouched. **Earned** is narrow on purpose — the exercise came
+  prompt, and the inline rating row is untouched. **Where there is no plan there is no prompt at all** —
+  a next step is something only a plan can ask — so *Done* stays the rating prompt it has always been
+  (N8). **Earned** is narrow on purpose — the exercise came
   from a plan, every prescribed working set carried a target RPE, and each was performed with its reps
   met at or under that RPE; warm-ups are excluded, and an unrated session suggests nothing rather than
   guessing. Accepting writes the **plan** — the slot's prescription for a program start, the template's

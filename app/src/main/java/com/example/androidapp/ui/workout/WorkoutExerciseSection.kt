@@ -257,18 +257,18 @@ private fun ExerciseStateAction(
 }
 
 /**
- * The **Done** button for one exercise, and the prompt behind it (ROADMAP N7, N50).
+ * The **Done** button for one exercise, and the prompt behind it (ROADMAP N7, N8, N50).
  *
- * Done used to open *How did that feel?* first (N8); it opens the **progression prompt** now, which
- * states what the plan asked and what was done and — when the session earned one — offers the next
- * step as the lifter's choice. The rating is not lost: the prompt carries *How did that feel?* into
- * N8's own dialog, and the inline rating row (N10) stays where it is on the exercise.
+ * Where a plan can answer it, Done opens the **progression prompt** — what the plan asked, what was
+ * done, and the next step when the session earned one — and carries *How did that feel?* into N8's
+ * dialog. **Where there is no plan there is no next step to decide**, so Done is the rating prompt it
+ * has always been, and settling it (or skipping it) finishes the exercise: the prompt exists to answer
+ * something only a plan can ask.
  *
  * Owning the prompt here keeps the transient "form is open" state next to the button that opens it,
- * the shape [ReadinessSection] already uses. The rating is a detour from the prompt rather than a step
- * in finishing, so closing it hands the lifter back to the prompt they came from, where the step (or
- * the finish) still waits. Accepting a step writes the plan and finishes; *Not now* finishes without
- * writing, so doing neither is as available as doing either.
+ * the shape [ReadinessSection] already uses. From the progression prompt the rating is a detour rather
+ * than a step in finishing, so closing it hands the lifter back to the prompt they came from, where the
+ * step (or the finish) still waits.
  */
 @Composable
 private fun FinishExerciseAction(
@@ -279,9 +279,11 @@ private fun FinishExerciseAction(
 ) {
     var prompting by remember { mutableStateOf(false) }
     var rating by remember { mutableStateOf(false) }
+    // A plan is what the progression prompt reads, so no plan means no prompt (N50).
+    val hasPlan = row.progression.planned != null
 
     AppTextButton(
-        onClick = { prompting = true },
+        onClick = { if (hasPlan) prompting = true else rating = true },
         modifier = Modifier.testTag(TestTags.EXERCISE_DONE),
     ) {
         Text(stringResource(R.string.active_workout_done_exercise))
@@ -292,12 +294,16 @@ private fun FinishExerciseAction(
             initialMuscleFeel = row.muscleFeel,
             initialJoints = row.joints,
             isPrompt = true,
-            // Settling the rating returns to the prompt rather than finishing: it is the answer to a
-            // question the prompt asked, not the answer to the prompt itself.
-            onDismiss = { rating = false },
+            onDismiss = {
+                rating = false
+                // The rating is the whole prompt without a plan, so skipping it finishes; from the
+                // progression prompt it only closes the detour and hands the lifter back.
+                if (!hasPlan) onFinish(row.id)
+            },
             onSave = { feel, picked ->
                 rating = false
                 onRate(row.id, feel, picked)
+                if (!hasPlan) onFinish(row.id)
             },
         )
     } else if (prompting) {
