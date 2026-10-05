@@ -18,21 +18,6 @@ repeated here.
   plan could answer it, and it writes the plan — so a lifter who would rather the app did not edit a
   template on the way out of an exercise had no way to say so. Settings now carries *Ask about
   progression*, on by default. Off, *Done* just finishes the exercise; nothing is written to the plan.
-
-### Changed
-
-- **A program's screen is its days, one ⋮ each, and what a day trains is a tap away** (N72). Each slot
-  row carried an arrow for each direction and a delete icon, and the delete fired on the tap; they
-  are one menu now, in the same shape the workout and the template editor already use — each
-  direction offered only where it exists, the removal last, coloured, and behind a question that says
-  what leaves and what stays. Tapping a day's **name** opens a read-only view of what its template
-  actually trains: the exercises in order, each with the sets the plan wrote, drawn with the same line
-  the template editor uses and in that exercise's own unit. There is deliberately no way to edit a
-  plan from there — a program uses its template, and the template is edited in the template editor —
-  so the view is one question and one Close.
-
-### Added
-
 - **Weights can be shown and typed in pounds, app-wide or per exercise** (N64). Storage is unchanged
   — every weight is still whole grams — so this is presentation and nothing else: a stored value
   survives a switch exactly, and switching back shows the number it always did. Settings carries
@@ -56,30 +41,15 @@ repeated here.
   untouched. Two slots naming one template now share its plan *and* its progression — the deliberate
   reversal of P3.8's "the slot wins where it speaks" — while the last-time prefill stays that slot's
   own history.
-- **A warm-up records no RPE** (N67). The set editor offered the effort field for every role, so a
-  ramp could be written with a number the plan never asked of it — and read back as though the set had
-  been judged against one. The field is now absent while the role is *Warm-up*, what a save writes
-  drops the number even if the draft still held it, and the set's row and History stop printing one.
-  Migration 28→29 clears what was already stored: every logged warm-up's RPE, and the per-set target a
-  plan written before N59 still carries as its fallback. The plan's exercise-level target is left
-  alone, because that one belongs to the exercise's working sets.
-- **The RPE stepper has its own row, above *Log set*** (N68). It shared a row with the button that
-  commits the set, so the ± pair was squeezed into whatever the button left over and the control that
-  states the effort sat a thumb-width from the one that writes it. The row is full width now, its
-  number is the largest thing on it and keeps a fixed column, and *Log set* is the full-width row
-  below — the values it writes are still the ones above it.
-- **An exercise's *Done* moved to its foot, and is withheld until a set is logged** (N69). It sat in
-  the header beside the name, where it read as part of the title rather than as the last thing about
-  the exercise, and it was offered before there was any work to be done with. It now comes after the
-  sets and the rating, and an exercise with nothing logged has no action at all — the way past a
-  movement you did not do is the overflow's *Remove*, which asks first. *Reopen* keeps the same place,
-  so the foot of the block is where its state is decided either way.
-- **The plan's line states how many sets are left** (N70). It only spoke once the last planned set had
-  landed, so the stretch of the session the count would have been useful in — the sets still to write
-  — said nothing at all. It now reads *"2 planned sets left"* while one remains and falls back to
-  N52's *"Planned work done — log extra sets if you want them."* at zero, which is the state that
-  sentence was written for. The count and the *Log extra set* label share one rule, so they cannot
-  disagree about when the plan's work is finished.
+- **A program's screen is its days, one ⋮ each, and what a day trains is a tap away** (N72). Each slot
+  row carried an arrow for each direction and a delete icon, and the delete fired on the tap; they
+  are one menu now, in the same shape the workout and the template editor already use — each
+  direction offered only where it exists, the removal last, coloured, and behind a question that says
+  what leaves and what stays. Tapping a day's **name** opens a read-only view of what its template
+  actually trains: the exercises in order, each with the sets the plan wrote, drawn with the same line
+  the template editor uses and in that exercise's own unit. There is deliberately no way to edit a
+  plan from there — a program uses its template, and the template is edited in the template editor —
+  so the view is one question and one Close.
 - **A template's exercise actions live behind one ⋮, and removing one asks first** (N71). The row
   carried a *Superset with above* text link, two arrows and a delete icon; the live workout had
   already moved the same actions into a per-exercise overflow (N53). The template now draws that same
@@ -87,6 +57,30 @@ repeated here.
   component** used by both screens rather than a second copy, so the two cannot drift. Removal keeps
   the workout's guard: the planned sets go with the row and there is no undo to reach for, so it is a
   question rather than a tap.
+- **The plan's line states how many sets are left** (N70). It only spoke once the last planned set had
+  landed, so the stretch of the session the count would have been useful in — the sets still to write
+  — said nothing at all. It now reads *"2 planned sets left"* while one remains and falls back to
+  N52's *"Planned work done — log extra sets if you want them."* at zero, which is the state that
+  sentence was written for. The count and the *Log extra set* label share one rule, so they cannot
+  disagree about when the plan's work is finished.
+- **An exercise's *Done* moved to its foot, and is withheld until a set is logged** (N69). It sat in
+  the header beside the name, where it read as part of the title rather than as the last thing about
+  the exercise, and it was offered before there was any work to be done with. It now comes after the
+  sets and the rating, and an exercise with nothing logged has no action at all — the way past a
+  movement you did not do is the overflow's *Remove*, which asks first. *Reopen* keeps the same place,
+  so the foot of the block is where its state is decided either way.
+- **The RPE stepper has its own row, above *Log set*** (N68). It shared a row with the button that
+  commits the set, so the ± pair was squeezed into whatever the button left over and the control that
+  states the effort sat a thumb-width from the one that writes it. The row is full width now, its
+  number is the largest thing on it and keeps a fixed column, and *Log set* is the full-width row
+  below — the values it writes are still the ones above it.
+- **A warm-up records no RPE** (N67). The set editor offered the effort field for every role, so a
+  ramp could be written with a number the plan never asked of it — and read back as though the set had
+  been judged against one. The field is now absent while the role is *Warm-up*, what a save writes
+  drops the number even if the draft still held it, and the set's row and History stop printing one.
+  Migration 28→29 clears what was already stored: every logged warm-up's RPE, and the per-set target a
+  plan written before N59 still carries as its fallback. The plan's exercise-level target is left
+  alone, because that one belongs to the exercise's working sets.
 
 ### Removed
 

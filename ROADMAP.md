@@ -43,15 +43,18 @@ and is order-only, and more than one active program, which P3.12 allowed.
 Self-contained enough for this queue, and small enough that its decision is spelled out when it is
 picked up rather than now — so it is a wish, and gains an id when it graduates.
 
-- **An exercise's own default weight change.** 2.5 kg is one global constant rather than a property of
-  the movement: [`Weight.DEFAULT_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/Weight.kt)
-  steps the fields' +/− buttons, and
-  [`DEFAULT_PROGRESSION_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/model/ProgressionSuggestion.kt)
-  is what the warm-up ramp rounds to, so a machine that jumps 5 kg (or 1 kg) is always edited against a
-  step it does not have. The request is a per-exercise value beside `restSeconds` and `techniqueNote` on
-  [Exercise.kt](app/src/main/java/com/example/androidapp/domain/model/Exercise.kt), still 2.5 kg unless
-  it is set. Whether the ramp follows it too, or only the steppers, is the decision; the value is whole
-  grams and its column is a migration numbered as it ships.
+- **An exercise's own default weight change.** The step is one global pair of constants rather than a
+  property of the movement:
+  [`Weight.stepGrams`](app/src/main/java/com/example/androidapp/domain/Weight.kt) answers 2.5 kg or 5 lb
+  from the unit alone, steps the fields' +/− buttons, and is what the warm-up ramp and the progression
+  offer round to — so a machine that jumps 5 kg (or 1 kg) is still always edited against a step it does
+  not have. **N64 narrowed this rather than closing it**: the unit is answered for and the movement is
+  not, and the step now travels as an argument to the ramp and the offer instead of being read from a
+  constant at each call site, which is the seam this request wants. The request is a per-exercise value
+  beside `restSeconds` and `techniqueNote` on
+  [Exercise.kt](app/src/main/java/com/example/androidapp/domain/model/Exercise.kt), still the unit's own
+  step unless it is set. Whether the ramp follows it too, or only the steppers, is the decision; the
+  value is whole grams and its column is a migration numbered as it ships.
 
 ## Parked — deliberately not planned
 
@@ -75,7 +78,6 @@ non-goal is a line this app does not cross.
 | P5.3 | Monetization / Play Billing | There is a concrete reason to charge, and a willingness to take the Play-services dependency. |
 | P5.4 | Localization | A non-English user appears. |
 | P1.11 | Onboarding: goal, experience level, weekly target | This stops being a single-user local tool with one obvious user. It personalises defaults, and there are no defaults to personalise. |
-| P1.9 | kg/lb display setting | You start lifting in pounds. Storage is canonical grams, so this is display-only whenever it is wanted. |
 | P1.17 | Accessibility audit | The per-screen rule stops being enough — a real complaint on a device, or a screen that grew past ad-hoc tagging. The rule still applies to every change; only the sweep is parked. |
 | P2.5 | Progress photos | A visual record is actually wanted, and an encrypted-storage design for it is acceptable. |
 | P2.8 | Muscle-group balance warnings | Enough history exists for a rolling window to say something true rather than something plausible. |
