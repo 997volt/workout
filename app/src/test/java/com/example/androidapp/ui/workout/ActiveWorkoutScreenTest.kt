@@ -21,6 +21,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -518,6 +519,22 @@ class ActiveWorkoutScreenTest {
         setScreen(state(isFinished = false))
 
         composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertExists()
+    }
+
+    @Test
+    fun theRpeField_isItsOwnRow_aboveTheLogButton() {
+        // ROADMAP N68: the ± pair shared a row with *Log set*, which squeezed the field into whatever
+        // the button did not take and put the control that commits the set a thumb-width from the one
+        // that states the effort. They are separate rows now, so the field ends above the button.
+        setScreen(state(isFinished = false))
+
+        val rpe = composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).getUnclippedBoundsInRoot()
+        val log = composeTestRule.onNodeWithTag(TestTags.SET_LOG).getUnclippedBoundsInRoot()
+
+        assertTrue(
+            "the RPE field must end above the Log set button, not beside it",
+            rpe.bottom <= log.top,
+        )
     }
 
     @Test

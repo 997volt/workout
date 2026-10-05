@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.Load
@@ -231,7 +234,9 @@ internal fun SetRpeField(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            // The whole row is a touch target's height rather than the text's, so the ± buttons and
+            // the number between them are one comfortable control (N68).
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -247,8 +252,12 @@ internal fun SetRpeField(
             )
             Text(
                 text = valueText,
-                style = MaterialTheme.typography.labelLarge,
+                // The number is what the control is for, so it is the largest thing in the row and
+                // keeps a fixed column even when it reads *Not recorded* (N68).
+                style = MaterialTheme.typography.titleMedium,
+                textAlign = TextAlign.Center,
                 modifier = Modifier
+                    .widthIn(min = 56.dp)
                     .testTag(tags.rpe)
                     .semantics { contentDescription = spokenValue },
             )

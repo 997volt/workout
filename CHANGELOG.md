@@ -28,6 +28,11 @@ repeated here.
   Migration 28→29 clears what was already stored: every logged warm-up's RPE, and the per-set target a
   plan written before N59 still carries as its fallback. The plan's exercise-level target is left
   alone, because that one belongs to the exercise's working sets.
+- **The RPE stepper has its own row, above *Log set*** (N68). It shared a row with the button that
+  commits the set, so the ± pair was squeezed into whatever the button left over and the control that
+  states the effort sat a thumb-width from the one that writes it. The row is full width now, its
+  number is the largest thing on it and keeps a fixed column, and *Log set* is the full-width row
+  below — the values it writes are still the ones above it.
 
 ### Removed
 

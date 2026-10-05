@@ -471,38 +471,33 @@ private fun NextSetEditor(
                 optionTag = { role -> TestTags.exercisePendingRole(row.id, role) },
             )
             SetEntryNumbers(draft = draft, onDraftChange = { draft = it })
-            // The button sits beside the last field, so the values it writes are the ones under the
-            // thumb that taps it.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            // A warm-up has no effort to state, so the field is not offered at all rather than
+            // shown disabled: a control that cannot write is worse than no control (N67). The
+            // role picker above is what brings it back.
+            if (draft.setType.recordsEffort) {
+                // Full width on its own row (N68). It used to share one with *Log set*, which left
+                // the ± pair squeezed into whatever the button did not take and put the control that
+                // commits the set a thumb-width from the one that states the effort. Now the button
+                // is the row below, and every value it writes is still above it.
+                SetRpeField(
+                    draft = draft,
+                    onDraftChange = { draft = it },
+                    targetRpeHalves = suggestion.targetRpeHalves,
+                )
+            }
+            FilledTonalButton(
+                onClick = { onLogSet(draft.toEdit()) },
+                enabled = values.isComplete,
+                modifier = Modifier.fillMaxWidth().testTag(TestTags.SET_LOG),
             ) {
-                // A warm-up has no effort to state, so the field is not offered at all rather than
-                // shown disabled: a control that cannot write is worse than no control (N67). The
-                // role picker above is what brings it back.
-                if (draft.setType.recordsEffort) {
-                    SetRpeField(
-                        draft = draft,
-                        onDraftChange = { draft = it },
-                        targetRpeHalves = suggestion.targetRpeHalves,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                FilledTonalButton(
-                    onClick = { onLogSet(draft.toEdit()) },
-                    enabled = values.isComplete,
-                    modifier = Modifier.testTag(TestTags.SET_LOG),
-                ) {
-                    // The plan's work is done, so the label stops promising a target the plan no
-                    // longer names (ROADMAP N52). Logging an extra set is what the control still
-                    // does — nothing closes, and the way to end the exercise is Done.
-                    Text(
-                        stringResource(
-                            if (row.isPastPlan) R.string.set_log_extra else R.string.set_log,
-                        ),
-                    )
-                }
+                // The plan's work is done, so the label stops promising a target the plan no
+                // longer names (ROADMAP N52). Logging an extra set is what the control still
+                // does — nothing closes, and the way to end the exercise is Done.
+                Text(
+                    stringResource(
+                        if (row.isPastPlan) R.string.set_log_extra else R.string.set_log,
+                    ),
+                )
             }
         }
     }
