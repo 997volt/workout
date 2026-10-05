@@ -272,6 +272,8 @@ class WorkoutDetailViewModelTest {
             sessionExerciseId: String,
             reps: Int,
             weightGrams: Long,
+            rpeHalves: Int?,
+            note: String?,
             setType: com.example.androidapp.domain.model.SetType,
             assistanceGrams: Long,
         ): DataResult<Unit> = unused()

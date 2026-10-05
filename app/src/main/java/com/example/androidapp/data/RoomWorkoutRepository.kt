@@ -392,9 +392,16 @@ class RoomWorkoutRepository @Inject constructor(
         sessionExerciseId: String,
         reps: Int,
         weightGrams: Long,
+        rpeHalves: Int?,
+        note: String?,
         setType: SetType,
         assistanceGrams: Long,
     ): DataResult<Unit> = dataResultOf {
+        // The screen's field is the real guard; this is the boundary that keeps an
+        // out-of-range value from reaching the database (ROADMAP N6).
+        if (!Rpe.isValid(rpeHalves)) {
+            throw InvalidInputException("RPE must be between 1 and 10, in half steps.")
+        }
         // A stale screen can hold an id for an exercise that was removed, or whose
         // session was already finished. Writing anyway would file the set under
         // history the user cannot reach, so this fails as NotFound instead.
@@ -415,6 +422,12 @@ class RoomWorkoutRepository @Inject constructor(
                 // a weight that subtracts (ROADMAP N15).
                 assistanceGrams = assistanceGrams.coerceAtLeast(0L),
                 setType = setType,
+                // What the set felt like, written with the set rather than after it: the
+                // inline fields are on screen before *Log set*, so they are part of what it
+                // commits (N59), and an undo puts back what the deleted row carried (N6).
+                rpeHalves = rpeHalves,
+                // A cleared comment is null, not "": one representation of nothing.
+                note = note?.trim()?.ifEmpty { null },
                 completedAt = now,
                 createdAt = now,
                 updatedAt = now,

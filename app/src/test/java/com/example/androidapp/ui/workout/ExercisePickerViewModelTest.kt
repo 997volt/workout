@@ -406,6 +406,8 @@ class ExercisePickerViewModelTest {
             sessionExerciseId: String,
             reps: Int,
             weightGrams: Long,
+            rpeHalves: Int?,
+            note: String?,
             setType: SetType,
         assistanceGrams: Long,
         ): DataResult<Unit> = unused()

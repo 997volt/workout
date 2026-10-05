@@ -100,6 +100,14 @@ repeated here.
   keeps its value and a backup written before the change still restores whole. A reader prefers the
   exercise's number and falls back to the set's, so an old file behaves as it did.
 
+### Fixed
+
+- **A set logged from the screen keeps the RPE and the comment it was given** (no feature id). The
+  inline fields are stated before *Log set*, but the write path had no parameter for either, so what
+  they said never reached the row — and *Undo* on a deleted set dropped the same two values as it put
+  the row back. The log path now takes both, required rather than defaulted so a caller cannot lose
+  them by forgetting.
+
 ### Removed
 
 - **The library's overflow menu is gone, and with it the *Workout history* link** (no feature id). The

@@ -755,6 +755,10 @@ class ActiveWorkoutViewModel @Inject constructor(
                 sessionExerciseId = sessionExerciseId,
                 reps = edit.reps,
                 weightGrams = edit.weightGrams,
+                // What the fields hold is what *Log set* writes (N59, N6). Leaving these out is what
+                // made every inline set come back with no effort recorded.
+                rpeHalves = edit.rpeHalves,
+                note = edit.note,
                 setType = edit.setType,
                 assistanceGrams = edit.assistanceGrams,
             )
@@ -894,8 +898,11 @@ class ActiveWorkoutViewModel @Inject constructor(
                     sessionExerciseId = set.sessionExerciseId,
                     reps = set.reps,
                     weightGrams = set.weightGrams,
+                    // An undo puts back the set that was deleted, help included (B7) — and what the row
+                    // said about itself, which is its RPE and comment (N6).
+                    rpeHalves = set.rpeHalves,
+                    note = set.note,
                     setType = set.setType,
-                    // An undo puts back the set that was deleted, help included (B7).
                     assistanceGrams = set.assistanceGrams,
                 ),
             )

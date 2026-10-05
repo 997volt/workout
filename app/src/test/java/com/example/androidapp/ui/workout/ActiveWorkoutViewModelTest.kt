@@ -1676,6 +1676,8 @@ class ActiveWorkoutViewModelTest {
             sessionExerciseId: String,
             reps: Int,
             weightGrams: Long,
+            rpeHalves: Int?,
+            note: String?,
             setType: SetType,
         assistanceGrams: Long,
         ): DataResult<Unit> {
@@ -1690,6 +1692,10 @@ class ActiveWorkoutViewModelTest {
                 // Without this the fake silently dropped the help, which is how B7's
                 // fix could have gone unnoticed by its own test.
                 assistanceGrams = assistanceGrams,
+                // The same for the effort and the comment: the screen states both before
+                // *Log set*, so a fake that drops them hides the write path losing them (N6, N59).
+                rpeHalves = rpeHalves,
+                note = note,
             )
             return DataResult.Success(Unit)
         }

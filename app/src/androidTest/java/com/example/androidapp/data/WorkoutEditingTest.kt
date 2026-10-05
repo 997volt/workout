@@ -175,7 +175,13 @@ class WorkoutEditingTest {
         seedOpenWorkoutWithASet()
         repository.finishExercise("se1")
 
-        val result = repository.logSet("se1", reps = 5, weightGrams = 100_000L)
+        val result = repository.logSet(
+            "se1",
+            reps = 5,
+            weightGrams = 100_000L,
+            rpeHalves = null,
+            note = null,
+        )
 
         assertEquals(DataError.NotFound, (result as DataResult.Failure).error)
         assertEquals("the refused set must not be written", 1, database.backupDao().allSets().size)
@@ -192,7 +198,57 @@ class WorkoutEditingTest {
         assertNull(
             database.workoutDao().observeSessionExerciseDetails(sessionId).first().single().finishedAt,
         )
-        assertTrue(repository.logSet("se1", reps = 5, weightGrams = 100_000L) is DataResult.Success)
+        assertTrue(
+            repository.logSet(
+                "se1",
+                reps = 5,
+                weightGrams = 100_000L,
+                rpeHalves = null,
+                note = null,
+            ) is DataResult.Success,
+        )
+    }
+
+    @Test
+    fun aLoggedSet_keepsTheRpeAndCommentItWasGiven() = runTest {
+        // N6, N59: the inline fields are on screen before *Log set*, so what they state is what the
+        // write has to carry. It did not — `logSet` had no such parameters, so every set logged from
+        // the screen came back with no effort recorded, and undoing a delete lost the comment too.
+        seedOpenWorkoutWithASet()
+
+        val result = repository.logSet(
+            sessionExerciseId = "se1",
+            reps = 8,
+            weightGrams = 100_000L,
+            rpeHalves = 19,
+            note = "  grinder  ",
+        )
+
+        assertTrue(result is DataResult.Success)
+        val logged = database.backupDao().allSets().single { it.setIndex == 1 }
+        assertEquals(19, logged.rpeHalves ?: 0)
+        assertEquals("a cleared comment is null, not whitespace", "grinder", logged.note)
+    }
+
+    @Test
+    fun anRpeOffTheScale_isRefusedRatherThanStored() = runTest {
+        // The field is the real guard; this is the boundary behind it (N6).
+        seedOpenWorkoutWithASet()
+
+        val result = repository.logSet(
+            sessionExerciseId = "se1",
+            reps = 8,
+            weightGrams = 100_000L,
+            rpeHalves = 21,
+            note = null,
+        )
+
+        assertTrue(result is DataResult.Failure)
+        assertEquals(
+            "nothing half a step off the scale reaches the database",
+            1,
+            database.backupDao().allSets().size,
+        )
     }
 
     @Test
@@ -447,6 +503,8 @@ class WorkoutEditingTest {
             sessionExerciseId = "se1",
             reps = 8,
             weightGrams = 0L,
+            rpeHalves = null,
+            note = null,
             assistanceGrams = 20_000L,
         )
 

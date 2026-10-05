@@ -177,11 +177,20 @@ interface WorkoutRepository {
     /** Soft-deletes the session and everything in it. */
     suspend fun deleteSession(sessionId: String): DataResult<Unit>
 
-    /** Logs a set at the end of [sessionExerciseId] (P1.3). */
+    /**
+     * Logs a set at the end of [sessionExerciseId] (P1.3).
+     *
+     * [rpeHalves] and [note] are required rather than defaulted, for [updateSet]'s reason: the caller
+     * states what the set is, so a screen that shows an effort cannot forget to write it. The inline
+     * *Log set* did exactly that — the field had a number and every set it wrote came back with none
+     * (N59).
+     */
     suspend fun logSet(
         sessionExerciseId: String,
         reps: Int,
         weightGrams: Long,
+        rpeHalves: Int?,
+        note: String?,
         setType: SetType = SetType.NORMAL,
         /** The machine's assistance, as a magnitude (ROADMAP N15). */
         assistanceGrams: Long = 0,
