@@ -33,6 +33,12 @@ repeated here.
   states the effort sat a thumb-width from the one that writes it. The row is full width now, its
   number is the largest thing on it and keeps a fixed column, and *Log set* is the full-width row
   below — the values it writes are still the ones above it.
+- **An exercise's *Done* moved to its foot, and is withheld until a set is logged** (N69). It sat in
+  the header beside the name, where it read as part of the title rather than as the last thing about
+  the exercise, and it was offered before there was any work to be done with. It now comes after the
+  sets and the rating, and an exercise with nothing logged has no action at all — the way past a
+  movement you did not do is the overflow's *Remove*, which asks first. *Reopen* keeps the same place,
+  so the foot of the block is where its state is decided either way.
 
 ### Removed
 

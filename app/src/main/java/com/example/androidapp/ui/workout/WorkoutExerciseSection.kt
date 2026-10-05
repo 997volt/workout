@@ -146,7 +146,8 @@ internal fun ExerciseList(
  * ROADMAP N7 adds the third state this renders — open, or done. A done exercise
  * keeps its sets on screen, dimmed and non-editable, offers **Reopen** instead of
  * **Done**, and loses its next-set fields; the wording avoids *Finish*, which is the
- * workout-level action.
+ * workout-level action. N69 moved that action to the foot of the block and withdrew
+ * *Done* entirely until the exercise has a set to finish.
  */
 @Composable
 private fun ExerciseSection(
@@ -181,13 +182,6 @@ private fun ExerciseSection(
                 restTimerEnabled = restTimerEnabled,
                 defaultRestSeconds = defaultRestSeconds,
                 modifier = Modifier.weight(1f),
-            )
-            ExerciseStateAction(
-                row = row,
-                onReopenExercise = onReopenExercise,
-                onFinishExercise = onFinishExercise,
-                onAcceptProgression = onAcceptProgression,
-                progressionPromptEnabled = progressionPromptEnabled,
             )
             // The rare actions moved in here rather than sitting on the header (ROADMAP N53): the
             // header is read constantly mid-session, and a text link in every one of them cost more
@@ -228,14 +222,32 @@ private fun ExerciseSection(
             legacyJointPainNote = row.jointPainNote,
             onRate = { feel, joints -> onRateExercise(row.id, feel, joints) },
         )
+
+        // The exercise's own action lives at its foot (N69), after everything that belongs to it: a
+        // header button was read as part of the title, and *Done* is the last thing about this
+        // exercise rather than the first.
+        ExerciseStateAction(
+            row = row,
+            onReopenExercise = onReopenExercise,
+            onFinishExercise = onFinishExercise,
+            onAcceptProgression = onAcceptProgression,
+            progressionPromptEnabled = progressionPromptEnabled,
+            modifier = Modifier.padding(top = 8.dp),
+        )
     }
 }
 
 /**
- * The header's state action: **Reopen** on a done exercise, **Done** on an open one (ROADMAP N7).
+ * The exercise's state action, rendered at its foot: **Reopen** on a done exercise, **Done** on one
+ * that has something to finish (ROADMAP N7, N69).
  *
  * Split out of [ExerciseSection] because the choice belongs to the row's *state* rather than to its
  * content, and because the section around it is at the length this project allows.
+ *
+ * **An exercise with nothing logged has no action at all** (N69). *Done* says the work is over, and
+ * there is no work to be over before a set exists; the way past an exercise you did not do is the
+ * overflow's *Remove*, which asks before it takes anything. Reopen keeps the same place as Done, so
+ * the foot of the block is where its state is decided either way.
  */
 @Composable
 private fun ExerciseStateAction(
@@ -244,20 +256,24 @@ private fun ExerciseStateAction(
     onFinishExercise: (String) -> Unit,
     onAcceptProgression: (String, ProgressionDirection) -> Unit,
     progressionPromptEnabled: Boolean,
+    modifier: Modifier = Modifier,
 ) {
-    if (row.isFinished) {
-        AppTextButton(
+    when {
+        row.isFinished -> AppTextButton(
             onClick = onReopenExercise,
-            modifier = Modifier.testTag(TestTags.EXERCISE_REOPEN),
+            modifier = modifier.testTag(TestTags.EXERCISE_REOPEN),
         ) {
             Text(stringResource(R.string.active_workout_reopen))
         }
-    } else {
-        FinishExerciseAction(
+
+        row.sets.isEmpty() -> Unit
+
+        else -> FinishExerciseAction(
             row = row,
             onFinish = onFinishExercise,
             onAcceptProgression = onAcceptProgression,
             progressionPromptEnabled = progressionPromptEnabled,
+            modifier = modifier,
         )
     }
 }
@@ -282,6 +298,7 @@ private fun FinishExerciseAction(
     onFinish: (String) -> Unit,
     onAcceptProgression: (String, ProgressionDirection) -> Unit,
     progressionPromptEnabled: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     var prompting by remember { mutableStateOf(false) }
     // A plan is what the progression prompt reads (N50), and the setting is what asks for it (N66).
@@ -289,7 +306,7 @@ private fun FinishExerciseAction(
 
     AppTextButton(
         onClick = { if (prompts) prompting = true else onFinish(row.id) },
-        modifier = Modifier.testTag(TestTags.EXERCISE_DONE),
+        modifier = modifier.testTag(TestTags.EXERCISE_DONE),
     ) {
         Text(stringResource(R.string.active_workout_done_exercise))
     }

@@ -387,6 +387,12 @@ the rule; that one argues it.
   **absent** for a warm-up rather than disabled: a control that cannot write invites a tap that does
   nothing. Migration 28→29 clears the numbers already stored — logged and planned alike — while the
   plan's exercise-level target stays, because it belongs to the exercise's working sets.
+- **An exercise is finished at its foot, and only once it has a set** (N69). *Done* says the work is
+  over, so it is withheld until there is work: an exercise with nothing logged offers no action at all,
+  and the way past a movement you did not do is the overflow's *Remove*, which keeps its confirmation.
+  The action sits below the sets and the rating rather than in the header, where it read as part of the
+  title instead of the last thing about the exercise. *Reopen* keeps the same place on a done one, so
+  one position answers "what is this exercise's state" rather than two.
 
 - **A destination belongs in the action row, and a heading does not carry a way out of itself**
   (N42). Programs moved from the home overflow into the pair above the start pill, and "See all

@@ -147,25 +147,54 @@ class ActiveWorkoutScreenTest {
     fun anOpenExercise_offersDone_andItsLogSetButton() {
         setScreen(state(isFinished = false))
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_REOPEN).assertDoesNotExist()
         // The fields stating the next set, and the button that writes them (N59).
         composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertExists()
         composeTestRule.onNodeWithText("Log set").assertExists()
-        // N5's cue, on the screen it was added for.
-        composeTestRule.onNodeWithText("Brace, sit back").assertIsDisplayed()
+        // N5's cue, on the screen it was added for. Existence rather than "displayed": the block is
+        // taller than Robolectric's window now that Done sits at its foot (N69), and the click above
+        // scrolls the cue out of view.
+        composeTestRule.onNodeWithText("Brace, sit back").assertExists()
     }
 
     @Test
     fun aDoneExercise_hidesLogSet_andOffersReopen() {
         setScreen(state(isFinished = true))
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_REOPEN).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_REOPEN).performScrollTo().assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_FINISHED_LABEL).assertIsDisplayed()
         // The accident N7 exists to prevent: no way to add another set, and no fields stating one.
         composeTestRule.onNodeWithTag(TestTags.SET_LOG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertDoesNotExist()
+    }
+
+    @Test
+    fun anExerciseWithNothingLogged_isNotOfferedDone() {
+        // ROADMAP N69: *Done* says the work is over, and there is no work before a set exists. The way
+        // past an exercise you did not do is the overflow's Remove, which asks before it takes.
+        setScreen(state(isFinished = false, sets = emptyList()))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_REOPEN).assertDoesNotExist()
+        // Still open, and still able to log: it simply has nothing to finish yet.
+        composeTestRule.onNodeWithTag(TestTags.SET_LOG).assertExists()
+    }
+
+    @Test
+    fun done_isAtTheFoot_ofTheExercise() {
+        // N69 moved the action off the header, where it read as part of the title. It now comes after
+        // everything that belongs to the exercise — the next-set fields above it included.
+        setScreen(state(isFinished = false))
+
+        val fields = composeTestRule.onNodeWithTag(TestTags.SET_LOG).getUnclippedBoundsInRoot()
+        val done = composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).getUnclippedBoundsInRoot()
+
+        assertTrue(
+            "Done must sit at the exercise's foot, below the fields it follows",
+            done.top >= fields.bottom,
+        )
     }
 
     @Test
@@ -178,7 +207,7 @@ class ActiveWorkoutScreenTest {
             actions = Actions(onFinishExercise = { finished = it }),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
 
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertExists()
         assertEquals(null, finished)
@@ -202,7 +231,7 @@ class ActiveWorkoutScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
 
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertDoesNotExist()
@@ -225,7 +254,7 @@ class ActiveWorkoutScreenTest {
             progressionPromptEnabled = false,
         )
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
 
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertDoesNotExist()
         assertEquals("se1", finished)
@@ -240,7 +269,7 @@ class ActiveWorkoutScreenTest {
             actions = Actions(onAcceptProgression = { id, direction -> accepted = id to direction }),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_REPS).performClick()
 
         assertEquals("se1" to ProgressionDirection.REPS, accepted)
@@ -258,7 +287,7 @@ class ActiveWorkoutScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
 
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertExists()
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertDoesNotExist()
@@ -346,7 +375,7 @@ class ActiveWorkoutScreenTest {
         var reopened: String? = null
         setScreen(state(isFinished = true), actions = Actions(onReopenExercise = { reopened = it }))
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_REOPEN).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_REOPEN).performScrollTo().performClick()
 
         assertEquals("se1", reopened)
     }
@@ -560,6 +589,8 @@ class ActiveWorkoutScreenTest {
         progression: ProgressionPrompt = ProgressionPrompt(),
         /** What the next-set fields open on (N59); a warm-up role withholds the RPE field (N67). */
         suggestion: SetSuggestion = SetSuggestion(reps = 5, weightGrams = 100_000),
+        /** What the exercise has logged; empty is the state *Done* is withheld in (N69). */
+        sets: List<SetRow> = listOf(SetRow(id = "set1", number = 1, reps = 5, weightGrams = 100_000)),
     ) = ActiveWorkoutUiState(
         isLoading = false,
         sessionId = "s1",
@@ -572,7 +603,7 @@ class ActiveWorkoutScreenTest {
                 subtitle = "Quads · Barbell",
                 techniqueNote = "Brace, sit back",
                 isFinished = isFinished,
-                sets = listOf(SetRow(id = "set1", number = 1, reps = 5, weightGrams = 100_000)),
+                sets = sets,
                 suggestion = suggestion,
                 progression = progression,
             ),
@@ -925,7 +956,8 @@ class ActiveWorkoutScreenTest {
         // is brought into view.
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_LIST)
             .performScrollToNode(hasTestTag(TestTags.exerciseMenu("se2")))
-        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se2")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se2"))
+            .performSemanticsAction(SemanticsActions.OnClick)
         composeTestRule.onNodeWithText("Leave the superset").assertExists()
         composeTestRule.onNodeWithTag(TestTags.supersetToggle("se2")).performClick()
 
@@ -952,7 +984,10 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.exerciseMove("se1", up = false)).performClick()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_LIST)
             .performScrollToNode(hasTestTag(TestTags.exerciseMenu("se2")))
-        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se2")).performClick()
+        // Invoked through the semantics action rather than a tap: the ⋮ of the *second* row lands under
+        // the extended FAB after the minimal scroll, and a swallowed tap would read as a missing entry.
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se2"))
+            .performSemanticsAction(SemanticsActions.OnClick)
         composeTestRule.onNodeWithTag(TestTags.exerciseMove("se2", up = true)).performClick()
 
         assertEquals(listOf("se1" to 1, "se2" to -1), moved)
@@ -977,7 +1012,10 @@ class ActiveWorkoutScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_LIST)
             .performScrollToNode(hasTestTag(TestTags.exerciseMenu("se2")))
-        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se2")).performClick()
+        // Invoked through the semantics action rather than a tap: the ⋮ of the *second* row lands under
+        // the extended FAB after the minimal scroll, and a swallowed tap would read as a missing entry.
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se2"))
+            .performSemanticsAction(SemanticsActions.OnClick)
         composeTestRule.onNodeWithTag(TestTags.exerciseMove("se2", up = false)).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.exerciseMove("se2", up = true)).assertExists()
     }
