@@ -8,6 +8,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -38,6 +42,8 @@ class ProgramEditorScreenTest {
         onSetSlotWeekday: (String, DayOfWeek?) -> Unit = { _, _ -> },
         onMoveSlot: (String, Int) -> Unit = { _, _ -> },
         onRemoveSlot: (String) -> Unit = {},
+        onPreviewSlot: (String, String) -> Unit = { _, _ -> },
+        onClosePreview: () -> Unit = {},
         onDeleteProgram: () -> Unit = {},
         onExportProgram: () -> Unit = {},
     ) {
@@ -50,6 +56,8 @@ class ProgramEditorScreenTest {
                 onSetSlotWeekday = onSetSlotWeekday,
                 onMoveSlot = onMoveSlot,
                 onRemoveSlot = onRemoveSlot,
+                onPreviewSlot = onPreviewSlot,
+                onClosePreview = onClosePreview,
                 onDeleteProgram = onDeleteProgram,
                 onExportProgram = onExportProgram,
                 onBack = {},
@@ -155,22 +163,116 @@ class ProgramEditorScreenTest {
 
     @Test
     fun movingASlot_carriesItsDirection() {
+        // ROADMAP N72: the order moved behind the row's ⋮, so reaching a direction means opening it.
         val moved = mutableListOf<Pair<String, Int>>()
         setScreen(onMoveSlot = { id, delta -> moved += id to delta })
 
+        composeTestRule.onNodeWithTag(TestTags.Programs.slotMenu("s1")).performClick()
         composeTestRule.onNodeWithTag(TestTags.Programs.move("s1", up = false)).performClick()
 
         assertThat(moved).containsExactly("s1" to 1)
     }
 
     @Test
-    fun removingASlot_asksTheEditorToRemoveThatOne() {
+    fun aDirectionWithNowhereToGo_isNotOffered() {
+        // The first slot has nothing above it and the last nothing below, so the entry is absent
+        // rather than present-and-inert — the shape the workout's menu already uses (N54, N72).
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.slotMenu("s1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.move("s1", up = true)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Programs.move("s1", up = false)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.slotMenu("s2")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.move("s2", up = false)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Programs.move("s2", up = true)).assertExists()
+    }
+
+    @Test
+    fun removingASlot_asksFirst_andReportsThatOneOnConfirm() {
+        // N72: the schedule loses a day, so it is a question rather than a tap.
         var removed: String? = null
         setScreen(onRemoveSlot = { removed = it })
 
+        composeTestRule.onNodeWithTag(TestTags.Programs.slotMenu("s2")).performClick()
         composeTestRule.onNodeWithTag(TestTags.Programs.removeSlot("s2")).performClick()
+        assertThat(removed).isNull()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.SLOT_REMOVE_CONFIRM).performClick()
 
         assertThat(removed).isEqualTo("s2")
+    }
+
+    @Test
+    fun cancellingARemoval_writesNothing() {
+        var removed: String? = null
+        setScreen(onRemoveSlot = { removed = it })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.slotMenu("s2")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.removeSlot("s2")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.SLOT_REMOVE_CANCEL).performClick()
+
+        assertThat(removed).isNull()
+    }
+
+    @Test
+    fun tappingASlotsName_opensWhatItsTemplateTrains() {
+        // ROADMAP N72: the name is the way in, and what it opens is read-only — the template is
+        // edited in the template editor, not here.
+        var asked: Pair<String, String>? = null
+        setScreen(onPreviewSlot = { id, name -> asked = id to name })
+
+        composeTestRule.onNodeWithText("Heavy lower").performClick()
+
+        assertThat(asked).isEqualTo("t1" to "Heavy lower")
+    }
+
+    @Test
+    fun thePreview_listsTheTemplatesExercises_andItsSets() {
+        var closed = false
+        setScreen(
+            onClosePreview = { closed = true },
+            state = twoSlots.copy(
+                preview = SlotPreview(
+                    templateName = "Heavy lower",
+                    exercises = listOf(
+                        TemplateExercise(
+                            id = "te1",
+                            templateId = "t1",
+                            exerciseId = "back-squat",
+                            position = 0,
+                            exerciseName = "Back Squat",
+                            primaryMuscle = MuscleGroup.QUADS,
+                            equipment = Equipment.BARBELL,
+                            sets = listOf(
+                                TemplateSet(
+                                    id = "ts1",
+                                    templateExerciseId = "te1",
+                                    setIndex = 0,
+                                    targetWeightGrams = 100_000L,
+                                    targetRepsMax = 3,
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.PREVIEW).assertExists()
+        composeTestRule.onNodeWithText("Back Squat").assertExists()
+        // The same line the template editor draws, in the exercise's own unit (N64, N72).
+        composeTestRule.onNodeWithText("100 kg", substring = true).assertExists()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.PREVIEW_CLOSE).performClick()
+        assertThat(closed).isTrue()
+    }
+
+    @Test
+    fun thePreview_saysSo_whenTheTemplatePlansNothing() {
+        setScreen(state = twoSlots.copy(preview = SlotPreview(templateName = "Empty day", exercises = emptyList())))
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.PREVIEW_EMPTY).assertExists()
     }
 
     @Test

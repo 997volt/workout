@@ -7,6 +7,7 @@ import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.repository.ProgramRepository
@@ -19,9 +20,24 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/**
+ * What one slot's template prescribes, as the preview shows it (ROADMAP N72).
+ *
+ * The exercises in the template's own order, each with the sets the plan wrote. Nothing here is
+ * editable, so there is no draft beside it.
+ */
+data class SlotPreview(
+    val templateName: String,
+    val exercises: List<TemplateExercise>,
+)
 
 data class ProgramEditorUiState(
     val isLoading: Boolean = true,
@@ -36,6 +52,14 @@ data class ProgramEditorUiState(
      * is up to, derived from what was done rather than stored.
      */
     val runSlotId: String? = null,
+    /**
+     * The template one slot points at, being read rather than edited, or null (ROADMAP N72).
+     *
+     * A preview and not an editor: the template is edited in the template editor, and a program is a
+     * schedule over it. Tapping the name is how a lifter checks what a day actually does without
+     * leaving the program.
+     */
+    val preview: SlotPreview? = null,
     val error: DataError? = null,
 ) {
     /** The program was deleted, or never existed — either way there is no editor. */
@@ -65,20 +89,64 @@ class ProgramEditorViewModel @Inject constructor(
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted
 
+    /**
+     * The slot the preview is showing, or null (ROADMAP N72).
+     *
+     * The name travels with the id: the slot already holds it, and reading the templates list again
+     * to find it would be a second subscription for a string the caller has.
+     */
+    private data class PreviewRequest(val templateId: String, val templateName: String)
+
+    private val previewRequest = MutableStateFlow<PreviewRequest?>(null)
+
+    /**
+     * What the preview shows, read only while a slot is open.
+     *
+     * The exercise flow is what the template editor draws, so a plan edited there is what this
+     * shows the next time it is opened — which is the point of a preview over a copy.
+     */
+    private val preview: Flow<SlotPreview?> = previewRequest.flatMapLatest { request ->
+        if (request == null) {
+            flowOf(null)
+        } else {
+            templateRepository.observeExercises(request.templateId).map { exercises ->
+                SlotPreview(templateName = request.templateName, exercises = exercises)
+            }
+        }
+    }
+
+    /**
+     * The two things this editor overlays on the program: the open preview and the run's place
+     * (ROADMAP N72, P3.9).
+     *
+     * Kept together so the state combine stays at the arity the rest of the screen uses — which is
+     * the shape N73 deleted when there was only one of them.
+     */
+    private data class EditorExtras(
+        val preview: SlotPreview?,
+        val runSlotId: String?,
+    )
+
+    private val extras: Flow<EditorExtras> =
+        combine(preview, repository.observeProgramRun(programId)) { open, run ->
+            EditorExtras(preview = open, runSlotId = run?.slot?.id)
+        }
+
     /** The program, its slots, the templates to add, and where the run is (ROADMAP P3.3, P3.9). */
     val uiState: StateFlow<ProgramEditorUiState> = combine(
         repository.observeProgram(programId),
         repository.observeSlots(programId),
         templateRepository.observeTemplates(),
         error,
-        repository.observeProgramRun(programId),
-    ) { program, slots, templates, currentError, run ->
+        extras,
+    ) { program, slots, templates, currentError, open ->
         ProgramEditorUiState(
             isLoading = false,
             program = program,
             slots = slots,
             templates = templates,
-            runSlotId = run?.slot?.id,
+            runSlotId = open.runSlotId,
+            preview = open.preview,
             error = currentError,
         )
     }.stateIn(
@@ -117,6 +185,15 @@ class ProgramEditorViewModel @Inject constructor(
     fun onMoveSlot(slotId: String, delta: Int) = write { repository.moveSlot(slotId, delta) }
 
     fun onRemoveSlot(slotId: String) = write { repository.removeSlot(slotId) }
+
+    /** Opens the read-only view of what one slot's template trains (ROADMAP N72). */
+    fun onPreviewSlot(templateId: String, templateName: String) {
+        previewRequest.value = PreviewRequest(templateId, templateName)
+    }
+
+    fun onClosePreview() {
+        previewRequest.value = null
+    }
 
     fun onDeleteProgram() {
         viewModelScope.launch {

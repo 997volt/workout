@@ -338,9 +338,14 @@ private fun TargetFields(
     }
 }
 
-/** `100 kg × 3`, `× 3–5`, `RPE 8` — whatever the plan actually wrote, in one line. */
+/**
+ * `100 kg × 3`, `× 3–5`, `RPE 8` — whatever the plan actually wrote, in one line.
+ *
+ * `internal` since N72: the program's read-only preview shows the same line, and a second formatter
+ * for one plan would be the way two readings of it start.
+ */
 @Composable
-private fun TemplateSet.summary(unit: WeightUnit): String {
+internal fun TemplateSet.summary(unit: WeightUnit): String {
     val weight = if (targetWeightGrams != null || targetAssistanceGrams != null) {
         stringResource(
             R.string.template_set_weight_value,

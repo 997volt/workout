@@ -620,6 +620,18 @@
     <string name="program_move_program_up">Move %1$s up the list</string>
     <string name="program_move_program_down">Move %1$s down the list</string>
     <string name="program_remove_slot">Remove %1$s</string>
+    <!-- A slot's ⋮, and the question behind its remove (ROADMAP N72): the schedule loses a day, and
+         the workout it pointed at is untouched, which is what the sentence has to say. -->
+    <string name="program_slot_menu">%1$s actions</string>
+    <string name="program_remove_confirm_title">Remove this training day?</string>
+    <string name="program_remove_confirm_text">%1$s leaves the schedule. The workout it points at, and everything you logged, stay.</string>
+    <string name="program_remove_confirm">Remove</string>
+    <!-- What a slot's template actually trains, read-only (ROADMAP N72): the template is edited in
+         the template editor, so this view has no control of its own. -->
+    <string name="program_preview_title">%1$s — its exercises</string>
+    <string name="program_preview_empty">This workout plans no exercises yet.</string>
+    <!-- What tapping a slot's name announces to a screen reader (ROADMAP N72). -->
+    <string name="program_preview_open">See what %1$s trains</string>
     <string name="program_delete">Delete program</string>
     <string name="program_delete_confirm_title">Delete this program?</string>
     <string name="program_delete_confirm_text">The schedule goes away. The workouts it points at, and everything you logged, stay.</string>

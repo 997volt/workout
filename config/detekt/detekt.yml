@@ -111,4 +111,6 @@ complexity:
     # asks for: a test addresses a control by identity rather than by position or by
     # English. One more arrives with each list-shaped screen, which is growth in the
     # surface being tested rather than a type doing too much.
-    thresholdInObjects: 20
+    # Moved 20 -> 21 at N72, for the program slot's ⋮: a slot's entries moved behind one menu, so
+    # the tag that addresses it is one more per-id helper in the same flat namespace.
+    thresholdInObjects: 21

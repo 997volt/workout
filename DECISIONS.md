@@ -453,8 +453,17 @@ the rule; that one argues it.
 
 ## Programs
 
-- **A program is a schedule over templates; a slot is a template plus an optional weekday, and it
-  prescribes nothing of its own** (N73, reversing P3.8). P3.8 let a slot override its template — its
+- **A slot's row acts through one menu, and its template is read-only from there** (N72, extending
+  N53 and N71). The row carried two arrows and a delete icon, and the delete fired on the tap; one ⋮
+  is the shape the workout and the template editor already draw, so the third screen is the same
+  control rather than a fourth arrangement of it. Each direction is offered only where it exists, and
+  a removal asks first and says both halves — the day leaves the schedule, the workout it pointed at
+  and everything logged with it stay. Tapping the day's **name** opens what the template trains,
+  read-only: a program uses its template (N73), so the question "what does this day do" is worth
+  answering in place, but a second place to **edit** a plan is what "uses the template" rules out.
+  The sets are drawn with the template editor's own line, promoted to `internal` rather than written
+  again, because two formatters for one plan is how two readings of it start.
+ P3.8 let a slot override its template — its
   sets, its rest, its cue and its target effort — so two slots naming one workout could train it
   differently, and progression wrote *the slot* for a program start. The lifter's decision is that a
   program always **uses** what the template says: there is one plan, it is the template's, and

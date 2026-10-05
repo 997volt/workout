@@ -19,6 +19,18 @@ repeated here.
   template on the way out of an exercise had no way to say so. Settings now carries *Ask about
   progression*, on by default. Off, *Done* just finishes the exercise; nothing is written to the plan.
 
+### Changed
+
+- **A program's screen is its days, one ⋮ each, and what a day trains is a tap away** (N72). Each slot
+  row carried an arrow for each direction and a delete icon, and the delete fired on the tap; they
+  are one menu now, in the same shape the workout and the template editor already use — each
+  direction offered only where it exists, the removal last, coloured, and behind a question that says
+  what leaves and what stays. Tapping a day's **name** opens a read-only view of what its template
+  actually trains: the exercises in order, each with the sets the plan wrote, drawn with the same line
+  the template editor uses and in that exercise's own unit. There is deliberately no way to edit a
+  plan from there — a program uses its template, and the template is edited in the template editor —
+  so the view is one question and one Close.
+
 ### Added
 
 - **Weights can be shown and typed in pounds, app-wide or per exercise** (N64). Storage is unchanged

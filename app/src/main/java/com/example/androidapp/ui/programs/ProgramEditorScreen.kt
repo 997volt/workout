@@ -20,8 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -61,6 +59,15 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import com.example.androidapp.ui.components.exerciseWeightUnit
+import com.example.androidapp.ui.components.summary
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
@@ -107,6 +114,8 @@ fun ProgramEditorRoute(
         onSetSlotWeekday = viewModel::onSetSlotWeekday,
         onMoveSlot = viewModel::onMoveSlot,
         onRemoveSlot = viewModel::onRemoveSlot,
+        onPreviewSlot = viewModel::onPreviewSlot,
+        onClosePreview = viewModel::onClosePreview,
         onDeleteProgram = viewModel::onDeleteProgram,
         onExportProgram = exportProgram,
         transferMessage = transferMessage,
@@ -127,6 +136,8 @@ fun ProgramEditorScreen(
     onSetSlotWeekday: (String, DayOfWeek?) -> Unit,
     onMoveSlot: (String, Int) -> Unit,
     onRemoveSlot: (String) -> Unit,
+    onPreviewSlot: (String, String) -> Unit,
+    onClosePreview: () -> Unit,
     onDeleteProgram: () -> Unit,
     onBack: () -> Unit,
     /** Required rather than defaulted, so a route that forgets it fails the build (B49, B52). */
@@ -174,6 +185,7 @@ fun ProgramEditorScreen(
             onSetSlotWeekday = onSetSlotWeekday,
             onMoveSlot = onMoveSlot,
             onRemoveSlot = onRemoveSlot,
+            onPreviewSlot = onPreviewSlot,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -192,6 +204,7 @@ fun ProgramEditorScreen(
             confirmingDelete = false
             onDeleteProgram()
         },
+        onClosePreview = onClosePreview,
     )
 }
 
@@ -233,6 +246,7 @@ private fun ProgramEditorDialogs(
     onDismissPicker: () -> Unit,
     onDismissDelete: () -> Unit,
     onConfirmDelete: () -> Unit,
+    onClosePreview: () -> Unit,
 ) {
     if (pickingTemplate) {
         TemplatePickerDialog(
@@ -246,6 +260,11 @@ private fun ProgramEditorDialogs(
         DeleteProgramDialog(onDismiss = onDismissDelete, onConfirm = onConfirmDelete)
     }
 
+    // What a slot's template actually trains, read-only (ROADMAP N72): the template is edited in the
+    // template editor, so there is no control in here but Close.
+    state.preview?.let { preview ->
+        TemplatePreviewDialog(preview = preview, onDismiss = onClosePreview)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -295,6 +314,7 @@ private fun ProgramEditorBody(
     onSetSlotWeekday: (String, DayOfWeek?) -> Unit,
     onMoveSlot: (String, Int) -> Unit,
     onRemoveSlot: (String) -> Unit,
+    onPreviewSlot: (String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.isLoading) {
@@ -338,6 +358,7 @@ private fun ProgramEditorBody(
                         onMoveDown = { onMoveSlot(slot.id, 1) },
                         onRemove = { onRemoveSlot(slot.id) },
                         onSetWeekday = { weekday -> onSetSlotWeekday(slot.id, weekday) },
+                        onOpenPreview = { onPreviewSlot(slot.templateId, slot.templateName) },
                     )
                     HorizontalDivider()
                 }
@@ -432,11 +453,22 @@ private fun ProgramSlotBlock(
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
     onSetWeekday: (DayOfWeek?) -> Unit,
+    onOpenPreview: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
         ListItem(
-            headlineContent = { Text(slot.templateName) },
+            // The name is the way in: a slot is a schedule, so "what does this day actually do" is
+            // the question the row raises, and it is answered without leaving the program (N72).
+            headlineContent = {
+                Text(
+                    text = slot.templateName,
+                    modifier = Modifier.clickable(
+                        onClickLabel = stringResource(R.string.program_preview_open, slot.templateName),
+                        onClick = onOpenPreview,
+                    ),
+                )
+            },
             supportingContent = {
                 Column {
                     Text(
@@ -457,7 +489,7 @@ private fun ProgramSlotBlock(
                 }
             },
             trailingContent = {
-                SlotActions(
+                SlotActionsMenu(
                     slot = slot,
                     isFirst = isFirst,
                     isLast = isLast,
@@ -472,9 +504,16 @@ private fun ProgramSlotBlock(
     }
 }
 
-/** The order and the delete controls of one slot, split out so the row stays a row. */
+/**
+ * One slot's ⋮: its order, and the removal that takes the day out of the schedule (ROADMAP N72).
+ *
+ * The row used to carry an arrow for each direction and a delete icon, and the delete fired on the
+ * tap. They are one menu now, in the shape the workout and the template editor already use (N53,
+ * N71): each direction offered only where it exists, and the destructive entry last, coloured, and
+ * behind a question — a slot that goes takes its place in the schedule with it.
+ */
 @Composable
-private fun SlotActions(
+private fun SlotActionsMenu(
     slot: ProgramSlot,
     isFirst: Boolean,
     isLast: Boolean,
@@ -483,37 +522,194 @@ private fun SlotActions(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    var open by rememberSaveable { mutableStateOf(false) }
+    var confirming by rememberSaveable { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
         IconButton(
-            onClick = onMoveUp,
-            enabled = !isFirst,
-            modifier = Modifier.testTag(TestTags.Programs.move(slot.id, up = true)),
+            onClick = { open = true },
+            modifier = Modifier.testTag(TestTags.Programs.slotMenu(slot.id)),
         ) {
             Icon(
-                imageVector = Icons.Filled.KeyboardArrowUp,
-                contentDescription = stringResource(R.string.program_move_up, slot.templateName),
+                imageVector = Icons.Filled.MoreVert,
+                contentDescription = stringResource(R.string.program_slot_menu, slot.templateName),
             )
         }
-        IconButton(
-            onClick = onMoveDown,
-            enabled = !isLast,
-            modifier = Modifier.testTag(TestTags.Programs.move(slot.id, up = false)),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.KeyboardArrowDown,
-                contentDescription = stringResource(R.string.program_move_down, slot.templateName),
-            )
-        }
-        IconButton(
-            onClick = onRemove,
-            modifier = Modifier.testTag(TestTags.Programs.removeSlot(slot.id)),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Delete,
-                contentDescription = stringResource(R.string.program_remove_slot, slot.templateName),
-            )
-        }
+        SlotMenuEntries(
+            expanded = open,
+            onDismiss = { open = false },
+            slot = slot,
+            isFirst = isFirst,
+            isLast = isLast,
+            onMoveUp = onMoveUp,
+            onMoveDown = onMoveDown,
+            onRemove = { confirming = true },
+        )
     }
+
+    if (confirming) {
+        RemoveSlotDialog(
+            name = slot.templateName,
+            onDismiss = { confirming = false },
+            onConfirm = {
+                confirming = false
+                onRemove()
+            },
+        )
+    }
+}
+
+/**
+ * The entries one slot's ⋮ offers (ROADMAP N72).
+ *
+ * Its own composable for the reason the project keeps splitting them: the button, the menu and the
+ * question were one function at the length this project allows, and the entries are the part that
+ * reads on its own.
+ */
+@Composable
+private fun SlotMenuEntries(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    slot: ProgramSlot,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        if (!isFirst) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.program_move_up, slot.templateName)) },
+                onClick = {
+                    onDismiss()
+                    onMoveUp()
+                },
+                modifier = Modifier.testTag(TestTags.Programs.move(slot.id, up = true)),
+            )
+        }
+        if (!isLast) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.program_move_down, slot.templateName)) },
+                onClick = {
+                    onDismiss()
+                    onMoveDown()
+                },
+                modifier = Modifier.testTag(TestTags.Programs.move(slot.id, up = false)),
+            )
+        }
+        DropdownMenuItem(
+            text = {
+                Text(
+                    text = stringResource(R.string.program_remove_slot, slot.templateName),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            },
+            onClick = {
+                onDismiss()
+                onRemove()
+            },
+            modifier = Modifier.testTag(TestTags.Programs.removeSlot(slot.id)),
+        )
+    }
+}
+
+/**
+ * The question a slot's removal asks first (ROADMAP N72).
+ *
+ * The schedule loses a day; the workout it pointed at, and everything logged with it, stay. Both
+ * halves are said, because only the first is obvious from the button.
+ */
+@Composable
+private fun RemoveSlotDialog(name: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.program_remove_confirm_title)) },
+        text = { Text(stringResource(R.string.program_remove_confirm_text, name)) },
+        confirmButton = {
+            AppTextButton(
+                onClick = onConfirm,
+                modifier = Modifier.testTag(TestTags.Programs.SLOT_REMOVE_CONFIRM),
+            ) {
+                Text(stringResource(R.string.program_remove_confirm))
+            }
+        },
+        dismissButton = {
+            AppTextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag(TestTags.Programs.SLOT_REMOVE_CANCEL),
+            ) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        },
+    )
+}
+
+/**
+ * What a slot's template trains, read-only (ROADMAP N72).
+ *
+ * A preview rather than an editor, and deliberately nothing else: a program uses the template, so
+ * this answers "what does this day actually do" without becoming a second place to edit a plan. The
+ * sets are drawn with the line the template editor already uses, in the exercise's own unit (N64).
+ */
+@Composable
+private fun TemplatePreviewDialog(
+    preview: SlotPreview,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AlertDialog(
+        modifier = modifier.testTag(TestTags.Programs.PREVIEW),
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.program_preview_title, preview.templateName)) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 360.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (preview.exercises.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.program_preview_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag(TestTags.Programs.PREVIEW_EMPTY),
+                    )
+                }
+                preview.exercises.forEach { exercise ->
+                    val unit = exerciseWeightUnit(exercise.weightUnit)
+                    Text(
+                        text = exercise.exerciseName,
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    if (exercise.sets.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.template_plan_none),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        exercise.sets.forEach { set ->
+                            Text(
+                                text = set.summary(unit),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            AppTextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag(TestTags.Programs.PREVIEW_CLOSE),
+            ) {
+                Text(stringResource(R.string.action_close))
+            }
+        },
+    )
 }
 
 /**
@@ -657,6 +853,8 @@ private fun ProgramEditorScreenPreview() {
             onSetSlotWeekday = { _, _ -> },
             onMoveSlot = { _, _ -> },
             onRemoveSlot = {},
+            onPreviewSlot = { _, _ -> },
+            onClosePreview = {},
             onDeleteProgram = {},
             onBack = {},
             onExportProgram = {},

@@ -462,6 +462,18 @@ object TestTags {
         const val SKIP_DO_NOW = "program_skip_do_now"
         const val SKIP_CONTINUE = "program_skip_continue"
 
+        /** A slot's ⋮: the order and remove entries it opens (ROADMAP N72). */
+        fun slotMenu(id: String) = "program_slot_menu_$id"
+
+        /** The read-only view of what a slot's template prescribes (ROADMAP N72). */
+        const val PREVIEW = "program_preview"
+        const val PREVIEW_EMPTY = "program_preview_empty"
+        const val PREVIEW_CLOSE = "program_preview_close"
+
+        /** The question behind a slot's remove (ROADMAP N72). */
+        const val SLOT_REMOVE_CONFIRM = "program_slot_remove_confirm"
+        const val SLOT_REMOVE_CANCEL = "program_slot_remove_cancel"
+
         /** The slot the run is at, marked in the editor (ROADMAP P3.9). */
         fun runSlot(id: String) = "program_run_$id"
 
