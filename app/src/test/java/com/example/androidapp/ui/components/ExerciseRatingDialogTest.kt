@@ -5,14 +5,12 @@ import androidx.test.core.app.ApplicationProvider
 import android.content.Context
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
@@ -28,10 +26,10 @@ import org.junit.runner.RunWith
 /**
  * How an exercise felt — muscle feel and the picked joints (ROADMAP N8, N63).
  *
- * The muscle-feel field is unchanged and the whole capture is skippable, so what matters here is
- * that saving nothing writes nothing, that a value off the 1–10 scale blocks Save rather than being
- * clamped, that dismissing the prompt is not a write — and that the joint half is picked from the
- * body's joints with left and right apart and a score of its own.
+ * Both halves are steppers, so what matters here is what each records: muscle feel starts at 7, so
+ * saving without touching it is still an answer, the buttons stop at the ends of the scale, dismissing
+ * the prompt is not a write — and the joint half is picked from the body's joints with left and right
+ * apart and a score of its own.
  */
 @RunWith(AndroidJUnit4::class)
 class ExerciseRatingDialogTest {
@@ -69,41 +67,34 @@ class ExerciseRatingDialogTest {
     }
 
     @Test
-    fun savingWithNothingRecorded_meansNotRated() {
+    fun savingWithoutTouchingTheStepper_recordsItsStartingPoint() {
+        // The stepper always shows a number, so Save carries it: 7 is the value the dialog opens on.
         show()
 
         composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
 
         assertTrue(saveCalled)
-        assertEquals(null to emptyList<JointPain>(), saved)
+        assertEquals(7 to emptyList<JointPain>(), saved)
     }
 
     @Test
-    fun typedMuscleFeel_isReportedOnSave() {
+    fun steppingTheMuscleFeel_isReportedOnSave() {
         show()
 
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("8")
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_INCREASE).performClick()
         composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
 
         assertEquals(8 to emptyList<JointPain>(), saved)
     }
 
     @Test
-    fun aValueOutsideTheScale_disablesSave_ratherThanClampingIt() {
-        show()
+    fun theMuscleStepper_stopsAtTheEndsOfTheScale() {
+        // A stepper cannot leave the scale, so there is no value to refuse: the end's button is the one
+        // that is disabled, the shape the scored picks already use.
+        show(initialFeel = 1)
 
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("11")
-
-        composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).assertIsNotEnabled()
-    }
-
-    @Test
-    fun anUnparseableValue_disablesSave() {
-        show()
-
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("sore")
-
-        composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_DECREASE).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_INCREASE).assertIsEnabled()
     }
 
     @Test
@@ -114,7 +105,7 @@ class ExerciseRatingDialogTest {
             isPrompt = false,
         )
 
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertTextContains("8")
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertTextEquals("8/10")
         val site = jointSiteKey(Joint.KNEE, Side.LEFT)
         composeTestRule.onNodeWithTag(TestTags.Rating.jointRow(site)).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Rating.jointScore(site)).assertTextEquals("4/10")

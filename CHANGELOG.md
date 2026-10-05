@@ -77,6 +77,11 @@ repeated here.
   guessing. Accepting writes the **plan** — the slot's prescription for a program start, the template's
   planned set for a direct one — because the plan is what the next run reads, and the app still writes
   only what the lifter accepts.
+- **Muscle feel is a stepped number, and it opens on 7** (N8). It was the last typed number on the
+  rating dialog, and it is one value on a ten-point scale: it is now the same −/+ stepper the picked
+  soreness and joint lists use, starting at 7 — a set worked hard without being taken to failure —
+  rather than blank, so *Save* always carries the number the dialog shows. The ends are still named
+  beneath it (N12), and the dialog as a whole is skipped the way it always was.
 
 ### Removed
 

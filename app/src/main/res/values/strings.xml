@@ -338,6 +338,9 @@
          once per scale so a later reader reuses them instead of inventing a second
          vocabulary for the same thing. -->
     <string name="rating_muscle_anchors">1 = barely worked, 10 = fully worked</string>
+    <!-- The muscle-feel stepper's two buttons (ROADMAP N8): the number is stepped, not typed. -->
+    <string name="rating_muscle_decrease">Lower muscle feel</string>
+    <string name="rating_muscle_increase">Raise muscle feel</string>
     <string name="rating_skip">Skip</string>
     <string name="rating_row_title">How it felt</string>
     <string name="rating_row_add">Tap to rate</string>

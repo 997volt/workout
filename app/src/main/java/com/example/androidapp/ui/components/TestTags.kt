@@ -80,11 +80,13 @@ object TestTags {
     fun exerciseMove(id: String, up: Boolean) = "exercise_move_${if (up) "up" else "down"}_$id"
 
     /**
-     * How an exercise felt (ROADMAP N8): the muscle-feel field, the dialog's buttons, and the
+     * How an exercise felt (ROADMAP N8): the muscle-feel stepper, the dialog's buttons, and the
      * workout detail's row that reaches it. The joint half moved into [Rating], because it is a
      * picked list whose controls are addressed by the joint they act on (ROADMAP N63).
      */
     const val RATING_MUSCLE_FIELD = "rating_muscle_field"
+    const val RATING_MUSCLE_DECREASE = "rating_muscle_decrease"
+    const val RATING_MUSCLE_INCREASE = "rating_muscle_increase"
     const val RATING_SAVE = "rating_save"
     const val RATING_DISMISS = "rating_dismiss"
     const val EXERCISE_RATING_ROW = "exercise_rating_row"

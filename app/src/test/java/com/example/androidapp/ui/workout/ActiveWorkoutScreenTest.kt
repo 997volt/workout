@@ -202,7 +202,7 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertExists()
         assertEquals("nothing is written before the rating is settled", null, finished)
 
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("8")
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_INCREASE).performClick()
         composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
 
         assertEquals(Rounding("se1", 8, emptyList()), rated)
@@ -262,7 +262,7 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_RATE).performClick()
 
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("8")
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_INCREASE).performClick()
         // N63's picked joint rides with the ratings the prompt collects, with its own score.
         composeTestRule.onNodeWithTag(TestTags.Rating.JOINT_ADD).performScrollTo().performClick()
         composeTestRule.onNodeWithTag(TestTags.Rating.jointOption(jointSiteKey(Joint.KNEE, Side.LEFT)))
@@ -310,7 +310,7 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_RATING_ROW, useUnmergedTree = true)
             .performScrollTo()
             .performClick()
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("7")
+        // Muscle feel is left at the 7 it opens on: the inline rating is what this test is about.
         composeTestRule.onNodeWithTag(TestTags.Rating.JOINT_ADD).performScrollTo().performClick()
         composeTestRule.onNodeWithTag(TestTags.Rating.jointOption(jointSiteKey(Joint.ELBOW, Side.RIGHT)))
             .performClick()
@@ -342,7 +342,9 @@ class ActiveWorkoutScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_RATING_ROW, useUnmergedTree = true)
             .performClick()
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("5")
+        // Two steps down from the 7 the stepper opens on.
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_DECREASE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_DECREASE).performClick()
         composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
 
         assertEquals(Rounding("se1", 5, emptyList()), rated)

@@ -2,10 +2,15 @@ package com.example.androidapp.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -13,10 +18,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.JOINT_SITES
@@ -35,16 +40,12 @@ import com.example.androidapp.domain.model.jointSiteLabel
  * reached from the workout detail; [isPrompt] only changes the wording and whether
  * the secondary button reads *Skip* or *Cancel*.
  *
- * The muscle-feel number is unchanged: it is one number about the whole exercise, which is what
- * "how well was the target muscle worked" is. The joint half is a picked list — a joint and, for
- * the paired ones, which side, each with its own 1–10 score (N63) — because a bare number with a
- * free-text location cannot be read back one joint at a time later. The single joint-pain field and
- * its note box are gone; a session rated before them keeps the number and the text, which history
- * still reads.
- *
- * The muscle field is optional — the whole capture is skippable, which is what the Skip button says
- * — and a value outside 1–10 keeps Save disabled rather than being clamped, since a silent 11 → 10
- * would misstate the session. A picked joint's score can only be stepped between 1 and 10.
+ * Both halves are steppers on the same 1–10 scale, because neither can be anything else: muscle feel is
+ * one number about the whole exercise (N8), and the joint half is a picked list — a joint and, for the
+ * paired ones, which side, each with its own score (N63). Muscle feel starts at [DEFAULT_MUSCLE_FEEL]
+ * when nothing was recorded: a stepper always shows a number, so the point it starts on is also what
+ * *Save* records if the lifter never touches it. The single joint-pain field and its note box are gone;
+ * a session rated before them keeps the number and the text, which history still reads.
  */
 @Composable
 fun ExerciseRatingDialog(
@@ -55,14 +56,10 @@ fun ExerciseRatingDialog(
     onSave: (muscleFeel: Int?, joints: List<JointPain>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var muscleText by rememberSaveable { mutableStateOf(initialMuscleFeel?.toString().orEmpty()) }
-    // `rememberSaveable` for the same reason the field is: a rotation mid-edit must not throw away
+    var muscleFeel by rememberSaveable { mutableStateOf(initialMuscleFeel ?: DEFAULT_MUSCLE_FEEL) }
+    // `rememberSaveable` for the same reason the stepper is: a rotation mid-edit must not throw away
     // the joints already picked.
     var joints by rememberSaveable(stateSaver = JointsSaver) { mutableStateOf(initialJoints) }
-
-    val muscleFeel = muscleText.trim().ifEmpty { null }?.toIntOrNull()
-    // Blank is valid; anything typed has to parse *and* sit on the scale.
-    val muscleIsValid = muscleText.isBlank() || (muscleFeel != null && TenPointScale.isValid(muscleFeel))
 
     AlertDialog(
         modifier = modifier,
@@ -76,9 +73,8 @@ fun ExerciseRatingDialog(
         },
         text = {
             RatingFields(
-                muscleText = muscleText,
-                onMuscleChange = { muscleText = it },
-                muscleIsValid = muscleIsValid,
+                muscleFeel = muscleFeel,
+                onMuscleChange = { muscleFeel = it },
                 joints = joints,
                 onAddJoint = { site ->
                     joints = joints + JointPain(site.joint, site.side, DEFAULT_SCORED_PICK)
@@ -96,7 +92,6 @@ fun ExerciseRatingDialog(
         confirmButton = {
             AppTextButton(
                 modifier = Modifier.testTag(TestTags.RATING_SAVE),
-                enabled = muscleIsValid,
                 onClick = { onSave(muscleFeel, joints) },
             ) {
                 Text(stringResource(R.string.action_save))
@@ -117,31 +112,18 @@ fun ExerciseRatingDialog(
     )
 }
 
-/** The muscle-feel field and the joint list under it, split out so the dialog reads as a dialog. */
+/** The muscle-feel stepper and the joint list under it, split out so the dialog reads as a dialog. */
 @Composable
 private fun RatingFields(
-    muscleText: String,
-    onMuscleChange: (String) -> Unit,
-    muscleIsValid: Boolean,
+    muscleFeel: Int,
+    onMuscleChange: (Int) -> Unit,
     joints: List<JointPain>,
     onAddJoint: (JointSite) -> Unit,
     onJointScore: (String, Int) -> Unit,
     onRemoveJoint: (String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(
-            value = muscleText,
-            onValueChange = onMuscleChange,
-            modifier = Modifier.fillMaxWidth().testTag(TestTags.RATING_MUSCLE_FIELD),
-            singleLine = true,
-            label = { Text(stringResource(R.string.rating_muscle_label)) },
-            // The anchors, not "Optional": the Skip button already says the rating
-            // can be left alone, and this line is the only place the scale can be
-            // explained while the number is being picked (ROADMAP N12).
-            supportingText = { Text(stringResource(R.string.rating_muscle_anchors)) },
-            isError = muscleText.isNotBlank() && !muscleIsValid,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        )
+        MuscleFeelRow(feel = muscleFeel, onFeelChange = onMuscleChange)
         // N9's location box became N63's picked list: every joint a lift may name, left and right
         // apart, each with its own score. The shared editor (N62's second caller) owns the
         // interaction, so a stepped score and a removal behave the same here as on the readiness note.
@@ -163,6 +145,63 @@ private fun RatingFields(
             onAdd = { key -> onAddJoint(JointSite.byKey(key)) },
             onScore = onJointScore,
             onRemove = onRemoveJoint,
+        )
+    }
+}
+
+/**
+ * Muscle feel as a −/+ stepper (ROADMAP N8), the shape the scored picks already use (N62, N63).
+ *
+ * The ends carry their meaning underneath (N12): the number is chosen here, so "1 = barely worked,
+ * 10 = fully worked" is what keeps a 7 this month comparable to a 7 next month. The buttons stop at
+ * the ends rather than wrapping, so the scale cannot be left by holding one down.
+ */
+@Composable
+private fun MuscleFeelRow(
+    feel: Int,
+    onFeelChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.rating_muscle_label),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(
+                onClick = { onFeelChange(feel - 1) },
+                enabled = feel > TenPointScale.MIN,
+                modifier = Modifier.testTag(TestTags.RATING_MUSCLE_DECREASE),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Remove,
+                    contentDescription = stringResource(R.string.rating_muscle_decrease),
+                )
+            }
+            Text(
+                text = stringResource(R.string.scored_pick_score, feel),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.testTag(TestTags.RATING_MUSCLE_FIELD),
+            )
+            IconButton(
+                onClick = { onFeelChange(feel + 1) },
+                enabled = feel < TenPointScale.MAX,
+                modifier = Modifier.testTag(TestTags.RATING_MUSCLE_INCREASE),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Add,
+                    contentDescription = stringResource(R.string.rating_muscle_increase),
+                )
+            }
+        }
+        Text(
+            text = stringResource(R.string.rating_muscle_anchors),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -196,3 +235,12 @@ private val JointsSaver = listSaver<List<JointPain>, String>(
         }
     },
 )
+
+/**
+ * The muscle feel a rating starts on when nothing was recorded (ROADMAP N8).
+ *
+ * A stepper always shows a number, so this is also what *Save* records when the lifter never touches
+ * it — which is why it is not the middle of the scale: 7 is the working end of it, a set worked hard
+ * without being taken to failure.
+ */
+internal const val DEFAULT_MUSCLE_FEEL = 7
