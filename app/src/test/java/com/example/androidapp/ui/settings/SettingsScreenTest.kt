@@ -35,6 +35,7 @@ class SettingsScreenTest {
     private var imported = 0
     private var cleared = 0
     private val restTimerWrites = mutableListOf<Boolean>()
+    private val progressionWrites = mutableListOf<Boolean>()
 
     private fun show(state: SettingsUiState, message: String? = null) {
         composeTestRule.setContent {
@@ -43,6 +44,7 @@ class SettingsScreenTest {
                 onSetDefaultRest = { chosen += it },
                 onBack = { backs++ },
                 onSetRestTimer = { restTimerWrites += it },
+                onSetProgressionPrompt = { progressionWrites += it },
                 onExportData = { exported++ },
                 onImportData = { imported++ },
                 onClearData = { cleared++ },
@@ -92,6 +94,18 @@ class SettingsScreenTest {
             .performClick()
 
         assertEquals(listOf(false), restTimerWrites)
+    }
+
+    @Test
+    fun theProgressionSwitch_sendsItsChoice() {
+        // ROADMAP N66: on by default, so a tap withdraws the question Done asks.
+        show(SettingsUiState())
+
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_PROGRESSION)
+            .performScrollTo()
+            .performClick()
+
+        assertEquals(listOf(false), progressionWrites)
     }
 
     @Test

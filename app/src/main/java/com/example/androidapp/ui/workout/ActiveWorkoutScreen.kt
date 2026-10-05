@@ -95,6 +95,7 @@ fun ActiveWorkoutRoute(
     val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()
     val restTimerEnabled by viewModel.restTimerEnabled.collectAsStateWithLifecycle()
     val defaultRestSeconds by viewModel.defaultRestSeconds.collectAsStateWithLifecycle()
+    val progressionPromptEnabled by viewModel.progressionPromptEnabled.collectAsStateWithLifecycle()
     RestCueAndScreenOn(clock, restCueEnabled, keepScreenOn, restTimerEnabled)
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
@@ -134,27 +135,9 @@ fun ActiveWorkoutRoute(
         countsAgainstProgram = viewModel.startedFromProgram,
         restTimerEnabled = restTimerEnabled,
         defaultRestSeconds = defaultRestSeconds,
+        progressionPromptEnabled = progressionPromptEnabled,
         modifier = modifier,
     )
-}
-
-/**
- * Leaves a screen the first time [closed] turns true — once, not twice (ROADMAP B44).
- *
- * This was two `LaunchedEffect(closed)` blocks in the route above, each calling the leave
- * callback. Both ran in the same frame, so closing a session popped the back stack twice: the
- * workout left, and so did the screen beneath it, leaving the navigation host with nothing to
- * render — the white screen that followed a discard. The duplication was invisible while both
- * effects were anonymous; one effect, named, is the fix.
- *
- * It reads the latest [onLeave] through a remembered state because the effect restarts on
- * `closed`: reading the lambda directly would capture whichever one was current when the effect
- * last started.
- */
-@Composable
-fun LeaveWhenClosed(closed: Boolean, onLeave: () -> Unit) {
-    val leave by rememberUpdatedState(onLeave)
-    LaunchedEffect(closed) { if (closed) leave() }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -203,6 +186,8 @@ fun ActiveWorkoutScreen(
     restTimerEnabled: Boolean = true,
     /** The fallback the static prescription label uses when an exercise prescribes no rest (N44). */
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
+    /** Whether *Done* asks about the next step a plan earned (ROADMAP N66). */
+    progressionPromptEnabled: Boolean = true,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -233,11 +218,7 @@ fun ActiveWorkoutScreen(
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddExercise,
-                text = { Text(stringResource(R.string.active_workout_add_exercise)) },
-                icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
-            )
+            AddExerciseButton(onClick = onAddExercise)
         },
     ) { innerPadding ->
         WorkoutBody(
@@ -261,6 +242,7 @@ fun ActiveWorkoutScreen(
             onToggleSuperset = onToggleSuperset,
             restTimerEnabled = restTimerEnabled,
             defaultRestSeconds = defaultRestSeconds,
+            progressionPromptEnabled = progressionPromptEnabled,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -271,6 +253,21 @@ fun ActiveWorkoutScreen(
         onDismiss = { editing = null },
     )
 
+}
+
+/**
+ * The one action a workout always offers: adding a movement (ROADMAP F1).
+ *
+ * Split out of the screen when N66's switch pushed it over the length this project allows, and it is
+ * the piece that reads on its own: an extended FAB whose whole content is its own label and glyph.
+ */
+@Composable
+private fun AddExerciseButton(onClick: () -> Unit) {
+    ExtendedFloatingActionButton(
+        onClick = onClick,
+        text = { Text(stringResource(R.string.active_workout_add_exercise)) },
+        icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
+    )
 }
 
 /**
@@ -589,6 +586,7 @@ private fun WorkoutBody(
     onToggleSuperset: (String) -> Unit = {},
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
+    progressionPromptEnabled: Boolean = true,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         // The record sits above the work, not in a dialog: it happens *between* sets, and
@@ -645,6 +643,7 @@ private fun WorkoutBody(
                         onToggleSuperset = onToggleSuperset,
                         restTimerEnabled = restTimerEnabled,
                         defaultRestSeconds = defaultRestSeconds,
+                        progressionPromptEnabled = progressionPromptEnabled,
                     )
                 }
             }

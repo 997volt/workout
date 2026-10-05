@@ -336,6 +336,9 @@ private class FakeSettingsRepository(
     override fun observeRestTimerEnabled(): Flow<Boolean> = flowOf(true)
     override suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit> =
         DataResult.Success(Unit)
+    override fun observeProgressionPromptEnabled(): Flow<Boolean> = flowOf(true)
+    override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> =
+        DataResult.Success(Unit)
     override fun observeStatisticsRange(): Flow<StatisticsRange> = stored
     override suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit> {
         stored.value = range

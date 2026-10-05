@@ -66,6 +66,12 @@ class PreferencesSettingsRepository @Inject constructor(
     override suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit> =
         writeFlag(KEY_REST_TIMER_ENABLED, enabled)
 
+    override fun observeProgressionPromptEnabled(): Flow<Boolean> =
+        observeFlag(KEY_PROGRESSION_PROMPT_ENABLED, true)
+
+    override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> =
+        writeFlag(KEY_PROGRESSION_PROMPT_ENABLED, enabled)
+
     /** A boolean preference, defaulted rather than null: these flags have always had a meaning. */
     private fun observeFlag(key: String, default: Boolean): Flow<Boolean> = callbackFlow {
         trySend(preferences.getBoolean(key, default))
@@ -192,6 +198,7 @@ class PreferencesSettingsRepository @Inject constructor(
         const val KEY_REST_CUE_ENABLED = "rest_cue_enabled"
         const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
         const val KEY_REST_TIMER_ENABLED = "rest_timer_enabled"
+        const val KEY_PROGRESSION_PROMPT_ENABLED = "progression_prompt_enabled"
         const val KEY_RANGE_KIND = "statistics_range_kind"
         const val KEY_RANGE_FROM = "statistics_range_from"
         const val KEY_RANGE_TO = "statistics_range_to"

@@ -57,6 +57,18 @@ interface SettingsRepository {
     fun observeRestTimerEnabled(): Flow<Boolean>
 
     suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit>
+
+    /**
+     * Whether *Done* offers the next step a plan earned (ROADMAP N50, N66).
+     *
+     * On by default, because it is what the app has done since N50 and turning it off is the
+     * change a user asks for. Off means the exercise simply finishes: the prompt is a question
+     * about the *plan*, and a lifter who does not want the app editing the plan is not asked it.
+     */
+    fun observeProgressionPromptEnabled(): Flow<Boolean>
+
+    suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit>
+
     /**
      * The window the Statistics screen is showing (ROADMAP N35).
      *

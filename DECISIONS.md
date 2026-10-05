@@ -374,6 +374,12 @@ the rule; that one argues it.
   countdown behind a static number would be the timer still running, which is the reading this
   rejects. It is a preference about the timer, not a fact about the exercise, so it stays distinct
   from a prescribed rest of zero. ([evidence](DECISIONS-EVIDENCE.md#n44))
+- **The progression question is a preference, and it is on until it is turned off** (N66, extending
+  N50). *Done* still offers the next step a plan earned, because that is what the app has done since
+  N50 and a preference that arrives off would silently remove a feature. It is off when the lifter
+  says so, and off means the exercise simply finishes: the prompt exists to change the *plan*, so
+  somebody who does not want the app editing the plan is not asked about it. Hiding the prompt but
+  still writing the step was rejected — the write is the only thing the question is for.
 
 - **A destination belongs in the action row, and a heading does not carry a way out of itself**
   (N42). Programs moved from the home overflow into the pair above the start pill, and "See all

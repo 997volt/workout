@@ -92,6 +92,23 @@ class SettingsViewModelTest {
         assertEquals(false, viewModel.uiState.value.restTimerEnabled)
         assertEquals(listOf(false), repository.timerWrites)
     }
+
+    @Test
+    fun theProgressionPromptSwitch_readsAndWritesTheStoredFlag() = runTest(dispatcher) {
+        // ROADMAP N66: on until the lifter turns it off, and the screen shows what is in force
+        // rather than what was tapped.
+        val repository = FakeSettingsRepository(stored = 90)
+        val viewModel = SettingsViewModel(repository)
+        advanceUntilIdle()
+
+        assertEquals("on by default", true, viewModel.uiState.value.progressionPromptEnabled)
+
+        viewModel.onSetProgressionPrompt(false)
+        advanceUntilIdle()
+
+        assertEquals(false, viewModel.uiState.value.progressionPromptEnabled)
+        assertEquals(listOf(false), repository.progressionWrites)
+    }
 }
 
 /** Hand-written, like every fake here: there is no mocking framework in this project. */
@@ -142,6 +159,22 @@ private class FakeSettingsRepository(
             DataResult.Failure(DataError.Invalid("refused"))
         } else {
             timer.value = enabled
+            DataResult.Success(Unit)
+        }
+    }
+
+    /** N66: the same read-back shape as N44's, so a refused write cannot look applied. */
+    private val progression = MutableStateFlow(true)
+    val progressionWrites = mutableListOf<Boolean>()
+
+    override fun observeProgressionPromptEnabled(): Flow<Boolean> = progression.asStateFlow()
+
+    override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> {
+        progressionWrites += enabled
+        return if (refuseWrites) {
+            DataResult.Failure(DataError.Invalid("refused"))
+        } else {
+            progression.value = enabled
             DataResult.Success(Unit)
         }
     }

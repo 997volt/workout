@@ -94,6 +94,7 @@ fun SettingsRoute(
         onSetRestCue = viewModel::onSetRestCue,
         onSetKeepScreenOn = viewModel::onSetKeepScreenOn,
         onSetRestTimer = viewModel::onSetRestTimer,
+        onSetProgressionPrompt = viewModel::onSetProgressionPrompt,
         onExportData = transferActions.export,
         onImportData = transferActions.import,
         onClearData = {
@@ -121,6 +122,7 @@ fun SettingsScreen(
     onSetRestCue: (Boolean) -> Unit = {},
     onSetKeepScreenOn: (Boolean) -> Unit = {},
     onSetRestTimer: (Boolean) -> Unit = {},
+    onSetProgressionPrompt: (Boolean) -> Unit = {},
     onExportData: () -> Unit = {},
     onImportData: () -> Unit = {},
     onClearData: () -> Unit = {},
@@ -164,6 +166,7 @@ fun SettingsScreen(
             onSetRestCue = onSetRestCue,
             onSetKeepScreenOn = onSetKeepScreenOn,
             onSetRestTimer = onSetRestTimer,
+            onSetProgressionPrompt = onSetProgressionPrompt,
             onExportData = onExportData,
             onImportData = onImportData,
             onClearData = { confirmingClear = true },
@@ -185,6 +188,7 @@ private fun SettingsBody(
     onSetRestCue: (Boolean) -> Unit,
     onSetKeepScreenOn: (Boolean) -> Unit,
     onSetRestTimer: (Boolean) -> Unit,
+    onSetProgressionPrompt: (Boolean) -> Unit,
     onExportData: () -> Unit,
     onImportData: () -> Unit,
     onClearData: () -> Unit,
@@ -205,6 +209,7 @@ private fun SettingsBody(
             onSetRestCue = onSetRestCue,
             onSetKeepScreenOn = onSetKeepScreenOn,
             onSetRestTimer = onSetRestTimer,
+            onSetProgressionPrompt = onSetProgressionPrompt,
         )
         DataSection(
             onExport = onExportData,
@@ -343,13 +348,14 @@ private fun SettingSwitch(
     }
 }
 
-/** The switches that change how a workout behaves (ROADMAP N27, N44). */
+/** The switches that change how a workout behaves (ROADMAP N27, N44, N66). */
 @Composable
 private fun WorkoutSwitches(
     state: SettingsUiState,
     onSetRestCue: (Boolean) -> Unit,
     onSetKeepScreenOn: (Boolean) -> Unit,
     onSetRestTimer: (Boolean) -> Unit,
+    onSetProgressionPrompt: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AppCard(modifier = modifier) {
@@ -359,6 +365,14 @@ private fun WorkoutSwitches(
             checked = state.restTimerEnabled,
             onCheckedChange = onSetRestTimer,
             testTag = TestTags.SETTINGS_REST_TIMER,
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        SettingSwitch(
+            label = stringResource(R.string.settings_progression),
+            hint = stringResource(R.string.settings_progression_hint),
+            checked = state.progressionPromptEnabled,
+            onCheckedChange = onSetProgressionPrompt,
+            testTag = TestTags.SETTINGS_PROGRESSION,
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         SettingSwitch(

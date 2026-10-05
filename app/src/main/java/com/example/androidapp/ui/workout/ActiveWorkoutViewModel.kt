@@ -320,6 +320,16 @@ class ActiveWorkoutViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     /**
+     * Whether *Done* asks about the next step a plan earned (ROADMAP N66).
+     *
+     * Read from settings rather than held as its own state: the answer is the app's, and the screen
+     * only needs it at the moment Done is tapped. On by default, so an upgrade changes nothing.
+     */
+    val progressionPromptEnabled: StateFlow<Boolean> =
+        settingsRepository.observeProgressionPromptEnabled()
+            .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
+    /**
      * The record just set, if the last logged set was one (ROADMAP N23).
      *
      * Not dismissible on purpose: it clears when the next set is logged, which is when the

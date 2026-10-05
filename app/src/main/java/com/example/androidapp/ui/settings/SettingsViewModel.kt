@@ -49,6 +49,11 @@ class SettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(restTimerEnabled = enabled) }
             }
         }
+        viewModelScope.launch {
+            settingsRepository.observeProgressionPromptEnabled().collect { enabled ->
+                _uiState.update { it.copy(progressionPromptEnabled = enabled) }
+            }
+        }
     }
 
     fun onSetRestCue(enabled: Boolean) {
@@ -61,6 +66,10 @@ class SettingsViewModel @Inject constructor(
 
     fun onSetRestTimer(enabled: Boolean) {
         write { settingsRepository.setRestTimerEnabled(enabled) }
+    }
+
+    fun onSetProgressionPrompt(enabled: Boolean) {
+        write { settingsRepository.setProgressionPromptEnabled(enabled) }
     }
 
     /** One place where a failed write becomes the error the screen shows. */
@@ -97,6 +106,12 @@ data class SettingsUiState(
      * nothing is counted, nothing is adjusted and nothing chimes.
      */
     val restTimerEnabled: Boolean = true,
+    /**
+     * Whether *Done* asks about the next step a plan earned (ROADMAP N50, N66).
+     *
+     * On, so an upgrade changes nothing for someone who never opens settings.
+     */
+    val progressionPromptEnabled: Boolean = true,
     val error: DataError? = null,
 ) {
     val choices: List<Int> get() = REST_CHOICES

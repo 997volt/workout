@@ -85,6 +85,8 @@ class ActiveWorkoutScreenTest {
          * say so, which is what N53's move into the overflow made worth asserting.
          */
         onToggleSuperset: (String) -> Unit = actions.onToggleSuperset,
+        /** Whether *Done* asks about the next step a plan earned (ROADMAP N66). */
+        progressionPromptEnabled: Boolean = true,
     ) {
         composeTestRule.setContent {
             ActiveWorkoutScreen(
@@ -116,6 +118,7 @@ class ActiveWorkoutScreenTest {
                 countsAgainstProgram = countsAgainstProgram,
                 restTimerEnabled = restTimerEnabled,
                 defaultRestSeconds = defaultRestSeconds,
+                progressionPromptEnabled = progressionPromptEnabled,
             )
         }
     }
@@ -204,6 +207,28 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertDoesNotExist()
         assertEquals("Done writes nothing", null, rated)
         assertEquals("se1", finished)
+    }
+
+    @Test
+    fun withThePromptTurnedOff_tappingDone_onlyFinishesTheExercise() {
+        // ROADMAP N66: the question is a preference, so a plan that could answer it is not asked
+        // when the switch is off — Done finishes and nothing is written to the plan.
+        var accepted: Pair<String, ProgressionDirection>? = null
+        var finished: String? = null
+        setScreen(
+            state(isFinished = false, progression = earnedPrompt()),
+            actions = Actions(
+                onAcceptProgression = { id, direction -> accepted = id to direction },
+                onFinishExercise = { finished = it },
+            ),
+            progressionPromptEnabled = false,
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertDoesNotExist()
+        assertEquals("se1", finished)
+        assertEquals("nothing was written to the plan", null, accepted)
     }
 
     @Test

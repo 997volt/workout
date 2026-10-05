@@ -102,6 +102,8 @@ internal fun ExerciseList(
     /** Whether a rest is counted down, and the fallback its static label uses (ROADMAP N44). */
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
+    /** Whether *Done* asks about the next step a plan earned (ROADMAP N66). */
+    progressionPromptEnabled: Boolean = true,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag(TestTags.EXERCISE_LIST),
@@ -130,6 +132,7 @@ internal fun ExerciseList(
                 onToggleSuperset = if (index == 0) null else { { onToggleSuperset(row.id) } },
                 restTimerEnabled = restTimerEnabled,
                 defaultRestSeconds = defaultRestSeconds,
+                progressionPromptEnabled = progressionPromptEnabled,
             )
             HorizontalDivider()
         }
@@ -164,6 +167,8 @@ private fun ExerciseSection(
     onToggleSuperset: (() -> Unit)? = null,
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
+    /** Whether *Done* asks about the next step a plan earned (ROADMAP N66). */
+    progressionPromptEnabled: Boolean = true,
 ) {
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Row(
@@ -182,6 +187,7 @@ private fun ExerciseSection(
                 onReopenExercise = onReopenExercise,
                 onFinishExercise = onFinishExercise,
                 onAcceptProgression = onAcceptProgression,
+                progressionPromptEnabled = progressionPromptEnabled,
             )
             // The rare actions moved in here rather than sitting on the header (ROADMAP N53): the
             // header is read constantly mid-session, and a text link in every one of them cost more
@@ -237,6 +243,7 @@ private fun ExerciseStateAction(
     onReopenExercise: () -> Unit,
     onFinishExercise: (String) -> Unit,
     onAcceptProgression: (String, ProgressionDirection) -> Unit,
+    progressionPromptEnabled: Boolean,
 ) {
     if (row.isFinished) {
         AppTextButton(
@@ -250,16 +257,19 @@ private fun ExerciseStateAction(
             row = row,
             onFinish = onFinishExercise,
             onAcceptProgression = onAcceptProgression,
+            progressionPromptEnabled = progressionPromptEnabled,
         )
     }
 }
 
 /**
- * The **Done** button for one exercise, and the prompt behind it (ROADMAP N7, N50).
+ * The **Done** button for one exercise, and the prompt behind it (ROADMAP N7, N50, N66).
  *
  * Where a plan can answer it, Done opens the **progression prompt** — what the plan asked, what was
  * done, and the next step when the session earned one. **Where there is no plan there is no next step
- * to decide**, so Done only finishes the exercise.
+ * to decide**, so Done only finishes the exercise; and the switch at Settings can withdraw the
+ * question entirely (N66), because a lifter who does not want the app editing the plan is not asked
+ * about it.
  *
  * The rating is deliberately not on this path (N8, N10): *How did that feel?* is opened where the
  * lifter reaches for it — the exercise's own row — and never handed to them on the way out of it.
@@ -271,13 +281,14 @@ private fun FinishExerciseAction(
     row: SessionExerciseRow,
     onFinish: (String) -> Unit,
     onAcceptProgression: (String, ProgressionDirection) -> Unit,
+    progressionPromptEnabled: Boolean,
 ) {
     var prompting by remember { mutableStateOf(false) }
-    // A plan is what the progression prompt reads, so no plan means no prompt (N50).
-    val hasPlan = row.progression.planned != null
+    // A plan is what the progression prompt reads (N50), and the setting is what asks for it (N66).
+    val prompts = progressionPromptEnabled && row.progression.planned != null
 
     AppTextButton(
-        onClick = { if (hasPlan) prompting = true else onFinish(row.id) },
+        onClick = { if (prompts) prompting = true else onFinish(row.id) },
         modifier = Modifier.testTag(TestTags.EXERCISE_DONE),
     ) {
         Text(stringResource(R.string.active_workout_done_exercise))

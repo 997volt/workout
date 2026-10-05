@@ -12,6 +12,13 @@ repeated here.
 
 ## [Unreleased]
 
+### Added
+
+- **The progression question at *Done* can be turned off** (N66). It has opened since N50 wherever a
+  plan could answer it, and it writes the plan — so a lifter who would rather the app did not edit a
+  template on the way out of an exercise had no way to say so. Settings now carries *Ask about
+  progression*, on by default. Off, *Done* just finishes the exercise; nothing is written to the plan.
+
 ### Removed
 
 - **The workout screen's "Last time" line is gone** (N65). It printed the *first* set of the previous

@@ -2649,6 +2649,16 @@ private class FakeSettingsRepository(
         return DataResult.Success(Unit)
     }
 
+    /** N66: settable before the ViewModel is built, so a test can start with the prompt off. */
+    val progressionPrompt = MutableStateFlow(true)
+
+    override fun observeProgressionPromptEnabled(): Flow<Boolean> = progressionPrompt.asStateFlow()
+
+    override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> {
+        progressionPrompt.value = enabled
+        return DataResult.Success(Unit)
+    }
+
     override fun observeStatisticsRange(): Flow<StatisticsRange> = flowOf(StatisticsRange())
 
     override suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit> =

@@ -500,6 +500,10 @@
     <!-- The app's settings (ROADMAP N21). -->
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back</string>
+    <!-- Whether Done asks about the plan's next step (ROADMAP N66). On by default: it is what the
+         app has done since N50, so an upgrade changes nothing for someone who never opens settings. -->
+    <string name="settings_progression">Ask about progression</string>
+    <string name="settings_progression_hint">At Done, offer the next step when the plan was met. Off just finishes the exercise.</string>
     <string name="settings_rest_title">Default rest</string>
     <string name="settings_rest_current">Now: %1$s</string>
     <string name="settings_rest_explainer">Used when an exercise has no rest of its own. An exercise set in the template or the library always wins.</string>

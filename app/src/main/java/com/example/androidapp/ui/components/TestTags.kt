@@ -330,6 +330,8 @@ object TestTags {
     /** The rest-timer switch (ROADMAP N44), and the workout screen's static prescription it turns on. */
     const val SETTINGS_REST_TIMER = "settings_rest_timer"
     const val EXERCISE_REST_PRESCRIPTION = "exercise_rest_prescription"
+    /** The switch that decides whether *Done* asks about the next step a plan earned (ROADMAP N66). */
+    const val SETTINGS_PROGRESSION = "settings_progression"
     /** The row that opens the typed delete-everything confirmation (ROADMAP N43). */
     const val SETTINGS_CLEAR_DATA = "settings_clear_data"
 
