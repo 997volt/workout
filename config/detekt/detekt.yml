@@ -14,6 +14,17 @@
 config:
   validation: true
 
+Compose:
+  CompositionLocalAllowlist:
+    # One ambient is allowed, and named here rather than left to a blanket rule: the weight unit
+    # (ROADMAP N64) is display configuration every screen needs, and threading it as a parameter
+    # through every composable between the shell and the field that shows a number did not fit the
+    # length ceilings this project enforces. Nothing outside composition reads it — `Weight`'s
+    # format, parse and step functions all take the unit as an argument — and the default is the
+    # unit the app shipped in, so a preview or a test behaves as it always did.
+    allowedCompositionLocals:
+      - LocalWeightUnit
+
 naming:
   FunctionNaming:
     # Composables are PascalCase by Kotlin/Compose convention (`ExerciseLibraryScreen`),

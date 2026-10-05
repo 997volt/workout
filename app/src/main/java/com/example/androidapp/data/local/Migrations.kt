@@ -773,6 +773,25 @@ private const val DROP_PROGRAM_SLOT_SETS = "DROP TABLE IF EXISTS `program_slot_s
 
 private const val DROP_PROGRAM_SLOT_EXERCISES = "DROP TABLE IF EXISTS `program_slot_exercises`"
 
+/**
+ * An exercise may carry its own display unit (ROADMAP N64).
+ *
+ * A nullable TEXT column holding the enum's name: null is "follow the app setting", which is what
+ * every existing row becomes, so nothing changes for anyone until they set one. Presentation only —
+ * every weight stays in grams, so this column changes no number on disk.
+ *
+ * The migration test seeds an exercise, upgrades, and asserts it survives with no unit set,
+ * validated against the exported `31.json`.
+ */
+val MIGRATION_30_31 = object : Migration(30, 31) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(ADD_EXERCISE_WEIGHT_UNIT)
+    }
+}
+
+private const val ADD_EXERCISE_WEIGHT_UNIT =
+    "ALTER TABLE `exercises` ADD COLUMN `weightUnit` TEXT"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -913,4 +932,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_27_28,
     MIGRATION_28_29,
     MIGRATION_29_30,
+    MIGRATION_30_31,
 )

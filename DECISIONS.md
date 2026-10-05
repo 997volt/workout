@@ -17,6 +17,27 @@ the rule; that one argues it.
 
 ## Data model
 
+- **A weight's unit is presentation, and an exercise may choose its own** (N64). Storage stays whole
+  grams, which is what makes the switch free and reversible: nothing on disk changes, and a value
+  typed in pounds reads back as the pounds that were typed — pounds round to the nearest tenth *from
+  the stored grams*, once, rather than truncating to `220.4`. The app-wide unit lives in Settings and
+  is kilograms until it is changed, so an upgrade moves no number. An exercise's own unit is a
+  nullable column holding the enum's name: null is "follow the app", which is a third answer and not
+  a missing one, which is why the edit form offers three chips rather than two. **Statistics and body
+  measurements are out of scope by decision**: their units belong to the metric, chosen per series in
+  a registry that knows nothing about exercises, and making a chart follow an exercise's unit would
+  mean a series that reads differently depending on which lift was picked last.
+- **The unit reaches the screen as an ambient, and reaches every function as a parameter** (N64).
+  `LocalWeightUnit` is provided once at the shell and read where a number is drawn, because threading
+  it through every composable between the root and the field did not fit the length ceilings this
+  project enforces — the batch that added it had already split three functions for exceeding them.
+  Nothing outside composition depends on it: `Weight.format`, `parse` and `stepGrams` take the unit as
+  an argument, so the pure layer stays pure and testable, and the local's default is the unit the app
+  shipped in so a preview or a test behaves as it always did. The allowance is named in
+  [detekt.yml](config/detekt/detekt.yml) rather than left to the rule's default, so the next ambient
+  is a decision rather than a habit.
+
+
 - **Weights are whole grams in a `Long`**
   ([Weight.kt](app/src/main/java/com/example/androidapp/domain/Weight.kt)) — exact 0.5 kg
   and 1.25 kg steps, no floating-point drift; units are presentational.

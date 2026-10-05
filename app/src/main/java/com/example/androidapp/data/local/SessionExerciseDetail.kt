@@ -1,5 +1,6 @@
 package com.example.androidapp.data.local
 
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SessionExercise
 import java.time.Instant
@@ -23,6 +24,14 @@ data class SessionExerciseDetail(
     val restSeconds: Int?,
     /** Shown under the exercise name while lifting (ROADMAP N5). */
     val techniqueNote: String?,
+    /**
+     * The library exercise's own display unit by name, or null to follow the app setting (N64).
+     *
+     * Read from the library rather than snapshotted onto the session, unlike the rest and cue: a
+     * display preference is not part of what the plan prescribed, and changing it should reach a
+     * workout that is already open.
+     */
+    val weightUnit: String?,
     /** When this exercise was marked done, or null (ROADMAP N7). */
     val finishedAt: Long?,
     /** How well the target muscle was worked, 1–10, or null (ROADMAP N8). */
@@ -53,6 +62,7 @@ internal fun SessionExerciseDetail.toDomain(
     equipment = equipment,
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
+    weightUnit = WeightUnit.fromName(weightUnit),
     finishedAt = finishedAt?.let(Instant::ofEpochMilli),
     muscleFeel = muscleFeel,
     jointPain = jointPain,

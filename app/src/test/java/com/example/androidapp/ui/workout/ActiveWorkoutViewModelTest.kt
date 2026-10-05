@@ -17,6 +17,7 @@ import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.Weight
@@ -2447,6 +2448,16 @@ private class FakeSettingsRepository(
 
     override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> {
         progressionPrompt.value = enabled
+        return DataResult.Success(Unit)
+    }
+
+    /** N64: the app-wide unit the display follows. Kilograms unless a test says otherwise. */
+    private val unit = MutableStateFlow(WeightUnit.KILOGRAMS)
+
+    override fun observeWeightUnit(): Flow<WeightUnit> = unit.asStateFlow()
+
+    override suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit> {
+        this.unit.value = unit
         return DataResult.Success(Unit)
     }
 

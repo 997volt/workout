@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionPrompt
 
@@ -40,6 +41,8 @@ import com.example.androidapp.domain.model.ProgressionPrompt
 fun ProgressionDialog(
     exerciseName: String,
     prompt: ProgressionPrompt,
+    /** The unit this exercise is read in (ROADMAP N64): its own, or the app setting. */
+    unit: WeightUnit,
     onAccept: (ProgressionDirection) -> Unit,
     onNotNow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -50,7 +53,7 @@ fun ProgressionDialog(
         // away is not a question — the shape the skip prompt already uses.
         onDismissRequest = onNotNow,
         title = { Text(stringResource(R.string.progression_title, exerciseName)) },
-        text = { ProgressionBody(prompt = prompt, onAccept = onAccept) },
+        text = { ProgressionBody(prompt = prompt, onAccept = onAccept, unit = unit) },
         // Nothing to confirm: the two steps are offered in the body, beside what they would change, and
         // *Not now* is the only thing left for the button row to say.
         confirmButton = {},
@@ -73,6 +76,7 @@ fun ProgressionDialog(
 private fun ProgressionBody(
     prompt: ProgressionPrompt,
     onAccept: (ProgressionDirection) -> Unit,
+    unit: WeightUnit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -82,6 +86,7 @@ private fun ProgressionBody(
                     weightGrams = planned.targetWeightGrams,
                     assistanceGrams = planned.targetAssistanceGrams,
                     rpeHalves = planned.targetRpeHalves,
+                    unit = unit,
                 )
                 stringResource(R.string.progression_plan, line)
             } ?: stringResource(R.string.progression_no_plan),
@@ -91,7 +96,7 @@ private fun ProgressionBody(
             Text(
                 text = stringResource(
                     R.string.progression_done,
-                    setLine(done.reps, done.weightGrams, done.assistanceGrams, done.rpeHalves),
+                    setLine(done.reps, done.weightGrams, done.assistanceGrams, done.rpeHalves, unit),
                 ),
                 modifier = Modifier.testTag(TestTags.PROGRESSION_DONE),
             )
@@ -105,7 +110,13 @@ private fun ProgressionBody(
                     onClick = { onAccept(ProgressionDirection.LOAD) },
                     modifier = Modifier.fillMaxWidth().testTag(TestTags.PROGRESSION_LOAD),
                 ) {
-                    Text(stringResource(R.string.progression_increase_load, Weight.kilograms(step.to)))
+                    Text(
+                        stringResource(
+                            R.string.progression_increase_load,
+                            Weight.format(step.to, unit),
+                            unit.label(),
+                        ),
+                    )
                 }
             }
             FilledTonalButton(
@@ -132,10 +143,15 @@ private fun setLine(
     weightGrams: Long?,
     assistanceGrams: Long?,
     rpeHalves: Int?,
+    unit: WeightUnit,
 ): String {
     val repsPart = reps?.let { pluralStringResource(R.plurals.progression_reps_value, it, it) }
     val weightPart = weightGrams?.let {
-        stringResource(R.string.progression_weight_value, Weight.display(it, assistanceGrams ?: 0L))
+        stringResource(
+            R.string.progression_weight_value,
+            Weight.display(it, assistanceGrams ?: 0L, unit),
+            unit.label(),
+        )
     }
     val rpePart = rpeHalves?.let { rpeMarker(it) }
     return listOfNotNull(repsPart, weightPart, rpePart).joinToString(" · ")

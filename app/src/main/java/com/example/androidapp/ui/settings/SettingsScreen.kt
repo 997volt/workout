@@ -41,6 +41,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppRow
@@ -95,6 +97,7 @@ fun SettingsRoute(
         onSetKeepScreenOn = viewModel::onSetKeepScreenOn,
         onSetRestTimer = viewModel::onSetRestTimer,
         onSetProgressionPrompt = viewModel::onSetProgressionPrompt,
+        onSetWeightUnit = viewModel::onSetWeightUnit,
         onExportData = transferActions.export,
         onImportData = transferActions.import,
         onClearData = {
@@ -123,6 +126,7 @@ fun SettingsScreen(
     onSetKeepScreenOn: (Boolean) -> Unit = {},
     onSetRestTimer: (Boolean) -> Unit = {},
     onSetProgressionPrompt: (Boolean) -> Unit = {},
+    onSetWeightUnit: (WeightUnit) -> Unit = {},
     onExportData: () -> Unit = {},
     onImportData: () -> Unit = {},
     onClearData: () -> Unit = {},
@@ -167,6 +171,7 @@ fun SettingsScreen(
             onSetKeepScreenOn = onSetKeepScreenOn,
             onSetRestTimer = onSetRestTimer,
             onSetProgressionPrompt = onSetProgressionPrompt,
+            onSetWeightUnit = onSetWeightUnit,
             onExportData = onExportData,
             onImportData = onImportData,
             onClearData = { confirmingClear = true },
@@ -189,6 +194,7 @@ private fun SettingsBody(
     onSetKeepScreenOn: (Boolean) -> Unit,
     onSetRestTimer: (Boolean) -> Unit,
     onSetProgressionPrompt: (Boolean) -> Unit,
+    onSetWeightUnit: (WeightUnit) -> Unit,
     onExportData: () -> Unit,
     onImportData: () -> Unit,
     onClearData: () -> Unit,
@@ -200,6 +206,12 @@ private fun SettingsBody(
             .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // The unit comes first: it is the one preference that changes what every other screen
+        // says, rather than how this one behaves (ROADMAP N64).
+        WeightUnitSection(
+            state = state,
+            onSetWeightUnit = onSetWeightUnit,
+        )
         RestDefaultSection(
             state = state,
             onSetDefaultRest = onSetDefaultRest,
@@ -391,6 +403,51 @@ private fun WorkoutSwitches(
             testTag = TestTags.SETTINGS_KEEP_SCREEN_ON,
         )
     }
+}
+
+/**
+ * The unit every weight is shown and typed in (ROADMAP N64).
+ *
+ * Two chips rather than a switch: a switch has an on and an off, and these are two names for the same
+ * setting. An exercise may override it for itself, which is said here rather than left to be found.
+ */
+@Composable
+private fun WeightUnitSection(
+    state: SettingsUiState,
+    onSetWeightUnit: (WeightUnit) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AppCard(modifier = modifier) {
+        Text(
+            text = stringResource(R.string.settings_weight_unit),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+            text = stringResource(R.string.settings_weight_unit_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+        Row(
+            modifier = Modifier.padding(top = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            WeightUnit.entries.forEach { unit ->
+                AppFilterChip(
+                    selected = unit == state.weightUnit,
+                    onClick = { onSetWeightUnit(unit) },
+                    label = unit.label(),
+                    testTag = unit.chipTag(),
+                )
+            }
+        }
+    }
+}
+
+/** The tag the chip for one unit answers to (ROADMAP N64). */
+private fun WeightUnit.chipTag(): String = when (this) {
+    WeightUnit.KILOGRAMS -> TestTags.SETTINGS_WEIGHT_UNIT_KG
+    WeightUnit.POUNDS -> TestTags.SETTINGS_WEIGHT_UNIT_LB
 }
 
 /** The default rest: what is in force, what it means, and the choices (ROADMAP N21). */

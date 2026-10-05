@@ -3,6 +3,7 @@ package com.example.androidapp.ui.history
 import kotlinx.coroutines.flow.asStateFlow
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.SetType
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -42,6 +43,8 @@ data class HistorySet(
      * never knew one, so editing a warm-up turned it into a working set.
      */
     val setType: SetType = SetType.NORMAL,
+    /** The unit this set's load is read in (ROADMAP N64): its exercise's own, or the app's. */
+    val weightUnit: WeightUnit? = null,
 )
 
 /** An exercise within a past workout, with everything that was logged for it. */
@@ -57,6 +60,8 @@ data class HistoryExercise(
      */
     val exerciseId: String,
     val name: String,
+    /** This exercise's own display unit, or null to follow the app setting (ROADMAP N64). */
+    val weightUnit: WeightUnit? = null,
     val sets: List<HistorySet>,
     /** How well the target muscle was worked, 1–10, or null (ROADMAP N8). */
     val muscleFeel: Int? = null,
@@ -166,6 +171,7 @@ class WorkoutDetailViewModel @Inject constructor(
                         id = row.id,
                         exerciseId = row.exerciseId,
                         name = row.exerciseName,
+                        weightUnit = row.weightUnit,
                         muscleFeel = row.muscleFeel,
                         joints = row.joints,
                         jointPain = row.jointPain,
@@ -184,6 +190,7 @@ class WorkoutDetailViewModel @Inject constructor(
                                     // renders a default (ROADMAP B5, N15).
                                     assistanceGrams = it.assistanceGrams,
                                     setType = it.setType,
+                                    weightUnit = row.weightUnit,
                                 )
                             },
                     )

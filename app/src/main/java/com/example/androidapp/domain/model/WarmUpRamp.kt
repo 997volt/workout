@@ -66,13 +66,17 @@ fun warmUpRamp(
  * reach a loadable step below it — so a control that would do nothing is not offered, and a call
  * that would write nothing cannot happen either.
  */
-fun warmUpRampFor(sets: List<TemplateSet>): List<WarmUpTarget> {
+fun warmUpRampFor(
+    sets: List<TemplateSet>,
+    /** The smallest loadable step in the unit this plan is read in (ROADMAP N64). */
+    stepGrams: Long = DEFAULT_PROGRESSION_STEP_GRAMS,
+): List<WarmUpTarget> {
     val workingWeight = sets
         .filterNot { it.role == SetType.WARMUP }
         .mapNotNull { it.targetWeightGrams }
         .maxOrNull()
         ?: return emptyList()
-    return warmUpRamp(workingWeight)
+    return warmUpRamp(workingWeight, stepGrams)
 }
 
 /** The ramp's shape: a fraction of the working weight, and the reps to do at it. */

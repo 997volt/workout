@@ -1,5 +1,7 @@
 package com.example.androidapp.domain.model
 
+import com.example.androidapp.domain.WeightUnit
+
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -96,6 +98,13 @@ data class SessionExercise(
     val restSeconds: Int? = null,
     /** A cue to show under the name while lifting (ROADMAP N5). */
     val techniqueNote: String? = null,
+    /**
+     * This exercise's own display unit, or null to follow the app setting (ROADMAP N64).
+     *
+     * Carried on the row so every number that belongs to the exercise — its logged sets, its
+     * plan's targets, its review line — can be read in the unit it is set to.
+     */
+    val weightUnit: WeightUnit? = null,
     /**
      * When this exercise was marked done (ROADMAP N7), or null while it is open.
      *

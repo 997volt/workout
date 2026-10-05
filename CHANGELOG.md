@@ -19,6 +19,19 @@ repeated here.
   template on the way out of an exercise had no way to say so. Settings now carries *Ask about
   progression*, on by default. Off, *Done* just finishes the exercise; nothing is written to the plan.
 
+### Added
+
+- **Weights can be shown and typed in pounds, app-wide or per exercise** (N64). Storage is unchanged
+  — every weight is still whole grams — so this is presentation and nothing else: a stored value
+  survives a switch exactly, and switching back shows the number it always did. Settings carries
+  *Weight unit* (kg by default, so an upgrade changes nothing), and an exercise can set its own on its
+  detail screen, which is the point: a machine that jumps in pounds reads in pounds while everything
+  else reads in kilograms. Every number belonging to that exercise follows it — its logged sets, its
+  plan's targets, its review line, its history — and the ± steppers move by that unit's plate pair,
+  2.5 kg or 5 lb. **Statistics and body measurements stay in kilograms**: their units are the metric's
+  own, chosen per series, and are not a property of an exercise. The strings that baked in `kg` now
+  take the unit as an argument, so a translation can place it.
+
 ### Changed
 
 - **A program is a schedule over templates, and nothing else** (N73). A slot used to carry its own

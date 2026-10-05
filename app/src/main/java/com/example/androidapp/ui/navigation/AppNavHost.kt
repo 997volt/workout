@@ -12,13 +12,18 @@ import androidx.compose.foundation.layout.WindowInsets
 import com.example.androidapp.ui.measurements.MeasurementsRoute
 import com.example.androidapp.ui.adherence.AdherenceRoute
 import com.example.androidapp.ui.settings.SettingsRoute
+import com.example.androidapp.ui.settings.WeightUnitViewModel
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.exercises.ExerciseDetailRoute
 import com.example.androidapp.ui.exercises.ExerciseLibraryRoute
 import com.example.androidapp.ui.history.WorkoutDetailRoute
@@ -57,6 +62,10 @@ fun AppNavHost(
     val tabRoot = AppTab.forRoute(destination?.route)
     LaunchedEffect(tabRoot) { tabRoot?.let { lastTab = it } }
 
+    // The unit every weight is read in, provided once here rather than threaded through every
+    // screen between this and the field that shows a number (ROADMAP N64).
+    val weightUnit by hiltViewModel<WeightUnitViewModel>().weightUnit.collectAsStateWithLifecycle()
+
     val showBar = showsTabBar(destination?.route)
     Scaffold(
         // The shell owns the bar's height and nothing else: each screen keeps its own top bar and its own
@@ -67,17 +76,19 @@ fun AppNavHost(
         },
         modifier = modifier,
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = WorkoutsHome,
-            // Applied once here instead of by every screen (ROADMAP N34).
-            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
-        ) {
-            homeDestinations(navController)
-            workoutDestinations(navController)
-            templateDestinations(navController)
-            programDestinations(navController)
-            historyDestinations(navController)
+        CompositionLocalProvider(LocalWeightUnit provides weightUnit) {
+            NavHost(
+                navController = navController,
+                startDestination = WorkoutsHome,
+                // Applied once here instead of by every screen (ROADMAP N34).
+                modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
+            ) {
+                homeDestinations(navController)
+                workoutDestinations(navController)
+                templateDestinations(navController)
+                programDestinations(navController)
+                historyDestinations(navController)
+            }
         }
     }
 }

@@ -53,6 +53,10 @@
          fallback rather than a bare dash, because it is what will actually run. -->
     <string name="exercise_detail_rest">Rest between sets</string>
     <string name="exercise_detail_rest_default">Default (%1$s)</string>
+    <!-- The exercise's own display unit (ROADMAP N64). "App default" names the unit in force, so
+         the row says both where the value comes from and what it currently means. -->
+    <string name="exercise_detail_weight_unit">Weight unit</string>
+    <string name="exercise_detail_weight_unit_default">App default (%1$s)</string>
     <string name="exercise_detail_cue">Technique cue</string>
     <!-- The rest field's two ways of saying "not a number": empty inherits, zero means none
          (ROADMAP N45). One string, wherever a rest is authored. -->
@@ -140,11 +144,11 @@
     <string name="template_set_title">Planned set</string>
     <string name="template_set_title_new">Add a planned set</string>
     <string name="template_set_role">Role: %1$s</string>
-    <string name="template_set_weight">Target weight (kg)</string>
+    <string name="template_set_weight">Target weight (%1$s)</string>
     <string name="template_set_reps_min">Reps from</string>
     <string name="template_set_reps_max">Reps to</string>
     <string name="template_set_note">Note</string>
-    <string name="template_set_weight_value">%1$s kg</string>
+    <string name="template_set_weight_value">%1$s %2$s</string>
     <plurals name="template_plan_summary">
         <item quantity="one">%1$d planned set</item>
         <item quantity="other">%1$d planned sets</item>
@@ -210,6 +214,7 @@
     <string name="statistics_goal_clear">Clear</string>
     <string name="statistics_per_week">%1$s %2$s per week</string>
     <string name="unit_kilograms">kg</string>
+    <string name="unit_pounds">lb</string>
     <string name="unit_centimetres">cm</string>
     <string name="unit_percent">%</string>
     <string name="unit_reps">reps</string>
@@ -374,9 +379,9 @@
         <item quantity="one">%1$d rep</item>
         <item quantity="other">%1$d reps</item>
     </plurals>
-    <string name="progression_weight_value">%1$s kg</string>
+    <string name="progression_weight_value">%1$s %2$s</string>
     <string name="progression_offer">The plan was met with room in hand.</string>
-    <string name="progression_increase_load">Increase load to %1$s kg</string>
+    <string name="progression_increase_load">Increase load to %1$s %2$s</string>
     <plurals name="progression_increase_reps">
         <item quantity="one">Raise the target to %1$d rep</item>
         <item quantity="other">Raise the target to %1$d reps</item>
@@ -426,11 +431,11 @@
     </plurals>
     <string name="set_plan_done">Planned work done — log extra sets if you want them.</string>
     <string name="set_number">%1$d</string>
-    <string name="set_summary">%1$s kg × %2$d</string>
+    <string name="set_summary">%1$s %2$s × %3$d</string>
     <string name="set_edit_title">Edit set</string>
     <!-- Tap action for a set row (P1.17): announces what tapping does. -->
     <string name="set_edit_action">Edit set</string>
-    <string name="set_weight_label">Weight (kg)</string>
+    <string name="set_weight_label">Weight (%1$s)</string>
     <string name="set_reps_label">Reps</string>
     <string name="set_save">Save</string>
     <string name="set_cancel">Cancel</string>
@@ -482,7 +487,7 @@
     <string name="clear_done">Everything deleted</string>
     <!-- The review a finished workout gets (ROADMAP N20). -->
     <string name="summary_title">Workout complete</string>
-    <string name="summary_totals">Sets %1$d · reps %2$d · %3$s kg</string>
+    <string name="summary_totals">Sets %1$d · reps %2$d · %3$s %4$s</string>
     <string name="summary_readiness">Readiness: %1$s</string>
     <string name="summary_note">Note: %1$s</string>
     <string name="summary_ratings_title">How it felt</string>
@@ -495,15 +500,15 @@
     <string name="summary_prescribed">prescribed %1$s</string>
     <string name="summary_performed">performed %1$s</string>
     <string name="summary_shape">%1$d×%2$d</string>
-    <string name="summary_shape_weight">%1$s at %2$s kg</string>
+    <string name="summary_shape_weight">%1$s at %2$s %3$s</string>
     <string name="summary_sets_only">Sets: %1$d</string>
     <string name="summary_not_performed">not performed</string>
     <string name="summary_not_planned">not in the plan</string>
     <string name="summary_skipped">skipped — the plan asked for it</string>
     <string name="summary_no_weight_to_compare">no planned weight to compare</string>
     <string name="summary_matched">as planned</string>
-    <string name="summary_over">%1$s kg over plan</string>
-    <string name="summary_under">%1$s kg under plan</string>
+    <string name="summary_over">%1$s %2$s over plan</string>
+    <string name="summary_under">%1$s %2$s under plan</string>
     <string name="summary_done">Done</string>
     <!-- The app's settings (ROADMAP N21). -->
     <string name="settings_title">Settings</string>
@@ -511,6 +516,10 @@
     <!-- Whether Done asks about the plan's next step (ROADMAP N66). On by default: it is what the
          app has done since N50, so an upgrade changes nothing for someone who never opens settings. -->
     <string name="settings_progression">Ask about progression</string>
+    <!-- The unit every weight is shown and typed in (ROADMAP N64). Presentation only: storage is
+         always grams, so switching this changes nothing on disk. -->
+    <string name="settings_weight_unit">Weight unit</string>
+    <string name="settings_weight_unit_hint">Used wherever a weight is shown or typed. An exercise can set its own.</string>
     <string name="settings_progression_hint">At Done, offer the next step when the plan was met. Off just finishes the exercise.</string>
     <string name="settings_rest_title">Default rest</string>
     <string name="settings_rest_current">Now: %1$s</string>
@@ -530,8 +539,8 @@
     <string name="settings_data_import_hint">Merge a backup into this device. Nothing is overwritten.</string>
     <string name="settings_data_clear_hint">Delete every workout, measurement and target. This cannot be undone.</string>
     <!-- The record just set (ROADMAP N23). -->
-    <string name="personal_record_title">Personal record: %2$s kg × %1$d</string>
-    <string name="personal_record_beats">%1$s — your best before was %2$s kg</string>
+    <string name="personal_record_title">Personal record: %2$s %3$s × %1$d</string>
+    <string name="personal_record_beats">%1$s — your best before was %2$s %3$s</string>
     <string name="personal_record_first">%1$s — the first time at this rep count</string>
     <!-- Supersets and circuits (ROADMAP N24). -->
     <string name="superset_pair">Superset with above</string>
@@ -555,7 +564,7 @@
     <string name="history_loading">Loading history…</string>
     <string name="history_empty">No workouts yet</string>
     <string name="history_empty_hint">Finished workouts will appear here.</string>
-    <string name="history_volume">%1$s kg</string>
+    <string name="history_volume">%1$s %2$s</string>
     <string name="history_detail_title">Workout</string>
     <string name="history_detail_missing">That workout is no longer stored.</string>
     <!-- Repeating one finished workout (ROADMAP N48): the entry point the home button gave up, now

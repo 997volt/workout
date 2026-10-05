@@ -61,6 +61,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.ui.components.SetEdit
+import com.example.androidapp.ui.components.exerciseWeightUnit
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.SetEditorDialog
 import com.example.androidapp.ui.components.WorkoutNoteDialog
 import com.example.androidapp.ui.components.ReadinessNoteDialog
@@ -288,6 +290,7 @@ private fun SetEditorSection(
         initialReps = set.reps,
         initialWeightGrams = set.weightGrams,
         initialRpe = set.rpeHalves,
+    initialUnit = set.weightUnit,
         initialNote = set.note,
         // Without these the draft starts at a plain working set with no help, and saving
         // writes that over the stored row — a one-rep correction silently destroying the role
@@ -907,11 +910,13 @@ private fun PersonalRecordBanner(
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            val unit = exerciseWeightUnit(record.weightUnit)
             Text(
                 text = stringResource(
                     R.string.personal_record_title,
                     record.reps,
-                    Weight.display(record.weightGrams, 0),
+                    Weight.display(record.weightGrams, 0, unit),
+                    unit.label(),
                 ),
                 style = MaterialTheme.typography.titleSmall,
             )
@@ -920,7 +925,8 @@ private fun PersonalRecordBanner(
                     stringResource(
                         R.string.personal_record_beats,
                         record.exerciseName,
-                        Weight.display(previous, 0),
+                        Weight.display(previous, 0, unit),
+                        unit.label(),
                     )
                 } ?: stringResource(R.string.personal_record_first, record.exerciseName),
                 style = MaterialTheme.typography.bodySmall,

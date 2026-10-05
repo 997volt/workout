@@ -52,6 +52,7 @@ import com.example.androidapp.ui.components.SetRpeField
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.restLabel
 import com.example.androidapp.ui.components.rpeMarker
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.toEdit
 import com.example.androidapp.ui.components.values
 import com.example.androidapp.ui.components.AppTextButton
@@ -373,6 +374,7 @@ private fun FinishExerciseAction(
         ProgressionDialog(
             exerciseName = row.name,
             prompt = row.progression,
+            unit = row.weightUnit,
             onAccept = { direction ->
                 prompting = false
                 onAcceptProgression(row.id, direction)
@@ -464,7 +466,9 @@ private fun NextSetEditor(
             ),
         )
     }
-    val values = draft.values()
+    // The exercise's own unit, resolved once for this block (ROADMAP N64).
+    val unit = row.weightUnit
+    val values = draft.values(unit)
 
     Column(modifier = modifier) {
         PlanProgressNotice(row = row)
@@ -479,7 +483,7 @@ private fun NextSetEditor(
                 testTag = TestTags.exercisePendingRole(row.id),
                 optionTag = { role -> TestTags.exercisePendingRole(row.id, role) },
             )
-            SetEntryNumbers(draft = draft, onDraftChange = { draft = it })
+            SetEntryNumbers(draft = draft, onDraftChange = { draft = it }, unit = unit)
             // A warm-up has no effort to state, so the field is not offered at all rather than
             // shown disabled: a control that cannot write is worse than no control (N67). The
             // role picker above is what brings it back.
@@ -495,7 +499,7 @@ private fun NextSetEditor(
                 )
             }
             FilledTonalButton(
-                onClick = { onLogSet(draft.toEdit()) },
+                onClick = { onLogSet(draft.toEdit(unit)) },
                 enabled = values.isComplete,
                 modifier = Modifier.fillMaxWidth().testTag(TestTags.SET_LOG),
             ) {
@@ -646,7 +650,8 @@ private fun SetLine(
             Text(
                 text = stringResource(
                     R.string.set_summary,
-                    Weight.display(set.weightGrams, set.assistanceGrams),
+                    Weight.display(set.weightGrams, set.assistanceGrams, set.weightUnit),
+                    set.weightUnit.label(),
                     set.reps,
                 ),
                 style = MaterialTheme.typography.bodyLarge,

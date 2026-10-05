@@ -3,6 +3,7 @@ package com.example.androidapp.ui.settings
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.repository.SettingsRepository
 import kotlinx.coroutines.Dispatchers
@@ -175,6 +176,22 @@ private class FakeSettingsRepository(
             DataResult.Failure(DataError.Invalid("refused"))
         } else {
             progression.value = enabled
+            DataResult.Success(Unit)
+        }
+    }
+
+    /** N64: the same read-back shape, so a refused write cannot look applied. */
+    private val unit = MutableStateFlow(WeightUnit.KILOGRAMS)
+    val unitWrites = mutableListOf<WeightUnit>()
+
+    override fun observeWeightUnit(): Flow<WeightUnit> = unit.asStateFlow()
+
+    override suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit> {
+        unitWrites += unit
+        return if (refuseWrites) {
+            DataResult.Failure(DataError.Invalid("refused"))
+        } else {
+            this.unit.value = unit
             DataResult.Success(Unit)
         }
     }

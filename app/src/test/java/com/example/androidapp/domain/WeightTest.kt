@@ -81,6 +81,57 @@ class WeightTest {
         assertThat(Weight.parseKilograms("60.0")).isEqualTo(60_000L)
     }
 
+    @Test
+    fun aPoundValue_roundTripsThroughStorageExactly() {
+        // ROADMAP N64: what a lifter types in pounds has to read back as what they typed. Parsing
+        // rounds to whole grams, so the display has to round to the tenth *from those grams* — the
+        // 0.4999 a truncating division produces is the bug this pins down.
+        for (text in listOf("45", "100", "220.5", "102.5", "1.5", "0.5")) {
+            val grams = Weight.parse(text, WeightUnit.POUNDS)!!
+            assertThat(Weight.format(grams, WeightUnit.POUNDS)).isEqualTo(text)
+        }
+    }
+
+    @Test
+    fun aKilogramValue_stillReadsTheWayItAlwaysDid() {
+        // The unit is presentation: nothing about the kilogram path moves.
+        assertThat(Weight.format(62_500L, WeightUnit.KILOGRAMS)).isEqualTo("62.5")
+        assertThat(Weight.format(100_000L, WeightUnit.KILOGRAMS)).isEqualTo("100")
+        assertThat(Weight.parse("62.5", WeightUnit.KILOGRAMS)).isEqualTo(62_500L)
+    }
+
+    @Test
+    fun theSameWeight_readsInEachUnit_withoutChangingOnDisk() {
+        // 100 kg is 220.5 lb, and neither number is stored: the grams are.
+        val grams = 100_000L
+        assertThat(Weight.format(grams, WeightUnit.KILOGRAMS)).isEqualTo("100")
+        assertThat(Weight.format(grams, WeightUnit.POUNDS)).isEqualTo("220.5")
+    }
+
+    @Test
+    fun aPoundEntry_refusesWhatTheGrammarRefuses() {
+        // The same grammar and the same refusals as kilograms: a typo cannot become a set (P1.3).
+        assertThat(Weight.parse("", WeightUnit.POUNDS)).isNull()
+        assertThat(Weight.parse("abc", WeightUnit.POUNDS)).isNull()
+        assertThat(Weight.parse("-20", WeightUnit.POUNDS)).isNull()
+        assertThat(Weight.parse("1e10", WeightUnit.POUNDS)).isNull()
+    }
+
+    @Test
+    fun theStep_isTheSmallestPlatePair_theUnitActuallyHas() {
+        // 2.5 kg for a metric gym, 5 lb (2268 g) for a pound-loading one (N64).
+        assertThat(Weight.stepGrams(WeightUnit.KILOGRAMS)).isEqualTo(2_500L)
+        assertThat(Weight.stepGrams(WeightUnit.POUNDS)).isEqualTo(2_268L)
+    }
+
+    @Test
+    fun anAssistedLoad_parsesAndDisplaysInTheChosenUnit() {
+        val load = Weight.parseLoad("-20", WeightUnit.POUNDS)!!
+        assertThat(load.assistanceGrams).isEqualTo(9_072L)
+        assertThat(load.weightGrams).isEqualTo(0L)
+        assertThat(Weight.display(load.weightGrams, load.assistanceGrams, WeightUnit.POUNDS))
+            .isEqualTo("-20")
+    }
 }
 
 /**
@@ -154,6 +205,6 @@ class RestTimerTest {
         // Assistance wins when both are set, which the editor cannot produce: it is
         // the number that changes how the set reads.
         assertThat(Weight.display(20_000L, 20_000L)).isEqualTo("-20")
-    }
-
+    
+}
 }

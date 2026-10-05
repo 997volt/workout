@@ -50,7 +50,7 @@ class TemplateEditorScreenTest {
         val onMoveExercise: (String, Int) -> Unit = { _, _ -> },
         val onDeleteTemplate: () -> Unit = {},
         val onAddExercise: () -> Unit = {},
-        val onAddWarmUpSets: (String) -> Unit = {},
+        val onAddWarmUpSets: (String, Long) -> Unit = { _, _ -> },
         val onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
     )
 

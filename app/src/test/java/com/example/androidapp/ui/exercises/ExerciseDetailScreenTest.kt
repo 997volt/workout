@@ -82,6 +82,26 @@ class ExerciseDetailScreenTest {
     }
 
     @Test
+    fun theWeightUnit_isShownAsTheInForceOne() {
+        // ROADMAP N64: the row says what is in force and where it comes from — "App default (kg)" —
+        // rather than a bare unit that would read as this exercise's own setting.
+        show(customState(isEditing = false))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_WEIGHT_UNIT).assertExists()
+    }
+
+    @Test
+    fun theWeightUnit_isATripleChoice_whenEditing() {
+        // Null is a real answer here — "follow the app" — so the form offers three chips, which is
+        // why it is not the two-way control the settings screen uses (ROADMAP N64).
+        show(customState(isEditing = true))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_WEIGHT_UNIT_DEFAULT).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_WEIGHT_UNIT_KG).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_WEIGHT_UNIT_LB).assertExists()
+    }
+
+    @Test
     fun aCustomExercise_offersEdit() {
         var edit = false
         show(customState(isEditing = false), onEdit = { edit = true })

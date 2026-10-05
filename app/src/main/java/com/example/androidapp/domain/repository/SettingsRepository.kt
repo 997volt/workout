@@ -1,5 +1,6 @@
 package com.example.androidapp.domain.repository
 
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.DataResult
 import kotlinx.coroutines.flow.Flow
@@ -68,6 +69,20 @@ interface SettingsRepository {
     fun observeProgressionPromptEnabled(): Flow<Boolean>
 
     suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit>
+
+    /**
+     * The unit weights are shown and typed in, app-wide (ROADMAP N64).
+     *
+     * A preference rather than a per-screen choice, and **presentation only**: every weight is stored
+     * as whole grams, so switching this changes nothing on disk. An exercise may override it for
+     * itself ([com.example.androidapp.domain.model.Exercise.weightUnit]).
+     *
+     * Kilograms by default, which is the unit the app shipped in: an upgrade changes nothing for
+     * someone who never opens settings.
+     */
+    fun observeWeightUnit(): Flow<WeightUnit>
+
+    suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit>
 
     /**
      * The window the Statistics screen is showing (ROADMAP N35).

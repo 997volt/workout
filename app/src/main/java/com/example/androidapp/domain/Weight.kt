@@ -23,8 +23,20 @@ object Weight {
     /** Sub-divisions shown on the label: 62.5 kg is 62 whole + 5 tenths. */
     private const val TENTHS_PER_KILOGRAM = 10
 
+    /** Exactly 0.45359237 kg by definition, so this is a definition rather than a measurement. */
+    private const val GRAMS_PER_POUND = 453.59237
+
+    /** Tenths of a pound, the sub-division a pound label shows. */
+    private const val TENTHS_PER_POUND = 10L
+
     /** A 2.5 kg step: the smallest pair of plates most gyms have per side. */
     const val DEFAULT_STEP_GRAMS = 2_500L
+
+    /**
+     * A 5 lb step (2268 g): the pound equivalent of [DEFAULT_STEP_GRAMS] — a pair of 2.5 lb plates,
+     * which is what a pound-loading gym has (ROADMAP N64).
+     */
+    const val POUND_STEP_GRAMS = 2_268L
 
     /**
      * The heaviest weight a lifter can log, in grams.
@@ -121,6 +133,67 @@ object Weight {
      */
     fun display(weightGrams: Long, assistanceGrams: Long): String =
         if (assistanceGrams > 0L) "-" + kilograms(assistanceGrams) else kilograms(weightGrams)
+
+    // --- ROADMAP N64: the same values in the unit a screen is set to ---------------------------
+
+    /**
+     * A weight in [unit]'s own sub-division, without the unit: `60000 -> "60"`, `60000 -> "132.3"`.
+     *
+     * Pounds round to the nearest tenth **once**, from the stored grams, so a weight typed as
+     * `220.5` and stored parses back to `220.5` rather than to `220.4` — the 0.4999 a truncating
+     * division would produce. That round trip is the property the whole unit feature rests on.
+     */
+    fun format(grams: Long, unit: WeightUnit): String = when (unit) {
+        WeightUnit.KILOGRAMS -> kilograms(grams)
+        WeightUnit.POUNDS -> pounds(grams)
+    }
+
+    private fun pounds(grams: Long): String {
+        val tenths = Math.round(grams * TENTHS_PER_POUND / GRAMS_PER_POUND)
+        val whole = tenths / TENTHS_PER_POUND
+        val remainder = abs(tenths % TENTHS_PER_POUND)
+        return if (remainder == 0L) whole.toString() else "$whole.$remainder"
+    }
+
+    /**
+     * [parseKilograms] in [unit]: the same grammar, the same refusals, and the same canonical cap.
+     *
+     * The cap is deliberately `MAX_GRAMS` in either unit, so "the heaviest weight a lifter can log"
+     * is one number on disk rather than one per unit, and switching units cannot silently legalise
+     * an entry the other refuses.
+     */
+    fun parse(text: String, unit: WeightUnit): Long? {
+        val normalized = text.trim().replace(',', '.')
+        if (!PLAIN_DECIMAL.matches(normalized)) return null
+
+        val grams = normalized.toDoubleOrNull()
+            ?.takeIf { it.isFinite() && it >= 0 }
+            ?.let { value ->
+                when (unit) {
+                    WeightUnit.KILOGRAMS -> Math.round(value * GRAMS_PER_KILOGRAM)
+                    WeightUnit.POUNDS -> Math.round(value * GRAMS_PER_POUND)
+                }
+            }
+        return grams?.takeIf { it <= MAX_GRAMS }
+    }
+
+    /** [parseLoad] in [unit]. */
+    fun parseLoad(text: String, unit: WeightUnit): Load? {
+        val trimmed = text.trim()
+        val assisted = trimmed.startsWith("-")
+        val magnitude = parse(trimmed.removePrefix("-"), unit) ?: return null
+        return if (assisted) Load(weightGrams = 0L, assistanceGrams = magnitude) else Load(magnitude, 0L)
+    }
+
+    /** [display] in [unit]. */
+    fun display(weightGrams: Long, assistanceGrams: Long, unit: WeightUnit): String =
+        if (assistanceGrams > 0L) "-" + format(assistanceGrams, unit) else format(weightGrams, unit)
+
+    /** The step one ± tap takes in [unit]: 2.5 kg, or the 5 lb a pound-loading gym jumps by. */
+    fun stepGrams(unit: WeightUnit): Long = when (unit) {
+        WeightUnit.KILOGRAMS -> DEFAULT_STEP_GRAMS
+        WeightUnit.POUNDS -> POUND_STEP_GRAMS
+    }
 }
 
 /** A typed load, split into the two columns it is stored in (ROADMAP N15). */

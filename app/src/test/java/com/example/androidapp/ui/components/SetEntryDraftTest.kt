@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.components
 
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.SetType
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -23,8 +24,8 @@ class SetEntryDraftTest {
             setType = SetType.WARMUP,
         )
 
-        assertThat(draft.values().rpeHalves).isEqualTo(18)
-        assertThat(draft.toEdit().rpeHalves).isNull()
+        assertThat(draft.values(WeightUnit.KILOGRAMS).rpeHalves).isEqualTo(18)
+        assertThat(draft.toEdit(WeightUnit.KILOGRAMS).rpeHalves).isNull()
     }
 
     @Test
@@ -36,6 +37,6 @@ class SetEntryDraftTest {
             setType = SetType.NORMAL,
         )
 
-        assertThat(draft.toEdit().rpeHalves).isEqualTo(17)
+        assertThat(draft.toEdit(WeightUnit.KILOGRAMS).rpeHalves).isEqualTo(17)
     }
 }

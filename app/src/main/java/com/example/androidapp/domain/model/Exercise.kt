@@ -1,5 +1,7 @@
 package com.example.androidapp.domain.model
 
+import com.example.androidapp.domain.WeightUnit
+
 /**
  * An entry in the exercise library (ROADMAP P1.1).
  *
@@ -27,4 +29,12 @@ data class Exercise(
     val restSeconds: Int? = null,
     /** "Chest up, elbows tucked": read while lifting, not a description (ROADMAP N5). */
     val techniqueNote: String? = null,
+    /**
+     * This exercise's own display unit, or null to follow the app setting (ROADMAP N64).
+     *
+     * **Presentation only**, like the setting it overrides: the weight is stored in grams either
+     * way. A machine that jumps in pounds is why this exists — the lat pulldown reads in lb while
+     * everything else reads in kg, and every number that belongs to *this* exercise follows it.
+     */
+    val weightUnit: WeightUnit? = null,
 )

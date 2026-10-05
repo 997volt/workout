@@ -7,6 +7,7 @@ import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
@@ -37,6 +38,8 @@ data class ExerciseEdit(
     val restSeconds: Int? = null,
     /** A cue to read while lifting, or null (ROADMAP N5). */
     val techniqueNote: String? = null,
+    /** This exercise's own display unit, or null to follow the app setting (ROADMAP N64). */
+    val weightUnit: WeightUnit? = null,
 )
 
 data class ExerciseDetailUiState(
@@ -120,6 +123,7 @@ class ExerciseDetailViewModel @Inject constructor(
                 movementPattern = edit.movementPattern,
                 restSeconds = edit.restSeconds,
                 techniqueNote = edit.techniqueNote,
+                weightUnit = edit.weightUnit,
             )
             when (val result = repository.updateExercise(updated)) {
                 is DataResult.Success -> _uiState.update {

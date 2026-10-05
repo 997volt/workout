@@ -124,12 +124,17 @@ data class ProgressionOffer(
 fun progressionPromptFor(
     planned: List<ProgressionPlanSet>,
     performed: List<ProgressionPerformance>,
+    /**
+     * The smallest loadable step in the unit this exercise is read in (ROADMAP N64): 2.5 kg for a
+     * metric lifter, 5 lb for a pound-loading machine, so the offered step is one it can load.
+     */
+    stepGrams: Long = DEFAULT_PROGRESSION_STEP_GRAMS,
 ): ProgressionPrompt {
     val plannedWork = planned.plannedWork()
     return ProgressionPrompt(
         planned = plannedWork.lastOrNull(),
         performed = performed.performedWork().lastOrNull(),
-        offer = progressionOfferFor(planned, performed),
+        offer = progressionOfferFor(planned, performed, stepGrams),
     )
 }
 

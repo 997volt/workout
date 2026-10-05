@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -36,6 +37,7 @@ class SettingsScreenTest {
     private var cleared = 0
     private val restTimerWrites = mutableListOf<Boolean>()
     private val progressionWrites = mutableListOf<Boolean>()
+    private val unitWrites = mutableListOf<WeightUnit>()
 
     private fun show(state: SettingsUiState, message: String? = null) {
         composeTestRule.setContent {
@@ -44,6 +46,7 @@ class SettingsScreenTest {
                 onSetDefaultRest = { chosen += it },
                 onBack = { backs++ },
                 onSetRestTimer = { restTimerWrites += it },
+                onSetWeightUnit = { unitWrites += it },
                 onSetProgressionPrompt = { progressionWrites += it },
                 onExportData = { exported++ },
                 onImportData = { imported++ },
@@ -94,6 +97,21 @@ class SettingsScreenTest {
             .performClick()
 
         assertEquals(listOf(false), restTimerWrites)
+    }
+
+    @Test
+    fun theWeightUnitChips_sendTheChoice_andShowWhatIsInForce() {
+        // ROADMAP N64: the app-wide unit, and the screen shows the stored one rather than the tapped.
+        show(SettingsUiState(weightUnit = WeightUnit.KILOGRAMS))
+
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_WEIGHT_UNIT_KG)
+            .performScrollTo()
+            .assertIsSelected()
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_WEIGHT_UNIT_LB)
+            .performScrollTo()
+            .performClick()
+
+        assertEquals(listOf(WeightUnit.POUNDS), unitWrites)
     }
 
     @Test

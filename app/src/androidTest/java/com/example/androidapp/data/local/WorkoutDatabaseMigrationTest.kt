@@ -1546,4 +1546,31 @@ class WorkoutDatabaseMigrationTest {
 
         migrated.close()
     }
+
+    @Test
+    fun migration30To31_givesAnExerciseItsOwnUnit_leavingEveryRowOnTheAppSetting() {
+        // ROADMAP N64: an exercise may carry its own display unit. The column is nullable with no
+        // default, so every existing row reads as unset — which is "follow the app setting" — and
+        // nothing changes for anyone until they set one. Presentation only: no weight moves.
+        helper.createDatabase(TEST_DB, 30).apply {
+            execSQL(
+                """
+                INSERT INTO exercises
+                    (id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, isCustom,
+                     restSeconds, techniqueNote, createdAt, updatedAt)
+                VALUES ('e1', 'Back Squat', 'QUADS', '', 'BARBELL', 'SQUAT', 0, NULL, NULL, 1, 1)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 31, true, MIGRATION_30_31)
+
+        migrated.query("SELECT id, weightUnit FROM exercises").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("e1", cursor.getString(0))
+            assertTrue("unset means follow the app setting", cursor.isNull(1))
+        }
+        migrated.close()
+    }
 }

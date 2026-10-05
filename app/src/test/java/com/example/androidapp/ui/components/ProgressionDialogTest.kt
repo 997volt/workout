@@ -14,6 +14,7 @@ import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionOffer
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.ProgressionPrompt
 import com.example.androidapp.domain.model.ProgressionStep
 import org.junit.Assert.assertEquals
@@ -45,6 +46,7 @@ class ProgressionDialogTest {
             ProgressionDialog(
                 exerciseName = "Back Squat",
                 prompt = prompt,
+                unit = WeightUnit.KILOGRAMS,
                 onAccept = { accepted = it },
                 onNotNow = { notNow = true },
             )
@@ -58,10 +60,10 @@ class ProgressionDialogTest {
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN)
             .assertIsDisplayed()
             .assertTextContains(plural(R.plurals.progression_reps_value, 5), substring = true)
-            .assertTextContains(text(R.string.progression_weight_value, "100"), substring = true)
+            .assertTextContains(text(R.string.progression_weight_value, "100", "kg"), substring = true)
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_DONE)
             .assertIsDisplayed()
-            .assertTextContains(text(R.string.progression_weight_value, "100"), substring = true)
+            .assertTextContains(text(R.string.progression_weight_value, "100", "kg"), substring = true)
     }
 
     @Test
@@ -70,7 +72,7 @@ class ProgressionDialogTest {
 
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_LOAD)
             .assertIsDisplayed()
-            .assertTextContains(text(R.string.progression_increase_load, "102.5"))
+            .assertTextContains(text(R.string.progression_increase_load, "102.5", "kg"))
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_LOAD).performClick()
 
         assertEquals(ProgressionDirection.LOAD, accepted)

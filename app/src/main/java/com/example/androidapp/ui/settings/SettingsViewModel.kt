@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -54,6 +55,11 @@ class SettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(progressionPromptEnabled = enabled) }
             }
         }
+        viewModelScope.launch {
+            settingsRepository.observeWeightUnit().collect { unit ->
+                _uiState.update { it.copy(weightUnit = unit) }
+            }
+        }
     }
 
     fun onSetRestCue(enabled: Boolean) {
@@ -70,6 +76,10 @@ class SettingsViewModel @Inject constructor(
 
     fun onSetProgressionPrompt(enabled: Boolean) {
         write { settingsRepository.setProgressionPromptEnabled(enabled) }
+    }
+
+    fun onSetWeightUnit(unit: WeightUnit) {
+        write { settingsRepository.setWeightUnit(unit) }
     }
 
     /** One place where a failed write becomes the error the screen shows. */
@@ -112,6 +122,8 @@ data class SettingsUiState(
      * On, so an upgrade changes nothing for someone who never opens settings.
      */
     val progressionPromptEnabled: Boolean = true,
+    /** The unit every weight is read in unless an exercise names its own (ROADMAP N64). */
+    val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
     val error: DataError? = null,
 ) {
     val choices: List<Int> get() = REST_CHOICES

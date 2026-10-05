@@ -57,7 +57,10 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.warmUpRampFor
+import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.CenteredMessage
@@ -124,7 +127,7 @@ fun TemplateEditorScreen(
     onDeleteTemplate: () -> Unit,
     onAddExercise: () -> Unit,
     onBack: () -> Unit,
-    onAddWarmUpSets: (String) -> Unit,
+    onAddWarmUpSets: (String, Long) -> Unit,
     modifier: Modifier = Modifier,
     onDismissMessage: () -> Unit = {},
     onAddSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
@@ -233,7 +236,7 @@ private fun TemplateEditorBody(
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
     onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit,
-    onAddWarmUpSets: (String) -> Unit,
+    onAddWarmUpSets: (String, Long) -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (String) -> Unit = {},
 ) {
@@ -282,7 +285,7 @@ private fun TemplateEditorBody(
                         onAddSet = { edit -> onAddSet(exercise.id, edit) },
                         onUpdateSet = onUpdateSet,
                         onRemoveSet = onRemoveSet,
-                        onAddWarmUpSets = { onAddWarmUpSets(exercise.id) },
+                        onAddWarmUpSets = { step -> onAddWarmUpSets(exercise.id, step) },
                         onSavePlan = { rest, cue, rpe -> onSaveExercisePlan(exercise.id, rest, cue, rpe) },
                     )
                     HorizontalDivider()
@@ -358,9 +361,12 @@ private fun TemplateExerciseBlock(
     onSavePlan: (Int?, String?, Int?) -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,
-    onAddWarmUpSets: (() -> Unit)? = null,
+    /** Adds a ramp rounded to the unit's step (ROADMAP N64), or null when there is none. */
+    onAddWarmUpSets: ((Long) -> Unit)? = null,
     supersetLabels: Map<String, String> = emptyMap(),
 ) {
+    // This exercise's display unit, resolved once: every load it names reads in it (ROADMAP N64).
+    val unit = exerciseWeightUnit(exercise.weightUnit)
     var planOpen by rememberSaveable { mutableStateOf(false) }
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     var adding by rememberSaveable { mutableStateOf(false) }
@@ -396,26 +402,24 @@ private fun TemplateExerciseBlock(
             // action itself reads (ROADMAP N28, B50): asking whether a weight was merely *typed*
             // offered the button for an assisted set (0 kg) and for one too light to load, and a
             // press then reported success while writing nothing.
-            onAddWarmUpSets = if (warmUpRampFor(exercise.sets).isNotEmpty()) {
-                onAddWarmUpSets
+            // A ramp is a list of loads, so it exists in the unit the exercise is read in (N64).
+            onAddWarmUpSets = if (onAddWarmUpSets != null &&
+                warmUpRampFor(exercise.sets, Weight.stepGrams(unit)).isNotEmpty()
+            ) {
+                { onAddWarmUpSets(Weight.stepGrams(unit)) }
             } else {
                 null
             },
+            unit = unit,
         )
     }
 
     val edited = exercise.sets.firstOrNull { it.id == editing }
     if (adding || edited != null) {
-        TemplateSetDialog(
-            // Add set starts from the last planned set rather than from nothing (ROADMAP N46): a
-            // set is nearly always the one before it again, and Duplicate — which doubled the whole
-            // plan and left the odd counts to manual adds — is gone. Blank only while there is no
-            // set to start from, and the role prefills too, which is safe because Add warm-ups
-            // *prepends*: the last set is the last working set.
-            initial = edited?.let { it.toEdit() }
-                ?: exercise.sets.lastOrNull()?.toEdit()
-                ?: TemplateSetEdit(),
-            isNew = edited == null,
+        TemplateSetEditor(
+            exercise = exercise,
+            edited = edited,
+            unit = unit,
             onDismiss = {
                 adding = false
                 editing = null
@@ -427,6 +431,36 @@ private fun TemplateExerciseBlock(
             },
         )
     }
+}
+
+/**
+ * The dialog that adds or edits one planned set (ROADMAP N14, N46).
+ *
+ * Split out of the block when N64's unit pushed it over the length this project allows, and it is
+ * the piece that reads on its own: what a new set starts from, and what a save reports.
+ */
+@Composable
+private fun TemplateSetEditor(
+    exercise: TemplateExercise,
+    edited: TemplateSet?,
+    unit: WeightUnit,
+    onDismiss: () -> Unit,
+    onSave: (TemplateSetEdit) -> Unit,
+) {
+    TemplateSetDialog(
+        unit = unit,
+        // Add set starts from the last planned set rather than from nothing (ROADMAP N46): a set is
+        // nearly always the one before it again, and Duplicate — which doubled the whole plan and
+        // left the odd counts to manual adds — is gone. Blank only while there is no set to start
+        // from, and the role prefills too, which is safe because Add warm-ups *prepends*: the last
+        // set is the last working set.
+        initial = edited?.let { it.toEdit() }
+            ?: exercise.sets.lastOrNull()?.toEdit()
+            ?: TemplateSetEdit(),
+        isNew = edited == null,
+        onDismiss = onDismiss,
+        onSave = onSave,
+    )
 }
 
 /** `Planned sets · 3` — the way into the plan for this exercise. */
@@ -648,7 +682,7 @@ private fun TemplateEditorScreenPreview() {
             onDeleteTemplate = {},
             onAddExercise = {},
             onBack = {},
-            onAddWarmUpSets = {},
+            onAddWarmUpSets = { _, _ -> },
         )
     }
 }

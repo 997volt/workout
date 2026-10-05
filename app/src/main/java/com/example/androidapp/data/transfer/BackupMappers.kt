@@ -67,6 +67,7 @@ internal fun ExerciseEntity.toDto() = ExerciseDto(
     deletedAt = deletedAt,
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
+    weightUnit = weightUnit,
 )
 
 internal fun ExerciseDto.toEntity() = ExerciseEntity(

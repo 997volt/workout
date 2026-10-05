@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.repository.TemplateSetEdit
@@ -59,6 +60,8 @@ fun TemplatePlanDialog(
      * that would do nothing is worse than no control.
      */
     onAddWarmUpSets: (() -> Unit)? = null,
+    /** The unit this exercise's planned loads are shown in (ROADMAP N64). */
+    unit: WeightUnit = WeightUnit.KILOGRAMS,
 ) {
     AlertDialog(
         modifier = modifier,
@@ -85,6 +88,7 @@ fun TemplatePlanDialog(
                     PlanSetRow(
                         number = index + 1,
                         set = set,
+                        unit = unit,
                         onEdit = { onEditSet(set) },
                         onDelete = { onDeleteSet(set.id) },
                     )
@@ -112,6 +116,7 @@ fun TemplatePlanDialog(
 private fun PlanSetRow(
     number: Int,
     set: TemplateSet,
+    unit: WeightUnit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -129,7 +134,7 @@ private fun PlanSetRow(
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(
-                text = set.summary(),
+                text = set.summary(unit),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -172,11 +177,13 @@ fun TemplateSetDialog(
     onDismiss: () -> Unit,
     onSave: (TemplateSetEdit) -> Unit,
     modifier: Modifier = Modifier,
+    /** The unit this target load is typed and shown in (ROADMAP N64). */
+    unit: WeightUnit = WeightUnit.KILOGRAMS,
 ) {
     // `remember`, not `rememberSaveable`: a data class is not something a Bundle can
     // hold, and registering one throws when the dialog opens. The set editor's own
     // draft is held the same way for the same reason.
-    var draft by remember { mutableStateOf(TemplateSetDraft(initial)) }
+    var draft by remember { mutableStateOf(TemplateSetDraft(initial, unit)) }
 
     AlertDialog(
         modifier = modifier,
@@ -229,14 +236,17 @@ data class TemplateSetDraft(
     /** The plan's legacy per-set target RPE, passed through unchanged, or null (N59). */
     val targetRpeHalves: Int? = null,
     val note: String = "",
+    /** The unit this target is typed and shown in (ROADMAP N64). */
+    val unit: WeightUnit = WeightUnit.KILOGRAMS,
 ) {
-    constructor(edit: TemplateSetEdit) : this(
+    constructor(edit: TemplateSetEdit, unit: WeightUnit) : this(
         role = edit.role,
         weightText = if (edit.targetWeightGrams != null || edit.targetAssistanceGrams != null) {
-            Weight.display(edit.targetWeightGrams ?: 0L, edit.targetAssistanceGrams ?: 0L)
+            Weight.display(edit.targetWeightGrams ?: 0L, edit.targetAssistanceGrams ?: 0L, unit)
         } else {
             ""
         },
+        unit = unit,
         repsMinText = edit.targetRepsMin?.toString().orEmpty(),
         repsMaxText = edit.targetRepsMax?.toString().orEmpty(),
         targetRpeHalves = edit.targetRpeHalves,
@@ -245,7 +255,7 @@ data class TemplateSetDraft(
 
     // The plan writes assistance the same way a set does: -20 in the weight field
     // (ROADMAP N15).
-    val load: Load? get() = Weight.parseLoad(weightText)
+    val load: Load? get() = Weight.parseLoad(weightText, unit)
     val weight: Long? get() = load?.weightGrams
     val assistanceGrams: Long? get() = load?.assistanceGrams
     val repsMin: Int? get() = repsMinText.trim().ifEmpty { null }?.toIntOrNull()
@@ -295,7 +305,7 @@ private fun TargetFields(
             modifier = Modifier.fillMaxWidth().testTag(TestTags.TEMPLATE_SET_WEIGHT),
             singleLine = true,
             isError = !draft.weightIsValid,
-            label = { Text(stringResource(R.string.template_set_weight)) },
+            label = { Text(stringResource(R.string.template_set_weight, draft.unit.label())) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -330,11 +340,12 @@ private fun TargetFields(
 
 /** `100 kg × 3`, `× 3–5`, `RPE 8` — whatever the plan actually wrote, in one line. */
 @Composable
-private fun TemplateSet.summary(): String {
+private fun TemplateSet.summary(unit: WeightUnit): String {
     val weight = if (targetWeightGrams != null || targetAssistanceGrams != null) {
         stringResource(
             R.string.template_set_weight_value,
-            Weight.display(targetWeightGrams ?: 0L, targetAssistanceGrams ?: 0L),
+            Weight.display(targetWeightGrams ?: 0L, targetAssistanceGrams ?: 0L, unit),
+            unit.label(),
         )
     } else {
         null

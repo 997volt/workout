@@ -1,5 +1,7 @@
 package com.example.androidapp.domain.model
 
+import com.example.androidapp.domain.WeightUnit
+
 /**
  * A plan and what actually happened, side by side (ROADMAP N20).
  *
@@ -41,6 +43,8 @@ data class ExercisePlan(
     val exerciseId: String,
     val name: String,
     val sets: List<PlannedSetSpec>,
+    /** The unit this exercise's numbers read in, or null to follow the app setting (ROADMAP N64). */
+    val weightUnit: WeightUnit? = null,
 )
 
 /** An exercise as it was performed. */
@@ -48,6 +52,8 @@ data class ExerciseActual(
     val exerciseId: String,
     val name: String,
     val sets: List<PerformedSetSpec>,
+    /** The same as [ExercisePlan.weightUnit], for an exercise the plan never named (N64). */
+    val weightUnit: WeightUnit? = null,
 )
 
 /**
@@ -59,6 +65,8 @@ data class ExerciseActual(
  */
 data class PlanComparison(
     val name: String,
+    /** The unit this exercise's numbers read in, or null to follow the app setting (ROADMAP N64). */
+    val weightUnit: WeightUnit? = null,
     val prescribedSets: Int,
     val performedSets: Int,
     val prescribedReps: Int?,
@@ -89,11 +97,11 @@ fun comparePlanToActual(
     val plannedIds = planned.map { it.exerciseId }.toSet()
 
     val answered = planned.map { plan ->
-        comparisonOf(plan.name, plan.sets, actualById[plan.exerciseId]?.sets.orEmpty())
+        comparisonOf(plan.name, plan.sets, actualById[plan.exerciseId]?.sets.orEmpty(), plan.weightUnit)
     }
     val improvised = performed
         .filterNot { it.exerciseId in plannedIds }
-        .map { comparisonOf(it.name, emptyList(), it.sets) }
+        .map { comparisonOf(it.name, emptyList(), it.sets, it.weightUnit) }
 
     return answered + improvised
 }
@@ -102,6 +110,7 @@ private fun comparisonOf(
     name: String,
     plannedSets: List<PlannedSetSpec>,
     performedSets: List<PerformedSetSpec>,
+    weightUnit: WeightUnit?,
 ): PlanComparison {
     val working = { role: SetType -> role != SetType.WARMUP }
     val plannedWork = plannedSets.filter { working(it.role) }
@@ -119,6 +128,7 @@ private fun comparisonOf(
 
     return PlanComparison(
         name = name,
+        weightUnit = weightUnit,
         // B21: the counts exclude warm-ups, exactly as the rep sums do — otherwise "prescribed
         // 2×3" meant two sets, one of them a warm-up, totalling three reps. The dialog says so.
         prescribedSets = plannedWork.size,

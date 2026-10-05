@@ -46,6 +46,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.ui.components.LocalWeightUnit
+import com.example.androidapp.ui.components.exerciseWeightUnit
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.domain.model.JointPain
@@ -424,8 +427,14 @@ private fun Totals(state: WorkoutDetailUiState, modifier: Modifier = Modifier) {
     ) {
         Text(text = duration, style = MaterialTheme.typography.titleMedium)
         Text(text = sets, style = MaterialTheme.typography.bodyMedium)
+        val unit = LocalWeightUnit.current
         Text(
-            text = stringResource(R.string.history_volume, Weight.kilograms(state.volumeGrams)),
+            // The workout's total, so it follows the app setting rather than any one exercise (N64).
+            text = stringResource(
+                R.string.history_volume,
+                Weight.format(state.volumeGrams, unit),
+                unit.label(),
+            ),
             style = MaterialTheme.typography.bodyMedium,
         )
     }
@@ -501,7 +510,12 @@ private fun HistorySetRow(
                     Text(
                         text = stringResource(
                             R.string.set_summary,
-                            Weight.display(set.weightGrams, set.assistanceGrams),
+                            Weight.display(
+                                set.weightGrams,
+                                set.assistanceGrams,
+                                exerciseWeightUnit(set.weightUnit),
+                            ),
+                            exerciseWeightUnit(set.weightUnit).label(),
                             set.reps,
                         ),
                         style = MaterialTheme.typography.bodyLarge,
@@ -587,6 +601,7 @@ private fun EditSetDialog(
 ) {
     SetEditorDialog(
         modifier = modifier,
+        initialUnit = exerciseWeightUnit(set.weightUnit),
         initialReps = set.reps,
         initialWeightGrams = set.weightGrams,
         initialRpe = set.rpeHalves,

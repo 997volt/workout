@@ -1,6 +1,7 @@
 package com.example.androidapp.data.local
 
 
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.TemplateExercise
@@ -24,6 +25,8 @@ data class TemplateExerciseDetail(
     val techniqueNote: String?,
     /** The effort the plan builds to, in half-points, or null (N59, amended). */
     val targetRpeHalves: Int?,
+    /** The library exercise's own display unit by name, or null to follow the app (N64). */
+    val weightUnit: String?,
     val supersetGroup: Int?,
 )
 
@@ -40,6 +43,7 @@ internal fun TemplateExerciseDetail.toDomain(
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
     targetRpeHalves = targetRpeHalves,
+    weightUnit = WeightUnit.fromName(weightUnit),
     supersetGroup = supersetGroup,
     sets = sets,
 )

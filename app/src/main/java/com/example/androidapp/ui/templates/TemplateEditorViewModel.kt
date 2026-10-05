@@ -106,11 +106,11 @@ class TemplateEditorViewModel @Inject constructor(
      * assisted, or too light to load a step below the work — gets no ramp, and the call writes nothing
      * rather than reporting a success over no change.
      */
-    fun onAddWarmUpSets(templateExerciseId: String) = write {
+    fun onAddWarmUpSets(templateExerciseId: String, stepGrams: Long) = write {
         val exercise = uiState.value.exercises.firstOrNull { it.id == templateExerciseId }
             ?: return@write DataResult.Failure(DataError.NotFound)
 
-        val ramp = warmUpRampFor(exercise.sets).map { target ->
+        val ramp = warmUpRampFor(exercise.sets, stepGrams).map { target ->
             TemplateSetEdit(
                 role = SetType.WARMUP,
                 targetWeightGrams = target.weightGrams,

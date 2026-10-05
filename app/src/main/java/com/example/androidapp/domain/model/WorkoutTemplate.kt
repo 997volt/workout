@@ -1,5 +1,7 @@
 package com.example.androidapp.domain.model
 
+import com.example.androidapp.domain.WeightUnit
+
 /**
  * A named, reusable workout (ROADMAP N3): a name and an ordered list of exercises,
  * started in one tap.
@@ -50,6 +52,13 @@ data class TemplateExercise(
      * exercises without the user pairing them again.
      */
     val supersetGroup: Int? = null,
+    /**
+     * The library exercise's own display unit, or null to follow the app setting (ROADMAP N64).
+     *
+     * Read from the library rather than copied onto the plan, like the name: a display preference
+     * is not something a plan prescribes, and changing it should reach a plan already on screen.
+     */
+    val weightUnit: WeightUnit? = null,
     /** The planned sets, in order (ROADMAP N14). Empty for a template with none. */
     val sets: List<TemplateSet> = emptyList(),
 )

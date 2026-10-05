@@ -326,6 +326,12 @@ object TestTags {
 
 
     /** The settings screen (ROADMAP N21): the screen, the current value, and each choice. */
+    /** The exercise's own weight unit (ROADMAP N64): its row on the detail, and the edit choice. */
+    const val EXERCISE_WEIGHT_UNIT = "exercise_weight_unit"
+    const val EXERCISE_EDIT_WEIGHT_UNIT_DEFAULT = "exercise_edit_weight_unit_default"
+    const val EXERCISE_EDIT_WEIGHT_UNIT_KG = "exercise_edit_weight_unit_kg"
+    const val EXERCISE_EDIT_WEIGHT_UNIT_LB = "exercise_edit_weight_unit_lb"
+
     const val SETTINGS_SCREEN = "settings_screen"
     const val SETTINGS_REST_CURRENT = "settings_rest_current"
     const val SETTINGS_REST_CUE = "settings_rest_cue"
@@ -335,6 +341,9 @@ object TestTags {
     const val EXERCISE_REST_PRESCRIPTION = "exercise_rest_prescription"
     /** The switch that decides whether *Done* asks about the next step a plan earned (ROADMAP N66). */
     const val SETTINGS_PROGRESSION = "settings_progression"
+    /** The two unit chips on Settings (ROADMAP N64). */
+    const val SETTINGS_WEIGHT_UNIT_KG = "setting_weight_unit_kg"
+    const val SETTINGS_WEIGHT_UNIT_LB = "setting_weight_unit_lb"
     /** The row that opens the typed delete-everything confirmation (ROADMAP N43). */
     const val SETTINGS_CLEAR_DATA = "settings_clear_data"
 

@@ -144,6 +144,13 @@ data class ExerciseDto(
      */
     val restSeconds: Int? = null,
     val techniqueNote: String? = null,
+    /**
+     * The exercise's own display unit by name, or null to follow the app setting (ROADMAP N64).
+     *
+     * Defaulted, not required: a file written before this existed still decodes, and the codec's
+     * schema version is deliberately not bumped for an added field (see `BackupCodecTest`).
+     */
+    val weightUnit: String? = null,
 )
 
 /**

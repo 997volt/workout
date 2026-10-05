@@ -10,6 +10,7 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.DataError
 import kotlinx.coroutines.launch
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.Exercise
@@ -336,6 +337,10 @@ private class FakeSettingsRepository(
     override fun observeRestTimerEnabled(): Flow<Boolean> = flowOf(true)
     override suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit> =
         DataResult.Success(Unit)
+
+    override fun observeWeightUnit(): Flow<WeightUnit> = flowOf(WeightUnit.KILOGRAMS)
+
+    override suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit> = DataResult.Success(Unit)
     override fun observeProgressionPromptEnabled(): Flow<Boolean> = flowOf(true)
     override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> =
         DataResult.Success(Unit)

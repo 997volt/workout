@@ -37,6 +37,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.ui.components.LocalWeightUnit
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.ui.components.AppRow
@@ -180,7 +182,12 @@ private fun WorkoutRow(
 ) {
     val setCount = pluralStringResource(R.plurals.history_sets, workout.setCount, workout.setCount)
     val duration = workout.duration?.let { WorkoutFormat.elapsed(it) }.orEmpty()
-    val volume = stringResource(R.string.history_volume, Weight.kilograms(workout.volumeGrams))
+    val unit = LocalWeightUnit.current
+    val volume = stringResource(
+        R.string.history_volume,
+        Weight.format(workout.volumeGrams, unit),
+        unit.label(),
+    )
 
     AppRow(
         headline = HistoryFormat.historyHeadline(

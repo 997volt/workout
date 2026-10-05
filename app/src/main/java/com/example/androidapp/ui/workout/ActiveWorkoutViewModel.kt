@@ -22,6 +22,7 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SessionExercise
@@ -76,6 +77,8 @@ data class SetRow(
     val setType: SetType = SetType.NORMAL,
     /** The machine's assistance, 0 for none (ROADMAP N15). */
     val assistanceGrams: Long = 0,
+    /** The unit this exercise's numbers read in (ROADMAP N64). */
+    val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
 )
 
 /** One exercise in the workout, with its sets and what the next set will prefill. */
@@ -98,6 +101,13 @@ data class SessionExerciseRow(
     val supersetLabel: String? = null,
     /** This exercise's own rest, or null for the app default (ROADMAP N5). */
     val restSeconds: Int? = null,
+    /**
+     * The unit every number belonging to this exercise reads in (ROADMAP N64).
+     *
+     * The exercise's own override where it has one, the app setting otherwise, resolved once here
+     * rather than at each of the places that show one of its weights.
+     */
+    val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
     /**
      * How many sets the plan behind this workout writes for this exercise, or null when there is no
      * plan (ROADMAP N52).
@@ -342,6 +352,13 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val pendingUndo = MutableStateFlow<SetEntry?>(null)
     private val previousByExercise = MutableStateFlow<Map<String, PreviousPerformance>>(emptyMap())
 
+    /**
+     * The app-wide unit, for the one place that needs it without a row in hand: the review's
+     * planned side, which comes from the template rather than from the session (ROADMAP N64).
+     */
+    private val appWeightUnit: StateFlow<WeightUnit> = settingsRepository.observeWeightUnit()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, WeightUnit.KILOGRAMS)
+
     /** True while a just-opened session is asking what was not recovered today (N4). */
     private val readinessPromptVisible = MutableStateFlow(false)
 
@@ -381,6 +398,8 @@ class ActiveWorkoutViewModel @Inject constructor(
         val sets: List<SetEntry>,
         val previous: Map<String, PreviousPerformance>,
         val planned: List<TemplateExercise>,
+        /** The app-wide unit, so a change to it re-resolves every row's own (ROADMAP N64). */
+        val unit: WeightUnit,
     )
 
     /** The three session-shaped sources, kept together so the combine below stays three deep. */
@@ -394,14 +413,20 @@ class ActiveWorkoutViewModel @Inject constructor(
     private data class PlanPart(
         val planned: List<TemplateExercise>,
         val previous: Map<String, PreviousPerformance>,
+        /** The app-wide unit, so a change to it re-resolves every row's own (ROADMAP N64). */
+        val unit: WeightUnit,
     )
 
     private val snapshots: Flow<Snapshot> = combine(
         combine(activeSession, sessionExercises, setsState) { session, exercises, logged ->
             SessionPart(session, exercises, logged)
         },
-        combine(previousByExercise, plannedExercises) { previous, planned ->
-            PlanPart(planned, previous)
+        combine(previousByExercise, plannedExercises, settingsRepository.observeWeightUnit()) {
+                previous,
+                planned,
+                unit,
+            ->
+            PlanPart(planned, previous, unit)
         },
     ) { session, plan ->
         Snapshot(
@@ -410,6 +435,7 @@ class ActiveWorkoutViewModel @Inject constructor(
             sets = session.sets,
             previous = plan.previous,
             planned = plan.planned,
+            unit = plan.unit,
         )
     }
 
@@ -728,6 +754,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                         reps = edit.reps,
                         weightGrams = edit.weightGrams,
                         previousBestGrams = against.bestAt(edit.reps),
+                        weightUnit = row.weightUnit,
                     )
                 }
 
@@ -941,7 +968,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                     lastError.value = null
                     // The workout is over and stored; the review is what the user sees
                     // next, and dismissing it is what closes the screen (N20).
-                    _summary.value = buildSummary(finishedState, plan, note)
+                    _summary.value = buildSummary(finishedState, plan, note, appWeightUnit.value)
                 }
 
                 is DataResult.Failure -> lastError.value = result.error
@@ -1027,8 +1054,12 @@ class ActiveWorkoutViewModel @Inject constructor(
                 it.toRow(
                     sets = sets,
                     previous = previous[it.exerciseId],
-                    // The plan is the template's, whole (ROADMAP N73).
-                    plan = PlanContext(plannedEntry = planEntries[it.id]),
+                    // The plan is the template's, whole (ROADMAP N73), read in this exercise's
+                    // own unit where it has one (N64).
+                    plan = PlanContext(
+                        plannedEntry = planEntries[it.id],
+                        unit = it.weightUnit ?: unit,
+                    ),
                     supersetLabels = supersetLabelsFor(exercises),
                 )
             },
@@ -1088,11 +1119,14 @@ private fun buildSummary(
     state: ActiveWorkoutUiState,
     plan: List<TemplateExercise>,
     note: String?,
+    appUnit: WeightUnit,
 ): WorkoutReview {
     val actual = state.exercises.map { row ->
         ExerciseActual(
             exerciseId = row.exerciseId,
             name = row.name,
+            // The row already carries its exercise's effective unit (N64).
+            weightUnit = row.weightUnit,
             sets = row.sets.map {
                 PerformedSetSpec(
                     role = it.setType,
@@ -1107,6 +1141,7 @@ private fun buildSummary(
         ExercisePlan(
             exerciseId = plannedExercise.exerciseId,
             name = plannedExercise.exerciseName,
+            weightUnit = plannedExercise.weightUnit ?: appUnit,
             sets = plannedExercise.sets.map {
                 PlannedSetSpec(
                     role = it.role,
@@ -1184,6 +1219,8 @@ private fun ActiveWorkoutUiState.roundIsCompleteFor(row: SessionExerciseRow): Bo
  */
 private data class PlanContext(
     val plannedEntry: TemplateExercise?,
+    /** The unit this exercise's plan is read in: its own override, or the app setting (N64). */
+    val unit: WeightUnit = WeightUnit.KILOGRAMS,
 )
 
 /**
@@ -1231,7 +1268,8 @@ private fun SessionExercise.toRow(
     plan: PlanContext,
     supersetLabels: Map<String, String>,
 ): SessionExerciseRow {
-    val loggedSets = sets.loggedRowsFor(id)
+    // Every set this exercise logged reads in the exercise's own unit (ROADMAP N64).
+    val loggedSets = sets.loggedRowsFor(id).map { it.copy(weightUnit = plan.unit) }
 
     return SessionExerciseRow(
         id = id,
@@ -1242,6 +1280,7 @@ private fun SessionExercise.toRow(
         supersetGroup = supersetGroup,
         supersetLabel = supersetLabels[id],
         restSeconds = restSeconds,
+        weightUnit = plan.unit,
         plannedSetCount = plan.plannedSetCount,
         isFinished = isFinished,
         muscleFeel = muscleFeel,
@@ -1254,6 +1293,7 @@ private fun SessionExercise.toRow(
         progression = progressionPromptFor(
             planned = plan.progressionSets(),
             performed = loggedSets.map { it.toProgressionPerformance() },
+            stepGrams = Weight.stepGrams(plan.unit),
         ),
     )
 }

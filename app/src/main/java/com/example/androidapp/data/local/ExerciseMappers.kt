@@ -1,5 +1,6 @@
 package com.example.androidapp.data.local
 
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Exercise
 
 /**
@@ -19,6 +20,7 @@ internal fun ExerciseEntity.toDomain(): Exercise = Exercise(
     isCustom = isCustom,
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
+    weightUnit = WeightUnit.fromName(weightUnit),
 )
 
 /**
@@ -35,6 +37,7 @@ internal fun Exercise.toEntity(now: Long): ExerciseEntity = ExerciseEntity(
     isCustom = isCustom,
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
+    weightUnit = weightUnit?.name,
     createdAt = now,
     updatedAt = now,
     deletedAt = null,

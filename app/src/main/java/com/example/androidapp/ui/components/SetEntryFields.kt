@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
 
@@ -73,11 +74,11 @@ internal data class SetEntryValues(
     val isComplete: Boolean get() = reps != null && load != null && rpeValid
 }
 
-internal fun SetEntryDraft.values(): SetEntryValues {
+internal fun SetEntryDraft.values(unit: WeightUnit): SetEntryValues {
     // A set of zero reps is not a set, which is why this floor is 1.
     val reps = repsText.toIntOrNull()?.takeIf { it > 0 }
     // One field, two columns: a leading minus is assistance (ROADMAP N15).
-    val load = Weight.parseLoad(weightText)
+    val load = Weight.parseLoad(weightText, unit)
     // Halves, so 9.5 is a value and 9.3 is not (ROADMAP N6).
     val rpeHalves = rpeText.trim().ifEmpty { null }?.let(Rpe::parse)
     return SetEntryValues(
@@ -90,8 +91,8 @@ internal fun SetEntryDraft.values(): SetEntryValues {
 }
 
 /** The set this draft states. Call only where [SetEntryValues.isComplete] gates the action. */
-internal fun SetEntryDraft.toEdit(): SetEdit {
-    val values = values()
+internal fun SetEntryDraft.toEdit(unit: WeightUnit): SetEdit {
+    val values = values(unit)
     return SetEdit(
         reps = values.reps ?: 0,
         weightGrams = values.load?.weightGrams ?: 0L,
@@ -157,14 +158,16 @@ internal data class SetFieldTags(
 internal fun SetEntryNumbers(
     draft: SetEntryDraft,
     onDraftChange: (SetEntryDraft) -> Unit,
+    /** The unit this set's load is typed and shown in (ROADMAP N64). */
+    unit: WeightUnit,
     modifier: Modifier = Modifier,
     tags: SetFieldTags = SetFieldTags.Logging,
 ) {
-    val values = draft.values()
+    val values = draft.values(unit)
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         NumberStepper(
-            label = stringResource(R.string.set_weight_label),
+            label = stringResource(R.string.set_weight_label, unit.label()),
             testTag = tags.weight,
             increaseTag = tags.increaseWeight,
             decreaseTag = tags.decreaseWeight,
@@ -176,11 +179,11 @@ internal fun SetEntryNumbers(
             onStep = { delta ->
                 val stepped = Weight.stepLoad(
                     signedGrams = values.load?.signedGrams ?: 0L,
-                    deltaGrams = delta * Weight.DEFAULT_STEP_GRAMS,
+                    deltaGrams = delta * Weight.stepGrams(unit),
                 )
                 onDraftChange(
                     draft.copy(
-                        weightText = Weight.display(stepped.weightGrams, stepped.assistanceGrams),
+                        weightText = Weight.display(stepped.weightGrams, stepped.assistanceGrams, unit),
                     ),
                 )
             },

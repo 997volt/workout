@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
 
@@ -53,13 +54,15 @@ fun SetEditorDialog(
     initialNote: String? = null,
     initialSetType: SetType = SetType.NORMAL,
     initialAssistanceGrams: Long = 0,
+    /** The unit this set's load is typed and shown in (ROADMAP N64). */
+    initialUnit: WeightUnit = WeightUnit.KILOGRAMS,
 ) {
     var draft by remember {
         mutableStateOf(
             SetEntryDraft(
                 repsText = initialReps.toString(),
                 // Shown as one signed number: -20 is 20 kg of assistance (N15).
-                weightText = Weight.display(initialWeightGrams, initialAssistanceGrams),
+                weightText = Weight.display(initialWeightGrams, initialAssistanceGrams, initialUnit),
                 // The halves the set recorded, shown as a lifter writes them. A set that recorded
                 // none opens blank and keeps none unless the lifter states one (N59): an edit is not
                 // where a measurement nobody gave appears.
@@ -70,18 +73,18 @@ fun SetEditorDialog(
         )
     }
 
-    val values = draft.values()
+    val values = draft.values(initialUnit)
 
     AlertDialog(
         modifier = modifier,
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.set_edit_title)) },
-        text = { SetEditingFields(draft = draft, onDraftChange = { draft = it }) },
+        text = { SetEditingFields(draft = draft, onDraftChange = { draft = it }, unit = initialUnit) },
         confirmButton = {
             AppTextButton(
                 modifier = Modifier.testTag(TestTags.SET_SAVE),
                 enabled = values.isComplete,
-                onClick = { onSave(draft.toEdit()) },
+                onClick = { onSave(draft.toEdit(initialUnit)) },
             ) {
                 Text(stringResource(R.string.set_save))
             }
@@ -107,10 +110,16 @@ fun SetEditorDialog(
 private fun SetEditingFields(
     draft: SetEntryDraft,
     onDraftChange: (SetEntryDraft) -> Unit,
+    unit: WeightUnit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SetRoleSelector(role = draft.setType, onSelect = { onDraftChange(draft.copy(setType = it)) })
-        SetEntryNumbers(draft = draft, onDraftChange = onDraftChange, tags = SetFieldTags.Editing)
+        SetEntryNumbers(
+            draft = draft,
+            onDraftChange = onDraftChange,
+            unit = unit,
+            tags = SetFieldTags.Editing,
+        )
         // A warm-up records no effort, so the field is not offered for one (ROADMAP N67). The role
         // picker above is what brings it back, and the save drops whatever the draft held.
         if (draft.setType.recordsEffort) {

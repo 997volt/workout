@@ -1,5 +1,7 @@
 package com.example.androidapp.domain.model
 
+import com.example.androidapp.domain.WeightUnit
+
 /**
  * The best lift at each rep count (ROADMAP N23).
  *
@@ -77,4 +79,6 @@ data class PersonalRecordMoment(
     val weightGrams: Long,
     /** What it beat, or null when nothing had been recorded at this rep count. */
     val previousBestGrams: Long?,
+    /** The unit this exercise is read in, or null to follow the app setting (ROADMAP N64). */
+    val weightUnit: WeightUnit? = null,
 )

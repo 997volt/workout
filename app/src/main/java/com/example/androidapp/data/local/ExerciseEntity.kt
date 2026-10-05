@@ -40,6 +40,14 @@ data class ExerciseEntity(
     val restSeconds: Int? = null,
     /** A short cue to read *while* lifting, not a description (ROADMAP N5). */
     val techniqueNote: String? = null,
+    /**
+     * This exercise's own display unit, or null to follow the app setting (ROADMAP N64).
+     *
+     * A nullable TEXT column holding the enum's **name**, so a build that does not know a name
+     * reads it as "follow the app" rather than as a different unit. Nullable with no default, so
+     * the migration that adds it is a plain ALTER and existing rows read as unset.
+     */
+    val weightUnit: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

@@ -9,6 +9,7 @@ import android.content.SharedPreferences
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -71,6 +72,33 @@ class PreferencesSettingsRepository @Inject constructor(
 
     override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> =
         writeFlag(KEY_PROGRESSION_PROMPT_ENABLED, enabled)
+
+    override fun observeWeightUnit(): Flow<WeightUnit> = callbackFlow {
+        trySend(currentWeightUnit())
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
+            if (changed == KEY_WEIGHT_UNIT) trySend(currentWeightUnit())
+        }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate().distinctUntilChanged()
+
+    override suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit> {
+        preferences.edit(commit = true) { putString(KEY_WEIGHT_UNIT, unit.name) }
+        return if (currentWeightUnit() == unit) {
+            DataResult.Success(Unit)
+        } else {
+            DataResult.Failure(DataError.Storage(IllegalStateException("the setting was not stored")))
+        }
+    }
+
+    /**
+     * The stored unit, defaulted.
+     *
+     * An unknown name falls back to kilograms rather than throwing: a preference is not worth a
+     * broken screen, and storing the enum **by name** is what makes that possible.
+     */
+    private fun currentWeightUnit(): WeightUnit =
+        WeightUnit.fromName(preferences.getString(KEY_WEIGHT_UNIT, null)) ?: WeightUnit.KILOGRAMS
 
     /** A boolean preference, defaulted rather than null: these flags have always had a meaning. */
     private fun observeFlag(key: String, default: Boolean): Flow<Boolean> = callbackFlow {
@@ -199,6 +227,7 @@ class PreferencesSettingsRepository @Inject constructor(
         const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
         const val KEY_REST_TIMER_ENABLED = "rest_timer_enabled"
         const val KEY_PROGRESSION_PROMPT_ENABLED = "progression_prompt_enabled"
+        const val KEY_WEIGHT_UNIT = "weight_unit"
         const val KEY_RANGE_KIND = "statistics_range_kind"
         const val KEY_RANGE_FROM = "statistics_range_from"
         const val KEY_RANGE_TO = "statistics_range_to"

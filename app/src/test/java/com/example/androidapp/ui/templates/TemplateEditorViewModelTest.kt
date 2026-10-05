@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.templates
 
+import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.SetType
 import kotlinx.coroutines.flow.flowOf
 import com.example.androidapp.domain.repository.TemplateSetEdit
@@ -411,7 +412,7 @@ class TemplateEditorViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
-        viewModel.onAddWarmUpSets("te1")
+        viewModel.onAddWarmUpSets("te1", Weight.DEFAULT_STEP_GRAMS)
         advanceUntilIdle()
 
         val written = repository.prependedSets.single { it.first == "te1" }.second
@@ -437,7 +438,7 @@ class TemplateEditorViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
-        viewModel.onAddWarmUpSets("te1")
+        viewModel.onAddWarmUpSets("te1", Weight.DEFAULT_STEP_GRAMS)
         advanceUntilIdle()
 
         assertTrue("nothing written", repository.prependedSets.none { it.first == "te1" })
@@ -461,7 +462,7 @@ class TemplateEditorViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
-        viewModel.onAddWarmUpSets("te1")
+        viewModel.onAddWarmUpSets("te1", Weight.DEFAULT_STEP_GRAMS)
         advanceUntilIdle()
 
         assertTrue("nothing written", repository.prependedSets.none { it.first == "te1" })

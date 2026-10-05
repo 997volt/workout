@@ -43,6 +43,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.ui.components.AppFilterChip
+import com.example.androidapp.ui.components.LocalWeightUnit
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
@@ -185,6 +189,25 @@ private fun ExerciseDetailBody(
     }
 }
 
+/**
+ * The exercise's own display unit, as a read-only row (ROADMAP N64).
+ *
+ * "App default" names the unit in force as well as saying where the value comes from: a row reading
+ * only "kg" would look like this exercise's own setting, which is the opposite of what it means.
+ */
+@Composable
+private fun WeightUnitRow(exercise: Exercise, modifier: Modifier = Modifier) {
+    AttributeRow(
+        label = stringResource(R.string.exercise_detail_weight_unit),
+        value = exercise.weightUnit?.label()
+            ?: stringResource(
+                R.string.exercise_detail_weight_unit_default,
+                LocalWeightUnit.current.label(),
+            ),
+        modifier = modifier.testTag(TestTags.EXERCISE_WEIGHT_UNIT),
+    )
+}
+
 @Composable
 private fun ExerciseDetails(exercise: Exercise, modifier: Modifier = Modifier) {
     Column(
@@ -239,6 +262,9 @@ private fun ExerciseDetails(exercise: Exercise, modifier: Modifier = Modifier) {
         )
         HorizontalDivider()
 
+        WeightUnitRow(exercise = exercise)
+        HorizontalDivider()
+
         // Honest placeholder: history is the next milestone, not a broken screen.
         Text(
             text = stringResource(R.string.exercise_detail_history_planned),
@@ -264,6 +290,8 @@ private data class ExerciseDraft(
     val movementPattern: MovementPattern,
     val restText: String,
     val techniqueNote: String,
+    /** The three-way choice: null follows the app setting (ROADMAP N64). */
+    val weightUnit: WeightUnit? = null,
 ) {
     val restSeconds: Int? get() = restText.trim().ifEmpty { null }?.toIntOrNull()
 
@@ -283,6 +311,7 @@ private data class ExerciseDraft(
         movementPattern = movementPattern,
         restSeconds = restSeconds,
         techniqueNote = techniqueNote.trim().ifEmpty { null },
+        weightUnit = weightUnit,
     )
 }
 
@@ -293,6 +322,7 @@ private fun Exercise.toDraft() = ExerciseDraft(
     movementPattern = movementPattern,
     restText = restSeconds?.toString().orEmpty(),
     techniqueNote = techniqueNote.orEmpty(),
+    weightUnit = weightUnit,
 )
 
 /**
@@ -426,6 +456,59 @@ private fun ExercisePrescriptionFields(
             label = { Text(stringResource(R.string.exercise_detail_cue)) },
             minLines = 2,
         )
+
+        WeightUnitChoice(
+            selected = draft.weightUnit,
+            onSelect = { onDraftChange(draft.copy(weightUnit = it)) },
+        )
+    }
+}
+
+/**
+ * This exercise's own display unit, or the app's (ROADMAP N64).
+ *
+ * Three chips rather than two, because null is a real answer here — "follow the app" — and a
+ * two-way control would have to express it as one of the two units, which is what an override is
+ * not. Same shape the settings screen's own unit control uses.
+ */
+private fun WeightUnit.editChipTag(): String = when (this) {
+    WeightUnit.KILOGRAMS -> TestTags.EXERCISE_EDIT_WEIGHT_UNIT_KG
+    WeightUnit.POUNDS -> TestTags.EXERCISE_EDIT_WEIGHT_UNIT_LB
+}
+
+@Composable
+private fun WeightUnitChoice(
+    selected: WeightUnit?,
+    onSelect: (WeightUnit?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.exercise_detail_weight_unit),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Row(
+            modifier = Modifier.padding(top = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            AppFilterChip(
+                selected = selected == null,
+                onClick = { onSelect(null) },
+                label = stringResource(
+                    R.string.exercise_detail_weight_unit_default,
+                    LocalWeightUnit.current.label(),
+                ),
+                testTag = TestTags.EXERCISE_EDIT_WEIGHT_UNIT_DEFAULT,
+            )
+            WeightUnit.entries.forEach { unit ->
+                AppFilterChip(
+                    selected = selected == unit,
+                    onClick = { onSelect(unit) },
+                    label = unit.label(),
+                    testTag = unit.editChipTag(),
+                )
+            }
+        }
     }
 }
 

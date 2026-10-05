@@ -18,6 +18,9 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.model.PlanComparison
 import com.example.androidapp.domain.model.label
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.ui.components.LocalWeightUnit
+import com.example.androidapp.ui.components.exerciseWeightUnit
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.AppTextButton
 
@@ -38,6 +41,9 @@ fun WorkoutReviewDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // The totals are the workout's, so they follow the app setting; each exercise's own lines below
+    // follow that exercise (ROADMAP N64).
+    val appUnit = LocalWeightUnit.current
     AlertDialog(
         modifier = modifier.testTag(TestTags.SUMMARY_DIALOG),
         onDismissRequest = onDismiss,
@@ -52,7 +58,8 @@ fun WorkoutReviewDialog(
                         R.string.summary_totals,
                         summary.totalSets,
                         summary.totalReps,
-                        Weight.display(summary.totalVolumeGrams, 0),
+                        Weight.display(summary.totalVolumeGrams, 0, appUnit),
+                        appUnit.label(),
                     ),
                     style = MaterialTheme.typography.titleMedium,
                 )
@@ -135,11 +142,18 @@ private fun prescribedText(comparison: PlanComparison): String? {
         null
     }
     return when {
-        shape != null && weight != null ->
-            stringResource(R.string.summary_shape_weight, shape, Weight.display(weight, 0))
+        shape != null && weight != null -> {
+            val unit = exerciseWeightUnit(comparison.weightUnit)
+            stringResource(
+                R.string.summary_shape_weight,
+                shape,
+                Weight.display(weight, 0, unit),
+                unit.label(),
+            )
+        }
 
         shape != null -> shape
-        weight != null -> Weight.display(weight, 0)
+        weight != null -> Weight.display(weight, 0, exerciseWeightUnit(comparison.weightUnit))
         else -> stringResource(R.string.summary_sets_only, comparison.prescribedSets)
     }
 }
@@ -150,8 +164,14 @@ private fun performedText(comparison: PlanComparison): String {
     if (comparison.performedSets == 0) return stringResource(R.string.summary_not_performed)
     val weight = comparison.performedTopWeightGrams
     val shape = stringResource(R.string.summary_shape, comparison.performedSets, comparison.performedReps)
+    val unit = exerciseWeightUnit(comparison.weightUnit)
     return if (weight != null && weight > 0L) {
-        stringResource(R.string.summary_shape_weight, shape, Weight.display(weight, 0))
+        stringResource(
+            R.string.summary_shape_weight,
+            shape,
+            Weight.display(weight, 0, unit),
+            unit.label(),
+        )
     } else {
         shape
     }
@@ -164,10 +184,15 @@ private fun verdictText(comparison: PlanComparison): String = when {
     comparison.performedSets == 0 -> stringResource(R.string.summary_skipped)
     comparison.topSetDeltaGrams == null -> stringResource(R.string.summary_no_weight_to_compare)
     comparison.matchedPlan -> stringResource(R.string.summary_matched)
-    comparison.topSetDeltaGrams > 0L ->
-        stringResource(R.string.summary_over, Weight.display(comparison.topSetDeltaGrams, 0))
-    else ->
-        stringResource(R.string.summary_under, Weight.display(-comparison.topSetDeltaGrams, 0))
+    comparison.topSetDeltaGrams > 0L -> {
+        val unit = exerciseWeightUnit(comparison.weightUnit)
+        stringResource(R.string.summary_over, Weight.display(comparison.topSetDeltaGrams, 0, unit), unit.label())
+    }
+
+    else -> {
+        val unit = exerciseWeightUnit(comparison.weightUnit)
+        stringResource(R.string.summary_under, Weight.display(-comparison.topSetDeltaGrams, 0, unit), unit.label())
+    }
 }
 
 /** The section the screen exists for: the plan, the performance, and the difference (N20, B21). */
