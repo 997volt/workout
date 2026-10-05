@@ -125,14 +125,14 @@ class ReadinessNoteDialogTest {
     }
 
     @Test
-    fun pickingAMuscle_addsIt_inTheMiddleOfTheScale() {
+    fun pickingAMuscle_addsIt_atTheBottomOfTheScale() {
         show()
 
         composeTestRule.onNodeWithTag(TestTags.Readiness.SORE_ADD).performScrollTo().performClick()
         composeTestRule.onNodeWithTag(TestTags.Readiness.soreOption("CHEST")).performClick()
 
         composeTestRule.onNodeWithTag(TestTags.Readiness.soreRow("CHEST")).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Readiness.soreScore("CHEST")).assertTextEquals("5/10")
+        composeTestRule.onNodeWithTag(TestTags.Readiness.soreScore("CHEST")).assertTextEquals("1/10")
     }
 
     @Test
@@ -208,7 +208,7 @@ class ReadinessNoteDialogTest {
             listOf(
                 SoreMuscle(MuscleGroup.QUADS, 8),
                 SoreMuscle(MuscleGroup.CALVES, 3),
-                SoreMuscle(MuscleGroup.CHEST, 5),
+                SoreMuscle(MuscleGroup.CHEST, 1),
             ),
             savedSoreMuscles,
         )

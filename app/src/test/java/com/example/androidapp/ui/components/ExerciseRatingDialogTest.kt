@@ -134,14 +134,14 @@ class ExerciseRatingDialogTest {
         ApplicationProvider.getApplicationContext<Context>().getString(R.string.rating_muscle_anchors)
 
     @Test
-    fun pickingAJoint_addsIt_inTheMiddleOfTheScale() {
+    fun pickingAJoint_addsIt_atTheBottomOfTheScale() {
         show()
 
         pick(Joint.SHOULDER, Side.LEFT)
 
         val site = jointSiteKey(Joint.SHOULDER, Side.LEFT)
         composeTestRule.onNodeWithTag(TestTags.Rating.jointRow(site)).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Rating.jointScore(site)).assertTextEquals("5/10")
+        composeTestRule.onNodeWithTag(TestTags.Rating.jointScore(site)).assertTextEquals("1/10")
     }
 
     @Test
@@ -231,7 +231,7 @@ class ExerciseRatingDialogTest {
         assertEquals(
             8 to listOf(
                 JointPain(Joint.KNEE, Side.LEFT, 6),
-                JointPain(Joint.SHOULDER, Side.RIGHT, 5),
+                JointPain(Joint.SHOULDER, Side.RIGHT, 1),
             ),
             saved,
         )

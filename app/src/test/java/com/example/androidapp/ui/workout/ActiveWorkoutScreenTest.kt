@@ -269,7 +269,7 @@ class ActiveWorkoutScreenTest {
             .performClick()
         composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
 
-        assertEquals(Rounding("se1", 8, listOf(JointPain(Joint.KNEE, Side.LEFT, 5))), rated)
+        assertEquals(Rounding("se1", 8, listOf(JointPain(Joint.KNEE, Side.LEFT, 1))), rated)
         assertEquals("rating is a detour, not the finish", null, finished)
     }
 
@@ -316,7 +316,7 @@ class ActiveWorkoutScreenTest {
             .performClick()
         composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
 
-        assertEquals(Rounding("se1", 7, listOf(JointPain(Joint.ELBOW, Side.RIGHT, 5))), rated)
+        assertEquals(Rounding("se1", 7, listOf(JointPain(Joint.ELBOW, Side.RIGHT, 1))), rated)
     }
 
     @Test

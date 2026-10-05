@@ -217,5 +217,11 @@ internal class ScoredPickStrings(
 /** How tall a scored list may grow before it scrolls, keeping the dialog's buttons on screen. */
 private val SCORED_PICKS_MAX_HEIGHT = 200.dp
 
-/** The score a freshly added pick starts on: the middle of the scale, so a step either way is one tap. */
-internal const val DEFAULT_SCORED_PICK = 5
+/**
+ * The score a freshly added pick starts on: the bottom of the scale (ROADMAP N62, N63).
+ *
+ * A pick is added the moment the lifter names the site, before they have said how bad it is, and 1
+ * claims the least rather than the middle — a 5 would record a severity nobody chose and read back as
+ * though they had. The lifter steps it up to what it actually is.
+ */
+internal const val DEFAULT_SCORED_PICK = 1
