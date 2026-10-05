@@ -112,6 +112,16 @@ class ExerciseTrendPointTest {
     }
 
     @Test
+    fun theJointPainPoint_isTheWorstJointTheQueryReported() {
+        // ROADMAP N63: the SQL resolves one exercise's live joint rows to the **worst** of them and
+        // keeps the `jointPain` alias, so the series is that number — a left knee 8 beside a right
+        // knee 3 is 8, not 5.5. The SQL itself is covered by `TrendsDaoTest` on a device.
+        val points = rows(row(weight = 100_000L, reps = 5), jointPain = 8).toExerciseTrendPoints()
+
+        assertEquals(8.0, points.single().averageJointPain!!, 0.0001)
+    }
+
+    @Test
     fun sessions_comeBackOldestFirst() {
         // The chart draws left to right, so the order is part of the contract.
         val points = rows(

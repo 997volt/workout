@@ -3,6 +3,7 @@ package com.example.androidapp.domain.repository
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
@@ -137,8 +138,13 @@ interface WorkoutRepository {
     suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit>
 
     /**
-     * Writes how an exercise felt — muscle feel and joint pain, each 1–10 or null
-     * to clear it (ROADMAP N8).
+     * Writes how an exercise felt — muscle feel and the joints that hurt (ROADMAP N8, N63).
+     *
+     * An empty [joints] clears the picked list and a non-empty one **replaces** it rather than
+     * merging, because the editor shows exactly what is stored. A score outside `TenPointScale` is
+     * refused as `Invalid` before anything is written. The legacy `jointPain` / `jointPainNote`
+     * columns are never rewritten by this call, so a session rated before N63 keeps its number and
+     * its free text.
      *
      * Separate from [finishExercise] rather than folded into it: the ratings are
      * captured *at* Done but are skippable, and they stay editable from the workout
@@ -147,9 +153,7 @@ interface WorkoutRepository {
     suspend fun rateExercise(
         sessionExerciseId: String,
         muscleFeel: Int?,
-        jointPain: Int?,
-        /** Which joints hurt, or null (ROADMAP N9). Blank is stored as null. */
-        jointPainNote: String? = null,
+        joints: List<JointPain>,
     ): DataResult<Unit>
 
     /** Marks the session complete. It stops being "active" and enters history. */

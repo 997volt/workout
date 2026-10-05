@@ -3,7 +3,9 @@ package com.example.androidapp.data.transfer
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.MeasurementEntity
 import com.example.androidapp.data.local.ProgramDeloadEntity
@@ -14,6 +16,7 @@ import com.example.androidapp.data.local.ProgramSlotExerciseEntity
 import com.example.androidapp.data.local.ProgramSlotSetEntity
 import com.example.androidapp.data.local.ProgramSubstitutionEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.SessionExerciseJointEntity
 import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
@@ -239,6 +242,26 @@ class BackupCodecRoundTripTest {
             muscle = MuscleGroup.HAMSTRINGS,
             score = 7,
             position = 2,
+            createdAt = 1_600_000_000_000L,
+            updatedAt = 1_600_000_000_001L,
+            deletedAt = 1_600_000_000_002L,
+        )
+
+        assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aSessionExerciseJoint_survivesTheCodec() {
+        // ROADMAP N63: the joint, its side and its score are a fact the lifter wrote, and the codec
+        // is hand-written — a field it is not told about comes back as its default instead, which is
+        // an export that looks complete and is not. The side is the column this table adds.
+        val entity = SessionExerciseJointEntity(
+            id = "joint1",
+            sessionExerciseId = "se1",
+            joint = Joint.KNEE,
+            side = Side.LEFT,
+            score = 6,
+            position = 1,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = 1_600_000_000_002L,

@@ -114,6 +114,15 @@ data class SessionExercise(
     val jointPain: Int? = null,
     /** Which joints, e.g. "left shoulder" (ROADMAP N9), or null. */
     val jointPainNote: String? = null,
+    /**
+     * The joints that hurt, each with its side and its own score (ROADMAP N63).
+     *
+     * Replaces the single [jointPain] number and its free-text [jointPainNote] as the way a rating
+     * is given — one score per picked joint, left and right apart — but neither column is removed:
+     * a session rated before the change keeps its number and its text, and history reads them.
+     * Empty means no joint was picked, which is also what a skipped rating writes.
+     */
+    val joints: List<JointPain> = emptyList(),
 ) {
     val isFinished: Boolean get() = finishedAt != null
 }

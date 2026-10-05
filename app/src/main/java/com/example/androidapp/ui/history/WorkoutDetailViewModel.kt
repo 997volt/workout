@@ -2,6 +2,7 @@ package com.example.androidapp.ui.history
 
 import kotlinx.coroutines.flow.asStateFlow
 import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SetType
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -59,9 +60,11 @@ data class HistoryExercise(
     val sets: List<HistorySet>,
     /** How well the target muscle was worked, 1–10, or null (ROADMAP N8). */
     val muscleFeel: Int? = null,
-    /** Joint or connective-tissue discomfort, 1–10, or null (ROADMAP N8). */
+    /** The joints that hurt, each with its side and own score (ROADMAP N63), or empty. */
+    val joints: List<JointPain> = emptyList(),
+    /** Legacy joint pain, 1–10, or null (ROADMAP N8) — read for a session rated before N63. */
     val jointPain: Int? = null,
-    /** Which joints, or null (ROADMAP N9). */
+    /** Legacy "which joints" free text, or null (ROADMAP N9) — read, never rewritten. */
     val jointPainNote: String? = null,
 )
 
@@ -164,6 +167,7 @@ class WorkoutDetailViewModel @Inject constructor(
                         exerciseId = row.exerciseId,
                         name = row.exerciseName,
                         muscleFeel = row.muscleFeel,
+                        joints = row.joints,
                         jointPain = row.jointPain,
                         jointPainNote = row.jointPainNote,
                         sets = logged
@@ -226,10 +230,9 @@ class WorkoutDetailViewModel @Inject constructor(
     fun onRateExercise(
         sessionExerciseId: String,
         muscleFeel: Int?,
-        jointPain: Int?,
-        jointPainNote: String?,
+        joints: List<JointPain>,
     ) = write {
-        workoutRepository.rateExercise(sessionExerciseId, muscleFeel, jointPain, jointPainNote)
+        workoutRepository.rateExercise(sessionExerciseId, muscleFeel, joints)
     }
 
     /**

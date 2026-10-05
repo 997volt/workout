@@ -2,9 +2,11 @@ package com.example.androidapp.data.transfer
 
 import java.time.DayOfWeek
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.platform.CrashLog
 import kotlinx.serialization.Serializable
 
@@ -44,6 +46,15 @@ data class BackupFile(
      * or an export would silently carry none of it.
      */
     val sessionSoreMuscles: List<SessionSoreMuscleDto> = emptyList(),
+    /**
+     * The joints each session exercise reported painful, with their sides and scores (ROADMAP N63).
+     *
+     * Defaulted like every added collection: a file written before the list existed still decodes,
+     * and its exercises simply report none — the legacy `jointPain` number on the exercise's own row
+     * is carried in [SessionExerciseDto] as it always was. It must be here in the same change as the
+     * table, or an export would silently carry none of it.
+     */
+    val sessionExerciseJoints: List<SessionExerciseJointDto> = emptyList(),
     /**
      * Templates and their exercises (ROADMAP N3).
      *
@@ -238,6 +249,26 @@ data class SessionSoreMuscleDto(
     val id: String,
     val sessionId: String,
     val muscle: MuscleGroup,
+    /** 1–10, on `TenPointScale`. */
+    val score: Int,
+    val position: Int,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+)
+
+/**
+ * One joint a session exercise reported painful, its side, and its score (ROADMAP N63).
+ *
+ * [joint] and [side] travel as enum names, like every other enum in this file, and [position] is
+ * the order the lifter picked them in — data, not a presentational detail.
+ */
+@Serializable
+data class SessionExerciseJointDto(
+    val id: String,
+    val sessionExerciseId: String,
+    val joint: Joint,
+    val side: Side,
     /** 1–10, on `TenPointScale`. */
     val score: Int,
     val position: Int,

@@ -17,28 +17,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-One batch, taken from using the app: what a session records about the body it was trained with, and what
-the app says when an exercise is done. A candidate graduates to this section — gaining an id and a
-spelled-out decision rather than a wish — when it is picked up, so what stands here is committed work;
-the two queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what
-is a product in its own right.
-
-### What the body reported
-
-- **N63 — the joint location is picked, not typed: more than one joint, left and right apart.** N9 made
-  "which joints" free text on the argument that it is not a set of values the app can check; that was
-  right for a note and wrong for a fact the charts are asked about, so the box becomes a pick from the
-  body's joints — shoulder, elbow, wrist, hip, knee, ankle, and the central neck and lower back — with
-  **left and right as separate entries** for the paired ones, because "knee 6" is half a sentence. More
-  than one at a time, and each picked joint carries its own pain score on the same shape as N62's
-  soreness list: one picked-list-of-sites-with-a-score component, extracted at this second caller rather
-  than built twice. What this owes the rest of the app: the joint-pain trend reads one number per exercise
-  today, so it reads the **worst** joint that session rather than an average of two sides, and a session
-  rated before the change keeps reading the free text it wrote — history is not rewritten, and free text
-  is not parsed into structure it never had. The single *Joint pain (1–10)* field and its note box go, the
-  migration is numbered as it ships, and the new rows join the backup codec.
-
-### What the app says when an exercise is done
+One item is left of the batch taken from using the app: the progression the app asks about when an
+exercise is done. A candidate graduates to this section — gaining an id and a spelled-out decision
+rather than a wish — when it is picked up, so what stands here is committed work; the two queues below
+are where the rest lives, *Later* for what is self-contained and *Parked* for what is a product in its
+own right.
 
 - **N50 — the app's progression comes back as a decision at *Done*, earned by the plan and its target
   RPE.** N59 withdrew the offer rather than the question: the next set's values are now fields the lifter

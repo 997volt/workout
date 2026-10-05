@@ -14,9 +14,12 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneOffsetSource
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
 import java.time.Instant
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -204,48 +207,114 @@ class WorkoutEditingTest {
     }
 
     @Test
-    fun ratingAnExercise_storesMuscleFeelAndJointPain() = runTest {
+    fun ratingAnExercise_storesMuscleFeelAndThePickedJoints() = runTest {
         val sessionId = seedOpenWorkoutWithASet()
 
-        val result = repository.rateExercise("se1", muscleFeel = 8, jointPain = 2)
+        val result = repository.rateExercise(
+            "se1",
+            muscleFeel = 8,
+            joints = listOf(
+                JointPain(Joint.KNEE, Side.LEFT, 6),
+                JointPain(Joint.KNEE, Side.RIGHT, 3),
+            ),
+        )
 
         assertTrue(result is DataResult.Success)
-        val stored = database.workoutDao().observeSessionExerciseDetails(sessionId).first().single()
+        val stored = repository.observeSessionExercises(sessionId).first().single()
         assertEquals(8, stored.muscleFeel)
-        assertEquals(2, stored.jointPain)
+        // Left and right are two rows with their own scores (ROADMAP N63), in pick order.
+        assertEquals(
+            listOf(
+                JointPain(Joint.KNEE, Side.LEFT, 6),
+                JointPain(Joint.KNEE, Side.RIGHT, 3),
+            ),
+            stored.joints,
+        )
     }
 
     @Test
-    fun aJointPainLocation_isStored_andABlankOneBecomesNull() = runTest {
+    fun aJointList_isReplaced_ratherThanMerged() = runTest {
+        // ROADMAP N63: the editor shows exactly what is stored, so a joint missing from a save was
+        // removed by the lifter and must not survive as a hidden row.
         val sessionId = seedOpenWorkoutWithASet()
-
-        assertTrue(
-            repository.rateExercise("se1", muscleFeel = 8, jointPain = 4, jointPainNote = "  left shoulder  ")
-                is DataResult.Success,
+        repository.rateExercise(
+            "se1",
+            muscleFeel = 8,
+            joints = listOf(JointPain(Joint.KNEE, Side.LEFT, 6), JointPain(Joint.KNEE, Side.RIGHT, 3)),
         )
+
+        repository.rateExercise(
+            "se1",
+            muscleFeel = 8,
+            joints = listOf(JointPain(Joint.KNEE, Side.RIGHT, 9)),
+        )
+
         assertEquals(
-            "left shoulder",
-            database.workoutDao().observeSessionExerciseDetails(sessionId).first().single().jointPainNote,
+            listOf(JointPain(Joint.KNEE, Side.RIGHT, 9)),
+            repository.observeSessionExercises(sessionId).first().single().joints,
+        )
+    }
+
+    @Test
+    fun ratingWithJoints_leavesTheLegacyColumnsAlone() = runTest {
+        // ROADMAP N63: the single number and its free text are what an old session recorded, so a
+        // new rating writes the picked list and never rewrites them.
+        val sessionId = seedOpenWorkoutWithASet()
+        database.workoutDao().insertSessionExercise(
+            SessionExerciseEntity(
+                id = "se-legacy",
+                sessionId = sessionId,
+                exerciseId = "back-squat",
+                position = 1,
+                muscleFeel = 4,
+                jointPain = 7,
+                jointPainNote = "left shoulder",
+                createdAt = 0L,
+                updatedAt = 0L,
+                deletedAt = null,
+            ),
         )
 
-        repository.rateExercise("se1", muscleFeel = 8, jointPain = 4, jointPainNote = "   ")
-
-        // Two representations of "nothing" would render differently on screen, the
-        // same rule the readiness note follows (ROADMAP N9).
-        assertNull(
-            database.workoutDao().observeSessionExerciseDetails(sessionId).first().single().jointPainNote,
+        repository.rateExercise(
+            "se-legacy",
+            muscleFeel = 8,
+            joints = listOf(JointPain(Joint.SHOULDER, Side.LEFT, 5)),
         )
+
+        val stored = repository.observeSessionExercises(sessionId).first().single { it.id == "se-legacy" }
+        assertEquals("the picked list is the new rating", listOf(JointPain(Joint.SHOULDER, Side.LEFT, 5)), stored.joints)
+        assertEquals("the legacy number is not rewritten", 7, stored.jointPain)
+        assertEquals("nor its free text", "left shoulder", stored.jointPainNote)
     }
 
     @Test
     fun aRatingOutsideTheScale_isRefused_withoutTouchingTheExercise() = runTest {
         val sessionId = seedOpenWorkoutWithASet()
 
-        val result = repository.rateExercise("se1", muscleFeel = 11, jointPain = 2)
+        val result = repository.rateExercise("se1", muscleFeel = 11, joints = emptyList())
 
         assertTrue((result as DataResult.Failure).error is DataError.Invalid)
         assertNull(
             "a refused write must leave the exercise unrated",
+            database.workoutDao().observeSessionExerciseDetails(sessionId).first().single().muscleFeel,
+        )
+    }
+
+    @Test
+    fun aJointScoreOutsideTheScale_isRefused_beforeAnythingIsWritten() = runTest {
+        // N63: the picked list carries its own scores, so the one validator covers them too — and it
+        // runs before the muscle feel is stored, so a bad list cannot leave half a rating.
+        val sessionId = seedOpenWorkoutWithASet()
+
+        val result = repository.rateExercise(
+            "se1",
+            muscleFeel = 8,
+            joints = listOf(JointPain(Joint.KNEE, Side.LEFT, 11)),
+        )
+
+        assertTrue((result as DataResult.Failure).error is DataError.Invalid)
+        assertNull(
+            "nothing is written when a joint score is off the scale",
             database.workoutDao().observeSessionExerciseDetails(sessionId).first().single().muscleFeel,
         )
     }
@@ -274,15 +343,19 @@ class WorkoutEditingTest {
     @Test
     fun ratingsSurviveFinishingAndReopening() = runTest {
         val sessionId = seedOpenWorkoutWithASet()
-        repository.rateExercise("se1", muscleFeel = 8, jointPain = 2)
+        repository.rateExercise(
+            "se1",
+            muscleFeel = 8,
+            joints = listOf(JointPain(Joint.KNEE, Side.LEFT, 2)),
+        )
 
         repository.finishExercise("se1")
         repository.reopenExercise("se1")
 
         // Reopening is for fixing a mis-tap; it must not wipe how it felt.
-        val stored = database.workoutDao().observeSessionExerciseDetails(sessionId).first().single()
+        val stored = repository.observeSessionExercises(sessionId).first().single()
         assertEquals(8, stored.muscleFeel)
-        assertEquals(2, stored.jointPain)
+        assertEquals(listOf(JointPain(Joint.KNEE, Side.LEFT, 2)), stored.joints)
     }
 
     private suspend fun historyVolume(): Long =

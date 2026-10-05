@@ -10,6 +10,7 @@ import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
 import com.example.androidapp.data.local.ProgramSlotExerciseEntity
 import com.example.androidapp.data.local.ProgramSlotSetEntity
+import com.example.androidapp.data.local.SessionExerciseJointEntity
 import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
@@ -19,9 +20,11 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneOffsetSource
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.platform.CrashLogStore
 import java.nio.file.Files
 import java.time.DayOfWeek
@@ -529,6 +532,53 @@ class BackupRoundTripTest {
         assertEquals(MuscleGroup.QUADS, restored[0].muscle)
         assertEquals(8, restored[0].score)
         assertEquals(MuscleGroup.CALVES, restored[1].muscle)
+        assertEquals(3, restored[1].score)
+    }
+
+    @Test
+    fun anExercisesPainfulJoints_surviveTheRoundTrip() = runTest {
+        // ROADMAP N63: the picked joints are the lifter's own record, and the codec is hand-written —
+        // a table it is not told about is dropped on export and lost on restore, in silence. The
+        // side and the score are what reading one joint back depends on.
+        seedAWorkout()
+        val sessionExerciseId = database.backupDao().allSessionExercises().single().id
+        database.sessionExerciseJointDao().insertAll(
+            listOf(
+                SessionExerciseJointEntity(
+                    id = "joint-1",
+                    sessionExerciseId = sessionExerciseId,
+                    joint = Joint.KNEE,
+                    side = Side.LEFT,
+                    score = 6,
+                    position = 0,
+                    createdAt = 1_000L,
+                    updatedAt = 1_000L,
+                    deletedAt = null,
+                ),
+                SessionExerciseJointEntity(
+                    id = "joint-2",
+                    sessionExerciseId = sessionExerciseId,
+                    joint = Joint.KNEE,
+                    side = Side.RIGHT,
+                    score = 3,
+                    position = 1,
+                    createdAt = 1_000L,
+                    updatedAt = 1_000L,
+                    deletedAt = null,
+                ),
+            ),
+        )
+
+        val json = exportedJson()
+        database.clearAllTables()
+        repository.import(json)
+
+        val restored = database.sessionExerciseJointDao().allForBackup().sortedBy { it.position }
+        assertEquals(2, restored.size)
+        assertEquals(Joint.KNEE, restored[0].joint)
+        assertEquals("left and right come back apart", Side.LEFT, restored[0].side)
+        assertEquals(6, restored[0].score)
+        assertEquals(Side.RIGHT, restored[1].side)
         assertEquals(3, restored[1].score)
     }
 

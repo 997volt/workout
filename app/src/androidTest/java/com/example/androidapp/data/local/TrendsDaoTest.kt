@@ -4,9 +4,11 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -125,6 +127,75 @@ class TrendsDaoTest {
     }
 
     @Test
+    fun theJointTrend_readsTheWorstJoint_notAnAverageOfSides() = runTest {
+        // ROADMAP N63: "left knee 3, right knee 8" is one bad knee, and averaging the two sides
+        // would report 5.5 for a knee that hurt 8.
+        val sessionId = "s1"
+        database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
+        exercise(sessionId, "se1")
+        joint("se1", Joint.KNEE, Side.LEFT, 3, position = 0)
+        joint("se1", Joint.KNEE, Side.RIGHT, 8, position = 1)
+
+        val row = dao.observeFeelTrend(limit = 10).first().single()
+
+        assertEquals(8.0, row.averageJointPain)
+        assertNull(row.averageMuscleFeel)
+    }
+
+    @Test
+    fun aWorkoutThatRecordedOnlyJoints_stillAppears() = runTest {
+        // The exercise's own columns are both null; the picked list is the only thing it recorded,
+        // so the WHERE clause has to count it or the trend silently ignores the workout.
+        val sessionId = "s1"
+        database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
+        exercise(sessionId, "se1", feel = null, pain = null)
+        joint("se1", Joint.SHOULDER, Side.LEFT, 5, position = 0)
+
+        val row = dao.observeFeelTrend(limit = 10).first().single()
+
+        assertEquals(5.0, row.averageJointPain)
+    }
+
+    @Test
+    fun aPickedJoint_winsOverTheLegacyNumber() = runTest {
+        // A session rated before N63 and rated again after it carries both; the picked list is the
+        // rating that was actually given, and the legacy column is the fallback.
+        val sessionId = "s1"
+        database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
+        exercise(sessionId, "se1", feel = null, pain = 2)
+        joint("se1", Joint.KNEE, Side.RIGHT, 6, position = 0)
+
+        assertEquals(6.0, dao.observeFeelTrend(limit = 10).first().single().averageJointPain)
+    }
+
+    @Test
+    fun aSoftDeletedJoint_isNotTheWorst() = runTest {
+        // A replaced list's old rows are hidden, not gone: reading them would resurrect a score the
+        // lifter took off (N63's replace-on-save).
+        val sessionId = "s1"
+        database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
+        exercise(sessionId, "se1")
+        joint("se1", Joint.KNEE, Side.LEFT, 9, position = 0, deleted = true)
+        joint("se1", Joint.KNEE, Side.RIGHT, 3, position = 1)
+
+        assertEquals(3.0, dao.observeFeelTrend(limit = 10).first().single().averageJointPain)
+    }
+
+    @Test
+    fun theExerciseTrendRow_readsTheWorstJoint_withTheLegacyFallback() = runTest {
+        // ROADMAP N63, and the alias is unchanged so the Kotlin mapping is too (N17).
+        val sessionId = "s1"
+        database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
+        exercise(sessionId, "se1", feel = 8, pain = null)
+        joint("se1", Joint.KNEE, Side.LEFT, 4, position = 0)
+        joint("se1", Joint.ANKLE, Side.RIGHT, 7, position = 1)
+
+        val withJoints = dao.observeExerciseTrendRows("library-se1", limit = 10).first()
+
+        assertEquals(7, withJoints.first().jointPain)
+    }
+
+    @Test
     fun theWindow_keepsTheNewestWorkouts() = runTest {
         (1..12).forEach { index ->
             seedWorkout(sessionId = "s$index", startedAt = index * 1_000L, rpes = listOf(7))
@@ -205,6 +276,32 @@ class TrendsDaoTest {
                 createdAt = 0L,
                 updatedAt = 0L,
                 deletedAt = null,
+            ),
+        )
+    }
+
+    /** One picked joint, as a save writes it (ROADMAP N63). */
+    private suspend fun joint(
+        sessionExerciseId: String,
+        joint: Joint,
+        side: Side,
+        score: Int,
+        position: Int,
+        deleted: Boolean = false,
+    ) {
+        database.sessionExerciseJointDao().insertAll(
+            listOf(
+                SessionExerciseJointEntity(
+                    id = "joint-$sessionExerciseId-$position",
+                    sessionExerciseId = sessionExerciseId,
+                    joint = joint,
+                    side = side,
+                    score = score,
+                    position = position,
+                    createdAt = 0L,
+                    updatedAt = 0L,
+                    deletedAt = if (deleted) 1L else null,
+                ),
             ),
         )
     }

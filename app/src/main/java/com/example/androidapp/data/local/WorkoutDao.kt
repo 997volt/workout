@@ -299,8 +299,12 @@ interface WorkoutDao {
     suspend fun findSessionIdForSessionExercise(id: String): String?
 
     /**
-     * Writes an exercise's feel ratings (ROADMAP N8). Nulls clear them, because
-     * from the workout detail's editor the fields are the whole state.
+     * Writes an exercise's muscle feel (ROADMAP N8). Null clears it, because from the
+     * workout detail's editor the field is the whole state.
+     *
+     * Deliberately says nothing about `jointPain` / `jointPainNote`: the joint rating became a
+     * picked list in its own table (ROADMAP N63), and the two columns are **legacy** data an old
+     * session keeps and history still reads. Rewriting them would be rewriting what was recorded.
      *
      * Rows updated: 0 means the exercise is gone.
      */
@@ -308,8 +312,6 @@ interface WorkoutDao {
         """
         UPDATE session_exercises
         SET muscleFeel = :muscleFeel,
-            jointPain = :jointPain,
-            jointPainNote = :jointPainNote,
             updatedAt = :at
         WHERE id = :id AND deletedAt IS NULL
         """,
@@ -317,8 +319,6 @@ interface WorkoutDao {
     suspend fun setSessionExerciseRating(
         id: String,
         muscleFeel: Int?,
-        jointPain: Int?,
-        jointPainNote: String?,
         at: Long,
     ): Int
 

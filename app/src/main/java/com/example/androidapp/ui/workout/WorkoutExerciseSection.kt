@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.ExerciseRatingDialog
 import com.example.androidapp.ui.components.ExerciseRatingSection
@@ -88,8 +89,8 @@ internal fun ExerciseList(
     onMoveExercise: (String, Int) -> Unit,
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
-    onFinishExercise: (String, Int?, Int?, String?) -> Unit,
-    onRateExercise: (String, Int?, Int?, String?) -> Unit,
+    onFinishExercise: (String, Int?, List<JointPain>) -> Unit,
+    onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (String) -> Unit = {},
@@ -149,8 +150,8 @@ private fun ExerciseSection(
     canMoveDown: Boolean,
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
-    onFinishExercise: (String, Int?, Int?, String?) -> Unit,
-    onRateExercise: (String, Int?, Int?, String?) -> Unit,
+    onFinishExercise: (String, Int?, List<JointPain>) -> Unit,
+    onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: () -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,
@@ -208,9 +209,10 @@ private fun ExerciseSection(
         // as the last chance rather than the only one.
         ExerciseRatingSection(
             muscleFeel = row.muscleFeel,
-            jointPain = row.jointPain,
-            jointPainNote = row.jointPainNote,
-            onRate = { feel, pain, note -> onRateExercise(row.id, feel, pain, note) },
+            joints = row.joints,
+            legacyJointPain = row.jointPain,
+            legacyJointPainNote = row.jointPainNote,
+            onRate = { feel, joints -> onRateExercise(row.id, feel, joints) },
         )
     }
 }
@@ -225,7 +227,7 @@ private fun ExerciseSection(
 private fun ExerciseStateAction(
     row: SessionExerciseRow,
     onReopenExercise: () -> Unit,
-    onFinishExercise: (String, Int?, Int?, String?) -> Unit,
+    onFinishExercise: (String, Int?, List<JointPain>) -> Unit,
 ) {
     if (row.isFinished) {
         AppTextButton(
@@ -238,8 +240,7 @@ private fun ExerciseStateAction(
         FinishExerciseAction(
             exerciseId = row.id,
             muscleFeel = row.muscleFeel,
-            jointPain = row.jointPain,
-            jointPainNote = row.jointPainNote,
+            joints = row.joints,
             onFinish = onFinishExercise,
         )
     }
@@ -258,9 +259,8 @@ private fun ExerciseStateAction(
 private fun FinishExerciseAction(
     exerciseId: String,
     muscleFeel: Int?,
-    jointPain: Int?,
-    jointPainNote: String?,
-    onFinish: (String, Int?, Int?, String?) -> Unit,
+    joints: List<JointPain>,
+    onFinish: (String, Int?, List<JointPain>) -> Unit,
 ) {
     var rating by remember { mutableStateOf(false) }
 
@@ -274,16 +274,15 @@ private fun FinishExerciseAction(
     if (rating) {
         ExerciseRatingDialog(
             initialMuscleFeel = muscleFeel,
-            initialJointPain = jointPain,
-            initialJointPainNote = jointPainNote.orEmpty(),
+            initialJoints = joints,
             isPrompt = true,
             onDismiss = {
                 rating = false
-                onFinish(exerciseId, null, null, null)
+                onFinish(exerciseId, null, emptyList())
             },
-            onSave = { feel, pain, note ->
+            onSave = { feel, picked ->
                 rating = false
-                onFinish(exerciseId, feel, pain, note)
+                onFinish(exerciseId, feel, picked)
             },
         )
     }

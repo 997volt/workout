@@ -228,58 +228,63 @@ class WorkoutDaoTest {
     }
 
     @Test
-    fun setSessionExerciseRating_writesAndClearsTheFeelRatings() = runTest {
+    fun setSessionExerciseRating_writesAndClearsTheMuscleFeel() = runTest {
         val session = dao.startSession()
         insertExercise(session.id, "back-squat", position = 0)
         val rowId = dao.observeSessionExerciseDetails(session.id).first().single().id
 
         assertEquals(
             1,
-            dao.setSessionExerciseRating(
-                id = rowId,
-                muscleFeel = 8,
-                jointPain = 2,
-                jointPainNote = "left shoulder",
-                at = 5_000L,
-            ),
+            dao.setSessionExerciseRating(id = rowId, muscleFeel = 8, at = 5_000L),
         )
         val rated = dao.observeSessionExerciseDetails(session.id).first().single()
         assertEquals(8, rated.muscleFeel)
-        assertEquals(2, rated.jointPain)
-        assertEquals("left shoulder", rated.jointPainNote)
 
-        // Nulls clear, because from the detail's editor the fields are the state.
+        // Null clears, because from the detail's editor the field is the state.
         assertEquals(
             1,
-            dao.setSessionExerciseRating(
-                id = rowId,
-                muscleFeel = null,
-                jointPain = null,
-                jointPainNote = null,
-                at = 6_000L,
-            ),
+            dao.setSessionExerciseRating(id = rowId, muscleFeel = null, at = 6_000L),
         )
-        val cleared = dao.observeSessionExerciseDetails(session.id).first().single()
-        assertNull(cleared.muscleFeel)
-        assertNull(cleared.jointPain)
-        assertNull("the location goes with the rating it explains (N9)", cleared.jointPainNote)
+        assertNull(dao.observeSessionExerciseDetails(session.id).first().single().muscleFeel)
+    }
+
+    @Test
+    fun setSessionExerciseRating_leavesTheLegacyJointColumnsAlone() = runTest {
+        // ROADMAP N63: the joint rating moved to its own table, and the old single number and its
+        // free text are data a previous version recorded — read, never rewritten by a new rating.
+        val session = dao.startSession()
+        insertExercise(
+            session.id,
+            "back-squat",
+            position = 0,
+            jointPain = 7,
+            jointPainNote = "left shoulder",
+        )
+        val rowId = dao.observeSessionExerciseDetails(session.id).first().single().id
+
+        dao.setSessionExerciseRating(id = rowId, muscleFeel = 8, at = 5_000L)
+
+        val rated = dao.observeSessionExerciseDetails(session.id).first().single()
+        assertEquals(8, rated.muscleFeel)
+        assertEquals("the legacy number is not rewritten", 7, rated.jointPain)
+        assertEquals("nor its free text", "left shoulder", rated.jointPainNote)
     }
 
     @Test
     fun setSessionExerciseRating_reportsZeroRowsForAnUnknownExercise() = runTest {
         assertEquals(
             0,
-            dao.setSessionExerciseRating(
-                id = "nope",
-                muscleFeel = 5,
-                jointPain = 5,
-                jointPainNote = null,
-                at = 1L,
-            ),
+            dao.setSessionExerciseRating(id = "nope", muscleFeel = 5, at = 1L),
         )
     }
 
-    private suspend fun insertExercise(sessionId: String, exerciseId: String, position: Int) {
+    private suspend fun insertExercise(
+        sessionId: String,
+        exerciseId: String,
+        position: Int,
+        jointPain: Int? = null,
+        jointPainNote: String? = null,
+    ) {
         // Seed the library row first: session_exercises has a foreign key to it.
         database.exerciseDao().insertAll(
             listOf(
@@ -303,6 +308,9 @@ class WorkoutDaoTest {
                 sessionId = sessionId,
                 exerciseId = exerciseId,
                 position = position,
+                // The N8 columns a pre-N63 session recorded, carried by a seed that needs them.
+                jointPain = jointPain,
+                jointPainNote = jointPainNote,
                 createdAt = 0L,
                 updatedAt = 0L,
                 deletedAt = null,

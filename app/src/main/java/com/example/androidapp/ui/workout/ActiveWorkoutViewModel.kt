@@ -23,6 +23,7 @@ import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.SlotPrescription
@@ -108,9 +109,15 @@ data class SessionExerciseRow(
     val isFinished: Boolean = false,
     /** How well the target muscle was worked, 1–10, or null (ROADMAP N8). */
     val muscleFeel: Int? = null,
-    /** Joint or connective-tissue discomfort, 1–10, or null (ROADMAP N8). */
+    /**
+     * The joints that hurt, each with its side and its own score (ROADMAP N63).
+     *
+     * The picked list a new rating writes; empty means none was picked.
+     */
+    val joints: List<JointPain> = emptyList(),
+    /** Legacy joint pain, 1–10, or null (ROADMAP N8) — shown for a session rated before N63. */
     val jointPain: Int? = null,
-    /** Which joints, or null (ROADMAP N9) — the same "nothing" as everywhere else. */
+    /** Legacy "which joints" free text, or null (ROADMAP N9) — shown, never rewritten. */
     val jointPainNote: String? = null,
     val sets: List<SetRow> = emptyList(),
     val suggestion: SetSuggestion = SetSuggestion(DEFAULT_REPS, Weight.DEFAULT_GRAMS),
@@ -563,23 +570,21 @@ class ActiveWorkoutViewModel @Inject constructor(
      * Marks an exercise done (ROADMAP N7) and offers an undo, because the mis-tap
      * this prevents is also the mis-tap it can cause.
      *
-     * [muscleFeel] and [jointPain] are the skippable half (ROADMAP N8): they are
+     * [muscleFeel] and [joints] are the skippable half (ROADMAP N8, N63): they are
      * written first, so a failure leaves the exercise open with an error to read
      * rather than done with the ratings silently lost.
      */
     fun onFinishExercise(
         sessionExerciseId: String,
         muscleFeel: Int? = null,
-        jointPain: Int? = null,
-        jointPainNote: String? = null,
+        joints: List<JointPain> = emptyList(),
     ) {
         viewModelScope.launch {
-            if (muscleFeel != null || jointPain != null) {
+            if (muscleFeel != null || joints.isNotEmpty()) {
                 val rated = workoutRepository.rateExercise(
                     sessionExerciseId = sessionExerciseId,
                     muscleFeel = muscleFeel,
-                    jointPain = jointPain,
-                    jointPainNote = jointPainNote,
+                    joints = joints,
                 )
                 if (rated is DataResult.Failure) {
                     lastError.value = rated.error
@@ -620,16 +625,14 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onRateExercise(
         sessionExerciseId: String,
         muscleFeel: Int?,
-        jointPain: Int?,
-        jointPainNote: String?,
+        joints: List<JointPain>,
     ) {
         viewModelScope.launch {
             handle(
                 workoutRepository.rateExercise(
                     sessionExerciseId = sessionExerciseId,
                     muscleFeel = muscleFeel,
-                    jointPain = jointPain,
-                    jointPainNote = jointPainNote,
+                    joints = joints,
                 ),
             )
         }
@@ -1071,6 +1074,9 @@ data class WorkoutReview(
 data class ExerciseRating(
     val name: String,
     val muscleFeel: Int?,
+    /** The joints that hurt, each with its side and score (ROADMAP N63), or empty. */
+    val joints: List<JointPain>,
+    /** Legacy joint pain, 1–10, or null (ROADMAP N8) — read for a session rated before N63. */
     val jointPain: Int?,
 )
 
@@ -1126,11 +1132,17 @@ private fun buildSummary(
         totalVolumeGrams = allSets.sumOf { it.weightGrams * it.reps },
         ratings = state.exercises.mapNotNull { row ->
             val feel = row.muscleFeel
-            val pain = row.jointPain
-            if (feel == null && pain == null) {
+            // The picked joints are the new half (N63); the legacy number is read so an exercise
+            // rated before the change is still a rating rather than an unrated one.
+            if (feel == null && row.joints.isEmpty() && row.jointPain == null) {
                 null
             } else {
-                ExerciseRating(name = row.name, muscleFeel = feel, jointPain = pain)
+                ExerciseRating(
+                    name = row.name,
+                    muscleFeel = feel,
+                    joints = row.joints,
+                    jointPain = row.jointPain,
+                )
             }
         },
         comparisons = comparePlanToActual(planned = planned, performed = actual),
@@ -1243,6 +1255,7 @@ private fun SessionExercise.toRow(
         plannedSetCount = plan.plannedSetCount,
         isFinished = isFinished,
         muscleFeel = muscleFeel,
+        joints = joints,
         jointPain = jointPain,
         jointPainNote = jointPainNote,
         sets = loggedSets,

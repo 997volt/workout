@@ -1148,4 +1148,70 @@ class WorkoutDatabaseMigrationTest {
 
         migrated.close()
     }
+
+    @Test
+    fun migration26To27_addsTheJointList_leavingTheLegacyColumnsAlone() {
+        // ROADMAP N63. The legacy `jointPain` number and its free text are data a previous version
+        // recorded; the migration adds a table and must not rewrite them. An exercise rated before
+        // the change gets no joint rows, which is exactly the state it was in.
+        helper.createDatabase(TEST_DB, 26).apply {
+            execSQL(
+                """
+                INSERT INTO workout_sessions
+                    (id, startedAt, finishedAt, notes, restEndsAt, readinessNote,
+                     zoneOffsetMinutes, createdAt, updatedAt, deletedAt, templateId)
+                VALUES ('s1', 100, 200, NULL, NULL, NULL, 0, 100, 200, NULL, NULL)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO exercises
+                    (id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern,
+                     isCustom, createdAt, updatedAt, deletedAt, restSeconds, techniqueNote)
+                VALUES ('back-squat', 'Back Squat', 'QUADS', '', 'BARBELL', 'SQUAT',
+                        0, 100, 100, NULL, NULL, NULL)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO session_exercises
+                    (id, sessionId, exerciseId, position, restSeconds, techniqueNote, finishedAt,
+                     muscleFeel, jointPain, jointPainNote, supersetGroup, createdAt, updatedAt, deletedAt)
+                VALUES ('se1', 's1', 'back-squat', 0, NULL, NULL, NULL,
+                        8, 7, 'left shoulder', NULL, 100, 100, NULL)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 27, true, MIGRATION_26_27)
+
+        migrated.query(
+            "SELECT muscleFeel, jointPain, jointPainNote FROM session_exercises WHERE id = 'se1'",
+        ).use { cursor ->
+            assertTrue("the exercise already there survived", cursor.moveToFirst())
+            assertEquals("its muscle feel is untouched", 8, cursor.getInt(0))
+            assertEquals("the legacy joint number is not rewritten", 7, cursor.getInt(1))
+            assertEquals("nor its free text", "left shoulder", cursor.getString(2))
+        }
+        migrated.query("SELECT COUNT(*) FROM session_exercise_joints").use { cursor ->
+            cursor.moveToFirst()
+            assertEquals("no joint is invented by the upgrade", 0, cursor.getInt(0))
+        }
+        // A row the migrated schema accepts, with the names the converters write and the exercise it
+        // belongs to — the foreign key is what makes the rows belong to that session exercise.
+        migrated.execSQL(
+            "INSERT INTO session_exercise_joints " +
+                "(id, sessionExerciseId, joint, side, score, position, createdAt, updatedAt, deletedAt) " +
+                "VALUES ('j1', 'se1', 'KNEE', 'LEFT', 6, 0, 100, 100, NULL)",
+        )
+        migrated.query("SELECT joint, side, score FROM session_exercise_joints").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("KNEE", cursor.getString(0))
+            assertEquals("left and right are stored apart", "LEFT", cursor.getString(1))
+            assertEquals(6, cursor.getInt(2))
+        }
+
+        migrated.close()
+    }
 }

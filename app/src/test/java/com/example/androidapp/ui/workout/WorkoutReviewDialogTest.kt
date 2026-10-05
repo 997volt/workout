@@ -5,7 +5,10 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PlanComparison
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -106,9 +109,61 @@ class WorkoutReviewDialogTest {
     @Test
     fun aRatingTheUserJustGave_isReadBack() {
         // The ratings used to go nowhere the user could see (N20's complaint).
-        show(review(ratings = listOf(ExerciseRating("Back Squat", muscleFeel = 8, jointPain = 2))))
+        show(
+            review(
+                ratings = listOf(
+                    ExerciseRating(
+                        name = "Back Squat",
+                        muscleFeel = 8,
+                        joints = listOf(JointPain(Joint.KNEE, Side.LEFT, 2)),
+                        jointPain = null,
+                    ),
+                ),
+            ),
+        )
 
         composeTestRule.onNodeWithText("How it felt").assertExists()
+        composeTestRule.onNodeWithText("Back Squat — felt 8/10, Left knee 2/10").assertExists()
+    }
+
+    @Test
+    fun theWorstJoint_isTheOneTheReviewNames() {
+        // ROADMAP N63: "left knee 6, right knee 2" is one bad knee, and the line names it.
+        show(
+            review(
+                ratings = listOf(
+                    ExerciseRating(
+                        name = "Back Squat",
+                        muscleFeel = 8,
+                        joints = listOf(
+                            JointPain(Joint.KNEE, Side.LEFT, 6),
+                            JointPain(Joint.KNEE, Side.RIGHT, 2),
+                        ),
+                        jointPain = null,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Back Squat — felt 8/10, Left knee 6/10").assertExists()
+    }
+
+    @Test
+    fun aLegacyRating_isStillReadBack() {
+        // N63: a session rated before the picked list keeps its number, and the review reads it.
+        show(
+            review(
+                ratings = listOf(
+                    ExerciseRating(
+                        name = "Back Squat",
+                        muscleFeel = 8,
+                        joints = emptyList(),
+                        jointPain = 2,
+                    ),
+                ),
+            ),
+        )
+
         composeTestRule.onNodeWithText("Back Squat — felt 8/10, joints 2/10").assertExists()
     }
 

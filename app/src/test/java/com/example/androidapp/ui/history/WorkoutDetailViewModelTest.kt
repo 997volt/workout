@@ -10,10 +10,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.repository.StartedSession
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
@@ -127,15 +130,32 @@ class WorkoutDetailViewModelTest {
     }
 
     @Test
-    fun theRatingsAndTheLocation_reachTheScreen() = runTest(dispatcher) {
+    fun theMuscleFeelAndThePickedJoints_reachTheScreen() = runTest(dispatcher) {
         val viewModel = viewModelFor()
         observe(viewModel)
         advanceUntilIdle()
 
         val exercise = viewModel.uiState.value.exercises.single()
         assertEquals(8, exercise.muscleFeel)
+        assertEquals(listOf(JointPain(Joint.SHOULDER, Side.LEFT, 4)), exercise.joints)
+    }
+
+    @Test
+    fun aLegacyRating_stillReachesTheScreen() = runTest(dispatcher) {
+        // ROADMAP N63: a session rated before the picked list keeps its number and its free text,
+        // and the detail reads both rather than showing it as unrated.
+        repository.exercises.value = repository.exercises.value.map {
+            it.copy(joints = emptyList(), jointPain = 4, jointPainNote = "left shoulder")
+        }
+
+        val viewModel = viewModelFor()
+        observe(viewModel)
+        advanceUntilIdle()
+
+        val exercise = viewModel.uiState.value.exercises.single()
         assertEquals(4, exercise.jointPain)
         assertEquals("left shoulder", exercise.jointPainNote)
+        assertEquals(emptyList<JointPain>(), exercise.joints)
     }
 
     @Test
@@ -186,8 +206,7 @@ class WorkoutDetailViewModelTest {
                     primaryMuscle = MuscleGroup.QUADS,
                     equipment = Equipment.BARBELL,
                     muscleFeel = 8,
-                    jointPain = 4,
-                    jointPainNote = "left shoulder",
+                    joints = listOf(JointPain(Joint.SHOULDER, Side.LEFT, 4)),
                 ),
             ),
         )
@@ -216,8 +235,7 @@ class WorkoutDetailViewModelTest {
         override suspend fun rateExercise(
             sessionExerciseId: String,
             muscleFeel: Int?,
-            jointPain: Int?,
-            jointPainNote: String?,
+            joints: List<JointPain>,
         ): DataResult<Unit> = unused()
 
         override suspend fun personalRecords(

@@ -80,15 +80,37 @@ object TestTags {
     fun exerciseMove(id: String, up: Boolean) = "exercise_move_${if (up) "up" else "down"}_$id"
 
     /**
-     * How an exercise felt (ROADMAP N8): the dialog's two fields and the workout
-     * detail's row that reaches it.
+     * How an exercise felt (ROADMAP N8): the muscle-feel field, the dialog's buttons, and the
+     * workout detail's row that reaches it. The joint half moved into [Rating], because it is a
+     * picked list whose controls are addressed by the joint they act on (ROADMAP N63).
      */
     const val RATING_MUSCLE_FIELD = "rating_muscle_field"
-    const val RATING_JOINT_FIELD = "rating_joint_field"
-    const val RATING_JOINT_NOTE_FIELD = "rating_joint_note_field"
     const val RATING_SAVE = "rating_save"
     const val RATING_DISMISS = "rating_dismiss"
     const val EXERCISE_RATING_ROW = "exercise_rating_row"
+
+    /**
+     * The joints an exercise reported painful (ROADMAP N63), grouped so this object stays under its
+     * ceiling: every control is addressed by the joint and side it acts on — the id
+     * `jointSiteKey` builds from the enum names, so left and right are separate entries and no
+     * control is reached by position.
+     */
+    object Rating {
+        /** The control that opens the joint picker. */
+        const val JOINT_ADD = "${RATING_JOINT_TAG_PREFIX}_add"
+
+        /** One option of the picker, addressed by the `Joint` and `Side` names. */
+        fun jointOption(site: String) = "${RATING_JOINT_TAG_PREFIX}_option_$site"
+
+        /** One picked joint's row, and that row's own score controls. */
+        fun jointRow(site: String) = "${RATING_JOINT_TAG_PREFIX}_row_$site"
+        fun jointScore(site: String) = "${RATING_JOINT_TAG_PREFIX}_score_$site"
+        fun jointDecrease(site: String) = "${RATING_JOINT_TAG_PREFIX}_decrease_$site"
+        fun jointIncrease(site: String) = "${RATING_JOINT_TAG_PREFIX}_increase_$site"
+
+        /** Takes the joint off the list. */
+        fun jointRemove(site: String) = "${RATING_JOINT_TAG_PREFIX}_remove_$site"
+    }
 
     const val HOME_TITLE = "home_title"
     const val HOME_START = "home_start"
@@ -166,22 +188,19 @@ object TestTags {
      */
     object Readiness {
         /** The control that opens the muscle picker. */
-        const val SORE_ADD = "readiness_sore_add"
-
-        /** The block history draws the picked list in (ROADMAP N62). */
-        const val SORE_LIST = "readiness_sore_list"
+        const val SORE_ADD = "${READINESS_SORE_TAG_PREFIX}_add"
 
         /** One option of the picker, addressed by the `MuscleGroup` name. */
-        fun soreOption(muscle: String) = "readiness_sore_option_$muscle"
+        fun soreOption(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_option_$muscle"
 
         /** One picked muscle's row, and that row's own score controls. */
-        fun soreRow(muscle: String) = "readiness_sore_row_$muscle"
-        fun soreScore(muscle: String) = "readiness_sore_score_$muscle"
-        fun soreDecrease(muscle: String) = "readiness_sore_decrease_$muscle"
-        fun soreIncrease(muscle: String) = "readiness_sore_increase_$muscle"
+        fun soreRow(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_row_$muscle"
+        fun soreScore(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_score_$muscle"
+        fun soreDecrease(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_decrease_$muscle"
+        fun soreIncrease(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_increase_$muscle"
 
         /** Takes the muscle off the list. */
-        fun soreRemove(muscle: String) = "readiness_sore_remove_$muscle"
+        fun soreRemove(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_remove_$muscle"
     }
 
     /** The workout comment asked for on Finish (ROADMAP N11), and its row in history. */

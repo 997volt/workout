@@ -14,6 +14,7 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
@@ -371,8 +372,7 @@ class ExercisePickerViewModelTest {
         override suspend fun rateExercise(
             sessionExerciseId: String,
             muscleFeel: Int?,
-            jointPain: Int?,
-            jointPainNote: String?,
+            joints: List<JointPain>,
         ): DataResult<Unit> = unused()
         override suspend fun personalRecords(
             exerciseId: String,

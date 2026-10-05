@@ -1,7 +1,11 @@
 package com.example.androidapp.ui.workout
 
+import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.PersonalRecordMoment
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.jointSiteKey
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertHasClickAction
@@ -47,11 +51,11 @@ class ActiveWorkoutScreenTest {
      * a call site long before it stops compiling.
      */
     private data class Actions(
-        val onFinishExercise: (String, Int?, Int?, String?) -> Unit = { _, _, _, _ -> },
+        val onFinishExercise: (String, Int?, List<JointPain>) -> Unit = { _, _, _ -> },
         val onMoveExercise: (String, Int) -> Unit = { _, _ -> },
         val onReopenExercise: (String) -> Unit = {},
         val onRemoveExercise: (String) -> Unit = {},
-        val onRateExercise: (String, Int?, Int?, String?) -> Unit = { _, _, _, _ -> },
+        val onRateExercise: (String, Int?, List<JointPain>) -> Unit = { _, _, _ -> },
         val onFinish: (String?) -> Unit = {},
         val onLogSet: (String, SetEdit) -> Unit = { _, _ -> },
         val onToggleSuperset: (String) -> Unit = {},
@@ -149,12 +153,11 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertDoesNotExist()
     }
 
-    /** What the screen reports when an exercise is finished (N7, N8, N9). */
+    /** What the screen reports when an exercise is finished (N7, N8, N63). */
     private data class FinishCall(
         val id: String,
         val muscleFeel: Int?,
-        val jointPain: Int?,
-        val jointPainNote: String?,
+        val joints: List<JointPain>,
     )
 
     @Test
@@ -163,8 +166,8 @@ class ActiveWorkoutScreenTest {
         setScreen(
             state(isFinished = false),
             actions = Actions(
-                onFinishExercise = { id, feel, pain, note ->
-                    finished = FinishCall(id, feel, pain, note)
+                onFinishExercise = { id, feel, joints ->
+                    finished = FinishCall(id, feel, joints)
                 },
             ),
         )
@@ -186,8 +189,8 @@ class ActiveWorkoutScreenTest {
         setScreen(
             state(isFinished = false),
             actions = Actions(
-                onFinishExercise = { id, feel, pain, note ->
-                    finished = FinishCall(id, feel, pain, note)
+                onFinishExercise = { id, feel, joints ->
+                    finished = FinishCall(id, feel, joints)
                 },
             ),
         )
@@ -195,7 +198,7 @@ class ActiveWorkoutScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.RATING_DISMISS).performClick()
 
-        assertEquals(FinishCall("se1", null, null, null), finished)
+        assertEquals(FinishCall("se1", null, emptyList()), finished)
     }
 
     @Test
@@ -204,20 +207,24 @@ class ActiveWorkoutScreenTest {
         setScreen(
             state(isFinished = false),
             actions = Actions(
-                onFinishExercise = { id, feel, pain, note ->
-                    finished = FinishCall(id, feel, pain, note)
+                onFinishExercise = { id, feel, joints ->
+                    finished = FinishCall(id, feel, joints)
                 },
             ),
         )
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("8")
-        composeTestRule.onNodeWithTag(TestTags.RATING_JOINT_FIELD).performTextInput("2")
-        // N9's location rides with the ratings the prompt collects.
-        composeTestRule.onNodeWithTag(TestTags.RATING_JOINT_NOTE_FIELD).performTextInput("left knee")
+        // N63's picked joint rides with the ratings the prompt collects, with its own score.
+        composeTestRule.onNodeWithTag(TestTags.Rating.JOINT_ADD).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Rating.jointOption(jointSiteKey(Joint.KNEE, Side.LEFT)))
+            .performClick()
 
         composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
 
-        assertEquals(FinishCall("se1", 8, 2, "left knee"), finished)
+        assertEquals(
+            FinishCall("se1", 8, listOf(JointPain(Joint.KNEE, Side.LEFT, 5))),
+            finished,
+        )
     }
 
     @Test
@@ -228,8 +235,8 @@ class ActiveWorkoutScreenTest {
         setScreen(
             state(isFinished = false),
             Actions(
-                onRateExercise = { id, feel, pain, note ->
-                    rated = Rounding(id, feel, pain, note)
+                onRateExercise = { id, feel, joints ->
+                    rated = Rounding(id, feel, joints)
                 },
             ),
         )
@@ -238,18 +245,20 @@ class ActiveWorkoutScreenTest {
             .performScrollTo()
             .performClick()
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("7")
-        composeTestRule.onNodeWithTag(TestTags.RATING_JOINT_FIELD).performTextInput("3")
+        composeTestRule.onNodeWithTag(TestTags.Rating.JOINT_ADD).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Rating.jointOption(jointSiteKey(Joint.ELBOW, Side.RIGHT)))
+            .performClick()
         composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
 
-        assertEquals(Rounding("se1", 7, 3, null), rated)
+        assertEquals(Rounding("se1", 7, listOf(JointPain(Joint.ELBOW, Side.RIGHT, 5))), rated)
     }
 
     @Test
     fun anExerciseAlreadyRated_showsWhatItSaid() {
         setScreen(state(isFinished = false).copy(exercises = listOf(finishedRow(rated = true))))
 
-        // N9's location rides in the same summary.
-        composeTestRule.onNodeWithText("Muscle feel 8 · Joint pain 2 · left knee").assertExists()
+        // N63: the picked joint and its own score ride in the same summary.
+        composeTestRule.onNodeWithText("Muscle feel 8 · Left knee 2/10").assertExists()
     }
 
     @Test
@@ -259,8 +268,8 @@ class ActiveWorkoutScreenTest {
         setScreen(
             state(isFinished = false).copy(exercises = listOf(finishedRow(rated = false))),
             Actions(
-                onRateExercise = { id, feel, pain, note ->
-                    rated = Rounding(id, feel, pain, note)
+                onRateExercise = { id, feel, joints ->
+                    rated = Rounding(id, feel, joints)
                 },
             ),
         )
@@ -270,15 +279,14 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("5")
         composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
 
-        assertEquals(Rounding("se1", 5, null, null), rated)
+        assertEquals(Rounding("se1", 5, emptyList()), rated)
     }
 
     /** What the screen reports when a rating is saved outside the Done prompt. */
     private data class Rounding(
         val id: String,
         val muscleFeel: Int?,
-        val jointPain: Int?,
-        val jointPainNote: String?,
+        val joints: List<JointPain>,
     )
 
     private fun finishedRow(rated: Boolean) = SessionExerciseRow(
@@ -288,8 +296,7 @@ class ActiveWorkoutScreenTest {
         subtitle = "Quads · Barbell",
         isFinished = true,
         muscleFeel = if (rated) 8 else null,
-        jointPain = if (rated) 2 else null,
-        jointPainNote = if (rated) "left knee" else null,
+        joints = if (rated) listOf(JointPain(Joint.KNEE, Side.LEFT, 2)) else emptyList(),
         sets = listOf(SetRow(id = "set1", number = 1, reps = 5, weightGrams = 100_000)),
         suggestion = SetSuggestion(reps = 5, weightGrams = 100_000),
     )

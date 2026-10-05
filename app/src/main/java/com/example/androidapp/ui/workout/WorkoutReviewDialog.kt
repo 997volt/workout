@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.PlanComparison
+import com.example.androidapp.domain.model.label
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.AppTextButton
@@ -70,7 +71,15 @@ fun WorkoutReviewDialog(
                     summary.ratings.forEach { rating ->
                         val parts = buildList {
                             rating.muscleFeel?.let { add(stringResource(R.string.summary_rating_feel, it)) }
-                            rating.jointPain?.let { add(stringResource(R.string.summary_rating_pain, it)) }
+                            // The worst joint it reported (N63): "left knee 6, right knee 2" is one
+                            // bad knee, and this line has room for one name and one number. A session
+                            // rated before the picked list falls back to its legacy number.
+                            val worst = rating.joints.maxByOrNull { it.score }
+                            if (worst != null) {
+                                add(stringResource(R.string.summary_rating_joint, worst.label, worst.score))
+                            } else {
+                                rating.jointPain?.let { add(stringResource(R.string.summary_rating_pain, it)) }
+                            }
                         }
                         Text("${rating.name} — ${parts.joinToString(", ")}")
                     }

@@ -48,6 +48,7 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.ui.components.CenteredMessage
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.SetEditorDialog
 import com.example.androidapp.ui.components.TestTags
@@ -159,7 +160,7 @@ fun WorkoutDetailScreen(
     state: WorkoutDetailUiState,
     onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit,
     onDeleteSet: (String) -> Unit,
-    onRateExercise: (String, Int?, Int?, String?) -> Unit,
+    onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onDeleteWorkout: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -284,7 +285,7 @@ private fun DetailContent(
     state: WorkoutDetailUiState,
     onEditSet: (HistorySet) -> Unit,
     onDeleteSet: (String) -> Unit,
-    onRate: (String, Int?, Int?, String?) -> Unit,
+    onRate: (String, Int?, List<JointPain>) -> Unit,
     onOpenExerciseTrends: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -435,7 +436,7 @@ private fun ExerciseBlock(
     exercise: HistoryExercise,
     onEditSet: (HistorySet) -> Unit,
     onDeleteSet: (HistorySet) -> Unit,
-    onRate: (String, Int?, Int?, String?) -> Unit,
+    onRate: (String, Int?, List<JointPain>) -> Unit,
     onOpenTrends: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -462,9 +463,10 @@ private fun ExerciseBlock(
 
         ExerciseRatingSection(
             muscleFeel = exercise.muscleFeel,
-            jointPain = exercise.jointPain,
-            jointPainNote = exercise.jointPainNote,
-            onRate = { feel, pain, note -> onRate(exercise.id, feel, pain, note) },
+            joints = exercise.joints,
+            legacyJointPain = exercise.jointPain,
+            legacyJointPainNote = exercise.jointPainNote,
+            onRate = { feel, joints -> onRate(exercise.id, feel, joints) },
         )
     }
 }
@@ -564,7 +566,7 @@ private fun WorkoutDetailScreenPreview() {
             ),
             onUpdateSet = { _, _, _, _, _, _, _ -> },
             onDeleteSet = {},
-            onRateExercise = { _, _, _, _ -> },
+            onRateExercise = { _, _, _ -> },
             onDeleteWorkout = {},
             onBack = {},
         )

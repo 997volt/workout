@@ -4,9 +4,11 @@ import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.assertNull
 import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -82,6 +84,21 @@ class BackupCodecTest {
                 jointPain = 2,
                 jointPainNote = "left shoulder",
                 createdAt = 10L,
+                updatedAt = 12L,
+                deletedAt = null,
+            ),
+        ),
+        // The joints each exercise reported painful (ROADMAP N63): a fact the lifter wrote, so the
+        // hand-written codec must name it or an export loses it in silence.
+        sessionExerciseJoints = listOf(
+            SessionExerciseJointDto(
+                id = "sej1",
+                sessionExerciseId = "se1",
+                joint = Joint.KNEE,
+                side = Side.LEFT,
+                score = 6,
+                position = 0,
+                createdAt = 12L,
                 updatedAt = 12L,
                 deletedAt = null,
             ),
@@ -168,6 +185,23 @@ class BackupCodecTest {
 
         assertTrue("expected the enum name in the file", text.contains("\"QUADS\""))
         assertTrue(text.contains("\"WARMUP\""))
+        // A picked joint travels as its names too (ROADMAP N63), left and right apart.
+        assertTrue(text.contains("\"KNEE\""))
+        assertTrue(text.contains("\"LEFT\""))
+    }
+
+    @Test
+    fun aFileWrittenBeforeTheJointListExisted_stillDecodes_seeingNone() {
+        // ROADMAP N63 added a whole collection, defaulted to empty like every other — which is what
+        // lets a file written before the picked list restore its legacy jointPain number cleanly.
+        val json = Json { prettyPrint = false }
+        val tree = json.parseToJsonElement(BackupCodec.encode(sample)).jsonObject
+        val olderFile = JsonObject(tree - "sessionExerciseJoints")
+
+        val restored = BackupCodec.decode(olderFile.toString())
+
+        assertEquals(emptyList<SessionExerciseJointDto>(), restored.sessionExerciseJoints)
+        assertEquals("the legacy number still decodes", 2, restored.sessionExercises.first().jointPain)
     }
 
     @Test

@@ -14,6 +14,15 @@ repeated here.
 
 ### Added
 
+- **The joint rating is picked from the body's joints, left and right apart, each with its own score**
+  (N63). "Which joints" was free text and the pain was one number: right for a note, wrong for a fact
+  the trend is asked about. The per-exercise rating now offers the body's joints — shoulder, elbow,
+  wrist, hip, knee, ankle, and the central neck and lower back — as separate left and right entries
+  where the joint is paired, each picked one carrying its own 1–10, and a save replaces the list. The
+  single *Joint pain (1–10)* field and its note box are gone; a session rated before the change keeps
+  its number and its free text, which history still reads, and the joint-pain trend reads the **worst**
+  joint rather than an average of two sides. The picked rows ride in the backup with the exercise they
+  describe, and the readiness note's sore-muscle list and this one now share a single editor.
 - **The readiness note records which muscles are still sore, and how sore** (N62). The note was one
   free-text line — the right shape for "slept badly" and the wrong one for "quads 8, calves 3". The prompt
   a new workout opens with now offers the taxonomy's own muscle groups beside the note, each picked one

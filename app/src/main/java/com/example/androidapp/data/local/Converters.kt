@@ -2,9 +2,11 @@ package com.example.androidapp.data.local
 
 import androidx.room.TypeConverter
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
 import java.time.DayOfWeek
 
 /**
@@ -46,6 +48,18 @@ class Converters {
 
     @TypeConverter
     fun toSetType(value: String): SetType = SetType.valueOf(value)
+
+    @TypeConverter
+    fun fromJoint(value: Joint): String = value.name
+
+    @TypeConverter
+    fun toJoint(value: String): Joint = Joint.valueOf(value)
+
+    @TypeConverter
+    fun fromSide(value: Side): String = value.name
+
+    @TypeConverter
+    fun toSide(value: String): Side = Side.valueOf(value)
 
     @TypeConverter
     fun fromMuscleGroups(values: List<MuscleGroup>): String =

@@ -23,11 +23,14 @@ import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.SlotSet
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutSession
@@ -453,12 +456,16 @@ class ActiveWorkoutViewModelTest {
         settle()
         val id = viewModel.uiState.value.exercises.single().id
 
-        viewModel.onFinishExercise(id, muscleFeel = 8, jointPain = 2)
+        viewModel.onFinishExercise(
+            id,
+            muscleFeel = 8,
+            joints = listOf(JointPain(Joint.KNEE, Side.LEFT, 2)),
+        )
         settle()
 
         val row = viewModel.uiState.value.exercises.single()
         assertEquals(8, row.muscleFeel)
-        assertEquals(2, row.jointPain)
+        assertEquals(listOf(JointPain(Joint.KNEE, Side.LEFT, 2)), row.joints)
         assertTrue("the exercise is done either way (N8)", row.isFinished)
     }
 
@@ -473,13 +480,18 @@ class ActiveWorkoutViewModelTest {
         settle()
         val id = viewModel.uiState.value.exercises.single().id
 
-        viewModel.onRateExercise(id, muscleFeel = 7, jointPain = 3, jointPainNote = "left knee")
+        viewModel.onRateExercise(
+            id,
+            muscleFeel = 7,
+            joints = listOf(JointPain(Joint.SHOULDER, Side.LEFT, 3)),
+        )
         settle()
 
         val row = viewModel.uiState.value.exercises.single()
         assertEquals(7, row.muscleFeel)
-        assertEquals(3, row.jointPain)
-        assertEquals("left knee", row.jointPainNote)
+        assertEquals(listOf(JointPain(Joint.SHOULDER, Side.LEFT, 3)), row.joints)
+        assertNull("the legacy pair is not written by a new rating", row.jointPain)
+        assertNull(row.jointPainNote)
         assertFalse("rating an exercise must not close it", row.isFinished)
         assertNull(
             "and it is not a Done, so there is no undo to offer",
@@ -498,7 +510,7 @@ class ActiveWorkoutViewModelTest {
         val id = viewModel.uiState.value.exercises.single().id
         repository.failWrites = true
 
-        viewModel.onRateExercise(id, muscleFeel = 7, jointPain = null, jointPainNote = null)
+        viewModel.onRateExercise(id, muscleFeel = 7, joints = emptyList())
         settle()
 
         assertNotNull(viewModel.uiState.value.error)
@@ -519,7 +531,7 @@ class ActiveWorkoutViewModelTest {
         val row = viewModel.uiState.value.exercises.single()
         assertTrue(row.isFinished)
         assertNull("skipping must not invent a rating", row.muscleFeel)
-        assertNull(row.jointPain)
+        assertEquals(emptyList<JointPain>(), row.joints)
     }
 
     @Test
@@ -533,7 +545,7 @@ class ActiveWorkoutViewModelTest {
         val id = viewModel.uiState.value.exercises.single().id
         repository.failWrites = true
 
-        viewModel.onFinishExercise(id, muscleFeel = 8, jointPain = null)
+        viewModel.onFinishExercise(id, muscleFeel = 8)
         settle()
 
         assertNotNull(viewModel.uiState.value.error)
@@ -1332,17 +1344,12 @@ class ActiveWorkoutViewModelTest {
         override suspend fun rateExercise(
             sessionExerciseId: String,
             muscleFeel: Int?,
-            jointPain: Int?,
-            jointPainNote: String?,
+            joints: List<JointPain>,
         ): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             exercises.value = exercises.value.map {
                 if (it.id == sessionExerciseId) {
-                    it.copy(
-                        muscleFeel = muscleFeel,
-                        jointPain = jointPain,
-                        jointPainNote = jointPainNote,
-                    )
+                    it.copy(muscleFeel = muscleFeel, joints = joints)
                 } else {
                     it
                 }

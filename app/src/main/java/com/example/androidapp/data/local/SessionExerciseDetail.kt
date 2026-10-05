@@ -1,5 +1,6 @@
 package com.example.androidapp.data.local
 
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SessionExercise
 import java.time.Instant
 
@@ -26,14 +27,23 @@ data class SessionExerciseDetail(
     val finishedAt: Long?,
     /** How well the target muscle was worked, 1–10, or null (ROADMAP N8). */
     val muscleFeel: Int?,
-    /** Joint or connective-tissue discomfort, 1–10, or null (ROADMAP N8). */
+    /** Legacy joint pain, 1–10, or null (ROADMAP N8) — read for a session rated before N63. */
     val jointPain: Int?,
-    /** Which joints, or null (ROADMAP N9). */
+    /** Legacy "which joints" free text, or null (ROADMAP N9) — read, never rewritten. */
     val jointPainNote: String?,
     val supersetGroup: Int?,
 )
 
-internal fun SessionExerciseDetail.toDomain(): SessionExercise = SessionExercise(
+/**
+ * The projected row as the domain reads it, with the joints the query cannot join (ROADMAP N63).
+ *
+ * [joints] is a parameter rather than a field of the projection for the same reason N62's
+ * sore-muscle list is: the rows live in their own table, so the reader that has them in hand passes
+ * them in. It is deliberately not defaulted — a caller that forgot them would drop the rating.
+ */
+internal fun SessionExerciseDetail.toDomain(
+    joints: List<SessionExerciseJointEntity>,
+): SessionExercise = SessionExercise(
     id = id,
     sessionId = sessionId,
     exerciseId = exerciseId,
@@ -47,5 +57,10 @@ internal fun SessionExerciseDetail.toDomain(): SessionExercise = SessionExercise
     muscleFeel = muscleFeel,
     jointPain = jointPain,
     jointPainNote = jointPainNote,
+    joints = joints.map { it.toDomain() },
     supersetGroup = supersetGroup,
 )
+
+/** One joint row as the rest of the app reads it (ROADMAP N63). */
+internal fun SessionExerciseJointEntity.toDomain(): JointPain =
+    JointPain(joint = joint, side = side, score = score)

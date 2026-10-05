@@ -65,6 +65,7 @@ import com.example.androidapp.ui.components.SetEditorDialog
 import com.example.androidapp.ui.components.WorkoutNoteDialog
 import com.example.androidapp.ui.components.ReadinessNoteDialog
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.AppTextButton
@@ -170,8 +171,8 @@ fun ActiveWorkoutScreen(
     onAdjustRest: (Int) -> Unit,
     onSaveReadinessNote: (String?, List<SoreMuscle>) -> Unit,
     onDismissReadinessPrompt: () -> Unit,
-    onFinishExercise: (String, Int?, Int?, String?) -> Unit,
-    onRateExercise: (String, Int?, Int?, String?) -> Unit,
+    onFinishExercise: (String, Int?, List<JointPain>) -> Unit,
+    onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onUndoFinishExercise: () -> Unit,
     onDismissFinishUndo: () -> Unit,
     onReopenExercise: (String) -> Unit,
@@ -573,8 +574,8 @@ private fun WorkoutBody(
     onAdjustRest: (Int) -> Unit,
     onSaveReadinessNote: (String?, List<SoreMuscle>) -> Unit,
     onDismissReadinessPrompt: () -> Unit,
-    onFinishExercise: (String, Int?, Int?, String?) -> Unit,
-    onRateExercise: (String, Int?, Int?, String?) -> Unit,
+    onFinishExercise: (String, Int?, List<JointPain>) -> Unit,
+    onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
     onDiscard: () -> Unit,
     modifier: Modifier = Modifier,
@@ -870,8 +871,8 @@ private fun ActiveWorkoutScreenPreview() {
             onAdjustRest = {},
             onSaveReadinessNote = { _, _ -> },
             onDismissReadinessPrompt = {},
-            onFinishExercise = { _, _, _, _ -> },
-            onRateExercise = { _, _, _, _ -> },
+            onFinishExercise = { _, _, _ -> },
+            onRateExercise = { _, _, _ -> },
             onUndoFinishExercise = {},
             onDismissFinishUndo = {},
             onReopenExercise = {},

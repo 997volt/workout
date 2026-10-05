@@ -7,6 +7,7 @@ import com.example.androidapp.data.local.ExerciseTrendRowEntity
 import androidx.room.withTransaction
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.SessionExerciseJointEntity
 import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.WorkoutDao
@@ -19,6 +20,7 @@ import com.example.androidapp.domain.ZoneOffsetSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.TenPointScale
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.Rpe
@@ -65,6 +67,9 @@ class RoomWorkoutRepository @Inject constructor(
     /** The session's sore-muscle rows (ROADMAP N62), and their half of the backup. */
     private val soreMuscleDao = database.sessionSoreMuscleDao()
 
+    /** The joints a session exercise reported painful (ROADMAP N63), and their half of the backup. */
+    private val jointDao = database.sessionExerciseJointDao()
+
     /**
      * The active session with its sore-muscle list (ROADMAP N62).
      *
@@ -82,7 +87,15 @@ class RoomWorkoutRepository @Inject constructor(
         }
 
     override fun observeSessionExercises(sessionId: String): Flow<List<SessionExercise>> =
-        dao.observeSessionExerciseDetails(sessionId).map { rows -> rows.map { it.toDomain() } }
+        combine(
+            dao.observeSessionExerciseDetails(sessionId),
+            jointDao.observeForSession(sessionId),
+        ) { rows, joints ->
+            // Grouped once rather than filtered per row: the joints arrive whole for the session,
+            // and an exercise with none is the common case.
+            val byExercise = joints.groupBy { it.sessionExerciseId }
+            rows.map { row -> row.toDomain(byExercise[row.id].orEmpty()) }
+        }
 
     override fun observeSets(sessionId: String): Flow<List<SetEntry>> =
         dao.observeSetsForSession(sessionId).map { rows -> rows.map { it.toDomain() } }
@@ -194,11 +207,12 @@ class RoomWorkoutRepository @Inject constructor(
 
     override suspend fun removeExercise(sessionExerciseId: String): DataResult<Unit> =
         dataResultOf {
-            val updated = dao.softDeleteSessionExercise(
-                id = sessionExerciseId,
-                at = timeSource.nowEpochMillis(),
-            )
+            val now = timeSource.nowEpochMillis()
+            val updated = dao.softDeleteSessionExercise(id = sessionExerciseId, at = now)
             if (updated == 0) throw NotFoundException("session exercise $sessionExerciseId")
+            // The joint rows belong to the exercise, so they go with it (N63) — the reader already
+            // hides a removed exercise's joints, and this keeps the stored state saying the same.
+            jointDao.softDeleteForExercise(sessionExerciseId = sessionExerciseId, at = now)
         }
 
     override suspend fun moveExercise(sessionExerciseId: String, delta: Int): DataResult<Unit> =
@@ -260,27 +274,48 @@ class RoomWorkoutRepository @Inject constructor(
     override suspend fun rateExercise(
         sessionExerciseId: String,
         muscleFeel: Int?,
-        jointPain: Int?,
-        jointPainNote: String?,
+        joints: List<JointPain>,
     ): DataResult<Unit> = dataResultOf {
-        // Both sit on the same 1–10 scale as a set's RPE, and all three are
-        // skippable, so the one validator covers them (ROADMAP N8).
-        if (!TenPointScale.isValid(muscleFeel) || !TenPointScale.isValid(jointPain)) {
+        // Both halves sit on the same 1–10 scale as a set's RPE, and both are skippable, so the one
+        // validator covers them (ROADMAP N8, N63). Checked before any write, so a bad score cannot
+        // leave a save half-landed.
+        if (!TenPointScale.isValid(muscleFeel) || joints.any { !TenPointScale.isValid(it.score) }) {
             throw InvalidInputException(
                 "Ratings must be between ${TenPointScale.MIN} and ${TenPointScale.MAX}.",
             )
         }
+        val now = timeSource.nowEpochMillis()
+        // The legacy `jointPain` / `jointPainNote` columns are deliberately not written (N63): an
+        // old session's number and free text are what was recorded, and history keeps reading them.
         val updated = dao.setSessionExerciseRating(
             id = sessionExerciseId,
             muscleFeel = muscleFeel,
-            jointPain = jointPain,
-            // Blank is stored as null rather than "": two representations of
-            // "nothing" would show up differently on screen (the same rule the
-            // readiness note follows).
-            jointPainNote = jointPainNote?.trim()?.ifEmpty { null },
-            at = timeSource.nowEpochMillis(),
+            at = now,
         )
         if (updated == 0) throw NotFoundException("session exercise $sessionExerciseId")
+
+        // A save **replaces** the list (N63): the editor shows exactly what is stored, so a joint
+        // missing from it was removed by the lifter. The same shape the readiness write uses — the
+        // exercise write above has already refused a dead row, so the only failure window hides the
+        // old list and shows the new one empty rather than mixing the two.
+        jointDao.softDeleteForExercise(sessionExerciseId = sessionExerciseId, at = now)
+        if (joints.isNotEmpty()) {
+            jointDao.insertAll(
+                joints.mapIndexed { index, joint ->
+                    SessionExerciseJointEntity(
+                        id = UUID.randomUUID().toString(),
+                        sessionExerciseId = sessionExerciseId,
+                        joint = joint.joint,
+                        side = joint.side,
+                        score = joint.score,
+                        position = index,
+                        createdAt = now,
+                        updatedAt = now,
+                        deletedAt = null,
+                    )
+                },
+            )
+        }
     }
 
     override suspend fun finishSession(sessionId: String): DataResult<Unit> = dataResultOf {
@@ -347,6 +382,8 @@ class RoomWorkoutRepository @Inject constructor(
         // The sore-muscle rows go with the session they describe (N62): leaving them live would
         // show a deleted workout's soreness to the restore the export offers.
         soreMuscleDao.softDeleteForSession(sessionId = sessionId, at = now)
+        // And the joint rows go with the exercise they describe (N63), for the same reason.
+        jointDao.softDeleteForSession(sessionId = sessionId, at = now)
         dao.softDeleteSessionExercises(sessionId = sessionId, at = now)
         dao.softDeleteSession(id = sessionId, at = now)
     }

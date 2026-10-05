@@ -6,7 +6,10 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertTextContains
 import org.junit.Assert.assertEquals
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.SoreMuscle
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -107,7 +110,7 @@ class WorkoutDetailScreenTest {
         onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit =
         { _, _, _, _, _, _, _ -> },
         onDeleteSet: (String) -> Unit = {},
-        onRateExercise: (String, Int?, Int?, String?) -> Unit = { _, _, _, _ -> },
+        onRateExercise: (String, Int?, List<JointPain>) -> Unit = { _, _, _ -> },
         onDeleteWorkout: () -> Unit = {},
         onOpenExerciseTrends: (String) -> Unit = {},
         savedTemplate: String? = null,
@@ -237,7 +240,29 @@ class WorkoutDetailScreenTest {
 
     @Test
     fun anExercisesFeelRatings_areShownInHistory() {
-        // N8: captured when the exercise was marked done, and editable from here.
+        // N8, N63: captured when the exercise was marked done, and editable from here.
+        setScreen(
+            uiState = state.copy(
+                exercises = listOf(
+                    HistoryExercise(
+                        id = "se1",
+                        exerciseId = "back-squat",
+                        name = "Back Squat",
+                        sets = emptyList(),
+                        muscleFeel = 8,
+                        joints = listOf(JointPain(Joint.KNEE, Side.LEFT, 2)),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Muscle feel 8 · Left knee 2/10").assertIsDisplayed()
+    }
+
+    @Test
+    fun aLegacyJointRating_isStillShownInHistory() {
+        // ROADMAP N63: the number and its free text were not rewritten, so history still reads
+        // them for a session rated before the picked list existed.
         setScreen(
             uiState = state.copy(
                 exercises = listOf(
@@ -248,12 +273,14 @@ class WorkoutDetailScreenTest {
                         sets = emptyList(),
                         muscleFeel = 8,
                         jointPain = 2,
+                        jointPainNote = "left shoulder",
                     ),
                 ),
             ),
         )
 
-        composeTestRule.onNodeWithText("Muscle feel 8 · Joint pain 2").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Muscle feel 8 · Joint pain 2 · left shoulder")
+            .assertIsDisplayed()
     }
 
     @Test

@@ -633,6 +633,35 @@ private const val CREATE_SESSION_SORE_MUSCLES_SESSION_INDEX =
     "CREATE INDEX IF NOT EXISTS `index_session_sore_muscles_sessionId` " +
         "ON `session_sore_muscles` (`sessionId`)"
 
+/**
+ * v26 -> v27: the joints a session exercise reported painful, each with its side and score
+ * (ROADMAP N63).
+ *
+ * One new table, and what it deliberately does *not* do is the point: the legacy `jointPain` and
+ * `jointPainNote` columns on `session_exercises` are untouched — a session rated before the change
+ * keeps its number and its free text, and history still reads them — and an exercise rated before
+ * the change gets no rows, which is exactly the state it was in. The SQL is Room's own, copied from
+ * the exported `27.json` rather than hand-written as an equivalent.
+ */
+val MIGRATION_26_27 = object : Migration(26, 27) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(CREATE_SESSION_EXERCISE_JOINTS)
+        db.execSQL(CREATE_SESSION_EXERCISE_JOINTS_EXERCISE_INDEX)
+    }
+}
+
+private const val CREATE_SESSION_EXERCISE_JOINTS =
+    "CREATE TABLE IF NOT EXISTS `session_exercise_joints` (" +
+        "`id` TEXT NOT NULL, `sessionExerciseId` TEXT NOT NULL, `joint` TEXT NOT NULL, " +
+        "`side` TEXT NOT NULL, `score` INTEGER NOT NULL, `position` INTEGER NOT NULL, " +
+        "`createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, " +
+        "PRIMARY KEY(`id`), FOREIGN KEY(`sessionExerciseId`) REFERENCES `session_exercises`(`id`) " +
+        "ON UPDATE NO ACTION ON DELETE CASCADE )"
+
+private const val CREATE_SESSION_EXERCISE_JOINTS_EXERCISE_INDEX =
+    "CREATE INDEX IF NOT EXISTS `index_session_exercise_joints_sessionExerciseId` " +
+        "ON `session_exercise_joints` (`sessionExerciseId`)"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -769,4 +798,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_23_24,
     MIGRATION_24_25,
     MIGRATION_25_26,
+    MIGRATION_26_27,
 )
