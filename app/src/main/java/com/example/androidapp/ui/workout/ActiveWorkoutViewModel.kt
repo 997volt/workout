@@ -29,6 +29,16 @@ import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.SlotPrescription
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.SlotSet
+import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.ProgressionDirection
+import com.example.androidapp.domain.model.ProgressionPerformance
+import com.example.androidapp.domain.model.ProgressionPlanSet
+import com.example.androidapp.domain.model.ProgressionPrompt
+import com.example.androidapp.domain.model.ProgressionSource
+import com.example.androidapp.domain.model.progressionPromptFor
+import com.example.androidapp.domain.repository.SlotSetEdit
+import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.taxonomySubtitle
@@ -122,6 +132,14 @@ data class SessionExerciseRow(
     val sets: List<SetRow> = emptyList(),
     val suggestion: SetSuggestion = SetSuggestion(DEFAULT_REPS, Weight.DEFAULT_GRAMS),
     val lastTime: SetRow? = null,
+    /**
+     * What *Done* opens with (ROADMAP N50): the plan's target for the last working set, what was done
+     * there, and the step those two earned.
+     *
+     * Empty rather than nullable, because *Done* still has something to say for an exercise with no
+     * plan — the rating is behind the same prompt — and it says "no plan" rather than inventing one.
+     */
+    val progression: ProgressionPrompt = ProgressionPrompt(),
 )
 
 /**
@@ -570,36 +588,63 @@ class ActiveWorkoutViewModel @Inject constructor(
      * Marks an exercise done (ROADMAP N7) and offers an undo, because the mis-tap
      * this prevents is also the mis-tap it can cause.
      *
-     * [muscleFeel] and [joints] are the skippable half (ROADMAP N8, N63): they are
-     * written first, so a failure leaves the exercise open with an error to read
-     * rather than done with the ratings silently lost.
+     * The ratings used to ride in here (N8): *Done* opened *How did that feel?* and the answer was
+     * written on the way to finishing. N50 makes the rating a detour from the progression prompt
+     * rather than a step in finishing, so it is written by [onRateExercise] and this only closes the
+     * exercise — with nothing written if the lifter never rated it.
      */
-    fun onFinishExercise(
-        sessionExerciseId: String,
-        muscleFeel: Int? = null,
-        joints: List<JointPain> = emptyList(),
-    ) {
-        viewModelScope.launch {
-            if (muscleFeel != null || joints.isNotEmpty()) {
-                val rated = workoutRepository.rateExercise(
-                    sessionExerciseId = sessionExerciseId,
-                    muscleFeel = muscleFeel,
-                    joints = joints,
-                )
-                if (rated is DataResult.Failure) {
-                    lastError.value = rated.error
-                    return@launch
-                }
-                lastError.value = null
-            }
-            when (val result = workoutRepository.finishExercise(sessionExerciseId)) {
-                is DataResult.Success -> {
-                    lastError.value = null
-                    pendingFinishedExercise.value = sessionExerciseId
-                }
+    fun onFinishExercise(sessionExerciseId: String) {
+        viewModelScope.launch { finishExercise(sessionExerciseId) }
+    }
 
-                is DataResult.Failure -> lastError.value = result.error
+    /**
+     * Writes the step the lifter accepted, then finishes the exercise (ROADMAP N50).
+     *
+     * [direction] is the lifter's own choice, and **the plan is what changes**: the session's record
+     * already says what was done, and N16's living template is what the next run reads. The slot's
+     * prescription takes the step for a program start, so two slots naming one template still progress
+     * apart (P3.8); the template's planned set takes it for a direct one. A failed write leaves the
+     * exercise open with the error on screen, because finishing anyway would say the step was taken —
+     * the same reason the ratings were written before the finish they used to travel with.
+     */
+    fun onAcceptProgression(sessionExerciseId: String, direction: ProgressionDirection) {
+        val offer = uiState.value.exercises
+            .firstOrNull { it.id == sessionExerciseId }
+            ?.progression
+            ?.offer
+            ?: return
+        // A direction the plan never offered has nothing to write; the dialog does not offer one, and
+        // this is the same answer if a tap somehow arrives after the plan changed under it.
+        val raised = offer.accepted(direction) ?: return
+        viewModelScope.launch {
+            val written = when (raised.source) {
+                ProgressionSource.TEMPLATE -> templateRepository.updateSet(
+                    raised.setId,
+                    raised.toTemplateEdit(),
+                )
+
+                ProgressionSource.SLOT -> programRepository.updateSlotSet(
+                    raised.setId,
+                    raised.toSlotEdit(),
+                )
             }
+            if (written is DataResult.Failure) {
+                lastError.value = written.error
+                return@launch
+            }
+            finishExercise(sessionExerciseId)
+        }
+    }
+
+    /** Closes one exercise and offers the undo every finish offers (ROADMAP N7). */
+    private suspend fun finishExercise(sessionExerciseId: String) {
+        when (val result = workoutRepository.finishExercise(sessionExerciseId)) {
+            is DataResult.Success -> {
+                lastError.value = null
+                pendingFinishedExercise.value = sessionExerciseId
+            }
+
+            is DataResult.Failure -> lastError.value = result.error
         }
     }
 
@@ -1260,6 +1305,11 @@ private fun SessionExercise.toRow(
         jointPainNote = jointPainNote,
         sets = loggedSets,
         suggestion = suggestionFor(loggedSets, previous, plan),
+        // The step this exercise earned, read from the same plan the prefill reads (N50).
+        progression = progressionPromptFor(
+            planned = plan.progressionSets(),
+            performed = loggedSets.map { it.toProgressionPerformance() },
+        ),
         lastTime = previous?.sets?.firstOrNull()?.let { first ->
             SetRow(
                 id = first.id,
@@ -1290,6 +1340,87 @@ private fun List<SetEntry>.loggedRowsFor(sessionExerciseId: String): List<SetRow
                 assistanceGrams = set.assistanceGrams,
             )
         }
+
+/**
+ * The plan's sets for one exercise, reduced for the progression rule (ROADMAP N50).
+ *
+ * The slot's prescription **is** the plan where it prescribes sets for this exercise, and the
+ * template's planned sets are the plan otherwise — the same "wins where it speaks" the prefill uses
+ * (P3.8, N14), read whole rather than field by field because an accepted step has to be written back
+ * to one of them, and a merged offer would have two homes.
+ */
+private fun PlanContext.progressionSets(): List<ProgressionPlanSet> {
+    val prescribed = prescription?.sets.orEmpty()
+    return if (prescribed.isNotEmpty()) {
+        prescribed.map { it.toProgressionSet() }
+    } else {
+        plannedEntry?.sets.orEmpty().map { it.toProgressionSet() }
+    }
+}
+
+private fun SlotSet.toProgressionSet(): ProgressionPlanSet = ProgressionPlanSet(
+    setId = id,
+    setIndex = setIndex,
+    source = ProgressionSource.SLOT,
+    role = role,
+    targetWeightGrams = targetWeightGrams,
+    targetAssistanceGrams = targetAssistanceGrams,
+    targetRepsMin = targetRepsMin,
+    targetRepsMax = targetRepsMax,
+    targetRpeHalves = targetRpeHalves,
+    targetPercentOf1Rm = targetPercentOf1Rm,
+    note = note,
+)
+
+private fun TemplateSet.toProgressionSet(): ProgressionPlanSet = ProgressionPlanSet(
+    setId = id,
+    setIndex = setIndex,
+    source = ProgressionSource.TEMPLATE,
+    role = role,
+    targetWeightGrams = targetWeightGrams,
+    targetAssistanceGrams = targetAssistanceGrams,
+    targetRepsMin = targetRepsMin,
+    targetRepsMax = targetRepsMax,
+    targetRpeHalves = targetRpeHalves,
+    note = note,
+)
+
+/** One logged set as the rule reads it: the role decides whether it is work at all (N50). */
+private fun SetRow.toProgressionPerformance(): ProgressionPerformance = ProgressionPerformance(
+    reps = reps,
+    weightGrams = weightGrams,
+    assistanceGrams = assistanceGrams,
+    rpeHalves = rpeHalves,
+    role = setType,
+)
+
+/**
+ * The accepted set as the template write takes it (N14).
+ *
+ * The whole target travels, not only the field the step moved: `updateSet` overwrites a planned set,
+ * so a partial edit would clear every target the step did not name.
+ */
+private fun ProgressionPlanSet.toTemplateEdit(): TemplateSetEdit = TemplateSetEdit(
+    role = role,
+    targetWeightGrams = targetWeightGrams,
+    targetAssistanceGrams = targetAssistanceGrams,
+    targetRepsMin = targetRepsMin,
+    targetRepsMax = targetRepsMax,
+    targetRpeHalves = targetRpeHalves,
+    note = note,
+)
+
+/** The same for a slot's prescribed set, which alone carries the percentage (P3.8). */
+private fun ProgressionPlanSet.toSlotEdit(): SlotSetEdit = SlotSetEdit(
+    role = role,
+    targetWeightGrams = targetWeightGrams,
+    targetAssistanceGrams = targetAssistanceGrams,
+    targetRepsMin = targetRepsMin,
+    targetRepsMax = targetRepsMax,
+    targetRpeHalves = targetRpeHalves,
+    targetPercentOf1Rm = targetPercentOf1Rm,
+    note = note,
+)
 
 /**
  * What the next set is shown with: the plan's target where it speaks, then history (ROADMAP N14, N59,

@@ -27,6 +27,8 @@ import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgressionDirection
+import com.example.androidapp.domain.model.ProgressionStep
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
@@ -167,6 +169,46 @@ class ActiveWorkoutViewModelTest {
             assistanceGrams = suggestion.assistanceGrams,
         )
     }
+
+    /**
+     * Logs one set and then states how it felt and how hard it was (ROADMAP N50).
+     *
+     * The one-tap log deliberately records no RPE (N6), so an answered plan is arranged the way a
+     * lifter answers it: log the set, then fill the RPE in the fields that state it.
+     */
+    private fun TestScope.logAnsweredSet(
+        viewModel: ActiveWorkoutViewModel,
+        repository: FakeWorkoutRepository,
+        reps: Int,
+        weightGrams: Long,
+        rpe: Int?,
+        setType: SetType = SetType.NORMAL,
+    ) {
+        viewModel.onLogSet(
+            viewModel.uiState.value.exercises.single().id,
+            offeredSet(viewModel, setType = setType),
+        )
+        settle()
+        viewModel.onUpdateSet(
+            repository.sets.value.last().id,
+            reps = reps,
+            weightGrams = weightGrams,
+            rpeHalves = rpe,
+            note = null,
+            setType = setType,
+        )
+        settle()
+    }
+
+    /** One exercise of a plan with a single answered working set (ROADMAP N50). */
+    private fun answeredPlan() = FakeTemplateRepository(
+        planned = listOf(
+            plannedExercise(
+                position = 0,
+                sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = 8)),
+            ),
+        ),
+    )
 
     @Test
     fun startsASessionOnEntry_soNothingCanBeLostBeforeItExists() = runTest(dispatcher) {
@@ -447,7 +489,9 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
-    fun finishingWithRatings_writesThem_andMarksTheRowDone() = runTest(dispatcher) {
+    fun ratingAnExercise_thenFinishing_keepsTheRating_andMarksTheRowDone() = runTest(dispatcher) {
+        // N50 splits what N8 used to do in one call: the rating is written where it is answered (the
+        // prompt's own action, or the inline row), and Done only closes the exercise.
         val repository = FakeWorkoutRepository()
         val viewModel = viewModelFor(repository)
         observe(viewModel)
@@ -456,11 +500,13 @@ class ActiveWorkoutViewModelTest {
         settle()
         val id = viewModel.uiState.value.exercises.single().id
 
-        viewModel.onFinishExercise(
+        viewModel.onRateExercise(
             id,
             muscleFeel = 8,
             joints = listOf(JointPain(Joint.KNEE, Side.LEFT, 2)),
         )
+        settle()
+        viewModel.onFinishExercise(id)
         settle()
 
         val row = viewModel.uiState.value.exercises.single()
@@ -535,24 +581,190 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
-    fun aFailedRating_leavesTheExerciseOpen_andSurfacesTheError() = runTest(dispatcher) {
+    fun aFailedPlanWrite_leavesTheExerciseOpen_andSurfacesTheError() = runTest(dispatcher) {
+        // ROADMAP N50: the step writes the plan *before* the exercise closes, so a dropped write
+        // leaves the lifter where they were rather than done with a plan that never moved.
+        val repository = FakeWorkoutRepository()
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = 8)),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+        templates.failUpdates = true
+
+        viewModel.onAcceptProgression(id, ProgressionDirection.LOAD)
+        settle()
+
+        assertNotNull("a dropped plan write must not be silent", viewModel.uiState.value.error)
+        assertFalse(
+            "finishing anyway would say the step was taken",
+            viewModel.uiState.value.exercises.single().isFinished,
+        )
+    }
+
+    @Test
+    fun anAnsweredPlan_offersTheNextStep_onTheRow() = runTest(dispatcher) {
+        // ROADMAP N50: the plan asked for 5 reps at RPE 8 and the session did them at 7, so there is
+        // room in hand and the app can state both next steps.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        val offer = viewModel.uiState.value.exercises.single().progression.offer
+        assertNotNull(offer)
+        assertEquals("ts-0", offer!!.set.setId)
+        assertEquals(ProgressionStep(5, 6), offer.reps)
+        assertEquals(ProgressionStep(100_000L, 102_500L), offer.load)
+    }
+
+    @Test
+    fun acceptingTheLoadStep_writesTheTemplatesPlannedSet_thenFinishes() = runTest(dispatcher) {
+        // N50: the accepted step changes the *plan*, because that is what the next run reads (N16).
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onAcceptProgression(id, ProgressionDirection.LOAD)
+        settle()
+
+        val written = templates.updates.single()
+        assertEquals("ts-0", written.first)
+        assertEquals(102_500L, written.second.targetWeightGrams)
+        assertEquals("the step raises the load, not the reps", 5, written.second.targetRepsMax)
+        assertTrue(viewModel.uiState.value.exercises.single().isFinished)
+        assertEquals(id, viewModel.uiState.value.pendingFinishedExerciseId)
+    }
+
+    @Test
+    fun acceptingTheRepStep_writesTheSlotsPrescription_thenFinishes() = runTest(dispatcher) {
+        // A program start writes the slot, so two slots naming one template progress apart (P3.8).
+        val repository = FakeWorkoutRepository()
+        val programs = FakeProgramRepository().apply {
+            prescriptions = listOf(
+                SlotPrescription(
+                    exerciseId = "back-squat",
+                    sets = listOf(
+                        SlotSet(
+                            id = "ps0",
+                            setIndex = 0,
+                            targetWeightGrams = 100_000L,
+                            targetRepsMax = 5,
+                            targetRpeHalves = 8,
+                        ),
+                    ),
+                ),
+            )
+        }
+        val viewModel = viewModelFor(repository, templateId = "t1", programs = programs, slotId = "slot-1")
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onAcceptProgression(id, ProgressionDirection.REPS)
+        settle()
+
+        val written = programs.slotSetUpdates.single()
+        assertEquals("ps0", written.first)
+        assertEquals(6, written.second.targetRepsMax)
+        assertEquals("the step raises the reps, not the load", 100_000L, written.second.targetWeightGrams)
+        assertTrue(viewModel.uiState.value.exercises.single().isFinished)
+    }
+
+    @Test
+    fun decliningTheStep_finishesTheExercise_withoutWritingThePlan() = runTest(dispatcher) {
+        // "with doing neither equally available" (N50): Not now is a finish, not a nudge.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertTrue(viewModel.uiState.value.exercises.single().isFinished)
+        assertTrue("the app writes only what the lifter accepts", templates.updates.isEmpty())
+    }
+
+    @Test
+    fun anUnratedSession_statesThePlan_butOffersNothing() = runTest(dispatcher) {
+        // "A session with no recorded RPE ... suggests nothing rather than guessing" (N50), and the
+        // prompt still says what the plan asked.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = null)
+
+        val prompt = viewModel.uiState.value.exercises.single().progression
+        assertNotNull("the plan is still worth stating", prompt.planned)
+        assertNull(prompt.offer)
+    }
+
+    @Test
+    fun aPlanWithNoTargetRpe_offersNothing() = runTest(dispatcher) {
+        val repository = FakeWorkoutRepository()
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = null)),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        assertNull(viewModel.uiState.value.exercises.single().progression.offer)
+    }
+
+    @Test
+    fun anExerciseWithNoPlan_statesNoPlan() = runTest(dispatcher) {
         val repository = FakeWorkoutRepository()
         val viewModel = viewModelFor(repository)
         observe(viewModel)
         settle()
         viewModel.onAddExercise("back-squat")
         settle()
-        val id = viewModel.uiState.value.exercises.single().id
-        repository.failWrites = true
 
-        viewModel.onFinishExercise(id, muscleFeel = 8)
-        settle()
-
-        assertNotNull(viewModel.uiState.value.error)
-        assertFalse(
-            "the ratings are written first, so a failure leaves the exercise open",
-            viewModel.uiState.value.exercises.single().isFinished,
-        )
+        val prompt = viewModel.uiState.value.exercises.single().progression
+        assertNull("nothing to progress from", prompt.planned)
+        assertNull(prompt.offer)
     }
 
     @Test
@@ -1677,19 +1889,30 @@ class ActiveWorkoutViewModelTest {
         sets = sets,
     )
 
-    private fun plannedSet(index: Int, reps: Int, weightGrams: Long) = TemplateSet(
+    private fun plannedSet(index: Int, reps: Int, weightGrams: Long, rpe: Int? = null) = TemplateSet(
         id = "ts-$index",
         templateExerciseId = "te-0",
         setIndex = index,
         role = SetType.NORMAL,
         targetWeightGrams = weightGrams,
         targetRepsMax = reps,
+        // The target RPE is what earning a step is measured against (N50).
+        targetRpeHalves = rpe,
     )
 
-    /** Reads only: this test never writes a plan, and the plan's reads are enough. */
+    /**
+     * Reads the plan, and records a progression step written back to it (ROADMAP N50).
+     *
+     * Everything else is a path this screen never takes, which is why the rest still throws.
+     */
     private class FakeTemplateRepository(
         private val planned: List<TemplateExercise> = emptyList(),
     ) : TemplateRepository {
+        /** Every planned set the ViewModel rewrote, as the id and the edit it sent. */
+        val updates = mutableListOf<Pair<String, TemplateSetEdit>>()
+
+        /** Set to refuse the next write, so a dropped step can be asserted (N50). */
+        var failUpdates = false
         override suspend fun setSupersetGroup(
             templateExerciseIds: List<String>,
             group: Int?,
@@ -1732,7 +1955,11 @@ class ActiveWorkoutViewModelTest {
         override suspend fun updateSet(
             templateSetId: String,
             edit: TemplateSetEdit,
-        ): DataResult<Unit> = notUsed()
+        ): DataResult<Unit> {
+            if (failUpdates) return DataResult.Failure(DataError.Storage(IOException("disk full")))
+            updates += templateSetId to edit
+            return DataResult.Success(Unit)
+        }
 
         override suspend fun removeSet(templateSetId: String): DataResult<Unit> = notUsed()
         override suspend fun setExercisePlan(
@@ -2251,6 +2478,12 @@ private class FakeProgramRepository : ProgramRepository {
     /** What the started slot prescribes; empty unless a test sets one (ROADMAP P3.8). */
     var prescriptions: List<SlotPrescription> = emptyList()
 
+    /** Every prescribed set the ViewModel rewrote, as the id and the edit it sent (ROADMAP N50). */
+    val slotSetUpdates = mutableListOf<Pair<String, SlotSetEdit>>()
+
+    /** Set to refuse the next write, so a dropped step can be asserted (N50). */
+    var failSlotSetUpdates = false
+
     override fun observeSlotPrescriptions(slotId: String): Flow<List<SlotPrescription>> =
         flowOf(prescriptions)
 
@@ -2322,8 +2555,11 @@ private class FakeProgramRepository : ProgramRepository {
         edit: SlotSetEdit,
     ): DataResult<Unit> = error("the workout screen does not prescribe a set")
 
-    override suspend fun updateSlotSet(slotSetId: String, edit: SlotSetEdit): DataResult<Unit> =
-        error("the workout screen does not edit a prescribed set")
+    override suspend fun updateSlotSet(slotSetId: String, edit: SlotSetEdit): DataResult<Unit> {
+        if (failSlotSetUpdates) return DataResult.Failure(DataError.Storage(IOException("disk full")))
+        slotSetUpdates += slotSetId to edit
+        return DataResult.Success(Unit)
+    }
 
     override suspend fun removeSlotSet(slotSetId: String): DataResult<Unit> =
         error("the workout screen does not remove a prescribed set")

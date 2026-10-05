@@ -64,6 +64,17 @@ repeated here.
   split is untouched: the field still opens the read-only planned-workout dialog and the pill beside it
   starts the workout, and one pill is drawn per next-up row because more than one program may be active
   (P3.12).
+- **What the app asks when an exercise is done is progression, and the answer changes the plan** (N50).
+  N59 withdrew the app's proposal but left two questions open — where a proposal belongs, and what earns
+  one — and this answers both. *Done* opens a **progression prompt** that states what the plan asked and
+  what was done and, where the plan was answered with room in hand, offers the next step as the lifter's
+  choice: the smallest loadable step, or a rep. *How did that feel?* is one action away on the same
+  prompt, and the inline rating row is untouched. **Earned** is narrow on purpose — the exercise came
+  from a plan, every prescribed working set carried a target RPE, and each was performed with its reps
+  met at or under that RPE; warm-ups are excluded, and an unrated session suggests nothing rather than
+  guessing. Accepting writes the **plan** — the slot's prescription for a program start, the template's
+  planned set for a direct one — because the plan is what the next run reads, and the app still writes
+  only what the lifter accepts.
 
 ### Removed
 

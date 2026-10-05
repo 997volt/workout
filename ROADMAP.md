@@ -17,33 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-One item is left of the batch taken from using the app: the progression the app asks about when an
-exercise is done. A candidate graduates to this section — gaining an id and a spelled-out decision
-rather than a wish — when it is picked up, so what stands here is committed work; the two queues below
-are where the rest lives, *Later* for what is self-contained and *Parked* for what is a product in its
-own right.
-
-- **N50 — the app's progression comes back as a decision at *Done*, earned by the plan and its target
-  RPE.** N59 withdrew the offer rather than the question: the next set's values are now fields the lifter
-  reads and edits, so a chip beside them had nothing to add. What it left was *where* a proposal could
-  live and *what* would earn one, and this is both. *Done* (N7) stops opening *How did that feel?* first:
-  it opens a **progression prompt** that states what the plan asked and what was done and — when it was
-  earned — offers the next step as the lifter's choice: **a load increase** (the smallest loadable step,
-  [`DEFAULT_PROGRESSION_STEP_GRAMS`](app/src/main/java/com/example/androidapp/domain/model/ProgressionSuggestion.kt))
-  **or a rep**, with doing neither equally available. The rating is not lost: the prompt carries a *How did
-  that feel?* action into the dialog N8 already ships, and the inline rating row (N10) stays where it is.
-  **Earned** means the exercise came from a plan — a template's planned set or a program slot's
-  prescription, both of which carry `targetRpeHalves` — and every prescribed working set was performed
-  with its reps met at an RPE **at or under** the target, so the plan was fulfilled with room in hand;
-  warm-ups are excluded (N17, N20, N22), and a session with no recorded RPE or no target RPE suggests
-  nothing rather than guessing. **The accepted step changes the plan**, not just the session's record: it
-  is written to the slot's prescription for a program start (P3.8), so it stays per slot, and to the
-  template's planned set for a direct one, because the plan is what the next run reads and N16 already
-  makes a template living. Reading the slot's *history* (P3.8's extension of N22) goes with the rule it
-  extended. Rejected: a stored "next target" on the session, which is the forward view N16 removed; and
-  restoring N22's rule, which computed from the plan's rep ceiling alone and offered itself beside the
-  next set, where this one is conditioned on the session's own effort and waits to be asked. It suggests,
-  and it writes only what the lifter accepts.
+**Nothing.** The batch that stood here — a scored sore-muscle list on the readiness note (N62), the joints
+picked with their own scores and the trend reading the worst (N63), and the progression the app asks
+about at *Done* (N50) — is built, and each entry is in [CHANGELOG.md](CHANGELOG.md). A candidate
+graduates to this section — gaining an id and a spelled-out decision rather than a wish — when it is
+picked up, so what stands here is committed work; the two queues below are where the rest lives,
+*Later* for what is self-contained and *Parked* for what is a product in its own right.
 
 ## Later (still self-contained)
 

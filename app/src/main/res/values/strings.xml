@@ -352,6 +352,28 @@
     <string name="rating_joint_increase">Raise %1$s pain</string>
     <string name="rating_joint_remove">Remove %1$s</string>
 
+    <!-- The next step a plan earned, asked when an exercise is done (ROADMAP N50). The prompt states
+         what the plan asked and what was done, and offers a load or a rep as the lifter's choice;
+         "Not now" is the decline, and the rating stays reachable behind it (N8, N10). -->
+    <string name="progression_title">%1$s — next step</string>
+    <string name="progression_no_plan">No plan for this exercise</string>
+    <string name="progression_plan">Plan: %1$s</string>
+    <string name="progression_done">Done: %1$s</string>
+    <!-- One set, as "5 reps · 100 kg · RPE 8": the parts the plan or the session actually has, joined
+         where the dialog builds the line. Reps are a quantity, so they are a plural. -->
+    <plurals name="progression_reps_value">
+        <item quantity="one">%1$d rep</item>
+        <item quantity="other">%1$d reps</item>
+    </plurals>
+    <string name="progression_weight_value">%1$s kg</string>
+    <string name="progression_offer">The plan was met with room in hand.</string>
+    <string name="progression_increase_load">Increase load to %1$s kg</string>
+    <plurals name="progression_increase_reps">
+        <item quantity="one">Raise the target to %1$d rep</item>
+        <item quantity="other">Raise the target to %1$d reps</item>
+    </plurals>
+    <string name="progression_not_now">Not now</string>
+
     <!-- The score a scored pick (a sore muscle, a painful joint) is shown with. One format for
          both lists, which is the point of the shared editor (ROADMAP N62, N63). -->
     <string name="scored_pick_score">%1$d/10</string>

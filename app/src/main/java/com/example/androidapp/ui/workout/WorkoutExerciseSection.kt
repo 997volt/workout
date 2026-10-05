@@ -40,9 +40,11 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.ExerciseRatingDialog
 import com.example.androidapp.ui.components.ExerciseRatingSection
+import com.example.androidapp.ui.components.ProgressionDialog
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.SetEntryDraft
 import com.example.androidapp.ui.components.SetEntryNumbers
@@ -63,7 +65,7 @@ import com.example.androidapp.ui.components.AppTextButton
  * Split out of `ActiveWorkoutScreen.kt` when that file reached the function ceiling:
  * the screen is the scaffold, the clock and the workout-level actions, while this is
  * everything that belongs to a single exercise — its name and small print, its sets,
- * and the Done/Reopen actions (ROADMAP N7, N8).
+ * and the Done/Reopen actions, with the progression prompt behind Done (ROADMAP N7, N8, N50).
  */
 
 /** How far a done exercise's sets are faded (ROADMAP N7). */
@@ -89,7 +91,9 @@ internal fun ExerciseList(
     onMoveExercise: (String, Int) -> Unit,
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
-    onFinishExercise: (String, Int?, List<JointPain>) -> Unit,
+    onFinishExercise: (String) -> Unit,
+    /** Writes the step a lifter accepted at *Done*, and finishes the exercise (ROADMAP N50). */
+    onAcceptProgression: (String, ProgressionDirection) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -116,6 +120,7 @@ internal fun ExerciseList(
                 onEditSet = onEditSet,
                 onDeleteSet = onDeleteSet,
                 onFinishExercise = onFinishExercise,
+                onAcceptProgression = onAcceptProgression,
                 onRateExercise = onRateExercise,
                 onReopenExercise = { onReopenExercise(row.id) },
                 // Row 0 has nothing above it to pair with: with no previous exercise the group
@@ -150,7 +155,8 @@ private fun ExerciseSection(
     canMoveDown: Boolean,
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
-    onFinishExercise: (String, Int?, List<JointPain>) -> Unit,
+    onFinishExercise: (String) -> Unit,
+    onAcceptProgression: (String, ProgressionDirection) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: () -> Unit,
     modifier: Modifier = Modifier,
@@ -174,6 +180,8 @@ private fun ExerciseSection(
                 row = row,
                 onReopenExercise = onReopenExercise,
                 onFinishExercise = onFinishExercise,
+                onAcceptProgression = onAcceptProgression,
+                onRateExercise = onRateExercise,
             )
             // The rare actions moved in here rather than sitting on the header (ROADMAP N53): the
             // header is read constantly mid-session, and a text link in every one of them cost more
@@ -227,7 +235,9 @@ private fun ExerciseSection(
 private fun ExerciseStateAction(
     row: SessionExerciseRow,
     onReopenExercise: () -> Unit,
-    onFinishExercise: (String, Int?, List<JointPain>) -> Unit,
+    onFinishExercise: (String) -> Unit,
+    onAcceptProgression: (String, ProgressionDirection) -> Unit,
+    onRateExercise: (String, Int?, List<JointPain>) -> Unit,
 ) {
     if (row.isFinished) {
         AppTextButton(
@@ -238,34 +248,40 @@ private fun ExerciseStateAction(
         }
     } else {
         FinishExerciseAction(
-            exerciseId = row.id,
-            muscleFeel = row.muscleFeel,
-            joints = row.joints,
+            row = row,
             onFinish = onFinishExercise,
+            onAcceptProgression = onAcceptProgression,
+            onRate = onRateExercise,
         )
     }
 }
 
 /**
- * The **Done** button for one exercise, and the rating prompt behind it (ROADMAP
- * N7, N8).
+ * The **Done** button for one exercise, and the prompt behind it (ROADMAP N7, N50).
  *
- * Owning the dialog here keeps the transient "form is open" state next to the
- * button that opens it, the same shape as [ReadinessSection]. Saving writes the
- * ratings and then finishes; skipping finishes without them, because the whole
- * capture is optional.
+ * Done used to open *How did that feel?* first (N8); it opens the **progression prompt** now, which
+ * states what the plan asked and what was done and — when the session earned one — offers the next
+ * step as the lifter's choice. The rating is not lost: the prompt carries *How did that feel?* into
+ * N8's own dialog, and the inline rating row (N10) stays where it is on the exercise.
+ *
+ * Owning the prompt here keeps the transient "form is open" state next to the button that opens it,
+ * the shape [ReadinessSection] already uses. The rating is a detour from the prompt rather than a step
+ * in finishing, so closing it hands the lifter back to the prompt they came from, where the step (or
+ * the finish) still waits. Accepting a step writes the plan and finishes; *Not now* finishes without
+ * writing, so doing neither is as available as doing either.
  */
 @Composable
 private fun FinishExerciseAction(
-    exerciseId: String,
-    muscleFeel: Int?,
-    joints: List<JointPain>,
-    onFinish: (String, Int?, List<JointPain>) -> Unit,
+    row: SessionExerciseRow,
+    onFinish: (String) -> Unit,
+    onAcceptProgression: (String, ProgressionDirection) -> Unit,
+    onRate: (String, Int?, List<JointPain>) -> Unit,
 ) {
+    var prompting by remember { mutableStateOf(false) }
     var rating by remember { mutableStateOf(false) }
 
     AppTextButton(
-        onClick = { rating = true },
+        onClick = { prompting = true },
         modifier = Modifier.testTag(TestTags.EXERCISE_DONE),
     ) {
         Text(stringResource(R.string.active_workout_done_exercise))
@@ -273,17 +289,30 @@ private fun FinishExerciseAction(
 
     if (rating) {
         ExerciseRatingDialog(
-            initialMuscleFeel = muscleFeel,
-            initialJoints = joints,
+            initialMuscleFeel = row.muscleFeel,
+            initialJoints = row.joints,
             isPrompt = true,
-            onDismiss = {
-                rating = false
-                onFinish(exerciseId, null, emptyList())
-            },
+            // Settling the rating returns to the prompt rather than finishing: it is the answer to a
+            // question the prompt asked, not the answer to the prompt itself.
+            onDismiss = { rating = false },
             onSave = { feel, picked ->
                 rating = false
-                onFinish(exerciseId, feel, picked)
+                onRate(row.id, feel, picked)
             },
+        )
+    } else if (prompting) {
+        ProgressionDialog(
+            exerciseName = row.name,
+            prompt = row.progression,
+            onAccept = { direction ->
+                prompting = false
+                onAcceptProgression(row.id, direction)
+            },
+            onNotNow = {
+                prompting = false
+                onFinish(row.id)
+            },
+            onRate = { rating = true },
         )
     }
 }

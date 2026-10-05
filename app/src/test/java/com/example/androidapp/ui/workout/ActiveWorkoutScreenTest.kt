@@ -3,6 +3,13 @@ package com.example.androidapp.ui.workout
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.PersonalRecordMoment
+import com.example.androidapp.domain.model.ProgressionDirection
+import com.example.androidapp.domain.model.ProgressionOffer
+import com.example.androidapp.domain.model.ProgressionPerformance
+import com.example.androidapp.domain.model.ProgressionPlanSet
+import com.example.androidapp.domain.model.ProgressionPrompt
+import com.example.androidapp.domain.model.ProgressionSource
+import com.example.androidapp.domain.model.ProgressionStep
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.jointSiteKey
@@ -51,7 +58,8 @@ class ActiveWorkoutScreenTest {
      * a call site long before it stops compiling.
      */
     private data class Actions(
-        val onFinishExercise: (String, Int?, List<JointPain>) -> Unit = { _, _, _ -> },
+        val onFinishExercise: (String) -> Unit = {},
+        val onAcceptProgression: (String, ProgressionDirection) -> Unit = { _, _ -> },
         val onMoveExercise: (String, Int) -> Unit = { _, _ -> },
         val onReopenExercise: (String) -> Unit = {},
         val onRemoveExercise: (String) -> Unit = {},
@@ -90,6 +98,7 @@ class ActiveWorkoutScreenTest {
                 onRateExercise = actions.onRateExercise,
                 onFinish = actions.onFinish,
                 onFinishExercise = actions.onFinishExercise,
+                onAcceptProgression = actions.onAcceptProgression,
                 onReopenExercise = actions.onReopenExercise,
                 onDeleteSet = {},
                 onUndoDelete = {},
@@ -153,78 +162,84 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertDoesNotExist()
     }
 
-    /** What the screen reports when an exercise is finished (N7, N8, N63). */
-    private data class FinishCall(
-        val id: String,
-        val muscleFeel: Int?,
-        val joints: List<JointPain>,
-    )
-
     @Test
-    fun tappingDone_asksHowItFelt_beforeFinishing() {
-        var finished: FinishCall? = null
-        setScreen(
-            state(isFinished = false),
-            actions = Actions(
-                onFinishExercise = { id, feel, joints ->
-                    finished = FinishCall(id, feel, joints)
-                },
-            ),
-        )
+    fun tappingDone_opensTheProgressionPrompt_andWritesNothingUntilItIsAnswered() {
+        // ROADMAP N50: Done stops opening "How did that feel?" first. The question is now what the
+        // plan and the session earned, and answering it is what finishes the exercise.
+        var finished: String? = null
+        setScreen(state(isFinished = false), actions = Actions(onFinishExercise = { finished = it }))
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
 
-        // N8: the prompt comes up first, and nothing is written until it is answered.
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertExists()
         assertEquals(null, finished)
 
-        composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).performClick()
 
-        assertEquals("se1", finished?.id)
+        assertEquals("se1", finished)
     }
 
     @Test
-    fun skippingTheRatingPrompt_finishesWithoutRatings() {
-        var finished: FinishCall? = null
+    fun aPlanThatEarnedAStep_offersIt_andReportsTheDirectionAccepted() {
+        var accepted: Pair<String, ProgressionDirection>? = null
         setScreen(
-            state(isFinished = false),
-            actions = Actions(
-                onFinishExercise = { id, feel, joints ->
-                    finished = FinishCall(id, feel, joints)
-                },
-            ),
+            state(isFinished = false, progression = earnedPrompt()),
+            actions = Actions(onAcceptProgression = { id, direction -> accepted = id to direction }),
         )
+
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_REPS).performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.RATING_DISMISS).performClick()
-
-        assertEquals(FinishCall("se1", null, emptyList()), finished)
+        assertEquals("se1" to ProgressionDirection.REPS, accepted)
     }
 
     @Test
-    fun savingTheRatings_passesBothThrough() {
-        var finished: FinishCall? = null
+    fun thePromptsRateAction_stillOpensTheRatingDialog() {
+        // N50: the rating is not lost — the prompt carries it into N8's own dialog, and the inline
+        // row (N10) stays where it is.
+        var rated: Rounding? = null
+        var finished: String? = null
         setScreen(
-            state(isFinished = false),
+            state(isFinished = false, progression = earnedPrompt()),
             actions = Actions(
-                onFinishExercise = { id, feel, joints ->
-                    finished = FinishCall(id, feel, joints)
-                },
+                onRateExercise = { id, feel, joints -> rated = Rounding(id, feel, joints) },
+                onFinishExercise = { finished = it },
             ),
         )
+
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_RATE).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertExists()
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).performTextInput("8")
         // N63's picked joint rides with the ratings the prompt collects, with its own score.
         composeTestRule.onNodeWithTag(TestTags.Rating.JOINT_ADD).performScrollTo().performClick()
         composeTestRule.onNodeWithTag(TestTags.Rating.jointOption(jointSiteKey(Joint.KNEE, Side.LEFT)))
             .performClick()
-
         composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
 
-        assertEquals(
-            FinishCall("se1", 8, listOf(JointPain(Joint.KNEE, Side.LEFT, 5))),
-            finished,
+        assertEquals(Rounding("se1", 8, listOf(JointPain(Joint.KNEE, Side.LEFT, 5))), rated)
+        assertEquals("rating is a detour, not the finish", null, finished)
+    }
+
+    @Test
+    fun closingTheRating_returnsToThePrompt_ratherThanFinishing() {
+        var finished: String? = null
+        setScreen(
+            state(isFinished = false, progression = earnedPrompt()),
+            actions = Actions(onFinishExercise = { finished = it }),
         )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_RATE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.RATING_DISMISS).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).assertExists()
+        assertEquals(null, finished)
+
+        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).performClick()
+
+        assertEquals("se1", finished)
     }
 
     @Test
@@ -470,7 +485,14 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertDoesNotExist()
     }
 
-    private fun state(isFinished: Boolean) = ActiveWorkoutUiState(
+    private fun state(
+        isFinished: Boolean,
+        /**
+         * What *Done* opens with (ROADMAP N50). Empty by default, which is the no-plan case: the
+         * prompt still opens and says so, so every Done test goes through the same flow.
+         */
+        progression: ProgressionPrompt = ProgressionPrompt(),
+    ) = ActiveWorkoutUiState(
         isLoading = false,
         sessionId = "s1",
         startedAt = "07:42",
@@ -484,9 +506,31 @@ class ActiveWorkoutScreenTest {
                 isFinished = isFinished,
                 sets = listOf(SetRow(id = "set1", number = 1, reps = 5, weightGrams = 100_000)),
                 suggestion = SetSuggestion(reps = 5, weightGrams = 100_000),
+                progression = progression,
             ),
         ),
     )
+
+    /** One exercise whose plan asked 5 reps at RPE 8 and whose session answered at 7 (N50). */
+    private fun earnedPrompt(): ProgressionPrompt {
+        val planned = ProgressionPlanSet(
+            setId = "ts-0",
+            setIndex = 0,
+            source = ProgressionSource.TEMPLATE,
+            targetWeightGrams = 100_000L,
+            targetRepsMax = 5,
+            targetRpeHalves = 8,
+        )
+        return ProgressionPrompt(
+            planned = planned,
+            performed = ProgressionPerformance(reps = 5, weightGrams = 100_000L, rpeHalves = 7),
+            offer = ProgressionOffer(
+                set = planned,
+                reps = ProgressionStep(5, 6),
+                load = ProgressionStep(100_000L, 102_500L),
+            ),
+        )
+    }
 
     @Test
     fun theNextSet_isStatedByFields_andLogSetWritesThem() {

@@ -90,6 +90,18 @@ object TestTags {
     const val EXERCISE_RATING_ROW = "exercise_rating_row"
 
     /**
+     * The step a plan earned, offered when an exercise is done (ROADMAP N50): what the plan asked,
+     * what was done, the two directions a lifter can accept, declining, and the way back into the
+     * rating dialog the prompt carries.
+     */
+    const val PROGRESSION_PLAN = "progression_plan"
+    const val PROGRESSION_DONE = "progression_done"
+    const val PROGRESSION_LOAD = "progression_load"
+    const val PROGRESSION_REPS = "progression_reps"
+    const val PROGRESSION_RATE = "progression_rate"
+    const val PROGRESSION_NOT_NOW = "progression_not_now"
+
+    /**
      * The joints an exercise reported painful (ROADMAP N63), grouped so this object stays under its
      * ceiling: every control is addressed by the joint and side it acts on — the id
      * `jointSiteKey` builds from the enum names, so left and right are separate entries and no

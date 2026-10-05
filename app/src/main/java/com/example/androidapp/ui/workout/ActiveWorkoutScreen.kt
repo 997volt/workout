@@ -66,6 +66,7 @@ import com.example.androidapp.ui.components.WorkoutNoteDialog
 import com.example.androidapp.ui.components.ReadinessNoteDialog
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.AppTextButton
@@ -118,6 +119,7 @@ fun ActiveWorkoutRoute(
         onSaveReadinessNote = viewModel::onSaveReadinessNote,
         onDismissReadinessPrompt = viewModel::onDismissReadinessPrompt,
         onFinishExercise = viewModel::onFinishExercise,
+        onAcceptProgression = viewModel::onAcceptProgression,
         onRateExercise = viewModel::onRateExercise,
         // The undo is reopening, addressed by the id the state already carries — the
         // wrapper that used to sit here was a second name for one operation (N24).
@@ -171,7 +173,9 @@ fun ActiveWorkoutScreen(
     onAdjustRest: (Int) -> Unit,
     onSaveReadinessNote: (String?, List<SoreMuscle>) -> Unit,
     onDismissReadinessPrompt: () -> Unit,
-    onFinishExercise: (String, Int?, List<JointPain>) -> Unit,
+    onFinishExercise: (String) -> Unit,
+    /** Writes the next step a lifter accepted at *Done*, and finishes the exercise (ROADMAP N50). */
+    onAcceptProgression: (String, ProgressionDirection) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onUndoFinishExercise: () -> Unit,
     onDismissFinishUndo: () -> Unit,
@@ -249,6 +253,7 @@ fun ActiveWorkoutScreen(
             onSaveReadinessNote = onSaveReadinessNote,
             onDismissReadinessPrompt = onDismissReadinessPrompt,
             onFinishExercise = onFinishExercise,
+            onAcceptProgression = onAcceptProgression,
             onRateExercise = onRateExercise,
             onReopenExercise = onReopenExercise,
             onDiscard = onDiscard,
@@ -574,7 +579,8 @@ private fun WorkoutBody(
     onAdjustRest: (Int) -> Unit,
     onSaveReadinessNote: (String?, List<SoreMuscle>) -> Unit,
     onDismissReadinessPrompt: () -> Unit,
-    onFinishExercise: (String, Int?, List<JointPain>) -> Unit,
+    onFinishExercise: (String) -> Unit,
+    onAcceptProgression: (String, ProgressionDirection) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
     onDiscard: () -> Unit,
@@ -633,6 +639,7 @@ private fun WorkoutBody(
                         onEditSet = onEditSet,
                         onDeleteSet = onDeleteSet,
                         onFinishExercise = onFinishExercise,
+                        onAcceptProgression = onAcceptProgression,
                         onRateExercise = onRateExercise,
                         onReopenExercise = onReopenExercise,
                         onToggleSuperset = onToggleSuperset,
@@ -871,7 +878,8 @@ private fun ActiveWorkoutScreenPreview() {
             onAdjustRest = {},
             onSaveReadinessNote = { _, _ -> },
             onDismissReadinessPrompt = {},
-            onFinishExercise = { _, _, _ -> },
+            onFinishExercise = { _ -> },
+            onAcceptProgression = { _, _ -> },
             onRateExercise = { _, _, _ -> },
             onUndoFinishExercise = {},
             onDismissFinishUndo = {},
