@@ -20,10 +20,10 @@ repeated here.
   wrist, hip, knee, ankle, and the central neck and lower back — as separate left and right entries
   where the joint is paired, each picked one carrying its own 1–10 (a new pick starts at 1), and a save
   replaces the list. The single *Joint pain (1–10)* field and its note box are gone; a session rated
-  before the change keeps
-  its number and its free text, which history still reads, and the joint-pain trend reads the **worst**
-  joint rather than an average of two sides. The picked rows ride in the backup with the exercise they
-  describe, and the readiness note's sore-muscle list and this one now share a single editor.
+  before the change keeps its number and its free text, which history still reads, and the joint-pain
+  trend reads the **worst** joint rather than an average of two sides. The picked rows ride in the backup
+  with the exercise they describe, and the readiness note's sore-muscle list and this one now share a
+  single editor.
 - **The readiness note records which muscles are still sore, and how sore** (N62). The note was one
   free-text line — the right shape for "slept badly" and the wrong one for "quads 8, calves 3". The prompt
   a new workout opens with now offers the taxonomy's own muscle groups beside the note, each picked one
@@ -62,17 +62,17 @@ repeated here.
   container rather than the accent, so the two full-width pills do not read as the same action and the
   planned one is the app's suggestion — and last the next-up block at the bottom edge, set a size
   larger than before, whose *Start* grew from a text button into the same full-width pill and reads
-  *Start planned workout*. N55's split is untouched: the field still opens the read-only planned-workout dialog and the pill beside it
-  starts the workout, and one pill is drawn per next-up row because more than one program may be active
-  (P3.12).
+  *Start planned workout*. N55's split is untouched: the field still opens the read-only planned-workout
+  dialog and the pill beside it starts the workout, and one pill is drawn per next-up row because more
+  than one program may be active (P3.12).
 - **What the app asks when an exercise is done is progression, and the answer changes the plan** (N50).
   N59 withdrew the app's proposal but left two questions open — where a proposal belongs, and what earns
   one — and this answers both. *Done* opens a **progression prompt** that states what the plan asked and
   what was done and, where the plan was answered with room in hand, offers the next step as the lifter's
   choice: the smallest loadable step, or a rep. **Where there is no plan there is no prompt at all** —
   a next step is something only a plan can ask — so *Done* finishes the exercise and nothing else.
-  **Earned** is narrow on purpose — the exercise came
-  from a plan, every prescribed working set carried a target RPE, and each was performed with its reps
+  **Earned** is narrow on purpose — the exercise came from a plan, every prescribed working set carried
+  a target RPE, and each was performed with its reps
   met at or under that RPE; warm-ups are excluded, and an unrated session suggests nothing rather than
   guessing. Accepting writes the **plan** — the slot's prescription for a program start, the template's
   planned set for a direct one — because the plan is what the next run reads, and the app still writes
@@ -81,7 +81,7 @@ repeated here.
   rating dialog, and it is one value on a ten-point scale: it is now the same −/+ stepper the picked
   soreness and joint lists use, starting at 7 — a set worked hard without being taken to failure —
   rather than blank, so *Save* always carries the number the dialog shows. The ends are still named
-  beneath it (N12), and the dialog as a whole is skipped the way it always was.
+  beneath it (N12).
 - **A set's RPE is a stepped number, prefilled from the plan** (N6, N59). It was the workout screen's
   last typed field, and it was left blank on purpose — N59 showed the plan's target *beside* it rather
   than writing a target into a record of what happened. The lifter now reads the plan's own RPE in the
