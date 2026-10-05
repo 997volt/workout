@@ -2,7 +2,6 @@ package com.example.androidapp.ui.workout
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,12 +13,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,6 +40,8 @@ import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
+import com.example.androidapp.ui.components.ExerciseActionsMenu
+import com.example.androidapp.ui.components.ExerciseMenuTags
 import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.ProgressionDialog
 import com.example.androidapp.ui.components.SetEdit
@@ -198,12 +195,13 @@ private fun ExerciseSection(
             )
             // The rare actions moved in here rather than sitting on the header (ROADMAP N53): the
             // header is read constantly mid-session, and a text link in every one of them cost more
-            // attention than the action earned.
-            ExerciseOverflow(
+            // attention than the action earned. The menu itself is shared with the template editor
+            // since N71; only its tags and the removal's sentence belong to this screen.
+            WorkoutExerciseActions(
                 row = row,
-                onToggleSuperset = onToggleSuperset,
                 canMoveUp = canMoveUp,
                 canMoveDown = canMoveDown,
+                onToggleSuperset = onToggleSuperset,
                 onMove = onMoveExercise,
                 onRemove = onRemoveExercise,
             )
@@ -248,6 +246,53 @@ private fun ExerciseSection(
             modifier = Modifier.padding(top = 8.dp),
         )
     }
+}
+
+/**
+ * This screen's use of the shared exercise menu: its tags, its wording, and its two exclusions
+ * (ROADMAP N71, N53).
+ *
+ * Split out so [ExerciseSection] stays under the length this project allows, and because what belongs
+ * to *this* screen is exactly these seven arguments: the rest of the menu is the component's.
+ *
+ * The exclusions are the workout's own. A row with nothing above it is passed a null
+ * [onToggleSuperset] (B28), and a done exercise is out of the round as well (N7) — both make
+ * [ExerciseActionsMenu] leave the pairing entry out rather than write something that does nothing. A
+ * direction with nowhere to go is left to the list, which is what [canMoveUp]/[canMoveDown] carry.
+ */
+@Composable
+private fun WorkoutExerciseActions(
+    row: SessionExerciseRow,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onToggleSuperset: (() -> Unit)?,
+    onMove: (Int) -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ExerciseActionsMenu(
+        contentDescription = stringResource(R.string.exercise_menu_more, row.name),
+        canMoveUp = canMoveUp,
+        canMoveDown = canMoveDown,
+        supersetGrouped = if (onToggleSuperset != null && !row.isFinished) {
+            row.supersetGroup != null
+        } else {
+            null
+        },
+        removeTitle = stringResource(R.string.active_workout_remove_confirm_title),
+        removeText = stringResource(R.string.active_workout_remove_confirm_text, row.name),
+        onToggleSuperset = { onToggleSuperset?.invoke() },
+        onMove = onMove,
+        onRemove = onRemove,
+        tags = ExerciseMenuTags(
+            menu = TestTags.exerciseMenu(row.id),
+            moveUp = TestTags.exerciseMove(row.id, up = true),
+            moveDown = TestTags.exerciseMove(row.id, up = false),
+            superset = TestTags.supersetToggle(row.id),
+            remove = TestTags.EXERCISE_REMOVE,
+        ),
+        modifier = modifier,
+    )
 }
 
 /**
@@ -335,72 +380,6 @@ private fun FinishExerciseAction(
             onNotNow = {
                 prompting = false
                 onFinish(row.id)
-            },
-        )
-    }
-}
-
-/**
- * One exercise's rare actions, behind its own ⋮ menu (ROADMAP N53).
- *
- * *Superset with above* was a text link in every exercise header and *Delete* an icon beside *Done*.
- * Both are rarely used and the header is read constantly mid-session, so the two of them cost more
- * attention than they earned. They moved into a per-exercise overflow — the shape the workout-level
- * actions used until N42 removed the one that no longer had a reason to exist — because the action
- * moved rather than changed:
- *
- * - Delete keeps its confirmation (B2). Removing an exercise soft-deletes it *and* takes its sets out
- *   of the session, and unlike deleting a set or marking one done there is no undo to reach for, so
- *   the guard is a question rather than a way back.
- * - Pairing keeps its row-0 exclusion (B28): the caller passes a null [onToggleSuperset] for the first
- *   exercise, which has nothing above it, so the entry is simply not offered rather than writing a
- *   group that would rewrite every ungrouped row. A done exercise is out of the round as well (N7),
- *   which is why the item goes with its Log set button.
- * - Order (N54) offers only the direction that exists, for the same reason: the list knows which row
- *   it is drawing, so the first exercise has no *Move up* rather than one that writes nothing.
- */
-@Composable
-private fun ExerciseOverflow(
-    row: SessionExerciseRow,
-    onToggleSuperset: (() -> Unit)?,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onMove: (Int) -> Unit,
-    onRemove: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var menuOpen by remember { mutableStateOf(false) }
-    var confirmingRemoval by remember { mutableStateOf(false) }
-
-    Box(modifier = modifier) {
-        IconButton(
-            onClick = { menuOpen = true },
-            modifier = Modifier.testTag(TestTags.exerciseMenu(row.id)),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.MoreVert,
-                contentDescription = stringResource(R.string.active_workout_exercise_more, row.name),
-            )
-        }
-        ExerciseMenuItems(
-            row = row,
-            expanded = menuOpen,
-            onDismiss = { menuOpen = false },
-            onToggleSuperset = onToggleSuperset,
-            canMoveUp = canMoveUp,
-            canMoveDown = canMoveDown,
-            onMove = onMove,
-            onRemove = { confirmingRemoval = true },
-        )
-    }
-
-    if (confirmingRemoval) {
-        ConfirmRemovalDialog(
-            name = row.name,
-            onDismiss = { confirmingRemoval = false },
-            onConfirm = {
-                confirmingRemoval = false
-                onRemove()
             },
         )
     }
@@ -724,118 +703,5 @@ private fun SetExtrasMarker(set: SetRow, modifier: Modifier = Modifier) {
             modifier = modifier,
         )
     }
-}
-
-/**
- * The entries one exercise's overflow offers (ROADMAP N53, N54).
- *
- * Its own composable for the reason the project keeps splitting them: the button, the dialog and the
- * menu were one function at ninety-odd lines, and each of the three is a thing that can be read on its
- * own. Order comes first — it is the entry most likely to be reached for mid-session, and the one that
- * changes what everything below it means — and each direction is offered only where it exists, because
- * the list this menu is drawn from knows a row's neighbours (N54, B28's shape).
- */
-@Composable
-private fun ExerciseMenuItems(
-    row: SessionExerciseRow,
-    expanded: Boolean,
-    onDismiss: () -> Unit,
-    onToggleSuperset: (() -> Unit)?,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onMove: (Int) -> Unit,
-    onRemove: () -> Unit,
-) {
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        if (canMoveUp) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.active_workout_move_up)) },
-                onClick = {
-                    onDismiss()
-                    onMove(-1)
-                },
-                modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = true)),
-            )
-        }
-        if (canMoveDown) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.active_workout_move_down)) },
-                onClick = {
-                    onDismiss()
-                    onMove(1)
-                },
-                modifier = Modifier.testTag(TestTags.exerciseMove(row.id, up = false)),
-            )
-        }
-        if (onToggleSuperset != null && !row.isFinished) {
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        stringResource(
-                            if (row.supersetGroup == null) {
-                                R.string.superset_pair
-                            } else {
-                                R.string.superset_unpair
-                            },
-                        ),
-                    )
-                },
-                onClick = {
-                    onDismiss()
-                    onToggleSuperset()
-                },
-                modifier = Modifier.testTag(TestTags.supersetToggle(row.id)),
-            )
-        }
-        DropdownMenuItem(
-            text = {
-                Text(
-                    text = stringResource(R.string.active_workout_remove_action),
-                    color = MaterialTheme.colorScheme.error,
-                )
-            },
-            onClick = {
-                onDismiss()
-                onRemove()
-            },
-            modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE),
-        )
-    }
-}
-
-/**
- * The question a removal asks before it takes anything (ROADMAP B2, moved by N53).
- *
- * Its own composable because the overflow around it is at the length this project allows, and because
- * the guard is the part worth reading on its own: removing an exercise takes its sets with it and has
- * no undo to reach for.
- */
-@Composable
-private fun ConfirmRemovalDialog(
-    name: String,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.active_workout_remove_confirm_title)) },
-        text = { Text(stringResource(R.string.active_workout_remove_confirm_text, name)) },
-        confirmButton = {
-            AppTextButton(
-                onClick = onConfirm,
-                modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE_CONFIRM),
-            ) {
-                Text(stringResource(R.string.active_workout_remove_confirm))
-            }
-        },
-        dismissButton = {
-            AppTextButton(
-                onClick = onDismiss,
-                modifier = Modifier.testTag(TestTags.EXERCISE_REMOVE_CANCEL),
-            ) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
-    )
 }
 

@@ -45,6 +45,13 @@ repeated here.
   N52's *"Planned work done — log extra sets if you want them."* at zero, which is the state that
   sentence was written for. The count and the *Log extra set* label share one rule, so they cannot
   disagree about when the plan's work is finished.
+- **A template's exercise actions live behind one ⋮, and removing one asks first** (N71). The row
+  carried a *Superset with above* text link, two arrows and a delete icon; the live workout had
+  already moved the same actions into a per-exercise overflow (N53). The template now draws that same
+  menu — order, then pairing, then the destructive entry last and coloured — and it is **one
+  component** used by both screens rather than a second copy, so the two cannot drift. Removal keeps
+  the workout's guard: the planned sets go with the row and there is no undo to reach for, so it is a
+  question rather than a tap.
 
 ### Removed
 

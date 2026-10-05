@@ -84,22 +84,24 @@
     <string name="active_workout_discard_program">It was started from a program, so leaving it unfinished counts as a missed session.</string>
     <string name="active_workout_empty">No exercises yet</string>
     <string name="active_workout_empty_hint">Add your first exercise to start tracking this workout.</string>
-    <!-- One exercise's rare actions live behind its own overflow (ROADMAP N53): the content
-         description names the exercise the menu belongs to, and the entry names the action. -->
-    <string name="active_workout_exercise_more">%1$s actions</string>
-    <string name="active_workout_remove_action">Remove exercise</string>
-    <!-- Reordering this session's own exercises (ROADMAP N54). The words name the effect on the
+    <!-- One exercise's rare actions live behind its own overflow (ROADMAP N53, shared by N71): the
+         content description names the exercise the menu belongs to, and each entry names the action.
+         The names are the menu's, not one screen's, because both the workout and a template draw it. -->
+    <string name="exercise_menu_more">%1$s actions</string>
+    <string name="exercise_menu_remove">Remove exercise</string>
+    <!-- Reordering an exercise inside its own list (ROADMAP N54). The words name the effect on the
          list, not a direction on screen, so they read the same way in a right-to-left layout. -->
-    <string name="active_workout_move_up">Move up</string>
-    <string name="active_workout_move_down">Move down</string>
+    <string name="exercise_menu_move_up">Move up</string>
+    <string name="exercise_menu_move_down">Move down</string>
     <!-- The rest an exercise prescribes, shown as a fixed label when the timer is switched off
          (ROADMAP N44): the same value the countdown would have used, with nothing running. -->
     <string name="active_workout_rest_prescription">Rest %1$s</string>
     <!-- Removing an exercise takes its sets with it and has no undo (ROADMAP B2),
-         so the dialog says both things rather than asking a bare question. -->
+         so the dialog says both things rather than asking a bare question. The sentence is the
+         screen's — a workout loses sets, a template loses planned ones — the label is shared. -->
     <string name="active_workout_remove_confirm_title">Remove this exercise?</string>
     <string name="active_workout_remove_confirm_text">%1$s and its sets leave this workout. This cannot be undone.</string>
-    <string name="active_workout_remove_confirm">Remove</string>
+    <string name="exercise_remove_confirm">Remove</string>
     <!-- Ending one exercise (ROADMAP N7). The workout-level action is already
          called Finish, so this is Done, never Finish. -->
     <string name="active_workout_done_exercise">Done</string>
@@ -165,9 +167,10 @@
     <string name="action_close">Close</string>
     <string name="template_no_exercises">No exercises yet</string>
     <string name="template_no_exercises_hint">Add the exercises you want, then put them in the order you train them.</string>
-    <string name="template_move_up">Move %1$s up</string>
-    <string name="template_move_down">Move %1$s down</string>
-    <string name="template_remove_exercise">Remove %1$s</string>
+    <!-- Removing a planned exercise takes its sets with it and has no undo (ROADMAP B2, N71):
+         the sentence says so, the same way the workout's does for its own sets. -->
+    <string name="template_remove_confirm_title">Remove this exercise?</string>
+    <string name="template_remove_confirm_text">%1$s and its planned sets leave this template. This cannot be undone.</string>
     <string name="template_delete">Delete template</string>
     <string name="template_delete_confirm_title">Delete this template?</string>
     <string name="template_delete_confirm_text">The plan goes away. Workouts you already did with it stay in your history.</string>

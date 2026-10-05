@@ -399,6 +399,13 @@ the rule; that one argues it.
   computed from **one** rule (every logged set against every planned one), so the line cannot say work
   is done while the button still promises the plan's next set; a null plan stays null rather than
   reading zero, because "nothing was planned" and "all of it is done" are different statements.
+- **An exercise's rare actions are one menu, and removing one always asks** (N71, extending N53 and
+  B2). The workout and the template editor draw the same component, because a second screen carrying
+  a near-copy of a menu is how two vocabularies for one idea start. Each entry is offered only where
+  it exists — a direction with nowhere to go is absent rather than present-and-inert, and the first
+  row has no pairing entry (B28) — and the destructive one is last, coloured, and behind a
+  confirmation whose sentence the screen supplies: what the sets leave is a workout or a template, but
+  the guard is the same one, because a soft delete with no undo reachable from the UI is not a tap.
 
 - **A destination belongs in the action row, and a heading does not carry a way out of itself**
   (N42). Programs moved from the home overflow into the pair above the start pill, and "See all

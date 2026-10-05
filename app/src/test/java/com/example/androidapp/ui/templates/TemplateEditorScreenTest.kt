@@ -9,8 +9,10 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
@@ -19,6 +21,7 @@ import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -27,8 +30,9 @@ import org.junit.runner.RunWith
 /**
  * One template's editor (ROADMAP N3).
  *
- * The reorder buttons are the part worth pinning down: they act on *positions*, so
- * the direction each one sends has to be the direction the user sees.
+ * The reorder entries are the part worth pinning down: they act on *positions*, so the direction each
+ * one sends has to be the direction the user sees. Since N71 they live behind the row's ⋮, the same
+ * menu the live workout draws, so reaching one means opening it first.
  */
 @RunWith(AndroidJUnit4::class)
 class TemplateEditorScreenTest {
@@ -98,6 +102,7 @@ class TemplateEditorScreenTest {
         var moved: Pair<String, Int>? = null
         setScreen(actions = Actions(onMoveExercise = { id, delta -> moved = id to delta }))
 
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te1")).performClick()
         composeTestRule.onNodeWithTag(TestTags.templateMove("te1", up = false)).performClick()
 
         assertEquals("te1" to 1, moved)
@@ -108,32 +113,83 @@ class TemplateEditorScreenTest {
         var moved: Pair<String, Int>? = null
         setScreen(actions = Actions(onMoveExercise = { id, delta -> moved = id to delta }))
 
+        // The second row's ⋮ is under the extended FAB after the minimal scroll, so the menu is opened
+        // through its semantics action: a swallowed tap would read as a missing entry (N71).
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
-            .performScrollToNode(hasTestTag(TestTags.templateMove("te2", up = true)))
+            .performScrollToNode(hasTestTag(TestTags.templateMenu("te2")))
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te2"))
+            .performSemanticsAction(SemanticsActions.OnClick)
         composeTestRule.onNodeWithTag(TestTags.templateMove("te2", up = true)).performClick()
 
         assertEquals("te2" to -1, moved)
     }
 
     @Test
-    fun atTheEdges_theRelevantMoveButtonIsDisabled() {
+    fun atTheEdges_theRelevantMoveEntryIsNotOffered() {
         setScreen()
 
-        // There is nowhere for the first exercise to go up, or the last to go down.
-        composeTestRule.onNodeWithTag(TestTags.templateMove("te1", up = true)).assertIsNotEnabled()
+        // There is nowhere for the first exercise to go up, or the last to go down, so the entry is
+        // absent rather than present-and-inert — B28's shape, now through the shared menu (N71).
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateMove("te1", up = true)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.templateMove("te1", up = false)).performClick()
+
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
-            .performScrollToNode(hasTestTag(TestTags.templateMove("te2", up = false)))
-        composeTestRule.onNodeWithTag(TestTags.templateMove("te2", up = false)).assertIsNotEnabled()
+            .performScrollToNode(hasTestTag(TestTags.templateMenu("te2")))
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te2"))
+            .performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.onNodeWithTag(TestTags.templateMove("te2", up = false)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.templateMove("te2", up = true)).assertExists()
     }
 
     @Test
-    fun removingAnExercise_reportsThatRow() {
+    fun removingAnExercise_asksFirst_andReportsThatRowOnConfirm() {
+        // ROADMAP N71: a template's removal keeps the guard the workout's has (B2) — the planned sets
+        // go with the row and there is no undo to reach for.
         var removed: String? = null
         setScreen(actions = Actions(onRemoveExercise = { removed = it }))
 
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te1")).performClick()
         composeTestRule.onNodeWithTag(TestTags.templateRemove("te1")).performClick()
+        assertNull("the dialog must come before the write", removed)
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_REMOVE_CONFIRM).performClick()
 
         assertEquals("te1", removed)
+    }
+
+    @Test
+    fun cancellingARemoval_writesNothing() {
+        var removed: String? = null
+        setScreen(actions = Actions(onRemoveExercise = { removed = it }))
+
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateRemove("te1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_REMOVE_CANCEL).performClick()
+
+        assertNull(removed)
+    }
+
+    @Test
+    fun theFirstExercise_isNotOfferedTheSupersetEntry() {
+        // B28's row-0 exclusion, through the shared menu (N71): nothing above it to pair with.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te1")).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.supersetToggle("te1")).assertDoesNotExist()
+    }
+
+    @Test
+    fun theSecondExercise_isOfferedTheSupersetEntry() {
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.templateMenu("te2")))
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te2"))
+            .performSemanticsAction(SemanticsActions.OnClick)
+
+        composeTestRule.onNodeWithTag(TestTags.supersetToggle("te2")).assertExists()
     }
 
     @Test

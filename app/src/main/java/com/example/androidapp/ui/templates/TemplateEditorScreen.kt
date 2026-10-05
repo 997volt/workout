@@ -18,8 +18,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -63,6 +61,8 @@ import com.example.androidapp.domain.model.warmUpRampFor
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.CenteredMessage
+import com.example.androidapp.ui.components.ExerciseActionsMenu
+import com.example.androidapp.ui.components.ExerciseMenuTags
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TemplatePlanDialog
 import com.example.androidapp.ui.components.TemplateSetDialog
@@ -560,49 +560,32 @@ private fun TemplateExerciseRow(
             Text("${exercise.primaryMuscle.label} · ${exercise.equipment.label}")
         },
         trailingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (onToggleSuperset != null) {
-                    PlanSupersetToggle(exercise = exercise, onToggle = onToggleSuperset)
-                }
-                IconButton(
-                    onClick = onMoveUp,
-                    enabled = !isFirst,
-                    modifier = Modifier.testTag(TestTags.templateMove(exercise.id, up = true)),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowUp,
-                        contentDescription = stringResource(
-                            R.string.template_move_up,
-                            exercise.exerciseName,
-                        ),
-                    )
-                }
-                IconButton(
-                    onClick = onMoveDown,
-                    enabled = !isLast,
-                    modifier = Modifier.testTag(TestTags.templateMove(exercise.id, up = false)),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.KeyboardArrowDown,
-                        contentDescription = stringResource(
-                            R.string.template_move_down,
-                            exercise.exerciseName,
-                        ),
-                    )
-                }
-                IconButton(
-                    onClick = onRemove,
-                    modifier = Modifier.testTag(TestTags.templateRemove(exercise.id)),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = stringResource(
-                            R.string.template_remove_exercise,
-                            exercise.exerciseName,
-                        ),
-                    )
-                }
-            }
+            // One control, not four (ROADMAP N71): the superset toggle, the two arrows and the delete
+            // icon became the same ⋮ the live workout uses, and removal now asks first — it takes the
+            // planned sets with it and there is no undo to reach for (B2).
+            ExerciseActionsMenu(
+                contentDescription = stringResource(R.string.exercise_menu_more, exercise.exerciseName),
+                canMoveUp = !isFirst,
+                canMoveDown = !isLast,
+                // The first planned exercise has nothing above it to pair with (B28), so the entry is
+                // not offered rather than writing a group that rewrites every ungrouped row.
+                supersetGrouped = onToggleSuperset?.let { exercise.supersetGroup != null },
+                removeTitle = stringResource(R.string.template_remove_confirm_title),
+                removeText = stringResource(
+                    R.string.template_remove_confirm_text,
+                    exercise.exerciseName,
+                ),
+                onToggleSuperset = { onToggleSuperset?.invoke() },
+                onMove = { delta -> if (delta < 0) onMoveUp() else onMoveDown() },
+                onRemove = onRemove,
+                tags = ExerciseMenuTags(
+                    menu = TestTags.templateMenu(exercise.id),
+                    moveUp = TestTags.templateMove(exercise.id, up = true),
+                    moveDown = TestTags.templateMove(exercise.id, up = false),
+                    superset = TestTags.supersetToggle(exercise.id),
+                    remove = TestTags.templateRemove(exercise.id),
+                ),
+            )
         },
         modifier = modifier.testTag(TestTags.templateExerciseRow(exercise.id)),
     )
@@ -673,31 +656,3 @@ private fun TemplateEditorScreenPreview() {
 /** `A1 · ` for a grouped planned exercise, or nothing (ROADMAP B16). */
 private fun superscriptLabel(exercise: TemplateExercise, labels: Map<String, String>): String =
     labels[exercise.id]?.let { "$it · " }.orEmpty()
-
-/**
- * Planning an exercise into the superset above, or out of it (ROADMAP B16).
- *
- * Its own composable because the row around it is at the length this project allows, and
- * because the word changes with the state: "pair" when it stands alone, "leave" when it does not.
- */
-@Composable
-private fun PlanSupersetToggle(
-    exercise: TemplateExercise,
-    onToggle: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    AppTextButton(
-        onClick = onToggle,
-        modifier = modifier.testTag(TestTags.supersetToggle(exercise.id)),
-    ) {
-        Text(
-            stringResource(
-                if (exercise.supersetGroup == null) {
-                    R.string.superset_pair
-                } else {
-                    R.string.superset_unpair
-                },
-            ),
-        )
-    }
-}

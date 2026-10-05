@@ -277,6 +277,9 @@ object TestTags {
 
     fun templateExerciseRow(id: String) = "template_exercise_$id"
 
+    /** A planned exercise's ⋮: the entries it opens are tagged by the helpers below (ROADMAP N71). */
+    fun templateMenu(id: String) = "template_menu_$id"
+
     /** Reordering a template's exercises: one helper, because up and down are one idea. */
     fun templateMove(id: String, up: Boolean) = "template_move_${if (up) "up" else "down"}_$id"
 
