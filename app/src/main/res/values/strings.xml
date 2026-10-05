@@ -330,8 +330,9 @@
     <string name="trends_metric_muscle">Muscle feel</string>
     <string name="trends_metric_joint">Joint pain</string>
     <!-- How an exercise felt (ROADMAP N8). Deliberately unlabelled ends: numbers
-         only for now, because an anchor would be a claim the app cannot justify. -->
-    <string name="rating_prompt_title">How did that feel?</string>
+         only for now, because an anchor would be a claim the app cannot justify.
+         One title and one way out: the dialog is only ever opened from the
+         exercise's own rating row, so there is no prompt wording to vary (N8). -->
     <string name="rating_edit_title">How it felt</string>
     <string name="rating_muscle_label">Muscle feel (1–10)</string>
     <!-- N12: what 1 and 10 mean, said where the number is chosen. The words live
@@ -341,7 +342,6 @@
     <!-- The muscle-feel stepper's two buttons (ROADMAP N8): the number is stepped, not typed. -->
     <string name="rating_muscle_decrease">Lower muscle feel</string>
     <string name="rating_muscle_increase">Raise muscle feel</string>
-    <string name="rating_skip">Skip</string>
     <string name="rating_row_title">How it felt</string>
     <string name="rating_row_add">Tap to rate</string>
     <string name="rating_muscle_value">Muscle feel %1$d</string>

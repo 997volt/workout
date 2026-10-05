@@ -184,9 +184,9 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun withNoPlan_tappingDone_isTheRatingPrompt_thatFinishesOnSave() {
-        // ROADMAP N50: no plan means no next step to decide, so Done stays the rating prompt it has
-        // always been (N8) rather than a prompt whose only answer is that it has nothing to say.
+    fun withNoPlan_tappingDone_onlyFinishesTheExercise() {
+        // N50: no plan means no next step to decide. N8: leaving the exercise never asks how it felt,
+        // so nothing opens at all — the rating is the exercise's own row.
         var rated: Rounding? = null
         var finished: String? = null
         setScreen(
@@ -200,34 +200,8 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
 
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertExists()
-        assertEquals("nothing is written before the rating is settled", null, finished)
-
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_INCREASE).performClick()
-        composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
-
-        assertEquals(Rounding("se1", 8, emptyList()), rated)
-        assertEquals("se1", finished)
-    }
-
-    @Test
-    fun withNoPlan_skippingTheRating_stillFinishes() {
-        // Skipping the capture is what *Skip* says, and with no progression prompt behind it there is
-        // nothing left to answer.
-        var rated: Rounding? = null
-        var finished: String? = null
-        setScreen(
-            state(isFinished = false),
-            actions = Actions(
-                onRateExercise = { id, feel, joints -> rated = Rounding(id, feel, joints) },
-                onFinishExercise = { finished = it },
-            ),
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
-        composeTestRule.onNodeWithTag(TestTags.RATING_DISMISS).performClick()
-
-        assertEquals("skipping writes nothing", null, rated)
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertDoesNotExist()
+        assertEquals("Done writes nothing", null, rated)
         assertEquals("se1", finished)
     }
 
@@ -246,52 +220,22 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun thePromptsRateAction_stillOpensTheRatingDialog() {
-        // N50: the rating is not lost — the prompt carries it into N8's own dialog, and the inline
-        // row (N10) stays where it is.
+    fun theProgressionPrompt_doesNotOfferTheRating() {
+        // N8: the rating belongs to the exercise's own row, so the prompt asks about the plan and
+        // nothing else — nothing in it opens the rating dialog.
         var rated: Rounding? = null
-        var finished: String? = null
         setScreen(
             state(isFinished = false, progression = earnedPrompt()),
             actions = Actions(
                 onRateExercise = { id, feel, joints -> rated = Rounding(id, feel, joints) },
-                onFinishExercise = { finished = it },
             ),
         )
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_RATE).performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_INCREASE).performClick()
-        // N63's picked joint rides with the ratings the prompt collects, with its own score.
-        composeTestRule.onNodeWithTag(TestTags.Rating.JOINT_ADD).performScrollTo().performClick()
-        composeTestRule.onNodeWithTag(TestTags.Rating.jointOption(jointSiteKey(Joint.KNEE, Side.LEFT)))
-            .performClick()
-        composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
-
-        assertEquals(Rounding("se1", 8, listOf(JointPain(Joint.KNEE, Side.LEFT, 1))), rated)
-        assertEquals("rating is a detour, not the finish", null, finished)
-    }
-
-    @Test
-    fun closingTheRating_returnsToThePrompt_ratherThanFinishing() {
-        var finished: String? = null
-        setScreen(
-            state(isFinished = false, progression = earnedPrompt()),
-            actions = Actions(onFinishExercise = { finished = it }),
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performClick()
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_RATE).performClick()
-        composeTestRule.onNodeWithTag(TestTags.RATING_DISMISS).performClick()
-
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).assertExists()
-        assertEquals(null, finished)
-
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).performClick()
-
-        assertEquals("se1", finished)
+        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertDoesNotExist()
+        assertEquals("nothing in the prompt rates the exercise", null, rated)
     }
 
     @Test

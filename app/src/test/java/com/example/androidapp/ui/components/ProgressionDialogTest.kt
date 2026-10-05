@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -39,7 +40,6 @@ class ProgressionDialogTest {
 
     private var accepted: ProgressionDirection? = null
     private var notNow = false
-    private var rated = false
 
     private fun show(prompt: ProgressionPrompt) {
         composeTestRule.setContent {
@@ -48,7 +48,6 @@ class ProgressionDialogTest {
                 prompt = prompt,
                 onAccept = { accepted = it },
                 onNotNow = { notNow = true },
-                onRate = { rated = true },
             )
         }
     }
@@ -101,18 +100,13 @@ class ProgressionDialogTest {
     }
 
     @Test
-    fun theRateAction_isStillReachable_fromThePrompt() {
-        // The rating is not lost to the progression question (N50): the prompt carries it into N8's
-        // dialog, which is the whole reason Done could stop opening it first.
+    fun thePrompt_leavesTheRatingToTheExercise() {
+        // N8: the rating belongs to the exercise's own row, opened when the lifter reaches for it, so
+        // leaving the exercise never asks for one.
         show(prompt())
 
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_RATE)
-            .assertIsDisplayed()
-            .assertTextContains(text(R.string.rating_prompt_title))
-            .performClick()
-
-        assertTrue(rated)
-        assertNull("asking to rate is not accepting a step", accepted)
+        composeTestRule.onNodeWithText(text(R.string.rating_edit_title)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).assertIsDisplayed()
     }
 
     @Test
@@ -122,8 +116,7 @@ class ProgressionDialogTest {
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_LOAD).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_REPS).assertDoesNotExist()
-        // The two ways out are still there, which is what keeps Done from being a dead end.
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_RATE).assertIsDisplayed()
+        // Declining is still there, which is what keeps Done from being a dead end.
         composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).assertIsDisplayed()
     }
 

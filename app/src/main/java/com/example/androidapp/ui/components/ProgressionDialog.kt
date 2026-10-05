@@ -20,11 +20,12 @@ import com.example.androidapp.domain.model.ProgressionPrompt
 /**
  * The next step a plan earned, as the lifter's decision (ROADMAP N50).
  *
- * *Done* used to open *How did that feel?* first; it opens this instead. The dialog states what the
- * plan asked and what was done, and — when the session earned one — offers the next step as a choice:
- * **a load** (the smallest loadable step) **or a rep**, with *Not now* equally available. The rating
- * is not lost: the prompt carries *How did that feel?* into N8's own dialog, and the inline rating
- * row (N10) stays where it is on the exercise.
+ * *Done* opens this where a plan can answer it. The dialog states what the plan asked and what was
+ * done, and — when the session earned one — offers the next step as a choice: **a load** (the smallest
+ * loadable step) **or a rep**, with *Not now* equally available.
+ *
+ * The rating is not here (N8): *How did that feel?* belongs to the exercise's own row, opened when the
+ * lifter reaches for it, so leaving the exercise never asks for one.
  *
  * It is deliberately **not** a gate. *Not now* and a tap outside it both mean "suggest nothing", and
  * doing neither is as reachable as doing either: the app states a step it read out of the plan and the
@@ -41,7 +42,6 @@ fun ProgressionDialog(
     prompt: ProgressionPrompt,
     onAccept: (ProgressionDirection) -> Unit,
     onNotNow: () -> Unit,
-    onRate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AlertDialog(
@@ -51,14 +51,9 @@ fun ProgressionDialog(
         onDismissRequest = onNotNow,
         title = { Text(stringResource(R.string.progression_title, exerciseName)) },
         text = { ProgressionBody(prompt = prompt, onAccept = onAccept) },
-        confirmButton = {
-            AppTextButton(
-                onClick = onRate,
-                modifier = Modifier.testTag(TestTags.PROGRESSION_RATE),
-            ) {
-                Text(stringResource(R.string.rating_prompt_title))
-            }
-        },
+        // Nothing to confirm: the two steps are offered in the body, beside what they would change, and
+        // *Not now* is the only thing left for the button row to say.
+        confirmButton = {},
         dismissButton = {
             AppTextButton(
                 onClick = onNotNow,

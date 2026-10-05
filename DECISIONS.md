@@ -245,8 +245,10 @@ the rule; that one argues it.
   computed from the rep ceiling alone and offered itself beside the next set, where this one is
   conditioned on the session's own effort and waits to be asked. An unrated session or a plan with no
   target RPE suggests nothing rather than guessing. **Where there is no plan there is no prompt at all**:
-  a next step is something only a plan can ask, so *Done* stays the rating prompt it has always been
-  (N8). **Accepting writes the plan** — the slot's prescription for a program start (P3.8), the
+  a next step is something only a plan can ask, so *Done* simply finishes the exercise. **The rating is
+  never on this path** — *How did that feel?* is opened from the exercise's own row, when the lifter
+  reaches for it, because asking on the way out asks at the moment the answer is worth least.
+  **Accepting writes the plan** — the slot's prescription for a program start (P3.8), the
   template's planned set for a direct one — because the plan is what the next run reads; a "next target"
   stored on the session was rejected as the forward view N16 removed.
 

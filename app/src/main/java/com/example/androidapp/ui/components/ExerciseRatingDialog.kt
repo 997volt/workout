@@ -36,9 +36,10 @@ import com.example.androidapp.domain.model.jointSiteLabel
 /**
  * How an exercise felt — muscle feel and joint pain (ROADMAP N8, N63).
  *
- * One dialog serves the prompt shown when an exercise is marked done and the edit
- * reached from the workout detail; [isPrompt] only changes the wording and whether
- * the secondary button reads *Skip* or *Cancel*.
+ * One dialog, opened where the lifter reaches for it: the exercise's own rating row on the workout
+ * screen, and the same row on the workout detail. *Done* does not open it, which is why there is no
+ * prompt wording left to vary — the title and the secondary button read the same wherever it is
+ * reached from.
  *
  * Both halves are steppers on the same 1–10 scale, because neither can be anything else: muscle feel is
  * one number about the whole exercise (N8), and the joint half is a picked list — a joint and, for the
@@ -51,7 +52,6 @@ import com.example.androidapp.domain.model.jointSiteLabel
 fun ExerciseRatingDialog(
     initialMuscleFeel: Int?,
     initialJoints: List<JointPain>,
-    isPrompt: Boolean,
     onDismiss: () -> Unit,
     onSave: (muscleFeel: Int?, joints: List<JointPain>) -> Unit,
     modifier: Modifier = Modifier,
@@ -65,11 +65,7 @@ fun ExerciseRatingDialog(
         modifier = modifier,
         onDismissRequest = onDismiss,
         title = {
-            Text(
-                stringResource(
-                    if (isPrompt) R.string.rating_prompt_title else R.string.rating_edit_title,
-                ),
-            )
+            Text(stringResource(R.string.rating_edit_title))
         },
         text = {
             RatingFields(
@@ -102,11 +98,7 @@ fun ExerciseRatingDialog(
                 modifier = Modifier.testTag(TestTags.RATING_DISMISS),
                 onClick = onDismiss,
             ) {
-                Text(
-                    stringResource(
-                        if (isPrompt) R.string.rating_skip else R.string.action_cancel,
-                    ),
-                )
+                Text(stringResource(R.string.action_cancel))
             }
         },
     )

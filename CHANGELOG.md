@@ -69,10 +69,9 @@ repeated here.
   N59 withdrew the app's proposal but left two questions open — where a proposal belongs, and what earns
   one — and this answers both. *Done* opens a **progression prompt** that states what the plan asked and
   what was done and, where the plan was answered with room in hand, offers the next step as the lifter's
-  choice: the smallest loadable step, or a rep. *How did that feel?* is one action away on the same
-  prompt, and the inline rating row is untouched. **Where there is no plan there is no prompt at all** —
-  a next step is something only a plan can ask — so *Done* stays the rating prompt it has always been
-  (N8). **Earned** is narrow on purpose — the exercise came
+  choice: the smallest loadable step, or a rep. **Where there is no plan there is no prompt at all** —
+  a next step is something only a plan can ask — so *Done* finishes the exercise and nothing else.
+  **Earned** is narrow on purpose — the exercise came
   from a plan, every prescribed working set carried a target RPE, and each was performed with its reps
   met at or under that RPE; warm-ups are excluded, and an unrated session suggests nothing rather than
   guessing. Accepting writes the **plan** — the slot's prescription for a program start, the template's
@@ -99,6 +98,11 @@ repeated here.
   from the last set that named one; the per-set columns stay, so a plan set through a set's dialog
   keeps its value and a backup written before the change still restores whole. A reader prefers the
   exercise's number and falls back to the set's, so an old file behaves as it did.
+- **The rating is opened by the lifter, never handed to them** (N8, N50). *Done* used to end in *How did
+  that feel?* — with a plan, one action inside the progression prompt; without one, as the prompt
+  itself. Both are gone: the exercise's own rating row is the only way in, so finishing an exercise
+  never asks how it felt. The dialog has one title and one way out now, because there is no prompt
+  wording left to vary.
 
 ### Fixed
 

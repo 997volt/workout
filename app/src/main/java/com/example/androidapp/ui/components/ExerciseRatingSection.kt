@@ -78,7 +78,6 @@ fun ExerciseRatingSection(
         ExerciseRatingDialog(
             initialMuscleFeel = muscleFeel,
             initialJoints = joints,
-            isPrompt = false,
             onDismiss = { editing = false },
             onSave = { feel, picked ->
                 editing = false

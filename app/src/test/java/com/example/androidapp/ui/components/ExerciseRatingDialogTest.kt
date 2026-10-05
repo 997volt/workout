@@ -44,13 +44,11 @@ class ExerciseRatingDialogTest {
     private fun show(
         initialFeel: Int? = null,
         initialJoints: List<JointPain> = emptyList(),
-        isPrompt: Boolean = true,
     ) {
         composeTestRule.setContent {
             ExerciseRatingDialog(
                 initialMuscleFeel = initialFeel,
                 initialJoints = initialJoints,
-                isPrompt = isPrompt,
                 onDismiss = { dismissed = true },
                 onSave = { feel, joints ->
                     saved = feel to joints
@@ -102,7 +100,6 @@ class ExerciseRatingDialogTest {
         show(
             initialFeel = 8,
             initialJoints = listOf(JointPain(Joint.KNEE, Side.LEFT, 4)),
-            isPrompt = false,
         )
 
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertTextEquals("8/10")
