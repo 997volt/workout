@@ -660,6 +660,15 @@ private fun SetLine(
                 ),
                 style = MaterialTheme.typography.bodyLarge,
             )
+            // What a set was is reps, load *and* effort, so the RPE reads on the line rather than as a
+            // marker (N6): the stepper records one per set (N59), and the row has to say it back.
+            set.rpeHalves?.let { halves ->
+                Text(
+                    text = rpeMarker(halves),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             SetExtrasMarker(set = set)
         }
         if (editable) {
@@ -676,11 +685,13 @@ private fun SetLine(
 }
 
 /**
- * The small marker a set carries when it has an RPE or a comment (ROADMAP N6).
+ * The small marker a set carries when it has a role or a comment (ROADMAP N6).
  *
  * A marker, not the text: the workout row has to stay scannable mid-set, and the
- * comment itself belongs on the workout detail. Nothing is emitted when the set
- * carries neither, which is the state the one-tap log path leaves it in.
+ * comment itself belongs on the workout detail. The RPE is no longer one of these — it reads on the
+ * set's own line, because the stepper records one per set (N59) and a marker could only hint at the
+ * number — so nothing is emitted when the set carries neither a role nor a note, which is the state
+ * the one-tap log path leaves it in.
  */
 @Composable
 private fun SetExtrasMarker(set: SetRow, modifier: Modifier = Modifier) {
@@ -689,9 +700,8 @@ private fun SetExtrasMarker(set: SetRow, modifier: Modifier = Modifier) {
     val roleMarker = set.setType
         .takeIf { it != SetType.NORMAL }
         ?.let { stringResource(R.string.set_role_marker, it.label) }
-    val rpePart = set.rpeHalves?.let { rpeMarker(it) }
     val noteMarker = if (set.note != null) stringResource(R.string.set_note_marker) else null
-    val marker = listOfNotNull(roleMarker, rpePart, noteMarker).joinToString(" · ")
+    val marker = listOfNotNull(roleMarker, noteMarker).joinToString(" · ")
 
     if (marker.isNotEmpty()) {
         Text(

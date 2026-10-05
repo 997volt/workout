@@ -428,11 +428,12 @@
     <string name="set_rpe_label">RPE (1–10)</string>
     <string name="set_role_marker">%1$s</string>
     <!-- Where the stepper's starting number came from, because it is now in the field rather than
-         beside it (ROADMAP N59): the plan's own target where it names one, the default otherwise. -->
+         beside it (ROADMAP N59). Shown only where the plan names a target — the field already says
+         what it opens on when the plan names none, so a line restating the default was noise. -->
     <string name="set_rpe_target">Plan: RPE %1$s</string>
-    <string name="set_rpe_default">Starts at %1$s</string>
     <string name="set_note_label">Comment</string>
-    <!-- The marker on a logged set that carries either (ROADMAP N6). -->
+    <!-- The marker on a logged set that carries a role or a comment (ROADMAP N6); the RPE reads on
+         the set's own line rather than here (N59). -->
     <!-- Formatted from halves, so this can be 9.5 (ROADMAP N6). -->
     <string name="set_rpe_marker">RPE %1$s</string>
     <string name="set_note_marker">Comment</string>

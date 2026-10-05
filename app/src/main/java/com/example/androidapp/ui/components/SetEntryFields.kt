@@ -209,16 +209,15 @@ internal fun SetRpeField(
                 },
             )
         }
-        // Where the number came from, because it is now *in* the field rather than beside it: the
-        // plan's own target where it names one, the default it started at otherwise.
-        Text(
-            text = stringResource(
-                if (targetRpeHalves == null) R.string.set_rpe_default else R.string.set_rpe_target,
-                Rpe.format(targetRpeHalves ?: DEFAULT_RPE_HALVES),
-            ),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        // Where the number came from, and only where the plan named one: the field already shows what it
+        // opens on, so a line restating the default under it was noise (N59).
+        targetRpeHalves?.let { target ->
+            Text(
+                text = stringResource(R.string.set_rpe_target, Rpe.format(target)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

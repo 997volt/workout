@@ -701,11 +701,39 @@ class ActiveWorkoutScreenTest {
     @Test
     fun withNoPlannedRpe_theStepperStartsAtNine() {
         // A stepper always shows a number, so an exercise with no plan target opens on 9.0, and that
-        // is what a logged set records if it is never touched (N59).
+        // is what a logged set records if it is never touched (N59). Nothing captions it: the field
+        // already shows what it opens on.
         setScreen(state = state(isFinished = false))
 
         composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("9")
-        composeTestRule.onNodeWithText("Starts at 9").assertExists()
+        composeTestRule.onNodeWithText("Starts at 9").assertDoesNotExist()
+    }
+
+    @Test
+    fun aLoggedSet_showsTheRpeItCarries() {
+        // N6, N59: effort is part of what a set was, so the row says it on the set's own line rather
+        // than leaving it to the small marker a glance can miss.
+        val base = state(isFinished = false)
+        setScreen(
+            state = base.copy(
+                exercises = base.exercises.map { row ->
+                    row.copy(
+                        sets = listOf(
+                            SetRow(
+                                id = "set1",
+                                number = 1,
+                                reps = 8,
+                                weightGrams = 100_000L,
+                                rpeHalves = 19,
+                            ),
+                        ),
+                    )
+                },
+            ),
+        )
+
+        composeTestRule.onNodeWithText("100 kg × 8").assertExists()
+        composeTestRule.onNodeWithText("RPE 9.5").assertExists()
     }
 
     @Test

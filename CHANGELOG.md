@@ -87,9 +87,10 @@ repeated here.
   last typed field, and it was left blank on purpose — N59 showed the plan's target *beside* it rather
   than writing a target into a record of what happened. The lifter now reads the plan's own RPE in the
   field and changes it if the set felt different; with no plan the stepper opens on 9. Halves step half a
-  point at a time and stop at 1 and 10, so a logged set always carries an RPE, and the caption under it
-  says where the number came from. The plan editors keep their text field: there the RPE is a target
-  being authored, not a set being recorded.
+  point at a time and stop at 1 and 10, so a logged set always carries an RPE — and the set's own line
+  says it back, because effort is part of what a set was. The caption under the field names the plan's
+  target where there is one, and is absent otherwise. The plan editors keep their text field: there the
+  RPE is a target being authored, not a set being recorded.
 - **A plan's RPE is one number per exercise, not one per planned set** (N14, N59). Authoring a plan
   meant typing an effort into every set, and the plan was saying the same thing each time; the target
   now sits beside the rest and cue the exercise already carries, in both the template editor and a
