@@ -18,17 +18,19 @@ repeated here.
   (N63). "Which joints" was free text and the pain was one number: right for a note, wrong for a fact
   the trend is asked about. The per-exercise rating now offers the body's joints — shoulder, elbow,
   wrist, hip, knee, ankle, and the central neck and lower back — as separate left and right entries
-  where the joint is paired, each picked one carrying its own 1–10, and a save replaces the list. The
-  single *Joint pain (1–10)* field and its note box are gone; a session rated before the change keeps
+  where the joint is paired, each picked one carrying its own 1–10 (a new pick starts at 1), and a save
+  replaces the list. The single *Joint pain (1–10)* field and its note box are gone; a session rated
+  before the change keeps
   its number and its free text, which history still reads, and the joint-pain trend reads the **worst**
   joint rather than an average of two sides. The picked rows ride in the backup with the exercise they
   describe, and the readiness note's sore-muscle list and this one now share a single editor.
 - **The readiness note records which muscles are still sore, and how sore** (N62). The note was one
   free-text line — the right shape for "slept badly" and the wrong one for "quads 8, calves 3". The prompt
   a new workout opens with now offers the taxonomy's own muscle groups beside the note, each picked one
-  carrying its own 1–10, and a save replaces the list so a muscle taken off it is gone rather than merged
-  with the old rows. The note itself is unchanged and the whole capture is still skippable; the rows ride
-  in the backup with the session they describe, and history draws them under the readiness line.
+  carrying its own 1–10 (a new pick starts at 1), and a save replaces the list so a muscle taken off
+  it is gone rather than merged with the old rows. The note itself is unchanged and the whole capture
+  is still skippable; the rows ride in the backup with the session they describe, and history draws
+  them under the readiness line.
 
 ### Changed
 
@@ -36,16 +38,16 @@ repeated here.
   editor in front of every set so a set that differed from the prefill was corrected before it was
   written; the cost was a dialog between every set and a button whose label could not describe what it
   wrote. The values the plan and history prefill are now the exercise block's own fields — weight,
-  reps, the role picker, and the plan's target RPE shown *beside* the RPE field rather than written
-  into it — so they are read and changed before anything is committed, and *Log set* is a button beside
-  them that writes exactly what is on screen. B7's display-agrees-with-storage is back on this path,
-  and the editor is what correcting an already-logged set still opens. The fields are keyed on the
+  reps and the role picker — so they are read and changed before anything is committed, and *Log set*
+  is a button beside them that writes exactly what is on screen. B7's display-agrees-with-storage is
+  back on this path, and the editor is what correcting an already-logged set still opens. The fields
+  are keyed on the
   logged-set count, so a write re-arms them from the plan's next unlogged set (B48) — N19's "a role is
   one set's decision" holding without a dialog.
 - **The app's progression proposal is withdrawn** (N33, N22). With the next set's values visible and
   editable before the write, a separate proposal to accept had nothing left to add, so the *Use it*
   link and the double-progression rule that computed it are gone; what the fields start from is what
-  was done last time, unchanged. ROADMAP N50 still owns what the app should propose instead, and the
+  was done last time, unchanged. N50 has since put a proposal back, at *Done* (the entry below), and the
   warm-up ramp keeps the loadable step the rule had defined (N28).
 - **The rest field's "Empty for the default, 0 for none." hint is gone but for one field** (N60). It sat
   under the template editor's rest field and under a program slot's as well as under the exercise's, and
@@ -59,9 +61,8 @@ repeated here.
   already opened), the empty start — renamed *Start empty workout* and drawn on the deep indigo
   container rather than the accent, so the two full-width pills do not read as the same action and the
   planned one is the app's suggestion — and last the next-up block at the bottom edge, set a size
-  larger than before, whose
-  *Start* grew from a text button into the same full-width pill and reads *Start planned workout*. N55's
-  split is untouched: the field still opens the read-only planned-workout dialog and the pill beside it
+  larger than before, whose *Start* grew from a text button into the same full-width pill and reads
+  *Start planned workout*. N55's split is untouched: the field still opens the read-only planned-workout dialog and the pill beside it
   starts the workout, and one pill is drawn per next-up row because more than one program may be active
   (P3.12).
 - **What the app asks when an exercise is done is progression, and the answer changes the plan** (N50).
