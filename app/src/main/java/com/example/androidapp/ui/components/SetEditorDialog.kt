@@ -35,11 +35,11 @@ import com.example.androidapp.domain.model.SetType
  * and failure since the beginning with no way to reach them, and a plan that can say
  * "top set" while a logged set cannot is two vocabularies for one idea.
  *
- * RPE and the comment are always shown, but only the comment may be left empty: the **RPE is a
- * stepper** now (N59), so it always shows a number — the set's own where it recorded one, 9.0
- * otherwise — and a set saved without touching it still records what it was performed at. Save stays
- * disabled while reps or the load is not a usable value; the stepper cannot leave 1–10, so there is
- * no off-scale RPE left to refuse or to clamp.
+ * RPE and the comment are always shown, but **neither is invented**: the RPE is a stepper (N59), so
+ * it shows the set's own number where it recorded one and reads *Not recorded* where it did not, and
+ * a save that does not touch it keeps that absence. Correcting a set's weight must not turn an
+ * unrecorded effort into a 9.0 measurement. Save stays disabled while reps or the load is not a
+ * usable value; the stepper cannot leave 1–10, so there is no off-scale RPE left to refuse.
  */
 @Composable
 fun SetEditorDialog(
@@ -59,9 +59,10 @@ fun SetEditorDialog(
                 repsText = initialReps.toString(),
                 // Shown as one signed number: -20 is 20 kg of assistance (N15).
                 weightText = Weight.display(initialWeightGrams, initialAssistanceGrams),
-                // The halves the set recorded, shown as a lifter writes them; a set that recorded
-                // none opens on the default the stepper always shows (N59).
-                rpeText = initialRpe?.let(Rpe::format) ?: Rpe.format(DEFAULT_RPE_HALVES),
+                // The halves the set recorded, shown as a lifter writes them. A set that recorded
+                // none opens blank and keeps none unless the lifter states one (N59): an edit is not
+                // where a measurement nobody gave appears.
+                rpeText = initialRpe?.let(Rpe::format).orEmpty(),
                 noteText = initialNote.orEmpty(),
                 setType = initialSetType,
             ),
@@ -74,26 +75,7 @@ fun SetEditorDialog(
         modifier = modifier,
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.set_edit_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SetRoleSelector(
-                    role = draft.setType,
-                    onSelect = { draft = draft.copy(setType = it) },
-                )
-                SetEntryNumbers(draft = draft, onDraftChange = { draft = it })
-                SetRpeField(
-                    draft = draft,
-                    onDraftChange = { draft = it },
-                )
-                OutlinedTextField(
-                    value = draft.noteText,
-                    onValueChange = { draft = draft.copy(noteText = it) },
-                    modifier = Modifier.fillMaxWidth().testTag(TestTags.SET_NOTE_FIELD),
-                    label = { Text(stringResource(R.string.set_note_label)) },
-                    minLines = 2,
-                )
-            }
-        },
+        text = { SetEditingFields(draft = draft, onDraftChange = { draft = it }) },
         confirmButton = {
             AppTextButton(
                 modifier = Modifier.testTag(TestTags.SET_SAVE),
@@ -112,4 +94,29 @@ fun SetEditorDialog(
             }
         },
     )
+}
+
+/**
+ * The fields of a set that exists (N59), split out so the dialog around them reads as a dialog.
+ *
+ * They answer to [SetFieldTags.Editing] rather than the workout screen's names, because the two are
+ * composed at once — the dialog is a window over the screen — and a tag has to name one control.
+ */
+@Composable
+private fun SetEditingFields(
+    draft: SetEntryDraft,
+    onDraftChange: (SetEntryDraft) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SetRoleSelector(role = draft.setType, onSelect = { onDraftChange(draft.copy(setType = it)) })
+        SetEntryNumbers(draft = draft, onDraftChange = onDraftChange, tags = SetFieldTags.Editing)
+        SetRpeField(draft = draft, onDraftChange = onDraftChange, tags = SetFieldTags.Editing)
+        OutlinedTextField(
+            value = draft.noteText,
+            onValueChange = { onDraftChange(draft.copy(noteText = it)) },
+            modifier = Modifier.fillMaxWidth().testTag(TestTags.SET_NOTE_FIELD),
+            label = { Text(stringResource(R.string.set_note_label)) },
+            minLines = 2,
+        )
+    }
 }

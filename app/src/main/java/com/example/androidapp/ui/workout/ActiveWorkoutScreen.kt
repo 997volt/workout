@@ -804,7 +804,7 @@ private fun ReadinessRow(
                 text = stringResource(R.string.readiness_sore_line, sore.muscle.label, sore.score),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.testTag(TestTags.Readiness.soreRow(sore.muscle.name)),
+                modifier = Modifier.testTag(TestTags.Readiness.soreLine(sore.muscle.name)),
             )
         }
     }

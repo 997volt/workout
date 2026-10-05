@@ -177,9 +177,9 @@ class WorkoutDetailScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.Readiness.soreRow("QUADS"))
+        composeTestRule.onNodeWithTag(TestTags.Readiness.soreLine("QUADS"))
             .assertTextContains("Quads 8/10")
-        composeTestRule.onNodeWithTag(TestTags.Readiness.soreRow("CALVES"))
+        composeTestRule.onNodeWithTag(TestTags.Readiness.soreLine("CALVES"))
             .assertTextContains("Calves 3/10")
     }
 
@@ -193,7 +193,7 @@ class WorkoutDetailScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.Readiness.soreRow("CORE"))
+        composeTestRule.onNodeWithTag(TestTags.Readiness.soreLine("CORE"))
             .assertTextContains("Core 4/10")
     }
 

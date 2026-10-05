@@ -83,6 +83,8 @@ fun ExerciseRatingSection(
                 editing = false
                 onRate(feel, picked)
             },
+            legacyJointPain = legacyJointPain,
+            legacyJointPainNote = legacyJointPainNote,
         )
     }
 }

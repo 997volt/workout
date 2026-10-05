@@ -406,7 +406,7 @@ private fun ReadinessBlock(
             Text(
                 text = stringResource(R.string.readiness_sore_line, sore.muscle.label, sore.score),
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.testTag(TestTags.Readiness.soreRow(sore.muscle.name)),
+                modifier = Modifier.testTag(TestTags.Readiness.soreLine(sore.muscle.name)),
             )
         }
     }

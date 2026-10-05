@@ -1240,6 +1240,8 @@ class WorkoutDatabaseMigrationTest {
                        ('te3', 't1', 'overhead-press', 2, NULL, NULL, NULL, 1, 1, NULL)
                 """.trimIndent(),
             )
+            // te2's only set that named an effort is soft-deleted (deletedAt 200), so the backfill has
+            // to skip it: a plan's deleted set is not what the plan builds to (N59).
             execSQL(
                 """
                 INSERT INTO template_sets
@@ -1249,7 +1251,8 @@ class WorkoutDatabaseMigrationTest {
                        ('ts2', 'te1', 1, 'NORMAL', 100000, NULL, 5, 5, 8, NULL, 1, 1, NULL),
                        ('ts3', 'te2', 0, 'NORMAL', 80000, NULL, 5, 5, NULL, NULL, 1, 1, NULL),
                        ('ts4', 'te3', 0, 'WARMUP', 50000, NULL, 5, 5, 6, NULL, 1, 1, NULL),
-                       ('ts5', 'te3', 1, 'NORMAL', 90000, NULL, 5, 5, NULL, NULL, 1, 1, NULL)
+                       ('ts5', 'te3', 1, 'NORMAL', 90000, NULL, 5, 5, NULL, NULL, 1, 1, NULL),
+                       ('ts6', 'te2', 1, 'NORMAL', 80000, NULL, 5, 5, 9, NULL, 1, 1, 200)
                 """.trimIndent(),
             )
             execSQL(
@@ -1302,8 +1305,9 @@ class WorkoutDatabaseMigrationTest {
             assertEquals("te3", cursor.getString(0))
             assertEquals("a warm-up's value counts, and it is the last one", 6, cursor.getInt(1))
         }
-        // The per-set values are left in place rather than cleared: a pre-change backup still needs
-        // them, and the reader falls back to them where the exercise names nothing.
+        // The per-set values are left in place rather than cleared, the soft-deleted one included: a
+        // pre-change backup still needs them, and the reader falls back to them where the exercise
+        // names nothing. A save that *clears* the exercise's effort is what retires them (N59).
         migrated.query(
             "SELECT id, targetRpeHalves FROM template_sets ORDER BY id",
         ).use { cursor ->
@@ -1311,7 +1315,7 @@ class WorkoutDatabaseMigrationTest {
                 while (cursor.moveToNext()) add(cursor.getString(0) to cursor.getInt(1).takeIf { !cursor.isNull(1) })
             }
             assertEquals(
-                listOf("ts1" to 5, "ts2" to 8, "ts3" to null, "ts4" to 6, "ts5" to null),
+                listOf("ts1" to 5, "ts2" to 8, "ts3" to null, "ts4" to 6, "ts5" to null, "ts6" to 9),
                 values,
             )
         }

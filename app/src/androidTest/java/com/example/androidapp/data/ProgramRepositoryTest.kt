@@ -471,6 +471,27 @@ class ProgramRepositoryTest {
     }
 
     @Test
+    fun clearingTheSlotsEffort_clearsItsPrescribedSetsLegacyValue_too() = runTest {
+        // The same clear as a template's (N59): the per-set column is the fallback, so it has to go
+        // with the exercise-level number or the reader resurrects what the lifter just removed.
+        val program = create("Upper/Lower")
+        val template = createTemplate("Heavy lower")
+        repository.addSlot(program, template, DayOfWeek.MONDAY)
+        val slotId = slot(program).id
+        repository.setSlotExercisePlan(slotId, "back-squat", null, null, targetRpeHalves = 16)
+        repository.addSlotSet(
+            slotId,
+            "back-squat",
+            SlotSetEdit(targetWeightGrams = 100_000L, targetRepsMax = 5, targetRpeHalves = 8),
+        )
+
+        repository.setSlotExercisePlan(slotId, "back-squat", null, null, targetRpeHalves = null)
+
+        val set = repository.observeSlotPrescriptions(slotId).first().single().sets.single()
+        assertNull("the prescribed set's legacy value goes with the slot's", set.targetRpeHalves)
+    }
+
+    @Test
     fun aSlotNamingOnlyAnEffort_isAPrescription_ratherThanAnAbsentOne() = runTest {
         // The effort is the third thing a slot can say about an exercise (N59, amended), so a row
         // carrying it alone is not an empty prescription to be dropped.

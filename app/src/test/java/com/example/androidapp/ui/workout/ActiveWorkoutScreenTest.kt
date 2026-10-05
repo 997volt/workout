@@ -19,6 +19,7 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -590,6 +591,31 @@ class ActiveWorkoutScreenTest {
         composeTestRule.onNodeWithTag(TestTags.SET_LOG).performSemanticsAction(SemanticsActions.OnClick)
 
         assertEquals(listOf(7), logged.map { it.reps })
+    }
+
+    @Test
+    fun theInlineSteppers_moveTheFieldsTheyState() {
+        // The logging path's own controls (N59), each addressed by its own tag: the correction dialog
+        // states a set that exists and no longer shares these names, so one tag names one control (D4).
+        setScreen(state = state(isFinished = false))
+
+        // Sent as semantics actions rather than touches: the fields sit at the fold of this test's
+        // small surface, where a touch at a control's centre can land outside the list's viewport.
+        composeTestRule.onNodeWithTag(TestTags.SET_INCREASE_WEIGHT)
+            .performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertTextContains("102.5")
+        composeTestRule.onNodeWithTag(TestTags.SET_DECREASE_WEIGHT)
+            .performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertTextContains("100")
+
+        composeTestRule.onNodeWithTag(TestTags.SET_DECREASE_REPS)
+            .performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.onNodeWithTag(TestTags.SET_REPS_FIELD).assertTextContains("4")
+
+        // No plan names an effort here, so the stepper opens on the default 9.0.
+        composeTestRule.onNodeWithTag(TestTags.SET_DECREASE_RPE)
+            .performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("8.5")
     }
 
     @Test

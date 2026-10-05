@@ -663,9 +663,9 @@ class ActiveWorkoutViewModel @Inject constructor(
     /**
      * Writes how an exercise felt, at any time (ROADMAP N10).
      *
-     * The same write the Done prompt makes, without finishing anything: the ratings
-     * are worth recording while the set is still fresh, and the prompt is then the
-     * last chance rather than the only one.
+     * The exercise's own rating row is the **only** way in: N50 took the rating off the Done path, so
+     * this is reached when the lifter reaches for it rather than handed over on the way out. The
+     * rating stays editable for as long as the session is.
      */
     fun onRateExercise(
         sessionExerciseId: String,
@@ -711,14 +711,14 @@ class ActiveWorkoutViewModel @Inject constructor(
 
 
     /**
-     * Logs one set, exactly as the dialog that collected it says (ROADMAP N51, amending B7).
+     * Logs one set, exactly as the fields that stated it say (ROADMAP N59, restoring B7).
      *
-     * The one-tap path wrote the offered set and left a set that differed from the prefill to be
-     * edited afterwards — the same dialog, one step later, with the first step having decided
-     * something the user did not mean. Logging *is* that dialog now, so this takes the values it was
-     * committed with rather than the ones the row happened to offer: the button no longer writes the
-     * set its label describes, because the label no longer describes one. The role travels in the
-     * same value (N19, N14) — a set is what it was performed as, and one field carries that.
+     * N51 made logging *be* the editor and left a set that differed from the prefill to be corrected
+     * afterwards; N59 reversed that, because the next set's values are fields on the exercise block
+     * now. So this takes what those fields hold rather than what the row happened to offer: the button
+     * beside them writes the set on screen, and the editor is what correcting an already-logged set
+     * opens. The role travels in the same value (N19, N14) — a set is what it was performed as, and
+     * one field carries that.
      */
     fun onLogSet(sessionExerciseId: String, edit: SetEdit) {
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId } ?: return
@@ -1351,10 +1351,14 @@ private fun List<SetEntry>.loggedRowsFor(sessionExerciseId: String): List<SetRow
 /**
  * The plan's sets for one exercise, reduced for the progression rule (ROADMAP N50).
  *
- * The slot's prescription **is** the plan where it prescribes sets for this exercise, and the
- * template's planned sets are the plan otherwise — the same "wins where it speaks" the prefill uses
- * (P3.8, N14), read whole rather than field by field because an accepted step has to be written back
- * to one of them, and a merged offer would have two homes.
+ * **The same plan the screen shows.** A slot wins where it speaks, so the plan is the two sets of
+ * rows merged per index — the slot's prescribed set where it wrote one, the template's where it did
+ * not — and the slot's one target RPE stands over the template's even for a set it wrote no row for
+ * (P3.8, N14, N59). Reading only the slot's rows once it prescribed any, as this first did, dropped
+ * the template's remaining sets from the check: a slot overriding one of three made "every
+ * prescribed working set" mean one, and paired it with the wrong performance. Each index keeps the
+ * source of the row that supplies it, because an accepted step is written back to the plan that
+ * stated the set.
  *
  * The **target RPE is one number for the exercise** (N59, amended), so every set here carries it
  * rather than its own: the slot's value over the template's where the slot prescribes the sets, and a
@@ -1363,12 +1367,24 @@ private fun List<SetEntry>.loggedRowsFor(sessionExerciseId: String): List<SetRow
  */
 private fun PlanContext.progressionSets(): List<ProgressionPlanSet> {
     val prescribed = prescription?.sets.orEmpty()
+    val planned = plannedEntry?.sets.orEmpty()
+    val slotRpe = prescription?.targetRpeHalves
     val exerciseRpe = plannedEntry?.targetRpeHalves
-    return if (prescribed.isNotEmpty()) {
-        val slotRpe = prescription?.targetRpeHalves ?: exerciseRpe
-        prescribed.map { it.toProgressionSet(rpeTarget = slotRpe) }
-    } else {
-        plannedEntry?.sets.orEmpty().map { it.toProgressionSet(rpeTarget = exerciseRpe) }
+    val slotByIndex = prescribed.associateBy { it.setIndex }
+    val plannedByIndex = planned.associateBy { it.setIndex }
+    return (slotByIndex.keys + plannedByIndex.keys).sorted().mapNotNull { index ->
+        val slotSet = slotByIndex[index]
+        val plannedSet = plannedByIndex[index]
+        when {
+            // The slot's own set: its number wins, then the exercise-level values in the order the
+            // prefill applies them.
+            slotSet != null -> slotSet.toProgressionSet(
+                rpeTarget = slotRpe ?: slotSet.targetRpeHalves ?: exerciseRpe ?: plannedSet?.targetRpeHalves,
+            )
+            // A set only the template wrote: the slot's exercise-level RPE still covers it (N59).
+            plannedSet != null -> plannedSet.toProgressionSet(rpeTarget = slotRpe ?: exerciseRpe)
+            else -> null
+        }
     }
 }
 
@@ -1390,6 +1406,7 @@ private fun SlotSet.toProgressionSet(rpeTarget: Int?): ProgressionPlanSet = Prog
     targetRpeHalves = rpeTarget ?: targetRpeHalves,
     targetPercentOf1Rm = targetPercentOf1Rm,
     note = note,
+    legacyRpeHalves = targetRpeHalves,
 )
 
 private fun TemplateSet.toProgressionSet(rpeTarget: Int?): ProgressionPlanSet = ProgressionPlanSet(
@@ -1403,6 +1420,7 @@ private fun TemplateSet.toProgressionSet(rpeTarget: Int?): ProgressionPlanSet = 
     targetRepsMax = targetRepsMax,
     targetRpeHalves = rpeTarget ?: targetRpeHalves,
     note = note,
+    legacyRpeHalves = targetRpeHalves,
 )
 
 /** One logged set as the rule reads it: the role decides whether it is work at all (N50). */
@@ -1426,7 +1444,9 @@ private fun ProgressionPlanSet.toTemplateEdit(): TemplateSetEdit = TemplateSetEd
     targetAssistanceGrams = targetAssistanceGrams,
     targetRepsMin = targetRepsMin,
     targetRepsMax = targetRepsMax,
-    targetRpeHalves = targetRpeHalves,
+    // The set's **own** legacy value, not the exercise's number the rule read: copying the latter
+    // into a column the reader falls back to is what made a cleared plan's RPE come back (N59).
+    targetRpeHalves = legacyRpeHalves,
     note = note,
 )
 
@@ -1437,15 +1457,16 @@ private fun ProgressionPlanSet.toSlotEdit(): SlotSetEdit = SlotSetEdit(
     targetAssistanceGrams = targetAssistanceGrams,
     targetRepsMin = targetRepsMin,
     targetRepsMax = targetRepsMax,
-    targetRpeHalves = targetRpeHalves,
+    targetRpeHalves = legacyRpeHalves,
     targetPercentOf1Rm = targetPercentOf1Rm,
     note = note,
 )
 
 /**
  * What the next set is shown with: the plan's target where it speaks, then history (ROADMAP N14, N59,
- * P3.8). The plan's RPE travels with it rather than in it, so the screen can say what the set is
- * meant to feel like without recording that as what it felt like.
+ * P3.8). The plan's RPE rides in the value rather than beside it: the stepper opens on it, the lifter
+ * reads it and changes it when the set felt different, and what is recorded is still that set's own
+ * number — with no plan the field opens on [DEFAULT_RPE_HALVES] instead of staying blank.
  */
 private fun SessionExercise.suggestionFor(
     loggedSets: List<SetRow>,

@@ -276,14 +276,28 @@ class RoomTemplateRepository @Inject constructor(
         if (!Rpe.isValid(targetRpeHalves)) {
             throw InvalidInputException("Target RPE must be between 1 and 10, in half steps.")
         }
-        val updated = dao.setExercisePlan(
-            id = templateExerciseId,
-            restSeconds = restSeconds,
-            techniqueNote = techniqueNote?.trim()?.ifEmpty { null },
-            targetRpeHalves = targetRpeHalves,
-            at = timeSource.nowEpochMillis(),
-        )
-        if (updated == 0) throw NotFoundException("template exercise $templateExerciseId")
+        val now = timeSource.nowEpochMillis()
+        database.withTransaction {
+            // The previous value decides whether a clear also has to reach the legacy per-set column,
+            // so it is read before the write that replaces it (N59).
+            val previous = dao.findTemplateExercise(templateExerciseId)
+                ?: throw NotFoundException("template exercise $templateExerciseId")
+            val updated = dao.setExercisePlan(
+                id = templateExerciseId,
+                restSeconds = restSeconds,
+                techniqueNote = techniqueNote?.trim()?.ifEmpty { null },
+                targetRpeHalves = targetRpeHalves,
+                at = now,
+            )
+            if (updated == 0) throw NotFoundException("template exercise $templateExerciseId")
+            // A clear has to reach the reader: the per-set column is the fallback the exercise's
+            // number wins over, so leaving it behind would resurrect the effort the lifter just
+            // removed. Only a transition to null clears, so a plan whose effort only ever lived on
+            // its sets — an imported pre-change backup — keeps it.
+            if (targetRpeHalves == null && previous.targetRpeHalves != null) {
+                dao.clearSetTargetRpe(templateExerciseId, at = now)
+            }
+        }
     }
 
     override suspend fun removeExercise(templateExerciseId: String): DataResult<Unit> =

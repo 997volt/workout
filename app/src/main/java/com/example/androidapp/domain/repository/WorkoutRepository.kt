@@ -142,9 +142,9 @@ interface WorkoutRepository {
      *
      * An empty [joints] clears the picked list and a non-empty one **replaces** it rather than
      * merging, because the editor shows exactly what is stored. A score outside `TenPointScale` is
-     * refused as `Invalid` before anything is written. The legacy `jointPain` / `jointPainNote`
-     * columns are never rewritten by this call, so a session rated before N63 keeps its number and
-     * its free text.
+     * refused as `Invalid` before anything is written. The rating **replaces the legacy
+     * `jointPain` / `jointPainNote`** columns too, so a list the lifter cleared stays cleared; a
+     * session nobody re-rates keeps its number and its free text, which history still reads.
      *
      * Separate from [finishExercise] rather than folded into it: the ratings are
      * captured *at* Done but are skippable, and they stay editable from the workout
@@ -199,15 +199,16 @@ interface WorkoutRepository {
     /**
      * Rewrites a logged set, including its RPE and comment (ROADMAP N6).
      *
-     * [rpeHalves] and [note] are required rather than defaulted: an edit states what the
-     * set now says, so a caller cannot clear them by forgetting to pass them.
+     * [rpeHalves] and [note] are required rather than defaulted, for [logSet]'s reason: an edit states
+     * what the set now says, so a caller cannot clear them by forgetting to pass them. A blank RPE is
+     * written as null deliberately, which is how a mistyped one is undone.
      */
     suspend fun updateSet(
         setId: String,
         reps: Int,
         weightGrams: Long,
-        rpeHalves: Int? = null,
-        note: String? = null,
+        rpeHalves: Int?,
+        note: String?,
         /** The role the set was performed as (ROADMAP N14). */
         setType: SetType = SetType.NORMAL,
         /** The machine's assistance, as a magnitude (ROADMAP N15). */

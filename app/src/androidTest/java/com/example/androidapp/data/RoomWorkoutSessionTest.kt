@@ -157,9 +157,13 @@ class RoomWorkoutSessionTest {
 
         repository.deleteSession(started.id)
 
+        // The session read is null — that is what deleting the workout means — so the soreness is
+        // unreachable through it, and the rows themselves are hidden rather than merely orphaned.
+        assertNull(repository.observeSession(started.id).first())
         assertEquals(
-            emptyList<SoreMuscle>(),
-            repository.observeSession(started.id).first()?.soreMuscles,
+            "the deleted session's soreness is hidden, not left live",
+            0,
+            database.sessionSoreMuscleDao().observeForSession(started.id).first().size,
         )
     }
 

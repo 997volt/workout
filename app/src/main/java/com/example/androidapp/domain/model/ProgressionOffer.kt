@@ -48,6 +48,16 @@ data class ProgressionPlanSet(
     val targetRpeHalves: Int? = null,
     val targetPercentOf1Rm: Int? = null,
     val note: String? = null,
+    /**
+     * The set's **own** stored value of the legacy per-set RPE column, or null (N59).
+     *
+     * [targetRpeHalves] is the exercise's one number, which the caller carries onto every set so the
+     * rule can measure each against it. This is what the set row itself holds, and it is what an
+     * accepted step must put back: writing [targetRpeHalves] into the set would copy the exercise's
+     * number into a column the reader falls back to, so clearing the exercise's field later would
+     * silently resurrect a value the lifter never gave that set.
+     */
+    val legacyRpeHalves: Int? = null,
 ) {
     /**
      * The reps this set asks for: **the ceiling a written plan means**, falling back to the floor
@@ -165,9 +175,22 @@ fun progressionOfferFor(
     return ProgressionOffer(
         set = changed,
         reps = ProgressionStep(repTarget, repTarget + REPS_PER_STEP),
-        load = changed.targetWeightGrams?.let { ProgressionStep(it, it + stepGrams) },
+        load = changed.addedWeightGrams?.let { ProgressionStep(it, it + stepGrams) },
     )
 }
+
+/**
+ * The **added** weight this set names, or null (N15).
+ *
+ * A load a step can raise is a bar's kilograms, and only that. An assisted set stores its number as
+ * a magnitude of help with `targetWeightGrams = 0` — the shape both plan editors write for `-20` —
+ * so a non-null column is not on its own a load to raise; raising it would put 2.5 kg on a machine
+ * doing 20 kg of the work, and `Weight.display` would then show `-20` and hide the write. A
+ * bodyweight set's `0` is the same absence. The warm-up ramp already guards this (`<= 0`), and this
+ * is the rule's own half of it.
+ */
+private val ProgressionPlanSet.addedWeightGrams: Long?
+    get() = targetWeightGrams?.takeIf { it > 0L && targetAssistanceGrams == null }
 
 /** The sets that are work: a warm-up is not what a target is measured against (N17, N20, N22). */
 private fun List<ProgressionPlanSet>.plannedWork(): List<ProgressionPlanSet> =

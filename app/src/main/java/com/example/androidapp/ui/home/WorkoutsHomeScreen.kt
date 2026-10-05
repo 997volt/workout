@@ -471,6 +471,14 @@ private fun StartOrResumeButton(
         } else {
             MaterialTheme.colorScheme.primaryContainer
         },
+        // The pair travels together: the lesser pill draws on the container, so its label takes the
+        // container's own "on" colour. The default is the accent surface's `onPrimary`, which the
+        // contrast check would then be asserting about a pair nothing draws (N61).
+        contentColor = if (resuming) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        },
         // Tagged by state, not caption: which of the two shows is the behaviour under test, and the
         // captions are user-visible text a translation changes.
         modifier = modifier.testTag(if (resuming) TestTags.HOME_RESUME else TestTags.HOME_START),

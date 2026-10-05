@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import android.content.Context
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -44,6 +45,8 @@ class ExerciseRatingDialogTest {
     private fun show(
         initialFeel: Int? = null,
         initialJoints: List<JointPain> = emptyList(),
+        legacyJointPain: Int? = null,
+        legacyJointPainNote: String? = null,
     ) {
         composeTestRule.setContent {
             ExerciseRatingDialog(
@@ -54,6 +57,8 @@ class ExerciseRatingDialogTest {
                     saved = feel to joints
                     saveCalled = true
                 },
+                legacyJointPain = legacyJointPain,
+                legacyJointPainNote = legacyJointPainNote,
             )
         }
     }
@@ -223,6 +228,31 @@ class ExerciseRatingDialogTest {
             ),
             saved,
         )
+    }
+
+    @Test
+    fun aRatingGivenBeforeTheJointList_isStated_soItsReplacementIsVisible() {
+        // N63: the old number and its text cannot be represented as a picked joint, so the dialog states
+        // what a save retires rather than letting it disappear silently. A rating with no legacy data
+        // shows no such line.
+        show()
+
+        composeTestRule.onNodeWithTag(TestTags.RATING_LEGACY_JOINT).assertDoesNotExist()
+    }
+
+    @Test
+    fun aLegacyJointRating_isShown_whenThereIsOne() {
+        show(legacyJointPain = 7, legacyJointPainNote = "left shoulder")
+
+        val line = composeTestRule.onNodeWithTag(TestTags.RATING_LEGACY_JOINT)
+        line.assertExists()
+        line.assertTextContains("Joint pain 7", substring = true)
+        line.assertTextContains("left shoulder", substring = true)
+
+        // And a save reports the picked list, which is what replaces it.
+        composeTestRule.onNodeWithTag(TestTags.RATING_SAVE).performClick()
+
+        assertEquals(7 to emptyList<JointPain>(), saved)
     }
 
     @Test

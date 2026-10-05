@@ -37,8 +37,10 @@ internal data class SetEntryDraft(
     /**
      * The RPE as text — the halves [values] parses back out of it.
      *
-     * It is no longer blank: the field is a stepper now (ROADMAP N59), so it always holds a number
-     * and the stepper only ever writes text [Rpe.parse] reads as the halves it stepped to.
+     * The workout screen's fields open it on the plan's number or the default (N59), so they never
+     * leave it blank. The correction dialog opens it blank for a set that recorded none, and blank is
+     * what a save then keeps: the stepper only ever writes text [Rpe.parse] reads as the halves it
+     * stepped to.
      */
     val rpeText: String,
     /** Only the dialog edits the comment; the inline fields leave it empty. */
@@ -47,12 +49,13 @@ internal data class SetEntryDraft(
 )
 
 /**
- * The RPE a set starts at when no plan names one (ROADMAP N59).
+ * The RPE the workout screen's stepper starts on when no plan names one (ROADMAP N59).
  *
- * 9.0. A stepper always shows a number, so this is what a logged set records when the plan asks for
- * nothing and the lifter never touches it — the same direction the muscle-feel stepper took (N8).
- * It is not the middle of the scale but the working end of it, where a hard set that was not taken
- * to failure lands.
+ * 9.0. That screen always states an effort, so this is what a set logged there records when the plan
+ * asks for nothing and the lifter never touches it — the same direction the muscle-feel stepper took
+ * (N8). It is not the middle of the scale but the working end of it, where a hard set that was not
+ * taken to failure lands. The correction dialog is the other case: a set that recorded none shows
+ * none, and this is what its stepper's first tap states.
  */
 internal const val DEFAULT_RPE_HALVES = 18
 
@@ -63,7 +66,7 @@ internal data class SetEntryValues(
     val rpeHalves: Int?,
     val rpeValid: Boolean,
 ) {
-    /** A set needs reps and a load; the comment stays optional, and the RPE is always stated (N6, N59). */
+    /** A set needs reps and a load; the comment and a not-recorded RPE stay optional (N6, N59). */
     val isComplete: Boolean get() = reps != null && load != null && rpeValid
 }
 
@@ -96,21 +99,69 @@ internal fun SetEntryDraft.toEdit(): SetEdit {
     )
 }
 
+/**
+ * The test tags one statement of a set answers to (ROADMAP N59).
+ *
+ * Two composables state a set — the workout screen's own next-set fields and the correction dialog
+ * for one that exists — and a tag has to address **one** control, so each path names its own. The
+ * values are the constants in [TestTags]; this only carries them to the shared steppers.
+ */
+internal data class SetFieldTags(
+    val weight: String,
+    val increaseWeight: String,
+    val decreaseWeight: String,
+    val reps: String,
+    val increaseReps: String,
+    val decreaseReps: String,
+    val rpe: String,
+    val increaseRpe: String,
+    val decreaseRpe: String,
+) {
+    companion object {
+        /** The workout screen's fields, which state the next set before it is committed (N59). */
+        val Logging = SetFieldTags(
+            weight = TestTags.SET_WEIGHT_FIELD,
+            increaseWeight = TestTags.SET_INCREASE_WEIGHT,
+            decreaseWeight = TestTags.SET_DECREASE_WEIGHT,
+            reps = TestTags.SET_REPS_FIELD,
+            increaseReps = TestTags.SET_INCREASE_REPS,
+            decreaseReps = TestTags.SET_DECREASE_REPS,
+            rpe = TestTags.SET_RPE_FIELD,
+            increaseRpe = TestTags.SET_INCREASE_RPE,
+            decreaseRpe = TestTags.SET_DECREASE_RPE,
+        )
+
+        /** The correction dialog's fields, which restate a set that already exists (N59). */
+        val Editing = SetFieldTags(
+            weight = TestTags.SET_EDIT_WEIGHT_FIELD,
+            increaseWeight = TestTags.SET_EDIT_INCREASE_WEIGHT,
+            decreaseWeight = TestTags.SET_EDIT_DECREASE_WEIGHT,
+            reps = TestTags.SET_EDIT_REPS_FIELD,
+            increaseReps = TestTags.SET_EDIT_INCREASE_REPS,
+            decreaseReps = TestTags.SET_EDIT_DECREASE_REPS,
+            rpe = TestTags.SET_EDIT_RPE_FIELD,
+            increaseRpe = TestTags.SET_EDIT_INCREASE_RPE,
+            decreaseRpe = TestTags.SET_EDIT_DECREASE_RPE,
+        )
+    }
+}
+
 /** The weight and reps steppers, in the order both callers read them (ROADMAP P1.3a, N59). */
 @Composable
 internal fun SetEntryNumbers(
     draft: SetEntryDraft,
     onDraftChange: (SetEntryDraft) -> Unit,
     modifier: Modifier = Modifier,
+    tags: SetFieldTags = SetFieldTags.Logging,
 ) {
     val values = draft.values()
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         NumberStepper(
             label = stringResource(R.string.set_weight_label),
-            testTag = TestTags.SET_WEIGHT_FIELD,
-            increaseTag = TestTags.SET_INCREASE_WEIGHT,
-            decreaseTag = TestTags.SET_DECREASE_WEIGHT,
+            testTag = tags.weight,
+            increaseTag = tags.increaseWeight,
+            decreaseTag = tags.decreaseWeight,
             value = draft.weightText,
             onValueChange = { onDraftChange(draft.copy(weightText = it)) },
             keyboardType = KeyboardType.Decimal,
@@ -130,9 +181,9 @@ internal fun SetEntryNumbers(
         )
         NumberStepper(
             label = stringResource(R.string.set_reps_label),
-            testTag = TestTags.SET_REPS_FIELD,
-            increaseTag = TestTags.SET_INCREASE_REPS,
-            decreaseTag = TestTags.SET_DECREASE_REPS,
+            testTag = tags.reps,
+            increaseTag = tags.increaseReps,
+            decreaseTag = tags.decreaseReps,
             value = draft.repsText,
             onValueChange = { onDraftChange(draft.copy(repsText = it)) },
             keyboardType = KeyboardType.Number,
@@ -150,11 +201,9 @@ internal fun SetEntryNumbers(
 /**
  * The RPE a set is logged at, as a −/+ stepper (ROADMAP N6, N59).
  *
- * It opens on the plan's own target where there is one ([targetRpeHalves]) and on
- * [DEFAULT_RPE_HALVES] otherwise, and it always shows a number. N59 first kept the plan's value
- * *beside* an optional field, so a prescription could never be recorded as a measurement; that is
- * reversed here because the two were never in conflict — the lifter reads the plan's number, changes
- * it when the set felt different, and what is recorded is still what the set was.
+ * The draft's text is what it shows, so the workout screen's fields open it on the plan's number or
+ * [DEFAULT_RPE_HALVES] and the correction dialog opens it blank for a set that recorded none.
+ * [targetRpeHalves] is the plan's number, used only for the caption under the field.
  *
  * A step is half a point, so the field steps 9 → 9.5 → 10, and the ends are **clamped** to
  * [Rpe.MIN_HALVES]…[Rpe.MAX_HALVES] rather than wrapped, so holding a button down cannot leave the
@@ -166,10 +215,14 @@ internal fun SetRpeField(
     onDraftChange: (SetEntryDraft) -> Unit,
     modifier: Modifier = Modifier,
     targetRpeHalves: Int? = null,
+    tags: SetFieldTags = SetFieldTags.Logging,
 ) {
-    // The draft's text stays the source of truth — `values()` parses it — and the stepper only ever
-    // writes halves that parse back to the number it is showing.
-    val halves = Rpe.parse(draft.rpeText) ?: DEFAULT_RPE_HALVES
+    val halves = Rpe.parse(draft.rpeText)
+    // A set that recorded no effort says so rather than showing a number nobody gave (N59).
+    val valueText = halves?.let(Rpe::format) ?: stringResource(R.string.set_rpe_unset)
+    // A bare number announces nothing useful, so the value carries its own name (N59, N12).
+    val spokenValue = halves?.let { stringResource(R.string.set_rpe_marker, Rpe.format(it)) }
+        ?: stringResource(R.string.set_rpe_unset)
     val decreaseDescription = stringResource(R.string.set_stepper_decrease, RPE_STEPPER_NAME)
     val increaseDescription = stringResource(R.string.set_stepper_increase, RPE_STEPPER_NAME)
 
@@ -186,27 +239,21 @@ internal fun SetRpeField(
             StepButton(
                 glyph = "\u2212",
                 description = decreaseDescription,
-                testTag = TestTags.SET_DECREASE_RPE,
-                onClick = {
-                    onDraftChange(
-                        draft.copy(rpeText = Rpe.format((halves - 1).coerceAtLeast(Rpe.MIN_HALVES))),
-                    )
-                },
+                testTag = tags.decreaseRpe,
+                onClick = { onDraftChange(draft.copy(rpeText = steppedRpeText(halves, -1))) },
             )
             Text(
-                text = Rpe.format(halves),
+                text = valueText,
                 style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.testTag(TestTags.SET_RPE_FIELD),
+                modifier = Modifier
+                    .testTag(tags.rpe)
+                    .semantics { contentDescription = spokenValue },
             )
             StepButton(
                 glyph = "+",
                 description = increaseDescription,
-                testTag = TestTags.SET_INCREASE_RPE,
-                onClick = {
-                    onDraftChange(
-                        draft.copy(rpeText = Rpe.format((halves + 1).coerceAtMost(Rpe.MAX_HALVES))),
-                    )
-                },
+                testTag = tags.increaseRpe,
+                onClick = { onDraftChange(draft.copy(rpeText = steppedRpeText(halves, +1))) },
             )
         }
         // Where the number came from, and only where the plan named one: the field already shows what it
@@ -230,6 +277,19 @@ internal fun SetRpeField(
 private const val RPE_STEPPER_NAME = "RPE"
 
 /**
+ * The text one tap of the RPE stepper writes (ROADMAP N59).
+ *
+ * Blank is a real state — a set that recorded no effort — and the first tap **states the default**
+ * rather than stepping a number that was never there. After that it steps by a half and clamps at the
+ * ends of the scale, so holding a button down cannot leave 1–10.
+ */
+private fun steppedRpeText(current: Int?, delta: Int): String = when {
+    current == null -> Rpe.format(DEFAULT_RPE_HALVES)
+    delta < 0 -> Rpe.format((current - 1).coerceAtLeast(Rpe.MIN_HALVES))
+    else -> Rpe.format((current + 1).coerceAtMost(Rpe.MAX_HALVES))
+}
+
+/**
  * A labelled number field with a −/+ pair either side (ROADMAP P1.3a).
  *
  * The text is the single source of truth: the steppers rewrite it rather than
@@ -243,7 +303,7 @@ private const val RPE_STEPPER_NAME = "RPE"
  * anyway. Two characters beat an icon-artifact dependency.
  */
 @Composable
-internal fun NumberStepper(
+private fun NumberStepper(
     label: String,
     testTag: String,
     increaseTag: String,

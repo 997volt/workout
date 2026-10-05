@@ -312,9 +312,11 @@ class WorkoutEditingTest {
     }
 
     @Test
-    fun ratingWithJoints_leavesTheLegacyColumnsAlone() = runTest {
-        // ROADMAP N63: the single number and its free text are what an old session recorded, so a
-        // new rating writes the picked list and never rewrites them.
+    fun aRating_retiresTheLegacyColumns_itReplaces() = runTest {
+        // ROADMAP N63: the single number and its free text are what an old session recorded, and the
+        // row summary and the pain trend fall back to them whenever the picked list is empty. A new
+        // rating **replaces** the old one, so it retires them — left behind, a list the lifter cleared
+        // would resurrect the number they just removed.
         val sessionId = seedOpenWorkoutWithASet()
         database.workoutDao().insertSessionExercise(
             SessionExerciseEntity(
@@ -339,8 +341,21 @@ class WorkoutEditingTest {
 
         val stored = repository.observeSessionExercises(sessionId).first().single { it.id == "se-legacy" }
         assertEquals("the picked list is the new rating", listOf(JointPain(Joint.SHOULDER, Side.LEFT, 5)), stored.joints)
-        assertEquals("the legacy number is not rewritten", 7, stored.jointPain)
-        assertEquals("nor its free text", "left shoulder", stored.jointPainNote)
+        assertNull("the legacy number is retired by the rating that replaces it", stored.jointPain)
+        assertNull("and its free text", stored.jointPainNote)
+    }
+
+    @Test
+    fun clearingAPickedList_keepsItCleared() = runTest {
+        // ROADMAP N63: the resurrection this guards against — a save with every joint removed leaves
+        // no live row, and a reader that fell back to the legacy column would show the old pain again.
+        val sessionId = seedOpenWorkoutWithASet()
+        repository.rateExercise("se1", muscleFeel = 8, joints = listOf(JointPain(Joint.KNEE, Side.LEFT, 6)))
+
+        repository.rateExercise("se1", muscleFeel = 8, joints = emptyList())
+
+        val stored = repository.observeSessionExercises(sessionId).first().single { it.id == "se1" }
+        assertEquals("the list is cleared, not resurrected", emptyList<JointPain>(), stored.joints)
     }
 
     @Test
@@ -481,6 +496,8 @@ class WorkoutEditingTest {
             setId = "set1",
             reps = 8,
             weightGrams = 20_000L,
+            rpeHalves = null,
+            note = null,
             assistanceGrams = 20_000L,
         )
 

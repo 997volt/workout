@@ -260,6 +260,10 @@ class RoomProgramRepository @Inject constructor(
         val now = timeSource.nowEpochMillis()
         val existing = prescriptionDao.findSlotExercise(slotId, exerciseId)
         val saysNothing = restSeconds == null && techniqueNote == null && targetRpeHalves == null
+        // A clear has to reach the reader, exactly as it does for a template (N59): the per-set column
+        // is the fallback, and a clear that left it behind would be undone. Only a transition to null
+        // clears, so a pre-change prescription keeps its sets' value.
+        val legacyEffortCleared = targetRpeHalves == null && existing?.targetRpeHalves != null
         when {
             // Nothing is said and there is no row: there is nothing to write.
             existing == null && saysNothing -> Unit
@@ -281,14 +285,21 @@ class RoomProgramRepository @Inject constructor(
             saysNothing && prescriptionDao.countSlotSets(existing.id) == 0 ->
                 prescriptionDao.softDeleteSlotExercise(existing.id, now)
 
-            else -> prescriptionDao.updateSlotExercise(
-                existing.copy(
-                    restSeconds = restSeconds,
-                    techniqueNote = techniqueNote,
-                    targetRpeHalves = targetRpeHalves,
-                    updatedAt = now,
-                ),
-            )
+            else -> database.withTransaction {
+                prescriptionDao.updateSlotExercise(
+                    existing.copy(
+                        restSeconds = restSeconds,
+                        techniqueNote = techniqueNote,
+                        targetRpeHalves = targetRpeHalves,
+                        updatedAt = now,
+                    ),
+                )
+                prescriptionDao.clearSlotSetTargetRpe(
+                    slotExerciseId = existing.id,
+                    clear = legacyEffortCleared,
+                    at = now,
+                )
+            }
         }
     }
 

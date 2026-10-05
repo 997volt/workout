@@ -199,14 +199,47 @@ class ProgressionOfferTest {
 
     @Test
     fun anAssistedSet_offersOnlyTheRep() {
-        // The machine's help is a magnitude, not a load, so adding a step of weight to it would be
-        // the corruption N15 rejected a signed weight for.
+        // The shape both plan editors write for `-20`: zero added weight beside 20 kg of help. The
+        // machine's help is a magnitude, not a load, so adding a step of weight to it would be the
+        // corruption N15 rejected a signed weight for — and `Weight.display` prefers the help, so the
+        // write would not even be visible.
         val offer = progressionOfferFor(
-            planned = listOf(planSet(weight = null, assistance = 20_000L)),
+            planned = listOf(planSet(weight = 0L, assistance = 20_000L)),
             performed = listOf(done(weight = 0L)),
         )
 
         assertThat(offer!!.load).isNull()
+        assertThat(offer.reps).isEqualTo(ProgressionStep(5, 6))
+    }
+
+    @Test
+    fun aBodyweightSet_offersOnlyTheRep() {
+        // Zero added weight with no assistance is a bodyweight movement, and 0 -> 2.5 kg is not a
+        // step its plan asked for either.
+        val offer = progressionOfferFor(
+            planned = listOf(planSet(weight = 0L)),
+            performed = listOf(done(weight = 0L)),
+        )
+
+        assertThat(offer!!.load).isNull()
+    }
+
+    @Test
+    fun acceptingAStep_keepsTheSetsOwnLegacyRpe_ratherThanTheExercises() {
+        // The exercise's one number rides on every set so the rule can read it, but the write-back has
+        // to put the set's **own** stored value back (N59): copying the exercise's number into the
+        // legacy column would resurrect it after the plan's field was cleared.
+        val offer = progressionOfferFor(
+            planned = listOf(planSet(rpe = 18, legacyRpe = 6)),
+            performed = listOf(done()),
+        )!!
+
+        val accepted = offer.accepted(ProgressionDirection.REPS)!!
+
+        assertThat(accepted.legacyRpeHalves).isEqualTo(6)
+        assertWithMessage("the rule still read the exercise's target")
+            .that(accepted.targetRpeHalves)
+            .isEqualTo(18)
     }
 
     @Test
@@ -336,6 +369,8 @@ class ProgressionOfferTest {
         repsMax: Int? = 5,
         /** The exercise's one target RPE, which the caller carries onto each set (N59, amended). */
         rpe: Int? = 8,
+        /** The set's own legacy per-set value, which an accepted write puts back (N59). */
+        legacyRpe: Int? = null,
         percentOf1Rm: Int? = null,
         note: String? = null,
     ) = ProgressionPlanSet(
@@ -350,6 +385,7 @@ class ProgressionOfferTest {
         targetRpeHalves = rpe,
         targetPercentOf1Rm = percentOf1Rm,
         note = note,
+        legacyRpeHalves = legacyRpe,
     )
 
     private fun done(

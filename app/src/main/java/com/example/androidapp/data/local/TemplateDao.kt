@@ -249,6 +249,26 @@ interface TemplateDao {
         at: Long,
     ): Int
 
+    /**
+     * Clears the legacy per-set target effort of one planned exercise (ROADMAP N59).
+     *
+     * The effort is the exercise's one number now, and the per-set column is only the fallback a plan
+     * written before the change arrives with. Clearing the exercise's field is how a lifter says the
+     * plan names no effort, and without this the reader would fall back to the per-set value the clear
+     * was meant to remove. It is called only on a transition to null, so a plan whose effort only ever
+     * lived on its sets — an imported pre-change backup — keeps it.
+     */
+    @Query(
+        """
+        UPDATE template_sets
+        SET targetRpeHalves = NULL, updatedAt = :at
+        WHERE templateExerciseId = :templateExerciseId
+          AND targetRpeHalves IS NOT NULL
+          AND deletedAt IS NULL
+        """,
+    )
+    suspend fun clearSetTargetRpe(templateExerciseId: String, at: Long): Int
+
     /** Next free position; -1 on an empty template, so callers add 1. */
     @Query("SELECT COALESCE(MAX(position), -1) FROM template_exercises WHERE templateId = :templateId")
     suspend fun maxPosition(templateId: String): Int

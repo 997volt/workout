@@ -400,6 +400,43 @@ class TemplateRepositoryTest {
         return repository.observeExercises(templateId).first().single().id
     }
 
+    @Test
+    fun clearingTheExercisesEffort_clearsTheLegacyPerSetValues_too() = runTest {
+        // N59: the per-set column is the fallback the reader uses when the exercise names no effort, so
+        // a clear that left it behind would resurrect the number the lifter just removed. A plan that
+        // arrived with per-set values — a migrated one — is exactly this case.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.setExercisePlan(exercise, restSeconds = null, techniqueNote = null, targetRpeHalves = 16)
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(targetWeightGrams = 100_000L, targetRepsMax = 5, targetRpeHalves = 8),
+        )
+
+        repository.setExercisePlan(exercise, restSeconds = null, techniqueNote = null, targetRpeHalves = null)
+
+        val set = repository.observeExercises(template).first().single().sets.single()
+        assertNull("the set's legacy value goes with the exercise's", set.targetRpeHalves)
+    }
+
+    @Test
+    fun savingNoEffortOverAPlanThatNeverNamedOne_keepsTheSetsOwn() = runTest {
+        // A plan that came from a backup written before the effort moved to the exercise names none at
+        // the exercise level; its sets' values are the only target it has, and an edit that changes the
+        // rest must not erase them (N59).
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(targetWeightGrams = 100_000L, targetRepsMax = 5, targetRpeHalves = 8),
+        )
+
+        repository.setExercisePlan(exercise, restSeconds = 180, techniqueNote = null, targetRpeHalves = null)
+
+        val set = repository.observeExercises(template).first().single().sets.single()
+        assertEquals("the per-set value survives a save that names no effort", 8, set.targetRpeHalves)
+    }
+
 
 
     @Test

@@ -133,7 +133,10 @@ the rule; that one argues it.
   fields beside it *are* the values, and the editor is what correcting an already-logged set still
   opens. N19's role picker moved out of the dialog rather than away: it is still one set's decision
   made before the write, and it still clears itself, because the fields are keyed on the logged-set
-  count and re-arm from the plan's next unlogged set (B48). ([evidence](DECISIONS-EVIDENCE.md#n59))
+  count and re-arm from the plan's next unlogged set (B48). The **correction dialog invents nothing**:
+  it states a set that exists, so a set that recorded no effort shows *Not recorded* and keeps that on
+  save — correcting a weight must not turn an absence into a 9.0 measurement — and the stepper's first
+  tap states the default rather than stepping a number that was never there. ([evidence](DECISIONS-EVIDENCE.md#n59))
 - **An exercise's rare actions live behind its own overflow, and what cannot be done is not offered**
   (N53). *Superset with above* was a text link in every exercise header and *Delete* an icon beside
   *Done*; both are rarely used, and the header is read constantly mid-session, so the two of them cost
@@ -241,16 +244,24 @@ the rule; that one argues it.
 - **The progression is asked at *Done*, and the plan's own target RPE is what earns it** (N50). A plan's
   working set carries a target RPE (N14, P3.8), and where **every** prescribed working set was performed
   with its reps met at or under that target the session had room in hand, so *Done* offers the next step
-  as the lifter's choice: the smallest loadable step, or a rep. It is not N22's rule restored — that
-  computed from the rep ceiling alone and offered itself beside the next set, where this one is
-  conditioned on the session's own effort and waits to be asked. An unrated session or a plan with no
-  target RPE suggests nothing rather than guessing. **Where there is no plan there is no prompt at all**:
-  a next step is something only a plan can ask, so *Done* simply finishes the exercise. **The rating is
-  never on this path** — *How did that feel?* is opened from the exercise's own row, when the lifter
-  reaches for it, because asking on the way out asks at the moment the answer is worth least.
+  as the lifter's choice: the smallest loadable step, or a rep — and **only a rep where the plan names no
+  added weight**, because an assisted set stores the machine's help as a magnitude with zero kilograms
+  and a bodyweight set stores zero, so neither has a load a step can raise: offering `0 → 2.5 kg` there
+  would write a weight that `Weight.display` then hides behind the assistance. *Every* prescribed set is
+  **the plan the screen showed**, the slot's rows merged with the template's per index (P3.8), not the
+  slot's alone — otherwise a slot overriding one of three sets made "every" mean one, and paired it with
+  the wrong performance. It is not N22's rule restored — that computed from the rep ceiling alone and
+  offered itself beside the next set, where this one is conditioned on the session's own effort and waits
+  to be asked. An unrated session or a plan with no target RPE suggests nothing rather than guessing.
+  **Where there is no plan there is no prompt at all**: a next step is something only a plan can ask, so
+  *Done* simply finishes the exercise. **The rating is never on this path** — *How did that feel?* is
+  opened from the exercise's own row, when the lifter reaches for it, because asking on the way out asks
+  at the moment the answer is worth least.
   **Accepting writes the plan** — the slot's prescription for a program start (P3.8), the
   template's planned set for a direct one — because the plan is what the next run reads; a "next target"
-  stored on the session was rejected as the forward view N16 removed.
+  stored on the session was rejected as the forward view N16 removed. The write carries the **set's own**
+  stored effort rather than the exercise's number the rule read, so a plan whose one field is cleared
+  later is not resurrected by a copy the accept left behind.
 
 - **A superset is a group of exercises performed in rounds** (N24). The model is a
   nullable `supersetGroup: Int?` ordinal on `session_exercises` and `template_exercises`; a
@@ -441,7 +452,10 @@ the rule; that one argues it.
   the exercise's, one number for every set it prescribes** — a plan asks for an effort, while the set
   logged against it records what that set actually felt like, one per set (N6, N59) — and a migration
   seeds it from the per-set values a plan already carried, which stay in their columns so an older
-  backup still restores whole. Every target is nullable and nothing verifies it, for N14's reason.
+  backup still restores whole. **The fallback is for a plan that never named one at the exercise level,
+  not for one that was cleared**: saving a blank field over an exercise that had a number clears the
+  legacy per-set values in the same transaction, or the reader would resurrect the effort the lifter
+  just removed. Every target is nullable and nothing verifies it, for N14's reason.
 - **A percentage is derived, never assumed** (P3.8, from N17). The kilograms are Epley's estimate of
   the exercise's heaviest working set, rounded to the loadable step. An exercise with nothing
   estimable leaves the load open and history prefills it, which is "no number" said honestly rather

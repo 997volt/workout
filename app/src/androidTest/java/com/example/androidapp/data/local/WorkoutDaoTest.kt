@@ -249,9 +249,11 @@ class WorkoutDaoTest {
     }
 
     @Test
-    fun setSessionExerciseRating_leavesTheLegacyJointColumnsAlone() = runTest {
-        // ROADMAP N63: the joint rating moved to its own table, and the old single number and its
-        // free text are data a previous version recorded — read, never rewritten by a new rating.
+    fun setSessionExerciseRating_retiresTheLegacyJointColumns() = runTest {
+        // ROADMAP N63: the joint rating moved to its own table, and the old single number and its free
+        // text are data a previous version recorded. A new rating **replaces** the old one, so it
+        // retires them — left behind, a picked list the lifter cleared would fall back to the number it
+        // replaced. A session nobody re-rates keeps them, which is what history reading them means.
         val session = dao.startSession()
         insertExercise(
             session.id,
@@ -266,8 +268,8 @@ class WorkoutDaoTest {
 
         val rated = dao.observeSessionExerciseDetails(session.id).first().single()
         assertEquals(8, rated.muscleFeel)
-        assertEquals("the legacy number is not rewritten", 7, rated.jointPain)
-        assertEquals("nor its free text", "left shoulder", rated.jointPainNote)
+        assertNull("the legacy number goes with the rating that replaces it", rated.jointPain)
+        assertNull("and its free text", rated.jointPainNote)
     }
 
     @Test

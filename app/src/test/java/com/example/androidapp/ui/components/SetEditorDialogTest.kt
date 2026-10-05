@@ -24,8 +24,9 @@ import org.junit.runner.RunWith
  *
  * `Weight.step` already had unit tests and no callers. These are about the wiring
  * the unit tests cannot see: that a tap actually moves the field, that the floors
- * hold at the extremes, and that the RPE stepper records the number it shows — the
- * default included, now that a set always carries one (N59).
+ * hold at the extremes, and that the RPE stepper records the number it shows — and,
+ * for a set that recorded none, that a correction leaves it that way rather than
+ * inventing the default (N59).
  */
 @RunWith(AndroidJUnit4::class)
 class SetEditorDialogTest {
@@ -35,11 +36,12 @@ class SetEditorDialogTest {
 
     private var saved: SetEdit? = null
 
-    private fun show(reps: Int = 5, weightGrams: Long = 100_000L) {
+    private fun show(reps: Int = 5, weightGrams: Long = 100_000L, rpe: Int? = null) {
         composeTestRule.setContent {
             SetEditorDialog(
                 initialReps = reps,
                 initialWeightGrams = weightGrams,
+                initialRpe = rpe,
                 onDismiss = {},
                 onSave = { saved = it },
             )
@@ -51,9 +53,9 @@ class SetEditorDialogTest {
         show(weightGrams = 100_000L)
 
         // 100 kg, and the default step is 2.5 kg.
-        composeTestRule.onNodeWithTag(TestTags.SET_INCREASE_WEIGHT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_INCREASE_WEIGHT).performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertTextContains("102.5")
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_WEIGHT_FIELD).assertTextContains("102.5")
     }
 
     @Test
@@ -62,17 +64,26 @@ class SetEditorDialogTest {
         // where 0 is meaningful.
         show(reps = 1)
 
-        composeTestRule.onNodeWithTag(TestTags.SET_DECREASE_REPS).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_DECREASE_REPS).performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.SET_REPS_FIELD).assertTextContains("1")
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_REPS_FIELD).assertTextContains("1")
+    }
+
+    @Test
+    fun steppingRepsUp_raisesTheField() {
+        show(reps = 5)
+
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_INCREASE_REPS).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_REPS_FIELD).assertTextContains("6")
     }
 
     @Test
     fun anUnusableWeight_disablesSave_ratherThanGuessing() {
         show()
 
-        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).performTextClearance()
-        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).performTextInput("not a number")
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_WEIGHT_FIELD).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_WEIGHT_FIELD).performTextInput("not a number")
 
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertIsNotEnabled()
     }
@@ -85,7 +96,7 @@ class SetEditorDialogTest {
 
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).assertIsEnabled().performClick()
 
-        assertEquals(SetEdit(reps = 5, weightGrams = 0L, rpeHalves = 18, note = null), saved)
+        assertEquals(SetEdit(reps = 5, weightGrams = 0L, rpeHalves = null, note = null), saved)
     }
 
     @Test
@@ -96,9 +107,9 @@ class SetEditorDialogTest {
         show(weightGrams = 1_000L)
 
         // One step down from 1 kg: 1 − 2.5.
-        composeTestRule.onNodeWithTag(TestTags.SET_DECREASE_WEIGHT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_DECREASE_WEIGHT).performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertTextContains("-1.5")
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_WEIGHT_FIELD).assertTextContains("-1.5")
     }
 
     @Test
@@ -106,8 +117,8 @@ class SetEditorDialogTest {
         // ROADMAP N15: one field, two columns.
         show(weightGrams = 0L)
 
-        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).performTextClearance()
-        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).performTextInput("-20")
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_WEIGHT_FIELD).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_WEIGHT_FIELD).performTextInput("-20")
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
 
         assertEquals(0L, saved?.weightGrams)
@@ -126,43 +137,51 @@ class SetEditorDialogTest {
             )
         }
 
-        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD).assertTextContains("-20")
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_WEIGHT_FIELD).assertTextContains("-20")
     }
 
     @Test
     fun theRpeStepperAndCommentField_areAlwaysOffered() {
-        // N6's decision: RPE is visible on every edit. It is a stepper now (N59), so there is no
-        // blank state to leave it in; the comment is the field that may stay empty.
+        // N6's decision: RPE is visible on every edit. It is a stepper now (N59), and a set that
+        // recorded no effort says so rather than opening on a number nobody gave; the comment is the
+        // other field that may stay empty.
         //
         // Existence rather than "displayed": the editor is taller than
         // Robolectric's default window, and what matters is that the fields are
         // always part of it, not where they land on a small screen.
         show()
 
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_RPE_FIELD).assertExists()
         composeTestRule.onNodeWithTag(TestTags.SET_NOTE_FIELD).assertExists()
     }
 
     @Test
-    fun withNoPlanTarget_theStepperStartsAtNine_andSaveCarriesIt() {
-        // A stepper always shows a number, so a set with no plan target records the default rather
-        // than nothing: 9.0 is 18 halves (N59).
+    fun aSetThatRecordedNoRpe_keepsNone_andTheFirstTapStatesTheDefault() {
+        // This is the correction path's decision, asserted rather than assumed: editing a set's weight
+        // must not turn an unrecorded effort into a 9.0 measurement (N59). The stepper's first tap is
+        // how a lifter states one, and it states the default 9.0 rather than stepping a number that
+        // was never there.
         show()
 
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("9")
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_RPE_FIELD).assertTextEquals("Not recorded")
 
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+        assertEquals(SetEdit(reps = 5, weightGrams = 100_000L, rpeHalves = null, note = null), saved)
 
-        assertEquals(SetEdit(reps = 5, weightGrams = 100_000L, rpeHalves = 18, note = null), saved)
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_DECREASE_RPE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_RPE_FIELD).assertTextEquals("9")
+
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+        assertEquals(18, saved?.rpeHalves)
     }
 
     @Test
     fun anRpeAndComment_areReportedOnSave() {
-        show()
+        show(rpe = 18)
 
         // Two steps down from 9.0 is 8.
-        composeTestRule.onNodeWithTag(TestTags.SET_DECREASE_RPE).performClick()
-        composeTestRule.onNodeWithTag(TestTags.SET_DECREASE_RPE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_DECREASE_RPE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_DECREASE_RPE).performClick()
         composeTestRule.onNodeWithTag(TestTags.SET_NOTE_FIELD).performTextInput("Felt heavy")
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
 
@@ -173,11 +192,11 @@ class SetEditorDialogTest {
     @Test
     fun steppingTheRpeUp_movesByAHalfPoint() {
         // ROADMAP N6 extended: the step is half a point, so 9 → 9.5 (19 halves).
-        show()
+        show(rpe = 18)
 
-        composeTestRule.onNodeWithTag(TestTags.SET_INCREASE_RPE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_INCREASE_RPE).performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("9.5")
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_RPE_FIELD).assertTextEquals("9.5")
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
 
         assertEquals(19, saved?.rpeHalves)
@@ -187,13 +206,13 @@ class SetEditorDialogTest {
     fun theRpeStepper_stopsAtBothEndsOfTheScale() {
         // Clamped rather than wrapped: holding either button cannot leave 1–10, so there is no
         // off-scale value left to refuse (the shape the reps stepper's floor at 1 uses).
-        show()
+        show(rpe = 18)
 
-        repeat(20) { composeTestRule.onNodeWithTag(TestTags.SET_DECREASE_RPE).performClick() }
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("1")
+        repeat(20) { composeTestRule.onNodeWithTag(TestTags.SET_EDIT_DECREASE_RPE).performClick() }
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_RPE_FIELD).assertTextEquals("1")
 
-        repeat(20) { composeTestRule.onNodeWithTag(TestTags.SET_INCREASE_RPE).performClick() }
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("10")
+        repeat(20) { composeTestRule.onNodeWithTag(TestTags.SET_EDIT_INCREASE_RPE).performClick() }
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_RPE_FIELD).assertTextEquals("10")
     }
 
     @Test
@@ -251,7 +270,7 @@ class SetEditorDialogTest {
             )
         }
 
-        composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextEquals("9.5")
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_RPE_FIELD).assertTextEquals("9.5")
 
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
 

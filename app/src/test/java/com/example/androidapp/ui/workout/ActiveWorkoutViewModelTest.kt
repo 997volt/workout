@@ -38,6 +38,7 @@ import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.repository.StartedSession
+import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.domain.repository.WorkoutRepository
 import androidx.lifecycle.SavedStateHandle
@@ -147,11 +148,10 @@ class ActiveWorkoutViewModelTest {
     )
 
     /**
-     * The set the logging dialog opens on and Save commits (ROADMAP N51).
+     * The set the workout screen's own fields state, as *Log set* commits it (N59).
      *
-     * The one-tap path went, so a call to `onLogSet` is now "Save was tapped on what the dialog
-     * showed" — which is the row's own offer unless a test deliberately overrides a field to say the
-     * user typed something else.
+     * The RPE is part of it: the inline stepper opens on the plan's target or the default, so a set
+     * logged from the screen always carries one — the fix that made the field's number reach the row.
      */
     private fun offeredSet(
         viewModel: ActiveWorkoutViewModel,
@@ -163,7 +163,7 @@ class ActiveWorkoutViewModelTest {
         return SetEdit(
             reps = reps ?: suggestion.reps,
             weightGrams = weightGrams ?: suggestion.weightGrams,
-            rpeHalves = null,
+            rpeHalves = suggestion.targetRpeHalves ?: DEFAULT_RPE_HALVES,
             note = null,
             setType = setType,
             assistanceGrams = suggestion.assistanceGrams,
@@ -698,6 +698,132 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun acceptingAStep_writesTheSetsOwnRpe_notTheExercisesNumber() = runTest(dispatcher) {
+        // N59: the exercise's one number rides on every set for the rule to read, but the set's own
+        // legacy value is what travels back. Copying the exercise's number into the set column would
+        // make a cleared plan's effort come back, because the reader falls back to it.
+        val repository = FakeWorkoutRepository()
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    targetRpeHalves = 18,
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = 6)),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onAcceptProgression(id, ProgressionDirection.REPS)
+        settle()
+
+        val written = templates.updates.single()
+        assertEquals("the set's own legacy value, not the exercise's 9.0", 6, written.second.targetRpeHalves)
+        assertEquals(6, written.second.targetRepsMax)
+    }
+
+    @Test
+    fun aSlotThatOverridesOneSet_stillChecksTheTemplatesOthers() = runTest(dispatcher) {
+        // N50's "every prescribed working set" is the merged plan the screen shows (P3.8): the slot's
+        // set wins at index 0, and the template's set at index 1 still has to be answered — a session
+        // that failed it earns nothing. Reading only the slot's rows offered a step on half the work.
+        val repository = FakeWorkoutRepository()
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    targetRpeHalves = 8,
+                    sets = listOf(
+                        plannedSet(index = 0, reps = 5, weightGrams = 100_000L),
+                        plannedSet(index = 1, reps = 5, weightGrams = 100_000L),
+                    ),
+                ),
+            ),
+        )
+        val programs = FakeProgramRepository().apply {
+            prescriptions = listOf(
+                SlotPrescription(
+                    exerciseId = "back-squat",
+                    targetRpeHalves = 8,
+                    sets = listOf(
+                        SlotSet(id = "ps0", setIndex = 0, targetWeightGrams = 100_000L, targetRepsMax = 5),
+                    ),
+                ),
+            )
+        }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            programs = programs,
+            slotId = "slot-1",
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 8)
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 10)
+
+        assertNull(
+            "the template's second set was performed above the target, so nothing is earned",
+            viewModel.uiState.value.exercises.single().progression.offer,
+        )
+    }
+
+    @Test
+    fun aSlotsOwnRpe_coversTheTemplatesSets_itWroteNoRowFor() = runTest(dispatcher) {
+        // P3.8/N59: the slot wins where it speaks field by field, and its one target RPE covers the
+        // whole exercise — including a set it wrote no row for. The prefill and the rule have to read
+        // the same number, or the stepper opens on one target and the prompt is judged against another.
+        val repository = FakeWorkoutRepository()
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    // The template names 10.0, the slot 6.0: reading the template's would earn a step.
+                    targetRpeHalves = 20,
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
+                ),
+            ),
+        )
+        val programs = FakeProgramRepository().apply {
+            prescriptions = listOf(
+                SlotPrescription(exerciseId = "back-squat", targetRpeHalves = 12, sets = emptyList()),
+            )
+        }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            programs = programs,
+            slotId = "slot-1",
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+
+        assertEquals(
+            "the slot's 6 is what the stepper opens on",
+            12,
+            viewModel.uiState.value.exercises.single().suggestion.targetRpeHalves,
+        )
+
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 16)
+
+        val prompt = viewModel.uiState.value.exercises.single().progression
+        assertEquals("and the plan the rule states is the same number", 12, prompt.planned?.targetRpeHalves)
+        assertNull("8 is above the slot's 6, so nothing is earned", prompt.offer)
+    }
+
+    @Test
     fun decliningTheStep_finishesTheExercise_withoutWritingThePlan() = runTest(dispatcher) {
         // "with doing neither equally available" (N50): Not now is a finish, not a nudge.
         val repository = FakeWorkoutRepository()
@@ -1068,8 +1194,9 @@ class ActiveWorkoutViewModelTest {
         val logged = repository.sets.value.single()
         assertEquals(DEFAULT_REPS, logged.reps)
         assertEquals(Weight.DEFAULT_GRAMS, logged.weightGrams)
-        // N6: the one-tap path deliberately writes neither, so logging stays fast.
-        assertNull(logged.rpeHalves)
+        // N59: what the fields state is what *Log set* writes, the RPE included — a set from this
+        // screen always carries one, and it is the default where no plan named a target.
+        assertEquals(DEFAULT_RPE_HALVES, logged.rpeHalves)
         assertNull(logged.note)
     }
 

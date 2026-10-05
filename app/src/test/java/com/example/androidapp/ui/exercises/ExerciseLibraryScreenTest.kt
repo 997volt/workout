@@ -1,6 +1,9 @@
 package com.example.androidapp.ui.exercises
 
 import java.io.IOException
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
@@ -163,7 +166,11 @@ class ExerciseLibraryScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.DATA_EXPORT).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.DATA_IMPORT).assertDoesNotExist()
-        composeTestRule.onNodeWithText("Workout history").assertDoesNotExist()
+        // Read from resources rather than matched as English: the assertion is "the History screen is
+        // not reachable from here", and a reworded title must not make it pass by accident.
+        val historyTitle =
+            ApplicationProvider.getApplicationContext<Context>().getString(R.string.history_title)
+        composeTestRule.onNodeWithText(historyTitle).assertDoesNotExist()
     }
 
     @Test

@@ -12,7 +12,8 @@ object TestTags {
     const val SET_WEIGHT_FIELD = "set_weight_field"
     const val SET_REPS_FIELD = "set_reps_field"
 
-    /** RPE and the set comment (ROADMAP N6). The RPE is a stepper that always shows a number (N59). */
+    /** RPE and the set comment (ROADMAP N6). The RPE is a stepper; the logging path always states a
+     *  number, and the edit path shows "Not recorded" for a set that gave none (N59). */
     const val SET_RPE_FIELD = "set_rpe_field"
     const val SET_DECREASE_RPE = "set_decrease_rpe"
     const val SET_INCREASE_RPE = "set_increase_rpe"
@@ -35,6 +36,24 @@ object TestTags {
     const val SET_DECREASE_WEIGHT = "set_decrease_weight"
     const val SET_INCREASE_REPS = "set_increase_reps"
     const val SET_DECREASE_REPS = "set_decrease_reps"
+
+    /**
+     * The correction dialog's own fields (ROADMAP N59).
+     *
+     * A tag addresses **one** control, and the dialog states a set that exists while the workout
+     * screen's own fields state the next one. Both are composed while the dialog is open — it is a
+     * window over the screen, not a replacement — so sharing the tags above made each match two
+     * nodes. These are the edit path's half; the constants above are the logging path's.
+     */
+    const val SET_EDIT_WEIGHT_FIELD = "set_edit_weight_field"
+    const val SET_EDIT_INCREASE_WEIGHT = "set_edit_increase_weight"
+    const val SET_EDIT_DECREASE_WEIGHT = "set_edit_decrease_weight"
+    const val SET_EDIT_REPS_FIELD = "set_edit_reps_field"
+    const val SET_EDIT_INCREASE_REPS = "set_edit_increase_reps"
+    const val SET_EDIT_DECREASE_REPS = "set_edit_decrease_reps"
+    const val SET_EDIT_RPE_FIELD = "set_edit_rpe_field"
+    const val SET_EDIT_INCREASE_RPE = "set_edit_increase_rpe"
+    const val SET_EDIT_DECREASE_RPE = "set_edit_decrease_rpe"
 
     /**
      * Ending an exercise (ROADMAP N7). The two actions are mutually exclusive, so
@@ -92,6 +111,9 @@ object TestTags {
     const val RATING_SAVE = "rating_save"
     const val RATING_DISMISS = "rating_dismiss"
     const val EXERCISE_RATING_ROW = "exercise_rating_row"
+
+    /** The rating a picked list retires when it is saved (ROADMAP N63), shown read-only. */
+    const val RATING_LEGACY_JOINT = "rating_legacy_joint"
 
     /**
      * The step a plan earned, offered when an exercise is done (ROADMAP N50): what the plan asked,
@@ -215,6 +237,15 @@ object TestTags {
 
         /** Takes the muscle off the list. */
         fun soreRemove(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_remove_$muscle"
+
+        /**
+         * One muscle's **read-only** line where the editor is not open (ROADMAP N62).
+         *
+         * Separate from [soreRow] because a tag addresses one control: the workout header draws the
+         * stored list under the note and the editor draws the same muscles while it is open, so the
+         * shared name matched two nodes whenever the dialog was up over the screen.
+         */
+        fun soreLine(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_line_$muscle"
     }
 
     /** The workout comment asked for on Finish (ROADMAP N11), and its row in history. */

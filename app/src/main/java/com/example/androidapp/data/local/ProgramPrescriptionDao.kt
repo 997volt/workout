@@ -97,6 +97,29 @@ interface ProgramPrescriptionDao {
     @Update
     suspend fun updateSlotSet(row: ProgramSlotSetEntity): Int
 
+    /**
+     * Clears the legacy per-set target effort of one slot's exercise (ROADMAP N59, P3.8).
+     *
+     * The same job [TemplateDao.clearSetTargetRpe] does for a template, and for the same reason: the
+     * effort is the exercise's one number now, the per-set column is only the fallback a pre-change
+     * plan arrives with, and a clear that left it behind would be undone by the reader.
+     *
+     * [clear] is the transition the caller decided — a blank field over an exercise that had a number
+     * — as a parameter rather than a second statement, so the branch has no rule of its own to keep in
+     * step with the template's.
+     */
+    @Query(
+        """
+        UPDATE program_slot_sets
+        SET targetRpeHalves = NULL, updatedAt = :at
+        WHERE slotExerciseId = :slotExerciseId
+          AND targetRpeHalves IS NOT NULL
+          AND deletedAt IS NULL
+          AND :clear
+        """,
+    )
+    suspend fun clearSlotSetTargetRpe(slotExerciseId: String, clear: Boolean, at: Long): Int
+
     @Query(
         """
         UPDATE program_slot_exercises

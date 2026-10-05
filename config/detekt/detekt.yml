@@ -94,11 +94,7 @@ complexity:
     # these features and belongs with P3.14's per-slot breakdown rather than here.
     thresholdInInterfaces: 30
     thresholdInClasses: 28
-    # The file ceiling moved 20 -> 21 at N63, for `BackupMappers`: the codec's whole contract is
-    # field-for-field entity <-> DTO pairs in one place, and a new table adds one pair. Splitting a
-    # single table's mappers into a second file would put half of that contract somewhere else, which
-    # is a worse answer than one more function here.
-    thresholdInFiles: 21
+    thresholdInFiles: 20
     # `TestTags` is a flat namespace of tags, and the parameterised ones (a row
     # addressed by id, a chart addressed by metric) are the pattern the quality bar
     # asks for: a test addresses a control by identity rather than by position or by

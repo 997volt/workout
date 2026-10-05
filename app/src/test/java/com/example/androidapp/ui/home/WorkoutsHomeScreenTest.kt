@@ -270,7 +270,8 @@ class WorkoutsHomeScreenTest {
 
         composeTestRule.onNodeWithText("Next up").assertExists()
         // The small Start became the screen's second full-width pill, named apart from the empty one.
-        composeTestRule.onNodeWithText("Start planned workout").assertExists()
+        // Addressed by tag: the caption is a user-visible string a translation changes.
+        composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).assertExists()
         composeTestRule.onNodeWithText("Upper/Lower · 5 exercises").assertExists()
         composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).performClick()
 

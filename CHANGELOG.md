@@ -20,10 +20,12 @@ repeated here.
   wrist, hip, knee, ankle, and the central neck and lower back — as separate left and right entries
   where the joint is paired, each picked one carrying its own 1–10 (a new pick starts at 1), and a save
   replaces the list. The single *Joint pain (1–10)* field and its note box are gone; a session rated
-  before the change keeps its number and its free text, which history still reads, and the joint-pain
-  trend reads the **worst** joint rather than an average of two sides. The picked rows ride in the backup
-  with the exercise they describe, and the readiness note's sore-muscle list and this one now share a
-  single editor.
+  before the change keeps its number and its free text, which history still reads **until it is rated
+  again — a new rating retires them**, so a list the lifter cleared stays cleared rather than falling
+  back to the number it replaced (the dialog states the old rating so that replacement is visible). The
+  joint-pain trend reads the **worst** joint rather than an average of two sides. The picked rows ride
+  in the backup with the exercise they describe, and the readiness note's sore-muscle list and this one
+  now share a single editor.
 - **The readiness note records which muscles are still sore, and how sore** (N62). The note was one
   free-text line — the right shape for "slept badly" and the wrong one for "quads 8, calves 3". The prompt
   a new workout opens with now offers the taxonomy's own muscle groups beside the note, each picked one
@@ -41,9 +43,8 @@ repeated here.
   reps and the role picker — so they are read and changed before anything is committed, and *Log set*
   is a button beside them that writes exactly what is on screen. B7's display-agrees-with-storage is
   back on this path, and the editor is what correcting an already-logged set still opens. The fields
-  are keyed on the
-  logged-set count, so a write re-arms them from the plan's next unlogged set (B48) — N19's "a role is
-  one set's decision" holding without a dialog.
+  are keyed on the logged-set count, so a write re-arms them from the plan at the position the next set
+  occupies (B48) — N19's "a role is one set's decision" holding without a dialog.
 - **The app's progression proposal is withdrawn** (N33, N22). With the next set's values visible and
   editable before the write, a separate proposal to accept had nothing left to add, so the *Use it*
   link and the double-progression rule that computed it are gone; what the fields start from is what
@@ -69,14 +70,20 @@ repeated here.
   N59 withdrew the app's proposal but left two questions open — where a proposal belongs, and what earns
   one — and this answers both. *Done* opens a **progression prompt** that states what the plan asked and
   what was done and, where the plan was answered with room in hand, offers the next step as the lifter's
-  choice: the smallest loadable step, or a rep. **Where there is no plan there is no prompt at all** —
+  choice: the smallest loadable step, or a rep — and **only a rep where the plan names no added
+  weight**, because an assisted set's number is the machine's help and a bodyweight set's is zero, so
+  neither has a load a step can raise. **Where there is no plan there is no prompt at all** —
   a next step is something only a plan can ask — so *Done* finishes the exercise and nothing else.
   **Earned** is narrow on purpose — the exercise came from a plan, every prescribed working set carried
   a target RPE, and each was performed with its reps
   met at or under that RPE; warm-ups are excluded, and an unrated session suggests nothing rather than
-  guessing. Accepting writes the **plan** — the slot's prescription for a program start, the template's
-  planned set for a direct one — because the plan is what the next run reads, and the app still writes
-  only what the lifter accepts.
+  guessing. "Every prescribed working set" is the plan the screen showed: a slot's prescription wins
+  where it speaks and the template answers the rest, so a slot overriding one of three sets still has
+  its other two checked and its own RPE applied to them. Accepting writes the **plan** — the slot's
+  prescription for a program start, the template's planned set for a direct one — because the plan is
+  what the next run reads, and the app still writes only what the lifter accepts; the set's own legacy
+  RPE travels back with it rather than the exercise's number the rule read, so an effort cleared from
+  the plan later is not resurrected.
 - **Muscle feel is a stepped number, and it opens on 7** (N8). It was the last typed number on the
   rating dialog, and it is one value on a ten-point scale: it is now the same −/+ stepper the picked
   soreness and joint lists use, starting at 7 — a set worked hard without being taken to failure —
@@ -85,11 +92,13 @@ repeated here.
 - **A set's RPE is a stepped number, prefilled from the plan** (N6, N59). It was the workout screen's
   last typed field, and it was left blank on purpose — N59 showed the plan's target *beside* it rather
   than writing a target into a record of what happened. The lifter now reads the plan's own RPE in the
-  field and changes it if the set felt different; with no plan the stepper opens on 9. Halves step half a
-  point at a time and stop at 1 and 10, so a logged set always carries an RPE — and the set's own line
-  says it back, because effort is part of what a set was. The caption under the field names the plan's
-  target where there is one, and is absent otherwise. The plan editors keep their text field: there the
-  RPE is a target being authored, not a set being recorded.
+  field and changes it if the set felt different; with no plan the workout screen's stepper opens on 9.
+  Halves step half a point at a time and stop at 1 and 10, so a set logged from that screen always
+  carries an RPE — and the set's own line says it back, because effort is part of what a set was. The
+  caption under the field names the plan's target where there is one, and is absent otherwise. The plan
+  editors keep their text field: there the RPE is a target being authored, not a set being recorded.
+  **Correcting an already-logged set invents nothing**: a set that recorded no effort shows *Not
+  recorded*, keeps that on save, and states the default on the first tap of either button.
 - **A plan's RPE is one number per exercise, not one per planned set** (N14, N59). Authoring a plan
   meant typing an effort into every set, and the plan was saying the same thing each time; the target
   now sits beside the rest and cue the exercise already carries, in both the template editor and a
@@ -97,7 +106,10 @@ repeated here.
   the set records what it actually felt like. Migration 27→28 adds the columns and seeds each exercise
   from the last set that named one; the per-set columns stay, so a plan set through a set's dialog
   keeps its value and a backup written before the change still restores whole. A reader prefers the
-  exercise's number and falls back to the set's, so an old file behaves as it did.
+  exercise's number and falls back to the set's, so an old file behaves as it did — and clearing the
+  exercise's one field clears the legacy per-set values with it, or the fallback would resurrect the
+  effort the lifter just removed; a plan whose effort only ever lived on its sets (an imported
+  pre-change backup) is left alone.
 - **The rating is opened by the lifter, never handed to them** (N8, N50). *Done* used to end in *How did
   that feel?* — with a plan, one action inside the progression prompt; without one, as the prompt
   itself. Both are gone: the exercise's own rating row is the only way in, so finishing an exercise
@@ -106,11 +118,12 @@ repeated here.
 
 ### Fixed
 
-- **A set logged from the screen keeps the RPE and the comment it was given** (no feature id). The
-  inline fields are stated before *Log set*, but the write path had no parameter for either, so what
-  they said never reached the row — and *Undo* on a deleted set dropped the same two values as it put
-  the row back. The log path now takes both, required rather than defaulted so a caller cannot lose
-  them by forgetting.
+- **A set logged from the screen keeps the RPE it was given** (no feature id). The inline fields are
+  stated before *Log set*, but the write path had no parameter for the effort, so what the stepper
+  showed never reached the row — and *Undo* on a deleted set dropped the effort and the comment as it
+  put the row back. The log path now takes both, required rather than defaulted so a caller cannot lose
+  them by forgetting. A comment is given from the set's own row rather than on this path, so "the
+  comment it was given" is what the edit and the undo carry.
 
 ### Removed
 
