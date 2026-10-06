@@ -134,6 +134,32 @@ class WorkoutDetailScreenTest {
     }
 
     @Test
+    fun theStepOfAPastSetsExercise_reachesItsEditor() {
+        // ROADMAP B65: the ± buttons in the workout move by the movement's own step, and the same set
+        // corrected from history has to step the same way — the editor was never given the step, so it
+        // always moved by the unit's. + on a 5 kg-step exercise is 105 kg, not 102.5.
+        var saved: Long? = null
+        setScreen(
+            uiState = state.copy(
+                exercises = listOf(
+                    state.exercises.first().copy(
+                        sets = listOf(
+                            HistorySet(id = "set1", reps = 5, weightGrams = 100_000, stepGrams = 5_000L),
+                        ),
+                    ),
+                ),
+            ),
+            onUpdateSet = { _, _, weight, _, _, _, _ -> saved = weight },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.SET_ROW, useUnmergedTree = true).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_EDIT_INCREASE_WEIGHT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
+
+        assertEquals(105_000L, saved)
+    }
+
+    @Test
     fun rendersTheExerciseAndItsSet() {
         setScreen()
 

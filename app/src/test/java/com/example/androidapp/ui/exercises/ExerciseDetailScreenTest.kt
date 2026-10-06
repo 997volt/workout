@@ -193,6 +193,25 @@ class ExerciseDetailScreenTest {
     }
 
     @Test
+    fun switchingTheUnit_carriesTheTypedStepRatherThanReinterpretingIt() {
+        // ROADMAP B66: the step is a load in grams and the field's text is only how it reads, so a unit
+        // change while the form is open has to carry the number. "5" typed in kilograms and then read
+        // as pounds would store 2268 g — a different step from the one the lifter asked for.
+        var saved: ExerciseEdit? = null
+        show(customState(isEditing = true), onSave = { saved = it })
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_STEP).performTextInput("5")
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_WEIGHT_UNIT_LB).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performScrollTo().performClick()
+
+        // The field shows a tenth of a unit, so re-expressing 5 kg in pounds lands within one of those
+        // tenths rather than exactly — 4990 g, which reads as "5 kg" and as "11 lb" either way. What
+        // must not happen is the text being read as 5 lb, which is 2268 g: a different step entirely.
+        val step = requireNotNull(saved?.stepGrams) { "the form must save a step" }
+        assertTrue("re-expressed, not reinterpreted: $step g", step in 4_955L..5_045L)
+    }
+
+    @Test
     fun aStepOfZero_disablesSave() {
         // Zero is not a small step, it is no step: the ± buttons would do nothing and the warm-up
         // ramp divides by it, so the form refuses it rather than storing it (N77).

@@ -338,6 +338,21 @@ private data class ExerciseDraft(
     val stepGrams: Long? get() = stepText.trim().ifEmpty { null }?.let { Weight.parse(it, unit) }
 
     /**
+     * The step text as it reads in [next], when the unit changes (ROADMAP B66).
+     *
+     * The step is a load in grams and the text is only how it is read, so the number travels: 5 typed
+     * in kilograms becomes the same load in pounds rather than a different one. The field shows a tenth
+     * of the unit, so the re-expression is rounded to that — 5 kg reads as 11 lb and stores 4990 g,
+     * which both units still display as the same step. Blank stays blank, since that is the unit's own
+     * step and needs no carrying, and an unparseable text is kept as typed rather than replaced by
+     * "empty", which would hide the field's own error.
+     */
+    fun stepTextIn(next: WeightUnit): String {
+        val grams = stepText.takeIf { it.isNotBlank() }?.let { stepGrams }
+        return grams?.let { Weight.format(it, next) } ?: stepText
+    }
+
+    /**
      * A step of zero is refused rather than stored: it is not a small step but no step, and the
      * warm-up ramp divides by it (N77). Blank is the unit's own, which is a real answer.
      */
@@ -513,7 +528,13 @@ private fun ExercisePrescriptionFields(
 
         WeightUnitChoice(
             selected = draft.weightUnit,
-            onSelect = { onDraftChange(draft.copy(weightUnit = it)) },
+            // The step is a load in grams, so a unit change carries the number rather than
+            // reinterpreting the text: "5" typed in kilograms would otherwise be read as 5 lb and
+            // stored as 2.27 kg, silently changing what the lifter asked for (ROADMAP B66). Choosing
+            // the app's own unit reads in the app's, which is the unit the draft carries for it.
+            onSelect = {
+                onDraftChange(draft.copy(weightUnit = it, stepText = draft.stepTextIn(it ?: draft.appUnit)))
+            },
         )
 
         // Last, because the step is typed in the unit chosen just above it (N77). The hint names

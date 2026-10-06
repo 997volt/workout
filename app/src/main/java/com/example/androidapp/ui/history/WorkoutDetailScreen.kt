@@ -608,6 +608,9 @@ private fun EditSetDialog(
         initialNote = set.note,
         initialSetType = set.setType,
         initialAssistanceGrams = set.assistanceGrams,
+        // The exercise's own step, so the ± buttons here move the way they do in the workout this set
+        // came from (ROADMAP N77, B65): the same correction made in two places must step the same.
+        initialStepGrams = set.stepGrams,
         onDismiss = onDismiss,
         onSave = { edit ->
             onUpdateSet(

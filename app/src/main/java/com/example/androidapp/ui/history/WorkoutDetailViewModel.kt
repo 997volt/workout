@@ -45,6 +45,14 @@ data class HistorySet(
     val setType: SetType = SetType.NORMAL,
     /** The unit this set's load is read in (ROADMAP N64): its exercise's own, or the app's. */
     val weightUnit: WeightUnit? = null,
+    /**
+     * The library exercise's own weight step, or null for the unit's (ROADMAP N77, B65).
+     *
+     * Carried onto the set rather than read from the exercise beside it because the editor is opened
+     * per set: without it the ± buttons here moved by 2.5 kg while the same set corrected inside the
+     * workout moved by the step the movement actually loads in.
+     */
+    val stepGrams: Long? = null,
 )
 
 /** An exercise within a past workout, with everything that was logged for it. */
@@ -191,6 +199,9 @@ class WorkoutDetailViewModel @Inject constructor(
                                     assistanceGrams = it.assistanceGrams,
                                     setType = it.setType,
                                     weightUnit = row.weightUnit,
+                                    // And the movement's own step, so correcting a past set steps the
+                                    // way the workout it came from does (ROADMAP N77, B65).
+                                    stepGrams = row.stepGrams,
                                 )
                             },
                     )
