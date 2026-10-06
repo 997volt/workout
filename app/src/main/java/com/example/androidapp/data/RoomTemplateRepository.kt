@@ -274,12 +274,19 @@ class RoomTemplateRepository @Inject constructor(
         }
 
     /**
-     * Removes a planned set, and the run that hangs off it (ROADMAP N79, B60).
+     * Removes a planned set, and the run that hangs off it (ROADMAP N79, B60, B72).
      *
      * A rung carries no targets of its own — its load is derived from the set above it — so a run whose
      * anchor is gone has nothing left to read and nothing the editor may write. The whole run goes with
      * the anchor, whichever of its rows the delete was asked for: [runAt] names every rung whose anchor
      * this row is, which is the run's every rung, because adjacency is the only parent link there is.
+     *
+     * The survivors are then **renumbered to the positions they now hold**. A plan is read by position —
+     * a live session matches its logged sets against `setIndex` (`nextIndex = loggedSets.size`) and a
+     * run's continuation is keyed by it — so a gap left by a removal points both at the wrong row: a
+     * deleted middle set makes the next logged set line up with the one after it (B72). Renumbering
+     * keeps one index space rather than two, and it is the same invariant `prependSets` holds from the
+     * other direction.
      *
      * Rejected alternative: promoting a stranded first rung to a set of its own. A rung deliberately
      * names no reps and no weight, so promoting it invents both, and the invented numbers would be
@@ -301,6 +308,14 @@ class RoomTemplateRepository @Inject constructor(
         val now = timeSource.nowEpochMillis()
         database.withTransaction {
             going.forEach { dao.softDeleteTemplateSet(id = it, at = now) }
+            dao.findTemplateSets(exercise.templateId)
+                .filter { it.templateExerciseId == exercise.id }
+                .sortedBy { it.setIndex }
+                .forEachIndexed { position, row ->
+                    if (row.setIndex != position) {
+                        dao.updateTemplateSet(row.copy(setIndex = position, updatedAt = now))
+                    }
+                }
         }
     }
 

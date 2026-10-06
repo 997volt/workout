@@ -612,6 +612,34 @@ class TemplateRepositoryTest {
     }
 
     @Test
+    fun removingAMiddleSet_keepsTheSurvivorsPositionsContiguous() = runTest {
+        // ROADMAP B72: a plan is matched to a running session by position — `setIndex` against the
+        // number of sets logged, and a run's continuation against the plan's own index — so a removal
+        // that left a gap pointed the prefill and the rest rule at the wrong row. The survivors are
+        // renumbered, which is the one index space; `prependSets` holds the same invariant the other way.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 3))
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 5))
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 8))
+        val middle = repository.observeExercises(template).first().single().sets[1]
+
+        repository.removeSet(middle.id)
+
+        val left = repository.observeExercises(template).first().single().sets
+        assertEquals("the survivors hold the positions they now occupy", listOf(0, 1), left.map { it.setIndex })
+        assertEquals("and they are the sets that were there, in order", listOf(3, 8), left.map { it.targetRepsMax })
+
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 10))
+
+        assertEquals(
+            "and a new set appends rather than filling a gap",
+            listOf(0, 1, 2),
+            repository.observeExercises(template).first().single().sets.map { it.setIndex },
+        )
+    }
+
+    @Test
     fun anExercisesOwnStep_andAClimb_reachAPlanThroughTheProjections() = runTest {
         // ROADMAP B70: both columns travel through hand-written SQL projections — the exercise's step
         // onto the planned exercise, the climb onto the planned set — and no test read either back
