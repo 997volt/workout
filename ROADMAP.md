@@ -29,11 +29,29 @@ with its reps met at or under the exercise's one target RPE (N59) earns its own 
 siblings did — and **two bulk actions** (*raise every earned set's load*, *…reps*) cover the plan whose
 sets share a target while a row stays individually changeable. The prompt is **frozen when *Done* is
 tapped** and held as view-model state: a written target would otherwise re-arm the same offer on the
-next read, and a selection is not a write. Unchanged: the RPE target stays one number for the exercise
-(N59), the earning predicate and the warm-up exclusion (N17, N20, N22), the unit's own step (N64), and
-that only what the lifter chose is written. **No migration and no backup-format change** — a planned
-set's weight, assistance and rep targets are already its own columns. DECISIONS' N50 bullet is amended
-where it fixes the exercise-wide rule, with the argument for this id beside it as N74's evidence.
+next read, and a selection is not a write.
+
+**A step respects the plan's rep range.** "Reps from" and "Reps to" become the fixed range a set was
+authored with, which progression never edits, and a new **current rep target** becomes the number the
+session prefills and the rule measures; on a plan written with a floor it starts there (`from`, else
+`to`) and climbs. The **rep** direction is offered only while that target **and** the reps actually done
+are both below the range's ceiling, and accepting the **weight** direction on a set whose range is real
+(`from < to`) writes the current target back to `from` as well — so a range is climbed 5→6→7→8 and then
+started again a step heavier, instead of having its ceiling pushed to 9 and 10 as it is today. A plan
+with no ceiling keeps climbing as it does now, a plan whose ends are equal offers the weight alone, and
+a weight step on either leaves the reps alone. This is N22's double progression back — reps to the
+ceiling, then the load step and the range starts again (N22) — now gated on the session's own RPE and
+with the range itself held still; it retires the code's shared reading that a range means its upper
+bound (`targetRepsMax ?: targetRepsMin`), so the target becomes one of three numbers, `template_sets`
+gains the column in **migration 31→32** and the backup DTO a field beside it, and a plan already
+installed is backfilled to its range's floor, which is what a ranged plan's session then starts asking
+for.
+
+Unchanged: the RPE target stays one number for the exercise (N59), the earning predicate and the warm-up
+exclusion (N17, N20, N22), the unit's own step (N64), and that only what the lifter chose is written.
+The per-set offers otherwise ride on target columns a planned set already owns. DECISIONS' N50 bullet is
+amended where it fixes the exercise-wide rule and where it refuses N22's shape, with the argument for
+this id beside it as N74's evidence.
 
 A candidate graduates to this section — gaining an id and a spelled-out decision rather than a wish —
 when it is picked up, so what stands here is committed work; the two queues below are where the rest
