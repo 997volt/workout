@@ -3,12 +3,16 @@ package com.example.androidapp.ui.workout
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.PersonalRecordMoment
+import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.ProgressionDirection
+import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.ProgressionOffer
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionPrompt
+import com.example.androidapp.domain.model.ProgressionSetPrompt
 import com.example.androidapp.domain.model.ProgressionStep
+import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
@@ -37,6 +41,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -62,7 +67,10 @@ class ActiveWorkoutScreenTest {
      */
     private data class Actions(
         val onFinishExercise: (String) -> Unit = {},
-        val onAcceptProgression: (String, ProgressionDirection) -> Unit = { _, _ -> },
+        val onToggleProgression: (String, ProgressionDirection) -> Unit = { _, _ -> },
+        val onSelectAllProgression: (ProgressionDirection) -> Unit = {},
+        val onConfirmProgression: () -> Unit = {},
+        val onDismissProgression: () -> Unit = {},
         val onMoveExercise: (String, Int) -> Unit = { _, _ -> },
         val onReopenExercise: (String) -> Unit = {},
         val onRemoveExercise: (String) -> Unit = {},
@@ -86,8 +94,11 @@ class ActiveWorkoutScreenTest {
          * say so, which is what N53's move into the overflow made worth asserting.
          */
         onToggleSuperset: (String) -> Unit = actions.onToggleSuperset,
-        /** Whether *Done* asks about the next step a plan earned (ROADMAP N66). */
-        progressionPromptEnabled: Boolean = true,
+        /**
+         * The frozen progression question, or null (ROADMAP N74). It is the ViewModel's state rather
+         * than the screen's, so a test hands in exactly the question it wants drawn.
+         */
+        pendingProgression: PendingProgression? = null,
     ) {
         composeTestRule.setContent {
             ActiveWorkoutScreen(
@@ -103,7 +114,6 @@ class ActiveWorkoutScreenTest {
                 onRateExercise = actions.onRateExercise,
                 onFinish = actions.onFinish,
                 onFinishExercise = actions.onFinishExercise,
-                onAcceptProgression = actions.onAcceptProgression,
                 onReopenExercise = actions.onReopenExercise,
                 onDeleteSet = {},
                 onUndoDelete = {},
@@ -119,7 +129,11 @@ class ActiveWorkoutScreenTest {
                 countsAgainstProgram = countsAgainstProgram,
                 restTimerEnabled = restTimerEnabled,
                 defaultRestSeconds = defaultRestSeconds,
-                progressionPromptEnabled = progressionPromptEnabled,
+                pendingProgression = pendingProgression,
+                onToggleProgression = actions.onToggleProgression,
+                onSelectAllProgression = actions.onSelectAllProgression,
+                onConfirmProgression = actions.onConfirmProgression,
+                onDismissProgression = actions.onDismissProgression,
             )
         }
     }
@@ -198,9 +212,10 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun withAPlan_tappingDone_opensTheProgressionPrompt_andWritesNothingUntilItIsAnswered() {
-        // ROADMAP N50: where a plan can answer it, Done opens the progression prompt, and answering
-        // it is what finishes the exercise.
+    fun withAPlan_tappingDone_asksTheViewModelToFinish_ratherThanOpeningAnythingItself() {
+        // ROADMAP N74: whether a question opens is the ViewModel's call, because the offer is read
+        // from the plan and the session — so the screen's Done button only reports the tap, and the
+        // question is drawn from the frozen state it is handed back.
         var finished: String? = null
         setScreen(
             state(isFinished = false, progression = plannedPrompt()),
@@ -209,18 +224,29 @@ class ActiveWorkoutScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertExists()
-        assertEquals(null, finished)
-
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).performClick()
-
         assertEquals("se1", finished)
+        composeTestRule.onNodeWithTag(TestTags.Progression.CONFIRM).assertDoesNotExist()
+    }
+
+    @Test
+    fun anOpenQuestion_isDrawn_andDeclining_reportsItself() {
+        var dismissed = false
+        setScreen(
+            state(isFinished = false, progression = earnedPrompt()),
+            actions = Actions(onDismissProgression = { dismissed = true }),
+            pendingProgression = question(),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.set("ts-0")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Progression.NOT_NOW).performClick()
+
+        assertTrue("declining reports itself rather than finishing here", dismissed)
     }
 
     @Test
     fun withNoPlan_tappingDone_onlyFinishesTheExercise() {
-        // N50: no plan means no next step to decide. N8: leaving the exercise never asks how it felt,
-        // so nothing opens at all — the rating is the exercise's own row.
+        // N50: no plan means no next step to decide, so the ViewModel finishes and nothing opens.
+        // N8: leaving the exercise never asks how it felt — the rating is the exercise's own row.
         var rated: Rounding? = null
         var finished: String? = null
         setScreen(
@@ -233,46 +259,47 @@ class ActiveWorkoutScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Progression.CONFIRM).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertDoesNotExist()
         assertEquals("Done writes nothing", null, rated)
         assertEquals("se1", finished)
     }
 
     @Test
-    fun withThePromptTurnedOff_tappingDone_onlyFinishesTheExercise() {
-        // ROADMAP N66: the question is a preference, so a plan that could answer it is not asked
-        // when the switch is off — Done finishes and nothing is written to the plan.
-        var accepted: Pair<String, ProgressionDirection>? = null
-        var finished: String? = null
+    fun aQuestionWithNoFrozenState_isNeverDrawn() {
+        // ROADMAP N66: the question is a preference, and the ViewModel does not freeze one when it is
+        // off — a screen with nothing frozen has nothing to draw.
+        var rated: Rounding? = null
         setScreen(
             state(isFinished = false, progression = earnedPrompt()),
             actions = Actions(
-                onAcceptProgression = { id, direction -> accepted = id to direction },
-                onFinishExercise = { finished = it },
+                onRateExercise = { id, feel, joints -> rated = Rounding(id, feel, joints) },
             ),
-            progressionPromptEnabled = false,
         )
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
-
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertDoesNotExist()
-        assertEquals("se1", finished)
-        assertEquals("nothing was written to the plan", null, accepted)
+        composeTestRule.onNodeWithTag(TestTags.Progression.CONFIRM).assertDoesNotExist()
+        assertEquals("nothing in the prompt rates the exercise", null, rated)
     }
 
     @Test
-    fun aPlanThatEarnedAStep_offersIt_andReportsTheDirectionAccepted() {
-        var accepted: Pair<String, ProgressionDirection>? = null
+    fun pickingAStep_reportsTheSetAndDirection_andConfirmingWritesThem() {
+        var toggled: Pair<String, ProgressionDirection>? = null
+        var confirmed = false
         setScreen(
             state(isFinished = false, progression = earnedPrompt()),
-            actions = Actions(onAcceptProgression = { id, direction -> accepted = id to direction }),
+            actions = Actions(
+                onToggleProgression = { setId, direction -> toggled = setId to direction },
+                onConfirmProgression = { confirmed = true },
+            ),
+            pendingProgression = question(),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_REPS).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Progression.reps("ts-0")).performClick()
+        assertEquals("ts-0" to ProgressionDirection.REPS, toggled)
+        assertFalse("a pick is not a write", confirmed)
 
-        assertEquals("se1" to ProgressionDirection.REPS, accepted)
+        composeTestRule.onNodeWithTag(TestTags.Progression.CONFIRM).performClick()
+        assertTrue(confirmed)
     }
 
     @Test
@@ -285,11 +312,10 @@ class ActiveWorkoutScreenTest {
             actions = Actions(
                 onRateExercise = { id, feel, joints -> rated = Rounding(id, feel, joints) },
             ),
+            pendingProgression = question(),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
-
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Progression.set("ts-0")).assertExists()
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertDoesNotExist()
         assertEquals("nothing in the prompt rates the exercise", null, rated)
     }
@@ -663,35 +689,51 @@ class ActiveWorkoutScreenTest {
      * test that wants the prompt can pass this rather than the earned one (N50).
      */
     private fun plannedPrompt(): ProgressionPrompt = ProgressionPrompt(
-        planned = ProgressionPlanSet(
-            setId = "ts-0",
-            setIndex = 0,
-            targetWeightGrams = 100_000L,
-            targetRepsMax = 5,
-            targetRpeHalves = 8,
+        sets = listOf(
+            ProgressionSetPrompt(
+                planned = planSet(),
+                performed = ProgressionPerformance(reps = 5, weightGrams = 100_000L, rpeHalves = 8),
+                miss = ProgressionMiss.TOPPED_OUT,
+            ),
         ),
-        performed = ProgressionPerformance(reps = 5, weightGrams = 100_000L, rpeHalves = 8),
     )
 
-    /** One exercise whose plan asked 5 reps at RPE 8 and whose session answered at 7 (N50). */
-    private fun earnedPrompt(): ProgressionPrompt {
-        val planned = ProgressionPlanSet(
-            setId = "ts-0",
-            setIndex = 0,
-            targetWeightGrams = 100_000L,
-            targetRepsMax = 5,
-            targetRpeHalves = 8,
-        )
-        return ProgressionPrompt(
-            planned = planned,
-            performed = ProgressionPerformance(reps = 5, weightGrams = 100_000L, rpeHalves = 7),
-            offer = ProgressionOffer(
-                set = planned,
-                reps = ProgressionStep(5, 6),
-                load = ProgressionStep(100_000L, 102_500L),
+    /** One exercise whose plan asked 5 reps at RPE 8 and whose session answered at 7 (N50, N74). */
+    private fun earnedPrompt(): ProgressionPrompt = ProgressionPrompt(
+        sets = listOf(
+            ProgressionSetPrompt(
+                planned = planSet(),
+                performed = ProgressionPerformance(reps = 5, weightGrams = 100_000L, rpeHalves = 7),
+                offer = ProgressionOffer(
+                    set = planSet(),
+                    reps = ProgressionStep(5, 6),
+                    load = ProgressionStep(100_000L, 102_500L),
+                ),
             ),
-        )
-    }
+        ),
+    )
+
+    /**
+     * The question the ViewModel would have frozen for [earnedPrompt] (ROADMAP N74).
+     *
+     * Built through the same domain factory the ViewModel uses, so what the screen draws is what it
+     * would really be handed rather than a hand-made shape that agrees with nothing.
+     */
+    private fun question(): PendingProgression = pendingProgressionFor(
+        sessionExerciseId = "se1",
+        exerciseName = "Back Squat",
+        unit = WeightUnit.KILOGRAMS,
+        prompt = earnedPrompt(),
+    )
+
+    private fun planSet() = ProgressionPlanSet(
+        setId = "ts-0",
+        setIndex = 0,
+        targetWeightGrams = 100_000L,
+        targetRepsMin = 5,
+        targetRepsMax = 8,
+        targetRpeHalves = 8,
+    )
 
     @Test
     fun theNextSet_isStatedByFields_andLogSetWritesThem() {

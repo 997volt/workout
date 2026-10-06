@@ -2,6 +2,7 @@ package com.example.androidapp.ui.components
 
 import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -10,14 +11,17 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.R
+import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.ProgressionDirection
+import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.ProgressionOffer
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
-import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.domain.model.ProgressionPrompt
+import com.example.androidapp.domain.model.ProgressionSetPrompt
 import com.example.androidapp.domain.model.ProgressionStep
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -25,12 +29,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The next step a plan earned, as the lifter's decision (ROADMAP N50).
+ * The next step each planned set earned, as the lifter's decision (ROADMAP N50, N74).
  *
- * What matters here is that the prompt states both halves — what the plan asked and what was done —
- * that each control reports the direction it names rather than one of them, that declining writes
- * nothing, and that the rating the prompt carries is still one tap away. A prompt that offered only
- * the load, or that finished the exercise on a dismiss, would be the app deciding instead of asking.
+ * What matters here is that the question states one row per working set — the plan, what was done,
+ * and the step that set earned or why it earned none — that a pick reports the set and the direction
+ * rather than a bare "increase", that the directions a set offers are the only ones on it, and that
+ * declining writes nothing. Picking a step must not itself confirm anything: that is the whole point
+ * of N74's one *Done*.
  */
 @RunWith(AndroidJUnit4::class)
 class ProgressionDialogTest {
@@ -38,105 +43,197 @@ class ProgressionDialogTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    private var accepted: ProgressionDirection? = null
+    private var toggled: Pair<String, ProgressionDirection>? = null
+    private var selectedAll: ProgressionDirection? = null
+    private var confirmed = false
     private var notNow = false
 
-    private fun show(prompt: ProgressionPrompt) {
+    private fun show(question: PendingProgression) {
         composeTestRule.setContent {
             ProgressionDialog(
-                exerciseName = "Back Squat",
-                prompt = prompt,
-                unit = WeightUnit.KILOGRAMS,
-                onAccept = { accepted = it },
+                progression = question,
+                onToggle = { setId, direction -> toggled = setId to direction },
+                onSelectAll = { selectedAll = it },
+                onConfirm = { confirmed = true },
                 onNotNow = { notNow = true },
             )
         }
     }
 
     @Test
-    fun thePrompt_statesWhatThePlanAsked_andWhatWasDone() {
-        show(prompt())
+    fun everyWorkingSet_getsItsOwnRow() {
+        show(question(row("ts-0"), row("ts-1")))
 
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN)
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Progression.set("ts-0")).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Progression.set("ts-1")).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Progression.plan("ts-0"))
             .assertTextContains(plural(R.plurals.progression_reps_value, 5), substring = true)
             .assertTextContains(text(R.string.progression_weight_value, "100", "kg"), substring = true)
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_DONE)
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Progression.done("ts-1"))
             .assertTextContains(text(R.string.progression_weight_value, "100", "kg"), substring = true)
     }
 
     @Test
-    fun theLoadDirection_reportsItself_andNamesTheWeightItWouldSet() {
-        show(prompt())
+    fun belowTheCeiling_theRepIsOffered_andTheWeightIsNot() {
+        // The measure of N74: a set with reps left in its range has no weight step to take.
+        show(question(row("ts-0")))
 
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_LOAD)
+        composeTestRule.onNodeWithTag(TestTags.Progression.reps("ts-0"))
             .assertIsDisplayed()
-            .assertTextContains(text(R.string.progression_increase_load, "102.5", "kg"))
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_LOAD).performClick()
-
-        assertEquals(ProgressionDirection.LOAD, accepted)
-        assertTrue("accepting is not declining", !notNow)
+            .assertTextContains(plural(R.plurals.progression_choose_reps, 6))
+        composeTestRule.onNodeWithTag(TestTags.Progression.load("ts-0")).assertDoesNotExist()
     }
 
     @Test
-    fun theRepDirection_reportsItself_andNamesTheRepsItWouldSet() {
-        show(prompt())
+    fun atTheCeiling_theWeightIsOffered_andNamesTheRestart() {
+        // Asked 5 to 8, climbed to 8: the label states both halves of the write — the load and the
+        // reps it puts back on the floor — rather than hiding the second behind the first.
+        val climbed = planSet("ts-0").copy(targetRepsCurrent = 8)
+        val offer = ProgressionOffer(set = climbed, load = ProgressionStep(100_000L, 102_500L))
+        show(question(row("ts-0", planned = climbed, offer = offer, performed = done(reps = 8))))
 
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_REPS)
-            .assertTextContains(plural(R.plurals.progression_increase_reps, 6))
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_REPS).performClick()
-
-        assertEquals(ProgressionDirection.REPS, accepted)
+        composeTestRule.onNodeWithTag(TestTags.Progression.load("ts-0"))
+            .assertIsDisplayed()
+            .assertTextContains(pluralLabel(R.plurals.progression_choose_load_restart, 5, "102.5", "kg", 5))
+        composeTestRule.onNodeWithTag(TestTags.Progression.reps("ts-0")).assertDoesNotExist()
     }
 
     @Test
-    fun declining_isReported_andAcceptsNothing() {
-        show(prompt())
+    fun aSetThatEarnedNothing_statesWhy_andOffersNoStep() {
+        show(
+            question(
+                row(
+                    "ts-0",
+                    performed = done(reps = 3),
+                    offer = null,
+                    miss = ProgressionMiss.REPS_SHORT,
+                ),
+            ),
+        )
 
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).assertIsDisplayed().performClick()
+        composeTestRule.onNodeWithText(plural(R.plurals.progression_miss_reps_short, 2)).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Progression.reps("ts-0")).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Progression.load("ts-0")).assertDoesNotExist()
+    }
+
+    @Test
+    fun aToppedOutSet_saysSoRatherThanOfferingARepPastTheRange() {
+        show(question(row("ts-0", offer = null, miss = ProgressionMiss.TOPPED_OUT)))
+
+        composeTestRule.onNodeWithText(plural(R.plurals.progression_miss_topped_out, 8))
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun pickingAStep_reportsTheSetAndTheDirection() {
+        show(question(row("ts-0")))
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.reps("ts-0")).performClick()
+
+        assertEquals("ts-0" to ProgressionDirection.REPS, toggled)
+        assertFalse("a pick is not a write", confirmed)
+    }
+
+    @Test
+    fun aPickedStep_isAnnouncedAsSelected() {
+        // The chip's selected state is what says which step is picked, so a screen reader hears the
+        // answer rather than two identical buttons.
+        show(question(row("ts-0", direction = ProgressionDirection.REPS)))
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.reps("ts-0")).assertIsSelected()
+    }
+
+    @Test
+    fun theBulkPicks_appearOnlyWhereTwoSetsWouldTakeTheSameTap() {
+        show(question(row("ts-0"), row("ts-1")))
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.REPS_ALL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Progression.LOAD_ALL).assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.REPS_ALL).performClick()
+
+        assertEquals(ProgressionDirection.REPS, selectedAll)
+    }
+
+    @Test
+    fun aSingleOfferingSet_hasNoBulkPick() {
+        show(question(row("ts-0")))
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.REPS_ALL).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Progression.LOAD_ALL).assertDoesNotExist()
+    }
+
+    @Test
+    fun aWrittenStep_isStated_andLosesItsControls() {
+        val accepted = planSet("ts-0").copy(targetRepsCurrent = 6)
+        show(question(row("ts-0", planned = accepted, offer = null, applied = true)))
+
+        composeTestRule.onNodeWithText(text(R.string.progression_applied)).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Progression.reps("ts-0")).assertDoesNotExist()
+    }
+
+    @Test
+    fun confirming_isReported_asWritingEveryPick() {
+        show(question(row("ts-0"), row("ts-1", direction = ProgressionDirection.REPS)))
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.CONFIRM).assertIsDisplayed().performClick()
+
+        assertTrue(confirmed)
+        assertFalse("accepting is not declining", notNow)
+    }
+
+    @Test
+    fun declining_isReported_andConfirmsNothing() {
+        show(question(row("ts-0", direction = ProgressionDirection.REPS)))
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.NOT_NOW).assertIsDisplayed().performClick()
 
         assertTrue(notNow)
-        assertNull("doing neither writes no direction", accepted)
+        assertFalse("doing neither writes nothing", confirmed)
+        assertNull(toggled)
     }
 
     @Test
-    fun thePrompt_leavesTheRatingToTheExercise() {
+    fun theQuestion_leavesTheRatingToTheExercise() {
         // N8: the rating belongs to the exercise's own row, opened when the lifter reaches for it, so
         // leaving the exercise never asks for one.
-        show(prompt())
+        show(question(row("ts-0")))
 
         composeTestRule.onNodeWithText(text(R.string.rating_edit_title)).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Progression.NOT_NOW).assertIsDisplayed()
     }
 
-    @Test
-    fun withNothingEarned_thePrompt_stillStatesThePlan_andOffersNoStep() {
-        show(prompt(offer = null))
+    private fun question(vararg sets: PendingProgression.PendingSet) = PendingProgression(
+        sessionExerciseId = "se1",
+        exerciseName = "Back Squat",
+        unit = WeightUnit.KILOGRAMS,
+        sets = sets.toList(),
+    )
 
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_LOAD).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_REPS).assertDoesNotExist()
-        // Declining is still there, which is what keeps Done from being a dead end.
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_NOT_NOW).assertIsDisplayed()
-    }
+    private fun row(
+        setId: String,
+        planned: ProgressionPlanSet = planSet(setId),
+        performed: ProgressionPerformance? = done(),
+        offer: ProgressionOffer? = ProgressionOffer(set = planSet(setId), reps = ProgressionStep(5, 6)),
+        miss: ProgressionMiss? = null,
+        direction: ProgressionDirection? = null,
+        applied: Boolean = false,
+    ) = PendingProgression.PendingSet(
+        prompt = ProgressionSetPrompt(planned = planned, performed = performed, offer = offer, miss = miss),
+        direction = direction,
+        applied = applied,
+    )
 
-    @Test
-    fun anExerciseWithNoPlan_saysSo_ratherThanInventingOne() {
-        show(ProgressionPrompt())
+    private fun planSet(setId: String) = ProgressionPlanSet(
+        setId = setId,
+        setIndex = 0,
+        targetWeightGrams = 100_000L,
+        targetRepsMin = 5,
+        targetRepsMax = 8,
+        targetRpeHalves = 8,
+    )
 
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_PLAN)
-            .assertTextContains(text(R.string.progression_no_plan))
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_DONE).assertDoesNotExist()
-    }
-
-    @Test
-    fun aPlanWithNoLoadToRaise_offersOnlyTheRep() {
-        show(prompt(offer = offer(load = null)))
-
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_LOAD).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.PROGRESSION_REPS).assertIsDisplayed()
-    }
+    private fun done(reps: Int = 5) = ProgressionPerformance(reps = reps, weightGrams = 100_000L, rpeHalves = 7)
 
     private fun text(id: Int, vararg args: Any): String =
         ApplicationProvider.getApplicationContext<Context>().getString(id, *args)
@@ -145,23 +242,8 @@ class ProgressionDialogTest {
         ApplicationProvider.getApplicationContext<Context>().resources
             .getQuantityString(id, quantity, quantity)
 
-    private fun prompt(offer: ProgressionOffer? = offer()) = ProgressionPrompt(
-        planned = planSet(),
-        performed = ProgressionPerformance(reps = 5, weightGrams = 100_000L, rpeHalves = 7),
-        offer = offer,
-    )
-
-    private fun planSet() = ProgressionPlanSet(
-        setId = "ts-0",
-        setIndex = 0,
-        targetWeightGrams = 100_000L,
-        targetRepsMax = 5,
-        targetRpeHalves = 8,
-    )
-
-    private fun offer(load: ProgressionStep<Long>? = ProgressionStep(100_000L, 102_500L)) = ProgressionOffer(
-        set = planSet(),
-        reps = ProgressionStep(5, 6),
-        load = load,
-    )
+    /** A plural whose message takes more than the count, in format order. */
+    private fun pluralLabel(id: Int, quantity: Int, vararg args: Any): String =
+        ApplicationProvider.getApplicationContext<Context>().resources
+            .getQuantityString(id, quantity, *args)
 }

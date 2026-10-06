@@ -116,14 +116,29 @@ object TestTags {
     const val RATING_LEGACY_JOINT = "rating_legacy_joint"
 
     /**
-     * The step a plan earned, offered when an exercise is done (ROADMAP N50): what the plan asked,
-     * what was done, the two directions a lifter can accept, and declining.
+     * The steps a plan earned, offered when an exercise is done (ROADMAP N50, N74).
+     *
+     * One row per working set, so all but the question's own controls are addressed by the planned set
+     * they act on: a set is named by what it would change rather than by its position, which is what
+     * keeps a tag stable when the plan's order is edited. The two bulk controls are the exception,
+     * because they have no one set to name.
      */
-    const val PROGRESSION_PLAN = "progression_plan"
-    const val PROGRESSION_DONE = "progression_done"
-    const val PROGRESSION_LOAD = "progression_load"
-    const val PROGRESSION_REPS = "progression_reps"
-    const val PROGRESSION_NOT_NOW = "progression_not_now"
+    object Progression {
+        /** The question's own controls: writing every pick, declining all of them. */
+        const val CONFIRM = "progression_confirm"
+        const val NOT_NOW = "progression_not_now"
+
+        /** The bulk picks, which act on every row that offers that direction (N74). */
+        const val LOAD_ALL = "progression_load_all"
+        const val REPS_ALL = "progression_reps_all"
+
+        /** One set's row and the parts inside it. */
+        fun set(setId: String) = "progression_set_$setId"
+        fun plan(setId: String) = "progression_plan_$setId"
+        fun done(setId: String) = "progression_done_$setId"
+        fun load(setId: String) = "progression_load_$setId"
+        fun reps(setId: String) = "progression_reps_$setId"
+    }
 
     /**
      * The joints an exercise reported painful (ROADMAP N63), grouped so this object stays under its

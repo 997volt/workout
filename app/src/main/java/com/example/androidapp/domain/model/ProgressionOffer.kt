@@ -1,14 +1,21 @@
 package com.example.androidapp.domain.model
 
 /**
- * The next step an exercise earned, as a decision the lifter makes (ROADMAP N50).
+ * The next step each planned set earned, as a decision the lifter makes (ROADMAP N50, N74).
  *
  * N59 withdrew the app's proposal rather than the question: with the next set's values already fields
  * on the screen, a chip beside them had nothing to add. What it left was *where* a proposal belongs
  * and *what* earns one. **Done** is where — the work is over, and what comes next is the decision
  * that remains — and the plan's own targets are what: the offer exists only where the plan named a
- * target RPE for the exercise and every working set met it, so the app states a step it can read out
- * of the plan and the log rather than guessing from history.
+ * target RPE for the exercise and the set met it, so the app states a step it can read out of the plan
+ * and the log rather than guessing from history.
+ *
+ * **N74 made that step per set, and held it inside the plan's rep range.** Every prescribed working
+ * set is judged on its own rather than the exercise as a whole, so a set that was answered earns its
+ * step even when a sibling missed. The range a set was authored with — "Reps from"/"Reps to" — is
+ * never edited by progression: a set below its ceiling earns **reps**, and a set at the ceiling earns
+ * the **weight**, which puts the climb back on the range's floor. The two directions are therefore
+ * exclusive wherever the plan wrote a ceiling; a plan that wrote none keeps both, as it always has.
  *
  * **The app still only suggests.** The offer is inert until the lifter accepts one of its directions,
  * and accepting writes the plan and nothing else (DECISIONS.md's "the app suggests; it never writes").
@@ -21,7 +28,8 @@ enum class ProgressionDirection { LOAD, REPS }
 data class ProgressionStep<T>(val from: T, val to: T)
 
 /**
- * One prescribed set, reduced to what progression reads and what the accepted write must keep (N50).
+ * One prescribed set, reduced to what progression reads and what the accepted write must keep
+ * (N50, N74).
  *
  * Every target is nullable, exactly as it is on the plan: a set that names no load cannot have one
  * raised, and a set that names no reps cannot have its work checked. There is one plan to write back
@@ -56,11 +64,21 @@ data class ProgressionPlanSet(
     val legacyRpeHalves: Int? = null,
 ) {
     /**
-     * The reps this set asks for: the number the lifter has climbed to, falling back to the range's
-     * floor and then its ceiling — the reading `plannedTargetFor` and `prescribedTargetFor` share, so
-     * the prompt and the rule agree about what "5–8" asks for once progression has moved it (N74).
+     * The reps this set asks for: where the lifter has climbed to, falling back to the range's floor
+     * and then its ceiling — the reading `plannedTargetFor` shares, so the session and the prompt
+     * agree about what "5–8" asks for once progression has moved it (N74).
      */
     val targetReps: Int? get() = targetRepsCurrent ?: targetRepsMin ?: targetRepsMax
+
+    /**
+     * True when the plan wrote a real range for the weight step to restart (N74).
+     *
+     * Both ends have to be there and differ: "5 to 5" is one number rather than a range, and a plan
+     * that named only one end has no floor to return to — so a weight step on either leaves the reps
+     * exactly where they are.
+     */
+    val restartsAtFloor: Boolean
+        get() = targetRepsMin != null && targetRepsMax != null && targetRepsMin < targetRepsMax
 }
 
 /** One performed set, reduced to what progression reads (N50). Warm-ups are dropped by the rule. */
@@ -73,53 +91,113 @@ data class ProgressionPerformance(
 )
 
 /**
- * What the done prompt states, and the step it offers (ROADMAP N50).
+ * Why a working set earned no step (ROADMAP N74).
  *
- * A prompt rather than a bare offer because *Done* has to say something even when nothing was earned:
- * [planned] is the plan's own target for the last working set — the set a step would change — and
- * [performed] is what the session logged there. Either may be absent, and the wording says so rather
- * than inventing a target the plan never wrote.
+ * Stated rather than left blank because *Done* has to say something about work that was not answered:
+ * a lifter reading "2 reps short of the plan" learns what the app measured, where an empty row would
+ * read as a bug. The last one is the only case where the set *was* answered and still has nowhere to
+ * go.
  */
-data class ProgressionPrompt(
-    val planned: ProgressionPlanSet? = null,
-    val performed: ProgressionPerformance? = null,
+enum class ProgressionMiss {
+    /** The plan prescribed it and the session never logged it. */
+    NOT_DONE,
+
+    /** Work the plan does not name — an extra set — so there is no target a step could move. */
+    NOT_IN_PLAN,
+
+    /** The set names no reps, so there is nothing to check the work against or to raise. */
+    NO_REP_TARGET,
+
+    /** The exercise names no target RPE, so the app cannot tell whether there was room in hand. */
+    NO_TARGET_RPE,
+
+    /** The set was logged without an effort, so nothing is known about the room in hand. */
+    UNRATED,
+
+    /** Performed short of the reps this set asked for. */
+    REPS_SHORT,
+
+    /** Performed above the effort the plan asked for. */
+    OVER_TARGET_RPE,
+
+    /**
+     * Answered at the top of the range with no load to raise (N74).
+     *
+     * A bodyweight or assisted set has no added weight a step can move, so reaching its ceiling is
+     * the end of the app's suggestions — it says so rather than offering a rep past the range.
+     */
+    TOPPED_OUT,
+}
+
+/** One working set as the prompt states it: the plan, what was done, and what it earned (N74). */
+data class ProgressionSetPrompt(
+    val planned: ProgressionPlanSet?,
+    val performed: ProgressionPerformance?,
+    /** The step this set earned, or null — in which case [miss] says why (N74). */
     val offer: ProgressionOffer? = null,
+    /** Why no step was offered, or null when one was (N74). */
+    val miss: ProgressionMiss? = null,
 )
 
 /**
- * The step one exercise earned, and the plan set it would change (ROADMAP N50).
+ * What the done prompt states, and the steps it offers (ROADMAP N50, N74).
  *
- * [reps] is always there when there is an offer at all: the work can only be checked against a rep
- * target, so a set that names none earns nothing. [load] is absent where the plan names no **added**
- * weight to raise — an assisted set's number is the machine's help rather than a load (N15), so it
- * has no target a step can move.
+ * One entry per prescribed working set, in the plan's own order, and then any logged work the plan
+ * does not name — so the prompt is the whole session rather than the exercise's last set. An exercise
+ * with no plan at all has nothing to state, and the screen does not ask (N50).
+ */
+data class ProgressionPrompt(
+    val sets: List<ProgressionSetPrompt> = emptyList(),
+) {
+    /** True where the plan can answer *Done* at all: one prescribed set is enough (N50, N74). */
+    val hasPlan: Boolean get() = sets.any { it.planned != null }
+
+    /** How many sets earned a step: what the screen says when nothing did (N74). */
+    val earned: Int get() = sets.count { it.offer != null }
+}
+
+/**
+ * The step one set earned, and the plan set it would change (ROADMAP N50, N74).
+ *
+ * Either direction may be absent — a bodyweight set has no load to raise, a plan may name no reps —
+ * and for a set inside a written range **exactly one is offered**: below the ceiling the reps move
+ * and the weight waits, at the ceiling the weight moves and the reps restart. A plan that wrote no
+ * ceiling is the one case that keeps both.
  */
 data class ProgressionOffer(
     val set: ProgressionPlanSet,
-    val reps: ProgressionStep<Int>,
+    /** The rep step, or null where the plan's range has no room left in it (N74). */
+    val reps: ProgressionStep<Int>? = null,
+    /** The load step, or null where the plan names no added weight to raise (N15, N74). */
     val load: ProgressionStep<Long>? = null,
 ) {
     /**
      * The set as accepting [direction] would leave the plan, or null when that direction is not
      * offered.
      *
-     * The step moves the **current rep target** and never the range's two ends (N74): those are what
-     * the plan was authored with, so raising the ceiling past them — which is what this did — grew the
-     * prescription rather than the lifter's place inside it.
+     * A rep moves **where the lifter is in the range** and never the range's two ends (N74). A weight
+     * step on a real range puts that climb back on the floor — the range is started again a step
+     * heavier — while a plan that named no range keeps the reps it had.
      */
     fun accepted(direction: ProgressionDirection): ProgressionPlanSet? = when (direction) {
-        ProgressionDirection.LOAD -> load?.let { set.copy(targetWeightGrams = it.to) }
-        ProgressionDirection.REPS -> set.copy(targetRepsCurrent = reps.to)
+        ProgressionDirection.LOAD -> load?.let { step ->
+            set.copy(
+                targetWeightGrams = step.to,
+                targetRepsCurrent = set.targetRepsMin.takeIf { set.restartsAtFloor } ?: set.targetRepsCurrent,
+            )
+        }
+
+        ProgressionDirection.REPS -> reps?.let { set.copy(targetRepsCurrent = it.to) }
     }
 }
 
 /**
- * The prompt one exercise's *Done* opens with (ROADMAP N50).
+ * The prompt one exercise's *Done* opens with (ROADMAP N50, N74).
  *
- * [planned] and [performed] are the plan and the session reduced to what progression reads, in the
- * exercise's own order. The prompt states the **last working set** on each side: that is the set the
- * session built toward, the one a step would change, and pairing the whole lists is [progressionOfferFor]'s
- * job rather than the wording's. An exercise with no plan states no plan rather than failing.
+ * The plan's Nth working set is paired with the session's Nth, warm-ups removed from both sides
+ * (N17, N20, N22), and each pair is judged on its own. Work the plan does not name is stated after
+ * them with no step to offer, so the prompt accounts for the whole session. An exercise with no plan
+ * states no sets rather than failing.
  */
 fun progressionPromptFor(
     planned: List<ProgressionPlanSet>,
@@ -131,50 +209,88 @@ fun progressionPromptFor(
     stepGrams: Long = DEFAULT_PROGRESSION_STEP_GRAMS,
 ): ProgressionPrompt {
     val plannedWork = planned.plannedWork()
-    return ProgressionPrompt(
-        planned = plannedWork.lastOrNull(),
-        performed = performed.performedWork().lastOrNull(),
-        offer = progressionOfferFor(planned, performed, stepGrams),
+    val performedWork = performed.performedWork()
+    val prescribed = plannedWork.mapIndexed { index, set ->
+        set.toPrompt(performedWork.getOrNull(index), stepGrams)
+    }
+    val extra = performedWork.drop(plannedWork.size).map { done ->
+        ProgressionSetPrompt(planned = null, performed = done, miss = ProgressionMiss.NOT_IN_PLAN)
+    }
+    return ProgressionPrompt(sets = prescribed + extra)
+}
+
+/**
+ * One prescribed set and what the session did to it (N74).
+ *
+ * The offer and the miss are two halves of one judgement, so they are made together: a set either
+ * earned a step or has a reason it did not, never both and never neither.
+ */
+private fun ProgressionPlanSet.toPrompt(
+    done: ProgressionPerformance?,
+    stepGrams: Long,
+): ProgressionSetPrompt {
+    val unanswered = answeredMiss(done)
+    val offer = if (unanswered == null && done != null) offerFor(done, stepGrams) else null
+    return ProgressionSetPrompt(
+        planned = this,
+        performed = done,
+        offer = offer,
+        // An answered set with no step is the one case the plan cannot take further (N74).
+        miss = unanswered ?: ProgressionMiss.TOPPED_OUT.takeIf { offer == null },
     )
 }
 
 /**
- * The next step one exercise earned, or null (ROADMAP N50).
+ * Why the plan's own terms were not met, or null when they were (N74).
  *
- * **Earned** means the plan named a target RPE for the exercise — one number, carried onto every
- * prescribed working set by the caller — and every one of them was performed with its reps met at or
- * under that RPE, so the plan was answered with room in hand. The plan's Nth working set is paired
- * with the session's Nth working set: **the exercise's logged order**, with warm-ups removed from both
- * sides first (N17, N20, N22). Matching on `setIndex` would break the moment a plan's warm-up went
- * unlogged — every later index would shift and honest work would read as unattempted — while the order
- * of the work itself is the pairing the plan already means. A prescribed set with no performed
- * counterpart is work not done, and one rep short or one RPE above target earns nothing: this is the
- * app saying it is sure, so it says nothing otherwise.
- *
- * The same holds for the two things it cannot check — a plan that names no target RPE, or a session
- * that recorded none — which is why an unrated session suggests nothing rather than guessing (N59
- * shows the plan's RPE in the field rather than recording it).
- *
- * [stepGrams] is the smallest loadable step, so a barbell that jumps 2.5 kg is moved by one it has.
+ * Every check the old exercise-wide rule made, made against one set: the plan has to name reps and
+ * one target effort for the exercise, the session has to have recorded an effort, and the work has to
+ * have met the reps without going over that effort.
  */
-fun progressionOfferFor(
-    planned: List<ProgressionPlanSet>,
-    performed: List<ProgressionPerformance>,
-    stepGrams: Long = DEFAULT_PROGRESSION_STEP_GRAMS,
-): ProgressionOffer? {
-    val plannedWork = planned.plannedWork()
-    val performedWork = performed.performedWork()
-    val changed = plannedWork.lastOrNull()
-    val repTarget = changed?.targetReps
-    val earned = repTarget != null && plannedWork.withIndex().all { (index, plan) ->
-        plan.wasMetBy(performedWork.getOrNull(index))
+private fun ProgressionPlanSet.answeredMiss(done: ProgressionPerformance?): ProgressionMiss? {
+    val reps = targetReps
+    val rpeTarget = targetRpeHalves
+    return when {
+        done == null -> ProgressionMiss.NOT_DONE
+        reps == null -> ProgressionMiss.NO_REP_TARGET
+        rpeTarget == null -> ProgressionMiss.NO_TARGET_RPE
+        done.rpeHalves == null -> ProgressionMiss.UNRATED
+        done.reps < reps -> ProgressionMiss.REPS_SHORT
+        done.rpeHalves > rpeTarget -> ProgressionMiss.OVER_TARGET_RPE
+        else -> null
     }
-    if (changed == null || repTarget == null || !earned) return null
-    return ProgressionOffer(
-        set = changed,
-        reps = ProgressionStep(repTarget, repTarget + REPS_PER_STEP),
-        load = changed.addedWeightGrams?.let { ProgressionStep(it, it + stepGrams) },
-    )
+}
+
+/**
+ * The step an answered set earned, or null when the range has nothing left to give (N74).
+ *
+ * **Below the range's ceiling the reps move and the weight waits**, and the target becomes one past
+ * what was actually done rather than one past the number the plan asked for — asked 5, did 7 of an 8
+ * ceiling, next target 8, so the plan tracks the lifter. **At the ceiling the weight moves instead**,
+ * and a plan that wrote no ceiling is the case that keeps both directions, as it always did. A set at
+ * the ceiling with no load to raise returns null, which [toPrompt] states as [ProgressionMiss.TOPPED_OUT].
+ */
+private fun ProgressionPlanSet.offerFor(
+    done: ProgressionPerformance,
+    stepGrams: Long,
+): ProgressionOffer? {
+    val reps = targetReps ?: return null
+    val ceiling = targetRepsMax
+    val load = addedWeightGrams?.let { ProgressionStep(it, it + stepGrams) }
+    return when {
+        ceiling == null -> ProgressionOffer(
+            set = this,
+            reps = ProgressionStep(reps, reps + REPS_PER_STEP),
+            load = load,
+        )
+
+        done.reps < ceiling -> ProgressionOffer(
+            set = this,
+            reps = ProgressionStep(reps, minOf(done.reps + REPS_PER_STEP, ceiling)),
+        )
+
+        else -> load?.let { ProgressionOffer(set = this, load = it) }
+    }
 }
 
 /**
@@ -197,19 +313,6 @@ private fun List<ProgressionPlanSet>.plannedWork(): List<ProgressionPlanSet> =
 /** The same exclusion on the session's side, in the order the sets were logged (N50). */
 private fun List<ProgressionPerformance>.performedWork(): List<ProgressionPerformance> =
     filterNot { it.role == SetType.WARMUP }
-
-/**
- * True when the plan's set was answered: its reps met, at or under the RPE the plan asked for.
- *
- * Both halves are what the plan wrote, so a set the plan gave no rep target or no RPE to was never
- * answered — and an unrecorded RPE is the same absence (N59).
- */
-private fun ProgressionPlanSet.wasMetBy(done: ProgressionPerformance?): Boolean {
-    val reps = targetReps
-    val rpeTarget = targetRpeHalves
-    return done != null && done.rpeHalves != null && reps != null && rpeTarget != null &&
-        done.reps >= reps && done.rpeHalves <= rpeTarget
-}
 
 /** One rep is the step a rep direction raises by: the smallest unit a plan counts in. */
 private const val REPS_PER_STEP = 1

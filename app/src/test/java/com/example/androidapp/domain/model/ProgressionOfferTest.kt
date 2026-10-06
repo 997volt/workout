@@ -5,159 +5,231 @@ import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
 /**
- * The next step an exercise earned (ROADMAP N50).
+ * The next step each planned set earned (ROADMAP N50, N74).
  *
- * The rule is where "earned" is decided, so what matters here is every way it can say no: a rep
- * short, an RPE at the target and one over it, no RPE recorded, no target RPE written for the
- * exercise, a plan of warm-ups only, and no plan at all. A wrong yes is the app telling a lifter to
- * add weight they have not earned, which is the failure the whole rule exists to avoid.
+ * The rule is where "earned" is decided, so what matters here is every way it can say no and every
+ * way the two directions are kept apart: a rep short, an RPE at the target and one over it, no RPE
+ * recorded, no target RPE written for the exercise, a plan of warm-ups only, and no plan at all. A
+ * wrong yes is the app telling a lifter to add weight they have not earned, which is the failure the
+ * whole rule exists to avoid.
+ *
+ * N74's half is the range: a set below its ceiling earns the rep and *not* the weight, a set at the
+ * ceiling earns the weight and *not* the rep, and accepting the weight puts the climb back on the
+ * range's floor. Only a plan that wrote no ceiling keeps both, as it always did.
  */
 class ProgressionOfferTest {
 
     @Test
-    fun everyWorkingSet_isCheckedAgainstTheExercisesOneTargetRpe() {
-        // ROADMAP N59, amended: the plan names one RPE for the exercise, and the caller carries it
-        // onto every prescribed set. Meeting it on one set and exceeding it on the next is not the
-        // plan answered, so nothing is offered.
-        val offer = progressionOfferFor(
-            planned = listOf(
-                planSet(id = "ts-0", index = 0, rpe = 8),
-                planSet(id = "ts-1", index = 1, rpe = 8),
-            ),
-            performed = listOf(done(rpe = 8), done(rpe = 9)),
-        )
+    fun aSetBelowItsCeiling_earnsTheRepAlone() {
+        // Asked 5 of "5 to 8" and did them: there are reps left inside the range, so the weight waits
+        // rather than being offered beside them (N74).
+        val offer = singleOffer(planned = listOf(planSet(repsMin = 5, repsMax = 8)), performed = listOf(done()))
 
-        assertThat(offer).isNull()
+        assertThat(offer).isNotNull()
+        assertThat(offer!!.reps).isEqualTo(ProgressionStep(5, 6))
+        assertWithMessage("the weight waits while reps are left").that(offer.load).isNull()
     }
 
     @Test
-    fun anAnsweredPlan_offersBothDirections() {
-        val offer = progressionOfferFor(
-            planned = listOf(planSet()),
-            performed = listOf(done()),
+    fun aMissedSibling_doesNotStopTheSetThatWasAnswered() {
+        // The old rule needed every prescribed working set, so one missed set earned the exercise
+        // nothing at all. Per set, the answered one still earns its own step (N74).
+        val prompt = progressionPromptFor(
+            planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1)),
+            performed = listOf(done(reps = 5), done(reps = 3)),
         )
 
-        assertThat(offer).isNotNull()
-        assertThat(offer!!.set.setId).isEqualTo("ts-0")
-        assertThat(offer.reps).isEqualTo(ProgressionStep(5, 6))
+        assertThat(prompt.sets[0].offer).isNotNull()
+        assertThat(prompt.sets[0].offer!!.set.setId).isEqualTo("ts-0")
+        assertThat(prompt.sets[1].offer).isNull()
+        assertThat(prompt.sets[1].miss).isEqualTo(ProgressionMiss.REPS_SHORT)
+    }
+
+    @Test
+    fun theRepStep_tracksWhatWasDone_cappedAtTheCeiling() {
+        // Asked 5, did 7 of an 8 ceiling: the plan follows the lifter to the top of the range rather
+        // than stepping to 6 (N74).
+        val offer = singleOffer(planned = listOf(planSet(repsMin = 5, repsMax = 8)), performed = listOf(done(reps = 7)))
+
+        assertThat(offer!!.reps).isEqualTo(ProgressionStep(5, 8))
+    }
+
+    @Test
+    fun aSetAtItsCeiling_earnsTheWeightAlone() {
+        // The range is topped out, so the only way forward is a heavier bar — offered on its own.
+        val offer = singleOffer(
+            planned = listOf(planSet(repsMin = 5, repsMax = 8, repsCurrent = 8)),
+            performed = listOf(done(reps = 8)),
+        )
+
+        assertThat(offer!!.reps).isNull()
         assertThat(offer.load).isEqualTo(ProgressionStep(100_000L, 102_500L))
     }
 
     @Test
-    fun aRepShort_earnsNothing() {
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(repsMax = 5)),
-            performed = listOf(done(reps = 4)),
+    fun acceptingTheWeight_restartsARealRangeOnItsFloor() {
+        // "5 to 8" climbed to 8 becomes 5 reps a step heavier; the bounds themselves never move.
+        val offer = singleOffer(
+            planned = listOf(planSet(repsMin = 5, repsMax = 8, repsCurrent = 8)),
+            performed = listOf(done(reps = 8)),
+        )!!
+
+        val accepted = offer.accepted(ProgressionDirection.LOAD)!!
+
+        assertThat(accepted.targetWeightGrams).isEqualTo(102_500L)
+        assertThat(accepted.targetRepsCurrent).isEqualTo(5)
+        assertThat(accepted.targetRepsMin).isEqualTo(5)
+        assertWithMessage("the range's ceiling is the plan's, not the step's")
+            .that(accepted.targetRepsMax)
+            .isEqualTo(8)
+    }
+
+    @Test
+    fun aPlanWithNoCeiling_keepsBothDirections() {
+        // "At least five" wrote no ceiling, so there is always room in the reps — and the weight step
+        // it has always offered stays (N74).
+        val offer = singleOffer(
+            planned = listOf(planSet(repsMin = 5, repsMax = null)),
+            performed = listOf(done()),
         )
 
-        assertThat(offer).isNull()
+        assertThat(offer!!.reps).isEqualTo(ProgressionStep(5, 6))
+        assertThat(offer.load).isEqualTo(ProgressionStep(100_000L, 102_500L))
+    }
+
+    @Test
+    fun aPlanWhoseEndsAreEqual_offersTheWeightAlone_andKeepsTheReps() {
+        // "5 to 5" is one number rather than a range: there is no climb inside it, and no floor to
+        // restart at, so the weight moves and the reps stay where the plan put them.
+        val offer = singleOffer(
+            planned = listOf(planSet(repsMin = 5, repsMax = 5)),
+            performed = listOf(done()),
+        )!!
+
+        assertThat(offer.reps).isNull()
+        val accepted = offer.accepted(ProgressionDirection.LOAD)!!
+        assertWithMessage("the reps the set asks for are unchanged")
+            .that(accepted.targetReps)
+            .isEqualTo(5)
+        assertThat(accepted.targetRepsCurrent).isNull()
+    }
+
+    @Test
+    fun aPlanThatNamedNoFloor_offersTheWeightAlone_andKeepsTheReps() {
+        // "to 8" has a ceiling and no floor, so it is topped out at 8 and there is nowhere to restart.
+        val offer = singleOffer(
+            planned = listOf(planSet(repsMin = null, repsMax = 8, repsCurrent = 8)),
+            performed = listOf(done(reps = 8)),
+        )!!
+
+        assertThat(offer.reps).isNull()
+        assertThat(offer.accepted(ProgressionDirection.LOAD)!!.targetRepsCurrent).isEqualTo(8)
+    }
+
+    @Test
+    fun aRepShort_earnsNothing() {
+        val prompt = singleSet(planned = listOf(planSet()), performed = listOf(done(reps = 4)))
+
+        assertThat(prompt.offer).isNull()
+        assertThat(prompt.miss).isEqualTo(ProgressionMiss.REPS_SHORT)
     }
 
     @Test
     fun anRpeAtTheTarget_isMet() {
         // "at or under the target": the plan was answered exactly, and there is still room to move.
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(rpe = 8)),
-            performed = listOf(done(rpe = 8)),
-        )
+        val offer = singleOffer(planned = listOf(planSet(rpe = 8)), performed = listOf(done(rpe = 8)))
 
         assertThat(offer).isNotNull()
     }
 
     @Test
     fun anRpeOverTheTarget_earnsNothing() {
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(rpe = 8)),
-            performed = listOf(done(rpe = 9)),
-        )
+        val prompt = singleSet(planned = listOf(planSet(rpe = 8)), performed = listOf(done(rpe = 9)))
 
-        assertThat(offer).isNull()
+        assertThat(prompt.offer).isNull()
+        assertThat(prompt.miss).isEqualTo(ProgressionMiss.OVER_TARGET_RPE)
     }
 
     @Test
     fun anUnrecordedRpe_earnsNothing() {
         // The session did not say how hard it was, so nothing is known about the room in hand.
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(rpe = 8)),
-            performed = listOf(done(rpe = null)),
-        )
+        val prompt = singleSet(planned = listOf(planSet(rpe = 8)), performed = listOf(done(rpe = null)))
 
-        assertThat(offer).isNull()
+        assertThat(prompt.offer).isNull()
+        assertThat(prompt.miss).isEqualTo(ProgressionMiss.UNRATED)
     }
 
     @Test
     fun aPlanWithNoTargetRpe_earnsNothing() {
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(rpe = null)),
-            performed = listOf(done(rpe = 7)),
-        )
+        val prompt = singleSet(planned = listOf(planSet(rpe = null)), performed = listOf(done(rpe = 7)))
 
-        assertThat(offer).isNull()
+        assertThat(prompt.offer).isNull()
+        assertThat(prompt.miss).isEqualTo(ProgressionMiss.NO_TARGET_RPE)
     }
 
     @Test
     fun aPlanWithNoRepTarget_earnsNothing() {
         // Nothing to check the work against, and nothing to raise.
-        val offer = progressionOfferFor(
+        val prompt = singleSet(
             planned = listOf(planSet(repsMin = null, repsMax = null)),
             performed = listOf(done()),
         )
 
-        assertThat(offer).isNull()
+        assertThat(prompt.offer).isNull()
+        assertThat(prompt.miss).isEqualTo(ProgressionMiss.NO_REP_TARGET)
     }
 
     @Test
-    fun aPlanOfOnlyWarmUps_earnsNothing() {
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(role = SetType.WARMUP)),
-            performed = listOf(done(role = SetType.WARMUP)),
-        )
+    fun aPlannedSetThatWasNotDone_isStated_asNotDone() {
+        // The row still appears — the prompt accounts for the plan — it simply has no step.
+        val prompt = singleSet(planned = listOf(planSet()), performed = emptyList())
 
-        assertThat(offer).isNull()
+        assertThat(prompt.planned).isNotNull()
+        assertThat(prompt.offer).isNull()
+        assertThat(prompt.miss).isEqualTo(ProgressionMiss.NOT_DONE)
     }
 
     @Test
-    fun noPlan_earnsNothing() {
-        val offer = progressionOfferFor(planned = emptyList(), performed = listOf(done()))
-
-        assertThat(offer).isNull()
-    }
-
-    @Test
-    fun noWorkLogged_earnsNothing() {
-        val offer = progressionOfferFor(planned = listOf(planSet()), performed = emptyList())
-
-        assertThat(offer).isNull()
-    }
-
-    @Test
-    fun oneUnansweredSetAmongAnsweredOnes_earnsNothing() {
-        // Every prescribed working set, not the last one: a plan answered twice and missed once was
-        // not answered.
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1)),
-            performed = listOf(done(reps = 5), done(reps = 3)),
-        )
-
-        assertThat(offer).isNull()
-    }
-
-    @Test
-    fun anExtraSetLogged_doesNotStopTheOffer() {
-        // More work than the plan asked for is not a reason to withhold the plan's next step.
-        val offer = progressionOfferFor(
+    fun workThePlanDoesNotName_isStatedWithoutAStep() {
+        // An extra set is part of the session, so the prompt states it — with no target to change.
+        val prompt = progressionPromptFor(
             planned = listOf(planSet()),
             performed = listOf(done(), done(), done()),
         )
 
-        assertThat(offer).isNotNull()
+        assertThat(prompt.sets).hasSize(3)
+        assertThat(prompt.sets[0].offer).isNotNull()
+        assertThat(prompt.sets[1].planned).isNull()
+        assertThat(prompt.sets[1].miss).isEqualTo(ProgressionMiss.NOT_IN_PLAN)
+        assertThat(prompt.sets[2].miss).isEqualTo(ProgressionMiss.NOT_IN_PLAN)
+    }
+
+    @Test
+    fun aPlanOfOnlyWarmUps_statesNothingToProgress() {
+        val prompt = progressionPromptFor(
+            planned = listOf(planSet(role = SetType.WARMUP)),
+            performed = listOf(done(role = SetType.WARMUP)),
+        )
+
+        assertThat(prompt.sets).isEmpty()
+        assertThat(prompt.hasPlan).isFalse()
+    }
+
+    @Test
+    fun noPlan_statesNoSetsAtAll() {
+        val prompt = progressionPromptFor(planned = emptyList(), performed = listOf(done()))
+
+        assertWithMessage("nothing to progress from, and nothing invented")
+            .that(prompt.sets.map { it.miss })
+            .containsExactly(ProgressionMiss.NOT_IN_PLAN)
+        assertThat(prompt.hasPlan).isFalse()
     }
 
     @Test
     fun warmUpsAreExcludedFromBothSides() {
-        // The plan's warm-up went unlogged, which shifts no index here: the work is paired by the
+        // The plan's warm-up went unlogged, which shifts no pairing here: the work is matched by the
         // order it was performed in, with a warm-up on either side dropped first (N17, N20, N22).
-        val offer = progressionOfferFor(
+        val prompt = progressionPromptFor(
             planned = listOf(
                 planSet(id = "warm", index = 0, role = SetType.WARMUP, weight = 40_000L, rpe = 5),
                 planSet(id = "work", index = 1),
@@ -165,63 +237,62 @@ class ProgressionOfferTest {
             performed = listOf(done()),
         )
 
-        assertThat(offer).isNotNull()
-        assertThat(offer!!.set.setId).isEqualTo("work")
+        assertThat(prompt.sets).hasSize(1)
+        assertThat(prompt.sets.single().offer!!.set.setId).isEqualTo("work")
     }
 
     @Test
-    fun theLastWorkingSet_isTheOneChanged() {
-        // It is the set the session built toward, so it is the plan's target in the sense a lifter
-        // means it — and one set is what the write is for.
-        val offer = progressionOfferFor(
-            planned = listOf(
-                planSet(id = "first", index = 0, weight = 90_000L),
-                planSet(id = "last", index = 1, weight = 100_000L),
-            ),
-            performed = listOf(done(weight = 90_000L), done(weight = 100_000L)),
+    fun aBodyweightSetAtItsCeiling_isToppedOut() {
+        // No rep is left inside the range and there is no weight to raise, so the app says exactly
+        // that rather than offering a rep past the plan (N74).
+        val offer = singleOffer(
+            planned = listOf(planSet(weight = null, repsMin = 5, repsMax = 8, repsCurrent = 8)),
+            performed = listOf(done(reps = 8, weight = 0L)),
         )
 
-        assertThat(offer!!.set.setId).isEqualTo("last")
+        assertThat(offer).isNull()
+        assertThat(
+            singleSet(
+                planned = listOf(planSet(weight = null, repsMin = 5, repsMax = 8, repsCurrent = 8)),
+                performed = listOf(done(reps = 8, weight = 0L)),
+            ).miss,
+        ).isEqualTo(ProgressionMiss.TOPPED_OUT)
     }
 
     @Test
-    fun aSetWithNoAddedWeight_offersOnlyTheRep() {
-        // A bodyweight movement has no load to raise; the rep is still a target a step can move.
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(weight = null)),
+    fun anAssistedSetBelowItsCeiling_stillOffersTheRep() {
+        // The shape both plan editors write for `-20`: zero added weight beside 20 kg of help, so a
+        // weight step would put 2.5 kg on a machine doing 20 kg of the work (N15).
+        val offer = singleOffer(
+            planned = listOf(planSet(weight = 0L, assistance = 20_000L, repsMin = 5, repsMax = 8)),
             performed = listOf(done(weight = 0L)),
-        )
+        )!!
 
-        assertThat(offer).isNotNull()
-        assertThat(offer!!.load).isNull()
+        assertThat(offer.load).isNull()
         assertThat(offer.reps).isEqualTo(ProgressionStep(5, 6))
     }
 
     @Test
-    fun anAssistedSet_offersOnlyTheRep() {
-        // The shape both plan editors write for `-20`: zero added weight beside 20 kg of help. The
-        // machine's help is a magnitude, not a load, so adding a step of weight to it would be the
-        // corruption N15 rejected a signed weight for — and `Weight.display` prefers the help, so the
-        // write would not even be visible.
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(weight = 0L, assistance = 20_000L)),
-            performed = listOf(done(weight = 0L)),
-        )
+    fun acceptingADirectionThePlanNeverOffered_isNull() {
+        // A set at its ceiling offers the weight, not the rep, and the dialog has no chip to tap.
+        val offer = singleOffer(
+            planned = listOf(planSet(repsMin = 5, repsMax = 8, repsCurrent = 8)),
+            performed = listOf(done(reps = 8)),
+        )!!
 
-        assertThat(offer!!.load).isNull()
-        assertThat(offer.reps).isEqualTo(ProgressionStep(5, 6))
+        assertThat(offer.accepted(ProgressionDirection.REPS)).isNull()
     }
 
     @Test
-    fun aBodyweightSet_offersOnlyTheRep() {
-        // Zero added weight with no assistance is a bodyweight movement, and 0 -> 2.5 kg is not a
-        // step its plan asked for either.
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(weight = 0L)),
-            performed = listOf(done(weight = 0L)),
-        )
+    fun acceptingTheRep_movesTheCurrentTarget_insideTheRange() {
+        // ROADMAP N74: the range is what the plan was authored with, and progression never edits it.
+        val offer = singleOffer(planned = listOf(planSet(repsMin = 5, repsMax = 8)), performed = listOf(done()))!!
 
-        assertThat(offer!!.load).isNull()
+        val accepted = offer.accepted(ProgressionDirection.REPS)!!
+
+        assertThat(accepted.targetRepsCurrent).isEqualTo(6)
+        assertThat(accepted.targetRepsMin).isEqualTo(5)
+        assertThat(accepted.targetRepsMax).isEqualTo(8)
     }
 
     @Test
@@ -229,12 +300,12 @@ class ProgressionOfferTest {
         // The exercise's one number rides on every set so the rule can read it, but the write-back has
         // to put the set's **own** stored value back (N59): copying the exercise's number into the
         // legacy column would resurrect it after the plan's field was cleared.
-        val offer = progressionOfferFor(
+        val offer = singleOffer(
             planned = listOf(planSet(rpe = 18, legacyRpe = 6)),
             performed = listOf(done()),
         )!!
 
-        val accepted = offer.accepted(ProgressionDirection.REPS)!!
+        val accepted = offer.accepted(ProgressionDirection.LOAD)!!
 
         assertThat(accepted.legacyRpeHalves).isEqualTo(6)
         assertWithMessage("the rule still read the exercise's target")
@@ -243,68 +314,9 @@ class ProgressionOfferTest {
     }
 
     @Test
-    fun theRaiseIsTheStep_itWasGiven() {
-        // The smallest loadable step is a parameter, so a barbell that jumps 5 kg is moved by one.
-        val offer = progressionOfferFor(
-            planned = listOf(planSet()),
-            performed = listOf(done()),
-            stepGrams = 5_000L,
-        )
-
-        assertThat(offer!!.load).isEqualTo(ProgressionStep(100_000L, 105_000L))
-    }
-
-    @Test
-    fun acceptingTheLoad_raisesTheTargetWeight() {
-        val offer = progressionOfferFor(listOf(planSet()), listOf(done()))!!
-
-        val accepted = offer.accepted(ProgressionDirection.LOAD)
-
-        assertThat(accepted!!.targetWeightGrams).isEqualTo(102_500L)
-        assertWithMessage("the rep target is untouched").that(accepted.targetRepsMax).isEqualTo(5)
-    }
-
-    @Test
-    fun acceptingTheRep_movesTheCurrentTarget_insideTheRange() {
-        // ROADMAP N74: the range is what the plan was authored with, and progression never edits it.
-        // What a rep step moves is the lifter's place inside it.
-        val offer = progressionOfferFor(listOf(planSet(repsMin = 5, repsMax = 8)), listOf(done(reps = 8)))!!
-
-        val accepted = offer.accepted(ProgressionDirection.REPS)
-
-        assertThat(accepted!!.targetRepsCurrent).isEqualTo(6)
-        assertWithMessage("the floor is the range's own, not what a step moves")
-            .that(accepted.targetRepsMin)
-            .isEqualTo(5)
-        assertWithMessage("and neither is the ceiling")
-            .that(accepted.targetRepsMax)
-            .isEqualTo(8)
-    }
-
-    @Test
-    fun acceptingTheRep_movesTheTarget_aPlanWithNoCeilingStillHas() {
-        // An AMRAP-ish "at least five" wrote no ceiling, so the step moves the number the session
-        // asks for while the floor stays where the plan wrote it (N74).
-        val offer = progressionOfferFor(listOf(planSet(repsMin = 5, repsMax = null)), listOf(done()))!!
-
-        val accepted = offer.accepted(ProgressionDirection.REPS)
-
-        assertThat(accepted!!.targetRepsCurrent).isEqualTo(6)
-        assertThat(accepted.targetRepsMin).isEqualTo(5)
-        assertThat(accepted.targetRepsMax).isNull()
-    }
-
-    @Test
-    fun acceptingADirectionThePlanNeverOffered_isNull() {
-        val offer = progressionOfferFor(listOf(planSet(weight = null)), listOf(done()))!!
-
-        assertThat(offer.accepted(ProgressionDirection.LOAD)).isNull()
-    }
-
-    @Test
     fun theAcceptedSet_keepsEverythingTheStepDidNotMove() {
-        val offer = progressionOfferFor(
-            planned = listOf(planSet(assistance = null, note = "belt on")),
+        val offer = singleOffer(
+            planned = listOf(planSet(note = "belt on")),
             performed = listOf(done()),
         )!!
 
@@ -316,39 +328,53 @@ class ProgressionOfferTest {
     }
 
     @Test
-    fun thePrompt_statesThePlan_andWhatWasDone() {
-        val prompt = progressionPromptFor(
-            planned = listOf(planSet()),
-            performed = listOf(done(reps = 5, rpe = 7)),
-        )
+    fun theRaiseIsTheStep_itWasGiven() {
+        // The smallest loadable step is a parameter, so a barbell that jumps 5 kg is moved by one.
+        val offer = singleOffer(
+            planned = listOf(planSet(repsMin = 5, repsMax = 8, repsCurrent = 8)),
+            performed = listOf(done(reps = 8)),
+            stepGrams = 5_000L,
+        )!!
 
-        assertThat(prompt.planned?.targetWeightGrams).isEqualTo(100_000L)
-        assertThat(prompt.planned?.targetReps).isEqualTo(5)
-        assertThat(prompt.performed?.reps).isEqualTo(5)
-        assertThat(prompt.performed?.rpeHalves).isEqualTo(7)
-        assertThat(prompt.offer).isNotNull()
+        assertThat(offer.load).isEqualTo(ProgressionStep(100_000L, 105_000L))
     }
 
     @Test
-    fun thePromptSaysNothingPlanned_forAnExerciseWithNoPlan() {
-        // Done still has something to say — the rating is behind it — but it does not invent a plan.
-        val prompt = progressionPromptFor(planned = emptyList(), performed = listOf(done()))
+    fun thePrompt_statesThePlanAndWhatWasDone_forEverySet() {
+        val prompt = progressionPromptFor(
+            planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1)),
+            performed = listOf(done(reps = 5, rpe = 7), done(reps = 8, rpe = 7)),
+        )
 
-        assertThat(prompt.planned).isNull()
-        assertThat(prompt.offer).isNull()
+        assertThat(prompt.hasPlan).isTrue()
+        assertThat(prompt.earned).isEqualTo(2)
+        assertThat(prompt.sets[0].planned?.targetWeightGrams).isEqualTo(100_000L)
+        assertThat(prompt.sets[0].planned?.targetReps).isEqualTo(5)
+        assertThat(prompt.sets[0].performed?.reps).isEqualTo(5)
+        assertThat(prompt.sets[1].performed?.reps).isEqualTo(8)
     }
 
     @Test
-    fun thePrompt_statesNoOffer_whenTheSessionWasNotRated() {
-        // The prompt is still worth reading — it says what the plan asked — it just suggests nothing.
+    fun anAnsweredPlan_statesHowManySetsEarnedOne() {
         val prompt = progressionPromptFor(
-            planned = listOf(planSet()),
-            performed = listOf(done(rpe = null)),
+            planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1)),
+            performed = listOf(done(reps = 5), done(reps = 3)),
         )
 
-        assertThat(prompt.planned).isNotNull()
-        assertThat(prompt.offer).isNull()
+        assertThat(prompt.earned).isEqualTo(1)
     }
+
+    private fun singleSet(
+        planned: List<ProgressionPlanSet>,
+        performed: List<ProgressionPerformance>,
+        stepGrams: Long = DEFAULT_PROGRESSION_STEP_GRAMS,
+    ): ProgressionSetPrompt = progressionPromptFor(planned, performed, stepGrams).sets.first()
+
+    private fun singleOffer(
+        planned: List<ProgressionPlanSet>,
+        performed: List<ProgressionPerformance>,
+        stepGrams: Long = DEFAULT_PROGRESSION_STEP_GRAMS,
+    ): ProgressionOffer? = singleSet(planned, performed, stepGrams).offer
 
     private fun planSet(
         id: String = "ts-0",
@@ -356,8 +382,10 @@ class ProgressionOfferTest {
         role: SetType = SetType.NORMAL,
         weight: Long? = 100_000L,
         assistance: Long? = null,
-        repsMin: Int? = null,
+        repsMin: Int? = 5,
         repsMax: Int? = 5,
+        /** Where in the range the lifter is, or null for "the floor, else the ceiling" (N74). */
+        repsCurrent: Int? = null,
         /** The exercise's one target RPE, which the caller carries onto each set (N59, amended). */
         rpe: Int? = 8,
         /** The set's own legacy per-set value, which an accepted write puts back (N59). */
@@ -371,6 +399,7 @@ class ProgressionOfferTest {
         targetAssistanceGrams = assistance,
         targetRepsMin = repsMin,
         targetRepsMax = repsMax,
+        targetRepsCurrent = repsCurrent,
         targetRpeHalves = rpe,
         note = note,
         legacyRpeHalves = legacyRpe,

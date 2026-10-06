@@ -23,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,14 +36,12 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.JointPain
-import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
 import com.example.androidapp.ui.components.ExerciseActionsMenu
 import com.example.androidapp.ui.components.ExerciseMenuTags
 import com.example.androidapp.ui.components.ExerciseRatingSection
-import com.example.androidapp.ui.components.ProgressionDialog
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.SetEntryDraft
 import com.example.androidapp.ui.components.SetEntryNumbers
@@ -105,8 +102,6 @@ internal fun ExerciseList(
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
     onFinishExercise: (String) -> Unit,
-    /** Writes the step a lifter accepted at *Done*, and finishes the exercise (ROADMAP N50). */
-    onAcceptProgression: (String, ProgressionDirection) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -114,8 +109,6 @@ internal fun ExerciseList(
     /** Whether a rest is counted down, and the fallback its static label uses (ROADMAP N44). */
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
-    /** Whether *Done* asks about the next step a plan earned (ROADMAP N66). */
-    progressionPromptEnabled: Boolean = true,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag(TestTags.EXERCISE_LIST),
@@ -135,7 +128,6 @@ internal fun ExerciseList(
                 onEditSet = onEditSet,
                 onDeleteSet = onDeleteSet,
                 onFinishExercise = onFinishExercise,
-                onAcceptProgression = onAcceptProgression,
                 onRateExercise = onRateExercise,
                 onReopenExercise = { onReopenExercise(row.id) },
                 // Row 0 has nothing above it to pair with: with no previous exercise the group
@@ -144,7 +136,6 @@ internal fun ExerciseList(
                 onToggleSuperset = if (index == 0) null else { { onToggleSuperset(row.id) } },
                 restTimerEnabled = restTimerEnabled,
                 defaultRestSeconds = defaultRestSeconds,
-                progressionPromptEnabled = progressionPromptEnabled,
             )
             HorizontalDivider()
         }
@@ -173,15 +164,12 @@ private fun ExerciseSection(
     onEditSet: (SetRow) -> Unit,
     onDeleteSet: (String) -> Unit,
     onFinishExercise: (String) -> Unit,
-    onAcceptProgression: (String, ProgressionDirection) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: () -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
-    /** Whether *Done* asks about the next step a plan earned (ROADMAP N66). */
-    progressionPromptEnabled: Boolean = true,
 ) {
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Row(
@@ -243,8 +231,6 @@ private fun ExerciseSection(
             row = row,
             onReopenExercise = onReopenExercise,
             onFinishExercise = onFinishExercise,
-            onAcceptProgression = onAcceptProgression,
-            progressionPromptEnabled = progressionPromptEnabled,
             modifier = Modifier.padding(top = 8.dp),
         )
     }
@@ -314,8 +300,6 @@ private fun ExerciseStateAction(
     row: SessionExerciseRow,
     onReopenExercise: () -> Unit,
     onFinishExercise: (String) -> Unit,
-    onAcceptProgression: (String, ProgressionDirection) -> Unit,
-    progressionPromptEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     when {
@@ -328,65 +312,12 @@ private fun ExerciseStateAction(
 
         row.sets.isEmpty() -> Unit
 
-        else -> FinishExerciseAction(
-            row = row,
-            onFinish = onFinishExercise,
-            onAcceptProgression = onAcceptProgression,
-            progressionPromptEnabled = progressionPromptEnabled,
-            modifier = modifier,
-        )
-    }
-}
-
-/**
- * The **Done** button for one exercise, and the prompt behind it (ROADMAP N7, N50, N66).
- *
- * Where a plan can answer it, Done opens the **progression prompt** — what the plan asked, what was
- * done, and the next step when the session earned one. **Where there is no plan there is no next step
- * to decide**, so Done only finishes the exercise; and the switch at Settings can withdraw the
- * question entirely (N66), because a lifter who does not want the app editing the plan is not asked
- * about it.
- *
- * The rating is deliberately not on this path (N8, N10): *How did that feel?* is opened where the
- * lifter reaches for it — the exercise's own row — and never handed to them on the way out of it.
- * Owning the prompt here keeps the transient "form is open" state next to the button that opens it,
- * the shape [ReadinessSection] already uses.
- */
-@Composable
-private fun FinishExerciseAction(
-    row: SessionExerciseRow,
-    onFinish: (String) -> Unit,
-    onAcceptProgression: (String, ProgressionDirection) -> Unit,
-    progressionPromptEnabled: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    // `rememberSaveable`: the activity declares no `configChanges`, so a rotation mid-prompt would
-    // otherwise dismiss the question the lifter was answering (nothing is written until they answer).
-    var prompting by rememberSaveable { mutableStateOf(false) }
-    // A plan is what the progression prompt reads (N50), and the setting is what asks for it (N66).
-    val prompts = progressionPromptEnabled && row.progression.planned != null
-
-    AppTextButton(
-        onClick = { if (prompts) prompting = true else onFinish(row.id) },
-        modifier = modifier.testTag(TestTags.EXERCISE_DONE),
-    ) {
-        Text(stringResource(R.string.active_workout_done_exercise))
-    }
-
-    if (prompting) {
-        ProgressionDialog(
-            exerciseName = row.name,
-            prompt = row.progression,
-            unit = row.weightUnit,
-            onAccept = { direction ->
-                prompting = false
-                onAcceptProgression(row.id, direction)
-            },
-            onNotNow = {
-                prompting = false
-                onFinish(row.id)
-            },
-        )
+        else -> AppTextButton(
+            onClick = { onFinishExercise(row.id) },
+            modifier = modifier.testTag(TestTags.EXERCISE_DONE),
+        ) {
+            Text(stringResource(R.string.active_workout_done_exercise))
+        }
     }
 }
 

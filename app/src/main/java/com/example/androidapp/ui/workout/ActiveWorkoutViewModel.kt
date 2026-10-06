@@ -7,6 +7,7 @@ import com.example.androidapp.domain.model.PersonalRecordMoment
 import com.example.androidapp.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import com.example.androidapp.domain.model.comparePlanToActual
 import com.example.androidapp.domain.model.PlannedSetSpec
 import com.example.androidapp.domain.model.PlanComparison
@@ -34,6 +35,9 @@ import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionPrompt
+import com.example.androidapp.domain.model.PendingProgression
+import com.example.androidapp.domain.model.ProgressionChoice
+import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.domain.model.progressionPromptFor
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.model.SoreMuscle
@@ -138,8 +142,8 @@ data class SessionExerciseRow(
     val sets: List<SetRow> = emptyList(),
     val suggestion: SetSuggestion = SetSuggestion(DEFAULT_REPS, Weight.DEFAULT_GRAMS),
     /**
-     * What *Done* opens with (ROADMAP N50): the plan's target for the last working set, what was done
-     * there, and the step those two earned.
+     * What *Done* opens with (ROADMAP N50, N74): one row per working set — the plan's target for it,
+     * what the session did, and the step those two earned.
      *
      * Empty rather than nullable, because *Done* still has something to say for an exercise with no
      * plan — the rating is behind the same prompt — and it says "no plan" rather than inventing one.
@@ -317,10 +321,11 @@ class ActiveWorkoutViewModel @Inject constructor(
     /**
      * Whether *Done* asks about the next step a plan earned (ROADMAP N66).
      *
-     * Read from settings rather than held as its own state: the answer is the app's, and the screen
-     * only needs it at the moment Done is tapped. On by default, so an upgrade changes nothing.
+     * Read from settings rather than held as its own state: the answer is the app's, and this reads it
+     * at the moment Done is tapped (N74 moved that decision here from the screen). On by default, so
+     * an upgrade changes nothing.
      */
-    val progressionPromptEnabled: StateFlow<Boolean> =
+    private val progressionPromptEnabled: StateFlow<Boolean> =
         settingsRepository.observeProgressionPromptEnabled()
             .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
@@ -365,6 +370,17 @@ class ActiveWorkoutViewModel @Inject constructor(
     /** The exercise just marked done, awaiting the snackbar's undo (ROADMAP N7). */
     private val pendingFinishedExercise = MutableStateFlow<String?>(null)
 
+    /**
+     * The progression question a *Done* froze, or null while none is open (ROADMAP N74).
+     *
+     * Held rather than derived, and it has to be: the offer is computed from the plan's target and the
+     * session's work, so the first step written would re-arm the same set's offer on the next read.
+     * Holding it is also what lets a pick survive a rotation mid-answer, since a local `remember`
+     * would not.
+     */
+    private val _pendingProgression = MutableStateFlow<PendingProgression?>(null)
+    val pendingProgression: StateFlow<PendingProgression?> = _pendingProgression.asStateFlow()
+
     /** Emits true once a finish or discard succeeds, so the screen can leave. */
     private val _closed = MutableStateFlow(false)
     val closed: StateFlow<Boolean> = _closed
@@ -390,17 +406,6 @@ class ActiveWorkoutViewModel @Inject constructor(
             if (session == null) flowOf(emptyList()) else workoutRepository.observeSets(session.id)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
-
-    /** Everything that describes the workout's contents. */
-    private data class Snapshot(
-        val session: WorkoutSession?,
-        val exercises: List<SessionExercise>,
-        val sets: List<SetEntry>,
-        val previous: Map<String, PreviousPerformance>,
-        val planned: List<TemplateExercise>,
-        /** The app-wide unit, so a change to it re-resolves every row's own (ROADMAP N64). */
-        val unit: WeightUnit,
-    )
 
     /** The three session-shaped sources, kept together so the combine below stays three deep. */
     private data class SessionPart(
@@ -570,45 +575,78 @@ class ActiveWorkoutViewModel @Inject constructor(
     }
 
     /**
-     * Marks an exercise done (ROADMAP N7) and offers an undo, because the mis-tap
-     * this prevents is also the mis-tap it can cause.
+     * Closes an exercise (ROADMAP N7, N50, N74).
+     *
+     * With no question open this is the *Done* button, and where a plan can answer it that **opens
+     * the question instead of closing the exercise** (N50, N74). The question is frozen here rather
+     * than read back later: the offer is computed from the plan's target and the session's work, so
+     * writing one step would re-arm the same set's offer on the next read. The setting can withdraw
+     * the question entirely (N66), and an exercise with no plan never has one to ask.
+     *
+     * With a question already open for this exercise it is *Not now*: declining is a finish, not a
+     * nudge, so the question is dropped and nothing is written (N50). Committing is
+     * [onConfirmProgression] because it has work to do before the finish.
      *
      * The ratings used to ride in here (N8): *Done* opened *How did that feel?* and the answer was
-     * written on the way to finishing. N50 makes the rating a detour from the progression prompt
-     * rather than a step in finishing, so it is written by [onRateExercise] and this only closes the
-     * exercise — with nothing written if the lifter never rated it.
+     * written on the way to finishing, so it is written by [onRateExercise] instead — with nothing
+     * written if the lifter never rated it.
      */
     fun onFinishExercise(sessionExerciseId: String) {
-        viewModelScope.launch { finishExercise(sessionExerciseId) }
+        val questionOpen = _pendingProgression.value?.sessionExerciseId == sessionExerciseId
+        val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId }
+        when {
+            questionOpen -> {
+                _pendingProgression.value = null
+                viewModelScope.launch { finishExercise(sessionExerciseId) }
+            }
+
+            progressionPromptEnabled.value && row?.progression?.hasPlan == true ->
+                _pendingProgression.value = pendingProgressionFor(
+                    sessionExerciseId = sessionExerciseId,
+                    exerciseName = row.name,
+                    unit = row.weightUnit,
+                    prompt = row.progression,
+                )
+
+            else -> viewModelScope.launch { finishExercise(sessionExerciseId) }
+        }
     }
 
     /**
-     * Writes the step the lifter accepted, then finishes the exercise (ROADMAP N50).
+     * Picks a step on the frozen question (ROADMAP N74).
      *
-     * [direction] is the lifter's own choice, and **the plan is what changes**: the session's record
-     * already says what was done, and N16's living template is what the next run reads. The slot's
-     * prescription takes the step for a program start, so two slots naming one template still progress
-     * apart (P3.8); the template's planned set takes it for a direct one. A failed write leaves the
-     * exercise open with the error on screen, because finishing anyway would say the step was taken —
-     * the same reason the ratings were written before the finish they used to travel with.
+     * [setId] names one set; null means every set that offers [direction], which is the plan whose
+     * sets share a target and would otherwise ask for the same tap once per set. A pick is not a
+     * write: nothing reaches the plan until [onConfirmProgression], which is what lets a lifter read
+     * the whole answer before taking it.
      */
-    fun onAcceptProgression(sessionExerciseId: String, direction: ProgressionDirection) {
-        val offer = uiState.value.exercises
-            .firstOrNull { it.id == sessionExerciseId }
-            ?.progression
-            ?.offer
-            ?: return
-        // A direction the plan never offered has nothing to write; the dialog does not offer one, and
-        // this is the same answer if a tap somehow arrives after the plan changed under it.
-        val raised = offer.accepted(direction) ?: return
+    fun onSelectProgression(setId: String?, direction: ProgressionDirection) {
+        _pendingProgression.update { pending ->
+            pending?.let { if (setId == null) it.chooseAll(direction) else it.toggle(setId, direction) }
+        }
+    }
+
+    /**
+     * Writes every step the lifter picked, then finishes the exercise (ROADMAP N50, N74).
+     *
+     * **The plan is what changes**: the session's record already says what was done, and N16's living
+     * template is what the next run reads (N73). The writes go one planned set at a time, and a
+     * failure stops the run with the error on screen and the exercise still open — finishing anyway
+     * would say every step was taken. What was already written is marked on the frozen question, so a
+     * retry writes only what is left.
+     */
+    fun onConfirmProgression() {
+        val pending = _pendingProgression.value ?: return
         viewModelScope.launch {
-            // The plan is the template's, so this is the only place a step can be written (N73).
-            val written = templateRepository.updateSet(raised.setId, raised.toTemplateEdit())
-            if (written is DataResult.Failure) {
-                lastError.value = written.error
+            val failure = writeProgressionSteps(pending.chosen, templateRepository) { accepted ->
+                _pendingProgression.update { it?.applied(accepted.setId, accepted) }
+            }
+            if (failure != null) {
+                lastError.value = failure
                 return@launch
             }
-            finishExercise(sessionExerciseId)
+            _pendingProgression.value = null
+            finishExercise(pending.sessionExerciseId)
         }
     }
 
@@ -1035,43 +1073,6 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
-    private fun Snapshot.toUiState(
-        error: DataError?,
-        undo: SetEntry?,
-        readinessPromptVisible: Boolean,
-        pendingFinishedExerciseId: String?,
-    ): ActiveWorkoutUiState {
-        // Which plan entry each row follows is resolved once, by movement (ROADMAP N54), rather than
-        // per row from the slot it happens to occupy.
-        val planEntries = planEntriesFor(exercises, planned)
-        return ActiveWorkoutUiState(
-            isLoading = false,
-            sessionId = session?.id,
-            startedAt = session?.let {
-                WorkoutFormat.clockTime(it.startedAt, zone = it.zoneIdOrNull() ?: ZoneId.systemDefault())
-            }.orEmpty(),
-            exercises = exercises.map {
-                it.toRow(
-                    sets = sets,
-                    previous = previous[it.exerciseId],
-                    // The plan is the template's, whole (ROADMAP N73), read in this exercise's
-                    // own unit where it has one (N64).
-                    plan = PlanContext(
-                        plannedEntry = planEntries[it.id],
-                        unit = it.weightUnit ?: unit,
-                    ),
-                    supersetLabels = supersetLabelsFor(exercises),
-                )
-            },
-            pendingUndo = undo,
-            pendingFinishedExerciseId = pendingFinishedExerciseId,
-            readinessNote = session?.readinessNote,
-            readinessSoreMuscles = session?.soreMuscles.orEmpty(),
-            isReadinessPromptVisible = readinessPromptVisible,
-            error = error,
-        )
-    }
-
     private companion object {
         /**
          * Reported when an undo's subject has gone. `Invalid` because it is the only
@@ -1083,6 +1084,66 @@ class ActiveWorkoutViewModel @Inject constructor(
         const val STOP_TIMEOUT_MILLIS = 5_000L
         const val TICK_MILLIS = 1_000L
     }
+}
+
+/**
+ * Everything that describes the workout's contents.
+ *
+ * File-level with [toUiState] rather than nested in the ViewModel: the two are one translation of the
+ * session's flows into screen state, and the class sits at the function ceiling detekt enforces.
+ */
+private data class Snapshot(
+    val session: WorkoutSession?,
+    val exercises: List<SessionExercise>,
+    val sets: List<SetEntry>,
+    val previous: Map<String, PreviousPerformance>,
+    val planned: List<TemplateExercise>,
+    /** The app-wide unit, so a change to it re-resolves every row's own (ROADMAP N64). */
+    val unit: WeightUnit,
+)
+
+/**
+ * The screen's state, translated from the snapshot the session's flows combine into.
+ *
+ * A file-level extension rather than a member: the class sits at the function ceiling detekt
+ * enforces, and this only translates the state it is given — it reads nothing from the ViewModel and
+ * writes nothing back, so it does not belong to it.
+ */
+private fun Snapshot.toUiState(
+    error: DataError?,
+    undo: SetEntry?,
+    readinessPromptVisible: Boolean,
+    pendingFinishedExerciseId: String?,
+): ActiveWorkoutUiState {
+    // Which plan entry each row follows is resolved once, by movement (ROADMAP N54), rather than per
+    // row from the slot it happens to occupy.
+    val planEntries = planEntriesFor(exercises, planned)
+    return ActiveWorkoutUiState(
+        isLoading = false,
+        sessionId = session?.id,
+        startedAt = session?.let {
+            WorkoutFormat.clockTime(it.startedAt, zone = it.zoneIdOrNull() ?: ZoneId.systemDefault())
+        }.orEmpty(),
+        exercises = exercises.map {
+            it.toRow(
+                sets = sets,
+                previous = previous[it.exerciseId],
+                // The plan is the template's, whole (ROADMAP N73), read in this exercise's own unit
+                // where it has one (N64).
+                plan = PlanContext(
+                    plannedEntry = planEntries[it.id],
+                    unit = it.weightUnit ?: unit,
+                ),
+                supersetLabels = supersetLabelsFor(exercises),
+            )
+        },
+        pendingUndo = undo,
+        pendingFinishedExerciseId = pendingFinishedExerciseId,
+        readinessNote = session?.readinessNote,
+        readinessSoreMuscles = session?.soreMuscles.orEmpty(),
+        isReadinessPromptVisible = readinessPromptVisible,
+        error = error,
+    )
 }
 
 /** What the screen shows once a workout is finished (ROADMAP N20). */
@@ -1356,6 +1417,28 @@ private fun SetRow.toProgressionPerformance(): ProgressionPerformance = Progress
     rpeHalves = rpeHalves,
     role = setType,
 )
+
+/**
+ * Writes every step the lifter picked, and reports the first failure (ROADMAP N74).
+ *
+ * File-level rather than a member because the class is at the function ceiling detekt enforces — the
+ * shape [planEntriesFor] already uses — and because this is a sequence over the repository rather than
+ * a question about the session. Each accepted set is handed to [onWritten] as it lands, so a retry
+ * after a failure writes only what is left.
+ */
+private suspend fun writeProgressionSteps(
+    chosen: List<ProgressionChoice>,
+    repository: TemplateRepository,
+    onWritten: (ProgressionPlanSet) -> Unit,
+): DataError? {
+    for (choice in chosen) {
+        val accepted = choice.offer.accepted(choice.direction) ?: continue
+        val written = repository.updateSet(accepted.setId, accepted.toTemplateEdit())
+        if (written is DataResult.Failure) return written.error
+        onWritten(accepted)
+    }
+    return null
+}
 
 /**
  * The accepted set as the template write takes it (N14).

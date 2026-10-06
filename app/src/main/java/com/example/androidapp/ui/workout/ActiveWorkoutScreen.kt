@@ -66,8 +66,10 @@ import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.SetEditorDialog
 import com.example.androidapp.ui.components.WorkoutNoteDialog
 import com.example.androidapp.ui.components.ReadinessNoteDialog
+import com.example.androidapp.ui.components.ProgressionDialog
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.ui.components.TestTags
@@ -97,7 +99,7 @@ fun ActiveWorkoutRoute(
     val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()
     val restTimerEnabled by viewModel.restTimerEnabled.collectAsStateWithLifecycle()
     val defaultRestSeconds by viewModel.defaultRestSeconds.collectAsStateWithLifecycle()
-    val progressionPromptEnabled by viewModel.progressionPromptEnabled.collectAsStateWithLifecycle()
+    val pendingProgression by viewModel.pendingProgression.collectAsStateWithLifecycle()
     RestCueAndScreenOn(clock, restCueEnabled, keepScreenOn, restTimerEnabled)
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
@@ -122,7 +124,14 @@ fun ActiveWorkoutRoute(
         onSaveReadinessNote = viewModel::onSaveReadinessNote,
         onDismissReadinessPrompt = viewModel::onDismissReadinessPrompt,
         onFinishExercise = viewModel::onFinishExercise,
-        onAcceptProgression = viewModel::onAcceptProgression,
+        pendingProgression = pendingProgression,
+        // One question, three operations on it: picking a step, writing them all, and declining.
+        onToggleProgression = { setId, direction -> viewModel.onSelectProgression(setId, direction) },
+        onSelectAllProgression = { direction -> viewModel.onSelectProgression(null, direction) },
+        onConfirmProgression = viewModel::onConfirmProgression,
+        onDismissProgression = {
+            pendingProgression?.let { viewModel.onFinishExercise(it.sessionExerciseId) }
+        },
         onRateExercise = viewModel::onRateExercise,
         // The undo is reopening, addressed by the id the state already carries — the
         // wrapper that used to sit here was a second name for one operation (N24).
@@ -137,7 +146,6 @@ fun ActiveWorkoutRoute(
         countsAgainstProgram = viewModel.startedFromProgram,
         restTimerEnabled = restTimerEnabled,
         defaultRestSeconds = defaultRestSeconds,
-        progressionPromptEnabled = progressionPromptEnabled,
         modifier = modifier,
     )
 }
@@ -159,8 +167,6 @@ fun ActiveWorkoutScreen(
     onSaveReadinessNote: (String?, List<SoreMuscle>) -> Unit,
     onDismissReadinessPrompt: () -> Unit,
     onFinishExercise: (String) -> Unit,
-    /** Writes the next step a lifter accepted at *Done*, and finishes the exercise (ROADMAP N50). */
-    onAcceptProgression: (String, ProgressionDirection) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onUndoFinishExercise: () -> Unit,
     onDismissFinishUndo: () -> Unit,
@@ -188,8 +194,21 @@ fun ActiveWorkoutScreen(
     restTimerEnabled: Boolean = true,
     /** The fallback the static prescription label uses when an exercise prescribes no rest (N44). */
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
-    /** Whether *Done* asks about the next step a plan earned (ROADMAP N66). */
-    progressionPromptEnabled: Boolean = true,
+    /**
+     * The progression question a *Done* froze, or null while none is open (ROADMAP N74).
+     *
+     * Non-null is what draws it: the ViewModel decides whether tapping *Done* opens one at all, so
+     * neither the setting (N66) nor "there is no plan" (N50) is re-decided here.
+     */
+    pendingProgression: PendingProgression? = null,
+    /** Picks one set's step, or takes the pick back when it is already there (ROADMAP N74). */
+    onToggleProgression: (String, ProgressionDirection) -> Unit = { _, _ -> },
+    /** Picks one direction on every set of the question that offers it (ROADMAP N74). */
+    onSelectAllProgression: (ProgressionDirection) -> Unit = {},
+    /** Writes every pick and closes the exercise (ROADMAP N74). */
+    onConfirmProgression: () -> Unit = {},
+    /** Declines the whole question and closes the exercise (ROADMAP N74). */
+    onDismissProgression: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -236,7 +255,6 @@ fun ActiveWorkoutScreen(
             onSaveReadinessNote = onSaveReadinessNote,
             onDismissReadinessPrompt = onDismissReadinessPrompt,
             onFinishExercise = onFinishExercise,
-            onAcceptProgression = onAcceptProgression,
             onRateExercise = onRateExercise,
             onReopenExercise = onReopenExercise,
             onDiscard = onDiscard,
@@ -244,7 +262,6 @@ fun ActiveWorkoutScreen(
             onToggleSuperset = onToggleSuperset,
             restTimerEnabled = restTimerEnabled,
             defaultRestSeconds = defaultRestSeconds,
-            progressionPromptEnabled = progressionPromptEnabled,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -255,6 +272,11 @@ fun ActiveWorkoutScreen(
         onDismiss = { editing = null },
     )
 
+    // One host, drawn from the frozen state rather than the row it came from, so a rotation
+    // mid-answer reopens it on the picks already made (N74).
+    pendingProgression?.let {
+        ProgressionDialog(it, onToggleProgression, onSelectAllProgression, onConfirmProgression, onDismissProgression)
+    }
 }
 
 /**
@@ -580,7 +602,6 @@ private fun WorkoutBody(
     onSaveReadinessNote: (String?, List<SoreMuscle>) -> Unit,
     onDismissReadinessPrompt: () -> Unit,
     onFinishExercise: (String) -> Unit,
-    onAcceptProgression: (String, ProgressionDirection) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
     onDiscard: () -> Unit,
@@ -589,7 +610,6 @@ private fun WorkoutBody(
     onToggleSuperset: (String) -> Unit = {},
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
-    progressionPromptEnabled: Boolean = true,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         // The record sits above the work, not in a dialog: it happens *between* sets, and
@@ -640,13 +660,11 @@ private fun WorkoutBody(
                         onEditSet = onEditSet,
                         onDeleteSet = onDeleteSet,
                         onFinishExercise = onFinishExercise,
-                        onAcceptProgression = onAcceptProgression,
                         onRateExercise = onRateExercise,
                         onReopenExercise = onReopenExercise,
                         onToggleSuperset = onToggleSuperset,
                         restTimerEnabled = restTimerEnabled,
                         defaultRestSeconds = defaultRestSeconds,
-                        progressionPromptEnabled = progressionPromptEnabled,
                     )
                 }
             }
@@ -880,7 +898,6 @@ private fun ActiveWorkoutScreenPreview() {
             onSaveReadinessNote = { _, _ -> },
             onDismissReadinessPrompt = {},
             onFinishExercise = { _ -> },
-            onAcceptProgression = { _, _ -> },
             onRateExercise = { _, _, _ -> },
             onUndoFinishExercise = {},
             onDismissFinishUndo = {},

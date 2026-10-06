@@ -27,6 +27,7 @@ import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgressionDirection
+import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.ProgressionStep
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
@@ -602,7 +603,9 @@ class ActiveWorkoutViewModelTest {
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
         templates.failUpdates = true
 
-        viewModel.onAcceptProgression(id, ProgressionDirection.LOAD)
+        viewModel.onFinishExercise(id)
+        viewModel.onSelectProgression(setId = null, direction = ProgressionDirection.LOAD)
+        viewModel.onConfirmProgression()
         settle()
 
         assertNotNull("a dropped plan write must not be silent", viewModel.uiState.value.error)
@@ -625,11 +628,15 @@ class ActiveWorkoutViewModelTest {
         settle()
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
 
-        val offer = viewModel.uiState.value.exercises.single().progression.offer
+        val offer = viewModel.uiState.value.exercises.single().progression.sets.single().offer
         assertNotNull(offer)
         assertEquals("ts-0", offer!!.set.setId)
-        assertEquals(ProgressionStep(5, 6), offer.reps)
-        assertEquals(ProgressionStep(100_000L, 102_500L), offer.load)
+        assertNull("a plan with no floor is topped out, so no rep is offered", offer.reps)
+        assertEquals(
+            "the weight is what is left once the range has no floor to climb",
+            ProgressionStep(100_000L, 102_500L),
+            offer.load,
+        )
     }
 
     @Test
@@ -645,13 +652,21 @@ class ActiveWorkoutViewModelTest {
         val id = viewModel.uiState.value.exercises.single().id
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
 
-        viewModel.onAcceptProgression(id, ProgressionDirection.LOAD)
+        viewModel.onFinishExercise(id)
+        assertNotNull("Done opens the question instead of closing the exercise", viewModel.pendingProgression.value)
+        viewModel.onSelectProgression(setId = "ts-0", direction = ProgressionDirection.LOAD)
+        settle()
+        assertTrue("a pick alone writes nothing (N74)", templates.updates.isEmpty())
+
+        viewModel.onConfirmProgression()
         settle()
 
         val written = templates.updates.single()
         assertEquals("ts-0", written.first)
         assertEquals(102_500L, written.second.targetWeightGrams)
-        assertEquals("the step raises the load, not the reps", 5, written.second.targetRepsMax)
+        assertEquals("the plan's reps are the plan's, not the step's", 5, written.second.targetRepsMax)
+        assertNull("a max-only plan has no floor to restart at", written.second.targetRepsCurrent)
+        assertNull("the question is closed once it is answered", viewModel.pendingProgression.value)
         assertTrue(viewModel.uiState.value.exercises.single().isFinished)
         assertEquals(id, viewModel.uiState.value.pendingFinishedExerciseId)
     }
@@ -679,12 +694,18 @@ class ActiveWorkoutViewModelTest {
         val id = viewModel.uiState.value.exercises.single().id
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
 
-        viewModel.onAcceptProgression(id, ProgressionDirection.REPS)
+        viewModel.onFinishExercise(id)
+        viewModel.onSelectProgression(setId = "ts-0", direction = ProgressionDirection.LOAD)
+        viewModel.onConfirmProgression()
         settle()
 
         val written = templates.updates.single()
         assertEquals("the set's own legacy value, not the exercise's 9.0", 6, written.second.targetRpeHalves)
-        assertEquals("the step moves where the lifter is in the range (N74)", 6, written.second.targetRepsCurrent)
+        assertEquals(
+            "a plan written as one number earns the load at its ceiling (N74)",
+            102_500L,
+            written.second.targetWeightGrams,
+        )
     }
 
     @Test
@@ -701,8 +722,15 @@ class ActiveWorkoutViewModelTest {
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
 
         viewModel.onFinishExercise(id)
+        assertNotNull("Done opens the question first", viewModel.pendingProgression.value)
+        assertFalse("and opening it finishes nothing", viewModel.uiState.value.exercises.single().isFinished)
+
+        // *Not now*, a dismiss and the back gesture are the same call: the question is already open
+        // for this exercise, so it is declined rather than opened again.
+        viewModel.onFinishExercise(id)
         settle()
 
+        assertNull(viewModel.pendingProgression.value)
         assertTrue(viewModel.uiState.value.exercises.single().isFinished)
         assertTrue("the app writes only what the lifter accepts", templates.updates.isEmpty())
     }
@@ -721,8 +749,10 @@ class ActiveWorkoutViewModelTest {
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = null)
 
         val prompt = viewModel.uiState.value.exercises.single().progression
-        assertNotNull("the plan is still worth stating", prompt.planned)
-        assertNull(prompt.offer)
+        val set = prompt.sets.first()
+        assertNotNull("the plan is still worth stating", set.planned)
+        assertNull(set.offer)
+        assertEquals("an unrecorded effort is why there is no step", ProgressionMiss.UNRATED, set.miss)
     }
 
     @Test
@@ -743,7 +773,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
 
-        assertNull(viewModel.uiState.value.exercises.single().progression.offer)
+        assertNull(viewModel.uiState.value.exercises.single().progression.sets.first().offer)
     }
 
     @Test
@@ -767,16 +797,17 @@ class ActiveWorkoutViewModelTest {
         settle()
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
 
-        val prompt = viewModel.uiState.value.exercises.single().progression
-        assertNotNull(prompt.offer)
-        assertNotNull("the prompt states the plan's own RPE", prompt.planned?.targetRpeHalves)
-        assertEquals(8, prompt.planned?.targetRpeHalves)
+        val set = viewModel.uiState.value.exercises.single().progression.sets.single()
+        assertNotNull(set.offer)
+        assertNotNull("the prompt states the plan's own RPE", set.planned?.targetRpeHalves)
+        assertEquals(8, set.planned?.targetRpeHalves)
     }
 
     @Test
-    fun oneSetAboveTheExercisesOneTargetRpe_earnsNothing() = runTest(dispatcher) {
-        // Every working set is measured against the same number (N59, amended): meeting it once and
-        // exceeding it once is not the plan answered, and a wrong yes is what the rule exists to stop.
+    fun oneSetAboveTheExercisesOneTargetRpe_earnsNothing_onItsOwn() = runTest(dispatcher) {
+        // The target is still one number for the exercise (N59, amended), but it is measured set by
+        // set (N74): the set that answered the plan earns its step while the one that went over does
+        // not, where the exercise-wide rule withheld both.
         val repository = FakeWorkoutRepository()
         val templates = FakeTemplateRepository(
             planned = listOf(
@@ -798,7 +829,10 @@ class ActiveWorkoutViewModelTest {
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
         logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 9)
 
-        assertNull(viewModel.uiState.value.exercises.single().progression.offer)
+        val sets = viewModel.uiState.value.exercises.single().progression.sets
+        assertNotNull("the set that answered the plan keeps its step", sets[0].offer)
+        assertNull("the set that went over the target earns nothing", sets[1].offer)
+        assertEquals(ProgressionMiss.OVER_TARGET_RPE, sets[1].miss)
     }
 
     @Test
@@ -811,8 +845,8 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         val prompt = viewModel.uiState.value.exercises.single().progression
-        assertNull("nothing to progress from", prompt.planned)
-        assertNull(prompt.offer)
+        assertFalse("nothing to progress from", prompt.hasPlan)
+        assertTrue(prompt.sets.isEmpty())
     }
 
     @Test
