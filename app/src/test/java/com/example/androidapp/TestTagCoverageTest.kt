@@ -101,7 +101,6 @@ class TestTagCoverageTest {
             "TEMPLATE_SET_CANCEL",
             "templateExerciseRow",
             "templatePlanRemove",
-            "templatePlanSet",
         )
     }
 }

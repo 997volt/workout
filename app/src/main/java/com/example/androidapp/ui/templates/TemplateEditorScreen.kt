@@ -578,6 +578,14 @@ private fun ExercisePlanFields(
     }
 }
 
+/**
+ * One planned set as the editor's write takes it (ROADMAP N14, N79).
+ *
+ * Every field the row can carry has to travel, because `updateSet` overwrites the planned set whole:
+ * dropping one here silently erases what the plan stored. `dropValueGrams` is the one that bit — the
+ * dialog is the only place a run's value is authored, so a row reopened without it showed an empty
+ * field, disabled Save (B61), and read as a number the app had lost.
+ */
 private fun TemplateSet.toEdit() = TemplateSetEdit(
     role = role,
     targetWeightGrams = targetWeightGrams,
@@ -586,6 +594,7 @@ private fun TemplateSet.toEdit() = TemplateSetEdit(
     targetRepsMax = targetRepsMax,
     targetRepsCurrent = targetRepsCurrent,
     targetRpeHalves = targetRpeHalves,
+    dropValueGrams = dropValueGrams,
     note = note,
 )
 

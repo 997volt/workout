@@ -3,6 +3,7 @@ package com.example.androidapp.ui.templates
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -443,6 +444,21 @@ class TemplateEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MIN).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE).assertDoesNotExist()
+    }
+
+    @Test
+    fun editingADropSet_opensOnTheValueItAlreadyTakesOff() {
+        // ROADMAP B61: the dialog is the only place a run's value is authored, so reopening a drop row
+        // has to show what the plan stored. An empty field is not a cosmetic loss: the dialog's own
+        // guard disables Save on a first rung with no value, so the row becomes uneditable — note
+        // included — and the number reads as one the app dropped.
+        setScreen(state = droppingExercise())
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts2")).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE).assertTextContains("20")
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsEnabled()
     }
 
     @Test
