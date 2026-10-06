@@ -36,6 +36,38 @@ the rule; that one argues it.
   shipped in so a preview or a test behaves as it always did. The allowance is named in
   [detekt.yml](config/detekt/detekt.yml) rather than left to the rule's default, so the next ambient
   is a decision rather than a habit.
+- **The muscles are one vocabulary, and a retired name stays readable** (N75). Adductors is a
+  `MuscleGroup` entry and nothing else: the readiness note's sore list is derived from the taxonomy
+  (`SORE_MUSCLE_GROUPS` is the selectable groups minus *Other*), so a second list of "muscles you can
+  be sore in" would be two vocabularies for one idea — and the same entry makes it an exercise's
+  primary muscle, which is where the taxonomy belongs. **`BACK` split into `LATS`, `UPPER_BACK` and
+  `LOWER_BACK`, and `BACK` itself stays in the enum as a legacy value**: every muscle is stored by
+  name and read back through `valueOf`, so deleting it would make every row that still says it — and
+  every export written before the split — throw on read. It is excluded from every picker (through
+  `SELECTABLE_MUSCLE_GROUPS`) and still shown where a row carries it, the way N59's legacy per-set
+  effort and N63's legacy joint number are. **The seeded library is corrected by migration**, not by
+  editing the seed: the seed is an `INSERT OR IGNORE` top-up that never updates a row, so a
+  re-classified seed reaches fresh installs only. Each statement is guarded by the value the seed
+  wrote and keyed to the seeded ids, so an exercise a lifter re-classified keeps their answer, a custom
+  movement keeps its *Back*, and a secondary list is rewritten token by token so an added muscle
+  survives. The deadlifts leave the back group for `HAMSTRINGS` — which the Romanian deadlift already
+  had — with `LOWER_BACK` taking the retired tag's place in their secondaries, because the erectors
+  holding a heavy hinge is a fact about the lift. The new constants sit where they belong in anatomy
+  order rather than being appended, which is the one thing the enum's "append it, order is cosmetic"
+  habit does not cover: the order *is* the pickers' map.
+  ([evidence](DECISIONS-EVIDENCE.md#n75))
+- **An exercise may name the step its weights move by** (N77). The ± buttons, the warm-up ramp and the
+  progression offer all move a load by a step, and until this it came from the unit alone — 2.5 kg or
+  5 lb — so a machine that jumps 5 kg, or 1 kg, was always edited against a step it did not have. The
+  value is `stepGrams: Long?` beside `restSeconds` and `techniqueNote`, typed in the exercise's own
+  unit to a tenth of it and stored in whole grams, with null meaning the unit's own; the three call
+  sites read `Weight.stepGramsFor`, and the ramp follows it because a ramp rounded to a step the
+  machine cannot load is the same defect one screen over. **It is a property of the movement, not
+  presentation** — unlike the unit it is not cleared when the unit changes — and it is deliberately
+  *not* an ambient the way the unit is: it rides on the row the session and the plan already join from
+  the library, and the pure functions take it as an argument. A step of zero is refused rather than
+  stored: it is not a small step but no step, the ± buttons would do nothing and the ramp divides by
+  it. ([evidence](DECISIONS-EVIDENCE.md#n77))
 
 
 - **Weights are whole grams in a `Long`**
@@ -435,12 +467,32 @@ the rule; that one argues it.
   **absent** for a warm-up rather than disabled: a control that cannot write invites a tap that does
   nothing. Migration 28→29 clears the numbers already stored — logged and planned alike — while the
   plan's exercise-level target stays, because it belongs to the exercise's working sets.
+- **The workout's overflow carries the plans, and the templates list withholds the start** (N78). The
+  tab bar stays off the logger (N34): a bar under a live set logger invites losing the session, while an
+  overflow entry is a deliberate step. So Programs and Templates are reachable from the workout's own
+  overflow — which held only *Discard* — and Home no longer hides its two plan links while a session is
+  open, because hiding them was how the app said "you are in a workout" and looking at what is next
+  should not require ending one. **B43's withholding lives on in a narrower place**: starting is
+  idempotent (`startOrResumeSession` hands back the open session), so the templates list asks the
+  workout repository whether a session is open and disables *Start* when one is, with the row saying
+  why. The button would not make a second workout — it would silently take a lifter who tapped *Start*
+  on one template into the workout already running from another, and that is the lie it prevents.
+  Making Templates a tab, or showing the bar mid-workout, was rejected for N34's reason.
+  ([evidence](DECISIONS-EVIDENCE.md#n78))
 - **An exercise is finished at its foot, and only once it has a set** (N69). *Done* says the work is
   over, so it is withheld until there is work: an exercise with nothing logged offers no action at all,
   and the way past a movement you did not do is the overflow's *Remove*, which keeps its confirmation.
   The action sits below the sets and the rating rather than in the header, where it read as part of the
   title instead of the last thing about the exercise. *Reopen* keeps the same place on a done one, so
-  one position answers "what is this exercise's state" rather than two.
+  one position answers "what is this exercise's state" rather than two. **N76 puts the action at the
+  end of the rating row** rather than under it — see the bullet below — and everything else here stands.
+- **The action and the rating are one closing row** (N76). "The exercise is over" and "how did that
+  feel" answer one question, so *Done* sits at the end of the rating row and inside its band instead of
+  eight points under it: two controls read as a field with a button near it, which is what the foot
+  used to say. The action keeps N69's place and its tags, and the rating row gives up the half of the
+  width the action needs — its click target covered the whole row, and a full-width one would swallow
+  the button beside it. Moving the action up beside the header was rejected for N53's reason: the
+  header is read constantly mid-session.
 - **The plan's line states the remainder, and the finished sentence only at zero** (N70). N52's notice
   could speak only once the plan was complete, which left the sets still to write — the part of the
   session a count is for — with nothing to read. The remainder and the *Log extra set* label are

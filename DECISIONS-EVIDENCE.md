@@ -996,6 +996,103 @@ view-model state rather than a `remember` — a rotation mid-answer has to reope
 answers already made. One *Done* writes them all; a failed write marks what landed and leaves the
 exercise open, so a retry writes only what is left rather than a step twice.
 
+## N75
+
+The sore list and the exercise taxonomy were already one vocabulary — `SORE_MUSCLE_GROUPS` is derived
+from `MuscleGroup.entries` — so adding adductors as a second, sore-only list would have created the
+thing the derivation exists to prevent: two names for one idea, drifting the first time a movement
+claimed a muscle the sore list did not know. One entry puts it in the picker, the exercise dropdown and
+the search at once, and it is the same word in all three.
+
+**Back could not simply be replaced.** Every muscle is stored by name and read back through
+`MuscleGroup.valueOf`, so removing the constant does not deprecate the value — it makes every row that
+still says `BACK` throw on read, and every export written before the split fail to restore with a
+decoder error. Keeping it as a legacy value costs one enum entry and one filter on two lists, and it is
+the shape N59 and N63 already chose for a value the app stopped offering but must still read. Excluding
+it from `SELECTABLE_MUSCLE_GROUPS` is what keeps anything new from being tagged with it.
+
+The seeded library had to move by migration rather than by editing the seed, because the seed only ever
+inserts: it is an `INSERT OR IGNORE` top-up on every database open that deliberately never updates an
+existing row (a REPLACE would fight the session exercises that reference the row by foreign key and
+would undo a soft delete). Re-classifying the seed list therefore reaches fresh installs and nothing
+else. The migration is written to touch only what the app itself wrote and only where the lifter has
+not answered for it — each statement is guarded by the seeded value and keyed to the seeded ids, and
+the secondary lists are rewritten token by token rather than replaced whole. A custom exercise tagged
+*Back* is left alone on purpose: nothing in the row says which of the three it is, and picking one would
+be exactly the guess this project refuses elsewhere.
+
+The deadlifts are the case that shows the judgement is the lifter's rather than arithmetic: they leave
+the back group for `HAMSTRINGS`, which the Romanian deadlift already carried, and the `HAMSTRINGS` in
+their secondary list becomes `LOWER_BACK` — the erectors holding a heavy hinge, which is what the
+retired tag was standing for.
+
+**`CURRENT_SCHEMA_VERSION` moved to 2**, and this is the first change that needed it. Its own rule says
+a bump is for a field that changes meaning *or* for a newer file carrying data an older build cannot
+represent. Adding `weightUnit` did not qualify (an unknown key is ignored, the field is absent), but
+adding enum *values* does: an older build's decoder throws on `LATS`, so without the bump the lifter
+would be told the file "does not look like a backup" when the truth is that the app is older.
+
+## N76
+
+The two controls were already adjacent and already about the same moment, which is why they read wrong:
+a field, then eight points under it a button, is the shape of a form. Putting the action at the end of
+the rating row makes one line of the pair and costs nothing else — N69's argument for the *foot* is
+untouched, since the row is still the last thing in the exercise block.
+
+Two consequences were decided rather than discovered. The rating row's click target covered the full
+width, so it had to give up the half the action needs: a full-width target under a button is a control
+that swallows its neighbour. And the rating composable has a second caller in History, so the change is
+a layout at this call site and nothing on the component's own surface.
+
+Moving the action back up beside the header was the obvious alternative and is refused for N53's reason:
+the header is read constantly mid-session, and the actions left it because a link in every header cost
+more attention than it earned.
+
+## N77
+
+The step is a fact about the equipment, and equipment belongs to the movement: a leg press that adds
+5 kg and a lat pulldown that adds 5 lb are the same two exercises on different machines. A plan names
+*what to lift*, not how the machine is loaded, so a per-plan step would ask the lifter to restate the
+same machine in every plan that uses it.
+
+Three places read `Weight.stepGrams(unit)` — the ± buttons, the warm-up ramp and the progression offer
+— and all three had the same defect, so all three read the exercise's value instead. The ramp is the one
+worth arguing: leaving it on the unit's step would build a ramp of weights the machine cannot select,
+which is a plan nobody can follow and the same wrong answer one screen over. Nothing else changed,
+because the plan editors type a load rather than stepping one.
+
+It is deliberately **not** an ambient, unlike the unit (N64). The unit is display configuration every
+screen needs; the step is a property of the movement a screen is showing, so it rides on the row the
+session and the plan already join from the library, and the pure functions keep taking it as an
+argument. Making it a setting was rejected: there is no app-wide step to have, since the machine varies
+by movement. Deriving it from the equipment enum was rejected as a guess — "machine" does not say
+whether the stack jumps by 2.5 or by 10.
+
+A step of zero is refused rather than stored. It is not a small step but no step: the ± buttons would
+move nothing, and the ramp divides by the step when it rounds, so zero is a crash rather than a
+preference.
+
+## N78
+
+The tab bar is off the logger by N34's decision, and that decision is about *accidental* exit: a bar
+under a thumb that is mid-set is an invitation to lose the session. The overflow is the opposite kind of
+control — a deliberate step to reach it — so putting the two plan screens there keeps N34's argument
+whole while removing the part that was never argued: that a lifter could not *look* at a plan without
+ending a workout.
+
+Home's links were hidden for the same reason the bar was, one screen over, and they are the same denial:
+the session is open either way, so which screen you are standing on changes nothing about it. They stay
+now, and the pill below them still says *Resume*, so the primary act has not moved.
+
+**B43's rule survives narrowed rather than being dropped.** It withheld a second way to *start* a
+workout while one was running, because a start that lands in an existing session is a way to lose one.
+Starting is idempotent — `startOrResumeSession` returns the open session — so a live *Start* on another
+template would not create a second workout, it would silently move the lifter into the one already
+running from a template they were not looking at. That is why the templates list disables the button and
+the row says why, rather than the screen being unreachable: the withholding belongs on the *start*, not
+on the look. Making Templates a tab, or showing the tab bar on the logger, was rejected for N34's
+reason.
+
 ## Truth, Turbine
 
 New and touched tests assert with Truth, and assert Flow sequences with Turbine.

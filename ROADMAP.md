@@ -17,102 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-### N75 — adductors join the muscles, and Back splits three ways
-
-**Adductors** becomes a `MuscleGroup`, and that is the whole of its half: the readiness note's sore list
-is derived — `SORE_MUSCLE_GROUPS` is the taxonomy minus *Other* — so one constant puts it in the picker
-and in the exercise dropdown at once, and a second list of "muscles you can be sore in" would be two
-vocabularies for one idea. **`BACK` splits into `LATS`, `UPPER_BACK` and `LOWER_BACK`**, and that half is
-a data problem rather than an enum edit. Every muscle is stored by name and read back through
-`MuscleGroup.valueOf`, so deleting `BACK` would make every row that still says it — and every export
-written before this — throw on read. It therefore **stays in the enum as a legacy value**: excluded from
-the pickers, still resolved wherever it is read, and shown as *Back* rather than dropped, the way N59's
-legacy per-set effort and N63's legacy joint number are.
-
-**The seeded library is corrected by a migration, not by editing the seed.** The seed is an
-`INSERT OR IGNORE` top-up that runs on every open and never updates a row, so a re-classified seed
-reaches fresh installs only. The app knows its own movements, so rewriting the ten rows that carry Back,
-by id, is a correction rather than a guess — and the deadlifts **leave the back group altogether**: both
-of them take `HAMSTRINGS` as their primary, which the Romanian deadlift already has, and the Back they
-used to name becomes a `LOWER_BACK` secondary, because the erectors holding a heavy hinge is a fact
-about the lift rather than a classification to move. `HAMSTRINGS` leaves the deadlift's secondary list
-with it, or the row would name its own primary twice.
-
-| Seeded movement | Back it named | Becomes |
-| --- | --- | --- |
-| Deadlift, Conventional Deadlift | primary | primary `HAMSTRINGS`; `LOWER_BACK` replaces it in the secondaries |
-| Romanian Deadlift | secondary | `LOWER_BACK` secondary (its primary is already `HAMSTRINGS`) |
-| Pull-Up, Lat Pulldown, Assisted Pull-Up | primary | `LATS` |
-| Barbell Row, Seated Cable Row, Machine Row | primary | `UPPER_BACK` |
-| Face Pull | secondary | `UPPER_BACK` |
-
-**A custom exercise a lifter tagged Back is left alone**: nothing in the row says which of the three it
-is, and picking one would be the guess this project refuses. The new constants sit in anatomy order in
-the pickers rather than being appended, which is the one thing the enum's "append it, order is cosmetic"
-habit does not cover — the order *is* the picker's map, and *Adductors* after *Other* is a worse one.
-
-Unchanged, and worth saying so: the sore-muscle save validates the score and never the muscle, no
-statistics or balance code aggregates a muscle group (P2.8 is still unbuilt), and there is no muscle
-filter to widen. A migration is numbered as it ships; adductors alone needs none.
-
-### N76 — *Done* sits beside *How it felt*
-
-The exercise's foot stacks two controls: the rating row, then *Done* eight points below it. They answer
-one question — the exercise is over, and how it felt is the last thing to say about it — so they become
-**one row**: the rating row takes the width, the exercise's state action sits at its end and the same
-height, and the pair reads as the exercise's closing line rather than as a field with a button near it.
-The action keeps its place at the foot (N69's reason for putting it there has not changed) and its tags —
-`EXERCISE_DONE`, `EXERCISE_REOPEN` — so nothing addresses it by its English; the rating row keeps its own
-tag and its *"How it felt"* click label.
-
-Two details the shape decides. The rating row's click target is the full width today, so it has to give
-up the half the action needs or it would swallow the button. And the rating composable is shared with
-History, so anything added for this stays optional at that call site. With no set to finish nothing is
-drawn (N69), which leaves the row holding the rating alone.
-
-Rejected: moving *Done* up beside the exercise's header. N53 moved these actions to the foot precisely
-because the header is read constantly mid-session, and that reason stands.
-
-### N77 — an exercise's own weight step (graduated from *Later*)
-
-The ± steppers move by one global pair of constants —
-[`Weight.stepGrams`](app/src/main/java/com/example/androidapp/domain/Weight.kt) — which answers 2.5 kg or
-5 lb from the unit alone, so a machine that jumps 5 kg (or 1 kg) is still always
-edited against a step it does not have. N64 left the seam for this by making the step travel as an
-argument to the warm-up ramp and the progression offer instead of being read from a constant at each
-call site. An exercise gains **`stepGrams: Long?`** beside `restSeconds` and `techniqueNote` on
-[Exercise.kt](app/src/main/java/com/example/androidapp/domain/model/Exercise.kt) — typed in that
-exercise's own unit to a tenth of it (0.1 kg, or 0.1 lb) and stored whole grams, with null meaning the
-unit's own step — and the three places that read `Weight.stepGrams(unit)` today read it instead: **the
-workout's load steppers** — the signed load, so on an assisted set the same step moves the help —
-**the warm-up ramp** (both the guard that offers the ramp and the rounding that builds it) **and the
-progression offer**. The ramp follows it for the reason the steppers do: a ramp
-rounded to a step the machine cannot load is the same defect one screen over. Nothing in the plan editors
-changes — they type a load rather than stepping one, so there is no fourth call site to convert.
-
-It is a per-exercise property and not a per-plan one, it travels in the backup file, and it is edited on
-the exercise's own detail screen beside the rest and the cue. A migration numbered as it ships adds the
-column. It is not the plate calculator (P2.6 stays parked), and it does not become a second
-prescription anything has to keep in step with the plan.
-
-### N78 — Programs and Templates while a workout is running
-
-Both screens are unreachable mid-workout twice over: the tab bar is hidden on the logger — N34's reason,
-that a tab bar under a live set logger is an invitation to lose the session — and Home hides its
-Programs and Templates links whenever a session is open. A lifter who wants to look at what is next has
-to end the workout to see it. **The workout's own overflow, which today holds only *Discard*, gains
-*Programs* and *Templates*, and Home stops hiding its two links while a session is open.** The tab bar
-stays off the logger: the reason it was off has not changed, and an overflow entry is a deliberate step
-rather than a bar sitting under the thumb.
-
-**The Start control in the Templates list is disabled while a session is open**, and says why rather than
-only greying. Starting is already idempotent — `startOrResumeSession` returns the open session — so the
-button would not open a second workout; it would silently take a lifter who tapped *Start* on one
-template into the workout already running from another. That is the lie the disabled button prevents, and
-the safety was never the missing part. Programs has no Start to disable (its trailing action is *Use*,
-which activates), and Home's own launch points keep their meaning: the primary button already reads
-*Resume* when a session is open, and the plan and next-up starts go through the same gate and resume the
-same session.
+**Nothing.** The batch that stood here — adductors and the three-way back split (N75), *Done* beside the
+rating row (N76), an exercise's own weight step (N77), and the plan screens reachable from a running
+workout (N78) — is built, and each entry is in [CHANGELOG.md](CHANGELOG.md). A candidate graduates to
+this section — gaining an id and a spelled-out decision rather than a wish — when it is picked up, so
+what stands here is committed work; the two queues below are where the rest lives, *Later* for what is
+self-contained and *Parked* for what is a product in its own right.
 
 ## Later (still self-contained)
 

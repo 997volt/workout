@@ -12,8 +12,39 @@ repeated here.
 
 ## [Unreleased]
 
+### Added
+
+- **Adductors join the muscles, and Back is now three groups** (N75). *Back* was one muscle for
+  everything from a lat pulldown to a deadlift, which is not a distinction anyone trains by: it is
+  **Lats**, **Upper back** and **Lower back** now, and **Adductors** joins the legs. Both halves reach
+  every place a muscle is chosen — the readiness note's sore list, an exercise's own primary muscle,
+  the picker's search — because they are one vocabulary rather than a sore-only list beside a taxonomy.
+  The retired *Back* is **not offered any more, and still readable**: every muscle is stored by name, so
+  a row that carries it (a custom exercise, a note written before the split) keeps saying *Back* rather
+  than failing to load, and a backup file written before this still restores. The **seeded library is
+  moved by a migration**, since the seed only ever adds: the vertical pulls become lats, the rows upper
+  back, and the deadlifts **hamstrings** with lower back as their secondary — the erectors holding a
+  heavy hinge. An exercise you re-classified yourself is left exactly as you left it.
+- **An exercise can name the step its weights move by** (N77). The ± buttons moved by one pair of
+  constants — 2.5 kg, or 5 lb — so a leg press that jumps 5 kg, or a stack that jumps 1, was always
+  edited against a step it did not have. An exercise's own step (typed in its own unit to a tenth,
+  stored in grams, empty for the unit's own) now drives **the ± buttons, the warm-up ramp and the
+  progression offer** alike, and it moves assistance too, because the stepper moves one signed load. A
+  step of zero is refused: it is not a small step but no step.
+
 ### Changed
 
+- **The exercise's *Done* sits beside *How it felt*** (N76), on the same line rather than eight points
+  under it: the two answer one question — the exercise is over, and how it felt is the last thing to
+  say about it — and stacked, they read as a field with a button near it. The action keeps its place at
+  the exercise's foot and the rating keeps its own click target, narrowed to the half the action needs.
+- **Programs and Templates are reachable while a workout is running** (N78), from the workout's own
+  overflow and from the home screen, which no longer hides its two plan links whenever a session is
+  open. Looking at what is next used to require ending the workout. The tab bar stays off the logger —
+  a bar under a live set logger is an invitation to lose the session — and **the *Start* control in the
+  templates list is disabled while a session is open**, saying why: starting is idempotent, so it would
+  not open a second workout, it would silently drop you into the one already running from another
+  template.
 - **Progression is offered one set at a time, and each step stays inside the plan's rep range** (N74).
   *Done* used to state one unlabeled pair of lines about the exercise's **last** working set and offer two
   directions with nothing to choose on, earned only when *every* prescribed set was met — so one missed
