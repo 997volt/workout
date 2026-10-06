@@ -90,6 +90,88 @@ repeated here.
   set (migration 31→32) and a plan already installed starts at its range's **floor**, so a ranged plan's
   first session under this asks for the bottom of its range and climbs.
 
+### Fixed
+
+A review of the unreleased batch above found fourteen defects, fixed here (B59–B72). The batch had not
+shipped, so this is where they were caught rather than a later version's problem.
+
+- **A plan holding a drop run written before the value column exists can be edited again** (B59). The
+  write boundary re-checked every rung rule over *all* of an exercise's stored rows, and one rule refuses
+  a drop run whose first rung names no value — which migration 34→35 leaves null on every plan written
+  before the feature. So the moment anything in such a plan was touched it was refused, with the error
+  naming a run while the lifter was editing another row. The boundary now compares the plan before and
+  after the write and refuses only what the write **creates**: an untouched row stays as wrong as it was,
+  a new row is judged on its own, and an anchor edited light enough to strand the rung below it is still
+  refused. A migration cannot invent the value — there is no number it could write that the lifter meant,
+  and every candidate silently moves the ladder — so the read path's "null means no value" stays the one
+  answer.
+- **Deleting a run's anchor takes its rungs with it** (B60), which DECISIONS had recorded as a rule since
+  the shape was planned and `removeSet` never did: it soft-deleted one row, leaving a run standing over a
+  gap with no targets of its own to read — and then B59's boundary could not be written out of it. The
+  whole run goes with the anchor, because `runAt`'s anchor is what says which rungs belong to the row
+  being removed. Promoting a stranded first rung was rejected: a rung deliberately names no reps and no
+  weight, so promoting it invents both.
+- **The plan editor keeps a run's value** (B61). `TemplateSet.toEdit()` carried every field except
+  `dropValueGrams`, so reopening a drop row built an empty value field and the dialog's own guard
+  disabled Save — the row could not be edited at all, note included, without retyping a number the list
+  behind the dialog was showing. `updateSet` overwrites the row whole, so a field left out here is a
+  field silently erased; the sibling N74 column had been carried when it was added, and this one was
+  missed.
+- **A file from a newer build is refused as newer rather than as corrupt** (B62). Both transfer codecs
+  decoded the whole document and only then compared its version, so a newer file failed *inside* the
+  decoder — on an enum name this build has no constant for — where the gate could no longer catch it. The
+  lifter was told their file was corrupt when its only fault was being new, which is the confusion the
+  version exists to prevent. The version is now read out of the JSON tree before the body is decoded, and
+  the program document's own version moves to 2 on the rule the backup's moved on: it carries the
+  exercise DTOs and the planned sets, so N75's split muscle names and `SetType.CLUSTER` travel in it and a
+  build without those constants cannot represent them.
+- **A rung's anchor is a set that stands on its own, at every boundary** (B63). The live log asked
+  whether the exercise had *any* set that was not a rung, which a warm-up satisfies — while the run model
+  requires the set directly above the run's first row to record effort, and the plan boundary refuses
+  exactly that shape. A drop logged after a warm-up was stored as a rung the app read no run for, and the
+  prefill then took its load off the ramp. The log, the prefill and the picker now all read
+  `recordsEffort`, the one rule that says what an anchor is.
+- **A rung is offered only where it can be written** (B64). The role picker listed every role
+  unconditionally, so the first set of an exercise could be armed with a drop or a cluster in both the
+  logger and the plan editor and the refusal only arrived after the tap — a control that cannot write,
+  which this project removes rather than shows. The picker takes the offer set from its caller now (the
+  logger answers from its own logged rows, the plan from the position the row holds or would take), and
+  **editing a logged set's role holds the same rule as logging one** — the path that had no guard at all,
+  and how a first set could be re-roled into a rung the log path would have refused.
+- **The history editor's ± buttons step by the movement's own step** (B65). The history detail's set
+  editor was never given the step, so correcting a past set moved by 2.5 kg while the same correction
+  inside the workout moved by the step the exercise actually loads in: a fourth ± surface the N77 entry's
+  "three places" did not name.
+- **Changing an exercise's unit carries its step rather than reinterpreting it** (B66). The step field
+  kept its text verbatim and parsed it in whichever unit was selected at save, so "5" typed in kilograms
+  and then switched to pounds stored 2268 g — a different step from the one asked for, with no signal.
+  The number now travels, re-expressed to the new unit's tenth.
+- **The Back split rewrites a whole muscle name, not any occurrence of one** (B67). `secondaryMuscles` is
+  a joined list of *names*, and `LOWER_BACK` contains `BACK`, so a bare `replace` would have turned one
+  into `LOWER_UPPER_BACK` and the reader would have thrown on it. No legitimately written row can carry
+  that name — it arrived with the split — so this is hardening rather than a live repair, but the rewrite
+  delimits its tokens now.
+- **The progression question's switch is covered again** (B68). The N74 rewrite moved the "ask about
+  progression" decision from the screen into the ViewModel and deleted the screen test that held it, so
+  N66's promise — the app asks only when asked — was unguarded end to end.
+- **The rules and columns the batch left untested** (B69, B70). A drop value that is not above zero, a
+  later rung carrying its own value, a rung cut short leaving the group's step on its anchor, a cluster
+  counting towards volume, and the ViewModel's own match of a rung to the same set last time are all
+  asserted now; so are `stepGrams`, `dropValueGrams` and `targetRepsCurrent` through the backup round
+  trip, and both `stepGrams` projections through their DAOs.
+- **Four small regressions** (B71). The planned-set note box lost its two-line minimum in the N79
+  refactor; the home screen's comment still described the plan links as hidden while a workout is open,
+  which N78 reversed; the primary-muscle dropdown's options were addressed by their English labels in a
+  test rather than by tags; and a rung whose load cannot be derived — the run names no value yet, or the
+  anchor has no added weight — left its plan row blank, so an assisted-anchor drop read as a cluster. The
+  row says "no load to drop" now; the live fields deliberately keep falling back to what was just done,
+  because in a session the lifter may have taken the plates off by hand and the number is a starting
+  point they edit.
+- **A plan's positions stay contiguous after a removal** (B72). A plan is matched to a running session by
+  position — `setIndex` against the number of sets logged — so removing a *middle* set left the two index
+  spaces drifted apart and pointed the prefill and N79's rest rule at the wrong row. The survivors are
+  renumbered, which is the invariant `prependSets` already keeps from the other direction.
+
 ## [1.14] — 2026-10-05 (versionCode 15)
 
 ### Added

@@ -1185,3 +1185,49 @@ documented minutes is the cheaper side of that trade.
 If the cadence ever changes, do it as a **GitHub Environment secret with required reviewers**, so
 a human approves before any job can read the key. A raw repository secret readable by any
 workflow is the version that should stay unbuilt.
+
+## B59-B72
+
+A review of the unreleased N74–N79 batch, read line by line before release. Fourteen defects, four of
+which were judgement calls rather than slips; the rest are recorded in the CHANGELOG and their tests.
+
+**Grandfathering an existing row, or backfilling it (B59).** The plan boundary re-checks every rung rule
+over every stored row, and migration 34→35 leaves a pre-N79 drop run's value null — so the rules refused
+a plan the app could still read, on any edit at all, with the error naming a run while the lifter edited
+another row. Two answers looked available. **Backfill a value in the migration:** rejected, because there
+is no number it could write that the lifter meant. Any constant invents a load, moves a ladder nobody
+asked to move, and — worst — becomes indistinguishable from a value the lifter did author; a nullable
+column with a defined reading ("this run names no value, so its rungs carry what they carry") is the
+honest shape, and the read path already implements it. **Grandfather by set id and by problem sentence:**
+kept. An untouched row is left as wrong as it was, a new row is judged on its own, and a write that makes
+an existing row worse or moves the problem elsewhere is still refused — so the rule still binds every
+write the app can *cause*, while a plan written before the rule stays editable and correctable. The
+comparison is by the problem's own sentence rather than by a boolean, because "still exactly as broken"
+and "broken in a new way" are different events.
+
+**Delete a run with its anchor, or promote the first rung (B60).** DECISIONS had recorded "deleting an
+anchor takes its rungs with it" since the shape was planned, and no code held it: `removeSet`
+soft-deleted one row and left a run standing over a gap. Promoting the stranded first rung to a set of its
+own is the alternative that preserves the lifter's work, and it is the one to reject: a rung deliberately
+names no reps and no weight, so promotion invents both, and invented numbers are indistinguishable from
+authored ones. Deleting is what the decision says and what the shape can defend.
+
+**Which message a newer file gets (B62).** The version gate existed and the version was bumped, and the
+message still could not arrive: both codecs decoded the document first, and a newer file dies *inside*
+the decoder on an enum name this build lacks — the exact data the gate is for. Reading the version out of
+the JSON tree costs one parse of the same text and turns one answer ("corrupt") into the two the format
+actually has. The program document was the second telling: it carries the exercise DTOs and planned sets,
+so the split muscle names and `SetType.CLUSTER` travel in it, and its version had been left at 1 when
+they were added. A bump cannot repair an already-released build's ordering — only this one's — but it
+makes the contract true from here, and every document v1.14 *can* read is now refused with the right
+sentence. The old tests missed both because they built the "future" file from a sample whose enum values
+were all known, which exercises the branch that already worked.
+
+**One index space, or two (B72).** A plan is matched to a running session by position: the prefill pairs
+the next logged set with `setIndex == loggedSets.size`, and N79's rest rule asks whether the plan row at
+that position continues a run. Removing a *middle* planned set left a gap, so "the number of sets logged"
+and "the plan's own index" stopped agreeing, and the same set could be prefilled from one row and rested
+against another. Renumbering the survivors makes position mean the plan's order and nothing else, which is
+the invariant `prependSets` already holds from the other direction. The assumption is older than N79 — the
+prefill leaned on it — but N79 was the first rule where getting it wrong changed what the screen *does*,
+which is what made it worth fixing rather than tolerating.

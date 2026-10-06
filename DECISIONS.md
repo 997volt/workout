@@ -60,14 +60,16 @@ the rule; that one argues it.
   progression offer all move a load by a step, and until this it came from the unit alone — 2.5 kg or
   5 lb — so a machine that jumps 5 kg, or 1 kg, was always edited against a step it did not have. The
   value is `stepGrams: Long?` beside `restSeconds` and `techniqueNote`, typed in the exercise's own
-  unit to a tenth of it and stored in whole grams, with null meaning the unit's own; the three call
-  sites read `Weight.stepGramsFor`, and the ramp follows it because a ramp rounded to a step the
-  machine cannot load is the same defect one screen over. **It is a property of the movement, not
-  presentation** — unlike the unit it is not cleared when the unit changes — and it is deliberately
-  *not* an ambient the way the unit is: it rides on the row the session and the plan already join from
-  the library, and the pure functions take it as an argument. A step of zero is refused rather than
-  stored: it is not a small step but no step, the ± buttons would do nothing and the ramp divides by
-  it. ([evidence](DECISIONS-EVIDENCE.md#n77))
+  unit to a tenth of it and stored in whole grams, with null meaning the unit's own; **every** call site
+  reads `Weight.stepGramsFor` — the workout's fields, the warm-up ramp, the progression offer and the
+  history editor, the last of which the feature's first pass missed (B65) — and the ramp follows it
+  because a ramp rounded to a step the machine cannot load is the same defect one screen over. **It is a
+  property of the movement, not presentation** — unlike the unit it is not cleared when the unit changes,
+  and that change carries the typed number, re-expressed to the new unit's tenth, rather than reading
+  "5" as the other unit (B66) — and it is deliberately *not* an ambient the way the unit is: it rides on
+  the row the session and the plan already join from the library, and the pure functions take it as an
+  argument. A step of zero is refused rather than stored: it is not a small step but no step, the ±
+  buttons would do nothing and the ramp divides by it. ([evidence](DECISIONS-EVIDENCE.md#n77))
 
 
 - **Weights are whole grams in a `Long`**
@@ -110,12 +112,24 @@ the rule; that one argues it.
   under an anchor with **no added weight** (an assisted or bodyweight set has no 20 kg to take off) and
   false once the ladder runs past zero — a **negative weight being assistance in this app, not a small
   weight** (N15), so a rung that would compute to −20 reads as carrying no
-  derived weight rather than becoming an assisted set. Deleting an anchor takes its rungs with it, so a
-  run cannot be left hanging.
-  ([evidence](DECISIONS-EVIDENCE.md#n79))
+  derived weight rather than becoming an assisted set. **The anchor rule is `recordsEffort`, and every
+  boundary asks it** (B63, B64): the plan's write, the live log, the re-role of a logged set, the
+  prefill that reads which bar a drop comes off, and the picker — which offers a rung only where the
+  boundary would accept one, because a control that cannot write is removed rather than shown. Deleting
+  an anchor takes its rungs with it, so a run cannot be left hanging — and `removeSet` now does it, the
+  rule having been recorded here before any code held it (B60). [runAt](app/src/main/java/com/example/androidapp/domain/model/RungRun.kt)
+  is the one reader of the shape, and `isAnchoredAt` answers the same question for a position a row
+  *would* take, which is what lets a picker and a boundary share one rule.
+  ([evidence](DECISIONS-EVIDENCE.md#n79), [B59–B72](DECISIONS-EVIDENCE.md#b59-b72))
 - **A template is living, and a session reads it at the start** (N16). Nothing links a
   session to its plan beyond the route that started it, so editing a plan changes the next
   prefill; writing targets onto the session would freeze them and make "living" false.
+- **A plan is read by position, and position stays contiguous** (B72). A running session matches its
+  logged sets to the plan by `setIndex` against the number logged, and a run's continuation is keyed by
+  the same index, so a stored index *is* the plan's order rather than a durable id. Removing a planned set
+  therefore renumbers the survivors, in the same transaction as the delete — the invariant `prependSets`
+  already holds from the other direction — instead of leaving a gap that points the prefill and the rest
+  rule at the row after the one they mean. ([evidence](DECISIONS-EVIDENCE.md#b59-b72))
 - **The plan's rest and cue win over the library's; null means "the library's"** (N14,
   extending N5) — copied onto the session exercise when it is seeded from a plan.
 - **A prescribed rest of zero is a value — "no rest" — and only a negative is refused** (N45,
@@ -384,11 +398,32 @@ the rule; that one argues it.
   entity → DTO → entity. A session's `restEndsAt` is the one deliberate exclusion.
   ([evidence](DECISIONS-EVIDENCE.md#n24-codec))
 
+- **A transfer file's version is read before its body is decoded** (B62). Both codecs used to decode the
+  document and only then compare its version, so a file from a newer build failed *inside* the decoder —
+  on an enum name this build has no constant for, which is exactly the data a version gate exists for —
+  and the lifter was told their file was corrupt when its only fault was being new. The gate reads the
+  version out of the JSON tree first, then hands the element to the decoder, so "newer" and "corrupt" are
+  two answers rather than one. The rule that a bump is needed when a newer file could carry data an older
+  build cannot represent applies to **every** format, not only the backup: the program document's version
+  moved to 2 in the same change, having been left at 1 when the split muscle names and `SetType.CLUSTER`
+  began travelling in it.
+  ([evidence](DECISIONS-EVIDENCE.md#b59-b72))
+
 - **A migration is amended only while its version has never shipped — and the cost is
   real** (B16). Room refuses a database whose stored identity hash no longer matches, so a
   device that ran the amended version must be wiped; the alternative, a 16→17 migration, is
   correct but adds a version step to prove for data that exists only on developer machines.
   ([evidence](DECISIONS-EVIDENCE.md#b16))
+
+- **A write is judged on what it creates, not on what is already stored** (B59). The plan boundary
+  re-checked every rung rule over all of an exercise's stored rows, so a plan written before those rules
+  existed — a drop run whose value column arrived null — was refused the moment anything in it was
+  touched, and could be neither read nor corrected. The comparison is per set id and per problem: an
+  untouched row is left as wrong as it was, a new row is judged on its own, and a write that makes an
+  existing row worse, or moves a problem to another row, is still refused. The alternative — a migration
+  that backfills a value — invents a number the lifter never gave and silently moves the whole ladder, so
+  **a nullable column with a defined reading beats a plausible default**.
+  ([evidence](DECISIONS-EVIDENCE.md#b59-b72))
 
 - **The rest cue stays inside the permission-free envelope** (N27). `Vibrator` needs
   `VIBRATE`, so the cue is view-level haptics plus an in-process tone, and keep-screen-on
