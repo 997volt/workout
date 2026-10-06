@@ -19,53 +19,55 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ### N79 — a drop or a cluster is one group, judged on its first set
 
-A **drop** and a **cluster** are one shape with one rule between them: a run of sets hanging off a single
-working set, sharing its numbers. `SetType` gains **`CLUSTER`** beside `DROP`, and both come to mean *a
-member of the group above me* rather than a set of its own — the run is contiguous and adjacency is the
-parent link, so **nothing ties a rung to its set**. The anchor records effort (Working, Top set or
-Failure); a warm-up cannot anchor a run.
+A **drop** and a **cluster** are one shape: a contiguous run of sets hanging off a single working set. The
+anchor is a set that records effort (Working, Top set or Failure — never a warm-up), and adjacency is the
+parent link, so **nothing ties a rung to its set**. `SetType` gains **`CLUSTER`** beside `DROP`, and both
+come to mean *a member of the group above me* rather than a set of its own.
 
-**A rung carries no target of its own**: no reps, no rating, and no weight written down. The anchor
-carries the group's rep target and its rating, one of each per group. A rung's weight is **derived** — a
-**cluster** rung is the anchor's weight, the same load repeated, and a **drop** rung is
-`anchor − k × dropValue` for its position *k*, so a 20 kg value under 100 kg is **80, then 60**. The drop
-is one **value per run**, not a weight per rung: the plan edits one number, accepting a step writes one
-row, and no rung can drift from the anchor.
+**A rung carries no target of its own**: no reps, no rating, no weight written down. Its weight is
+**derived** from the anchor — the anchor's own for a cluster, `anchor − k × dropValue` for a drop, so a
+20 kg value under 100 kg is **80, then 60**. The value is **held by the run's first rung** and inherited by
+the rest, so the plan edits one number, accepting a step writes one row, and no rung can drift. It is
+validated where every other weight is — above zero, below the anchor's, and with the **whole ladder**
+checked so the last rung cannot compute to nothing — and **refused under an anchor with no added weight**:
+an assisted or bodyweight set has no 20 kg to take off, which is the absence the progression rule already
+refuses to step, so the picker does not offer a drop there. A rung that would compute to zero or below
+reads as carrying no derived weight, rather than turning into assistance. A cluster needs no
+guard: it copies whatever load the anchor has, assistance included.
 
-**The prefill splits accordingly.** A rung's **weight** is computed — the anchor's for a cluster, the next
-rung of the ladder for a drop — and its **reps** come from **the same set's last performance in a previous
-training**, not from the set before it in this one. The match is by the set's place in the plan, the only
-identity a logged row keeps between sessions; a rung never performed in a previous training falls back to
-the set just done.
+**The prefill splits accordingly.** A rung's weight is computed **from what the anchor actually did** in
+this session — the plan's weight standing in before it has been done, so stripping 20 kg off a bar you
+loaded 5 kg heavy gives 85 and not 80 — and its **reps come from the same set's last performance in a
+previous training** — matched by the set's place in the plan, the only identity a logged row keeps
+between sessions — falling back to the set just done.
 
-**One rating for the group** falls out of `recordsEffort`, already the switch that hides the field and
-nulls it at every write boundary: a rung records none, so the rating sits on the anchor. The
-reason is deliberately **not N67's** — a rung is work, just not work rated on its own — and a rating
-already stored on a drop row stays on disk and stops being displayed.
+**One rating for the group**, which is how `recordsEffort` already works: a rung records none, so the
+rating sits on the anchor. The reason is deliberately **not N67's** — a rung is work, just not work rated on
+its own — and a rating already stored on a drop row stays on disk and stops being displayed. **A rung
+cannot set a personal record** either; the record belongs to the anchor, the set that carries the rating.
+Volume is unchanged, since it already sums every set and every rep.
 
-**The group is judged on its first set**, both kinds alike: the plan's reps met and the effort inside the
-exercise's target, then N74's step applied **once to the group**. The accepted consequence is that **a
-rung cut short does not hold the group back** — it has no target to miss, so it is recorded rather than
-judged. **Rest needs no new field**: the exercise's rest runs once, after the run's last rung, which is
-what a superset round already does.
+**The group is judged on its first set**, both kinds alike — the plan's reps met and the effort inside the
+exercise's target, then N74's step applied **once to the group**. So a rung cut short does not hold the
+group back: it has no target to miss. The question states the group **once**, the anchor with its step or
+its reason and its rungs beneath it as recorded work. **Rest needs no new field** — the exercise's rest runs
+once, after the run's last rung, which is what a superset round already does.
 
 **The pairing becomes role-aware, or a run breaks the sets after it.** The Done prompt pairs non-warm-ups
 by position while the prefill counts *every* logged row, so an ad-hoc drop both shows the next prescribed
-set the wrong plan row and is judged as a working set — with its reps able to earn that set a heavier
-weight, which accepting writes into the plan. Prescribed non-members pair with performed non-members, and
-prescribed rungs with performed rungs, each in order.
+set the wrong plan row and is judged as a working set — its reps able to earn that set a heavier weight,
+which accepting writes into the plan. Prescribed non-members pair with performed non-members and prescribed
+rungs with performed rungs, each in order; a rung logged with no plan row hangs off the set before it, so it
+takes that group's rating and rest while staying unjudged. **One limit stays**: pairing within a class is
+still positional, so a *skipped* prescribed set shifts the pairs the way an extra one used to — closing that
+needs an identity a logged row does not carry, and it is its own id if it is wanted.
 
 Three small rules, without which the shape has no meaning: **a lone rung is refused**, **a warm-up cannot
 anchor**, and **deleting an anchor takes its rungs with it**. The column is `dropValueGrams` on a planned
 set — migration 34→35, nullable, shipping with the reader that reads it — where null means *not a rung* or
 *another rung of the same run*. A plan written before this holds an absolute weight on a `Drop` row and
-keeps that reading until the group is authored, so no migration invents a value.
-
-**A rung cannot set a personal record**: the record belongs to the set the group hangs off, the same set
-that carries the group's rating. **Volume is unchanged** — it already sums every set and every rep, so a
-rung's work counts towards it. Records are filtered by role in two places today,
-each excluding only a warm-up, and they take the same rule that keeps a rung from being rated: a role
-decides both, rather than two lists of exclusions drifting apart.
+keeps that reading, and a file that leads with a rung reads it as a plain set: nothing is invented, and
+nothing fails to load.
 
 ## Later (still self-contained)
 
