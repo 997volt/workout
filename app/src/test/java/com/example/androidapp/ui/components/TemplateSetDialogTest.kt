@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.components
 
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -9,6 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -119,7 +121,7 @@ class TemplateSetDialogTest {
     fun anExistingTargets_areShownRatherThanReset() {
         show(
             initial = TemplateSetEdit(
-                role = SetType.DROP,
+                role = SetType.TOP_SET,
                 targetWeightGrams = 60_000L,
                 targetRepsMax = 8,
             ),
@@ -128,8 +130,27 @@ class TemplateSetDialogTest {
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).performClick()
 
-        assertEquals(SetType.DROP, saved?.role)
+        assertEquals(SetType.TOP_SET, saved?.role)
         assertEquals(60_000L, saved?.targetWeightGrams)
         assertEquals(8, saved?.targetRepsMax)
+    }
+
+    @Test
+    fun aDropsValue_isShown_andIsWhatTheSaveCarries() {
+        // ROADMAP N79: a drop rung is authored by the value it takes off the anchor, so that is what
+        // the dialog opens on and what a save without edits writes back — a rung carries no weight or
+        // reps of its own for this test to have been about.
+        show(
+            initial = TemplateSetEdit(role = SetType.DROP, dropValueGrams = 20_000L),
+            isNew = false,
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE)
+            .assertTextContains("20", substring = true)
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).performClick()
+
+        assertEquals(SetType.DROP, saved?.role)
+        assertEquals(20_000L, saved?.dropValueGrams)
+        assertNull("and nothing it does not have", saved?.targetWeightGrams)
     }
 }

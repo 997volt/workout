@@ -34,6 +34,8 @@ import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.runAt
+import com.example.androidapp.domain.model.rungWeightAt
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.repository.TemplateSetEdit
 
@@ -89,6 +91,10 @@ fun TemplatePlanDialog(
                         number = index + 1,
                         set = set,
                         unit = unit,
+                        // A rung has no weight written down, so the row states what it derives from its
+                        // anchor rather than leaving the reader to do the arithmetic (N79).
+                        rungWeightGrams = sets.rungWeightAt(index),
+                        holdsTheRunValue = sets.runAt(index)?.rung == 1,
                         onEdit = { onEditSet(set) },
                         onDelete = { onDeleteSet(set.id) },
                     )
@@ -119,6 +125,10 @@ private fun PlanSetRow(
     unit: WeightUnit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    /** What a rung loads, derived from its anchor, or null (ROADMAP N79). */
+    rungWeightGrams: Long? = null,
+    /** True on the rung that holds the run's value, which is the one worth naming it on (N79). */
+    holdsTheRunValue: Boolean = false,
 ) {
     Row(
         modifier = Modifier
@@ -134,7 +144,7 @@ private fun PlanSetRow(
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(
-                text = set.summary(unit),
+                text = set.summary(unit, rungWeightGrams, holdsTheRunValue),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -179,11 +189,18 @@ fun TemplateSetDialog(
     modifier: Modifier = Modifier,
     /** The unit this target load is typed and shown in (ROADMAP N64). */
     unit: WeightUnit = WeightUnit.KILOGRAMS,
+    /**
+     * Whether this set is the one that opens its run, read from the row above it (ROADMAP N79).
+     *
+     * A run is contiguous, so the row above being a different kind of set is what makes this one the
+     * run's first — and its first rung is the only place a drop value is authored.
+     */
+    opensItsRun: Boolean = true,
 ) {
     // `remember`, not `rememberSaveable`: a data class is not something a Bundle can
     // hold, and registering one throws when the dialog opens. The set editor's own
     // draft is held the same way for the same reason.
-    var draft by remember { mutableStateOf(TemplateSetDraft(initial, unit)) }
+    var draft by remember { mutableStateOf(TemplateSetDraft(initial, unit, opensItsRun)) }
 
     AlertDialog(
         modifier = modifier,
@@ -233,6 +250,13 @@ fun TemplateSetDialog(
 data class TemplateSetDraft(
     val role: SetType = SetType.NORMAL,
     val weightText: String = "",
+    /**
+     * The value this run takes off the set above it, as typed, or empty (ROADMAP N79).
+     *
+     * Only a drop run writes one, and only on its first rung: the rest inherit it, so a later rung
+     * showing a field would be asking for a number nothing reads.
+     */
+    val dropValueText: String = "",
     val repsMinText: String = "",
     val repsMaxText: String = "",
     /** The plan's legacy per-set target RPE, passed through unchanged, or null (N59). */
@@ -246,9 +270,19 @@ data class TemplateSetDraft(
     val note: String = "",
     /** The unit this target is typed and shown in (ROADMAP N64). */
     val unit: WeightUnit = WeightUnit.KILOGRAMS,
+    /**
+     * Whether the set being edited is the one that opens its run (ROADMAP N79).
+     *
+     * Read from the row above it — a run is contiguous, so the row above being a different kind of set
+     * is what makes this one the run's first. It decides whether the drop value is authored here at
+     * all, and a dialog that does not know says yes, which is the case for a plan's first drop.
+     */
+    val opensItsRun: Boolean = true,
 ) {
-    constructor(edit: TemplateSetEdit, unit: WeightUnit) : this(
+    constructor(edit: TemplateSetEdit, unit: WeightUnit, opensItsRun: Boolean = true) : this(
         role = edit.role,
+        dropValueText = edit.dropValueGrams?.let { Weight.format(it, unit) }.orEmpty(),
+        opensItsRun = opensItsRun,
         weightText = if (edit.targetWeightGrams != null || edit.targetAssistanceGrams != null) {
             Weight.display(edit.targetWeightGrams ?: 0L, edit.targetAssistanceGrams ?: 0L, unit)
         } else {
@@ -270,6 +304,12 @@ data class TemplateSetDraft(
     val repsMin: Int? get() = repsMinText.trim().ifEmpty { null }?.toIntOrNull()
     val repsMax: Int? get() = repsMaxText.trim().ifEmpty { null }?.toIntOrNull()
 
+    /** The drop value as typed, or null when the field is empty (ROADMAP N79). */
+    val dropValueGrams: Long? get() = dropValueText.trim().ifEmpty { null }?.let { Weight.parse(it, unit) }
+
+    /** True where this set is a drop that opens its run, which is the only place a value is written. */
+    val writesTheRunValue: Boolean get() = role == SetType.DROP && opensItsRun
+
     // Blank is allowed everywhere; anything typed has to be a usable number, and a
     // range that runs backwards is refused rather than silently swapped.
     val weightIsValid: Boolean get() = weightText.isBlank() || load != null
@@ -283,18 +323,29 @@ data class TemplateSetDraft(
                 (repsMaxText.isBlank() || (max != null && max >= 1)) &&
                 !(min != null && max != null && min > max)
         }
-    val isValid: Boolean get() = weightIsValid && repsAreValid
+    /**
+     * A drop that opens its run has to name the value it takes off (ROADMAP N79): without it there is
+     * no ladder to load, and the write boundary refuses the row for the same reason.
+     */
+    val dropValueIsValid: Boolean
+        get() = if (!writesTheRunValue) true else (dropValueGrams ?: 0L) > 0L
+
+    val isValid: Boolean get() = weightIsValid && repsAreValid && dropValueIsValid
 
     fun toEdit() = TemplateSetEdit(
         role = role,
-        targetWeightGrams = weight,
-        targetAssistanceGrams = assistanceGrams?.takeIf { it > 0L },
-        targetRepsMin = repsMin,
-        targetRepsMax = repsMax,
+        // A rung carries no weight of its own and no reps of its own: what it loads is derived from the
+        // anchor, and the group's target is the anchor's (ROADMAP N79). Writing either back would put a
+        // number on the row that nothing reads.
+        targetWeightGrams = weight.takeIf { !role.isRung },
+        targetAssistanceGrams = assistanceGrams?.takeIf { it > 0L && !role.isRung },
+        targetRepsMin = repsMin.takeIf { !role.isRung },
+        targetRepsMax = repsMax.takeIf { !role.isRung },
         targetRepsCurrent = currentRepsWithinRange(),
         // A warm-up carries no effort, whatever the draft still held from before the role changed
         // (ROADMAP N67) — the rule the logged set's own write boundary holds, for the plan side.
         targetRpeHalves = targetRpeHalves.takeIf { role.recordsEffort },
+        dropValueGrams = dropValueGrams.takeIf { writesTheRunValue },
         note = note.trim().ifEmpty { null },
     )
 
@@ -318,6 +369,34 @@ data class TemplateSetDraft(
     }
 }
 
+/**
+ * One planned set as a line: what it loads, what it asks for, and anything it notes.
+ *
+ * `internal` since N72: the program's read-only preview shows the same line, and a second formatter
+ * for one plan would be the way two readings of it start. A rung reads differently on purpose (N79):
+ * its load is derived rather than written down, it carries no reps of its own, and the value it takes
+ * off the anchor is named once, on the rung that holds it.
+ */
+@Composable
+internal fun TemplateSet.summary(
+    unit: WeightUnit,
+    /** What a rung loads, derived from its anchor (ROADMAP N79); null for a set of its own. */
+    rungWeightGrams: Long? = null,
+    /** True on the rung that holds the run's value, so the line names what the run takes off (N79). */
+    holdsTheRunValue: Boolean = false,
+): String {
+    // A planned warm-up shows no effort, the rule a logged warm-up already holds (ROADMAP N67), and a
+    // rung shows none either (N79): `recordsEffort` is the one rule both read.
+    val rpeHalves = if (role.recordsEffort) targetRpeHalves?.let { rpeMarker(it) } else null
+    return listOfNotNull(
+        weightLine(unit, rungWeightGrams),
+        dropValueLine(unit, holdsTheRunValue),
+        repsLine(),
+        rpeHalves,
+        note,
+    ).joinToString(" · ")
+}
+
 @Composable
 private fun TargetFields(
     draft: TemplateSetDraft,
@@ -330,63 +409,129 @@ private fun TargetFields(
             testTag = TestTags.TEMPLATE_SET_ROLE,
             optionTag = TestTags::templateSetRole,
         )
+        // A rung has no load of its own to type: a cluster repeats the anchor's and a drop is the
+        // anchor less the run's value, so the only field it can hold is that value — and only the rung
+        // that opens the run holds it (ROADMAP N79).
+        if (draft.writesTheRunValue) DropValueField(draft = draft, onChange = onChange)
+        if (!draft.role.isRung) LoadField(draft = draft, onChange = onChange)
+        RepsFields(draft = draft, onChange = onChange)
+        NoteField(draft = draft, onChange = onChange)
+    }
+}
+
+/** The one number a drop run is authored with: what each rung takes off the anchor (N79). */
+@Composable
+private fun DropValueField(
+    draft: TemplateSetDraft,
+    onChange: (TemplateSetDraft) -> Unit,
+) {
+    OutlinedTextField(
+        value = draft.dropValueText,
+        onValueChange = { onChange(draft.copy(dropValueText = it)) },
+        modifier = Modifier.fillMaxWidth().testTag(TestTags.TEMPLATE_SET_DROP_VALUE),
+        singleLine = true,
+        isError = !draft.dropValueIsValid,
+        label = { Text(stringResource(R.string.template_set_drop_value_label, draft.unit.label())) },
+        supportingText = { Text(stringResource(R.string.template_set_drop_value_hint)) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+    )
+}
+
+/** The load a set of its own names, which a rung does not have (N15, N79). */
+@Composable
+private fun LoadField(
+    draft: TemplateSetDraft,
+    onChange: (TemplateSetDraft) -> Unit,
+) {
+    OutlinedTextField(
+        value = draft.weightText,
+        onValueChange = { onChange(draft.copy(weightText = it)) },
+        modifier = Modifier.fillMaxWidth().testTag(TestTags.TEMPLATE_SET_WEIGHT),
+        singleLine = true,
+        isError = !draft.weightIsValid,
+        label = { Text(stringResource(R.string.template_set_weight, draft.unit.label())) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+    )
+}
+
+/** The target range, which a rung does not carry either — the group's is the anchor's (N14, N79). */
+@Composable
+private fun RepsFields(
+    draft: TemplateSetDraft,
+    onChange: (TemplateSetDraft) -> Unit,
+) {
+    if (draft.role.isRung) return
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
-            value = draft.weightText,
-            onValueChange = { onChange(draft.copy(weightText = it)) },
-            modifier = Modifier.fillMaxWidth().testTag(TestTags.TEMPLATE_SET_WEIGHT),
+            value = draft.repsMinText,
+            onValueChange = { onChange(draft.copy(repsMinText = it)) },
+            modifier = Modifier.weight(1f).testTag(TestTags.TEMPLATE_SET_REPS_MIN),
             singleLine = true,
-            isError = !draft.weightIsValid,
-            label = { Text(stringResource(R.string.template_set_weight, draft.unit.label())) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            isError = !draft.repsAreValid,
+            label = { Text(stringResource(R.string.template_set_reps_min)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(
-                value = draft.repsMinText,
-                onValueChange = { onChange(draft.copy(repsMinText = it)) },
-                modifier = Modifier.weight(1f).testTag(TestTags.TEMPLATE_SET_REPS_MIN),
-                singleLine = true,
-                isError = !draft.repsAreValid,
-                label = { Text(stringResource(R.string.template_set_reps_min)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            )
-            OutlinedTextField(
-                value = draft.repsMaxText,
-                onValueChange = { onChange(draft.copy(repsMaxText = it)) },
-                modifier = Modifier.weight(1f).testTag(TestTags.TEMPLATE_SET_REPS_MAX),
-                singleLine = true,
-                isError = !draft.repsAreValid,
-                label = { Text(stringResource(R.string.template_set_reps_max)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            )
-        }
         OutlinedTextField(
-            value = draft.note,
-            onValueChange = { onChange(draft.copy(note = it)) },
-            modifier = Modifier.fillMaxWidth().testTag(TestTags.TEMPLATE_SET_NOTE),
-            label = { Text(stringResource(R.string.template_set_note)) },
-            minLines = 2,
+            value = draft.repsMaxText,
+            onValueChange = { onChange(draft.copy(repsMaxText = it)) },
+            modifier = Modifier.weight(1f).testTag(TestTags.TEMPLATE_SET_REPS_MAX),
+            singleLine = true,
+            isError = !draft.repsAreValid,
+            label = { Text(stringResource(R.string.template_set_reps_max)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
     }
 }
 
+/** A note is the one thing every role can carry, a rung included (N14, N79). */
+@Composable
+private fun NoteField(
+    draft: TemplateSetDraft,
+    onChange: (TemplateSetDraft) -> Unit,
+) {
+    OutlinedTextField(
+        value = draft.note,
+        onValueChange = { onChange(draft.copy(note = it)) },
+        modifier = Modifier.fillMaxWidth().testTag(TestTags.TEMPLATE_SET_NOTE),
+        label = { Text(stringResource(R.string.template_set_note)) },
+    )
+}
+
 /**
- * `100 kg × 3`, `× 3–5`, `RPE 8` — whatever the plan actually wrote, in one line.
+ * The load this set shows, or null (ROADMAP N14, N79).
  *
- * `internal` since N72: the program's read-only preview shows the same line, and a second formatter
- * for one plan would be the way two readings of it start.
+ * A rung has no weight written down, so it states what it derives and states **nothing** where nothing
+ * can be derived — never the stored number the ladder does not read.
  */
 @Composable
-internal fun TemplateSet.summary(unit: WeightUnit): String {
-    val weight = if (targetWeightGrams != null || targetAssistanceGrams != null) {
-        stringResource(
-            R.string.template_set_weight_value,
-            Weight.display(targetWeightGrams ?: 0L, targetAssistanceGrams ?: 0L, unit),
-            unit.label(),
-        )
-    } else {
-        null
+private fun TemplateSet.weightLine(unit: WeightUnit, rungWeightGrams: Long?): String? = when {
+    role.isRung -> rungWeightGrams?.let {
+        stringResource(R.string.template_set_weight_value, Weight.format(it, unit), unit.label())
     }
-    val reps = when {
+
+    targetWeightGrams != null || targetAssistanceGrams != null -> stringResource(
+        R.string.template_set_weight_value,
+        Weight.display(targetWeightGrams ?: 0L, targetAssistanceGrams ?: 0L, unit),
+        unit.label(),
+    )
+
+    else -> null
+}
+
+/** What the run takes off the anchor, named once, on the rung that holds it (ROADMAP N79). */
+@Composable
+private fun TemplateSet.dropValueLine(unit: WeightUnit, holdsTheRunValue: Boolean): String? =
+    dropValueGrams
+        ?.takeIf { holdsTheRunValue && role == SetType.DROP }
+        ?.let { stringResource(R.string.template_set_drop_value, Weight.format(it, unit), unit.label()) }
+
+/** The reps this set asks for, or null: a rung carries none, because the group's is the anchor's (N79). */
+@Composable
+private fun TemplateSet.repsLine(): String? = if (role.isRung) {
+    null
+} else {
+    when {
         targetRepsMin != null && targetRepsMax != null ->
             pluralStringResource(
                 R.plurals.template_reps_range,
@@ -408,11 +553,6 @@ internal fun TemplateSet.summary(unit: WeightUnit): String {
         )
         else -> null
     }
-    // A planned warm-up shows no effort, the rule a logged warm-up already holds (ROADMAP N67): the
-    // per-set target is the fallback a pre-change plan arrives with, and printing it beside
-    // *Warm-up* reads as a number the ramp was judged against.
-    val rpeHalves = if (role.recordsEffort) targetRpeHalves?.let { rpeMarker(it) } else null
-    return listOfNotNull(weight, reps, rpeHalves, note).joinToString(" · ")
 }
 
 /** The dialog's two optional actions, together so the dialog itself stays readable. */

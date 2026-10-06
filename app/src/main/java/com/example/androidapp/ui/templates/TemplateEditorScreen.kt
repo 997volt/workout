@@ -55,6 +55,7 @@ import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.Rpe
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.Weight
@@ -384,10 +385,7 @@ private fun TemplateExerciseBlock(
             supersetLabels = supersetLabels,
         )
         PlanRow(exercise = exercise, onClick = { planOpen = true })
-        ExercisePlanFields(
-            exercise = exercise,
-            onSave = onSavePlan,
-        )
+        ExercisePlanFields(exercise = exercise, onSave = onSavePlan)
     }
 
     if (planOpen) {
@@ -420,6 +418,7 @@ private fun TemplateExerciseBlock(
             exercise = exercise,
             edited = edited,
             unit = unit,
+            opensItsRun = exercise.opensItsRun(edited),
             onDismiss = {
                 adding = false
                 editing = null
@@ -431,6 +430,19 @@ private fun TemplateExerciseBlock(
             },
         )
     }
+}
+
+/**
+ * Whether the set being edited is the one that opens its run (ROADMAP N79).
+ *
+ * A run is contiguous, so this row opens one when the row above it is not a drop of the same kind —
+ * which is what lets it author the value the run takes off its anchor. A new set is appended, so the
+ * row above it is the plan's last, and the first set of a plan has nothing above it at all.
+ */
+private fun TemplateExercise.opensItsRun(edited: TemplateSet?): Boolean {
+    val index = if (edited == null) sets.size else sets.indexOfFirst { it.id == edited.id }
+    val above = if (index <= 0) null else sets.getOrNull(index - 1)
+    return above?.role != SetType.DROP
 }
 
 /**
@@ -446,9 +458,12 @@ private fun TemplateSetEditor(
     unit: WeightUnit,
     onDismiss: () -> Unit,
     onSave: (TemplateSetEdit) -> Unit,
+    /** Whether this row opens its run, which is what lets it author a drop value (ROADMAP N79). */
+    opensItsRun: Boolean = true,
 ) {
     TemplateSetDialog(
         unit = unit,
+        opensItsRun = opensItsRun,
         // Add set starts from the last planned set rather than from nothing (ROADMAP N46): a set is
         // nearly always the one before it again, and Duplicate — which doubled the whole plan and
         // left the odd counts to manual adds — is gone. Blank only while there is no set to start

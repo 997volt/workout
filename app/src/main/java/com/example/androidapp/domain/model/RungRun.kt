@@ -81,3 +81,23 @@ fun rungLoad(anchor: Load, role: SetType, run: RungRun): Load? = when {
         (added - value * run.rung).takeIf { it > 0L }?.let { Load(weightGrams = it, assistanceGrams = 0L) }
     }
 }
+
+/**
+ * What the rung at [index] loads, or null when it is not a rung or nothing can be derived (N79).
+ *
+ * [anchorLoad] is what the anchor carries — the session passes what it **actually did**, because a drop
+ * is taken off the bar in front of you, and the plan passes nothing, which reads the anchor's own
+ * target. Null is the same answer as [rungLoad] gives: an anchor with no added weight, a run naming no
+ * value, or a ladder that has run out.
+ */
+fun List<TemplateSet>.rungWeightAt(index: Int, anchorLoad: Load? = null): Long? {
+    val run = runAt(index)
+    val anchor = run?.let { getOrNull(it.anchorIndex) }
+    val load = anchorLoad
+        ?: anchor?.let { Load(it.targetWeightGrams ?: 0L, it.targetAssistanceGrams ?: 0L) }
+    return if (run == null || load == null) {
+        null
+    } else {
+        rungLoad(load, this[index].role, run)?.weightGrams
+    }
+}

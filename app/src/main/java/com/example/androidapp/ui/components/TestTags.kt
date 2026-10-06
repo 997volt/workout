@@ -322,6 +322,9 @@ object TestTags {
     const val TEMPLATE_PLAN_CLOSE = "template_plan_close"
     const val TEMPLATE_SET_ROLE = "template_set_role"
     const val TEMPLATE_SET_WEIGHT = "template_set_weight"
+
+    /** The value a drop run takes off its anchor (ROADMAP N79), on the rung that holds it. */
+    const val TEMPLATE_SET_DROP_VALUE = "template_set_drop_value"
     const val TEMPLATE_SET_REPS_MIN = "template_set_reps_min"
     const val TEMPLATE_SET_REPS_MAX = "template_set_reps_max"
     const val TEMPLATE_SET_NOTE = "template_set_note"

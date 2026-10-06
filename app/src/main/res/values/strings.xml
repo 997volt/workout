@@ -154,6 +154,11 @@
     <string name="template_set_title">Planned set</string>
     <string name="template_set_title_new">Add a planned set</string>
     <string name="template_set_role">Role: %1$s</string>
+    <!-- A drop run's value (ROADMAP N79): the plan stores what the run takes off the anchor rather
+         than a weight per rung, so this is the one number a drop rung is authored with. -->
+    <string name="template_set_drop_value_label">Drop by (%1$s)</string>
+    <string name="template_set_drop_value_hint">Each drop takes this off the set above it.</string>
+    <string name="template_set_drop_value">%1$s %2$s drop</string>
     <string name="template_set_weight">Target weight (%1$s)</string>
     <string name="template_set_reps_min">Reps from</string>
     <string name="template_set_reps_max">Reps to</string>

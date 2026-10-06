@@ -17,6 +17,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -299,6 +300,45 @@ class TemplateEditorScreenTest {
         assertEquals(Weight.DEFAULT_STEP_GRAMS, askedStep)
     }
 
+    /** A working set at 100 kg with two 20 kg drops after it, so the ladder is 80 then 60 (N79). */
+    private fun droppingExercise() = TemplateEditorUiState(
+        isLoading = false,
+        template = WorkoutTemplate(id = "t1", name = "Legs", exerciseCount = 1),
+        exercises = listOf(
+            TemplateExercise(
+                id = "te1",
+                templateId = "t1",
+                exerciseId = "back-squat",
+                position = 0,
+                exerciseName = "Back Squat",
+                primaryMuscle = MuscleGroup.QUADS,
+                equipment = Equipment.BARBELL,
+                sets = listOf(
+                    TemplateSet(
+                        id = "ts1",
+                        templateExerciseId = "te1",
+                        setIndex = 0,
+                        targetWeightGrams = 100_000L,
+                        targetRepsMax = 5,
+                    ),
+                    TemplateSet(
+                        id = "ts2",
+                        templateExerciseId = "te1",
+                        setIndex = 1,
+                        role = SetType.DROP,
+                        dropValueGrams = 20_000L,
+                    ),
+                    TemplateSet(
+                        id = "ts3",
+                        templateExerciseId = "te1",
+                        setIndex = 2,
+                        role = SetType.DROP,
+                    ),
+                ),
+            ),
+        ),
+    )
+
     private companion object {
         val twoExercises = TemplateEditorUiState(
             isLoading = false,
@@ -374,5 +414,47 @@ class TemplateEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).assertTextContains("100")
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MAX).assertTextContains("3")
     }
+    @Test
+    fun addingADropSet_asksForTheValueItTakesOff_theAnchor() {
+        // ROADMAP N79: a drop rung has no weight of its own to type — its load is the anchor less the
+        // run's value — so the dialog swaps the weight field for the one number a run is authored with.
+        setScreen(state = rampedExercise(stepGrams = null))
 
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.DROP.name)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).assertDoesNotExist()
+    }
+
+    @Test
+    fun aClusterRung_asksForNeitherAWeight_norReps() {
+        // A cluster repeats the anchor's load and answers to the anchor's reps, so it carries neither
+        // (ROADMAP N79).
+        setScreen(state = rampedExercise(stepGrams = null))
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.CLUSTER.name)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MIN).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE).assertDoesNotExist()
+    }
+
+    @Test
+    fun thePlanRow_statesWhatEachRungLoads() {
+        // The ladder is derived, so the plan says what it comes to rather than leaving the reader to
+        // subtract: 100 with a 20 kg value is 80, then 60 (ROADMAP N79).
+        setScreen(state = droppingExercise())
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
+
+        // The row's line joins its parts, so each is asserted as part of it.
+        composeTestRule.onNodeWithText("80 kg", substring = true).assertExists()
+        composeTestRule.onNodeWithText("60 kg", substring = true).assertExists()
+        composeTestRule.onNodeWithText("20 kg drop", substring = true).assertExists()
+    }
 }
