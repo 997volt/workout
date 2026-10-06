@@ -3,6 +3,7 @@ package com.example.androidapp.data.transfer
 import com.example.androidapp.domain.InvalidInputException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
 
 /**
  * Reads and writes the backup file (ROADMAP P1.12).
@@ -22,12 +23,11 @@ object BackupCodec {
      * the file at all, so an older build's default for it is the truth rather than a loss. N64 added
      * `weightUnit` and N73 removed the two prescription collections on exactly those grounds.
      *
-     * **N75 is the first change that does need it.** It added enum *values* — `LATS`, `UPPER_BACK`,
-     * `LOWER_BACK`, `ADDUCTORS` — and an older build cannot represent those: its decoder throws on the
-     * name, so without this bump the lifter would be told "that does not look like a backup file"
-     * when the truth is that the file is newer. A value the new build cannot represent is exactly what
-     * this gate exists for, and it is why the constant moves to 2 rather than staying where adding
-     * fields left it.
+     * **N75 was the first change that needed it.** It added enum *values* — `LATS`, `UPPER_BACK`,
+     * `LOWER_BACK`, `ADDUCTORS` — which an older build cannot represent, so this moved to 2. What the
+     * bump could not do on its own was deliver its own message: the version used to be read out of the
+     * *decoded* document, and the decoder threw on the very enum name the bump exists for, so a newer
+     * file was reported as corrupt. [gatedDocument] reads the version before the body now (B62).
      */
     const val CURRENT_SCHEMA_VERSION = 2
 
@@ -44,25 +44,18 @@ object BackupCodec {
     /**
      * Parses [text], or throws [InvalidInputException] with a message worth showing.
      *
-     * The version gate is explicit rather than best-effort: a file from a newer app
-     * may hold data this build cannot represent, and importing it partially would
-     * look like success while silently losing whatever it did not understand.
+     * The version gate is explicit rather than best-effort, and it runs **before** the body is
+     * decoded: a file from a newer app may hold data this build cannot represent, and an unknown enum
+     * name makes the decoder throw — so a gate behind the decoder would answer "corrupt" to a file
+     * whose only fault is being new (B62).
      */
     fun decode(text: String): BackupFile {
-        val file = try {
-            json.decodeFromString<BackupFile>(text)
+        val element = gatedDocument(text, "schemaVersion", CURRENT_SCHEMA_VERSION, "backup")
+        return try {
+            json.decodeFromJsonElement<BackupFile>(element)
         } catch (malformed: SerializationException) {
-            // The cause is kept, not discarded: the user sees the plain message,
-            // while a debugger or a bug report still has the parser's complaint.
+            // A known version whose body this build cannot read is the corrupt case, and says so.
             throw InvalidInputException("That does not look like a backup file.", malformed)
         }
-
-        if (file.schemaVersion > CURRENT_SCHEMA_VERSION) {
-            throw InvalidInputException(
-                "That backup was written by a newer version of the app " +
-                    "(file v${file.schemaVersion}, this build reads v$CURRENT_SCHEMA_VERSION).",
-            )
-        }
-        return file
     }
 }

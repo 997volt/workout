@@ -3,6 +3,7 @@ package com.example.androidapp.data.transfer
 import com.example.androidapp.domain.InvalidInputException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
 
 /**
  * Reads and writes a program document (ROADMAP N47).
@@ -12,8 +13,15 @@ import kotlinx.serialization.json.Json
  */
 object ProgramDocumentCodec {
 
-    /** The version this build writes, and the newest it will read. */
-    const val CURRENT_FORMAT_VERSION = 1
+    /**
+     * The version this build writes, and the newest it will read.
+     *
+     * N75 and N79 moved it to 2: a program document carries the exercise DTOs and the planned sets, so
+     * the split muscle names (`LATS`, `UPPER_BACK`, `LOWER_BACK`, `ADDUCTORS`) and `SetType.CLUSTER`
+     * travel in it, and a build without those constants cannot represent them. The backup's version
+     * moved for the same reason and on the same rule.
+     */
+    const val CURRENT_FORMAT_VERSION = 2
 
     private val json = Json {
         prettyPrint = true
@@ -28,25 +36,17 @@ object ProgramDocumentCodec {
     /**
      * Parses [text], or throws [InvalidInputException] with a message worth showing.
      *
-     * The version gate is explicit rather than best-effort, for [BackupCodec.decode]'s reason: a
-     * document from a newer app may hold something this build cannot represent, and a partial read
-     * would look like success while quietly dropping it.
+     * The gateway is explicit rather than best-effort and, like the backup's, reads the version before
+     * the body: a document whose only fault is being newer must be answered as newer, and an enum name
+     * this build lacks makes the decoder throw before a gate behind it could run ([gatedDocument]).
      */
     fun decode(text: String): ProgramDocument {
-        val document = try {
-            json.decodeFromString<ProgramDocument>(text)
+        val element = gatedDocument(text, "formatVersion", CURRENT_FORMAT_VERSION, "program")
+        return try {
+            json.decodeFromJsonElement<ProgramDocument>(element)
         } catch (malformed: SerializationException) {
-            // The cause is kept, not discarded: the user sees the plain message, while a bug
-            // report still has the parser's complaint.
+            // A known version whose body this build cannot read is the corrupt case, and says so.
             throw InvalidInputException("That does not look like a program file.", malformed)
         }
-
-        if (document.formatVersion > CURRENT_FORMAT_VERSION) {
-            throw InvalidInputException(
-                "That program was written by a newer version of the app " +
-                    "(file v${document.formatVersion}, this build reads v$CURRENT_FORMAT_VERSION).",
-            )
-        }
-        return document
     }
 }

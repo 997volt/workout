@@ -245,6 +245,48 @@ class BackupCodecTest {
     }
 
     @Test
+    fun aNewerFileCarryingAValueThisBuildCannotRead_isRefusedAsNewer() {
+        // ROADMAP B62: the version is read before the body, so a file whose only fault is being newer
+        // is answered as newer even when it carries an enum name this build has no constant for —
+        // which is the very case the version exists for, and the one the old order got wrong.
+        val fromTheFuture = BackupCodec.encode(sample)
+            .replace(Regex("\"schemaVersion\"\\s*:\\s*\\d+"), "\"schemaVersion\": 99")
+            .replace(
+                Regex("\"primaryMuscle\"\\s*:\\s*\"[A-Za-z_]+\""),
+                "\"primaryMuscle\": \"A_MUSCLE_FROM_THE_FUTURE\"",
+            )
+        assertTrue("the fixture must carry an unreadable value", fromTheFuture.contains("A_MUSCLE_FROM_THE_FUTURE"))
+
+        val thrown = assertThrows(InvalidInputException::class.java) {
+            BackupCodec.decode(fromTheFuture)
+        }
+
+        assertTrue(
+            "a newer file is newer, not corrupt",
+            thrown.message.orEmpty().contains("newer version"),
+        )
+    }
+
+    @Test
+    fun aKnownVersionsFileCarryingAnUnreadableValue_isRefusedAsCorrupt() {
+        // The other half: with the version known, an enum name this build cannot represent is the file
+        // being wrong rather than new, and it is answered as the corrupt case.
+        val corrupt = BackupCodec.encode(sample).replace(
+            Regex("\"primaryMuscle\"\\s*:\\s*\"[A-Za-z_]+\""),
+            "\"primaryMuscle\": \"A_MUSCLE_FROM_THE_FUTURE\"",
+        )
+
+        val thrown = assertThrows(InvalidInputException::class.java) {
+            BackupCodec.decode(corrupt)
+        }
+
+        assertTrue(
+            "a known version that does not decode is corrupt",
+            thrown.message.orEmpty().contains("does not look like a backup file"),
+        )
+    }
+
+    @Test
     fun unknownFieldsAreTolerated() {
         // Within the same schema version a newer build may add fields; refusing
         // them would make the format brittle for no gain.

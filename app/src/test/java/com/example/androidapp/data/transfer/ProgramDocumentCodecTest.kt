@@ -50,6 +50,34 @@ class ProgramDocumentCodecTest {
     }
 
     @Test
+    fun aNewerDocumentCarryingAValueThisBuildCannotRead_isRefusedAsNewer() {
+        // ROADMAP B62, the program's half: `SetType.CLUSTER` and the split muscle names travel in a
+        // document, so the version has to be read before the body or a newer file reads as corrupt.
+        val fromTheFuture = ProgramDocumentCodec.encode(document())
+            .replace(Regex("\"formatVersion\"\\s*:\\s*\\d+"), "\"formatVersion\": 99")
+            .replace(Regex("\"role\"\\s*:\\s*\"[A-Z_]+\""), "\"role\": \"A_ROLE_FROM_THE_FUTURE\"")
+        assertThat(fromTheFuture).contains("A_ROLE_FROM_THE_FUTURE")
+
+        val thrown = assertThrows(InvalidInputException::class.java) {
+            ProgramDocumentCodec.decode(fromTheFuture)
+        }
+
+        assertThat(thrown.message).contains("newer version of the app")
+    }
+
+    @Test
+    fun aKnownVersionsDocumentCarryingAnUnreadableValue_isRefusedAsCorrupt() {
+        val corrupt = ProgramDocumentCodec.encode(document())
+            .replace(Regex("\"role\"\\s*:\\s*\"[A-Z_]+\""), "\"role\": \"A_ROLE_FROM_THE_FUTURE\"")
+
+        val thrown = assertThrows(InvalidInputException::class.java) {
+            ProgramDocumentCodec.decode(corrupt)
+        }
+
+        assertThat(thrown.message).isEqualTo("That does not look like a program file.")
+    }
+
+    @Test
     fun somethingElseEntirely_isRefusedAsNotAProgramFile() {
         val thrown = assertThrows(InvalidInputException::class.java) {
             ProgramDocumentCodec.decode("{\"schemaVersion\":1,\"exportedAt\":0}")
