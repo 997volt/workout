@@ -20,10 +20,16 @@ object BackupCodec {
      * dropping what it does not understand. Adding a field does not need a bump — an unknown key is
      * ignored and the field is simply absent — and neither does *removing* one: the value is not in
      * the file at all, so an older build's default for it is the truth rather than a loss. N64 added
-     * `weightUnit` and N73 removed the two prescription collections on exactly those grounds, which is
-     * why this is still 1.
+     * `weightUnit` and N73 removed the two prescription collections on exactly those grounds.
+     *
+     * **N75 is the first change that does need it.** It added enum *values* — `LATS`, `UPPER_BACK`,
+     * `LOWER_BACK`, `ADDUCTORS` — and an older build cannot represent those: its decoder throws on the
+     * name, so without this bump the lifter would be told "that does not look like a backup file"
+     * when the truth is that the file is newer. A value the new build cannot represent is exactly what
+     * this gate exists for, and it is why the constant moves to 2 rather than staying where adding
+     * fields left it.
      */
-    const val CURRENT_SCHEMA_VERSION = 1
+    const val CURRENT_SCHEMA_VERSION = 2
 
     private val json = Json {
         prettyPrint = true

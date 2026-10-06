@@ -180,6 +180,21 @@ class ExerciseDetailScreenTest {
     }
 
     @Test
+    fun theRetiredBack_isNotAnOption_andTheSplitGroupsAre() {
+        // ROADMAP N75: a new exercise is never tagged with the group the taxonomy split three ways. The
+        // seeded rows that carried it are moved by a migration; the value itself stays readable.
+        show(customState(isEditing = true))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_MUSCLE).performClick()
+
+        composeTestRule.onNodeWithText("Back").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Lats").assertExists()
+        composeTestRule.onNodeWithText("Upper back").assertExists()
+        composeTestRule.onNodeWithText("Lower back").assertExists()
+        composeTestRule.onNodeWithText("Adductors").assertExists()
+    }
+
+    @Test
     fun clearingTheName_disablesSave() {
         show(customState(isEditing = true))
 

@@ -820,6 +820,63 @@ private const val ADD_TEMPLATE_SET_CURRENT_REPS =
 private const val SEED_TEMPLATE_SET_CURRENT_REPS =
     "UPDATE `template_sets` SET `targetRepsCurrent` = COALESCE(`targetRepsMin`, `targetRepsMax`)"
 
+/**
+ * The back group splits three ways, and the seeded library is corrected with it (ROADMAP N75).
+ *
+ * `BACK` was one muscle; it is now `LATS`, `UPPER_BACK` and `LOWER_BACK`, and `ADDUCTORS` joins the
+ * legs. **The legacy value stays in the enum**, so nothing here has to move every row that names it:
+ * a reader resolves `BACK` either way and an export written before the split still restores. What the
+ * migration moves is the library the *app* wrote, which it can classify, and only where the lifter has
+ * not already answered for it — every statement is guarded by the seeded value (`primaryMuscle =
+ * 'BACK'`, or a secondary list that still carries `BACK`), so a re-classified exercise keeps their
+ * answer. A custom exercise is never in `id IN (...)`, and guessing what a lifter meant by *Back* is
+ * what the project refuses.
+ *
+ * The secondary lists are rewritten **token by token** rather than replaced whole, so a lifter who
+ * added `CORE` to one keeps it. The deadlifts are the interesting case: they leave the back group for
+ * `HAMSTRINGS`, which the Romanian deadlift already had, and the `HAMSTRINGS` in their secondary list
+ * becomes `LOWER_BACK` — the erectors holding a heavy hinge, which is what the retired tag meant.
+ *
+ * The migration test seeds a v32 library with a Back-tagged row of each shape (a vertical pull, a
+ * horizontal pull, a deadlift, the two secondary lists), a row a lifter re-classified and a custom
+ * exercise, and is validated against the exported `33.json`.
+ */
+val MIGRATION_32_33 = object : Migration(32, 33) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(SPLIT_BACK_INTO_LATS)
+        db.execSQL(SPLIT_BACK_INTO_UPPER_BACK)
+        db.execSQL(MOVE_DEADLIFTS_TO_HAMSTRINGS)
+        db.execSQL(SPLIT_FACE_PULL_SECONDARY)
+        db.execSQL(SPLIT_RDL_SECONDARY)
+    }
+}
+
+/** The vertical pulls are lats. */
+private const val SPLIT_BACK_INTO_LATS =
+    "UPDATE `exercises` SET `primaryMuscle` = 'LATS' " +
+        "WHERE `primaryMuscle` = 'BACK' AND `id` IN ('pull-up', 'lat-pulldown', 'assisted-pull-up')"
+
+/** The horizontal pulls are the upper back. */
+private const val SPLIT_BACK_INTO_UPPER_BACK =
+    "UPDATE `exercises` SET `primaryMuscle` = 'UPPER_BACK' " +
+        "WHERE `primaryMuscle` = 'BACK' AND `id` IN ('barbell-row', 'seated-cable-row', 'machine-row')"
+
+/** The deadlifts: hamstrings prime, and the erectors take the old tag's place in the secondaries. */
+private const val MOVE_DEADLIFTS_TO_HAMSTRINGS =
+    "UPDATE `exercises` SET `primaryMuscle` = 'HAMSTRINGS', " +
+        "`secondaryMuscles` = replace(`secondaryMuscles`, 'HAMSTRINGS', 'LOWER_BACK') " +
+        "WHERE `primaryMuscle` = 'BACK' AND `id` IN ('deadlift', 'conventional-deadlift')"
+
+/** A face pull's back work is the upper back. */
+private const val SPLIT_FACE_PULL_SECONDARY =
+    "UPDATE `exercises` SET `secondaryMuscles` = replace(`secondaryMuscles`, 'BACK', 'UPPER_BACK') " +
+        "WHERE `id` = 'face-pull' AND `secondaryMuscles` LIKE '%BACK%'"
+
+/** A Romanian deadlift's is the erectors. */
+private const val SPLIT_RDL_SECONDARY =
+    "UPDATE `exercises` SET `secondaryMuscles` = replace(`secondaryMuscles`, 'BACK', 'LOWER_BACK') " +
+        "WHERE `id` = 'romanian-deadlift' AND `secondaryMuscles` LIKE '%BACK%'"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -962,4 +1019,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_29_30,
     MIGRATION_30_31,
     MIGRATION_31_32,
+    MIGRATION_32_33,
 )

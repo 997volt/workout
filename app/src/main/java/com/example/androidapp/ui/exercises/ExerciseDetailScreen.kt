@@ -51,6 +51,7 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SELECTABLE_MUSCLE_GROUPS
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.restLabel
@@ -396,7 +397,8 @@ private fun ExerciseEditFields(
         AttributeSelector(
             label = stringResource(R.string.exercise_detail_primary),
             selected = draft.primaryMuscle,
-            options = MuscleGroup.entries,
+            // The retired `BACK` is not an option (N75); a row that carries it still reads as Back.
+            options = SELECTABLE_MUSCLE_GROUPS,
             optionLabel = { it.label },
             testTag = TestTags.EXERCISE_EDIT_MUSCLE,
             onSelect = { onDraftChange(draft.copy(primaryMuscle = it)) },

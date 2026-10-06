@@ -18,11 +18,12 @@ data class SoreMuscle(
 )
 
 /**
- * The muscle groups a readiness note may name, in taxonomy order (ROADMAP N62).
+ * The muscle groups a readiness note may name, in taxonomy order (ROADMAP N62, N75).
  *
  * [MuscleGroup.OTHER] is the "not specified yet" value a custom exercise is created with, so it is
  * not a muscle anybody can be sore *in* — offering it would let "Other, 6" be a fact with no
- * subject. A stored row that nevertheless carries it is read rather than hidden: the row is data,
- * and refusing to show it would be losing what a lifter wrote.
+ * subject. The retired [MuscleGroup.BACK] is not offered either (N75): it is one of the three groups
+ * the taxonomy now splits it into. A stored row that nevertheless carries either is read rather than
+ * hidden: the row is data, and refusing to show it would be losing what a lifter wrote.
  */
-val SORE_MUSCLE_GROUPS: List<MuscleGroup> = MuscleGroup.entries.filter { it != MuscleGroup.OTHER }
+val SORE_MUSCLE_GROUPS: List<MuscleGroup> = SELECTABLE_MUSCLE_GROUPS.filter { it != MuscleGroup.OTHER }

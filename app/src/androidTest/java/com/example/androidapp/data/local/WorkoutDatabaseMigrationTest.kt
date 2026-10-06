@@ -1637,4 +1637,67 @@ class WorkoutDatabaseMigrationTest {
 
         migrated.close()
     }
+
+    @Test
+    fun migration32To33_splitsTheBackGroup_andLeavesEveryAnsweredRowAlone() {
+        // ROADMAP N75: Back becomes Lats, Upper back and Lower back, and the seeded library moves with
+        // it. What matters as much as the split is what it does *not* touch: a row a lifter
+        // re-classified keeps their answer, a custom exercise's Back stays readable, and a secondary
+        // list is rewritten token by token so an added muscle survives.
+        helper.createDatabase(TEST_DB, 32).apply {
+            execSQL(
+                """
+                INSERT INTO exercises
+                    (id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, isCustom,
+                     createdAt, updatedAt)
+                VALUES
+                    ('pull-up', 'Pull-Up', 'BACK', 'BICEPS,FOREARMS', 'BODYWEIGHT', 'VERTICAL_PULL',
+                     0, 1, 1),
+                    ('machine-row', 'Machine Row', 'BACK', 'BICEPS', 'MACHINE', 'HORIZONTAL_PULL',
+                     0, 1, 1),
+                    ('deadlift', 'Deadlift', 'BACK', 'HAMSTRINGS,GLUTES,FOREARMS', 'BARBELL', 'HINGE',
+                     0, 1, 1),
+                    ('conventional-deadlift', 'Conventional Deadlift', 'BACK',
+                     'HAMSTRINGS,GLUTES,FOREARMS,CORE', 'BARBELL', 'HINGE', 0, 1, 1),
+                    ('face-pull', 'Face Pull', 'SHOULDERS', 'BACK', 'CABLE', 'ISOLATION', 0, 1, 1),
+                    ('romanian-deadlift', 'Romanian Deadlift', 'HAMSTRINGS', 'GLUTES,BACK', 'BARBELL',
+                     'HINGE', 0, 1, 1),
+                    ('lat-pulldown', 'Lat Pulldown', 'CHEST', 'BICEPS', 'CABLE', 'VERTICAL_PULL',
+                     0, 1, 1),
+                    ('my-pulldown', 'My Pulldown', 'BACK', 'BICEPS', 'MACHINE', 'VERTICAL_PULL',
+                     1, 1, 1)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 33, true, MIGRATION_32_33)
+
+        migrated.query(
+            "SELECT id, primaryMuscle, secondaryMuscles FROM exercises ORDER BY id",
+        ).use { cursor ->
+            val rows = buildList {
+                while (cursor.moveToNext()) {
+                    add(Triple(cursor.getString(0), cursor.getString(1), cursor.getString(2)))
+                }
+            }
+            assertEquals(
+                listOf(
+                    Triple("conventional-deadlift", "HAMSTRINGS", "LOWER_BACK,GLUTES,FOREARMS,CORE"),
+                    Triple("deadlift", "HAMSTRINGS", "LOWER_BACK,GLUTES,FOREARMS"),
+                    Triple("face-pull", "SHOULDERS", "UPPER_BACK"),
+                    // The lifter re-classified this one, so the migration has no business in it.
+                    Triple("lat-pulldown", "CHEST", "BICEPS"),
+                    Triple("machine-row", "UPPER_BACK", "BICEPS"),
+                    // A custom movement keeps the retired value rather than being guessed at.
+                    Triple("my-pulldown", "BACK", "BICEPS"),
+                    Triple("pull-up", "LATS", "BICEPS,FOREARMS"),
+                    Triple("romanian-deadlift", "HAMSTRINGS", "GLUTES,LOWER_BACK"),
+                ),
+                rows,
+            )
+        }
+
+        migrated.close()
+    }
 }
