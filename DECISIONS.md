@@ -902,3 +902,7 @@ stop being true:
   "Finish the workout you are in to start this one." under the row, and Home still showed both
   links above *Resume workout*.
 - The *Done* action sits at the rating row's height once a set is logged (N76).
+- A live workout's role picker offers **Cluster** beside **Drop** (N79), which is the fact that stops
+  being true if the enum and the pickers drift. The derived ladder, the one-rating rule and the pairing
+  are covered by the JVM and instrumented suites — the arithmetic is a pure function, so tapping it
+  would prove less than the tests do.

@@ -379,6 +379,20 @@ class RoomWorkoutRepository @Inject constructor(
         dao.softDeleteSession(id = sessionId, at = now)
     }
 
+    /**
+     * Whether this exercise has already logged a set a rung could hang off (ROADMAP N79).
+     *
+     * Read through the session the exercise belongs to rather than with a query of its own: the DAO
+     * already answers "this session's sets", and a rung's anchor is the first set of *this* exercise
+     * that stands on its own — a warm-up cannot anchor a run, so it does not count.
+     */
+    private suspend fun hasASetAboveIt(sessionExerciseId: String): Boolean {
+        val sessionSets = dao.findSessionIdForSessionExercise(sessionExerciseId)
+            ?.let { dao.observeSetsForSession(it).first() }
+            .orEmpty()
+        return sessionSets.any { it.sessionExerciseId == sessionExerciseId && !it.setType.isRung }
+    }
+
     override suspend fun logSet(
         sessionExerciseId: String,
         reps: Int,
@@ -398,6 +412,12 @@ class RoomWorkoutRepository @Inject constructor(
         // history the user cannot reach, so this fails as NotFound instead.
         if (dao.countLoggableSessionExercise(sessionExerciseId) == 0) {
             throw NotFoundException("session exercise $sessionExerciseId is not loggable")
+        }
+        // A rung hangs off the set above it, so the first set of an exercise cannot be one: there is
+        // nothing to derive a drop from and nothing to rate a cluster against (ROADMAP N79). The
+        // picker is the real guard; this is the boundary, the way the RPE check above is.
+        if (setType.isRung && !hasASetAboveIt(sessionExerciseId)) {
+            throw InvalidInputException("A ${setType.label.lowercase()} set follows the set above it.")
         }
         val now = timeSource.nowEpochMillis()
         dao.insertSet(

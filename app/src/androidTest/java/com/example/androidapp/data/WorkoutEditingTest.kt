@@ -482,6 +482,73 @@ class WorkoutEditingTest {
     }
 
     /** An open session with one exercise and one logged set (`s1`, `se1`, `set1`). */
+
+    @Test
+    fun aRungCannotBeTheFirstSetOfAnExercise() = runTest {
+        // ROADMAP N79: a drop or cluster set hangs off the set above it, so the first set of an
+        // exercise has nothing to derive from and nothing to rate. The picker is the real guard; this
+        // is the boundary — and the rule is about the *first* set rather than about rungs, which the
+        // third assertion shows.
+        seedOpenWorkout()
+        val rung: suspend (SetType) -> DataResult<Unit> = { type ->
+            repository.logSet(
+                "se1",
+                reps = 5,
+                weightGrams = 80_000L,
+                rpeHalves = null,
+                note = null,
+                setType = type,
+            )
+        }
+
+        assertTrue("nothing above it to drop from", rung(SetType.DROP) is DataResult.Failure)
+        assertTrue("and the same for a cluster", rung(SetType.CLUSTER) is DataResult.Failure)
+        assertTrue(
+            "a working set is fine",
+            repository.logSet(
+                "se1",
+                reps = 5,
+                weightGrams = 100_000L,
+                rpeHalves = null,
+                note = null,
+            ) is DataResult.Success,
+        )
+        assertTrue("and now a rung has an anchor", rung(SetType.DROP) is DataResult.Success)
+    }
+
+    /** The same open workout as [seedOpenWorkoutWithASet], before anything has been logged (N79). */
+    private suspend fun seedOpenWorkout(): String {
+        database.exerciseDao().insertAll(
+            listOf(
+                ExerciseEntity(
+                    id = "back-squat",
+                    name = "Back Squat",
+                    primaryMuscle = MuscleGroup.QUADS,
+                    secondaryMuscles = emptyList(),
+                    equipment = Equipment.BARBELL,
+                    movementPattern = MovementPattern.SQUAT,
+                    isCustom = false,
+                    createdAt = 0L,
+                    updatedAt = 0L,
+                    deletedAt = null,
+                ),
+            ),
+        )
+        val session = database.workoutDao().findOrCreateActiveSession(id = "s1", now = 1_000L).session
+        database.workoutDao().insertSessionExercise(
+            SessionExerciseEntity(
+                id = "se1",
+                sessionId = session.id,
+                exerciseId = "back-squat",
+                position = 0,
+                createdAt = 0L,
+                updatedAt = 0L,
+                deletedAt = null,
+            ),
+        )
+        return session.id
+    }
+
     private suspend fun seedOpenWorkoutWithASet(): String {
         database.exerciseDao().insertAll(
             listOf(
