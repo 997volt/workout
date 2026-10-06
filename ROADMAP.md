@@ -84,8 +84,9 @@ call site. An exercise gains **`stepGrams: Long?`** beside `restSeconds` and `te
 [Exercise.kt](app/src/main/java/com/example/androidapp/domain/model/Exercise.kt) — typed in that
 exercise's own unit to a tenth of it (0.1 kg, or 0.1 lb) and stored whole grams, with null meaning the
 unit's own step — and the three places that read `Weight.stepGrams(unit)` today read it instead: **the
-workout's load steppers, the warm-up ramp** (both the guard that offers the ramp and the rounding that
-builds it) **and the progression offer**. The ramp follows it for the reason the steppers do: a ramp
+workout's load steppers** — the signed load, so on an assisted set the same step moves the help —
+**the warm-up ramp** (both the guard that offers the ramp and the rounding that builds it) **and the
+progression offer**. The ramp follows it for the reason the steppers do: a ramp
 rounded to a step the machine cannot load is the same defect one screen over. Nothing in the plan editors
 changes — they type a load rather than stepping one, so there is no fourth call site to convert.
 
