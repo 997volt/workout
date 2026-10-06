@@ -25,10 +25,11 @@ repeated here.
   the whole ladder, and nothing can drift. A rung is **rated once per group** (the rating lives on the
   set it hangs off, and shows in no field of its own), **cannot set a personal record** while still
   counting towards volume, is **judged on the group's first set** rather than on numbers that are not its
-  own, and **rests only after the run closes**. Four rules keep it honest where it is authored: a value
-  belongs to a drop and is above zero; a rung needs a working set above it; a run names its value once;
-  and every rung must come out with something to load — an assisted or bodyweight anchor has no 20 kg to
-  take off, and a ladder that would run past zero is refused rather than becoming assistance. **A drop
+  own, and **rests only after the run closes**. Four rules keep it honest, in a plan and in a live log
+  alike: a value belongs to a drop and is above zero; a rung needs a working set above it — the *first*
+  set of an exercise cannot be one, plan or log; a run names its value once; and every rung must come
+  out with something to load — an assisted or bodyweight anchor has no 20 kg to take off, and a ladder
+  that would run past zero is refused rather than becoming assistance. **A drop
   logged on the fly no longer shifts the plan**: the Done question used to judge the next prescribed set
   against the drop's reps and offer it a heavier weight — which accepting wrote into the plan — and it
   now pairs prescribed work sets with performed work sets and prescribed rungs with performed rungs.
