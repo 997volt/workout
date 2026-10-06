@@ -304,7 +304,11 @@ the rule; that one argues it.
   ceiling with no added weight to raise — bodyweight or assisted (N15) — is offered **nothing** and says
   so, because the app has neither a rep inside the range nor a weight to move. **The question is frozen
   when *Done* is tapped**: the offer is computed from the plan's target and the session's work, so the
-  first step written would re-arm the very offer it answered, and a pick is not a write. The setting (N66)
+  first step written would re-arm the very offer it answered, and a pick is not a write. **A finished
+  exercise that is reopened is judged against the plan as it now stands**, because the target a set was
+  answered against is not stored: accept a rep step, finish, undo the finish, and that same set can read
+  as short of the target its own step created. Storing the answered target on the session is what N16
+  refused, so the app states the plan it has rather than the one the set met. The setting (N66)
   and "no plan, no question" (N50) still hold. ([evidence](DECISIONS-EVIDENCE.md#n74))
 
 - **A superset is a group of exercises performed in rounds** (N24). The model is a
