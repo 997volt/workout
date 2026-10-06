@@ -70,10 +70,12 @@ edited against a step it does not have. N64 left the seam for this by making the
 argument to the warm-up ramp and the progression offer instead of being read from a constant at each
 call site. An exercise gains **`stepGrams: Long?`** beside `restSeconds` and `techniqueNote` on
 [Exercise.kt](app/src/main/java/com/example/androidapp/domain/model/Exercise.kt) — whole grams, null
-meaning the unit's own step — and every ± that moves its load reads that where it has one: the workout's
-fields, the warm-up ramp and the progression offer. **The ramp follows it too**, because a ramp rounded
-to a step the machine cannot load is the same defect one screen over, and the plan editors that step a
-planned set's load follow it with them.
+meaning the unit's own step — and the three places that read `Weight.stepGrams(unit)` today read it
+instead: **the workout's load steppers, the warm-up ramp** (both the guard that offers the ramp and the
+rounding that builds it) **and the progression offer**. The ramp follows it for the reason the steppers
+do: a ramp rounded to a step the machine cannot load is the same defect one screen over. Nothing in the
+plan editors changes — they type a load rather than stepping one, so there is no fourth call site to
+convert.
 
 It is a per-exercise property and not a per-plan one, it travels in the backup file, and it is edited on
 the exercise's own detail screen beside the rest and the cue. A migration numbered as it ships adds the
