@@ -27,25 +27,30 @@ and the step always lands on the **last** working set, so the dialog names no se
 back-off set differently from a top set (N50). **Earning becomes independent per set** — a set performed
 with its reps met at or under the exercise's one target RPE (N59) earns its own step whatever its
 siblings did — and **two bulk actions** (*raise every earned set's load*, *…reps*) cover the plan whose
-sets share a target while a row stays individually changeable. The prompt is **frozen when *Done* is
-tapped** and held as view-model state: a written target would otherwise re-arm the same offer on the
-next read, and a selection is not a write.
+sets share a target, each acting only on the rows that offer that direction, while a row stays
+individually changeable. The prompt is **frozen when *Done* is tapped** and held as view-model state: a
+written target would otherwise re-arm the same offer on the next read, and a selection is not a write.
 
-**A step respects the plan's rep range.** "Reps from" and "Reps to" become the fixed range a set was
-authored with, which progression never edits, and a new **current rep target** becomes the number the
-session prefills and the rule measures; on a plan written with a floor it starts there (`from`, else
-`to`) and climbs. The **rep** direction is offered only while that target **and** the reps actually done
-are both below the range's ceiling, and accepting the **weight** direction on a set whose range is real
-(`from < to`) writes the current target back to `from` as well — so a range is climbed 5→6→7→8 and then
-started again a step heavier, instead of having its ceiling pushed to 9 and 10 as it is today. A plan
-with no ceiling keeps climbing as it does now, a plan whose ends are equal offers the weight alone, and
-a weight step on either leaves the reps alone. This is N22's double progression back — reps to the
-ceiling, then the load step and the range starts again (N22) — now gated on the session's own RPE and
-with the range itself held still; it retires the code's shared reading that a range means its upper
-bound (`targetRepsMax ?: targetRepsMin`), so the target becomes one of three numbers, `template_sets`
-gains the column in **migration 31→32** and the backup DTO a field beside it, and a plan already
-installed is backfilled to its range's floor, which is what a ranged plan's session then starts asking
-for.
+**A step respects the plan's rep range, and the two directions are exclusive.** "Reps from" and "Reps
+to" become the fixed range a set was authored with, which progression never edits, and a new **current
+rep target** becomes the number the session prefills and the rule measures; on a plan written with a
+floor it starts there (`from`, else `to`) and climbs. A met set **below the ceiling** is offered the
+**rep alone** — the weight is withheld while there are reps left to take — and the step moves the target
+to one past what was actually done, capped at the ceiling (asked 5, did 7 of 8, next target 8), so the
+plan tracks the lifter rather than its own number. A met set **at the ceiling** is offered the **weight
+alone**, because the rep condition has stopped holding, and where the range is real (`from < to`) that
+same write puts the current target back on `from` — so a range is climbed 5→6→7→8 and then started
+again a step heavier, instead of having its ceiling pushed to 9 and 10 as it is today. A plan written
+with **no ceiling** keeps both directions as it does now, and a plan whose two ends are equal offers the
+weight alone and keeps its reps. A met set at the ceiling with **no load to raise** — bodyweight, or an
+assisted machine — is offered **nothing at all**: the row states the plan was met and holds no step,
+which is the honest answer where the app has neither a rep to add nor a weight to move. This is N22's
+double progression back — reps to the ceiling, then the load step and the range starts again (N22) — now
+gated on the session's own RPE and with the range itself held still; it retires the code's shared
+reading that a range means its upper bound (`targetRepsMax ?: targetRepsMin`), so the target becomes one
+of three numbers, `template_sets` gains the column in **migration 31→32** and the backup DTO a field
+beside it, and a plan already installed is backfilled to its range's floor, which is what a ranged
+plan's session then starts asking for.
 
 Unchanged: the RPE target stays one number for the exercise (N59), the earning predicate and the warm-up
 exclusion (N17, N20, N22), the unit's own step (N64), and that only what the lifter chose is written.
