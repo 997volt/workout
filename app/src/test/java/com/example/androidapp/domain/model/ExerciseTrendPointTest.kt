@@ -44,6 +44,19 @@ class ExerciseTrendPointTest {
     }
 
     @Test
+    fun aClusterSet_countsAsAWorkingSetToo() {
+        // B69: N79 added the second rung role and the exclusion is `!= WARMUP`, so a cluster counts —
+        // but only the drop was asserted, which would leave a change to role-by-role filtering green.
+        val points = rows(
+            row(weight = 100_000L, reps = 5),
+            row(weight = 100_000L, reps = 4, type = SetType.CLUSTER),
+        ).toExerciseTrendPoints()
+
+        assertEquals(9, points.single().totalReps)
+        assertEquals(500_000L + 400_000L, points.single().volumeGrams)
+    }
+
+    @Test
     fun epley_estimatesFromTheHeaviestSet() {
         // 100 kg for 5: 100 × (1 + 5/30) = 116.67 kg, rounded to the nearest half.
         val points = rows(row(weight = 100_000L, reps = 5)).toExerciseTrendPoints()

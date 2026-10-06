@@ -612,6 +612,68 @@ class TemplateRepositoryTest {
     }
 
     @Test
+    fun anExercisesOwnStep_andAClimb_reachAPlanThroughTheProjections() = runTest {
+        // ROADMAP B70: both columns travel through hand-written SQL projections — the exercise's step
+        // onto the planned exercise, the climb onto the planned set — and no test read either back
+        // through a DAO, so a projection that dropped one stayed green.
+        database.exerciseDao().insertAll(listOf(exercise("front-squat").copy(stepGrams = 5_000L)))
+        val template = create("Legs")
+        repository.addExercise(template, "front-squat")
+        val exercise = repository.observeExercises(template).first().single().id
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(targetRepsMin = 5, targetRepsMax = 8, targetRepsCurrent = 7),
+        )
+
+        val planned = repository.observeExercises(template).first().single()
+
+        assertEquals(5_000L, planned.stepGrams)
+        assertEquals(7, planned.sets.single().targetRepsCurrent)
+    }
+
+    @Test
+    fun aDropValueThatIsNotAboveZero_isRefused() = runTest {
+        // ROADMAP B69: the value's rule has two halves, and only the role half was asserted — the
+        // boundary's "more than zero" and the dialog's matching guard were never reached by a test.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+
+        val zero = repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 0L))
+        val negative = repository.addSet(
+            exercise,
+            TemplateSetEdit(role = SetType.DROP, dropValueGrams = -20_000L),
+        )
+
+        assertTrue("zero is no value rather than a small one", zero is DataResult.Failure)
+        assertTrue("and a negative value would be assistance, not a drop", negative is DataResult.Failure)
+        assertEquals(1, repository.observeExercises(template).first().single().sets.size)
+    }
+
+    @Test
+    fun aLaterRungCarryingItsOwnValue_isRefused() = runTest {
+        // ROADMAP B69: "a run names its value on its first rung" was asserted only from the reading
+        // side — the second rung inherits and carries none — so the branch refusing a second value
+        // never ran. The value belongs to the run, and a later row's would be a number nothing reads.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 20_000L))
+
+        val second = repository.addSet(
+            exercise,
+            TemplateSetEdit(role = SetType.DROP, dropValueGrams = 30_000L),
+        )
+
+        assertTrue(second is DataResult.Failure)
+        assertEquals(
+            "and the plan keeps the run it had",
+            2,
+            repository.observeExercises(template).first().single().sets.size,
+        )
+    }
+
+    @Test
     fun aClusterRung_needsNoValue_atAll() = runTest {
         val template = create("Legs")
         val exercise = plannedExercise(template)

@@ -616,6 +616,87 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun withTheProgressionQuestionTurnedOff_DoneOnlyFinishesTheExercise() = runTest(dispatcher) {
+        // ROADMAP N66, restored by B68: the question is a preference, so a plan that *could* answer it
+        // is not asked when the switch is off — Done finishes and nothing is written to the plan. The
+        // N74 rewrite moved that decision from the screen into the ViewModel and the screen test that
+        // held it was deleted with nothing replacing it, so the promise was unguarded end to end.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val settings = FakeSettingsRepository().apply { progressionPrompt.value = false }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            settings = settings,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertNull("the switch withdraws the question", viewModel.pendingProgression.value)
+        assertTrue(
+            "and Done still finishes the exercise",
+            viewModel.uiState.value.exercises.single().isFinished,
+        )
+        assertEquals("with nothing written to the plan", emptyList<Pair<String, TemplateSetEdit>>(), templates.updates)
+    }
+
+    @Test
+    fun aRungsReps_comeFromTheSameSetLastTime_notFromTheAnchor() = runTest(dispatcher) {
+        // ROADMAP N79, B69: a rung's reps prefill from what *this same set* did in the previous
+        // training, matched by the set's place in the plan — the only identity a logged row keeps
+        // between sessions. "What you just did" would answer with the anchor's reps, which for a drop
+        // is the wrong number entirely. The match is the ViewModel's, and only the pure function was
+        // tested, with the value handed to it.
+        val repository = FakeWorkoutRepository().apply {
+            previous = PreviousPerformance(
+                listOf(
+                    SetEntry("old0", "old-ex", 0, 5, 100_000L),
+                    SetEntry("old1", "old-ex", 1, 10, 80_000L),
+                ),
+            )
+        }
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    sets = listOf(
+                        plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = 8),
+                        TemplateSet(
+                            id = "ts-1",
+                            templateExerciseId = "te-0",
+                            setIndex = 1,
+                            role = SetType.DROP,
+                            dropValueGrams = 20_000L,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+
+        // Log the anchor, so the pending set is the plan's drop.
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
+        settle()
+
+        val suggestion = viewModel.uiState.value.exercises.single().suggestion
+        assertEquals("last time's ten, for this same set", 10, suggestion.reps)
+        assertEquals("the anchor's own load less the run's value", 80_000L, suggestion.weightGrams)
+        assertEquals(SetType.DROP, suggestion.setType)
+    }
+
+    @Test
     fun theProgressionOffer_raisesByTheMovementsOwnStep() = runTest(dispatcher) {
         // ROADMAP N77: the offer moves the load by the step the movement actually jumps in, so a
         // machine that adds 5 kg is offered 105 rather than 102.5.

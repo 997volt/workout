@@ -22,6 +22,7 @@ import com.example.androidapp.data.local.TemplateSetEntity
 import com.example.androidapp.data.local.WorkoutSessionEntity
 import java.time.DayOfWeek
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
 /**
@@ -174,6 +175,9 @@ class BackupCodecRoundTripTest {
             targetRepsMin = null,
             targetRepsMax = null,
             targetRepsCurrent = null,
+            // The run's value, held by its first rung (N79): the codec must carry it, or a restore
+            // silently leaves the ladder with nothing to take off (B70).
+            dropValueGrams = 20_000L,
             targetRpeHalves = 19,
             note = null,
             createdAt = 1_600_000_000_000L,
@@ -181,7 +185,10 @@ class BackupCodecRoundTripTest {
             deletedAt = null,
         )
 
-        assertThat(entity.toDto().toEntity().targetRpeHalves).isNull()
+        val roundTripped = entity.toDto().toEntity()
+        assertThat(roundTripped.targetRpeHalves).isNull()
+        assertWithMessage("and its value travels, or the ladder loses what to take off")
+            .that(roundTripped.dropValueGrams).isEqualTo(20_000L)
     }
 
     @Test
@@ -347,6 +354,9 @@ class BackupCodecRoundTripTest {
             // The column N64 added: the exercise's own display unit. This is the field the codec
             // dropped, which is why it is set here rather than left at its null default.
             weightUnit = "POUNDS",
+            // And the one N77 added, on the same reasoning: a restore that drops it silently puts
+            // every exercise back on the unit's step, which is what the field exists to override (B70).
+            stepGrams = 5_000L,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,

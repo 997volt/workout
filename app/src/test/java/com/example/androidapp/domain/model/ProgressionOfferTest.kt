@@ -370,10 +370,15 @@ class ProgressionOfferTest {
         // ROADMAP N79, and the bug the pairing fix is for: a working set followed by a drop at a
         // lighter weight used to shift every later pair, so the *second* planned set was judged against
         // the drop's ten reps and offered a heavier weight — which accepting wrote into the plan.
+        //
+        // The second planned set carries a **range** (B69): with both ends at five, both pairings land
+        // on the ceiling and offer the same load, so the test pinned the pairing without distinguishing
+        // the offer. Below a ceiling of eight, the correct pairing earns the *rep* — 5 done of 5..8 —
+        // while the old pairing, reading the drop's ten, would earn the load instead.
         val prompt = progressionPromptFor(
             planned = listOf(
                 planSet(id = "ts-0", index = 0),
-                planSet(id = "ts-1", index = 1),
+                planSet(id = "ts-1", index = 1, repsMax = 8),
                 planSet(id = "ts-2", index = 2),
             ),
             performed = listOf(
@@ -389,6 +394,9 @@ class ProgressionOfferTest {
         assertThat(prompt.sets[0].performed?.reps).isEqualTo(5)
         assertThat(prompt.sets[1].performed?.reps).isEqualTo(5)
         assertThat(prompt.sets[2].performed?.reps).isEqualTo(5)
+        // And the second set is judged against the five it did, not the drop's ten.
+        assertThat(prompt.sets[1].offer?.reps).isNotNull()
+        assertThat(prompt.sets[1].offer?.load).isNull()
         // And the drop is what it is: extra work the plan does not name, earning nothing.
         assertThat(prompt.sets[3].planned).isNull()
         assertThat(prompt.sets[3].performed?.role).isEqualTo(SetType.DROP)
@@ -399,15 +407,21 @@ class ProgressionOfferTest {
     fun aPrescribedRung_earnsNothingOfItsOwn() {
         // The group's step belongs to the set the run hangs off, so the rung states why it has none
         // rather than being judged on numbers that are not its own (ROADMAP N79).
-        val rung = progressionPromptFor(
+        val prompt = progressionPromptFor(
             planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1, role = SetType.DROP)),
             performed = listOf(done(reps = 5), done(reps = 10, role = SetType.DROP, weight = 80_000L)),
-        ).sets[1]
+        )
+        val rung = prompt.sets[1]
 
         assertThat(rung.offer).isNull()
         assertThat(rung.miss).isEqualTo(ProgressionMiss.RUNG_OF_A_GROUP)
         assertWithMessage("the drop still reads against its own row")
             .that(rung.performed?.reps).isEqualTo(10)
+        // B69: "a rung cut short does not hold the group back" was asserted only from the rung's side.
+        // The rung has no target to miss, so the anchor is still judged on its own work and still earns
+        // its step — which is the whole point of judging the group on its first set.
+        assertWithMessage("and the anchor it hangs off still earns its own")
+            .that(prompt.sets[0].offer).isNotNull()
     }
 
     @Test

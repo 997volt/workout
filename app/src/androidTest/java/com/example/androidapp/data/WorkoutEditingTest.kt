@@ -590,8 +590,25 @@ class WorkoutEditingTest {
         assertEquals(SetType.DROP, database.workoutDao().findSetById(logged.id)!!.setType)
     }
 
-    /** The same open workout as [seedOpenWorkoutWithASet], before anything has been logged (N79). */
-    private suspend fun seedOpenWorkout(): String {
+    @Test
+    fun anExercisesOwnStep_reachesTheSessionItIsLoggedIn() = runTest {
+        // ROADMAP B70: `stepGrams` travels through a hand-written SQL projection — the same shape that
+        // dropped a column three times before the round-trip test existed — and nothing read it back
+        // from the session. The live ± buttons step by what arrives here (N77).
+        seedOpenWorkout(stepGrams = 5_000L)
+
+        val session = repository.observeSessionExercises("s1").first().single()
+
+        assertEquals(5_000L, session.stepGrams)
+    }
+
+    /**
+     * The same open workout as [seedOpenWorkoutWithASet], before anything has been logged (N79).
+     *
+     * [stepGrams] is the movement's own weight step (N77), unset by default: the projection that carries
+     * it onto the session had no test until B70.
+     */
+    private suspend fun seedOpenWorkout(stepGrams: Long? = null): String {
         database.exerciseDao().insertAll(
             listOf(
                 ExerciseEntity(
@@ -602,6 +619,7 @@ class WorkoutEditingTest {
                     equipment = Equipment.BARBELL,
                     movementPattern = MovementPattern.SQUAT,
                     isCustom = false,
+                    stepGrams = stepGrams,
                     createdAt = 0L,
                     updatedAt = 0L,
                     deletedAt = null,

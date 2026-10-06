@@ -384,6 +384,9 @@ class BackupRoundTripTest {
         assertEquals(20_000L, set.targetAssistanceGrams)
         assertEquals(1, set.targetRepsMin)
         assertEquals(2, set.targetRepsMax)
+        // The fixture seeded this from the start and nothing asserted it, so the column's round trip was
+        // silent (ROADMAP B70).
+        assertEquals("the climber's place in the range survives (N74)", 1, set.targetRepsCurrent)
         assertEquals(18, set.targetRpeHalves)
         assertEquals("grind", set.note)
 
