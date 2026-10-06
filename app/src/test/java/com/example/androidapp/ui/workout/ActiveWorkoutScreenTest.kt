@@ -79,6 +79,8 @@ class ActiveWorkoutScreenTest {
         val onLogSet: (String, SetEdit) -> Unit = { _, _ -> },
         val onToggleSuperset: (String) -> Unit = {},
         val onDiscard: () -> Unit = {},
+        val onOpenTemplates: () -> Unit = {},
+        val onOpenPrograms: () -> Unit = {},
     )
 
     private fun setScreen(
@@ -126,6 +128,8 @@ class ActiveWorkoutScreenTest {
                 onDismissFinishUndo = {},
                 onDiscard = actions.onDiscard,
                 onBack = {},
+                onOpenTemplates = actions.onOpenTemplates,
+                onOpenPrograms = actions.onOpenPrograms,
                 countsAgainstProgram = countsAgainstProgram,
                 restTimerEnabled = restTimerEnabled,
                 defaultRestSeconds = defaultRestSeconds,
@@ -209,6 +213,45 @@ class ActiveWorkoutScreenTest {
             "Done must sit at the exercise's foot, below the fields it follows",
             done.top >= fields.bottom,
         )
+    }
+
+    @Test
+    fun theWorkoutOverflow_opensTemplatesAndPrograms() {
+        // ROADMAP N78: both screens are reachable from a running workout, so a lifter checking what is
+        // next does not have to end the session to look. The tab bar stays off this screen (N34).
+        var templates = false
+        var programs = false
+        setScreen(
+            state(isFinished = false),
+            actions = Actions(
+                onOpenTemplates = { templates = true },
+                onOpenPrograms = { programs = true },
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_TEMPLATES).performClick()
+        assertTrue(templates)
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_PROGRAMS).performClick()
+        assertTrue(programs)
+    }
+
+    @Test
+    fun withNothingLogged_theOverflowStillOpensThePlans() {
+        // The menu is what carries them, so it is drawn while a session is open even when there is
+        // nothing to discard — an empty workout must not be the one that cannot reach the lists (N78).
+        var templates = false
+        setScreen(
+            state(isFinished = false, sets = emptyList()),
+            actions = Actions(onOpenTemplates = { templates = true }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_TEMPLATES).performClick()
+
+        assertTrue(templates)
     }
 
     @Test
@@ -573,7 +616,11 @@ class ActiveWorkoutScreenTest {
             actions = Actions(onDiscard = { discarded = true }),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).assertDoesNotExist()
+        // The overflow is drawn — it carries the two plan screens (N78) — but its discard is not:
+        // there is nothing to lose, so the prompt-free button in the body is the only way out.
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_TEXT).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_EMPTY).performClick()
 

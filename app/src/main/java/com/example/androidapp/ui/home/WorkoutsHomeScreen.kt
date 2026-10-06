@@ -383,26 +383,26 @@ private fun StartActions(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (activeWorkout == null) {
-            // A row of links above the pill, not a second pill: with a workout already open there is
-            // no choice to make, and while there is one, only the start itself is the primary act.
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
+        // A row of links above the pill, not a second pill. They stay while a workout is open
+        // (ROADMAP N78): hiding them was how the app said "you are in a workout", and a lifter
+        // checking what is next should not have to finish one to look. The pill below already says
+        // what the primary act is.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AppTextButton(
+                onClick = onOpenPrograms,
+                modifier = Modifier.testTag(TestTags.HOME_PROGRAMS),
             ) {
-                AppTextButton(
-                    onClick = onOpenPrograms,
-                    modifier = Modifier.testTag(TestTags.HOME_PROGRAMS),
-                ) {
-                    Text(stringResource(R.string.home_programs))
-                }
-                AppTextButton(
-                    onClick = onOpenTemplates,
-                    modifier = Modifier.testTag(TestTags.HOME_TEMPLATES),
-                ) {
-                    Text(stringResource(R.string.home_templates))
-                }
+                Text(stringResource(R.string.home_programs))
+            }
+            AppTextButton(
+                onClick = onOpenTemplates,
+                modifier = Modifier.testTag(TestTags.HOME_TEMPLATES),
+            ) {
+                Text(stringResource(R.string.home_templates))
             }
         }
         StartOrResumeButton(

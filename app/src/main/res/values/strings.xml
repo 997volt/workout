@@ -128,6 +128,10 @@
     <string name="templates_empty_hint">A template is a workout you can start in one tap.</string>
     <string name="template_new">New template</string>
     <string name="template_default_name">New template</string>
+    <!-- Why a template cannot be started while a session is open (ROADMAP N78): starting is
+         idempotent, so the button would resume the workout already running rather than begin this
+         one, and that is what the sentence says. -->
+    <string name="templates_start_blocked">Finish the workout you are in to start this one.</string>
     <string name="template_start">Start</string>
     <plurals name="template_exercises">
         <item quantity="one">%1$d exercise</item>

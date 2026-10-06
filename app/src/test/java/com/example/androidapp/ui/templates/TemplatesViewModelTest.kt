@@ -7,6 +7,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.ui.workout.FakeWorkoutRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
@@ -57,7 +58,7 @@ class TemplatesViewModelTest {
                 WorkoutTemplate(id = "t1", name = "Push day", exerciseCount = 5),
             )
         }
-        val viewModel = TemplatesViewModel(repository)
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
         observe(viewModel)
         advanceUntilIdle()
 
@@ -67,9 +68,30 @@ class TemplatesViewModelTest {
     }
 
     @Test
+    fun aRunningWorkout_isReported_soTheListCanDisableStart() = runTest(dispatcher) {
+        // ROADMAP N78: the list disables its Start controls for as long as a session is open, which is
+        // the one thing it needs the workout repository for.
+        val viewModel = TemplatesViewModel(FakeTemplateRepository(), FakeWorkoutRepository())
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.hasActiveWorkout)
+    }
+
+    @Test
+    fun withNoWorkoutRunning_nothingIsHeldBack() = runTest(dispatcher) {
+        val workouts = FakeWorkoutRepository().apply { session.value = null }
+        val viewModel = TemplatesViewModel(FakeTemplateRepository(), workouts)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.hasActiveWorkout)
+    }
+
+    @Test
     fun creating_reportsTheNewId_soTheListCanOpenItsEditor() = runTest(dispatcher) {
         val repository = FakeTemplateRepository().apply { createdId = "t9" }
-        val viewModel = TemplatesViewModel(repository)
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
         observe(viewModel)
         advanceUntilIdle()
 
@@ -83,7 +105,7 @@ class TemplatesViewModelTest {
     @Test
     fun theHandledId_isCleared_soARecompositionCannotReopenTheEditor() = runTest(dispatcher) {
         val repository = FakeTemplateRepository()
-        val viewModel = TemplatesViewModel(repository)
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
         observe(viewModel)
         advanceUntilIdle()
         viewModel.onCreateTemplate("New template")
@@ -97,7 +119,7 @@ class TemplatesViewModelTest {
     @Test
     fun aFailedCreate_surfacesTheError_insteadOfPretendingItSaved() = runTest(dispatcher) {
         val repository = FakeTemplateRepository().apply { failWrites = true }
-        val viewModel = TemplatesViewModel(repository)
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
         observe(viewModel)
         advanceUntilIdle()
 
@@ -111,7 +133,7 @@ class TemplatesViewModelTest {
     @Test
     fun theErrorCanBeCleared_onceItHasBeenShown() = runTest(dispatcher) {
         val repository = FakeTemplateRepository().apply { failWrites = true }
-        val viewModel = TemplatesViewModel(repository)
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
         observe(viewModel)
         advanceUntilIdle()
         viewModel.onCreateTemplate("New template")
@@ -126,7 +148,7 @@ class TemplatesViewModelTest {
     @Test
     fun aSuccessfulCreate_clearsAnEarlierError() = runTest(dispatcher) {
         val repository = FakeTemplateRepository().apply { failWrites = true }
-        val viewModel = TemplatesViewModel(repository)
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
         observe(viewModel)
         advanceUntilIdle()
         viewModel.onCreateTemplate("New template")

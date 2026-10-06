@@ -121,7 +121,11 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun withAWorkoutRunning_theTemplateChoiceIsNotOffered() {
+    fun withAWorkoutRunning_thePlanLinksStay() {
+        // ROADMAP N78: hiding them was how the app said "you are in a workout", and a lifter checking
+        // what is next should not have to finish one to look — so the links stay and the pill below
+        // still says the primary act is Resume.
+        var templates = false
         setScreen(
             WorkoutsHomeUiState(
                 isLoading = false,
@@ -130,9 +134,13 @@ class WorkoutsHomeScreenTest {
                     exerciseCount = 3,
                 ),
             ),
+            Actions(onOpenTemplates = { templates = true }),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).assertIsDisplayed().performClick()
+        composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).assertIsDisplayed()
+
+        assertThat(templates).isTrue()
     }
 
     @Test
@@ -457,10 +465,11 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun whileAWorkoutIsOpen_neitherStartChoiceIsOffered() {
-        // ROADMAP B43's last gap. This one has history and an open session, and asserts the pair is
-        // gone either way — a second way to start a workout while one is running is not a choice,
-        // it is a way to lose one. The pair is Programs and Start from template since N42.
+    fun whileAWorkoutIsOpen_thePlanLinksAreStillThere() {
+        // B43 withheld a second way to *start* a workout, because that is a way to lose one. N78 keeps
+        // that and separates it from *looking*: the two links open the plans, and the Start control in
+        // the templates list is disabled for as long as the session lasts, which is where the
+        // withholding lives now (TemplatesScreenTest holds that half).
         setScreen(
             state = WorkoutsHomeUiState(
                 isLoading = false,
@@ -472,8 +481,8 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).assertIsDisplayed()
     }
 
     @Test

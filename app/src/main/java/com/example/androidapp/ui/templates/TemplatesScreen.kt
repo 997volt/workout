@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.templates
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -10,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -167,6 +169,7 @@ fun TemplatesScreen(
             onOpenTemplate = onOpenTemplate,
             onStartTemplate = onStartTemplate,
             modifier = Modifier.padding(innerPadding),
+            startEnabled = !state.hasActiveWorkout,
         )
     }
 }
@@ -177,6 +180,8 @@ private fun TemplatesContent(
     onOpenTemplate: (String) -> Unit,
     onStartTemplate: (String) -> Unit,
     modifier: Modifier = Modifier,
+    /** False while a session is open, which one template list cannot start (ROADMAP N78). */
+    startEnabled: Boolean = true,
 ) {
     when {
         state.isLoading -> CenteredMessage(
@@ -200,6 +205,7 @@ private fun TemplatesContent(
                     template = template,
                     onOpen = { onOpenTemplate(template.id) },
                     onStart = { onStartTemplate(template.id) },
+                    startEnabled = startEnabled,
                 )
                 HorizontalDivider()
             }
@@ -213,21 +219,35 @@ private fun TemplateRow(
     onOpen: () -> Unit,
     onStart: () -> Unit,
     modifier: Modifier = Modifier,
+    startEnabled: Boolean = true,
 ) {
     ListItem(
         headlineContent = { Text(template.name) },
         supportingContent = {
-            Text(
-                pluralStringResource(
-                    R.plurals.template_exercises,
-                    template.exerciseCount,
-                    template.exerciseCount,
-                ),
-            )
+            Column {
+                Text(
+                    pluralStringResource(
+                        R.plurals.template_exercises,
+                        template.exerciseCount,
+                        template.exerciseCount,
+                    ),
+                )
+                // Greying alone would leave "why" to be guessed, and a Start that resumes a workout
+                // from another template is exactly what needs saying (N78).
+                if (!startEnabled) {
+                    Text(
+                        text = stringResource(R.string.templates_start_blocked),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag(TestTags.templateStartReason(template.id)),
+                    )
+                }
+            }
         },
         trailingContent = {
             AppTextButton(
                 onClick = onStart,
+                enabled = startEnabled,
                 // Starting is the point of a template, so it gets the row's own
                 // button; tapping the row itself edits it instead.
                 modifier = Modifier.testTag(TestTags.templateStart(template.id)),

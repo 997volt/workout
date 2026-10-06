@@ -1,6 +1,8 @@
 package com.example.androidapp.ui.templates
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -52,6 +54,27 @@ class TemplatesScreenTest {
         composeTestRule.onNodeWithText("5 exercises").assertIsDisplayed()
         composeTestRule.onNodeWithText("Legs").assertIsDisplayed()
         composeTestRule.onNodeWithText("1 exercise").assertIsDisplayed()
+    }
+
+    @Test
+    fun aRunningWorkout_disablesStart_andSaysWhy() {
+        // ROADMAP N78: starting is idempotent, so this button would resume the workout already running
+        // rather than begin this one. It is disabled rather than hidden — the plan is still worth
+        // looking at — and the row says why, because greying alone leaves that to be guessed.
+        setScreen(twoTemplates.copy(hasActiveWorkout = true))
+
+        composeTestRule.onNodeWithTag(TestTags.templateStart("t1")).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag(TestTags.templateStartReason("t1"), useUnmergedTree = true)
+            .assertExists()
+    }
+
+    @Test
+    fun withNoWorkoutRunning_startIsEnabled_andSaysNothingExtra() {
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.templateStart("t1")).assertIsEnabled()
+        composeTestRule.onNodeWithTag(TestTags.templateStartReason("t1"), useUnmergedTree = true)
+            .assertDoesNotExist()
     }
 
     @Test

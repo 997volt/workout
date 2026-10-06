@@ -6,6 +6,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.domain.repository.WorkoutRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +19,14 @@ import kotlinx.coroutines.launch
 data class TemplatesUiState(
     val isLoading: Boolean = true,
     val templates: List<WorkoutTemplate> = emptyList(),
+    /**
+     * True while a session is already open (ROADMAP N78).
+     *
+     * Starting is idempotent — the repository hands back the open session rather than making a second
+     * — so this is not a safety rail: it stops a *Start* tapped on one template from silently taking
+     * the lifter into the workout already running from another.
+     */
+    val hasActiveWorkout: Boolean = false,
     /** Set when a write failed, so the screen can say so instead of lying. */
     val error: DataError? = null,
 )
@@ -32,6 +41,7 @@ data class TemplatesUiState(
 @HiltViewModel
 class TemplatesViewModel @Inject constructor(
     private val repository: TemplateRepository,
+    private val workoutRepository: WorkoutRepository,
 ) : ViewModel() {
 
     private val error = MutableStateFlow<DataError?>(null)
@@ -42,9 +52,15 @@ class TemplatesViewModel @Inject constructor(
 
     val uiState: StateFlow<TemplatesUiState> = combine(
         repository.observeTemplates(),
+        workoutRepository.observeActiveSession(),
         error,
-    ) { templates, currentError ->
-        TemplatesUiState(isLoading = false, templates = templates, error = currentError)
+    ) { templates, session, currentError ->
+        TemplatesUiState(
+            isLoading = false,
+            templates = templates,
+            hasActiveWorkout = session != null,
+            error = currentError,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
