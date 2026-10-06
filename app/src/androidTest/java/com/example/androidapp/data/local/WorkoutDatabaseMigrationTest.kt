@@ -1700,4 +1700,33 @@ class WorkoutDatabaseMigrationTest {
 
         migrated.close()
     }
+
+    @Test
+    fun migration33To34_givesAnExerciseItsOwnStep_leavingEveryRowOnTheUnits() {
+        // ROADMAP N77: an exercise may name the step its ± buttons move by. The column is nullable
+        // with no default, so every row already on disk reads as the unit's own step — exactly what
+        // the steppers, the ramp and the progression offer meant before an exercise could say
+        // otherwise — and the row itself survives the upgrade.
+        helper.createDatabase(TEST_DB, 33).apply {
+            execSQL(
+                """
+                INSERT INTO exercises
+                    (id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, isCustom,
+                     createdAt, updatedAt)
+                VALUES ('e1', 'Back Squat', 'QUADS', 'GLUTES', 'BARBELL', 'SQUAT', 0, 1, 1)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 34, true, MIGRATION_33_34)
+
+        migrated.query("SELECT id, stepGrams FROM exercises").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("e1", cursor.getString(0))
+            assertTrue("unset means the unit's own step", cursor.isNull(1))
+        }
+
+        migrated.close()
+    }
 }

@@ -19,6 +19,21 @@ import org.junit.Test
 class WeightTest {
 
     @Test
+    fun stepGramsFor_prefersTheExercisesOwnStep() {
+        // ROADMAP N77: a machine that jumps 5 kg is edited in 5 kg steps whatever unit is shown.
+        assertThat(Weight.stepGramsFor(5_000L, WeightUnit.KILOGRAMS)).isEqualTo(5_000L)
+        assertThat(Weight.stepGramsFor(1_000L, WeightUnit.POUNDS)).isEqualTo(1_000L)
+    }
+
+    @Test
+    fun stepGramsFor_fallsBackToTheUnitsOwn() {
+        // Null is the state every exercise was in before it could say otherwise, so the fallback is
+        // the old behaviour rather than a new default.
+        assertThat(Weight.stepGramsFor(null, WeightUnit.KILOGRAMS)).isEqualTo(Weight.DEFAULT_STEP_GRAMS)
+        assertThat(Weight.stepGramsFor(null, WeightUnit.POUNDS)).isEqualTo(Weight.POUND_STEP_GRAMS)
+    }
+
+    @Test
     fun kilograms_dropsTrailingZeros() {
         assertThat(Weight.kilograms(60_000)).isEqualTo("60")
         assertThat(Weight.kilograms(0)).isEqualTo("0")

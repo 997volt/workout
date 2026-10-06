@@ -56,6 +56,8 @@ fun SetEditorDialog(
     initialAssistanceGrams: Long = 0,
     /** The unit this set's load is typed and shown in (ROADMAP N64). */
     initialUnit: WeightUnit = WeightUnit.KILOGRAMS,
+    /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
+    initialStepGrams: Long? = null,
 ) {
     var draft by remember {
         mutableStateOf(
@@ -79,7 +81,14 @@ fun SetEditorDialog(
         modifier = modifier,
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.set_edit_title)) },
-        text = { SetEditingFields(draft = draft, onDraftChange = { draft = it }, unit = initialUnit) },
+        text = {
+            SetEditingFields(
+                draft = draft,
+                onDraftChange = { draft = it },
+                unit = initialUnit,
+                stepGrams = initialStepGrams,
+            )
+        },
         confirmButton = {
             AppTextButton(
                 modifier = Modifier.testTag(TestTags.SET_SAVE),
@@ -111,6 +120,7 @@ private fun SetEditingFields(
     draft: SetEntryDraft,
     onDraftChange: (SetEntryDraft) -> Unit,
     unit: WeightUnit,
+    stepGrams: Long?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SetRoleSelector(role = draft.setType, onSelect = { onDraftChange(draft.copy(setType = it)) })
@@ -118,6 +128,7 @@ private fun SetEditingFields(
             draft = draft,
             onDraftChange = onDraftChange,
             unit = unit,
+            stepGrams = stepGrams,
             tags = SetFieldTags.Editing,
         )
         // A warm-up records no effort, so the field is not offered for one (ROADMAP N67). The role

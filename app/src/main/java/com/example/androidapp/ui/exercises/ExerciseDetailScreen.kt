@@ -43,9 +43,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.LocalWeightUnit
+import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
@@ -209,6 +211,28 @@ private fun WeightUnitRow(exercise: Exercise, modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * The exercise's own weight step, as a read-only row (ROADMAP N77).
+ *
+ * The default names the step in force as well as saying where it comes from, the shape the unit row
+ * beside it uses: "2.5 kg" alone would read as this exercise's own setting rather than the unit's.
+ */
+@Composable
+private fun WeightStepRow(exercise: Exercise, modifier: Modifier = Modifier) {
+    val unit = exerciseWeightUnit(exercise.weightUnit)
+    AttributeRow(
+        label = stringResource(R.string.exercise_detail_weight_step),
+        value = exercise.stepGrams?.let {
+            stringResource(R.string.exercise_detail_weight_step_value, Weight.format(it, unit), unit.label())
+        } ?: stringResource(
+            R.string.exercise_detail_weight_step_default,
+            Weight.format(Weight.stepGrams(unit), unit),
+            unit.label(),
+        ),
+        modifier = modifier.testTag(TestTags.EXERCISE_WEIGHT_STEP),
+    )
+}
+
 @Composable
 private fun ExerciseDetails(exercise: Exercise, modifier: Modifier = Modifier) {
     Column(
@@ -264,6 +288,8 @@ private fun ExerciseDetails(exercise: Exercise, modifier: Modifier = Modifier) {
         HorizontalDivider()
 
         WeightUnitRow(exercise = exercise)
+
+        WeightStepRow(exercise = exercise)
         HorizontalDivider()
 
         // Honest placeholder: history is the next milestone, not a broken screen.
@@ -291,10 +317,31 @@ private data class ExerciseDraft(
     val movementPattern: MovementPattern,
     val restText: String,
     val techniqueNote: String,
+    /** The step as typed, in this draft's unit (ROADMAP N77). Empty means the unit's own. */
+    val stepText: String = "",
     /** The three-way choice: null follows the app setting (ROADMAP N64). */
     val weightUnit: WeightUnit? = null,
+    /**
+     * The unit in force when the form opened, carried because a draft cannot read the ambient.
+     *
+     * It is what the step's text is parsed and shown in when the exercise has no unit of its own, so
+     * a form opened in pounds reads and writes pounds (N77).
+     */
+    val appUnit: WeightUnit = WeightUnit.KILOGRAMS,
 ) {
     val restSeconds: Int? get() = restText.trim().ifEmpty { null }?.toIntOrNull()
+
+    /** The unit this draft's numbers are typed in: its own choice, or the app's (N64). */
+    val unit: WeightUnit get() = weightUnit ?: appUnit
+
+    /** The step the field states, in grams, or null when it states none (N77). */
+    val stepGrams: Long? get() = stepText.trim().ifEmpty { null }?.let { Weight.parse(it, unit) }
+
+    /**
+     * A step of zero is refused rather than stored: it is not a small step but no step, and the
+     * warm-up ramp divides by it (N77). Blank is the unit's own, which is a real answer.
+     */
+    val stepIsValid: Boolean get() = stepText.isBlank() || (stepGrams ?: 0L) > 0L
 
     val restIsValid: Boolean
         get() {
@@ -303,7 +350,7 @@ private data class ExerciseDraft(
             return seconds >= RestTimer.MIN_PRESCRIBED_SECONDS
         }
 
-    val canSave: Boolean get() = name.isNotBlank() && restIsValid
+    val canSave: Boolean get() = name.isNotBlank() && restIsValid && stepIsValid
 
     fun toEdit(): ExerciseEdit = ExerciseEdit(
         name = name.trim(),
@@ -312,18 +359,22 @@ private data class ExerciseDraft(
         movementPattern = movementPattern,
         restSeconds = restSeconds,
         techniqueNote = techniqueNote.trim().ifEmpty { null },
+        stepGrams = stepGrams,
         weightUnit = weightUnit,
     )
 }
 
-private fun Exercise.toDraft() = ExerciseDraft(
+private fun Exercise.toDraft(appUnit: WeightUnit) = ExerciseDraft(
     name = name,
     primaryMuscle = primaryMuscle,
     equipment = equipment,
     movementPattern = movementPattern,
     restText = restSeconds?.toString().orEmpty(),
     techniqueNote = techniqueNote.orEmpty(),
+    // Shown in the unit it is parsed in, which is this exercise's own where it has one (N77).
+    stepText = stepGrams?.let { Weight.format(it, weightUnit ?: appUnit) }.orEmpty(),
     weightUnit = weightUnit,
+    appUnit = appUnit,
 )
 
 /**
@@ -343,7 +394,8 @@ private fun ExerciseEditForm(
 ) {
     // Keys on the exercise id so switching to another exercise resets the draft
     // rather than carrying the previous one's values over.
-    var draft by remember(exercise.id) { mutableStateOf(exercise.toDraft()) }
+    val appUnit = LocalWeightUnit.current
+    var draft by remember(exercise.id) { mutableStateOf(exercise.toDraft(appUnit)) }
 
     Column(
         modifier = modifier
@@ -462,6 +514,27 @@ private fun ExercisePrescriptionFields(
         WeightUnitChoice(
             selected = draft.weightUnit,
             onSelect = { onDraftChange(draft.copy(weightUnit = it)) },
+        )
+
+        // Last, because the step is typed in the unit chosen just above it (N77). The hint names
+        // what an empty field means, since "the unit's own" is a value rather than an absence.
+        OutlinedTextField(
+            value = draft.stepText,
+            onValueChange = { onDraftChange(draft.copy(stepText = it)) },
+            modifier = Modifier.fillMaxWidth().testTag(TestTags.EXERCISE_EDIT_STEP),
+            singleLine = true,
+            label = { Text(stringResource(R.string.exercise_detail_weight_step)) },
+            supportingText = {
+                Text(
+                    stringResource(
+                        R.string.exercise_step_edit_hint,
+                        Weight.format(Weight.stepGrams(draft.unit), draft.unit),
+                        draft.unit.label(),
+                    ),
+                )
+            },
+            isError = draft.stepText.isNotBlank() && !draft.stepIsValid,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         )
     }
 }

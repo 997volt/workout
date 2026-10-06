@@ -151,6 +151,13 @@ data class ExerciseDto(
      * schema version is deliberately not bumped for an added field (see `BackupCodecTest`).
      */
     val weightUnit: String? = null,
+    /**
+     * The exercise's own weight step in whole grams, or null for the unit's (ROADMAP N77).
+     *
+     * Defaulted and unbumped, like the unit above: a file written before this existed still decodes,
+     * and an absent value means exactly what the app meant before the field did.
+     */
+    val stepGrams: Long? = null,
 )
 
 /**

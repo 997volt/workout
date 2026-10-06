@@ -40,6 +40,8 @@ data class ExerciseEdit(
     val techniqueNote: String? = null,
     /** This exercise's own display unit, or null to follow the app setting (ROADMAP N64). */
     val weightUnit: WeightUnit? = null,
+    /** This exercise's own weight step in grams, or null for the unit's (ROADMAP N77). */
+    val stepGrams: Long? = null,
 )
 
 data class ExerciseDetailUiState(
@@ -124,6 +126,7 @@ class ExerciseDetailViewModel @Inject constructor(
                 restSeconds = edit.restSeconds,
                 techniqueNote = edit.techniqueNote,
                 weightUnit = edit.weightUnit,
+                stepGrams = edit.stepGrams,
             )
             when (val result = repository.updateExercise(updated)) {
                 is DataResult.Success -> _uiState.update {

@@ -110,6 +110,7 @@ interface WorkoutDao {
                COALESCE(se.restSeconds, e.restSeconds) AS restSeconds,
                COALESCE(se.techniqueNote, e.techniqueNote) AS techniqueNote,
                e.weightUnit AS weightUnit,
+               e.stepGrams AS stepGrams,
                se.finishedAt AS finishedAt,
                se.muscleFeel AS muscleFeel,
                se.jointPain AS jointPain,

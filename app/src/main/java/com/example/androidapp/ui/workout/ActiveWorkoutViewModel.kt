@@ -83,6 +83,8 @@ data class SetRow(
     val assistanceGrams: Long = 0,
     /** The unit this exercise's numbers read in (ROADMAP N64). */
     val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
+    /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
+    val stepGrams: Long? = null,
 )
 
 /** One exercise in the workout, with its sets and what the next set will prefill. */
@@ -112,6 +114,8 @@ data class SessionExerciseRow(
      * rather than at each of the places that show one of its weights.
      */
     val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
+    /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
+    val stepGrams: Long? = null,
     /**
      * How many sets the plan behind this workout writes for this exercise, or null when there is no
      * plan (ROADMAP N52).
@@ -1329,8 +1333,10 @@ private fun SessionExercise.toRow(
     plan: PlanContext,
     supersetLabels: Map<String, String>,
 ): SessionExerciseRow {
-    // Every set this exercise logged reads in the exercise's own unit (ROADMAP N64).
-    val loggedSets = sets.loggedRowsFor(id).map { it.copy(weightUnit = plan.unit) }
+    // Every set this exercise logged reads in the exercise's own unit (ROADMAP N64), and its ±
+    // buttons move by the step the movement loads in (N77).
+    val loggedSets = sets.loggedRowsFor(id, stepGrams)
+        .map { it.copy(weightUnit = plan.unit) }
 
     return SessionExerciseRow(
         id = id,
@@ -1342,6 +1348,7 @@ private fun SessionExercise.toRow(
         supersetLabel = supersetLabels[id],
         restSeconds = restSeconds,
         weightUnit = plan.unit,
+        stepGrams = stepGrams,
         plannedSetCount = plan.plannedSetCount,
         isFinished = isFinished,
         muscleFeel = muscleFeel,
@@ -1354,13 +1361,17 @@ private fun SessionExercise.toRow(
         progression = progressionPromptFor(
             planned = plan.progressionSets(),
             performed = loggedSets.map { it.toProgressionPerformance() },
-            stepGrams = Weight.stepGrams(plan.unit),
+            stepGrams = Weight.stepGramsFor(stepGrams, plan.unit),
         ),
     )
 }
 
 /** The sets logged against one session exercise, displayed 1-based and renumbered (N54's neighbours). */
-private fun List<SetEntry>.loggedRowsFor(sessionExerciseId: String): List<SetRow> =
+private fun List<SetEntry>.loggedRowsFor(
+    sessionExerciseId: String,
+    /** The movement's own step, carried onto every row so its editor steps the same way (N77). */
+    stepGrams: Long?,
+): List<SetRow> =
     filter { it.sessionExerciseId == sessionExerciseId }
         .sortedBy { it.setIndex }
         .mapIndexed { index, set ->
@@ -1375,6 +1386,7 @@ private fun List<SetEntry>.loggedRowsFor(sessionExerciseId: String): List<SetRow
                 note = set.note,
                 setType = set.setType,
                 assistanceGrams = set.assistanceGrams,
+                stepGrams = stepGrams,
             )
         }
 

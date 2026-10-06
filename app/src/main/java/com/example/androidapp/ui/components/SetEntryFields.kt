@@ -161,9 +161,17 @@ internal fun SetEntryNumbers(
     /** The unit this set's load is typed and shown in (ROADMAP N64). */
     unit: WeightUnit,
     modifier: Modifier = Modifier,
+    /**
+     * The step this exercise's ± taps take, or null for the unit's own (ROADMAP N77).
+     *
+     * Nullable rather than pre-resolved because the unit travels with it: a caller holding what the
+     * exercise says and the unit its numbers read in has everything the step needs.
+     */
+    stepGrams: Long? = null,
     tags: SetFieldTags = SetFieldTags.Logging,
 ) {
     val values = draft.values(unit)
+    val step = Weight.stepGramsFor(stepGrams, unit)
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         NumberStepper(
@@ -175,11 +183,12 @@ internal fun SetEntryNumbers(
             onValueChange = { onDraftChange(draft.copy(weightText = it)) },
             keyboardType = KeyboardType.Decimal,
             // Steps the signed number on screen (ROADMAP N15), so + on an assisted
-            // set reduces the help rather than deepening it.
+            // set reduces the help rather than deepening it — and by the step this
+            // exercise actually loads in (N77).
             onStep = { delta ->
                 val stepped = Weight.stepLoad(
                     signedGrams = values.load?.signedGrams ?: 0L,
-                    deltaGrams = delta * Weight.stepGrams(unit),
+                    deltaGrams = delta * step,
                 )
                 onDraftChange(
                     draft.copy(

@@ -106,6 +106,13 @@ data class SessionExercise(
      */
     val weightUnit: WeightUnit? = null,
     /**
+     * The library exercise's own weight step, or null for the unit's (ROADMAP N77).
+     *
+     * Read from the library like [weightUnit] rather than snapshotted onto the session: the step is a
+     * fact about the equipment, and correcting it should reach a workout that is already open.
+     */
+    val stepGrams: Long? = null,
+    /**
      * When this exercise was marked done (ROADMAP N7), or null while it is open.
      *
      * Deliberately not a delete: [finishedAt] set means no more sets are added and

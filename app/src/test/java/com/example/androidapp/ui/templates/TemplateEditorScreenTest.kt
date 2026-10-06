@@ -16,6 +16,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -235,6 +236,67 @@ class TemplateEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_DELETE_CONFIRM).performClick()
 
         assertTrue(deleted)
+    }
+
+    /**
+     * One exercise with a working weight, so the plan dialog can offer its warm-up ramp (N28), and a
+     * step the movement may or may not name (N77).
+     */
+    private fun rampedExercise(stepGrams: Long?) = TemplateEditorUiState(
+        isLoading = false,
+        template = WorkoutTemplate(id = "t1", name = "Legs", exerciseCount = 1),
+        exercises = listOf(
+            TemplateExercise(
+                id = "te1",
+                templateId = "t1",
+                exerciseId = "back-squat",
+                position = 0,
+                exerciseName = "Back Squat",
+                primaryMuscle = MuscleGroup.QUADS,
+                equipment = Equipment.BARBELL,
+                stepGrams = stepGrams,
+                sets = listOf(
+                    TemplateSet(
+                        id = "ts1",
+                        templateExerciseId = "te1",
+                        setIndex = 0,
+                        targetWeightGrams = 100_000L,
+                        targetRepsMin = 5,
+                        targetRepsMax = 5,
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    @Test
+    fun theWarmUpRamp_isBuiltFromTheMovementsOwnStep() {
+        // ROADMAP N77: the ramp rounds to the step the exercise actually loads in, so a machine that
+        // jumps 5 kg gets a ramp of 5 kg steps rather than the unit's 2.5 kg ones.
+        var askedStep: Long? = null
+        setScreen(
+            state = rampedExercise(stepGrams = 5_000L),
+            actions = Actions(onAddWarmUpSets = { _, step -> askedStep = step }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_ADD_WARMUPS).performClick()
+
+        assertEquals(5_000L, askedStep)
+    }
+
+    @Test
+    fun theWarmUpRamp_fallsBackToTheUnitsStep_whenTheMovementNamesNone() {
+        var askedStep: Long? = null
+        setScreen(
+            state = rampedExercise(stepGrams = null),
+            actions = Actions(onAddWarmUpSets = { _, step -> askedStep = step }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_ADD_WARMUPS).performClick()
+
+        assertEquals(Weight.DEFAULT_STEP_GRAMS, askedStep)
     }
 
     private companion object {

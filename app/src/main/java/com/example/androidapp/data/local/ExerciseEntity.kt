@@ -48,6 +48,14 @@ data class ExerciseEntity(
      * the migration that adds it is a plain ALTER and existing rows read as unset.
      */
     val weightUnit: String? = null,
+    /**
+     * This exercise's own weight step in whole grams, or null for the unit's (ROADMAP N77).
+     *
+     * Nullable with no default, so the migration that adds it is a plain ALTER and every existing row
+     * reads as the unit's own step, which is what the ± buttons, the warm-up ramp and the progression
+     * offer meant before an exercise could say otherwise.
+     */
+    val stepGrams: Long? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

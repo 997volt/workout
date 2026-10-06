@@ -616,6 +616,24 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun theProgressionOffer_raisesByTheMovementsOwnStep() = runTest(dispatcher) {
+        // ROADMAP N77: the offer moves the load by the step the movement actually jumps in, so a
+        // machine that adds 5 kg is offered 105 rather than 102.5.
+        val repository = FakeWorkoutRepository()
+        repository.stepGramsForNextExercise = 5_000L
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        val offer = viewModel.uiState.value.exercises.single().progression.sets.single().offer
+        assertEquals(ProgressionStep(100_000L, 105_000L), offer?.load)
+    }
+
+    @Test
     fun anAnsweredPlan_offersTheNextStep_onTheRow() = runTest(dispatcher) {
         // ROADMAP N50: the plan asked for 5 reps at RPE 8 and the session did them at 7, so there is
         // room in hand and the app can state both next steps.
@@ -1519,6 +1537,9 @@ class ActiveWorkoutViewModelTest {
 
         /** What the next added exercise carries, so N5's plumbing can be asserted. */
         var restSecondsForNextExercise: Int? = null
+
+    /** The library exercise's own weight step, so a row can be given one (ROADMAP N77). */
+    var stepGramsForNextExercise: Long? = null
         var techniqueNoteForNextExercise: String? = null
 
         /** The rest length the ViewModel actually asked for, or null if never asked. */
@@ -1592,6 +1613,7 @@ class ActiveWorkoutViewModelTest {
                 equipment = Equipment.BARBELL,
                 restSeconds = restSecondsForNextExercise,
                 techniqueNote = techniqueNoteForNextExercise,
+                stepGrams = stepGramsForNextExercise,
             )
             return DataResult.Success(Unit)
         }

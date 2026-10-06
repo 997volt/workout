@@ -57,6 +57,12 @@
          the row says both where the value comes from and what it currently means. -->
     <string name="exercise_detail_weight_unit">Weight unit</string>
     <string name="exercise_detail_weight_unit_default">App default (%1$s)</string>
+    <!-- The exercise's own weight step (ROADMAP N77). Both the row and the hint name the unit's own
+         step, because that is what an empty field actually means. -->
+    <string name="exercise_detail_weight_step">Weight step</string>
+    <string name="exercise_detail_weight_step_value">%1$s %2$s (this exercise)</string>
+    <string name="exercise_detail_weight_step_default">Unit default (%1$s %2$s)</string>
+    <string name="exercise_step_edit_hint">The ± buttons, the warm-up ramp and the next step. Empty uses %1$s %2$s.</string>
     <string name="exercise_detail_cue">Technique cue</string>
     <!-- The rest field's two ways of saying "not a number": empty inherits, zero means none
          (ROADMAP N45). One string, wherever a rest is authored. -->

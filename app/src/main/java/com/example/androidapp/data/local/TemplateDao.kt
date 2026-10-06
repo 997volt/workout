@@ -94,6 +94,7 @@ interface TemplateDao {
                te.techniqueNote AS techniqueNote,
                te.targetRpeHalves AS targetRpeHalves,
                e.weightUnit AS weightUnit,
+               e.stepGrams AS stepGrams,
                te.supersetGroup AS supersetGroup
         FROM template_exercises te
         JOIN exercises e ON e.id = te.exerciseId

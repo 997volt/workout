@@ -37,4 +37,13 @@ data class Exercise(
      * everything else reads in kg, and every number that belongs to *this* exercise follows it.
      */
     val weightUnit: WeightUnit? = null,
+    /**
+     * This exercise's own weight step in whole grams, or null for the unit's own (ROADMAP N77).
+     *
+     * The ± buttons, the warm-up ramp and the progression offer all move a load by a step, and until
+     * this existed that step came from the unit alone — so a machine that jumps 5 kg, or 1 kg, was
+     * always edited against a step it did not have. Unlike [weightUnit] this is **not presentation**:
+     * it is a fact about the equipment, which is why it is not cleared when the unit changes.
+     */
+    val stepGrams: Long? = null,
 )

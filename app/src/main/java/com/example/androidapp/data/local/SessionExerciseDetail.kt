@@ -32,6 +32,8 @@ data class SessionExerciseDetail(
      * workout that is already open.
      */
     val weightUnit: String?,
+    /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
+    val stepGrams: Long?,
     /** When this exercise was marked done, or null (ROADMAP N7). */
     val finishedAt: Long?,
     /** How well the target muscle was worked, 1–10, or null (ROADMAP N8). */
@@ -63,6 +65,7 @@ internal fun SessionExerciseDetail.toDomain(
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
     weightUnit = WeightUnit.fromName(weightUnit),
+    stepGrams = stepGrams,
     finishedAt = finishedAt?.let(Instant::ofEpochMilli),
     muscleFeel = muscleFeel,
     jointPain = jointPain,

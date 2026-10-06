@@ -221,6 +221,9 @@ object TestTags {
     const val EXERCISE_EDIT_PATTERN = "exercise_edit_pattern"
     const val EXERCISE_EDIT_REST = "exercise_edit_rest"
     const val EXERCISE_EDIT_CUE = "exercise_edit_cue"
+
+    /** The exercise's own weight step (ROADMAP N77), in the form and as a read-only row. */
+    const val EXERCISE_EDIT_STEP = "exercise_edit_step"
     const val EXERCISE_EDIT_SAVE = "exercise_edit_save"
     const val EXERCISE_EDIT_CANCEL = "exercise_edit_cancel"
 
@@ -343,6 +346,7 @@ object TestTags {
     /** The settings screen (ROADMAP N21): the screen, the current value, and each choice. */
     /** The exercise's own weight unit (ROADMAP N64): its row on the detail, and the edit choice. */
     const val EXERCISE_WEIGHT_UNIT = "exercise_weight_unit"
+    const val EXERCISE_WEIGHT_STEP = "exercise_weight_step"
     const val EXERCISE_EDIT_WEIGHT_UNIT_DEFAULT = "exercise_edit_weight_unit_default"
     const val EXERCISE_EDIT_WEIGHT_UNIT_KG = "exercise_edit_weight_unit_kg"
     const val EXERCISE_EDIT_WEIGHT_UNIT_LB = "exercise_edit_weight_unit_lb"

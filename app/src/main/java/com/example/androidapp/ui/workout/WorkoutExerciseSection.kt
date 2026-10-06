@@ -454,7 +454,9 @@ private fun NextSetEditor(
                 testTag = TestTags.exercisePendingRole(row.id),
                 optionTag = { role -> TestTags.exercisePendingRole(row.id, role) },
             )
-            SetEntryNumbers(draft = draft, onDraftChange = { draft = it }, unit = unit)
+            SetEntryNumbers(
+                draft = draft, onDraftChange = { draft = it }, unit = unit, stepGrams = row.stepGrams,
+            )
             // A warm-up has no effort to state, so the field is not offered at all rather than
             // shown disabled: a control that cannot write is worse than no control (N67). The
             // role picker above is what brings it back.

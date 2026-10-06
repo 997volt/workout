@@ -68,6 +68,7 @@ internal fun ExerciseEntity.toDto() = ExerciseDto(
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
     weightUnit = weightUnit,
+    stepGrams = stepGrams,
 )
 
 internal fun ExerciseDto.toEntity() = ExerciseEntity(
@@ -83,6 +84,9 @@ internal fun ExerciseDto.toEntity() = ExerciseEntity(
     // The exercise's own display unit (ROADMAP N64). A restore that dropped it silently reverted
     // every exercise to the app setting, which is the whole thing that field exists to override.
     weightUnit = weightUnit,
+    // And its own weight step (ROADMAP N77), for the same reason: dropping it would silently put
+    // every exercise back on the unit's step, which is what the field exists to override.
+    stepGrams = stepGrams,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,

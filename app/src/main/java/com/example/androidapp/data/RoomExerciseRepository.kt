@@ -91,6 +91,11 @@ class RoomExerciseRepository @Inject constructor(
         if (exercise.restSeconds != null && exercise.restSeconds < RestTimer.MIN_PRESCRIBED_SECONDS) {
             throw InvalidInputException(RestTimer.NEGATIVE_REST_REFUSAL)
         }
+        // A step of zero is not a small step, it is no step at all: the ± buttons would do nothing and
+        // the warm-up ramp divides by it (ROADMAP N77). Null stays "the unit's own".
+        if (exercise.stepGrams != null && exercise.stepGrams <= 0L) {
+            throw InvalidInputException("A weight step must be more than zero.")
+        }
 
         // Read the stored row first. The domain type deliberately carries no
         // createdAt, and the DAO writes every column, so rebuilding from the row
@@ -114,6 +119,8 @@ class RoomExerciseRepository @Inject constructor(
             // form had just made — the screen showed the new value from its own state while the row
             // kept null, and the unit reverted on the next read.
             weightUnit = exercise.weightUnit?.name,
+            // The exercise's own weight step in grams, or null for the unit's own (ROADMAP N77).
+            stepGrams = exercise.stepGrams,
             updatedAt = timeSource.nowEpochMillis(),
         )
         if (dao.update(updated) == 0) throw NotFoundException("exercise ${exercise.id}")

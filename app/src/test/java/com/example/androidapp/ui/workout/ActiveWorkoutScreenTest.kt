@@ -212,6 +212,19 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun theWeightSteppers_moveByTheMovementsOwnStep() {
+        // ROADMAP N77: a machine that jumps 5 kg is edited in 5 kg steps rather than the unit's 2.5,
+        // which is the whole reason the step stopped being a constant pair.
+        setScreen(state(isFinished = false, stepGrams = 5_000L))
+
+        composeTestRule.onNodeWithTag(TestTags.SET_INCREASE_WEIGHT)
+            .performSemanticsAction(SemanticsActions.OnClick)
+
+        composeTestRule.onNodeWithTag(TestTags.SET_WEIGHT_FIELD)
+            .assertTextContains("105", substring = true)
+    }
+
+    @Test
     fun done_sitsBesideTheRatingRow_atItsHeight() {
         // ROADMAP N76: the action and the rating are one closing decision, so *Done* sits at the rating
         // row's end and inside its band rather than eight points under it.
@@ -707,6 +720,8 @@ class ActiveWorkoutScreenTest {
         sets: List<SetRow> = listOf(SetRow(id = "set1", number = 1, reps = 5, weightGrams = 100_000)),
         /** The unit this exercise's numbers read in (ROADMAP N64). */
         weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
+        /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
+        stepGrams: Long? = null,
     ) = ActiveWorkoutUiState(
         isLoading = false,
         sessionId = "s1",
@@ -723,6 +738,7 @@ class ActiveWorkoutScreenTest {
                 suggestion = suggestion,
                 progression = progression,
                 weightUnit = weightUnit,
+                stepGrams = stepGrams,
             ),
         ),
     )

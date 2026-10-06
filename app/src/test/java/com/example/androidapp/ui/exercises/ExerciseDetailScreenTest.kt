@@ -13,6 +13,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -139,7 +140,7 @@ class ExerciseDetailScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_NAME).performTextClearance()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_NAME).performTextInput("Sled Push Heavy")
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performScrollTo().performClick()
 
         assertEquals("Sled Push Heavy", saved?.name)
         assertEquals(MuscleGroup.OTHER, saved?.primaryMuscle)
@@ -152,7 +153,7 @@ class ExerciseDetailScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_REST).performTextInput("180")
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_CUE).performTextInput("Brace, sit back")
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performScrollTo().performClick()
 
         assertEquals(180, saved?.restSeconds)
         assertEquals("Brace, sit back", saved?.techniqueNote)
@@ -174,9 +175,41 @@ class ExerciseDetailScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_MUSCLE).performClick()
         composeTestRule.onNodeWithText("Chest").performClick()
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performScrollTo().performClick()
 
         assertEquals(MuscleGroup.CHEST, saved?.primaryMuscle)
+    }
+
+    @Test
+    fun theWeightStep_isTypedInTheExercisesUnit_andSaved() {
+        // ROADMAP N77: 5 in the step field, with this exercise read in kilograms, is 5000 g on disk.
+        var saved: ExerciseEdit? = null
+        show(customState(isEditing = true), onSave = { saved = it })
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_STEP).performTextInput("5")
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performScrollTo().performClick()
+
+        assertEquals(5_000L, saved?.stepGrams)
+    }
+
+    @Test
+    fun aStepOfZero_disablesSave() {
+        // Zero is not a small step, it is no step: the ± buttons would do nothing and the warm-up
+        // ramp divides by it, so the form refuses it rather than storing it (N77).
+        show(customState(isEditing = true))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_STEP).performTextInput("0")
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).assertIsNotEnabled()
+    }
+
+    @Test
+    fun aStoredStep_isShownAsThisExercisesOwn() {
+        // The default names the step in force too, the shape the unit row uses: a bare number would
+        // read as this exercise's own setting when it is the unit's (N77).
+        show(ExerciseDetailUiState(isLoading = false, exercise = custom.copy(stepGrams = 5_000L)))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_WEIGHT_STEP).assertExists()
     }
 
     @Test
@@ -208,7 +241,7 @@ class ExerciseDetailScreenTest {
         var cancelled = false
         show(customState(isEditing = true), onCancelEdit = { cancelled = true })
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_CANCEL).performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_CANCEL).performScrollTo().performClick()
 
         assertTrue("cancel should leave the form", cancelled)
     }
@@ -264,7 +297,7 @@ class ExerciseDetailScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_REST).performTextInput("0")
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).assertIsEnabled().performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).assertIsEnabled().performScrollTo().performClick()
 
         assertEquals(0, saved?.restSeconds)
     }

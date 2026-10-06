@@ -194,6 +194,17 @@ object Weight {
         WeightUnit.KILOGRAMS -> DEFAULT_STEP_GRAMS
         WeightUnit.POUNDS -> POUND_STEP_GRAMS
     }
+
+    /**
+     * The step one ± tap takes for **this exercise**: its own, or the unit's (ROADMAP N64, N77).
+     *
+     * The three places that move a load by a step — the workout's fields, the warm-up ramp and the
+     * progression offer — read this rather than [stepGrams], so a machine that jumps 5 kg, or 1 kg,
+     * is edited, ramped and progressed in the step it actually has. Null is "the unit's own", which
+     * is what every exercise meant before it could say otherwise.
+     */
+    fun stepGramsFor(exerciseStepGrams: Long?, unit: WeightUnit): Long =
+        exerciseStepGrams ?: stepGrams(unit)
 }
 
 /** A typed load, split into the two columns it is stored in (ROADMAP N15). */

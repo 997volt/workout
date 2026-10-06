@@ -59,6 +59,13 @@ data class TemplateExercise(
      * is not something a plan prescribes, and changing it should reach a plan already on screen.
      */
     val weightUnit: WeightUnit? = null,
+    /**
+     * The library exercise's own weight step, or null for the unit's (ROADMAP N77).
+     *
+     * Read from the library for [weightUnit]'s reason, and it is what the warm-up ramp rounds to: a
+     * ramp built on a step the machine does not have is a plan nobody can load.
+     */
+    val stepGrams: Long? = null,
     /** The planned sets, in order (ROADMAP N14). Empty for a template with none. */
     val sets: List<TemplateSet> = emptyList(),
 )

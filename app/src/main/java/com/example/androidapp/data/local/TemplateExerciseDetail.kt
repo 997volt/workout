@@ -27,6 +27,8 @@ data class TemplateExerciseDetail(
     val targetRpeHalves: Int?,
     /** The library exercise's own display unit by name, or null to follow the app (N64). */
     val weightUnit: String?,
+    /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
+    val stepGrams: Long?,
     val supersetGroup: Int?,
 )
 
@@ -44,6 +46,7 @@ internal fun TemplateExerciseDetail.toDomain(
     techniqueNote = techniqueNote,
     targetRpeHalves = targetRpeHalves,
     weightUnit = WeightUnit.fromName(weightUnit),
+    stepGrams = stepGrams,
     supersetGroup = supersetGroup,
     sets = sets,
 )

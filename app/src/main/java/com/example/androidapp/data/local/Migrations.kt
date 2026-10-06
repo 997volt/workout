@@ -877,6 +877,27 @@ private const val SPLIT_RDL_SECONDARY =
     "UPDATE `exercises` SET `secondaryMuscles` = replace(`secondaryMuscles`, 'BACK', 'LOWER_BACK') " +
         "WHERE `id` = 'romanian-deadlift' AND `secondaryMuscles` LIKE '%BACK%'"
 
+/**
+ * An exercise may name its own weight step (ROADMAP N77).
+ *
+ * The ± buttons, the warm-up ramp and the progression offer all move a load by a step, and until this
+ * column that step came from the unit alone: a machine that jumps 5 kg (or 1 kg) was always edited
+ * against a step it did not have. It is nullable with no default, so the ALTER is valid on a table
+ * that already holds rows and every one of them reads as the unit's own step — which is exactly what
+ * the three call sites meant before this existed.
+ *
+ * The migration test seeds a row, upgrades, and asserts it survives with the column unset, validated
+ * against the exported `34.json`.
+ */
+val MIGRATION_33_34 = object : Migration(33, 34) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(ADD_EXERCISE_STEP_GRAMS)
+    }
+}
+
+private const val ADD_EXERCISE_STEP_GRAMS =
+    "ALTER TABLE `exercises` ADD COLUMN `stepGrams` INTEGER"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -1020,4 +1041,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_30_31,
     MIGRATION_31_32,
     MIGRATION_32_33,
+    MIGRATION_33_34,
 )

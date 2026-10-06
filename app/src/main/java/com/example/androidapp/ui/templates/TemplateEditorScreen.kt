@@ -404,9 +404,9 @@ private fun TemplateExerciseBlock(
             // press then reported success while writing nothing.
             // A ramp is a list of loads, so it exists in the unit the exercise is read in (N64).
             onAddWarmUpSets = if (onAddWarmUpSets != null &&
-                warmUpRampFor(exercise.sets, Weight.stepGrams(unit)).isNotEmpty()
+                warmUpRampFor(exercise.sets, Weight.stepGramsFor(exercise.stepGrams, unit)).isNotEmpty()
             ) {
-                { onAddWarmUpSets(Weight.stepGrams(unit)) }
+                { onAddWarmUpSets(Weight.stepGramsFor(exercise.stepGrams, unit)) }
             } else {
                 null
             },
