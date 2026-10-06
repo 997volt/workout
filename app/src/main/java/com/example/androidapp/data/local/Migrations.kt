@@ -861,21 +861,38 @@ private const val SPLIT_BACK_INTO_UPPER_BACK =
     "UPDATE `exercises` SET `primaryMuscle` = 'UPPER_BACK' " +
         "WHERE `primaryMuscle` = 'BACK' AND `id` IN ('barbell-row', 'seated-cable-row', 'machine-row')"
 
+/**
+ * One muscle replaced in a comma-separated secondary list, as a whole token (ROADMAP B67).
+ *
+ * `secondaryMuscles` is a joined list of names, so a bare `replace` is a substring operation:
+ * `LOWER_BACK` contains `BACK`, and a rewrite that meant "the retired Back tag" would turn it into
+ * `LOWER_UPPER_BACK`, which the reader then throws on. Wrapping the list in commas makes every token a
+ * delimited one, and the trim puts the ends back. No legitimately written v32 row can hold a
+ * `..._BACK` name — those arrived with the split — so this is hardening rather than a live repair, and
+ * it is the shape any future token rewrite here should use.
+ */
+private fun replaceMuscleToken(from: String, to: String): String =
+    "trim(replace(',' || `secondaryMuscles` || ',', ',$from,', ',$to,'), ',')"
+
+/** Whether the list holds [token] as a whole token rather than as part of a longer name (B67). */
+private fun hasMuscleToken(token: String): String =
+    "(',' || `secondaryMuscles` || ',') LIKE '%,$token,%'"
+
 /** The deadlifts: hamstrings prime, and the erectors take the old tag's place in the secondaries. */
-private const val MOVE_DEADLIFTS_TO_HAMSTRINGS =
+private val MOVE_DEADLIFTS_TO_HAMSTRINGS =
     "UPDATE `exercises` SET `primaryMuscle` = 'HAMSTRINGS', " +
-        "`secondaryMuscles` = replace(`secondaryMuscles`, 'HAMSTRINGS', 'LOWER_BACK') " +
+        "`secondaryMuscles` = ${replaceMuscleToken("HAMSTRINGS", "LOWER_BACK")} " +
         "WHERE `primaryMuscle` = 'BACK' AND `id` IN ('deadlift', 'conventional-deadlift')"
 
 /** A face pull's back work is the upper back. */
-private const val SPLIT_FACE_PULL_SECONDARY =
-    "UPDATE `exercises` SET `secondaryMuscles` = replace(`secondaryMuscles`, 'BACK', 'UPPER_BACK') " +
-        "WHERE `id` = 'face-pull' AND `secondaryMuscles` LIKE '%BACK%'"
+private val SPLIT_FACE_PULL_SECONDARY =
+    "UPDATE `exercises` SET `secondaryMuscles` = ${replaceMuscleToken("BACK", "UPPER_BACK")} " +
+        "WHERE `id` = 'face-pull' AND ${hasMuscleToken("BACK")}"
 
 /** A Romanian deadlift's is the erectors. */
-private const val SPLIT_RDL_SECONDARY =
-    "UPDATE `exercises` SET `secondaryMuscles` = replace(`secondaryMuscles`, 'BACK', 'LOWER_BACK') " +
-        "WHERE `id` = 'romanian-deadlift' AND `secondaryMuscles` LIKE '%BACK%'"
+private val SPLIT_RDL_SECONDARY =
+    "UPDATE `exercises` SET `secondaryMuscles` = ${replaceMuscleToken("BACK", "LOWER_BACK")} " +
+        "WHERE `id` = 'romanian-deadlift' AND ${hasMuscleToken("BACK")}"
 
 /**
  * An exercise may name its own weight step (ROADMAP N77).

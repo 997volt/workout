@@ -1702,6 +1702,50 @@ class WorkoutDatabaseMigrationTest {
     }
 
     @Test
+    fun migration32To33_rewritesAWholeMuscleToken_ratherThanAnyOccurrence() {
+        // ROADMAP B67: the rewrite is a token replacement, and `LOWER_BACK` / `UPPER_BACK` contain the
+        // token being replaced — so a bare `replace` would produce `LOWER_UPPER_BACK`, which the reader
+        // then throws on. No legitimately written v32 row can hold those names (they arrived with the
+        // split), so this fixture is synthetic: what is under test is the guard and the delimiting, not
+        // a state the app could produce.
+        helper.createDatabase(TEST_DB, 32).apply {
+            execSQL(
+                """
+                INSERT INTO exercises
+                    (id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, isCustom,
+                     createdAt, updatedAt)
+                VALUES
+                    ('face-pull', 'Face Pull', 'SHOULDERS', 'BACK,LOWER_BACK', 'CABLE', 'ISOLATION',
+                     0, 1, 1),
+                    ('romanian-deadlift', 'Romanian Deadlift', 'HAMSTRINGS', 'CORE,UPPER_BACK',
+                     'BARBELL', 'HINGE', 0, 1, 1)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 33, true, MIGRATION_32_33)
+
+        migrated.query("SELECT id, secondaryMuscles FROM exercises ORDER BY id").use { cursor ->
+            val rows = buildList {
+                while (cursor.moveToNext()) add(cursor.getString(0) to cursor.getString(1))
+            }
+            assertEquals(
+                listOf(
+                    // The BACK token is replaced; the LOWER_BACK beside it survives whole.
+                    "face-pull" to "UPPER_BACK,LOWER_BACK",
+                    // And a list whose only BACK-containing name is UPPER_BACK is left alone rather than
+                    // rewritten into UPPER_LOWER_BACK.
+                    "romanian-deadlift" to "CORE,UPPER_BACK",
+                ),
+                rows,
+            )
+        }
+
+        migrated.close()
+    }
+
+    @Test
     fun migration33To34_givesAnExerciseItsOwnStep_leavingEveryRowOnTheUnits() {
         // ROADMAP N77: an exercise may name the step its ± buttons move by. The column is nullable
         // with no default, so every row already on disk reads as the unit's own step — exactly what
