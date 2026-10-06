@@ -12,6 +12,30 @@ repeated here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Progression is offered one set at a time, and each step stays inside the plan's rep range** (N74).
+  *Done* used to state one unlabeled pair of lines about the exercise's **last** working set and offer two
+  directions with nothing to choose on, earned only when *every* prescribed set was met — so one missed
+  set earned nothing at all, not even the top set that had answered the plan, and the dialog never named
+  which set it meant. It now states **one row per working set**: its number, the plan, what was done, and
+  the step that set earned or why it earned none. **Earning is per set**, so a set that answered the plan
+  earns its step whatever its siblings did — the plan's Nth working set against the session's Nth, as the
+  pairing always was. **The range decides the direction**: "Reps from"/"Reps to" are the range the plan was
+  authored with and progression never edits them any more (a rep step used to raise the ceiling, so "5 to
+  8" drifted to 5–9 and 5–10). Below the ceiling a set earns the **rep** — one past what was actually done,
+  capped at the ceiling, so asked 5 and did 7 of an 8 the plan follows the lifter to 8 — and the weight
+  waits, because there are reps left to take. At the ceiling it earns the **weight**, which puts the climb
+  back on the range's floor, so a range is walked 5→6→7→8 and started again a step heavier. A plan that
+  wrote no ceiling keeps both directions as before, a plan whose ends are equal offers the weight alone,
+  and a bodyweight or assisted set at its ceiling is offered nothing and says why.
+  **Picking a step is not writing one**: every pick is drawn as the value it would write and committed by
+  a single *Done*, *Not now* and a dismiss write nothing, and a failed write leaves the exercise open with
+  what already landed marked so a retry writes only what is left. A plan whose sets share a target gets one
+  bulk pick per direction rather than the same tap per set. The current rep target is stored per planned
+  set (migration 31→32) and a plan already installed starts at its range's **floor**, so a ranged plan's
+  first session under this asks for the bottom of its range and climbs.
+
 ## [1.14] — 2026-10-05 (versionCode 15)
 
 ### Added

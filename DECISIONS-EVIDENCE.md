@@ -948,6 +948,54 @@ a proposal with no way to tell it apart from history is not a proposal, and ROAD
 what the app should suggest, the honest move was to withdraw it rather than keep a rule nothing calls.
 Its tests went with it; the loadable step it shared with the warm-up ramp (N28) stayed.
 
+## N74
+
+The question N50 shipped was exercise-wide twice over, and both halves failed in use. Earning required
+**every** prescribed working set to be met, so one missed back-off set earned the lifter nothing at all —
+not even the top set that had answered the plan. And the step always landed on the **last** working set,
+so the dialog stated one unlabeled plan line and one done line about a set the lifter could not identify,
+offered two mutually exclusive directions with no reason to prefer either, and closed the exercise in the
+same tap that answered it. "I don't get how to use it" is what that shape produces, and it is not a
+wording problem: there was no set in the question to answer.
+
+Judging each set on its own is what puts one there, and it costs nothing in sureness — the old rule's
+"every set met" was the app's way of being certain, and the same certainty is available per set from that
+set's own reps and effort. The pairing stays the plan's Nth working set against the session's Nth, with
+warm-ups dropped from both sides, because `setIndex` breaks the moment a plan's warm-up goes unlogged
+(N17, N20, N22). A prescribed set that was never performed earns nothing and says "not done"; work the
+plan does not name is stated too, with no target to change, so the question accounts for the session
+rather than for part of it.
+
+**The direction needed a rule, not a menu.** Offering a load and a rep side by side asked the lifter to
+choose between them with nothing to choose on, which is the second half of why the old question read as
+unanswerable. N22's rule — add reps to the plan's rep ceiling, then the load step and start the range
+again — is that rule, and N50's refusal of it ("that computed from the rep ceiling alone and offered
+itself beside the next set") was a refusal of its *gate*, not of its shape. Gated on the session's own
+RPE it returns: below the range's ceiling the reps move and the weight waits, at the ceiling the weight
+moves and the range restarts. A plan that wrote no ceiling keeps both directions, which is what it did
+before. A bodyweight or assisted set at its ceiling is offered nothing, because the app has neither a rep
+inside the range nor a weight to move, and saying so is better than inventing a step or moving a load that
+`Weight.display` would then hide behind the assistance (N15).
+
+**The range could not stay in the ceiling's column.** N50's rep step raised `targetRepsMax`, which grew
+the prescription instead of the lifter's place in it: "5 to 8" became 5–9, then 5–10. Holding the range
+still and moving the target needs a third number per planned set, which is `targetRepsCurrent`
+(migration 31→32). Overloading the ceiling was rejected outright — a weight step has to put the reps back
+on the floor while the ceiling survives for the next climb, and one column cannot be both. Deriving the
+target from the last session's reps was rejected too: it needs no column, but it moves the plan whenever
+history moves, so deleting a logged set would change what the next run asks — the stored "next target"
+N16 and N50 refused. The backfill takes the range's **floor**, `from` where the plan wrote one and its
+`to` otherwise, so a ranged plan's first session under the rule asks for the bottom of its range and
+climbs. Starting at the ceiling was the alternative, and it would leave the rep direction unreachable
+until a weight step had happened — unreachable in exactly the case the change exists to serve.
+
+**Frozen when *Done* is tapped**, because the offer is a function of the plan and the session: the first
+step written changes the plan target the offer was read from, so the same set would immediately offer
+another step it has already taken. That is also why a pick is not a write, and why the picks are
+view-model state rather than a `remember` — a rotation mid-answer has to reopen the question on the
+answers already made. One *Done* writes them all; a failed write marks what landed and leaves the
+exercise open, so a retry writes only what is left rather than a step twice.
+
 ## Truth, Turbine
 
 New and touched tests assert with Truth, and assert Flow sequences with Turbine.

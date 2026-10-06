@@ -271,18 +271,41 @@ the rule; that one argues it.
   would write a weight that `Weight.display` then hides behind the assistance. *Every* prescribed set is
   **the plan the screen showed**, the slot's rows merged with the template's per index (P3.8), not the
   slot's alone — otherwise a slot overriding one of three sets made "every" mean one, and paired it with
-  the wrong performance. It is not N22's rule restored — that computed from the rep ceiling alone and
-  offered itself beside the next set, where this one is conditioned on the session's own effort and waits
-  to be asked. An unrated session or a plan with no target RPE suggests nothing rather than guessing.
+  the wrong performance. **N74 amends both halves of that**: every set was judged as one, and the single
+  step always landed on the last of them, so a set that answered the plan earned nothing when a sibling
+  missed and the dialog named no set at all. It is not N22's rule restored — that computed from the rep
+  ceiling alone and offered itself beside the next set, where this one is conditioned on the session's own
+  effort and waits to be asked; **N74 brings N22's shape back inside the range, still gated on that
+  effort**. An unrated session or a plan with no target RPE suggests nothing rather than guessing.
   **Where there is no plan there is no prompt at all**: a next step is something only a plan can ask, so
   *Done* simply finishes the exercise. **The rating is never on this path** — *How did that feel?* is
   opened from the exercise's own row, when the lifter reaches for it, because asking on the way out asks
   at the moment the answer is worth least.
   **Accepting writes the plan** — the slot's prescription for a program start (P3.8), the
-  template's planned set for a direct one — because the plan is what the next run reads; a "next target"
+  template's planned set for a direct one, and since N73 the template's alone, because a slot prescribes
+  nothing of its own — because the plan is what the next run reads; a "next target"
   stored on the session was rejected as the forward view N16 removed. The write carries the **set's own**
   stored effort rather than the exercise's number the rule read, so a plan whose one field is cleared
   later is not resurrected by a copy the accept left behind.
+- **Progression is offered per prescribed set, inside the plan's rep range** (N74, amending N50). *Done*
+  states **one row per working set** — its number, the plan, what was done, and the step that set earned
+  or why it earned none — and the lifter picks a step per row, written by **one *Done***; *Not now*, a
+  dismiss and the back gesture all write nothing. **Earning is per set**: a set performed with its reps
+  met at or under the exercise's one target RPE (N59) earns its own step whatever its siblings did, where
+  N50 required every prescribed set and offered a single step on the last of them. **The range decides the
+  direction.** "Reps from"/"Reps to" are the range the plan was authored with and progression never edits
+  them; the number a session asks for is a third one, `targetRepsCurrent`, which starts on the range's
+  floor (`from`, else `to`) and climbs. Below the ceiling a set earns the **rep** — one past what was
+  actually done, capped at the ceiling, so asked 5 and did 7 of an 8 the plan follows the lifter to 8 —
+  and the weight is **withheld**, because there are reps left to take; at the ceiling it earns the
+  **weight**, which puts the climb back on the floor, so a range is walked 5→6→7→8 and started again a
+  step heavier. A plan that wrote no ceiling keeps both directions, as it did under N50; a plan whose ends
+  are equal, or that named only a ceiling, offers the weight alone and keeps its reps; and a set at the
+  ceiling with no added weight to raise — bodyweight or assisted (N15) — is offered **nothing** and says
+  so, because the app has neither a rep inside the range nor a weight to move. **The question is frozen
+  when *Done* is tapped**: the offer is computed from the plan's target and the session's work, so the
+  first step written would re-arm the very offer it answered, and a pick is not a write. The setting (N66)
+  and "no plan, no question" (N50) still hold. ([evidence](DECISIONS-EVIDENCE.md#n74))
 
 - **A superset is a group of exercises performed in rounds** (N24). The model is a
   nullable `supersetGroup: Int?` ordinal on `session_exercises` and `template_exercises`; a

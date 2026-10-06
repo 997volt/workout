@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v1.13** is shipped and installed. Last reviewed against the code: 2026-10-05.
+> **v1.14** is shipped and installed. Last reviewed against the code: 2026-10-06.
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -17,46 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-### N74 — progression is offered per planned set
-
-*Done* states **one row per working set** — what the plan asked, what was done, and the step that set
-earned on its own — and the lifter chooses a direction per row, **committed by one *Done***; *Not now*
-or a dismiss writes nothing, and a failed write reports the error, keeps the rows up and finishes
-nothing. Today the rule is exercise-wide twice over: earning needs **every** prescribed working set met,
-and the step always lands on the **last** working set, so the dialog names no set and cannot move a
-back-off set differently from a top set (N50). **Earning becomes independent per set** — a set performed
-with its reps met at or under the exercise's one target RPE (N59) earns its own step whatever its
-siblings did — and **two bulk actions** (*raise every earned set's load*, *…reps*) cover the plan whose
-sets share a target, each acting only on the rows that offer that direction, while a row stays
-individually changeable. The prompt is **frozen when *Done* is tapped** and held as view-model state: a
-written target would otherwise re-arm the same offer on the next read, and a selection is not a write.
-
-**A step respects the plan's rep range, and the two directions are exclusive.** "Reps from" and "Reps
-to" become the fixed range a set was authored with, which progression never edits, and a new **current
-rep target** becomes the number the session prefills and the rule measures; on a plan written with a
-floor it starts there (`from`, else `to`) and climbs. A met set **below the ceiling** is offered the
-**rep alone** — the weight is withheld while there are reps left to take — and the step moves the target
-to one past what was actually done, capped at the ceiling (asked 5, did 7 of 8, next target 8), so the
-plan tracks the lifter rather than its own number. A met set **at the ceiling** is offered the **weight
-alone**, because the rep condition has stopped holding, and where the range is real (`from < to`) that
-same write puts the current target back on `from` — so a range is climbed 5→6→7→8 and then started
-again a step heavier, instead of having its ceiling pushed to 9 and 10 as it is today. A plan written
-with **no ceiling** keeps both directions as it does now, and a plan whose two ends are equal offers the
-weight alone and keeps its reps. A met set at the ceiling with **no load to raise** — bodyweight, or an
-assisted machine — is offered **nothing at all**: the row states the plan was met and holds no step,
-which is the honest answer where the app has neither a rep to add nor a weight to move. This is N22's
-double progression back — reps to the ceiling, then the load step and the range starts again (N22) — now
-gated on the session's own RPE and with the range itself held still; it retires the code's shared
-reading that a range means its upper bound (`targetRepsMax ?: targetRepsMin`), so the target becomes one
-of three numbers, `template_sets` gains the column in **migration 31→32** and the backup DTO a field
-beside it, and a plan already installed is backfilled to its range's floor, which is what a ranged
-plan's session then starts asking for.
-
-Unchanged: the RPE target stays one number for the exercise (N59), the earning predicate and the warm-up
-exclusion (N17, N20, N22), the unit's own step (N64), and that only what the lifter chose is written.
-The per-set offers otherwise ride on target columns a planned set already owns. DECISIONS' N50 bullet is
-amended where it fixes the exercise-wide rule and where it refuses N22's shape, with the argument for
-this id beside it as N74's evidence.
+**Nothing.** The per-set progression question (N74) was the last thing standing here, and it is built —
+with the scored sore-muscle list on the readiness note (N62) and the joints picked with their own scores
+and the trend reading the worst (N63) — so each entry is in [CHANGELOG.md](CHANGELOG.md). A candidate
+graduates to this section — gaining an id and a spelled-out decision rather than a wish — when it is
+picked up, so what stands here is committed work; the two queues below are where the rest lives,
+*Later* for what is self-contained and *Parked* for what is a product in its own right.
 
 A candidate graduates to this section — gaining an id and a spelled-out decision rather than a wish —
 when it is picked up, so what stands here is committed work; the two queues below are where the rest
