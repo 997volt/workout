@@ -431,6 +431,24 @@ class TemplateEditorScreenTest {
     }
 
     @Test
+    fun aPlansFirstSet_cannotBeArmedWithARung() {
+        // ROADMAP B64: a rung hangs off the set above it, so the plan's picker does not offer one where
+        // there is nothing above — the write boundary would refuse the save, and the project's rule is
+        // that a control which cannot write is worse than no control (N67). The exercise here has no
+        // planned sets, so the set being added is its first. One exercise, because the plan dialog is
+        // reached through its own row.
+        setScreen(state = twoExercises.copy(exercises = listOf(twoExercises.exercises.first())))
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.DROP.name)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.CLUSTER.name)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.NORMAL.name)).assertExists()
+    }
+
+    @Test
     fun aClusterRung_asksForNeitherAWeight_norReps() {
         // A cluster repeats the anchor's load and answers to the anchor's reps, so it carries neither
         // (ROADMAP N79).

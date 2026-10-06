@@ -453,6 +453,10 @@ private fun NextSetEditor(
                 // Tagged for this row: a test reaches the picker through the flow it actually takes.
                 testTag = TestTags.exercisePendingRole(row.id),
                 optionTag = { role -> TestTags.exercisePendingRole(row.id, role) },
+                // A rung hangs off the set above it and the pending set is appended, so the picker
+                // offers one only where the boundary would accept it: a first set, or one after a
+                // ramp, cannot be armed with a role that is going to be refused (ROADMAP N79, B63, B64).
+                offers = { role -> row.sets.canLogAs(role) },
             )
             SetEntryNumbers(
                 draft = draft, onDraftChange = { draft = it }, unit = unit, stepGrams = row.stepGrams,

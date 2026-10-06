@@ -380,17 +380,32 @@ class RoomWorkoutRepository @Inject constructor(
     }
 
     /**
-     * Whether this exercise has already logged a set a rung could hang off (ROADMAP N79).
+     * Whether the live set directly above [setIndex] can anchor a rung performed as [role] (N79, B63).
      *
-     * Read through the session the exercise belongs to rather than with a query of its own: the DAO
-     * already answers "this session's sets", and a rung's anchor is the first set of *this* exercise
-     * that stands on its own — a warm-up cannot anchor a run, so it does not count.
+     * The picker's question and this boundary's answer are the same rule: a run is contiguous and its
+     * rows share a role, so a rung's anchor is the live set above the run's **first** row, and that set
+     * has to stand on its own. **A warm-up does not** — the run model reads no anchor above one — so a
+     * guard that asked merely "is there a set above it that is not a rung" let a drop be logged where
+     * the app then derived nothing. Read through the session the exercise belongs to rather than with a
+     * query of its own: the DAO already answers "this session's sets", ordered by set index.
+     *
+     * [setIndex] is the index the set holds, or the one it would take: a set being logged is appended,
+     * so its prospective index is the next free one, and the rows below it are exactly the ones this
+     * filters out.
      */
-    private suspend fun hasASetAboveIt(sessionExerciseId: String): Boolean {
-        val sessionSets = dao.findSessionIdForSessionExercise(sessionExerciseId)
+    private suspend fun canBePerformedAs(
+        sessionExerciseId: String,
+        setIndex: Int,
+        role: SetType,
+    ): Boolean {
+        if (!role.isRung) return true
+        val above = dao.findSessionIdForSessionExercise(sessionExerciseId)
             ?.let { dao.observeSetsForSession(it).first() }
             .orEmpty()
-        return sessionSets.any { it.sessionExerciseId == sessionExerciseId && !it.setType.isRung }
+            .filter { it.sessionExerciseId == sessionExerciseId && it.setIndex < setIndex }
+        var start = above.size
+        while (start > 0 && above[start - 1].setType == role) start--
+        return above.getOrNull(start - 1)?.setType?.recordsEffort == true
     }
 
     override suspend fun logSet(
@@ -413,10 +428,12 @@ class RoomWorkoutRepository @Inject constructor(
         if (dao.countLoggableSessionExercise(sessionExerciseId) == 0) {
             throw NotFoundException("session exercise $sessionExerciseId is not loggable")
         }
-        // A rung hangs off the set above it, so the first set of an exercise cannot be one: there is
-        // nothing to derive a drop from and nothing to rate a cluster against (ROADMAP N79). The
-        // picker is the real guard; this is the boundary, the way the RPE check above is.
-        if (setType.isRung && !hasASetAboveIt(sessionExerciseId)) {
+        val setIndex = dao.maxSetIndex(sessionExerciseId) + 1
+        // A rung hangs off the set above it, so the first set of an exercise cannot be one, and neither
+        // can a set that follows a warm-up: there is nothing to derive a drop from and nothing to rate a
+        // cluster against (ROADMAP N79, B63). The picker offers only what this allows; this is the
+        // boundary, the way the RPE check above is.
+        if (!canBePerformedAs(sessionExerciseId, setIndex, setType)) {
             throw InvalidInputException("A ${setType.label.lowercase()} set follows the set above it.")
         }
         val now = timeSource.nowEpochMillis()
@@ -424,7 +441,7 @@ class RoomWorkoutRepository @Inject constructor(
             SetEntryEntity(
                 id = UUID.randomUUID().toString(),
                 sessionExerciseId = sessionExerciseId,
-                setIndex = dao.maxSetIndex(sessionExerciseId) + 1,
+                setIndex = setIndex,
                 // A set of zero reps is not a set. Clamping here rather than
                 // trusting the caller keeps a mistyped field out of the history.
                 reps = reps.coerceAtLeast(1),
@@ -469,6 +486,14 @@ class RoomWorkoutRepository @Inject constructor(
             // (setIndex, completedAt, createdAt) are preserved rather than invented,
             // and so a soft-deleted set cannot be resurrected by an edit.
             val stored = dao.findSetById(setId) ?: throw NotFoundException("set $setId")
+            // Re-roling a logged set is a write like logging one, so it holds the same rule (B64): a
+            // first set edited into a drop, or a set under a warm-up, would otherwise reach the
+            // database as a rung the app reads no run for — the state the log path already refuses.
+            if (setType.isRung &&
+                !canBePerformedAs(stored.sessionExerciseId, stored.setIndex, setType)
+            ) {
+                throw InvalidInputException("A ${setType.label.lowercase()} set follows the set above it.")
+            }
             val updated = stored.copy(
                 reps = reps.coerceAtLeast(1),
                 weightGrams = weightGrams.coerceAtLeast(0L),

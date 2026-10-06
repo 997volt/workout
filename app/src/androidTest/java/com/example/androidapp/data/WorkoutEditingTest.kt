@@ -486,9 +486,9 @@ class WorkoutEditingTest {
     @Test
     fun aRungCannotBeTheFirstSetOfAnExercise() = runTest {
         // ROADMAP N79: a drop or cluster set hangs off the set above it, so the first set of an
-        // exercise has nothing to derive from and nothing to rate. The picker is the real guard; this
-        // is the boundary — and the rule is about the *first* set rather than about rungs, which the
-        // third assertion shows.
+        // exercise has nothing to derive from and nothing to rate. The picker offers only what this
+        // allows (B64) and this is the boundary that holds it against a stale screen — and the rule is
+        // about the *set above* rather than about rungs, which the third assertion shows.
         seedOpenWorkout()
         val rung: suspend (SetType) -> DataResult<Unit> = { type ->
             repository.logSet(
@@ -514,6 +514,80 @@ class WorkoutEditingTest {
             ) is DataResult.Success,
         )
         assertTrue("and now a rung has an anchor", rung(SetType.DROP) is DataResult.Success)
+    }
+
+    @Test
+    fun aRungCannotFollowAWarmUp() = runTest {
+        // ROADMAP B63: an anchor is a set that stands on its own — `recordsEffort` is the one rule —
+        // so a warm-up cannot anchor a run. The old guard asked only "is there a set above it that is
+        // not a rung", which a warm-up satisfied, and a drop logged there derived nothing at all: the
+        // app read no run above it and the row was a rung in name only.
+        seedOpenWorkout()
+        val log: suspend (SetType) -> DataResult<Unit> = { type ->
+            repository.logSet(
+                "se1",
+                reps = 5,
+                weightGrams = 80_000L,
+                rpeHalves = null,
+                note = null,
+                setType = type,
+            )
+        }
+
+        assertTrue("a ramp is a set", log(SetType.WARMUP) is DataResult.Success)
+        assertTrue("but it is not an anchor", log(SetType.DROP) is DataResult.Failure)
+        assertTrue("for a cluster either", log(SetType.CLUSTER) is DataResult.Failure)
+    }
+
+    @Test
+    fun reRolingALoggedSetIntoARung_holdsTheSameRule() = runTest {
+        // ROADMAP B64: editing a set's role is a write like logging one, and it had no rung guard at
+        // all — so the first set of an exercise could be re-roled into a drop that the log path would
+        // have refused, and the app would read no run for it.
+        seedOpenWorkoutWithASet()
+
+        val result = repository.updateSet(
+            setId = "set1",
+            reps = 5,
+            weightGrams = 100_000L,
+            rpeHalves = null,
+            note = null,
+            setType = SetType.DROP,
+        )
+
+        assertTrue("the first set has nothing above it", result is DataResult.Failure)
+        assertEquals(
+            "and the row keeps the role it had",
+            SetType.NORMAL,
+            database.workoutDao().findSetById("set1")!!.setType,
+        )
+    }
+
+    @Test
+    fun reRolingALaterSetIntoARung_isAllowed() = runTest {
+        // The other half: with a working set above it, the same edit is a legitimate re-role — the
+        // guard is about the place in the session, not about editing a set at all.
+        seedOpenWorkoutWithASet()
+        repository.logSet(
+            "se1",
+            reps = 5,
+            weightGrams = 90_000L,
+            rpeHalves = null,
+            note = null,
+        )
+        val logged = database.workoutDao().observeSetsForSession("s1").first().first { it.setIndex == 1 }
+
+        val result = repository.updateSet(
+            setId = logged.id,
+            reps = 5,
+            weightGrams = 80_000L,
+            rpeHalves = null,
+            note = null,
+            setType = SetType.DROP,
+        )
+
+        assertTrue(result is DataResult.Success)
+        assertEquals(SetType.DROP, database.workoutDao().findSetById(logged.id)!!.setType)
     }
 
     /** The same open workout as [seedOpenWorkoutWithASet], before anything has been logged (N79). */

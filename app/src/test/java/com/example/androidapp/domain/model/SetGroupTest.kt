@@ -4,6 +4,7 @@ import com.example.androidapp.domain.Load
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -170,5 +171,28 @@ class SetGroupTest {
         )
 
         assertEquals(setOf(0), sets.runContinuesAfter())
+    }
+
+    @Test
+    fun aRungIsAnchoredWhereTheSetAboveTheRunStandsOnItsOwn() {
+        // ROADMAP B64: the question a picker asks before it offers a rung. A run is contiguous and its
+        // rows share a role, so the anchor is the set above the run's FIRST row — which is why the
+        // answer depends on where the row would sit, and why asking about an index a row would take is
+        // the caller's job rather than this function's.
+        assertTrue("a working set anchors one", listOf(set(0)).isAnchoredAt(1, SetType.DROP))
+        assertFalse("a warm-up does not", listOf(set(0, role = SetType.WARMUP)).isAnchoredAt(1, SetType.DROP))
+        assertFalse("and nothing above anchors nothing", emptyList<TemplateSet>().isAnchoredAt(0, SetType.DROP))
+        assertTrue("a set that is not a rung needs no anchor", emptyList<TemplateSet>().isAnchoredAt(0, SetType.NORMAL))
+    }
+
+    @Test
+    fun aRungJoinsItsOwnRun_andNotAnotherKindOfOne() {
+        // The second drop of a run is anchored by the working set before the run, while a cluster at
+        // that same position has no anchor: the drop between it and the working set does not stand on
+        // its own (ROADMAP N79, B64).
+        val sets = listOf(set(0), set(1, role = SetType.DROP, weightGrams = null, dropValueGrams = 20_000L))
+
+        assertTrue(sets.isAnchoredAt(2, SetType.DROP))
+        assertFalse(sets.isAnchoredAt(2, SetType.CLUSTER))
     }
 }

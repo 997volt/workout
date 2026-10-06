@@ -123,6 +123,26 @@ fun suggestionForNextSet(
 }
 
 /**
+ * Which roles the next set may be logged as (ROADMAP N79, B63, B64).
+ *
+ * The same rule the write boundary holds, asked **before the tap** so the picker offers only what can
+ * be saved: a run is contiguous and its rows share a role, so a rung's anchor is the set above the
+ * run's first row, and that set has to stand on its own. A warm-up does not stand on its own, which is
+ * why the first set of an exercise cannot be a rung and neither can one that follows a ramp — and the
+ * pending set is always appended, so the walk starts at the end of this list.
+ *
+ * The boundary asks the same question of the same rows in `RoomWorkoutRepository.canBePerformedAs`;
+ * this side answers the picker, and both read `recordsEffort` as the one rule that says what an anchor
+ * is. A role that is not a rung is always available: it is what the set is when it is not a member.
+ */
+internal fun List<SetRow>.canLogAs(role: SetType): Boolean {
+    if (!role.isRung) return true
+    var start = size
+    while (start > 0 && this[start - 1].setType == role) start--
+    return getOrNull(start - 1)?.setType?.recordsEffort == true
+}
+
+/**
  * What one entry of the plan prescribes for the next set of its exercise (N14, N54).
  *
  * Takes the entry the caller has **already resolved** to this exercise rather than a position: the

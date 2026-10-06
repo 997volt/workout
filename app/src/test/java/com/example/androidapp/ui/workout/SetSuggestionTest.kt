@@ -10,7 +10,9 @@ import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -325,6 +327,25 @@ class SetSuggestionTest {
         assertEquals(100_000L, planned?.weightGrams)
         assertNull("and no reps of its own: the group's is the anchor's", planned?.reps)
         assertEquals(SetType.CLUSTER, planned?.role)
+    }
+
+    @Test
+    fun aRungIsOfferedOnlyWhereTheSetAboveItStandsOnItsOwn() {
+        // ROADMAP B63, B64: the picker's question, answered by the rule the write boundary holds. The
+        // first set of an exercise has nothing above it and a warm-up is not an anchor, so neither can
+        // be armed with a rung; a working set can, and another rung of the same run joins it.
+        val nothing = emptyList<SetRow>()
+        val ramp = listOf(logged(40_000L, 10).copy(setType = SetType.WARMUP))
+        val work = listOf(logged(100_000L, 5))
+        val dropRun = work + logged(80_000L, 8).copy(setType = SetType.DROP)
+
+        assertFalse("the first set has nothing above it", nothing.canLogAs(SetType.DROP))
+        assertFalse("and a warm-up does not anchor a drop", ramp.canLogAs(SetType.DROP))
+        assertFalse("nor a cluster", ramp.canLogAs(SetType.CLUSTER))
+        assertTrue("a working set does", work.canLogAs(SetType.DROP))
+        assertTrue("and another drop joins its own run", dropRun.canLogAs(SetType.DROP))
+        assertFalse("while a different kind of run has no anchor there", dropRun.canLogAs(SetType.CLUSTER))
+        assertTrue("a set that is not a rung is always available", nothing.canLogAs(SetType.NORMAL))
     }
 
     /** A working set at 100 with one 20 kg drop after it, as the plan stores it (N79). */

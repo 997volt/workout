@@ -37,11 +37,7 @@ fun List<TemplateSet>.runAt(index: Int): RungRun? {
     val role = getOrNull(index)?.role?.takeIf { it.isRung }
     val start = if (role == null) index else runStart(index, role)
 
-    // The row above the run has to stand on its own, or there is nothing to derive from and nothing
-    // to rate — which is what a plan beginning with a rung, or a run above another kind of rung, is.
-    val anchored = role != null && getOrNull(start - 1)?.role?.recordsEffort == true
-
-    return if (anchored) {
+    return if (role != null && isAnchoredAt(index, role)) {
         RungRun(
             anchorIndex = start - 1,
             rung = index - start + 1,
@@ -51,6 +47,18 @@ fun List<TemplateSet>.runAt(index: Int): RungRun? {
         null
     }
 }
+
+/**
+ * Whether a set at [index] carrying [role] would have an anchor (ROADMAP N79, B64).
+ *
+ * The question a picker asks before it offers a rung, answered by the rule [runAt] holds: a run is
+ * contiguous and its rows share a role, so the anchor is the set above the run's **first** row, and
+ * that set has to stand on its own. [index] may be a position a row *would* take rather than one it
+ * holds, which is what lets a dialog ask about the set it is about to add — and why this is a lookup
+ * over the plan rather than a property of a row.
+ */
+fun List<TemplateSet>.isAnchoredAt(index: Int, role: SetType): Boolean =
+    !role.isRung || getOrNull(runStart(index, role) - 1)?.role?.recordsEffort == true
 
 /** The first row of the contiguous same-role run that ends at [index]. */
 private fun List<TemplateSet>.runStart(index: Int, role: SetType): Int {

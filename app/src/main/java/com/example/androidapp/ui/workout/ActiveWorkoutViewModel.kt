@@ -1518,13 +1518,15 @@ private fun SessionExercise.suggestionFor(
 /**
  * What the set the next rung hangs off actually loaded, or null (ROADMAP N79).
  *
- * Read from the back of the session's own log and skipping rungs, because a run hangs off a set that
- * stands on its own: for the second drop of a run the set above it is the first drop, and the anchor is
- * still the working set before them. It is what a drop is taken off — the bar in front of you, not the
- * number the plan wrote down.
+ * Read from the back of the session's own log and skipping anything that does not stand on its own,
+ * because a run hangs off such a set: for the second drop of a run the set above it is the first drop,
+ * and the anchor is still the working set before them — and a **warm-up is not an anchor either**, the
+ * rule `runAt` holds, so a drop logged under one derives nothing here rather than taking the ramp's
+ * load (B63). It is what a drop is taken off: the bar in front of you, not the number the plan wrote
+ * down.
  */
 private fun List<SetRow>.anchorLoadForTheNextRung(): Load? =
-    lastOrNull { !it.setType.isRung }?.let { Load(it.weightGrams, it.assistanceGrams) }
+    lastOrNull { it.setType.recordsEffort }?.let { Load(it.weightGrams, it.assistanceGrams) }
 
 /**
  * `A1`, `A2` … for a grouped exercise, or null (ROADMAP N24).

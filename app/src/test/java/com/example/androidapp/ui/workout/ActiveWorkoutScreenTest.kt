@@ -912,6 +912,37 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun theFirstSet_cannotBeArmedWithARung() {
+        // ROADMAP B64: the picker offers only what the write boundary accepts — a control that cannot
+        // write is worse than no control (N67). A drop or a cluster hangs off the set above it, and the
+        // first set of an exercise has none.
+        setScreen(state = state(isFinished = false, sets = emptyList()))
+
+        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1")).performScrollTo().performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1", SetType.DROP.name))
+            .assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1", SetType.CLUSTER.name))
+            .assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1", SetType.NORMAL.name))
+            .assertExists()
+    }
+
+    @Test
+    fun aSetAboveAWorkingSet_canBeArmedWithARung() {
+        // The other half, so the absence above reads as the position rather than as rungs being hidden
+        // everywhere: one working set logged is an anchor, and the same picker offers both roles.
+        setScreen(state = state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1")).performScrollTo().performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1", SetType.DROP.name))
+            .assertExists()
+        composeTestRule.onNodeWithTag(TestTags.exercisePendingRole("se1", SetType.CLUSTER.name))
+            .assertExists()
+    }
+
+    @Test
     fun theRole_isChosenInline_beforeTheWrite() {
         // N19's picker moved out of the dialog rather than away: the role is still one set's
         // decision, still made before the set is written, and still cleared by the write.

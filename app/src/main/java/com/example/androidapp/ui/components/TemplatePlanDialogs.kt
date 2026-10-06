@@ -190,17 +190,19 @@ fun TemplateSetDialog(
     /** The unit this target load is typed and shown in (ROADMAP N64). */
     unit: WeightUnit = WeightUnit.KILOGRAMS,
     /**
-     * Whether this set is the one that opens its run, read from the row above it (ROADMAP N79).
+     * Which roles this set may be given (ROADMAP N79, B64).
      *
-     * A run is contiguous, so the row above being a different kind of set is what makes this one the
-     * run's first — and its first rung is the only place a drop value is authored.
+     * A rung hangs off the set above it, so the caller — which knows the position this row holds, or
+     * would hold when it is being added — answers whether one is available here. It decides two things
+     * at once: the roles the picker offers, and whether this row is the place a run's value is authored.
+     * The default offers everything, which is what a dialog with no position to speak of wants.
      */
-    opensItsRun: Boolean = true,
+    offers: (SetType) -> Boolean = { true },
 ) {
     // `remember`, not `rememberSaveable`: a data class is not something a Bundle can
     // hold, and registering one throws when the dialog opens. The set editor's own
     // draft is held the same way for the same reason.
-    var draft by remember { mutableStateOf(TemplateSetDraft(initial, unit, opensItsRun)) }
+    var draft by remember { mutableStateOf(TemplateSetDraft(initial, unit, offers(SetType.DROP))) }
 
     AlertDialog(
         modifier = modifier,
@@ -212,7 +214,7 @@ fun TemplateSetDialog(
                 ),
             )
         },
-        text = { TargetFields(draft = draft, onChange = { draft = it }) },
+        text = { TargetFields(draft = draft, onChange = { draft = it }, offers = offers) },
         confirmButton = {
             AppTextButton(
                 enabled = draft.isValid,
@@ -271,18 +273,19 @@ data class TemplateSetDraft(
     /** The unit this target is typed and shown in (ROADMAP N64). */
     val unit: WeightUnit = WeightUnit.KILOGRAMS,
     /**
-     * Whether the set being edited is the one that opens its run (ROADMAP N79).
+     * Whether this row is the place a run's value may be authored (ROADMAP N79, B64).
      *
-     * Read from the row above it — a run is contiguous, so the row above being a different kind of set
-     * is what makes this one the run's first. It decides whether the drop value is authored here at
-     * all, and a dialog that does not know says yes, which is the case for a plan's first drop.
+     * True only where the caller says a drop is available at this position, which is the same answer
+     * that puts **Drop** in the picker. A rung's load is derived from the anchor and the value belongs
+     * to the run, so the rung that opens it is the only one that may name it — and with nothing above
+     * to hang off, there is no run to name a value for.
      */
-    val opensItsRun: Boolean = true,
+    val holdsTheRunValue: Boolean = true,
 ) {
-    constructor(edit: TemplateSetEdit, unit: WeightUnit, opensItsRun: Boolean = true) : this(
+    constructor(edit: TemplateSetEdit, unit: WeightUnit, holdsTheRunValue: Boolean = true) : this(
         role = edit.role,
         dropValueText = edit.dropValueGrams?.let { Weight.format(it, unit) }.orEmpty(),
-        opensItsRun = opensItsRun,
+        holdsTheRunValue = holdsTheRunValue,
         weightText = if (edit.targetWeightGrams != null || edit.targetAssistanceGrams != null) {
             Weight.display(edit.targetWeightGrams ?: 0L, edit.targetAssistanceGrams ?: 0L, unit)
         } else {
@@ -308,7 +311,7 @@ data class TemplateSetDraft(
     val dropValueGrams: Long? get() = dropValueText.trim().ifEmpty { null }?.let { Weight.parse(it, unit) }
 
     /** True where this set is a drop that opens its run, which is the only place a value is written. */
-    val writesTheRunValue: Boolean get() = role == SetType.DROP && opensItsRun
+    val writesTheRunValue: Boolean get() = role == SetType.DROP && holdsTheRunValue
 
     // Blank is allowed everywhere; anything typed has to be a usable number, and a
     // range that runs backwards is refused rather than silently swapped.
@@ -401,6 +404,8 @@ internal fun TemplateSet.summary(
 private fun TargetFields(
     draft: TemplateSetDraft,
     onChange: (TemplateSetDraft) -> Unit,
+    /** Which roles this position can take (ROADMAP N79, B64). */
+    offers: (SetType) -> Boolean,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SetRoleSelector(
@@ -408,6 +413,9 @@ private fun TargetFields(
             onSelect = { onChange(draft.copy(role = it)) },
             testTag = TestTags.TEMPLATE_SET_ROLE,
             optionTag = TestTags::templateSetRole,
+            // A rung is not offered where there is nothing above it to hang off: the boundary would
+            // refuse the save, and a control that cannot write is worse than no control (N67, B64).
+            offers = offers,
         )
         // A rung has no load of its own to type: a cluster repeats the anchor's and a drop is the
         // anchor less the run's value, so the only field it can hold is that value — and only the rung
