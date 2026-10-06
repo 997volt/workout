@@ -37,12 +37,32 @@ they named that is not a feature is a settled decision: no dated instances (N16)
 automatic (the app states what happened; it never writes what it decided), a weekday-less slot that is never missed
 and is order-only, and more than one active program, which P3.12 allowed.
 
-### Nothing waiting
+### Two requests from use
 
-The queue is empty rather than closed: it is where a candidate waits as a wish until it is picked
-up, and picking one up is what gives it an id and a spelled-out decision. The last request that
-stood here — an exercise's own weight change — became N77 that way and has shipped, with its entry
-in [CHANGELOG.md](CHANGELOG.md).
+Both small and self-contained, and neither has been picked up, so neither has an id yet — picking one up
+is what gives it a spelled-out decision and a place in *Next*. The last request that stood here — an
+exercise's own weight change — became N77 that way and has shipped, with its entry in
+[CHANGELOG.md](CHANGELOG.md).
+
+- **More room around the next-up block.** A next-up row is drawn with 8 dp above it, inside the home
+  start bar's own 12 dp of vertical padding, and its name sits against its *Start* button with nothing
+  between them beyond the button's inset. With more than one program active (P3.12) the bar can carry
+  several rows, and the block reads tighter than the cards it sits under. The decision is *where* the
+  room goes — the block's own margin, the space between rows, or the gap between a row's text and its
+  action, which are three different fixes — and it wants a device with two active programs rather than a
+  guess.
+- **Bring *Substitute* back to a next-up row.** Today's card offers it (P3.11) and the next-up rows do
+  not, although a next-up row is the same `TodayPlan`: it already carries the slot's id and a *Start
+  planned workout*, so `substituteOccurrence` fits it as it stands. **What is not settled is which
+  occurrence the pick lands on.** A substitute is an event keyed by slot *and* week (P3.11), and
+  [WorkoutsHomeViewModel.kt](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeViewModel.kt)
+  writes the week of *today* — right for today's card, which is that occurrence by construction, and
+  questionable for a next-up row, which P3.9 makes deliberately **calendar-free**: a run advances when a
+  slot is trained or skipped, never because a day passed. On a Sunday the next-up Monday falls in the
+  *next* week, so the pick would be keyed to a week whose Monday has already gone. So the decision is
+  whether a next-up pick is a week-bound substitution at all — and if it is, which week it lands in
+  (`ProgramSchedule.occurrenceDate` is what turns a week and a weekday into the date in question) — or
+  whether it only opens the session and records nothing.
 
 ## Parked — deliberately not planned
 
