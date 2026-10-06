@@ -643,4 +643,120 @@ class TemplateRepositoryTest {
 
         assertTrue(result is DataResult.Failure)
     }
+
+    /**
+     * The shape migration 34→35 leaves on disk: a drop run from before the value existed.
+     *
+     * The migration is the only thing that can produce it, so it is written the way the migration
+     * leaves it — a raw update, not a repository call the rules would have refused.
+     */
+    private fun clearRunValues() {
+        database.openHelper.writableDatabase.execSQL(
+            "UPDATE template_sets SET dropValueGrams = NULL WHERE role = 'DROP'",
+        )
+    }
+
+    @Test
+    fun aPlanWrittenBeforeTheRunRules_isStillEditable() = runTest {
+        // ROADMAP B59: a drop run's value column arrived null, so a plan authored before the rung rules
+        // is stored in a shape they refuse. Reading it is fine — the load falls back to what the set
+        // carries — and so is every write that does not make it worse, or the lifter could not correct
+        // the plan at all.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 20_000L))
+        clearRunValues()
+        val anchor = repository.observeExercises(template).first().single().sets.first()
+
+        val added = repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 90_000L))
+        val edited = repository.updateSet(anchor.id, TemplateSetEdit(targetWeightGrams = 105_000L))
+
+        assertTrue("a legacy run must not freeze the plan", added is DataResult.Success)
+        assertTrue("nor refuse an edit beside it", edited is DataResult.Success)
+        assertEquals(3, repository.observeExercises(template).first().single().sets.size)
+    }
+
+    @Test
+    fun aRowTheWriteLeavesAsWrongAsItWas_isNotWhatRefusesIt() = runTest {
+        // The other half of B59: the same legacy row still refuses a change that makes it *different*,
+        // so grandfathering is not a hole. Giving the run's first rung a value it never had is a new
+        // state, and it is judged as one.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 20_000L))
+        clearRunValues()
+        val drop = repository.observeExercises(template).first().single().sets[1]
+
+        val result = repository.updateSet(
+            drop.id,
+            TemplateSetEdit(role = SetType.DROP, targetWeightGrams = 100_000L, dropValueGrams = -10_000L),
+        )
+
+        assertTrue("a value is still a positive number", result is DataResult.Failure)
+    }
+
+    @Test
+    fun editingAnAnchorLightEnoughToStrandARungBelowIt_isRefused() = runTest {
+        // ROADMAP B59: the write is judged on what it creates, including on a row it did not touch.
+        // 100 kg with a 60 kg value leaves 40 for the rung; an anchor edited to 50 leaves −10, which is
+        // assistance rather than a small weight (N15), so the edit is refused rather than stored.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 60_000L))
+        val anchor = repository.observeExercises(template).first().single().sets.first()
+
+        val result = repository.updateSet(anchor.id, TemplateSetEdit(targetWeightGrams = 50_000L))
+
+        assertTrue("a rung cannot be left with a negative load", result is DataResult.Failure)
+        assertEquals(
+            "and the anchor keeps what it had",
+            100_000L,
+            repository.observeExercises(template).first().single().sets.first().targetWeightGrams,
+        )
+    }
+
+    @Test
+    fun deletingARunsAnchor_takesItsRungsWithIt() = runTest {
+        // ROADMAP B60: a rung carries no targets of its own, so a run left standing over a gap can be
+        // neither read nor edited. The whole run goes with the anchor.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 20_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP))
+        val anchor = repository.observeExercises(template).first().single().sets.first()
+
+        repository.removeSet(anchor.id)
+
+        assertTrue(repository.observeExercises(template).first().single().sets.isEmpty())
+    }
+
+    @Test
+    fun deletingALaterRung_leavesTheRunAndItsAnchorAlone() = runTest {
+        // The anchor is not the run: removing its last rung shortens the ladder, and removing the
+        // first rung leaves the run anchored exactly where it was.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 20_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP))
+        val sets = repository.observeExercises(template).first().single().sets
+
+        repository.removeSet(sets[2].id)
+        val shortened = repository.observeExercises(template).first().single().sets
+
+        assertEquals(2, shortened.size)
+        assertEquals(listOf(SetType.NORMAL, SetType.DROP), shortened.map { it.role })
+
+        repository.removeSet(shortened[1].id)
+
+        assertEquals(
+            "the anchor stands on its own",
+            listOf(SetType.NORMAL),
+            repository.observeExercises(template).first().single().sets.map { it.role },
+        )
+    }
 }

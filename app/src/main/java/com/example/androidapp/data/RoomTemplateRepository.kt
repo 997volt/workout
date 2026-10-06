@@ -238,9 +238,10 @@ class RoomTemplateRepository @Inject constructor(
             deletedAt = null,
         )
         // The rung rules are about the *run* this row joins, so they are checked with the exercise's
-        // own sets in hand rather than on the row alone (ROADMAP N79).
+        // own sets in hand rather than on the row alone (ROADMAP N79): the stored list is what says
+        // which problems this write *creates* rather than which ones it inherits (B59).
         val sets = plannedSetsOf(exercise)
-        validateRun(sets + row.toDomain())
+        validateRun(stored = sets, after = sets + row.toDomain())
         dao.insertTemplateSet(row)
     }
 
@@ -263,19 +264,44 @@ class RoomTemplateRepository @Inject constructor(
             )
             val exercise = dao.findTemplateExercise(stored.templateExerciseId)
                 ?: throw NotFoundException("template exercise ${stored.templateExerciseId}")
+            val sets = plannedSetsOf(exercise)
             validateRun(
-                plannedSetsOf(exercise).map { if (it.id == templateSetId) edited.toDomain() else it },
+                stored = sets,
+                after = sets.map { if (it.id == templateSetId) edited.toDomain() else it },
             )
             val updated = dao.updateTemplateSet(edited)
             if (updated == 0) throw NotFoundException("template set $templateSetId")
         }
 
+    /**
+     * Removes a planned set, and the run that hangs off it (ROADMAP N79, B60).
+     *
+     * A rung carries no targets of its own — its load is derived from the set above it — so a run whose
+     * anchor is gone has nothing left to read and nothing the editor may write. The whole run goes with
+     * the anchor, whichever of its rows the delete was asked for: [runAt] names every rung whose anchor
+     * this row is, which is the run's every rung, because adjacency is the only parent link there is.
+     *
+     * Rejected alternative: promoting a stranded first rung to a set of its own. A rung deliberately
+     * names no reps and no weight, so promoting it invents both, and the invented numbers would be
+     * indistinguishable from ones the lifter authored. Deleting is the rule the shape was planned with.
+     */
     override suspend fun removeSet(templateSetId: String): DataResult<Unit> = dataResultOf {
-        val updated = dao.softDeleteTemplateSet(
-            id = templateSetId,
-            at = timeSource.nowEpochMillis(),
-        )
-        if (updated == 0) throw NotFoundException("template set $templateSetId")
+        val stored = dao.findTemplateSet(templateSetId)
+            ?: throw NotFoundException("template set $templateSetId")
+        val exercise = dao.findTemplateExercise(stored.templateExerciseId)
+            ?: throw NotFoundException("template exercise ${stored.templateExerciseId}")
+        val sets = plannedSetsOf(exercise)
+        val index = sets.indexOfFirst { it.id == templateSetId }
+        val going = if (index < 0) {
+            listOf(templateSetId)
+        } else {
+            listOf(templateSetId) +
+                sets.indices.filter { sets.runAt(it)?.anchorIndex == index }.map { sets[it].id }
+        }
+        val now = timeSource.nowEpochMillis()
+        database.withTransaction {
+            going.forEach { dao.softDeleteTemplateSet(id = it, at = now) }
+        }
     }
 
     override suspend fun setExercisePlan(
@@ -365,16 +391,31 @@ class RoomTemplateRepository @Inject constructor(
             .sortedBy { it.setIndex }
 
     /**
-     * Checks every rung a plan would hold, after the write being made (ROADMAP N79).
+     * Refuses only the rung problems the write being made **creates** (ROADMAP N79, B59).
      *
-     * The rules are about the **run** rather than the row: a rung hangs off a working set, a drop names
-     * the value it takes off, and every rung of a run has to come out with something to load. Checking
-     * the whole list rather than the edited row is what catches a value that is fine on its own and
-     * impossible once it is one rung further down the ladder.
+     * The rules are about the **run** rather than the row, so they are checked with the exercise's own
+     * sets in hand: that is what catches a value that is fine on its own and impossible once it is one
+     * rung further down the ladder, and an anchor edited light enough to strand a rung below it.
+     *
+     * What it does not do is re-judge rows the write never touched. A plan written before these rules
+     * existed — a drop run whose value column arrived null, a rung whose anchor is already gone — stays
+     * editable, because the alternative is a plan that can be neither read nor corrected. The
+     * comparison is by set id and by the problem's own sentence, so a write that leaves an existing
+     * problem exactly as it was passes, and one that makes it worse, moves it to another row, or puts a
+     * new row into it does not.
+     *
+     * Rejected alternative: backfilling a value for the runs already on disk in migration 34→35. There
+     * is no number the migration could write that the lifter meant — every candidate invents a load and
+     * silently moves the whole ladder — so the migration's null stays "this run names no value", which
+     * the read path already answers by falling back to what the set itself carries.
      */
-    private fun validateRun(sets: List<TemplateSet>) {
-        sets.indices.forEach { index ->
-            rungProblem(sets, index)?.let { throw InvalidInputException(it) }
+    private fun validateRun(stored: List<TemplateSet>, after: List<TemplateSet>) {
+        val alreadyWrong = stored.indices.associate { index ->
+            stored[index].id to rungProblem(stored, index)
+        }
+        after.indices.forEach { index ->
+            val problem = rungProblem(after, index) ?: return@forEach
+            if (alreadyWrong[after[index].id] != problem) throw InvalidInputException(problem)
         }
     }
 
