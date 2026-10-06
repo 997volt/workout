@@ -212,6 +212,38 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun done_sitsBesideTheRatingRow_atItsHeight() {
+        // ROADMAP N76: the action and the rating are one closing decision, so *Done* sits at the rating
+        // row's end and inside its band rather than eight points under it.
+        setScreen(state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo()
+
+        val rating = composeTestRule.onNodeWithTag(TestTags.EXERCISE_RATING_ROW).getUnclippedBoundsInRoot()
+        val done = composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).getUnclippedBoundsInRoot()
+        assertTrue("Done must sit at the rating row's end, not under it", done.left >= rating.right)
+        assertTrue(
+            "and within that row's height, so the two read as one line",
+            done.top < rating.bottom && rating.top < done.bottom,
+        )
+    }
+
+    @Test
+    fun withNothingLogged_theRatingRow_stillHoldsTheWidth() {
+        // N69 leaves the action out entirely until a set exists; the rating keeps the row, and it is
+        // the whole of it rather than a half waiting for a button that is not coming (N76).
+        setScreen(state(isFinished = false, sets = emptyList()))
+
+        val rating = composeTestRule.onNodeWithTag(TestTags.EXERCISE_RATING_ROW).getUnclippedBoundsInRoot()
+        val list = composeTestRule.onNodeWithTag(TestTags.EXERCISE_LIST).getUnclippedBoundsInRoot()
+
+        assertTrue(
+            "the rating row spans the exercise block",
+            (rating.right - rating.left) > (list.right - list.left) / 2,
+        )
+    }
+
+    @Test
     fun withAPlan_tappingDone_asksTheViewModelToFinish_ratherThanOpeningAnythingItself() {
         // ROADMAP N74: whether a question opens is the ViewModel's call, because the offer is read
         // from the plan and the session — so the screen's Done button only reports the tap, and the
@@ -222,7 +254,7 @@ class ActiveWorkoutScreenTest {
             actions = Actions(onFinishExercise = { finished = it }),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
+        clickExerciseAction(TestTags.EXERCISE_DONE)
 
         assertEquals("se1", finished)
         composeTestRule.onNodeWithTag(TestTags.Progression.CONFIRM).assertDoesNotExist()
@@ -257,7 +289,7 @@ class ActiveWorkoutScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DONE).performScrollTo().performClick()
+        clickExerciseAction(TestTags.EXERCISE_DONE)
 
         composeTestRule.onNodeWithTag(TestTags.Progression.CONFIRM).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.RATING_MUSCLE_FIELD).assertDoesNotExist()
@@ -401,7 +433,7 @@ class ActiveWorkoutScreenTest {
         var reopened: String? = null
         setScreen(state(isFinished = true), actions = Actions(onReopenExercise = { reopened = it }))
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_REOPEN).performScrollTo().performClick()
+        clickExerciseAction(TestTags.EXERCISE_REOPEN)
 
         assertEquals("se1", reopened)
     }
@@ -649,6 +681,17 @@ class ActiveWorkoutScreenTest {
         // 16 halves, written the way a lifter writes it.
         composeTestRule.onNodeWithTag(TestTags.SET_RPE_FIELD).assertTextContains("8")
     }
+
+    /**
+     * Taps the exercise's own action.
+     *
+     * Through its semantics rather than a touch, the way the set fields already are: N76 puts the
+     * action at the right edge of the rating row, where this rule's small viewport has the scaffold's
+     * extended FAB over it. Where the button *is* belongs to
+     * [done_sitsBesideTheRatingRow_atItsHeight]; what these tests are about is the callback it reports.
+     */
+    private fun clickExerciseAction(tag: String) =
+        composeTestRule.onNodeWithTag(tag).performSemanticsAction(SemanticsActions.OnClick)
 
     private fun state(
         isFinished: Boolean,

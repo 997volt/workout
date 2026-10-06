@@ -213,26 +213,33 @@ private fun ExerciseSection(
             onDeleteSet = onDeleteSet,
         )
 
-        // N10: the ratings can be given while the exercise is still in front of you. This row is the
-        // only way in: *Done* no longer opens the rating (N8) — it is reached when the lifter reaches
-        // for it, rather than handed to them on the way out of the exercise.
-        ExerciseRatingSection(
-            muscleFeel = row.muscleFeel,
-            joints = row.joints,
-            legacyJointPain = row.jointPain,
-            legacyJointPainNote = row.jointPainNote,
-            onRate = { feel, joints -> onRateExercise(row.id, feel, joints) },
-        )
+        // N10: the ratings can be given while the exercise is still in front of you, and this row is
+        // the only way in — *Done* no longer opens the rating (N8). N76 puts the exercise's own action
+        // at the end of that same row: "the exercise is over" and "how did that feel" are one closing
+        // decision, and a button eight points under the field read as a separate one.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ExerciseRatingSection(
+                muscleFeel = row.muscleFeel,
+                joints = row.joints,
+                legacyJointPain = row.jointPain,
+                legacyJointPainNote = row.jointPainNote,
+                onRate = { feel, joints -> onRateExercise(row.id, feel, joints) },
+                // The rating gives up the width the action needs (N76): its click target covered the
+                // whole row, and a full-width one would swallow the button beside it.
+                modifier = Modifier.weight(1f),
+            )
 
-        // The exercise's own action lives at its foot (N69), after everything that belongs to it: a
-        // header button was read as part of the title, and *Done* is the last thing about this
-        // exercise rather than the first.
-        ExerciseStateAction(
-            row = row,
-            onReopenExercise = onReopenExercise,
-            onFinishExercise = onFinishExercise,
-            modifier = Modifier.padding(top = 8.dp),
-        )
+            // The action stays at the exercise's foot (N69) — beside the last thing said about the
+            // exercise rather than under it.
+            ExerciseStateAction(
+                row = row,
+                onReopenExercise = onReopenExercise,
+                onFinishExercise = onFinishExercise,
+            )
+        }
     }
 }
 
