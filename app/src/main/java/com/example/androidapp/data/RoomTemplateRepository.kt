@@ -18,7 +18,12 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.Load
+import com.example.androidapp.domain.model.RungRun
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.runAt
+import com.example.androidapp.domain.model.rungLoad
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
@@ -211,29 +216,32 @@ class RoomTemplateRepository @Inject constructor(
         edit: TemplateSetEdit,
     ): DataResult<Unit> = dataResultOf {
         validate(edit)
-        if (dao.findTemplateExercise(templateExerciseId) == null) {
-            throw NotFoundException("template exercise $templateExerciseId")
-        }
+        val exercise = dao.findTemplateExercise(templateExerciseId)
+            ?: throw NotFoundException("template exercise $templateExerciseId")
         val now = timeSource.nowEpochMillis()
-        dao.insertTemplateSet(
-            TemplateSetEntity(
-                id = UUID.randomUUID().toString(),
-                templateExerciseId = templateExerciseId,
-                // Appended, so the plan reads in the order it was written.
-                setIndex = dao.maxSetIndex(templateExerciseId) + 1,
-                role = edit.role,
-                targetWeightGrams = edit.targetWeightGrams,
-                targetAssistanceGrams = edit.targetAssistanceGrams,
-                targetRepsMin = edit.targetRepsMin,
-                targetRepsMax = edit.targetRepsMax,
-                targetRepsCurrent = edit.targetRepsCurrent,
-                targetRpeHalves = edit.effortOrNull,
-                note = edit.note?.trim()?.ifEmpty { null },
-                createdAt = now,
-                updatedAt = now,
-                deletedAt = null,
-            ),
+        val row = TemplateSetEntity(
+            id = UUID.randomUUID().toString(),
+            templateExerciseId = templateExerciseId,
+            // Appended, so the plan reads in the order it was written.
+            setIndex = dao.maxSetIndex(templateExerciseId) + 1,
+            role = edit.role,
+            targetWeightGrams = edit.targetWeightGrams,
+            targetAssistanceGrams = edit.targetAssistanceGrams,
+            targetRepsMin = edit.targetRepsMin,
+            targetRepsMax = edit.targetRepsMax,
+            targetRepsCurrent = edit.targetRepsCurrent,
+            targetRpeHalves = edit.effortOrNull,
+            dropValueGrams = edit.dropValueGrams,
+            note = edit.note?.trim()?.ifEmpty { null },
+            createdAt = now,
+            updatedAt = now,
+            deletedAt = null,
         )
+        // The rung rules are about the *run* this row joins, so they are checked with the exercise's
+        // own sets in hand rather than on the row alone (ROADMAP N79).
+        val sets = plannedSetsOf(exercise)
+        validateRun(sets + row.toDomain())
+        dao.insertTemplateSet(row)
     }
 
     override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> =
@@ -241,19 +249,24 @@ class RoomTemplateRepository @Inject constructor(
             validate(edit)
             val stored = dao.findTemplateSet(templateSetId)
                 ?: throw NotFoundException("template set $templateSetId")
-            val updated = dao.updateTemplateSet(
-                stored.copy(
-                    role = edit.role,
-                    targetWeightGrams = edit.targetWeightGrams,
-                    targetAssistanceGrams = edit.targetAssistanceGrams,
-                    targetRepsMin = edit.targetRepsMin,
-                    targetRepsMax = edit.targetRepsMax,
-                    targetRepsCurrent = edit.targetRepsCurrent,
-                    targetRpeHalves = edit.effortOrNull,
-                    note = edit.note?.trim()?.ifEmpty { null },
-                    updatedAt = timeSource.nowEpochMillis(),
-                ),
+            val edited = stored.copy(
+                role = edit.role,
+                targetWeightGrams = edit.targetWeightGrams,
+                targetAssistanceGrams = edit.targetAssistanceGrams,
+                targetRepsMin = edit.targetRepsMin,
+                targetRepsMax = edit.targetRepsMax,
+                targetRepsCurrent = edit.targetRepsCurrent,
+                targetRpeHalves = edit.effortOrNull,
+                dropValueGrams = edit.dropValueGrams,
+                note = edit.note?.trim()?.ifEmpty { null },
+                updatedAt = timeSource.nowEpochMillis(),
             )
+            val exercise = dao.findTemplateExercise(stored.templateExerciseId)
+                ?: throw NotFoundException("template exercise ${stored.templateExerciseId}")
+            validateRun(
+                plannedSetsOf(exercise).map { if (it.id == templateSetId) edited.toDomain() else it },
+            )
+            val updated = dao.updateTemplateSet(edited)
             if (updated == 0) throw NotFoundException("template set $templateSetId")
         }
 
@@ -342,6 +355,81 @@ class RoomTemplateRepository @Inject constructor(
     private fun validate(edit: TemplateSetEdit) {
         validateLoad(edit)
         validateEffort(edit)
+    }
+
+    /** This exercise's planned sets in stored order, for the rules that are about the run (N79). */
+    private suspend fun plannedSetsOf(exercise: TemplateExerciseEntity): List<TemplateSet> =
+        dao.findTemplateSets(exercise.templateId)
+            .filter { it.templateExerciseId == exercise.id }
+            .map { it.toDomain() }
+            .sortedBy { it.setIndex }
+
+    /**
+     * Checks every rung a plan would hold, after the write being made (ROADMAP N79).
+     *
+     * The rules are about the **run** rather than the row: a rung hangs off a working set, a drop names
+     * the value it takes off, and every rung of a run has to come out with something to load. Checking
+     * the whole list rather than the edited row is what catches a value that is fine on its own and
+     * impossible once it is one rung further down the ladder.
+     */
+    private fun validateRun(sets: List<TemplateSet>) {
+        sets.indices.forEach { index ->
+            rungProblem(sets, index)?.let { throw InvalidInputException(it) }
+        }
+    }
+
+    /**
+     * What is wrong with the rung at [index], or null (ROADMAP N79).
+     *
+     * The value's own rules come first, because they hold whatever the row is; the rest are about the
+     * run it joins.
+     */
+    private fun rungProblem(sets: List<TemplateSet>, index: Int): String? {
+        val set = sets[index]
+        val valueProblem = dropValueProblem(set)
+        val run = if (set.role.isRung) sets.runAt(index) else null
+        return when {
+            valueProblem != null -> valueProblem
+            !set.role.isRung -> null
+
+            run == null ->
+                "A ${set.role.label.lowercase()} set hangs off the set above it, and there is none."
+
+            set.role == SetType.CLUSTER -> null
+
+            // The value belongs to the *run*, and the run writes it once: a later rung inherits it, so
+            // carrying one of its own would be a number nothing reads (ROADMAP N79).
+            run.rung == 1 && set.dropValueGrams == null ->
+                "A drop run needs the value it takes off the set above it."
+
+            run.rung > 1 && set.dropValueGrams != null ->
+                "A run's drop value is written on its first rung."
+
+            !hasSomethingToTakeOff(sets, run) ->
+                "That drop leaves the set above it nothing to take off."
+
+            else -> null
+        }
+    }
+
+    /** A value belongs to a drop and is a positive number (ROADMAP N79). */
+    private fun dropValueProblem(set: TemplateSet): String? = when {
+        set.dropValueGrams == null -> null
+        set.role != SetType.DROP -> "Only a drop set takes a value off the set above it."
+        set.dropValueGrams <= 0L -> "A drop value must be more than zero."
+        else -> null
+    }
+
+    /**
+     * Whether the run leaves a rung with a load (ROADMAP N79).
+     *
+     * False for an anchor with no added weight to take the value off, and false once the ladder has run
+     * down to nothing — a negative weight being assistance in this app rather than a small weight (N15).
+     */
+    private fun hasSomethingToTakeOff(sets: List<TemplateSet>, run: RungRun): Boolean {
+        val anchor = sets[run.anchorIndex]
+        val load = Load(anchor.targetWeightGrams ?: 0L, anchor.targetAssistanceGrams ?: 0L)
+        return rungLoad(load, SetType.DROP, run) != null
     }
 
     /** A load is a weight or a magnitude of assistance, never a negative either way. */

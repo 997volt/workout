@@ -139,5 +139,12 @@ data class TemplateSetEdit(
      */
     val targetRepsCurrent: Int? = null,
     val targetRpeHalves: Int? = null,
+    /**
+     * The value this run takes off the set above it, in grams, or null (ROADMAP N79).
+     *
+     * Carried by a **drop** rung and refused anywhere else, and only meaningful on the run's first
+     * rung: the rest inherit it, so a later rung's own value is not what the ladder reads.
+     */
+    val dropValueGrams: Long? = null,
     val note: String? = null,
 )

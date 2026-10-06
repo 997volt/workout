@@ -2,6 +2,9 @@ package com.example.androidapp.data
 
 import java.time.DayOfWeek
 import com.example.androidapp.domain.repository.TemplateSetEdit
+import com.example.androidapp.domain.Load
+import com.example.androidapp.domain.model.rungLoad
+import com.example.androidapp.domain.model.runAt
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.warmUpRamp
 import androidx.room.Room
@@ -304,12 +307,14 @@ class TemplateRepositoryTest {
         repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 5))
         val first = repository.observeExercises(template).first().single().sets.first()
 
-        repository.updateSet(first.id, TemplateSetEdit(role = SetType.DROP, targetRepsMax = 8))
+        // A failure set rather than a drop: the first planned set has nothing above it to hang off,
+        // so a drop there is refused by N79's rule and this test is about the update, not the group.
+        repository.updateSet(first.id, TemplateSetEdit(role = SetType.FAILURE, targetRepsMax = 8))
 
         val sets = repository.observeExercises(template).first().single().sets
         assertEquals(2, sets.size)
         assertEquals("the order is untouched", listOf(0, 1), sets.map { it.setIndex })
-        assertEquals(SetType.DROP, sets[0].role)
+        assertEquals(SetType.FAILURE, sets[0].role)
         assertEquals(8, sets[0].targetRepsMax)
         assertNull("a cleared target is null, not zero", sets[0].targetWeightGrams)
     }
@@ -525,5 +530,117 @@ class TemplateRepositoryTest {
             planned.last().targetWeightGrams,
         )
         assertEquals(SetType.NORMAL, planned.last().role)
+    }
+
+    @Test
+    fun aDropRun_storesItsValueOnce_andTheLadderReadsFromIt() = runTest {
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L, targetRepsMax = 5))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 20_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP))
+
+        val sets = repository.observeExercises(template).first().single().sets
+
+        assertEquals("the value is held by the run's first rung", 20_000L, sets[1].dropValueGrams)
+        assertNull("and a later rung carries none, inheriting it", sets[2].dropValueGrams)
+        assertEquals(20_000L, sets.runAt(1)?.dropValueGrams)
+        assertEquals(2, sets.runAt(2)?.rung)
+        assertEquals(
+            "so 100 with a 20 kg value is 80, then 60",
+            60_000L,
+            rungLoad(Load(100_000L, 0L), SetType.DROP, sets.runAt(2)!!)?.weightGrams,
+        )
+    }
+
+    @Test
+    fun aRungWithNoWorkingSetAboveIt_isRefused() = runTest {
+        // The first set of a plan has nothing to hang off, so it cannot be a rung (ROADMAP N79).
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+
+        val result = repository.addSet(
+            exercise,
+            TemplateSetEdit(role = SetType.DROP, dropValueGrams = 20_000L),
+        )
+
+        assertTrue(result is DataResult.Failure)
+        assertTrue(repository.observeExercises(template).first().single().sets.isEmpty())
+    }
+
+    @Test
+    fun aDropWithNoValue_isRefused() = runTest {
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+
+        val result = repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP))
+
+        assertTrue("a drop is the anchor less a value, and there is none", result is DataResult.Failure)
+    }
+
+    @Test
+    fun aLadderThatRunsPastZero_isRefusedAtTheRungThatWould() = runTest {
+        // 100 with a 40 kg value: 60 and 20 are rungs, and the third would be −20 — which in this app
+        // is not a small weight but 20 kg of help, so it is refused rather than stored (N15, N79).
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 40_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP))
+
+        val third = repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP))
+
+        assertTrue(third is DataResult.Failure)
+        assertEquals(3, repository.observeExercises(template).first().single().sets.size)
+    }
+
+    @Test
+    fun aValueBelongsToADrop_andNothingElse() = runTest {
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+
+        val onAWorkingSet = repository.addSet(exercise, TemplateSetEdit(dropValueGrams = 20_000L))
+        val onACluster = repository.addSet(
+            exercise,
+            TemplateSetEdit(role = SetType.CLUSTER, dropValueGrams = 20_000L),
+        )
+
+        assertTrue("a working set takes nothing off the set above it", onAWorkingSet is DataResult.Failure)
+        assertTrue("and a cluster repeats it rather than dropping it", onACluster is DataResult.Failure)
+    }
+
+    @Test
+    fun aClusterRung_needsNoValue_atAll() = runTest {
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+
+        val result = repository.addSet(exercise, TemplateSetEdit(role = SetType.CLUSTER))
+
+        assertTrue(result is DataResult.Success)
+        val sets = repository.observeExercises(template).first().single().sets
+        assertEquals(SetType.CLUSTER, sets.last().role)
+        assertNull(sets.last().dropValueGrams)
+    }
+
+    @Test
+    fun aDropUnderAnAnchorWithNoAddedWeight_isRefused() = runTest {
+        // An assisted anchor has no 20 kg to take off — the same absence the progression rule refuses
+        // to step, and the reason a drop is not offered there (ROADMAP N15, N79).
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(targetWeightGrams = 0L, targetAssistanceGrams = 20_000L),
+        )
+
+        val result = repository.addSet(
+            exercise,
+            TemplateSetEdit(role = SetType.DROP, dropValueGrams = 20_000L),
+        )
+
+        assertTrue(result is DataResult.Failure)
     }
 }
