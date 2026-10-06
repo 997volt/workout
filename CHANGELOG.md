@@ -42,18 +42,22 @@ repeated here.
   The retired *Back* is **not offered any more, and still readable**: every muscle is stored by name, so
   a row that carries it (a custom exercise, a note written before the split) keeps saying *Back* rather
   than failing to load, and a backup file written before this still restores. The other direction is
-  **refused rather than misread**: the split adds muscle names an older build cannot decode, so an
-  export taken from this build is rejected by 1.14 with the message that the file is newer — which is
-  why the backup format's own version moved, for the first time. The **seeded library is moved by a
+  **refused rather than misread**: the split adds muscle names an older build cannot decode, so a backup
+  or program document written here is refused by 1.14 — and, because 1.14 reads a file's body *before* its
+  version, it says the file does not look like a backup rather than that it is newer. That sentence
+  cannot be repaired in a build already released; both formats move to version 2 so the next build reads
+  the version first and answers "newer" (B62). The **seeded library is moved by a
   migration**, since the seed only ever adds: the vertical pulls become lats, the rows upper back,
   and the deadlifts **hamstrings** with lower back as their secondary — the erectors holding a heavy
   hinge. An exercise you re-classified yourself is left exactly as you left it.
 - **An exercise can name the step its weights move by** (N77). The ± buttons moved by one pair of
   constants — 2.5 kg, or 5 lb — so a leg press that jumps 5 kg, or a stack that jumps 1, was always
   edited against a step it did not have. An exercise's own step (typed in its own unit to a tenth,
-  stored in grams, empty for the unit's own) now drives **the ± buttons, the warm-up ramp and the
-  progression offer** alike, and it moves assistance too, because the stepper moves one signed load. A
-  step of zero is refused: it is not a small step but no step.
+  stored in grams, empty for the unit's own) now drives **every ± surface — the workout's fields and a
+  past set's editor — the warm-up ramp and the progression offer** alike, and it moves assistance too,
+  because the stepper moves one signed load. A step of zero is refused: it is not a small step but no
+  step, and changing the exercise's unit carries the typed number rather than reading it as the other
+  unit.
 
 ### Changed
 
@@ -74,8 +78,8 @@ repeated here.
   set earned nothing at all, not even the top set that had answered the plan, and the dialog never named
   which set it meant. It now states **one row per working set**: its number, the plan, what was done, and
   the step that set earned or why it earned none. **Earning is per set**, so a set that answered the plan
-  earns its step whatever its siblings did — the plan's Nth working set against the session's Nth, as the
-  pairing always was. **The range decides the direction**: "Reps from"/"Reps to" are the range the plan was
+  earns its step whatever its siblings did — the plan's Nth prescribed set against the session's Nth of
+  its own kind, which N79 made role-aware. **The range decides the direction**: "Reps from"/"Reps to" are the range the plan was
   authored with and progression never edits them any more (a rep step used to raise the ceiling, so "5 to
   8" drifted to 5–9 and 5–10). Below the ceiling a set earns the **rep** — one past what was actually done,
   capped at the ceiling, so asked 5 and did 7 of an 8 the plan follows the lifter to 8 — and the weight
@@ -140,8 +144,8 @@ shipped, so this is where they were caught rather than a later version's problem
   and how a first set could be re-roled into a rung the log path would have refused.
 - **The history editor's ± buttons step by the movement's own step** (B65). The history detail's set
   editor was never given the step, so correcting a past set moved by 2.5 kg while the same correction
-  inside the workout moved by the step the exercise actually loads in: a fourth ± surface the N77 entry's
-  "three places" did not name.
+  inside the workout moved by the step the exercise actually loads in — one correction, two places,
+  stepping differently.
 - **Changing an exercise's unit carries its step rather than reinterpreting it** (B66). The step field
   kept its text verbatim and parsed it in whichever unit was selected at save, so "5" typed in kilograms
   and then switched to pounds stored 2268 g — a different step from the one asked for, with no signal.
