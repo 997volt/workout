@@ -17,12 +17,27 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Nothing.** The batch that stood here — a scored sore-muscle list on the readiness note (N62), the joints
-picked with their own scores and the trend reading the worst (N63), and the progression the app asks
-about at *Done* (N50) — is built, and each entry is in [CHANGELOG.md](CHANGELOG.md). A candidate
-graduates to this section — gaining an id and a spelled-out decision rather than a wish — when it is
-picked up, so what stands here is committed work; the two queues below are where the rest lives,
-*Later* for what is self-contained and *Parked* for what is a product in its own right.
+### N74 — progression is offered per planned set
+
+*Done* states **one row per working set** — what the plan asked, what was done, and the step that set
+earned on its own — and the lifter chooses a direction per row, **committed by one *Done***; *Not now*
+or a dismiss writes nothing, and a failed write reports the error, keeps the rows up and finishes
+nothing. Today the rule is exercise-wide twice over: earning needs **every** prescribed working set met,
+and the step always lands on the **last** working set, so the dialog names no set and cannot move a
+back-off set differently from a top set (N50). **Earning becomes independent per set** — a set performed
+with its reps met at or under the exercise's one target RPE (N59) earns its own step whatever its
+siblings did — and **two bulk actions** (*raise every earned set's load*, *…reps*) cover the plan whose
+sets share a target while a row stays individually changeable. The prompt is **frozen when *Done* is
+tapped** and held as view-model state: a written target would otherwise re-arm the same offer on the
+next read, and a selection is not a write. Unchanged: the RPE target stays one number for the exercise
+(N59), the earning predicate and the warm-up exclusion (N17, N20, N22), the unit's own step (N64), and
+that only what the lifter chose is written. **No migration and no backup-format change** — a planned
+set's weight, assistance and rep targets are already its own columns. DECISIONS' N50 bullet is amended
+where it fixes the exercise-wide rule, with the argument for this id beside it as N74's evidence.
+
+A candidate graduates to this section — gaining an id and a spelled-out decision rather than a wish —
+when it is picked up, so what stands here is committed work; the two queues below are where the rest
+lives, *Later* for what is self-contained and *Parked* for what is a product in its own right.
 
 ## Later (still self-contained)
 
