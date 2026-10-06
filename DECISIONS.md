@@ -852,3 +852,16 @@ stop being true:
 - v1.1 installed over v1.0 and kept the history — dated, and now historical. Every schema step
   since is covered by the instrumented migration tests, which upgrade a real database holding
   real rows; the next manual upgrade check belongs here with the two versions it compared.
+- The three-way muscle split reaches a fresh install's pickers (N75): the readiness note offers
+  *Adductors* and has no *Back*, and the library reads *Lats* for a pull-up and *Upper back* for
+  a row. The migration that moves an existing library is the instrumented suite's job; a fresh
+  seed proves only the list.
+- An exercise's own weight step reaches a live workout (N77): with a 5 kg step on the Assisted
+  Pull-Up, the weight field's **+** took it from 20 to 25 — the 2.5 kg the unit alone would have
+  given was not used. The detail screen showed *Unit default (2.5 kg)* before the edit and
+  *5 kg (this exercise)* after, which is the read-back that proves the column was written.
+- The plans are reachable mid-workout (N78): from an **empty** session the overflow held
+  *Templates* and *Programs* and no *Discard*, the templates list's *Start* was disabled with
+  "Finish the workout you are in to start this one." under the row, and Home still showed both
+  links above *Resume workout*.
+- The *Done* action sits at the rating row's height once a set is logged (N76).
