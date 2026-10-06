@@ -40,9 +40,10 @@ and is order-only, and more than one active program, which P3.12 allowed.
 
 ### Nothing waiting
 
-The one request that stood here — an exercise's own default weight change — graduated to *Next* as
-N77, with its decision spelled out rather than deferred. The queue is empty rather than closed: it is
-where a candidate waits as a wish until it is picked up, and picking one up is what gives it an id.
+The queue is empty rather than closed: it is where a candidate waits as a wish until it is picked
+up, and picking one up is what gives it an id and a spelled-out decision. The last request that
+stood here — an exercise's own weight change — became N77 that way and has shipped, with its entry
+in [CHANGELOG.md](CHANGELOG.md).
 
 ## Parked — deliberately not planned
 

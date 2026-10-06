@@ -21,10 +21,13 @@ repeated here.
   the picker's search — because they are one vocabulary rather than a sore-only list beside a taxonomy.
   The retired *Back* is **not offered any more, and still readable**: every muscle is stored by name, so
   a row that carries it (a custom exercise, a note written before the split) keeps saying *Back* rather
-  than failing to load, and a backup file written before this still restores. The **seeded library is
-  moved by a migration**, since the seed only ever adds: the vertical pulls become lats, the rows upper
-  back, and the deadlifts **hamstrings** with lower back as their secondary — the erectors holding a
-  heavy hinge. An exercise you re-classified yourself is left exactly as you left it.
+  than failing to load, and a backup file written before this still restores. The other direction is
+  **refused rather than misread**: the split adds muscle names an older build cannot decode, so an
+  export taken from this build is rejected by 1.14 with the message that the file is newer — which is
+  why the backup format's own version moved, for the first time. The **seeded library is moved by a
+  migration**, since the seed only ever adds: the vertical pulls become lats, the rows upper back,
+  and the deadlifts **hamstrings** with lower back as their secondary — the erectors holding a heavy
+  hinge. An exercise you re-classified yourself is left exactly as you left it.
 - **An exercise can name the step its weights move by** (N77). The ± buttons moved by one pair of
   constants — 2.5 kg, or 5 lb — so a leg press that jumps 5 kg, or a stack that jumps 1, was always
   edited against a step it did not have. An exercise's own step (typed in its own unit to a tenth,
