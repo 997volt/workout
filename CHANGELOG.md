@@ -12,6 +12,8 @@ repeated here.
 
 ## [Unreleased]
 
+## [1.15] — 2026-10-06 (versionCode 16)
+
 ### Added
 
 - **Drop and cluster sets progress as one group** (N79). A drop set and a cluster set are one shape — a
