@@ -237,6 +237,12 @@ data class TemplateSetDraft(
     val repsMaxText: String = "",
     /** The plan's legacy per-set target RPE, passed through unchanged, or null (N59). */
     val targetRpeHalves: Int? = null,
+    /**
+     * Where in the range the lifter has climbed, passed through and clamped (ROADMAP N74).
+     *
+     * Not edited here: the range is what the lifter authors, and this only follows it.
+     */
+    val targetRepsCurrent: Int? = null,
     val note: String = "",
     /** The unit this target is typed and shown in (ROADMAP N64). */
     val unit: WeightUnit = WeightUnit.KILOGRAMS,
@@ -252,6 +258,7 @@ data class TemplateSetDraft(
         repsMinText = edit.targetRepsMin?.toString().orEmpty(),
         repsMaxText = edit.targetRepsMax?.toString().orEmpty(),
         targetRpeHalves = edit.targetRpeHalves,
+        targetRepsCurrent = edit.targetRepsCurrent,
         note = edit.note.orEmpty(),
     )
 
@@ -284,11 +291,31 @@ data class TemplateSetDraft(
         targetAssistanceGrams = assistanceGrams?.takeIf { it > 0L },
         targetRepsMin = repsMin,
         targetRepsMax = repsMax,
+        targetRepsCurrent = currentRepsWithinRange(),
         // A warm-up carries no effort, whatever the draft still held from before the role changed
         // (ROADMAP N67) — the rule the logged set's own write boundary holds, for the plan side.
         targetRpeHalves = targetRpeHalves.takeIf { role.recordsEffort },
         note = note.trim().ifEmpty { null },
     )
+
+    /**
+     * The current rep target the save carries (ROADMAP N74).
+     *
+     * The range is what the editor edits and this only follows it: a target that has been climbed to
+     * is clamped into the range on screen, so narrowing the range is the one edit that moves it and
+     * widening it leaves the climb where it was. A set that has never been progressed carries nothing
+     * — null already means "the range's floor", and materializing it here would write a number on
+     * every edit of the note or the load.
+     */
+    private fun currentRepsWithinRange(): Int? {
+        val min = repsMin
+        val max = repsMax
+        // A set that names no reps, or has never been progressed, carries nothing: null already means
+        // "the range's floor", so materializing one here would write a number on every edit of the
+        // note or the load.
+        val stored = targetRepsCurrent?.takeIf { min != null || max != null }
+        return stored?.coerceAtLeast(min ?: 1)?.coerceAtMost(max ?: Int.MAX_VALUE)
+    }
 }
 
 @Composable

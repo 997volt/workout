@@ -1341,6 +1341,8 @@ private fun TemplateSet.toProgressionSet(rpeTarget: Int?): ProgressionPlanSet = 
     targetAssistanceGrams = targetAssistanceGrams,
     targetRepsMin = targetRepsMin,
     targetRepsMax = targetRepsMax,
+    // Where in the range the lifter has climbed (N74): the number the rule measures and a step moves.
+    targetRepsCurrent = targetRepsCurrent,
     targetRpeHalves = rpeTarget ?: targetRpeHalves,
     note = note,
     legacyRpeHalves = targetRpeHalves,
@@ -1367,6 +1369,9 @@ private fun ProgressionPlanSet.toTemplateEdit(): TemplateSetEdit = TemplateSetEd
     targetAssistanceGrams = targetAssistanceGrams,
     targetRepsMin = targetRepsMin,
     targetRepsMax = targetRepsMax,
+    // The lifter's place in the range travels with the write (N74), or the step would be lost and
+    // the next session would ask for the floor again.
+    targetRepsCurrent = targetRepsCurrent,
     // The set's **own** legacy value, not the exercise's number the rule read: copying the latter
     // into a column the reader falls back to is what made a cleared plan's RPE come back (N59).
     targetRpeHalves = legacyRpeHalves,

@@ -792,6 +792,34 @@ val MIGRATION_30_31 = object : Migration(30, 31) {
 private const val ADD_EXERCISE_WEIGHT_UNIT =
     "ALTER TABLE `exercises` ADD COLUMN `weightUnit` TEXT"
 
+/**
+ * A planned set remembers where in its rep range the lifter has climbed (ROADMAP N74).
+ *
+ * The two bounds a plan was authored with are a *range* now, which progression never edits, so the
+ * number the session is asked for has to live somewhere of its own. It is backfilled to the range's
+ * floor — `from` where the plan wrote one, its `to` otherwise — because that is where a lifter
+ * restarts after a weight step, and a ranged plan's first session under this rule asks for the bottom
+ * of its range rather than its top.
+ *
+ * A plan that names no reps at all keeps the column null: there is no range to be inside.
+ *
+ * The migration test seeds a ranged set and a set with no reps, upgrades, and asserts the floor and
+ * the null, validated against the exported `32.json`.
+ */
+val MIGRATION_31_32 = object : Migration(31, 32) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(ADD_TEMPLATE_SET_CURRENT_REPS)
+        db.execSQL(SEED_TEMPLATE_SET_CURRENT_REPS)
+    }
+}
+
+private const val ADD_TEMPLATE_SET_CURRENT_REPS =
+    "ALTER TABLE `template_sets` ADD COLUMN `targetRepsCurrent` INTEGER"
+
+/** The range's floor, or its ceiling where the plan wrote no floor: where the climb starts. */
+private const val SEED_TEMPLATE_SET_CURRENT_REPS =
+    "UPDATE `template_sets` SET `targetRepsCurrent` = COALESCE(`targetRepsMin`, `targetRepsMax`)"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -933,4 +961,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_28_29,
     MIGRATION_29_30,
     MIGRATION_30_31,
+    MIGRATION_31_32,
 )

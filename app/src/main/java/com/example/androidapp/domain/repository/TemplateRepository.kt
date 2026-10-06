@@ -130,6 +130,14 @@ data class TemplateSetEdit(
     val targetAssistanceGrams: Long? = null,
     val targetRepsMin: Int? = null,
     val targetRepsMax: Int? = null,
+    /**
+     * Where in the range the lifter has climbed, or null (ROADMAP N74).
+     *
+     * The two ends above are the range the plan was authored with; this is the number the session is
+     * asked for, and the one progression moves. A weight step on a real range writes it back to
+     * [targetRepsMin]. Null means "the floor where the plan wrote one, its ceiling otherwise".
+     */
+    val targetRepsCurrent: Int? = null,
     val targetRpeHalves: Int? = null,
     val note: String? = null,
 )

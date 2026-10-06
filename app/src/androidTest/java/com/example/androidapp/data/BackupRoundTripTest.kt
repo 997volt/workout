@@ -320,6 +320,7 @@ class BackupRoundTripTest {
                 targetAssistanceGrams = 20_000L,
                 targetRepsMin = 1,
                 targetRepsMax = 2,
+                targetRepsCurrent = 1,
                 targetRpeHalves = 18,
                 note = "grind",
                 createdAt = 1_000L,

@@ -684,7 +684,7 @@ class ActiveWorkoutViewModelTest {
 
         val written = templates.updates.single()
         assertEquals("the set's own legacy value, not the exercise's 9.0", 6, written.second.targetRpeHalves)
-        assertEquals(6, written.second.targetRepsMax)
+        assertEquals("the step moves where the lifter is in the range (N74)", 6, written.second.targetRepsCurrent)
     }
 
     @Test

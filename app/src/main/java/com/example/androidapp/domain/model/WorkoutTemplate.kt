@@ -82,6 +82,14 @@ data class TemplateSet(
     /** The target reps: both ends nullable, since a plan may write only an upper bound. */
     val targetRepsMin: Int? = null,
     val targetRepsMax: Int? = null,
+    /**
+     * Where in the range the lifter has climbed, or null (ROADMAP N74).
+     *
+     * The two ends above are the range the plan was authored with, and progression never moves them;
+     * this is the number the session is asked for. Null means "the range's floor where it wrote one,
+     * its ceiling otherwise" — which is what every plan written before this column existed means.
+     */
+    val targetRepsCurrent: Int? = null,
     val targetRpeHalves: Int? = null,
     val note: String? = null,
 )

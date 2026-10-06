@@ -194,6 +194,7 @@ class RoomTemplateRepository @Inject constructor(
                         targetAssistanceGrams = edit.targetAssistanceGrams,
                         targetRepsMin = edit.targetRepsMin,
                         targetRepsMax = edit.targetRepsMax,
+                        targetRepsCurrent = edit.targetRepsCurrent,
                         targetRpeHalves = edit.effortOrNull,
                         note = edit.note,
                         createdAt = now,
@@ -225,6 +226,7 @@ class RoomTemplateRepository @Inject constructor(
                 targetAssistanceGrams = edit.targetAssistanceGrams,
                 targetRepsMin = edit.targetRepsMin,
                 targetRepsMax = edit.targetRepsMax,
+                targetRepsCurrent = edit.targetRepsCurrent,
                 targetRpeHalves = edit.effortOrNull,
                 note = edit.note?.trim()?.ifEmpty { null },
                 createdAt = now,
@@ -246,6 +248,7 @@ class RoomTemplateRepository @Inject constructor(
                     targetAssistanceGrams = edit.targetAssistanceGrams,
                     targetRepsMin = edit.targetRepsMin,
                     targetRepsMax = edit.targetRepsMax,
+                    targetRepsCurrent = edit.targetRepsCurrent,
                     targetRpeHalves = edit.effortOrNull,
                     note = edit.note?.trim()?.ifEmpty { null },
                     updatedAt = timeSource.nowEpochMillis(),
@@ -360,6 +363,8 @@ class RoomTemplateRepository @Inject constructor(
         val problem = when {
             edit.targetRepsMin != null && edit.targetRepsMin < 1 -> "Target reps must be at least 1."
             edit.targetRepsMax != null && edit.targetRepsMax < 1 -> "Target reps must be at least 1."
+            edit.targetRepsCurrent != null && edit.targetRepsCurrent < 1 ->
+                "The reps the session asks for must be at least 1."
             edit.targetRepsMin != null && edit.targetRepsMax != null &&
                 edit.targetRepsMin > edit.targetRepsMax ->
                 "The low end of a rep range cannot exceed the high end."
@@ -448,6 +453,9 @@ private suspend fun copyExerciseInto(
                 targetAssistanceGrams = set.assistanceGrams.takeIf { it > 0L },
                 targetRepsMin = set.reps,
                 targetRepsMax = set.reps,
+                // A copied set is one number, so the range's floor and its current target are that
+                // same number — the shape a plan written by hand for "3 sets of 5" has (N74).
+                targetRepsCurrent = set.reps,
                 // A copied warm-up carries no effort, the rule the set itself already holds (N67).
                 targetRpeHalves = set.rpeHalves.takeIf { set.setType.recordsEffort },
                 note = set.note,

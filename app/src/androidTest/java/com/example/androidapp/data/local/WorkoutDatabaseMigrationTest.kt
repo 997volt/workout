@@ -1573,4 +1573,68 @@ class WorkoutDatabaseMigrationTest {
         }
         migrated.close()
     }
+
+    @Test
+    fun migration31To32_seedsTheClimbAtTheRangesFloor_andLeavesTheRangeAlone() {
+        // ROADMAP N74: a plan's two rep bounds become a range progression never edits, so the number
+        // the session asks for moves into a column of its own. It arrives at the range's floor — the
+        // bottom of "5 to 8" — because that is where the lifter restarts after a weight step, and it
+        // is what a ranged plan's first session under the rule asks for. A set that wrote no reps
+        // keeps nothing, and the bounds themselves are untouched.
+        helper.createDatabase(TEST_DB, 31).apply {
+            execSQL(
+                """
+                INSERT INTO templates (id, name, createdAt, updatedAt)
+                VALUES ('t1', 'Legs', 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO template_exercises (id, templateId, exerciseId, position, createdAt, updatedAt)
+                VALUES ('te1', 't1', 'back-squat', 0, 1, 1)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO template_sets
+                    (id, templateExerciseId, setIndex, role, targetWeightGrams, targetAssistanceGrams,
+                     targetRepsMin, targetRepsMax, targetRpeHalves, note, createdAt, updatedAt)
+                VALUES ('ranged', 'te1', 0, 'NORMAL', 100000, NULL, 5, 8, 16, 'belt on', 1, 1),
+                       ('floor-only', 'te1', 1, 'NORMAL', 80000, NULL, 5, NULL, NULL, NULL, 1, 1),
+                       ('ceiling-only', 'te1', 2, 'NORMAL', 60000, NULL, NULL, 8, NULL, NULL, 1, 1),
+                       ('no-reps', 'te1', 3, 'WARMUP', 40000, NULL, NULL, NULL, NULL, NULL, 1, 1)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 32, true, MIGRATION_31_32)
+
+        migrated.query(
+            "SELECT id, targetRepsMin, targetRepsMax, targetRepsCurrent, note FROM template_sets " +
+                "ORDER BY setIndex",
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("ranged", cursor.getString(0))
+            assertEquals("the floor is where the climb starts", 5, cursor.getInt(3))
+            assertEquals("and the range itself is untouched", 5, cursor.getInt(1))
+            assertEquals(8, cursor.getInt(2))
+            assertEquals("the rest of the row came across", "belt on", cursor.getString(4))
+
+            assertTrue(cursor.moveToNext())
+            assertEquals("floor-only", cursor.getString(0))
+            assertEquals("a plan with only a floor starts there", 5, cursor.getInt(3))
+            assertTrue(cursor.isNull(cursor.getColumnIndexOrThrow("targetRepsMax")))
+
+            assertTrue(cursor.moveToNext())
+            assertEquals("ceiling-only", cursor.getString(0))
+            assertEquals("with no floor, its ceiling is the start", 8, cursor.getInt(3))
+
+            assertTrue(cursor.moveToNext())
+            assertEquals("no-reps", cursor.getString(0))
+            assertTrue("a set that names no reps has no place to be", cursor.isNull(3))
+        }
+
+        migrated.close()
+    }
 }

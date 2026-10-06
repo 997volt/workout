@@ -255,6 +255,7 @@ internal fun TemplateSetEntity.toDto() = TemplateSetDto(
     targetAssistanceGrams = targetAssistanceGrams,
     targetRepsMin = targetRepsMin,
     targetRepsMax = targetRepsMax,
+    targetRepsCurrent = targetRepsCurrent,
     targetRpeHalves = targetRpeHalves,
     note = note,
     createdAt = createdAt,
@@ -271,6 +272,7 @@ internal fun TemplateSetDto.toEntity() = TemplateSetEntity(
     targetAssistanceGrams = targetAssistanceGrams,
     targetRepsMin = targetRepsMin,
     targetRepsMax = targetRepsMax,
+    targetRepsCurrent = targetRepsCurrent,
     // A pre-half-step plan target carries whole numbers; 7 is 7.0, 14 halves. A planned warm-up
     // carries no effort (ROADMAP N67), the same rule the editor and the write path hold.
     targetRpeHalves = if (role.recordsEffort) {

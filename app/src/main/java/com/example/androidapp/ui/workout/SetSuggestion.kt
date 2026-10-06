@@ -124,9 +124,10 @@ fun plannedTargetFor(
     ?.sets
     ?.firstOrNull { it.setIndex == nextIndex }
     ?.let { set ->
-        // The upper bound is the one a written plan means (`max 2`).
+        // The number the lifter has climbed to, or the range's floor where progression has not moved
+        // it yet (ROADMAP N74) — the upper bound is only what a plan that wrote no floor means.
         PlannedTarget(
-            reps = set.targetRepsMax ?: set.targetRepsMin,
+            reps = set.targetRepsCurrent ?: set.targetRepsMin ?: set.targetRepsMax,
             weightGrams = set.targetWeightGrams,
             assistanceGrams = set.targetAssistanceGrams,
             // A planned set's role travels with its targets, so the ramp is armed, not retyped (B48).

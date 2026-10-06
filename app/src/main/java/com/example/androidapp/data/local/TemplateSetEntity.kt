@@ -48,6 +48,13 @@ data class TemplateSetEntity(
      */
     val targetRepsMin: Int?,
     val targetRepsMax: Int?,
+    /**
+     * Where in the range the lifter has climbed, or null (ROADMAP N74).
+     *
+     * The range itself is never moved by progression, so this is a third number rather than a
+     * reinterpretation of the two above. Backfilled to the range's floor by migration 31→32.
+     */
+    val targetRepsCurrent: Int?,
     val targetRpeHalves: Int?,
     val note: String?,
     val createdAt: Long,

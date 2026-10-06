@@ -346,6 +346,8 @@ data class TemplateSetDto(
     val targetAssistanceGrams: Long? = null,
     val targetRepsMin: Int? = null,
     val targetRepsMax: Int? = null,
+    /** Where in the range the lifter has climbed, or null (ROADMAP N74). */
+    val targetRepsCurrent: Int? = null,
     val targetRpeHalves: Int? = null,
     /** The plan target's pre-half-step whole-number RPE, read only (ROADMAP N6). */
     val targetRpe: Int? = null,

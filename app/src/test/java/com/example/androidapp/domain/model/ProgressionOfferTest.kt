@@ -265,26 +265,32 @@ class ProgressionOfferTest {
     }
 
     @Test
-    fun acceptingTheRep_raisesTheCeiling() {
+    fun acceptingTheRep_movesTheCurrentTarget_insideTheRange() {
+        // ROADMAP N74: the range is what the plan was authored with, and progression never edits it.
+        // What a rep step moves is the lifter's place inside it.
         val offer = progressionOfferFor(listOf(planSet(repsMin = 5, repsMax = 8)), listOf(done(reps = 8)))!!
 
         val accepted = offer.accepted(ProgressionDirection.REPS)
 
-        assertThat(accepted!!.targetRepsMax).isEqualTo(9)
-        assertWithMessage("the floor is what the range starts at, not what a step moves")
+        assertThat(accepted!!.targetRepsCurrent).isEqualTo(6)
+        assertWithMessage("the floor is the range's own, not what a step moves")
             .that(accepted.targetRepsMin)
             .isEqualTo(5)
+        assertWithMessage("and neither is the ceiling")
+            .that(accepted.targetRepsMax)
+            .isEqualTo(8)
     }
 
     @Test
-    fun acceptingTheRep_raisesTheFloor_whenThatIsAllThePlanWrote() {
-        // An AMRAP-ish "at least five" has no ceiling to raise, so the number the plan means is the
-        // floor, and that is what the step moves.
+    fun acceptingTheRep_movesTheTarget_aPlanWithNoCeilingStillHas() {
+        // An AMRAP-ish "at least five" wrote no ceiling, so the step moves the number the session
+        // asks for while the floor stays where the plan wrote it (N74).
         val offer = progressionOfferFor(listOf(planSet(repsMin = 5, repsMax = null)), listOf(done()))!!
 
         val accepted = offer.accepted(ProgressionDirection.REPS)
 
-        assertThat(accepted!!.targetRepsMin).isEqualTo(6)
+        assertThat(accepted!!.targetRepsCurrent).isEqualTo(6)
+        assertThat(accepted.targetRepsMin).isEqualTo(5)
         assertThat(accepted.targetRepsMax).isNull()
     }
 

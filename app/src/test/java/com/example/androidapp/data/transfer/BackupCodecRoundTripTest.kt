@@ -147,6 +147,7 @@ class BackupCodecRoundTripTest {
             targetAssistanceGrams = 15_000L,
             targetRepsMin = 2,
             targetRepsMax = 4,
+            targetRepsCurrent = 3,
             targetRpeHalves = 19,
             note = "leave one in the tank",
             createdAt = 1_600_000_000_000L,

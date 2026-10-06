@@ -40,6 +40,8 @@ data class ProgressionPlanSet(
     val targetAssistanceGrams: Long? = null,
     val targetRepsMin: Int? = null,
     val targetRepsMax: Int? = null,
+    /** Where in the range the lifter has climbed, or null (ROADMAP N74). */
+    val targetRepsCurrent: Int? = null,
     val targetRpeHalves: Int? = null,
     val note: String? = null,
     /**
@@ -54,11 +56,11 @@ data class ProgressionPlanSet(
     val legacyRpeHalves: Int? = null,
 ) {
     /**
-     * The reps this set asks for: **the ceiling a written plan means**, falling back to the floor
-     * when that is all it wrote — the reading `plannedTargetFor` and `prescribedTargetFor` already
-     * use, so the prompt and the rule agree about what "5–8" asks for.
+     * The reps this set asks for: the number the lifter has climbed to, falling back to the range's
+     * floor and then its ceiling — the reading `plannedTargetFor` and `prescribedTargetFor` share, so
+     * the prompt and the rule agree about what "5–8" asks for once progression has moved it (N74).
      */
-    val targetReps: Int? get() = targetRepsMax ?: targetRepsMin
+    val targetReps: Int? get() = targetRepsCurrent ?: targetRepsMin ?: targetRepsMax
 }
 
 /** One performed set, reduced to what progression reads (N50). Warm-ups are dropped by the rule. */
@@ -101,15 +103,13 @@ data class ProgressionOffer(
      * The set as accepting [direction] would leave the plan, or null when that direction is not
      * offered.
      *
-     * A rep raises the ceiling where the plan wrote one and the floor where that is all it wrote —
-     * N22's "add reps to the plan's rep ceiling", applied to whichever number the plan means.
+     * The step moves the **current rep target** and never the range's two ends (N74): those are what
+     * the plan was authored with, so raising the ceiling past them — which is what this did — grew the
+     * prescription rather than the lifter's place inside it.
      */
     fun accepted(direction: ProgressionDirection): ProgressionPlanSet? = when (direction) {
         ProgressionDirection.LOAD -> load?.let { set.copy(targetWeightGrams = it.to) }
-        ProgressionDirection.REPS -> when (set.targetRepsMax) {
-            null -> set.copy(targetRepsMin = reps.to)
-            else -> set.copy(targetRepsMax = reps.to)
-        }
+        ProgressionDirection.REPS -> set.copy(targetRepsCurrent = reps.to)
     }
 }
 
