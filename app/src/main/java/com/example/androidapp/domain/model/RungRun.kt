@@ -101,3 +101,29 @@ fun List<TemplateSet>.rungWeightAt(index: Int, anchorLoad: Load? = null): Long? 
         rungLoad(load, this[index].role, run)?.weightGrams
     }
 }
+
+/**
+ * Whether the set at [index] is followed by another rung of its own run (ROADMAP N79).
+ *
+ * The rest belongs to the group rather than to each set, so it waits for the run to close: an anchor
+ * whose next row is its first rung has not finished the group, and each rung but the last has one after
+ * it. A set with no run after it — the ordinary case — carries on to nothing and rests as it always has.
+ */
+fun List<TemplateSet>.continuesItsRunAt(index: Int): Boolean {
+    val mine = getOrNull(index)
+    val next = getOrNull(index + 1)
+    return when {
+        mine == null || next == null -> false
+        mine.role.isRung -> next.role == mine.role
+        else -> next.role.isRung && runAt(index + 1)?.anchorIndex == index
+    }
+}
+
+/**
+ * The set indexes whose run carries on into the next planned row (ROADMAP N79).
+ *
+ * Precomputed where the plan is in hand, because the rest is decided while a set is being logged and
+ * that path has the row rather than the plan.
+ */
+fun List<TemplateSet>.runContinuesAfter(): Set<Int> =
+    indices.filter { continuesItsRunAt(it) }.map { this[it].setIndex }.toSet()

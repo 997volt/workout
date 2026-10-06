@@ -7,6 +7,7 @@ import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -262,5 +263,110 @@ class SetSuggestionTest {
                 targetRpeHalves = setRpe,
             ),
         ),
+    )
+
+    @Test
+    fun aDropRung_isTheAnchorLessTheValue_andItsRepsComeFromTheSameSetLastTime() {
+        // ROADMAP N79: a rung carries no target of its own. Its load is the anchor's — the bar that was
+        // actually loaded, not the plan's number for it — less the run's value, and its reps come from
+        // what this same set did in the previous training rather than from the set just done.
+        val sets = droppingPlan()
+        val anchor = logged(weightGrams = 105_000L, reps = 5)
+
+        val suggestion = suggestionForNextSet(
+            loggedSets = listOf(anchor),
+            previous = PreviousPerformance(sets = listOf(previousSet(setIndex = 1, reps = 10))),
+            planned = plannedTargetFor(sets, nextIndex = 1, anchorLoad = Load(105_000L, 0L)),
+            sameSetLastTime = previousSet(setIndex = 1, reps = 10),
+        )
+
+        assertEquals(
+            "105 loaded, 20 off, and not the plan's 100",
+            85_000L,
+            suggestion.weightGrams,
+        )
+        assertEquals("last time's ten, not the anchor's five", 10, suggestion.reps)
+        assertEquals(SetType.DROP, suggestion.setType)
+    }
+
+    @Test
+    fun aDropRungNeverPerformed_fallsBackToWhatWasJustDone() {
+        val sets = droppingPlan()
+
+        val suggestion = suggestionForNextSet(
+            loggedSets = listOf(logged(weightGrams = 100_000L, reps = 5)),
+            previous = null,
+            planned = plannedTargetFor(sets, nextIndex = 1, anchorLoad = Load(100_000L, 0L)),
+            sameSetLastTime = null,
+        )
+
+        assertEquals(80_000L, suggestion.weightGrams)
+        assertEquals("nothing to copy, so the set just done answers", 5, suggestion.reps)
+    }
+
+    @Test
+    fun aClusterRung_repeatsTheAnchorsLoad_ratherThanTakingAnythingOff() {
+        val sets = TemplateExercise(
+            id = "te1",
+            templateId = "t1",
+            exerciseId = "back-squat",
+            position = 0,
+            exerciseName = "Back Squat",
+            primaryMuscle = MuscleGroup.QUADS,
+            equipment = Equipment.BARBELL,
+            sets = listOf(
+                TemplateSet(id = "ts1", templateExerciseId = "te1", setIndex = 0, targetWeightGrams = 100_000L),
+                TemplateSet(id = "ts2", templateExerciseId = "te1", setIndex = 1, role = SetType.CLUSTER),
+            ),
+        )
+
+        val planned = plannedTargetFor(sets, nextIndex = 1, anchorLoad = Load(100_000L, 0L))
+
+        assertEquals(100_000L, planned?.weightGrams)
+        assertNull("and no reps of its own: the group's is the anchor's", planned?.reps)
+        assertEquals(SetType.CLUSTER, planned?.role)
+    }
+
+    /** A working set at 100 with one 20 kg drop after it, as the plan stores it (N79). */
+    private fun droppingPlan() = TemplateExercise(
+        id = "te1",
+        templateId = "t1",
+        exerciseId = "back-squat",
+        position = 0,
+        exerciseName = "Back Squat",
+        primaryMuscle = MuscleGroup.QUADS,
+        equipment = Equipment.BARBELL,
+        sets = listOf(
+            TemplateSet(
+                id = "ts1",
+                templateExerciseId = "te1",
+                setIndex = 0,
+                targetWeightGrams = 100_000L,
+                targetRepsMax = 5,
+            ),
+            TemplateSet(
+                id = "ts2",
+                templateExerciseId = "te1",
+                setIndex = 1,
+                role = SetType.DROP,
+                dropValueGrams = 20_000L,
+            ),
+        ),
+    )
+
+    private fun logged(weightGrams: Long, reps: Int) = SetRow(
+        id = "set1",
+        number = 1,
+        reps = reps,
+        weightGrams = weightGrams,
+    )
+
+    private fun previousSet(setIndex: Int, reps: Int) = SetEntry(
+        id = "prev$setIndex",
+        sessionExerciseId = "se1",
+        setIndex = setIndex,
+        reps = reps,
+        weightGrams = 60_000L,
+        setType = SetType.DROP,
     )
 }

@@ -1,5 +1,7 @@
 package com.example.androidapp.ui.workout
 
+import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.rungWeightAt
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
@@ -73,6 +75,15 @@ fun suggestionForNextSet(
     loggedSets: List<SetRow>,
     previous: PreviousPerformance?,
     planned: PlannedTarget? = null,
+    /**
+     * What **this same set** did in the previous training, or null (ROADMAP N79).
+     *
+     * Read only for a rung. A rung carries no rep target of its own — the group's is the anchor's — so
+     * "what you just did" would answer with the anchor's reps, and for a drop that is the wrong number
+     * entirely: last time's 60 kg rung at 10 reps is a better guess for this one than the 5 the bar
+     * above it just did. Null where the set has never been performed, which leaves the old fallback.
+     */
+    sameSetLastTime: SetEntry? = null,
 ): SetSuggestion {
     // "What you just did" beats "what you did last time": within a session the set before is the best
     // evidence there is.
@@ -95,9 +106,13 @@ fun suggestionForNextSet(
     // signed weight was rejected for (ROADMAP N15).
     val plannedLoad = planned?.let { plannedLoadFor(it) }
 
+    // A rung has no target to answer to, so its reps come from the same set's last performance where
+    // there is one, and from what was just done where there is not (ROADMAP N79).
+    val rungReps = if (planned?.role?.isRung == true) sameSetLastTime?.reps else null
+
     return SetSuggestion(
         // The upper bound is the one that matters in a written plan (`max 2`).
-        reps = planned?.reps ?: prefill.reps,
+        reps = planned?.reps ?: rungReps ?: prefill.reps,
         weightGrams = plannedLoad?.weightGrams ?: prefill.weightGrams,
         assistanceGrams = plannedLoad?.assistanceGrams ?: prefill.assistanceGrams,
         // The armed role follows the plan, so a template's ramp is recorded as warm-ups without a
@@ -120,13 +135,33 @@ fun suggestionForNextSet(
 fun plannedTargetFor(
     planned: TemplateExercise?,
     nextIndex: Int,
-): PlannedTarget? = planned
-    ?.sets
-    ?.firstOrNull { it.setIndex == nextIndex }
-    ?.let { set ->
-        // The number the lifter has climbed to, or the range's floor where progression has not moved
-        // it yet (ROADMAP N74) — the upper bound is only what a plan that wrote no floor means.
+    /**
+     * What this set's *anchor* actually loaded, or null (ROADMAP N79).
+     *
+     * A drop is taken off the bar in front of you, so a rung's load is derived from what the anchor did
+     * in this session rather than from the plan's number for it — which is also why this is a parameter
+     * here: the plan alone cannot answer it.
+     */
+    anchorLoad: Load? = null,
+): PlannedTarget? {
+    val sets = planned?.sets.orEmpty()
+    val index = sets.indexOfFirst { it.setIndex == nextIndex }
+    val set = sets.getOrNull(index) ?: return null
+
+    // A rung carries no targets of its own (ROADMAP N79): its load is derived, and its reps are the
+    // caller's business — the same set's last performance — so both are answered as absent here.
+    return if (set.role.isRung) {
         PlannedTarget(
+            reps = null,
+            weightGrams = sets.rungWeightAt(index, anchorLoad),
+            assistanceGrams = null,
+            role = set.role,
+            rpeHalves = null,
+        )
+    } else {
+        PlannedTarget(
+            // The number the lifter has climbed to, or the range's floor where progression has not moved
+            // it yet (ROADMAP N74) — the upper bound is only what a plan that wrote no floor means.
             reps = set.targetRepsCurrent ?: set.targetRepsMin ?: set.targetRepsMax,
             weightGrams = set.targetWeightGrams,
             assistanceGrams = set.targetAssistanceGrams,
@@ -134,9 +169,10 @@ fun plannedTargetFor(
             role = set.role,
             // The exercise's one target RPE is what the stepper opens on (N59); a set's own value is
             // only the fallback for a plan written before the effort moved to the exercise.
-            rpeHalves = planned.targetRpeHalves ?: set.targetRpeHalves,
+            rpeHalves = planned?.targetRpeHalves ?: set.targetRpeHalves,
         )
     }
+}
 
 /** Typical working-set reps when there is nothing to go on. */
 const val DEFAULT_REPS = 8

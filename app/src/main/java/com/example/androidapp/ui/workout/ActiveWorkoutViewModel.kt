@@ -22,12 +22,14 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.runContinuesAfter
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.TemplateSet
@@ -116,6 +118,14 @@ data class SessionExerciseRow(
     val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
     /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
     val stepGrams: Long? = null,
+    /**
+     * The plan's set indexes whose run carries on into the next row (ROADMAP N79).
+     *
+     * The rest is the group's, so it starts after the run's last rung rather than between its rungs —
+     * and the decision is made while a set is being logged, where the plan is no longer in hand. Empty
+     * for a plan with no runs in it, which is every plan before this and most after it.
+     */
+    val runContinuesAfter: Set<Int> = emptySet(),
     /**
      * How many sets the plan behind this workout writes for this exercise, or null when there is no
      * plan (ROADMAP N52).
@@ -803,7 +813,11 @@ class ActiveWorkoutViewModel @Inject constructor(
                 // ROADMAP N24: in a superset the rest belongs to the round, not the set, so
                 // it waits until nothing else in the group is behind. Resting here would
                 // defeat the pairing the user just asked for.
-                if (uiState.value.roundIsCompleteFor(row)) {
+                // And the group's own rest waits for the run to close (N79): a rung has no rest of its
+                // own between it and the next, because the point of a drop or a cluster is that the
+                // sets follow each other.
+                val runContinues = row.sets.size in row.runContinuesAfter
+                if (!runContinues && uiState.value.roundIsCompleteFor(row)) {
                     // The group's own rest wins in a superset, then this exercise's, then the
                     // app setting (ROADMAP N5, N21, B15). Taking the rest from whichever member
                     // happened to close the round made the wait depend on the order the user
@@ -1349,6 +1363,7 @@ private fun SessionExercise.toRow(
         restSeconds = restSeconds,
         weightUnit = plan.unit,
         stepGrams = stepGrams,
+        runContinuesAfter = plan.plannedEntry?.sets?.runContinuesAfter().orEmpty(),
         plannedSetCount = plan.plannedSetCount,
         isFinished = isFinished,
         muscleFeel = muscleFeel,
@@ -1487,8 +1502,29 @@ private fun SessionExercise.suggestionFor(
     loggedSets = loggedSets,
     previous = previous,
     // The template is the plan, whole (ROADMAP N73).
-    planned = plannedTargetFor(plan.plannedEntry, nextIndex = loggedSets.size),
+    planned = plannedTargetFor(
+        planned = plan.plannedEntry,
+        nextIndex = loggedSets.size,
+        // A rung's load comes off the bar the anchor actually loaded (ROADMAP N79).
+        anchorLoad = loggedSets.anchorLoadForTheNextRung(),
+    ),
+    // And a rung's reps come from what this same set did in the previous training, matched by the
+    // set's place in the plan — the only identity a logged row keeps between sessions (N79).
+    sameSetLastTime = previous
+        ?.sets
+        ?.firstOrNull { it.setIndex == loggedSets.size },
 )
+
+/**
+ * What the set the next rung hangs off actually loaded, or null (ROADMAP N79).
+ *
+ * Read from the back of the session's own log and skipping rungs, because a run hangs off a set that
+ * stands on its own: for the second drop of a run the set above it is the first drop, and the anchor is
+ * still the working set before them. It is what a drop is taken off — the bar in front of you, not the
+ * number the plan wrote down.
+ */
+private fun List<SetRow>.anchorLoadForTheNextRung(): Load? =
+    lastOrNull { !it.setType.isRung }?.let { Load(it.weightGrams, it.assistanceGrams) }
 
 /**
  * `A1`, `A2` … for a grouped exercise, or null (ROADMAP N24).

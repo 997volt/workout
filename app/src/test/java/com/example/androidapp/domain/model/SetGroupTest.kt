@@ -2,6 +2,7 @@ package com.example.androidapp.domain.model
 
 import com.example.androidapp.domain.Load
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -137,5 +138,37 @@ class SetGroupTest {
 
         assertEquals(RungRun(0, 1, 10_000L), sets.runAt(1))
         assertEquals(RungRun(2, 1, 25_000L), sets.runAt(3))
+    }
+
+    @Test
+    fun aRunContinuesThroughRungs_butNotPastItsLast() {
+        // The anchor continues into its first rung, each rung into the next, and the last rung into
+        // nothing — which is what tells the rest when the group is over (ROADMAP N79).
+        assertEquals(setOf(2, 3), dropsOnTheLastSet.runContinuesAfter())
+        assertFalse(dropsOnTheLastSet.continuesItsRunAt(4))
+        assertFalse("a set with no run after it carries on to nothing", dropsOnTheLastSet.continuesItsRunAt(1))
+    }
+
+    @Test
+    fun aClusterRun_continuesTheSameWay() {
+        val sets = listOf(
+            set(0),
+            set(1, role = SetType.CLUSTER, weightGrams = null),
+            set(2, role = SetType.CLUSTER, weightGrams = null),
+        )
+
+        assertEquals(setOf(0, 1), sets.runContinuesAfter())
+    }
+
+    @Test
+    fun aDifferentKindOfRung_doesNotContinueTheRun() {
+        // A drop followed by a cluster is two runs, so the drop closes its own (ROADMAP N79).
+        val sets = listOf(
+            set(0),
+            set(1, role = SetType.DROP, weightGrams = null, dropValueGrams = 20_000L),
+            set(2, role = SetType.CLUSTER, weightGrams = null),
+        )
+
+        assertEquals(setOf(0), sets.runContinuesAfter())
     }
 }

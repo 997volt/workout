@@ -2307,6 +2307,50 @@ class ActiveWorkoutViewModelTest {
         settle()
         assertNotNull("now the round is done, so it rests", repository.lastRestSeconds)
     }
+
+    @Test
+    fun aDropRun_restsOnce_afterItsLastRung() = runTest(dispatcher) {
+        // ROADMAP N79: the rest belongs to the group rather than to each set, so it waits for the run to
+        // close — the point of a drop being that the sets follow each other.
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    targetRpeHalves = null,
+                    sets = listOf(
+                        plannedSet(index = 0, reps = 5, weightGrams = 100_000L),
+                        TemplateSet(
+                            id = "ts-1",
+                            templateExerciseId = "te-0",
+                            setIndex = 1,
+                            role = SetType.DROP,
+                            dropValueGrams = 20_000L,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val row = viewModel.uiState.value.exercises.first().id
+
+        // The anchor, whose next planned row is its first drop.
+        repository.lastRestSeconds = null
+        viewModel.onLogSet(row, offeredSet(viewModel))
+        settle()
+        assertNull("no rest between the anchor and its drop", repository.lastRestSeconds)
+
+        // The drop, which closes the run.
+        repository.lastRestSeconds = null
+        viewModel.onLogSet(row, offeredSet(viewModel, setType = SetType.DROP))
+        settle()
+        assertNotNull("and the group's rest after the last rung", repository.lastRestSeconds)
+    }
+
     @Test
     fun anUngroupedExercise_stillRestsAfterEverySet() = runTest(dispatcher) {
         // The old behaviour, stated so N24 cannot quietly change it.
