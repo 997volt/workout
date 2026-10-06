@@ -1093,6 +1093,68 @@ the row says why, rather than the screen being unreachable: the withholding belo
 on the look. Making Templates a tab, or showing the tab bar on the logger, was rejected for N34's
 reason.
 
+## N79
+
+A drop set and a cluster set are the same shape once the app stops treating them as sets of their own:
+a run of sets that hangs off a working set. Naming them apart was the user's decision and it is
+load-bearing rather than cosmetic — **the two progress by different rules**, and a role is what a rule
+hangs on. A drop's load is *derived* (you get 80 by stripping the top set's bar), so a load step on it
+is meaningless and the parent is what progresses; a cluster's rungs carry the parent's load, so they
+move with it and the group's judgement is what decides.
+
+**The value is stored, not the weights.** Keeping a weight per rung was the obvious alternative and it
+fails twice: it drifts from the anchor the moment the anchor is edited or progressed, and "progress all
+of them by the same weight" then needs a multi-row write with nothing to keep the rows honest. Storing
+one value per run makes the ladder a function — 100 with 20 off is 80, then 60 — so accepting a step
+writes one row and no rung can disagree with its anchor. It also settles the prefill: a rung's weight is
+*computed*, which is why it is not "what you did last set" (for a cluster the two coincide; for a drop
+the second rung is 60, not 80), and why it is computed from what the anchor **actually did** — a drop is
+taken off the bar in front of you, so 20 kg off a set loaded 5 kg heavy is 85, not 80. A cumulative
+ladder rather than a fixed rung weight was also the user's call, and it is the shape a lifter strips in.
+
+**Null is the answer wherever the arithmetic cannot be done**, and that is a correctness rule rather
+than defensiveness: this app stores a signed load, so a negative weight is not a small weight but
+assistance (N15). A rung computing to −20 would have become "20 kg of help" — a silently corrupted set —
+so an exhausted ladder, an anchor with no added weight, a run naming no value and a plan that begins
+with a rung all read as *carrying no derived weight*, and the caller falls back to what the row itself
+holds. Legacy reading is the same idea: a `Drop` row written before this keeps its absolute weight, and
+a file that leads with a rung reads it as a plain set, so nothing is invented and nothing fails to load.
+
+**One rating per group** falls out of `recordsEffort` rather than a new rule, which is why it is one
+property with two reasons: a warm-up is preparation, a rung is work that is not rated separately, and
+both answers are "this set does not stand as a performance of its own". The record scan takes the same
+predicate — a rung cannot set a record — while **volume is untouched**, because it already sums every
+set and every rep. A rating already stored on a drop row stays on disk and stops being displayed, the
+shape the other legacy columns have.
+
+**Judged on the first set** is the user's rule for both kinds, and its consequence is recorded rather
+than discovered: **a rung cut short does not hold the group back**. That is coherent precisely because a
+rung has no target of its own to miss — the group's target is the anchor's, and the rungs are what was
+done. I argued for judging a cluster on every rung, on the grounds that a rung carries the same load and
+its reps are a real target; the user overruled it for symmetry with drops, and the trade is written down
+here so the next person does not read it as an oversight.
+
+**The pairing fix is part of this rather than a follow-up.** The Done prompt counted non-warm-up sets by
+position while the prefill counted every logged row, so a drop logged after a working set shifted every
+later pair: the app judged the *second* prescribed set against the drop's ten reps against a five-rep
+ceiling, offered it a heavier weight for it, and accepting wrote that into the plan. That is a wrong
+write, not a wrong label, which is why it ships here. Pairing is now by class — prescribed work sets
+with performed work sets, prescribed rungs with performed rungs, each in order — and the limit that
+remains is named rather than implied: within a class it is still positional, so a **skipped** prescribed
+set shifts the pairs the way an extra one used to. Closing that needs an identity a logged row does not
+carry, and it is its own id if it is wanted.
+
+**Rest needed no field.** The exercise's rest already runs once, and a superset round already suppresses
+it until the round closes, so the run reuses that shape: the anchor does not rest, the run's last rung
+does. A run added live rather than planned still rests after the anchor, which is the honest reading of
+a plan that does not name it, and *Skip rest* is on screen.
+
+Rejected: a percentage of the anchor (a concept this app does not have), a per-rung rating (the group is
+one effort), per-rung rep targets (nothing would measure them), reusing `Drop` for both kinds (they
+progress differently), and treating a cluster as the intra-set meaning the literature usually gives the
+word — the user chose it for a group of separately logged same-weight sets, and inside this app that is
+what it means.
+
 ## Truth, Turbine
 
 New and touched tests assert with Truth, and assert Flow sequences with Turbine.

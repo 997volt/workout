@@ -14,6 +14,25 @@ repeated here.
 
 ### Added
 
+- **Drop and cluster sets progress as one group** (N79). A drop set and a cluster set are one shape — a
+  run of sets hanging off a working set — and the app now says so: **Cluster** joins **Drop** as a *rung*
+  of the set above it, so a run reads as the working set with its rungs under it rather than as N sets
+  that happen to be lighter. **A rung carries no targets of its own**, which is what makes the group
+  work: its load is *derived* — a cluster repeats the anchor's, a drop is the anchor less the run's
+  value, so 100 kg dropping by 20 is **80 then 60** — and its reps open on **what that same set did last
+  time**, because the set just done would answer with the anchor's. The plan therefore stores **one drop
+  value per run**, on the rung that opens it: editing the anchor, or accepting a progression step, moves
+  the whole ladder, and nothing can drift. A rung is **rated once per group** (the rating lives on the
+  set it hangs off, and shows in no field of its own), **cannot set a personal record** while still
+  counting towards volume, is **judged on the group's first set** rather than on numbers that are not its
+  own, and **rests only after the run closes**. Four rules keep it honest where it is authored: a value
+  belongs to a drop and is above zero; a rung needs a working set above it; a run names its value once;
+  and every rung must come out with something to load — an assisted or bodyweight anchor has no 20 kg to
+  take off, and a ladder that would run past zero is refused rather than becoming assistance. **A drop
+  logged on the fly no longer shifts the plan**: the Done question used to judge the next prescribed set
+  against the drop's reps and offer it a heavier weight — which accepting wrote into the plan — and it
+  now pairs prescribed work sets with performed work sets and prescribed rungs with performed rungs.
+
 - **Adductors join the muscles, and Back is now three groups** (N75). *Back* was one muscle for
   everything from a lat pulldown to a deadlift, which is not a distinction anyone trains by: it is
   **Lats**, **Upper back** and **Lower back** now, and **Adductors** joins the legs. Both halves reach

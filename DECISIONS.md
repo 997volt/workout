@@ -93,6 +93,26 @@ the rule; that one argues it.
 - **One role vocabulary for planned and performed sets.** `SetType` gained `TOP_SET`
   rather than a parallel plan enum, so one idea keeps one name; storing enums by name meant
   no row changed.
+- **A drop or a cluster is a group, and its rungs carry no targets of their own** (N79). The two roles
+  are one *shape*: a contiguous run of sets hanging off a working set, which is the run's **anchor**.
+  Adjacency is the parent link — the run is contiguous and its rows share a role — so no column ties a
+  rung to its set, and the model needed none. **What separates the two roles is the load**: a cluster
+  rung repeats the anchor's, assistance included, while a drop rung is the anchor's less the run's
+  value, once per rung, so 100 kg with a 20 kg value is 80 and then 60. That is why the plan stores the
+  **value**, once, on the run's first rung, and not a weight per rung: editing the anchor or accepting a
+  progression step moves the whole ladder, one row is written, and no rung can drift. A rung therefore
+  stores no reps either — the group's target is the anchor's — and its **reps prefill from that same
+  set's last performance in a previous training**, matched by the set's place in the plan, because "what
+  you just did" would answer with the anchor's reps. Four rules make the shape work at the write
+  boundary: a value belongs to a drop and is above zero; **a rung needs an anchor** that stands on its
+  own, so a warm-up cannot anchor a run and a plan cannot begin with one; a run names its value on its
+  first rung and nowhere else; and every rung has to come out with something to load, which is false
+  under an anchor with **no added weight** (an assisted or bodyweight set has no 20 kg to take off) and
+  false once the ladder runs past zero — a **negative weight being assistance in this app, not a small
+  weight** (N15), so a rung that would compute to −20 reads as carrying no
+  derived weight rather than becoming an assisted set. Deleting an anchor takes its rungs with it, so a
+  run cannot be left hanging.
+  ([evidence](DECISIONS-EVIDENCE.md#n79))
 - **A template is living, and a session reads it at the start** (N16). Nothing links a
   session to its plan beyond the route that started it, so editing a plan changes the next
   prefill; writing targets onto the session would freeze them and make "living" false.
@@ -467,6 +487,23 @@ the rule; that one argues it.
   **absent** for a warm-up rather than disabled: a control that cannot write invites a tap that does
   nothing. Migration 28→29 clears the numbers already stored — logged and planned alike — while the
   plan's exercise-level target stays, because it belongs to the exercise's working sets.
+- **A group is rated, judged and rested once** (N79, extending N67). A drop or cluster **rung is work, so
+  it is not excluded from the app the way a warm-up is — but it is not rated on its own**, because the
+  group is one effort: the rating lives on the set the group hangs off, and `recordsEffort` is the one
+  rule that hides the field, nulls the value at every write boundary and keeps it out of a backup. The
+  reason is deliberately **not** N67's, and the two live on one property because they have one answer:
+  a set that records no effort is not a record either, so a rung cannot set a personal record while its
+  work still counts as **volume**, which sums every set and every rep. **The group is judged on its
+  first set** — the plan's reps met and the effort inside the exercise's target, then N74's step applied
+  once, with a rung stating that reason where it earned nothing rather than being measured against
+  numbers that are not its own. A rung cut short therefore does **not** hold the group back: it has no
+  target of its own to miss. **The rest waits for the run to close**, which needs no new field: the
+  exercise's rest runs once after the last rung, the shape a superset round already has. And **the
+  Done question pairs by class rather than by raw position** — prescribed work sets with performed work
+  sets, prescribed rungs with performed rungs — because a drop logged after a working set used to shift
+  every later pair, judging a prescribed set against a lighter drop's reps and offering it a heavier
+  weight that accepting wrote into the plan.
+  ([evidence](DECISIONS-EVIDENCE.md#n79))
 - **The workout's overflow carries the plans, and the templates list withholds the start** (N78). The
   tab bar stays off the logger (N34): a bar under a live set logger invites losing the session, while an
   overflow entry is a deliberate step. So Programs and Templates are reachable from the workout's own
