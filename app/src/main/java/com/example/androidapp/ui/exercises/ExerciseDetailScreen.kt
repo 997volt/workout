@@ -467,8 +467,11 @@ private fun ExerciseEditFields(
             // The retired `BACK` is not an option (N75); a row that carries it still reads as Back.
             options = SELECTABLE_MUSCLE_GROUPS,
             optionLabel = { it.label },
-            testTag = TestTags.EXERCISE_EDIT_MUSCLE,
+            testTag = TestTags.Muscle.FIELD,
             onSelect = { onDraftChange(draft.copy(primaryMuscle = it)) },
+            // Tagged by the enum's name rather than its label, so a test names the group and not the
+            // English word for it (B71).
+            optionTag = { TestTags.Muscle.option(it.name) },
         )
 
         AttributeSelector(
@@ -650,6 +653,15 @@ private fun <T> AttributeSelector(
     testTag: String,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * How each option is tagged, so a test reaches it by identity rather than by its English label
+     * (ROADMAP B71).
+     *
+     * The labels are enum literals today — localization is parked (P5.4) — which is exactly why the
+     * repo's rule is to address controls by a tag: a translated label would silently break a test, and
+     * the choice would read as a missing option.
+     */
+    optionTag: (T) -> String? = { null },
 ) {
     var open by remember { mutableStateOf(false) }
 
@@ -674,12 +686,14 @@ private fun <T> AttributeSelector(
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             options.forEach { option ->
+                val tag = optionTag(option)
                 DropdownMenuItem(
                     text = { Text(optionLabel(option)) },
                     onClick = {
                         open = false
                         onSelect(option)
                     },
+                    modifier = if (tag == null) Modifier else Modifier.testTag(tag),
                 )
             }
         }

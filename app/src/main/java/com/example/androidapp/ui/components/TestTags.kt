@@ -224,7 +224,19 @@ object TestTags {
     /** The exercise detail screen's edit mode (ROADMAP N2, N5). */
     const val EXERCISE_EDIT = "exercise_edit"
     const val EXERCISE_EDIT_NAME = "exercise_edit_name"
-    const val EXERCISE_EDIT_MUSCLE = "exercise_edit_muscle"
+    /**
+     * The primary-muscle dropdown and its options (ROADMAP N75, B71).
+     *
+     * Grouped, both because the object is at the function ceiling this file keeps to and because the
+     * two belong together: the field, and one tag per muscle addressed by the enum's **name** — its
+     * label is an enum literal today, so matching on it would make a test read English and would break
+     * the day P5.4 translates them.
+     */
+    object Muscle {
+        const val FIELD = "exercise_edit_muscle"
+
+        fun option(muscle: String) = "exercise_edit_muscle_$muscle"
+    }
     const val EXERCISE_EDIT_EQUIPMENT = "exercise_edit_equipment"
     const val EXERCISE_EDIT_PATTERN = "exercise_edit_pattern"
     const val EXERCISE_EDIT_REST = "exercise_edit_rest"

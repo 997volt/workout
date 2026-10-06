@@ -113,6 +113,12 @@ fun suggestionForNextSet(
     return SetSuggestion(
         // The upper bound is the one that matters in a written plan (`max 2`).
         reps = planned?.reps ?: rungReps ?: prefill.reps,
+        // A rung whose load cannot be derived — the run names no value, or the anchor has no added
+        // weight to take one off — falls back to what was just done, deliberately (ROADMAP B71). The
+        // plans refuse to *author* that shape, so this is a row written before the rules or an assisted
+        // anchor, and in a live session the lifter may have taken the plates off by hand: the number is
+        // a starting point they edit, not a claim the app derived. The plan's own row says why it has
+        // none; here the fields must hold something, because what is on screen is what *Log set* writes.
         weightGrams = plannedLoad?.weightGrams ?: prefill.weightGrams,
         assistanceGrams = plannedLoad?.assistanceGrams ?: prefill.assistanceGrams,
         // The armed role follows the plan, so a template's ramp is recorded as warm-ups without a

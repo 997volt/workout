@@ -503,20 +503,25 @@ private fun NoteField(
         onValueChange = { onChange(draft.copy(note = it)) },
         modifier = Modifier.fillMaxWidth().testTag(TestTags.TEMPLATE_SET_NOTE),
         label = { Text(stringResource(R.string.template_set_note)) },
+        // Two lines, as this field had before the N79 refactor moved it into its own function and
+        // dropped the height with it (B71): a note is a sentence, and one line hides most of one.
+        minLines = 2,
     )
 }
 
 /**
- * The load this set shows, or null (ROADMAP N14, N79).
+ * The load this set shows, or null (ROADMAP N14, N79, B71).
  *
- * A rung has no weight written down, so it states what it derives and states **nothing** where nothing
- * can be derived — never the stored number the ladder does not read.
+ * A rung has no weight written down, so it states what it derives — never the stored number the ladder
+ * does not read. Where nothing can be derived it **says so** rather than leaving the line blank: the
+ * run names no value yet, or the anchor has no added weight to take one off, and a row with no load and
+ * no reason reads as a bug rather than as something to fill in.
  */
 @Composable
 private fun TemplateSet.weightLine(unit: WeightUnit, rungWeightGrams: Long?): String? = when {
     role.isRung -> rungWeightGrams?.let {
         stringResource(R.string.template_set_weight_value, Weight.format(it, unit), unit.label())
-    }
+    } ?: stringResource(R.string.template_set_rung_no_load)
 
     targetWeightGrams != null || targetAssistanceGrams != null -> stringResource(
         R.string.template_set_weight_value,

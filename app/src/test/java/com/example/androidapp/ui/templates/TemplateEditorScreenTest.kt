@@ -465,6 +465,32 @@ class TemplateEditorScreenTest {
     }
 
     @Test
+    fun aRungWithNoDerivableLoad_saysSo_insteadOfShowingNothing() {
+        // ROADMAP B71: where a rung's load cannot be derived — the run names no value yet, or the anchor
+        // has nothing to take one off — the row says so rather than standing empty, which reads as a bug
+        // and leaves an assisted-anchor drop indistinguishable from a cluster.
+        val runWithoutAValue = droppingExercise().let { state ->
+            state.copy(
+                exercises = listOf(
+                    state.exercises.first().copy(
+                        sets = state.exercises.first().sets.map {
+                            if (it.role == SetType.DROP) it.copy(dropValueGrams = null) else it
+                        },
+                    ),
+                ),
+            )
+        }
+        setScreen(state = runWithoutAValue)
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
+
+        // Addressed by the row, not by the sentence: every rung of the run derives nothing, so the text
+        // alone would match more than one row.
+        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts2"))
+            .assertTextContains("no load to drop", substring = true)
+    }
+
+    @Test
     fun editingADropSet_opensOnTheValueItAlreadyTakesOff() {
         // ROADMAP B61: the dialog is the only place a run's value is authored, so reopening a drop row
         // has to show what the plan stored. An empty field is not a cosmetic loss: the dialog's own

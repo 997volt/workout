@@ -49,9 +49,9 @@ enum class MuscleGroup(val label: String) {
  * The muscle groups a lifter can choose (ROADMAP N75).
  *
  * The taxonomy minus the legacy [MuscleGroup.BACK]. Everything that *offers* a muscle reads this
- * rather than [MuscleGroup.entries] — the exercise's own dropdown, the secondary-muscle editor and the
- * readiness note's sore list — so nothing new is ever tagged with the value the split retired, while a
- * stored row that carries it still reads.
+ * rather than [MuscleGroup.entries] — the exercise's own primary-muscle dropdown and the readiness
+ * note's sore list (a movement's secondary muscles are shown, not edited) — so nothing new is ever
+ * tagged with the value the split retired, while a stored row that carries it still reads.
  */
 val SELECTABLE_MUSCLE_GROUPS: List<MuscleGroup> =
     MuscleGroup.entries.filter { it != MuscleGroup.BACK }

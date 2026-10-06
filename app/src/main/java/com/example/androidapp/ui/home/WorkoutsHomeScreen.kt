@@ -356,14 +356,16 @@ private fun HomeContent(
 /**
  * The home start bar: the ways to begin, then where a program's run is up to (ROADMAP N3, P3.9, N55).
  *
- * Read top to bottom, it is the choice — *Programs* and *Templates*, while no workout is open — the
- * screen's primary action, and last the next-up block, so the thing the app is telling you to do next
- * sits at the very edge the thumb is already at. The empty start names itself **Start empty workout**
- * so the bar's two full-width pills do not read as the same action.
+ * Read top to bottom, it is the two ways into a plan — *Programs* and *Templates* — the screen's primary
+ * action, and last the next-up block, so the thing the app is telling you to do next sits at the very
+ * edge the thumb is already at. The empty start names itself **Start empty workout** so the bar's two
+ * full-width pills do not read as the same action.
  *
  * Resuming offers no choice: there is exactly one workout in progress, so the button means one thing.
- * The pair of links only appears when the user is actually choosing, and repeat-last gave its slot to
- * Programs (ROADMAP N42) — the entry point it gave up is an action on a finished workout, in History.
+ * The pair of links **stays while a workout is open** (ROADMAP N78): hiding them was how the app said
+ * "you are in a workout", and a lifter checking what is next should not have to finish one to look — the
+ * pill below already says what the primary act is. Repeat-last gave its slot to Programs (ROADMAP N42);
+ * the entry point it gave up is an action on a finished workout, in History.
  */
 @Composable
 private fun StartActions(

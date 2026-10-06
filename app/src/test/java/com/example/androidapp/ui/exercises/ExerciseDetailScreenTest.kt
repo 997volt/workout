@@ -173,7 +173,7 @@ class ExerciseDetailScreenTest {
         var saved: ExerciseEdit? = null
         show(customState(isEditing = true), onSave = { saved = it })
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_MUSCLE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Muscle.FIELD).performClick()
         composeTestRule.onNodeWithText("Chest").performClick()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performScrollTo().performClick()
 
@@ -235,15 +235,17 @@ class ExerciseDetailScreenTest {
     fun theRetiredBack_isNotAnOption_andTheSplitGroupsAre() {
         // ROADMAP N75: a new exercise is never tagged with the group the taxonomy split three ways. The
         // seeded rows that carried it are moved by a migration; the value itself stays readable.
+        // Addressed by the enum's name rather than its label (B71): the labels are enum literals today
+        // and a translated one would otherwise read as a missing option.
         show(customState(isEditing = true))
 
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_MUSCLE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Muscle.FIELD).performClick()
 
-        composeTestRule.onNodeWithText("Back").assertDoesNotExist()
-        composeTestRule.onNodeWithText("Lats").assertExists()
-        composeTestRule.onNodeWithText("Upper back").assertExists()
-        composeTestRule.onNodeWithText("Lower back").assertExists()
-        composeTestRule.onNodeWithText("Adductors").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Muscle.option("BACK")).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Muscle.option("LATS")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Muscle.option("UPPER_BACK")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Muscle.option("LOWER_BACK")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Muscle.option("ADDUCTORS")).assertExists()
     }
 
     @Test

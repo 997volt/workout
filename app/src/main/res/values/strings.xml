@@ -159,6 +159,9 @@
     <string name="template_set_drop_value_label">Drop by (%1$s)</string>
     <string name="template_set_drop_value_hint">Each drop takes this off the set above it.</string>
     <string name="template_set_drop_value">%1$s %2$s drop</string>
+    <!-- A rung whose load cannot be derived: the run names no value yet, or the anchor has nothing to
+         take off. Said rather than left blank, so an empty row does not read as a bug (ROADMAP B71). -->
+    <string name="template_set_rung_no_load">no load to drop</string>
     <string name="template_set_weight">Target weight (%1$s)</string>
     <string name="template_set_reps_min">Reps from</string>
     <string name="template_set_reps_max">Reps to</string>
