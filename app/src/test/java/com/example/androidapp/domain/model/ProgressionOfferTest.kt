@@ -364,6 +364,86 @@ class ProgressionOfferTest {
         assertThat(prompt.earned).isEqualTo(1)
     }
 
+
+    @Test
+    fun anAdHocRung_doesNotDisplaceTheWorkSetsAfterIt() {
+        // ROADMAP N79, and the bug the pairing fix is for: a working set followed by a drop at a
+        // lighter weight used to shift every later pair, so the *second* planned set was judged against
+        // the drop's ten reps and offered a heavier weight — which accepting wrote into the plan.
+        val prompt = progressionPromptFor(
+            planned = listOf(
+                planSet(id = "ts-0", index = 0),
+                planSet(id = "ts-1", index = 1),
+                planSet(id = "ts-2", index = 2),
+            ),
+            performed = listOf(
+                done(reps = 5),
+                done(reps = 10, role = SetType.DROP, weight = 80_000L),
+                done(reps = 5),
+                done(reps = 5),
+            ),
+        )
+
+        assertThat(prompt.sets).hasSize(4)
+        // The three prescribed sets keep their own work, in order.
+        assertThat(prompt.sets[0].performed?.reps).isEqualTo(5)
+        assertThat(prompt.sets[1].performed?.reps).isEqualTo(5)
+        assertThat(prompt.sets[2].performed?.reps).isEqualTo(5)
+        // And the drop is what it is: extra work the plan does not name, earning nothing.
+        assertThat(prompt.sets[3].planned).isNull()
+        assertThat(prompt.sets[3].performed?.role).isEqualTo(SetType.DROP)
+        assertThat(prompt.sets[3].miss).isEqualTo(ProgressionMiss.NOT_IN_PLAN)
+    }
+
+    @Test
+    fun aPrescribedRung_earnsNothingOfItsOwn() {
+        // The group's step belongs to the set the run hangs off, so the rung states why it has none
+        // rather than being judged on numbers that are not its own (ROADMAP N79).
+        val rung = progressionPromptFor(
+            planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1, role = SetType.DROP)),
+            performed = listOf(done(reps = 5), done(reps = 10, role = SetType.DROP, weight = 80_000L)),
+        ).sets[1]
+
+        assertThat(rung.offer).isNull()
+        assertThat(rung.miss).isEqualTo(ProgressionMiss.RUNG_OF_A_GROUP)
+        assertWithMessage("the drop still reads against its own row")
+            .that(rung.performed?.reps).isEqualTo(10)
+    }
+
+    @Test
+    fun aPrescribedRung_pairsWithThePerformedRung_notWithAWorkSet() {
+        // Planned as one working set and one drop, performed as a working set and two drops: the first
+        // drop pairs with the plan's, and the second is extra (ROADMAP N79).
+        val prompt = progressionPromptFor(
+            planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1, role = SetType.DROP)),
+            performed = listOf(
+                done(reps = 5),
+                done(reps = 10, role = SetType.DROP, weight = 80_000L),
+                done(reps = 6, role = SetType.DROP, weight = 60_000L),
+            ),
+        )
+
+        assertThat(prompt.sets).hasSize(3)
+        assertThat(prompt.sets[1].planned?.setId).isEqualTo("ts-1")
+        assertThat(prompt.sets[1].performed?.weightGrams).isEqualTo(80_000L)
+        assertThat(prompt.sets[2].planned).isNull()
+        assertThat(prompt.sets[2].performed?.weightGrams).isEqualTo(60_000L)
+    }
+
+    @Test
+    fun aPrescribedClusterRung_isTheSameShape() {
+        val rung = progressionPromptFor(
+            planned = listOf(
+                planSet(id = "ts-0", index = 0),
+                planSet(id = "ts-1", index = 1, role = SetType.CLUSTER),
+            ),
+            performed = listOf(done(reps = 5), done(reps = 3, role = SetType.CLUSTER)),
+        ).sets[1]
+
+        assertThat(rung.offer).isNull()
+        assertThat(rung.miss).isEqualTo(ProgressionMiss.RUNG_OF_A_GROUP)
+    }
+
     private fun singleSet(
         planned: List<ProgressionPlanSet>,
         performed: List<ProgressionPerformance>,

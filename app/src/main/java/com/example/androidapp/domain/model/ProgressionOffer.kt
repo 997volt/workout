@@ -127,6 +127,16 @@ enum class ProgressionMiss {
      * the end of the app's suggestions — it says so rather than offering a rep past the range.
      */
     TOPPED_OUT,
+
+    /**
+     * A rung of a group, which is never judged on its own (ROADMAP N79).
+     *
+     * A drop or cluster set carries no target of its own: the load is derived from the set above it,
+     * the reps are the same set's own history, and the step the group earned belongs to that first
+     * set. Stated rather than left blank, because a lifter reading a row with nothing beside it would
+     * take it for a bug.
+     */
+    RUNG_OF_A_GROUP,
 }
 
 /** One working set as the prompt states it: the plan, what was done, and what it earned (N74). */
@@ -210,12 +220,30 @@ fun progressionPromptFor(
 ): ProgressionPrompt {
     val plannedWork = planned.plannedWork()
     val performedWork = performed.performedWork()
-    val prescribed = plannedWork.mapIndexed { index, set ->
-        set.toPrompt(performedWork.getOrNull(index), stepGrams)
+
+    // **Paired by class, not by raw position** (ROADMAP N79). A rung logged without a plan row used
+    // to be counted as a work set, which shifted every later pair: the app compared a working set
+    // against a lighter drop's reps and offered it a heavier weight, and accepting wrote that into the
+    // plan. Prescribed work sets pair with performed work sets, and prescribed rungs with performed
+    // rungs, each in order — so an extra rung can only ever be extra.
+    val performedWorkIndexes = performedWork.indices.filterNot { performedWork[it].role.isRung }
+    val performedRungIndexes = performedWork.indices.filter { performedWork[it].role.isRung }
+    val plannedOf = { rungs: Boolean -> plannedWork.filter { it.role.isRung == rungs } }
+
+    val pairs = mutableMapOf<String, ProgressionPerformance?>()
+    val used = mutableSetOf<Int>()
+    listOf(true, false).forEach { rungs ->
+        plannedOf(rungs).forEachIndexed { index, set ->
+            val at = (if (rungs) performedRungIndexes else performedWorkIndexes).getOrNull(index)
+            pairs[set.setId] = at?.let { performedWork[it] }
+            at?.let { used += it }
+        }
     }
-    val extra = performedWork.drop(plannedWork.size).map { done ->
-        ProgressionSetPrompt(planned = null, performed = done, miss = ProgressionMiss.NOT_IN_PLAN)
-    }
+
+    val prescribed = plannedWork.map { set -> set.toPrompt(pairs[set.setId], stepGrams) }
+    val extra = performedWork
+        .filterIndexed { index, _ -> index !in used }
+        .map { ProgressionSetPrompt(planned = null, performed = it, miss = ProgressionMiss.NOT_IN_PLAN) }
     return ProgressionPrompt(sets = prescribed + extra)
 }
 
@@ -229,6 +257,15 @@ private fun ProgressionPlanSet.toPrompt(
     done: ProgressionPerformance?,
     stepGrams: Long,
 ): ProgressionSetPrompt {
+    // A rung is never judged: the group's step is earned or missed by the set it hangs off (N79).
+    if (role.isRung) {
+        return ProgressionSetPrompt(
+            planned = this,
+            performed = done,
+            miss = ProgressionMiss.RUNG_OF_A_GROUP,
+        )
+    }
+
     val unanswered = answeredMiss(done)
     val offer = if (unanswered == null && done != null) offerFor(done, stepGrams) else null
     return ProgressionSetPrompt(

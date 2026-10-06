@@ -423,6 +423,9 @@
     <!-- Why a set earned nothing, stated with the number the app measured (N74). -->
     <string name="progression_miss_not_done">Not done</string>
     <string name="progression_miss_not_in_plan">Not in the plan</string>
+    <!-- A rung of a drop or cluster group: it earns nothing of its own, and the step belongs to the
+         set it hangs off (ROADMAP N79). -->
+    <string name="progression_miss_rung">The group is judged on the set above it</string>
     <string name="progression_miss_no_reps">The plan names no reps for this set</string>
     <string name="progression_miss_no_rpe">The plan names no target RPE for this exercise</string>
     <string name="progression_miss_unrated">How it felt was not recorded</string>

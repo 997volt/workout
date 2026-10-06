@@ -261,6 +261,7 @@ private fun missLine(set: PendingProgression.PendingSet, miss: ProgressionMiss):
         ProgressionMiss.OVER_TARGET_RPE ->
             stringResource(R.string.progression_miss_over_rpe, rpeMarker(planned?.targetRpeHalves ?: 0))
 
+        ProgressionMiss.RUNG_OF_A_GROUP -> stringResource(R.string.progression_miss_rung)
         ProgressionMiss.TOPPED_OUT -> {
             val top = planned?.targetRepsMax ?: 0
             pluralStringResource(R.plurals.progression_miss_topped_out, top, top)
