@@ -21,7 +21,7 @@ import com.example.androidapp.domain.model.SetType
  *
  * Shared because the plan dialog and the set editor had a copy each: two near-identical
  * dropdowns over the same enum, which is how "the same roles everywhere" turns into two
- * lists that drift. A dropdown rather than chips because five options with words on them
+ * lists that drift. A dropdown rather than chips because the roles with words on them
  * do not fit a phone's dialog width.
  */
 @Composable

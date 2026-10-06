@@ -36,7 +36,11 @@ data class SetEntry(
     val completedAt: Instant? = null,
 )
 
-/** What kind of set this was. Warm-ups must not count towards PRs (P2.2). */
+/**
+ * What kind of set this was: a set of its own, or a *rung* of the group above it (ROADMAP N79).
+ *
+ * Warm-ups and rungs are excluded from records (P2.2, N79), and neither is rated on its own.
+ */
 enum class SetType(val label: String) {
     NORMAL("Working"),
     WARMUP("Warm-up"),
@@ -49,19 +53,45 @@ enum class SetType(val label: String) {
      * by name like every other enum, so adding it touched no row already on disk.
      */
     TOP_SET("Top set"),
+
+    /**
+     * A set taken at a lighter load straight after the one above it (ROADMAP N14, N79).
+     *
+     * Its weight is not its own: it is the anchor's less a stored drop value, once per rung, so the
+     * ladder moves when the anchor does (N79).
+     */
     DROP("Drop"),
+
+    /**
+     * Sets repeated at the anchor's own weight after a short break (ROADMAP N79).
+     *
+     * The same shape as [DROP] — a member of the group above it rather than a set of its own — and the
+     * one rule between them is the load: a cluster rung carries the anchor's weight itself, a drop rung
+     * the anchor's less the run's drop value. Stored by name like every other enum, so adding it
+     * touched no row already on disk.
+     */
+    CLUSTER("Cluster"),
     FAILURE("Failure"),
     ;
 
     /**
-     * Whether a set of this role records an effort (ROADMAP N67).
+     * Whether this role is a member of a group rather than a set of its own (ROADMAP N79).
      *
-     * A warm-up does not. It is preparation rather than work, so an RPE beside it measures
-     * nothing the plan asked for and reads as a number the set was judged against. The rule lives
-     * on the role so the write boundary, the editor and the row all read the same one, rather than
-     * each deciding for itself what a warm-up is.
+     * A rung hangs off the set before it: it carries no target of its own, the group is judged on its
+     * first set, and (for a drop) its weight is derived rather than written down.
      */
-    val recordsEffort: Boolean get() = this != WARMUP
+    val isRung: Boolean get() = this == DROP || this == CLUSTER
+
+    /**
+     * Whether this role stands as a performance of its own: rated, and able to be a record (N67, N79).
+     *
+     * A warm-up does not, because it is preparation rather than work — an RPE beside it measures
+     * nothing the plan asked for. A rung does not either, and for a different reason: it **is** work,
+     * but it is not rated or recorded on its own, because the group is one effort and its first set is
+     * what the app reads. The rule lives on the role so the write boundary, the editors, the rows and
+     * the record scan all read the same one, rather than each deciding for itself.
+     */
+    val recordsEffort: Boolean get() = !isRung && this != WARMUP
 }
 
 /**

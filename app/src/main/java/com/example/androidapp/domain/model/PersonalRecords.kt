@@ -28,10 +28,12 @@ data class PersonalRecords(
      * **[role] is a parameter rather than an assumption**, because a warm-up is not a record
      * however heavy it is (ROADMAP B17). Every caller used to leave it out, so the one set
      * path that mattered — the set being logged — was never checked, and a 120 kg warm-up could
-     * raise a personal best that the file's own doc said could no longer happen.
+     * raise a personal best that the file's own doc said could no longer happen. A **rung** is
+     * excluded by the same rule (N79): the record belongs to the set the group hangs off, the one
+     * that carries its rating.
      */
     fun isRecord(reps: Int, weightGrams: Long, role: SetType): Boolean =
-        role != SetType.WARMUP &&
+        role.recordsEffort &&
             reps > 0 &&
             weightGrams > 0L &&
             (bestAt(reps)?.let { weightGrams > it } ?: true)
@@ -56,11 +58,13 @@ data class PersonalRecords(
          * Records from performed sets.
          *
          * Warm-ups are excluded, as they are everywhere else a target is measured (N17, N20,
-         * N22), and a set with no added weight is not a record at any rep count.
+         * N22), and so are **rungs** — a drop or cluster set is work the group did, not a
+         * performance of its own (N79) — while a set with no added weight is not a record at any
+         * rep count.
          */
         fun from(sets: List<PerformedSetSpec>): PersonalRecords = PersonalRecords(
             bestByReps = sets
-                .filter { it.role != SetType.WARMUP && it.reps > 0 && it.weightGrams > 0L }
+                .filter { it.role.recordsEffort && it.reps > 0 && it.weightGrams > 0L }
                 .groupBy { it.reps }
                 .mapValues { (_, atReps) -> atReps.maxOf { it.weightGrams } },
         )

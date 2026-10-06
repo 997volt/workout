@@ -91,6 +91,29 @@ class PersonalRecordsTest {
     }
 
     @Test
+    fun aRung_isNeverARecord_norSetsOne() {
+        // ROADMAP N79: a drop or cluster set is work, but it is not a performance of its own — the
+        // record belongs to the set the group hangs off, the one that also carries its rating.
+        val records = PersonalRecords.from(
+            listOf(did(120_000L, 5, role = SetType.DROP), did(80_000L, 5, role = SetType.CLUSTER)),
+        )
+
+        assertTrue("neither rung set the bar", records.isEmpty)
+        assertFalse(
+            "and neither can raise one however heavy it is",
+            records.isRecord(reps = 5, weightGrams = 130_000L, role = SetType.DROP),
+        )
+        assertFalse(
+            "the cluster rung is the same rule",
+            records.isRecord(reps = 5, weightGrams = 130_000L, role = SetType.CLUSTER),
+        )
+        assertTrue(
+            "while the anchor it hangs off is a record as usual",
+            records.isRecord(reps = 5, weightGrams = 130_000L, role = SetType.NORMAL),
+        )
+    }
+
+    @Test
     fun theHeaviestAtARepCount_wins() {
         val records = PersonalRecords.from(listOf(did(95_000L, 5), did(100_000L, 5), did(97_500L, 5)))
 

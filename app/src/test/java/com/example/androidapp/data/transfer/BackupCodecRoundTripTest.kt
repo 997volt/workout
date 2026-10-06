@@ -142,7 +142,9 @@ class BackupCodecRoundTripTest {
             id = "ts1",
             templateExerciseId = "te1",
             setIndex = 2,
-            role = SetType.DROP,
+            // A role that carries an effort and every target: a rung would round-trip with its effort
+            // dropped, which is N79's rule and is asserted on its own below.
+            role = SetType.FAILURE,
             targetWeightGrams = 92_500L,
             targetAssistanceGrams = 15_000L,
             targetRepsMin = 2,
@@ -156,6 +158,30 @@ class BackupCodecRoundTripTest {
         )
 
         assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aPlannedRung_survivesTheCodec_withoutItsEffort() {
+        // ROADMAP N79: a rung is not rated on its own, so an export carrying a drop's effort brings
+        // back a set that has none — the same boundary rule a warm-up has had since N67.
+        val entity = TemplateSetEntity(
+            id = "ts1",
+            templateExerciseId = "te1",
+            setIndex = 3,
+            role = SetType.DROP,
+            targetWeightGrams = 92_500L,
+            targetAssistanceGrams = null,
+            targetRepsMin = null,
+            targetRepsMax = null,
+            targetRepsCurrent = null,
+            targetRpeHalves = 19,
+            note = null,
+            createdAt = 1_600_000_000_000L,
+            updatedAt = 1_600_000_000_001L,
+            deletedAt = null,
+        )
+
+        assertThat(entity.toDto().toEntity().targetRpeHalves).isNull()
     }
 
     @Test
