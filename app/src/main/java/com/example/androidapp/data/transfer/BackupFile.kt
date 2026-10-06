@@ -358,6 +358,14 @@ data class TemplateSetDto(
     val targetRpeHalves: Int? = null,
     /** The plan target's pre-half-step whole-number RPE, read only (ROADMAP N6). */
     val targetRpe: Int? = null,
+    /**
+     * The run's drop value in grams, or null (ROADMAP N79).
+     *
+     * Held by the run's first rung and inherited by the rest, so a null here means either "not a rung"
+     * or "another rung of the same run". Defaulted and unbumped like every other added field: a file
+     * written before this decodes, and an absent value means exactly what it meant before.
+     */
+    val dropValueGrams: Long? = null,
     val note: String? = null,
     val createdAt: Long,
     val updatedAt: Long,

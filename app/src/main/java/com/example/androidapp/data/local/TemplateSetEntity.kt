@@ -55,6 +55,14 @@ data class TemplateSetEntity(
      * reinterpretation of the two above. Backfilled to the range's floor by migration 31→32.
      */
     val targetRepsCurrent: Int?,
+    /**
+     * The drop value this run takes off the anchor, in whole grams, or null (ROADMAP N79).
+     *
+     * Held by the run's **first** rung and inherited by the rest: every later rung carries null, which
+     * is also what a set that is not a rung at all carries. Nullable with a Kotlin default so only this
+     * migration has to say anything, and the ALTER is plain because the column is nullable.
+     */
+    val dropValueGrams: Long? = null,
     val targetRpeHalves: Int?,
     val note: String?,
     val createdAt: Long,

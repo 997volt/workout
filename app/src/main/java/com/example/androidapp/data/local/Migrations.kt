@@ -898,6 +898,26 @@ val MIGRATION_33_34 = object : Migration(33, 34) {
 private const val ADD_EXERCISE_STEP_GRAMS =
     "ALTER TABLE `exercises` ADD COLUMN `stepGrams` INTEGER"
 
+/**
+ * A planned set may hold the drop value its run takes off the anchor (ROADMAP N79).
+ *
+ * A drop rung's weight is not written down but derived — `anchor − k × value` — so the plan stores
+ * the *value*, once for the run, and every rung moves when the anchor does. Nullable with no default,
+ * so the ALTER is valid on a table that already holds rows: null means "not a rung", or "another rung
+ * of the same run", which is exactly what every row on disk means before the feature is used.
+ *
+ * The migration test seeds a set, upgrades, and asserts it survives with the column unset, validated
+ * against the exported `35.json`.
+ */
+val MIGRATION_34_35 = object : Migration(34, 35) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(ADD_TEMPLATE_SET_DROP_VALUE)
+    }
+}
+
+private const val ADD_TEMPLATE_SET_DROP_VALUE =
+    "ALTER TABLE `template_sets` ADD COLUMN `dropValueGrams` INTEGER"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -1042,4 +1062,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_31_32,
     MIGRATION_32_33,
     MIGRATION_33_34,
+    MIGRATION_34_35,
 )

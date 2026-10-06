@@ -1729,4 +1729,48 @@ class WorkoutDatabaseMigrationTest {
 
         migrated.close()
     }
+
+    @Test
+    fun migration34To35_givesAPlannedSetItsDropValue_leavingEveryRowUnset() {
+        // ROADMAP N79: a drop rung's weight is derived from its anchor rather than written down, so the
+        // plan stores the value the run takes off. The column is nullable with no default, so every row
+        // already on disk reads as "not a rung" — which is what each of them is — and the row itself
+        // survives the upgrade.
+        helper.createDatabase(TEST_DB, 34).apply {
+            execSQL(
+                """
+                INSERT INTO templates (id, name, createdAt, updatedAt, deletedAt)
+                VALUES ('t1', 'Legs', 1, 1, NULL)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO template_exercises
+                    (id, templateId, exerciseId, position, createdAt, updatedAt, deletedAt)
+                VALUES ('te1', 't1', 'back-squat', 0, 1, 1, NULL)
+                """.trimIndent(),
+            )
+            execSQL(
+                """
+                INSERT INTO template_sets
+                    (id, templateExerciseId, setIndex, role, targetWeightGrams,
+                     targetRepsMin, targetRepsMax, createdAt, updatedAt, deletedAt)
+                VALUES ('ts1', 'te1', 0, 'DROP', 80000, 8, 12, 1, 1, NULL)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 35, true, MIGRATION_34_35)
+
+        migrated.query("SELECT id, role, targetWeightGrams, dropValueGrams FROM template_sets").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("ts1", cursor.getString(0))
+            assertEquals("the row kept its role and its written weight", "DROP", cursor.getString(1))
+            assertEquals(80_000L, cursor.getLong(2))
+            assertTrue("unset means the run names no value", cursor.isNull(3))
+        }
+
+        migrated.close()
+    }
 }

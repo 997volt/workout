@@ -98,5 +98,13 @@ data class TemplateSet(
      */
     val targetRepsCurrent: Int? = null,
     val targetRpeHalves: Int? = null,
+    /**
+     * The drop value this run takes off the anchor, in grams, or null (ROADMAP N79).
+     *
+     * Held by the run's first rung, per the group the set belongs to: a drop rung's own weight is
+     * `anchor − k × this` rather than a number written down, so the ladder moves when the anchor does.
+     * A cluster rung carries none, because it repeats the anchor's load rather than a value off it.
+     */
+    val dropValueGrams: Long? = null,
     val note: String? = null,
 )

@@ -261,6 +261,7 @@ internal fun TemplateSetEntity.toDto() = TemplateSetDto(
     targetRepsMax = targetRepsMax,
     targetRepsCurrent = targetRepsCurrent,
     targetRpeHalves = targetRpeHalves,
+    dropValueGrams = dropValueGrams,
     note = note,
     createdAt = createdAt,
     updatedAt = updatedAt,
@@ -284,6 +285,7 @@ internal fun TemplateSetDto.toEntity() = TemplateSetEntity(
     } else {
         null
     },
+    dropValueGrams = dropValueGrams,
     note = note,
     createdAt = createdAt,
     updatedAt = updatedAt,
