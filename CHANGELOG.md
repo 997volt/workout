@@ -100,6 +100,52 @@ repeated here.
   sets' *Add set*. The squeeze was N59's side effect rather than the cue's: the row was two fields until
   the exercise-level target effort moved in beside them.
 
+### Fixed
+
+A review of the unreleased batch above found six defects, fixed here (B73–B78). The batch had not
+shipped, so this is where they were caught rather than a later version's problem.
+
+- **A next-up row's substitute advances the run, and its *Restore* entry did nothing** (B73). The entry
+  argued that recording no substitution left the run where it was, and it did not: the session names the
+  template it trained, and P3.9's run follows the last slot trained, so a pick naming another slot of the
+  same program moved the run past it — a probe landed order-only A→B→C with the run at A on C, and a
+  weekday program's run at Monday on Friday. The claim was wrong rather than the code, so the rule is
+  recorded in [DECISIONS.md](DECISIONS.md) instead of resting on a comment, and it names the rejected
+  alternative: a session that names a template but settles no occurrence would need the session to carry
+  a second fact, and it contradicts P3.9's one rule. The picker's *Restore the scheduled workout* was the
+  other half — on a next-up row it routed to the same null pick a guard then dropped, so it dismissed and
+  did nothing at all. It is offered only where the pick is written, because a control that cannot do
+  anything is worse than no control (N53, N67).
+- **A deleted plan kept naming the workout in the list and stopped naming it in the detail** (B74, N58).
+  The detail read the title's name through `observeTemplate`, whose query filters `deletedAt IS NULL` —
+  the editor's read, where hiding a deleted plan is right — while the history list's join deliberately
+  does not, because N58 settled that a soft-deleted plan still names the workout it was. The two screens
+  therefore disagreed the moment a plan was deleted, and the comment claimed the code did the opposite of
+  what it did. The name is read through a name-only query that keeps a deleted row now. Reading the whole
+  template instead was rejected: it would put the deleted filter in the reader's hands and invite the
+  editor's rules into history.
+- **The prose N83 left behind still said `primary` fills the Start pill** (B75, N49, N83). The change
+  corrected [DECISIONS.md](DECISIONS.md) and the palette test's comments and said so, but two production
+  KDocs repeated the old claim, so the code's own prose contradicted the code. It also called *Resume*
+  "the workout screen's" where it is home's. Both are corrected, and
+  [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md) no longer calls N74–N79 "the unreleased batch".
+- **A planned exercise's *Add set* and empty note shared one tag across every block** (B76, N81). N81
+  unfolded a plan's sets into the exercise block and left both controls on a flat tag, so two planned
+  exercises were two nodes under one tag and neither could be addressed — which is why that batch's tests
+  narrowed to a single exercise to reach either. Both are per-row helpers now, and `TestTags` is one over
+  its function ceiling as a result, which `detekt.yml` records as it does for the two before this.
+- **The guards the review found weakened or missing** (B77). B6's half-point guard lost the
+  `assertIsDisplayed` it had before N81 deleted its dialog, and the N81 "reads on the block" case asserted
+  existence for lines it called readable; both assert what they say again. The warm-up entry's negative
+  test opened the ⋮ without anchoring that it drew, so a menu that never rendered passed it. A third
+  guard the deleted dialog held — a whole target RPE printing without a trailing zero — was re-homed
+  nowhere and has a test again. The palette's N83 scan matched the container literal anywhere in a file
+  rather than at the control, and now requires the container and its content colour together. The detail
+  screen addressed the set delete by the English "Delete set" and reads the resource instead, and the
+  empty-workout test's name claimed an order it never checked.
+- **The batch's loose ends** (B78). A line of trailing whitespace, two declarations with no blank line
+  between them, and a file still named for the composable N81 deleted.
+
 ## [1.15] — 2026-10-06 (versionCode 16)
 
 ### Added
