@@ -118,31 +118,37 @@ No id yet: picking one up is what gives it a spelled-out decision and a place in
 design before it is a change — the grouping has to be settled before it can be built — so the entry below
 is mostly the argument for one shape over the others.
 
-- **Exercises get variations, and the library groups them.** A movement is one thing performed several ways —
-  a flat barbell bench press done paused for three seconds, touch-and-go, as a speed day, or in competition
+- **Exercises get variations and families, and the library groups them.** One movement is performed several
+  ways — a flat barbell bench press paused for three seconds, touch-and-go, as a speed day, or in competition
   style — and the library has nowhere to say so today: each is either its own unrelated row or one row the
   lifter keeps renaming, and the rest are lost. **The grouping is a link, not a rename and not a merge.**
-  Every variation stays its own exercise, because that is the half that must not blur: a paused bench is a
-  different lift and moves less weight, so its records, the weight it steps by (N77) and what a plan prefills
-  from last time (P3.8) are its own. What the link buys is the other half — the views that fragment when one
-  movement is scattered across rows: muscle-group volume, "how much pressing am I doing", and the per-lift
-  adherence breakdown (P3.14), which reads a row per exercise and would otherwise read three for one bench.
-  So an exercise gains a **parent**: null for a movement, set for a variation of one, with the parent's name
-  read live rather than copied — N58's rule for templates, so a rename relabels its variations and a
-  soft-deleted parent still names them. The variation **inherits** what belongs to the movement (primary and
-  secondary muscles, equipment, movement pattern) and **keeps** what belongs to performing it (its own step,
-  rest, cue, unit, and every record). The parent is the whole of the structure: the qualifier stays a **name
-  the lifter writes**, because "three-second paused", "speed day", "beltless", "with chains" is not a closed
-  set — an enum would need a migration each time the sport invents a technique, and grouping by parsing a
-  name invents structure nobody stated, which the next rename breaks. Four things it has to settle. **Is the
-  movement itself loggable?** This entry assumes yes: competition style *is* the plain bench, and a group
-  whose head is not a row would be a second kind of exercise. **How far does a roll-up reach?** Records and
-  progression stay the variation's; the aggregate views above are where the parent is read, and which of
-  them roll up is the decision. **How deep is a group?** One level, until a case needs more — "close-grip
-  paused" is a variation of a variation and a real thing, but a tree is a promise nothing has asked for.
-  **Does the seeded library carry variations?** Seeding bases is what it already does; seeding a set of
-  common variations promises names, and a variation's name is the lifter's. The column moves both transfer
-  formats, since both carry exercises, and B62's rule applies to each: the version is read before the body.
+  Every exercise stays loggable and its own, because that is the half that must not blur: a paused bench is
+  a different lift and moves less weight, so its records, the weight it steps by (N77) and what a plan
+  prefills from last time (P3.8) are its own. What the link buys is the other half — the views that fragment
+  when one movement is scattered across rows: muscle-group volume, "how much pressing am I doing", and the
+  per-lift adherence breakdown (P3.14). The head of a group is a **category**: a row that exists to hold
+  others, is **never offered and never logged**, and carries a name. That is what makes it a *statistic*
+  rather than a classification — "all bench press volume" can be read as one number — and it is why the
+  category is not `movementPattern` plus `primaryMuscle`, which answer a fuzzier question ("horizontal chest
+  pressing", taking in a fly or a dip) while a category cuts where the lifter cuts: a machine press is in or
+  out of "bench press" because the lifter says so. **Dumbbell and machine bench belong in the same category**,
+  as exercises rather than as variations of the barbell one — the number the category exists to produce is a
+  lie about the training with the dumbbell work missing from it, and each stays its own exercise with its own
+  records, step and prefill. So the shape is two rules deep and no deeper: a category holds **exercises**
+  (barbell, dumbbell, machine), an exercise holds **its variations** (paused, touch-and-go, speed,
+  competition), and the name of what a row hangs under is read live rather than copied, N58's rule for
+  templates — a rename relabels its children and a soft-deleted head still names them. A variation
+  **inherits** what belongs to the movement (primary and secondary muscles, equipment, movement pattern) and
+  **keeps** what belongs to performing it (its step, rest, cue, unit, every record). The qualifier stays a
+  **name the lifter writes**: "three-second paused", "speed day", "beltless", "with chains" is not a closed
+  set, an enum would need a migration each time the sport invents a technique, and grouping by parsing a
+  name invents structure nobody stated that the next rename breaks. Two things are left open. **How far a
+  roll-up reaches** — records and progression stay the exercise's, and which aggregate views read the
+  category is the decision. **Whether the seeded library ships categories** — seeding the common families is
+  what makes the first statistic work out of the box, and a category is a taxonomy somebody maintains, so a
+  mis-filed exercise skews the number silently; the seed, and an easy way to move a row between categories,
+  are how that stays honest. The columns move both transfer formats, since both carry exercises, and B62's
+  rule applies to each: the version is read before the body.
 
 Everything that has stood here has shipped — the defects found in use, the workout screen's discard, the
 workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch, a rest of
