@@ -88,6 +88,9 @@ object TestTags {
     /** The empty workout's prompt-free discard, which N41 deliberately leaves alone. */
     const val ACTIVE_WORKOUT_DISCARD_EMPTY = "active_workout_discard_empty"
 
+    /** Adding a movement: the FAB over the list until N82, and the list's own last item since. */
+    const val ACTIVE_WORKOUT_ADD_EXERCISE = "active_workout_add_exercise"
+
     /** Removing an exercise, and the confirmation it now asks for (ROADMAP B2). */
     const val EXERCISE_REMOVE = "exercise_remove"
     const val EXERCISE_REMOVE_CONFIRM = "exercise_remove_confirm"

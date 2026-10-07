@@ -14,6 +14,18 @@ repeated here.
 
 ### Changed
 
+- **The workout's readiness scrolls with the work, and *Add exercise* sits under the last exercise**
+  (N82). The body was a fixed column — the record banner, the clock, the readiness row and the rest bar —
+  over a list of exercises, so everything above the list stayed on screen for the whole session: the
+  readiness note and the clock never moved while the work scrolled under them. The list owns what scrolls
+  now, as slots: readiness above the rows and the workout's one action below them. What stays put is
+  argued rather than inherited — the rest countdown, because the set it belongs to is off screen by the
+  time it matters, and the clock, the record banner and the error line with it. *Add exercise* was an
+  extended floating button over the last rows, which is why that list carried 96 dp of clearance to keep
+  it off them; it is the list's own last item now, in *Log set*'s form (N59) and the colour the FAB drew
+  (`primaryContainer`), keeping the + it carried. An empty session gets it too — that state is drawn
+  *instead of* the rows, inside the same list, and the FAB was the only way to put a first movement into
+  one — and `EmptyWorkout` gives up the viewport centring it no longer owns.
 - **A template's plan reads on the block, and one entry left its dialog for the ⋮** (N81). A planned
   exercise's sets were a count behind *Planned sets · 3*: the number without the plan, and every role,
   load, rung and delete behind a tap. They are lines in the block now — each still the way into that

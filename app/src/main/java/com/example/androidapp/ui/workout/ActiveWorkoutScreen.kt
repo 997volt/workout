@@ -18,10 +18,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -246,9 +247,6 @@ fun ActiveWorkoutScreen(
                 onOpenPrograms = onOpenPrograms,
             )
         },
-        floatingActionButton = {
-            AddExerciseButton(onClick = onAddExercise)
-        },
     ) { innerPadding ->
         WorkoutBody(
             state = state,
@@ -266,6 +264,8 @@ fun ActiveWorkoutScreen(
             onRateExercise = onRateExercise,
             onReopenExercise = onReopenExercise,
             onDiscard = onDiscard,
+            // The one action that used to float over the list is the list's own last item now (N82).
+            onAddExercise = onAddExercise,
             personalRecord = personalRecord,
             onToggleSuperset = onToggleSuperset,
             restTimerEnabled = restTimerEnabled,
@@ -287,18 +287,35 @@ fun ActiveWorkoutScreen(
 }
 
 /**
- * The one action a workout always offers: adding a movement (ROADMAP F1).
+ * The one action a workout always offers: adding a movement (ROADMAP F1), at the foot of the list (N82).
  *
- * Split out of the screen when N66's switch pushed it over the length this project allows, and it is
- * the piece that reads on its own: an extended FAB whose whole content is its own label and glyph.
+ * It was an extended floating button over the list's last rows, which is why that list carried 96 dp of
+ * bottom padding to stay clear of it. It keeps the colour it had and takes *Log set*'s form (N59): full
+ * width, in the flow, with the + it already carried. `PrimaryActionButton` is the near miss rather than
+ * the answer: it is already a full-width pill that "used to be" an extended floating button (P1.16, N1)
+ * and takes both colours as parameters, but at 52 dp with its own glyph spacing it is not *Log set*'s
+ * shape.
  */
 @Composable
-private fun AddExerciseButton(onClick: () -> Unit) {
-    ExtendedFloatingActionButton(
+private fun AddExerciseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    FilledTonalButton(
         onClick = onClick,
-        text = { Text(stringResource(R.string.active_workout_add_exercise)) },
-        icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
-    )
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .testTag(TestTags.ACTIVE_WORKOUT_ADD_EXERCISE),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Add,
+            contentDescription = null,
+            modifier = Modifier.padding(end = 8.dp),
+        )
+        Text(stringResource(R.string.active_workout_add_exercise))
+    }
 }
 
 /**
@@ -652,6 +669,7 @@ private fun WorkoutBody(
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
     onDiscard: () -> Unit,
+    onAddExercise: () -> Unit,
     modifier: Modifier = Modifier,
     personalRecord: PersonalRecordMoment? = null,
     onToggleSuperset: (String) -> Unit = {},
@@ -678,14 +696,11 @@ private fun WorkoutBody(
             state.hasNoSession -> CenteredMessage(stringResource(R.string.active_workout_none), showSpinner = false)
 
             else -> {
+                // The clock stays above the list, and so does the rest bar below it (N82): both are true
+                // while the work is scrolled somewhere else — the countdown especially, since the set it
+                // belongs to is off screen by then. The readiness row is not that, so it moved into the
+                // list and scrolls with the exercises, which is the whole of the request.
                 WorkoutHeader(startedAt = state.startedAt, clock = clock)
-                ReadinessSection(
-                    note = state.readinessNote,
-                    soreMuscles = state.readinessSoreMuscles,
-                    promptVisible = state.isReadinessPromptVisible,
-                    onDismissPrompt = onDismissReadinessPrompt,
-                    onSave = onSaveReadinessNote,
-                )
                 RestBar(
                     clock = clock,
                     onSkip = onSkipRest,
@@ -696,24 +711,33 @@ private fun WorkoutBody(
                 )
                 HorizontalDivider()
 
-                if (state.isEmpty) {
-                    EmptyWorkout(onDiscard = onDiscard)
-                } else {
-                    ExerciseList(
-                        rows = state.exercises,
-                        onLogSet = onLogSet,
-                        onRemoveExercise = onRemoveExercise,
-                        onMoveExercise = onMoveExercise,
-                        onEditSet = onEditSet,
-                        onDeleteSet = onDeleteSet,
-                        onFinishExercise = onFinishExercise,
-                        onRateExercise = onRateExercise,
-                        onReopenExercise = onReopenExercise,
-                        onToggleSuperset = onToggleSuperset,
-                        restTimerEnabled = restTimerEnabled,
-                        defaultRestSeconds = defaultRestSeconds,
-                    )
-                }
+                ExerciseList(
+                    rows = state.exercises,
+                    onLogSet = onLogSet,
+                    onRemoveExercise = onRemoveExercise,
+                    onMoveExercise = onMoveExercise,
+                    onEditSet = onEditSet,
+                    onDeleteSet = onDeleteSet,
+                    onFinishExercise = onFinishExercise,
+                    onRateExercise = onRateExercise,
+                    onReopenExercise = onReopenExercise,
+                    onToggleSuperset = onToggleSuperset,
+                    restTimerEnabled = restTimerEnabled,
+                    defaultRestSeconds = defaultRestSeconds,
+                    header = {
+                        ReadinessSection(
+                            note = state.readinessNote,
+                            soreMuscles = state.readinessSoreMuscles,
+                            promptVisible = state.isReadinessPromptVisible,
+                            onDismissPrompt = onDismissReadinessPrompt,
+                            onSave = onSaveReadinessNote,
+                        )
+                    },
+                    empty = { EmptyWorkout(onDiscard = onDiscard) },
+                    // Below the last exercise rather than over it (N82) — and drawn for an empty session
+                    // too, which is drawn *instead of* the rows and had no other way to add a movement.
+                    footer = { AddExerciseButton(onClick = onAddExercise) },
+                )
             }
         }
     }
@@ -880,8 +904,9 @@ private fun ReadinessRow(
 @Composable
 private fun EmptyWorkout(onDiscard: () -> Unit, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+        // A list item since N82, so it takes the width it is given rather than the whole screen: the
+        // centring it used was against a viewport this no longer owns.
+        modifier = modifier.fillMaxWidth().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(

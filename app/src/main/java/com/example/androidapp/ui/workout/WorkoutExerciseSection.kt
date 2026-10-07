@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -92,6 +91,16 @@ internal val SessionExerciseRow.isPastPlan: Boolean
 internal val SessionExerciseRow.plannedSetsLeft: Int?
     get() = plannedSetCount?.let { (it - sets.size).coerceAtLeast(0) }
 
+/**
+ * The workout's exercises, and the things that belong in the same scroll as them (ROADMAP N82).
+ *
+ * The body used to be a fixed column over this list — the clock, the readiness row and the rest bar —
+ * and everything outside the list was therefore on screen for the whole session. The list owns what
+ * scrolls now: the readiness row arrives as [header], the action that adds a movement as [footer], and
+ * the caller keeps only what must stay put. The slots are how that boundary is stated rather than
+ * implied, and [empty] is the third state because a session with no exercises is drawn *instead of* the
+ * rows while still sitting between the same two.
+ */
 @Composable
 internal fun ExerciseList(
     rows: List<SessionExerciseRow>,
@@ -109,36 +118,48 @@ internal fun ExerciseList(
     /** Whether a rest is counted down, and the fallback its static label uses (ROADMAP N44). */
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
+    /** Above the rows, inside the scroll: the session's readiness (N82). */
+    header: (@Composable () -> Unit)? = null,
+    /** Where the rows would be, when there are none (N82). */
+    empty: (@Composable () -> Unit)? = null,
+    /** Below the rows, inside the scroll: the workout's one action (N82). */
+    footer: (@Composable () -> Unit)? = null,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag(TestTags.EXERCISE_LIST),
-        // Leaves room for the extended FAB so it cannot cover the last row.
-        contentPadding = PaddingValues(bottom = 96.dp),
+        // Room at the foot of the scroll, where the extended FAB used to need 96 dp of clearance.
+        contentPadding = PaddingValues(bottom = 16.dp),
     ) {
-        itemsIndexed(items = rows, key = { _, row -> row.id }) { index, row ->
-            ExerciseSection(
-                row = row,
-                onLogSet = { edit -> onLogSet(row.id, edit) },
-                onRemoveExercise = { onRemoveExercise(row.id) },
-                onMoveExercise = { delta -> onMoveExercise(row.id, delta) },
-                // A row's neighbours are the list's own knowledge, so the entries that would write
-                // nothing are simply not offered (ROADMAP N54, the shape B28's row-0 exclusion uses).
-                canMoveUp = index > 0,
-                canMoveDown = index < rows.lastIndex,
-                onEditSet = onEditSet,
-                onDeleteSet = onDeleteSet,
-                onFinishExercise = onFinishExercise,
-                onRateExercise = onRateExercise,
-                onReopenExercise = { onReopenExercise(row.id) },
-                // Row 0 has nothing above it to pair with: with no previous exercise the group
-                // comes out null and the write would rewrite every ungrouped row, churning
-                // `updatedAt` for no change (ROADMAP B28).
-                onToggleSuperset = if (index == 0) null else { { onToggleSuperset(row.id) } },
-                restTimerEnabled = restTimerEnabled,
-                defaultRestSeconds = defaultRestSeconds,
-            )
-            HorizontalDivider()
+        header?.let { above -> item(key = "header") { above() } }
+        if (rows.isEmpty()) {
+            empty?.let { message -> item(key = "empty") { message() } }
+        } else {
+            itemsIndexed(items = rows, key = { _, row -> row.id }) { index, row ->
+                ExerciseSection(
+                    row = row,
+                    onLogSet = { edit -> onLogSet(row.id, edit) },
+                    onRemoveExercise = { onRemoveExercise(row.id) },
+                    onMoveExercise = { delta -> onMoveExercise(row.id, delta) },
+                    // A row's neighbours are the list's own knowledge, so the entries that would write
+                    // nothing are simply not offered (ROADMAP N54, the shape B28's row-0 exclusion uses).
+                    canMoveUp = index > 0,
+                    canMoveDown = index < rows.lastIndex,
+                    onEditSet = onEditSet,
+                    onDeleteSet = onDeleteSet,
+                    onFinishExercise = onFinishExercise,
+                    onRateExercise = onRateExercise,
+                    onReopenExercise = { onReopenExercise(row.id) },
+                    // Row 0 has nothing above it to pair with: with no previous exercise the group
+                    // comes out null and the write would rewrite every ungrouped row, churning
+                    // `updatedAt` for no change (ROADMAP B28).
+                    onToggleSuperset = if (index == 0) null else { { onToggleSuperset(row.id) } },
+                    restTimerEnabled = restTimerEnabled,
+                    defaultRestSeconds = defaultRestSeconds,
+                )
+                HorizontalDivider()
+            }
         }
+        footer?.let { below -> item(key = "footer") { below() } }
     }
 }
 

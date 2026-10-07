@@ -84,7 +84,6 @@ class TestTagCoverageTest {
             "HOME_NO_RECENT",
             "HOME_TITLE",
             "LIBRARY_SEARCH_FIELD",
-            "READINESS_ROW",
             "SETTINGS_KEEP_SCREEN_ON",
             "SETTINGS_REST_CUE",
             "SETTINGS_REST_CURRENT",

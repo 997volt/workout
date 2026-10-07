@@ -79,6 +79,7 @@ class ActiveWorkoutScreenTest {
         val onLogSet: (String, SetEdit) -> Unit = { _, _ -> },
         val onToggleSuperset: (String) -> Unit = {},
         val onDiscard: () -> Unit = {},
+        val onAddExercise: () -> Unit = {},
         val onOpenTemplates: () -> Unit = {},
         val onOpenPrograms: () -> Unit = {},
     )
@@ -106,7 +107,7 @@ class ActiveWorkoutScreenTest {
             ActiveWorkoutScreen(
                 state = state,
                 clock = remember { mutableStateOf(WorkoutClock()) },
-                onAddExercise = {},
+                onAddExercise = actions.onAddExercise,
                 onLogSet = actions.onLogSet,
                 onToggleSuperset = onToggleSuperset,
                 personalRecord = personalRecord,
@@ -752,6 +753,47 @@ class ActiveWorkoutScreenTest {
      */
     private fun clickExerciseAction(tag: String) =
         composeTestRule.onNodeWithTag(tag).performSemanticsAction(SemanticsActions.OnClick)
+
+    @Test
+    fun theReadinessRow_scrollsWithTheWork_insteadOfSittingAboveIt() {
+        // ROADMAP N82. The row sat in the fixed column above the list, so it stayed on screen for the
+        // whole session while the exercises scrolled under it. `performScrollTo` looks for a scrollable
+        // ancestor and fails when there is none, so this passes only while the row is an item of the
+        // list itself — the fixed column had nothing to scroll it with.
+        setScreen(state = state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.READINESS_ROW).performScrollTo()
+        composeTestRule.onNodeWithTag(TestTags.READINESS_ROW).assertExists()
+    }
+
+    @Test
+    fun addExercise_isAnItemOfTheList_andStillReportsItself() {
+        // ROADMAP N82: the extended FAB floated over the last rows, which is why that list carried 96 dp
+        // of clearance for it. It is the list's own last item now, in Log set's shape and the colour the
+        // FAB drew.
+        var added = 0
+        setScreen(state = state(isFinished = false), actions = Actions(onAddExercise = { added++ }))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.ACTIVE_WORKOUT_ADD_EXERCISE))
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ADD_EXERCISE).performClick()
+
+        assertEquals(1, added)
+    }
+
+    @Test
+    fun theEmptyWorkout_offersAddExercise_underItsOwnMessage() {
+        // N82's edge: an empty session is drawn *instead of* the exercises, and the FAB was the only way
+        // to put a first movement into one. The button is an item of the same list, so it is drawn under
+        // that message as well.
+        setScreen(
+            state = ActiveWorkoutUiState(isLoading = false, sessionId = "s1", exercises = emptyList()),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.ACTIVE_WORKOUT_ADD_EXERCISE))
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_EMPTY).assertExists()
+    }
 
     private fun state(
         isFinished: Boolean,

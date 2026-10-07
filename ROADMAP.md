@@ -17,35 +17,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Five items, in the order they are to be done.** They are what *Later* was holding, picked up
+**Four items, in the order they are to be done.** They are what *Later* was holding, picked up
 together, so each carries an id and the decision it needed spelled out rather than a wish. The order is
 not importance; it is what the code and the open questions already fix, which is why it is argued at the
 end of this section rather than left to be re-derived.
 
-- **N82 — The workout's preamble scrolls away, and *Add exercise* moves under the last exercise.** The
-  body is a fixed `Column` — the record banner, the elapsed header, the readiness row, the rest bar —
-  above a `LazyColumn` of exercises, so scrolling the work down leaves the readiness note and the clock
-  in place; and the way to add a movement is an `ExtendedFloatingActionButton` over the list's last rows,
-  which is exactly why that list carries 96 dp of bottom padding. Both move into the flow: readiness
-  becomes an item the list scrolls past, and *Add exercise* becomes a button below the last exercise
-  rather than over it — *Log set*'s shape, full width and a `FilledTonalButton`, filled with what the
-  FAB draws today (`primaryContainer`, white on it) and keeping the `+` the FAB carries.
-  `PrimaryActionButton` is the near miss rather than the answer: it is already a full-width pill that
-  "used to be" an extended floating button (P1.16, N1) and takes both colours as parameters, but at its
-  52 dp with its own glyph spacing it is not *Log set*'s shape, so this borrows the colours and takes
-  the form from the log-set button.
-  **What is not settled is where the line falls, because the rest bar must not cross it.** The
-  countdown is the one thing here that has to be readable while the list is scrolled somewhere else —
-  you are resting *from* a set that is no longer in front of you — so it stays pinned, and the record
-  banner and the error line stay with it for the same reason (N23 deliberately puts the record between
-  sets rather than over them). That leaves the elapsed clock: it is part of the same preamble as
-  readiness and could scroll with it, or stay beside the rest bar as the one fact that is true for the
-  whole session. Either way the refactor is the same one — the body becomes a single `LazyColumn` and
-  `ExerciseList`, which has this one caller, becomes the items inside it instead of a list of its own.
-  **The empty session is the edge the move creates.** `EmptyWorkout` is drawn *instead of* the list and
-  offers only *Discard*, so the FAB is the one way to put the first movement into a new workout; a
-  button at the end of a list that is not drawn leaves it with nothing to press, and needs the same
-  button. The FAB's 96 dp of bottom padding goes with the FAB.
 - **N83 — The *Start planned workout* pill takes *Log set*'s colour.** The pill is a `PrimaryActionButton`
   on its defaults and so draws `primary`, the app's own Indigo; *Log set* is a `FilledTonalButton` on its
   defaults and draws `secondaryContainer`, which N49 already took down to `TealDeep` so a white label
@@ -104,14 +80,12 @@ end of this section rather than left to be re-derived.
   guess. It is last for both reasons: it needs that device, and it measures a bar N83 and N85 have
   already changed — a pill whose colour moved, and a row that gained an action to space around.
 
-**Why this order.** N82 repeats the foot-of-list action N81 introduced on the workout screen, so the two
-screens are made to match while the shape is fresh. N83 rewrites the rule N49 and N61 hold; it comes after
-N81 and N82 because both raise a container-filled action the rewritten rule should cover, and before N86
-because N86 measures the very start bar N83 changes. N84 shares nothing with the rest and is the only item
-that adds an interaction mode, so it waits for the layout work rather than interrupting it. N85 and N86 are
-last because neither can be finished from the code alone — N85 needs a product answer about which week a
-next-up pick lands in, and N86 wants a device with two active programs — and N85 comes before N86 because a
-row that gains an action changes the spacing under it.
+**Why this order.** N83 rewrites the rule N49 and N61 hold, and it goes before N86 because N86 measures
+the very start bar N83 changes. N84 shares nothing with the rest and is the only item that adds an
+interaction mode, so it waits for the layout work rather than interrupting it. N85 and N86 are last
+because neither can be finished from the code alone — N85 needs a product answer about which week a
+next-up pick lands in, and N86 wants a device with two active programs — and N85 comes before N86 because
+a row that gains an action changes the spacing under it.
 
 ## Later (still self-contained)
 
