@@ -534,8 +534,10 @@ class WorkoutsHomeScreenTest {
     fun aNextUpSubstitute_startsThePick_andRecordsNothing() {
         // ROADMAP N85: a substitution is an event keyed by slot *and* week (P3.11), and a next-up row has no
         // week to key one by — the run is calendar-free (P3.9) and `ProgramRun` carries no week — so its pick
-        // starts the session and leaves the run where it is. The recording callback is watched to prove the
-        // absence rather than assumed.
+        // starts the session and records nothing. That is not the same as the run standing still, which an
+        // earlier version of this comment claimed: the session names the template it trained, and P3.9's run
+        // follows the last slot trained (see ProgramRunTest.aSessionNamingALaterSlot_advancesPastIt). The
+        // recording callback is watched to prove the absence rather than assumed.
         var recorded: Pair<TodayPlan, String?>? = null
         var started: Pair<TodayPlan, String?>? = null
         val nextUp = NextUp(
@@ -570,6 +572,39 @@ class WorkoutsHomeScreenTest {
         assertThat(started?.first?.slotId).isEqualTo("slot-2")
         assertThat(started?.second).isEqualTo("t2")
         assertThat(recorded).isNull()
+    }
+
+    @Test
+    fun aNextUpSubstitutesDialog_offersNothingToRestore() {
+        // ROADMAP N85: a next-up row records no substitution, so the picker's *Restore the scheduled
+        // workout* row has no pick to clear. It was offered anyway and dismissed without doing anything —
+        // a control that cannot do anything is worse than no control (N53, N67) — so it is left out here,
+        // while the card, which does write, still offers it (the test below).
+        val nextUp = NextUp(
+            plan = TodayPlan(
+                id = "slot-2",
+                templateId = "t1",
+                name = "Push",
+                exerciseCount = 5,
+                slotId = "slot-2",
+            ),
+            programName = "Upper/Lower",
+            isAtStart = true,
+        )
+        setScreen(
+            state = WorkoutsHomeUiState(
+                isLoading = false,
+                nextUp = listOf(nextUp),
+                templates = todayPlanWithTemplates.templates,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Home.nextUpSubstitute("slot-2")).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_SUBSTITUTE_DIALOG).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.HOME_SUBSTITUTE_CLEAR).assertDoesNotExist()
+        // The templates are still offered, so the dialog still does its one job.
+        composeTestRule.onNodeWithTag(TestTags.homeSubstituteTemplate("t2")).assertExists()
     }
 
     @Test

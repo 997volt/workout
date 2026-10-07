@@ -280,6 +280,9 @@ private fun SubstitutePicker(
             onDismiss()
             onChoose(current, null)
         },
+        // A next-up row records no substitution (N85), so there is nothing for it to restore: the entry
+        // would dismiss and do nothing at all. Offered only where the pick was written (N53, N67).
+        showClear = current.records,
         onDismiss = onDismiss,
     )
 }
@@ -288,13 +291,17 @@ private fun SubstitutePicker(
  * What stands in for one occurrence this week (ROADMAP P3.11).
  *
  * The scheduled workout is offered first and clears the pick, because a substitution is the
- * lifter's statement rather than the app's and a mis-pick would otherwise be permanent.
+ * lifter's statement rather than the app's and a mis-pick would otherwise be permanent — but only where
+ * the pick is recorded at all ([showClear]): a next-up row's substitute writes no event, so it has no
+ * pick to clear and the entry is left out rather than offered as a control that cannot do anything.
  */
 @Composable
 private fun SubstituteDialog(
     templates: List<WorkoutTemplate>,
     onPick: (String) -> Unit,
     onClear: () -> Unit,
+    /** False where the row records nothing, so there is no pick for the clearing row to clear (N85). */
+    showClear: Boolean,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -304,13 +311,15 @@ private fun SubstituteDialog(
         title = { Text(stringResource(R.string.home_substitute_title)) },
         text = {
             LazyColumn {
-                item(key = "scheduled") {
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.home_substitute_clear)) },
-                        modifier = Modifier
-                            .testTag(TestTags.HOME_SUBSTITUTE_CLEAR)
-                            .clickable(onClick = onClear),
-                    )
+                if (showClear) {
+                    item(key = "scheduled") {
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.home_substitute_clear)) },
+                            modifier = Modifier
+                                .testTag(TestTags.HOME_SUBSTITUTE_CLEAR)
+                                .clickable(onClick = onClear),
+                        )
+                    }
                 }
                 items(items = templates, key = { it.id }) { template ->
                     ListItem(

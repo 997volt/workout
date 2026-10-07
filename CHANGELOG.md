@@ -21,11 +21,17 @@ repeated here.
   advancing when a slot is trained or skipped rather than because a day passed, and `ProgramRun` carries the
   slot and a flag with the week nowhere in it. Recording it against the week of *today*, which is what the
   card does, would write an event for an occurrence other than the one being started: on a Sunday it keys
-  the next-up Monday to a week whose Monday has already gone. So the pick starts its workout and leaves the
-  run where it is. The accepted cost is that history does not say the run was substituted and the run does
-  not advance, because there was no occurrence for the substitution to be *in*; the card keeps its write,
-  because the card *is* today's occurrence by construction. The entry sits on the row's field rather than
-  beside the start pill, which is deliberately the screen's full-width one (N61).
+  the next-up Monday to a week whose Monday has already gone. So the pick starts its workout and records no
+  substitution. The accepted cost is that history does not say the run was substituted — and, corrected
+  after review, that is the *whole* of the cost: the run does **not** stand still, which an earlier version
+  of this entry claimed. The session names the template it trained and P3.9's run follows the last slot
+  trained, so a pick naming another slot of the same program moves the run past that slot, exactly as
+  starting that template from anywhere else does; a session that named a template but settled no occurrence
+  was rejected, because it would need the session to carry a second fact and it contradicts P3.9. The card
+  keeps its write, because the card *is* today's occurrence by construction. The entry sits on the row's
+  field rather than beside the start pill, which is deliberately the screen's full-width one (N61) — and the
+  picker's *Restore the scheduled workout* row is not offered here at all, since a next-up row has no pick
+  to clear and the entry otherwise dismissed without doing anything.
 
 ### Changed
 

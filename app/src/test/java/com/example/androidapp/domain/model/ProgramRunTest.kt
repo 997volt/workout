@@ -81,6 +81,29 @@ class ProgramRunTest {
     }
 
     @Test
+    fun aSessionNamingALaterSlot_advancesPastIt() {
+        // N85's consequence, owned rather than denied. A next-up row's substitute records no substitution,
+        // but the session it starts still names the template it trained, and the run follows the last slot
+        // trained — so a pick naming another slot of the same program moves the run past that slot. The run
+        // is at A; a finished B lands on C, not back at A, which is what an earlier claim about the
+        // substitute said would happen.
+        val slots = listOf(
+            slot("a", position = 0, templateId = "ta"),
+            slot("b", position = 1, templateId = "tb"),
+            slot("c", position = 2, templateId = "tc"),
+        )
+
+        val run = programRun(
+            slots = slots,
+            sessions = listOf(session("tb", monday)),
+            skips = emptyList(),
+            substitutions = emptyList(),
+        )
+
+        assertThat(run?.slot?.id).isEqualTo("c")
+    }
+
+    @Test
     fun anOrderOnlyProgram_runsAThroughC_andWraps() {
         // The case P3.3's weekday matching cannot express: nothing resolves these sessions but the
         // order, so the run is what gives "which one is next" an answer (P3.9).

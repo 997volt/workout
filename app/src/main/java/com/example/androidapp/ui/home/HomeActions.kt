@@ -15,16 +15,22 @@ import kotlinx.coroutines.launch
  */
 
 /**
- * Starts a next-up row's substitute, and writes nothing (ROADMAP N85).
+ * Starts a next-up row's substitute, and writes no substitution (ROADMAP N85).
  *
  * A substitution is an event keyed by slot *and week* (P3.11), and there is no week to key one by here: the
  * run is deliberately calendar-free (P3.9), advancing when a slot is trained or skipped rather than because
  * a day passed, and `ProgramRun` carries the slot and a flag with the week nowhere in it. Recording it
  * against the week of *today* — what [substituteOccurrence] does for the card — would write an event for an
  * occurrence other than the one being started: on a Sunday it keys the next-up Monday to a week whose Monday
- * has already gone. So the pick starts the session and leaves the run where it is, and the accepted cost is
- * that history does not say the run was substituted. The card keeps the write, because the card *is*
- * today's occurrence by construction.
+ * has already gone. So the pick starts the session and records no substitution, and the accepted cost is
+ * that history does not say the run was substituted.
+ *
+ * That is **not** the same as the run standing still, which an earlier version of this comment claimed. The
+ * session names the template it trained, and P3.9's run follows the last slot trained, so a pick naming
+ * another slot of the same program moves the run past that slot — exactly what starting that template from
+ * anywhere else does. The alternative was rejected: a session that names a template but settles no
+ * occurrence would need the session to carry a second fact, and it contradicts P3.9. DECISIONS.md's N85
+ * entry holds the rule. The card keeps its write, because the card *is* today's occurrence by construction.
  */
 internal fun startSubstitute(
     requestStart: (StartIntent) -> Unit,

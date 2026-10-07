@@ -733,6 +733,17 @@ the rule; that one argues it.
   settles an occurrence in **both** and advances both runs. Telling them apart would need the
   session to record the slot, which P3.8 deliberately did not do; it is recorded here so the
   overlap is a known limit rather than a surprise.
+- **A substitute trained from a next-up row is an ordinary session, and P3.9 advances the run past its
+  template** (N85). A next-up row has no occurrence to key a substitution to — the run is calendar-free and
+  `ProgramRun` carries no week — so the pick records nothing and the workout starts from the chosen template
+  with the slot's prescription seeding it (P3.8). What it does **not** do is hold the run still, which an
+  earlier version of the entry claimed. The session names the template it trained, and P3.9's run follows the
+  last slot trained, so a pick naming another slot of the same program moves the run past that slot exactly
+  as starting that template from the templates tab would; recording no substitution means only that history
+  does not mark the session as a stand-in. The alternative — a session that names a template but settles no
+  occurrence — was rejected: it needs the session to carry a second fact, and it contradicts P3.9's one rule.
+  The picker offers *Restore the scheduled workout* only where the pick was written, because a control that
+  cannot do anything is worse than no control (N53, N67).
 - **A program document is its own format, and every exercise it names travels with it** (N47). The
   backup is a restore of a whole database, so it cannot be the way one program is handed over; this
   is a document with a **version of its own**, carrying the program's *definition* — slots, the
