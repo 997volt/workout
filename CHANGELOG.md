@@ -14,6 +14,22 @@ repeated here.
 
 ### Changed
 
+- **A past workout is named, and everything that writes moved into one ⋮** (N84). The detail's title was
+  the date and nothing else, while the name N58 added appeared only on the list rows; and all three ways to
+  write — the tap that opened a set's editor, the delete on every set, the rating row — were live on
+  arrival, so reading a workout meant reading it through a screen of controls. The title is the plan's name
+  now, read live from the template row as N58 requires, with the workout's own date under it; a workout
+  with no plan behind it keeps its date as the title, and one with nothing to click is named *Workout*.
+  Everything that writes is behind one ⋮: *Edit workout*, *Save as plan* (still only when there is
+  something to copy, N31), and *Delete* — last, coloured, and still asking first (B2). The edit entry
+  states the mode it is in, *Edit workout* or *Done editing*, the shape *Reopen*/*Done* already uses (N7,
+  N69), and it is `rememberSaveable` because this activity declares no `configChanges` — a rotation would
+  otherwise switch editing off under the user. While reading, a set row stops being tappable and loses its
+  delete, and the ratings stay on the screen as a summary with no tap rather than disappearing: N8 and N50
+  went out of their way to make them something the lifter opens, and hiding the *reading* of them would
+  have taken that back. The exercise's name is not gated either — it opens that movement's trends, which is
+  a way out rather than a write. `WorkoutSession` gained the `templateId` its entity already stored, so the
+  detail can follow it to the plan's live name; the name itself is never copied onto the session.
 - **A planned workout's start wears *Log set*'s colour** (N83). Starting a plan and logging its next set
   are one move — the plan stated, and then committed — and the two planned-workout starts say so now: the
   next-up pill and today's card both draw `secondaryContainer`, the tonal container *Log set* draws,

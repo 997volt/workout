@@ -613,6 +613,11 @@
     <string name="history_empty_hint">Finished workouts will appear here.</string>
     <string name="history_volume">%1$s %2$s</string>
     <string name="history_detail_title">Workout</string>
+    <!-- The one ⋮ on a past workout, and the mode it holds (ROADMAP N84). The label states the state
+         it is in, so the way out of editing is the same entry that opened it. -->
+    <string name="history_detail_more">More actions</string>
+    <string name="history_detail_edit">Edit workout</string>
+    <string name="history_detail_edit_done">Done editing</string>
     <string name="history_detail_missing">That workout is no longer stored.</string>
     <!-- Repeating one finished workout (ROADMAP N48): the entry point the home button gave up, now
          addressed to the workout the row names rather than to "the last one". -->

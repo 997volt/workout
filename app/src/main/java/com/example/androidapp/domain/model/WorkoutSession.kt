@@ -67,6 +67,15 @@ data class WorkoutSession(
      * (N6), which is about one set.
      */
     val notes: String? = null,
+    /**
+     * The plan this session was started from, or null for a workout that began from nothing (N58).
+     *
+     * Provenance rather than prescription, and the domain's half of what the history list joins for. The
+     * *name* behind it is deliberately not carried here: it is read live from the template row, so
+     * renaming a plan relabels the past and a plan that has been deleted still names the workout it was
+     * (N58, N84).
+     */
+    val templateId: String? = null,
 )
 
 /**

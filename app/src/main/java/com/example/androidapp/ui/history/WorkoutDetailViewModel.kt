@@ -18,10 +18,15 @@ import java.time.Duration
 import javax.inject.Inject
 import androidx.navigation.toRoute
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -84,6 +89,13 @@ data class HistoryExercise(
 data class WorkoutDetailUiState(
     val isLoading: Boolean = true,
     val session: WorkoutSession? = null,
+    /**
+     * The plan's name, for the title, or null for a workout that began from nothing (N58, N84).
+     *
+     * Read live from the template row rather than stored on the session, so renaming a plan relabels the
+     * past. The screen falls back to the workout's own date when this is null.
+     */
+    val templateName: String? = null,
     val exercises: List<HistoryExercise> = emptyList(),
     val error: DataError? = null,
 ) {
@@ -169,11 +181,30 @@ class WorkoutDetailViewModel @Inject constructor(
     private val exercises = workoutRepository.observeSessionExercises(sessionId)
     private val sets = workoutRepository.observeSets(sessionId)
 
+    /**
+     * The plan's name for the title, read live from its row (N58, N84).
+     *
+     * Live rather than copied onto the session, which is the rule N58 argued: renaming a plan relabels the
+     * past, and a deleted plan still names the workout it was, since `deleteTemplate` is a soft delete. A
+     * session with no plan behind it has no id to follow, and the screen falls back to its own date.
+     */
+    private val templateName: Flow<String?> = session
+        .map { it?.templateId }
+        .distinctUntilChanged()
+        .flatMapLatest { templateId ->
+            if (templateId == null) {
+                flowOf(null)
+            } else {
+                templateRepository.observeTemplate(templateId).map { it?.name }
+            }
+        }
+
     val uiState: StateFlow<WorkoutDetailUiState> =
-        combine(session, exercises, sets, lastError) { current, exerciseRows, logged, error ->
+        combine(session, exercises, sets, lastError, templateName) { current, exerciseRows, logged, error, name ->
             WorkoutDetailUiState(
                 isLoading = false,
                 session = current,
+                templateName = name,
                 exercises = exerciseRows.map { row ->
                     HistoryExercise(
                         id = row.id,

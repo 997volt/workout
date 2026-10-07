@@ -34,7 +34,10 @@ import com.example.androidapp.domain.model.label
  *
  * [onRate] is called with the values the dialog collects; a caller that also
  * needs to finish the exercise (the Done prompt) keeps its own dialog for that, since
- * "save these" and "save these and close the exercise" are different acts.
+ * "save these" and "save these and close the exercise" are different acts. **Null means the rating is
+ * being read rather than changed** (ROADMAP N84): History draws a past workout's ratings before *Edit* is
+ * chosen, and the summary stays on the screen while the tap goes — a control that cannot write is worse
+ * than no control (N67), and hiding the reading of a rating would take back what N8 and N50 bought.
  */
 @Composable
 fun ExerciseRatingSection(
@@ -42,7 +45,7 @@ fun ExerciseRatingSection(
     joints: List<JointPain>,
     legacyJointPain: Int?,
     legacyJointPainNote: String?,
-    onRate: (muscleFeel: Int?, joints: List<JointPain>) -> Unit,
+    onRate: ((muscleFeel: Int?, joints: List<JointPain>) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     var editing by remember { mutableStateOf(false) }
@@ -54,7 +57,11 @@ fun ExerciseRatingSection(
         modifier = modifier
             .fillMaxWidth()
             .testTag(TestTags.EXERCISE_RATING_ROW)
-            .clickable(onClickLabel = editLabel) { editing = true }
+            // A read-only rating keeps its label and loses the tap, so a screen reader is not told about
+            // an edit that cannot happen (the rule a done exercise's own sets follow, N7).
+            .let { row ->
+                if (onRate == null) row else row.clickable(onClickLabel = editLabel) { editing = true }
+            }
             .padding(vertical = 8.dp),
     ) {
         Text(
@@ -74,14 +81,15 @@ fun ExerciseRatingSection(
         )
     }
 
-    if (editing) {
+    val rate = onRate
+    if (editing && rate != null) {
         ExerciseRatingDialog(
             initialMuscleFeel = muscleFeel,
             initialJoints = joints,
             onDismiss = { editing = false },
             onSave = { feel, picked ->
                 editing = false
-                onRate(feel, picked)
+                rate(feel, picked)
             },
             legacyJointPain = legacyJointPain,
             legacyJointPainNote = legacyJointPainNote,

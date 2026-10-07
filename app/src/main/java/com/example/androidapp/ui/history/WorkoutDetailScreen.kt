@@ -6,6 +6,7 @@ import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.SoreMuscle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,7 +18,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -34,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -183,6 +188,10 @@ fun WorkoutDetailScreen(
     var editing by remember { mutableStateOf<HistorySet?>(null) }
     var confirmingDelete by remember { mutableStateOf(false) }
     var savingAsPlan by remember { mutableStateOf(false) }
+    // Reading or editing (N84). `rememberSaveable`, unlike the three above: a data class is not something a
+    // Bundle can hold, but a mode the user chose is, and this activity declares no `configChanges` — so a
+    // rotation would otherwise put the workout back into reading and switch every edit off under them.
+    var editingWorkout by rememberSaveable { mutableStateOf(false) }
 
     PlanDialogs(
         savingAsPlan = savingAsPlan,
@@ -202,6 +211,9 @@ fun WorkoutDetailScreen(
         topBar = {
             DetailTopBar(
                 session = state.session,
+                templateName = state.templateName,
+                editing = editingWorkout,
+                onToggleEdit = { editingWorkout = !editingWorkout },
                 onDelete = { confirmingDelete = true },
                 onBack = onBack,
                 // Offered only when there is something to copy; the rule is enforced again by the
@@ -213,6 +225,7 @@ fun WorkoutDetailScreen(
         DetailContent(
             onOpenExerciseTrends = onOpenExerciseTrends,
             state = state,
+            editing = editingWorkout,
             onEditSet = { editing = it },
             onDeleteSet = onDeleteSet,
             onRate = onRateExercise,
@@ -239,19 +252,39 @@ fun WorkoutDetailScreen(
 @Composable
 private fun DetailTopBar(
     session: WorkoutSession?,
+    templateName: String?,
+    editing: Boolean,
+    onToggleEdit: () -> Unit,
     onDelete: () -> Unit,
     onBack: () -> Unit,
     /** Null when the workout has nothing to copy (ROADMAP N31). */
     onSaveAsPlan: (() -> Unit)? = null,
 ) {
+    val date = session?.let {
+        HistoryFormat.date(it.startedAt, zone = it.zoneIdOrNull() ?: ZoneId.systemDefault())
+    }
+
     TopAppBar(
         title = {
-            Text(
-                text = session?.let {
-                    HistoryFormat.date(it.startedAt, zone = it.zoneIdOrNull() ?: ZoneId.systemDefault())
+            // The plan's name is the title and the date is what happened, under it (N84). The history
+            // *list* states the same two the other way round — date first — because a list is scanned by
+            // when things happened, while a single workout is named by what it was (N58). A workout with
+            // no plan behind it has no name, so its date stays the title, as it always was.
+            Column {
+                Text(
+                    text = templateName ?: date ?: stringResource(R.string.history_detail_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.testTag(TestTags.HISTORY_DETAIL_TITLE),
+                )
+                if (templateName != null && date != null) {
+                    Text(
+                        text = date,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag(TestTags.HISTORY_DETAIL_DATE),
+                    )
                 }
-                    ?: stringResource(R.string.history_detail_title),
-            )
+            }
         },
         navigationIcon = {
             IconButton(onClick = onBack) {
@@ -262,30 +295,104 @@ private fun DetailTopBar(
             }
         },
         actions = {
-            onSaveAsPlan?.let { save ->
-                AppTextButton(
-                    onClick = save,
-                    modifier = Modifier.testTag(TestTags.DETAIL_SAVE_AS_PLAN),
-                ) {
-                    Text(stringResource(R.string.detail_save_as_plan))
-                }
-            }
-            // Only offer deletion once there is something to delete.
+            // Only offer the menu once there is a workout for its entries to act on.
             if (session != null) {
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = stringResource(R.string.history_delete_workout),
-                    )
-                }
+                DetailMenu(
+                    editing = editing,
+                    onToggleEdit = onToggleEdit,
+                    onSaveAsPlan = onSaveAsPlan,
+                    onDelete = onDelete,
+                )
             }
         },
     )
 }
 
+/**
+ * The one ⋮ on a past workout: the mode, the copy, and the destruction (ROADMAP N84).
+ *
+ * N53's rule, at screen level: what writes is rare and what reads is constant, so the edits stopped being
+ * live controls on every row and became one menu entry. The order and the colour are the exercise menu's
+ * (`ExerciseActionsMenu`): the mode first because it is the entry reached for most, then the constructive
+ * one, then the destructive one last and coloured — and the confirmation behind it stays (B2), because the
+ * delete takes the workout and there is no undo to reach for.
+ *
+ * `rememberSaveable` for the open state, the same rule that menu follows: this activity declares no
+ * `configChanges`, so rotation rebuilds it and a menu that was open would vanish mid-decision.
+ */
+@Composable
+private fun DetailMenu(
+    editing: Boolean,
+    onToggleEdit: () -> Unit,
+    onSaveAsPlan: (() -> Unit)?,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var menuOpen by rememberSaveable { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        IconButton(
+            onClick = { menuOpen = true },
+            modifier = Modifier.testTag(TestTags.HISTORY_DETAIL_MENU),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.MoreVert,
+                contentDescription = stringResource(R.string.history_detail_more),
+            )
+        }
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            // The label states the state it is in, the shape the workout's own Reopen/Done uses (N7, N69):
+            // a mode whose exit is another trip to this menu has to say which way it goes.
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(
+                            if (editing) {
+                                R.string.history_detail_edit_done
+                            } else {
+                                R.string.history_detail_edit
+                            },
+                        ),
+                    )
+                },
+                onClick = {
+                    menuOpen = false
+                    onToggleEdit()
+                },
+                modifier = Modifier.testTag(TestTags.HISTORY_DETAIL_EDIT),
+            )
+            onSaveAsPlan?.let { save ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.detail_save_as_plan)) },
+                    onClick = {
+                        menuOpen = false
+                        save()
+                    },
+                    modifier = Modifier.testTag(TestTags.DETAIL_SAVE_AS_PLAN),
+                )
+            }
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        text = stringResource(R.string.history_delete_workout),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                },
+                onClick = {
+                    menuOpen = false
+                    onDelete()
+                },
+                modifier = Modifier.testTag(TestTags.HISTORY_DETAIL_DELETE),
+            )
+        }
+    }
+}
+
 @Composable
 private fun DetailContent(
     state: WorkoutDetailUiState,
+    /** Whether the workout is being edited (N84), which is what the rows' write affordances answer to. */
+    editing: Boolean,
     onEditSet: (HistorySet) -> Unit,
     onDeleteSet: (String) -> Unit,
     onRate: (String, Int?, List<JointPain>) -> Unit,
@@ -337,6 +444,7 @@ private fun DetailContent(
                     ExerciseBlock(
                         onOpenTrends = onOpenExerciseTrends,
                         exercise = exercise,
+                        editing = editing,
                         onEditSet = onEditSet,
                         onDeleteSet = { onDeleteSet(it.id) },
                         onRate = onRate,
@@ -443,6 +551,8 @@ private fun Totals(state: WorkoutDetailUiState, modifier: Modifier = Modifier) {
 @Composable
 private fun ExerciseBlock(
     exercise: HistoryExercise,
+    /** Whether this block's sets and rating can be written, or are only being read (N84). */
+    editing: Boolean,
     onEditSet: (HistorySet) -> Unit,
     onDeleteSet: (HistorySet) -> Unit,
     onRate: (String, Int?, List<JointPain>) -> Unit,
@@ -465,6 +575,7 @@ private fun ExerciseBlock(
                 set = set,
                 number = index + 1,
                 editLabel = editLabel,
+                editable = editing,
                 onEditSet = onEditSet,
                 onDeleteSet = onDeleteSet,
             )
@@ -475,7 +586,15 @@ private fun ExerciseBlock(
             joints = exercise.joints,
             legacyJointPain = exercise.jointPain,
             legacyJointPainNote = exercise.jointPainNote,
-            onRate = { feel, joints -> onRate(exercise.id, feel, joints) },
+            // Read-only while reading (N84). N8 and N50 went out of their way to make the ratings something
+            // the lifter opens, so what stays on the screen is the *reading* of them — a summary with no
+            // tap — rather than a block that disappears behind the mode. The exercise's name above is not
+            // gated either: it opens that movement's trends, a way out rather than a write.
+            onRate = if (editing) {
+                { feel, joints -> onRate(exercise.id, feel, joints) }
+            } else {
+                null
+            },
         )
     }
 }
@@ -487,6 +606,8 @@ private fun HistorySetRow(
     set: HistorySet,
     number: Int,
     editLabel: String,
+    /** False while the workout is only being read: the row stops being tappable (N84). */
+    editable: Boolean,
     onEditSet: (HistorySet) -> Unit,
     onDeleteSet: (HistorySet) -> Unit,
 ) {
@@ -495,57 +616,82 @@ private fun HistorySetRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(
+            HistorySetNumbers(
+                set = set,
+                number = number,
                 modifier = Modifier
                     .weight(1f)
                     .testTag(TestTags.SET_ROW)
-                    .clickable(onClickLabel = editLabel) { onEditSet(set) },
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text(
-                        text = "$number",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = stringResource(
-                            R.string.set_summary,
-                            Weight.display(
-                                set.weightGrams,
-                                set.assistanceGrams,
-                                exerciseWeightUnit(set.weightUnit),
-                            ),
-                            exerciseWeightUnit(set.weightUnit).label(),
-                            set.reps,
-                        ),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    // The detail is where the full text lives (N6); the workout
-                    // row only carries a marker. A warm-up carries no effort to read back (N67).
-                    set.rpeHalves?.takeIf { set.setType.recordsEffort }?.let { rpeHalves ->
-                        Text(
-                            text = rpeMarker(rpeHalves),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                set.note?.let { comment ->
-                    Text(
-                        text = comment,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // Without a label a screen reader announces the row and gives no hint that tapping it
+                    // edits the set, so the label and the action both go when the workout is only being
+                    // read — the rule a done exercise's sets already follow (N7, N84).
+                    .let { column ->
+                        if (editable) {
+                            column.clickable(onClickLabel = editLabel) { onEditSet(set) }
+                        } else {
+                            column
+                        }
+                    },
+            )
+            if (editable) {
+                IconButton(onClick = { onDeleteSet(set) }) {
+                    Icon(
+                        imageVector = Icons.Filled.Delete,
+                        contentDescription = stringResource(R.string.set_delete),
                     )
                 }
-            }
-            IconButton(onClick = { onDeleteSet(set) }) {
-                Icon(
-                    imageVector = Icons.Filled.Delete,
-                    contentDescription = stringResource(R.string.set_delete),
-                )
             }
         }
     
+}
+
+/**
+ * What one logged set says: its number, its load and reps, its effort and its note (N6).
+ *
+ * Split out of [HistorySetRow] when N84's read-only branch pushed that function past the length this
+ * project allows, and it is the piece that reads on its own — the write affordances around it are the
+ * other half.
+ */
+@Composable
+private fun HistorySetNumbers(set: HistorySet, number: Int, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                text = "$number",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(
+                    R.string.set_summary,
+                    Weight.display(
+                        set.weightGrams,
+                        set.assistanceGrams,
+                        exerciseWeightUnit(set.weightUnit),
+                    ),
+                    exerciseWeightUnit(set.weightUnit).label(),
+                    set.reps,
+                ),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            // The detail is where the full text lives (N6); the workout row only carries a marker. A
+            // warm-up carries no effort to read back (N67).
+            set.rpeHalves?.takeIf { set.setType.recordsEffort }?.let { rpeHalves ->
+                Text(
+                    text = rpeMarker(rpeHalves),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        set.note?.let { comment ->
+            Text(
+                text = comment,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }
 
 @Composable

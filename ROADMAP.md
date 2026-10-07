@@ -17,31 +17,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Three items, in the order they are to be done.** They are what *Later* was holding, picked up
+**Two items, in the order they are to be done.** They are what *Later* was holding, picked up
 together, so each carries an id and the decision it needed spelled out rather than a wish. The order is
 not importance; it is what the code and the open questions already fix, which is why it is argued at the
 end of this section rather than left to be re-derived.
 
-- **N84 — A past workout's name goes on top of its detail, and its edits move behind one ⋮.** The title is
-  the date and nothing else — the name N58 added appears only in a list row's supporting line — and all
-  three ways to write sit live on arrival: a set row opens its editor on tap, every row carries a delete
-  icon, and the rating row is editable in place. The request is the name as the title and one overflow
-  holding **Edit**, **Save as plan** and **Delete**, which is the shape `WorkoutMenu` already uses on the
-  workout screen: the destructive entry last and coloured, still asking first (B2).
-  **The name is the template's, read live and never snapshotted** (N58), so nothing is written to the
-  session and no column arrives: the title becomes that name with the workout's own date kept under it, and
-  the date stays the title where a session has no template behind it, because a free workout has no name to
-  show. Giving the workout a name of its own was the snapshot N58 rejected — a column and a migration for
-  what only a *rename* changes — and it would put a rename and a set edit behind one *Edit* label.
-  **What is not settled is how far Edit reaches, because the rating row is both a reading and a write.**
-  Gating the tap-to-edit rows and their delete icons needs a way back out — a toggle whose label states the
-  state it is in, the shape *Reopen*/*Done* already uses (N7, N69). What that mode has to decide is the
-  ratings: N8 and N50 went out of their way to make them something the lifter opens, so hiding the *reading*
-  of them behind Edit would take back what that bought, and the choice is a read-only rating while reading
-  or one that stays editable throughout. The exercise *name* is not an edit — it opens that movement's
-  trends — so it stays. *Save as plan* is N31's entry, offered only when there is something to copy, so the
-  menu holds three actions on a workout with sets and two on one without: N53's "what cannot be done is not
-  offered", rather than a disabled third entry.
 - **N85 — Bring *Substitute* back to a next-up row.** Today's card offers it (P3.11) and the next-up rows do
   not, although a next-up row is the same `TodayPlan`: it already carries the slot's id and a *Start
   planned workout*, so `substituteOccurrence` fits it as it stands. **What is not settled is which
@@ -63,11 +43,10 @@ end of this section rather than left to be re-derived.
   guess. It is last for both reasons: it needs that device, and it measures a bar N83 and N85 have
   already changed — a pill whose colour moved, and a row that gained an action to space around.
 
-**Why this order.** N84 shares nothing with the rest and is the only item that adds an interaction mode,
-so it waits for the layout work rather than interrupting it. N85 and N86 are last because neither can be
-finished from the code alone — N85 needs a product answer about which week a next-up pick lands in, and
-N86 wants a device with two active programs — and N85 comes before N86 because a row that gains an action
-changes the spacing under it.
+**Why this order.** N85 and N86 are the last two because neither can be finished from the code alone —
+N85 needs a product answer about which week a next-up pick lands in, and N86 wants a device with two
+active programs — and N85 comes before N86 because a row that gains an action changes the spacing under
+it.
 
 ## Later (still self-contained)
 

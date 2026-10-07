@@ -192,6 +192,13 @@ object TestTags {
     const val DATA_IMPORT = "data_import"
 
     const val DETAIL_SAVE_AS_PLAN = "detail_save_as_plan"
+    /** The past workout's title — its plan's name, or its date — and the date under it (N84). */
+    const val HISTORY_DETAIL_TITLE = "history_detail_title"
+    const val HISTORY_DETAIL_DATE = "history_detail_date"
+    /** The one ⋮ on a past workout, and the two entries that write (N84). */
+    const val HISTORY_DETAIL_MENU = "history_detail_menu"
+    const val HISTORY_DETAIL_EDIT = "history_detail_edit"
+    const val HISTORY_DETAIL_DELETE = "history_detail_delete"
     const val DETAIL_PLAN_NAME = "detail_plan_name"
     const val DETAIL_PLAN_CONFIRM = "detail_plan_confirm"
     const val DETAIL_OPEN_NEW_PLAN = "detail_open_new_plan"

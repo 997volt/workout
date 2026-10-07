@@ -26,6 +26,9 @@ internal fun WorkoutSessionEntity.toDomain(soreMuscles: List<SessionSoreMuscleEn
         soreMuscles = soreMuscles.map { it.toDomain() },
         zoneOffsetMinutes = zoneOffsetMinutes,
         notes = notes,
+        // Provenance, so a past workout can say which plan it was (N58, N84). The name is not copied with
+        // it: the reader follows the id and reads the template's live name.
+        templateId = templateId,
     )
 
 /** One sore-muscle row as the rest of the app reads it (ROADMAP N62). */

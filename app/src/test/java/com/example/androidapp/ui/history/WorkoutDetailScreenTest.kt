@@ -5,13 +5,17 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertTextContains
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.SoreMuscle
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -63,8 +67,10 @@ class WorkoutDetailScreenTest {
     fun aSetRowSaysWhatTappingItDoes() {
         // P1.17: the row is editable, and a screen-reader user should be told that
         // rather than left to guess. The tag is what makes this assertable without
-        // matching on a translated string.
+        // matching on a translated string. Since N84 the row is editable only in the editing mode, so the
+        // label is asserted there — and its absence while reading is the other half, below.
         setScreen()
+        editWorkout()
 
                 // useUnmergedTree: a tag on a child of a merging parent is not visible in
         // the merged tree — the same trap the FAB hit earlier in this file.
@@ -72,11 +78,93 @@ class WorkoutDetailScreenTest {
             .assert(hasClickLabel())
     }
 
+    /**
+     * Opens the past workout's ⋮, which is where every write lives since N84.
+     *
+     * The entries moved off the header and into the menu, so reaching one is two gestures now: this is the
+     * first.
+     */
+    private fun openMenu() {
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_MENU).performClick()
+    }
+
+    /** Chooses *Edit workout*: the mode that puts the rows' write affordances back (N84). */
+    private fun editWorkout() {
+        openMenu()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_EDIT).performClick()
+    }
+
+    @Test
+    fun whileReading_aPastWorkout_offersNoWayToWrite() {
+        // N84: everything that writes is behind the menu, so a row that cannot be edited must not announce
+        // an edit either — the rule a done exercise's sets already follow (N7).
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_ROW, useUnmergedTree = true)
+            .assertHasNoClickAction()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_RATING_ROW, useUnmergedTree = true)
+            .assertHasNoClickAction()
+        composeTestRule.onNodeWithContentDescription("Delete set").assertDoesNotExist()
+    }
+
+    @Test
+    fun editingTheWorkout_givesTheRowsTheirWritesBack() {
+        // The other half of the mode: the same row, once *Edit workout* has been chosen.
+        setScreen()
+        editWorkout()
+
+        composeTestRule.onNodeWithTag(TestTags.SET_ROW, useUnmergedTree = true)
+            .assertHasClickAction()
+        composeTestRule.onNodeWithContentDescription("Delete set").assertExists()
+    }
+
+    @Test
+    fun theEditEntry_statesWhichModeItIsIn() {
+        // N7/N69's shape, applied to a mode: the entry that opens editing is the one that closes it, so its
+        // label has to say which way it goes.
+        setScreen()
+
+        openMenu()
+        composeTestRule.onNodeWithText("Edit workout").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_EDIT).performClick()
+        openMenu()
+
+        composeTestRule.onNodeWithText("Done editing").assertExists()
+    }
+
+    @Test
+    fun theTitle_namesThePlan_withTheDateUnderIt() {
+        // N84, and N58's rule that the name is read live: the title is what the workout *was*, and the date
+        // stays visible under it rather than being replaced by the name — so the two are asserted in the
+        // order they are read, by position.
+        setScreen(uiState = state.copy(templateName = "Push day"))
+
+        val name = composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_TITLE).getUnclippedBoundsInRoot()
+        val date = composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_DATE).getUnclippedBoundsInRoot()
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_TITLE).assertTextContains("Push day")
+        assertTrue("the date is not drawn under the name", date.top >= name.bottom)
+    }
+
+    @Test
+    fun aWorkoutWithNoPlan_keepsItsOwnDateAsTheTitle() {
+        // A session that began from nothing has no plan to name, so the date stays the title it always was
+        // and there is no second line to draw.
+        setScreen(uiState = state.copy(templateName = null))
+
+        // The year, rather than the whole formatted date: the format is [HistoryFormat]'s own subject and
+        // is asserted there, while what this test is about is *which* of the two strings is the title.
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_TITLE)
+            .assertTextContains("2026", substring = true)
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_DATE).assertDoesNotExist()
+    }
+
     @Test
     fun withNoExercises_theSaveActionIsNotOffered() {
         // ROADMAP N31: a workout with nothing to copy offers nothing. The repository refuses it too;
         // this is the half a user can see.
         setScreen(uiState = state.copy(exercises = emptyList()))
+        openMenu()
 
         composeTestRule.onNodeWithTag(TestTags.DETAIL_SAVE_AS_PLAN).assertDoesNotExist()
     }
@@ -85,6 +173,7 @@ class WorkoutDetailScreenTest {
     fun withExercises_itAsksForAName_beforeCopying() {
         var saved: String? = null
         setScreen(onSaveAsTemplate = { saved = it })
+        openMenu()
         composeTestRule.onNodeWithTag(TestTags.DETAIL_SAVE_AS_PLAN).performClick()
 
         // A blank name is refused before the tap as well as by the repository.
@@ -152,6 +241,7 @@ class WorkoutDetailScreenTest {
             onUpdateSet = { _, _, weight, _, _, _, _ -> saved = weight },
         )
 
+        editWorkout()
         composeTestRule.onNodeWithTag(TestTags.SET_ROW, useUnmergedTree = true).performClick()
         composeTestRule.onNodeWithTag(TestTags.SET_EDIT_INCREASE_WEIGHT).performClick()
         composeTestRule.onNodeWithTag(TestTags.SET_SAVE).performClick()
@@ -312,6 +402,7 @@ class WorkoutDetailScreenTest {
     @Test
     fun tappingTheFeelRow_opensTheRatingEditor() {
         setScreen()
+        editWorkout()
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_RATING_ROW, useUnmergedTree = true)
             .performClick()
@@ -321,8 +412,10 @@ class WorkoutDetailScreenTest {
 
     @Test
     fun tappingASet_opensTheEditor() {
-        // The whole point of P1.7: a mis-tap must be correctable from history.
+        // The whole point of P1.7: a mis-tap must be correctable from history — and since N84,
+        // correctable once the workout's own *Edit workout* has been chosen.
         setScreen()
+        editWorkout()
 
         composeTestRule.onNodeWithText("100 kg × 5").performClick()
 
@@ -333,8 +426,9 @@ class WorkoutDetailScreenTest {
     fun deletingAWorkout_asksFirst_andOnlyThenReports() {
         var deleted = false
         setScreen(onDeleteWorkout = { deleted = true })
+        openMenu()
 
-        composeTestRule.onNodeWithContentDescription("Delete workout").performClick()
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_DELETE).performClick()
 
         // Still nothing deleted: a confirmation has to stand between the tap and
         // the deletion, because there is no undo in the app.
