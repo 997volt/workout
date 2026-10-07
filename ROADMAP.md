@@ -12,58 +12,31 @@ the app show you the difference and what to do next.
 
 Ids (`F#` foundations, `B#` defects, `N#` the next planned changes, `P#.#` the product
 backlog, `R#.#` releases) are stable and go in commit messages. They were assigned when the
-work was planned, so they do not run in order — and an id this file does not list has
+work was planned, so they do not always run in order — and an id this file does not list has
 shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Nothing.** The fourteen defects a review of the unreleased N74–N79 batch found (B59–B72) are fixed, and
-the batch itself is recorded in [CHANGELOG.md](CHANGELOG.md) under *Unreleased*. A candidate graduates to
-this section — gaining an id and a spelled-out decision rather than a wish — when it is picked up, so what
-stands here is committed work; the two queues below are where the rest lives, *Later* for what is
-self-contained and *Parked* for what is a product in its own right.
+**Seven items, in the order they are to be done.** They are what *Later* was holding, picked up
+together, so each carries an id and the decision it needed spelled out rather than a wish. The order is
+not importance; it is what the code and the open questions already fix, which is why it is argued at the
+end of this section rather than left to be re-derived.
 
-## Later (still self-contained)
-
-Everything that stood here has shipped — the defects found in use, the workout screen's discard, the
-workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch, a rest of
-zero, the planned-set prefill, the program document, and the eight defects a review of that batch found
-and closed (B51-B58) — each with its entry in [CHANGELOG.md](CHANGELOG.md). A candidate graduates to
-*Next* — gaining an id and a spelled-out decision — when it is picked up, so this queue is where
-unplanned work waits, and *Parked* below is where deliberate non-work lives.
-
-The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what
-they named that is not a feature is a settled decision: no dated instances (N16), nothing
-automatic (the app states what happened; it never writes what it decided), a weekday-less slot that is never missed
-and is order-only, and more than one active program, which P3.12 allowed.
-
-### Seven requests from use
-
-Each small and self-contained, and none has been picked up, so none has an id yet — picking one up
-is what gives it a spelled-out decision and a place in *Next*. The last request that stood here — an
-exercise's own weight change — became N77 that way and has shipped, with its entry in
-[CHANGELOG.md](CHANGELOG.md).
-
-- **More room around the next-up block.** A next-up row is drawn with 8 dp above it, inside the home
-  start bar's own 12 dp of vertical padding, and its name sits against its *Start* button with nothing
-  between them beyond the button's inset. With more than one program active (P3.12) the bar can carry
-  several rows, and the block reads tighter than the cards it sits under. The decision is *where* the
-  room goes — the block's own margin, the space between rows, or the gap between a row's text and its
-  action, which are three different fixes — and it wants a device with two active programs rather than a
-  guess.
-- **Bring *Substitute* back to a next-up row.** Today's card offers it (P3.11) and the next-up rows do
-  not, although a next-up row is the same `TodayPlan`: it already carries the slot's id and a *Start
-  planned workout*, so `substituteOccurrence` fits it as it stands. **What is not settled is which
-  occurrence the pick lands on.** A substitute is an event keyed by slot *and* week (P3.11), and
-  [WorkoutsHomeViewModel.kt](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeViewModel.kt)
-  writes the week of *today* — right for today's card, which is that occurrence by construction, and
-  questionable for a next-up row, which P3.9 makes deliberately **calendar-free**: a run advances when a
-  slot is trained or skipped, never because a day passed. On a Sunday the next-up Monday falls in the
-  *next* week, so the pick would be keyed to a week whose Monday has already gone. So the decision is
-  whether a next-up pick is a week-bound substitution at all — and if it is, which week it lands in
-  (`ProgramSchedule.occurrenceDate` is what turns a week and a weekday into the date in question) — or
-  whether it only opens the session and records nothing.
-- **A template exercise's planned sets stop being folded away, and the block takes the workout's
+- **N80 — A template exercise's cue gets its own line.** `ExercisePlanFields` is one `Row`: rest at a
+  fixed 110 dp, the target RPE at 90 dp, the cue taking `weight(1f)`, and the save check at the end — so
+  the cue gets whatever those leave it, with `singleLine` on top, while the two fields it sits between
+  are fixed and readable. It was two fields until N59 put the exercise's target RPE beside the rest and
+  cue; the cue is what paid for that. The fix is the one N68 already used in the workout, where the RPE
+  stepper moved to its own full-width row because sharing left it squeezed into whatever the button did
+  not take.
+  **What is not settled is where the one save goes, because one write still covers all three.** The
+  check commits rest, RPE and cue together, so it cannot simply follow the cue down without reading as
+  that field's own save: the shapes are the button on the first row beside the two numbers it also
+  writes, beside the cue on the second row, or on a row of its own below everything — which is N68's
+  shape, and the one *Add set* takes at this same block's foot (N81), so the two would have to be told
+  apart by more than their position. The smaller question is the cue's height: B71 gave the note two
+  lines because a note is a sentence, and a cue is one too.
+- **N81 — A template exercise's planned sets stop being folded away, and the block takes the workout's
   shape.** The plan is one `ListItem` reading *Planned sets · 3* and everything about it is behind the
   tap: `TemplatePlanDialog` is the list, the only place a rung's derived load is shown, and where both
   *Add set* and *Add warm-ups* live. The sets become lines in the block itself, the way `ExerciseSets`
@@ -81,14 +54,14 @@ exercise's own weight change — became N77 that way and has shipped, with its e
   field the row can carry in one place (B61), or the block grows on-screen target fields and the dialog
   becomes correction only. That decides whether `TemplatePlanDialog` survives as anything — the list it
   draws is what is being unfolded, and a set line reachable by tap leaves it no job — and where the
-  plan's rest, RPE and cue row sits relative to the unfolded sets and the new foot. It also touches
-  durable content: [DECISIONS.md](DECISIONS.md) names *a template's plan dialog* as one of the two
-  surfaces that author sets, and N46's accepted cost leans on the list behind the dialog showing the
-  count.
-- **The workout's preamble scrolls away, and *Add exercise* moves under the last exercise.** The body
-  is a fixed `Column` — the record banner, the elapsed header, the readiness row, the rest bar — above
-  a `LazyColumn` of exercises, so scrolling the work down leaves the readiness note and the clock in
-  place; and the way to add a movement is an `ExtendedFloatingActionButton` over the list's last rows,
+  plan's rest, RPE and cue row, which N80 settles first, sits relative to the unfolded sets and the new
+  foot. It also touches durable content: [DECISIONS.md](DECISIONS.md) names *a template's plan dialog* as
+  one of the two surfaces that author sets, and N46's accepted cost leans on the list behind the dialog
+  showing the count.
+- **N82 — The workout's preamble scrolls away, and *Add exercise* moves under the last exercise.** The
+  body is a fixed `Column` — the record banner, the elapsed header, the readiness row, the rest bar —
+  above a `LazyColumn` of exercises, so scrolling the work down leaves the readiness note and the clock
+  in place; and the way to add a movement is an `ExtendedFloatingActionButton` over the list's last rows,
   which is exactly why that list carries 96 dp of bottom padding. Both move into the flow: readiness
   becomes an item the list scrolls past, and *Add exercise* becomes a button below the last exercise
   rather than over it — *Log set*'s shape, full width and a `FilledTonalButton`, filled with what the
@@ -109,22 +82,25 @@ exercise's own weight change — became N77 that way and has shipped, with its e
   offers only *Discard*, so the FAB is the one way to put the first movement into a new workout; a
   button at the end of a list that is not drawn leaves it with nothing to press, and needs the same
   button. The FAB's 96 dp of bottom padding goes with the FAB.
-- **A template exercise's cue gets its own line.** `ExercisePlanFields` is one `Row`: rest at a fixed
-  110 dp, the target RPE at 90 dp, the cue taking `weight(1f)`, and the save check at the end — so the
-  cue gets whatever those leave it, with `singleLine` on top, while the two fields it sits between are
-  fixed and readable. It was two fields until N59 put the exercise's target RPE beside the rest and cue;
-  the cue is what paid for that. The fix is the one N68 already used in the workout, where the RPE
-  stepper moved to its own full-width row because sharing left it squeezed into whatever the button did
-  not take.
-  **What is not settled is where the one save goes, because one write still covers all three.** The
-  check commits rest, RPE and cue together, so it cannot simply follow the cue down without reading as
-  that field's own save: the shapes are the button on the first row beside the two numbers it also
-  writes, beside the cue on the second row, or on a row of its own below everything — which is N68's
-  shape, and the one *Add set* takes at this same block's foot in the request above, so the two would
-  have to be told apart by more than their position. The smaller question is the cue's height: B71 gave
-  the note two lines because a note is a sentence, and a cue is one too.
-- **A past workout's name goes on top of its detail, and its edits move behind one ⋮.** The title is the
-  date and nothing else — the name N58 added appears only in a list row's supporting line — and all
+- **N83 — The *Start planned workout* pill takes *Log set*'s colour.** The pill is a `PrimaryActionButton`
+  on its defaults and so draws `primary`, the app's own Indigo; *Log set* is a `FilledTonalButton` on its
+  defaults and draws `secondaryContainer`, which N49 already took down to `TealDeep` so a white label
+  passes on it. The change is that one pair — `secondaryContainer` with `onSecondaryContainer` — and it
+  needs no new contrast work, because `PaletteContrastTest` asserts exactly that pair and names *Log set*
+  and the rest bar as what draws it.
+  **It lands against N49 and N61, both of which are written down.** N49 is settled in
+  [DECISIONS.md](DECISIONS.md) and opens with *the Start pill* as one of the things `primary` *fills*;
+  the same sentence is in `PaletteContrastTest`, so the decision's wording and that test's comment have to
+  move with this rather than be quietly contradicted. N61 built the ladder on purpose — the *empty* start
+  recedes to `primaryContainer` "so the two full-width pills do not read as the same action and the planned
+  one is the app's suggestion" — and this puts the planned pill on a container step too, a deep teal
+  beside a deep indigo. Both then read as recessed: the screen loses the loud one, and `primary` fills
+  nothing on home but *Resume*.
+  **Today's card is the same action in the same colour** — a plain `Button` reading *Start*, also on
+  `primary` — and it is not the control the request names, so whether this covers both planned-workout
+  starts or only the next-up row is what is left to settle.
+- **N84 — A past workout's name goes on top of its detail, and its edits move behind one ⋮.** The title is
+  the date and nothing else — the name N58 added appears only in a list row's supporting line — and all
   three ways to write sit live on arrival: a set row opens its editor on tap, every row carries a delete
   icon, and the rating row is editable in place. The request is the name as the title and one overflow
   holding **Edit**, **Save as plan** and **Delete**, which is the shape `WorkoutMenu` already uses on the
@@ -143,23 +119,51 @@ exercise's own weight change — became N77 that way and has shipped, with its e
   trends — so it stays. *Save as plan* is N31's entry, offered only when there is something to copy, so the
   menu holds three actions on a workout with sets and two on one without: N53's "what cannot be done is not
   offered", rather than a disabled third entry.
-- **The *Start planned workout* pill takes *Log set*'s colour.** The pill is a `PrimaryActionButton` on
-  its defaults and so draws `primary`, the app's own Indigo; *Log set* is a `FilledTonalButton` on its
-  defaults and draws `secondaryContainer`, which N49 already took down to `TealDeep` so a white label
-  passes on it. The change is that one pair — `secondaryContainer` with `onSecondaryContainer` — and it
-  needs no new contrast work, because `PaletteContrastTest` asserts exactly that pair and names *Log set*
-  and the rest bar as what draws it.
-  **It lands against N49 and N61, both of which are written down.** N49 is settled in
-  [DECISIONS.md](DECISIONS.md) and opens with *the Start pill* as one of the things `primary` *fills*;
-  the same sentence is in `PaletteContrastTest`, so the decision's wording and that test's comment have to
-  move with this rather than be quietly contradicted. N61 built the ladder on purpose — the *empty* start
-  recedes to `primaryContainer` "so the two full-width pills do not read as the same action and the planned
-  one is the app's suggestion" — and this puts the planned pill on a container step too, a deep teal
-  beside a deep indigo. Both then read as recessed: the screen loses the loud one, and `primary` fills
-  nothing on home but *Resume*.
-  **Today's card is the same action in the same colour** — a plain `Button` reading *Start*, also on
-  `primary` — and it is not the control the request names, so whether this covers both planned-workout
-  starts or only the next-up row is what is left to settle.
+- **N85 — Bring *Substitute* back to a next-up row.** Today's card offers it (P3.11) and the next-up rows do
+  not, although a next-up row is the same `TodayPlan`: it already carries the slot's id and a *Start
+  planned workout*, so `substituteOccurrence` fits it as it stands. **What is not settled is which
+  occurrence the pick lands on.** A substitute is an event keyed by slot *and* week (P3.11), and
+  [WorkoutsHomeViewModel.kt](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeViewModel.kt)
+  writes the week of *today* — right for today's card, which is that occurrence by construction, and
+  questionable for a next-up row, which P3.9 makes deliberately **calendar-free**: a run advances when a
+  slot is trained or skipped, never because a day passed. On a Sunday the next-up Monday falls in the
+  *next* week, so the pick would be keyed to a week whose Monday has already gone. So the decision is
+  whether a next-up pick is a week-bound substitution at all — and if it is, which week it lands in
+  (`ProgramSchedule.occurrenceDate` is what turns a week and a weekday into the date in question) — or
+  whether it only opens the session and records nothing.
+- **N86 — More room around the next-up block.** A next-up row is drawn with 8 dp above it, inside the home
+  start bar's own 12 dp of vertical padding, and its name sits against its *Start* button with nothing
+  between them beyond the button's inset. With more than one program active (P3.12) the bar can carry
+  several rows, and the block reads tighter than the cards it sits under. The decision is *where* the
+  room goes — the block's own margin, the space between rows, or the gap between a row's text and its
+  action, which are three different fixes — and it wants a device with two active programs rather than a
+  guess. It is last for both reasons: it needs that device, and it measures a bar N83 and N85 have
+  already changed — a pill whose colour moved, and a row that gained an action to space around.
+
+**Why this order.** N80 and N81 are one screen and one block, and they run row first so the block is
+rebuilt around a settled row; N82 then repeats N81's foot-of-list action on the workout screen, so the two
+screens are made to match while the shape is fresh. N83 rewrites the rule N49 and N61 hold; it comes after
+N81 and N82 because both raise a container-filled action the rewritten rule should cover, and before N86
+because N86 measures the very start bar N83 changes. N84 shares nothing with the rest and is the only item
+that adds an interaction mode, so it waits for the layout work rather than interrupting it. N85 and N86 are
+last because neither can be finished from the code alone — N85 needs a product answer about which week a
+next-up pick lands in, and N86 wants a device with two active programs — and N85 comes before N86 because a
+row that gains an action changes the spacing under it.
+
+## Later (still self-contained)
+
+**Nothing.** Everything that stood here has shipped — the defects found in use, the workout screen's
+discard, the workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch,
+a rest of zero, the planned-set prefill, the program document, and the eight defects a review of that
+batch found and closed (B51-B58) — each with its entry in [CHANGELOG.md](CHANGELOG.md), and the seven
+requests that were its last queue are picked up in *Next*. A candidate graduates there — gaining an id
+and a spelled-out decision — when it is picked up, so this queue is where unplanned work waits, and
+*Parked* below is where deliberate non-work lives.
+
+The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what
+they named that is not a feature is a settled decision: no dated instances (N16), nothing
+automatic (the app states what happened; it never writes what it decided), a weekday-less slot that is never missed
+and is order-only, and more than one active program, which P3.12 allowed.
 
 ## Parked — deliberately not planned
 
