@@ -17,7 +17,7 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Two requests from use**, each with the decision it settles. A candidate graduates to this section — gaining
+**Requests from use**, each with the decision it settles. A candidate graduates to this section — gaining
 an id and a spelled-out decision rather than a wish — when it is picked up, so what stands here is committed
 work; the two queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what
 is a product in its own right.
@@ -49,6 +49,42 @@ is a product in its own right.
   and the card is a different layout (N16, N61). N86's gap guard measures the row's text against its start
   pill, and this changes how tall that text is, so it is re-measured with the change rather than left to
   pass by luck.
+- **N90 — a deleted planned set can be taken back.** `TemplateEditorViewModel.onRemoveSet` soft-deletes the
+  row and says nothing, so a mis-tap on a set's delete is unrecoverable from the screen — the plan is simply
+  missing a set. The workout screen already answers this (N7, B3): a snackbar at the foot naming what went,
+  with *Undo*, and the ViewModel holding the removed row until the message is taken. The editor gets the
+  same, and the one decision to settle is **where the set comes back**. The workout's undo deliberately
+  *appends* — "the values come back, the position may not" — but a plan's order **is** the plan: a set's
+  `setIndex` is its position, and a run's ladder is read by position (`runAt`, `rungWeightAt`, N79), so
+  appending would silently rewrite a drop run. The restore must therefore put the row back where it was,
+  which the soft delete makes possible — the row and its index are still stored, so clearing `deletedAt`
+  is the whole of it. Only one undo is offered at a time, as the workout's is, and the box must not cover
+  the block's *Add set* foot.
+- **N91 — the template editor's exercises are folded until opened.** Every block draws its plan lines, the
+  rest, target RPE and cue fields and *Add set* (N14, N59, N80, N81), so a template of five exercises is a
+  long scroll of controls with the names — the thing the screen is scanned by — lost among them. Each
+  exercise shows its row alone until the name is tapped, and tapping again folds it. The state is per
+  exercise and `rememberSaveable`, for the reason N84's edit mode is: this activity declares no
+  `configChanges`, so a rotation would otherwise fold what the lifter opened. Everything below the row
+  folds together — the sets, the fields and the foot. The row becomes a control, so its action needs a name
+  and its state announcing, the rule every screen follows, and it must not fight the ⋮ the row already
+  carries (move, superset, remove, *Add warm-ups* since N81). One thing to settle on a device: whether a
+  newly added exercise opens expanded, so its first set can be added without a second tap, or stays folded.
+- **N92 — one program sits as far from the thumb as the screen allows.** The programs list is top-aligned
+  and its `LazyColumn` reserves room at the foot only for the *New program* FAB
+  ([ProgramsScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramsScreen.kt)), so with a
+  single program the row a lifter came to open is under the app bar — the far end of a modern phone — while
+  the only thing in reach is the action that makes another one. This is the candidate that needs a device
+  rather than an argument, in the shape N86's three gaps did: bottom-anchor the list so its rows end at the
+  thumb, draw the program as a full-width card beside the FAB, or move opening the active program down to
+  the foot and leave the list as reference. Whichever it is, the empty state and the many-program list must
+  not regress, and the choice is a measurement on a device rather than a guess.
+- **N93 — programs and templates reach each other.** Home links to both in one action row (N42), but the two
+  screens are siblings with no way across: from Programs, Templates is back-home-and-in, and the reverse is
+  the same trip. Each screen's own bar gains an entry to the other, sitting with the actions already there
+  (Programs carries *Load*, N47) rather than as a floating control, and tagged like them. It is a way across
+  and not a third way to *start* anything: a workout already running is answered by the templates list's own
+  withholding (N78, B43), not by this entry.
 
 ## Later (still self-contained)
 
