@@ -75,6 +75,19 @@ class TemplateDaoTest {
     }
 
     @Test
+    fun aDeletedTemplatesName_isStillRead_soAPastWorkoutKeepsNamingIt() = runTest {
+        // ROADMAP N58, B74: history reads a plan's name through this query rather than the list's, because a
+        // soft delete keeps the row (P1.12) and a workout that named the plan must go on naming it. The
+        // live-only reads stay hidden — that is the editor's rule, and it is not history's.
+        dao.insertTemplate(template("t1", "Legs"))
+        dao.softDeleteTemplate("t1", at = 5_000L)
+
+        assertNull(dao.observeTemplate("t1").first())
+        assertEquals("Legs", dao.observeTemplateName("t1").first())
+        assertNull("an id with no row has no name", dao.observeTemplateName("nope").first())
+    }
+
+    @Test
     fun renaming_updatesOnlyALiveTemplate() = runTest {
         dao.insertTemplate(template("t1", "Legs"))
 

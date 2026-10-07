@@ -130,6 +130,34 @@ class WorkoutDetailViewModelTest {
     }
 
     @Test
+    fun thePlansName_reachesTheTitle_readLiveFromTheTemplateRow() = runTest(dispatcher) {
+        // ROADMAP N58, B74: the title is the plan's own name, read live from the template row rather than
+        // copied onto the session — and read through the unfiltered name query, so a plan deleted since still
+        // names the workout it was. That the query keeps a deleted row is the DAO's business; this pins the
+        // wiring the review found unguarded, since the fake used to answer null and nothing asserted a name.
+        repository.session.value = repository.session.value?.copy(templateId = "t1")
+
+        val viewModel = viewModelFor(FakeTemplateRepository(templateName = "Push day"))
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertEquals("Push day", viewModel.uiState.value.templateName)
+    }
+
+    @Test
+    fun aWorkoutStartedFromNothing_readsNoPlanName() = runTest(dispatcher) {
+        // A session with no plan behind it has no id to follow, so nothing is read and the screen falls
+        // back to the workout's own date (N84).
+        repository.session.value = repository.session.value?.copy(templateId = null)
+
+        val viewModel = viewModelFor(FakeTemplateRepository(templateName = "Push day"))
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.templateName)
+    }
+
+    @Test
     fun theMuscleFeelAndThePickedJoints_reachTheScreen() = runTest(dispatcher) {
         val viewModel = viewModelFor()
         observe(viewModel)
@@ -314,6 +342,8 @@ class WorkoutDetailViewModelTest {
  */
 private class FakeTemplateRepository(
     private val savedId: String = "t1",
+    /** What the plan's name read answers with, so the title's live read can be asserted (B74). */
+    private val templateName: String? = null,
 ) : TemplateRepository {
 
     /** Every copy asked for, as the session it came from and the name it was given. */
@@ -361,6 +391,7 @@ private class FakeTemplateRepository(
 
     override fun observeTemplates(): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
     override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> = flowOf(null)
+    override fun observeTemplateName(templateId: String): Flow<String?> = flowOf(templateName)
     override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = flowOf(emptyList())
     override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
 

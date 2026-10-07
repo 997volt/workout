@@ -272,6 +272,7 @@ class ExercisePickerViewModelTest {
 
         override fun observeTemplates(): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
         override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> = flowOf(null)
+        override fun observeTemplateName(templateId: String): Flow<String?> = flowOf(null)
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> =
             flowOf(emptyList())
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())

@@ -56,6 +56,9 @@ class RoomTemplateRepository @Inject constructor(
     override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> =
         dao.observeTemplate(templateId).map { it?.toDomain() }
 
+    override fun observeTemplateName(templateId: String): Flow<String?> =
+        dao.observeTemplateName(templateId)
+
     override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> =
         combine(
             dao.observeTemplateExercises(templateId),

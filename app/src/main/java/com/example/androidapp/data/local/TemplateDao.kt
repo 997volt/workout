@@ -67,6 +67,17 @@ interface TemplateDao {
     )
     fun observeTemplate(id: String): Flow<TemplateSummaryRow?>
 
+    /**
+     * One template's name whether or not it is deleted, so a past workout keeps naming the plan it was
+     * (N58, B74).
+     *
+     * [observeTemplate] above is the *editor's* read and correctly hides a deleted row — you cannot edit a
+     * plan that is gone. History's read must not: a soft delete keeps the row for the export (P1.12), so the
+     * name is still there and the workout still says which workout it was.
+     */
+    @Query("SELECT name FROM templates WHERE id = :id")
+    fun observeTemplateName(id: String): Flow<String?>
+
     @Query("SELECT * FROM template_exercises WHERE id = :id AND deletedAt IS NULL")
     suspend fun findTemplateExercise(id: String): TemplateExerciseEntity?
 

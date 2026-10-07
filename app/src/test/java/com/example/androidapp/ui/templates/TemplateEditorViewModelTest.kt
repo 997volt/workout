@@ -257,6 +257,9 @@ class TemplateEditorViewModelTest {
         override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> =
             templates.map { rows -> rows.firstOrNull { it.id == templateId } }
 
+        override fun observeTemplateName(templateId: String): Flow<String?> =
+            templates.map { rows -> rows.firstOrNull { it.id == templateId }?.name }
+
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = exercises
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
         /** Recorded as one call, since writing the ramp in front is a single write (B34). */

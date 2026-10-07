@@ -185,8 +185,10 @@ class WorkoutDetailViewModel @Inject constructor(
      * The plan's name for the title, read live from its row (N58, N84).
      *
      * Live rather than copied onto the session, which is the rule N58 argued: renaming a plan relabels the
-     * past, and a deleted plan still names the workout it was, since `deleteTemplate` is a soft delete. A
-     * session with no plan behind it has no id to follow, and the screen falls back to its own date.
+     * past, and a deleted plan still names the workout it was — which is why this reads
+     * [TemplateRepository.observeTemplateName] rather than `observeTemplate`, whose deleted filter is the
+     * editor's rule and would blank the title the moment a plan was deleted (B74). A session with no plan
+     * behind it has no id to follow, and the screen falls back to its own date.
      */
     private val templateName: Flow<String?> = session
         .map { it?.templateId }
@@ -195,7 +197,7 @@ class WorkoutDetailViewModel @Inject constructor(
             if (templateId == null) {
                 flowOf(null)
             } else {
-                templateRepository.observeTemplate(templateId).map { it?.name }
+                templateRepository.observeTemplateName(templateId)
             }
         }
 

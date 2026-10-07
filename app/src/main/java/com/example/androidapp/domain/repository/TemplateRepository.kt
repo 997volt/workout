@@ -22,6 +22,16 @@ interface TemplateRepository {
     fun observeTemplate(templateId: String): Flow<WorkoutTemplate?>
 
     /**
+     * One template's name, **including a soft-deleted one**, or null when no such row exists (N58, B74).
+     *
+     * The name alone, and unfiltered, because that is what a past workout needs: [observeTemplate] hides a
+     * deleted plan — the editor cannot open one — while history must go on saying which plan the workout was,
+     * and a soft delete keeps the row for the export (P1.12). Reading the whole template here was rejected:
+     * it would put the deleted filter in the reader's hands and invite the editor's rules into history.
+     */
+    fun observeTemplateName(templateId: String): Flow<String?>
+
+    /**
      * The template's exercises in their stored order, each carrying its planned sets
      * (ROADMAP N14).
      */
