@@ -183,6 +183,14 @@ object TestTags {
     const val HOME_PROGRAMS = "home_programs"
 
     /**
+     * The question a planned start asks while a workout is already running (ROADMAP N89), and its two
+     * answers. Constants rather than a per-id helper: there is one of this dialog, whatever it is starting.
+     */
+    const val HOME_ACTIVE_WORKOUT_DIALOG = "home_active_workout_dialog"
+    const val HOME_ACTIVE_WORKOUT_CONTINUE = "home_active_workout_continue"
+    const val HOME_ACTIVE_WORKOUT_DISCARD = "home_active_workout_discard"
+
+    /**
      * Export and import (ROADMAP B1, N43). Tagged generically because the point is *which screen*
      * offers them: a test asserts presence in Settings and absence in the library, using the same
      * two tags. They moved here from the home overflow (N43), which is where the app's data is

@@ -88,18 +88,32 @@ fun WorkoutsHomeRoute(
     var failure by remember { mutableStateOf<DataError?>(null) }
     FailureMessage(failure = failure, onMessage = { message = it }, onClear = { failure = null })
 
+    // The active-session question (ROADMAP N89) is composed *inside* the missed-day gate below, so it
+    // intercepts a start only once that question is settled: asking the other way round could leave a
+    // lifter with a discarded session and nothing started if they then dismissed the missed-day prompt.
+    val requestStartFromHome = activeWorkoutGate(
+        // Read when a start arrives rather than captured: the session can begin or end while this composes.
+        isActive = { state.activeWorkout != null },
+        onStart = { intent ->
+            // The slot travels with the template so its prescription seeds the workout (P3.8).
+            if (intent.templateId != null) {
+                onStartTemplate(intent.templateId, intent.slotId)
+            } else {
+                onStartWorkout()
+            }
+        },
+        // *Continue workout* goes where home's own pill does.
+        onContinueOngoing = onStartWorkout,
+        discard = viewModel::discardActiveWorkout,
+        onFailure = { failure = it },
+    )
+
     // Every start goes through the program's missed-day question (ROADMAP P3.3), and this is
     // the only place the navigation happens: "do it now" and "continue" differ in intent
     // rather than in destination plumbing. A skip that could not be recorded is shown on the
     // same host, because the workout still starts and the question will come back (F7).
     val requestStart = programStartGate(
-        onStart = { intent ->
-            when {
-                // The slot travels with the template so its prescription seeds the workout (P3.8).
-                intent.templateId != null -> onStartTemplate(intent.templateId, intent.slotId)
-                else -> onStartWorkout()
-            }
-        },
+        onStart = requestStartFromHome,
         onError = { message = it },
     )
 

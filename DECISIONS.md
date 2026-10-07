@@ -556,6 +556,16 @@ the rule; that one argues it.
   on one template into the workout already running from another, and that is the lie it prevents.
   Making Templates a tab, or showing the bar mid-workout, was rejected for N34's reason.
   ([evidence](DECISIONS-EVIDENCE.md#n78))
+- **A start with a workout already running asks rather than resumes** (N89). N78 stopped the silent
+  hand-back in the templates list by disabling *Start*; home's own start actions had no guard, so tapping
+  *Start planned workout* on a next-up row dropped the plan and opened the running workout without a word.
+  The question is asked instead — *Continue workout*, or *Discard and start new* — because home is where the
+  lifter is choosing what to do, and disabling the control would take the choice away rather than offer it.
+  Discarding is the workout screen's own discard, the same soft delete, after which a scheduled occurrence
+  reads as a miss (P3.5); the question is asked **after** the missed-day one (P3.3), so dismissing that
+  cannot leave a lifter with a discarded session and nothing started, and dismissing this one cancels the
+  start rather than choosing for them. The templates list keeps its disabled *Start*: a different screen,
+  and a dialog behind a control that cannot be pressed would never be reached.
 - **An exercise is finished at its foot, and only once it has a set** (N69). *Done* says the work is
   over, so it is withheld until there is work: an exercise with nothing logged offers no action at all,
   and the way past a movement you did not do is the overflow's *Remove*, which keeps its confirmation.

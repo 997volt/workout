@@ -314,6 +314,14 @@
         <item quantity="one">%1$d exercise</item>
         <item quantity="other">%1$d exercises</item>
     </plurals>
+    <!-- Starting a planned workout while one is already running (ROADMAP N89): find-or-create would
+         silently hand the running session back and drop the plan, so the choice is asked instead.
+         Dismissing cancels the start rather than choosing for the lifter. -->
+    <string name="home_active_workout_title">A workout is already running</string>
+    <string name="home_active_workout_body">You have a workout in progress. Continuing opens it; discarding ends it unfinished and starts %1$s.</string>
+    <string name="home_active_workout_this">this workout</string>
+    <string name="home_active_workout_continue">Continue workout</string>
+    <string name="home_active_workout_discard">Discard and start new</string>
     <string name="weekday_mon">Mon</string>
     <string name="weekday_tue">Tue</string>
     <string name="weekday_wed">Wed</string>

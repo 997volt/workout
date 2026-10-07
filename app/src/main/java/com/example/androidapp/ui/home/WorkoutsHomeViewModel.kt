@@ -145,7 +145,7 @@ data class WorkoutsHomeUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class WorkoutsHomeViewModel @Inject constructor(
-    workoutRepository: WorkoutRepository,
+    private val workoutRepository: WorkoutRepository,
     private val templateRepository: TemplateRepository,
     private val programRepository: ProgramRepository,
     private val timeSource: TimeSource,
@@ -192,6 +192,14 @@ class WorkoutsHomeViewModel @Inject constructor(
     fun onDismissPlannedWorkout() {
         _plannedWorkout.value = null
     }
+
+    /**
+     * Ends the workout in progress without finishing it, so another can be started (ROADMAP N89).
+     *
+     * The rule lives in [discardActiveSession]; this is the repository it is given.
+     */
+    suspend fun discardActiveWorkout(): DataResult<Unit> =
+        discardActiveSession(activeSession, workoutRepository::deleteSession)
 
     private val activeWorkout: Flow<ActiveWorkoutInfo?> = activeSession
         .flatMapLatest { session ->

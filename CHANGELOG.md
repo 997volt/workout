@@ -12,6 +12,17 @@ repeated here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Starting a planned workout while one is running asks which** (N89). `startOrResumeSession` is
+  find-or-create, so the tap used to hand the running session back and drop the plan without a word — the
+  lie N78 named, guarded only in the templates list, which disables *Start*. Home's starts ask now:
+  *Continue workout* opens the session already running, and *Discard and start new* ends it the way the
+  workout screen's own discard does — a soft delete, after which a scheduled occurrence reads as a miss
+  (P3.5) — and then starts what was asked for. The question comes after the missed-day one, so dismissing
+  that cannot leave a discarded session and nothing started; dismissing this one cancels the start rather
+  than choosing for the lifter. The templates list keeps its disabled *Start*.
+
 ## [1.16] — 2026-10-07 (versionCode 17)
 
 ### Added
