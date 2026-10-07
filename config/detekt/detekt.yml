@@ -115,4 +115,8 @@ complexity:
     # the tag that addresses it is one more per-id helper in the same flat namespace.
     # Moved 21 -> 22 at N81, for the same shape twice over: a planned exercise's sets became lines a
     # test now addresses one at a time, and the warm-up ramp became an entry of that row's ⋮.
-    thresholdInObjects: 22
+    # Raised 22 -> 24 at B76, for the same reason once more: a planned exercise's empty note and its
+    # *Add set* stopped sharing one tag between every block, so two planned exercises can be told apart.
+    # That is two more helpers in the namespace, and the check fires once the count *reaches* the
+    # threshold — so 23 functions need 24 here, not 23.
+    thresholdInObjects: 24

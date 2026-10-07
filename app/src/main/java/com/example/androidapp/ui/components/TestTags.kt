@@ -342,9 +342,13 @@ object TestTags {
      */
     fun templateAddWarmUps(id: String) = "template_add_warmups_$id"
 
-    /** A plan's sets (ROADMAP N14, unfolded into the block by N81): the empty note, and the add. */
-    const val TEMPLATE_PLAN_EMPTY = "template_plan_empty"
-    const val TEMPLATE_PLAN_ADD = "template_plan_add"
+    /**
+     * A plan's sets (ROADMAP N14, unfolded into the block by N81), tagged per row like the ramp above:
+     * every exercise block carries its own empty note and its own *Add set*, so two planned exercises on
+     * screen are two of each (B76, the shape [templatePlanSet] uses).
+     */
+    fun templatePlanEmpty(id: String) = "template_plan_empty_$id"
+    fun templatePlanAdd(id: String) = "template_plan_add_$id"
     const val TEMPLATE_SET_ROLE = "template_set_role"
     const val TEMPLATE_SET_WEIGHT = "template_set_weight"
 

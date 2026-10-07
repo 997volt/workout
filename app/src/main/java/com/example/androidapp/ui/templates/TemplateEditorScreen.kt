@@ -409,13 +409,14 @@ private fun TemplateExerciseBlock(
             supersetLabels = supersetLabels,
         )
         PlannedSets(
+            exerciseId = exercise.id,
             sets = exercise.sets,
             unit = unit,
             onEdit = { editing = it.id },
             onRemove = onRemoveSet,
         )
         ExercisePlanFields(exercise = exercise, onSave = onSavePlan)
-        AddSetButton(onClick = { adding = true })
+        AddSetButton(exerciseId = exercise.id, onClick = { adding = true })
     }
 
     val edited = exercise.sets.firstOrNull { it.id == editing }
@@ -445,13 +446,13 @@ private fun TemplateExerciseBlock(
  * which is the workout's *Log set* (N59): full width, and under the values it does not write.
  */
 @Composable
-private fun AddSetButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun AddSetButton(exerciseId: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     FilledTonalButton(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .testTag(TestTags.TEMPLATE_PLAN_ADD),
+            .testTag(TestTags.templatePlanAdd(exerciseId)),
     ) {
         Text(stringResource(R.string.template_plan_add))
     }
@@ -507,6 +508,8 @@ private fun TemplateSetEditor(
  */
 @Composable
 private fun PlannedSets(
+    /** This block's exercise, so the empty note is tagged per row rather than once for the screen (B76). */
+    exerciseId: String,
     sets: List<TemplateSet>,
     unit: WeightUnit,
     onEdit: (TemplateSet) -> Unit,
@@ -521,7 +524,7 @@ private fun PlannedSets(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .padding(vertical = 4.dp)
-                    .testTag(TestTags.TEMPLATE_PLAN_EMPTY),
+                    .testTag(TestTags.templatePlanEmpty(exerciseId)),
             )
         }
         sets.forEachIndexed { index, set ->

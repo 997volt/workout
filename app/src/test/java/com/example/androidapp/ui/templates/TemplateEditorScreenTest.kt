@@ -68,8 +68,8 @@ class TemplateEditorScreenTest {
      */
     private fun addSet() {
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
-            .performScrollToNode(hasTestTag(TestTags.TEMPLATE_PLAN_ADD))
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).performClick()
+            .performScrollToNode(hasTestTag(TestTags.templatePlanAdd("te1")))
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).performClick()
     }
 
     private fun setScreen(
@@ -477,9 +477,9 @@ class TemplateEditorScreenTest {
         // ROADMAP B64: a rung hangs off the set above it, so the plan's picker does not offer one where
         // there is nothing above — the write boundary would refuse the save, and the project's rule is
         // that a control which cannot write is worse than no control (N67). The exercise here has no
-        // planned sets, so the set being added is its first. One exercise, because the block's Add set
-        // answers to one tag, and the union of two blocks would be two nodes under it.
-        setScreen(state = twoExercises.copy(exercises = listOf(twoExercises.exercises.first())))
+        // planned sets, so the set being added is its first — and since the block's Add set is tagged per
+        // exercise (B76), a second exercise can stay on screen while this one is the one addressed.
+        setScreen(state = twoExercises)
 
         addSet()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
@@ -579,8 +579,26 @@ class TemplateEditorScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_EMPTY).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.templatePlanEmpty("te1")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertIsDisplayed()
+    }
+
+    @Test
+    fun eachExerciseBlock_carriesItsOwnAddSet_andEmptyNote() {
+        // ROADMAP B76: the block's controls belong to the exercise, so two planned exercises answer to two
+        // distinct tags. Before, both blocks applied one tag — two nodes under it — so neither could be
+        // addressed, and `performScrollToNode` throws when a matcher finds more than one node.
+        setScreen(state = twoExercises)
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.templatePlanAdd("te1")))
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.templatePlanEmpty("te1")).assertExists()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.templatePlanAdd("te2")))
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te2")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.templatePlanEmpty("te2")).assertExists()
     }
 
     @Test
