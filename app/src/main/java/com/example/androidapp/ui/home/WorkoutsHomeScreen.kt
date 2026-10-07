@@ -132,6 +132,9 @@ fun WorkoutsHomeRoute(
             requestStart = requestStart,
             onFailure = { failure = it },
         ),
+        // A next-up row's pick starts the session and writes nothing (N85): the run it stands for is
+        // deliberately calendar-free, so there is no week to key a substitution to.
+        onStartSubstituteTemplate = startSubstitute(requestStart = requestStart),
         onOpenWorkout = onOpenWorkout,
         onOpenPrograms = onOpenPrograms,
         onOpenPlannedWorkout = viewModel::onOpenPlannedWorkout,
@@ -140,6 +143,16 @@ fun WorkoutsHomeRoute(
         modifier = modifier,
     )
 }
+
+/**
+ * A substitute picker that has been opened (ROADMAP N85): which row asked, and whether the pick is recorded.
+ *
+ * The two rows that offer *Substitute* do different things with the answer — a scheduled occurrence is
+ * written for its slot and week (P3.11), while a next-up row is not written at all — so the picker has to
+ * remember which kind of row opened it. A record rather than two states because the two only travel
+ * together.
+ */
+private data class SubstituteRequest(val plan: TodayPlan, val records: Boolean)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -167,16 +180,32 @@ fun WorkoutsHomeScreen(
      * A null template restores the slot's own workout and starts nothing.
      */
     onSubstituteTemplate: (TodayPlan, String?) -> Unit = { _, _ -> },
+    /**
+     * Starts the workout a next-up row's pick chose, and records nothing (ROADMAP N85).
+     *
+     * Beside [onSubstituteTemplate] rather than folded into it, because the two rows' picks are not the same
+     * act: one writes a substitution for an occurrence it belongs to, and the other has no occurrence to
+     * write against.
+     */
+    onStartSubstituteTemplate: (TodayPlan, String?) -> Unit = { _, _ -> },
 ) {
-    // The row whose substitute picker is open, or null (P3.11).
-    var substituting by remember { mutableStateOf<TodayPlan?>(null) }
+    // The row whose substitute picker is open, and whether that row's pick is recorded, or null
+    // (P3.11, N85). `substituting?.plan` is what the dialog draws; which callback answers it is decided by
+    // *which kind of row* opened it, which is the whole of N85's decision.
+    var substituting by remember { mutableStateOf<SubstituteRequest?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(message, snackbarHostState, onDismissMessage)
 
     SubstitutePicker(
-        plan = substituting,
+        request = substituting,
         templates = state.templates,
-        onChoose = onSubstituteTemplate,
+        onChoose = { request, templateId ->
+            if (request.records) {
+                onSubstituteTemplate(request.plan, templateId)
+            } else {
+                onStartSubstituteTemplate(request.plan, templateId)
+            }
+        },
         onDismiss = { substituting = null },
     )
 
@@ -197,6 +226,8 @@ fun WorkoutsHomeScreen(
                 // prescription travels with it (ROADMAP P3.8).
                 onStartTemplate = onStartTemplate,
                 onOpenPlannedWorkout = onOpenPlannedWorkout,
+                // A next-up row's pick starts the session and records nothing (N85).
+                onSubstitute = { plan -> substituting = SubstituteRequest(plan, records = false) },
                 // Programs took the slot the repeat-last link gave up (ROADMAP N42): the screen
                 // the whole scheduling half is edited from belongs in the action row rather than
                 // behind the overflow it got lost in.
@@ -208,7 +239,7 @@ fun WorkoutsHomeScreen(
             state = state,
             onOpenWorkout = onOpenWorkout,
             onStartTemplate = onStartTemplate,
-            onSubstitute = { plan -> substituting = plan },
+            onSubstitute = { plan -> substituting = SubstituteRequest(plan, records = true) },
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -226,14 +257,21 @@ fun WorkoutsHomeScreen(
  */
 @Composable
 private fun SubstitutePicker(
-    plan: TodayPlan?,
+    request: SubstituteRequest?,
     templates: List<WorkoutTemplate>,
-    onChoose: (TodayPlan, String?) -> Unit,
+    /**
+     * The pick, with the request it answers.
+     *
+     * The request travels with it because the picker **dismisses before it reports** — the dialog's exits
+     * call `onDismiss` first, so reading the screen's own state back here would read it already cleared. That
+     * is also why which rows record is the request's business rather than the screen's.
+     */
+    onChoose: (SubstituteRequest, String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val current = plan ?: return
+    val current = request ?: return
     SubstituteDialog(
-        templates = templates.filterNot { it.id == current.templateId },
+        templates = templates.filterNot { it.id == current.plan.templateId },
         onPick = { templateId ->
             onDismiss()
             onChoose(current, templateId)
@@ -376,6 +414,8 @@ private fun StartActions(
     onOpenTemplates: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onOpenPlannedWorkout: (NextUp) -> Unit,
+    /** Opens the substitute picker for one next-up row (ROADMAP N85). */
+    onSubstitute: (TodayPlan) -> Unit,
     onOpenPrograms: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -422,6 +462,7 @@ private fun StartActions(
                 nextUp = nextUpRow,
                 onOpen = { onOpenPlannedWorkout(nextUpRow) },
                 onStart = { onStartTemplate(nextUpRow.plan) },
+                onSubstitute = { onSubstitute(nextUpRow.plan) },
             )
         }
     }
@@ -501,6 +542,8 @@ private fun NextUpRow(
     nextUp: NextUp,
     onOpen: () -> Unit,
     onStart: () -> Unit,
+    /** Opens the substitute picker for this row (ROADMAP N85). */
+    onSubstitute: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val exercises = pluralStringResource(
@@ -539,6 +582,16 @@ private fun NextUpRow(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+            // The rare action beside the field rather than under the pill (N85): the pill is the screen's
+            // full-width start and stays that way (N61), so a second action goes on the row above it —
+            // which is where today's card offers the same one (P3.11). Leaving it unrecorded is N85's
+            // decision, and `startSubstitute` is where the argument for it lives.
+            AppTextButton(
+                onClick = onSubstitute,
+                modifier = Modifier.testTag(TestTags.Home.nextUpSubstitute(nextUp.plan.id)),
+            ) {
+                Text(stringResource(R.string.home_substitute))
             }
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,

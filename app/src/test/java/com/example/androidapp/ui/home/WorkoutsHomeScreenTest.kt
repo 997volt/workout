@@ -48,6 +48,7 @@ class WorkoutsHomeScreenTest {
         val onOpenTemplates: () -> Unit = {},
         val onStartTemplate: (TodayPlan) -> Unit = {},
         val onSubstituteTemplate: (TodayPlan, String?) -> Unit = { _, _ -> },
+        val onStartSubstituteTemplate: (TodayPlan, String?) -> Unit = { _, _ -> },
         val onOpenWorkout: (String) -> Unit = {},
         val onOpenPrograms: () -> Unit = {},
         val onOpenPlannedWorkout: (NextUp) -> Unit = {},
@@ -68,6 +69,7 @@ class WorkoutsHomeScreenTest {
                     onStartTemplate = actions.onStartTemplate,
                     onOpenPlannedWorkout = actions.onOpenPlannedWorkout,
                     onSubstituteTemplate = actions.onSubstituteTemplate,
+                    onStartSubstituteTemplate = actions.onStartSubstituteTemplate,
                     onOpenWorkout = actions.onOpenWorkout,
                     onOpenPrograms = actions.onOpenPrograms,
                     message = message,
@@ -500,6 +502,48 @@ class WorkoutsHomeScreenTest {
 
         assertThat(picked?.first?.slotId).isEqualTo("slot-1")
         assertThat(picked?.second).isEqualTo("t2")
+    }
+
+    @Test
+    fun aNextUpSubstitute_startsThePick_andRecordsNothing() {
+        // ROADMAP N85: a substitution is an event keyed by slot *and* week (P3.11), and a next-up row has no
+        // week to key one by — the run is calendar-free (P3.9) and `ProgramRun` carries no week — so its pick
+        // starts the session and leaves the run where it is. The recording callback is watched to prove the
+        // absence rather than assumed.
+        var recorded: Pair<TodayPlan, String?>? = null
+        var started: Pair<TodayPlan, String?>? = null
+        val nextUp = NextUp(
+            plan = TodayPlan(
+                id = "slot-2",
+                // The row's own plan, which the picker excludes from the list it offers (N55) — so "t2" is
+                // still there to be chosen.
+                templateId = "t1",
+                name = "Push",
+                exerciseCount = 5,
+                slotId = "slot-2",
+            ),
+            programName = "Upper/Lower",
+            isAtStart = true,
+        )
+        setScreen(
+            state = WorkoutsHomeUiState(
+                isLoading = false,
+                nextUp = listOf(nextUp),
+                templates = todayPlanWithTemplates.templates,
+            ),
+            actions = Actions(
+                onSubstituteTemplate = { plan, templateId -> recorded = plan to templateId },
+                onStartSubstituteTemplate = { plan, templateId -> started = plan to templateId },
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Home.nextUpSubstitute("slot-2")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.HOME_SUBSTITUTE_DIALOG).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.homeSubstituteTemplate("t2")).performClick()
+
+        assertThat(started?.first?.slotId).isEqualTo("slot-2")
+        assertThat(started?.second).isEqualTo("t2")
+        assertThat(recorded).isNull()
     }
 
     @Test

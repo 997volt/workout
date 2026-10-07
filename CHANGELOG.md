@@ -12,6 +12,21 @@ repeated here.
 
 ## [Unreleased]
 
+### Added
+
+- **A next-up row offers *Substitute*** (N85). Today's card had it (P3.11) and the runs under it did not,
+  although a next-up row is the same `TodayPlan` carrying the slot's id beside its own start. **Its pick
+  records nothing**, and that is the whole of the entry: a substitution is an event keyed by slot *and*
+  week, and a next-up row has no week to key one by — the run is deliberately calendar-free (P3.9),
+  advancing when a slot is trained or skipped rather than because a day passed, and `ProgramRun` carries the
+  slot and a flag with the week nowhere in it. Recording it against the week of *today*, which is what the
+  card does, would write an event for an occurrence other than the one being started: on a Sunday it keys
+  the next-up Monday to a week whose Monday has already gone. So the pick starts its workout and leaves the
+  run where it is. The accepted cost is that history does not say the run was substituted and the run does
+  not advance, because there was no occurrence for the substitution to be *in*; the card keeps its write,
+  because the card *is* today's occurrence by construction. The entry sits on the row's field rather than
+  beside the start pill, which is deliberately the screen's full-width one (N61).
+
 ### Changed
 
 - **A past workout is named, and everything that writes moved into one ⋮** (N84). The detail's title was

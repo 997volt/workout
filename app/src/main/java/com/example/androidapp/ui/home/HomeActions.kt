@@ -15,6 +15,34 @@ import kotlinx.coroutines.launch
  */
 
 /**
+ * Starts a next-up row's substitute, and writes nothing (ROADMAP N85).
+ *
+ * A substitution is an event keyed by slot *and week* (P3.11), and there is no week to key one by here: the
+ * run is deliberately calendar-free (P3.9), advancing when a slot is trained or skipped rather than because
+ * a day passed, and `ProgramRun` carries the slot and a flag with the week nowhere in it. Recording it
+ * against the week of *today* — what [substituteOccurrence] does for the card — would write an event for an
+ * occurrence other than the one being started: on a Sunday it keys the next-up Monday to a week whose Monday
+ * has already gone. So the pick starts the session and leaves the run where it is, and the accepted cost is
+ * that history does not say the run was substituted. The card keeps the write, because the card *is*
+ * today's occurrence by construction.
+ */
+internal fun startSubstitute(
+    requestStart: (StartIntent) -> Unit,
+): (TodayPlan, String?) -> Unit = { plan, templateId ->
+    val slotId = plan.slotId
+    if (slotId != null && templateId != null) {
+        requestStart(
+            StartIntent(
+                templateId = templateId,
+                // The slot is what the row stood for, so its prescription still seeds what it can
+                // (P3.8) — the same start a recorded substitute performs.
+                slotId = slotId,
+                label = plan.name,
+            ),
+        )
+    }
+}
+/**
  * Records a substitute for one occurrence and starts it (ROADMAP P3.11).
  *
  * The pick is made at the point of starting, so the write and the start are one action — and

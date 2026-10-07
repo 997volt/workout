@@ -479,6 +479,14 @@ object TestTags {
         fun startPlan(id: String) = "home_start_plan_$id"
 
         /**
+         * A next-up row's *Substitute* (ROADMAP N85).
+         *
+         * Per row for the reason [historyRepeat] is: the pick is addressed to *which* run is standing in,
+         * and more than one program may be active (P3.12), so the bar can carry several.
+         */
+        fun nextUpSubstitute(id: String) = "home_next_up_substitute_$id"
+
+        /**
          * The run's next-up field (ROADMAP P3.9, N55).
          *
          * It tags the *field*, which opens what is planned, and [nextUpStart] tags the separate start
