@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v1.14** is shipped and installed. Last reviewed against the code: 2026-10-07.
+> **v1.15** is shipped. Last reviewed against the code: 2026-10-07.
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -27,11 +27,11 @@ product in its own right.
 
 **Nothing.** Everything that stood here has shipped — the defects found in use, the workout screen's
 discard, the workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch,
-a rest of zero, the planned-set prefill, the program document, and the eight defects a review of that
-batch found and closed (B51-B58) — each with its entry in [CHANGELOG.md](CHANGELOG.md), and the seven
-requests that were its last queue are picked up in *Next*. A candidate graduates there — gaining an id
-and a spelled-out decision — when it is picked up, so this queue is where unplanned work waits, and
-*Parked* below is where deliberate non-work lives.
+a rest of zero, the planned-set prefill, the program document, the eight defects a review of that batch
+found and closed (B51-B58), and the seven requests that were its last queue (N80-N86) — each with its
+entry in [CHANGELOG.md](CHANGELOG.md). A candidate graduates there — gaining an id and a spelled-out
+decision — when it is picked up, so this queue is where unplanned work waits, and *Parked* below is where
+deliberate non-work lives.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what
 they named that is not a feature is a settled decision: no dated instances (N16), nothing

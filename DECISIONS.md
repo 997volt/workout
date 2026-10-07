@@ -140,9 +140,14 @@ the rule; that one argues it.
   5–3600 bound (N21) — an app-wide zero would take the rest out of every exercise at once, which is
   the switch's job — and a stored zero is displayed as a word rather than `0:00`, which reads as a
   rest that has run out. ([evidence](DECISIONS-EVIDENCE.md#n45))
-- **A new planned set starts from the last one, and there is no Duplicate** (N46). The two surfaces
-  that author sets — a template's plan dialog and a slot's prescription dialog — take the same
-  prefill, so a plan is extended by confirming rather than retyping and *any* count is reachable.
+- **A new planned set starts from the last one, and there is no Duplicate** (N46, narrowed by N81). The
+  surface that authors a planned set is the template editor's *Add set*, which opens the set dialog on the
+  last set, so a plan is extended by confirming rather than retyping and *any* count is reachable. N46 named
+  two surfaces — a template's plan dialog and a slot's prescription dialog — and neither exists now: N81
+  unfolded the plan dialog into the exercise block, and the slot's prescription dialog went with the program
+  rework that made a slot point at a template. The prefill is the same rule either way, which is why only its
+  name moved — the argument in [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md#n46) is about two because that
+  is what there was.
   Duplicate doubled (1, 2, 4, 8), left the odd counts to manual adds, and appended the whole plan,
   ramp included, into an order `setIndex` exists to keep. The accepted cost is that prefilled values
   look like saved ones, so "Add set" then Save without touching a field is a plausible accidental
