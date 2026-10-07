@@ -94,7 +94,7 @@ test ones touch no production code at all.
   line of trailing whitespace, against [.editorconfig](.editorconfig)'s `trim_trailing_whitespace`;
   [HomeActions.kt](app/src/main/java/com/example/androidapp/ui/home/HomeActions.kt) runs two declarations
   together with no blank line between them; and
-  [TemplatePlanDialogs.kt](app/src/main/java/com/example/androidapp/ui/components/TemplatePlanDialogs.kt)
+  [TemplatePlanDialogs.kt](app/src/main/java/com/example/androidapp/ui/components/TemplateSetDialog.kt)
   still bears the name of the composable N81 deleted, while holding only the set dialog.
 
 ## Later (still self-contained)

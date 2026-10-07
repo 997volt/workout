@@ -642,7 +642,6 @@ private fun HistorySetRow(
                 }
             }
         }
-    
 }
 
 /**
