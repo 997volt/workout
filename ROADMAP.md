@@ -151,11 +151,12 @@ is.
   invents a technique, and grouping by parsing a name invents structure nobody stated that the next rename
   breaks.
   **Settled alongside the shape:** the seeded library **ships categories**, so the first statistic works out
-  of the box; an **incline press is its own category**, a different movement rather than a different way of
-  performing one; a deleted category still names its children, because the soft delete keeps the row for the
-  export (P1.12); and because a category is a taxonomy somebody maintains — nothing derives it, and a
-  mis-filed row skews the number silently — moving a row between categories has to be easy rather than a
-  re-creation.
+  of the box; so does **the lifter creating their own**, because the seed's families are a starting set and
+  not a closed one — otherwise a custom movement could never be filed; an **incline press is its own
+  category**, a different movement rather than a different way of performing one; a deleted category still
+  names its children, because the soft delete keeps the row for the export (P1.12); and because a category is
+  a taxonomy somebody maintains — nothing derives it, and a mis-filed row skews the number silently — moving
+  a row between categories has to be easy rather than a re-creation.
   **What the work touches.** `exercises` gains a nullable `parentId` and the mark that makes a row a
   category (stored by name, never an ordinal), added by a migration numbered as it ships, with every existing
   row reading as `parentId = null`. Note the columns: `primaryMuscle`, `equipment` and `movementPattern` are
@@ -173,7 +174,9 @@ is.
   sums them.
   **Still open:** how far a roll-up reaches — records and progression stay the exercise's, and which aggregate
   views read the category (muscle-group volume, "how much pressing", the per-lift adherence breakdown, P3.14)
-  is the decision. "All bench press volume" is the one it exists for.
+  is the decision. "All bench press volume" is the one it exists for. Also open, and cheaper: **which families
+  the seed ships and under what names** — a product choice rather than a code one, and the first cut of it
+  decides how much of the library is grouped on day one.
 - **Movement patterns get fewer, and move onto the category.** `MovementPattern` holds eleven values —
   HORIZONTAL_PUSH, VERTICAL_PUSH, HORIZONTAL_PULL, VERTICAL_PULL, SQUAT, HINGE, LUNGE, CARRY, ISOLATION, CORE,
   OTHER ([ExerciseTaxonomy.kt](app/src/main/java/com/example/androidapp/domain/model/ExerciseTaxonomy.kt)) —
