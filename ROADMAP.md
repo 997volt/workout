@@ -24,16 +24,19 @@ end of this section rather than left to be re-derived.
 
 - **N85 — Bring *Substitute* back to a next-up row.** Today's card offers it (P3.11) and the next-up rows do
   not, although a next-up row is the same `TodayPlan`: it already carries the slot's id and a *Start
-  planned workout*, so `substituteOccurrence` fits it as it stands. **What is not settled is which
-  occurrence the pick lands on.** A substitute is an event keyed by slot *and* week (P3.11), and
-  [WorkoutsHomeViewModel.kt](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeViewModel.kt)
-  writes the week of *today* — right for today's card, which is that occurrence by construction, and
-  questionable for a next-up row, which P3.9 makes deliberately **calendar-free**: a run advances when a
-  slot is trained or skipped, never because a day passed. On a Sunday the next-up Monday falls in the
-  *next* week, so the pick would be keyed to a week whose Monday has already gone. So the decision is
-  whether a next-up pick is a week-bound substitution at all — and if it is, which week it lands in
-  (`ProgramSchedule.occurrenceDate` is what turns a week and a weekday into the date in question) — or
-  whether it only opens the session and records nothing.
+  planned workout*. **The decision is settled, and by the code rather than by taste: a next-up pick starts
+  the session and records nothing.** A substitute is an event keyed by slot *and* week (P3.11), and a
+  next-up row has no week to key it by: `ProgramRun` is a slot and a flag, with the week nowhere in it,
+  because P3.9 makes the run deliberately calendar-free — it advances when a slot is trained or skipped and
+  never because a day passed. So the two weeks a pick could be given are both wrong in the case this
+  request was raised for: the week of *today* keys a Sunday start to a week whose Monday has already gone,
+  and the week of the day the run "would" fall on is a date the app does not compute for a run at all
+  (`ProgramSchedule.occurrenceDate` turns a week and a weekday into one, and a run has neither). **The cost
+  is accepted**: history will not say the run was substituted and the run does not advance, because there
+  was no occurrence for the substitution to be *in* — the honest reading of a row that is next rather than
+  scheduled. Recording it against today's week is rejected: it writes an event for an occurrence other than
+  the one being started, which is exactly the wrong-week case above. Today's card keeps that write, because
+  the card *is* today's occurrence by construction.
 - **N86 — More room around the next-up block.** A next-up row is drawn with 8 dp above it, inside the home
   start bar's own 12 dp of vertical padding, and its name sits against its *Start* button with nothing
   between them beyond the button's inset. With more than one program active (P3.12) the bar can carry
