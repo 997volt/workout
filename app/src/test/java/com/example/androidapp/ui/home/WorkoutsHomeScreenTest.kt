@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -349,6 +350,31 @@ class WorkoutsHomeScreenTest {
 
         assertThat(opened.single()).isEqualTo(nextUp)
         assertThat(started).isEmpty()
+    }
+
+    @Test
+    fun aNextUpRow_givesItsStartRoom_underItsOwnText() {
+        // ROADMAP N86. Of the three gaps the entry named, a device showed this one to be the tight one: the
+        // row's text ended about 4 dp above its pill, where the space between two rows measured ~24 dp and
+        // the block's own top ~14 dp — both of which read fine. A minimum rather than a number, because what
+        // matters is that the text is not against the action it offers.
+        val nextUp = NextUp(
+            plan = TodayPlan(
+                id = "slot-2",
+                templateId = "t2",
+                name = "Push",
+                exerciseCount = 5,
+                slotId = "slot-2",
+            ),
+            programName = "Upper/Lower",
+            isAtStart = true,
+        )
+        setScreen(state = WorkoutsHomeUiState(isLoading = false, nextUp = listOf(nextUp)))
+
+        val field = composeTestRule.onNodeWithTag(TestTags.Home.nextUp("slot-2")).getUnclippedBoundsInRoot()
+        val pill = composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).getUnclippedBoundsInRoot()
+
+        assertThat(pill.top - field.bottom >= 8.dp).isTrue()
     }
 
     @Test

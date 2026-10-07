@@ -29,6 +29,11 @@ repeated here.
 
 ### Changed
 
+- **A next-up row gives its start room under its own text** (N86). The row's text sat against the pill it
+  offers — about 4 dp on a device — so each row read as a dense sandwich. The request named three candidate
+  gaps and wanted a device to choose between them rather than a guess, and the device chose: the space
+  between two rows measured ~24 dp and the block's own top ~14 dp, both of which read fine, while this one
+  did not. 8 dp above the pill makes it their equal, and the device measures 8 dp there afterwards.
 - **A past workout is named, and everything that writes moved into one ⋮** (N84). The detail's title was
   the date and nothing else, while the name N58 added appeared only on the list rows; and all three ways to
   write — the tap that opened a set's editor, the delete on every set, the rating row — were live on

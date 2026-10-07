@@ -17,17 +17,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**One item, and it is last because it is the one nothing but a device can finish.** *Later* held it as a
-request from use, and picking it up is what gave it an id and the decision it needed spelled out.
-
-- **N86 — More room around the next-up block.** A next-up row is drawn with 8 dp above it, inside the home
-  start bar's own 12 dp of vertical padding, and its name sits against its *Start* button with nothing
-  between them beyond the button's inset. With more than one program active (P3.12) the bar can carry
-  several rows, and the block reads tighter than the cards it sits under. The decision is *where* the
-  room goes — the block's own margin, the space between rows, or the gap between a row's text and its
-  action, which are three different fixes — and it wants a device with two active programs rather than a
-  guess. It is last for both reasons: it needs that device, and it measures a bar N83 and N85 have
-  already changed — a pill whose colour moved, and a row that gained an action to space around.
+**Nothing.** The seven requests *Later* was holding are picked up and shipped, each with its entry in
+[CHANGELOG.md](CHANGELOG.md) under *Unreleased*. A candidate graduates to this section — gaining an id and a
+spelled-out decision rather than a wish — when it is picked up, so what stands here is committed work; the
+two queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what is a
+product in its own right.
 
 ## Later (still self-contained)
 

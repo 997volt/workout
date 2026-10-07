@@ -610,6 +610,11 @@ private fun NextUpRow(
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier
                 .fillMaxWidth()
+                // Room between the row's own text and the action it offers (N86). Of the three gaps the
+                // entry named, a device showed this one to be the tight one: the supporting line's box
+                // ended about 4 dp above the pill, while the space between two rows measured ~24 dp and
+                // the block's own top ~14 dp — both of which read fine. 8 dp makes this one their equal.
+                .padding(top = 8.dp)
                 .testTag(TestTags.Home.nextUpStart(nextUp.plan.id)),
         )
     }
