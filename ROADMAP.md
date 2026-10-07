@@ -112,11 +112,11 @@ is a product in its own right.
 
 ## Later (still self-contained)
 
-### One request from use
+### Two requests from use
 
-No id yet: picking one up is what gives it a spelled-out decision and a place in *Next*, and this one is a
-design before it is a change — the grouping has to be settled before it can be built — so the entry below
-is mostly the argument for one shape over the others.
+No id yet: picking one up is what gives it a spelled-out decision and a place in *Next*, and the first is a
+design before it is a change — the grouping has to be settled before it can be built — so the entries below
+are mostly the argument for one shape over the others.
 
 - **Exercises get variations and families, and the library groups them.** One movement is performed several
   ways — a flat barbell bench press paused for three seconds, touch-and-go, as a speed day, or in competition
@@ -142,13 +142,34 @@ is mostly the argument for one shape over the others.
   **keeps** what belongs to performing it (its step, rest, cue, unit, every record). The qualifier stays a
   **name the lifter writes**: "three-second paused", "speed day", "beltless", "with chains" is not a closed
   set, an enum would need a migration each time the sport invents a technique, and grouping by parsing a
-  name invents structure nobody stated that the next rename breaks. Two things are left open. **How far a
+  name invents structure nobody stated that the next rename breaks. The seeded library **ships categories**,
+  so the first statistic works out of the box, and an **incline press is its own category** rather than a
+  variation of the flat bench — a different movement, not a different way of performing one. Because a
+  category is a taxonomy somebody maintains, and a mis-filed row skews the number silently, moving a row
+  between categories has to be easy rather than a re-creation. That leaves one thing open: **how far a
   roll-up reaches** — records and progression stay the exercise's, and which aggregate views read the
-  category is the decision. **Whether the seeded library ships categories** — seeding the common families is
-  what makes the first statistic work out of the box, and a category is a taxonomy somebody maintains, so a
-  mis-filed exercise skews the number silently; the seed, and an easy way to move a row between categories,
-  are how that stays honest. The columns move both transfer formats, since both carry exercises, and B62's
+  category is the decision. The columns move both transfer formats, since both carry exercises, and B62's
   rule applies to each: the version is read before the body.
+- **Movement patterns get fewer, and move onto the category.** `MovementPattern` holds eleven values —
+  HORIZONTAL_PUSH, VERTICAL_PUSH, HORIZONTAL_PULL, VERTICAL_PULL, SQUAT, HINGE, LUNGE, CARRY, ISOLATION, CORE,
+  OTHER ([ExerciseTaxonomy.kt](app/src/main/java/com/example/androidapp/domain/model/ExerciseTaxonomy.kt)) —
+  and the request is fewer of them, with one **PRESS** holding what the four directional values split and one
+  **PULL** likewise. The split buys nothing a lifter asks a question with: "how much pressing" is not two
+  questions because one of them was overhead, while the cost is a decision per exercise and a wrong answer
+  nothing checks. What is left is the grain the other axes do not already carry — PRESS, PULL, SQUAT, HINGE,
+  LUNGE, CARRY, ISOLATION, CORE, with OTHER as the honest escape — and whether LUNGE belongs inside SQUAT
+  (both knee-dominant, split by stance rather than by joint action) is the one call left inside the set. The
+  second half is the part the categories settle: **the pattern belongs to the category, not to the
+  exercise.** Whether a movement is a press or a hinge is what its family decides, so declaring it once per
+  category is what stops a movement and its variations disagreeing — the same reasoning that has a variation
+  inherit its muscles and equipment rather than restate them. The wrinkle to decide rather than discover is
+  the exercise in **no** category: it would then carry no pattern at all, which is honest for a custom
+  movement nobody has filed yet, but it means either a lone exercise keeps an optional pattern of its own or
+  the pattern is simply absent until it has a family. Two consequences ride along, both already
+  precedented. The rename is a **data migration over names, never ordinals** — the repo's rule — so retired
+  names are rewritten and any a build no longer knows still *read* rather than crashing, which is N75's
+  retired Back: not offered, still loads. And it moves both transfer formats, whose versions are read before
+  the body (B62).
 
 Everything that has stood here has shipped — the defects found in use, the workout screen's discard, the
 workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch, a rest of
