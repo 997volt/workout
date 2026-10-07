@@ -656,9 +656,11 @@ class TemplateEditorScreenTest {
     fun aPlannedWarmUp_printsNoEffort_evenThoughTheRowStillCarriesOne() {
         // ROADMAP N67, also carried over: a warm-up records no effort, and a plan written before that
         // rule can still carry a legacy per-set target. Printing it beside *Warm-up* read as a number
-        // the ramp had been judged against, so the line leaves it off.
+        // the ramp had been judged against, so the line leaves it off. The row is anchored first, or a
+        // regression that dropped the line altogether would satisfy the absence below (B77).
         setScreen(state = twoExercises.copy(exercises = listOf(targetRpeSet(17, role = SetType.WARMUP))))
 
+        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts1")).assertIsDisplayed()
         composeTestRule.onNodeWithText("RPE 8.5", substring = true).assertDoesNotExist()
     }
 
