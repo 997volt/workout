@@ -12,6 +12,8 @@ repeated here.
 
 ## [Unreleased]
 
+## [1.16] — 2026-10-07 (versionCode 17)
+
 ### Added
 
 - **A next-up row offers *Substitute*** (N85). Today's card had it (P3.11) and the runs under it did not,
