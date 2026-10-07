@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -500,12 +501,17 @@ private fun PlanRow(
 }
 
 /**
- * The effort, the rest and the cue this exercise's plan prescribes (N14, N59).
+ * The effort, the rest and the cue this exercise's plan prescribes (N14, N59, N80).
  *
- * The **target RPE is one number for the exercise**, beside the rest and cue the plan already
- * carried rather than on every planned set. All three blank means "the plan says nothing" — the
- * library's rest and cue show through, and the workout's RPE stepper opens on its default — so the
- * fields are empty rather than zero.
+ * The **target RPE is one number for the exercise**, beside the rest the plan already carried rather
+ * than on every planned set. All three blank means "the plan says nothing" — the library's rest and
+ * cue show through, and the workout's RPE stepper opens on its default — so the fields are empty
+ * rather than zero.
+ *
+ * **The cue has a line of its own** (N80) — see [PlanCueField]. Its width is the point, so the save stays
+ * up on the numbers' row rather than following the cue down: one press still writes all three, which is
+ * what that control's own content description says, and keeping it up there leaves the block's foot to
+ * the *Add set* button the plan's sets end on.
  */
 @Composable
 private fun ExercisePlanFields(
@@ -528,47 +534,73 @@ private fun ExercisePlanFields(
         cue.trim().ifEmpty { null } != exercise.techniqueNote ||
         rpeHalves != exercise.targetRpeHalves
 
-    Row(
+    Column(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        OutlinedTextField(
-            value = rest,
-            onValueChange = { rest = it },
-            modifier = Modifier.width(110.dp).testTag(TestTags.TEMPLATE_REST_FIELD),
-            singleLine = true,
-            isError = !restIsValid,
-            label = { Text(stringResource(R.string.template_rest_label)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        )
-        OutlinedTextField(
-            value = rpe,
-            onValueChange = { rpe = it },
-            modifier = Modifier.width(90.dp).testTag(TestTags.TEMPLATE_EXERCISE_RPE),
-            singleLine = true,
-            isError = !rpeIsValid,
-            label = { Text(stringResource(R.string.set_rpe_label)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        )
-        OutlinedTextField(
-            value = cue,
-            onValueChange = { cue = it },
-            modifier = Modifier.weight(1f).testTag(TestTags.TEMPLATE_CUE_FIELD),
-            singleLine = true,
-            label = { Text(stringResource(R.string.template_cue_label)) },
-        )
-        IconButton(
-            onClick = { onSave(restSeconds, cue.trim().ifEmpty { null }, rpeHalves) },
-            enabled = changed && restIsValid && rpeIsValid,
-            modifier = Modifier.testTag(TestTags.TEMPLATE_REST_CUE_SAVE),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(
-                imageVector = Icons.Filled.Check,
-                contentDescription = stringResource(R.string.template_rest_cue_save),
+            OutlinedTextField(
+                value = rest,
+                onValueChange = { rest = it },
+                modifier = Modifier.width(110.dp).testTag(TestTags.TEMPLATE_REST_FIELD),
+                singleLine = true,
+                isError = !restIsValid,
+                label = { Text(stringResource(R.string.template_rest_label)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             )
+            OutlinedTextField(
+                value = rpe,
+                onValueChange = { rpe = it },
+                modifier = Modifier.width(90.dp).testTag(TestTags.TEMPLATE_EXERCISE_RPE),
+                singleLine = true,
+                isError = !rpeIsValid,
+                label = { Text(stringResource(R.string.set_rpe_label)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            )
+            // Holds the check at the block's right margin, where it was before the cue moved out of
+            // this row (N80) — the two number fields are fixed-width, so without this the control that
+            // commits all three would jump to sit between them and the page's edge.
+            Spacer(modifier = Modifier.weight(1f))
+            IconButton(
+                onClick = { onSave(restSeconds, cue.trim().ifEmpty { null }, rpeHalves) },
+                enabled = changed && restIsValid && rpeIsValid,
+                modifier = Modifier.testTag(TestTags.TEMPLATE_REST_CUE_SAVE),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = stringResource(R.string.template_rest_cue_save),
+                )
+            }
         }
+        PlanCueField(cue = cue, onCueChange = { cue = it })
     }
+}
+
+/**
+ * The cue, on a full-width line of its own (N80).
+ *
+ * Split out of [ExercisePlanFields] when N80's second row pushed that function past the length this
+ * project allows, and it is the piece that changed: it took `weight(1f)` between the two fixed-width
+ * number fields and the save, which on a phone left it about a word wide with `singleLine` on top — the
+ * same squeeze N68 fixed for the workout's RPE stepper by giving it a row to itself.
+ */
+@Composable
+private fun PlanCueField(
+    cue: String,
+    onCueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedTextField(
+        value = cue,
+        onValueChange = onCueChange,
+        modifier = modifier.fillMaxWidth().testTag(TestTags.TEMPLATE_CUE_FIELD),
+        singleLine = true,
+        label = { Text(stringResource(R.string.template_cue_label)) },
+    )
 }
 
 /**

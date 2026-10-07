@@ -12,6 +12,17 @@ repeated here.
 
 ## [Unreleased]
 
+### Changed
+
+- **A template exercise's cue gets a line of its own** (N80). `ExercisePlanFields` held the rest, the
+  exercise's target RPE, the cue and the save in one row, and the cue was the only one taking
+  `weight(1f)` — so it absorbed whatever the two fixed-width number fields and the button left, which on
+  a phone is about a word, with `singleLine` on top. It is a full-width field on the row below now. The
+  save stayed up on the numbers' row rather than following it down: one press still writes all three —
+  which is what that control's own content description says — and it keeps the block's foot free for the
+  sets' *Add set*. The squeeze was N59's side effect rather than the cue's: the row was two fields until
+  the exercise-level target effort moved in beside them.
+
 ## [1.15] — 2026-10-06 (versionCode 16)
 
 ### Added

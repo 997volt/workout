@@ -6,6 +6,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -368,9 +369,10 @@ class TemplateEditorScreenTest {
     }
 
     @Test
-    fun oneRpeTargetPerExercise_isEdited_besideTheRestAndCue() {
-        // ROADMAP N59, amended: the effort is one number for the exercise, shown next to the rest and
-        // cue — not a field on each planned set. 9.5 is 19 half-points (N6).
+    fun oneRpeTargetPerExercise_isEdited_aboveTheCue() {
+        // ROADMAP N59, amended by N80: the effort is one number for the exercise, shown next to the
+        // rest — not a field on each planned set, and no longer in the cue's row. 9.5 is 19
+        // half-points (N6).
         var saved: Triple<Int?, String?, Int?>? = null
         setScreen(
             state = twoExercises.copy(
@@ -385,6 +387,30 @@ class TemplateEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_CUE_SAVE).performClick()
 
         assertEquals(Triple(null, null, 19), saved)
+    }
+
+    @Test
+    fun theCue_getsALineOfItsOwn_insteadOfASliverOfTheNumbersRow() {
+        // ROADMAP N80. The cue took `weight(1f)` between two fixed-width number fields and the save,
+        // so a phone left it about a word wide with `singleLine` on top. Both halves are asserted,
+        // because the width is the point and the position is the decision: it is wider than the two
+        // numbers together, it sits below them, and the save stayed up on their row rather than
+        // following the cue down — which keeps the block's foot free for the sets' own Add set.
+        setScreen(
+            state = twoExercises.copy(exercises = listOf(twoExercises.exercises.first())),
+        )
+
+        val rest = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_FIELD).getUnclippedBoundsInRoot()
+        val rpe = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).getUnclippedBoundsInRoot()
+        val cue = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_CUE_FIELD).getUnclippedBoundsInRoot()
+        val save = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_CUE_SAVE).getUnclippedBoundsInRoot()
+
+        assertTrue("the cue shares the numbers' row", cue.top >= rest.bottom)
+        assertTrue(
+            "the cue is no wider than the two numbers it used to sit between",
+            cue.right - cue.left >= (rest.right - rest.left) + (rpe.right - rpe.left),
+        )
+        assertTrue("the save followed the cue down out of the numbers' row", save.bottom <= cue.top)
     }
 
     @Test

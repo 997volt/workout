@@ -17,25 +17,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Seven items, in the order they are to be done.** They are what *Later* was holding, picked up
+**Six items, in the order they are to be done.** They are what *Later* was holding, picked up
 together, so each carries an id and the decision it needed spelled out rather than a wish. The order is
 not importance; it is what the code and the open questions already fix, which is why it is argued at the
 end of this section rather than left to be re-derived.
 
-- **N80 — A template exercise's cue gets its own line.** `ExercisePlanFields` is one `Row`: rest at a
-  fixed 110 dp, the target RPE at 90 dp, the cue taking `weight(1f)`, and the save check at the end — so
-  the cue gets whatever those leave it, with `singleLine` on top, while the two fields it sits between
-  are fixed and readable. It was two fields until N59 put the exercise's target RPE beside the rest and
-  cue; the cue is what paid for that. The fix is the one N68 already used in the workout, where the RPE
-  stepper moved to its own full-width row because sharing left it squeezed into whatever the button did
-  not take.
-  **What is not settled is where the one save goes, because one write still covers all three.** The
-  check commits rest, RPE and cue together, so it cannot simply follow the cue down without reading as
-  that field's own save: the shapes are the button on the first row beside the two numbers it also
-  writes, beside the cue on the second row, or on a row of its own below everything — which is N68's
-  shape, and the one *Add set* takes at this same block's foot (N81), so the two would have to be told
-  apart by more than their position. The smaller question is the cue's height: B71 gave the note two
-  lines because a note is a sentence, and a cue is one too.
 - **N81 — A template exercise's planned sets stop being folded away, and the block takes the workout's
   shape.** The plan is one `ListItem` reading *Planned sets · 3* and everything about it is behind the
   tap: `TemplatePlanDialog` is the list, the only place a rung's derived load is shown, and where both
@@ -140,9 +126,8 @@ end of this section rather than left to be re-derived.
   guess. It is last for both reasons: it needs that device, and it measures a bar N83 and N85 have
   already changed — a pill whose colour moved, and a row that gained an action to space around.
 
-**Why this order.** N80 and N81 are one screen and one block, and they run row first so the block is
-rebuilt around a settled row; N82 then repeats N81's foot-of-list action on the workout screen, so the two
-screens are made to match while the shape is fresh. N83 rewrites the rule N49 and N61 hold; it comes after
+**Why this order.** N81 rebuilds the exercise block, and N82 then repeats the foot-of-list action it
+introduces on the workout screen, so the two screens are made to match while the shape is fresh. N83 rewrites the rule N49 and N61 hold; it comes after
 N81 and N82 because both raise a container-filled action the rewritten rule should cover, and before N86
 because N86 measures the very start bar N83 changes. N84 shares nothing with the rest and is the only item
 that adds an interaction mode, so it waits for the layout work rather than interrupting it. N85 and N86 are
