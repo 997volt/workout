@@ -112,13 +112,45 @@ is a product in its own right.
 
 ## Later (still self-contained)
 
-**Nothing.** Everything that stood here has shipped — the defects found in use, the workout screen's
-discard, the workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch,
-a rest of zero, the planned-set prefill, the program document, the eight defects a review of that batch
-found and closed (B51-B58), and the seven requests that were its last queue (N80-N86) — each with its
-entry in [CHANGELOG.md](CHANGELOG.md). A candidate graduates there — gaining an id and a spelled-out
-decision — when it is picked up, so this queue is where unplanned work waits, and *Parked* below is where
-deliberate non-work lives.
+### One request from use
+
+No id yet: picking one up is what gives it a spelled-out decision and a place in *Next*, and this one is a
+design before it is a change — the grouping has to be settled before it can be built — so the entry below
+is mostly the argument for one shape over the others.
+
+- **Exercises get variations, and the library groups them.** A movement is one thing performed several ways —
+  a flat barbell bench press done paused for three seconds, touch-and-go, as a speed day, or in competition
+  style — and the library has nowhere to say so today: each is either its own unrelated row or one row the
+  lifter keeps renaming, and the rest are lost. **The grouping is a link, not a rename and not a merge.**
+  Every variation stays its own exercise, because that is the half that must not blur: a paused bench is a
+  different lift and moves less weight, so its records, the weight it steps by (N77) and what a plan prefills
+  from last time (P3.8) are its own. What the link buys is the other half — the views that fragment when one
+  movement is scattered across rows: muscle-group volume, "how much pressing am I doing", and the per-lift
+  adherence breakdown (P3.14), which reads a row per exercise and would otherwise read three for one bench.
+  So an exercise gains a **parent**: null for a movement, set for a variation of one, with the parent's name
+  read live rather than copied — N58's rule for templates, so a rename relabels its variations and a
+  soft-deleted parent still names them. The variation **inherits** what belongs to the movement (primary and
+  secondary muscles, equipment, movement pattern) and **keeps** what belongs to performing it (its own step,
+  rest, cue, unit, and every record). The parent is the whole of the structure: the qualifier stays a **name
+  the lifter writes**, because "three-second paused", "speed day", "beltless", "with chains" is not a closed
+  set — an enum would need a migration each time the sport invents a technique, and grouping by parsing a
+  name invents structure nobody stated, which the next rename breaks. Four things it has to settle. **Is the
+  movement itself loggable?** This entry assumes yes: competition style *is* the plain bench, and a group
+  whose head is not a row would be a second kind of exercise. **How far does a roll-up reach?** Records and
+  progression stay the variation's; the aggregate views above are where the parent is read, and which of
+  them roll up is the decision. **How deep is a group?** One level, until a case needs more — "close-grip
+  paused" is a variation of a variation and a real thing, but a tree is a promise nothing has asked for.
+  **Does the seeded library carry variations?** Seeding bases is what it already does; seeding a set of
+  common variations promises names, and a variation's name is the lifter's. The column moves both transfer
+  formats, since both carry exercises, and B62's rule applies to each: the version is read before the body.
+
+Everything that has stood here has shipped — the defects found in use, the workout screen's discard, the
+workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch, a rest of
+zero, the planned-set prefill, the program document, the eight defects a review of that batch found and
+closed (B51-B58), and the seven requests that were its last queue (N80-N86) — each with its entry in
+[CHANGELOG.md](CHANGELOG.md). A candidate graduates to *Next* — gaining an id and a spelled-out decision —
+when it is picked up, so this queue is where unplanned work waits, and *Parked* below is where deliberate
+non-work lives.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what
 they named that is not a feature is a settled decision: no dated instances (N16), nothing
