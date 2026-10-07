@@ -49,6 +49,19 @@ is a product in its own right.
   and the card is a different layout (N16, N61). N86's gap guard measures the row's text against its start
   pill, and this changes how tall that text is, so it is re-measured with the change rather than left to
   pass by luck.
+- **N89 — starting a planned workout while one is running asks which.** `startOrResumeSession` is
+  find-or-create, so starting a template with a session open hands the open one back
+  ([RoomWorkoutRepository.kt](app/src/main/java/com/example/androidapp/data/RoomWorkoutRepository.kt)): the
+  new plan is never seeded, and the lifter is dropped into the running workout as if they had asked for it.
+  N78 named exactly this and fixed it in one place — the templates list disables *Start* and says why — and
+  home's start actions have no guard at all. The request is a better answer than disabling: a dialog at the
+  point of starting that names the workout in progress and offers *Continue workout* or *Discard and start
+  new*. *Continue* opens the running session, which is what home's own pill does; *Discard* ends it as the
+  existing discard does — a soft delete, after which a scheduled occurrence reads as a miss (P3.5) — and
+  then starts what was asked for. The question is asked **after** the missed-day question, never before, so
+  cancelling that one cannot leave a lifter with a discarded session and no start. The templates list keeps
+  its disabled *Start*: a different screen with its own rule, and a dialog behind a control that cannot be
+  pressed would never be reached.
 
 ## Later (still self-contained)
 
