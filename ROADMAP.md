@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v1.14** is shipped and installed. Last reviewed against the code: 2026-10-06.
+> **v1.14** is shipped and installed. Last reviewed against the code: 2026-10-07.
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -37,9 +37,9 @@ they named that is not a feature is a settled decision: no dated instances (N16)
 automatic (the app states what happened; it never writes what it decided), a weekday-less slot that is never missed
 and is order-only, and more than one active program, which P3.12 allowed.
 
-### Two requests from use
+### Three requests from use
 
-Both small and self-contained, and neither has been picked up, so neither has an id yet — picking one up
+Each small and self-contained, and none has been picked up, so none has an id yet — picking one up
 is what gives it a spelled-out decision and a place in *Next*. The last request that stood here — an
 exercise's own weight change — became N77 that way and has shipped, with its entry in
 [CHANGELOG.md](CHANGELOG.md).
@@ -63,6 +63,28 @@ exercise's own weight change — became N77 that way and has shipped, with its e
   whether a next-up pick is a week-bound substitution at all — and if it is, which week it lands in
   (`ProgramSchedule.occurrenceDate` is what turns a week and a weekday into the date in question) — or
   whether it only opens the session and records nothing.
+- **A template exercise's planned sets stop being folded away, and the block takes the workout's
+  shape.** The plan is one `ListItem` reading *Planned sets · 3* and everything about it is behind the
+  tap: `TemplatePlanDialog` is the list, the only place a rung's derived load is shown, and where both
+  *Add set* and *Add warm-ups* live. The sets become lines in the block itself, the way `ExerciseSets`
+  draws a workout's logged ones, so the count and the loads read without a gesture; *Add set* becomes
+  the block's foot, a full-width button where the workout's *Log set* is (N59); and *Add warm-ups*
+  moves into the exercise's ⋮, which is N53's rule for the rare action — offered only where a ramp can
+  be built, the `warmUpRampFor` predicate the button already reads (N28, B50), which is N53's own
+  "what cannot be done is not offered". That menu is shared with the workout (N71), so the entry has
+  to be optional and null there, the shape `supersetGrouped` already uses.
+  **What is not settled is what *Add set* opens.** The workout could state its values on the screen
+  because a logged set is the plan's prefill with the occasional correction (N59); a *planned* set is
+  not that shape — its role, load, rep range, note and a run's value are all optional, and are authored
+  once as a plan rather than once per set performed — so either the button opens today's
+  `TemplateSetDialog` on N46's prefill from the last set, which is the smaller change and keeps every
+  field the row can carry in one place (B61), or the block grows on-screen target fields and the dialog
+  becomes correction only. That decides whether `TemplatePlanDialog` survives as anything — the list it
+  draws is what is being unfolded, and a set line reachable by tap leaves it no job — and where the
+  plan's rest, RPE and cue row sits relative to the unfolded sets and the new foot. It also touches
+  durable content: [DECISIONS.md](DECISIONS.md) names *a template's plan dialog* as one of the two
+  surfaces that author sets, and N46's accepted cost leans on the list behind the dialog showing the
+  count.
 
 ## Parked — deliberately not planned
 
