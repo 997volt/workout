@@ -17,11 +17,38 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Nothing.** The six defects a review of the unreleased N80–N86 batch found (B73–B78) are fixed, and the
-batch itself is recorded in [CHANGELOG.md](CHANGELOG.md) under *Unreleased*. A candidate graduates to this
-section — gaining an id and a spelled-out decision rather than a wish — when it is picked up, so what
-stands here is committed work; the two queues below are where the rest lives, *Later* for what is
-self-contained and *Parked* for what is a product in its own right.
+**Two requests from use**, each with the decision it settles. A candidate graduates to this section — gaining
+an id and a spelled-out decision rather than a wish — when it is picked up, so what stands here is committed
+work; the two queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what
+is a product in its own right.
+
+- **N87 — the plans leave the workout's overflow, and home becomes the only way in.** The workout's ⋮ carries
+  *Templates* and *Programs*
+  ([ActiveWorkoutScreen.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutScreen.kt)),
+  which N78 put there so that checking what is next would not mean ending the session. The request reverses
+  that half: mid-workout the overflow is the logger's own business, and the two plans belong where the
+  decision to train is taken — home's start bar
+  ([WorkoutsHomeScreen.kt](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeScreen.kt)), whose
+  links above the Start/Resume pill already stay visible while a session is open. Keeping that half is what
+  makes the removal safe: looking at what is next still does not require ending the workout, because home is
+  one step back. Three things come with it. The overflow then holds only *Discard*, so the ⋮ must be drawn
+  only when there is something to discard — today it is drawn always, because the two plan entries were
+  reachable from an empty session, while an empty session's own discard is prompt-free and drawn in the body
+  (N41). The two entries' tags go with them. And [DECISIONS.md](DECISIONS.md)'s N78 rule and its
+  [evidence](DECISIONS-EVIDENCE.md#n78) record the placement as settled, so they are amended with the
+  reversal's reason rather than left contradicting the code — the class of defect the N80–N86 review found
+  twice. B43's withholding is untouched: the templates list still disables *Start* while a session is open,
+  and it is still reachable from home.
+- **N88 — a next-up row's exercise count gets a line of its own.** The row's supporting line joins the
+  program's name and the count with a separator
+  ([WorkoutsHomeScreen.kt](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeScreen.kt)), so the
+  two read as one sentence: *Upper/Lower · 5 exercises*. The count moves to its own line, and **always** —
+  the point is the shape of the row, not a wrap that happens once the text is long, so a one-word program
+  name must not pull the count back up beside it. It stays the plural string it is, so it still reads one
+  exercise or five. Home's *today* card keeps its single supporting line: the request names the next-up row,
+  and the card is a different layout (N16, N61). N86's gap guard measures the row's text against its start
+  pill, and this changes how tall that text is, so it is re-measured with the change rather than left to
+  pass by luck.
 
 ## Later (still self-contained)
 
