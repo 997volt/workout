@@ -95,6 +95,20 @@ is a product in its own right.
   (Programs carries *Load*, N47) rather than as a floating control, and tagged like them. It is a way across
   and not a third way to *start* anything: a workout already running is answered by the templates list's own
   withholding (N78, B43), not by this entry.
+- **N94 — Statistics and Workouts trade places in the bar, and the app still opens on Workouts.** The bar's
+  order is the enum's order
+  ([AppTab.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppTab.kt)), and Workouts sits first
+  today for the reason that enum's own doc gives — "it is where the app opens". The request separates the two
+  things that reasoning ran together: Statistics takes the first place and Workouts the third, where
+  Statistics was, while the tab the app *opens* on does not move. That is `startDestination = WorkoutsHome`
+  and `lastTab`'s default of `AppTab.WORKOUTS`
+  ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)), neither of which
+  the swap touches, so the app still opens on Workouts — now the third tab selected. Two things follow. The
+  enum's doc loses the rationale it can no longer hold rather than being left contradicting the order, which
+  is the class of defect the N80–N86 review found twice; and the bar's read order moves with it, so a screen
+  reader announces Statistics first. Nothing else is keyed to the order: `forRoute` and `switchTab` match by
+  route, and [AppTabTest.kt](app/src/test/java/com/example/androidapp/ui/navigation/AppTabTest.kt) names all
+  five tabs without asserting where any of them sits.
 
 ## Later (still self-contained)
 
