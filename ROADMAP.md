@@ -42,18 +42,20 @@ is a product in its own right.
 - **N88 — a next-up row's exercise count gets a line of its own.** The row's supporting line joins the
   program's name and the count with a separator
   ([WorkoutsHomeScreen.kt](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeScreen.kt)), so the
-  two read as one sentence: *Upper/Lower · 5 exercises*. The count moves to its own line, and **always** —
-  the point is the shape of the row, not a wrap that happens once the text is long, so a one-word program
-  name must not pull the count back up beside it. It stays the plural string it is, so it still reads one
-  exercise or five. Home's *today* card keeps its single supporting line: the request names the next-up row,
-  and the card is a different layout (N16, N61). N86's gap guard measures the row's text against its start
+  two read as one sentence: *Upper/Lower · 5 exercises*. The count moves to its own line — the row reads
+  *Next up*, the workout's name, the program, then the count — and **always**: the point is the shape of the
+  row, not a wrap that happens once the text is long, so a one-word program name must not pull the count
+  back up beside it. It stays the plural string it is, so it still reads one exercise or five. Home's *today*
+  card keeps its single supporting line: the request names the next-up row, and the card is a different
+  layout (N16, N61). N86's gap guard measures the row's text against its start
   pill, and this changes how tall that text is, so it is re-measured with the change rather than left to
   pass by luck.
 - **N90 — a deleted planned set can be taken back.** `TemplateEditorViewModel.onRemoveSet` soft-deletes the
   row and says nothing, so a mis-tap on a set's delete is unrecoverable from the screen — the plan is simply
   missing a set. The workout screen already answers this (N7, B3): a snackbar at the foot naming what went,
   with *Undo*, and the ViewModel holding the removed row until the message is taken. The editor gets the
-  same, and the one decision to settle is **where the set comes back**. The workout's undo deliberately
+  same — for planned sets only, since removing a whole exercise and deleting a template already ask first
+  (B2, N53) — and **where the set comes back** is the decision it settles. The workout's undo deliberately
   *appends* — "the values come back, the position may not" — but a plan's order **is** the plan: a set's
   `setIndex` is its position, and a run's ladder is read by position (`runAt`, `rungWeightAt`, N79), so
   appending would silently rewrite a drop run. The restore must therefore put the row back where it was,
@@ -68,17 +70,22 @@ is a product in its own right.
   `configChanges`, so a rotation would otherwise fold what the lifter opened. Everything below the row
   folds together — the sets, the fields and the foot. The row becomes a control, so its action needs a name
   and its state announcing, the rule every screen follows, and it must not fight the ⋮ the row already
-  carries (move, superset, remove, *Add warm-ups* since N81). One thing to settle on a device: whether a
-  newly added exercise opens expanded, so its first set can be added without a second tap, or stays folded.
-- **N92 — one program sits as far from the thumb as the screen allows.** The programs list is top-aligned
+  carries (move, superset, remove, *Add warm-ups* since N81). A newly added exercise opens **expanded**, so
+  its first set can be added without a second tap; only the blocks that were already there start folded.
+- **N92 — the program to open moves to the foot, beside *New program*.** The programs list is top-aligned
   and its `LazyColumn` reserves room at the foot only for the *New program* FAB
   ([ProgramsScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramsScreen.kt)), so with a
   single program the row a lifter came to open is under the app bar — the far end of a modern phone — while
-  the only thing in reach is the action that makes another one. This is the candidate that needs a device
-  rather than an argument, in the shape N86's three gaps did: bottom-anchor the list so its rows end at the
-  thumb, draw the program as a full-width card beside the FAB, or move opening the active program down to
-  the foot and leave the list as reference. Whichever it is, the empty state and the many-program list must
-  not regress, and the choice is a measurement on a device rather than a guess.
+  the only thing in reach is the action that makes another one. The **active** program, which with one
+  program is the only one, is drawn as a full-width card at the foot with the *New program* button beside
+  it, so the thing to open is where the thumb already is. The list above stays the reference it is, in the
+  authored order (P3.12): with several programs the card is the one being acted on and the list still
+  carries the rest, and with none there is no card, so neither case is rearranged to suit the single-program
+  one. Bottom-anchoring
+  the whole list was rejected: with several programs it still scrolls, and pulling every row to the foot
+  makes a long list end nowhere rather than putting the *one* thing in reach. Moving the primary action
+  down instead was rejected for the opposite reason — the action is already at the foot; it is the program
+  it acts on that is not.
 - **N93 — programs and templates reach each other.** Home links to both in one action row (N42), but the two
   screens are siblings with no way across: from Programs, Templates is back-home-and-in, and the reverse is
   the same trip. Each screen's own bar gains an entry to the other, sitting with the actions already there
