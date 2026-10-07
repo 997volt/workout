@@ -1,5 +1,8 @@
 package com.example.androidapp.ui.history
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import com.example.androidapp.R
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsEnabled
@@ -94,6 +97,16 @@ class WorkoutDetailScreenTest {
         composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_EDIT).performClick()
     }
 
+    /**
+     * The set delete's label, read from the resources rather than spelled in English (B77).
+     *
+     * The rule is to address a control by its tag; where one has no tag, the resource is the next best
+     * thing — a translated string is not a test's to hardcode. A tag of its own would put another per-id
+     * helper in `TestTags` for one assertion, which is a cost rather than an assumption.
+     */
+    private fun setDeleteLabel(): String =
+        ApplicationProvider.getApplicationContext<Context>().getString(R.string.set_delete)
+
     @Test
     fun whileReading_aPastWorkout_offersNoWayToWrite() {
         // N84: everything that writes is behind the menu, so a row that cannot be edited must not announce
@@ -104,7 +117,7 @@ class WorkoutDetailScreenTest {
             .assertHasNoClickAction()
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_RATING_ROW, useUnmergedTree = true)
             .assertHasNoClickAction()
-        composeTestRule.onNodeWithContentDescription("Delete set").assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription(setDeleteLabel()).assertDoesNotExist()
     }
 
     @Test
@@ -115,7 +128,7 @@ class WorkoutDetailScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.SET_ROW, useUnmergedTree = true)
             .assertHasClickAction()
-        composeTestRule.onNodeWithContentDescription("Delete set").assertExists()
+        composeTestRule.onNodeWithContentDescription(setDeleteLabel()).assertExists()
     }
 
     @Test

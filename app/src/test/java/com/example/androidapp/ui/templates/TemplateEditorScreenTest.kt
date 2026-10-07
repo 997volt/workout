@@ -561,12 +561,18 @@ class TemplateEditorScreenTest {
     fun thePlansSets_readOnTheBlock_withNothingOpened() {
         // This is N81's whole change: the sets were a count behind *Planned sets · 3*, so the plan's
         // roles, loads and deletes were all behind a tap. Nothing is clicked here, and the line, the
-        // rung it derives and the delete that takes it are all on the screen.
+        // rung it derives and the delete that takes it are all *readable* — which is why these are
+        // `assertIsDisplayed` rather than `assertExists` (B77): a node composed below the fold exists too.
         setScreen(state = droppingExercise())
 
-        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts1")).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts2")).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.templatePlanRemove("ts2")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.templatePlanSet("ts1")))
+        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts1")).assertIsDisplayed()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.templatePlanSet("ts2")))
+        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts2")).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.templatePlanRemove("ts2")).assertIsDisplayed()
     }
 
     @Test
@@ -579,7 +585,7 @@ class TemplateEditorScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.templatePlanEmpty("te1")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.templatePlanEmpty("te1")).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertIsDisplayed()
     }
 
@@ -619,6 +625,8 @@ class TemplateEditorScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.templateMenu("te1")).performClick()
 
+        // The menu really opened, so the absence below is the entry's and not a popup that never drew (B77).
+        composeTestRule.onNodeWithTag(TestTags.templateRemove("te1")).assertExists()
         composeTestRule.onNodeWithTag(TestTags.templateAddWarmUps("te1")).assertDoesNotExist()
     }
 
@@ -626,10 +634,22 @@ class TemplateEditorScreenTest {
     fun aHalfStepTargetRpe_readsAsALifterWritesIt() {
         // ROADMAP B6, carried over from the plan dialog's own test when N81 deleted that dialog: a
         // planned set stores its effort in half-points, and handing the count straight to the marker
-        // rendered a plan saying 9.5 as *RPE 19*.
+        // rendered a plan saying 9.5 as *RPE 19*. Displayed, not merely composed (B77) — the guard is
+        // that a lifter can read it, which `assertExists` does not say.
         setScreen(state = twoExercises.copy(exercises = listOf(targetRpeSet(19))))
 
-        composeTestRule.onNodeWithText("RPE 9.5", substring = true).assertExists()
+        composeTestRule.onNodeWithText("RPE 9.5", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun aWholeTargetRpe_hasNoTrailingZero() {
+        // The third guard the deleted plan-dialog test held, re-homed because the review found it had gone
+        // (B77): a whole effort prints as *RPE 8*, not *RPE 8.0* — 16 half-points — for the same reason the
+        // half-point case exists.
+        setScreen(state = twoExercises.copy(exercises = listOf(targetRpeSet(16))))
+
+        composeTestRule.onNodeWithText("RPE 8", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("RPE 8.0", substring = true).assertDoesNotExist()
     }
 
     @Test

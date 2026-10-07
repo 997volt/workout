@@ -792,7 +792,15 @@ class ActiveWorkoutScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_LIST)
             .performScrollToNode(hasTestTag(TestTags.ACTIVE_WORKOUT_ADD_EXERCISE))
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_EMPTY).assertExists()
+
+        // The name claims an order, so the order is asserted rather than left to the tag's presence (B77):
+        // the empty message is drawn *instead of* the rows, and the action that answers it comes after it.
+        val message = composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_EMPTY)
+            .getUnclippedBoundsInRoot()
+        val add = composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ADD_EXERCISE)
+            .getUnclippedBoundsInRoot()
+
+        assertTrue("the add button is not under the empty message", add.top >= message.bottom)
     }
 
     private fun state(

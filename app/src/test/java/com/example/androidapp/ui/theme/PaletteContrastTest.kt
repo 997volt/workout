@@ -104,14 +104,20 @@ class PaletteContrastTest {
         // draws is a claim nobody can check, which is why the link half of this file is a scan rather than
         // an assertion. The pair above is worth holding because these two read it — and both of them,
         // because the two planned-workout starts are one action and only one of them carried the accent.
+        //
+        // The *pair*, not the container alone (B77): a scan for one literal passes on a comment, or on a
+        // control whose content colour was left at the default, so the two lines have to arrive together.
+        val tonalStart = Regex(
+            "containerColor = MaterialTheme\\.colorScheme\\.secondaryContainer,\\s+" +
+                "contentColor = MaterialTheme\\.colorScheme\\.onSecondaryContainer",
+        )
         val plannedStarts = listOf(
             "app/src/main/java/com/example/androidapp/ui/home/HomeRows.kt",
             "app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeScreen.kt",
         )
 
         plannedStarts.forEach { path ->
-            assertThat(File(repoRoot, path).readText())
-                .contains("containerColor = MaterialTheme.colorScheme.secondaryContainer")
+            assertThat(File(repoRoot, path).readText()).containsMatch(tonalStart.toPattern())
         }
     }
 
