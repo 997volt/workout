@@ -14,6 +14,18 @@ repeated here.
 
 ### Changed
 
+- **A template's plan reads on the block, and one entry left its dialog for the ⋮** (N81). A planned
+  exercise's sets were a count behind *Planned sets · 3*: the number without the plan, and every role,
+  load, rung and delete behind a tap. They are lines in the block now — each still the way into that
+  set's targets and the place its delete lives — and *Add set* is the block's foot, full width, where
+  the workout's *Log set* is (N59). It opens the same set dialog on N46's prefill that the dialog's own
+  Add set did, so extending a plan is unchanged; what went is the panel in front of the plan. *Add
+  warm-ups* moved the other way, into the exercise's ⋮, because it is a write rather than a reading and
+  the ⋮ is where N53 and N71 keep the rare actions. The shared menu takes it as an optional entry, since
+  the workout's own menu must not grow a control that writes a plan, and it is offered only where a ramp
+  can be built (N28, B50) — N53's "what cannot be done is not offered". `TemplatePlanDialog` is gone,
+  with its strings, its tags, and the test whose only subject it was; the two summary guards it held
+  (B6's half-point effort and N67's silent warm-up) moved to the screen's own test.
 - **A template exercise's cue gets a line of its own** (N80). `ExercisePlanFields` held the rest, the
   exercise's target RPE, the cue and the save in one row, and the cue was the only one taking
   `weight(1f)` — so it absorbed whatever the two fixed-width number fields and the button left, which on

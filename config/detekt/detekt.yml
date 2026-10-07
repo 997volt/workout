@@ -113,4 +113,6 @@ complexity:
     # surface being tested rather than a type doing too much.
     # Moved 20 -> 21 at N72, for the program slot's ⋮: a slot's entries moved behind one menu, so
     # the tag that addresses it is one more per-id helper in the same flat namespace.
-    thresholdInObjects: 21
+    # Moved 21 -> 22 at N81, for the same shape twice over: a planned exercise's sets became lines a
+    # test now addresses one at a time, and the warm-up ramp became an entry of that row's ⋮.
+    thresholdInObjects: 22

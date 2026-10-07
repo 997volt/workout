@@ -22,10 +22,12 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -43,7 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -59,18 +60,22 @@ import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.isAnchoredAt
+import com.example.androidapp.domain.model.runAt
+import com.example.androidapp.domain.model.rungWeightAt
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.warmUpRampFor
 import com.example.androidapp.ui.components.exerciseWeightUnit
+import com.example.androidapp.ui.components.label
+import com.example.androidapp.ui.components.summary
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.ExerciseActionsMenu
 import com.example.androidapp.ui.components.ExerciseMenuTags
 import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.TemplatePlanDialog
 import com.example.androidapp.ui.components.TemplateSetDialog
+import com.example.androidapp.ui.components.WarmUpAction
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -341,12 +346,13 @@ private fun TemplateNameField(
 }
 
 /**
- * One exercise in the editor: its header, the plan's sets, and the rest and cue the
- * plan prescribes (ROADMAP N14).
+ * One exercise in the editor: its header, the plan's sets, the rest and cue the plan prescribes, and
+ * the button that adds another set (ROADMAP N14, N81).
  *
- * The dialogs live here rather than in the screen, the same shape as the exercise
- * section in a workout: the state that says "this panel is open" belongs next to the
- * row that opens it.
+ * The sets are lines in the block rather than a count behind a tap (N81): the plan is what this screen
+ * is for, and the dialog that held it made reading it a gesture. The one panel that still opens — a
+ * set's targets — keeps its state here rather than in the screen, the shape the exercise section in a
+ * workout uses: the state that says "this panel is open" belongs next to the row that opens it.
  */
 @Composable
 private fun TemplateExerciseBlock(
@@ -369,9 +375,25 @@ private fun TemplateExerciseBlock(
 ) {
     // This exercise's display unit, resolved once: every load it names reads in it (ROADMAP N64).
     val unit = exerciseWeightUnit(exercise.weightUnit)
-    var planOpen by rememberSaveable { mutableStateOf(false) }
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     var adding by rememberSaveable { mutableStateOf(false) }
+
+    // A ramp's step is the unit's (N64), and the entry is offered only where a ramp can actually be
+    // built — the predicate the action itself reads (ROADMAP N28, B50): asking whether a weight was
+    // merely *typed* offered the button for an assisted set (0 kg) and for one too light to load, and a
+    // press then reported success while writing nothing.
+    val warmUpStep = Weight.stepGramsFor(exercise.stepGrams, unit)
+    val addWarmUps = if (onAddWarmUpSets != null &&
+        warmUpRampFor(exercise.sets, warmUpStep).isNotEmpty()
+    ) {
+        WarmUpAction(
+            label = stringResource(R.string.template_add_warmups),
+            tag = TestTags.templateAddWarmUps(exercise.id),
+            onClick = { onAddWarmUpSets(warmUpStep) },
+        )
+    } else {
+        null
+    }
 
     Column(modifier = modifier) {
         TemplateExerciseRow(
@@ -383,34 +405,17 @@ private fun TemplateExerciseBlock(
             onMoveDown = onMoveDown,
             onRemove = onRemove,
             onToggleSuperset = onToggleSuperset,
+            addWarmUps = addWarmUps,
             supersetLabels = supersetLabels,
         )
-        PlanRow(exercise = exercise, onClick = { planOpen = true })
-        ExercisePlanFields(exercise = exercise, onSave = onSavePlan)
-    }
-
-    if (planOpen) {
-        TemplatePlanDialog(
-            exerciseName = exercise.exerciseName,
+        PlannedSets(
             sets = exercise.sets,
-            onAddSet = { adding = true },
-            onEditSet = { editing = it.id },
-            onDeleteSet = onRemoveSet,
-            onDismiss = { planOpen = false },
-            // Offered only where a ramp can actually be built, which is the same predicate the
-            // action itself reads (ROADMAP N28, B50): asking whether a weight was merely *typed*
-            // offered the button for an assisted set (0 kg) and for one too light to load, and a
-            // press then reported success while writing nothing.
-            // A ramp is a list of loads, so it exists in the unit the exercise is read in (N64).
-            onAddWarmUpSets = if (onAddWarmUpSets != null &&
-                warmUpRampFor(exercise.sets, Weight.stepGramsFor(exercise.stepGrams, unit)).isNotEmpty()
-            ) {
-                { onAddWarmUpSets(Weight.stepGramsFor(exercise.stepGrams, unit)) }
-            } else {
-                null
-            },
             unit = unit,
+            onEdit = { editing = it.id },
+            onRemove = onRemoveSet,
         )
+        ExercisePlanFields(exercise = exercise, onSave = onSavePlan)
+        AddSetButton(onClick = { adding = true })
     }
 
     val edited = exercise.sets.firstOrNull { it.id == editing }
@@ -429,6 +434,26 @@ private fun TemplateExerciseBlock(
                 editing = null
             },
         )
+    }
+}
+
+/**
+ * The block's foot: the action that adds another planned set (N81).
+ *
+ * Split out when the second row of fields and the button pushed [TemplateExerciseBlock] past the length
+ * this project allows, and it is the piece that reads on its own — the label, the tag, and the shape,
+ * which is the workout's *Log set* (N59): full width, and under the values it does not write.
+ */
+@Composable
+private fun AddSetButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    FilledTonalButton(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .testTag(TestTags.TEMPLATE_PLAN_ADD),
+    ) {
+        Text(stringResource(R.string.template_plan_add))
     }
 }
 
@@ -472,32 +497,101 @@ private fun TemplateSetEditor(
     )
 }
 
-/** `Planned sets · 3` — the way into the plan for this exercise. */
+/**
+ * The plan's sets, as lines in the block (ROADMAP N14, N81).
+ *
+ * This was a dialog behind *Planned sets · 3*: the count without the plan, and every load, role and
+ * rung behind a tap. The lines are the screen's own content now, and each is still the way into that
+ * set's targets and the place its delete lives. An exercise with no sets keeps the sentence the dialog
+ * carried, because "add your first one" is still the next thing to do and the button below says how.
+ */
 @Composable
-private fun PlanRow(
-    exercise: TemplateExercise,
-    onClick: () -> Unit,
+private fun PlannedSets(
+    sets: List<TemplateSet>,
+    unit: WeightUnit,
+    onEdit: (TemplateSet) -> Unit,
+    onRemove: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.template_plan_row)) },
-        supportingContent = {
+    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        if (sets.isEmpty()) {
             Text(
-                if (exercise.sets.isEmpty()) {
-                    stringResource(R.string.template_plan_none)
-                } else {
-                    pluralStringResource(
-                        R.plurals.template_plan_summary,
-                        exercise.sets.size,
-                        exercise.sets.size,
-                    )
-                },
+                text = stringResource(R.string.template_plan_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(vertical = 4.dp)
+                    .testTag(TestTags.TEMPLATE_PLAN_EMPTY),
             )
-        },
+        }
+        sets.forEachIndexed { index, set ->
+            PlanSetRow(
+                number = index + 1,
+                set = set,
+                unit = unit,
+                // A rung has no weight written down, so the row states what it derives from its anchor
+                // rather than leaving the reader to do the arithmetic (N79).
+                rungWeightGrams = sets.rungWeightAt(index),
+                holdsTheRunValue = sets.runAt(index)?.rung == 1,
+                onEdit = { onEdit(set) },
+                onDelete = { onRemove(set.id) },
+            )
+        }
+    }
+}
+
+/**
+ * One planned set as a line: its number and role, what it loads and asks for, and its delete (N14, N79).
+ *
+ * Moved out of the plan dialog and into the block by N81, unchanged but for the padding: the dialog
+ * supplied it, the block does now. Its two tags are per set, because a plan of a working set and two
+ * rungs is three rows on one screen.
+ */
+@Composable
+private fun PlanSetRow(
+    number: Int,
+    set: TemplateSet,
+    unit: WeightUnit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** What a rung loads, derived from its anchor, or null (ROADMAP N79). */
+    rungWeightGrams: Long? = null,
+    /** True on the rung that holds the run's value, which is the one worth naming it on (N79). */
+    holdsTheRunValue: Boolean = false,
+) {
+    Row(
         modifier = modifier
-            .testTag(TestTags.TEMPLATE_PLAN_ROW)
-            .clickable(onClick = onClick),
-    )
+            .fillMaxWidth()
+            .testTag(TestTags.templatePlanSet(set.id))
+            .clickable(onClick = onEdit),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.template_plan_set, number, set.role.label),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = set.summary(unit, rungWeightGrams, holdsTheRunValue),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier.testTag(TestTags.templatePlanRemove(set.id)),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Delete,
+                contentDescription = stringResource(
+                    R.string.template_plan_remove,
+                    number,
+                ),
+            )
+        }
+    }
 }
 
 /**
@@ -634,6 +728,8 @@ private fun TemplateExerciseRow(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,
+    /** The warm-up entry this row's ⋮ offers, or null where no ramp can be built (N28, B50, N81). */
+    addWarmUps: WarmUpAction? = null,
     supersetLabels: Map<String, String> = emptyMap(),
 ) {
     ListItem(
@@ -654,6 +750,7 @@ private fun TemplateExerciseRow(
                 // The first planned exercise has nothing above it to pair with (B28), so the entry is
                 // not offered rather than writing a group that rewrites every ungrouped row.
                 supersetGrouped = onToggleSuperset?.let { exercise.supersetGroup != null },
+                addWarmUps = addWarmUps,
                 removeTitle = stringResource(R.string.template_remove_confirm_title),
                 removeText = stringResource(
                     R.string.template_remove_confirm_text,

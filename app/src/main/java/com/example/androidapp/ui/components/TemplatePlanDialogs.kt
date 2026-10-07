@@ -1,20 +1,11 @@
 package com.example.androidapp.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,7 +13,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -34,144 +24,9 @@ import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.runAt
-import com.example.androidapp.domain.model.rungWeightAt
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.repository.TemplateSetEdit
 
-/**
- * The planned sets of one template exercise (ROADMAP N14).
- *
- * A list you edit in place — add, open, delete, duplicate — rather than a form with
- * one Save: each row writes as it is confirmed, which is how the rest of the template
- * editor already behaves. The rest and cue the plan prescribes are edited in the
- * editor behind this dialog, so this stays one job.
- */
-@Composable
-fun TemplatePlanDialog(
-    exerciseName: String,
-    sets: List<TemplateSet>,
-    onAddSet: () -> Unit,
-    onEditSet: (TemplateSet) -> Unit,
-    onDeleteSet: (String) -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-    /**
-     * Adds a warm-up ramp computed from the plan's own working weight (ROADMAP N28), or null when
-     * there is no weight to take a fraction of: a bodyweight exercise gets no ramp, and a control
-     * that would do nothing is worse than no control.
-     */
-    onAddWarmUpSets: (() -> Unit)? = null,
-    /** The unit this exercise's planned loads are shown in (ROADMAP N64). */
-    unit: WeightUnit = WeightUnit.KILOGRAMS,
-) {
-    AlertDialog(
-        modifier = modifier,
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.template_plan_title, exerciseName)) },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    // A long plan scrolls rather than pushing the buttons off screen.
-                    .heightIn(max = 360.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                if (sets.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.template_plan_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.testTag(TestTags.TEMPLATE_PLAN_EMPTY),
-                    )
-                }
-                sets.forEachIndexed { index, set ->
-                    PlanSetRow(
-                        number = index + 1,
-                        set = set,
-                        unit = unit,
-                        // A rung has no weight written down, so the row states what it derives from its
-                        // anchor rather than leaving the reader to do the arithmetic (N79).
-                        rungWeightGrams = sets.rungWeightAt(index),
-                        holdsTheRunValue = sets.runAt(index)?.rung == 1,
-                        onEdit = { onEditSet(set) },
-                        onDelete = { onDeleteSet(set.id) },
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            AppTextButton(
-                onClick = onDismiss,
-                modifier = Modifier.testTag(TestTags.TEMPLATE_PLAN_CLOSE),
-            ) {
-                Text(stringResource(R.string.action_close))
-            }
-        },
-        dismissButton = {
-            PlanDialogButtons(
-                onAddWarmUpSets = onAddWarmUpSets,
-                onAddSet = onAddSet,
-            )
-        },
-    )
-}
-
-@Composable
-private fun PlanSetRow(
-    number: Int,
-    set: TemplateSet,
-    unit: WeightUnit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    /** What a rung loads, derived from its anchor, or null (ROADMAP N79). */
-    rungWeightGrams: Long? = null,
-    /** True on the rung that holds the run's value, which is the one worth naming it on (N79). */
-    holdsTheRunValue: Boolean = false,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag(TestTags.templatePlanSet(set.id))
-            .clickable(onClick = onEdit),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(R.string.template_plan_set, number, set.role.label),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
-                text = set.summary(unit, rungWeightGrams, holdsTheRunValue),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        IconButton(
-            onClick = onDelete,
-            modifier = Modifier.testTag(TestTags.templatePlanRemove(set.id)),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Delete,
-                contentDescription = stringResource(
-                    R.string.template_plan_remove,
-                    number,
-                ),
-            )
-        }
-    }
-}
-
-/**
- * One planned set's targets (ROADMAP N14).
- *
- * Every field is optional, and the dialog says so by leaving them empty: a plan that
- * says "work up to a heavy single" has no weight to write down, and a zero would be a
- * claim the app cannot check. Reps are a range because a plan writes `(max 2)` and
- * means only the upper bound.
- */
 /**
  * One planned set's targets (ROADMAP N14).
  *
@@ -565,30 +420,5 @@ private fun TemplateSet.repsLine(): String? = if (role.isRung) {
             targetRepsMax,
         )
         else -> null
-    }
-}
-
-/** The dialog's two optional actions, together so the dialog itself stays readable. */
-@Composable
-private fun PlanDialogButtons(
-    onAddWarmUpSets: (() -> Unit)?,
-    onAddSet: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        onAddWarmUpSets?.let { addWarmUps ->
-            AppTextButton(
-                onClick = addWarmUps,
-                modifier = Modifier.testTag(TestTags.TEMPLATE_ADD_WARMUPS),
-            ) {
-                Text(stringResource(R.string.template_add_warmups))
-            }
-        }
-        AppTextButton(
-            onClick = onAddSet,
-            modifier = Modifier.testTag(TestTags.TEMPLATE_PLAN_ADD),
-        ) {
-            Text(stringResource(R.string.template_plan_add))
-        }
     }
 }

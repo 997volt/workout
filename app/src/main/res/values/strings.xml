@@ -141,11 +141,8 @@
     <string name="template_name_label">Name</string>
     <string name="template_save_name">Save name</string>
     <string name="template_add_exercise">Add exercise</string>
-    <!-- A plan's sets (ROADMAP N14): what to lift, how much, in what shape. -->
-    <string name="template_plan_row">Planned sets</string>
-
+    <!-- A plan's sets (ROADMAP N14), read on the block since N81 rather than behind a count. -->
     <string name="template_plan_none">No planned sets</string>
-    <string name="template_plan_title">%1$s — the plan</string>
     <string name="template_plan_empty">No planned sets yet. Add your first one.</string>
     <string name="template_add_warmups">Add warm-ups</string>
     <string name="template_plan_add">Add set</string>
@@ -167,10 +164,6 @@
     <string name="template_set_reps_max">Reps to</string>
     <string name="template_set_note">Note</string>
     <string name="template_set_weight_value">%1$s %2$s</string>
-    <plurals name="template_plan_summary">
-        <item quantity="one">%1$d planned set</item>
-        <item quantity="other">%1$d planned sets</item>
-    </plurals>
     <plurals name="template_reps_range">
         <item quantity="one">%1$d–%2$d rep</item>
         <item quantity="other">%1$d–%2$d reps</item>

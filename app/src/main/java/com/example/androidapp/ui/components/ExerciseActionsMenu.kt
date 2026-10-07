@@ -41,6 +41,23 @@ data class ExerciseMenuTags(
 )
 
 /**
+ * The optional warm-up entry one screen's ⋮ may carry (ROADMAP N81): the label it reads under, the tag
+ * it answers to, and what it writes.
+ *
+ * A record rather than three parameters because the three only travel together, and it carries its own
+ * tag rather than joining [ExerciseMenuTags] because it is the one entry that is *not* every screen's:
+ * a template offers it wherever a ramp can be built (N28, B50) and the workout's menu must not grow a
+ * control that writes a plan, so "no entry" has to be expressible — the shape a nullable
+ * `supersetGrouped` uses one entry up. The pair shape `WarmUpTarget` rides with `warmUpRamp` is the
+ * same one.
+ */
+data class WarmUpAction(
+    val label: String,
+    val tag: String,
+    val onClick: () -> Unit,
+)
+
+/**
  * One exercise's rare actions, behind its own ⋮: order, pairing, and the destructive one last
  * (ROADMAP N53, N71).
  *
@@ -59,6 +76,11 @@ data class ExerciseMenuTags(
  *
  * **Remove asks first**, because it takes the exercise's sets with it and there is no undo to reach
  * for; the sentence is the caller's, since what the sets leave is a workout or a template.
+ *
+ * Since N81 it also carries one entry only a template offers — *Add warm-ups* (N28) — as an optional
+ * [WarmUpAction]. The entry moved here from the plan dialog the template editor no longer has, and it
+ * comes with its own label and tag because the workout's menu, which shares this component (N71), draws
+ * no such control: what a ramp needs is a plan's working weight, and a workout has logs.
  */
 @Composable
 fun ExerciseActionsMenu(
@@ -74,6 +96,8 @@ fun ExerciseActionsMenu(
     onRemove: () -> Unit,
     tags: ExerciseMenuTags,
     modifier: Modifier = Modifier,
+    /** The warm-up entry, or null where this screen offers none — which is the workout's own (N81). */
+    addWarmUps: WarmUpAction? = null,
 ) {
     // `rememberSaveable`, like the program slot's own menu (N72): the activity declares no
     // `configChanges`, so rotation rebuilds it, and a confirmation the lifter had open would
@@ -94,6 +118,7 @@ fun ExerciseActionsMenu(
             canMoveUp = canMoveUp,
             canMoveDown = canMoveDown,
             supersetGrouped = supersetGrouped,
+            addWarmUps = addWarmUps,
             onToggleSuperset = onToggleSuperset,
             onMove = onMove,
             onRemove = { confirmingRemoval = true },
@@ -128,6 +153,7 @@ private fun ExerciseMenuEntries(
     canMoveUp: Boolean,
     canMoveDown: Boolean,
     supersetGrouped: Boolean?,
+    addWarmUps: WarmUpAction?,
     onToggleSuperset: () -> Unit,
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
@@ -137,20 +163,14 @@ private fun ExerciseMenuEntries(
         if (canMoveUp) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.exercise_menu_move_up)) },
-                onClick = {
-                    onDismiss()
-                    onMove(-1)
-                },
+                onClick = menuClick(onDismiss) { onMove(-1) },
                 modifier = Modifier.testTag(tags.moveUp),
             )
         }
         if (canMoveDown) {
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.exercise_menu_move_down)) },
-                onClick = {
-                    onDismiss()
-                    onMove(1)
-                },
+                onClick = menuClick(onDismiss) { onMove(1) },
                 modifier = Modifier.testTag(tags.moveDown),
             )
         }
@@ -167,11 +187,18 @@ private fun ExerciseMenuEntries(
                         ),
                     )
                 },
-                onClick = {
-                    onDismiss()
-                    onToggleSuperset()
-                },
+                onClick = menuClick(onDismiss, onToggleSuperset),
                 modifier = Modifier.testTag(tags.superset),
+            )
+        }
+        // Above Remove and below pairing: it writes sets rather than taking them away, so N53's order
+        // puts it after the entry that changes the round and before the destructive one. It is drawn
+        // only where the caller supplies it (N81).
+        addWarmUps?.let { entry ->
+            DropdownMenuItem(
+                text = { Text(entry.label) },
+                onClick = menuClick(onDismiss, entry.onClick),
+                modifier = Modifier.testTag(entry.tag),
             )
         }
         DropdownMenuItem(
@@ -181,13 +208,21 @@ private fun ExerciseMenuEntries(
                     color = MaterialTheme.colorScheme.error,
                 )
             },
-            onClick = {
-                onDismiss()
-                onRemove()
-            },
+            onClick = menuClick(onDismiss, onRemove),
             modifier = Modifier.testTag(tags.remove),
         )
     }
+}
+
+/**
+ * One entry's click, which is always the same two things: close the menu, then act.
+ *
+ * File-level and pure, the shape [WarmUpAction] and the tag records use, so the entries above read as a
+ * list of labels and actions rather than as one repeated block of three lines each.
+ */
+private fun menuClick(onDismiss: () -> Unit, action: () -> Unit): () -> Unit = {
+    onDismiss()
+    action()
 }
 
 /**

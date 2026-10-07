@@ -326,12 +326,15 @@ object TestTags {
 
     fun templateRemove(id: String) = "template_remove_$id"
 
-    /** A plan's sets (ROADMAP N14): the list, one target, and its rest and cue. */
-    const val TEMPLATE_PLAN_ROW = "template_plan_row"
+    /**
+     * The warm-up ramp this exercise's ⋮ offers (ROADMAP N81), tagged per row: it is an entry on the
+     * shared menu, so two planned exercises on screen are two entries (the shape [templateMenu] uses).
+     */
+    fun templateAddWarmUps(id: String) = "template_add_warmups_$id"
+
+    /** A plan's sets (ROADMAP N14, unfolded into the block by N81): the empty note, and the add. */
     const val TEMPLATE_PLAN_EMPTY = "template_plan_empty"
     const val TEMPLATE_PLAN_ADD = "template_plan_add"
-    const val TEMPLATE_ADD_WARMUPS = "template_add_warmups"
-    const val TEMPLATE_PLAN_CLOSE = "template_plan_close"
     const val TEMPLATE_SET_ROLE = "template_set_role"
     const val TEMPLATE_SET_WEIGHT = "template_set_weight"
 
@@ -344,7 +347,7 @@ object TestTags {
     const val TEMPLATE_SET_CANCEL = "template_set_cancel"
     const val TEMPLATE_REST_FIELD = "template_rest_field"
     const val TEMPLATE_CUE_FIELD = "template_cue_field"
-    /** The exercise's one target RPE, beside the rest and cue it carries (N59, amended). */
+    /** The exercise's one target RPE, on the row the rest shares and above the cue's own (N59, N80). */
     const val TEMPLATE_EXERCISE_RPE = "template_exercise_rpe"
     const val TEMPLATE_REST_CUE_SAVE = "template_rest_cue_save"
 

@@ -3,6 +3,7 @@ package com.example.androidapp.ui.templates
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
@@ -57,6 +58,19 @@ class TemplateEditorScreenTest {
         val onAddWarmUpSets: (String, Long) -> Unit = { _, _ -> },
         val onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
     )
+
+    /**
+     * The block's own *Add set* (N81), reached the way a thumb reaches it.
+     *
+     * It is the foot of a block that already carries the plan's lines and the exercise's fields, so with
+     * a set planned it sits below the window's fold in this test — the list is scrolled to it rather than
+     * clicked where it is not.
+     */
+    private fun addSet() {
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.TEMPLATE_PLAN_ADD))
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).performClick()
+    }
 
     private fun setScreen(
         state: TemplateEditorUiState = twoExercises,
@@ -282,8 +296,10 @@ class TemplateEditorScreenTest {
             actions = Actions(onAddWarmUpSets = { _, step -> askedStep = step }),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_ADD_WARMUPS).performClick()
+        // The ramp moved into the row's ⋮ (N81): the plan is on the block now, and this is the one
+        // action that is not — it writes rather than reads, and it is the template's alone.
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateAddWarmUps("te1")).performClick()
 
         assertEquals(5_000L, askedStep)
     }
@@ -296,8 +312,10 @@ class TemplateEditorScreenTest {
             actions = Actions(onAddWarmUpSets = { _, step -> askedStep = step }),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_ADD_WARMUPS).performClick()
+        // The ramp moved into the row's ⋮ (N81): the plan is on the block now, and this is the one
+        // action that is not — it writes rather than reads, and it is the template's alone.
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateAddWarmUps("te1")).performClick()
 
         assertEquals(Weight.DEFAULT_STEP_GRAMS, askedStep)
     }
@@ -435,8 +453,7 @@ class TemplateEditorScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).performClick()
+        addSet()
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).assertTextContains("100")
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MAX).assertTextContains("3")
@@ -447,8 +464,7 @@ class TemplateEditorScreenTest {
         // run's value — so the dialog swaps the weight field for the one number a run is authored with.
         setScreen(state = rampedExercise(stepGrams = null))
 
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).performClick()
+        addSet()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
         composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.DROP.name)).performClick()
 
@@ -461,12 +477,11 @@ class TemplateEditorScreenTest {
         // ROADMAP B64: a rung hangs off the set above it, so the plan's picker does not offer one where
         // there is nothing above — the write boundary would refuse the save, and the project's rule is
         // that a control which cannot write is worse than no control (N67). The exercise here has no
-        // planned sets, so the set being added is its first. One exercise, because the plan dialog is
-        // reached through its own row.
+        // planned sets, so the set being added is its first. One exercise, because the block's Add set
+        // answers to one tag, and the union of two blocks would be two nodes under it.
         setScreen(state = twoExercises.copy(exercises = listOf(twoExercises.exercises.first())))
 
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).performClick()
+        addSet()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
 
         composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.DROP.name)).assertDoesNotExist()
@@ -480,8 +495,7 @@ class TemplateEditorScreenTest {
         // (ROADMAP N79).
         setScreen(state = rampedExercise(stepGrams = null))
 
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).performClick()
+        addSet()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
         composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.CLUSTER.name)).performClick()
 
@@ -508,8 +522,7 @@ class TemplateEditorScreenTest {
         }
         setScreen(state = runWithoutAValue)
 
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
-
+        // Nothing is opened: N81 put the plan's lines on the block, which is the point of the change.
         // Addressed by the row, not by the sentence: every rung of the run derives nothing, so the text
         // alone would match more than one row.
         composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts2"))
@@ -524,7 +537,7 @@ class TemplateEditorScreenTest {
         // included — and the number reads as one the app dropped.
         setScreen(state = droppingExercise())
 
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
+        // Tapping the line is the way in, exactly as it was in the dialog the line used to live in.
         composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts2")).performClick()
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE).assertTextContains("20")
@@ -532,15 +545,98 @@ class TemplateEditorScreenTest {
     }
 
     @Test
-    fun thePlanRow_statesWhatEachRungLoads() {
+    fun eachRungOfThePlan_statesWhatItLoads() {
         // The ladder is derived, so the plan says what it comes to rather than leaving the reader to
-        // subtract: 100 with a 20 kg value is 80, then 60 (ROADMAP N79).
+        // subtract: 100 with a 20 kg value is 80, then 60 (ROADMAP N79) — and since N81 that reads on
+        // the block itself, with nothing to open.
         setScreen(state = droppingExercise())
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ROW).performClick()
 
         // The row's line joins its parts, so each is asserted as part of it.
         composeTestRule.onNodeWithText("80 kg", substring = true).assertExists()
         composeTestRule.onNodeWithText("60 kg", substring = true).assertExists()
         composeTestRule.onNodeWithText("20 kg drop", substring = true).assertExists()
     }
+
+    @Test
+    fun thePlansSets_readOnTheBlock_withNothingOpened() {
+        // This is N81's whole change: the sets were a count behind *Planned sets · 3*, so the plan's
+        // roles, loads and deletes were all behind a tap. Nothing is clicked here, and the line, the
+        // rung it derives and the delete that takes it are all on the screen.
+        setScreen(state = droppingExercise())
+
+        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts1")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts2")).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.templatePlanRemove("ts2")).assertExists()
+    }
+
+    @Test
+    fun anExerciseWithNoSets_saysSoUnderItsHeader() {
+        // The dialog's sentence is the block's now (N81), and the button that answers it is at the
+        // foot of the same block: an empty plan is the one place the two are read together.
+        setScreen(
+            state = twoExercises.copy(
+                exercises = listOf(twoExercises.exercises.first().copy(sets = emptyList())),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_EMPTY).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_PLAN_ADD).assertIsDisplayed()
+    }
+
+    @Test
+    fun theWarmUpRamp_isNotOffered_whenThereIsNothingToRampFrom() {
+        // ROADMAP N28, B50, and N53's rule the entry now follows: a bodyweight set has no weight to take
+        // a fraction of, so the menu omits the entry rather than offering one that writes nothing. The
+        // action is supplied here, so what suppresses the entry is the ramp and not the caller.
+        val bodyweight = rampedExercise(stepGrams = null).let { state ->
+            state.copy(
+                exercises = listOf(
+                    state.exercises.first().copy(
+                        sets = state.exercises.first().sets.map { it.copy(targetWeightGrams = null) },
+                    ),
+                ),
+            )
+        }
+        setScreen(state = bodyweight, actions = Actions(onAddWarmUpSets = { _, _ -> }))
+
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te1")).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.templateAddWarmUps("te1")).assertDoesNotExist()
+    }
+
+    @Test
+    fun aHalfStepTargetRpe_readsAsALifterWritesIt() {
+        // ROADMAP B6, carried over from the plan dialog's own test when N81 deleted that dialog: a
+        // planned set stores its effort in half-points, and handing the count straight to the marker
+        // rendered a plan saying 9.5 as *RPE 19*.
+        setScreen(state = twoExercises.copy(exercises = listOf(targetRpeSet(19))))
+
+        composeTestRule.onNodeWithText("RPE 9.5", substring = true).assertExists()
+    }
+
+    @Test
+    fun aPlannedWarmUp_printsNoEffort_evenThoughTheRowStillCarriesOne() {
+        // ROADMAP N67, also carried over: a warm-up records no effort, and a plan written before that
+        // rule can still carry a legacy per-set target. Printing it beside *Warm-up* read as a number
+        // the ramp had been judged against, so the line leaves it off.
+        setScreen(state = twoExercises.copy(exercises = listOf(targetRpeSet(17, role = SetType.WARMUP))))
+
+        composeTestRule.onNodeWithText("RPE 8.5", substring = true).assertDoesNotExist()
+    }
+
+    /** A first exercise carrying one planned set, so a summary line can be read on its own. */
+    private fun targetRpeSet(halves: Int, role: SetType = SetType.NORMAL) =
+        twoExercises.exercises.first().copy(
+            sets = listOf(
+                TemplateSet(
+                    id = "ts1",
+                    templateExerciseId = "te1",
+                    setIndex = 0,
+                    role = role,
+                    targetWeightGrams = 140_000L,
+                    targetRepsMax = 2,
+                    targetRpeHalves = halves,
+                ),
+            ),
+        )
 }

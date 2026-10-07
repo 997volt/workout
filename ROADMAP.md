@@ -17,33 +17,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Six items, in the order they are to be done.** They are what *Later* was holding, picked up
+**Five items, in the order they are to be done.** They are what *Later* was holding, picked up
 together, so each carries an id and the decision it needed spelled out rather than a wish. The order is
 not importance; it is what the code and the open questions already fix, which is why it is argued at the
 end of this section rather than left to be re-derived.
 
-- **N81 — A template exercise's planned sets stop being folded away, and the block takes the workout's
-  shape.** The plan is one `ListItem` reading *Planned sets · 3* and everything about it is behind the
-  tap: `TemplatePlanDialog` is the list, the only place a rung's derived load is shown, and where both
-  *Add set* and *Add warm-ups* live. The sets become lines in the block itself, the way `ExerciseSets`
-  draws a workout's logged ones, so the count and the loads read without a gesture; *Add set* becomes
-  the block's foot, a full-width button where the workout's *Log set* is (N59); and *Add warm-ups*
-  moves into the exercise's ⋮, which is N53's rule for the rare action — offered only where a ramp can
-  be built, the `warmUpRampFor` predicate the button already reads (N28, B50), which is N53's own
-  "what cannot be done is not offered". That menu is shared with the workout (N71), so the entry has
-  to be optional and null there, the shape `supersetGrouped` already uses.
-  **What is not settled is what *Add set* opens.** The workout could state its values on the screen
-  because a logged set is the plan's prefill with the occasional correction (N59); a *planned* set is
-  not that shape — its role, load, rep range, note and a run's value are all optional, and are authored
-  once as a plan rather than once per set performed — so either the button opens today's
-  `TemplateSetDialog` on N46's prefill from the last set, which is the smaller change and keeps every
-  field the row can carry in one place (B61), or the block grows on-screen target fields and the dialog
-  becomes correction only. That decides whether `TemplatePlanDialog` survives as anything — the list it
-  draws is what is being unfolded, and a set line reachable by tap leaves it no job — and where the
-  plan's rest, RPE and cue row, which N80 settles first, sits relative to the unfolded sets and the new
-  foot. It also touches durable content: [DECISIONS.md](DECISIONS.md) names *a template's plan dialog* as
-  one of the two surfaces that author sets, and N46's accepted cost leans on the list behind the dialog
-  showing the count.
 - **N82 — The workout's preamble scrolls away, and *Add exercise* moves under the last exercise.** The
   body is a fixed `Column` — the record banner, the elapsed header, the readiness row, the rest bar —
   above a `LazyColumn` of exercises, so scrolling the work down leaves the readiness note and the clock
@@ -126,8 +104,8 @@ end of this section rather than left to be re-derived.
   guess. It is last for both reasons: it needs that device, and it measures a bar N83 and N85 have
   already changed — a pill whose colour moved, and a row that gained an action to space around.
 
-**Why this order.** N81 rebuilds the exercise block, and N82 then repeats the foot-of-list action it
-introduces on the workout screen, so the two screens are made to match while the shape is fresh. N83 rewrites the rule N49 and N61 hold; it comes after
+**Why this order.** N82 repeats the foot-of-list action N81 introduced on the workout screen, so the two
+screens are made to match while the shape is fresh. N83 rewrites the rule N49 and N61 hold; it comes after
 N81 and N82 because both raise a container-filled action the rewritten rule should cover, and before N86
 because N86 measures the very start bar N83 changes. N84 shares nothing with the rest and is the only item
 that adds an interaction mode, so it waits for the layout work rather than interrupting it. N85 and N86 are

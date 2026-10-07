@@ -94,11 +94,8 @@ class TestTagCoverageTest {
             "TAB_BAR",
             "TEMPLATES_TITLE",
             "TEMPLATE_EDIT_TITLE",
-            "TEMPLATE_PLAN_CLOSE",
-            "TEMPLATE_PLAN_EMPTY",
             "TEMPLATE_SET_CANCEL",
             "templateExerciseRow",
-            "templatePlanRemove",
         )
     }
 }
