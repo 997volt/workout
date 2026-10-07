@@ -12,7 +12,7 @@ import com.example.androidapp.ui.theme.IndigoLink
  * The app's text action — a link, in the vocabulary the palette uses (ROADMAP N49).
  *
  * `TextButton`'s own label colour is `primary`, and in this palette `primary` is the colour that
- * **fills** things: the Start pill, the selected tab, a chip that is on. Indigo is too dark to be read
+ * **fills** things: the selected tab, a chip that is on, and home's *Resume*. Indigo is too dark to be read
  * as text on the page (4.07:1) or on a raised card (3.77:1), which is what N49 measured, so every link
  * goes through here instead of each call site reaching for `TextButton` and inheriting the fill colour.
  * The call site that forgets is the one nobody can read, and a bare `IndigoLink` constant sitting

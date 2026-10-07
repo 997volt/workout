@@ -877,10 +877,8 @@ the rule; that one argues it.
   needs, so each accent carries an `onColor` and a test holds every pair at 3:1 or better.
   ([evidence](DECISIONS-EVIDENCE.md#b55))
 - **The app's colour fills; a link has a role of its own** (N49, extended by N83). `primary` is the app's
-  own colour and
-  it *fills* — the selected tab, a chip that is on, and the workout screen's *Resume* — and as a label
-  it is Indigo at
-  4.07:1 on the page and 3.77:1 on a raised card, under the 4.5:1 body-size text needs. So a text
+  own colour and it *fills* — the selected tab, a chip that is on, and home's *Resume* — and as a label it is
+  Indigo at 4.07:1 on the page and 3.77:1 on a raised card, under the 4.5:1 body-size text needs. So a text
   action draws `IndigoLink` through `AppTextButton` rather than inheriting the component's default, and
   the one surface whose links are drawn *on* a filled container — the rest bar — uses that container's
   own content colour instead. The filled tonal role moved for the same reason: `secondaryContainer` was

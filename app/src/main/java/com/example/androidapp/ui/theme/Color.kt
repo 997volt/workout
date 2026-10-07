@@ -69,11 +69,11 @@ val TealDeep = Color(0xFF1E6F6A)
 /**
  * The link colour: a text action inside a screen (ROADMAP N49).
  *
- * Not [Indigo]. Primary is the app's own colour and it *fills* things — the Start pill, the
- * selected tab, a chip that is on — and Indigo measures 4.07:1 against the page and 3.77:1 on a
- * raised card, both under the 4.5:1 body-size text needs. Redefining primary under the pill
- * would have dragged every filled surface down with the links, so the links get a role of their
- * own and [Indigo] keeps filling.
+ * Not [Indigo]. Primary is the app's own colour and it *fills* things — the selected tab, a chip that
+ * is on, and home's *Resume* — and Indigo measures 4.07:1 against the page and 3.77:1 on a raised
+ * card, both under the 4.5:1 body-size text needs. Redefining primary under a filled surface would
+ * have dragged every one of them down with the links, so the links get a role of their own and
+ * [Indigo] keeps filling.
  */
 val IndigoLink = Color(0xFFB0A4F0)
 

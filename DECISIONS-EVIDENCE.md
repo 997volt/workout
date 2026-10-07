@@ -1188,7 +1188,7 @@ workflow is the version that should stay unbuilt.
 
 ## B59-B72
 
-A review of the unreleased N74–N79 batch, read line by line before release. Fourteen defects, four of
+A review of the N74–N79 batch, read line by line before its release. Fourteen defects, four of
 which were judgement calls rather than slips; the rest are recorded in the CHANGELOG and their tests.
 
 **Grandfathering an existing row, or backfilling it (B59).** The plan boundary re-checks every rung rule

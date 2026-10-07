@@ -63,9 +63,10 @@ repeated here.
   because N49's lesson was that a ratio on a colour nothing draws is a claim nobody can check. N61's
   ladder on home's start bar survives as a difference of hue rather than of emphasis: the empty start
   keeps the deep indigo container, the planned pills are teal, and *Resume* is the only action left
-  carrying the accent. N49 named *the Start pill* as one of the things `primary` fills, so its entry in
-  [DECISIONS.md](DECISIONS.md) and the two comments in `PaletteContrastTest` that repeated it were
-  corrected with the change rather than left to contradict it.
+  carrying the accent. N49 named *the Start pill* as one of the things `primary` fills, so every place that
+  repeated it — its entry in [DECISIONS.md](DECISIONS.md), the comments in `PaletteContrastTest`, and the two
+  production KDocs in `Color.kt` and `AppTextButton.kt` — was corrected with the change rather than left to
+  contradict it.
 - **The workout's readiness scrolls with the work, and *Add exercise* sits under the last exercise**
   (N82). The body was a fixed column — the record banner, the clock, the readiness row and the rest bar —
   over a list of exercises, so everything above the list stayed on screen for the whole session: the
