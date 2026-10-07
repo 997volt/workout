@@ -860,8 +860,10 @@ the rule; that one argues it.
   assuming white (B55): white is 2.5:1 on `Amber` and 2.9:1 on `Teal`, under the contrast a graphic
   needs, so each accent carries an `onColor` and a test holds every pair at 3:1 or better.
   ([evidence](DECISIONS-EVIDENCE.md#b55))
-- **The app's colour fills; a link has a role of its own** (N49). `primary` is the app's own colour and
-  it *fills* — the Start pill, the selected tab, a chip that is on — and as a label it is Indigo at
+- **The app's colour fills; a link has a role of its own** (N49, extended by N83). `primary` is the app's
+  own colour and
+  it *fills* — the selected tab, a chip that is on, and the workout screen's *Resume* — and as a label
+  it is Indigo at
   4.07:1 on the page and 3.77:1 on a raised card, under the 4.5:1 body-size text needs. So a text
   action draws `IndigoLink` through `AppTextButton` rather than inheriting the component's default, and
   the one surface whose links are drawn *on* a filled container — the rest bar — uses that container's
@@ -870,6 +872,12 @@ the rule; that one argues it.
   down to a surface (`TealDeep`, 5.94:1). What holds this is a source scan, not a ratio: a contrast
   assertion on a constant no control reads is how the first attempt shipped the role while every label
   went on drawing the fill colour.
+  **A planned workout's start fills that tonal container too** (N83). Starting a plan and logging its
+  next set are one move — the plan stated, and then committed — so both planned-workout starts, the
+  next-up pill and today's card, wear *Log set*'s colour, and `primary` no longer fills either of them.
+  N61's ladder on home's start bar survives as a difference of hue rather than of emphasis: the empty
+  start keeps the deep indigo container it was given, the planned pills are the teal container, and
+  *Resume* is the only one left carrying the accent.
 - **Privacy: local-only.** No `INTERNET` permission, no ads, no analytics. Crash logs stay
   in app-private storage and leave only in an export the user chose to make.
 - **No Google Play services at runtime.** Firebase, `play-services-*`, Play Billing and

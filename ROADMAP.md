@@ -17,28 +17,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Four items, in the order they are to be done.** They are what *Later* was holding, picked up
+**Three items, in the order they are to be done.** They are what *Later* was holding, picked up
 together, so each carries an id and the decision it needed spelled out rather than a wish. The order is
 not importance; it is what the code and the open questions already fix, which is why it is argued at the
 end of this section rather than left to be re-derived.
 
-- **N83 — The *Start planned workout* pill takes *Log set*'s colour.** The pill is a `PrimaryActionButton`
-  on its defaults and so draws `primary`, the app's own Indigo; *Log set* is a `FilledTonalButton` on its
-  defaults and draws `secondaryContainer`, which N49 already took down to `TealDeep` so a white label
-  passes on it. The change is that one pair — `secondaryContainer` with `onSecondaryContainer` — and it
-  needs no new contrast work, because `PaletteContrastTest` asserts exactly that pair and names *Log set*
-  and the rest bar as what draws it.
-  **It lands against N49 and N61, both of which are written down.** N49 is settled in
-  [DECISIONS.md](DECISIONS.md) and opens with *the Start pill* as one of the things `primary` *fills*;
-  the same sentence is in `PaletteContrastTest`, so the decision's wording and that test's comment have to
-  move with this rather than be quietly contradicted. N61 built the ladder on purpose — the *empty* start
-  recedes to `primaryContainer` "so the two full-width pills do not read as the same action and the planned
-  one is the app's suggestion" — and this puts the planned pill on a container step too, a deep teal
-  beside a deep indigo. Both then read as recessed: the screen loses the loud one, and `primary` fills
-  nothing on home but *Resume*.
-  **Today's card is the same action in the same colour** — a plain `Button` reading *Start*, also on
-  `primary` — and it is not the control the request names, so whether this covers both planned-workout
-  starts or only the next-up row is what is left to settle.
 - **N84 — A past workout's name goes on top of its detail, and its edits move behind one ⋮.** The title is
   the date and nothing else — the name N58 added appears only in a list row's supporting line — and all
   three ways to write sit live on arrival: a set row opens its editor on tap, every row carries a delete
@@ -80,12 +63,11 @@ end of this section rather than left to be re-derived.
   guess. It is last for both reasons: it needs that device, and it measures a bar N83 and N85 have
   already changed — a pill whose colour moved, and a row that gained an action to space around.
 
-**Why this order.** N83 rewrites the rule N49 and N61 hold, and it goes before N86 because N86 measures
-the very start bar N83 changes. N84 shares nothing with the rest and is the only item that adds an
-interaction mode, so it waits for the layout work rather than interrupting it. N85 and N86 are last
-because neither can be finished from the code alone — N85 needs a product answer about which week a
-next-up pick lands in, and N86 wants a device with two active programs — and N85 comes before N86 because
-a row that gains an action changes the spacing under it.
+**Why this order.** N84 shares nothing with the rest and is the only item that adds an interaction mode,
+so it waits for the layout work rather than interrupting it. N85 and N86 are last because neither can be
+finished from the code alone — N85 needs a product answer about which week a next-up pick lands in, and
+N86 wants a device with two active programs — and N85 comes before N86 because a row that gains an action
+changes the spacing under it.
 
 ## Later (still self-contained)
 

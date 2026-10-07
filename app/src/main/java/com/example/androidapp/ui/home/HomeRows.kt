@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -147,6 +148,12 @@ private fun TodayPlanCard(
                 // The row's identity is the slot's, and the whole row travels: what starts
                 // is the template, and the slot carries its prescription (P3.3, P3.8).
                 onClick = onStart,
+                // Today's planned start and the next-up pill are one action on one plan, so they are one
+                // colour (N83): the tonal container *Log set* draws, rather than the accent.
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ),
                 modifier = Modifier
                     .padding(start = 4.dp)
                     .testTag(TestTags.Home.startPlan(plan.id)),

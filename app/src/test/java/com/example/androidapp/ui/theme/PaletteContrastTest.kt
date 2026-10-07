@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.luminance
 import com.example.androidapp.kotlinSources
 import com.example.androidapp.repoRoot
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Test
 
 /**
@@ -40,8 +41,9 @@ class PaletteContrastTest {
 
     @Test
     fun aFilledTonalButtonsLabel_clearsBodyTextOnItsContainer() {
-        // What the Log set button draws, and what the rest bar's own label and its links draw: the
-        // container's own content colour, white on the container the palette fills.
+        // What the Log set button draws, what a planned-workout start draws since N83, and what the rest
+        // bar's own label and its links draw: the container's own content colour, white on the container
+        // the palette fills.
         assertThat(contrast(WorkoutColors.onSecondaryContainer, WorkoutColors.secondaryContainer))
             .isAtLeast(BODY_TEXT_MINIMUM)
     }
@@ -57,18 +59,20 @@ class PaletteContrastTest {
 
     @Test
     fun theDeepIndigoContainer_carriesItsLabel() {
-        // The lesser of the two start pills (N61): Indigo taken down to the theme's `primaryContainer`,
-        // so the planned pill is the one that reads as the app's suggestion. Only the label pair is
-        // held here — unlike the teal container, this one is a recessed tone beside the accent rather
-        // than a quiet stand-alone control, so it is the white caption, not the extent, that names it.
+        // The empty start's container (N61), and since N83 the only pill that draws it: Indigo taken down
+        // to the theme's `primaryContainer`, one step below the accent, which the planned-workout starts
+        // and *Resume* now take or keep. Only the label pair is held here — unlike the teal container,
+        // this one is a recessed tone beside the accent rather than a quiet stand-alone control, so it is
+        // the white caption, not the extent, that names it.
         assertThat(contrast(WorkoutColors.onPrimaryContainer, WorkoutColors.primaryContainer))
             .isAtLeast(BODY_TEXT_MINIMUM)
     }
 
     @Test
     fun theAppColour_stillCarriesWhiteWhereItFills() {
-        // N49 leaves primary filling the Start pill, the selected tab and the chips, so the pair
-        // it fills with is asserted here rather than assumed from the links' change.
+        // N49 leaves primary filling the selected tab, a chip that is on, and the workout's *Resume* —
+        // the planned-workout starts moved to the tonal container at N83 — so the pair it fills with is
+        // asserted here rather than assumed from the links' change.
         assertThat(contrast(Indigo, Color.White)).isAtLeast(BODY_TEXT_MINIMUM)
     }
 
@@ -92,6 +96,23 @@ class PaletteContrastTest {
             .sorted()
 
         assertThat(stray).isEmpty()
+    }
+
+    @Test
+    fun thePlannedWorkoutStarts_drawTheTonalContainer_thePairAboveHolds() {
+        // N83, and N49's own lesson applied to the change that extended it: a ratio on a colour no control
+        // draws is a claim nobody can check, which is why the link half of this file is a scan rather than
+        // an assertion. The pair above is worth holding because these two read it — and both of them,
+        // because the two planned-workout starts are one action and only one of them carried the accent.
+        val plannedStarts = listOf(
+            "app/src/main/java/com/example/androidapp/ui/home/HomeRows.kt",
+            "app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeScreen.kt",
+        )
+
+        plannedStarts.forEach { path ->
+            assertThat(File(repoRoot, path).readText())
+                .contains("containerColor = MaterialTheme.colorScheme.secondaryContainer")
+        }
     }
 
     /** WCAG's ratio: 4.5:1 for body-size text. */

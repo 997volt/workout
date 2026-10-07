@@ -465,9 +465,9 @@ private fun StartOrResumeButton(
         },
         icon = if (resuming) Icons.Filled.PlayArrow else Icons.Filled.Add,
         onClick = onClick,
-        // The empty start is the lesser of the screen's two pills, so it recedes to the palette's
-        // deep indigo while the planned one keeps the accent (N61). Resuming is the only thing to do,
-        // so it stays loud.
+        // The empty start recedes to the palette's deep indigo (N61), one step below the planned pills,
+        // which draw the tonal container now (N83). Resuming is the only thing to do, so it keeps the
+        // accent and stays the loud one.
         containerColor = if (resuming) {
             MaterialTheme.colorScheme.primary
         } else {
@@ -491,9 +491,10 @@ private fun StartOrResumeButton(
  * One program's next run, at the bottom of the bar (ROADMAP P3.9, N55).
  *
  * The field opens what is planned and the full-width pill under it starts it, so looking and starting
- * stay two gestures (N55). The pill is the same shape as the empty start above the bar — the screen's
- * two primary actions — while the field above it stays compact, because more than one program can be
- * active (P3.12) and the bar may carry several.
+ * stay two gestures (N55). The pill keeps the empty start's shape but not its colour: it draws the tonal
+ * container *Log set* draws (N83), which is what the two planned-workout starts have in common and what
+ * tells them apart from the empty start's deep indigo. The field above it stays compact, because more than
+ * one program can be active (P3.12) and the bar may carry several.
  */
 @Composable
 private fun NextUpRow(
@@ -549,6 +550,11 @@ private fun NextUpRow(
             text = stringResource(R.string.home_start_planned_workout),
             icon = Icons.Filled.PlayArrow,
             onClick = onStart,
+            // Log set's container (N83). A planned-workout start is the same action as the workout's own
+            // next set — the plan, stated and then committed — so it wears the same colour, and
+            // `PrimaryActionButton` takes the pair rather than assuming the accent.
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(TestTags.Home.nextUpStart(nextUp.plan.id)),

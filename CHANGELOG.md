@@ -14,6 +14,16 @@ repeated here.
 
 ### Changed
 
+- **A planned workout's start wears *Log set*'s colour** (N83). Starting a plan and logging its next set
+  are one move — the plan stated, and then committed — and the two planned-workout starts say so now: the
+  next-up pill and today's card both draw `secondaryContainer`, the tonal container *Log set* draws,
+  instead of the accent. That pair is already held at 5.94:1, and a source scan says these two read it,
+  because N49's lesson was that a ratio on a colour nothing draws is a claim nobody can check. N61's
+  ladder on home's start bar survives as a difference of hue rather than of emphasis: the empty start
+  keeps the deep indigo container, the planned pills are teal, and *Resume* is the only action left
+  carrying the accent. N49 named *the Start pill* as one of the things `primary` fills, so its entry in
+  [DECISIONS.md](DECISIONS.md) and the two comments in `PaletteContrastTest` that repeated it were
+  corrected with the change rather than left to contradict it.
 - **The workout's readiness scrolls with the work, and *Add exercise* sits under the last exercise**
   (N82). The body was a fixed column — the record banner, the clock, the readiness row and the rest bar —
   over a list of exercises, so everything above the list stayed on screen for the whole session: the
