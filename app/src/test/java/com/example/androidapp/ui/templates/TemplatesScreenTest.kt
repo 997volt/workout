@@ -34,6 +34,7 @@ class TemplatesScreenTest {
         onCreate: (String) -> Unit = {},
         onOpen: (String) -> Unit = {},
         onStart: (String) -> Unit = {},
+        onOpenPrograms: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             TemplatesScreen(
@@ -42,8 +43,21 @@ class TemplatesScreenTest {
                 onOpenTemplate = onOpen,
                 onStartTemplate = onStart,
                 onBack = {},
+                onOpenPrograms = onOpenPrograms,
             )
         }
+    }
+
+    @Test
+    fun theBar_carriesTheWayAcrossToPrograms() {
+        // ROADMAP N93: the two plan screens were siblings with a trip home between them, so each one's
+        // own bar gains the entry to the other.
+        var opened = false
+        setScreen(onOpenPrograms = { opened = true })
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_PROGRAMS).performClick()
+
+        assertTrue(opened)
     }
 
     @Test

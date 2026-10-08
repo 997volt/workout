@@ -775,6 +775,13 @@ the rule; that one argues it.
   the card's width a function of the button's label and the font scale, and a number that drifts hides
   content rather than crowding it. The list keeps clearance for the button, now measured from one bar higher
   than before.
+- **Programs and Templates link to each other from their own bars** (N93). They are siblings — home's action
+  row opens both (N42) — and the only path from one to the other was back home and in, which is a trip
+  between two views of the same thing: a plan and the schedule that orders it. Each bar carries the entry,
+  sitting with the actions it already has (Programs' *Load*, N47) rather than floating over the list, because
+  it is a place to go rather than the one action that screen makes. **It is a way across and not a third way
+  to start anything**: it asks nothing about a session being open, and a running workout is still answered by
+  the templates list's own disabled *Start* (N78, B43) rather than by this entry being hidden.
 - **A program document is its own format, and every exercise it names travels with it** (N47). The
   backup is a restore of a whole database, so it cannot be the way one program is handed over; this
   is a document with a **version of its own**, carrying the program's *definition* — slots, the

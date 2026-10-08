@@ -187,6 +187,9 @@ private fun NavGraphBuilder.templateDestinations(navController: NavHostControlle
                 navController.navigate(ActiveWorkout(templateId = templateId))
             },
             onBack = { navController.popBackStack() },
+            // The sibling list (ROADMAP N93). Nothing about the start is said here: the rows below
+            // carry the withholding themselves while a session is open (N78, B43).
+            onOpenPrograms = { navController.navigate(Programs) },
         )
     }
 
@@ -206,6 +209,9 @@ private fun NavGraphBuilder.programDestinations(navController: NavHostController
         ProgramsRoute(
             onOpenProgram = { programId -> navController.navigate(ProgramEditor(programId)) },
             onBack = { navController.popBackStack() },
+            // The way across (ROADMAP N93): the two plan screens were siblings with a trip home
+            // between them.
+            onOpenTemplates = { navController.navigate(WorkoutTemplates) },
         )
     }
 

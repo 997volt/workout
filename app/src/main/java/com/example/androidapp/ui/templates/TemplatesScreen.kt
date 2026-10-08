@@ -61,6 +61,8 @@ fun TemplatesRoute(
     onStartTemplate: (String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The sibling list (ROADMAP N93): the two are one tap apart, from either one's own bar. */
+    onOpenPrograms: () -> Unit = {},
     viewModel: TemplatesViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -99,6 +101,7 @@ fun TemplatesRoute(
         },
         onDismissMessage = viewModel::onErrorShown,
         onBack = onBack,
+        onOpenPrograms = onOpenPrograms,
         modifier = modifier,
         message = gateMessage,
         onDismissGateMessage = { gateMessage = null },
@@ -114,6 +117,8 @@ fun TemplatesScreen(
     onStartTemplate: (String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The way across to Programs (ROADMAP N93), in this screen's own bar. */
+    onOpenPrograms: () -> Unit = {},
     onDismissMessage: () -> Unit = {},
     /** A sentence from the point-of-start question, shown on the same host (ROADMAP P3.3). */
     message: String? = null,
@@ -151,6 +156,18 @@ fun TemplatesScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.nav_back),
                         )
+                    }
+                },
+                actions = {
+                    // The sibling list, one tap away (ROADMAP N93): Programs was back-home-and-in from
+                    // here, and the two screens answer the same question from two sides. It is a way
+                    // across rather than a start, so it says nothing about a session being open — the
+                    // rows below carry that withholding themselves (N78, B43).
+                    AppTextButton(
+                        onClick = onOpenPrograms,
+                        modifier = Modifier.testTag(TestTags.TEMPLATES_PROGRAMS),
+                    ) {
+                        Text(stringResource(R.string.home_programs))
                     }
                 },
             )

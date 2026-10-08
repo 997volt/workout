@@ -311,6 +311,14 @@ object TestTags {
     const val TEMPLATES_TITLE = "templates_title"
     const val TEMPLATES_NEW = "templates_new"
     const val TEMPLATES_EMPTY = "templates_empty"
+
+    /**
+     * The way across to Programs, in this screen's own bar (ROADMAP N93).
+     *
+     * The two are siblings with no other path between them, so the entry sits with the actions the bar
+     * already carries rather than as a control floating over the list.
+     */
+    const val TEMPLATES_PROGRAMS = "templates_programs"
     const val TEMPLATE_EDIT_TITLE = "template_edit_title"
     const val TEMPLATE_NAME_FIELD = "template_name_field"
     const val TEMPLATE_NAME_SAVE = "template_name_save"
@@ -539,6 +547,14 @@ object TestTags {
         /** Carrying a program as a file (ROADMAP N47): the load action and the export action. */
         const val LOAD = "program_load"
         const val EXPORT = "program_export"
+
+        /**
+         * The way across to Templates, in this screen's own bar (ROADMAP N93).
+         *
+         * Beside *Load*, which is the other thing this bar does; a way across rather than a third way to
+         * start anything, which is the templates list's own withholding (N78, B43).
+         */
+        const val TEMPLATES = "program_templates"
 
         /** The point-of-start question (P3.3): the missed day, and the two answers. */
         const val SKIP_PROMPT = "program_skip_prompt"

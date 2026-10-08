@@ -44,12 +44,6 @@ is a product in its own right.
   and its state announcing, the rule every screen follows, and it must not fight the ⋮ the row already
   carries (move, superset, remove, *Add warm-ups* since N81). A newly added exercise opens **expanded**, so
   its first set can be added without a second tap; only the blocks that were already there start folded.
-- **N93 — programs and templates reach each other.** Home links to both in one action row (N42), but the two
-  screens are siblings with no way across: from Programs, Templates is back-home-and-in, and the reverse is
-  the same trip. Each screen's own bar gains an entry to the other, sitting with the actions already there
-  (Programs carries *Load*, N47) rather than as a floating control, and tagged like them. It is a way across
-  and not a third way to *start* anything: a workout already running is answered by the templates list's own
-  withholding (N78, B43), not by this entry.
 
 ## Later (still self-contained)
 

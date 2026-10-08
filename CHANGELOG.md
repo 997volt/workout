@@ -14,6 +14,12 @@ repeated here.
 
 ### Changed
 
+- **Programs and templates reach each other** (N93). Home links to both in one action row (N42), but the two
+  screens were siblings with no way across: from Programs, Templates was back-home-and-in, and the reverse was
+  the same trip. Each screen's own bar gains an entry to the other, sitting with the actions already there —
+  Programs carries *Load* (N47) — rather than as a floating control, and tagged like them. It is a way across
+  and not a third way to *start* anything: a workout already running is answered by the templates list's own
+  withholding (N78, B43), not by this entry.
 - **The active program moves to the foot, under the *New program* button** (N92). The programs list is
   top-aligned and its `LazyColumn` reserved room at the foot only for the *New program* FAB, so with a single
   program the row a lifter came to open was under the app bar — the far end of a modern phone — while the

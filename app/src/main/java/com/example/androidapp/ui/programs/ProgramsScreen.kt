@@ -63,6 +63,8 @@ fun ProgramsRoute(
     onOpenProgram: (String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The sibling list (ROADMAP N93): the two are one tap apart, from either one's own bar. */
+    onOpenTemplates: () -> Unit = {},
     viewModel: ProgramsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -90,6 +92,7 @@ fun ProgramsRoute(
         onSetActive = viewModel::onSetActive,
         onMoveProgram = viewModel::onMoveProgram,
         onLoadProgram = loadProgram,
+        onOpenTemplates = onOpenTemplates,
         transferMessage = transferMessage,
         onDismissTransferMessage = { transferMessage = null },
         onDismissMessage = viewModel::onErrorShown,
@@ -108,6 +111,8 @@ fun ProgramsScreen(
     /** Required rather than defaulted, so a route that forgets it fails the build (B49, B52). */
     onLoadProgram: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The way across to Templates (ROADMAP N93), in this screen's own bar. */
+    onOpenTemplates: () -> Unit = {},
     onSetActive: (String) -> Unit = {},
     onMoveProgram: (String, Int) -> Unit = { _, _ -> },
     transferMessage: String? = null,
@@ -133,26 +138,10 @@ fun ProgramsScreen(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.programs_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.nav_back),
-                        )
-                    }
-                },
-                actions = {
-                    // Loading a document is the file's way in (ROADMAP N47). Export is per program,
-                    // so it lives in the editor rather than here.
-                    AppTextButton(
-                        onClick = onLoadProgram,
-                        modifier = Modifier.testTag(TestTags.Programs.LOAD),
-                    ) {
-                        Text(stringResource(R.string.program_load))
-                    }
-                },
+            ProgramsTopBar(
+                onBack = onBack,
+                onLoadProgram = onLoadProgram,
+                onOpenTemplates = onOpenTemplates,
             )
         },
         floatingActionButton = {
@@ -182,6 +171,51 @@ fun ProgramsScreen(
             modifier = Modifier.padding(innerPadding),
         )
     }
+}
+
+/**
+ * The list's bar: the way in from the file, and the way across to Templates (ROADMAP N47, N93).
+ *
+ * Split out because the screen is at the length this project allows, and because the two entries are one
+ * kind of thing — the actions this screen's bar carries — beside the title and the back arrow.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ProgramsTopBar(
+    onBack: () -> Unit,
+    onLoadProgram: () -> Unit,
+    onOpenTemplates: () -> Unit,
+) {
+    TopAppBar(
+        title = { Text(stringResource(R.string.programs_title)) },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.nav_back),
+                )
+            }
+        },
+        actions = {
+            // Loading a document is the file's way in (ROADMAP N47). Export is per program,
+            // so it lives in the editor rather than here.
+            AppTextButton(
+                onClick = onLoadProgram,
+                modifier = Modifier.testTag(TestTags.Programs.LOAD),
+            ) {
+                Text(stringResource(R.string.program_load))
+            }
+            // The sibling list, one tap away (ROADMAP N93): the two screens answer the same question from
+            // two sides, and back-home-and-in was the only path between them. A way across rather than a
+            // third way to start a workout, so it asks nothing about a session being open.
+            AppTextButton(
+                onClick = onOpenTemplates,
+                modifier = Modifier.testTag(TestTags.Programs.TEMPLATES),
+            ) {
+                Text(stringResource(R.string.home_templates))
+            }
+        },
+    )
 }
 
 /**
