@@ -2,12 +2,13 @@
 
 > **v1.17** is shipped. Last reviewed against the code: 2026-10-08 — the N87–N95 batch shipped as 1.17 and
 > emptied *Next*; the two *Later* requests had graduated into it as N95–N97 and the *Later* section went with
-> them, leaving N96 here and N97 parked. **N98–N103 and B95 were added from use**: body weight
-> is kept in this app and what that lets the trend say; four smaller requests — the template editor's order, a
-> history row's two numbers, an unrated exercise's prompt, and home's body in place of *Recent*; and, from
-> reading the library's inheritance, one fact in one home — the taxonomy a child states rather than copies,
-> and the equipment's own step that a variation was clearing. A line-by-line reading of those N87–N95 changes
-> found sixteen defects; all sixteen are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
+> them, leaving N96 here. **N97 then came out of *Parked***, because the trigger it named has fired, and
+> **N98–N103 and B95 were added from use**: body weight is kept in this app and what that lets the trend say;
+> four smaller requests — the template editor's order, a history row's two numbers, an unrated exercise's
+> prompt, and home's body in place of *Recent*; and, from reading the library's inheritance, one fact in one
+> home — the taxonomy a child states rather than copies, and the equipment's own step that a variation was
+> clearing. A line-by-line reading of those N87–N95 changes found sixteen defects; all sixteen are fixed and
+> recorded in [CHANGELOG.md](CHANGELOG.md).
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -26,8 +27,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 **Requests from use**, each with the decision it settles. N95 shipped — the library's shape, its own entry in
 [CHANGELOG.md](CHANGELOG.md) — and what is left here is the pattern that moves onto it, which is why it could
-not land first. The third thing that job named, the number a category would sum to, is **parked by decision**
-rather than queued: see N97 below. **N98 is a second, independent request**, from a decision about where body
+not land first. The third thing that job named, the number a head would sum to, is **queued as N97**, because
+the trigger it named has fired — and reading that parked entry against the code widened its subject from a
+category to any head. **N98 is a second, independent request**, from a decision about where body
 weight lives rather than about the library: it touches the statistics screen, and it neither blocks nor is
 blocked by N96. **N99–N102 are four smaller requests from the same round of use**, each confined to the screen
 it names and independent of the others. **N103 and B95 come from reading the library's inheritance rather
@@ -62,6 +64,41 @@ equipment's own step that a variation clears alongside it.
   than authoritative**, which is the rule that lets a category without a pattern leave its movements' own
   answers alone; and the per-exercise column can only go in a migration that rebuilds the table, because SQLite
   has no way to drop a column or relax a `NOT NULL` in place.
+
+- **N97 — a head reads as one number, whether it is a category or an exercise.** The grouping N95 landed is
+  designed against this — "all bench press volume" — and the request that produced it wanted the aggregate, so
+  it was parked rather than dropped: the shape had to be used before it could say which views should read the
+  head. **The trigger it named has fired**, and reading the parked entry against the code widened its subject
+  and found three things it had left open.
+  **A head is any row that holds others, not only a category.** A category holds its movements and their
+  variations; an exercise holds its own variations; a variation holds nothing and is no head. It is the same
+  subtree either way, so one rule serves both — and the intermediate one is what fragments today, where three
+  rows of one barbell bench (competition, speed day, paused) split a lift a lifter thinks of as one.
+  **The subject is the subtree's ids**, which are distinct, so the union cannot double-count, and it
+  **includes the head's own sets** where it has any: an exercise with variations can still be logged directly,
+  while a category never can.
+  **A head's series stays derived, never stored** — the child sets read together — so a re-filed or renamed
+  child cannot leave a stale total. **Records and progression stay the exercise's**, because a PR belongs to
+  the lift that was actually performed.
+  **Which metrics take a head is decided per metric, not blanket**
+  ([ExerciseTrendMetric](app/src/main/java/com/example/androidapp/domain/model/ExerciseTrendPoint.kt), line
+  39). Volume, total reps, RPE, muscle feel and joint pain roll up: each is a sum or an average that means the
+  same thing over a family. **Heaviest set and estimated 1RM do not** — a speed-day single at 60% or a paused
+  triple merged into a competition bench's line reads as a decline that never happened, and it is the number a
+  lifter is most likely to misread. Assistance rolls up only where every row under the head carries it, because
+  it is a magnitude on assisted work, and a family mixing assisted and free rows has nothing to sum.
+  **What the work touches.** The lift list offers movements only — `library.second.filter { it.rowKind.isLoggable }`
+  ([StatisticsViewModel.kt](app/src/main/java/com/example/androidapp/ui/statistics/StatisticsViewModel.kt),
+  line 161) — and must also offer heads. That is a **read-view exception to N95's rule, not a repeal of it**: a
+  head is still never offered while logging and never named by a set, so the pickers that log keep their
+  filter and the statistics list is the one that changes. Because a head is a whole family, its row has to read
+  as one rather than as another lift. The query is exact today — `WHERE se.exerciseId = :exerciseId`
+  ([TrendsDao.kt](app/src/main/java/com/example/androidapp/data/local/TrendsDao.kt), lines 133 and 141) — so a
+  head resolves to the subtree's ids rather than to one. The per-lift breakdown groups by the exact id a slot
+  names ([ProgramSchedule.kt](app/src/main/java/com/example/androidapp/domain/model/ProgramSchedule.kt), line
+  552), so it rolls up by parent for the same reason, a head's count being the slots naming any row beneath it.
+  **The views it exists for** are the ones that fragment when one movement is spread across rows: the lift's
+  own trend, muscle-group volume, "how much pressing am I doing", and the per-lift breakdown of P3.14.
 
 - **N98 — the weight trend states an energy adjustment, and never a calorie target.** Body weight is recorded
   in this app, which makes one question answerable from what it already holds: *is the trend going where I
@@ -257,26 +294,6 @@ non-goal is a line this app does not cross.
 | — | **Encryption at rest / app lock** | You start carrying the phone somewhere you would not carry the data. |
 | F6 | Module split into `:core:*` / `:feature:*` | **A named goal, not a refactor**: a measured build-time problem, working on one feature without compiling the rest, or a second surface (Wear, a widget). |
 | F11b | Product analytics | Almost certainly never: on a single-user local tool it buys nothing, and it would breach the no-`INTERNET` line. |
-
-### N97 — a category reads as one number, parked by decision
-
-The grouping in N95 is designed against this — "all bench press volume" — and the request that produced it
-explicitly wants the aggregate, so parking it is a **deliberate scope cut** rather than a lost idea: the
-library shape lands first, and the statistic waits until the shape has been used enough to know which views
-should read it.
-
-What it would take is already named, so reviving it is small: the per-exercise trend series
-([MetricRegistry.kt](app/src/main/java/com/example/androidapp/ui/statistics/MetricRegistry.kt)) gains a
-category as a valid subject, and the per-lift adherence breakdown's domain function (`exerciseAdherence`)
-rolls up by parent. **A category's series is derived, never stored** — the child sets read together — so a
-re-filed or renamed child cannot leave a stale total; **records and progression stay the exercise's**, because
-a PR belongs to the lift that was actually performed. The views that fragment when one movement is spread
-across rows (muscle-group volume, "how much pressing am I doing", the per-lift breakdown of P3.14) are the
-ones it exists for.
-
-**Revisit when** a lift's own series stops answering "how is my bench going" — in practice, once a lifter has
-filed more than one variation or equipment variant under one category and the per-lift view fragments because
-of it. That is the signal the shape has been used enough to say which views should read the head.
 
 ### N39 — the plan's target, parked by decision
 
