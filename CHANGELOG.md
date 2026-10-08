@@ -141,6 +141,29 @@ repeated here.
   contradicting the code. B43's withholding is untouched: the templates list still disables *Start* while a
   session is open, and it is still reachable from home.
 
+### Fixed
+
+- **The defects a review of the N87–N95 batch found** (B79–B94). The batch was read line by line against what
+  this file says it does, and the reading found sixteen. **The two that cost the most:** the exercise picker's
+  search matched nothing, because the flat list it draws never read its query (B79); and a real v1.16 upgrade
+  left the three seeded bench variations unfiled, because `MIGRATION_36_37` corrected only rows already
+  pointing at the family head while the ordinary upgrade has them NULL, and the general loop skipped them
+  (B80). **In the library itself:** searching a variation's own name found nothing, because a movement was
+  drawn only where it had matched rather than where a variation of it had (B81); a variation under an exercise
+  in no category was never drawn, and *New variation of this* was offered on a variation, creating the third
+  level nothing draws (B82); a new variation was stored already named after its parent and cancelling the
+  editor left it, because it was written before the lifter had named it (B83). **On the detail screen:** the
+  page kept the old family after a save that moved the row (B84); the family field offered categories only,
+  so a variation's real head read as *Not filed under anything* (B85); and the muscle resolvers stopped one
+  level short, so a variation disagreed with the exercise above it (B86). **The smaller ones:** the library
+  stopped trimming its query (B87); a failed *New category* hid the library behind the read-failure page
+  (B88); the first exercise added to an empty template started folded (B89); the transfer formats could carry
+  `RowKind.CATEGORY` without a version bump, so a v2 build accepted the file and flattened the family instead
+  of refusing it as newer (B90); the discard question could be answered twice while its write ran (B91); the
+  library's shape was unenforced at the write and import boundary (B92); a substitute's start named the
+  scheduled workout rather than the one picked (B93); and the refactor left a dead list-item conversion and
+  the library's movement-creation action behind (B94).
+
 ## [1.16] — 2026-10-07 (versionCode 17)
 
 ### Added
