@@ -20,7 +20,6 @@ import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.ui.components.TestTags
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

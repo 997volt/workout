@@ -284,4 +284,24 @@ class ExerciseLibraryTest {
         ).inOrder()
         assertThat(rows.none { it.isCategory }).isTrue()
     }
+
+    @Test
+    fun theShapeRule_clearsACycle_aThirdLevel_andACategoryUnderACategory() {
+        // B92: an imported file is the one place a parent link this app would never write can arrive. A legal
+        // link is untouched, and an illegal one is cleared rather than stored and then hidden by the grouping.
+        val a = movement("a", "A", parent = "b")
+        val b = movement("b", "B", parent = "a")
+        val innerCategory = category("cat-inner", "Inner").copy(parentId = "cat-bench")
+        val tooDeep = movement("deep", "Deep", parent = "bench-speed")
+
+        val shaped = (library + a + b + innerCategory + tooDeep).withValidLibraryShape().associateBy { it.id }
+
+        assertThat(shaped.getValue("cat-inner").parentId).isNull()
+        assertThat(shaped.getValue("a").parentId).isNull()
+        assertThat(shaped.getValue("b").parentId).isNull()
+        assertThat(shaped.getValue("deep").parentId).isNull()
+        // The legal links survive, including the two-level movement-under-movement.
+        assertThat(shaped.getValue("barbell-bench-press").parentId).isEqualTo("cat-bench")
+        assertThat(shaped.getValue("bench-speed").parentId).isEqualTo("barbell-bench-press")
+    }
 }

@@ -99,10 +99,11 @@ fun ExerciseLibraryRoute(
 /**
  * The library list.
  *
- * The library's own screen since N95: the in-workout picker has its own ([com.example.androidapp.ui.workout.ExercisePickerScreen]),
- * because the two now hold different things — the library keeps families and folds them, the picker holds a
- * flat, movements-only list. What they share is shared as composables, not by one screen serving two states,
- * which is what let them drift apart the last time they were one (B79, B94).
+ * The library's own screen since N95: the in-workout picker has its own
+ * ([com.example.androidapp.ui.workout.ExercisePickerScreen]), because the two now hold different things — the
+ * library keeps families and folds them, the picker holds a flat, movements-only list. What they share is
+ * shared as composables, not by one screen serving two states, which is what let them drift apart the last
+ * time they were one (B79, B94).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

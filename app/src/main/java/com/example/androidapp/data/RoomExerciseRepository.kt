@@ -102,6 +102,29 @@ class RoomExerciseRepository @Inject constructor(
     }
 
     /**
+     * The library's shape, at the write boundary (ROADMAP N95, B92).
+     *
+     * A category sits at the top, and a movement may hang under a category or under an exercise that is not
+     * itself a variation. A parent that is not among the live rows is left alone — a removed head still names
+     * its children (N58's rule) — so only a *live* parent is judged.
+     */
+    private suspend fun requireValidLibraryShape(exercise: Exercise) {
+        val parent = exercise.parentId?.let { dao.findById(it) }
+        val refusal = when {
+            exercise.parentId == exercise.id -> "An exercise cannot hang under itself."
+            // No *live* parent is nothing to judge: a removed head still names its children (N58's rule).
+            parent == null -> null
+            exercise.rowKind != RowKind.MOVEMENT -> "A category sits at the top level."
+            parent.rowKind == RowKind.MOVEMENT &&
+                parent.parentId?.let { dao.findById(it) }?.rowKind == RowKind.MOVEMENT ->
+                "A variation cannot hang under another variation."
+
+            else -> null
+        }
+        if (refusal != null) throw InvalidInputException(refusal)
+    }
+
+    /**
      * The one creation path both kinds take (ROADMAP N95).
      *
      * A category differs from a custom exercise in exactly one field, which is the argument for a row kind
@@ -146,25 +169,8 @@ class RoomExerciseRepository @Inject constructor(
             throw InvalidInputException("A weight step must be more than zero.")
         }
 
-        // The library's shape is two rules deep (N95), and this is its write boundary (B92): a category sits
-        // at the top, and a movement may hang under a category or under an exercise that is not itself a
-        // variation. A parent that is not among the live rows is left alone — a removed head still names its
-        // children (N58's rule) — so only a *live* parent is judged.
-        if (exercise.parentId == exercise.id) {
-            throw InvalidInputException("An exercise cannot hang under itself.")
-        }
-        val parent = exercise.parentId?.let { dao.findById(it) }
-        if (parent != null) {
-            if (exercise.rowKind != RowKind.MOVEMENT) {
-                throw InvalidInputException("A category sits at the top level.")
-            }
-            if (parent.rowKind == RowKind.MOVEMENT) {
-                val grandparent = parent.parentId?.let { dao.findById(it) }
-                if (grandparent?.rowKind == RowKind.MOVEMENT) {
-                    throw InvalidInputException("A variation cannot hang under another variation.")
-                }
-            }
-        }
+        // The library's shape is two rules deep (N95), and this is its write boundary (B92).
+        requireValidLibraryShape(exercise)
 
         // Read the stored row first. The domain type deliberately carries no
         // createdAt, and the DAO writes every column, so rebuilding from the row

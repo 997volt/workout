@@ -276,15 +276,16 @@ fun Exercise.effectivePrimaryMuscle(library: List<Exercise>): MuscleGroup {
  * all the way up for [effectivePrimaryMuscle]'s reason (B86).
  */
 fun Exercise.effectiveSecondaryMuscles(library: List<Exercise>): List<MuscleGroup> {
-    if (secondaryMuscles.isNotEmpty()) return secondaryMuscles
     val byId = library.associateBy { it.id }
+    // A cycle is not a shape this app writes, but a resolver must not hang on one (B92); `seen` ends the walk.
     val seen = mutableSetOf(id)
     var ancestor = byId[parentId]
-    while (ancestor != null && seen.add(ancestor.id)) {
-        if (ancestor.secondaryMuscles.isNotEmpty()) return ancestor.secondaryMuscles
+    var found: List<MuscleGroup>? = secondaryMuscles.ifEmpty { null }
+    while (found == null && ancestor != null && seen.add(ancestor.id)) {
+        found = ancestor.secondaryMuscles.ifEmpty { null }
         ancestor = byId[ancestor.parentId]
     }
-    return emptyList()
+    return found.orEmpty()
 }
 
 /** The name of the head this row hangs under, or null — read live, and readable after it is removed (N95). */
@@ -313,19 +314,29 @@ internal fun <T> List<T>.validLibraryShape(
     val byId = associateBy(id)
 
     // True when this row's parent chain is at most two links and reaches a category or nothing. A cycle is
-    // what `seen` ends; "too deep" is a third link.
+    // what `seen` ends; "too deep" is a third link, whatever that link points at.
     fun parentIsUsable(row: T): Boolean {
         var current = row
         val seen = mutableSetOf(id(row))
         var depth = 0
-        while (true) {
-            val parent = byId[parentId(current)] ?: return true
-            if (!seen.add(id(parent))) return false
-            depth++
-            if (depth > 2) return false
-            if (isCategory(parent)) return true
-            current = parent
+        var usable = true
+        var atTop = false
+        while (!atTop && usable) {
+            val parent = byId[parentId(current)]
+            when {
+                parent == null -> atTop = true
+                isCategory(parent) -> {
+                    depth++
+                    if (depth > 2) usable = false else atTop = true
+                }
+
+                else -> {
+                    depth++
+                    if (depth > 2 || !seen.add(id(parent))) usable = false else current = parent
+                }
+            }
         }
+        return usable
     }
 
     return map { row ->

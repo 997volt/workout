@@ -259,6 +259,63 @@ class RoomExerciseRepositoryTest {
         assertEquals("Barbell Bench Press", renamed.name)
     }
 
+    @Test
+    fun createVariation_startsUnnamed_andHangsUnderItsParent() = runTest {
+        // B83: the copy used to keep the parent's name, so saving without typing stored a duplicate — and
+        // cancelling left it there, because a library row has no delete.
+        val parent = created("Barbell Bench Press")
+
+        val variation = (repository.createVariationOf(parent) as DataResult.Success<Exercise>).data
+
+        assertEquals("", variation.name)
+        assertEquals(parent.id, variation.parentId)
+        assertEquals("it inherits what it does not perform differently", parent.primaryMuscle, variation.primaryMuscle)
+        assertEquals(parent.equipment, variation.equipment)
+    }
+
+    @Test
+    fun createVariation_refusesAVariationOfAVariation() = runTest {
+        // B82: the third level the shape does not have — nothing draws a variation of a variation.
+        val parent = created("Barbell Bench Press")
+        val variation = (repository.createVariationOf(parent) as DataResult.Success<Exercise>).data
+
+        val failure = repository.createVariationOf(variation) as DataResult.Failure
+
+        assertTrue(failure.error is DataError.Invalid)
+    }
+
+    @Test
+    fun updateExercise_refusesToFileARowUnderItself() = runTest {
+        // B92: the write boundary holds the shape. The screen never offers it; a stale write must not either.
+        val row = created("Sled Push")
+
+        val failure = repository.updateExercise(row.copy(parentId = row.id)) as DataResult.Failure
+
+        assertTrue(failure.error is DataError.Invalid)
+    }
+
+    @Test
+    fun updateExercise_refusesAVariationOfAVariation() = runTest {
+        // B92: a movement whose own parent is a movement may not itself become a parent — the depth is two.
+        val parent = created("Barbell Bench Press")
+        val middle = (repository.createVariationOf(parent) as DataResult.Success<Exercise>).data
+        val other = created("Sled Push")
+
+        val failure = repository.updateExercise(other.copy(parentId = middle.id)) as DataResult.Failure
+
+        assertTrue(failure.error is DataError.Invalid)
+    }
+
+    @Test
+    fun updateExercise_filesAMovementUnderAMovement() = runTest {
+        // The legal half of B92: an exercise that is not itself a variation may hold one.
+        val parent = created("Barbell Bench Press")
+        val child = created("Paused Bench Press")
+
+        assertTrue(repository.updateExercise(child.copy(parentId = parent.id)) is DataResult.Success)
+        assertEquals(parent.id, library().single { it.id == child.id }.parentId)
+    }
+
     private suspend fun library(): List<Exercise> =
         (repository.observeExercises().first() as DataResult.Success).data
 
