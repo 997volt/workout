@@ -12,6 +12,41 @@ repeated here.
 
 ## [Unreleased]
 
+### Added
+
+- **Exercises get families, and the library reads as one** (N95). One movement is performed several ways — a
+  flat barbell bench paused for three seconds, touch-and-go, as a speed day, or in competition style — and the
+  library had nowhere to say so: each was either its own unrelated row or one row the lifter kept renaming.
+  The grouping is a **link, not a rename and not a merge**. Every exercise stays loggable and its own, because
+  that is the half that must not blur: a paused bench is a different lift and moves less weight, so its
+  records, the weight it steps by (N77) and what a plan prefills from last time (P3.8) are its own. The head of
+  a group is a **category** — a row that exists to hold others, is never offered while logging and never named
+  by a set — which is what makes it a *statistic* rather than a classification, and why it is not
+  `movementPattern` plus `primaryMuscle`: a category cuts where the lifter cuts, so a machine press is in or
+  out of "bench press" because they say so. The shape is two rules deep and no deeper: a category holds
+  **exercises** (barbell, dumbbell, machine), an exercise holds **its variations** (paused, speed,
+  competition), and the name of what a row hangs under is read live rather than copied, N58's rule for
+  templates — so a rename relabels its children and a removed head still names them.
+  **What is inherited, and how.** A variation inherits the exercise it hangs under — its muscles, its
+  equipment — so only what is performed differently is its own, and the relation is live rather than a copy: a
+  change to the head reaches every row under it, which is what keeps a family from disagreeing with itself. An
+  exercise reads its category's **primary muscle** the same way, and its **secondary muscles default** from the
+  category while it has named none of its own — the one place the child's value wins, because those are the
+  exercise's to change. The qualifier stays a **name the lifter writes**: "three-second paused", "speed day",
+  "beltless", "with chains" is not a closed set, and an enum would need a migration each time the sport invents
+  a technique. **The seeded library ships fifteen families** — bench press, incline press, overhead press,
+  squat, deadlift, lunge, hip thrust, row, lat pulldown, fly, curl, triceps extension, lateral raise, calf raise
+  and core — with the equipment variants filed as separate exercises under one head and the paused and
+  competition presses as the barbell bench's own variations; six movements are left unfiled, so the seed shows
+  both shapes. **So does the lifter**: a *New category* action on the library makes their own, filed afterwards
+  from a movement's own editor, because the seeded families are a starting set rather than a closed one. Moving
+  a row between families is one field of its own edit form, so a cancelled edit takes the move back with
+  everything else it would have changed. The library draws families first with their children indented under
+  them and a head's tap folding it, search reaches a movement through the family it is filed under (typing
+  "bench" finds *Speed Day*), and the two pickers and the statistics lift list offer movements only — a head is
+  never something to log against. Both transfer formats carry the two new columns, so a backup round trip
+  restores a library as a library rather than as a flat list.
+
 ### Changed
 
 - **The template editor's exercises are folded until opened** (N91). Every block drew its plan lines, the

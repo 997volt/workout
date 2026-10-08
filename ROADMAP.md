@@ -1,7 +1,8 @@
 # Workout — Roadmap
 
 > **v1.16** is shipped. Last reviewed against the code: 2026-10-08 — the N87–N94 batch shipped and emptied
-> *Next*, the two *Later* requests graduated into it as N95–N97, and the *Later* section went with them.
+> *Next*; the two *Later* requests graduated into it as N95–N97; the *Later* section went with them; and N95
+> has since shipped, leaving N96 here and N97 parked.
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -18,63 +19,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Requests from use**, each with the decision it settles. The two here are one job in dependency order — a
-library shape, and the pattern that moves onto it — so they land in that order and cannot be reordered. The
-third thing that job named, the number a category would sum to, is **parked by decision** rather than queued:
-see N97 below. They graduated from *Later*, which held them until they were picked up; that section is gone
-because this one is where its content now lives.
+**Requests from use**, each with the decision it settles. N95 shipped — the library's shape, its own entry in
+[CHANGELOG.md](CHANGELOG.md) — and what is left here is the pattern that moves onto it, which is why it could
+not land first. The third thing that job named, the number a category would sum to, is **parked by decision**
+rather than queued: see N97 below.
 
-- **N95 — exercises get categories and variations, and the library groups them.** One movement is performed
-  several ways — a flat barbell bench press paused for three seconds, touch-and-go, as a speed day, or in
-  competition style — and the library has nowhere to say so today: each is either its own unrelated row or
-  one row the lifter keeps renaming, and the rest are lost. **The grouping is a link, not a rename and not a
-  merge.** Every exercise stays loggable and its own, because that is the half that must not blur: a paused
-  bench is a different lift and moves less weight, so its records, the weight it steps by (N77) and what a
-  plan prefills from last time (P3.8) are its own. What the link buys is the other half — the views that
-  fragment when one movement is scattered across rows, which N97 makes real. The head of a group is a
-  **category**: a row that exists to hold others, is **never offered and never logged**, and carries a name.
-  That is what makes it a *statistic* rather than a classification, and it is why the category is not
-  `movementPattern` plus `primaryMuscle`, which answer a fuzzier question ("horizontal chest pressing",
-  taking in a fly or a dip) while a category cuts where the lifter cuts: a machine press is in or out of
-  "bench press" because the lifter says so. **Dumbbell and machine bench belong in the same category**, as
-  exercises rather than as variations of the barbell one — the number the category exists to produce is a
-  lie about the training with the dumbbell work missing from it, and each stays its own exercise. So the
-  shape is two rules deep and no deeper: a category holds **exercises** (barbell, dumbbell, machine), an
-  exercise holds **its variations** (paused, touch-and-go, speed, competition), and the name of what a row
-  hangs under is read live rather than copied, N58's rule for templates — a rename relabels its children and
-  a soft-deleted head still names them. **What is inherited, level by level:** a variation inherits the
-  *exercise* it hangs under — its muscles, its equipment — so only what is performed differently is its own
-  (its step, rest, cue and unit, and every record); an exercise inherits its *category's* **primary muscle**,
-  but sets its **own equipment**, which is the whole reason barbell, dumbbell and machine bench are three
-  exercises under one category rather than one. Secondary muscles default from the category and are the
-  exercise's to change. The qualifier stays a **name the lifter writes**: "three-second paused", "speed day",
-  "beltless", "with chains" is not a closed set, an enum would need a migration each time the sport invents a
-  technique, and grouping by parsing a name invents structure nobody stated that the next rename breaks.
-  **Settled alongside the shape:** the seeded library **ships categories**, so the first statistic works out
-  of the box; so does **the lifter creating their own**, because the seed's families are a starting set and
-  not a closed one — otherwise a custom movement could never be filed; an **incline press is its own
-  category**, a different movement rather than a different way of performing one; a deleted category still
-  names its children, because the soft delete keeps the row for the export (P1.12); and because a category is
-  a taxonomy somebody maintains — nothing derives it, and a mis-filed row skews the number silently — moving
-  a row between categories has to be easy rather than a re-creation. **A category carries no equipment**, and
-  that is a placeholder rather than a fact: its children each set their own, so the column holds the
-  library's "other" value. Making the column nullable for the one row kind was rejected — it pushes a null
-  check into every reader to spare one row a value it can honestly hold — and moving categories to a table of
-  their own was rejected too: a category is a row of the library that a set must never reference, which is a
-  *kind* of row rather than a second thing, and a separate table would duplicate the name, the delete and
-  the transfer rules it already shares.
-  **What the work touches.** `exercises` gains a nullable `parentId` and a **row kind stored by name, never
-  an ordinal** — which is what the pickers filter on, and what the migration backfills every existing row to
-  as a *movement*. The library screen grows the grouped, folded list, and search finds a family's exercises
-  and variations under the family's name; the pickers (a workout's add-exercise and a plan's) must not offer a
-  category; the exercise editor gains *new variation of this* and *move to category*, and a category gains a
-  small editor; and the seed gains the common families, under the seeder's rule that a top-up never undoes
-  what the lifter changed. Both transfer formats carry exercises, so both versions move, and B62's rule
-  applies to each: the version is read before the body.
-  **What a finished one looks like:** two variations of a barbell bench, a dumbbell bench and a machine press
-  filed under one *Bench Press*, each logging its own sets and keeping its own records, with the library
-  reading as families rather than as a flat list. **The number that sums them is not built** — see the parked
-  N97 below — so the grouping is a library shape first and a statistic later.
 - **N96 — movement patterns get fewer, and move onto the category.** `MovementPattern` holds eleven values —
   HORIZONTAL_PUSH, VERTICAL_PUSH, HORIZONTAL_PULL, VERTICAL_PULL, SQUAT, HINGE, LUNGE, CARRY, ISOLATION, CORE,
   OTHER ([ExerciseTaxonomy.kt](app/src/main/java/com/example/androidapp/domain/model/ExerciseTaxonomy.kt)) —

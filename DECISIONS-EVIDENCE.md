@@ -1141,6 +1141,44 @@ named is real and was measured: N86's gap between the row's text and its start p
 that text is, so a fourth line shrinks it — the device reads 8 dp after the change, which is the number N86
 asked for.
 
+## N95
+
+The grouping is a link because the two halves pull opposite ways, and only one of them can be a *merge*. What a
+lifter needs from a family is that its rows stop fragmenting the views — muscle-group volume, "how much pressing
+am I doing", the per-lift breakdown — and what they must not lose is that a paused bench is a different lift with
+its own records, its own step and its own prefill. A rename merges the rows and loses the second; a merge loses
+both. So the head is its own kind of row, and the whole design follows from that: it must never be offered, or a
+lifter logs against a category and the records it exists to keep apart are joined; and it must be a *statistic*,
+which is why it is not derived from `movementPattern` and `primaryMuscle`. Those two answer "horizontal chest
+pressing", which a fly and a dip are part of; a category answers "bench press", which is the cut a lifter
+actually makes. Only one of those can be computed, and it is not the useful one.
+
+**Inheritance is live, and that is a decision rather than an implementation detail.** Copying a head's muscle
+onto its children looks simpler and fails the first time a lifter renames a family: the head then describes only
+the children that never disagreed with it, and the ones filed earlier keep a value nobody can see the source of.
+Resolving it means one fact has one home, which is the same argument N58 makes for a template's name and the same
+one a variation's muscles already rested on. The cost is that a head with an unspecified muscle — which every
+*new* category is — passes that on, and a seeded movement filed under one reads *Other* until the head is filled
+in. That is the honest answer under the rule rather than a bug in it: the head says nothing, so the child has
+nothing to inherit, and inventing a value would be the app claiming a fact the lifter has not stated.
+
+**Secondary muscles are the one place the child wins**, and the entry says so: they "default from the category
+and are the exercise's to change". So the default applies exactly while the exercise is silent, which is why the
+inheritance is a fallback on an empty list rather than an override flag — an empty list already means "I have
+named none", and a second field would be a second way to say the same thing.
+
+**A removed head still names its children**, which needed a read the list deliberately does not use: every row,
+soft-deleted ones included, consulted for names and inheritance only. The list and the pickers keep reading the
+observer that hides removed rows, because a removed row must not be offered. The split is the same one the soft
+delete already relies on, applied to a *name* rather than to a row.
+
+**Both transfer formats carry the shape, and neither version moves.** An added field with a correct default is
+not a format change by this project's rule, and the default is load-bearing here: every row a file could have
+held before categories is a movement, so an absent kind has exactly one true meaning. The opposite default would
+turn an older file's whole library into heads, which are never offered. An older build reading a file with the
+fields present still opens it — unknown keys are ignored and the version is read before the body (B62) — which is
+why a bump would buy nothing.
+
 ## N94
 
 The bar's order and the app's entry point were one fact while Workouts sat first, and the enum's own

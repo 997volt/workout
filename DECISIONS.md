@@ -825,6 +825,25 @@ the rule; that one argues it.
   cost is that the row is taller, and **N86's gap to the start pill is a function of that height**, so the
   measurement was taken again with the change: it reads the same 8 dp.
   ([evidence](DECISIONS-EVIDENCE.md#n88))
+- **The library's rows are a two-rule shape: a category holds exercises, an exercise holds its variations**
+  (N95). The grouping is a **link**, so every exercise stays loggable and keeps its own records, step and
+  prefill — a paused bench is a different lift that moves less weight — while the views that fragment when one
+  movement is scattered across rows can be read as one thing. The head is a **category**: a row that exists to
+  hold others, is **never offered and never logged**, and carries a name. That is what makes it a *statistic*
+  rather than a classification, and it is why the category is not `movementPattern` plus `primaryMuscle` —
+  those answer a fuzzier question that takes in a fly or a dip, while a category cuts where the lifter cuts.
+  **Equipment variants are separate exercises under one head** rather than variations of each other, because
+  the number the category exists to produce would otherwise be a lie about the training. **Inheritance is
+  live, never copied**: a variation reads the muscles and equipment of the exercise above it, an exercise
+  reads its category's primary muscle, and its secondary muscles default from the category *until it names its
+  own* — the one place the child wins, because those are the exercise's to change. One fact, one home, which
+  is what stops a family disagreeing with itself. **The qualifier is a name the lifter writes**: a closed set
+  would need a migration every time the sport invents a technique. **The seeded families are a starting set,
+  not a closed one**, so a lifter makes their own and files a row by editing it — the move is one field of the
+  row's own form, so a cancelled edit takes it back. A head's name is read live and a **removed head still
+  names its children**, N58's rule for templates. **A lifted pattern is settled here too** (see N96): with no
+  category a row carries no pattern, rather than a guess about its joint action.
+  ([evidence](DECISIONS-EVIDENCE.md#n95))
 - **A program document is its own format, and every exercise it names travels with it** (N47). The
   backup is a restore of a whole database, so it cannot be the way one program is handed over; this
   is a document with a **version of its own**, carrying the program's *definition* — slots, the
