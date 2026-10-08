@@ -38,23 +38,35 @@ class AppTabTest {
     private val statistics = Statistics.serializer().descriptor.serialName
 
     @Test
-    fun theBar_offersFiveNamedTabs_andSaysWhichIsSelected() {
+    fun theBar_offersFiveNamedTabs_inTheEnumsOrder_andSaysWhichIsSelected() {
         composeTestRule.setContent { AndroidAppTheme { AppTabBar(selected = AppTab.HISTORY, onSelect = {}) } }
 
-        TestTags.TAB_WORKOUTS.let(composeTestRule::onNodeWithTag)
-        listOf(
-            TestTags.TAB_WORKOUTS,
-            TestTags.TAB_HISTORY,
+        // The bar's read order is the enum's order (N94), so the list below is asserted rather than
+        // merely iterated: a screen reader announces Statistics first and Workouts third.
+        assertThat(AppTab.entries.map { it.testTag }).containsExactly(
             TestTags.TAB_STATISTICS,
+            TestTags.TAB_HISTORY,
+            TestTags.TAB_WORKOUTS,
             TestTags.TAB_LIBRARY,
             TestTags.TAB_SETTINGS,
-        ).forEach { tag ->
-            composeTestRule.onNodeWithTag(tag).assertExists()
+        ).inOrder()
+
+        AppTab.entries.forEach { tab ->
+            composeTestRule.onNodeWithTag(tab.testTag).assertExists()
         }
 
         // The state a screen reader announces, which is the difference between a map and five squares.
         composeTestRule.onNodeWithTag(TestTags.TAB_HISTORY).assertIsSelected()
         composeTestRule.onNodeWithTag(TestTags.TAB_WORKOUTS).assertIsNotSelected()
+    }
+
+    @Test
+    fun theAppOpensOnWorkouts_thoughTheBarPutsItThird() {
+        // N94 separates the two things the old order ran together: the swap moves Workouts to the third
+        // place, and the tab the app opens on is `startDestination` — which the swap does not touch.
+        assertThat(AppTab.entries.first()).isEqualTo(AppTab.STATISTICS)
+        assertThat(AppTab.entries[2]).isEqualTo(AppTab.WORKOUTS)
+        assertThat(AppTab.forRoute(WorkoutsHome.serializer().descriptor.serialName)).isEqualTo(AppTab.WORKOUTS)
     }
 
     @Test

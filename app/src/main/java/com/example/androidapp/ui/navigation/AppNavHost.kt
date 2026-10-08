@@ -164,10 +164,6 @@ private fun NavGraphBuilder.workoutDestinations(navController: NavHostController
             onAddExercise = { navController.navigate(ExercisePicker()) },
             onDone = { navController.popBackStack() },
             onBack = { navController.popBackStack() },
-            // The same two destinations home reaches, from the workout's own overflow (ROADMAP N78):
-            // leaving the logger does not end the session, so this is a look rather than an exit.
-            onOpenTemplates = { navController.navigate(WorkoutTemplates) },
-            onOpenPrograms = { navController.navigate(Programs) },
         )
     }
 

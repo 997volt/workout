@@ -26,13 +26,14 @@ import com.example.androidapp.ui.components.TestTags
 /**
  * The five surfaces that have earned a permanent home (ROADMAP N34).
  *
- * The order is deliberate: Workouts first because it is where the app opens, Settings last because it is
- * where you go when you are not training. **Templates are not a tab** — a plan is part of working out, so
- * it lives under Workouts — and Library stays the exercise reference it is rather than becoming a second
- * way to start a session.
+ * **The order is the bar's, not the app's entry point.** Statistics leads, History follows, Workouts is
+ * third, and Settings is last because it is where you go when you are not training (N94) — the tab the app
+ * *opens* on is `startDestination` in [AppNavHost], which the order does not touch. Statistics is the screen
+ * that answers "how is everything going" (N35); it replaced the trends screen, which drew three of the
+ * twenty-one series the registry now covers.
  *
- * Statistics is the screen that answers "how is everything going" (N35); it replaced the trends screen,
- * which drew three of the twenty-one series the registry now covers.
+ * **Templates are not a tab** — a plan is part of working out, so it lives under Workouts — and Library
+ * stays the exercise reference it is rather than becoming a second way to start a session.
  */
 enum class AppTab(
     /** The route this tab selects. */
@@ -49,12 +50,12 @@ enum class AppTab(
     val icon: ImageVector,
     val testTag: String,
 ) {
-    WORKOUTS(
-        WorkoutsHome,
-        WorkoutsHome.serializer().descriptor.serialName,
-        R.string.tab_workouts,
-        Icons.Filled.FitnessCenter,
-        TestTags.TAB_WORKOUTS,
+    STATISTICS(
+        Statistics(),
+        Statistics.serializer().descriptor.serialName,
+        R.string.tab_statistics,
+        Icons.Filled.Insights,
+        TestTags.TAB_STATISTICS,
     ),
     HISTORY(
         WorkoutHistory,
@@ -63,12 +64,12 @@ enum class AppTab(
         Icons.Filled.History,
         TestTags.TAB_HISTORY,
     ),
-    STATISTICS(
-        Statistics(),
-        Statistics.serializer().descriptor.serialName,
-        R.string.tab_statistics,
-        Icons.Filled.Insights,
-        TestTags.TAB_STATISTICS,
+    WORKOUTS(
+        WorkoutsHome,
+        WorkoutsHome.serializer().descriptor.serialName,
+        R.string.tab_workouts,
+        Icons.Filled.FitnessCenter,
+        TestTags.TAB_WORKOUTS,
     ),
     LIBRARY(
         ExerciseLibrary,

@@ -14,6 +14,17 @@ repeated here.
 
 ### Changed
 
+- **Statistics leads the tab bar, and the app still opens on Workouts** (N94). The bar's order *is* the
+  enum's order, and Workouts sat first for the reason that enum's own doc gave — "it is where the app
+  opens". The request separates two things that one sentence ran together: Statistics takes the first
+  place and Workouts the third, where Statistics was, while the tab the app *opens* on does not move.
+  That is `startDestination = WorkoutsHome` and `lastTab`'s default of `AppTab.WORKOUTS`, neither of which
+  the swap touches, so the app still opens on Workouts — now the third tab selected. The enum's doc loses
+  the rationale it can no longer hold rather than being left contradicting the order, which is the class
+  of defect the N80–N86 review found twice. The bar's read order moves with it, so a screen reader
+  announces Statistics first; `forRoute` and `switchTab` match by route and nothing else was keyed to the
+  order. The test that used to only count five named tabs now asserts the order, because it would have
+  passed either way.
 - **Starting a planned workout while one is running asks which** (N89). `startOrResumeSession` is
   find-or-create, so the tap used to hand the running session back and drop the plan without a word — the
   lie N78 named, guarded only in the templates list, which disables *Start*. Home's starts ask now:
