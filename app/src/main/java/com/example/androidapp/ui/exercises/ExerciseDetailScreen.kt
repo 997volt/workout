@@ -53,6 +53,7 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SELECTABLE_MUSCLE_GROUPS
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
@@ -74,6 +75,7 @@ fun ExerciseDetailRoute(
         onBack = onBack,
         onOpenTrends = onOpenTrends,
         onEdit = viewModel::onEdit,
+        onNewVariation = viewModel::onCreateVariation,
         onCancelEdit = viewModel::onCancelEdit,
         onSave = viewModel::onSave,
         modifier = modifier,
@@ -90,6 +92,8 @@ fun ExerciseDetailScreen(
     onEdit: () -> Unit = {},
     onCancelEdit: () -> Unit = {},
     onSave: (ExerciseEdit) -> Unit = {},
+    /** Files a new variation of the exercise on screen and opens it for naming (ROADMAP N95). */
+    onNewVariation: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -125,6 +129,16 @@ fun ExerciseDetailScreen(
                             modifier = Modifier.testTag(TestTags.EXERCISE_EDIT),
                         ) {
                             Text(stringResource(R.string.exercise_edit))
+                        }
+                    }
+                    // A variant of this movement (ROADMAP N95), offered for a movement only: a variation
+                    // hangs under an exercise, and one under a category would be a third level.
+                    if (state.canCreateVariation) {
+                        AppTextButton(
+                            onClick = onNewVariation,
+                            modifier = Modifier.testTag(TestTags.EXERCISE_NEW_VARIATION),
+                        ) {
+                            Text(stringResource(R.string.exercise_new_variation))
                         }
                     }
                 },
@@ -180,6 +194,7 @@ private fun ExerciseDetailBody(
         exercise != null && state.isEditing -> ExerciseEditForm(
             exercise = exercise,
             error = state.error,
+            categoryOptions = state.categoryOptions,
             onCancel = onCancelEdit,
             onSave = onSave,
             modifier = modifier,
@@ -328,6 +343,13 @@ private data class ExerciseDraft(
      * a form opened in pounds reads and writes pounds (N77).
      */
     val appUnit: WeightUnit = WeightUnit.KILOGRAMS,
+    /**
+     * The head this exercise is filed under, or null (ROADMAP N95).
+     *
+     * Part of the draft so *move to category* is an ordinary save: the field leaves with the rest of the
+     * form, and a cancellation takes the move back with everything else it would have changed.
+     */
+    val parentId: String? = null,
 ) {
     val restSeconds: Int? get() = restText.trim().ifEmpty { null }?.toIntOrNull()
 
@@ -376,6 +398,7 @@ private data class ExerciseDraft(
         techniqueNote = techniqueNote.trim().ifEmpty { null },
         stepGrams = stepGrams,
         weightUnit = weightUnit,
+        parentId = parentId,
     )
 }
 
@@ -390,6 +413,7 @@ private fun Exercise.toDraft(appUnit: WeightUnit) = ExerciseDraft(
     stepText = stepGrams?.let { Weight.format(it, weightUnit ?: appUnit) }.orEmpty(),
     weightUnit = weightUnit,
     appUnit = appUnit,
+    parentId = parentId,
 )
 
 /**
@@ -403,6 +427,8 @@ private fun Exercise.toDraft(appUnit: WeightUnit) = ExerciseDraft(
 private fun ExerciseEditForm(
     exercise: Exercise,
     error: DataError?,
+    /** The heads this row may be filed under (ROADMAP N95); empty for a category, which is top level. */
+    categoryOptions: List<Exercise>,
     onCancel: () -> Unit,
     onSave: (ExerciseEdit) -> Unit,
     modifier: Modifier = Modifier,
@@ -419,8 +445,11 @@ private fun ExerciseEditForm(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        ExerciseEditFields(draft = draft, onDraftChange = { draft = it })
-
+        ExerciseEditFields(
+            draft = draft,
+            onDraftChange = { draft = it },
+            categoryOptions = categoryOptions.takeIf { exercise.rowKind == RowKind.MOVEMENT },
+        )
         ExercisePrescriptionFields(draft = draft, onDraftChange = { draft = it })
 
         error?.let { failure ->
@@ -442,12 +471,44 @@ private fun ExerciseEditForm(
     }
 }
 
+/**
+ * Which head this movement is filed under (ROADMAP N95).
+ *
+ * The same labelled dropdown the taxonomy fields use, over the library's heads with a null first: moving a
+ * row is *one field of the row*, and the shape's whole point is that keeping the taxonomy honest is cheap.
+ * *Not in a category* is an explicit choice rather than an empty state, because a loose custom movement is a
+ * real place to be.
+ */
+@Composable
+private fun CategoryPicker(
+    selectedId: String?,
+    options: List<Exercise>,
+    onSelect: (String?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val none = stringResource(R.string.exercise_category_none)
+    val optionIds: List<String?> = listOf(null) + options.map { it.id }
+    AttributeSelector<String?>(
+        label = stringResource(R.string.exercise_category_label),
+        selected = selectedId,
+        options = optionIds,
+        optionLabel = { id -> options.firstOrNull { it.id == id }?.name ?: none },
+        // A test reaches a head by its id rather than by its name, the rule the enum options follow (B71).
+        optionTag = { id -> id?.let { TestTags.exerciseCategoryOption(it) } },
+        testTag = TestTags.EXERCISE_EDIT_CATEGORY,
+        onSelect = onSelect,
+        modifier = modifier,
+    )
+}
+
 /** The identity attributes — name and taxonomy (ROADMAP N2). */
 @Composable
 private fun ExerciseEditFields(
     draft: ExerciseDraft,
     onDraftChange: (ExerciseDraft) -> Unit,
     modifier: Modifier = Modifier,
+    /** The heads this row may be filed under, or null where it has nowhere to be filed (N95). */
+    categoryOptions: List<Exercise>? = null,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -460,6 +521,16 @@ private fun ExerciseEditFields(
             singleLine = true,
             label = { Text(stringResource(R.string.exercise_name_label)) },
         )
+
+        // Only a movement has somewhere to be filed: a category sits at the top level, because the shape is
+        // two rules deep and a head under a head would be a third (N95).
+        categoryOptions?.let { options ->
+            CategoryPicker(
+                selectedId = draft.parentId,
+                options = options,
+                onSelect = { onDraftChange(draft.copy(parentId = it)) },
+            )
+        }
 
         AttributeSelector(
             label = stringResource(R.string.exercise_detail_primary),

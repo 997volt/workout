@@ -137,6 +137,9 @@ class ExerciseLibraryViewModelTest {
         override suspend fun createCategory(name: String): DataResult<Exercise> =
             error("the library screen must not create categories")
 
+        override suspend fun createVariationOf(parent: Exercise): DataResult<Exercise> =
+            error("the library screen must not create variations")
+
         override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> =
             error("the library screen must not edit exercises")
     }

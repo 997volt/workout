@@ -69,6 +69,26 @@ class RoomExerciseRepository @Inject constructor(
     override suspend fun createCategory(name: String): DataResult<Exercise> =
         create(name = name, rowKind = RowKind.CATEGORY)
 
+    override suspend fun createVariationOf(parent: Exercise): DataResult<Exercise> = dataResultOf {
+        if (parent.rowKind != RowKind.MOVEMENT) {
+            throw InvalidInputException("A variation hangs under a movement, not a category.")
+        }
+        // Everything inherited is copied; what is performed differently starts unset, including the name,
+        // which the editor is about to ask for.
+        val variation = parent.copy(
+            id = UUID.randomUUID().toString(),
+            isCustom = true,
+            parentId = parent.id,
+            rowKind = RowKind.MOVEMENT,
+            restSeconds = null,
+            techniqueNote = null,
+            weightUnit = null,
+            stepGrams = null,
+        )
+        dao.insert(variation.toEntity(now = timeSource.nowEpochMillis()))
+        variation
+    }
+
     /**
      * The one creation path both kinds take (ROADMAP N95).
      *

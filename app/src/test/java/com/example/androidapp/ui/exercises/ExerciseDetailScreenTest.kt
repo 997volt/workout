@@ -12,7 +12,9 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -20,6 +22,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
@@ -52,6 +55,7 @@ class ExerciseDetailScreenTest {
         onEdit: () -> Unit = {},
         onCancelEdit: () -> Unit = {},
         onSave: (ExerciseEdit) -> Unit = {},
+        onNewVariation: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             ExerciseDetailScreen(
@@ -60,6 +64,7 @@ class ExerciseDetailScreenTest {
                 onEdit = onEdit,
                 onCancelEdit = onCancelEdit,
                 onSave = onSave,
+                onNewVariation = onNewVariation,
             )
         }
     }
@@ -349,6 +354,81 @@ class ExerciseDetailScreenTest {
             movementPattern = MovementPattern.OTHER,
             isCustom = true,
         )
+
+        val bench = Exercise(
+            id = "cat-bench",
+            name = "Bench Press",
+            primaryMuscle = MuscleGroup.CHEST,
+            equipment = Equipment.OTHER,
+            movementPattern = MovementPattern.HORIZONTAL_PUSH,
+            rowKind = RowKind.CATEGORY,
+        )
+    }
+
+    @Test
+    fun aVariation_isOfferedForAMovement() {
+        // ROADMAP N95: a variation hangs under an exercise, so a movement offers one.
+        show(ExerciseDetailUiState(isLoading = false, exercise = seeded))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_NEW_VARIATION).assertIsDisplayed()
+    }
+
+    @Test
+    fun aVariation_isNotOfferedForACategory() {
+        // It would be the third level the shape does not have: a variation hangs under an exercise.
+        show(ExerciseDetailUiState(isLoading = false, exercise = bench))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_NEW_VARIATION).assertDoesNotExist()
+    }
+
+    @Test
+    fun theVariationAction_isWiredThrough() {
+        var variation = false
+        show(
+            ExerciseDetailUiState(isLoading = false, exercise = seeded),
+            onNewVariation = { variation = true },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_NEW_VARIATION).performClick()
+
+        assertTrue(variation)
+    }
+
+    @Test
+    fun theEditor_filesAMovementUnderAHead_andCanUnfileIt() {
+        // *Move to category* is one field of the row rather than a flow of its own (N95), so the picker is
+        // in the form and what it writes travels out with the save.
+        var saved: ExerciseEdit? = null
+        show(
+            ExerciseDetailUiState(
+                isLoading = false,
+                isEditing = true,
+                exercise = seeded,
+                categoryOptions = listOf(bench),
+            ),
+            onSave = { saved = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_CATEGORY).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_CATEGORY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.exerciseCategoryOption("cat-bench")).performClick()
+
+        // Addressed by the semantics action rather than by a tap: the form is scrolled to the bottom in this
+        // viewport, and what this asserts is the write the button performs rather than where it sits.
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE)
+            .performSemanticsAction(SemanticsActions.OnClick)
+
+        assertEquals("cat-bench", saved?.parentId)
+    }
+
+    @Test
+    fun aCategorysEditor_offersNoCategoryPicker() {
+        // A head sits at the top level, so there is nowhere to file it (N95).
+        show(
+            ExerciseDetailUiState(isLoading = false, isEditing = true, exercise = bench),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_CATEGORY).assertDoesNotExist()
     }
 
     @Test

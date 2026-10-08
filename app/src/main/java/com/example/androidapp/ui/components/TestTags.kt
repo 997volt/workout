@@ -250,6 +250,14 @@ object TestTags {
     }
     const val EXERCISE_EDIT_EQUIPMENT = "exercise_edit_equipment"
     const val EXERCISE_EDIT_PATTERN = "exercise_edit_pattern"
+
+    /** Files a new variation of this movement (ROADMAP N95). */
+    const val EXERCISE_NEW_VARIATION = "exercise_new_variation"
+
+    /** The category a movement is filed under (ROADMAP N95), and one selectable head. */
+    const val EXERCISE_EDIT_CATEGORY = "exercise_edit_category"
+
+    fun exerciseCategoryOption(id: String) = "exercise_edit_category_$id"
     const val EXERCISE_EDIT_REST = "exercise_edit_rest"
     const val EXERCISE_EDIT_CUE = "exercise_edit_cue"
 

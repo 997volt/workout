@@ -3,6 +3,10 @@
     <string name="nav_back">Back</string>
     <!-- Exercise library -->
     <string name="exercise_library_title">Exercise library</string>
+    <!-- A category and its variations (ROADMAP N95). -->
+    <string name="exercise_new_variation">New variation of this</string>
+    <string name="exercise_category_label">Category</string>
+    <string name="exercise_category_none">Not in a category</string>
     <string name="exercise_search_hint">Search exercises</string>
     <string name="exercise_search_clear">Clear search</string>
     <string name="exercise_library_loading">Loading exercises…</string>

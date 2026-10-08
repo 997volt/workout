@@ -324,6 +324,9 @@ class ExercisePickerViewModelTest {
         override suspend fun createCategory(name: String): DataResult<Exercise> =
             error("the picker must not create categories")
 
+        override suspend fun createVariationOf(parent: Exercise): DataResult<Exercise> =
+            error("the picker must not create variations")
+
         override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> =
             DataResult.Success(Unit)
     }

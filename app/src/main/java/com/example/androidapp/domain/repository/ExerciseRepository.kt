@@ -54,6 +54,19 @@ interface ExerciseRepository {
     suspend fun createCategory(name: String): DataResult<Exercise>
 
     /**
+     * Stores a new variation of [parent] and returns it (ROADMAP N95).
+     *
+     * **The variation inherits everything the exercise is** — its muscles, its equipment, its movement
+     * pattern — except its name and the things performed differently, which start unset. That is the shape
+     * the entry settles rather than a convenience: a paused bench is the same lift, so restating its muscles
+     * would be a second place for them to disagree with the lift it hangs under.
+     *
+     * The parent must be a movement: a variation of a *category* would be a third level, and the shape is
+     * two rules deep.
+     */
+    suspend fun createVariationOf(parent: Exercise): DataResult<Exercise>
+
+    /**
      * Saves the editable attributes of an existing exercise (ROADMAP N2).
      *
      * **This is also how a row is filed.** [Exercise.parentId] is one of those attributes, so *move to

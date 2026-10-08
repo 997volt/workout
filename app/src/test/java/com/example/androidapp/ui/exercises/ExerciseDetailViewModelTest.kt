@@ -5,9 +5,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.repository.ExerciseRepository
 import java.io.IOException
@@ -24,6 +26,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -137,6 +140,51 @@ class ExerciseDetailViewModelTest {
         assertEquals("Sled Push", state.exercise?.name)
     }
 
+    @Test
+    fun aVariation_inheritsTheExerciseItHangsUnder() = runTest(dispatcher) {
+        // ROADMAP N95: "a variation inherits the exercise it hangs under — its muscles, its equipment — so
+        // only what is performed differently is its own". That inheritance is this copy, so the test is what
+        // the new row carries rather than that a row appeared.
+        val parent = seeded.copy(
+            restSeconds = 180,
+            techniqueNote = "Brace",
+            stepGrams = 5_000L,
+            weightUnit = WeightUnit.POUNDS,
+        )
+        val repository = FakeRepository(mutableListOf(parent))
+        val viewModel = viewModelFor(repository, exerciseId = parent.id)
+        advanceUntilIdle()
+
+        viewModel.onCreateVariation()
+        advanceUntilIdle()
+
+        val variation = viewModel.uiState.value.exercise
+        assertNotNull(variation)
+        assertEquals("it hangs under the exercise", parent.id, variation?.parentId)
+        assertEquals(MuscleGroup.QUADS, variation?.primaryMuscle)
+        assertEquals(Equipment.BARBELL, variation?.equipment)
+        // What is performed differently starts unset rather than copied from the parent.
+        assertNull(variation?.restSeconds)
+        assertNull(variation?.techniqueNote)
+        assertNull(variation?.stepGrams)
+        assertNull(variation?.weightUnit)
+        assertTrue(
+            "and it opens for naming, which is the one thing it must be given",
+            viewModel.uiState.value.isEditing,
+        )
+    }
+
+    @Test
+    fun aVariation_isNotOfferedForACategory() = runTest(dispatcher) {
+        // A variation hangs under an exercise; one under a category would be the third level N95's shape
+        // does not have.
+        val repository = FakeRepository(mutableListOf(category))
+        val viewModel = viewModelFor(repository, exerciseId = category.id)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.canCreateVariation)
+    }
+
     private fun viewModelFor(
         repository: FakeRepository,
         exerciseId: String = "custom-1",
@@ -157,6 +205,23 @@ class ExerciseDetailViewModelTest {
             viewModel.uiState.value.notFound,
         )
     }
+
+    private val seeded = Exercise(
+        id = "back-squat",
+        name = "Back Squat",
+        primaryMuscle = MuscleGroup.QUADS,
+        equipment = Equipment.BARBELL,
+        movementPattern = MovementPattern.SQUAT,
+    )
+
+    private val category = Exercise(
+        id = "cat-bench",
+        name = "Bench Press",
+        primaryMuscle = MuscleGroup.CHEST,
+        equipment = Equipment.OTHER,
+        movementPattern = MovementPattern.HORIZONTAL_PUSH,
+        rowKind = RowKind.CATEGORY,
+    )
 
     private class FakeRepository(initial: MutableList<Exercise>) : ExerciseRepository {
         private val state = MutableStateFlow(initial.toList())
@@ -181,6 +246,25 @@ class ExerciseDetailViewModelTest {
 
         override suspend fun createCategory(name: String): DataResult<Exercise> =
             error("the detail screen must not create categories")
+
+        override suspend fun createVariationOf(parent: Exercise): DataResult<Exercise> {
+            if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
+            // Mirrors `RoomExerciseRepository.createVariationOf`: everything inherited is copied, and what
+            // is performed differently starts unset. A fake that resets less would let a regression through
+            // that the real one has.
+            val variation = parent.copy(
+                id = "variation-${parent.id}",
+                isCustom = true,
+                parentId = parent.id,
+                rowKind = RowKind.MOVEMENT,
+                restSeconds = null,
+                techniqueNote = null,
+                weightUnit = null,
+                stepGrams = null,
+            )
+            state.value = state.value + variation
+            return DataResult.Success(variation)
+        }
 
         override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))

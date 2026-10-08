@@ -426,6 +426,9 @@ private class FakeExerciseRepository(private val lifts: List<Exercise>) : Exerci
     override suspend fun createCategory(name: String): DataResult<Exercise> =
         DataResult.Failure(DataError.Invalid("not used here"))
 
+    override suspend fun createVariationOf(parent: Exercise): DataResult<Exercise> =
+        DataResult.Failure(DataError.Invalid("not used here"))
+
     override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> = DataResult.Success(Unit)
 
 
