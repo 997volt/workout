@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
-import com.example.androidapp.domain.ExerciseSearch
 import com.example.androidapp.domain.getOrNull
+import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.taxonomySubtitle
 import com.example.androidapp.domain.repository.ExerciseRepository
@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 /**
@@ -34,7 +33,15 @@ data class ExerciseListItem(
 
 data class ExerciseLibraryUiState(
     val query: String = "",
-    val items: List<ExerciseListItem> = emptyList(),
+    /**
+     * The live library, which the screen groups (ROADMAP N95).
+     *
+     * The **whole** library rather than pre-grouped rows, and that is a division of labour rather than an
+     * oversight: which families are open is screen state (`rememberRowFold`, N84's rule), so a grouping done
+     * here would have to be told about it on every fold and would then lag the screen by a frame. The screen
+     * holds the folds and calls the pure [com.example.androidapp.domain.libraryRows] with them.
+     */
+    val exercises: List<Exercise> = emptyList(),
     val isLoading: Boolean = true,
     /**
      * No exercises exist at all, as opposed to none matching the query.
@@ -54,7 +61,14 @@ data class ExerciseLibraryUiState(
      * A search that matched nothing — deliberately distinct from [isLoading] so
      * the UI shows "no results" rather than a spinner that never resolves.
      */
-    val isEmpty: Boolean get() = !isLoading && items.isEmpty()
+    /**
+     * Nothing to show — the list is empty, whether because the library is or because the search missed.
+     *
+     * **Which of the two it is** is [libraryIsEmpty]'s answer, and the screen picks its copy from that;
+     * asking it here too would be a second place for one fact to be read.
+     */
+    val isEmpty: Boolean
+        get() = !isLoading && libraryRows(exercises, query).isEmpty()
 }
 
 /**
@@ -82,7 +96,7 @@ class ExerciseLibraryViewModel @Inject constructor(
         val exercises = result.getOrNull().orEmpty()
         ExerciseLibraryUiState(
             query = currentQuery,
-            items = ExerciseSearch.filter(exercises, currentQuery).map { it.toListItem() },
+            exercises = exercises,
             isLoading = false,
             libraryIsEmpty = exercises.isEmpty(),
             error = (result as? DataResult.Failure)?.error,
@@ -96,6 +110,7 @@ class ExerciseLibraryViewModel @Inject constructor(
     fun onQueryChange(value: String) {
         query.value = value
     }
+
 
     private companion object {
         /** Keeps the upstream flow warm across a configuration change. */

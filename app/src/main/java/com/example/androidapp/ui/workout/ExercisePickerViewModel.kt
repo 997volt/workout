@@ -6,13 +6,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
-import com.example.androidapp.domain.ExerciseSearch
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.repository.ExerciseRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
-import com.example.androidapp.ui.exercises.ExerciseLibraryUiState
-import com.example.androidapp.ui.exercises.toListItem
+import com.example.androidapp.domain.LibraryRow
+import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.ui.navigation.ExercisePicker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -23,6 +22,22 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/**
+ * What the picker's list shows (ROADMAP N95).
+ *
+ * Its own type rather than the library's, because the two screens hold different things now: the library
+ * keeps the **whole** library and derives its rows on screen, since which families are open is screen
+ * state, while the picker has nothing to fold and holds the filtered list itself.
+ */
+data class ExercisePickerUiState(
+    val query: String = "",
+    val items: List<LibraryRow> = emptyList(),
+    val isLoading: Boolean = true,
+    val error: DataError? = null,
+) {
+    val isEmpty: Boolean get() = !isLoading && items.isEmpty()
+}
 
 /**
  * Drives the exercise picker shown over an active workout.
@@ -68,22 +83,24 @@ class ExercisePickerViewModel @Inject constructor(
     private val _error = MutableStateFlow<DataError?>(null)
     val error: StateFlow<DataError?> = _error
 
-    val uiState: StateFlow<ExerciseLibraryUiState> = combine(
+    val uiState: StateFlow<ExercisePickerUiState> = combine(
         exerciseRepository.observeExercises(),
         query,
     ) { result, currentQuery ->
         // The picker shows a read failure the same way the library does (B4).
         val exercises = result.getOrNull().orEmpty()
-        ExerciseLibraryUiState(
+        ExercisePickerUiState(
             query = currentQuery,
-            items = ExerciseSearch.filter(exercises, currentQuery).map { it.toListItem() },
+            // Flat and movements-only (ROADMAP N95): a picker offers what can be logged, and a lifter
+            // choosing what they just did is looking for one name rather than a tree.
+            items = libraryRows(exercises, currentQuery, grouped = false),
             isLoading = false,
             error = (result as? DataResult.Failure)?.error,
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-        initialValue = ExerciseLibraryUiState(),
+        initialValue = ExercisePickerUiState(),
     )
 
     fun onQueryChange(value: String) {

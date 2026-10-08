@@ -132,4 +132,6 @@ complexity:
     # threshold — so 23 functions need 24 here, not 23.
     # Raised 24 -> 25 at N91, for the same shape a fourth time: a planned exercise's name became the
     # control that opens its block, so the row a test has to tap is one more per-id helper.
-    thresholdInObjects: 25
+    # Raised 25 -> 26 at N95, a fifth time and the same shape: a library family's head is now a control
+    # that folds its children, so the head a test has to tap is one more per-id helper.
+    thresholdInObjects: 26

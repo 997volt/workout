@@ -8,13 +8,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.androidapp.R
 import com.example.androidapp.ui.components.NewExerciseDialog
 import com.example.androidapp.ui.components.dataErrorMessage
-import com.example.androidapp.ui.exercises.ExerciseLibraryScreen
 
 /**
  * The exercise picker reuses the library screen wholesale — same search, same
@@ -48,9 +45,8 @@ fun ExercisePickerRoute(
     // nothing the user typed before pressing Add.
     var naming by remember { mutableStateOf(false) }
 
-    ExerciseLibraryScreen(
+    ExercisePickerScreen(
         state = state,
-        title = stringResource(R.string.picker_title),
         onQueryChange = viewModel::onQueryChange,
         onExerciseClick = viewModel::onExerciseSelected,
         onBack = onBack,

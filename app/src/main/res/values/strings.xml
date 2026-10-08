@@ -27,6 +27,12 @@
     <!-- What tapping an exercise row does, with the lift's own name in it: "Open Back Squat"
          rather than "Open exercise", so a screen-reader user knows which row they are on. -->
     <string name="library_open_exercise">Open %1$s</string>
+    <!-- A category's row in the library (ROADMAP N95): the name is the control that folds it, and the
+         state is announced beside it, the shape a planned exercise's row already uses (N91). -->
+    <string name="library_open_category">Open %1$s</string>
+    <string name="library_close_category">Fold %1$s</string>
+    <string name="library_category_open">Open</string>
+    <string name="library_category_folded">Folded</string>
 
     <!-- Custom exercises (ROADMAP N2). Creation asks for the name only, so the
          dialog says so rather than presenting empty taxonomy fields. -->

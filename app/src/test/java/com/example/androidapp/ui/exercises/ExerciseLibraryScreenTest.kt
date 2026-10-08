@@ -12,6 +12,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.onNodeWithTag
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Exercise
+import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.ui.components.TestTags
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
@@ -39,15 +44,83 @@ class ExerciseLibraryScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    /**
+     * Two movements, one in a family (ROADMAP N95), so a test can assert both row shapes.
+     *
+     * The screen holds the library and groups it, so a test hands in exercises and reads rows — the
+     * grouping itself is covered by `ExerciseLibraryTest` on the JVM, where the interesting cases are
+     * cheap to arrange.
+     */
+    private val bench = category("cat-bench", "Bench Press")
+
     private val items = listOf(
-        ExerciseListItem(id = "back-squat", name = "Back Squat", subtitle = "Quads · Barbell"),
-        ExerciseListItem(id = "hammer-curl", name = "Hammer Curl", subtitle = "Biceps · Dumbbell"),
+        exercise("back-squat", "Back Squat", "Quads", "Barbell"),
+        exercise("hammer-curl", "Hammer Curl", "Biceps", "Dumbbell"),
+    )
+
+    private val groupedLibrary = listOf(
+        bench,
+        exercise("barbell-bench-press", "Barbell Bench Press", "Chest", "Barbell", parent = "cat-bench"),
+        exercise("back-squat", "Back Squat", "Quads", "Barbell"),
+    )
+
+    private fun exercise(
+        id: String,
+        name: String,
+        muscle: String,
+        equipment: String,
+        parent: String? = null,
+    ) = Exercise(
+        id = id,
+        name = name,
+        primaryMuscle = MuscleGroup.valueOf(muscle.uppercase()),
+        equipment = Equipment.valueOf(equipment.uppercase()),
+        movementPattern = MovementPattern.OTHER,
+        parentId = parent,
+    )
+
+    private fun category(id: String, name: String) = Exercise(
+        id = id,
+        name = name,
+        primaryMuscle = MuscleGroup.CHEST,
+        equipment = Equipment.OTHER,
+        movementPattern = MovementPattern.OTHER,
+        rowKind = RowKind.CATEGORY,
     )
 
             @Test
+    fun aFamily_isAHeadWithItsChildUnderIt_andFoldsOnItsName() {
+        // ROADMAP N95: the head is a row that holds others, so the library reads as families rather than
+        // as a flat list. Its name is the control — the shape a planned exercise's row already uses (N91) —
+        // and its state is announced, because the same name does different things open and folded.
+        setScreen(ExerciseLibraryUiState(isLoading = false, exercises = groupedLibrary))
+
+        composeTestRule.onNodeWithTag(TestTags.libraryCategory("cat-bench")).assertIsDisplayed()
+        composeTestRule.onNodeWithText("1 exercise").assertExists()
+        // Read by existence rather than by display: this test's viewport is short, and what it asserts is
+        // that the child is in the list under its head, which is N95's shape.
+        composeTestRule.onNodeWithText("Barbell Bench Press").assertExists()
+
+        composeTestRule.onNodeWithTag(TestTags.libraryCategory("cat-bench")).performClick()
+
+        composeTestRule.onNodeWithText("Barbell Bench Press").assertDoesNotExist()
+        // The head stays, and so does everything filed under nothing.
+        composeTestRule.onNodeWithTag(TestTags.libraryCategory("cat-bench")).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Back Squat").assertExists()
+    }
+
+    @Test
+    fun aMovementInNoFamily_isATopLevelRow() {
+        setScreen(ExerciseLibraryUiState(isLoading = false, exercises = groupedLibrary))
+
+        composeTestRule.onNodeWithText("Back Squat").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Quads · Barbell").assertIsDisplayed()
+    }
+
+    @Test
     fun anEmptyLibrary_saysSo_ratherThanBlamingTheSearch() {
         setScreen(
-            ExerciseLibraryUiState(isLoading = false, items = emptyList(), libraryIsEmpty = true),
+            ExerciseLibraryUiState(isLoading = false, exercises = emptyList(), libraryIsEmpty = true),
         )
 
         composeTestRule.onNodeWithTag(TestTags.LIBRARY_EMPTY_LIBRARY).assertIsDisplayed()
@@ -59,7 +132,7 @@ class ExerciseLibraryScreenTest {
         setScreen(
             ExerciseLibraryUiState(
                 isLoading = false,
-                items = emptyList(),
+                exercises = emptyList(),
                 libraryIsEmpty = false,
                 query = "zzz",
             ),
@@ -88,7 +161,7 @@ class ExerciseLibraryScreenTest {
 
     @Test
     fun rendersTitleAndRows() {
-        setScreen(ExerciseLibraryUiState(isLoading = false, items = items))
+        setScreen(ExerciseLibraryUiState(isLoading = false, exercises = items))
 
         composeTestRule.onNodeWithTag(TestTags.LIBRARY_TITLE).assertIsDisplayed()
         composeTestRule.onNodeWithText("Back Squat").assertIsDisplayed()
@@ -100,7 +173,7 @@ class ExerciseLibraryScreenTest {
         setScreen(
             ExerciseLibraryUiState(
                 isLoading = false,
-                items = listOf(ExerciseListItem(id = "custom-1", name = "Sled Push", subtitle = null)),
+                exercises = listOf(exercise("custom-1", "Sled Push", "Other", "Other")),
             ),
         )
 
@@ -110,7 +183,7 @@ class ExerciseLibraryScreenTest {
 
     @Test
     fun withNoCreateCallback_thereIsNoNewExerciseAction() {
-        setScreen(ExerciseLibraryUiState(isLoading = false, items = items))
+        setScreen(ExerciseLibraryUiState(isLoading = false, exercises = items))
 
         composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_EXERCISE).assertDoesNotExist()
     }
@@ -119,7 +192,7 @@ class ExerciseLibraryScreenTest {
     fun tappingNewExercise_reportsIt() {
         var started = false
         setScreen(
-            ExerciseLibraryUiState(isLoading = false, items = items),
+            ExerciseLibraryUiState(isLoading = false, exercises = items),
             onNewExercise = { started = true },
         )
 
@@ -131,7 +204,7 @@ class ExerciseLibraryScreenTest {
     @Test
     fun typingInSearchField_reportsTheQuery() {
         var typed: String? = null
-        setScreen(ExerciseLibraryUiState(isLoading = false, items = items), onQueryChange = { typed = it })
+        setScreen(ExerciseLibraryUiState(isLoading = false, exercises = items), onQueryChange = { typed = it })
 
         composeTestRule.onNode(hasSetTextAction()).performTextInput("squat")
 
@@ -141,7 +214,7 @@ class ExerciseLibraryScreenTest {
     @Test
     fun tappingRow_reportsThatExerciseId() {
         var clicked: String? = null
-        setScreen(ExerciseLibraryUiState(isLoading = false, items = items), onExerciseClick = { clicked = it })
+        setScreen(ExerciseLibraryUiState(isLoading = false, exercises = items), onExerciseClick = { clicked = it })
 
         composeTestRule.onNodeWithText("Hammer Curl").performClick()
 
@@ -150,7 +223,7 @@ class ExerciseLibraryScreenTest {
 
     @Test
     fun emptyResult_showsMessageInsteadOfSpinner() {
-        setScreen(ExerciseLibraryUiState(query = "zzz", isLoading = false, items = emptyList()))
+        setScreen(ExerciseLibraryUiState(query = "zzz", isLoading = false, exercises = emptyList()))
 
         composeTestRule.onNodeWithTag(TestTags.LIBRARY_NO_MATCH).assertIsDisplayed()
         composeTestRule.onNodeWithText("Loading exercises…").assertDoesNotExist()

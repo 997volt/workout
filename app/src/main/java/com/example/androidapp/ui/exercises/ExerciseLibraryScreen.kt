@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,18 +36,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.domain.LibraryRow
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Exercise
+import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.ui.components.AppRow
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.IconTile
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.rememberRowFold
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.theme.TileAccent
@@ -98,22 +108,26 @@ fun ExerciseLibraryScreen(
     onNewExercise: (() -> Unit)? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // The grouped rows, derived here because **which families are open is screen state** (ROADMAP N95).
+    // `rememberRowFold` is the sharing state N91 built, for the same reason: this activity declares no
+    // `configChanges`, so a rotation would otherwise fold what the lifter opened.
+    // Every family starts open: a library that opened folded would be a list of names with the movements
+    // behind them, which is the screen's subject rather than a detail of it.
+    val fold = rememberRowFold(ids = state.exercises.map { it.id }, initiallyOpen = true)
+    val rows = remember(state.exercises, state.query, fold.foldedIds) {
+        libraryRows(state.exercises, state.query, fold.foldedIds)
+    }
     MessageSnackbar(message, snackbarHostState, onDismissMessage)
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            // Only the picker offers creation: the library is a reference you
-            // navigate to, while the gap is felt mid-workout (ROADMAP N2).
-            if (onNewExercise != null) {
-                ExtendedFloatingActionButton(
-                    onClick = onNewExercise,
-                    text = { Text(stringResource(R.string.exercise_new)) },
-                    icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
-                    modifier = Modifier.testTag(TestTags.LIBRARY_NEW_EXERCISE),
-                )
-            }
+            // Only the picker offers creation: the library is a reference you navigate to, while the gap
+            // is felt mid-workout (ROADMAP N2). A composable rather than an `if` here, because the screen
+            // is at the length this project allows.
+            NewExerciseButton(onClick = onNewExercise)
         },
         topBar = {
             CenterAlignedTopAppBar(
@@ -150,14 +164,31 @@ fun ExerciseLibraryScreen(
                     query = state.query,
                     libraryIsEmpty = state.libraryIsEmpty,
                 )
-                else -> ExerciseList(items = state.items, onExerciseClick = onExerciseClick)
+                else -> ExerciseList(
+                    items = rows,
+                    isExpanded = fold::isExpanded,
+                    onToggle = fold::toggle,
+                    onExerciseClick = onExerciseClick,
+                )
             }
         }
     }
 }
 
+/** The picker's one action, or nothing at all where creation is not offered (ROADMAP N2). */
 @Composable
-private fun LoadingState(modifier: Modifier = Modifier) {
+private fun NewExerciseButton(onClick: (() -> Unit)?) {
+    if (onClick == null) return
+    ExtendedFloatingActionButton(
+        onClick = onClick,
+        text = { Text(stringResource(R.string.exercise_new)) },
+        icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
+        modifier = Modifier.testTag(TestTags.LIBRARY_NEW_EXERCISE),
+    )
+}
+
+@Composable
+internal fun LoadingState(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -173,7 +204,7 @@ private fun LoadingState(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun EmptyState(
+internal fun EmptyState(
     query: String,
     libraryIsEmpty: Boolean,
     modifier: Modifier = Modifier,
@@ -204,7 +235,7 @@ private fun EmptyState(
  */
 /** The library's search box, split out so the screen composable stays readable. */
 @Composable
-private fun LibrarySearchField(
+internal fun LibrarySearchField(
     query: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -244,9 +275,19 @@ private fun LibrarySearchField(
     )
 }
 
+/**
+ * The library as rows: a family head, its children under it, and the movements filed under nothing.
+ *
+ * A head's tap folds it (ROADMAP N95), the shape a planned exercise's row already uses (N91): the name is
+ * the control, the label names the action, and the state is announced beside it rather than left to be
+ * discovered. A child is indented by [LibraryRow.depth], which keeps "how deep is this" a fact about the
+ * library rather than about this list.
+ */
 @Composable
-private fun ExerciseList(
-    items: List<ExerciseListItem>,
+internal fun ExerciseList(
+    items: List<LibraryRow>,
+    isExpanded: (String) -> Boolean,
+    onToggle: (String) -> Unit,
     onExerciseClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -258,28 +299,107 @@ private fun ExerciseList(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(items = items, key = { it.id }) { item ->
-            AppRow(
-                headline = item.name,
-                // Null while an unedited custom exercise has no taxonomy: the row
-                // shows its name alone rather than "Other · Other" (N2).
-                supporting = item.subtitle,
-                leading = { IconTile(icon = Icons.Filled.FitnessCenter, accent = TileAccent.Teal) },
-                trailing = {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-                onClick = { onExerciseClick(item.id) },
-                // The headline is a lift's name, which names the thing but not the tap; the row
-                // would otherwise announce "Back Squat, button".
-                onClickLabel = stringResource(R.string.library_open_exercise, item.name),
-            )
+        items(items = items, key = { it.id }) { row ->
+            if (row.isCategory) {
+                CategoryRow(
+                    row = row,
+                    isExpanded = isExpanded(row.id),
+                    onToggle = { onToggle(row.id) },
+                )
+            } else {
+                ExerciseRow(row = row, onExerciseClick = onExerciseClick)
+            }
         }
     }
 }
+
+@Composable
+private fun CategoryRow(
+    row: LibraryRow,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val openLabel = stringResource(R.string.library_category_open)
+    val foldedLabel = stringResource(R.string.library_category_folded)
+    AppRow(
+        headline = row.name,
+        // The count is the whole point of a folded head: it says a family is there without spending the
+        // room to show it.
+        supporting = pluralStringResource(R.plurals.library_exercises, row.childCount, row.childCount),
+        leading = {
+            IconTile(icon = Icons.Filled.FitnessCenter, accent = TileAccent.Indigo)
+        },
+        trailing = {
+            Icon(
+                imageVector = if (isExpanded) {
+                    Icons.Filled.KeyboardArrowDown
+                } else {
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight
+                },
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        onClick = onToggle,
+        // The action, not the family: "Open Bench Press", and "Fold" once it is open (N91's rule).
+        onClickLabel = stringResource(
+            if (isExpanded) R.string.library_close_category else R.string.library_open_category,
+            row.name,
+        ),
+        stateDescription = if (isExpanded) openLabel else foldedLabel,
+        testTag = TestTags.libraryCategory(row.id),
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun ExerciseRow(
+    row: LibraryRow,
+    onExerciseClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AppRow(
+        headline = row.name,
+        // Null while an unedited custom exercise has no taxonomy: the row
+        // shows its name alone rather than "Other · Other" (N2).
+        supporting = row.subtitle,
+        leading = { IconTile(icon = Icons.Filled.FitnessCenter, accent = TileAccent.Teal) },
+        trailing = {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        onClick = { onExerciseClick(row.id) },
+        // The headline is a lift's name, which names the thing but not the tap; the row
+        // would otherwise announce "Back Squat, button".
+        onClickLabel = stringResource(R.string.library_open_exercise, row.name),
+        // A variation filed under a family is drawn in from the edge, which is the only thing that says
+        // it belongs to the row above it rather than standing beside it.
+        modifier = modifier.padding(start = (row.depth * CHILD_INDENT).dp),
+    )
+}
+
+/** How far a family's child is inset, in dp. One step, because the shape is two rules deep (N95). */
+private const val CHILD_INDENT = 16
+
+/** One preview row, so the two previews above stay short. */
+private fun previewExercise(
+    id: String,
+    name: String,
+    kind: RowKind,
+    parent: String? = null,
+) = Exercise(
+    id = id,
+    name = name,
+    primaryMuscle = MuscleGroup.CHEST,
+    equipment = Equipment.BARBELL,
+    movementPattern = MovementPattern.HORIZONTAL_PUSH,
+    parentId = parent,
+    rowKind = kind,
+)
 
 @Preview(showBackground = true)
 @Composable
@@ -289,10 +409,11 @@ private fun ExerciseLibraryScreenPreview() {
             state = ExerciseLibraryUiState(
                 query = "",
                 isLoading = false,
-                items = listOf(
-                    ExerciseListItem("back-squat", "Back Squat", "Quads · Barbell"),
-                    ExerciseListItem("bench-press", "Barbell Bench Press", "Chest · Barbell"),
-                    ExerciseListItem("my-lift", "Sled Push", null),
+                exercises = listOf(
+                    previewExercise("cat-bench", "Bench Press", RowKind.CATEGORY),
+                    previewExercise("bench-press", "Barbell Bench Press", RowKind.MOVEMENT, "cat-bench"),
+                    previewExercise("back-squat", "Back Squat", RowKind.MOVEMENT),
+                    previewExercise("my-lift", "Sled Push", RowKind.MOVEMENT),
                 ),
             ),
             title = "Exercise library",
@@ -307,7 +428,7 @@ private fun ExerciseLibraryScreenPreview() {
 private fun ExerciseLibraryEmptyPreview() {
     AndroidAppTheme {
         ExerciseLibraryScreen(
-            state = ExerciseLibraryUiState(query = "zzz", isLoading = false, items = emptyList()),
+            state = ExerciseLibraryUiState(query = "zzz", isLoading = false, exercises = emptyList()),
             title = "Exercise library",
             onQueryChange = {},
             onExerciseClick = {},

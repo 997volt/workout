@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 
 /**
  * One row in a list, drawn as its own card.
@@ -39,6 +41,14 @@ fun AppRow(
      * so without this the control announces what it is and not what it will do.
      */
     onClickLabel: String? = null,
+    /**
+     * The state the row is in, for a screen reader — "Open", "Folded" (ROADMAP N95).
+     *
+     * The companion to [onClickLabel] for a row whose tap *toggles* rather than navigates: the action names
+     * what the tap will do and this says what it will do it to, because a control whose behaviour depends on
+     * state the reader cannot see is exactly what a screen reader cannot report for itself (B21's rule).
+     */
+    stateDescription: String? = null,
     testTag: String? = null,
     /**
      * The headline's colour, for the one row that has to read as destructive (ROADMAP N43).
@@ -54,7 +64,16 @@ fun AppRow(
     val tappable = if (onClick == null) {
         Modifier
     } else {
-        Modifier.clip(shape).clickable(onClickLabel = onClickLabel, onClick = onClick)
+        Modifier
+            .clip(shape)
+            .clickable(onClickLabel = onClickLabel, onClick = onClick)
+            .then(
+                if (stateDescription == null) {
+                    Modifier
+                } else {
+                    Modifier.semantics { this.stateDescription = stateDescription }
+                },
+            )
     }
 
     Surface(

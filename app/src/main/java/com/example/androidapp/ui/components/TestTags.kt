@@ -338,6 +338,14 @@ object TestTags {
      */
     fun templateFold(id: String) = "template_fold_$id"
 
+    /**
+     * A library family's head, which folds its children (ROADMAP N95).
+     *
+     * A tag as well as the `onClickLabel`: the label is what a screen reader announces, while a test has to
+     * address the control by identity rather than by the English it happens to show.
+     */
+    fun libraryCategory(id: String) = "library_category_$id"
+
     fun templateStart(id: String) = "template_start_$id"
 
     /** Why a template's Start is disabled — a session is already open (ROADMAP N78). */

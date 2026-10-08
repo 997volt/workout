@@ -2,6 +2,7 @@ package com.example.androidapp.ui.exercises
 
 import java.io.IOException
 import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
@@ -60,7 +61,7 @@ class ExerciseLibraryViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse("loading should have finished", state.isLoading)
-        assertEquals(listOf("Back Squat", "Barbell Bench Press"), state.items.map { it.name })
+        assertEquals(listOf("Back Squat", "Barbell Bench Press"), rows(state).map { it.name })
     }
 
     @Test
@@ -74,7 +75,7 @@ class ExerciseLibraryViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals("squat", state.query)
-        assertEquals(listOf("Back Squat"), state.items.map { it.name })
+        assertEquals(listOf("Back Squat"), rows(state).map { it.name })
     }
 
     @Test
@@ -97,7 +98,7 @@ class ExerciseLibraryViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
-        assertEquals("Quads · Barbell", viewModel.uiState.value.items.single().subtitle)
+        assertEquals("Quads · Barbell", rows(viewModel.uiState.value).single().subtitle)
     }
 
     @Test
@@ -108,7 +109,7 @@ class ExerciseLibraryViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
-        assertNull(viewModel.uiState.value.items.single().subtitle)
+        assertNull(rows(viewModel.uiState.value).single().subtitle)
     }
 
     private class FakeRepository(exercises: List<Exercise>) : ExerciseRepository {
@@ -203,6 +204,9 @@ class ExerciseLibraryViewModelTest {
         val state = viewModel.uiState.value
         assertNotNull("the failure must reach the screen", state.error)
         assertFalse(state.isLoading)
-        assertTrue("an unreadable library must not claim to be empty", state.items.isEmpty())
+        assertTrue("an unreadable library must not claim to be empty", state.exercises.isEmpty())
     }
+
+    /** The rows the screen derives from the state, so these tests read what the list would show. */
+    private fun rows(state: ExerciseLibraryUiState) = libraryRows(state.exercises, state.query)
 }

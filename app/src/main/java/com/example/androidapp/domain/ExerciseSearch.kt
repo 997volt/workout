@@ -33,7 +33,7 @@ object ExerciseSearch {
      *    stops working in another language. `name` is locale-stable, so
      *    `FOREARMS` still matches "forearms" whatever the display language says.
      */
-    private fun Exercise.matches(query: String): Boolean =
+    internal fun Exercise.matches(query: String): Boolean =
         matches(query, name, name) ||
             (listOf(primaryMuscle) + secondaryMuscles).any { matches(query, it.label, it.name) } ||
             matches(query, equipment.label, equipment.name) ||

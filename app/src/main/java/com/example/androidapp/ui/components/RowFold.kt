@@ -6,31 +6,39 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 
 /**
- * Which rows of a list are open, keyed by id (ROADMAP N91).
+ * Which rows of a list are open, keyed by id (ROADMAP N91, reused by N95's library).
  *
- * **A map written once per exercise, and an immutable value on every change.** A `mutableSetOf()` held
- * inside a state object is mutated in place, and Compose compares state by `equals`, so the set's own
- * contents changing never reads as a change: the tap did nothing and the block stayed open. Assigning a
- * new map is what makes a fold a change, at the cost of copying a handful of pairs per tap.
+ * **A map written once per row, and an immutable value on every change.** A `mutableSetOf()` held inside a
+ * state object is mutated in place, and Compose compares state by `equals`, so the set's own contents
+ * changing never reads as a change: the tap did nothing and the row stayed open. Assigning a new map is
+ * what makes a fold a change, at the cost of copying a handful of pairs per tap.
  *
- * **The first exercise the list draws is recorded as open — or folded, if the plan already held it when
- * the screen arrived.** That is the whole of N91's "only the blocks that were already there start
- * folded": a block's absence from the map means it is the exercise just added, which opens so its first
- * set can be added without a second tap. `rememberSaveable` is N84's rule — this activity declares no
- * `configChanges`, so a rotation would otherwise fold what the lifter opened — and it is why the map
- * holds a plain `Boolean` per id rather than deriving the state from a list's membership.
+ * **A row the list has already drawn is folded; one that arrives afterwards opens.** That is N91's "only the
+ * blocks that were already there start folded": the map is seeded from what the first content composition
+ * can see, so a row absent from it is the one just added — which opens, so its first set (or its first child
+ * in the library) needs no second tap. `rememberSaveable` is N84's rule — this activity declares no
+ * `configChanges`, so a rotation would otherwise fold what the lifter opened.
  *
- * A first composition while the plan is still loading records nothing, so those blocks open once it
- * arrives, which is the case the second half above cannot tell apart from an added exercise.
+ * A first composition while the plan is still loading seeds nothing, so those rows open once it arrives,
+ * which the seed cannot tell apart from the added case.
+ *
+ * [initiallyOpen] is for a caller whose rows have nothing to hide on arrival — the library, where a family
+ * that started folded would be a list of names with the movements behind them: both halves of the rule
+ * above invert with it, so what the screen opened on is open and what arrives is open too.
  */
 @Composable
-fun rememberRowFold(ids: List<String>): RowFold {
+fun rememberRowFold(ids: List<String>, initiallyOpen: Boolean = false): RowFold {
     val alreadyThere = remember(ids.isEmpty()) { ids.toSet() }
     val state = rememberSaveable { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
     if (ids.isNotEmpty()) {
         val missing = ids.filterNot { it in state.value }
         if (missing.isNotEmpty()) {
-            state.value = state.value + missing.associateWith { it !in alreadyThere }
+            state.value = state.value + missing.associateWith { id ->
+                // N91's shape folds what the screen opened on and opens what arrives; the library wants
+                // every family open on arrival, so both halves invert together with this flag rather than
+                // one of them being special-cased.
+                if (initiallyOpen) true else id !in alreadyThere
+            }
         }
     }
     return RowFold(
@@ -49,5 +57,13 @@ class RowFold(
 
     /** The tap on a row's name: fold it, or open it again. */
     fun toggle(id: String) = onToggle(id)
+
+    /**
+     * The ids the lifter has closed, for a caller that derives something from the folds (ROADMAP N95).
+     *
+     * N91's own caller asks row by row and needs no such list; the library's grouping has to know the whole
+     * set before it can decide which rows exist at all.
+     */
+    val foldedIds: Set<String> get() = open.filterValues { !it }.keys
 }
 
