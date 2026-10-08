@@ -333,10 +333,13 @@ class RoomTemplateRepository @Inject constructor(
      * as the identity of the one write that hid it, so every row that went together comes back together
      * and nothing else does.
      *
-     * The order is re-derived rather than trusted: the live rows kept contiguous positions only among
-     * themselves (B72 renumbers them), so the restored block is spliced back by the indexes the two
-     * groups still carry, and the whole exercise is renumbered from there. That is also why a restored
-     * rung lands beside its anchor rather than at the end.
+     * The order is re-derived rather than trusted, and **the splice point is a count, not an index**:
+     * B72 renumbers the survivors to `0..n-1` when a removal leaves, so their stored indexes no longer
+     * say where the gap was. What does say it is how many live rows the removal left *above* the block —
+     * their indexes still ascend in the order they had, so the block belongs after the last live row whose
+     * stored index is below the block's lowest. Sorting by index instead was the first attempt and it put
+     * a restored middle set after its neighbour, which the instrumented suite caught: with the survivors
+     * renumbered to 0 and 1, a block carrying the index 2 sorted last.
      */
     override suspend fun restoreSet(templateSetId: String): DataResult<Unit> = dataResultOf {
         // The row the undo names may be hidden, so it is read through the one query that can see it — and
@@ -353,17 +356,15 @@ class RoomTemplateRepository @Inject constructor(
             val coming = all.filter { it.deletedAt == hiddenAt }
             val live = all.filter { it.deletedAt == null }
 
-            // The order is re-derived rather than trusted: the live rows kept contiguous positions only
-            // among themselves (B72 renumbers them), so the restored block is spliced back by the indexes
-            // the two groups still carry, and the whole exercise is renumbered from there. That is also
-            // why a restored rung lands beside its anchor rather than at the end.
-            (live + coming).sortedBy { it.setIndex }.forEachIndexed { position, set ->
-                if (set.setIndex != position || set.deletedAt != null) {
-                    dao.updateTemplateSet(
-                        set.copy(setIndex = position, deletedAt = null, updatedAt = now),
-                    )
+            val above = live.count { it.setIndex < coming.minOf { row -> row.setIndex } }
+            (live.take(above) + coming.sortedBy { it.setIndex } + live.drop(above))
+                .forEachIndexed { position, set ->
+                    if (set.setIndex != position || set.deletedAt != null) {
+                        dao.updateTemplateSet(
+                            set.copy(setIndex = position, deletedAt = null, updatedAt = now),
+                        )
+                    }
                 }
-            }
         }
     }
 

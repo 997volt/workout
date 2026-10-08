@@ -400,10 +400,13 @@ class TemplateRepositoryTest {
             back.map { it.role },
         )
         assertEquals(listOf(0, 1, 2, 3), back.map { it.setIndex })
+        // The anchor reads its own stored load — `rungWeightAt` answers only for a rung — and the two
+        // rungs still derive 80 and 60 off it, which is the ladder the restore had to keep intact.
+        assertEquals("the anchor keeps its load", 100_000L, back.first().targetWeightGrams)
         assertEquals(
             "and the ladder derives what it did before",
-            listOf(100_000L, 80_000L, 60_000L),
-            back.indices.take(3).map { back.rungWeightAt(it) },
+            listOf(80_000L, 60_000L),
+            listOf(1, 2).map { back.rungWeightAt(it) },
         )
     }
 
