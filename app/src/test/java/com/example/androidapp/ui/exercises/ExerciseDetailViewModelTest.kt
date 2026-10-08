@@ -179,6 +179,9 @@ class ExerciseDetailViewModelTest {
         override suspend fun createCustomExercise(name: String): DataResult<Exercise> =
             error("the detail screen must not create exercises")
 
+        override suspend fun createCategory(name: String): DataResult<Exercise> =
+            error("the detail screen must not create categories")
+
         override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             saved = exercise

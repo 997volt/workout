@@ -11,6 +11,7 @@ import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
 import java.time.Instant
 import java.util.UUID
@@ -193,6 +194,73 @@ class RoomExerciseRepositoryTest {
         assertEquals(DataError.NotFound, failure.error)
         assertNull(database.exerciseDao().findById(created.id))
     }
+
+    @Test
+    fun createCategory_storesAHeadThatIsNotALift() = runTest {
+        // ROADMAP N95: a category is a full row of the library and differs from a custom exercise in one
+        // field, which is what the row kind is for rather than a table of its own.
+        val category = (repository.createCategory("  Bench Press  ") as DataResult.Success<Exercise>).data
+
+        UUID.fromString(category.id)
+        assertEquals("Bench Press", category.name)
+        assertEquals(RowKind.CATEGORY, category.rowKind)
+        assertTrue("the library keeps it: a head is a row, not a hidden marker", category.isCustom)
+        assertNull("a head hangs under nothing", category.parentId)
+        // Unspecified for a custom exercise's reason, and the equipment value is the documented
+        // placeholder: a family spans equipment and every child sets its own.
+        assertEquals(MuscleGroup.OTHER, category.primaryMuscle)
+        assertEquals(Equipment.OTHER, category.equipment)
+
+        val library = (repository.observeExercises().first() as DataResult.Success).data
+        assertEquals(listOf(RowKind.CATEGORY), library.map { it.rowKind })
+    }
+
+    @Test
+    fun createCategory_refusesABlankName_withoutStoringAnything() = runTest {
+        val failure = repository.createCategory("   ") as DataResult.Failure
+
+        assertTrue(failure.error is DataError.Invalid)
+        val library = (repository.observeExercises().first() as DataResult.Success).data
+        assertTrue("a refused create must store nothing", library.isEmpty())
+    }
+
+    @Test
+    fun updateExercise_filesARowUnderACategory_andCanUnfileIt() = runTest {
+        // *Move to category* is this write and nothing else (N95): the parent is one of the row's own
+        // editable attributes. The bug this guards is `stored.copy` keeping every field it is not told,
+        // so a field left out of the copy is silently ignored — the screen would show the new head while
+        // the row kept the old one.
+        val category = (repository.createCategory("Bench Press") as DataResult.Success<Exercise>).data
+        val variation = created("Paused Bench Press")
+
+        repository.updateExercise(variation.copy(parentId = category.id))
+
+        val filed = library().single { it.id == variation.id }
+        assertEquals(category.id, filed.parentId)
+        assertEquals("filing moves no other field", "Paused Bench Press", filed.name)
+        assertEquals(RowKind.MOVEMENT, filed.rowKind)
+
+        repository.updateExercise(filed.copy(parentId = null))
+
+        assertNull("and unfiling is the same write with no parent", library().single { it.id == variation.id }.parentId)
+    }
+
+    @Test
+    fun updateExercise_keepsTheRowKindItWasStoredWith() = runTest {
+        // The kind is not the form's to change — a lift does not become a head by being edited — but it
+        // travels through the same copy, so a value dropped there would turn every edited category into a
+        // lift and offer it in a picker.
+        val category = (repository.createCategory("Bench Press") as DataResult.Success<Exercise>).data
+
+        repository.updateExercise(category.copy(name = "Barbell Bench Press"))
+
+        val renamed = library().single()
+        assertEquals(RowKind.CATEGORY, renamed.rowKind)
+        assertEquals("Barbell Bench Press", renamed.name)
+    }
+
+    private suspend fun library(): List<Exercise> =
+        (repository.observeExercises().first() as DataResult.Success).data
 
     private suspend fun created(name: String): Exercise =
         (repository.createCustomExercise(name) as DataResult.Success<Exercise>).data

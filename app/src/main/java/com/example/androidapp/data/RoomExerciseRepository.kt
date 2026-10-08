@@ -14,6 +14,7 @@ import com.example.androidapp.domain.toDataError
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.ExerciseRepository
@@ -62,14 +63,29 @@ class RoomExerciseRepository @Inject constructor(
         dao.findById(id)?.toDomain()
     }
 
-    override suspend fun createCustomExercise(name: String): DataResult<Exercise> = dataResultOf {
+    override suspend fun createCustomExercise(name: String): DataResult<Exercise> =
+        create(name = name, rowKind = RowKind.MOVEMENT)
+
+    override suspend fun createCategory(name: String): DataResult<Exercise> =
+        create(name = name, rowKind = RowKind.CATEGORY)
+
+    /**
+     * The one creation path both kinds take (ROADMAP N95).
+     *
+     * A category differs from a custom exercise in exactly one field, which is the argument for a row kind
+     * rather than a second table: sharing this keeps the name rule, the unspecified taxonomy and the
+     * timestamp rule from being written twice and drifting.
+     */
+    private suspend fun create(name: String, rowKind: RowKind): DataResult<Exercise> = dataResultOf {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) throw InvalidInputException("Give the exercise a name.")
 
         // The taxonomy is stored as unspecified rather than left null, because
         // the columns are non-nullable. Enums are stored by name, so these values
         // need no migration — which is what lets this land before the N3/N4-N8
-        // schema decision (ROADMAP N2).
+        // schema decision (ROADMAP N2). For a category the equipment value is a
+        // placeholder and says so: a family spans equipment, and each child sets
+        // its own, which is what `Equipment.OTHER` already means.
         val exercise = Exercise(
             id = UUID.randomUUID().toString(),
             name = trimmed,
@@ -78,6 +94,7 @@ class RoomExerciseRepository @Inject constructor(
             equipment = Equipment.OTHER,
             movementPattern = MovementPattern.OTHER,
             isCustom = true,
+            rowKind = rowKind,
         )
         dao.insert(exercise.toEntity(now = timeSource.nowEpochMillis()))
         exercise
@@ -110,6 +127,12 @@ class RoomExerciseRepository @Inject constructor(
             secondaryMuscles = exercise.secondaryMuscles,
             equipment = exercise.equipment,
             movementPattern = exercise.movementPattern,
+            // The row's place in the library (ROADMAP N95). `stored.copy` keeps every field it is not
+            // told, so leaving these out would silently ignore a *move to category* — the screen would
+            // show the new head while the row kept the old one, which is the same failure the display
+            // unit had before N64's fix below.
+            parentId = exercise.parentId,
+            rowKind = exercise.rowKind,
             restSeconds = exercise.restSeconds,
             // A cleared cue is stored as null, not as an empty string: two
             // representations of "nothing" would show up differently on screen.

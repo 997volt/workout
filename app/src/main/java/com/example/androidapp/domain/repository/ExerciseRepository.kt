@@ -41,7 +41,24 @@ interface ExerciseRepository {
     suspend fun createCustomExercise(name: String): DataResult<Exercise>
 
     /**
+     * Stores a new **category** head named [name] and returns it (ROADMAP N95).
+     *
+     * A category is a full row of the library — named, editable, soft-deletable and carried by both
+     * transfer formats — so it is created by the same path as a custom exercise and differs only in
+     * [com.example.androidapp.domain.model.RowKind]. That is the point of the row kind rather than a table
+     * of its own: the two kinds share every rule except whether they may be offered by a picker.
+     *
+     * Its taxonomy columns are stored as unspecified for [createCustomExercise]'s reason, and the equipment
+     * placeholder is deliberate — a family spans equipment, and every child sets its own.
+     */
+    suspend fun createCategory(name: String): DataResult<Exercise>
+
+    /**
      * Saves the editable attributes of an existing exercise (ROADMAP N2).
+     *
+     * **This is also how a row is filed.** [Exercise.parentId] is one of those attributes, so *move to
+     * category* and *new variation of this* are this same write; two methods for one row edit would be two
+     * places to keep the validation in, and a screen that changes a parent already holds the row.
      *
      * Fails with [com.example.androidapp.domain.DataError.NotFound] when [exercise]
      * no longer exists, so a stale detail screen cannot silently write nothing.
