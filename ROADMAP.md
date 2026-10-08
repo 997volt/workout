@@ -47,8 +47,11 @@ rather than queued: see N97 below.
   whose versions are read before the body (B62). A retired name must still **read** rather than crash when an
   older row is loaded by a build that no longer offers it — N75's retired Back, which is not offered and
   still loads. **The per-exercise column is dropped in the same migration**, so the category's is the one home
-  the rule "one fact, one home" leaves. **Dependency:** this cannot land before N95, because until categories exist there is
-  nothing to hang a pattern on.
+  the rule "one fact, one home" leaves. **N95 has landed, so the dependency this entry named is met** — categories exist, the library draws them, and
+  a lifter can make one. Two things N95 settled that this builds on: a head that says nothing is **silent rather
+  than authoritative**, which is the rule that lets a category without a pattern leave its movements' own
+  answers alone; and the per-exercise column can only go in a migration that rebuilds the table, because SQLite
+  has no way to drop a column or relax a `NOT NULL` in place.
 
 ## Parked — deliberately not planned
 
@@ -135,7 +138,7 @@ unfound. Two of those four were this file describing itself wrongly.
 Everything that has stood in *Next* has shipped — the defects found in use, the workout screen's discard, the
 workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch, a rest of
 zero, the planned-set prefill, the program document, the eight defects a review of that batch found and
-closed (B51-B58), the seven requests that were its last queue (N80-N86), and the N87–N94 batch — each with
+closed (B51-B58), the seven requests that were its last queue (N80-N86), and the N87–N95 batch — each with
 its entry in [CHANGELOG.md](CHANGELOG.md).
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what they named
