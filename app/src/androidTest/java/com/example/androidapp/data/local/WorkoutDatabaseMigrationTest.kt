@@ -1,10 +1,12 @@
 package com.example.androidapp.data.local
 
 import androidx.room.testing.MigrationTestHelper
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -1848,5 +1850,71 @@ class WorkoutDatabaseMigrationTest {
         }
 
         migrated.close()
+    }
+
+    @Test
+    fun anExistingLibrary_arrivesFiledIntoTheSeededFamilies() {
+        // ROADMAP N95, and the half the seeder cannot do: `INSERT OR IGNORE` never updates a row that
+        // exists, so a database that already has its movements would get the families empty and every
+        // movement loose — the feature not working rather than working differently.
+        //
+        // Three rows are asked about, because they are the three answers: a movement that takes a family, a
+        // movement a lifter had already filed somewhere else, and one they had filed themselves.
+        helper.createDatabase(TEST_DB, 36).apply {
+            insertExercise("barbell-bench-press", "Barbell Bench Press", parentId = "bench-press")
+            // Filed flat by the migration's predecessor, which is the file this one corrects.
+            insertExercise("paused-bench-press-3s", "3-Second Paused Bench Press", parentId = "bench-press")
+            insertExercise("back-squat", "Back Squat", parentId = null)
+            insertExercise("moved-by-hand", "Moved By Hand", parentId = "some-other-family")
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 37, true, MIGRATION_36_37)
+
+        migrated.query(
+            "SELECT id, parentId, rowKind, name FROM exercises",
+        ).use { cursor ->
+            val family = mutableMapOf<String, String?>()
+            val kind = mutableMapOf<String, String>()
+            val name = mutableMapOf<String, String>()
+            while (cursor.moveToNext()) {
+                name[cursor.getString(0)] = cursor.getString(3)
+                family[cursor.getString(0)] = cursor.getString(1)
+                kind[cursor.getString(0)] = cursor.getString(2)
+            }
+
+            assertEquals("Bench Press", name["bench-press"])
+            assertEquals("CATEGORY", kind["bench-press"])
+            assertNull("a head sits at the top level", family["bench-press"])
+
+            assertEquals("an unfiled movement takes its family", "squat", family["back-squat"])
+            assertEquals(
+                "the three bench variations come down to the barbell bench they are versions of",
+                "barbell-bench-press",
+                family["paused-bench-press-3s"],
+            )
+            assertEquals(
+                "a movement a lifter filed by hand keeps where they put it",
+                "some-other-family",
+                family["moved-by-hand"],
+            )
+        }
+
+        migrated.close()
+    }
+
+    /** Inserts one exercise into a database at v36, the shape the migration above starts from. */
+    private fun SupportSQLiteDatabase.insertExercise(id: String, name: String, parentId: String?) {
+        execSQL(
+            """
+            INSERT INTO exercises
+                (id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, isCustom,
+                 parentId, rowKind, restSeconds, techniqueNote, weightUnit, stepGrams,
+                 createdAt, updatedAt, deletedAt)
+            VALUES (?, ?, 'CHEST', '', 'BARBELL', 'HORIZONTAL_PUSH', 0, ?, 'MOVEMENT',
+                    NULL, NULL, NULL, NULL, 1, 1, NULL)
+            """.trimIndent(),
+            arrayOf(id, name, parentId),
+        )
     }
 }

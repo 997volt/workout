@@ -78,6 +78,93 @@ internal object SeedExercises {
         barbell("cable-arm-curl", "Cable Arm Curl", MuscleGroup.BICEPS, Equipment.CABLE, MovementPattern.ISOLATION, MuscleGroup.FOREARMS),
     )
 
+    /**
+     * The families the seed ships (ROADMAP N95).
+     *
+     * A category is a name and nothing else: it holds others rather than being performed, so its taxonomy
+     * columns are placeholders and the app never offers it. The slugs are permanent for
+     * [all]'s reason — a movement filed under a category references its id.
+     */
+    val categories: List<SeedCategory> = listOf(
+        SeedCategory("bench-press", "Bench Press"),
+        SeedCategory("incline-press", "Incline Press"),
+        SeedCategory("overhead-press-family", "Overhead Press"),
+        SeedCategory("squat", "Squat"),
+        SeedCategory("deadlift-family", "Deadlift"),
+        SeedCategory("lunge", "Lunge"),
+        SeedCategory("hip-thrust-family", "Hip Thrust"),
+        SeedCategory("row", "Row"),
+        SeedCategory("lat-pulldown-family", "Lat Pulldown"),
+        SeedCategory("fly", "Fly"),
+        SeedCategory("curl", "Curl"),
+        SeedCategory("triceps-extension", "Triceps Extension"),
+        SeedCategory("lateral-raise-family", "Lateral Raise"),
+        SeedCategory("calf-raise-family", "Calf Raise"),
+        SeedCategory("core", "Core"),
+    )
+
+    /**
+     * Which family each seeded movement is filed under (ROADMAP N95), by the slugs above.
+     *
+     * The **one** place this mapping lives: the seeder reads it so the movements a database is populated
+     * with arrive filed, and the migration that creates the families on an existing database reads the same
+     * map. A second copy in SQL would be a second thing to keep in step, and the two would disagree the
+     * first time a movement was re-filed in the seed.
+     *
+     * The equipment variants are **separate movements under one head** rather than variations of each
+     * other, because the number the category exists to produce is a lie about the training with the dumbbell
+     * and machine work missing from it — and each keeps its own records, step and prefill. The paused and
+     * competition bench presses are the reverse: the same lift performed differently, so they hang under the
+     * barbell one.
+     *
+     * A movement absent from this map is unfiled, which is a real place to be.
+     */
+    val parentOf: Map<String, String> = mapOf(
+        // Bench Press: three equipment variants, and the barbell one's own variations under it.
+        "barbell-bench-press" to "bench-press",
+        "competition-bench-press" to "barbell-bench-press",
+        "bench-press-speed-day" to "barbell-bench-press",
+        "paused-bench-press-3s" to "barbell-bench-press",
+        "incline-dumbbell-press" to "incline-press",
+        "overhead-press" to "overhead-press-family",
+        "push-press" to "overhead-press",
+        "back-squat" to "squat",
+        "leg-press" to "squat",
+        "paused-back-squat" to "back-squat",
+        "conventional-deadlift" to "deadlift-family",
+        "romanian-deadlift" to "deadlift-family",
+        "walking-lunge" to "lunge",
+        "bulgarian-split-squat" to "lunge",
+        "hip-thrust" to "hip-thrust-family",
+        "barbell-row" to "row",
+        "seated-cable-row" to "row",
+        "machine-row" to "row",
+        "lat-pulldown" to "lat-pulldown-family",
+        "pull-up" to "lat-pulldown-family",
+        "assisted-pull-up" to "lat-pulldown-family",
+        "cable-fly" to "fly",
+        "dumbbell-fly" to "fly",
+        "barbell-curl" to "curl",
+        "hammer-curl" to "curl",
+        "cable-arm-curl" to "curl",
+        "incline-dumbbell-arm-curl" to "curl",
+        "triceps-pushdown" to "triceps-extension",
+        "two-arm-cable-pushdown" to "triceps-extension",
+        "overhead-triceps-extension" to "triceps-extension",
+        "dumbbell-skullcrusher" to "triceps-extension",
+        "lateral-raise" to "lateral-raise-family",
+        "dumbbell-rotator-raise" to "lateral-raise-family",
+        "rotator-cable-to-side" to "lateral-raise-family",
+        "standing-calf-raise" to "calf-raise-family",
+        "seated-calf-raise" to "calf-raise-family",
+        "plank" to "core",
+        "hanging-leg-raise" to "core",
+        "cable-crunch" to "core",
+        // Deliberately unfiled, so the seed demonstrates both shapes: `face-pull`, `leg-extension`,
+        // `lying-leg-curl`, `dip`, `push-up` and `deadlift`'s own name are movements a lifter files
+        // themselves if they want a family around them.
+    )
+
     /** Terse constructor: the seed list is long and every row repeats the same shape. */
     private fun barbell(
         id: String,
@@ -94,4 +181,13 @@ internal object SeedExercises {
         equipment = equipment,
         movementPattern = pattern,
     )
+
 }
+/**
+ * A family the seed ships (ROADMAP N95).
+ *
+ * A name and a permanent slug: a category has no muscles, no equipment and no pattern of its own, and the
+ * app never offers it. It exists so the movements filed under it can be read together.
+ */
+internal data class SeedCategory(val id: String, val name: String)
+

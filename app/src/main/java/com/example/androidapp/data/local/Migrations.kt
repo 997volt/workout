@@ -5,6 +5,7 @@
 package com.example.androidapp.data.local
 
 import androidx.room.migration.Migration
+import com.example.androidapp.data.SeedExercises
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
@@ -968,6 +969,82 @@ private const val ADD_EXERCISE_ROW_KIND =
 private const val BACKFILL_EXERCISE_ROW_KIND =
     "UPDATE `exercises` SET `rowKind` = 'MOVEMENT'"
 
+/**
+ * Files an existing library into the families the seed ships (ROADMAP N95).
+ *
+ * A data migration rather than something the seeder does, and the reason is the seeder's own rule:
+ * `INSERT OR IGNORE` never updates a row that exists, so the movements a database already has would arrive
+ * under no head at all — every family empty and every movement loose, which is the feature not working
+ * rather than working differently. A first install needs none of this, because the seeder writes the parents
+ * with the rows.
+ *
+ * **The guard is what makes it safe on a database a lifter has organised.** Only an *unfiled* row is filed,
+ * so a movement the lifter moved out of a family stays out and one they filed themselves stays filed. The
+ * three bench variations are the one place a file can be wrong in a way the guard cannot see: their natural
+ * home is *under the barbell bench*, not under the family, and a build between the two migrations could have
+ * filed them flat. They are therefore moved only when they are still pointing at the family head, which is
+ * where the flat file put them and nowhere a lifter would have chosen.
+ *
+ * The SQL is generated from [SeedExercises.parentOf] rather than written out here, for the reason the seeder
+ * reads the same map: two copies of "which family is this movement in" disagree the first time the seed
+ * changes, and this one could not be caught by a compile error.
+ */
+val MIGRATION_36_37 = object : Migration(36, 37) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        SeedExercises.categories.forEach { category ->
+            db.execSQL(
+                "INSERT OR IGNORE INTO `exercises` " +
+                    "(id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, " +
+                    "isCustom, parentId, rowKind, createdAt, updatedAt) " +
+                    "VALUES (?, ?, 'OTHER', '', 'OTHER', 'OTHER', 0, NULL, 'CATEGORY', ?, ?)",
+                arrayOf<Any?>(category.id, category.name, MIGRATION_SEEDED_AT, MIGRATION_SEEDED_AT),
+            )
+        }
+
+        // The movements already under a family keep their place; only the bench variations' own level is
+        // corrected, and only from the flat file this migration's predecessor produced.
+        db.execSQL(
+            UPDATE_BENCH_VARIATIONS_FOR_N95,
+            arrayOf<Any?>("barbell-bench-press", "bench-press"),
+        )
+        // Everything still unfiled takes the family the seed says it belongs to.
+        SeedExercises.parentOf.forEach { (movementId, familyId) ->
+            if (movementId in BENCH_VARIATION_IDS) return@forEach
+            db.execSQL(
+                "UPDATE `exercises` SET `parentId` = ?, `updatedAt` = ? " +
+                    "WHERE id = ? AND `parentId` IS NULL AND `rowKind` = 'MOVEMENT'",
+                arrayOf<Any?>(familyId, MIGRATION_SEEDED_AT, movementId),
+            )
+        }
+    }
+}
+
+/**
+ * The three bench movements that hang under the barbell bench rather than under the family (N95).
+ *
+ * Named here as well as in the seed because this migration has to treat them differently: they are the one
+ * case where "already filed" can be the wrong file.
+ */
+private val BENCH_VARIATION_IDS = setOf(
+    "competition-bench-press",
+    "bench-press-speed-day",
+    "paused-bench-press-3s",
+)
+
+/**
+ * The timestamp this migration stamps the rows it writes.
+ *
+ * A constant rather than the clock: a migration's effect has to be the same whenever it runs, and a test
+ * that read a moving timestamp could not assert that these rows are the seed's.
+ */
+private const val MIGRATION_SEEDED_AT = 1_700_000_000_000L
+
+/** The three bench movements moved from the family head down to the barbell bench they are versions of. */
+private const val UPDATE_BENCH_VARIATIONS_FOR_N95 =
+    "UPDATE `exercises` SET `parentId` = ?, `updatedAt` = " + MIGRATION_SEEDED_AT + " " +
+        "WHERE `parentId` = ? AND id IN ('competition-bench-press', 'bench-press-speed-day', " +
+        "'paused-bench-press-3s')"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -1114,4 +1191,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_33_34,
     MIGRATION_34_35,
     MIGRATION_35_36,
+    MIGRATION_36_37,
 )

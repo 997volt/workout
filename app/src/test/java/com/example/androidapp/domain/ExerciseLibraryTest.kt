@@ -22,7 +22,7 @@ class ExerciseLibraryTest {
 
     private val barbellBench = movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench")
     private val dumbbellBench = movement("dumbbell-bench-press", "Dumbbell Bench Press", parent = "cat-bench")
-    private val speedDay = movement("bench-speed", "Speed Day", parent = "cat-bench")
+    private val speedDay = movement("bench-speed", "Speed Day", parent = "barbell-bench-press")
     private val backSquat = movement("back-squat", "Back Squat", parent = "cat-squat")
     private val deadlift = movement("deadlift", "Deadlift")
 
@@ -38,18 +38,22 @@ class ExerciseLibraryTest {
         assertThat(rows.map { it.name }).containsExactly(
             "Bench Press",
             "Barbell Bench Press",
-            "Dumbbell Bench Press",
             "Speed Day",
+            "Dumbbell Bench Press",
             "Squat",
             "Back Squat",
             "Deadlift",
         ).inOrder()
 
         assertThat(rows.single { it.id == "cat-bench" }.let { it.isCategory to it.childCount })
-            .isEqualTo(true to 3)
-        // One depth, which is N95's own picture: the category holds the exercises *and* the variations
-        // filed under it, so a variation is never a third level down.
-        assertThat(rows.single { it.id == "bench-speed" }.depth).isEqualTo(1)
+            .isEqualTo(true to 2)
+        // And a movement says how many variations are under it, which is what its own line reads.
+        assertThat(rows.single { it.id == "barbell-bench-press" }.childCount).isEqualTo(1)
+        // N95's two rules seen from the list: the family holds the exercises at one depth, and an exercise
+        // holds its variations at the next. *Speed Day* never says "bench", and it is found by the names it
+        // is filed under rather than by its own.
+        assertThat(rows.single { it.id == "barbell-bench-press" }.depth).isEqualTo(1)
+        assertThat(rows.single { it.id == "bench-speed" }.depth).isEqualTo(2)
         assertThat(rows.single { it.id == "back-squat" }.depth).isEqualTo(1)
         // A movement in no category is a top-level row, not a child of nothing.
         assertThat(rows.single { it.id == "deadlift" }.depth).isEqualTo(0)
@@ -66,8 +70,9 @@ class ExerciseLibraryTest {
             "Deadlift",
         ).inOrder()
         assertThat(rows.single { it.id == "cat-bench" }.isExpanded).isFalse()
-        // The count still says what is inside, which is what a folded head's line promises.
-        assertThat(rows.single { it.id == "cat-bench" }.childCount).isEqualTo(3)
+        // The count still says what is inside, which is what a folded head's line promises: two movements,
+        // and the count is of *its own* children rather than of everything below it.
+        assertThat(rows.single { it.id == "cat-bench" }.childCount).isEqualTo(2)
     }
 
     @Test
@@ -79,8 +84,8 @@ class ExerciseLibraryTest {
         assertThat(rows.map { it.name }).containsExactly(
             "Bench Press",
             "Barbell Bench Press",
-            "Dumbbell Bench Press",
             "Speed Day",
+            "Dumbbell Bench Press",
         ).inOrder()
     }
 

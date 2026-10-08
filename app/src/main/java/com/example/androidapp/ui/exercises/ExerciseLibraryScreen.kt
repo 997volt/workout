@@ -363,7 +363,13 @@ private fun ExerciseRow(
         headline = row.name,
         // Null while an unedited custom exercise has no taxonomy: the row
         // shows its name alone rather than "Other · Other" (N2).
-        supporting = row.subtitle,
+        // A movement's own variations, when it has any (N95): the line says what is inside the row below
+        // rather than leaving the lifter to discover it by counting indents.
+        supporting = listOfNotNull(
+            row.subtitle,
+            pluralStringResource(R.plurals.library_exercises, row.childCount, row.childCount)
+                .takeIf { row.childCount > 0 },
+        ).joinToString(" · ").ifEmpty { null },
         leading = { IconTile(icon = Icons.Filled.FitnessCenter, accent = TileAccent.Teal) },
         trailing = {
             Icon(

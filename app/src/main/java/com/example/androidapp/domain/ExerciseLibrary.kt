@@ -49,47 +49,105 @@ fun libraryRows(
     }
 
     val byId = exercises.associateBy { it.id }
-    val categories = exercises.filter { it.rowKind == RowKind.CATEGORY }.sortedBy { it.name }
-    val categoryIds = categories.mapTo(mutableSetOf()) { it.id }
     val matched = exercises.filter { it.matchesWithItsFamily(query, byId) }.mapTo(mutableSetOf()) { it.id }
+    // The variations, grouped once: N95's shape puts them one level below their exercise, so both passes
+    // below need to ask "what hangs under this movement" rather than walking the list again.
+    val variationsOf = exercises
+        .filter { it.rowKind == RowKind.MOVEMENT }
+        .groupBy { it.parentId }
 
     val rows = mutableListOf<LibraryRow>()
 
-    categories.forEach { category ->
-        val children = exercises
-            .filter { it.parentId == category.id && it.id in matched }
-            .sortedBy { it.name }
-
-        // A head with nothing left under it, and no match of its own, is not a row: a family the query
-        // does not touch is not part of the answer.
-        if (children.isEmpty() && category.id !in matched) return@forEach
-
-        rows += LibraryRow(
-            id = category.id,
-            name = category.name,
-            subtitle = null,
-            depth = 0,
-            isCategory = true,
-            childCount = children.size,
-            isExpanded = category.id !in foldedCategories,
-        )
-        if (category.id !in foldedCategories) {
-            children.forEach { rows += it.toLibraryRow(depth = 1) }
-        }
-    }
-
-    // Everything the loop above did not draw, as top-level rows: a movement in no category, and one whose
-    // parent the library no longer has — possible because a head is soft-deleted and still names its
-    // children (N58's rule), and an orphaned row has to stay reachable rather than vanish with its head.
     exercises
-        // `rowKind` as well as the parent, or a category is drawn twice: its own loop above emits it, and
-        // its `parentId` is null — which is "not under a category" — so this pass would take it too.
-        .filter { it.rowKind == RowKind.MOVEMENT && it.id in matched && it.parentId !in categoryIds }
+        .filter { it.rowKind == RowKind.CATEGORY }
         .sortedBy { it.name }
-        .forEach { rows += it.toLibraryRow(depth = 0) }
+        .forEach { category ->
+            val family = familyRows(
+                category = category,
+                exercises = exercises,
+                variationsOf = variationsOf,
+                matched = matched,
+                isFolded = category.id in foldedCategories,
+            )
+            rows += family
+        }
+
+    rows += looseRows(
+        exercises = exercises,
+        matched = matched,
+        drawn = rows.mapTo(mutableSetOf()) { it.id },
+    )
 
     return rows
 }
+
+/**
+ * One family's rows: the head, then its movements, then each movement's own variations.
+ *
+ * Empty when the query has nothing to say about the family — neither the head nor any movement under it
+ * matches, and a family the query does not touch is not part of the answer. A folded head returns itself
+ * alone, keeping its count: the count is what a folded family is *for*.
+ */
+private fun familyRows(
+    category: Exercise,
+    exercises: List<Exercise>,
+    variationsOf: Map<String?, List<Exercise>>,
+    matched: Set<String>,
+    isFolded: Boolean,
+): List<LibraryRow> {
+    val children = exercises
+        .filter { it.parentId == category.id && it.id in matched }
+        .sortedBy { it.name }
+    if (children.isEmpty() && category.id !in matched) return emptyList()
+
+    val head = LibraryRow(
+        id = category.id,
+        name = category.name,
+        subtitle = null,
+        depth = 0,
+        isCategory = true,
+        childCount = children.size,
+        isExpanded = !isFolded,
+    )
+    val rows = mutableListOf(head)
+    // A folded head is the one row: its count is what a folded family is *for*.
+    if (!isFolded) {
+        children.forEach { movement ->
+            val variations = variationsOf[movement.id].orEmpty()
+                .filter { it.id in matched }
+                .sortedBy { it.name }
+            rows += movement.toLibraryRow(depth = 1, childCount = variations.size)
+            variations.forEach { rows += it.toLibraryRow(depth = 2) }
+        }
+    }
+    return rows
+}
+
+/**
+ * The movements drawn at the top level: one in no family, and one whose family the library no longer has.
+ *
+ * An orphan is possible because a head is soft-deleted and still names its children (N58's rule), and it has
+ * to stay reachable rather than vanish with its head. A variation whose *exercise* is missing is here for the
+ * same reason: the movement exists, so hiding it because a row above it is gone would hide a lift.
+ */
+private fun looseRows(
+    exercises: List<Exercise>,
+    matched: Set<String>,
+    drawn: Set<String>,
+): List<LibraryRow> {
+    val known = exercises.mapTo(mutableSetOf()) { it.id }
+    return exercises
+        // `rowKind` as well as the parent, or a category is drawn twice: its own loop emits it, and its
+        // `parentId` is null — which is "not under a family" — so this pass would take it too.
+        .filter { it.rowKind == RowKind.MOVEMENT && it.id in matched && it.id !in drawn }
+        // A row whose parent this library **has** belongs under it, and the family pass either drew it there
+        // or left it out because the head is folded. Only a row with no parent, or a parent that is gone, is
+        // top level — which is what keeps a movement's variation from surfacing beside its exercise.
+        .filter { it.parentId == null || it.parentId !in known }
+        .sortedBy { it.name }
+        .map { it.toLibraryRow(depth = 0) }
+}
+
 
 /**
  * True when [query] finds this row, **or the head it hangs under**.
@@ -109,10 +167,11 @@ private fun Exercise.matchesWithItsFamily(
     return byId[parentId]?.matches(query) == true
 }
 
-private fun Exercise.toLibraryRow(depth: Int) = LibraryRow(
+private fun Exercise.toLibraryRow(depth: Int, childCount: Int = 0) = LibraryRow(
     id = id,
     name = name,
     subtitle = taxonomySubtitle(primaryMuscle, equipment),
     depth = depth,
     isCategory = false,
+    childCount = childCount,
 )

@@ -2,6 +2,9 @@ package com.example.androidapp.data.local
 
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.androidapp.data.SeedExercises
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
 
 /**
@@ -32,6 +35,31 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
 
     db.beginTransaction()
     try {
+        // The families first (ROADMAP N95). A category is a row of the library like any other, so it is
+        // seeded by the same statement with the same conflict rule — which is what keeps a lifter's rename
+        // or re-file from being undone on the next start.
+        SeedExercises.categories.forEach { category ->
+            db.execSQL(
+                INSERT_EXERCISE,
+                arrayOf<Any?>(
+                    category.id,
+                    category.name,
+                    // The placeholders a head carries: it is never offered and never logged, so its taxonomy
+                    // says nothing rather than something untrue. Its equipment is the library's "other"
+                    // because a family deliberately spans equipment and every child sets its own.
+                    converters.fromMuscleGroup(MuscleGroup.OTHER),
+                    converters.fromMuscleGroups(emptyList()),
+                    converters.fromEquipment(Equipment.OTHER),
+                    converters.fromMovementPattern(MovementPattern.OTHER),
+                    0, // isCustom: seed, like every row this function writes
+                    null, // parentId: a head sits at the top level
+                    RowKind.CATEGORY.name,
+                    seededAt,
+                    seededAt,
+                ),
+            )
+        }
+
         SeedExercises.all.forEach { exercise ->
             db.execSQL(
                 INSERT_EXERCISE,
@@ -43,10 +71,11 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                     converters.fromEquipment(exercise.equipment),
                     converters.fromMovementPattern(exercise.movementPattern),
                     0, // isCustom
-                    // A seeded row starts top level and is a lift. The families N95 ships are linked by
-                    // the migration that creates them, not by this top-up, which must never re-file a row
-                    // the lifter has moved — the seeder's own rule is that it undoes nothing.
-                    null, // parentId
+                    // The family this movement arrives filed under (ROADMAP N95), from the seed's own map so
+                    // the seeder and the migration cannot disagree about it. `INSERT OR IGNORE` is what
+                    // keeps this from undoing a re-file: the row that already exists is left alone, and
+                    // only a movement a database does not have yet arrives with its parent set.
+                    SeedExercises.parentOf[exercise.id],
                     // The enum's name rather than the column's SQL default, so the value keeps one home; a
                     // DEFAULT in SQL would be a second copy of a name that lives in the enum.
                     RowKind.MOVEMENT.name,

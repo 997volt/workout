@@ -85,9 +85,13 @@ class MigrationsTest {
         // The interesting assertion is the one the helper already made: it validates the
         // migrated schema against the current entities, so reaching here means the chain
         // produced exactly today's tables and columns.
-        migrated.query("SELECT COUNT(*) FROM exercises").use { cursor ->
+        //
+        // The library is not empty any more, and that is the chain working rather than a leak: N95's
+        // migration seeds the families, because a database that predates them would otherwise arrive with
+        // every movement loose. What this asserts is that the table it wrote to is the one the chain built.
+        migrated.query("SELECT COUNT(*) FROM exercises WHERE rowKind = 'CATEGORY'").use { cursor ->
             cursor.moveToFirst()
-            assertEquals("the oldest schema's table survived the chain", 0, cursor.getInt(0))
+            assertEquals("the seeded families landed in the migrated table", 15, cursor.getInt(0))
         }
         migrated.close()
     }
