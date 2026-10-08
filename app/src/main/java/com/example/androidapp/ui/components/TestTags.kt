@@ -330,6 +330,14 @@ object TestTags {
     /** A template in the list; tapping it edits, its button starts a workout. */
     fun templateRow(id: String) = "template_row_$id"
 
+    /**
+     * A planned exercise's name, which opens and folds its block (ROADMAP N91).
+     *
+     * The exercise's own row tag stays the address of the row as a whole; this is the control inside it,
+     * because the fold is the name's tap and not the ⋮ beside it.
+     */
+    fun templateFold(id: String) = "template_fold_$id"
+
     fun templateStart(id: String) = "template_start_$id"
 
     /** Why a template's Start is disabled — a session is already open (ROADMAP N78). */

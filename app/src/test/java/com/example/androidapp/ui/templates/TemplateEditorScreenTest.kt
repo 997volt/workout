@@ -1,5 +1,9 @@
 package com.example.androidapp.ui.templates
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
@@ -9,6 +13,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -62,6 +67,16 @@ class TemplateEditorScreenTest {
     )
 
     /**
+     * Opens one block (ROADMAP N91), which every read of its sets, fields or foot now needs first.
+     *
+     * The tap is the control the lifter uses — the exercise's own name — so a test that reads a block's
+     * contents goes through the same door rather than past it.
+     */
+    private fun openBlock(exerciseId: String) {
+        composeTestRule.onNodeWithTag(TestTags.templateFold(exerciseId)).performClick()
+    }
+
+    /**
      * The block's own *Add set* (N81), reached the way a thumb reaches it.
      *
      * It is the foot of a block that already carries the plan's lines and the exercise's fields, so with
@@ -93,6 +108,81 @@ class TemplateEditorScreenTest {
                 onBack = {},
             )
         }
+    }
+
+    @Test
+    fun aPlannedExercisesBlock_startsFolded_andTheNameOpensIt() {
+        // ROADMAP N91: a plan of five exercises was a long scroll of controls with the names — the thing
+        // the screen is scanned by — lost among them. The row is the whole of a block until its name is
+        // tapped, and everything below it folds together: the sets, the fields and the foot.
+        setScreen(state = twoExercises)
+
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.templatePlanEmpty("te1")).assertDoesNotExist()
+        composeTestRule.onNodeWithContentDescription("Save rest, RPE and cue").assertDoesNotExist()
+
+        openBlock("te1")
+
+        composeTestRule.onNodeWithTag(TestTags.templatePlanEmpty("te1")).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertIsDisplayed()
+        // Read by existence rather than by display: the test's viewport is short, and what this asserts is
+        // that the fields came with the block, not that they fit on this screen. Addressed by the save's
+        // own content description, which is what a screen reader announces for it.
+        composeTestRule.onNodeWithContentDescription("Save rest, RPE and cue").assertExists()
+
+        // And tapping the name again folds it back.
+        openBlock("te1")
+
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertDoesNotExist()
+    }
+
+    @Test
+    fun aBlocksName_statesWhetherItIsOpen() {
+        // The row is a control now, so its state has to be announced (B21's rule): without it a screen
+        // reader reads the same name whether the block is open or folded, and the tap does a different
+        // thing in each case.
+        setScreen(state = twoExercises)
+
+        composeTestRule.onNodeWithTag(TestTags.templateFold("te1"))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Folded"))
+
+        openBlock("te1")
+
+        composeTestRule.onNodeWithTag(TestTags.templateFold("te1"))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Open"))
+    }
+
+    @Test
+    fun anExerciseAddedAfterTheScreenOpened_opens() {
+        // N91's other half: only the blocks that were already there start folded, so the exercise just
+        // added can take its first set without a second tap. The state is the list's, so this hands the
+        // screen a second exercise after it has drawn the first.
+        val state = mutableStateOf(
+            twoExercises.copy(exercises = listOf(twoExercises.exercises.first())),
+        )
+        composeTestRule.setContent {
+            TemplateEditorScreen(
+                state = state.value,
+                onRename = {},
+                onRemoveExercise = {},
+                onMoveExercise = { _, _ -> },
+                onDeleteTemplate = {},
+                onAddExercise = {},
+                onAddWarmUpSets = { _, _ -> },
+                onSaveExercisePlan = { _, _, _, _ -> },
+                onBack = {},
+            )
+        }
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertDoesNotExist()
+
+        state.value = twoExercises
+        composeTestRule.waitForIdle()
+
+        // It opens on arrival: the block is fully drawn, foot and all, with no tap on it. Asserted as
+        // existing rather than displayed, because the foot of a just-added block can sit below the fold.
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te2")).assertExists()
+        // And the one that was already there stays folded.
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertDoesNotExist()
     }
 
     @Test
@@ -128,6 +218,7 @@ class TemplateEditorScreenTest {
             state = twoExercises.copy(exercises = listOf(targetRpeSet(16))),
             actions = Actions(onRemoveSet = { removed = it }),
         )
+        openBlock("te1")
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
             .performScrollToNode(hasTestTag(TestTags.templatePlanSet("ts1")))
@@ -443,6 +534,7 @@ class TemplateEditorScreenTest {
             ),
             actions = Actions(onSaveExercisePlan = { _, rest, cue, rpe -> saved = Triple(rest, cue, rpe) }),
         )
+        openBlock("te1")
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).assertTextContains("8")
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).performTextClearance()
@@ -462,6 +554,7 @@ class TemplateEditorScreenTest {
         setScreen(
             state = twoExercises.copy(exercises = listOf(twoExercises.exercises.first())),
         )
+        openBlock("te1")
 
         val rest = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_FIELD).getUnclippedBoundsInRoot()
         val rpe = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).getUnclippedBoundsInRoot()
@@ -497,6 +590,7 @@ class TemplateEditorScreenTest {
                 ),
             ),
         )
+        openBlock("te1")
 
         addSet()
 
@@ -508,6 +602,7 @@ class TemplateEditorScreenTest {
         // ROADMAP N79: a drop rung has no weight of its own to type — its load is the anchor less the
         // run's value — so the dialog swaps the weight field for the one number a run is authored with.
         setScreen(state = rampedExercise(stepGrams = null))
+        openBlock("te1")
 
         addSet()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
@@ -525,6 +620,7 @@ class TemplateEditorScreenTest {
         // planned sets, so the set being added is its first — and since the block's Add set is tagged per
         // exercise (B76), a second exercise can stay on screen while this one is the one addressed.
         setScreen(state = twoExercises)
+        openBlock("te1")
 
         addSet()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
@@ -539,6 +635,7 @@ class TemplateEditorScreenTest {
         // A cluster repeats the anchor's load and answers to the anchor's reps, so it carries neither
         // (ROADMAP N79).
         setScreen(state = rampedExercise(stepGrams = null))
+        openBlock("te1")
 
         addSet()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
@@ -566,6 +663,7 @@ class TemplateEditorScreenTest {
             )
         }
         setScreen(state = runWithoutAValue)
+        openBlock("te1")
 
         // Nothing is opened: N81 put the plan's lines on the block, which is the point of the change.
         // Addressed by the row, not by the sentence: every rung of the run derives nothing, so the text
@@ -581,6 +679,7 @@ class TemplateEditorScreenTest {
         // guard disables Save on a first rung with no value, so the row becomes uneditable — note
         // included — and the number reads as one the app dropped.
         setScreen(state = droppingExercise())
+        openBlock("te1")
 
         // Tapping the line is the way in, exactly as it was in the dialog the line used to live in.
         composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts2")).performClick()
@@ -595,6 +694,7 @@ class TemplateEditorScreenTest {
         // subtract: 100 with a 20 kg value is 80, then 60 (ROADMAP N79) — and since N81 that reads on
         // the block itself, with nothing to open.
         setScreen(state = droppingExercise())
+        openBlock("te1")
 
         // The row's line joins its parts, so each is asserted as part of it.
         composeTestRule.onNodeWithText("80 kg", substring = true).assertExists()
@@ -609,6 +709,7 @@ class TemplateEditorScreenTest {
         // rung it derives and the delete that takes it are all *readable* — which is why these are
         // `assertIsDisplayed` rather than `assertExists` (B77): a node composed below the fold exists too.
         setScreen(state = droppingExercise())
+        openBlock("te1")
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
             .performScrollToNode(hasTestTag(TestTags.templatePlanSet("ts1")))
@@ -629,6 +730,7 @@ class TemplateEditorScreenTest {
                 exercises = listOf(twoExercises.exercises.first().copy(sets = emptyList())),
             ),
         )
+        openBlock("te1")
 
         composeTestRule.onNodeWithTag(TestTags.templatePlanEmpty("te1")).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertIsDisplayed()
@@ -640,11 +742,16 @@ class TemplateEditorScreenTest {
         // distinct tags. Before, both blocks applied one tag — two nodes under it — so neither could be
         // addressed, and `performScrollToNode` throws when a matcher finds more than one node.
         setScreen(state = twoExercises)
+        openBlock("te1")
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
             .performScrollToNode(hasTestTag(TestTags.templatePlanAdd("te1")))
         composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertExists()
         composeTestRule.onNodeWithTag(TestTags.templatePlanEmpty("te1")).assertExists()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.templateFold("te2")))
+        openBlock("te2")
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
             .performScrollToNode(hasTestTag(TestTags.templatePlanAdd("te2")))
@@ -682,6 +789,7 @@ class TemplateEditorScreenTest {
         // rendered a plan saying 9.5 as *RPE 19*. Displayed, not merely composed (B77) — the guard is
         // that a lifter can read it, which `assertExists` does not say.
         setScreen(state = twoExercises.copy(exercises = listOf(targetRpeSet(19))))
+        openBlock("te1")
 
         composeTestRule.onNodeWithText("RPE 9.5", substring = true).assertIsDisplayed()
     }
@@ -692,6 +800,7 @@ class TemplateEditorScreenTest {
         // (B77): a whole effort prints as *RPE 8*, not *RPE 8.0* — 16 half-points — for the same reason the
         // half-point case exists.
         setScreen(state = twoExercises.copy(exercises = listOf(targetRpeSet(16))))
+        openBlock("te1")
 
         composeTestRule.onNodeWithText("RPE 8", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("RPE 8.0", substring = true).assertDoesNotExist()
@@ -704,6 +813,7 @@ class TemplateEditorScreenTest {
         // the ramp had been judged against, so the line leaves it off. The row is anchored first, or a
         // regression that dropped the line altogether would satisfy the absence below (B77).
         setScreen(state = twoExercises.copy(exercises = listOf(targetRpeSet(17, role = SetType.WARMUP))))
+        openBlock("te1")
 
         composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts1")).assertIsDisplayed()
         composeTestRule.onNodeWithText("RPE 8.5", substring = true).assertDoesNotExist()

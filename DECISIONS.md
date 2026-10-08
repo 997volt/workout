@@ -759,6 +759,21 @@ the rule; that one argues it.
   occurrence — was rejected: it needs the session to carry a second fact, and it contradicts P3.9's one rule.
   The picker offers *Restore the scheduled workout* only where the pick was written, because a control that
   cannot do anything is worse than no control (N53, N67).
+- **A template exercise's block is folded until its name is opened** (N91). A plan's controls are the
+  editor's job, but the *names* are what the screen is scanned by, and by N81 every block drew its plan
+  lines, its rest/cue/RPE fields and *Add set* — five exercises made a long scroll of controls with the
+  names lost among them. The row is therefore the whole of a block until its own name is tapped, and
+  everything below it folds together. **The name is the control**, not a chevron beside it, because the
+  name is what the lifter is looking for; the row's ⋮ is untouched, so opening a block is never a tap on a
+  menu, and the label names the *action* while the state is announced beside it — the same name behaving
+  differently depending on unseen state is the thing a screen reader cannot report for itself (B21's rule,
+  applied to a fold). **The state is per exercise and `rememberSaveable`**, for N84's reason: this activity
+  declares no `configChanges`, so a rotation would otherwise fold what the lifter opened. **A newly added
+  exercise opens**, so its first set can be taken without a second tap, and only the blocks the plan already
+  held start folded — the one exception being a first composition while the plan is still loading, which has
+  no ids to tell apart and so opens them all. The state lives in `ui/components/RowFold.kt` rather than in
+  the screen: it is a list of ids and a per-row flag, and the editor's own file and longest function are both
+  at the length this project allows.
 - **A removed planned set comes back at the position it held** (N90). The editor's set delete used to
   soft-delete the row and say nothing, so a mis-tap was unrecoverable; the workout's own answer is the shape
   it takes (N7, B3) — a snackbar naming what went, with *Undo*, held by the ViewModel until the message is

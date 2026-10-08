@@ -1,6 +1,7 @@
 # Workout — Roadmap
 
-> **v1.16** is shipped. Last reviewed against the code: 2026-10-07.
+> **v1.16** is shipped. Last reviewed against the code: 2026-10-08 — the N87–N94 batch shipped
+> together, which emptied *Next*.
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -17,21 +18,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Requests from use**, each with the decision it settles. A candidate graduates to this section — gaining
-an id and a spelled-out decision rather than a wish — when it is picked up, so what stands here is committed
-work; the two queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what
-is a product in its own right.
-
-- **N91 — the template editor's exercises are folded until opened.** Every block draws its plan lines, the
-  rest, target RPE and cue fields and *Add set* (N14, N59, N80, N81), so a template of five exercises is a
-  long scroll of controls with the names — the thing the screen is scanned by — lost among them. Each
-  exercise shows its row alone until the name is tapped, and tapping again folds it. The state is per
-  exercise and `rememberSaveable`, for the reason N84's edit mode is: this activity declares no
-  `configChanges`, so a rotation would otherwise fold what the lifter opened. Everything below the row
-  folds together — the sets, the fields and the foot. The row becomes a control, so its action needs a name
-  and its state announcing, the rule every screen follows, and it must not fight the ⋮ the row already
-  carries (move, superset, remove, *Add warm-ups* since N81). A newly added exercise opens **expanded**, so
-  its first set can be added without a second tap; only the blocks that were already there start folded.
+**Nothing is queued.** A candidate graduates to this section — gaining an id and a spelled-out decision
+rather than a wish — when it is picked up, and the queues below are where the rest lives: *Later* for what
+is self-contained and *Parked* for what is a product in its own right.
 
 ## Later (still self-contained)
 

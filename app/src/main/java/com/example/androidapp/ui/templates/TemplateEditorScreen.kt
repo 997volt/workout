@@ -1,7 +1,8 @@
 package com.example.androidapp.ui.templates
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,9 +17,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -48,6 +51,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -64,9 +69,7 @@ import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.isAnchoredAt
 import com.example.androidapp.domain.model.runAt
 import com.example.androidapp.domain.model.rungWeightAt
-import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.domain.model.warmUpRampFor
 import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.summary
@@ -78,8 +81,10 @@ import com.example.androidapp.ui.components.ExerciseMenuTags
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TemplateSetDialog
 import com.example.androidapp.ui.components.WarmUpAction
+import com.example.androidapp.ui.components.warmUpActionFor
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.rememberRowFold
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 /**
@@ -323,6 +328,8 @@ private fun TemplateEditorBody(
         return
     }
 
+    val fold = rememberRowFold(ids = state.exercises.map { it.id })
+
     Column(modifier = modifier.fillMaxSize()) {
         state.template?.let { template ->
             TemplateNameField(
@@ -350,6 +357,8 @@ private fun TemplateEditorBody(
                         position = index + 1,
                         isFirst = index == 0,
                         isLast = index == state.exercises.lastIndex,
+                        isExpanded = fold.isExpanded(exercise.id),
+                        onToggle = { fold.toggle(exercise.id) },
                         onMoveUp = { onMoveExercise(exercise.id, -1) },
                         onMoveDown = { onMoveExercise(exercise.id, 1) },
                         onRemove = { onRemoveExercise(exercise.id) },
@@ -414,13 +423,18 @@ private fun TemplateNameField(
 }
 
 /**
- * One exercise in the editor: its header, the plan's sets, the rest and cue the plan prescribes, and
- * the button that adds another set (ROADMAP N14, N81).
+ * One exercise in the editor: its row, and — until the row is folded — the plan's sets, the rest and cue
+ * the plan prescribes, and the button that adds another set (ROADMAP N14, N81, N91).
  *
- * The sets are lines in the block rather than a count behind a tap (N81): the plan is what this screen
- * is for, and the dialog that held it made reading it a gesture. The one panel that still opens — a
- * set's targets — keeps its state here rather than in the screen, the shape the exercise section in a
- * workout uses: the state that says "this panel is open" belongs next to the row that opens it.
+ * **Folded until opened** (N91): a plan of five exercises used to be a long scroll of controls with the
+ * names — the thing the screen is scanned by — lost among them, so the row is now the whole of a block
+ * until its name is tapped. The state is the list's rather than this composable's, because a rotation has
+ * to put back every block the lifter opened and the list is where the whole of that answer lives.
+ *
+ * The sets are lines in the block rather than a count behind a tap (N81): the plan is what this screen is
+ * for, and the dialog that held it made reading it a gesture. The one panel that still opens — a set's
+ * targets — keeps its state here rather than in the screen, the shape the exercise section in a workout
+ * uses: the state that says "this panel is open" belongs next to the row that opens it.
  */
 @Composable
 private fun TemplateExerciseBlock(
@@ -428,6 +442,8 @@ private fun TemplateExerciseBlock(
     position: Int,
     isFirst: Boolean,
     isLast: Boolean,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
@@ -446,22 +462,7 @@ private fun TemplateExerciseBlock(
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     var adding by rememberSaveable { mutableStateOf(false) }
 
-    // A ramp's step is the unit's (N64), and the entry is offered only where a ramp can actually be
-    // built — the predicate the action itself reads (ROADMAP N28, B50): asking whether a weight was
-    // merely *typed* offered the button for an assisted set (0 kg) and for one too light to load, and a
-    // press then reported success while writing nothing.
-    val warmUpStep = Weight.stepGramsFor(exercise.stepGrams, unit)
-    val addWarmUps = if (onAddWarmUpSets != null &&
-        warmUpRampFor(exercise.sets, warmUpStep).isNotEmpty()
-    ) {
-        WarmUpAction(
-            label = stringResource(R.string.template_add_warmups),
-            tag = TestTags.templateAddWarmUps(exercise.id),
-            onClick = { onAddWarmUpSets(warmUpStep) },
-        )
-    } else {
-        null
-    }
+    val addWarmUps = warmUpActionFor(exercise, unit, onAddWarmUpSets)
 
     Column(modifier = modifier) {
         TemplateExerciseRow(
@@ -469,6 +470,8 @@ private fun TemplateExerciseBlock(
             position = position,
             isFirst = isFirst,
             isLast = isLast,
+            isExpanded = isExpanded,
+            onToggle = onToggle,
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
             onRemove = onRemove,
@@ -476,15 +479,18 @@ private fun TemplateExerciseBlock(
             addWarmUps = addWarmUps,
             supersetLabels = supersetLabels,
         )
-        PlannedSets(
-            exerciseId = exercise.id,
-            sets = exercise.sets,
-            unit = unit,
-            onEdit = { editing = it.id },
-            onRemove = onRemoveSet,
-        )
-        ExercisePlanFields(exercise = exercise, onSave = onSavePlan)
-        AddSetButton(exerciseId = exercise.id, onClick = { adding = true })
+        // Everything below the row folds together (N91): the sets, the fields and the foot.
+        if (isExpanded) {
+            PlannedSets(
+                exerciseId = exercise.id,
+                sets = exercise.sets,
+                unit = unit,
+                onEdit = { editing = it.id },
+                onRemove = onRemoveSet,
+            )
+            ExercisePlanFields(exercise = exercise, onSave = onSavePlan)
+            AddSetButton(exerciseId = exercise.id, onClick = { adding = true })
+        }
     }
 
     val edited = exercise.sets.firstOrNull { it.id == editing }
@@ -788,12 +794,15 @@ private fun TemplateSet.toEdit() = TemplateSetEdit(
     note = note,
 )
 
+
 @Composable
 private fun TemplateExerciseRow(
     exercise: TemplateExercise,
     position: Int,
     isFirst: Boolean,
     isLast: Boolean,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
@@ -803,43 +812,109 @@ private fun TemplateExerciseRow(
     addWarmUps: WarmUpAction? = null,
     supersetLabels: Map<String, String> = emptyMap(),
 ) {
+    val openLabel = stringResource(R.string.template_exercise_open)
+    val foldedLabel = stringResource(R.string.template_exercise_folded)
     ListItem(
         headlineContent = {
-            Text("$position. ${superscriptLabel(exercise, supersetLabels)}${exercise.exerciseName}")
+            // The name is the control (ROADMAP N91): tapping it opens the block and tapping it again
+            // folds it. The label names the *action* — "Open Back Squat", "Fold Back Squat" — and the
+            // state is announced beside it, because the same name behaves differently depending on state
+            // the screen reader cannot otherwise see (B21's rule, applied to a fold).
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        onClickLabel = stringResource(
+                            if (isExpanded) {
+                                R.string.template_close_exercise
+                            } else {
+                                R.string.template_open_exercise
+                            },
+                            exercise.exerciseName,
+                        ),
+                        onClick = onToggle,
+                    )
+                    .semantics { stateDescription = if (isExpanded) openLabel else foldedLabel }
+                    .testTag(TestTags.templateFold(exercise.id)),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (isExpanded) {
+                            Icons.Filled.KeyboardArrowDown
+                        } else {
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight
+                        },
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        // `A1 · ` in front of a grouped exercise, or nothing (ROADMAP B16).
+                        text = "$position. " +
+                            (supersetLabels[exercise.id]?.let { "$it · " }.orEmpty()) +
+                            exercise.exerciseName,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
         },
         supportingContent = {
             Text("${exercise.primaryMuscle.label} · ${exercise.equipment.label}")
         },
         trailingContent = {
-            // One control, not four (ROADMAP N71): the superset toggle, the two arrows and the delete
-            // icon became the same ⋮ the live workout uses, and removal now asks first — it takes the
-            // planned sets with it and there is no undo to reach for (B2).
-            ExerciseActionsMenu(
-                contentDescription = stringResource(R.string.exercise_menu_more, exercise.exerciseName),
+            ExerciseMenu(
+                exercise = exercise,
                 canMoveUp = !isFirst,
                 canMoveDown = !isLast,
-                // The first planned exercise has nothing above it to pair with (B28), so the entry is
-                // not offered rather than writing a group that rewrites every ungrouped row.
-                supersetGrouped = onToggleSuperset?.let { exercise.supersetGroup != null },
+                canToggleSuperset = onToggleSuperset != null,
                 addWarmUps = addWarmUps,
-                removeTitle = stringResource(R.string.template_remove_confirm_title),
-                removeText = stringResource(
-                    R.string.template_remove_confirm_text,
-                    exercise.exerciseName,
-                ),
                 onToggleSuperset = { onToggleSuperset?.invoke() },
                 onMove = { delta -> if (delta < 0) onMoveUp() else onMoveDown() },
                 onRemove = onRemove,
-                tags = ExerciseMenuTags(
-                    menu = TestTags.templateMenu(exercise.id),
-                    moveUp = TestTags.templateMove(exercise.id, up = true),
-                    moveDown = TestTags.templateMove(exercise.id, up = false),
-                    superset = TestTags.supersetToggle(exercise.id),
-                    remove = TestTags.templateRemove(exercise.id),
-                ),
             )
         },
         modifier = modifier.testTag(TestTags.templateExerciseRow(exercise.id)),
+    )
+}
+
+
+/**
+ * The one control a planned exercise's row offers, and the rare entries behind it (ROADMAP N71, N81).
+ *
+ * The superset toggle, the two arrows and the delete icon became the same ⋮ the live workout uses, and
+ * removal asks first because it takes the planned sets with it (B2). N91 leaves it where it is: the fold
+ * is the row's own name, so opening a block is never a tap on a menu.
+ */
+@Composable
+private fun ExerciseMenu(
+    exercise: TemplateExercise,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    /** False for the first planned exercise, which has nothing above it to pair with (B28). */
+    canToggleSuperset: Boolean,
+    addWarmUps: WarmUpAction?,
+    onToggleSuperset: () -> Unit,
+    onMove: (Int) -> Unit,
+    onRemove: () -> Unit,
+) {
+    ExerciseActionsMenu(
+        contentDescription = stringResource(R.string.exercise_menu_more, exercise.exerciseName),
+        canMoveUp = canMoveUp,
+        canMoveDown = canMoveDown,
+        // Not offered rather than writing a group that rewrites every ungrouped row.
+        supersetGrouped = if (canToggleSuperset) exercise.supersetGroup != null else null,
+        addWarmUps = addWarmUps,
+        removeTitle = stringResource(R.string.template_remove_confirm_title),
+        removeText = stringResource(R.string.template_remove_confirm_text, exercise.exerciseName),
+        onToggleSuperset = onToggleSuperset,
+        onMove = onMove,
+        onRemove = onRemove,
+        tags = ExerciseMenuTags(
+            menu = TestTags.templateMenu(exercise.id),
+            moveUp = TestTags.templateMove(exercise.id, up = true),
+            moveDown = TestTags.templateMove(exercise.id, up = false),
+            superset = TestTags.supersetToggle(exercise.id),
+            remove = TestTags.templateRemove(exercise.id),
+        ),
     )
 }
 
@@ -905,6 +980,3 @@ private fun TemplateEditorScreenPreview() {
     }
 }
 
-/** `A1 · ` for a grouped planned exercise, or nothing (ROADMAP B16). */
-private fun superscriptLabel(exercise: TemplateExercise, labels: Map<String, String>): String =
-    labels[exercise.id]?.let { "$it · " }.orEmpty()

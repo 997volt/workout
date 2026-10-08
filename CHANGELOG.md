@@ -14,6 +14,19 @@ repeated here.
 
 ### Changed
 
+- **The template editor's exercises are folded until opened** (N91). Every block drew its plan lines, the
+  rest, target RPE and cue fields and *Add set* (N14, N59, N80, N81), so a template of five exercises was a
+  long scroll of controls with the names — the thing the screen is scanned by — lost among them. Each
+  exercise shows its row alone until the name is tapped, and tapping again folds it; everything below the
+  row folds together, and the row's own ⋮ is untouched, so opening a block is never a tap on a menu. The row
+  becomes a control, so its label names the action — *Open Back Squat*, *Fold Back Squat* — and its state is
+  announced beside it, because the same name behaves differently depending on state a screen reader cannot
+  otherwise see. The state is per exercise and `rememberSaveable`, for the reason N84's edit mode is: this
+  activity declares no `configChanges`, so a rotation would otherwise fold what the lifter opened. A newly
+  added exercise opens **expanded**, so its first set can be added without a second tap; only the blocks
+  that were already there start folded. The shared state moved to `ui/components/RowFold.kt`, and the
+  editor's warm-up entry and row menu were split out, because the file and its longest function are both at
+  the length this project allows.
 - **A deleted planned set can be taken back** (N90). `TemplateEditorViewModel.onRemoveSet` soft-deleted the
   row and said nothing, so a mis-tap on a set's delete was unrecoverable from the screen — the plan was
   simply missing a set. The workout screen already answers this (N7, B3): a snackbar at the foot naming what

@@ -1153,6 +1153,41 @@ soft-deleted row, so it cannot be folded into the live queries — that is what 
 `TemplateUndoDao` would own half of one table to serve one call. The note beside the thresholds names both
 and why, which is the same convention the earlier moves followed.
 
+## N91
+
+The block grew by accretion and each addition was individually right: N14's targets, N79's plan lines,
+N80's own line for the cue, N81's sets on the block and *Add set* at its foot. The result was that the
+screen's one scanning surface — the list of names — was the smallest thing on it. Folding is the change that
+gives the names back without taking any of those away, which is why it folds *the whole block* rather than
+just the fields: a half-folded block would still be a scroll of controls with one name at the top.
+
+**The name is the control, and the ⋮ is not.** A chevron or an *Open* button beside the name would be a
+smaller tap target for the thing the lifter aims at anyway, and the row already carries a menu whose entries
+act on the exercise as a whole — move, superset, remove, *Add warm-ups* — so folding through the menu would
+have made the name's own obvious gesture a two-tap detour. The consequence is the accessibility work: the
+label names the action ("Open Back Squat", "Fold Back Squat") and a `stateDescription` reports which it is,
+because an identical name that does different things depending on invisible state is exactly what a screen
+reader cannot discover by itself.
+
+**`rememberSaveable`, and both halves of the state saved.** N84 settled the rule this follows: the activity
+declares no `configChanges`, so a mode the user chose must survive a rotation. The second half is subtler and
+was a bug on the way: the state has to distinguish "the lifter folded this" from "this block has never been
+drawn", because those two are what tell a pre-existing block from an added one — and a fold map with only one
+flag re-derives the wrong answer for whichever case it is not tuned for. An exercise added after the screen
+opened is absent from the map, which is the signal that it opens.
+
+**A `mutableSetOf()` inside a state object does not work, and the reason is worth recording.** Compose
+compares state by `equals`, and a set mutated in place is still `equals` to itself, so the write is not a
+change: the tap ran, the set changed, and nothing recomposed — the block stayed exactly as it was. The state
+is therefore an immutable map replaced on every toggle, which costs a copy of a handful of pairs per tap and
+buys a fold that actually folds.
+
+**The shared state moved to `ui/components/RowFold.kt`, and two helpers left the screen.** The editor file
+and its longest function are both at the ceiling detekt enforces, and the honest answers were a type that is
+about *a list and a per-row flag* rather than about templates, plus a warm-up entry and a row menu that read
+on their own. The `TestTags` object ceiling moved by one for the same reason as its three previous moves: a
+row a test has to tap is one more per-id helper in one flat namespace.
+
 ## N92
 
 The problem is reach, not visibility. Every program was already on the screen; the one a lifter opens with
