@@ -203,4 +203,19 @@ class ExerciseLibraryTest {
         assertThat(child.headName(listOf(child, removedHead))).isEqualTo("Gone Family")
         assertThat(child.headName(listOf(child))).isNull()
     }
+
+    @Test
+    fun aHeadThatSaysNothing_leavesTheMovementsOwnMuscle() {
+        // The device found this one: `OTHER` is how this app spells "not specified yet", and it is every new
+        // category's value — so reading it literally blanked the muscle of every movement filed under a head
+        // the lifter had just made, while the row still held a real answer nobody could see.
+        val silentHead = library.map {
+            if (it.id == "cat-bench") it.copy(primaryMuscle = MuscleGroup.OTHER) else it
+        }
+
+        // The movement's own value — the fixture builds every movement with Hammers, and the point is that the
+        // silent head does not override it.
+        assertThat(silentHead.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(silentHead))
+            .isEqualTo(MuscleGroup.HAMSTRINGS)
+    }
 }

@@ -192,18 +192,26 @@ private fun Exercise.toLibraryRow(
 )
 
 /**
- * This exercise's **effective** primary muscle: its head's, or its own when it has no head (ROADMAP N95).
+ * This exercise's **effective** primary muscle: its head's, or its own (ROADMAP N95).
  *
  * *Live*, not copied, which is what "an exercise inherits its category's primary muscle" means in practice
  * and why nothing is written to the child when it is filed: one fact with one home. Change the head's muscle
  * and every movement under it reads the new one, so a family cannot disagree with itself — the same reason a
  * variation inherits its exercise's muscles rather than restating them.
  *
- * A row whose head is not in [library] keeps its own value. That is the honest answer rather than a guess:
- * the head is gone, so there is nothing to inherit, and the value the row already holds is what it was.
+ * **A head that says nothing is silent rather than authoritative**, so the row keeps its own value and starts
+ * inheriting the moment the head is filled in. `OTHER` is how this app spells "not specified yet" (N2), and it
+ * is every *new* category's value — so reading it literally would blank the muscle of every movement filed
+ * under one on the day it was created, while the row still held a real answer nobody could see.
+ *
+ * A row whose head is not in [library] keeps its own value for the same reason: nothing to inherit is not the
+ * same as inheriting nothing.
  */
 fun Exercise.effectivePrimaryMuscle(library: List<Exercise>): MuscleGroup =
-    library.firstOrNull { it.id == parentId }?.primaryMuscle ?: primaryMuscle
+    library.firstOrNull { it.id == parentId }
+        ?.primaryMuscle
+        ?.takeIf { it != MuscleGroup.OTHER }
+        ?: primaryMuscle
 
 /**
  * This exercise's **effective** secondary muscles: its head's while it has named none of its own (N95).
