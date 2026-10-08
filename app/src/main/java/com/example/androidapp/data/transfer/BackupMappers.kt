@@ -7,6 +7,8 @@ import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.domain.model.Rpe
+import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.domain.validLibraryShape
 import com.example.androidapp.data.local.TemplateSetEntity
 import com.example.androidapp.data.local.WorkoutSessionEntity
 
@@ -98,6 +100,19 @@ internal fun ExerciseDto.toEntity() = ExerciseEntity(
     updatedAt = updatedAt,
     deletedAt = deletedAt,
 )
+
+/**
+ * [validLibraryShape] for a backup DTO (ROADMAP N95, B92): the import writes raw rows, so the shape rule has
+ * to run before the entity does. A legal library is unchanged; an illegal link is cleared rather than stored
+ * and then hidden by the grouped list.
+ */
+internal fun List<ExerciseDto>.withValidLibraryShape(): List<ExerciseDto> =
+    validLibraryShape(
+        id = { it.id },
+        parentId = { it.parentId },
+        isCategory = { it.rowKind == RowKind.CATEGORY },
+        withParent = { row, parent -> row.copy(parentId = parent) },
+    )
 
 internal fun WorkoutSessionEntity.toDto() = SessionDto(
     id = id,

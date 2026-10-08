@@ -1862,8 +1862,11 @@ class WorkoutDatabaseMigrationTest {
         // movement a lifter had already filed somewhere else, and one they had filed themselves.
         helper.createDatabase(TEST_DB, 36).apply {
             insertExercise("barbell-bench-press", "Barbell Bench Press", parentId = "bench-press")
-            // Filed flat by the migration's predecessor, which is the file this one corrects.
-            insertExercise("paused-bench-press-3s", "3-Second Paused Bench Press", parentId = "bench-press")
+            // The ordinary upgrade is a v35 database, where MIGRATION_35_36 has just added the column and
+            // every `parentId` is still NULL (B80). This one must be filed by the general loop.
+            insertExercise("paused-bench-press-3s", "3-Second Paused Bench Press", parentId = null)
+            // A development build between the two migrations filed this one flat, under the family head.
+            insertExercise("competition-bench-press", "Competition Bench Press", parentId = "bench-press")
             insertExercise("back-squat", "Back Squat", parentId = null)
             insertExercise("moved-by-hand", "Moved By Hand", parentId = "some-other-family")
             close()
@@ -1889,9 +1892,14 @@ class WorkoutDatabaseMigrationTest {
 
             assertEquals("an unfiled movement takes its family", "squat", family["back-squat"])
             assertEquals(
-                "the three bench variations come down to the barbell bench they are versions of",
+                "an unfiled bench variation comes down to the barbell bench on the ordinary upgrade",
                 "barbell-bench-press",
                 family["paused-bench-press-3s"],
+            )
+            assertEquals(
+                "and one a flat build filed under the family head moves down too",
+                "barbell-bench-press",
+                family["competition-bench-press"],
             )
             assertEquals(
                 "a movement a lifter filed by hand keeps where they put it",

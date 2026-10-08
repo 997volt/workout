@@ -20,8 +20,12 @@ object ProgramDocumentCodec {
      * the split muscle names (`LATS`, `UPPER_BACK`, `LOWER_BACK`, `ADDUCTORS`) and `SetType.CLUSTER`
      * travel in it, and a build without those constants cannot represent them. The backup's version
      * moved for the same reason and on the same rule.
+     *
+     * **N95 moved it to 3**, again with the backup: the exercise DTOs now carry `rowKind` and `parentId`,
+     * and a movement's place in the library is data a build without those fields drops rather than reads
+     * (B90).
      */
-    const val CURRENT_FORMAT_VERSION = 2
+    const val CURRENT_FORMAT_VERSION = 3
 
     private val json = Json {
         prettyPrint = true

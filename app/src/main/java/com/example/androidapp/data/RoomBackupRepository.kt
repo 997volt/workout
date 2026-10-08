@@ -11,6 +11,7 @@ import com.example.androidapp.data.transfer.BackupCodec
 import com.example.androidapp.data.transfer.BackupFile
 import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
+import com.example.androidapp.data.transfer.withValidLibraryShape
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
@@ -126,7 +127,13 @@ class RoomBackupRepository @Inject constructor(
     override suspend fun import(text: String): DataResult<ImportSummary> = dataResultOf {
         // Throws InvalidInputException for a file we cannot use, before touching
         // anything — a rejected file must leave the database exactly as it was.
-        val file = BackupCodec.decode(text)
+        //
+        // The library's shape is enforced before anything is written (B92): a file can carry a parent link the
+        // app would never write — a cycle, a category under a category, a variation of a variation — and the
+        // grouped list would then hide or duplicate the row rather than show it. A legal library is unchanged.
+        val file = BackupCodec.decode(text).let { decoded ->
+            decoded.copy(exercises = decoded.exercises.withValidLibraryShape())
+        }
 
         // One transaction, so a failure part-way cannot leave sessions without their sets.
         // The shape is: a soft delete keeps the row under its id, so an insert-only import

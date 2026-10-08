@@ -77,10 +77,18 @@ class RoomExerciseRepository @Inject constructor(
         if (parent.rowKind != RowKind.MOVEMENT) {
             throw InvalidInputException("A variation hangs under a movement, not a category.")
         }
-        // Everything inherited is copied; what is performed differently starts unset, including the name,
-        // which the editor is about to ask for.
+        // The third level the shape does not have (ROADMAP N95, B82): a variation of a variation would hang
+        // under an exercise that is itself a variation, and nothing draws that row.
+        val grandparent = parent.parentId?.let { dao.findById(it) }
+        if (grandparent?.rowKind == RowKind.MOVEMENT) {
+            throw InvalidInputException("A variation hangs under an exercise, not under another variation.")
+        }
+        // Everything inherited is copied; what is performed differently starts unset, **including the name**,
+        // which the editor is about to ask for. Copying it stored a row already named after its parent, so
+        // saving without typing left a duplicate (B83).
         val variation = parent.copy(
             id = UUID.randomUUID().toString(),
+            name = "",
             isCustom = true,
             parentId = parent.id,
             rowKind = RowKind.MOVEMENT,
@@ -136,6 +144,26 @@ class RoomExerciseRepository @Inject constructor(
         // the warm-up ramp divides by it (ROADMAP N77). Null stays "the unit's own".
         if (exercise.stepGrams != null && exercise.stepGrams <= 0L) {
             throw InvalidInputException("A weight step must be more than zero.")
+        }
+
+        // The library's shape is two rules deep (N95), and this is its write boundary (B92): a category sits
+        // at the top, and a movement may hang under a category or under an exercise that is not itself a
+        // variation. A parent that is not among the live rows is left alone — a removed head still names its
+        // children (N58's rule) — so only a *live* parent is judged.
+        if (exercise.parentId == exercise.id) {
+            throw InvalidInputException("An exercise cannot hang under itself.")
+        }
+        val parent = exercise.parentId?.let { dao.findById(it) }
+        if (parent != null) {
+            if (exercise.rowKind != RowKind.MOVEMENT) {
+                throw InvalidInputException("A category sits at the top level.")
+            }
+            if (parent.rowKind == RowKind.MOVEMENT) {
+                val grandparent = parent.parentId?.let { dao.findById(it) }
+                if (grandparent?.rowKind == RowKind.MOVEMENT) {
+                    throw InvalidInputException("A variation cannot hang under another variation.")
+                }
+            }
         }
 
         // Read the stored row first. The domain type deliberately carries no

@@ -14,6 +14,7 @@ import com.example.androidapp.data.transfer.ProgramDocument
 import com.example.androidapp.data.transfer.ProgramDocumentCodec
 import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
+import com.example.androidapp.data.transfer.withValidLibraryShape
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.data.local.toProgramSession
 import com.example.androidapp.data.local.toRunSession
@@ -466,8 +467,12 @@ private suspend fun mergeProgramDocument(
     val backupDao = database.backupDao()
     val programBackup = database.programBackupDao()
 
-    val exercisesAdded = backupDao.insertExercises(document.exercises.map { it.toEntity() })
-        .count { it != IGNORED_ROW }
+    // The library's shape is enforced on the way in (B92): a document can carry a parent link the app would
+    // never write, and a movement filed under a head the document does not carry keeps the link (the head may
+    // exist here) while an illegal one is cleared.
+    val exercisesAdded = backupDao.insertExercises(
+        document.exercises.withValidLibraryShape().map { it.toEntity() },
+    ).count { it != IGNORED_ROW }
 
     val carriedTemplates = document.templates.map { it.id }.toSet()
     val knownTemplates = (carriedTemplates + document.slots.map { it.templateId }).filter {

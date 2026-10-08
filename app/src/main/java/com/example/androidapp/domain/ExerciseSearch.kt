@@ -11,13 +11,6 @@ import com.example.androidapp.domain.model.Exercise
  */
 object ExerciseSearch {
 
-    /** Exercises matching [query], in their original order. A blank query matches everything. */
-    fun filter(exercises: List<Exercise>, query: String): List<Exercise> {
-        val trimmed = query.trim()
-        if (trimmed.isEmpty()) return exercises
-        return exercises.filter { it.matches(trimmed) }
-    }
-
     /**
      * True when [query] appears anywhere we describe an exercise: its name, either
      * muscle group, its equipment or its movement pattern.

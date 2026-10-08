@@ -981,9 +981,10 @@ private const val BACKFILL_EXERCISE_ROW_KIND =
  * **The guard is what makes it safe on a database a lifter has organised.** Only an *unfiled* row is filed,
  * so a movement the lifter moved out of a family stays out and one they filed themselves stays filed. The
  * three bench variations are the one place a file can be wrong in a way the guard cannot see: their natural
- * home is *under the barbell bench*, not under the family, and a build between the two migrations could have
- * filed them flat. They are therefore moved only when they are still pointing at the family head, which is
- * where the flat file put them and nowhere a lifter would have chosen.
+ * home is *under the barbell bench*, not under the family, and a development build between the two
+ * migrations could have filed them flat under the family head. That case is corrected below, and the
+ * ordinary upgrade — where `parentId` is still NULL because its predecessor only adds the columns — is left
+ * to the general loop, whose map already sends them to the barbell bench (B80).
  *
  * The SQL is generated from [SeedExercises.parentOf] rather than written out here, for the reason the seeder
  * reads the same map: two copies of "which family is this movement in" disagree the first time the seed
@@ -1001,15 +1002,16 @@ val MIGRATION_36_37 = object : Migration(36, 37) {
             )
         }
 
-        // The movements already under a family keep their place; only the bench variations' own level is
-        // corrected, and only from the flat file this migration's predecessor produced.
+        // The movements already filed under the *family head* by an intermediate build keep their place at
+        // that level; only the bench variations' own level is corrected, and only from that flat file.
         db.execSQL(
             UPDATE_BENCH_VARIATIONS_FOR_N95,
             arrayOf<Any?>("barbell-bench-press", "bench-press"),
         )
-        // Everything still unfiled takes the family the seed says it belongs to.
+        // Everything still unfiled takes the family the seed says it belongs to — including the three bench
+        // variations on the ordinary upgrade, where this update above matched nothing because their
+        // `parentId` was NULL rather than the family head. Skipping them here was the defect (B80).
         SeedExercises.parentOf.forEach { (movementId, familyId) ->
-            if (movementId in BENCH_VARIATION_IDS) return@forEach
             db.execSQL(
                 "UPDATE `exercises` SET `parentId` = ?, `updatedAt` = ? " +
                     "WHERE id = ? AND `parentId` IS NULL AND `rowKind` = 'MOVEMENT'",
@@ -1018,18 +1020,6 @@ val MIGRATION_36_37 = object : Migration(36, 37) {
         }
     }
 }
-
-/**
- * The three bench movements that hang under the barbell bench rather than under the family (N95).
- *
- * Named here as well as in the seed because this migration has to treat them differently: they are the one
- * case where "already filed" can be the wrong file.
- */
-private val BENCH_VARIATION_IDS = setOf(
-    "competition-bench-press",
-    "bench-press-speed-day",
-    "paused-bench-press-3s",
-)
 
 /**
  * The timestamp this migration stamps the rows it writes.

@@ -218,4 +218,70 @@ class ExerciseLibraryTest {
         assertThat(silentHead.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(silentHead))
             .isEqualTo(MuscleGroup.HAMSTRINGS)
     }
+
+    @Test
+    fun aQueryNamingOnlyAVariation_stillDrawsItUnderItsExercise() {
+        // B81: a variation matches on its own name, but its exercise does not, so the family pass used to
+        // emit nothing and the loose pass refused the row — an exact name search answered "no exercises
+        // match". The exercise above it is drawn to carry it.
+        val rows = libraryRows(library, query = "Speed Day")
+
+        assertThat(rows.map { it.name }).containsExactly(
+            "Bench Press",
+            "Barbell Bench Press",
+            "Speed Day",
+        ).inOrder()
+        assertThat(rows.single { it.id == "barbell-bench-press" }.childCount).isEqualTo(1)
+    }
+
+    @Test
+    fun aVariationOfAMovementInNoFamily_isDrawnUnderIt() {
+        // B82: a custom exercise in no category can have variations, and they were dropped from the library
+        // (the flat picker still offered them). The unfiled movement now carries its own variations, one
+        // level down, the same shape a category child has.
+        val dip = movement("dip", "Dip")
+        val weightedDip = movement("weighted-dip", "Weighted Dip", parent = "dip")
+
+        val rows = libraryRows(library + dip + weightedDip, query = "")
+
+        assertThat(rows.single { it.id == "dip" }.childCount).isEqualTo(1)
+        assertThat(rows.single { it.id == "weighted-dip" }.depth).isEqualTo(1)
+    }
+
+    @Test
+    fun aVariation_readsTheMuscleItsExerciseInherits() {
+        // B86: the resolver read the parent's stored field, so a silent exercise's muscle came from the
+        // category but its variation's did not. The walk reaches the nearest row that states one.
+        val silentBench = library.map {
+            if (it.id == "barbell-bench-press") it.copy(primaryMuscle = MuscleGroup.OTHER) else it
+        }
+
+        assertThat(
+            silentBench.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(silentBench),
+        ).isEqualTo(MuscleGroup.CHEST)
+        assertThat(silentBench.first { it.id == "bench-speed" }.effectivePrimaryMuscle(silentBench))
+            .isEqualTo(MuscleGroup.CHEST)
+    }
+
+    @Test
+    fun aWhitespaceOnlyQuery_matchesTheWholeLibrary() {
+        // B87: the trim lived in the filter the grouping no longer uses, so a query of only spaces matched
+        // nothing where v1.16 answered with everything.
+        assertThat(libraryRows(library, query = "   ").map { it.name })
+            .isEqualTo(libraryRows(library, query = "").map { it.name })
+    }
+
+    @Test
+    fun theFlatList_isFilteredByTheQuery_andOffersNoHeads() {
+        // B79: the picker's flat branch ignored its query. It is movements only, still, and a variation is
+        // found through the exercise it hangs under.
+        val rows = libraryRows(library, query = "bench", grouped = false)
+
+        assertThat(rows.map { it.name }).containsExactly(
+            "Barbell Bench Press",
+            "Dumbbell Bench Press",
+            "Speed Day",
+        ).inOrder()
+        assertThat(rows.none { it.isCategory }).isTrue()
+    }
 }

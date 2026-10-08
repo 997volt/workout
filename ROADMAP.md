@@ -2,7 +2,8 @@
 
 > **v1.16** is shipped. Last reviewed against the code: 2026-10-08 — the N87–N94 batch shipped and emptied
 > *Next*; the two *Later* requests graduated into it as N95–N97; the *Later* section went with them; and N95
-> has since shipped, leaving N96 here and N97 parked.
+> has since shipped, leaving N96 here and N97 parked. A line-by-line reading of the unreleased N87–N95
+> changes then found the defects now queued under *Next* beside N96.
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -52,6 +53,100 @@ rather than queued: see N97 below.
   than authoritative**, which is the rule that lets a category without a pattern leave its movements' own
   answers alone; and the per-exercise column can only go in a migration that rebuilds the table, because SQLite
   has no way to drop a column or relax a `NOT NULL` in place.
+
+### Defects found in review
+
+The unreleased N87–N95 batch was read line by line against what [CHANGELOG.md](CHANGELOG.md) says it does,
+and the reading found these. Two make a control do nothing or give an upgrading library the wrong shape; the
+rest are smaller, and the last few are rules the batch states but nothing holds.
+
+- **The exercise picker's search does nothing** (B79). `ExercisePickerViewModel` passes the query to
+  `libraryRows(exercises, currentQuery, grouped = false)`, and the flat branch of
+  [ExerciseLibrary.kt](app/src/main/java/com/example/androidapp/domain/ExerciseLibrary.kt) never reads it:
+  it returns every loggable row, sorted by name. v1.16 searched with `ExerciseSearch.filter`, which this
+  refactor left with no caller. Typing "zzz" in the picker leaves the whole list on screen, and the picker's
+  empty state hardcodes `libraryIsEmpty = false`, so an empty library reads as a failed search as well.
+- **A real v1.16 upgrade leaves the three seeded bench variations unfiled** (B80). `MIGRATION_36_37`
+  corrects the bench variations with `UPDATE … WHERE parentId = 'bench-press'`, but `MIGRATION_35_36` only
+  adds the columns and backfills `rowKind` — every `parentId` is still NULL when that update runs, so it
+  matches nothing, and the general loop then skips those three ids as already handled. A fresh install files
+  them from `SeedExercises.parentOf`, so the two paths disagree: an upgraded library shows *Competition
+  Bench Press*, *Bench Press — Speed Day* and *3-Second Paused Bench Press* as loose rows instead of under
+  *Barbell Bench Press*. The instrumented test passes only because it hand-inserts a v36 row already
+  pointing at the family head, a state no shipped build produces.
+- **Searching a variation's own name finds nothing** (B81). In `libraryRows`, a variation is drawn only
+  inside the loop over a category's matched children, and `looseRows` then drops any row whose parent is in
+  the library. So a query that matches *Speed Day* but neither *Barbell Bench Press* nor *Bench Press*
+  matches the row and then emits nothing: the family pass has no matched movement to hang it under, and the
+  loose pass will not take it. Typing "speed" or "paused" in the library answers *No exercises match*,
+  though the row is there and an empty query lists it — the opposite of what `matchesWithItsFamily`'s own
+  doc promises ("filing never hides anything").
+- **A variation is invisible whenever its exercise is not a drawn family child** (B82). `looseRows` draws an
+  unfiled movement but not its variations, and `familyRows` draws variations only for category children, so
+  a variation under an exercise in no category — a custom movement, or one of the six the seed leaves loose
+  — never appears in the library while the flat picker still offers it. The same gap makes a *variation of a
+  variation* invisible, and the screen offers exactly that: `canCreateVariation` asks only for
+  `rowKind == MOVEMENT`, and `createVariationOf` refuses a category parent but not a variation, so the third
+  level the shape forbids can be created and then cannot be found. "Two rules deep and no deeper" is stated
+  and not enforced.
+- **A new variation is stored already named after the exercise it hangs under** (B83). `createVariationOf`
+  copies its parent and says in its comment that the name starts unset, but the copy keeps `name`, and the
+  insert happens before the editor opens. Saving without typing leaves a second row with the parent's exact
+  name; cancelling leaves it too, because a library row has no delete. The qualifier is meant to be "a name
+  the lifter writes".
+- **The detail screen keeps the old family after a save that moved the row** (B84). `loadCategoryOptions`
+  runs once in `init`, and a successful save replaces only `exercise`; `head` and `headName` keep their
+  pre-move values. Filing a loose movement under a category therefore returns to a page with no *Category*
+  row and the old inherited muscle, until the screen is left and re-entered — the page contradicting the row
+  it just wrote.
+- **A variation's family field reads *Not in a category*** (B85). The edit form's `CategoryPicker` is
+  offered categories only, while a variation's parent is a movement, so the row's own id is not among the
+  options and the button falls back to the *none* label. Editing *3-Second Paused Bench Press* shows
+  *Category: Barbell Bench Press* on the page and *Not in a category* in the form; accepting that value
+  re-files the variation to the top level.
+- **The effective-muscle resolvers look only one level up** (B86). `effectivePrimaryMuscle` reads the
+  parent's stored field rather than the parent's effective value, so a muscle a category passes down reaches
+  its movements but not their variations: with the category at Chest and a movement that stores `OTHER` and
+  inherits it, the movement reads Chest and its new variation reads Other. `effectiveSecondaryMuscles` has
+  the same one-level fallback, and a family disagreeing with itself is what the live inheritance exists to
+  prevent.
+- **The library's search stopped trimming its query** (B87). The trim lived in `ExerciseSearch.filter`,
+  which is off this path now, so `matches` receives the raw text: a query of only spaces, which v1.16
+  treated as blank and answered with the whole library, now matches nothing, and "squat " with the trailing
+  space a half-typed second word leaves behind answers *No exercises match* where v1.16 matched.
+- **A failed *New category* is drawn as a failed read and hides the library** (B88). `onCreateCategory`
+  writes its failure into the same `error` field the read uses, and the body tests `error != null` before
+  the list, so a write that did not land replaces the library with the read-failure page. The naming dialog
+  is already closed when the write fails and the route passes no message, so nothing clears it until the
+  dialog is opened and dismissed or a later create succeeds.
+- **The first exercise added to an empty template starts folded** (B89). `rememberRowFold` seeds "what was
+  already there" from the first non-empty id list, and its `remember` key is `ids.isEmpty()` — so when an
+  empty editor gains its first exercise the key flips, the seed is rebuilt to include that id, and the row
+  is judged already-there and folded. N91's *a newly added exercise opens expanded* holds only while the
+  list was already non-empty.
+- **The transfer formats can carry `RowKind.CATEGORY` without a version bump** (B90). Both codecs say to
+  bump when a newer file could carry data an older build cannot represent — N75's added muscle names are the
+  precedent — and a file written now carries `"rowKind": "CATEGORY"` and `parentId` that a v1.16 build has
+  no field for. With the version still 2 and `ignoreUnknownKeys = true`, that build accepts the file and
+  silently flattens every family instead of refusing it as newer.
+- **The new question's discard has no in-flight guard** (B91). `activeWorkoutGate` clears its pending start
+  only after the suspend discard returns, so the dialog and both answers stay live for the whole write: a
+  second tap on *Discard and start new* (or *Continue workout* after it) reaches `onStart` again — a second
+  logger entry, so Back appears dead — or, when both taps read the old session, the loser's delete reports
+  `NotFound` and raises a failure snackbar over a start that did succeed. The repo's own pattern guards this
+  one screen over in `ProgramStartGateViewModel`.
+- **The library's shape is not enforced at the write or import boundary** (B92). `updateExercise` and the
+  importers store any `parentId`, so a file with a cycle or a category under a category is accepted. A
+  two-row cycle makes both rows vanish from the grouped library, each excluded from `looseRows` because its
+  parent exists, and a category under a category is drawn twice, once as its own head and once as a child.
+  The import path is the only way in today, which is why this is small.
+- **A substitute's start is named as the scheduled plan** (B93). `startSubstitute` and
+  `substituteOccurrence` carry `label = plan.name`, the row that was scheduled, while the start seeds the
+  template that was picked. N89's new dialog is the surface that now shows the wrong name back to the
+  lifter.
+- **The library's list-item conversion and `ExerciseSearch.filter` are left with no caller** (B94).
+  `ExerciseListItem`/`toListItem` and the filter function are still declared after the refactor that
+  replaced both, which is the API the rule says to delete the moment nothing calls it.
 
 ## Parked — deliberately not planned
 

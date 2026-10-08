@@ -28,8 +28,14 @@ object BackupCodec {
      * bump could not do on its own was deliver its own message: the version used to be read out of the
      * *decoded* document, and the decoder threw on the very enum name the bump exists for, so a newer
      * file was reported as corrupt. [gatedDocument] reads the version before the body now (B62).
+     *
+     * **N95 moved it to 3.** A library row carries `rowKind` and `parentId`, and `RowKind.CATEGORY` is a
+     * value a build without the field cannot represent: that build would accept the file, drop both keys,
+     * and turn every head into a loggable lift — flattening every family instead of refusing the file as
+     * newer. Adding the two fields is exactly the case the paragraph above excludes (a plain addition), but
+     * the *meaning* of a movement row is what changed when a second value appeared (B90).
      */
-    const val CURRENT_SCHEMA_VERSION = 2
+    const val CURRENT_SCHEMA_VERSION = 3
 
     private val json = Json {
         prettyPrint = true
