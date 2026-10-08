@@ -4,6 +4,7 @@ import java.time.DayOfWeek
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
@@ -158,6 +159,21 @@ data class ExerciseDto(
      * and an absent value means exactly what the app meant before the field did.
      */
     val stepGrams: Long? = null,
+    /**
+     * The row this exercise hangs under, or null (ROADMAP N95).
+     *
+     * Defaulted and unbumped, like the two fields above: a file written before categories existed decodes
+     * with every row pristine, and null means exactly what the app meant before the field did.
+     */
+    val parentId: String? = null,
+    /**
+     * Whether this row is a movement or a category head, stored by name (ROADMAP N95).
+     *
+     * **Defaulted rather than required, and the default is the load-bearing part.** Every row a file could
+     * have held before categories is a movement, so an absent value has one true meaning — and the opposite
+     * default would turn an older file's whole library into heads, which are never offered.
+     */
+    val rowKind: RowKind = RowKind.MOVEMENT,
 )
 
 /**

@@ -20,6 +20,7 @@ import com.example.androidapp.domain.ZoneOffsetSource
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
@@ -615,5 +616,46 @@ class BackupRoundTripTest {
          * tops up, so a later release adding an exercise must not break this.
          */
         const val SEEDED_LIBRARY_MINIMUM = 30
+    }
+
+    @Test
+    fun theLibraryShape_survivesTheRoundTrip() = runTest {
+        // ROADMAP N95, and the reason this is a test rather than an assumption: the backup is a
+        // field-for-field copy through a hand-written codec, so a column the DTO does not name is dropped by
+        // export and lost on restore **silently** — the file looks complete and the library comes back flat,
+        // with every head turned into a lift a picker offers.
+        database.exerciseDao().insertAll(
+            listOf(
+                seedExercise(),
+                seedExercise().copy(
+                    id = "cat-squat",
+                    name = "Squat",
+                    rowKind = RowKind.CATEGORY,
+                    parentId = null,
+                ),
+                seedExercise().copy(id = "paused-back-squat", name = "Paused Back Squat", parentId = "cat-squat"),
+            ),
+        )
+
+        val json = exportedJson()
+        database.clearAllTables()
+        repository.import(json)
+
+        val restored = database.exerciseDao().observeAll().first().associateBy { it.id }
+        assertEquals(
+            "a head comes back a head, or every one of them is offered",
+            RowKind.CATEGORY,
+            restored.getValue("cat-squat").rowKind,
+        )
+        assertEquals(
+            "and a row comes back under the family it was filed in",
+            "cat-squat",
+            restored.getValue("paused-back-squat").parentId,
+        )
+        assertEquals(
+            "an unfiled movement stays unfiled",
+            null,
+            restored.getValue("back-squat").parentId,
+        )
     }
 }

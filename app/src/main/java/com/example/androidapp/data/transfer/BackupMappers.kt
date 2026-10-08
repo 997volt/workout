@@ -69,6 +69,8 @@ internal fun ExerciseEntity.toDto() = ExerciseDto(
     techniqueNote = techniqueNote,
     weightUnit = weightUnit,
     stepGrams = stepGrams,
+    parentId = parentId,
+    rowKind = rowKind,
 )
 
 internal fun ExerciseDto.toEntity() = ExerciseEntity(
@@ -87,6 +89,11 @@ internal fun ExerciseDto.toEntity() = ExerciseEntity(
     // And its own weight step (ROADMAP N77), for the same reason: dropping it would silently put
     // every exercise back on the unit's step, which is what the field exists to override.
     stepGrams = stepGrams,
+    // The library's shape (ROADMAP N95). Dropping `parentId` would flatten a restored library into a list,
+    // and dropping `rowKind` would turn every head into a lift a picker offers — the two halves of the
+    // feature that a round trip has to carry or it is not a round trip.
+    parentId = parentId,
+    rowKind = rowKind,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,

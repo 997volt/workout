@@ -6,6 +6,7 @@ import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
@@ -206,6 +207,32 @@ class BackupCodecTest {
 
         assertEquals(emptyList<SessionExerciseJointDto>(), restored.sessionExerciseJoints)
         assertEquals("the legacy number still decodes", 2, restored.sessionExercises.first().jointPain)
+    }
+
+    @Test
+    fun anExerciseWrittenBeforeCategoriesExisted_stillDecodes_asAMovement() {
+        // ROADMAP N95. The default is the load-bearing part rather than the decoding: every row a file could
+        // have held before categories is a movement, so an absent kind has one true meaning — and the
+        // opposite default would turn an older file's whole library into heads, which are never offered.
+        val json = Json { prettyPrint = false }
+        val tree = json.parseToJsonElement(BackupCodec.encode(sample)).jsonObject
+        val olderExercises = tree.getValue("exercises").jsonArray.map { element ->
+            JsonObject(element.jsonObject - "rowKind" - "parentId")
+        }
+        val olderFile = JsonObject(tree + ("exercises" to JsonArray(olderExercises)))
+
+        val restored = BackupCodec.decode(olderFile.toString())
+
+        assertEquals(
+            "a file with no kind in it is a library of movements",
+            listOf(RowKind.MOVEMENT),
+            restored.exercises.map { it.rowKind }.distinct(),
+        )
+        assertEquals(
+            "and none of them is filed under anything",
+            listOf(null),
+            restored.exercises.map { it.parentId }.distinct(),
+        )
     }
 
     @Test
