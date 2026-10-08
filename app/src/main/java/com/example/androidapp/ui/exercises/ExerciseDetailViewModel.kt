@@ -66,6 +66,15 @@ data class ExerciseDetailUiState(
      * for a category, which sits at the top level because the shape is two rules deep and no deeper.
      */
     val categoryOptions: List<Exercise> = emptyList(),
+    /**
+     * What this row's head is called, or null when it hangs under nothing (ROADMAP N95).
+     *
+     * Read rather than copied, and **still answered by a head that has been removed** (N58's rule), which is
+     * why the ViewModel reads the library including removed rows for this one question.
+     */
+    val headName: String? = null,
+    /** This row's head, for the muscle it passes down (N95). Null when it hangs under nothing. */
+    val head: Exercise? = null,
 ) {
     /**
      * Loaded, but no such exercise — a real state, not an error to hide.
@@ -158,13 +167,21 @@ class ExerciseDetailViewModel @Inject constructor(
      * own row is left out — filing something under itself is not a thing the shape allows.
      */
     private suspend fun loadCategoryOptions() {
-        val result = repository.observeExercises().first()
-        val exercises = (result as? DataResult.Success)?.data.orEmpty()
+        // Two reads, because they answer two different questions. The **live** library is what the picker may
+        // offer: filing a row under a head that was removed would be filing it nowhere, and N95's rule is
+        // that a removed head keeps naming what is already under it rather than taking anything new. The
+        // read *including* removed rows is what names the head this row already hangs under, because a
+        // removed head still names its children (N58's rule).
+        val live = (repository.observeExercises().first() as? DataResult.Success)?.data.orEmpty()
+        val everything = (repository.getAllIncludingDeleted() as? DataResult.Success)?.data.orEmpty()
         _uiState.update { state ->
+            val head = everything.firstOrNull { it.id == state.exercise?.parentId }
             state.copy(
-                categoryOptions = exercises.filter {
+                categoryOptions = live.filter {
                     it.rowKind == RowKind.CATEGORY && it.id != state.exercise?.id
                 },
+                head = head,
+                headName = head?.name,
             )
         }
     }

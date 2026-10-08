@@ -36,6 +36,15 @@ fun NewExerciseDialog(
     onDismiss: () -> Unit,
     onCreate: (String) -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * What is being made, and the two tags the fields answer to (ROADMAP N95).
+     *
+     * A category is made by the same gesture as a custom movement — one name — so it is the same dialog with
+     * its own words, rather than a second dialog that would drift from this one's validation.
+     */
+    title: String = stringResource(R.string.exercise_new),
+    hint: String = stringResource(R.string.exercise_new_hint),
+    testTags: NewRowTags = NewRowTags(TestTags.NEW_EXERCISE_NAME, TestTags.NEW_EXERCISE_SAVE),
 ) {
     // Saveable, so rotating the device mid-type does not throw the name away.
     var name by rememberSaveable { mutableStateOf("") }
@@ -44,18 +53,18 @@ fun NewExerciseDialog(
     AlertDialog(
         modifier = modifier,
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.exercise_new)) },
+        title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    modifier = Modifier.fillMaxWidth().testTag(TestTags.NEW_EXERCISE_NAME),
+                    modifier = Modifier.fillMaxWidth().testTag(testTags.name),
                     singleLine = true,
                     label = { Text(stringResource(R.string.exercise_name_label)) },
                 )
                 Text(
-                    text = stringResource(R.string.exercise_new_hint),
+                    text = hint,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -70,7 +79,7 @@ fun NewExerciseDialog(
         },
         confirmButton = {
             AppTextButton(
-                modifier = Modifier.testTag(TestTags.NEW_EXERCISE_SAVE),
+                modifier = Modifier.testTag(testTags.save),
                 enabled = trimmed.isNotEmpty(),
                 onClick = { onCreate(trimmed) },
             ) {
@@ -86,4 +95,12 @@ fun NewExerciseDialog(
             }
         },
     )
+
 }
+/**
+ * The two tags one naming dialog applies (ROADMAP N95).
+ *
+ * Paired rather than passed one at a time so a screen cannot tag its field and its save from two different
+ * rows — which would leave one of them addressable and the other not.
+ */
+data class NewRowTags(val name: String, val save: String)

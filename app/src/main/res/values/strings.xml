@@ -5,6 +5,8 @@
     <string name="exercise_library_title">Exercise library</string>
     <!-- A category and its variations (ROADMAP N95). -->
     <string name="exercise_new_variation">New variation of this</string>
+    <string name="exercise_new_category">New category</string>
+    <string name="exercise_new_category_hint">A category holds movements so they can be read as one — a barbell, a dumbbell and a machine bench under one Bench Press. It is never offered while logging; file movements into it from their own screen.</string>
     <string name="exercise_category_label">Category</string>
     <string name="exercise_category_none">Not in a category</string>
     <string name="exercise_search_hint">Search exercises</string>

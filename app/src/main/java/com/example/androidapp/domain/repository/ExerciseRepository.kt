@@ -30,6 +30,16 @@ interface ExerciseRepository {
     suspend fun getExercise(id: String): DataResult<Exercise?>
 
     /**
+     * Every row of the library, **removed ones included**, for resolving the name of a head (ROADMAP N95).
+     *
+     * One question, and it is a naming one: a deleted head still names its children, so the name has to be
+     * reachable once the row stops being offered. This is deliberately not the observer the screens read —
+     * that one hides removed rows, because a list must not offer them — and deliberately not a flow, because
+     * it is consulted rather than watched.
+     */
+    suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>>
+
+    /**
      * Stores a new custom exercise named [name] and returns it (ROADMAP N2).
      *
      * Creation deliberately asks for the name only: the taxonomy fields are

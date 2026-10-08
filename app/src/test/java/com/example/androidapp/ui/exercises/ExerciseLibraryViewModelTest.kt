@@ -6,6 +6,7 @@ import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.repository.ExerciseRepository
 import kotlinx.coroutines.Dispatchers
@@ -135,7 +136,19 @@ class ExerciseLibraryViewModelTest {
             error("the library screen must not create exercises")
 
         override suspend fun createCategory(name: String): DataResult<Exercise> =
-            error("the library screen must not create categories")
+            DataResult.Success(
+                Exercise(
+                    id = "cat-new",
+                    name = name,
+                    primaryMuscle = MuscleGroup.OTHER,
+                    equipment = Equipment.OTHER,
+                    movementPattern = MovementPattern.OTHER,
+                    rowKind = RowKind.CATEGORY,
+                ),
+            )
+
+        override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> =
+            DataResult.Success(state.value)
 
         override suspend fun createVariationOf(parent: Exercise): DataResult<Exercise> =
             error("the library screen must not create variations")

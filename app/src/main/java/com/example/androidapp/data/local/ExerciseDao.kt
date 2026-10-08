@@ -20,6 +20,17 @@ interface ExerciseDao {
     @Query("SELECT * FROM exercises WHERE id = :id AND deletedAt IS NULL")
     suspend fun findById(id: String): ExerciseEntity?
 
+    /**
+     * Every row, **soft-deleted ones included** (ROADMAP N95).
+     *
+     * One caller exists and it is a naming question rather than a list: a head that was removed still has to
+     * *name* its children (N58's rule for templates), so the name has to be reachable after the row stops
+     * being offered. Nothing that draws a list may use this — [observeAll] is what hides the deleted rows,
+     * and this is deliberately not a flow, because it is read once to resolve names rather than subscribed to.
+     */
+    @Query("SELECT * FROM exercises ORDER BY name ASC")
+    suspend fun findAllIncludingDeleted(): List<ExerciseEntity>
+
     /** Counts soft-deleted rows too, so it answers "has this database been populated?". */
     @Query("SELECT COUNT(*) FROM exercises")
     suspend fun count(): Int

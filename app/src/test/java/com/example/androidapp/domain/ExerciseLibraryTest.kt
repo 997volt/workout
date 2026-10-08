@@ -148,4 +148,59 @@ class ExerciseLibraryTest {
         parentId = parent,
         rowKind = RowKind.MOVEMENT,
     )
+
+    @Test
+    fun aMovement_readsItsFamilysMuscles_live() {
+        // ROADMAP N95's inheritance, and the reason nothing is written to the child when it is filed: one
+        // fact with one home, so a family cannot disagree with itself.
+        assertThat(barbellBench.effectivePrimaryMuscle(library)).isEqualTo(MuscleGroup.CHEST)
+        // And the head's own value is untouched by the child reading it.
+        assertThat(bench.primaryMuscle).isEqualTo(MuscleGroup.CHEST)
+
+        // Changing the head changes every movement under it, which is what "live" buys.
+        val renamed = library.map { if (it.id == "cat-bench") it.copy(primaryMuscle = MuscleGroup.SHOULDERS) else it }
+
+        assertThat(renamed.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(renamed))
+            .isEqualTo(MuscleGroup.SHOULDERS)
+    }
+
+    @Test
+    fun aMovementInNoFamily_keepsItsOwnMuscle() {
+        // "An exercise in no category carries no pattern" is N96's rule; this is its N95 half — with no head
+        // there is nothing to inherit, and the row's own value is the answer rather than a null.
+        assertThat(deadlift.effectivePrimaryMuscle(library)).isEqualTo(MuscleGroup.HAMSTRINGS)
+    }
+
+    @Test
+    fun secondaryMuscles_defaultFromTheHead_untilTheExerciseNamesItsOwn() {
+        // "Secondary muscles default from the category and are the exercise's to change" — the default
+        // applies exactly while the exercise is silent, which is the one place the child's own value wins.
+        val headWithSecondaries = library.map {
+            if (it.id == "cat-bench") it.copy(secondaryMuscles = listOf(MuscleGroup.TRICEPS)) else it
+        }
+
+        assertThat(
+            headWithSecondaries.first { it.id == "dumbbell-bench-press" }
+                .effectiveSecondaryMuscles(headWithSecondaries),
+        ).containsExactly(MuscleGroup.TRICEPS)
+
+        val namedItsOwn = headWithSecondaries.map {
+            if (it.id == "dumbbell-bench-press") it.copy(secondaryMuscles = listOf(MuscleGroup.SHOULDERS)) else it
+        }
+
+        assertThat(namedItsOwn.first { it.id == "dumbbell-bench-press" }.effectiveSecondaryMuscles(namedItsOwn))
+            .containsExactly(MuscleGroup.SHOULDERS)
+    }
+
+    @Test
+    fun aRemovedHead_stillNamesItsChild() {
+        // N58's rule, inherited by N95: a head that has been removed is still the answer to "what is this
+        // filed under". The caller passes the library that includes removed rows, which is why this resolves
+        // at all — the observer the list reads deliberately hides them.
+        val removedHead = bench.copy(id = "cat-gone", name = "Gone Family")
+        val child = movement("filed", "Filed Lift", parent = "cat-gone")
+
+        assertThat(child.headName(listOf(child, removedHead))).isEqualTo("Gone Family")
+        assertThat(child.headName(listOf(child))).isNull()
+    }
 }

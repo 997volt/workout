@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /**
  * One row of the library list, flattened so the composable does no domain work.
@@ -56,6 +57,12 @@ data class ExerciseLibraryUiState(
      * an empty list would be a lie about what is on the device.
      */
     val error: DataError? = null,
+    /**
+     * Every row by id, removed ones included, so a child can name a head that is no longer offered (N95).
+     *
+     * Not part of the list: it is the answer to "what is this id called" rather than a set of rows to draw.
+     */
+    val removedHeads: Map<String, Exercise> = emptyMap(),
 ) {
     /**
      * A search that matched nothing — deliberately distinct from [isLoading] so
@@ -82,15 +89,28 @@ data class ExerciseLibraryUiState(
  */
 @HiltViewModel
 class ExerciseLibraryViewModel @Inject constructor(
-    exerciseRepository: ExerciseRepository,
+    private val exerciseRepository: ExerciseRepository,
 ) : ViewModel() {
 
     private val query = MutableStateFlow("")
 
+    private val error = MutableStateFlow<DataError?>(null)
+
+    /**
+     * The whole library **including removed rows**, read once for naming (ROADMAP N95).
+     *
+     * A deleted head still names its children (N58's rule), so a child's family has to be resolvable after
+     * the head stops being offered. Kept beside the observed list rather than in it: the list must not offer
+     * a removed row, and this is only ever asked "what is this id called".
+     */
+    private val includingRemoved = MutableStateFlow<Map<String, Exercise>>(emptyMap())
+
     val uiState: StateFlow<ExerciseLibraryUiState> = combine(
         exerciseRepository.observeExercises(),
         query,
-    ) { result, currentQuery ->
+        error,
+        includingRemoved,
+    ) { result, currentQuery, currentError, removed ->
         // A read failure is rendered where the list would have been (ROADMAP B4),
         // instead of escaping the flow and taking the screen down.
         val exercises = result.getOrNull().orEmpty()
@@ -99,7 +119,10 @@ class ExerciseLibraryViewModel @Inject constructor(
             exercises = exercises,
             isLoading = false,
             libraryIsEmpty = exercises.isEmpty(),
-            error = (result as? DataResult.Failure)?.error,
+            // Either failure: the read, or a write the screen has not dismissed yet (F7's rule for a write
+            // that produced nothing).
+            error = (result as? DataResult.Failure)?.error ?: currentError,
+            removedHeads = removed,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -107,8 +130,40 @@ class ExerciseLibraryViewModel @Inject constructor(
         initialValue = ExerciseLibraryUiState(),
     )
 
+    init {
+        viewModelScope.launch {
+            // Deliberately silent on failure: this only resolves names, so a read that did not happen leaves
+            // a child showing no family rather than breaking the screen.
+            val result = exerciseRepository.getAllIncludingDeleted()
+            includingRemoved.value = (result as? DataResult.Success)
+                ?.data
+                .orEmpty()
+                .associateBy { it.id }
+        }
+    }
+
     fun onQueryChange(value: String) {
         query.value = value
+    }
+
+    /**
+     * Makes a family for the lifter's own movements (ROADMAP N95).
+     *
+     * The seeded families are a starting set rather than a closed one, so without this a custom movement
+     * could only ever be filed under a head the seed happened to ship — which is the one thing the entry
+     * says must not be true. Its movements are filed afterwards, from each movement's own editor.
+     */
+    fun onCreateCategory(name: String) {
+        viewModelScope.launch {
+            when (val result = exerciseRepository.createCategory(name)) {
+                is DataResult.Success -> error.value = null
+                is DataResult.Failure -> error.value = result.error
+            }
+        }
+    }
+
+    fun onErrorShown() {
+        error.value = null
     }
 
 

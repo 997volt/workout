@@ -429,6 +429,9 @@ private class FakeExerciseRepository(private val lifts: List<Exercise>) : Exerci
     override suspend fun createVariationOf(parent: Exercise): DataResult<Exercise> =
         DataResult.Failure(DataError.Invalid("not used here"))
 
+    override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> =
+        DataResult.Success(lifts)
+
     override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> = DataResult.Success(Unit)
 
 

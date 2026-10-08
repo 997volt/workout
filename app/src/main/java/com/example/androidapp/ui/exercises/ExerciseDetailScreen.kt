@@ -50,6 +50,7 @@ import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.effectiveSecondaryMuscles
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
@@ -202,6 +203,8 @@ private fun ExerciseDetailBody(
 
         exercise != null -> ExerciseDetails(
             exercise = exercise,
+            head = state.head,
+            headName = state.headName,
             modifier = modifier,
         )
     }
@@ -249,7 +252,14 @@ private fun WeightStepRow(exercise: Exercise, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ExerciseDetails(exercise: Exercise, modifier: Modifier = Modifier) {
+private fun ExerciseDetails(
+    exercise: Exercise,
+    /** The head this row hangs under, or null (ROADMAP N95): what it inherits its muscles from. */
+    head: Exercise?,
+    /** What that head is called, or null. Read apart from [head] because a removed head still names it. */
+    headName: String?,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -257,10 +267,7 @@ private fun ExerciseDetails(exercise: Exercise, modifier: Modifier = Modifier) {
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        AttributeRow(
-            label = stringResource(R.string.exercise_detail_primary),
-            value = exercise.primaryMuscle.label,
-        )
+        FamilyRows(exercise = exercise, head = head, headName = headName)
         HorizontalDivider()
 
         AttributeRow(
@@ -314,6 +321,50 @@ private fun ExerciseDetails(exercise: Exercise, modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 16.dp),
         )
+    }
+}
+
+
+/**
+ * What this row takes from the head it hangs under (ROADMAP N95): the family's name, the muscle it inherits,
+ * and the secondary list it defaults to.
+ *
+ * One subject — what this row is, by virtue of where it is filed — and split out of [ExerciseDetails], which
+ * is at the length this project allows. A loose movement inherits nothing and shows only what it holds.
+ */
+@Composable
+private fun FamilyRows(exercise: Exercise, head: Exercise?, headName: String?) {
+    // One emitting root, because three sibling `AttributeRow`s and their dividers are one block of content:
+    // a composable that emits several siblings at its top level has no single anchor for them (N95's rows are
+    // read together anyway, as the answer to "what is this filed under").
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        // Shown only when there is a head: a loose movement has no family to name rather than an empty row.
+        headName?.let { name ->
+            AttributeRow(
+                label = stringResource(R.string.exercise_category_label),
+                value = name,
+                modifier = Modifier.testTag(TestTags.EXERCISE_DETAIL_CATEGORY),
+            )
+            HorizontalDivider()
+        }
+
+        AttributeRow(
+            label = stringResource(R.string.exercise_detail_primary),
+            // The head's muscle, because an exercise **inherits** it (N95). Nothing is written to the row for
+            // it, which is why this reads the head rather than the row's own value.
+            value = (head?.primaryMuscle ?: exercise.primaryMuscle).label,
+        )
+        HorizontalDivider()
+
+        AttributeRow(
+            label = stringResource(R.string.exercise_detail_secondary),
+            // The head's list while this exercise has named none of its own: "default from the category and
+            // are the exercise's to change", so the exercise's own list wins the moment it has one.
+            value = exercise.effectiveSecondaryMuscles(listOfNotNull(head, exercise))
+                .joinToString(", ") { it.label }
+                .ifEmpty { stringResource(R.string.exercise_detail_none) },
+        )
+        HorizontalDivider()
     }
 }
 

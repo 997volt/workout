@@ -63,6 +63,10 @@ class RoomExerciseRepository @Inject constructor(
         dao.findById(id)?.toDomain()
     }
 
+    override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> = dataResultOf {
+        dao.findAllIncludingDeleted().map { it.toDomain() }
+    }
+
     override suspend fun createCustomExercise(name: String): DataResult<Exercise> =
         create(name = name, rowKind = RowKind.MOVEMENT)
 

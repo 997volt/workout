@@ -31,7 +31,9 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,7 +58,11 @@ import com.example.androidapp.ui.components.IconTile
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.RowFold
 import com.example.androidapp.ui.components.rememberRowFold
+import com.example.androidapp.domain.DataError
+import com.example.androidapp.ui.components.NewExerciseDialog
+import com.example.androidapp.ui.components.NewRowTags
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.theme.TileAccent
@@ -82,6 +88,8 @@ fun ExerciseLibraryRoute(
         onBack = onBack,
         onQueryChange = viewModel::onQueryChange,
         onExerciseClick = onExerciseClick,
+        onNewCategory = viewModel::onCreateCategory,
+        onDismissMessage = viewModel::onErrorShown,
         modifier = modifier,
     )
 }
@@ -106,17 +114,24 @@ fun ExerciseLibraryScreen(
     message: String? = null,
     onDismissMessage: () -> Unit = {},
     onNewExercise: (() -> Unit)? = null,
+    /** Makes a family, where [onNewExercise] makes a movement (ROADMAP N95). Set on the library only. */
+    onNewCategory: ((String) -> Unit)? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    var namingCategory by remember { mutableStateOf(false) }
 
-    // The grouped rows, derived here because **which families are open is screen state** (ROADMAP N95).
-    // `rememberRowFold` is the sharing state N91 built, for the same reason: this activity declares no
-    // `configChanges`, so a rotation would otherwise fold what the lifter opened.
-    // Every family starts open: a library that opened folded would be a list of names with the movements
-    // behind them, which is the screen's subject rather than a detail of it.
+    // Which families are open is screen state (N95), and `rememberRowFold` is the sharing state N91 built:
+    // no `configChanges`, so a rotation would otherwise fold what the lifter opened. All start **open**.
     val fold = rememberRowFold(ids = state.exercises.map { it.id }, initiallyOpen = true)
-    val rows = remember(state.exercises, state.query, fold.foldedIds) {
-        libraryRows(state.exercises, state.query, fold.foldedIds)
+    val rows = remember(state.exercises, state.query, fold.foldedIds, state.removedHeads) {
+        libraryRows(
+            exercises = state.exercises,
+            query = state.query,
+            foldedCategories = fold.foldedIds,
+            // The fuller map, so a child reads what a head passed down even after that head is removed. The
+            // list still draws only what `state.exercises` holds: a removed row is never a row (N95).
+            headResolver = state.exercises + state.removedHeads.values,
+        )
     }
     MessageSnackbar(message, snackbarHostState, onDismissMessage)
 
@@ -127,63 +142,134 @@ fun ExerciseLibraryScreen(
             // Only the picker offers creation: the library is a reference you navigate to, while the gap
             // is felt mid-workout (ROADMAP N2). A composable rather than an `if` here, because the screen
             // is at the length this project allows.
-            NewExerciseButton(onClick = onNewExercise)
-        },
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    TopBarTitle(text = title, testTag = TestTags.LIBRARY_TITLE)
-                },
-                navigationIcon = {
-                    if (onBack != null) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.nav_back),
-                            )
-                        }
-                    }
-                },
+            NewExerciseButton(
+                onClick = onNewExercise,
+                onNewCategory = onNewCategory?.let { { namingCategory = true } },
             )
         },
+        topBar = { LibraryTopBar(title = title, onBack = onBack) },
     ) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            LibrarySearchField(query = state.query, onQueryChange = onQueryChange)
+        LibraryBody(
+            state = state,
+            rows = rows,
+            fold = fold,
+            onQueryChange = onQueryChange,
+            onExerciseClick = onExerciseClick,
+            modifier = Modifier.padding(innerPadding),
+        )
+    }
 
-            when {
-                state.isLoading -> LoadingState()
+    NamingDialog(
+        isOpen = namingCategory,
+        error = state.error,
+        onDismiss = {
+            namingCategory = false
+            onDismissMessage()
+        },
+        onCreate = { name ->
+            namingCategory = false
+            onNewCategory?.invoke(name)
+        },
+    )
+}
 
-                // A failed read is shown here, where the list would have been (B4):
-                // an empty list would misreport what is on the device.
-                state.error != null -> CenteredMessage(
-                    text = dataErrorMessage(state.error),
-                    modifier = Modifier.testTag(TestTags.LIBRARY_READ_ERROR),
-                )
 
-                state.isEmpty -> EmptyState(
-                    query = state.query,
-                    libraryIsEmpty = state.libraryIsEmpty,
-                )
-                else -> ExerciseList(
-                    items = rows,
-                    isExpanded = fold::isExpanded,
-                    onToggle = fold::toggle,
-                    onExerciseClick = onExerciseClick,
-                )
+/** The screen's bar, split out so the screen stays inside the length this project allows. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LibraryTopBar(title: String, onBack: (() -> Unit)?) {
+    CenterAlignedTopAppBar(
+        title = { TopBarTitle(text = title, testTag = TestTags.LIBRARY_TITLE) },
+        navigationIcon = {
+            if (onBack != null) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.nav_back),
+                    )
+                }
             }
+        },
+    )
+}
+
+/**
+ * The screen's body: the search, then whatever the state has to show.
+ *
+ * Split out of [ExerciseLibraryScreen] because that screen is at the length this project allows, and because
+ * the branch order *is* the behaviour worth reading in one piece: a failed read is named before the empty
+ * states, or a broken read would be reported as an empty library (B4).
+ */
+@Composable
+private fun LibraryBody(
+    state: ExerciseLibraryUiState,
+    rows: List<LibraryRow>,
+    fold: RowFold,
+    onQueryChange: (String) -> Unit,
+    onExerciseClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxSize()) {
+        LibrarySearchField(query = state.query, onQueryChange = onQueryChange)
+
+        when {
+            state.isLoading -> LoadingState()
+
+            state.error != null -> CenteredMessage(
+                text = dataErrorMessage(state.error),
+                modifier = Modifier.testTag(TestTags.LIBRARY_READ_ERROR),
+            )
+
+            state.isEmpty -> EmptyState(query = state.query, libraryIsEmpty = state.libraryIsEmpty)
+
+            else -> ExerciseList(
+                items = rows,
+                isExpanded = fold::isExpanded,
+                onToggle = fold::toggle,
+                onExerciseClick = onExerciseClick,
+            )
         }
     }
 }
 
-/** The picker's one action, or nothing at all where creation is not offered (ROADMAP N2). */
+/** The one dialog this screen opens, split out so the screen stays inside the length this project allows. */
 @Composable
-private fun NewExerciseButton(onClick: (() -> Unit)?) {
-    if (onClick == null) return
+private fun NamingDialog(
+    isOpen: Boolean,
+    error: DataError?,
+    onDismiss: () -> Unit,
+    onCreate: (String) -> Unit,
+) {
+    if (!isOpen) return
+    NewExerciseDialog(
+        error = error,
+        onDismiss = onDismiss,
+        onCreate = onCreate,
+        title = stringResource(R.string.exercise_new_category),
+        hint = stringResource(R.string.exercise_new_category_hint),
+        testTags = NewRowTags(TestTags.NEW_CATEGORY_NAME, TestTags.NEW_CATEGORY_SAVE),
+    )
+}
+
+/**
+ * The screen's one action, or nothing at all where creation is not offered (ROADMAP N2, N95).
+ *
+ * A movement on the picker and a **category** on the library: the picker answers "what am I doing", while the
+ * library is where the library's shape is kept. Only one is ever set, so the two never share a row.
+ */
+@Composable
+private fun NewExerciseButton(onClick: (() -> Unit)?, onNewCategory: (() -> Unit)?) {
+    val label = when {
+        onNewCategory != null -> R.string.exercise_new_category
+        onClick != null -> R.string.exercise_new
+        else -> return
+    }
+    val tag = if (onNewCategory != null) TestTags.LIBRARY_NEW_CATEGORY else TestTags.LIBRARY_NEW_EXERCISE
     ExtendedFloatingActionButton(
-        onClick = onClick,
-        text = { Text(stringResource(R.string.exercise_new)) },
+        onClick = onNewCategory ?: onClick ?: return,
+        text = { Text(stringResource(label)) },
         icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
-        modifier = Modifier.testTag(TestTags.LIBRARY_NEW_EXERCISE),
+        modifier = Modifier.testTag(tag),
     )
 }
 

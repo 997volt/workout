@@ -247,6 +247,13 @@ class ExerciseDetailViewModelTest {
         override suspend fun createCategory(name: String): DataResult<Exercise> =
             error("the detail screen must not create categories")
 
+        /**
+         * The naming read (ROADMAP N95). The fake answers with the live rows it holds, which is enough for
+         * these tests: nothing here asserts on a *removed* head naming its child.
+         */
+        override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> =
+            DataResult.Success(state.value)
+
         override suspend fun createVariationOf(parent: Exercise): DataResult<Exercise> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             // Mirrors `RoomExerciseRepository.createVariationOf`: everything inherited is copied, and what

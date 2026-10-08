@@ -251,8 +251,16 @@ object TestTags {
     const val EXERCISE_EDIT_EQUIPMENT = "exercise_edit_equipment"
     const val EXERCISE_EDIT_PATTERN = "exercise_edit_pattern"
 
+    /** The family a movement is filed under, as the detail screen reads it (ROADMAP N95). */
+    const val EXERCISE_DETAIL_CATEGORY = "exercise_detail_category"
+
     /** Files a new variation of this movement (ROADMAP N95). */
     const val EXERCISE_NEW_VARIATION = "exercise_new_variation"
+
+    /** Makes a family of the lifter's own (ROADMAP N95): the action, its name field and its save. */
+    const val LIBRARY_NEW_CATEGORY = "library_new_category"
+    const val NEW_CATEGORY_NAME = "new_category_name"
+    const val NEW_CATEGORY_SAVE = "new_category_save"
 
     /** The category a movement is filed under (ROADMAP N95), and one selectable head. */
     const val EXERCISE_EDIT_CATEGORY = "exercise_edit_category"

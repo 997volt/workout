@@ -89,6 +89,32 @@ class ExerciseLibraryScreenTest {
     )
 
             @Test
+    fun aCategory_canBeMadeFromTheLibrary() {
+        // ROADMAP N95: the seeded families are a starting set rather than a closed one, so without this a
+        // custom movement could only ever be filed under a head the seed happened to ship.
+        var created: String? = null
+        setScreen(
+            ExerciseLibraryUiState(isLoading = false, exercises = items),
+            onNewCategory = { created = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_CATEGORY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.NEW_CATEGORY_NAME).performTextInput("Press")
+        composeTestRule.onNodeWithTag(TestTags.NEW_CATEGORY_SAVE).performClick()
+
+        assertEquals("Press", created)
+    }
+
+    @Test
+    fun aCategory_isNotOfferedByThePicker() {
+        // The same composable serves both screens, and only the library is given the action: the gap a lifter
+        // feels mid-workout is a missing *movement*, and a head can never be logged against (N95).
+        setScreen(ExerciseLibraryUiState(isLoading = false, exercises = items))
+
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_CATEGORY).assertDoesNotExist()
+    }
+
+    @Test
     fun aFamily_isAHeadWithItsChildUnderIt_andFoldsOnItsName() {
         // ROADMAP N95: the head is a row that holds others, so the library reads as families rather than
         // as a flat list. Its name is the control — the shape a planned exercise's row already uses (N91) —
@@ -147,6 +173,7 @@ class ExerciseLibraryScreenTest {
         onQueryChange: (String) -> Unit = {},
         onExerciseClick: (String) -> Unit = {},
         onNewExercise: (() -> Unit)? = null,
+        onNewCategory: ((String) -> Unit)? = null,
     ) {
         composeTestRule.setContent {
             ExerciseLibraryScreen(
@@ -155,6 +182,7 @@ class ExerciseLibraryScreenTest {
                 onQueryChange = onQueryChange,
                 onExerciseClick = onExerciseClick,
                 onNewExercise = onNewExercise,
+                onNewCategory = onNewCategory,
             )
         }
     }

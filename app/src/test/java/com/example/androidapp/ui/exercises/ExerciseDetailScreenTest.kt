@@ -277,8 +277,8 @@ class ExerciseDetailScreenTest {
         show(ExerciseDetailUiState(isLoading = false, exercise = seeded))
 
         composeTestRule.onNodeWithText("Primary muscle").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Quads").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Barbell").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Quads").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Barbell").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -294,7 +294,7 @@ class ExerciseDetailScreenTest {
     fun anExercisesOwnRest_isShownInItsPlace() {
         show(ExerciseDetailUiState(isLoading = false, exercise = seeded.copy(restSeconds = 180)))
 
-        composeTestRule.onNodeWithText("3:00").assertIsDisplayed()
+        composeTestRule.onNodeWithText("3:00").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -310,7 +310,7 @@ class ExerciseDetailScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithText("None").assertIsDisplayed()
+        composeTestRule.onNodeWithText("None").performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -332,8 +332,8 @@ class ExerciseDetailScreenTest {
     fun anUnsetCue_readsAsNone() {
         show(ExerciseDetailUiState(isLoading = false, exercise = seeded.copy(techniqueNote = null)))
 
-        composeTestRule.onNodeWithText("Technique cue").assertIsDisplayed()
-        composeTestRule.onNodeWithText("None").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Technique cue").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("None").performScrollTo().assertIsDisplayed()
     }
 
     private companion object {
@@ -363,6 +363,34 @@ class ExerciseDetailScreenTest {
             movementPattern = MovementPattern.HORIZONTAL_PUSH,
             rowKind = RowKind.CATEGORY,
         )
+    }
+
+    @Test
+    fun aFiledMovement_namesItsFamily_andTakesTheMuscleFromIt() {
+        // ROADMAP N95: the child reads the head's primary muscle rather than holding a copy, and a head that
+        // has been removed still names it (N58's rule). Both are one row on the detail screen because they
+        // answer one question — what is this filed under.
+        show(
+            ExerciseDetailUiState(
+                isLoading = false,
+                exercise = seeded.copy(parentId = "cat-bench"),
+                head = bench,
+                headName = "Bench Press",
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DETAIL_CATEGORY).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Bench Press").assertIsDisplayed()
+        // The head says Chest and the row itself says Quads, so reading Chest is the inheritance working.
+        composeTestRule.onNodeWithText("Chest").assertIsDisplayed()
+    }
+
+    @Test
+    fun anUnfiledMovement_namesNoFamily() {
+        show(ExerciseDetailUiState(isLoading = false, exercise = seeded))
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_DETAIL_CATEGORY).assertDoesNotExist()
+        composeTestRule.onNodeWithText("Quads").performScrollTo().assertIsDisplayed()
     }
 
     @Test
