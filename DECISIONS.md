@@ -759,6 +759,23 @@ the rule; that one argues it.
   occurrence — was rejected: it needs the session to carry a second fact, and it contradicts P3.9's one rule.
   The picker offers *Restore the scheduled workout* only where the pick was written, because a control that
   cannot do anything is worse than no control (N53, N67).
+- **A removed planned set comes back at the position it held** (N90). The editor's set delete used to
+  soft-delete the row and say nothing, so a mis-tap was unrecoverable; the workout's own answer is the shape
+  it takes (N7, B3) — a snackbar naming what went, with *Undo*, held by the ViewModel until the message is
+  taken — but **where it comes back is deliberately not the workout's answer**. The workout *appends*,
+  because a log is read by what was done and "the values come back, the position may not" is the honest
+  limit there. A plan is the other way round: **its order is the plan**. A set's `setIndex` is its position
+  and a run's ladder is read by position (`runAt`, `rungWeightAt`, N79), so appending a restored rung would
+  silently rewrite a drop ladder — a plan the lifter never wrote, produced by an undo. The soft delete is
+  what makes the honest restore possible: the row and its index are still on disk, so the restore clears
+  `deletedAt` and shifts the survivors down to make room, renumbering the exercise from there. **A run comes
+  back whole**, because the rungs are not separate sets — a run whose anchor is gone reads as nothing — and
+  `deletedAt` doubles as the identity of the one write that hid it, so an undo reaches its own removal and
+  nothing else. That last part is load-bearing: without it, a restore that put back "every hidden row" would
+  resurrect a set the lifter had deleted deliberately a moment earlier. Only one undo is offered at a time,
+  as the workout's is, and it goes with the exercise that owns the set, so an Undo can never outlive the
+  block it would restore into. **The box sits at the scaffold's foot**, not over the list, so the block's
+  *Add set* — the control the delete lives beside — is never covered.
 - **The active program rides the programs screen's bottom bar** (N92). The list is top-aligned and its only
   foot clearance was the *New program* FAB, so with a single program the row to open sat under the app bar —
   the least reachable place on a modern phone — while the action that makes *another* program was the thing

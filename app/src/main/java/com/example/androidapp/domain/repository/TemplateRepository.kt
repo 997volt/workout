@@ -108,6 +108,17 @@ interface TemplateRepository {
     suspend fun removeSet(templateSetId: String): DataResult<Unit>
 
     /**
+     * Takes a planned set's removal back, **at the position it held** (ROADMAP N90).
+     *
+     * [templateSetId] is any row of what the removal took: the set the delete was asked for, or a rung of
+     * the run that went with it. Everything soft-deleted by that one write comes back together, because a
+     * run whose anchor is gone reads as nothing, and the survivors shift down to make room — so the plan's
+     * order is what it was rather than what the removal happened to leave behind. Appending instead would
+     * silently rewrite a drop run, which is read by position (`runAt`), and a plan's order *is* the plan.
+     */
+    suspend fun restoreSet(templateSetId: String): DataResult<Unit>
+
+    /**
      * Writes what a plan prescribes for one exercise: a rest, a cue and the target RPE it builds to,
      * any of which may be null to fall back to the library's (N5) or to name no effort (N59).
      */

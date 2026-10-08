@@ -57,6 +57,8 @@ class TemplateEditorScreenTest {
         val onAddExercise: () -> Unit = {},
         val onAddWarmUpSets: (String, Long) -> Unit = { _, _ -> },
         val onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
+        val onRemoveSet: (String) -> Unit = {},
+        val onUndoRemoveSet: () -> Unit = {},
     )
 
     /**
@@ -86,9 +88,52 @@ class TemplateEditorScreenTest {
                 onAddExercise = actions.onAddExercise,
                 onAddWarmUpSets = actions.onAddWarmUpSets,
                 onSaveExercisePlan = actions.onSaveExercisePlan,
+                onRemoveSet = actions.onRemoveSet,
+                onUndoRemoveSet = actions.onUndoRemoveSet,
                 onBack = {},
             )
         }
+    }
+
+    @Test
+    fun removingAPlannedSet_offersTheWayBack() {
+        // ROADMAP N90: a mis-tap on a set's delete used to be unrecoverable from the screen, with
+        // nothing said. The ViewModel holds the set that went, and the box names it and offers Undo,
+        // which reports the tap upward.
+        var undone = false
+        setScreen(
+            state = twoExercises.copy(
+                exercises = listOf(targetRpeSet(16)),
+                pendingUndo = TemplateSet(
+                    id = "ts1",
+                    templateExerciseId = "te1",
+                    setIndex = 0,
+                ),
+            ),
+            actions = Actions(onUndoRemoveSet = { undone = true }),
+        )
+
+        composeTestRule.onNodeWithText("Set deleted").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Undo").performClick()
+
+        assertTrue(undone)
+    }
+
+    @Test
+    fun aPlannedSetsDelete_asksForThatSetToGo() {
+        // The other half of N90: what the tap reports upward is the set's own id, which is what the
+        // ViewModel turns into a removal and then into an undo.
+        var removed: String? = null
+        setScreen(
+            state = twoExercises.copy(exercises = listOf(targetRpeSet(16))),
+            actions = Actions(onRemoveSet = { removed = it }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.templatePlanSet("ts1")))
+        composeTestRule.onNodeWithTag(TestTags.templatePlanRemove("ts1")).performClick()
+
+        assertEquals("ts1", removed)
     }
 
     @Test

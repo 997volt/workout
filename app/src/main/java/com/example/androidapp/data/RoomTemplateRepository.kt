@@ -322,8 +322,52 @@ class RoomTemplateRepository @Inject constructor(
         }
     }
 
-    override suspend fun setExercisePlan(
-        templateExerciseId: String,
+    /**
+     * Takes a removal back, at the position the rows held (ROADMAP N90).
+     *
+     * The workout screen's undo *appends*, because a live session's sets are read by what was done and
+     * the position comes back only where it can. A plan is the other way round: **its order is the plan**.
+     * A set's `setIndex` is its place, and a run's ladder is read by position (`runAt`, `rungWeightAt`,
+     * N79), so appending a restored rung would silently rewrite a drop ladder. The soft delete is what
+     * makes the honest restore possible — the row and its index are still on disk, and `deletedAt` doubles
+     * as the identity of the one write that hid it, so every row that went together comes back together
+     * and nothing else does.
+     *
+     * The order is re-derived rather than trusted: the live rows kept contiguous positions only among
+     * themselves (B72 renumbers them), so the restored block is spliced back by the indexes the two
+     * groups still carry, and the whole exercise is renumbered from there. That is also why a restored
+     * rung lands beside its anchor rather than at the end.
+     */
+    override suspend fun restoreSet(templateSetId: String): DataResult<Unit> = dataResultOf {
+        // The row the undo names may be hidden, so it is read through the one query that can see it — and
+        // that query carries the plan too, because the rows to renumber are read back by template.
+        val removed = dao.findTemplateSetWithPlan(templateSetId)
+            ?: throw NotFoundException("template set $templateSetId")
+        val hiddenAt = removed.deletedAt
+            ?: throw InvalidInputException("That planned set was not removed")
+
+        val now = timeSource.nowEpochMillis()
+        database.withTransaction {
+            val all = dao.findTemplateSetsIncludingDeleted(removed.owningTemplateId)
+                .filter { it.templateExerciseId == removed.templateExerciseId }
+            val coming = all.filter { it.deletedAt == hiddenAt }
+            val live = all.filter { it.deletedAt == null }
+
+            // The order is re-derived rather than trusted: the live rows kept contiguous positions only
+            // among themselves (B72 renumbers them), so the restored block is spliced back by the indexes
+            // the two groups still carry, and the whole exercise is renumbered from there. That is also
+            // why a restored rung lands beside its anchor rather than at the end.
+            (live + coming).sortedBy { it.setIndex }.forEachIndexed { position, set ->
+                if (set.setIndex != position || set.deletedAt != null) {
+                    dao.updateTemplateSet(
+                        set.copy(setIndex = position, deletedAt = null, updatedAt = now),
+                    )
+                }
+            }
+        }
+    }
+
+    override suspend fun setExercisePlan(        templateExerciseId: String,
         restSeconds: Int?,
         techniqueNote: String?,
         targetRpeHalves: Int?,

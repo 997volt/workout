@@ -4,6 +4,7 @@ import java.time.DayOfWeek
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.model.rungLoad
+import com.example.androidapp.domain.model.rungWeightAt
 import com.example.androidapp.domain.model.runAt
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.warmUpRamp
@@ -43,7 +44,14 @@ class TemplateRepositoryTest {
     private lateinit var database: WorkoutDatabase
     private lateinit var repository: RoomTemplateRepository
 
-    private val clock = TimeSource { Instant.parse("2026-09-29T08:00:00Z") }
+    /**
+     * The clock every write reads, movable so two removals are two moments.
+     *
+     * A soft delete stamps `deletedAt` with this value, and that stamp is what tells a restore which rows
+     * went together (ROADMAP N90): a fixed clock would make every removal on a device one single run.
+     */
+    private var now = Instant.parse("2026-09-29T08:00:00Z")
+    private val clock = TimeSource { now }
 
     @Before
     fun setUp() {
@@ -339,6 +347,102 @@ class TemplateRepositoryTest {
         assertTrue(repository.addSet("nope", TemplateSetEdit()) is DataResult.Failure)
         assertTrue(repository.removeSet("nope") is DataResult.Failure)
         assertTrue(repository.updateSet("nope", TemplateSetEdit()) is DataResult.Failure)
+    }
+
+    @Test
+    fun restoringARemovedSet_putsItBackWhereItWas() = runTest {
+        // ROADMAP N90: the workout's undo appends, and that is the right answer for a log — "the values
+        // come back, the position may not". A plan is the other way round: its order *is* the plan, so a
+        // set removed from the middle comes back in the middle, with the survivors shifted down.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 3))
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 5))
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 8))
+        val middle = repository.observeExercises(template).first().single().sets[1]
+
+        repository.removeSet(middle.id)
+        now = now.plusSeconds(5)
+        repository.restoreSet(middle.id)
+
+        val back = repository.observeExercises(template).first().single().sets
+        assertEquals("the set is where it was", listOf(3, 5, 8), back.map { it.targetRepsMax })
+        assertEquals("and the index space is contiguous again", listOf(0, 1, 2), back.map { it.setIndex })
+    }
+
+    @Test
+    fun restoringARunsAnchor_putsTheWholeRunBackInOrder() = runTest {
+        // N90 with N79: a rung's load is read by position (`runAt`, `rungWeightAt`), so a restore that
+        // appended would silently rewrite the ladder. The whole run comes back together, because the
+        // rungs are not separate sets — one write hid them, and the one timestamp says so.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 100_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP, dropValueGrams = 20_000L))
+        repository.addSet(exercise, TemplateSetEdit(role = SetType.DROP))
+        repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = 60_000L))
+        val anchor = repository.observeExercises(template).first().single().sets.first()
+
+        repository.removeSet(anchor.id)
+        assertEquals(
+            "the run went with the anchor",
+            listOf(60_000L),
+            repository.observeExercises(template).first().single().sets.map { it.targetWeightGrams },
+        )
+
+        now = now.plusSeconds(5)
+        repository.restoreSet(anchor.id)
+
+        val back = repository.observeExercises(template).first().single().sets
+        assertEquals(
+            "the run is back above the set that followed it",
+            listOf(SetType.NORMAL, SetType.DROP, SetType.DROP, SetType.NORMAL),
+            back.map { it.role },
+        )
+        assertEquals(listOf(0, 1, 2, 3), back.map { it.setIndex })
+        assertEquals(
+            "and the ladder derives what it did before",
+            listOf(100_000L, 80_000L, 60_000L),
+            back.indices.take(3).map { back.rungWeightAt(it) },
+        )
+    }
+
+    @Test
+    fun restoringAfterEarlierRemovals_doesNotResurrectThem() = runTest {
+        // `deletedAt` is the identity of the one write that hid a run, so an undo reaches its own
+        // removal and nothing else — the alternative, restoring every hidden row, would put back a set
+        // the lifter deleted deliberately a minute earlier.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 3))
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 5))
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 8))
+        val sets = repository.observeExercises(template).first().single().sets
+
+        repository.removeSet(sets[0].id)
+        now = now.plusSeconds(5)
+        repository.removeSet(sets[2].id)
+
+        repository.restoreSet(sets[2].id)
+
+        assertEquals(
+            "only the set this undo names comes back",
+            listOf(5, 8),
+            repository.observeExercises(template).first().single().sets.map { it.targetRepsMax },
+        )
+    }
+
+    @Test
+    fun restoringASetThatWasNeverRemoved_isRefused() = runTest {
+        // The live row is not a removal to take back, and the refusal is the repository's rather than the
+        // screen's: N90's undo is offered for one set at a time, and a stale tap has to land nowhere.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(exercise, TemplateSetEdit(targetRepsMax = 3))
+        val live = repository.observeExercises(template).first().single().sets.single()
+
+        assertTrue(repository.restoreSet(live.id) is DataResult.Failure)
+        assertTrue(repository.restoreSet("nope") is DataResult.Failure)
     }
 
     @Test

@@ -14,6 +14,21 @@ repeated here.
 
 ### Changed
 
+- **A deleted planned set can be taken back** (N90). `TemplateEditorViewModel.onRemoveSet` soft-deleted the
+  row and said nothing, so a mis-tap on a set's delete was unrecoverable from the screen — the plan was
+  simply missing a set. The workout screen already answers this (N7, B3): a snackbar at the foot naming what
+  went, with *Undo*, and the ViewModel holding the removed row until the message is taken. The editor gets
+  the same box, worded by the same strings, for planned sets only — removing a whole exercise and deleting a
+  template already ask first (B2, N53, N71). **Where the set comes back is the decision it settles.** The
+  workout's undo deliberately *appends* — "the values come back, the position may not" — but a plan's order
+  **is** the plan: a set's `setIndex` is its position and a run's ladder is read by position (`runAt`,
+  `rungWeightAt`, N79), so appending would silently rewrite a drop run. The restore therefore puts the row
+  back where it was, which the soft delete makes possible — the row and its index are still stored, so
+  clearing `deletedAt` is the whole of it — with the survivors shifted down to make room and the whole
+  exercise renumbered from there. `deletedAt` doubles as the identity of the one write that hid a run, so an
+  undo reaches its own removal and nothing else: deleting a run's anchor takes its rungs, and all of them
+  come back together. Only one undo is offered at a time, as the workout's is, and the box sits at the
+  scaffold's foot rather than over the block, so it cannot cover the *Add set* a delete lives beside.
 - **Programs and templates reach each other** (N93). Home links to both in one action row (N42), but the two
   screens were siblings with no way across: from Programs, Templates was back-home-and-in, and the reverse was
   the same trip. Each screen's own bar gains an entry to the other, sitting with the actions already there —

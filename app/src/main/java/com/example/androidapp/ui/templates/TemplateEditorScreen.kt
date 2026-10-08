@@ -30,8 +30,10 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -116,6 +118,8 @@ fun TemplateEditorRoute(
         onAddSet = viewModel::onAddSet,
         onUpdateSet = viewModel::onUpdateSet,
         onRemoveSet = viewModel::onRemoveSet,
+        onUndoRemoveSet = viewModel::onUndoRemoveSet,
+        onDismissUndo = viewModel::onDismissUndo,
         onAddWarmUpSets = viewModel::onAddWarmUpSets,
         onSaveExercisePlan = viewModel::onSaveExercisePlan,
         onDismissMessage = viewModel::onErrorShown,
@@ -140,6 +144,9 @@ fun TemplateEditorScreen(
     onAddSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
     onUpdateSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
     onRemoveSet: (String) -> Unit = {},
+    /** Puts a just-removed planned set back where it was (ROADMAP N90). */
+    onUndoRemoveSet: () -> Unit = {},
+    onDismissUndo: () -> Unit = {},
     onToggleSuperset: (String) -> Unit = {},
     onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
 ) {
@@ -147,13 +154,19 @@ fun TemplateEditorScreen(
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
     val currentOnDismissMessage by rememberUpdatedState(onDismissMessage)
 
-    state.error?.let { failure ->
-        val message = dataErrorMessage(failure)
-        LaunchedEffect(message) {
-            snackbarHostState.showSnackbar(message)
-            currentOnDismissMessage()
-        }
-    }
+    // A removed planned set offers the way back (ROADMAP N90), on the screen's own host: the same box the
+    // workout shows, worded by the same strings, because it is the same act. It sits at the scaffold's
+    // foot rather than over the block, so the *Add set* a delete lives beside is not covered.
+    ShowRemovedSetUndo(
+        pendingUndo = state.undoableSet,
+        hostState = snackbarHostState,
+        onUndo = onUndoRemoveSet,
+        onDismiss = onDismissUndo,
+    )
+
+    // A write that failed says so through the same host, rather than leaving the screen lying about what
+    // is stored (F7).
+    ShowEditorError(state, snackbarHostState, currentOnDismissMessage)
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -197,6 +210,61 @@ fun TemplateEditorScreen(
                 onDeleteTemplate()
             },
         )
+    }
+}
+
+/**
+ * A failed write, said once and then dismissed (F7).
+ *
+ * Resolved during composition and shown from the effect, because a string resource cannot be read inside
+ * `LaunchedEffect`. Split out with the undo offer so the screen itself stays inside the length this
+ * project allows.
+ */
+@Composable
+private fun ShowEditorError(
+    state: TemplateEditorUiState,
+    hostState: SnackbarHostState,
+    onDismiss: () -> Unit,
+) {
+    val failure = state.error ?: return
+    val message = dataErrorMessage(failure)
+    // Held as a State, so the effect's key stays the message (B3's rule for the workout's two boxes):
+    // reading the lambda directly inside a restarting effect is what the Compose rules warn about.
+    val currentOnDismiss by rememberUpdatedState(onDismiss)
+    LaunchedEffect(message) {
+        hostState.showSnackbar(message)
+        currentOnDismiss()
+    }
+}
+
+/**
+ * Undo for a planned set just removed (ROADMAP N90).
+ *
+ * The workout's deleted-set snackbar, one screen over: a mis-tap on a set's delete used to be
+ * unrecoverable, and the plan was simply missing a set with nothing said. One undo at a time, so the
+ * offered [pendingUndo] is a single set rather than a queue; the screen's own host means it cannot
+ * outlive the screen either.
+ */
+@Composable
+private fun ShowRemovedSetUndo(
+    pendingUndo: TemplateSet?,
+    hostState: SnackbarHostState,
+    onUndo: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val message = stringResource(R.string.set_deleted)
+    val undoLabel = stringResource(R.string.set_undo)
+    val currentOnUndo by rememberUpdatedState(onUndo)
+    val currentOnDismiss by rememberUpdatedState(onDismiss)
+
+    LaunchedEffect(pendingUndo) {
+        if (pendingUndo == null) return@LaunchedEffect
+        val result = hostState.showSnackbar(
+            message = message,
+            actionLabel = undoLabel,
+            duration = SnackbarDuration.Short,
+        )
+        if (result == SnackbarResult.ActionPerformed) currentOnUndo() else currentOnDismiss()
     }
 }
 

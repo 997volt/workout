@@ -9,6 +9,7 @@ import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.warmUpRampFor
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
@@ -29,9 +30,21 @@ data class TemplateEditorUiState(
     /** `A1`/`A2` per planned exercise, or empty when nothing is grouped (ROADMAP B16). */
     val supersetLabels: Map<String, String> = emptyMap(),
     val error: DataError? = null,
+    /** A just-removed planned set awaiting undo; the screen shows it as a snackbar (ROADMAP N90). */
+    val pendingUndo: TemplateSet? = null,
 ) {
     /** The template was deleted, or never existed — either way there is no editor. */
     val notFound: Boolean get() = !isLoading && template == null
+
+    /**
+     * The undo is only offered while its exercise is still in the plan (ROADMAP B3, N90).
+     *
+     * The same rule the workout's undo follows: removing the whole exercise takes the set with it, and an
+     * Undo left standing over a block that is gone would fire a write the restore would refuse. Filtering
+     * here is the dismissal.
+     */
+    val undoableSet: TemplateSet?
+        get() = pendingUndo?.takeIf { set -> exercises.any { it.id == set.templateExerciseId } }
 }
 
 /**
@@ -51,6 +64,9 @@ class TemplateEditorViewModel @Inject constructor(
 
     private val error = MutableStateFlow<DataError?>(null)
 
+    /** The planned set a removal just took, awaiting the snackbar's undo (ROADMAP N90). */
+    private val pendingUndo = MutableStateFlow<TemplateSet?>(null)
+
     /** True once the template is gone, so the screen can leave the editor. */
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted
@@ -59,7 +75,8 @@ class TemplateEditorViewModel @Inject constructor(
         repository.observeTemplate(templateId),
         repository.observeExercises(templateId),
         error,
-    ) { template, exercises, currentError ->
+        pendingUndo,
+    ) { template, exercises, currentError, undo ->
         TemplateEditorUiState(
             isLoading = false,
             template = template,
@@ -74,6 +91,7 @@ class TemplateEditorViewModel @Inject constructor(
                 exercise.id to "$letter$member"
             }.toMap(),
             error = currentError,
+            pendingUndo = undo,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -132,7 +150,43 @@ class TemplateEditorViewModel @Inject constructor(
         repository.updateSet(templateSetId, edit)
     }
 
-    fun onRemoveSet(templateSetId: String) = write { repository.removeSet(templateSetId) }
+    /**
+     * Removes a planned set, and offers the way back (ROADMAP N90).
+     *
+     * The removal is a soft delete, so the row is still there to put back — and *where* it comes back is
+     * the decision this settles: `TemplateRepository.restoreSet` splices it into the position it held,
+     * because a plan's order is the plan. The removed set is held only as long as the snackbar lives: one
+     * undo at a time, the shape the workout screen already uses (N7, B3).
+     */
+    fun onRemoveSet(templateSetId: String) {
+        val set = uiState.value.exercises
+            .flatMap { it.sets }
+            .firstOrNull { it.id == templateSetId }
+            ?: return
+        viewModelScope.launch {
+            when (val result = repository.removeSet(templateSetId)) {
+                is DataResult.Success -> {
+                    error.value = null
+                    pendingUndo.value = set
+                }
+
+                is DataResult.Failure -> error.value = result.error
+            }
+        }
+    }
+
+    /** Puts the removed set back where it was (ROADMAP N90). */
+    fun onUndoRemoveSet() {
+        val set = pendingUndo.value ?: return
+        pendingUndo.value = null
+        viewModelScope.launch {
+            error.value = (repository.restoreSet(set.id) as? DataResult.Failure)?.error
+        }
+    }
+
+    fun onDismissUndo() {
+        pendingUndo.value = null
+    }
 
     /**
      * The rest, cue and one target RPE this exercise's plan prescribes, over the library's (N14, N59).

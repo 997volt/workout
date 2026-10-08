@@ -22,18 +22,6 @@ an id and a spelled-out decision rather than a wish — when it is picked up, so
 work; the two queues below are where the rest lives, *Later* for what is self-contained and *Parked* for what
 is a product in its own right.
 
-- **N90 — a deleted planned set can be taken back.** `TemplateEditorViewModel.onRemoveSet` soft-deletes the
-  row and says nothing, so a mis-tap on a set's delete is unrecoverable from the screen — the plan is simply
-  missing a set. The workout screen already answers this (N7, B3): a snackbar at the foot naming what went,
-  with *Undo*, and the ViewModel holding the removed row until the message is taken. The editor gets the
-  same — for planned sets only, since removing a whole exercise and deleting a template already ask first
-  (B2, N53) — and **where the set comes back** is the decision it settles. The workout's undo deliberately
-  *appends* — "the values come back, the position may not" — but a plan's order **is** the plan: a set's
-  `setIndex` is its position, and a run's ladder is read by position (`runAt`, `rungWeightAt`, N79), so
-  appending would silently rewrite a drop run. The restore must therefore put the row back where it was,
-  which the soft delete makes possible — the row and its index are still stored, so clearing `deletedAt`
-  is the whole of it. Only one undo is offered at a time, as the workout's is, and the box must not cover
-  the block's *Add set* foot.
 - **N91 — the template editor's exercises are folded until opened.** Every block draws its plan lines, the
   rest, target RPE and cue fields and *Add set* (N14, N59, N80, N81), so a template of five exercises is a
   long scroll of controls with the names — the thing the screen is scanned by — lost among them. Each

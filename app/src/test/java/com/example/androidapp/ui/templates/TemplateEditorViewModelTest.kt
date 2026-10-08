@@ -65,6 +65,100 @@ class TemplateEditorViewModelTest {
     private fun viewModelFor(repository: TemplateRepository, templateId: String = "t1") =
         TemplateEditorViewModel(repository, SavedStateHandle(mapOf("templateId" to templateId)))
 
+    /** One planned exercise carrying [sets], which is what a removal's undo is about. */
+    private fun exerciseWithSets(id: String, vararg sets: TemplateSet) =
+        exercise(id, 0, "Back Squat").copy(templateId = "t1", sets = sets.toList())
+
+    private fun plannedSet(id: String, index: Int) = TemplateSet(
+        id = id,
+        templateExerciseId = "te1",
+        setIndex = index,
+        targetRepsMax = 5,
+    )
+
+    @Test
+    fun removingAPlannedSet_offersTheUndo_holdingTheSetThatWent() = runTest(dispatcher) {
+        // ROADMAP N90: the editor used to soft-delete the row and say nothing, so a mis-tap was
+        // unrecoverable from the screen.
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
+            exercises.value = listOf(
+                exerciseWithSets("te1", plannedSet("s1", 0), plannedSet("s2", 1)),
+            )
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onRemoveSet("s1")
+        advanceUntilIdle()
+
+        assertEquals(listOf("s1"), repository.removedSets)
+        assertEquals("s1", viewModel.uiState.value.undoableSet?.id)
+    }
+
+    @Test
+    fun theUndo_asksTheRepositoryToPutTheSetBackInItsPlace() = runTest(dispatcher) {
+        // N90's decision: a plan's order *is* the plan, so the restore is the repository's splice rather
+        // than the workout's append — and it is addressed by the set that went, not by a position.
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
+            exercises.value = listOf(exerciseWithSets("te1", plannedSet("s1", 0), plannedSet("s2", 1)))
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+        viewModel.onRemoveSet("s1")
+        advanceUntilIdle()
+
+        viewModel.onUndoRemoveSet()
+        advanceUntilIdle()
+
+        assertEquals(listOf("s1"), repository.restoredSets)
+        assertNull("the offer goes with the tap", viewModel.uiState.value.undoableSet)
+    }
+
+    @Test
+    fun dismissingTheUndo_leavesTheSetRemoved() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
+            exercises.value = listOf(exerciseWithSets("te1", plannedSet("s1", 0)))
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+        viewModel.onRemoveSet("s1")
+        advanceUntilIdle()
+
+        viewModel.onDismissUndo()
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.undoableSet)
+        assertTrue("nothing was put back", repository.restoredSets.isEmpty())
+    }
+
+    @Test
+    fun removingTheWholeExercise_withdrawsTheSetsUndo() = runTest(dispatcher) {
+        // B3's rule, one screen over: removing the exercise takes the set with it, so an Undo left
+        // standing over a block that is gone would fire a restore the repository would refuse.
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
+            exercises.value = listOf(exerciseWithSets("te1", plannedSet("s1", 0)))
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+        viewModel.onRemoveSet("s1")
+        advanceUntilIdle()
+        assertNotNull(viewModel.uiState.value.undoableSet)
+
+        viewModel.onRemoveExercise("te1")
+        repository.exercises.value = emptyList()
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.undoableSet)
+    }
+
     @Test
     fun theTemplateAndItsExercises_comeFromTheRepository() = runTest(dispatcher) {
         val repository = FakeTemplateRepository().apply {
@@ -244,6 +338,9 @@ class TemplateEditorViewModelTest {
         val exercises = MutableStateFlow<List<TemplateExercise>>(emptyList())
         val renamed = mutableListOf<Pair<String, String>>()
         val removed = mutableListOf<String>()
+        /** The planned sets a removal took, and the ones an undo put back (ROADMAP N90). */
+        val removedSets = mutableListOf<String>()
+        val restoredSets = mutableListOf<String>()
         val moved = mutableListOf<Pair<String, Int>>()
         val deleted = mutableListOf<String>()
         val addedSets = mutableListOf<Pair<String, TemplateSetEdit>>()
@@ -286,8 +383,20 @@ class TemplateEditorViewModelTest {
             edit: TemplateSetEdit,
         ): DataResult<Unit> = DataResult.Success(Unit)
 
-        override suspend fun removeSet(templateSetId: String): DataResult<Unit> =
-            DataResult.Success(Unit)
+        override suspend fun removeSet(templateSetId: String): DataResult<Unit> {
+            if (failWrites) return failure()
+            removedSets += templateSetId
+            exercises.value = exercises.value.map { exercise ->
+                exercise.copy(sets = exercise.sets.filterNot { it.id == templateSetId })
+            }
+            return DataResult.Success(Unit)
+        }
+
+        override suspend fun restoreSet(templateSetId: String): DataResult<Unit> {
+            if (failWrites) return failure()
+            restoredSets += templateSetId
+            return DataResult.Success(Unit)
+        }
         override suspend fun setExercisePlan(
             templateExerciseId: String,
             restSeconds: Int?,

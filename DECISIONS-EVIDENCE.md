@@ -1121,6 +1121,38 @@ and `switchTab` match by route, so the swap is the enum's `entries` alone. What 
 bar's read order, which follows the enum — a screen reader announces Statistics first — and that is the
 part a test now asserts, because "five named tabs existed" would have passed either way.
 
+## N90
+
+The workout screen's undo answers "I mis-tapped" by re-logging the set, and it appends on purpose: a session
+is read by what was done, so the values coming back is the whole of the promise. A plan cannot make that
+promise, because a plan *is* an order. A drop run is the sharp case — `runAt` and `rungWeightAt` read a
+ladder off the rows above it, so a restored rung appended at the end is either stranded or silently attached
+to a different anchor, and either way the plan now says something the lifter did not write. So the restore
+splices rather than appends, and the soft delete is what pays for it: the row kept its `setIndex`, so putting
+it back is a matter of making room rather than of guessing where it went.
+
+**The renumbering runs again on the way back.** `removeSet` compacts the survivors to `0..n-1` (B72), which
+means the removed run's stored indexes are the only record of where it sat. The restore therefore merges the
+two groups by those indexes and renumbers the result, rather than inserting at a remembered position: the
+position is not remembered anywhere, and inventing one from the removal's own timestamp would be a second
+source of truth for the same fact. This is also why the undo holds nothing but the set: the repository can
+answer "what did this removal take" from the row itself.
+
+**`deletedAt` is the correlation id, and that was chosen over a column.** A run's rungs share no other mark —
+they are consecutive rows with no parent pointer — so "which rows went together" has to come from somewhere.
+A `removedWith` column would be a schema change, a migration and a second fact to keep true, for a value that
+already exists: every row a single removal hid carries that removal's own timestamp. The dependency is real
+and it is recorded here — a fixed clock would make every removal on a device one run — and the instrumented
+suite moves its clock between removals to hold it. The alternative, restoring every hidden row of the
+exercise, was rejected outright: it puts back a set the lifter deleted deliberately a minute earlier, which
+turns one undo into a different, wrong write.
+
+**The second capability cost the DAO one query and the repository one override**, and both thresholds in
+`detekt.yml` moved by one rather than a type being split. A restore is the only reader that must see a
+soft-deleted row, so it cannot be folded into the live queries — that is what "soft delete" means — and a
+`TemplateUndoDao` would own half of one table to serve one call. The note beside the thresholds names both
+and why, which is the same convention the earlier moves followed.
+
 ## N92
 
 The problem is reach, not visibility. Every program was already on the screen; the one a lifter opens with

@@ -208,6 +208,9 @@ class TemplatesViewModelTest {
         override suspend fun removeSet(templateSetId: String): DataResult<Unit> {
             error("these tests do not write a plan")
         }
+        override suspend fun restoreSet(templateSetId: String): DataResult<Unit> {
+            error("these tests do not write a plan")
+        }
         override suspend fun setExercisePlan(
             templateExerciseId: String,
             restSeconds: Int?,
