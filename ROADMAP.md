@@ -44,23 +44,6 @@ is a product in its own right.
   and its state announcing, the rule every screen follows, and it must not fight the ⋮ the row already
   carries (move, superset, remove, *Add warm-ups* since N81). A newly added exercise opens **expanded**, so
   its first set can be added without a second tap; only the blocks that were already there start folded.
-- **N92 — the active program moves to the foot, under the *New program* button.** The programs list is
-  top-aligned and its `LazyColumn` reserves room at the foot only for the *New program* FAB
-  ([ProgramsScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramsScreen.kt)), so with a
-  single program the row a lifter came to open is under the app bar — the far end of a modern phone — while
-  the only thing in reach is the action that makes another one. The **active** program, which with one
-  program is the only one, is drawn as a full-width card at the very foot, as the screen's own bottom bar,
-  so the thing to open is the most reachable thing on the screen. The list above stays the reference it is,
-  in the authored order (P3.12): with several programs the card is the one being acted on and the list still
-  carries the rest, and with none there is no card, so neither case is rearranged to suit the single-program
-  one. *New program* keeps floating, and the scaffold places a floating action **above** a bottom bar — so
-  the button sits higher than the card rather than over it, and the two cannot collide without either being
-  handed a width that has to keep matching the other. Drawing them side by side was rejected for that
-  reason: it makes the card's width a function of the button's label and the font scale, and a number that
-  drifts hides content rather than crowding it. Putting the button into the bar beside the card was rejected
-  too: the FAB is the shape this app gives "the one action this screen makes", and the two would have to
-  share a row on the narrowest phones. The list still needs clearance for the floating button, which is now
-  one bottom bar higher than it is rather than gone — the button is still floating over the list.
 - **N93 — programs and templates reach each other.** Home links to both in one action row (N42), but the two
   screens are siblings with no way across: from Programs, Templates is back-home-and-in, and the reverse is
   the same trip. Each screen's own bar gains an entry to the other, sitting with the actions already there

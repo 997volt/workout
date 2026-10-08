@@ -521,6 +521,14 @@ object TestTags {
         const val NAME_FIELD = "program_name_field"
         const val NAME_SAVE = "program_name_save"
         const val ACTIVE = "program_active"
+
+        /**
+         * The active program at the foot of the list (ROADMAP N92).
+         *
+         * The card that makes the thing to open the most reachable thing on the screen, rather than the
+         * row under the app bar.
+         */
+        const val ACTIVE_CARD = "program_active_card"
         const val ADD_SLOT = "program_add_slot"
         const val NO_SLOTS = "program_no_slots"
         const val DELETE = "program_delete"

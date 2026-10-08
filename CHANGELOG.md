@@ -14,6 +14,22 @@ repeated here.
 
 ### Changed
 
+- **The active program moves to the foot, under the *New program* button** (N92). The programs list is
+  top-aligned and its `LazyColumn` reserved room at the foot only for the *New program* FAB, so with a single
+  program the row a lifter came to open was under the app bar — the far end of a modern phone — while the
+  only thing in reach was the action that makes another one. The **active** program, which with one program
+  is the only one, is drawn as a full-width card at the very foot, as the screen's own bottom bar, so the
+  thing to open is the most reachable thing on the screen. It says what the row says — the name, the slot
+  count, and *In use* rather than a *Use* button, since a control that activates the program it is already
+  showing would do nothing. The list above stays the reference it is, in the authored order (P3.12): with
+  several programs the card is the one being acted on and the list still carries the rest, and with none
+  there is no card, so neither case is rearranged to suit the single-program one. *New program* keeps
+  floating, and the scaffold places a floating action **above** a bottom bar — so the button sits higher
+  than the card rather than over it, and the two cannot collide without either being handed a width that has
+  to keep matching the other. Drawing them side by side was rejected for that reason: it makes the card's
+  width a function of the button's label and the font scale, and a number that drifts hides content rather
+  than crowding it. The list still needs clearance for the floating button, which is now one bottom bar
+  higher than it is rather than gone.
 - **Statistics leads the tab bar, and the app still opens on Workouts** (N94). The bar's order *is* the
   enum's order, and Workouts sat first for the reason that enum's own doc gave — "it is where the app
   opens". The request separates two things that one sentence ran together: Statistics takes the first

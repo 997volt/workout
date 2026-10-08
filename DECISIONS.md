@@ -759,6 +759,22 @@ the rule; that one argues it.
   occurrence — was rejected: it needs the session to carry a second fact, and it contradicts P3.9's one rule.
   The picker offers *Restore the scheduled workout* only where the pick was written, because a control that
   cannot do anything is worse than no control (N53, N67).
+- **The active program rides the programs screen's bottom bar** (N92). The list is top-aligned and its only
+  foot clearance was the *New program* FAB, so with a single program the row to open sat under the app bar —
+  the least reachable place on a modern phone — while the action that makes *another* program was the thing
+  in reach. The **active** program is drawn as a card in the scaffold's own `bottomBar`, so it is fixed at
+  the foot and the list scrolls above it. **It is added to the list, never swapped with a row**: the list
+  stays the reference it is, every program in the authored order (P3.12), and the card is the one being
+  acted on. With several active programs it shows the first and the list carries the rest; with none there
+  is no card, so neither case is rearranged to suit the single-program one. The card repeats what the row
+  says — name, slot count, *In use* — because the two are the same fact read in two places rather than two
+  facts; it offers no *Use*, since activating the program it is already showing would do nothing.
+  **The FAB and the bar cannot collide**, which the scaffold settles by placing a floating action *above* a
+  bottom bar. Putting the button into the bar beside the card was rejected — the two would have to share a
+  row on the narrowest phones — and drawing the card *beside* the floating button was rejected too: it makes
+  the card's width a function of the button's label and the font scale, and a number that drifts hides
+  content rather than crowding it. The list keeps clearance for the button, now measured from one bar higher
+  than before.
 - **A program document is its own format, and every exercise it names travels with it** (N47). The
   backup is a restore of a whole database, so it cannot be the way one program is handed over; this
   is a document with a **version of its own**, carrying the program's *definition* — slots, the

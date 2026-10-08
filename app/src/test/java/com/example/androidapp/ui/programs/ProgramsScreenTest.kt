@@ -1,7 +1,10 @@
 package com.example.androidapp.ui.programs
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -62,9 +65,11 @@ class ProgramsScreenTest {
     fun eachProgram_showsItsNameAndSlotCount() {
         setScreen()
 
-        composeTestRule.onNodeWithText("Upper/Lower").assertIsDisplayed()
-        composeTestRule.onNodeWithText("4 workouts").assertIsDisplayed()
-        composeTestRule.onNodeWithText("PPL").assertIsDisplayed()
+        // Addressed by row tag rather than by text: the active program's name and slot count are on its
+        // foot card too (N92), so the same strings are legitimately on screen twice.
+        composeTestRule.onNodeWithTag(TestTags.Programs.row("p1")).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Programs.row("p2")).assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("4 workouts").assertCountEquals(2)
         composeTestRule.onNodeWithText("6 workouts").assertIsDisplayed()
     }
 
@@ -101,10 +106,74 @@ class ProgramsScreenTest {
     fun theActiveProgram_isLabelled_ratherThanOfferingToUseItself() {
         setScreen()
 
-        composeTestRule.onNodeWithText("In use").assertIsDisplayed()
+        // *In use* is on the row and on the foot card (N92), so this counts the label rather than
+        // demanding the screen hold it once — the assertion is that no *Use* button stands beside it.
+        composeTestRule.onAllNodesWithText("In use").assertCountEquals(2)
         composeTestRule.onNodeWithTag(TestTags.Programs.use("p1")).assertDoesNotExist()
         // The inactive one still offers the choice.
         composeTestRule.onNodeWithTag(TestTags.Programs.use("p2")).assertIsDisplayed()
+    }
+
+    @Test
+    fun theActiveProgram_isDrawnAtTheFoot_asTheScreensOwnBar() {
+        // ROADMAP N92: with one program the row a lifter came to open sat under the app bar — the far end
+        // of a modern phone — while the only thing in reach was the action that makes another one. The card
+        // is the screen's bottom bar now, so position is the assertion: it is below every list row.
+        setScreen()
+
+        val card = composeTestRule.onNodeWithTag(TestTags.Programs.ACTIVE_CARD)
+        card.assertIsDisplayed()
+        val cardTop = card.getUnclippedBoundsInRoot().top
+        val lastRowBottom =
+            composeTestRule.onNodeWithTag(TestTags.Programs.row("p2")).getUnclippedBoundsInRoot().bottom
+
+        assertThat(cardTop >= lastRowBottom).isTrue()
+        // The floating button is placed **above** the bar rather than over it, which is what keeps the two
+        // from colliding without either being handed a width that has to match the other.
+        val newButtonBottom =
+            composeTestRule.onNodeWithTag(TestTags.Programs.NEW).getUnclippedBoundsInRoot().bottom
+        assertThat(cardTop >= newButtonBottom).isTrue()
+    }
+
+    @Test
+    fun theActiveCard_opensThatProgram() {
+        var opened: String? = null
+        setScreen(onOpen = { opened = it })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.ACTIVE_CARD).performClick()
+
+        assertThat(opened).isEqualTo("p1")
+    }
+
+    @Test
+    fun withSeveralActivePrograms_theCardIsOneOfThem_andTheListKeepsTheRest() {
+        // P3.12 allows more than one, so the card is the one being acted on rather than "the" program;
+        // the list above stays the reference it is, in the authored order, with both still readable.
+        setScreen(
+            ProgramsUiState(
+                isLoading = false,
+                programs = listOf(
+                    WorkoutProgram(id = "p1", name = "Upper/Lower", slotCount = 4, isActive = true),
+                    WorkoutProgram(id = "p2", name = "PPL", slotCount = 6, isActive = true),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.ACTIVE_CARD).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Programs.row("p1")).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Programs.row("p2")).assertIsDisplayed()
+    }
+
+    @Test
+    fun withNoActiveProgram_thereIsNoCard() {
+        setScreen(
+            ProgramsUiState(
+                isLoading = false,
+                programs = listOf(WorkoutProgram(id = "p2", name = "PPL", slotCount = 6)),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.ACTIVE_CARD).assertDoesNotExist()
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.programs
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,6 +43,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
@@ -53,8 +55,8 @@ import com.example.androidapp.ui.theme.AndroidAppTheme
  * The program list (ROADMAP P3.3).
  *
  * A program is a set of templates in the order they are trained, so this list is where the
- * schedule is chosen; the editor behind a row is where it is written. Reached from the
- * home screen's overflow, one tap from the plan it changes.
+ * schedule is chosen; the editor behind a row is where it is written. Reached from the home
+ * screen's action row, beside Templates (N42), one tap from the plan it changes.
  */
 @Composable
 fun ProgramsRoute(
@@ -161,6 +163,16 @@ fun ProgramsScreen(
                 modifier = Modifier.testTag(TestTags.Programs.NEW),
             )
         },
+        // The active program rides the screen's own bottom bar (N92): with one program it is the one
+        // thing there is to open, and the far end of a modern phone is the wrong place for it. The
+        // scaffold places a floating action **above** a bottom bar, so the *New program* button ends up
+        // higher than this card rather than over it — neither is handed a width that has to keep
+        // matching the other, which is what drawing them side by side would have cost.
+        bottomBar = {
+            state.programs.firstOrNull { it.isActive }?.let { active ->
+                ActiveProgramCard(program = active, onOpen = { onOpenProgram(active.id) })
+            }
+        },
     ) { innerPadding ->
         ProgramsContent(
             state = state,
@@ -169,6 +181,51 @@ fun ProgramsScreen(
             onMoveProgram = onMoveProgram,
             modifier = Modifier.padding(innerPadding),
         )
+    }
+}
+
+/**
+ * The active program, at the foot of the list (ROADMAP N92).
+ *
+ * A **card** rather than a second list row, because that is the screen's own bottom bar: it is not part of
+ * the reference above it — the list keeps every program in the authored order (P3.12), and the card is the
+ * one being acted on. With several active programs one of them is shown (the list's own order decides
+ * which); with none there is no card at all, so neither case is rearranged to suit the single-program one.
+ *
+ * It says the same thing the row does — the name, the slot count, and *In use* rather than a *Use* button,
+ * because a control that activates the program it is already showing would do nothing.
+ */
+@Composable
+private fun ActiveProgramCard(
+    program: WorkoutProgram,
+    onOpen: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AppCard(
+        modifier = modifier
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .testTag(TestTags.Programs.ACTIVE_CARD)
+            .clickable(onClickLabel = program.name, onClick = onOpen),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = program.name, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.program_slots,
+                        program.slotCount,
+                        program.slotCount,
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                text = stringResource(R.string.program_in_use),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 
@@ -194,8 +251,10 @@ private fun ProgramsContent(
 
         else -> LazyColumn(
             modifier = modifier.fillMaxSize(),
-            // Leaves room for the extended FAB so it cannot cover the last row.
-            contentPadding = PaddingValues(bottom = 96.dp),
+            // Leaves room for the floating button, which is one bottom bar higher than it used to be
+            // (ROADMAP N92): the active program's card rides the scaffold's own bottom bar, so the last
+            // row clears both it and the button floating above it.
+            contentPadding = PaddingValues(bottom = FLOATING_BUTTON_CLEARANCE + ACTIVE_CARD_CLEARANCE),
         ) {
             itemsIndexed(items = state.programs, key = { _, program -> program.id }) { index, program ->
                 ProgramRow(
@@ -212,6 +271,20 @@ private fun ProgramsContent(
         }
     }
 }
+
+/**
+ * Space the list keeps clear of the extended *New program* button: its 56 dp, plus the margin it floats
+ * with (ROADMAP N92).
+ */
+private val FLOATING_BUTTON_CLEARANCE = 96.dp
+
+/**
+ * Space the list keeps for the active program's bottom bar above that (ROADMAP N92).
+ *
+ * The card's own height plus the 8 dp it is inset by on each side — enough that a last row is readable
+ * rather than tucked under the bar, which is a clearance rather than a measurement.
+ */
+private val ACTIVE_CARD_CLEARANCE = 96.dp
 
 @Composable
 private fun ProgramRow(

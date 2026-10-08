@@ -1119,7 +1119,33 @@ The doc loses the rationale it can no longer hold rather than being left contrad
 is the class of defect the N80–N86 review found twice. Nothing else is keyed to the order: `forRoute`
 and `switchTab` match by route, so the swap is the enum's `entries` alone. What does move with it is the
 bar's read order, which follows the enum — a screen reader announces Statistics first — and that is the
-part a test now asserts, because "five named tabs exist" would have passed either way.
+part a test now asserts, because "five named tabs existed" would have passed either way.
+
+## N92
+
+The problem is reach, not visibility. Every program was already on the screen; the one a lifter opens with
+one program authored sat first, under the app bar, which on a modern phone is the corner a thumb cannot
+reach without regripping, while the *New program* FAB occupied the only reachable spot — an action that
+makes a *second* program, offered to someone who came to open their first. So the active one moves to the
+foot rather than the list being sorted: sorting would make the reference above it agree with a reach
+decision, and the authored order is the user's (P3.12).
+
+**The card is a bottom bar rather than a last list row**, and the difference is what it does under scroll: a
+row scrolls away, so with a long list the reachable thing is reachable only until the list is scrolled, which
+is exactly when it is least findable. The scaffold's `bottomBar` is fixed, and it also settles the collision
+with the FAB for free — Material places a floating action above a bottom bar.
+
+**The button was not moved into the bar.** That is the tempting simplification: one row, card and button
+side by side. It fails on width, because the card's share becomes a function of the button's label and the
+user's font scale, and a card whose width is a computed guess about another control overflows or truncates
+rather than simply crowding. The FAB is also the shape this app gives "the one action this screen makes", and
+demoting it to a bar entry would spend that meaning to save a row of height.
+
+**One active program is shown when several are.** P3.12 allows more than one, so "the active program" is not
+a unique thing; the card shows one of them and the list still carries every one, with its own *In use* label,
+so nothing became unreachable and no case the single-program user has is generalised into a rule for the
+others. With none active there is no card, because a card for nothing would be a control that cannot do
+anything (N53, N67).
 
 ## N79
 
