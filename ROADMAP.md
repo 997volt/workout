@@ -18,10 +18,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Requests from use**, each with the decision it settles. All three are one job in dependency order — a
-library shape, the pattern that moves onto it, and the number it exists to produce — so they land in that
-order and cannot be reordered. They graduated from *Later*, which held them until they were picked up; that
-section is gone because this one is where its content now lives, and *Parked* below is unchanged.
+**Requests from use**, each with the decision it settles. The two here are one job in dependency order — a
+library shape, and the pattern that moves onto it — so they land in that order and cannot be reordered. The
+third thing that job named, the number a category would sum to, is **parked by decision** rather than queued:
+see N97 below. They graduated from *Later*, which held them until they were picked up; that section is gone
+because this one is where its content now lives.
 
 - **N95 — exercises get categories and variations, and the library groups them.** One movement is performed
   several ways — a flat barbell bench press paused for three seconds, touch-and-go, as a speed day, or in
@@ -71,8 +72,9 @@ section is gone because this one is where its content now lives, and *Parked* be
   what the lifter changed. Both transfer formats carry exercises, so both versions move, and B62's rule
   applies to each: the version is read before the body.
   **What a finished one looks like:** two variations of a barbell bench, a dumbbell bench and a machine press
-  filed under one *Bench Press*, each logging its own sets and keeping its own records — with N97's one number
-  that sums them.
+  filed under one *Bench Press*, each logging its own sets and keeping its own records, with the library
+  reading as families rather than as a flat list. **The number that sums them is not built** — see the parked
+  N97 below — so the grouping is a library shape first and a statistic later.
 - **N96 — movement patterns get fewer, and move onto the category.** `MovementPattern` holds eleven values —
   HORIZONTAL_PUSH, VERTICAL_PUSH, HORIZONTAL_PULL, VERTICAL_PULL, SQUAT, HINGE, LUNGE, CARRY, ISOLATION, CORE,
   OTHER ([ExerciseTaxonomy.kt](app/src/main/java/com/example/androidapp/domain/model/ExerciseTaxonomy.kt)) —
@@ -98,24 +100,6 @@ section is gone because this one is where its content now lives, and *Parked* be
   still loads. **The per-exercise column is dropped in the same migration**, so the category's is the one home
   the rule "one fact, one home" leaves. **Dependency:** this cannot land before N95, because until categories exist there is
   nothing to hang a pattern on.
-- **N97 — a category reads as one number.** This is the half that makes N95 a *statistic* rather than a
-  filing cabinet, and it is what the category was designed against: "all bench press volume". The aggregate
-  views that fragment when one movement is spread across rows — the per-exercise trend series
-  ([MetricRegistry.kt](app/src/main/java/com/example/androidapp/ui/statistics/MetricRegistry.kt)) and the
-  per-lift adherence breakdown (P3.14,
-  [AdherenceBreakdown.kt](app/src/main/java/com/example/androidapp/ui/adherence/AdherenceBreakdown.kt)) —
-  gain a category reading that sums its children **as they are today**, so filing a new variation into a
-  category moves the number with no further writing. **A category's series is derived, never stored**: it is
-  the child sets read together, so a re-filed or renamed child cannot leave a stale total behind, which is
-  the same reason the head's name is read live (N58). **Records and progression stay the exercise's**,
-  untouched: a PR belongs to the lift that was actually performed, and a category that could set one would
-  be claiming a weight no single movement moved. That is the line the entry draws, and it is what keeps N95's
-  "every exercise stays loggable and its own" true. The per-lift adherence rows already aggregate by a
-  template's planned exercises, so a category's counts are its children's summed over the same slots.
-  **What the work touches.** The statistics series queries and the metric registry's exercise group, which
-  must offer a category where it offers a lift; the adherence breakdown's domain function
-  (`exerciseAdherence`), which rolls up by parent; and the pickers and charts that read a `MetricKey`, which
-  need a category id to be a valid subject of one. **Dependency:** N95.
 
 ## Parked — deliberately not planned
 
@@ -147,6 +131,26 @@ non-goal is a line this app does not cross.
 | — | **Encryption at rest / app lock** | You start carrying the phone somewhere you would not carry the data. |
 | F6 | Module split into `:core:*` / `:feature:*` | **A named goal, not a refactor**: a measured build-time problem, working on one feature without compiling the rest, or a second surface (Wear, a widget). |
 | F11b | Product analytics | Almost certainly never: on a single-user local tool it buys nothing, and it would breach the no-`INTERNET` line. |
+
+### N97 — a category reads as one number, parked by decision
+
+The grouping in N95 is designed against this — "all bench press volume" — and the request that produced it
+explicitly wants the aggregate, so parking it is a **deliberate scope cut** rather than a lost idea: the
+library shape lands first, and the statistic waits until the shape has been used enough to know which views
+should read it.
+
+What it would take is already named, so reviving it is small: the per-exercise trend series
+([MetricRegistry.kt](app/src/main/java/com/example/androidapp/ui/statistics/MetricRegistry.kt)) gains a
+category as a valid subject, and the per-lift adherence breakdown's domain function (`exerciseAdherence`)
+rolls up by parent. **A category's series is derived, never stored** — the child sets read together — so a
+re-filed or renamed child cannot leave a stale total; **records and progression stay the exercise's**, because
+a PR belongs to the lift that was actually performed. The views that fragment when one movement is spread
+across rows (muscle-group volume, "how much pressing am I doing", the per-lift breakdown of P3.14) are the
+ones it exists for.
+
+**Revisit when** a lift's own series stops answering "how is my bench going" — in practice, once a lifter has
+filed more than one variation or equipment variant under one category and the per-lift view fragments because
+of it. That is the signal the shape has been used enough to say which views should read the head.
 
 ### N39 — the plan's target, parked by decision
 
