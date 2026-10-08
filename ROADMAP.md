@@ -3,12 +3,13 @@
 > **v1.17** is shipped. Last reviewed against the code: 2026-10-08 — the N87–N95 batch shipped as 1.17 and
 > emptied *Next*; the two *Later* requests had graduated into it as N95–N97 and the *Later* section went with
 > them, leaving N96 here. **N97 then came out of *Parked***, because the trigger it named has fired, and
-> **N98–N103 and B95 were added from use**: body weight is kept in this app and what that lets the trend say;
-> four smaller requests — the template editor's order, a history row's two numbers, an unrated exercise's
-> prompt, and home's body in place of *Recent*; and, from reading the library's inheritance, one fact in one
-> home — the taxonomy a child states rather than copies, and the equipment's own step that a variation was
-> clearing. A line-by-line reading of those N87–N95 changes found sixteen defects; all sixteen are fixed and
-> recorded in [CHANGELOG.md](CHANGELOG.md).
+> **fourteen parked ids became non-goals** — the platforms, services, sensors and shapes this app will not
+> grow into — which is why that section is a table now. **N98–N103 and B95 were added from use**: body weight
+> is kept in this app and what that lets the trend say; four smaller requests — the template editor's order, a
+> history row's two numbers, an unrated exercise's prompt, and home's body in place of *Recent*; and, from
+> reading the library's inheritance, one fact in one home — the taxonomy a child states rather than copies,
+> and the equipment's own step that a variation was clearing. A line-by-line reading of those N87–N95 changes
+> found sixteen defects; all sixteen are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -273,17 +274,6 @@ non-goal is a line this app does not cross.
 
 | # | Feature | Revisit only if |
 | --- | --- | --- |
-| P4.1 | Health Connect read/write | A user asks to share with a platform health graph. It is a sharing integration; this app stores data for its user. |
-| P4.2 | Foreground service | The rest timer needs to survive something the alarm and the in-app timer cannot. |
-| P4.3 | Home-screen widget | The glance it would give turns out to be the missing thing. |
-| P4.4 | Quick Settings / launcher shortcuts | Starting a routine becomes frequent enough to deserve a second entry point. |
-| P4.5 | Wear OS companion | Wrist logging is genuinely wanted — and you accept `play-services-wearable`, which breaks the no-GMS line. |
-| P4.6 | Bluetooth heart-rate straps | The product becomes heart-rate training rather than logging. |
-| P4.7 | WorkManager reminders | Nudges demonstrably improve adherence. |
-| P4.8 | Large-screen layouts | Tablet or foldable users actually appear. |
-| P4.9 | Offline-first sync | There is a real multi-device story. It needs a backend, accounts and conflict resolution — the largest irreversible commitment on this list. |
-| P3.7, P5.2 | Friends, shared routines | Accounts, servers and moderation become worth owning. |
-| P5.3 | Monetization / Play Billing | There is a concrete reason to charge, and a willingness to take the Play-services dependency. |
 | P5.4 | Localization | A non-English user appears. |
 | P1.11 | Onboarding: goal, experience level, weekly target | This stops being a single-user local tool with one obvious user. It personalises defaults, and there are no defaults to personalise. |
 | P1.17 | Accessibility audit | The per-screen rule stops being enough — a real complaint on a device, or a screen that grew past ad-hoc tagging. The rule still applies to every change; only the sweep is parked. |
@@ -292,8 +282,6 @@ non-goal is a line this app does not cross.
 | P2.6 | Plate calculator | Loading from a plan's target is frequent enough that the arithmetic gets in the way, and you would rather it were done for you. |
 | — | **Play Store listing** | You want distribution beyond `adb install`. Self-install works today, and Play App Signing would change who holds the signing key. |
 | — | **Encryption at rest / app lock** | You start carrying the phone somewhere you would not carry the data. |
-| F6 | Module split into `:core:*` / `:feature:*` | **A named goal, not a refactor**: a measured build-time problem, working on one feature without compiling the rest, or a second surface (Wear, a widget). |
-| F11b | Product analytics | Almost certainly never: on a single-user local tool it buys nothing, and it would breach the no-`INTERNET` line. |
 
 ### N39 — the plan's target, parked by decision
 
@@ -305,9 +293,30 @@ none.
 
 ## Explicit non-goals
 
-Permanent, unlike *Parked* above: nutrition / calorie tracking, social feeds, live GPS route
-tracking, and a web dashboard. Each is a product in its own right and would dilute the logging
-core.
+Permanent, unlike *Parked* above: a parked row becomes possible again the moment its trigger fires, while a
+non-goal is a line this app does not cross. They are of three kinds — a product in its own right that would
+dilute the logging core, a line the hard constraints already draw, and a shape this repository has decided
+against — and each row says which, because a refusal whose reason is lost is the one the next person
+overturns.
+
+| # | Non-goal | Why it is permanent |
+| --- | --- | --- |
+| — | Nutrition / calorie tracking | A product in its own right. The app states the energy implication of a weight trend it already owns (N98) and stores no food and no intake. |
+| P3.7, P5.2 | Social feeds, friends and shared routines | Accounts, servers and moderation would have to be owned, and a feed needs a public. |
+| — | Live GPS route tracking | A different product: this one logs sets, not distance. |
+| — | A web dashboard | Statistics is where the log becomes useful; sending health data to a second place to read your own trend is worse privacy and worse UX, not a division of labour. |
+| P4.1 | Health Connect read/write | A sharing integration. This app stores data for its user, and the export file is the only path off the device. |
+| P4.2 | Foreground service | The app declares no permissions and holds no background work; a rest timer that needs a service to survive is the service's product. |
+| P4.3 | Home-screen widget | A second surface is a second product to keep true. The app is opened and used. |
+| P4.4 | Quick Settings / launcher shortcuts | One entry point is the app; a shortcut is the launcher's job rather than a second way in. |
+| P4.5 | Wear OS companion | It needs `play-services-wearable`, and the no-Google-Play-services line is permanent. |
+| P4.6 | Bluetooth heart-rate straps | That is heart-rate training rather than logging, with a sensor between the lifter and the log. |
+| P4.7 | WorkManager reminders | The app never pursues its user: no notification permission, and nothing that asks to be opened. |
+| P4.8 | Large-screen layouts | One layout, deliberately — a second is a second surface to design, test and hold to the per-screen accessibility rule. |
+| P4.9 | Offline-first sync | It needs a backend and accounts, and the no-`INTERNET` line forbids the first; the largest irreversible commitment this app could make. |
+| P5.3 | Monetization / Play Billing | Play Billing is a Play-services dependency, which the hard constraints forbid. |
+| F6 | Module split into `:core:*` / `:feature:*` | One module is the shape, and the trigger the row named — a second surface such as Wear or a widget — is ruled out above, so the named goal it was waiting to become cannot arrive. |
+| F11b | Product analytics | It buys nothing on a single-user local tool and would breach the no-`INTERNET` line. |
 
 ## Keeping this true
 
