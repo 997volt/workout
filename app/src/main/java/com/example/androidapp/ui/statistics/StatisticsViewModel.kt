@@ -151,7 +151,17 @@ class StatisticsViewModel @Inject constructor(
         repositories.trends.observeTrends(NO_LIMIT),
         repositories.measurements.observeAll(),
     ) { range, selection, library, points, body ->
-        Sources(range, selection, library.first, points, body, library.second)
+        Sources(
+            range = range,
+            selection = selection,
+            summaries = library.first,
+            // Movements only (ROADMAP N95): a category is never offered, here as much as in a picker. A
+            // series is read for a lift that was performed, and a head has no sets of its own to read —
+            // its roll-up is parked as N97 rather than implied by this list.
+            lifts = library.second.filter { it.rowKind.isLoggable },
+            workoutPoints = points,
+            measurements = body,
+        )
     }
 
     /** The chosen lift's own series, or nothing when the metric does not need one. */

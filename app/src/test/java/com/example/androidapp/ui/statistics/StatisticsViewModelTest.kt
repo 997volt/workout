@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.example.androidapp.domain.repository.ExerciseRepository
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.DataError
 import kotlinx.coroutines.launch
@@ -206,7 +207,25 @@ class StatisticsViewModelTest {
         assertThat(viewModel.uiState.value.lifts.map { it.name }).isEqualTo(listOf("Back Squat", "Barbell Bench Press"))
     }
 
-    private fun lift(id: String, name: String) = Exercise(
+    @Test
+    fun theLiftPicker_doesNotOfferACategory() = runTest(dispatcher) {
+        // ROADMAP N95: a head is never offered. It is a row of the library, so it reaches this list the way
+        // every other row does — filtering it here is what keeps "never offered" true on the third surface
+        // that names a lift, not just on the two pickers.
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            lifts = listOf(
+                lift("back-squat", "Back Squat"),
+                lift("cat-bench", "Bench Press", rowKind = RowKind.CATEGORY),
+            ),
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.lifts.map { it.name }).isEqualTo(listOf("Back Squat"))
+    }
+
+    private fun lift(id: String, name: String, rowKind: RowKind = RowKind.MOVEMENT) = Exercise(
         id = id,
         name = name,
         primaryMuscle = MuscleGroup.QUADS,
@@ -214,6 +233,7 @@ class StatisticsViewModelTest {
         equipment = Equipment.BARBELL,
         movementPattern = MovementPattern.SQUAT,
         isCustom = false,
+        rowKind = rowKind,
     )
 
     private fun summary(at: Instant, volume: Long) = WorkoutSummary(

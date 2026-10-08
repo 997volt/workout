@@ -8,6 +8,7 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -104,6 +105,68 @@ class ExercisePickerViewModelTest {
         assertTrue(viewModel.added.value)
         assertNull(viewModel.error.value)
     }
+
+    @Test
+    fun theList_offersMovementsOnly_neverACategory() = runTest(dispatcher) {
+        // ROADMAP N95: a category is never offered and never logged. It is a real row of the library, so it
+        // arrives in the same list every other row does -- filtering it here, at the one place a lifter
+        // chooses what to log, is what keeps the rule true rather than merely intended.
+        val exercises = FakeExerciseRepository(
+            listOf(
+                movement("back-squat", "Back Squat"),
+                category("cat-bench", "Bench Press"),
+                movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench"),
+            ),
+        )
+        val viewModel = viewModelFor(exercises)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf("Back Squat", "Barbell Bench Press"),
+            viewModel.uiState.value.items.map { it.name },
+        )
+        assertTrue(
+            "no row the picker offers is a head",
+            viewModel.uiState.value.items.none { it.isCategory },
+        )
+    }
+
+    @Test
+    fun theList_isFlat_evenWhenAMovementIsFiledUnderACategory() = runTest(dispatcher) {
+        // The picker has nothing to fold: a lifter choosing what they just did is looking for one name, so
+        // a family's children are listed beside everything else rather than nested under a head that is not
+        // there (N95).
+        val exercises = FakeExerciseRepository(
+            listOf(
+                category("cat-bench", "Bench Press"),
+                movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench"),
+            ),
+        )
+        val viewModel = viewModelFor(exercises)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertEquals(listOf(0), viewModel.uiState.value.items.map { it.depth }.distinct())
+    }
+
+    private fun movement(id: String, name: String, parent: String? = null) = Exercise(
+        id = id,
+        name = name,
+        primaryMuscle = MuscleGroup.QUADS,
+        equipment = Equipment.BARBELL,
+        movementPattern = MovementPattern.SQUAT,
+        parentId = parent,
+    )
+
+    private fun category(id: String, name: String) = Exercise(
+        id = id,
+        name = name,
+        primaryMuscle = MuscleGroup.CHEST,
+        equipment = Equipment.OTHER,
+        movementPattern = MovementPattern.OTHER,
+        rowKind = RowKind.CATEGORY,
+    )
 
     @Test
     fun aFailedCreate_reportsIt_andAddsNothing() = runTest(dispatcher) {
