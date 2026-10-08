@@ -283,7 +283,9 @@ class WorkoutsHomeScreenTest {
         // The small Start became the screen's second full-width pill, named apart from the empty one.
         // Addressed by tag: the caption is a user-visible string a translation changes.
         composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).assertExists()
-        composeTestRule.onNodeWithText("Upper/Lower · 5 exercises").assertExists()
+        // N88: the program and the count are two lines rather than one *Upper/Lower · 5 exercises*.
+        composeTestRule.onNodeWithText("Upper/Lower").assertExists()
+        composeTestRule.onNodeWithText("5 exercises").assertExists()
         composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).performClick()
 
         // The slot travels with the start, so its prescription seeds the workout (P3.8).
@@ -375,6 +377,35 @@ class WorkoutsHomeScreenTest {
         val pill = composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).getUnclippedBoundsInRoot()
 
         assertThat(pill.top - field.bottom >= 8.dp).isTrue()
+    }
+
+    @Test
+    fun aNextUpRowsCount_isAlwaysOnItsOwnLine() {
+        // ROADMAP N88: the point is the shape of the row, not a wrap that happens once the text is long,
+        // so a **one-word** program name must not pull the count back up beside it. Asserted by position:
+        // the two lines share no vertical overlap, which a separator-joined line could not satisfy.
+        val nextUp = NextUp(
+            plan = TodayPlan(
+                id = "slot-2",
+                templateId = "t2",
+                name = "Push",
+                exerciseCount = 5,
+                slotId = "slot-2",
+            ),
+            // Deliberately short: this is the case a natural wrap would put back on one line.
+            programName = "A",
+            isAtStart = true,
+        )
+        setScreen(state = WorkoutsHomeUiState(isLoading = false, nextUp = listOf(nextUp)))
+
+        // Unmerged, because the row is one clickable node to a screen reader: the merged parent carries
+        // both lines' text and would answer every lookup with the same box.
+        val program = composeTestRule.onNodeWithText("A", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val count = composeTestRule.onNodeWithText("5 exercises", useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        assertThat(count.top >= program.bottom).isTrue()
+        // And the joined sentence is gone rather than drawn somewhere else.
+        composeTestRule.onNodeWithText("A · 5 exercises").assertDoesNotExist()
     }
 
     @Test

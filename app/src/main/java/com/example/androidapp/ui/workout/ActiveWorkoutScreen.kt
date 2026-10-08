@@ -83,9 +83,6 @@ fun ActiveWorkoutRoute(
     onDone: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    /** The plans a running workout can still look at, from its own overflow (ROADMAP N78). */
-    onOpenTemplates: () -> Unit = {},
-    onOpenPrograms: () -> Unit = {},
     viewModel: ActiveWorkoutViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -145,8 +142,6 @@ fun ActiveWorkoutRoute(
         onFinish = viewModel::onFinish,
         onDiscard = viewModel::onDiscard,
         onBack = onBack,
-        onOpenTemplates = onOpenTemplates,
-        onOpenPrograms = onOpenPrograms,
         countsAgainstProgram = viewModel.startedFromProgram,
         restTimerEnabled = restTimerEnabled,
         defaultRestSeconds = defaultRestSeconds,
@@ -179,9 +174,6 @@ fun ActiveWorkoutScreen(
     onDiscard: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    /** The two plan screens reachable from the overflow while a session runs (ROADMAP N78). */
-    onOpenTemplates: () -> Unit = {},
-    onOpenPrograms: () -> Unit = {},
     /** Moves one exercise one place in the session's own order (ROADMAP N54). */
     onMoveExercise: (String, Int) -> Unit = { _, _ -> },
     onToggleSuperset: (String) -> Unit = {},
@@ -232,19 +224,14 @@ fun ActiveWorkoutScreen(
         topBar = {
             WorkoutTopBar(
                 canFinish = state.exercises.any { it.sets.isNotEmpty() },
-                // The empty workout already offers a prompt-free discard inside its own body; this
-                // is the exit for a workout that holds something (ROADMAP N41).
+                // The empty workout already offers a prompt-free discard inside its own body, so
+                // there is nothing for the overflow to hold and it is not drawn (ROADMAP N41, N87).
                 canDiscard = state.sessionId != null && !state.isEmpty,
-                // The menu is drawn whenever a session is open, because the plan entries live in it
-                // and an empty workout must still reach them (N78).
-                showMenu = state.sessionId != null,
                 setCount = state.exercises.sumOf { it.sets.size },
                 countsAgainstProgram = countsAgainstProgram,
                 onFinish = onFinish,
                 onDiscard = onDiscard,
                 onBack = onBack,
-                onOpenTemplates = onOpenTemplates,
-                onOpenPrograms = onOpenPrograms,
             )
         },
     ) { innerPadding ->
@@ -458,15 +445,11 @@ private fun ShowFinishSnackbar(
 private fun WorkoutTopBar(
     canFinish: Boolean,
     canDiscard: Boolean,
-    /** True while a session is open, which is when the plan entries are worth reaching (N78). */
-    showMenu: Boolean,
     setCount: Int,
     countsAgainstProgram: Boolean,
     onFinish: (String?) -> Unit,
     onDiscard: () -> Unit,
     onBack: () -> Unit,
-    onOpenTemplates: () -> Unit,
-    onOpenPrograms: () -> Unit,
 ) {
     // Whether the finish prompt is up. Dismissing it finishes without a comment
     // (ROADMAP N11): the user asked to finish, and the comment is optional.
@@ -494,13 +477,8 @@ private fun WorkoutTopBar(
             ) {
                 Text(stringResource(R.string.active_workout_finish))
             }
-            if (showMenu) {
-                WorkoutMenu(
-                    canDiscard = canDiscard,
-                    onOpenTemplates = onOpenTemplates,
-                    onOpenPrograms = onOpenPrograms,
-                    onDiscard = { confirmingDiscard = true },
-                )
+            if (canDiscard) {
+                WorkoutMenu(onDiscard = { confirmingDiscard = true })
             }
         },
     )
@@ -532,23 +510,22 @@ private fun WorkoutTopBar(
 }
 
 /**
- * The workout's overflow: the two plans it can step out to, and the discard (ROADMAP N78, N41).
+ * The workout's overflow, which holds the discard (ROADMAP N41, N87).
  *
- * The plans are here rather than on the tab bar because the bar is off this screen on purpose (N34):
- * a tab bar under a live set logger is an invitation to lose the session, while an overflow entry is
- * a deliberate step. A lifter checking what is next no longer has to end the workout to look.
+ * **It is the one entry it has**, because N87 took the two plans back out: mid-workout the overflow is the
+ * logger's own business, and the lists that answer "what is next" belong where the decision to train is
+ * taken — home's start bar (N42), which stays visible while a session is open, so looking at a plan is
+ * still one step back rather than the end of the workout. N34 is what keeps this screen off the tab bar,
+ * and N78 put the plans here for that reason; N87 keeps the argument and drops the half that was never
+ * argued, since home reaches both without ending anything.
  *
- * Split out because the top bar around it is at the length this project allows and because the menu's
- * open state belongs with the button that opens it. The discard is drawn only when there is something
- * to discard; the menu itself is not, because these two entries are reachable from an empty one.
+ * Because the discard is all that is left, the ⋮ is drawn only when there is something to discard — see
+ * [WorkoutTopBar]. An empty session's discard is prompt-free and drawn in the body (N41), so it has no use
+ * for a menu at all. The menu's open state belongs with the button that opens it, which is why it is split
+ * out rather than inlined into a top bar already at the length this project allows.
  */
 @Composable
-private fun WorkoutMenu(
-    canDiscard: Boolean,
-    onOpenTemplates: () -> Unit,
-    onOpenPrograms: () -> Unit,
-    onDiscard: () -> Unit,
-) {
+private fun WorkoutMenu(onDiscard: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
 
     Box {
@@ -563,31 +540,13 @@ private fun WorkoutMenu(
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.home_templates)) },
+                text = { Text(stringResource(R.string.active_workout_discard)) },
                 onClick = {
                     menuOpen = false
-                    onOpenTemplates()
+                    onDiscard()
                 },
-                modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_TEMPLATES),
+                modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD),
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.home_programs)) },
-                onClick = {
-                    menuOpen = false
-                    onOpenPrograms()
-                },
-                modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_PROGRAMS),
-            )
-            if (canDiscard) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.active_workout_discard)) },
-                    onClick = {
-                        menuOpen = false
-                        onDiscard()
-                    },
-                    modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD),
-                )
-            }
         }
     }
 }

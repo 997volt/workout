@@ -73,13 +73,6 @@ object TestTags {
     const val ACTIVE_WORKOUT_MENU = "active_workout_menu"
     const val ACTIVE_WORKOUT_DISCARD = "active_workout_discard"
 
-    /**
-     * The two plan screens a running workout can step out to (ROADMAP N78).
-     *
-     * In the workout's overflow rather than on the tab bar, which is off the logger on purpose (N34).
-     */
-    const val ACTIVE_WORKOUT_TEMPLATES = "active_workout_templates"
-    const val ACTIVE_WORKOUT_PROGRAMS = "active_workout_programs"
     const val ACTIVE_WORKOUT_DISCARD_TEXT = "active_workout_discard_text"
     const val ACTIVE_WORKOUT_DISCARD_PROGRAM = "active_workout_discard_program"
     const val ACTIVE_WORKOUT_DISCARD_CONFIRM = "active_workout_discard_confirm"

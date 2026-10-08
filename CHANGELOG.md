@@ -25,6 +25,15 @@ repeated here.
   announces Statistics first; `forRoute` and `switchTab` match by route and nothing else was keyed to the
   order. The test that used to only count five named tabs now asserts the order, because it would have
   passed either way.
+- **A next-up row's exercise count gets a line of its own** (N88). The row's supporting line joined the
+  program's name and the count with a separator, so the two read as one sentence: *Upper/Lower · 5
+  exercises*. They are two lines now — *Next up*, the workout's name, the program, then the count — and
+  **always**, because the point is the shape of the row rather than a wrap that happens once the text is
+  long, so a one-word program name must not pull the count back up beside it. It stays the plural string
+  it is, so it still reads one exercise or five. Home's *today* card keeps its single supporting line: the
+  request names the next-up row, and the card is a different layout (N16, N61). N86's gap guard measures the
+  row's text against its start pill, and the taller text was re-measured with the change rather than left to
+  pass by luck.
 - **Starting a planned workout while one is running asks which** (N89). `startOrResumeSession` is
   find-or-create, so the tap used to hand the running session back and drop the plan without a word — the
   lie N78 named, guarded only in the templates list, which disables *Start*. Home's starts ask now:
@@ -33,6 +42,19 @@ repeated here.
   (P3.5) — and then starts what was asked for. The question comes after the missed-day one, so dismissing
   that cannot leave a discarded session and nothing started; dismissing this one cancels the start rather
   than choosing for the lifter. The templates list keeps its disabled *Start*.
+- **The plans leave the workout's overflow, and home becomes the only way in** (N87). The workout's ⋮
+  carried *Templates* and *Programs*, which N78 put there so that checking what is next would not mean
+  ending the session. The request reverses that half: mid-workout the overflow is the logger's own
+  business, and the two plans belong where the decision to train is taken — home's start bar, whose links
+  above the Start/Resume pill already stay visible while a session is open. Keeping that half is what makes
+  the removal safe: looking at what is next still does not require ending the workout, because home is one
+  step back. The overflow then holds only *Discard*, so the ⋮ is drawn only when there is something to
+  discard — it used to be drawn for every open session, because the two plan entries were reachable from an
+  empty one, while an empty session's own discard is prompt-free and drawn in the body (N41). The two
+  entries' tags go with them, and [DECISIONS.md](DECISIONS.md)'s N78 rule and its
+  [evidence](DECISIONS-EVIDENCE.md#n78) are amended with the reversal's reason rather than left
+  contradicting the code. B43's withholding is untouched: the templates list still disables *Start* while a
+  session is open, and it is still reachable from home.
 
 ## [1.16] — 2026-10-07 (versionCode 17)
 

@@ -544,17 +544,22 @@ the rule; that one argues it.
   every later pair, judging a prescribed set against a lighter drop's reps and offering it a heavier
   weight that accepting wrote into the plan.
   ([evidence](DECISIONS-EVIDENCE.md#n79))
-- **The workout's overflow carries the plans, and the templates list withholds the start** (N78). The
-  tab bar stays off the logger (N34): a bar under a live set logger invites losing the session, while an
-  overflow entry is a deliberate step. So Programs and Templates are reachable from the workout's own
-  overflow — which held only *Discard* — and Home no longer hides its two plan links while a session is
-  open, because hiding them was how the app said "you are in a workout" and looking at what is next
-  should not require ending one. **B43's withholding lives on in a narrower place**: starting is
-  idempotent (`startOrResumeSession` hands back the open session), so the templates list asks the
-  workout repository whether a session is open and disables *Start* when one is, with the row saying
-  why. The button would not make a second workout — it would silently take a lifter who tapped *Start*
-  on one template into the workout already running from another, and that is the lie it prevents.
-  Making Templates a tab, or showing the bar mid-workout, was rejected for N34's reason.
+- **The workout's overflow is the logger's own business, and the templates list withholds the start**
+  (N78, narrowed by N87). The tab bar stays off the logger (N34): a bar under a live set logger invites
+  losing the session, while an overflow entry is a deliberate step. N78 put Programs and Templates there
+  and un-hid Home's two plan links for the same reason — a lifter checking what is next should not have to
+  end a workout to look. **N87 keeps the second half and reverses the first**: mid-workout the overflow
+  holds only *Discard*, because the two plans already live where the decision to train is taken, on home's
+  start bar, which stays visible while a session is open — so the look is still one step back rather than
+  the end of the session, and the logger stops carrying a way out it does not own. The ⋮ is then drawn
+  **only when there is something to discard**: with the plan entries gone, an empty session's own discard
+  is prompt-free and drawn in the body (N41), so the menu would open on nothing.
+  **B43's withholding lives on in a narrower place**: starting is idempotent (`startOrResumeSession`
+  hands back the open session), so the templates list asks the workout repository whether a session is
+  open and disables *Start* when one is, with the row saying why. The button would not make a second
+  workout — it would silently take a lifter who tapped *Start* on one template into the workout already
+  running from another, and that is the lie it prevents. Making Templates a tab, or showing the bar
+  mid-workout, was rejected for N34's reason.
   ([evidence](DECISIONS-EVIDENCE.md#n78))
 - **A start with a workout already running asks rather than resumes** (N89). N78 stopped the silent
   hand-back in the templates list by disabling *Start*; home's own start actions had no guard, so tapping
@@ -964,10 +969,11 @@ stop being true:
   Pull-Up, the weight field's **+** took it from 20 to 25 — the 2.5 kg the unit alone would have
   given was not used. The detail screen showed *Unit default (2.5 kg)* before the edit and
   *5 kg (this exercise)* after, which is the read-back that proves the column was written.
-- The plans are reachable mid-workout (N78): from an **empty** session the overflow held
-  *Templates* and *Programs* and no *Discard*, the templates list's *Start* was disabled with
-  "Finish the workout you are in to start this one." under the row, and Home still showed both
-  links above *Resume workout*.
+- The plans are reachable mid-workout (N78, narrowed by N87): the workout's ⋮ holds only *Discard* and is
+  not drawn from an **empty** session at all, while Home still shows *Templates* and *Programs* above
+  *Resume workout* with a live session — so the look is one step back rather than a menu inside the
+  session. The templates list's *Start* was disabled with "Finish the workout you are in to start this
+  one." under the row.
 - The *Done* action sits at the rating row's height once a set is logged (N76).
 - A live workout's role picker offers **Cluster** beside **Drop** (N79), which is the fact that stops
   being true if the enum and the pickers drift. The derived ladder, the one-rating rule and the pairing

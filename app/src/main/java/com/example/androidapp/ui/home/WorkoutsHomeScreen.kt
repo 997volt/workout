@@ -569,11 +569,6 @@ private fun NextUpRow(
     onSubstitute: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val exercises = pluralStringResource(
-        R.plurals.home_plan_exercises,
-        nextUp.plan.exerciseCount,
-        nextUp.plan.exerciseCount,
-    )
     val openLabel = stringResource(R.string.home_next_up_open, nextUp.plan.name)
     Column(modifier = modifier.fillMaxWidth().padding(top = 8.dp)) {
         // The whole line is the field, so the target is the row rather than a caption inside it.
@@ -586,26 +581,7 @@ private fun NextUpRow(
                 .clickable(onClickLabel = openLabel, onClick = onOpen),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.home_next_up),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = nextUp.plan.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    // The program's name is here because more than one program may be active
-                    // (P3.12), so two rows have to be tellable apart.
-                    text = listOf(nextUp.programName, exercises).joinToString(" · "),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            NextUpLabel(nextUp = nextUp, modifier = Modifier.weight(1f))
             // The rare action beside the field rather than under the pill (N85): the pill is the screen's
             // full-width start and stays that way (N61), so a second action goes on the row above it —
             // which is where today's card offers the same one (P3.11). Leaving it unrecorded is N85's
@@ -637,8 +613,51 @@ private fun NextUpRow(
                 // entry named, a device showed this one to be the tight one: the supporting line's box
                 // ended about 4 dp above the pill, while the space between two rows measured ~24 dp and
                 // the block's own top ~14 dp — both of which read fine. 8 dp makes this one their equal.
+                // N88 gave the text a fourth line, and the device re-measure with it still read 8 dp.
                 .padding(top = 8.dp)
                 .testTag(TestTags.Home.nextUpStart(nextUp.plan.id)),
+        )
+    }
+}
+
+/**
+ * A next-up row's text: what is next, the workout, the program, and how many exercises (ROADMAP N88).
+ *
+ * The program and the count are two lines rather than one joined sentence, and **always**: the point is the
+ * shape of the row rather than a wrap that happens once the text is long, so a one-word program name must
+ * not pull the count back up beside it. Split out of [NextUpRow] because the row is at the length this
+ * project allows, and the count's plural is what this half owns.
+ */
+@Composable
+private fun NextUpLabel(nextUp: NextUp, modifier: Modifier = Modifier) {
+    val exercises = pluralStringResource(
+        R.plurals.home_plan_exercises,
+        nextUp.plan.exerciseCount,
+        nextUp.plan.exerciseCount,
+    )
+    Column(modifier = modifier) {
+        Text(
+            text = stringResource(R.string.home_next_up),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = nextUp.plan.name,
+            style = MaterialTheme.typography.titleLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            // The program's name is here because more than one program may be active
+            // (P3.12), so two rows have to be tellable apart.
+            text = nextUp.programName,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = exercises,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

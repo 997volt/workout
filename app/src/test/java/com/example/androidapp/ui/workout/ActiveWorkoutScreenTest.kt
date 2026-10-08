@@ -80,8 +80,6 @@ class ActiveWorkoutScreenTest {
         val onToggleSuperset: (String) -> Unit = {},
         val onDiscard: () -> Unit = {},
         val onAddExercise: () -> Unit = {},
-        val onOpenTemplates: () -> Unit = {},
-        val onOpenPrograms: () -> Unit = {},
     )
 
     private fun setScreen(
@@ -129,8 +127,6 @@ class ActiveWorkoutScreenTest {
                 onDismissFinishUndo = {},
                 onDiscard = actions.onDiscard,
                 onBack = {},
-                onOpenTemplates = actions.onOpenTemplates,
-                onOpenPrograms = actions.onOpenPrograms,
                 countsAgainstProgram = countsAgainstProgram,
                 restTimerEnabled = restTimerEnabled,
                 defaultRestSeconds = defaultRestSeconds,
@@ -217,42 +213,26 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun theWorkoutOverflow_opensTemplatesAndPrograms() {
-        // ROADMAP N78: both screens are reachable from a running workout, so a lifter checking what is
-        // next does not have to end the session to look. The tab bar stays off this screen (N34).
-        var templates = false
-        var programs = false
-        setScreen(
-            state(isFinished = false),
-            actions = Actions(
-                onOpenTemplates = { templates = true },
-                onOpenPrograms = { programs = true },
-            ),
-        )
+    fun theWorkoutOverflow_holdsOnlyTheDiscard() {
+        // ROADMAP N87: the plans left the logger's overflow, because mid-workout it is the logger's own
+        // business and home's start bar reaches both lists without ending the session. What is left is
+        // the one write this screen owns, so the menu that used to be a way out is a way to discard.
+        setScreen(state(isFinished = false))
 
         composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_TEMPLATES).performClick()
-        assertTrue(templates)
 
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_PROGRAMS).performClick()
-        assertTrue(programs)
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Templates").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Programs").assertDoesNotExist()
     }
 
     @Test
-    fun withNothingLogged_theOverflowStillOpensThePlans() {
-        // The menu is what carries them, so it is drawn while a session is open even when there is
-        // nothing to discard — an empty workout must not be the one that cannot reach the lists (N78).
-        var templates = false
-        setScreen(
-            state(isFinished = false, sets = emptyList()),
-            actions = Actions(onOpenTemplates = { templates = true }),
-        )
+    fun withNothingLogged_theOverflowIsNotDrawn() {
+        // N87 follows N41: with the plan entries gone the ⋮ holds only the discard, so an empty
+        // session — whose discard is prompt-free and drawn in the body — has no use for it at all.
+        setScreen(ActiveWorkoutUiState(isLoading = false, sessionId = "s1", exercises = emptyList()))
 
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_TEMPLATES).performClick()
-
-        assertTrue(templates)
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).assertDoesNotExist()
     }
 
     @Test
@@ -617,11 +597,8 @@ class ActiveWorkoutScreenTest {
             actions = Actions(onDiscard = { discarded = true }),
         )
 
-        // The overflow is drawn — it carries the two plan screens (N78) — but its discard is not:
-        // there is nothing to lose, so the prompt-free button in the body is the only way out.
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD).assertDoesNotExist()
+        // N87: the ⋮ is gone too, since its only entry was the discard this state does not prompt for.
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_TEXT).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_EMPTY).performClick()
 

@@ -1084,6 +1084,19 @@ Home's links were hidden for the same reason the bar was, one screen over, and t
 the session is open either way, so which screen you are standing on changes nothing about it. They stay
 now, and the pill below them still says *Resume*, so the primary act has not moved.
 
+**N87 reverses half of it, and only half.** The overflow entry was never the thing that made the look
+possible: home's links do, and they stay visible while a session is open. So mid-workout the overflow
+goes back to being a logger's control — the *Discard* it held before N78 — and the two plans are reached
+where the decision to train is taken, the start bar. The reversal is recorded here rather than in a fresh
+section because N78's own argument is what it keeps: the tab bar stays off the logger, starting is still
+withheld in the templates list, and looking at a plan still does not require finishing a workout — one
+step back to home rather than a menu inside the session.
+
+Two things follow from the menu holding one entry. **The ⋮ is drawn only when there is something to
+discard**, since an empty session's discard is prompt-free and lives in the body (N41) and a menu that
+opens on nothing is a control that lies. And the two tags the entry used go with it, because the project
+deletes an API the moment nothing calls it.
+
 **B43's rule survives narrowed rather than being dropped.** It withheld a second way to *start* a
 workout while one was running, because a start that lands in an existing session is a way to lose one.
 Starting is idempotent — `startOrResumeSession` returns the open session — so a live *Start* on another
@@ -1092,6 +1105,21 @@ running from a template they were not looking at. That is why the templates list
 the row says why, rather than the screen being unreachable: the withholding belongs on the *start*, not
 on the look. Making Templates a tab, or showing the tab bar on the logger, was rejected for N34's
 reason.
+
+## N94
+
+The bar's order and the app's entry point were one fact while Workouts sat first, and the enum's own
+doc said so: "Workouts first because it is where the app opens". The request separates them. Statistics
+takes the first place, History the second, Workouts the third where Statistics was, and the tab the app
+*opens* on does not move — that is `startDestination = WorkoutsHome` and `lastTab`'s default of
+`AppTab.WORKOUTS`, neither of which the enum's order touches. So the app still opens on Workouts, now
+the third tab selected, and the two statements stop pretending to be one.
+
+The doc loses the rationale it can no longer hold rather than being left contradicting the order, which
+is the class of defect the N80–N86 review found twice. Nothing else is keyed to the order: `forRoute`
+and `switchTab` match by route, so the swap is the enum's `entries` alone. What does move with it is the
+bar's read order, which follows the enum — a screen reader announces Statistics first — and that is the
+part a test now asserts, because "five named tabs exist" would have passed either way.
 
 ## N79
 
