@@ -20,6 +20,23 @@ data class Exercise(
     val movementPattern: MovementPattern,
     val isCustom: Boolean = false,
     /**
+     * The row this one hangs under, or null for a top-level row (ROADMAP N95).
+     *
+     * One field for both levels of the two-rule shape, because [rowKind] decides what it means: a
+     * variation's parent is the exercise it is a version of, and an exercise's parent is the category it
+     * is filed under. Null is a top-level row, and for a movement that means "in no category" — a valid
+     * place to be rather than a missing value.
+     */
+    val parentId: String? = null,
+    /**
+     * Whether this row is a lift or a category head (ROADMAP N95).
+     *
+     * The field the rest of the app asks before *offering* anything: a [RowKind.CATEGORY] is never shown
+     * by a picker and never named by a logged set, while staying a full row of the library — named,
+     * transferable, soft-deletable and editable like any other (P1.12).
+     */
+    val rowKind: RowKind = RowKind.MOVEMENT,
+    /**
      * This exercise's own rest between sets in seconds, or null to use
      * [com.example.androidapp.domain.RestTimer.DEFAULT_SECONDS] (ROADMAP N5).
      *

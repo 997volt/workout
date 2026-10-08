@@ -1817,4 +1817,36 @@ class WorkoutDatabaseMigrationTest {
 
         migrated.close()
     }
+
+    @Test
+    fun addingCategories_leavesEveryExistingRowAMovement() {
+        // ROADMAP N95: the two new columns are shape, not data — a library that predates categories is a
+        // flat list of lifts, so `parentId` reads as top level and `rowKind` as a movement. The backfill is
+        // the part worth a test rather than the ALTER: a migration that left `rowKind` at its SQL default
+        // would hide every existing exercise from every picker, which is the one failure mode that is both
+        // silent and total.
+        helper.createDatabase(TEST_DB, 35).apply {
+            execSQL(
+                """
+                INSERT INTO exercises
+                    (id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, isCustom,
+                     restSeconds, techniqueNote, weightUnit, stepGrams, createdAt, updatedAt, deletedAt)
+                VALUES ('back-squat', 'Back Squat', 'QUADS', 'GLUTES', 'BARBELL', 'SQUAT', 0,
+                        NULL, NULL, NULL, NULL, 1, 1, NULL)
+                """.trimIndent(),
+            )
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 36, true, MIGRATION_35_36)
+
+        migrated.query("SELECT id, parentId, rowKind FROM exercises").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("back-squat", cursor.getString(0))
+            assertTrue("a flat library is top level", cursor.isNull(1))
+            assertEquals("and every row in it is a lift", "MOVEMENT", cursor.getString(2))
+        }
+
+        migrated.close()
+    }
 }

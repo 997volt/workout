@@ -2,6 +2,7 @@ package com.example.androidapp.data.local
 
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.androidapp.data.SeedExercises
+import com.example.androidapp.domain.model.RowKind
 
 /**
  * Tops up the seed exercise library.
@@ -42,6 +43,13 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                     converters.fromEquipment(exercise.equipment),
                     converters.fromMovementPattern(exercise.movementPattern),
                     0, // isCustom
+                    // A seeded row starts top level and is a lift. The families N95 ships are linked by
+                    // the migration that creates them, not by this top-up, which must never re-file a row
+                    // the lifter has moved — the seeder's own rule is that it undoes nothing.
+                    null, // parentId
+                    // The enum's name rather than the column's SQL default, so the value keeps one home; a
+                    // DEFAULT in SQL would be a second copy of a name that lives in the enum.
+                    RowKind.MOVEMENT.name,
                     // One timestamp per batch, so seeded rows are recognisable as
                     // seed rather than as something the user created.
                     seededAt,
@@ -59,4 +67,4 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
 internal const val INSERT_EXERCISE =
     "INSERT OR IGNORE INTO exercises " +
         "(id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, " +
-        "isCustom, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "isCustom, parentId, rowKind, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"

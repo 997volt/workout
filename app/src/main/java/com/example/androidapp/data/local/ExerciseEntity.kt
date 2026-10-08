@@ -5,6 +5,7 @@ import androidx.room.PrimaryKey
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 
 /**
  * A persisted library exercise (ROADMAP F5).
@@ -32,6 +33,27 @@ data class ExerciseEntity(
     val equipment: Equipment,
     val movementPattern: MovementPattern,
     val isCustom: Boolean,
+    /**
+     * The row this one hangs under, or null for a top-level row (ROADMAP N95).
+     *
+     * One column for both levels of the two-rule shape, because the *kind* decides what it means: a
+     * variation's parent is the exercise it is performed as a version of, and an exercise's parent is the
+     * category it is filed under. Every existing row is null, which reads as "top level" and is exactly
+     * what a flat library was.
+     *
+     * Deliberately **not** a foreign key with a cascade: a head is soft-deleted like every other row
+     * (P1.12 keeps it for the export), and N58's rule is that a removed head still *names* its children —
+     * both of which a cascade would take away.
+     */
+    val parentId: String? = null,
+    /**
+     * Whether this row is a lift or a category head (ROADMAP N95), stored by name.
+     *
+     * Backed by a Kotlin default rather than a SQL default so the migration is a plain ALTER plus one
+     * UPDATE: Room's default value would have to be the string literal, and this keeps the value's home
+     * in the enum. Every pre-existing row is backfilled to [RowKind.MOVEMENT].
+     */
+    val rowKind: RowKind = RowKind.MOVEMENT,
     /**
      * This exercise's own rest between sets, or null to use the app default
      * (ROADMAP N5). Nullable with no default, so the migration that adds it is a

@@ -935,6 +935,39 @@ val MIGRATION_34_35 = object : Migration(34, 35) {
 private const val ADD_TEMPLATE_SET_DROP_VALUE =
     "ALTER TABLE `template_sets` ADD COLUMN `dropValueGrams` INTEGER"
 
+/**
+ * Gives the library its shape: a row may hang under another, and a row may be a category (ROADMAP N95).
+ *
+ * Two plain ALTERs and one UPDATE, because both columns are nullable-or-defaulted in Kotlin rather than in
+ * SQL. `parentId` is null for every existing row, which reads as "top level" and is exactly what a flat
+ * library was; `rowKind` is backfilled to `MOVEMENT` in the same statement, since every row that existed
+ * before categories **is** a lift. The default in SQL is written as the empty string rather than the enum's
+ * name so the value's one home stays the enum — a name copied into a migration is a second place to change.
+ *
+ * **No index on `parentId`.** The grouping query reads the whole library, which is a few dozen rows and is
+ * already read whole today; an index would be a guess about a size this app has not seen.
+ *
+ * **No foreign key.** A head is soft-deleted like every other row (P1.12 keeps it for the export), and
+ * N58's rule is that a removed head still names its children — a cascade would take the children with it,
+ * and a `RESTRICT` would refuse the delete. The children's referent is a row that is still there.
+ */
+val MIGRATION_35_36 = object : Migration(35, 36) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(ADD_EXERCISE_PARENT_ID)
+        db.execSQL(ADD_EXERCISE_ROW_KIND)
+        db.execSQL(BACKFILL_EXERCISE_ROW_KIND)
+    }
+}
+
+private const val ADD_EXERCISE_PARENT_ID =
+    "ALTER TABLE `exercises` ADD COLUMN `parentId` TEXT"
+
+private const val ADD_EXERCISE_ROW_KIND =
+    "ALTER TABLE `exercises` ADD COLUMN `rowKind` TEXT NOT NULL DEFAULT ''"
+
+private const val BACKFILL_EXERCISE_ROW_KIND =
+    "UPDATE `exercises` SET `rowKind` = 'MOVEMENT'"
+
 private const val CREATE_PROGRAMS =
     "CREATE TABLE IF NOT EXISTS `programs` (" +
         "`id` TEXT NOT NULL, `name` TEXT NOT NULL, `isActive` INTEGER NOT NULL, " +
@@ -1080,4 +1113,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_32_33,
     MIGRATION_33_34,
     MIGRATION_34_35,
+    MIGRATION_35_36,
 )

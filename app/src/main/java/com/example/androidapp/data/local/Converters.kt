@@ -5,6 +5,7 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
 import java.time.DayOfWeek
@@ -42,6 +43,23 @@ class Converters {
 
     @TypeConverter
     fun toMovementPattern(value: String): MovementPattern = MovementPattern.valueOf(value)
+
+    @TypeConverter
+    fun fromRowKind(value: RowKind): String = value.name
+
+    /**
+     * Reads a row kind, treating a name this build does not know as a **movement** (ROADMAP N95).
+     *
+     * Every other enum here throws on an unknown name, and that is right for a value a lifter chose: a
+     * role or a muscle it cannot read is data it must not silently reinterpret. This one is different in
+     * kind, not in taste. The value decides whether a row is *offered*, and the two failures are not
+     * symmetric — reading a category as a movement shows one extra picker row, while reading a movement as
+     * a category **hides a lift that logged sets already point at**. So the unknown name falls back to the
+     * kind that keeps the row reachable, which is [RowKind.MOVEMENT].
+     */
+    @TypeConverter
+    fun toRowKind(value: String): RowKind =
+        RowKind.entries.firstOrNull { it.name == value } ?: RowKind.MOVEMENT
 
     @TypeConverter
     fun fromSetType(value: SetType): String = value.name

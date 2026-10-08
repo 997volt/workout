@@ -68,6 +68,31 @@ enum class Equipment(val label: String) {
     OTHER("Other"),
 }
 
+/**
+ * What a row in the exercise library *is* (ROADMAP N95).
+ *
+ * The library holds two kinds of row, and the difference is what the rest of the app asks about rather
+ * than how either is displayed:
+ *
+ *  - [MOVEMENT] is a lift somebody performs. Every picker offers it, and it is the only thing a logged
+ *    set may reference.
+ *  - [CATEGORY] is a head that holds others — *Bench Press* over a barbell, a dumbbell and a machine
+ *    variant. It is **never offered and never logged**: it exists so the movements filed under it can be
+ *    read together, which is what makes it a taxonomy rather than a second kind of exercise.
+ *
+ * **Stored by name, never an ordinal**, like every other enum here: an ordinal would silently re-label
+ * every row the first time a value was inserted above another. [MOVEMENT] is what every row that existed
+ * before categories is backfilled to, because it is what they already were.
+ */
+enum class RowKind {
+    MOVEMENT,
+    CATEGORY,
+    ;
+
+    /** True for the rows a picker may offer and a logged set may name (ROADMAP N95). */
+    val isLoggable: Boolean get() = this == MOVEMENT
+}
+
 /** Movement pattern, the basis for the push/pull balance check (P2.8). */
 enum class MovementPattern(val label: String) {
     HORIZONTAL_PUSH("Horizontal push"),
