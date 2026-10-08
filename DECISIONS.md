@@ -1030,6 +1030,14 @@ stop being true:
   session. The templates list's *Start* was disabled with "Finish the workout you are in to start this
   one." under the row.
 - The *Done* action sits at the rating row's height once a set is logged (N76).
+- N87–N94 were checked together on a Pixel 6 / API 36 (density 420, so 2.625 px per dp). Statistics led the
+  tab bar with Workouts third while the app opened on Workouts; a planned exercise's block drew its row
+  alone until the name was tapped, then the plan note, the rest/RPE/cue fields and *Add set*; deleting a
+  planned set offered *Set deleted* / *Undo* in a box clear of *Add set*, and Undo brought the **same set id**
+  back; the active program sat in the programs screen's foot bar with *New program* floating above it; and
+  Programs' and Templates' bars each carried the entry to the other. The next-up row's four lines ended 21 px
+  above its start pill — **exactly the 8 dp N86 asked for** after N88 gave the row a fourth line, which is
+  the re-measure that entry required.
 - A live workout's role picker offers **Cluster** beside **Drop** (N79), which is the fact that stops
   being true if the enum and the pickers drift. The derived ladder, the one-rating rule and the pairing
   are covered by the JVM and instrumented suites — the arithmetic is a pure function, so tapping it

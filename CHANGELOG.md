@@ -83,7 +83,7 @@ repeated here.
   it is, so it still reads one exercise or five. Home's *today* card keeps its single supporting line: the
   request names the next-up row, and the card is a different layout (N16, N61). N86's gap guard measures the
   row's text against its start pill, and the taller text was re-measured with the change rather than left to
-  pass by luck.
+  pass by luck: on the device the four lines now end 21 px — exactly 8 dp at density 420 — above the pill.
 - **Starting a planned workout while one is running asks which** (N89). `startOrResumeSession` is
   find-or-create, so the tap used to hand the running session back and drop the plan without a word — the
   lie N78 named, guarded only in the templates list, which disables *Start*. Home's starts ask now:
