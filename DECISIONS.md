@@ -560,7 +560,8 @@ the rule; that one argues it.
   workout — it would silently take a lifter who tapped *Start* on one template into the workout already
   running from another, and that is the lie it prevents. Making Templates a tab, or showing the bar
   mid-workout, was rejected for N34's reason.
-  ([evidence](DECISIONS-EVIDENCE.md#n78))
+  ([evidence](DECISIONS-EVIDENCE.md#n78); N87's reversal is argued at
+  [its own section](DECISIONS-EVIDENCE.md#n87))
 - **A start with a workout already running asks rather than resumes** (N89). N78 stopped the silent
   hand-back in the templates list by disabling *Start*; home's own start actions had no guard, so tapping
   *Start planned workout* on a next-up row dropped the plan and opened the running workout without a word.
@@ -814,6 +815,16 @@ the rule; that one argues it.
   it is a place to go rather than the one action that screen makes. **It is a way across and not a third way
   to start anything**: it asks nothing about a session being open, and a running workout is still answered by
   the templates list's own disabled *Start* (N78, B43) rather than by this entry being hidden.
+  ([evidence](DECISIONS-EVIDENCE.md#n93))
+- **A next-up row states the program and the count on lines of their own** (N88). Joined by a separator the
+  two read as one sentence — *Upper/Lower · 5 exercises* — so they are two `Text`s rather than one. **It is
+  the row's shape, not a wrap**: the count is its own line whatever the program is called, so a one-word
+  program name cannot pull it back up, which is why the split is structural rather than a flexible line. The
+  *today* card keeps its single supporting line, because it is a different layout (N16, N61) and the request
+  names the next-up row; the shared plural string stays shared, and only one of its two call sites moved. The
+  cost is that the row is taller, and **N86's gap to the start pill is a function of that height**, so the
+  measurement was taken again with the change: it reads the same 8 dp.
+  ([evidence](DECISIONS-EVIDENCE.md#n88))
 - **A program document is its own format, and every exercise it names travels with it** (N47). The
   backup is a restore of a whole database, so it cannot be the way one program is handed over; this
   is a document with a **version of its own**, carrying the program's *definition* — slots, the

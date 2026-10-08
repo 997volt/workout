@@ -1106,6 +1106,41 @@ the row says why, rather than the screen being unreachable: the withholding belo
 on the look. Making Templates a tab, or showing the tab bar on the logger, was rejected for N34's
 reason.
 
+## N87
+
+N78 put the two plan screens in the workout's overflow and argued it from N34: the tab bar is off the logger
+because a bar under a mid-set thumb loses sessions, while an overflow entry is a deliberate step. That
+argument is about how a *look* is reached, and it still holds — N87 changes which look needs reaching. Home
+already kept its plan links visible while a session was open, for N78's own reason, so the overflow entry was
+a second door to a room that was never locked. The reversal removes the door, not the room: mid-workout the ⋮
+is the logger's own business, and *Templates* and *Programs* are one step back, where the decision to train
+is taken.
+
+**What follows is that the ⋮ must stop being unconditional.** It was drawn for every open session because the
+entry that had to be reachable from an empty one lived in it; with that entry gone, the only thing left is
+*Discard*, and an empty session's discard is prompt-free and drawn in the body (N41). A menu that opens on
+nothing is a control that lies, so its condition became the same one the entry already had. The two tags go
+with the entries, per the deletion rule.
+
+**B43's withholding is the part that did not move.** It was always about the *start*, not the look: starting
+is idempotent, so a live *Start* on another template would silently move the lifter into the session already
+running from a template they were not looking at. That is why the templates list disables the button and the
+row says why, and it is untouched — including its reachability from home, which is now the only way in.
+
+## N88
+
+The row's supporting line joined the program's name and the count with a separator, and the two read as one
+sentence. Splitting them is not a wrap rule: the request is about the *shape* of the row, so the count gets
+its own line whatever the program is called — a one-word program name must not pull it back up. The
+implementation is therefore two `Text`s rather than a flexible layout, which is also what makes the shape
+assertable by position rather than by eye.
+
+**The *today* card keeps its one line.** It is a different layout (N16, N61) and the request names the next-up
+row, so the shared plural string stays shared and only one of its two call sites moved. The cost the entry
+named is real and was measured: N86's gap between the row's text and its start pill is a function of how tall
+that text is, so a fourth line shrinks it — the device reads 8 dp after the change, which is the number N86
+asked for.
+
 ## N94
 
 The bar's order and the app's entry point were one fact while Workouts sat first, and the enum's own
@@ -1213,6 +1248,18 @@ a unique thing; the card shows one of them and the list still carries every one,
 so nothing became unreachable and no case the single-program user has is generalised into a rule for the
 others. With none active there is no card, because a card for nothing would be a control that cannot do
 anything (N53, N67).
+
+## N93
+
+The two screens are siblings under one idea — a plan, and the schedule that orders it — and the only path
+between them was back home and in. Each bar already carries the actions that belong to its own screen
+(Programs' *Load*, N47), and this is a place to go rather than an action on what is listed, so it sits with
+them rather than floating over the list.
+
+**It deliberately says nothing about a running workout.** B43's withholding belongs on a *start*, not on a
+look (N78's distinction), and this entry starts nothing: the templates list's rows still disable *Start* while
+a session is open, so a way across cannot become a third way to begin one. Hiding the entry instead would
+have been the roundabout version of the same rule, applied where it does not belong.
 
 ## N79
 
