@@ -191,9 +191,11 @@ fun WorkoutsHomeScreen(
     /**
      * Records the workout that stands in for one occurrence, then starts it (ROADMAP P3.11).
      *
-     * A null template restores the slot's own workout and starts nothing.
+     * A null template restores the slot's own workout and starts nothing. The third argument is the picked
+     * template's **name**, so the start's own question can name the workout it is about to begin rather than
+     * the one that was scheduled (B93).
      */
-    onSubstituteTemplate: (TodayPlan, String?) -> Unit = { _, _ -> },
+    onSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
     /**
      * Starts the workout a next-up row's pick chose, and records nothing (ROADMAP N85).
      *
@@ -201,7 +203,7 @@ fun WorkoutsHomeScreen(
      * act: one writes a substitution for an occurrence it belongs to, and the other has no occurrence to
      * write against.
      */
-    onStartSubstituteTemplate: (TodayPlan, String?) -> Unit = { _, _ -> },
+    onStartSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
 ) {
     // The row whose substitute picker is open, and whether that row's pick is recorded, or null
     // (P3.11, N85). `substituting?.plan` is what the dialog draws; which callback answers it is decided by
@@ -213,11 +215,11 @@ fun WorkoutsHomeScreen(
     SubstitutePicker(
         request = substituting,
         templates = state.templates,
-        onChoose = { request, templateId ->
+        onChoose = { request, templateId, templateName ->
             if (request.records) {
-                onSubstituteTemplate(request.plan, templateId)
+                onSubstituteTemplate(request.plan, templateId, templateName)
             } else {
-                onStartSubstituteTemplate(request.plan, templateId)
+                onStartSubstituteTemplate(request.plan, templateId, templateName)
             }
         },
         onDismiss = { substituting = null },
@@ -278,21 +280,22 @@ private fun SubstitutePicker(
      *
      * The request travels with it because the picker **dismisses before it reports** — the dialog's exits
      * call `onDismiss` first, so reading the screen's own state back here would read it already cleared. That
-     * is also why which rows record is the request's business rather than the screen's.
+     * is also why which rows record is the request's business rather than the screen's. The third argument is
+     * the picked template's name, which the dialog already draws and the start's question needs (B93).
      */
-    onChoose: (SubstituteRequest, String?) -> Unit,
+    onChoose: (SubstituteRequest, String?, String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val current = request ?: return
     SubstituteDialog(
         templates = templates.filterNot { it.id == current.plan.templateId },
-        onPick = { templateId ->
+        onPick = { template ->
             onDismiss()
-            onChoose(current, templateId)
+            onChoose(current, template.id, template.name)
         },
         onClear = {
             onDismiss()
-            onChoose(current, null)
+            onChoose(current, null, null)
         },
         // A next-up row records no substitution (N85), so there is nothing for it to restore: the entry
         // would dismiss and do nothing at all. Offered only where the pick was written (N53, N67).
@@ -312,7 +315,7 @@ private fun SubstitutePicker(
 @Composable
 private fun SubstituteDialog(
     templates: List<WorkoutTemplate>,
-    onPick: (String) -> Unit,
+    onPick: (WorkoutTemplate) -> Unit,
     onClear: () -> Unit,
     /** False where the row records nothing, so there is no pick for the clearing row to clear (N85). */
     showClear: Boolean,
@@ -340,7 +343,7 @@ private fun SubstituteDialog(
                         headlineContent = { Text(template.name) },
                         modifier = Modifier
                             .testTag(TestTags.homeSubstituteTemplate(template.id))
-                            .clickable { onPick(template.id) },
+                            .clickable { onPick(template) },
                     )
                 }
             }

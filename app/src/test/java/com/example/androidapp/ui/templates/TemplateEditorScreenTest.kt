@@ -186,6 +186,33 @@ class TemplateEditorScreenTest {
     }
 
     @Test
+    fun theFirstExerciseAddedToAnEmptyTemplate_opens() {
+        // B89: the seed was keyed on `ids.isEmpty()`, so when an empty editor gained its first exercise the
+        // key flipped, the seed was rebuilt to include that id, and the one row N91 says opens was folded.
+        val state = mutableStateOf(twoExercises.copy(exercises = emptyList()))
+        composeTestRule.setContent {
+            TemplateEditorScreen(
+                state = state.value,
+                onRename = {},
+                onRemoveExercise = {},
+                onMoveExercise = { _, _ -> },
+                onDeleteTemplate = {},
+                onAddExercise = {},
+                onAddWarmUpSets = { _, _ -> },
+                onSaveExercisePlan = { _, _, _, _ -> },
+                onBack = {},
+            )
+        }
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_NO_EXERCISES).assertIsDisplayed()
+
+        state.value = twoExercises.copy(exercises = listOf(twoExercises.exercises.first()))
+        composeTestRule.waitForIdle()
+
+        // Its *Add set* is drawn, which is the whole point of the row opening.
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertExists()
+    }
+
+    @Test
     fun removingAPlannedSet_offersTheWayBack() {
         // ROADMAP N90: a mis-tap on a set's delete used to be unrecoverable from the screen, with
         // nothing said. The ViewModel holds the set that went, and the box names it and offers Undo,

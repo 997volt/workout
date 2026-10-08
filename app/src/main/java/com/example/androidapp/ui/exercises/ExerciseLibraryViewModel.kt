@@ -7,7 +7,6 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Exercise
-import com.example.androidapp.domain.model.taxonomySubtitle
 import com.example.androidapp.domain.repository.ExerciseRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -17,20 +16,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-
-/**
- * One row of the library list, flattened so the composable does no domain work.
- *
- * [subtitle] is null for an exercise whose taxonomy has not been filled in — a
- * custom exercise created from just a name. The row then renders nothing under
- * the title rather than the "Other · Other" the raw labels would produce
- * (ROADMAP N2).
- */
-data class ExerciseListItem(
-    val id: String,
-    val name: String,
-    val subtitle: String?,
-)
 
 data class ExerciseLibraryUiState(
     val query: String = "",
@@ -57,6 +42,14 @@ data class ExerciseLibraryUiState(
      * an empty list would be a lie about what is on the device.
      */
     val error: DataError? = null,
+    /**
+     * A write failed, and is a message rather than the page (ROADMAP B88).
+     *
+     * A failed read and a failed write used to share [error], so a *New category* that did not land replaced
+     * the whole library with the read-failure page and left it there. The two are different sentences with
+     * different consequences, and only the read one hides the list.
+     */
+    val writeError: DataError? = null,
     /**
      * Every row by id, removed ones included, so a child can name a head that is no longer offered (N95).
      *
@@ -119,9 +112,9 @@ class ExerciseLibraryViewModel @Inject constructor(
             exercises = exercises,
             isLoading = false,
             libraryIsEmpty = exercises.isEmpty(),
-            // Either failure: the read, or a write the screen has not dismissed yet (F7's rule for a write
-            // that produced nothing).
-            error = (result as? DataResult.Failure)?.error ?: currentError,
+            // Either failure is kept apart (B88): a failed read takes the page, a failed write is a message.
+            error = (result as? DataResult.Failure)?.error,
+            writeError = currentError,
             removedHeads = removed,
         )
     }.stateIn(
@@ -170,13 +163,5 @@ class ExerciseLibraryViewModel @Inject constructor(
     private companion object {
         /** Keeps the upstream flow warm across a configuration change. */
         const val STOP_TIMEOUT_MILLIS = 5_000L
-        const val TICK_MILLIS = 1_000L
     }
 }
-
-/** Shared with the workout screens' exercise picker, which renders the same rows. */
-internal fun Exercise.toListItem() = ExerciseListItem(
-    id = id,
-    name = name,
-    subtitle = taxonomySubtitle(primaryMuscle, equipment),
-)

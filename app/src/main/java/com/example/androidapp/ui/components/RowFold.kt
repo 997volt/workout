@@ -14,11 +14,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
  * what makes a fold a change, at the cost of copying a handful of pairs per tap.
  *
  * **A row the list has already drawn is folded; one that arrives afterwards opens.** That is N91's "only the
- * blocks that were already there start folded": the map is seeded from what the first content composition
- * can see, so a row absent from it is the one just added — which opens, so its first set (or its first child
- * in the library) needs no second tap. `rememberSaveable` is N84's rule — this activity declares no
- * `configChanges`, so a rotation would otherwise fold what the lifter opened.
+ * blocks that were already there start folded": the seed is the id list of the **first** composition that has
+ * content, and it is taken once — so a row absent from it is the one just added, which opens, so its first
+ * set (or its first child in the library) needs no second tap. `rememberSaveable` is N84's rule — this
+ * activity declares no `configChanges`, so a rotation would otherwise fold what the lifter opened.
  *
+ * **Taken once, with no key, is the point** (B89): keyed on `ids.isEmpty()`, the seed was rebuilt when an
+ * empty editor gained its first exercise, so the one row that must open was judged already-there and folded.
  * A first composition while the plan is still loading seeds nothing, so those rows open once it arrives,
  * which the seed cannot tell apart from the added case.
  *
@@ -28,7 +30,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
  */
 @Composable
 fun rememberRowFold(ids: List<String>, initiallyOpen: Boolean = false): RowFold {
-    val alreadyThere = remember(ids.isEmpty()) { ids.toSet() }
+    // No key: the first content the screen shows is the whole seed. A key that flips with emptiness rebuilt
+    // it to include the first row added, folding exactly the row N91 says opens.
+    val alreadyThere = remember { ids.toSet() }
     val state = rememberSaveable { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
     if (ids.isNotEmpty()) {
         val missing = ids.filterNot { it in state.value }

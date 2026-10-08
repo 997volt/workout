@@ -88,6 +88,8 @@ fun ExerciseLibraryRoute(
         onBack = onBack,
         onQueryChange = viewModel::onQueryChange,
         onExerciseClick = onExerciseClick,
+        // A failed write is a message on the screen's own host (B88); the page's `error` stays the read's.
+        message = state.writeError?.let { dataErrorMessage(it) },
         onNewCategory = viewModel::onCreateCategory,
         onDismissMessage = viewModel::onErrorShown,
         modifier = modifier,
@@ -97,10 +99,10 @@ fun ExerciseLibraryRoute(
 /**
  * The library list.
  *
- * [onBack] and [onNewExercise] are optional so the same composable serves both
- * the standalone library destination and the in-workout exercise picker, which
- * differs in its title, what a tap does, and — for the picker — the offer to
- * create a new exercise (ROADMAP N2).
+ * The library's own screen since N95: the in-workout picker has its own ([com.example.androidapp.ui.workout.ExercisePickerScreen]),
+ * because the two now hold different things — the library keeps families and folds them, the picker holds a
+ * flat, movements-only list. What they share is shared as composables, not by one screen serving two states,
+ * which is what let them drift apart the last time they were one (B79, B94).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,8 +115,7 @@ fun ExerciseLibraryScreen(
     onBack: (() -> Unit)? = null,
     message: String? = null,
     onDismissMessage: () -> Unit = {},
-    onNewExercise: (() -> Unit)? = null,
-    /** Makes a family, where [onNewExercise] makes a movement (ROADMAP N95). Set on the library only. */
+    /** Makes a family (ROADMAP N95). Set on the library, which is where the library's shape is kept. */
     onNewCategory: ((String) -> Unit)? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -143,7 +144,6 @@ fun ExerciseLibraryScreen(
             // is felt mid-workout (ROADMAP N2). A composable rather than an `if` here, because the screen
             // is at the length this project allows.
             NewExerciseButton(
-                onClick = onNewExercise,
                 onNewCategory = onNewCategory?.let { { namingCategory = true } },
             )
         },
@@ -161,7 +161,7 @@ fun ExerciseLibraryScreen(
 
     NamingDialog(
         isOpen = namingCategory,
-        error = state.error,
+        error = state.writeError,
         onDismiss = {
             namingCategory = false
             onDismissMessage()
@@ -257,19 +257,20 @@ private fun NamingDialog(
  * A movement on the picker and a **category** on the library: the picker answers "what am I doing", while the
  * library is where the library's shape is kept. Only one is ever set, so the two never share a row.
  */
+/**
+ * The library's one action: a new category (ROADMAP N95).
+ *
+ * Making a *movement* moved to the picker (B94): the library is where the library's shape is kept, and the
+ * gap a new movement fills is felt mid-workout, which is the picker's screen now.
+ */
 @Composable
-private fun NewExerciseButton(onClick: (() -> Unit)?, onNewCategory: (() -> Unit)?) {
-    val label = when {
-        onNewCategory != null -> R.string.exercise_new_category
-        onClick != null -> R.string.exercise_new
-        else -> return
-    }
-    val tag = if (onNewCategory != null) TestTags.LIBRARY_NEW_CATEGORY else TestTags.LIBRARY_NEW_EXERCISE
+private fun NewExerciseButton(onNewCategory: (() -> Unit)?) {
+    if (onNewCategory == null) return
     ExtendedFloatingActionButton(
-        onClick = onNewCategory ?: onClick ?: return,
-        text = { Text(stringResource(label)) },
+        onClick = onNewCategory,
+        text = { Text(stringResource(R.string.exercise_new_category)) },
         icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
-        modifier = Modifier.testTag(tag),
+        modifier = Modifier.testTag(TestTags.LIBRARY_NEW_CATEGORY),
     )
 }
 

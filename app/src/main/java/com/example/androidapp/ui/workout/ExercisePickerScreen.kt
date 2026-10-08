@@ -93,7 +93,7 @@ fun ExercisePickerScreen(
                     modifier = Modifier.testTag(TestTags.LIBRARY_READ_ERROR),
                 )
 
-                state.isEmpty -> EmptyState(query = state.query, libraryIsEmpty = false)
+                state.isEmpty -> EmptyState(query = state.query, libraryIsEmpty = state.libraryIsEmpty)
 
                 else -> ExerciseList(
                     items = state.items,

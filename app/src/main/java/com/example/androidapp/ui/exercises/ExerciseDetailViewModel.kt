@@ -60,10 +60,11 @@ data class ExerciseDetailUiState(
     val isEditing: Boolean = false,
     val error: DataError? = null,
     /**
-     * The heads this row can be filed under (ROADMAP N95), live from the library.
+     * The heads this row can be filed under (ROADMAP N95, B85), live from the library.
      *
-     * Offered for a movement, which can be filed under a category or a variation of another exercise; empty
-     * for a category, which sits at the top level because the shape is two rules deep and no deeper.
+     * A head is a category or an exercise that is not itself a variation: a movement is filed under a
+     * family, and a variation under the exercise it is performed as. Empty for a category, which sits at the
+     * top level because the shape is two rules deep and no deeper.
      */
     val categoryOptions: List<Exercise> = emptyList(),
     /**
@@ -75,6 +76,13 @@ data class ExerciseDetailUiState(
     val headName: String? = null,
     /** This row's head, for the muscle it passes down (N95). Null when it hangs under nothing. */
     val head: Exercise? = null,
+    /**
+     * The exercise a variation being edited hangs under, while that variation is not stored yet (B83).
+     *
+     * The row is written on **Save**, not when the editor opens: creating it up front left a stray row named
+     * after its parent when the lifter cancelled, and there is no delete for a library row to take it back.
+     */
+    val variationParent: Exercise? = null,
 ) {
     /**
      * Loaded, but no such exercise — a real state, not an error to hide.
@@ -86,18 +94,15 @@ data class ExerciseDetailUiState(
     val notFound: Boolean get() = !isLoading && exercise == null && error == null
 
     /**
-     * Any exercise can be corrected here (ROADMAP N5). Seeded rows included, and
-     * that is safe: the seeder tops up with `INSERT OR IGNORE` and never updates an
-     * existing row, so an edit survives every future top-up.
-     */
-    /**
      * Whether *new variation of this* is offered (ROADMAP N95).
      *
-     * A movement only, and only while not already editing: a variation hangs under an exercise, and one
-     * under a category would be the third level the shape does not have.
+     * A movement that is **not already a variation** (B82): a variation hangs under an exercise, and a
+     * variation of a variation would be the third level the shape does not have. [head] is the row this one
+     * hangs under, so a movement whose head is a movement is one.
      */
     val canCreateVariation: Boolean
-        get() = !isLoading && !isEditing && exercise?.rowKind == RowKind.MOVEMENT
+        get() = !isLoading && !isEditing && exercise?.rowKind == RowKind.MOVEMENT &&
+            head?.rowKind != RowKind.MOVEMENT
 
     /**
      * Whether the editor is offered (ROADMAP N2, widened by N5).
@@ -150,21 +155,31 @@ class ExerciseDetailViewModel @Inject constructor(
         _uiState.update { it.copy(isEditing = true, error = null) }
     }
 
+    /**
+     * Leaves the editor without writing (ROADMAP N95, B83).
+     *
+     * A variation that was only being drafted goes back to the exercise it hangs under, and **nothing was
+     * ever stored**, so cancelling leaves the library exactly as it was.
+     */
     fun onCancelEdit() {
-        _uiState.update { it.copy(isEditing = false, error = null) }
+        _uiState.update { state ->
+            state.copy(
+                exercise = state.variationParent ?: state.exercise,
+                isEditing = false,
+                variationParent = null,
+                error = null,
+            )
+        }
     }
 
     /**
-     * Writes the edited attributes, keeping the row's id, secondary muscles and
-     * custom flag. Leaving edit mode is driven by the write, so a failure keeps
-     * the form open with the user's input rather than pretending it saved.
-     */
-    /**
-     * The heads this row may be filed under (ROADMAP N95).
+     * The heads this row may be filed under (ROADMAP N95, B85).
      *
      * Read separately from the exercise itself and *not* wrapped in a failure branch: a list that could not
      * be read leaves the picker empty, which hides a control rather than breaking the page. The exercise's
-     * own row is left out — filing something under itself is not a thing the shape allows.
+     * own row is left out — filing something under itself is not a thing the shape allows — and so is a
+     * movement that is already a variation, because a variation of a variation is the third level there is
+     * no room for (B82).
      */
     private suspend fun loadCategoryOptions() {
         // Two reads, because they answer two different questions. The **live** library is what the picker may
@@ -174,11 +189,17 @@ class ExerciseDetailViewModel @Inject constructor(
         // removed head still names its children (N58's rule).
         val live = (repository.observeExercises().first() as? DataResult.Success)?.data.orEmpty()
         val everything = (repository.getAllIncludingDeleted() as? DataResult.Success)?.data.orEmpty()
+        val liveById = live.associateBy { it.id }
         _uiState.update { state ->
             val head = everything.firstOrNull { it.id == state.exercise?.parentId }
             state.copy(
-                categoryOptions = live.filter {
-                    it.rowKind == RowKind.CATEGORY && it.id != state.exercise?.id
+                categoryOptions = live.filter { candidate ->
+                    candidate.id != state.exercise?.id &&
+                        (
+                            candidate.rowKind == RowKind.CATEGORY ||
+                                // A movement may hold a variation only while it is not one itself.
+                                liveById[candidate.parentId]?.rowKind != RowKind.MOVEMENT
+                            )
                 },
                 head = head,
                 headName = head?.name,
@@ -187,48 +208,94 @@ class ExerciseDetailViewModel @Inject constructor(
     }
 
     /**
-     * Files a new variation of this exercise and opens it for naming (ROADMAP N95).
+     * Starts a variation of this exercise, in the editor (ROADMAP N95, B83).
      *
-     * A variation **inherits the exercise it hangs under** — its muscles, its equipment — so the copy below
-     * is what "inherits" means in practice: only what is performed differently is the new row's own. It
-     * arrives in the editor rather than on a finished screen, because its name is the one thing the lifter
+     * A variation **inherits the exercise it hangs under** — its muscles, its equipment — so the draft below
+     * is what "inherits" means in practice: only what is performed differently will be the new row's own.
+     * It arrives in the editor rather than on a finished screen, because its name is the one thing the lifter
      * must supply: "three-second paused" is a name they write, not a value from a closed set.
+     *
+     * **Nothing is written yet** (B83): the row used to be inserted before the editor opened, so cancelling
+     * left a stray row named after its parent — and a library row has no delete. The insert moved to [onSave],
+     * which is the first moment the lifter has said they want it.
      */
     fun onCreateVariation() {
         val parent = _uiState.value.exercise ?: return
-        viewModelScope.launch {
-            when (val result = repository.createVariationOf(parent)) {
-                is DataResult.Success -> _uiState.update {
-                    it.copy(exercise = result.data, isEditing = true, error = null)
-                }
-
-                is DataResult.Failure -> _uiState.update { it.copy(error = result.error) }
-            }
-        }
-    }
-
-    fun onSave(edit: ExerciseEdit) {
-        val current = _uiState.value.exercise ?: return
-        viewModelScope.launch {
-            val updated = current.copy(
-                name = edit.name.trim(),
-                primaryMuscle = edit.primaryMuscle,
-                equipment = edit.equipment,
-                movementPattern = edit.movementPattern,
-                restSeconds = edit.restSeconds,
-                techniqueNote = edit.techniqueNote,
-                weightUnit = edit.weightUnit,
-                stepGrams = edit.stepGrams,
-                // The one field that makes this write *move to category* as well as an edit (N95).
-                parentId = edit.parentId,
+        _uiState.update {
+            it.copy(
+                exercise = parent.copy(
+                    id = "",
+                    name = "",
+                    isCustom = true,
+                    parentId = parent.id,
+                    rowKind = RowKind.MOVEMENT,
+                    restSeconds = null,
+                    techniqueNote = null,
+                    weightUnit = null,
+                    stepGrams = null,
+                ),
+                variationParent = parent,
+                isEditing = true,
+                error = null,
             )
-            when (val result = repository.updateExercise(updated)) {
-                is DataResult.Success -> _uiState.update {
-                    it.copy(exercise = updated, isEditing = false, error = null)
+        }
+    }
+
+    /**
+     * Writes the edited attributes, keeping the row's id, secondary muscles and custom flag.
+     *
+     * A variation being drafted is created **and then** filled in, in that order, because the create path is
+     * what copies the inherited fields (B83). A failure at either write keeps the form open with what was
+     * typed rather than pretending it saved. The heads are re-read on success, so a *move to category* shows
+     * the new family and the muscle it now inherits rather than the pre-move answers (B84).
+     */
+    fun onSave(edit: ExerciseEdit) {
+        val state = _uiState.value
+        val current = state.exercise ?: return
+        viewModelScope.launch {
+            val outcome: DataResult<Exercise> = if (state.variationParent != null) {
+                when (val created = repository.createVariationOf(state.variationParent)) {
+                    is DataResult.Success -> write(created.data.withEdit(edit))
+                    is DataResult.Failure -> created
+                }
+            } else {
+                write(current.withEdit(edit))
+            }
+            when (outcome) {
+                is DataResult.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            exercise = outcome.data,
+                            isEditing = false,
+                            variationParent = null,
+                            error = null,
+                        )
+                    }
+                    loadCategoryOptions()
                 }
 
-                is DataResult.Failure -> _uiState.update { it.copy(error = result.error) }
+                is DataResult.Failure -> _uiState.update { it.copy(error = outcome.error) }
             }
         }
     }
+
+    /** Writes [row], returning it on success so the screen can hold what was stored. */
+    private suspend fun write(row: Exercise): DataResult<Exercise> =
+        when (val result = repository.updateExercise(row)) {
+            is DataResult.Success -> DataResult.Success(row)
+            is DataResult.Failure -> result
+        }
+
+    private fun Exercise.withEdit(edit: ExerciseEdit): Exercise = copy(
+        name = edit.name.trim(),
+        primaryMuscle = edit.primaryMuscle,
+        equipment = edit.equipment,
+        movementPattern = edit.movementPattern,
+        restSeconds = edit.restSeconds,
+        techniqueNote = edit.techniqueNote,
+        weightUnit = edit.weightUnit,
+        stepGrams = edit.stepGrams,
+        // The one field that makes this write *move to category* as well as an edit (N95).
+        parentId = edit.parentId,
+    )
 }

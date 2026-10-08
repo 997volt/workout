@@ -35,6 +35,13 @@ data class ExercisePickerUiState(
     val items: List<LibraryRow> = emptyList(),
     val isLoading: Boolean = true,
     val error: DataError? = null,
+    /**
+     * No movement exists at all, as opposed to none matching the query (ROADMAP P1.1a).
+     *
+     * The picker offers movements only, so a library holding nothing a lifter can log — including one that
+     * holds categories but no movements — is empty here, and says so rather than blaming the search.
+     */
+    val libraryIsEmpty: Boolean = false,
 ) {
     val isEmpty: Boolean get() = !isLoading && items.isEmpty()
 }
@@ -92,10 +99,12 @@ class ExercisePickerViewModel @Inject constructor(
         ExercisePickerUiState(
             query = currentQuery,
             // Flat and movements-only (ROADMAP N95): a picker offers what can be logged, and a lifter
-            // choosing what they just did is looking for one name rather than a tree.
+            // choosing what they just did is looking for one name rather than a tree. The query reaches the
+            // flat list (B79), so typing filters it instead of doing nothing.
             items = libraryRows(exercises, currentQuery, grouped = false),
             isLoading = false,
             error = (result as? DataResult.Failure)?.error,
+            libraryIsEmpty = exercises.none { it.rowKind.isLoggable },
         )
     }.stateIn(
         scope = viewModelScope,

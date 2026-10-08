@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.home
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -99,6 +100,31 @@ class ActiveWorkoutDialogTest {
         setDialog(start = null)
 
         composeTestRule.onNodeWithTag(TestTags.HOME_ACTIVE_WORKOUT_DIALOG).assertDoesNotExist()
+    }
+
+    @Test
+    fun whileTheDiscardIsRunning_bothAnswersAreDead() {
+        // ROADMAP B91: the pending start was cleared only once the suspend delete returned, so both answers
+        // stayed live for the whole write — a second tap could navigate twice or report a delete that lost
+        // the race. The buttons are disabled while it runs.
+        var continued = 0
+        var discarded = 0
+        composeTestRule.setContent {
+            AndroidAppTheme {
+                ActiveWorkoutDialog(
+                    start = StartIntent(templateId = "t1", label = "Heavy lower"),
+                    onContinue = { continued++ },
+                    onDiscardAndStart = { discarded++ },
+                    onDismiss = {},
+                    busy = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_ACTIVE_WORKOUT_DISCARD).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag(TestTags.HOME_ACTIVE_WORKOUT_CONTINUE).assertIsNotEnabled()
+        assertThat(discarded).isEqualTo(0)
+        assertThat(continued).isEqualTo(0)
     }
 }
 

@@ -48,8 +48,8 @@ class WorkoutsHomeScreenTest {
         val onStartWorkout: () -> Unit = {},
         val onOpenTemplates: () -> Unit = {},
         val onStartTemplate: (TodayPlan) -> Unit = {},
-        val onSubstituteTemplate: (TodayPlan, String?) -> Unit = { _, _ -> },
-        val onStartSubstituteTemplate: (TodayPlan, String?) -> Unit = { _, _ -> },
+        val onSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
+        val onStartSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
         val onOpenWorkout: (String) -> Unit = {},
         val onOpenPrograms: () -> Unit = {},
         val onOpenPlannedWorkout: (NextUp) -> Unit = {},
@@ -545,12 +545,18 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun theSubstituteAction_offersTheTemplates_andReportsThePick() {
-        // ROADMAP P3.11: the pick is made at the point of starting, from the row being started.
-        var picked: Pair<TodayPlan, String?>? = null
+    fun theSubstituteAction_offersTheTemplates_andReportsThePickByName() {
+        // ROADMAP P3.11: the pick is made at the point of starting, from the row being started. ROADMAP B93:
+        // the pick's **name** travels with it, so the start's own question names the workout it is about to
+        // begin rather than the scheduled one it stands in for.
+        var picked: Triple<TodayPlan, String?, String?>? = null
         setScreen(
             state = todayPlanWithTemplates,
-            actions = Actions(onSubstituteTemplate = { plan, templateId -> picked = plan to templateId }),
+            actions = Actions(
+                onSubstituteTemplate = { plan, templateId, templateName ->
+                    picked = Triple(plan, templateId, templateName)
+                },
+            ),
         )
 
         composeTestRule.onNodeWithTag(TestTags.homeSubstitute("slot-1")).performClick()
@@ -559,6 +565,7 @@ class WorkoutsHomeScreenTest {
 
         assertThat(picked?.first?.slotId).isEqualTo("slot-1")
         assertThat(picked?.second).isEqualTo("t2")
+        assertThat(picked?.third).isEqualTo("Dumbbell version")
     }
 
     @Test
@@ -591,8 +598,8 @@ class WorkoutsHomeScreenTest {
                 templates = todayPlanWithTemplates.templates,
             ),
             actions = Actions(
-                onSubstituteTemplate = { plan, templateId -> recorded = plan to templateId },
-                onStartSubstituteTemplate = { plan, templateId -> started = plan to templateId },
+                onSubstituteTemplate = { plan, templateId, _ -> recorded = plan to templateId },
+                onStartSubstituteTemplate = { plan, templateId, _ -> started = plan to templateId },
             ),
         )
 
@@ -643,7 +650,9 @@ class WorkoutsHomeScreenTest {
         var picked: Pair<TodayPlan, String?>? = null
         setScreen(
             state = todayPlanWithTemplates,
-            actions = Actions(onSubstituteTemplate = { plan, templateId -> picked = plan to templateId }),
+            actions = Actions(
+                onSubstituteTemplate = { plan, templateId, _ -> picked = plan to templateId },
+            ),
         )
 
         composeTestRule.onNodeWithTag(TestTags.homeSubstitute("slot-1")).performClick()

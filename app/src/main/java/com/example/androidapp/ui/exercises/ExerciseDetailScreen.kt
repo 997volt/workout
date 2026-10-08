@@ -527,12 +527,14 @@ private fun ExerciseEditForm(
 }
 
 /**
- * Which head this movement is filed under (ROADMAP N95).
+ * Which head this movement is filed under (ROADMAP N95, B85).
  *
  * The same labelled dropdown the taxonomy fields use, over the library's heads with a null first: moving a
  * row is *one field of the row*, and the shape's whole point is that keeping the taxonomy honest is cheap.
- * *Not in a category* is an explicit choice rather than an empty state, because a loose custom movement is a
- * real place to be.
+ * A head is a **category or an exercise** — a movement is filed under a family, and a variation under the
+ * exercise it is performed as — so a variation's real head is among the options and the field reads it back
+ * instead of falling through to the null label. *Not filed under anything* is an explicit choice rather than
+ * an empty state, because a loose custom movement is a real place to be.
  */
 @Composable
 private fun CategoryPicker(

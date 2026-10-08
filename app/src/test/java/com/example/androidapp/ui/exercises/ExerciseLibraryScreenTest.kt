@@ -172,7 +172,6 @@ class ExerciseLibraryScreenTest {
         state: ExerciseLibraryUiState,
         onQueryChange: (String) -> Unit = {},
         onExerciseClick: (String) -> Unit = {},
-        onNewExercise: (() -> Unit)? = null,
         onNewCategory: ((String) -> Unit)? = null,
     ) {
         composeTestRule.setContent {
@@ -181,7 +180,6 @@ class ExerciseLibraryScreenTest {
                 title = "Exercise library",
                 onQueryChange = onQueryChange,
                 onExerciseClick = onExerciseClick,
-                onNewExercise = onNewExercise,
                 onNewCategory = onNewCategory,
             )
         }
@@ -210,23 +208,16 @@ class ExerciseLibraryScreenTest {
     }
 
     @Test
-    fun withNoCreateCallback_thereIsNoNewExerciseAction() {
-        setScreen(ExerciseLibraryUiState(isLoading = false, exercises = items))
-
-        composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_EXERCISE).assertDoesNotExist()
-    }
-
-    @Test
-    fun tappingNewExercise_reportsIt() {
-        var started = false
+    fun theLibrary_neverOffersANewMovement() {
+        // Making a movement is the in-workout picker's action now (B94): the library is where the library's
+        // shape is kept, and its one action is a category.
         setScreen(
             ExerciseLibraryUiState(isLoading = false, exercises = items),
-            onNewExercise = { started = true },
+            onNewCategory = {},
         )
 
-        composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_EXERCISE).performClick()
-
-        assertTrue("the picker's create action should be wired through", started)
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_EXERCISE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_CATEGORY).assertIsDisplayed()
     }
 
     @Test

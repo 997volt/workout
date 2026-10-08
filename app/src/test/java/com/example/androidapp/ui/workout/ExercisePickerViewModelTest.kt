@@ -150,6 +150,55 @@ class ExercisePickerViewModelTest {
         assertEquals(listOf(0), viewModel.uiState.value.items.map { it.depth }.distinct())
     }
 
+    @Test
+    fun theList_isFilteredByTheQuery() = runTest(dispatcher) {
+        // B79: the flat branch ignored its query, so the picker's search box did nothing at all — the whole
+        // movements list stayed on screen however much was typed.
+        val exercises = FakeExerciseRepository(
+            listOf(
+                movement("back-squat", "Back Squat"),
+                movement("bench", "Barbell Bench Press"),
+            ),
+        )
+        val viewModel = viewModelFor(exercises)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onQueryChange("back squat")
+        advanceUntilIdle()
+
+        assertEquals(listOf("Back Squat"), viewModel.uiState.value.items.map { it.name })
+        assertFalse(viewModel.uiState.value.isEmpty)
+    }
+
+    @Test
+    fun aQueryThatMatchesNothing_isASearchMiss_notAnEmptyLibrary() = runTest(dispatcher) {
+        val exercises = FakeExerciseRepository(listOf(movement("back-squat", "Back Squat")))
+        val viewModel = viewModelFor(exercises)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onQueryChange("zzz")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.isEmpty)
+        assertFalse("the library is not empty; the search just missed", state.libraryIsEmpty)
+    }
+
+    @Test
+    fun aLibraryWithNoMovements_readsAsEmpty_ratherThanAsAFailedSearch() = runTest(dispatcher) {
+        // B79's other half: the picker's empty state hardcoded `libraryIsEmpty = false`, so an empty library
+        // was reported as a search that found nothing.
+        val exercises = FakeExerciseRepository(listOf(category("cat-bench", "Bench Press")))
+        val viewModel = viewModelFor(exercises)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isEmpty)
+        assertTrue(viewModel.uiState.value.libraryIsEmpty)
+    }
+
     private fun movement(id: String, name: String, parent: String? = null) = Exercise(
         id = id,
         name = name,

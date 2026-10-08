@@ -52,31 +52,42 @@ internal fun activeWorkoutGate(
     onFailure: (DataError) -> Unit,
 ): (StartIntent) -> Unit {
     var pending by remember { mutableStateOf<StartIntent?>(null) }
+    // True while the soft delete is in flight (B91): both answers stay live for the whole suspend write
+    // otherwise, and a second tap either navigates twice or reports a delete that lost the race.
+    var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     ActiveWorkoutDialog(
         start = pending,
+        busy = busy,
         onContinue = {
-            pending = null
-            onContinueOngoing()
+            if (!busy) {
+                pending = null
+                onContinueOngoing()
+            }
         },
         onDiscardAndStart = { intent ->
-            scope.launch {
-                when (val result = discard()) {
-                    is DataResult.Success -> {
-                        pending = null
-                        onStart(intent)
-                    }
+            if (!busy) {
+                busy = true
+                scope.launch {
+                    val result = discard()
+                    busy = false
+                    when (result) {
+                        is DataResult.Success -> {
+                            pending = null
+                            onStart(intent)
+                        }
 
-                    is DataResult.Failure -> {
-                        // The session is still there, so nothing starts and the failure is said (F7).
-                        onFailure(result.error)
-                        pending = null
+                        is DataResult.Failure -> {
+                            // The session is still there, so nothing starts and the failure is said (F7).
+                            onFailure(result.error)
+                            pending = null
+                        }
                     }
                 }
             }
         },
-        onDismiss = { pending = null },
+        onDismiss = { if (!busy) pending = null },
     )
 
     return { intent ->
@@ -99,7 +110,8 @@ internal fun activeWorkoutGate(
  *
  * The destructive answer is the affirmative one, the shape the workout screen's discard dialog uses,
  * because starting the plan is what the lifter asked for. Dismissing cancels the start rather than choosing
- * for them — the rule the missed-day question follows (P3.3).
+ * for them — the rule the missed-day question follows (P3.3). [busy] disables every answer while the discard
+ * is in flight, so the question cannot be answered twice (B91).
  */
 @Composable
 internal fun ActiveWorkoutDialog(
@@ -108,6 +120,8 @@ internal fun ActiveWorkoutDialog(
     onDiscardAndStart: (StartIntent) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    /** True while the destructive answer's write is running: both buttons are dead until it lands. */
+    busy: Boolean = false,
 ) {
     val current = start ?: return
     AlertDialog(
@@ -127,6 +141,7 @@ internal fun ActiveWorkoutDialog(
             AppTextButton(
                 onClick = { onDiscardAndStart(current) },
                 modifier = Modifier.testTag(TestTags.HOME_ACTIVE_WORKOUT_DISCARD),
+                enabled = !busy,
             ) {
                 Text(stringResource(R.string.home_active_workout_discard))
             }
@@ -135,6 +150,7 @@ internal fun ActiveWorkoutDialog(
             AppTextButton(
                 onClick = onContinue,
                 modifier = Modifier.testTag(TestTags.HOME_ACTIVE_WORKOUT_CONTINUE),
+                enabled = !busy,
             ) {
                 Text(stringResource(R.string.home_active_workout_continue))
             }

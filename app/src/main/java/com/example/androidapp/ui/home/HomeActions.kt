@@ -57,7 +57,7 @@ internal suspend fun discardActiveSession(
  */
 internal fun startSubstitute(
     requestStart: (StartIntent) -> Unit,
-): (TodayPlan, String?) -> Unit = { plan, templateId ->
+): (TodayPlan, String?, String?) -> Unit = { plan, templateId, templateName ->
     val slotId = plan.slotId
     if (slotId != null && templateId != null) {
         requestStart(
@@ -66,7 +66,9 @@ internal fun startSubstitute(
                 // The slot is what the row stood for, so its prescription still seeds what it can
                 // (P3.8) — the same start a recorded substitute performs.
                 slotId = slotId,
-                label = plan.name,
+                // The **picked** template's name, not the scheduled row's: the start's own question names
+                // the workout it is about to begin (B93). The scheduled name stays the fallback.
+                label = templateName ?: plan.name,
             ),
         )
     }
@@ -83,7 +85,7 @@ internal fun substituteOccurrence(
     viewModel: WorkoutsHomeViewModel,
     requestStart: (StartIntent) -> Unit,
     onFailure: (DataError) -> Unit,
-): (TodayPlan, String?) -> Unit = { plan, templateId ->
+): (TodayPlan, String?, String?) -> Unit = { plan, templateId, templateName ->
     val slotId = plan.slotId
     if (slotId != null) {
         scope.launch {
@@ -95,7 +97,8 @@ internal fun substituteOccurrence(
                             // The slot is what it was scheduled as, so its prescription still
                             // seeds what it can (P3.8, P3.11).
                             slotId = slotId,
-                            label = plan.name,
+                            // The picked substitute's name, for the reason [startSubstitute] gives (B93).
+                            label = templateName ?: plan.name,
                         ),
                     )
                 }

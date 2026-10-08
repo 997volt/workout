@@ -185,6 +185,110 @@ class ExerciseDetailViewModelTest {
         assertFalse(viewModel.uiState.value.canCreateVariation)
     }
 
+    @Test
+    fun aVariation_isWrittenOnSave_neverWhenTheEditorOpens() = runTest(dispatcher) {
+        // B83: the row used to be inserted the moment *New variation of this* was tapped, so cancelling the
+        // editor left a stray row named after its parent, and a library row has no delete.
+        val repository = FakeRepository(mutableListOf(seeded))
+        val viewModel = viewModelFor(repository, exerciseId = seeded.id)
+        advanceUntilIdle()
+
+        viewModel.onCreateVariation()
+        advanceUntilIdle()
+        assertTrue(
+            "nothing is stored while the variation is only being named",
+            repository.stored.none { it.id.startsWith("variation-") },
+        )
+
+        viewModel.onSave(
+            ExerciseEdit(
+                name = "Paused Back Squat",
+                primaryMuscle = MuscleGroup.QUADS,
+                equipment = Equipment.BARBELL,
+                movementPattern = MovementPattern.SQUAT,
+                parentId = seeded.id,
+            ),
+        )
+        advanceUntilIdle()
+
+        val stored = repository.stored.single { it.id.startsWith("variation-") }
+        assertEquals("Paused Back Squat", stored.name)
+        assertEquals(seeded.id, stored.parentId)
+        assertEquals("Paused Back Squat", viewModel.uiState.value.exercise?.name)
+    }
+
+    @Test
+    fun cancellingANewVariation_leavesTheLibraryAsItWas() = runTest(dispatcher) {
+        // B83's other half: the way out of the editor writes nothing and returns to the exercise.
+        val repository = FakeRepository(mutableListOf(seeded))
+        val viewModel = viewModelFor(repository, exerciseId = seeded.id)
+        advanceUntilIdle()
+
+        viewModel.onCreateVariation()
+        viewModel.onCancelEdit()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.isEditing)
+        assertEquals(seeded.id, viewModel.uiState.value.exercise?.id)
+        assertEquals(listOf(seeded), repository.stored)
+    }
+
+    @Test
+    fun aVariationOfAVariation_isNotOffered() = runTest(dispatcher) {
+        // B82: the shape is two rules deep. A movement whose own head is a movement is already the second
+        // level, so a variation of it would be the third the library never draws.
+        val variation = seeded.copy(id = "paused-squat", name = "Paused Back Squat", parentId = seeded.id)
+        val repository = FakeRepository(mutableListOf(seeded, variation))
+
+        val ofAVariation = viewModelFor(repository, exerciseId = variation.id)
+        advanceUntilIdle()
+        assertFalse(ofAVariation.uiState.value.canCreateVariation)
+
+        val ofAMovement = viewModelFor(FakeRepository(mutableListOf(seeded)), exerciseId = seeded.id)
+        advanceUntilIdle()
+        assertTrue(ofAMovement.uiState.value.canCreateVariation)
+    }
+
+    @Test
+    fun savingAMoveToACategory_reloadsTheHead() = runTest(dispatcher) {
+        // B84: `head`/`headName` were read once in `init`, so a save that moved the row left the page showing
+        // no family and the pre-move inherited muscle.
+        val repository = FakeRepository(mutableListOf(custom, category))
+        val viewModel = viewModelFor(repository, exerciseId = custom.id)
+        advanceUntilIdle()
+        assertNull(viewModel.uiState.value.headName)
+
+        viewModel.onEdit()
+        viewModel.onSave(
+            ExerciseEdit(
+                name = custom.name,
+                primaryMuscle = custom.primaryMuscle,
+                equipment = custom.equipment,
+                movementPattern = custom.movementPattern,
+                parentId = category.id,
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals("Bench Press", viewModel.uiState.value.headName)
+        assertEquals(category.id, viewModel.uiState.value.head?.id)
+    }
+
+    @Test
+    fun aVariationsOwnExercise_isAmongTheHeadsItCanBeFiledUnder() = runTest(dispatcher) {
+        // B85: the picker offered categories only, so a variation's real head was not among the options and
+        // the field fell through to the null label while the page named the exercise above it.
+        val variation = seeded.copy(id = "paused-squat", name = "Paused Back Squat", parentId = seeded.id)
+        val repository = FakeRepository(mutableListOf(seeded, variation, category))
+        val viewModel = viewModelFor(repository, exerciseId = variation.id)
+        advanceUntilIdle()
+
+        val ids = viewModel.uiState.value.categoryOptions.map { it.id }
+        assertTrue("a movement that is not itself a variation may hold one", seeded.id in ids)
+        assertTrue("and a category always may", category.id in ids)
+        assertFalse("the row is never a head for itself", variation.id in ids)
+    }
+
     private fun viewModelFor(
         repository: FakeRepository,
         exerciseId: String = "custom-1",
@@ -228,6 +332,9 @@ class ExerciseDetailViewModelTest {
         var saved: Exercise? = null
         var failWrites = false
 
+        /** Every row the fake holds, so a test can prove a write did — or did not — happen. */
+        val stored: List<Exercise> get() = state.value
+
         /** Lets a test drive the B4 path: a read that fails rather than throws. */
         var failReads = false
 
@@ -261,6 +368,7 @@ class ExerciseDetailViewModelTest {
             // that the real one has.
             val variation = parent.copy(
                 id = "variation-${parent.id}",
+                name = "",
                 isCustom = true,
                 parentId = parent.id,
                 rowKind = RowKind.MOVEMENT,

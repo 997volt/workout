@@ -118,6 +118,9 @@ class ExerciseLibraryViewModelTest {
         /** Lets a test drive the B4 path: a read that fails rather than throws. */
         var failReads = false
 
+        /** Lets a test drive B88: a category write that does not land. */
+        var failWrites = false
+
         override fun observeExercises(): Flow<DataResult<List<Exercise>>> =
             if (failReads) {
                 flowOf(DataResult.Failure(DataError.Storage(IOException("database is locked"))))
@@ -136,16 +139,20 @@ class ExerciseLibraryViewModelTest {
             error("the library screen must not create exercises")
 
         override suspend fun createCategory(name: String): DataResult<Exercise> =
-            DataResult.Success(
-                Exercise(
-                    id = "cat-new",
-                    name = name,
-                    primaryMuscle = MuscleGroup.OTHER,
-                    equipment = Equipment.OTHER,
-                    movementPattern = MovementPattern.OTHER,
-                    rowKind = RowKind.CATEGORY,
-                ),
-            )
+            if (failWrites) {
+                DataResult.Failure(DataError.Storage(IOException("disk full")))
+            } else {
+                DataResult.Success(
+                    Exercise(
+                        id = "cat-new",
+                        name = name,
+                        primaryMuscle = MuscleGroup.OTHER,
+                        equipment = Equipment.OTHER,
+                        movementPattern = MovementPattern.OTHER,
+                        rowKind = RowKind.CATEGORY,
+                    ),
+                )
+            }
 
         override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> =
             DataResult.Success(state.value)
@@ -221,6 +228,28 @@ class ExerciseLibraryViewModelTest {
         assertNotNull("the failure must reach the screen", state.error)
         assertFalse(state.isLoading)
         assertTrue("an unreadable library must not claim to be empty", state.exercises.isEmpty())
+    }
+
+    @Test
+    fun aFailedWrite_isAMessage_notAReadErrorThatHidesTheList() = runTest(dispatcher) {
+        // ROADMAP B88: a *New category* that did not land wrote into the same field a failed read uses, and
+        // the body tests that field before the list — so the library vanished behind the read-failure page.
+        val repository = FakeRepository(listOf(squat)).apply { failWrites = true }
+        val viewModel = ExerciseLibraryViewModel(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onCreateCategory("Press")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertNull("a failed write is not a failed read", state.error)
+        assertNotNull("but it is still said", state.writeError)
+        assertEquals("and the list it would have hidden is still there", 1, state.exercises.size)
+
+        viewModel.onErrorShown()
+        advanceUntilIdle()
+        assertNull("the message is dismissed once it has been shown", viewModel.uiState.value.writeError)
     }
 
     /** The rows the screen derives from the state, so these tests read what the list would show. */
