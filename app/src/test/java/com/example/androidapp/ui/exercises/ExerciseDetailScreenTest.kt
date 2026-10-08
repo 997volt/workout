@@ -381,7 +381,7 @@ class ExerciseDetailScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DETAIL_CATEGORY).assertIsDisplayed()
         composeTestRule.onNodeWithText("Bench Press").assertIsDisplayed()
-        // The head says Chest and the row itself says Quads, so reading Chest is the inheritance working.
+        // `bench` says Chest and the row itself says Quads, so reading Chest is the inheritance working.
         composeTestRule.onNodeWithText("Chest").assertIsDisplayed()
     }
 
@@ -472,4 +472,22 @@ class ExerciseDetailScreenTest {
     /** The "no such exercise" line, read from resources so wording can change. */
     private fun notFoundMessage(): String =
         ApplicationProvider.getApplicationContext<Context>().getString(R.string.exercise_detail_not_found)
+
+    @Test
+    fun aHeadThatSaysNothing_leavesTheRowsOwnMuscleOnScreen() {
+        // The bug the device caught, at the surface it was visible on: reading the head's field directly here
+        // was a second copy of the inheritance rule, so the domain fix did not reach it and a new category
+        // blanked the muscle of everything filed under it.
+        show(
+            ExerciseDetailUiState(
+                isLoading = false,
+                exercise = seeded.copy(parentId = "cat-bench"),
+                head = bench.copy(primaryMuscle = MuscleGroup.OTHER),
+                headName = "Bench Press",
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Quads").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Other").assertDoesNotExist()
+    }
 }

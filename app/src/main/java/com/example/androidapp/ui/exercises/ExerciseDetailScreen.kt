@@ -50,6 +50,7 @@ import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.effectivePrimaryMuscle
 import com.example.androidapp.domain.effectiveSecondaryMuscles
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
@@ -352,7 +353,10 @@ private fun FamilyRows(exercise: Exercise, head: Exercise?, headName: String?) {
             label = stringResource(R.string.exercise_detail_primary),
             // The head's muscle, because an exercise **inherits** it (N95). Nothing is written to the row for
             // it, which is why this reads the head rather than the row's own value.
-            value = (head?.primaryMuscle ?: exercise.primaryMuscle).label,
+            // Through the resolver rather than the head's field, so a head that says nothing is silent (N95):
+            // reading `head?.primaryMuscle` here was the bug the device caught, and it survived the domain fix
+            // because this call site was a second copy of the rule.
+            value = exercise.effectivePrimaryMuscle(listOfNotNull(head, exercise)).label,
         )
         HorizontalDivider()
 
