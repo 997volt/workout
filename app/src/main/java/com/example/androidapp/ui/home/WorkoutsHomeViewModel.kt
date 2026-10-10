@@ -15,7 +15,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.WorkoutSession
-import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.workout.WorkoutClock
 import com.example.androidapp.ui.workout.WorkoutFormat
@@ -39,15 +38,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-/**
- * How many recent workouts the home screen shows (ROADMAP N1).
- *
- * A home-sized view, not the history screen: enough to answer "where was I", with a
- * link through for the rest. Five fits on one screenful on a small phone without
- * scrolling past the button that matters.
- */
-private const val RECENT_LIMIT = 5
 
 /**
  * A workout already in progress.
@@ -109,7 +99,6 @@ data class PlannedWorkout(
 
 data class WorkoutsHomeUiState(
     val isLoading: Boolean = true,
-    val recent: List<WorkoutSummary> = emptyList(),
     val activeWorkout: ActiveWorkoutInfo? = null,
     /** The device's weekday, for the "Today" heading (ROADMAP N16). */
     val today: DayOfWeek = DayOfWeek.MONDAY,
@@ -127,13 +116,7 @@ data class WorkoutsHomeUiState(
     val nextUp: List<NextUp> = emptyList(),
     /** The templates a substitution can choose from (ROADMAP P3.11). */
     val templates: List<WorkoutTemplate> = emptyList(),
-) {
-    /**
-     * Nothing logged and nothing running — the first-run case, which should point at
-     * Start rather than showing an empty list with no explanation.
-     */
-    val isFirstRun: Boolean get() = !isLoading && recent.isEmpty() && activeWorkout == null
-}
+)
 
 /**
  * The home screen (ROADMAP N1).
@@ -280,14 +263,12 @@ class WorkoutsHomeViewModel @Inject constructor(
         }
 
     val uiState: StateFlow<WorkoutsHomeUiState> = combine(
-        workoutRepository.observeHistory(),
         activeWorkout,
         templateRepository.observeTemplates(),
         programsPart,
-    ) { history, workout, templates, programs ->
+    ) { workout, templates, programs ->
         WorkoutsHomeUiState(
             isLoading = false,
-            recent = history.take(RECENT_LIMIT),
             activeWorkout = workout,
             today = today,
             todaysPlan = todaysPlanFor(

@@ -12,8 +12,10 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -28,11 +30,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
-import com.example.androidapp.domain.Weight
-import com.example.androidapp.ui.components.LocalWeightUnit
-import com.example.androidapp.ui.components.label
-import com.example.androidapp.domain.model.WorkoutSummary
-import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppRow
 import com.example.androidapp.ui.components.IconTile
@@ -40,10 +37,7 @@ import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.longLabel
 import com.example.androidapp.ui.components.AppTextButton
-import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.theme.TileAccent
-import com.example.androidapp.ui.workout.WorkoutFormat
-import java.time.ZoneId
 
 /**
  * The home list and the rows it is made of.
@@ -54,16 +48,19 @@ import java.time.ZoneId
  */
 
 /**
- * Today's plans and the recent workouts, in one list (ROADMAP N16).
+ * Today's plans and the ways in, in one list (ROADMAP N16, N102).
  *
- * Split out of the body because the two lists together are long enough to be their own
- * composable — and because "today" and "recent" are different questions that happen to
- * share a scroll.
+ * Split out of the body because the two halves together are long enough to be their own composable — and
+ * because "what is scheduled" and "where else can I go" are different questions that happen to share a
+ * scroll.
  */
 @Composable
-internal fun TodayAndRecent(
+internal fun HomeBody(
     state: WorkoutsHomeUiState,
-    onOpenWorkout: (String) -> Unit,
+    onStartWorkout: () -> Unit,
+    onOpenPrograms: () -> Unit,
+    onOpenTemplates: () -> Unit,
+    onOpenMeasurements: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
     modifier: Modifier = Modifier,
@@ -76,7 +73,12 @@ internal fun TodayAndRecent(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         todayPlanItems(state = state, onStartTemplate = onStartTemplate, onSubstitute = onSubstitute)
-        recentItems(state = state, onOpenWorkout = onOpenWorkout)
+        wayInItems(
+            onStartWorkout = onStartWorkout,
+            onOpenPrograms = onOpenPrograms,
+            onOpenTemplates = onOpenTemplates,
+            onOpenMeasurements = onOpenMeasurements,
+        )
     }
 }
 
@@ -192,58 +194,102 @@ private fun PlanHeading(
     }
 }
 
-/** The recent workouts, newest first (ROADMAP N1). */
-private fun LazyListScope.recentItems(
-    state: WorkoutsHomeUiState,
-    onOpenWorkout: (String) -> Unit,
+/**
+ * The ways in: three destinations and the screen's own primary action (ROADMAP N102).
+ *
+ * These replace the *Recent* list, and they are the row the recent workouts were: a tile, a name, a line
+ * under it and a chevron. A chevron promises a screen, so the three destinations carry one and *Start empty
+ * workout* does not — it is the action this screen exists for, and it wears the empty start's own accent
+ * (N61) rather than reading as a fourth peer.
+ *
+ * No section header over them: they are the body rather than a category of content, and a heading over four
+ * different destinations would be a label for "miscellaneous".
+ */
+private fun LazyListScope.wayInItems(
+    onStartWorkout: () -> Unit,
+    onOpenPrograms: () -> Unit,
+    onOpenTemplates: () -> Unit,
+    onOpenMeasurements: () -> Unit,
 ) {
-    if (state.recent.isEmpty()) return
-    item(key = "recent") {
-        SectionHeader(text = stringResource(R.string.home_recent))
+    item(key = "way-in-programs") {
+        WayInRow(
+            headline = stringResource(R.string.home_programs),
+            supporting = stringResource(R.string.home_programs_supporting),
+            onClickLabel = stringResource(R.string.home_open, stringResource(R.string.home_programs)),
+            icon = Icons.Filled.EventAvailable,
+            accent = TileAccent.Teal,
+            testTag = TestTags.HOME_PROGRAMS,
+            onClick = onOpenPrograms,
+        )
     }
-    items(state.recent.size, key = { state.recent[it].id }) { index ->
-        RecentWorkoutRow(
-            workout = state.recent[index],
-            onClick = { onOpenWorkout(state.recent[index].id) },
+    item(key = "way-in-templates") {
+        WayInRow(
+            headline = stringResource(R.string.home_templates),
+            supporting = stringResource(R.string.home_templates_supporting),
+            onClickLabel = stringResource(R.string.home_open, stringResource(R.string.home_templates)),
+            icon = Icons.Filled.FitnessCenter,
+            accent = TileAccent.Sky,
+            testTag = TestTags.HOME_TEMPLATES,
+            onClick = onOpenTemplates,
+        )
+    }
+    item(key = "way-in-measurements") {
+        WayInRow(
+            headline = stringResource(R.string.measurements_title),
+            supporting = stringResource(R.string.home_measurements_supporting),
+            onClickLabel = stringResource(R.string.home_open, stringResource(R.string.measurements_title)),
+            icon = Icons.Filled.Straighten,
+            accent = TileAccent.Coral,
+            testTag = TestTags.HOME_MEASUREMENTS,
+            onClick = onOpenMeasurements,
+        )
+    }
+    item(key = "way-in-start") {
+        WayInRow(
+            // The row names its own action, so its label is that name rather than a second "Open".
+            headline = stringResource(R.string.home_start_empty_workout),
+            supporting = stringResource(R.string.home_start_supporting),
+            onClickLabel = stringResource(R.string.home_start_empty_workout),
+            icon = Icons.Filled.Add,
+            accent = TileAccent.Indigo,
+            testTag = TestTags.HOME_START,
+            onClick = onStartWorkout,
+            discloses = false,
         )
     }
 }
 
+/**
+ * One way in: a tile, a name, a line about it, and a chevron where the tap opens a screen.
+ *
+ * [discloses] is the whole of the difference between the three destinations and the start — a chevron
+ * promises somewhere to go, and a row that begins something has nowhere to promise.
+ */
 @Composable
-internal fun RecentWorkoutRow(
-    workout: WorkoutSummary,
+private fun WayInRow(
+    headline: String,
+    supporting: String,
+    onClickLabel: String,
+    icon: ImageVector,
+    accent: TileAccent,
+    testTag: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    discloses: Boolean = true,
 ) {
-    val setCount = pluralStringResource(R.plurals.history_sets, workout.setCount, workout.setCount)
-    val duration = workout.duration?.let { WorkoutFormat.elapsed(it) }.orEmpty()
-    val unit = LocalWeightUnit.current
-    val volume = stringResource(
-        R.string.history_volume,
-        Weight.format(workout.volumeGrams, unit),
-        unit.label(),
-    )
-
     AppRow(
-        // The session's own zone, like history and the workout detail (ROADMAP B33). Omitting it
-        // here was a dropped argument rather than missing data, and it made one workout read as
-        // two different dates on two screens.
-        headline = HistoryFormat.historyHeadline(
-            workout.startedAt,
-            zone = workout.zoneIdOrNull() ?: ZoneId.systemDefault(),
-        ),
-        // The template's name comes first, because it is the half of the row that says what the
-        // session *was* (ROADMAP N58); a workout with no plan behind it contributes nothing.
-        supporting = listOf(workout.templateName, duration, setCount, volume)
-            .filter { !it.isNullOrEmpty() }
-            .joinToString(" · "),
-        leading = { IconTile(icon = Icons.Filled.History, accent = TileAccent.Sky) },
-        trailing = { DiscloseChevron() },
+        headline = headline,
+        supporting = supporting,
+        leading = { IconTile(icon = icon, accent = accent) },
+        trailing = if (discloses) {
+            { DiscloseChevron() }
+        } else {
+            null
+        },
         onClick = onClick,
-        // The headline is a date, which names the workout but not the tap: without this the
-        // row announces "Monday 28 September, button".
-        onClickLabel = stringResource(R.string.action_open_workout),
-        testTag = TestTags.HOME_RECENT_ROW,
+        // A row's headline names the thing and never the action, so the tap says what it does.
+        onClickLabel = onClickLabel,
+        testTag = testTag,
         modifier = modifier,
     )
 }

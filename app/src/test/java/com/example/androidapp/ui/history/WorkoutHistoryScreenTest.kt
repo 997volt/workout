@@ -11,6 +11,7 @@ import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import java.time.Instant
 import java.time.YearMonth
+import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
@@ -77,6 +78,23 @@ class WorkoutHistoryScreenTest {
         show(stateWith(summary("session-1", repeatable = 1).copy(templateName = "Lower A")))
 
         composeTestRule.onNodeWithText("Lower A · 12 sets").assertIsDisplayed()
+    }
+
+    @Test
+    fun aPastWorkoutsDate_isRenderedInItsOwnZone() {
+        // ROADMAP B33 and B39: grouping was well covered while the rendering was not, and the rendering is
+        // where the bug was. The expected string is produced by the same formatter, so this cannot drift
+        // with the machine's locale. It moved here from the home screen's tests when the recent list went
+        // (N102) and this row became the only one drawing a past workout's date.
+        val tokyo = summary("session-1", repeatable = 1).copy(
+            startedAt = Instant.parse("2026-09-30T20:00:00Z"),
+            zoneOffsetMinutes = 540,
+        )
+        show(stateWith(tokyo))
+
+        val expected = HistoryFormat.historyHeadline(tokyo.startedAt, zone = ZoneOffset.ofHours(9))
+
+        composeTestRule.onNodeWithText(expected).assertIsDisplayed()
     }
 
     private fun stateWith(workout: WorkoutSummary) = WorkoutHistoryUiState(

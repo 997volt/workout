@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -19,8 +18,6 @@ import com.example.androidapp.ui.workout.WorkoutClock
 import java.time.DayOfWeek
 import java.time.Instant
 import org.junit.Rule
-import com.example.androidapp.ui.history.HistoryFormat
-import java.time.ZoneOffset
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -50,8 +47,8 @@ class WorkoutsHomeScreenTest {
         val onStartTemplate: (TodayPlan) -> Unit = {},
         val onSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
         val onStartSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
-        val onOpenWorkout: (String) -> Unit = {},
         val onOpenPrograms: () -> Unit = {},
+        val onOpenMeasurements: () -> Unit = {},
         val onOpenPlannedWorkout: (NextUp) -> Unit = {},
     )
 
@@ -71,8 +68,8 @@ class WorkoutsHomeScreenTest {
                     onOpenPlannedWorkout = actions.onOpenPlannedWorkout,
                     onSubstituteTemplate = actions.onSubstituteTemplate,
                     onStartSubstituteTemplate = actions.onStartSubstituteTemplate,
-                    onOpenWorkout = actions.onOpenWorkout,
                     onOpenPrograms = actions.onOpenPrograms,
+                    onOpenMeasurements = actions.onOpenMeasurements,
                     message = message,
                 )
             }
@@ -80,12 +77,15 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun withNothingLogged_theScreenPointsAtStart() {
+    fun withNothingLogged_theBodyIsTheWaysIn() {
+        // N102: with no history and nothing running the screen is never blank — the four ways in *are* the
+        // body — so the first-run message that explained an empty list went with the list it explained.
         var started = false
         setScreen(WorkoutsHomeUiState(isLoading = false), Actions(onStartWorkout = { started = true }))
 
-        // An empty list with no explanation tells a first-run user nothing.
-        composeTestRule.onNodeWithTag(TestTags.HOME_FIRST_RUN).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.HOME_MEASUREMENTS).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.HOME_START).performClick()
 
         assertThat(started).isTrue()
@@ -104,13 +104,21 @@ class WorkoutsHomeScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.HOME_RESUME).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.HOME_START).assertDoesNotExist()
+    }
+
+    @Test
+    fun withNothingRunning_theBarCarriesNoPill() {
+        // N102: starting empty is a row in the body, so the bar is the resume pill and the next-up block —
+        // and with neither it is empty, rather than offering a start that already exists above it.
+        setScreen(WorkoutsHomeUiState(isLoading = false))
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_RESUME).assertDoesNotExist()
     }
 
     @Test
     fun theStartAction_offersBothWaysToBegin() {
-        // N3: the start action presents the choice — empty, or from a plan set up
-        // in advance. With a workout already open there is no choice to make.
+        // N3, moved by N102: the choice is the body's rows now rather than the bar's — start empty, or go
+        // and pick a plan — and both are still one tap from the screen the app opens on.
         var templates = false
         setScreen(
             WorkoutsHomeUiState(isLoading = false),
@@ -184,35 +192,30 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun recentWorkouts_areListed_andOpenTheirDetail() {
-        var opened: String? = null
+    fun theWaysIn_openTheirDestinations() {
+        // N102: the body's rows are the ways in, and each reports the destination it stands for. They
+        // replaced the recent list, which is also why nothing on this screen opens a past workout any
+        // more — History is the tab beside this one (N42).
+        var programs = false
+        var templates = false
+        var measurements = false
         setScreen(
-            WorkoutsHomeUiState(isLoading = false, recent = listOf(summary("session-1"))),
-            Actions(onOpenWorkout = { opened = it }),
+            WorkoutsHomeUiState(isLoading = false),
+            Actions(
+                onOpenPrograms = { programs = true },
+                onOpenTemplates = { templates = true },
+                onOpenMeasurements = { measurements = true },
+            ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_RECENT_ROW).performClick()
+        composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).performClick()
+        composeTestRule.onNodeWithTag(TestTags.HOME_MEASUREMENTS).performClick()
+        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).performClick()
 
-        assertThat(opened).isEqualTo("session-1")
+        assertThat(programs).isTrue()
+        assertThat(templates).isTrue()
+        assertThat(measurements).isTrue()
     }
-
-    @Test
-    fun theRecentHeading_carriesNoWayOut() {
-        // ROADMAP N42: "See all workouts" duplicated the History tab, which is one tap away and
-        // always visible; the heading now names the section and nothing else.
-        setScreen(WorkoutsHomeUiState(isLoading = false, recent = listOf(summary("session-1"))))
-
-        composeTestRule.onNodeWithText("See all workouts").assertDoesNotExist()
-    }
-
-    private fun summary(id: String) = WorkoutSummary(
-        id = id,
-        startedAt = Instant.parse("2026-09-29T08:00:00Z"),
-        finishedAt = Instant.parse("2026-09-29T09:00:00Z"),
-        exerciseCount = 3,
-        setCount = 12,
-        volumeGrams = 1_000_000L,
-    )
 
     @Test
     fun todaysPlan_isShownUnderToday_withAStartAction() {
@@ -294,13 +297,18 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun theNextUpBlock_sitsBelowTheStartPill() {
-        // The start bar reads top to bottom: the links, the empty start, then the next-up block, so
-        // the app's own suggestion is the last thing the thumb reaches. Checked by position rather
-        // than by the order things happen to be composed in, which a rearranged Column would not show.
+    fun theNextUpBlock_sitsBelowTheResumePill() {
+        // The start bar reads top to bottom: the resume pill, then the next-up block, so the app's own
+        // suggestion is the last thing the thumb reaches. Checked by position rather than by the order
+        // things happen to be composed in, which a rearranged Column would not show. N102 left the pill
+        // drawn only while a workout is open, so the state carries one.
         setScreen(
             state = WorkoutsHomeUiState(
                 isLoading = false,
+                activeWorkout = ActiveWorkoutInfo(
+                    startedAt = Instant.parse("2026-10-01T10:00:00Z"),
+                    exerciseCount = 2,
+                ),
                 nextUp = listOf(
                     NextUp(
                         plan = TodayPlan(
@@ -317,11 +325,11 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
-        val start = composeTestRule.onNodeWithTag(TestTags.HOME_START).getUnclippedBoundsInRoot()
+        val pill = composeTestRule.onNodeWithTag(TestTags.HOME_RESUME).getUnclippedBoundsInRoot()
         val nextUp = composeTestRule.onNodeWithTag(TestTags.Home.nextUp("slot-2"))
             .getUnclippedBoundsInRoot()
 
-        assertThat(nextUp.top).isGreaterThan(start.bottom)
+        assertThat(nextUp.top).isGreaterThan(pill.bottom)
     }
 
     @Test
@@ -506,33 +514,15 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun aPastWorkoutsDate_isRenderedInItsOwnZone() {
-        // ROADMAP B33 and B39: grouping was well covered while the rendering was not, and the
-        // rendering is where the bug was. Home and history now agree — and the expected string is
-        // produced by the same formatter, so this cannot drift with the machine's locale.
-        val tokyo = summary("session-1").copy(
-            startedAt = Instant.parse("2026-09-30T20:00:00Z"),
-            zoneOffsetMinutes = 540,
-        )
-        setScreen(WorkoutsHomeUiState(isLoading = false, recent = listOf(tokyo)))
-
-        val expected = HistoryFormat.date(
-            tokyo.startedAt,
-            zone = ZoneOffset.ofHours(9),
-        )
-        composeTestRule.onNodeWithText(expected, substring = true).assertIsDisplayed()
-    }
-
-    @Test
-    fun whileAWorkoutIsOpen_thePlanLinksAreStillThere() {
+    fun whileAWorkoutIsOpen_theWaysInAreStillThere() {
         // B43 withheld a second way to *start* a workout, because that is a way to lose one. N78 keeps
-        // that and separates it from *looking*: the two links open the plans, and the Start control in
+        // that and separates it from *looking*: the ways in open the plans, and the Start control in
         // the templates list is disabled for as long as the session lasts, which is where the
-        // withholding lives now (TemplatesScreenTest holds that half).
+        // withholding lives now (TemplatesScreenTest holds that half). N102 moved them into the body,
+        // which is drawn whatever else is: the session changed which pill the bar carries, not the body.
         setScreen(
             state = WorkoutsHomeUiState(
                 isLoading = false,
-                recent = listOf(summary("session-1")),
                 activeWorkout = ActiveWorkoutInfo(
                     startedAt = Instant.parse("2026-10-01T10:00:00Z"),
                     exerciseCount = 2,

@@ -3,9 +3,7 @@ package com.example.androidapp.ui.home
 import com.example.androidapp.domain.DataError
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,7 +12,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
@@ -43,13 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
-import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.FailureMessage
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.PrimaryActionButton
-import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.AppTextButton
@@ -57,7 +52,6 @@ import com.example.androidapp.ui.programs.programStartGate
 import com.example.androidapp.ui.programs.StartIntent
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.workout.WorkoutClock
-import java.time.Instant
 
 @Composable
 fun WorkoutsHomeRoute(
@@ -68,8 +62,14 @@ fun WorkoutsHomeRoute(
      * (ROADMAP P3.3, P3.8).
      */
     onStartTemplate: (String, String?) -> Unit,
-    onOpenWorkout: (String) -> Unit,
     onOpenPrograms: () -> Unit,
+    /**
+     * The way into body measurements (ROADMAP N102).
+     *
+     * Home is where the weight series the statistics screen reads gets written, so the way in belongs with
+     * the other ways in rather than inside a chart tab.
+     */
+    onOpenMeasurements: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WorkoutsHomeViewModel = hiltViewModel(),
 ) {
@@ -149,8 +149,8 @@ fun WorkoutsHomeRoute(
         // A next-up row's pick starts the session and writes nothing (N85): the run it stands for is
         // deliberately calendar-free, so there is no week to key a substitution to.
         onStartSubstituteTemplate = startSubstitute(requestStart = requestStart),
-        onOpenWorkout = onOpenWorkout,
         onOpenPrograms = onOpenPrograms,
+        onOpenMeasurements = onOpenMeasurements,
         onOpenPlannedWorkout = viewModel::onOpenPlannedWorkout,
         message = message,
         onDismissMessage = { message = null },
@@ -174,11 +174,11 @@ fun WorkoutsHomeScreen(
     state: WorkoutsHomeUiState,
     clock: State<WorkoutClock>,
     onStartWorkout: () -> Unit,
-    onOpenWorkout: (String) -> Unit,
     modifier: Modifier = Modifier,
     onOpenTemplates: () -> Unit = {},
     onStartTemplate: (TodayPlan) -> Unit = {},
     onOpenPrograms: () -> Unit = {},
+    onOpenMeasurements: () -> Unit = {},
     /**
      * Opens what a program's next run has planned, without starting it (ROADMAP N55).
      *
@@ -237,23 +237,21 @@ fun WorkoutsHomeScreen(
                 clock = clock,
                 nextUp = state.nextUp,
                 onStartWorkout = onStartWorkout,
-                onOpenTemplates = onOpenTemplates,
                 // A next-up row starts the workout the same way a scheduled one does, so the slot's
                 // prescription travels with it (ROADMAP P3.8).
                 onStartTemplate = onStartTemplate,
                 onOpenPlannedWorkout = onOpenPlannedWorkout,
                 // A next-up row's pick starts the session and records nothing (N85).
                 onSubstitute = { plan -> substituting = SubstituteRequest(plan, records = false) },
-                // Programs took the slot the repeat-last link gave up (ROADMAP N42): the screen
-                // the whole scheduling half is edited from belongs in the action row rather than
-                // behind the overflow it got lost in.
-                onOpenPrograms = onOpenPrograms,
             )
         },
     ) { innerPadding ->
         HomeContent(
             state = state,
-            onOpenWorkout = onOpenWorkout,
+            onStartWorkout = onStartWorkout,
+            onOpenPrograms = onOpenPrograms,
+            onOpenTemplates = onOpenTemplates,
+            onOpenMeasurements = onOpenMeasurements,
             onStartTemplate = onStartTemplate,
             onSubstitute = { plan -> substituting = SubstituteRequest(plan, records = true) },
             modifier = Modifier.padding(innerPadding),
@@ -360,76 +358,50 @@ private fun SubstituteDialog(
 /**
  * The list body, split out so the screen itself stays a scaffold and a state.
  *
- * Lives here rather than beside the rows it draws because it is a decision about *state* — which
- * of the four things the screen can be showing — and the rows are only one of the four.
+ * Two things the screen can be showing rather than four (ROADMAP N102): the body is the ways in, always,
+ * with today's plans above them when there are any. There is no empty state left to draw — a body of four
+ * ways in is never blank — which is why the first-run message went with the list it was explaining.
  */
 @Composable
 private fun HomeContent(
     state: WorkoutsHomeUiState,
-    onOpenWorkout: (String) -> Unit,
+    onStartWorkout: () -> Unit,
+    onOpenPrograms: () -> Unit,
+    onOpenTemplates: () -> Unit,
+    onOpenMeasurements: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-        when {
-            state.isLoading -> CenteredMessage(
-                text = stringResource(R.string.history_loading),
-                modifier = modifier,
-            )
-
-            // First run: an empty list with no explanation tells the user nothing. A next-up row no
-            // longer counts here — it lives in the bottom bar (ROADMAP N55), which is not this list.
-            state.todaysPlan.isNotEmpty() -> TodayAndRecent(
-                state = state,
-                onOpenWorkout = onOpenWorkout,
-                onStartTemplate = onStartTemplate,
-                onSubstitute = onSubstitute,
-                modifier = modifier,
-            )
-
-            state.isFirstRun -> CenteredMessage(
-                text = stringResource(R.string.home_first_run),
-                hint = stringResource(R.string.home_first_run_hint),
-                modifier = modifier.testTag(TestTags.HOME_FIRST_RUN),
-            )
-
-            state.recent.isEmpty() -> CenteredMessage(
-                text = stringResource(R.string.home_no_recent),
-                modifier = modifier.testTag(TestTags.HOME_NO_RECENT),
-            )
-
-            else -> LazyColumn(
-                modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                item(key = "header") {
-                    // The heading and nothing else: "See all workouts" went (ROADMAP N42), because
-                    // History is the tab beside this one — a section heading carrying a way out of
-                    // its own section was a second path to somewhere the app already goes.
-                    SectionHeader(text = stringResource(R.string.home_recent))
-                }
-                items(state.recent.size, key = { state.recent[it].id }) { index ->
-                    val workout = state.recent[index]
-                    RecentWorkoutRow(workout = workout, onClick = { onOpenWorkout(workout.id) })
-                }
-            }
-        }
+    if (state.isLoading) {
+        CenteredMessage(
+            text = stringResource(R.string.history_loading),
+            modifier = modifier,
+        )
+    } else {
+        HomeBody(
+            state = state,
+            onStartWorkout = onStartWorkout,
+            onOpenPrograms = onOpenPrograms,
+            onOpenTemplates = onOpenTemplates,
+            onOpenMeasurements = onOpenMeasurements,
+            onStartTemplate = onStartTemplate,
+            onSubstitute = onSubstitute,
+            modifier = modifier,
+        )
+    }
 }
 
 /**
- * The home start bar: the ways to begin, then where a program's run is up to (ROADMAP N3, P3.9, N55).
+ * The home start bar: resuming, then where a program's run is up to (ROADMAP P3.9, N55, N102).
  *
- * Read top to bottom, it is the two ways into a plan — *Programs* and *Templates* — the screen's primary
- * action, and last the next-up block, so the thing the app is telling you to do next sits at the very
- * edge the thumb is already at. The empty start names itself **Start empty workout** so the bar's two
- * full-width pills do not read as the same action.
+ * Read top to bottom, it is the *Resume* pill — drawn only while a workout is open — and the next-up block,
+ * so the thing the app is telling you to do next sits at the very edge the thumb is already at. Starting
+ * empty is one of the body's rows now (N102), and this bar no longer offers it: the same action twice on one
+ * screen is what N42 removed the last time it happened.
  *
- * Resuming offers no choice: there is exactly one workout in progress, so the button means one thing.
- * The pair of links **stays while a workout is open** (ROADMAP N78): hiding them was how the app said
- * "you are in a workout", and a lifter checking what is next should not have to finish one to look — the
- * pill below already says what the primary act is. Repeat-last gave its slot to Programs (ROADMAP N42);
- * the entry point it gave up is an action on a finished workout, in History.
+ * The *Programs* and *Templates* links left with it, for that reason and to that place — the body's ways in,
+ * where a destination can say what it is instead of being one word in a row of words.
  */
 @Composable
 private fun StartActions(
@@ -437,12 +409,10 @@ private fun StartActions(
     clock: State<WorkoutClock>,
     nextUp: List<NextUp>,
     onStartWorkout: () -> Unit,
-    onOpenTemplates: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onOpenPlannedWorkout: (NextUp) -> Unit,
     /** Opens the substitute picker for one next-up row (ROADMAP N85). */
     onSubstitute: (TodayPlan) -> Unit,
-    onOpenPrograms: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -451,36 +421,18 @@ private fun StartActions(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // A row of links above the pill, not a second pill. They stay while a workout is open
-        // (ROADMAP N78): hiding them was how the app said "you are in a workout", and a lifter
-        // checking what is next should not have to finish one to look. The pill below already says
-        // what the primary act is.
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            AppTextButton(
-                onClick = onOpenPrograms,
-                modifier = Modifier.testTag(TestTags.HOME_PROGRAMS),
-            ) {
-                Text(stringResource(R.string.home_programs))
-            }
-            AppTextButton(
-                onClick = onOpenTemplates,
-                modifier = Modifier.testTag(TestTags.HOME_TEMPLATES),
-            ) {
-                Text(stringResource(R.string.home_templates))
-            }
+        // Resuming offers no choice: there is exactly one workout in progress, so the button means one
+        // thing. Nothing to resume means no pill at all (N102): this bar is not a place to start.
+        activeWorkout?.let { running ->
+            ResumeButton(
+                activeWorkout = running,
+                clock = clock,
+                onClick = onStartWorkout,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
-        StartOrResumeButton(
-            activeWorkout = activeWorkout,
-            clock = clock,
-            onClick = onStartWorkout,
-            modifier = Modifier.fillMaxWidth(),
-        )
         // Where each active program's run is, at the bottom edge of the screen the thumb is already
-        // at (ROADMAP P3.9, N55). It sits under the start pill so the thing the app says is next is
+        // at (ROADMAP P3.9, N55). It sits under the resume pill so the thing the app says is next is
         // the last thing the thumb reaches, and the field stays compact above its own full-width pill
         // because more than one active program (P3.12) means the bar can carry several.
         nextUp.forEach { nextUpRow ->
@@ -495,62 +447,42 @@ private fun StartActions(
 }
 
 /**
- * The home screen's primary action (P1.16, moved here by N1).
+ * The bar's one pill: the workout already running (P1.16, moved here by N1, narrowed by N102).
  *
- * Reads the clock — and is the only composable here that does, so the one-second tick stops at this
- * button instead of rebuilding the list beneath it — and hands the shape to [PrimaryActionButton],
- * which the next-up pill shares.
+ * Reads the clock — and is the only composable here that does, so the one-second tick stops at this button
+ * instead of rebuilding the list beneath it — and hands the shape to [PrimaryActionButton], which the next-up
+ * pill shares.
+ *
+ * There is exactly one workout in progress, so the button means one thing and takes no null: the empty start
+ * it used to fall back to is a row in the body now, which is why this no longer branches.
  */
 @Composable
-private fun StartOrResumeButton(
-    activeWorkout: ActiveWorkoutInfo?,
+private fun ResumeButton(
+    activeWorkout: ActiveWorkoutInfo,
     clock: State<WorkoutClock>,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val resuming = activeWorkout != null
-    val elapsed = if (resuming) clock.value.elapsed else ""
-    val exercises = if (resuming) {
-        pluralStringResource(
-            R.plurals.library_exercises,
-            activeWorkout.exerciseCount,
-            activeWorkout.exerciseCount,
-        )
-    } else {
-        ""
-    }
+    val exercises = pluralStringResource(
+        R.plurals.library_exercises,
+        activeWorkout.exerciseCount,
+        activeWorkout.exerciseCount,
+    )
 
     PrimaryActionButton(
-        text = if (resuming) {
-            listOf(
-                stringResource(R.string.library_resume_workout),
-                elapsed,
-                exercises,
-            ).filter { it.isNotEmpty() }.joinToString(" · ")
-        } else {
-            stringResource(R.string.home_start_empty_workout)
-        },
-        icon = if (resuming) Icons.Filled.PlayArrow else Icons.Filled.Add,
+        text = listOf(
+            stringResource(R.string.library_resume_workout),
+            clock.value.elapsed,
+            exercises,
+        ).filter { it.isNotEmpty() }.joinToString(" · "),
+        icon = Icons.Filled.PlayArrow,
         onClick = onClick,
-        // The empty start recedes to the palette's deep indigo (N61), one step below the planned pills,
-        // which draw the tonal container now (N83). Resuming is the only thing to do, so it keeps the
-        // accent and stays the loud one.
-        containerColor = if (resuming) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.primaryContainer
-        },
-        // The pair travels together: the lesser pill draws on the container, so its label takes the
-        // container's own "on" colour. The default is the accent surface's `onPrimary`, which the
-        // contrast check would then be asserting about a pair nothing draws (N61).
-        contentColor = if (resuming) {
-            MaterialTheme.colorScheme.onPrimary
-        } else {
-            MaterialTheme.colorScheme.onPrimaryContainer
-        },
-        // Tagged by state, not caption: which of the two shows is the behaviour under test, and the
-        // captions are user-visible text a translation changes.
-        modifier = modifier.testTag(if (resuming) TestTags.HOME_RESUME else TestTags.HOME_START),
+        // Resuming is the only thing the bar offers, so it keeps the accent and stays the loud one — the
+        // pairing N61 settled when the empty start receded to the container below it.
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        // Tagged by state, not caption: the caption is user-visible text a translation changes.
+        modifier = modifier.testTag(TestTags.HOME_RESUME),
     )
 }
 
@@ -670,23 +602,12 @@ private fun NextUpLabel(nextUp: NextUp, modifier: Modifier = Modifier) {
 private fun WorkoutsHomeScreenPreview() {
     AndroidAppTheme {
         WorkoutsHomeScreen(
-            state = WorkoutsHomeUiState(
-                isLoading = false,
-                recent = listOf(
-                    WorkoutSummary(
-                        id = "a",
-                        startedAt = Instant.parse("2026-09-28T07:00:00Z"),
-                        finishedAt = Instant.parse("2026-09-28T08:05:00Z"),
-                        exerciseCount = 4,
-                        setCount = 16,
-                        volumeGrams = 12_500_000L,
-                    ),
-                ),
-            ),
+            state = WorkoutsHomeUiState(isLoading = false),
             clock = remember { mutableStateOf(WorkoutClock()) },
             onStartWorkout = {},
             onOpenTemplates = {},
-            onOpenWorkout = {},
+            onOpenPrograms = {},
+            onOpenMeasurements = {},
         )
     }
 }

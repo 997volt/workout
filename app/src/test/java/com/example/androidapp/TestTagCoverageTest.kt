@@ -81,7 +81,6 @@ class TestTagCoverageTest {
             "EXERCISE_TRENDS",
             "GOAL",
             "HOME_CLEAR_DATA",
-            "HOME_NO_RECENT",
             "HOME_TITLE",
             "LIBRARY_SEARCH_FIELD",
             "SETTINGS_KEEP_SCREEN_ON",

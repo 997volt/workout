@@ -168,12 +168,14 @@ object TestTags {
     }
 
     const val HOME_TITLE = "home_title"
+    /** The body's row that starts an empty workout (ROADMAP N102). */
     const val HOME_START = "home_start"
+    /** The bar's pill, drawn only while a workout is running (ROADMAP N102). */
     const val HOME_RESUME = "home_resume"
-    /** The way into the template list, in the action row (ROADMAP N3, N42). */
+    /** The ways in, as rows in the body rather than words in the action row (ROADMAP N3, N42, N102). */
     const val HOME_TEMPLATES = "home_templates"
-    /** The way into programs, in the action row rather than the overflow (ROADMAP P3.3, N42). */
     const val HOME_PROGRAMS = "home_programs"
+    const val HOME_MEASUREMENTS = "home_measurements"
 
     /**
      * The question a planned start asks while a workout is already running (ROADMAP N89), and its two
@@ -203,10 +205,6 @@ object TestTags {
     const val DETAIL_PLAN_NAME = "detail_plan_name"
     const val DETAIL_PLAN_CONFIRM = "detail_plan_confirm"
     const val DETAIL_OPEN_NEW_PLAN = "detail_open_new_plan"
-    const val HOME_RECENT_ROW = "home_recent_row"
-    const val HOME_FIRST_RUN = "home_first_run"
-    const val HOME_NO_RECENT = "home_no_recent"
-
     const val LIBRARY_TITLE = "library_title"
     const val LIBRARY_SEARCH_FIELD = "library_search_field"
 

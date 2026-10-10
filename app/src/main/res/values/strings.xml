@@ -18,12 +18,14 @@
     <string name="exercise_library_no_exercises_hint">Your exercise library is empty.</string>
     <!-- Home (ROADMAP N1) -->
     <string name="home_title">Workouts</string>
-    <string name="home_recent">Recent</string>
-    <string name="home_first_run">No workouts yet</string>
-    <string name="home_first_run_hint">Tap Start empty workout to log your first one.</string>
-    <string name="home_no_recent">Nothing recent</string>
-
     <string name="home_start_empty_workout">Start empty workout</string>
+    <!-- The body's ways in (ROADMAP N102). Each says what the destination is for, because a bare name
+         in a list of four names is a menu rather than a way in. -->
+    <string name="home_open">Open %1$s</string>
+    <string name="home_programs_supporting">Schedules over your templates</string>
+    <string name="home_templates_supporting">What a workout trains</string>
+    <string name="home_measurements_supporting">Weight, tape and body fat</string>
+    <string name="home_start_supporting">Log sets as you go</string>
     <string name="library_resume_workout">Resume workout</string>
     <plurals name="library_exercises">
         <item quantity="one">%1$d exercise</item>

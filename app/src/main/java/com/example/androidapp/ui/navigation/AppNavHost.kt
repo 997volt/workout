@@ -120,10 +120,11 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
             onStartTemplate = { templateId, slotId ->
                 navController.navigate(ActiveWorkout(templateId = templateId, slotId = slotId))
             },
-            onOpenWorkout = { sessionId -> navController.navigate(WorkoutDetail(sessionId)) },
-            // The schedule the today's-plan section is read from (ROADMAP P3.3), now in the action
-            // row rather than the overflow it got lost in (N42).
+            // The schedule the today's-plan section is read from (ROADMAP P3.3), now a row in the
+            // body rather than the overflow it got lost in (N42, N102).
             onOpenPrograms = { navController.navigate(Programs) },
+            // Home is where the weight the chart reads gets written, so the way in is here too (N102).
+            onOpenMeasurements = { navController.navigate(Measurements) },
         )
     }
 
