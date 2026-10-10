@@ -11,8 +11,8 @@
 > and the equipment's own step that a variation was clearing. **All of it has since shipped except N103**,
 > which is a nullable taxonomy — so a row states only what it knows and reads the rest from the head above it.
 > Checked against the changelog as well as the code: every shipped id has its entry there, and N103 is the only
-> one this file still lists as planned. **Reading this batch line by line then found the six defects queued
-> under *Next* beside it**, each named in the code it lives in.
+> one this file still lists as planned. **Reading this batch line by line found six defects (B96–B101); all six
+> are fixed and recorded in [CHANGELOG.md](CHANGELOG.md)**, so *Next* holds N103 alone again.
 > A line-by-line reading of those N87–N95 changes
 > found sixteen defects; all sixteen are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
 >
@@ -86,70 +86,6 @@ change is left**, and it is the only one that rebuilds a table.
   selective-clear rule below: a value goes where the nearest stating ancestor states the same fact.
   Nothing reads it either way, because `effectiveMovementPattern` reads the head; the cleanup is what
   makes the stored shape say what the model says.
-
-### Defects found in review
-
-The unreleased N96–N103 and B95 batch was read line by line against what [CHANGELOG.md](CHANGELOG.md) says it
-does, and the reading found these. Three are about what a screen states — a variation's pattern that vanishes,
-a family's rating that is one movement's, and a head offered under a metric that does not read one — and three
-are rules the batch's own entries state that the code holding the data does not keep, one of which (B100) no
-caller reaches yet.
-
-- **A variation's detail screen states no movement pattern** (B96). N96 makes the pattern the category's fact,
-  and [ExerciseDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseDetailScreen.kt)
-  asks `effectiveMovementPattern` for the row and its **immediate** head — `listOfNotNull(head, exercise)`,
-  where `head` is the row `parentId` names
-  ([ExerciseDetailViewModel.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseDetailViewModel.kt)).
-  A movement filed under a category walks that one step and draws *Press*; a variation filed under a movement
-  that is itself filed under a category stops at the movement, whose `rowKind` is `MOVEMENT`, and the resolver
-  answers null — so *3-Second Paused Bench Press* and *Bench Press — Speed Day* draw no Pattern row at all
-  while *Barbell Bench Press* draws one. The field the editor offers the category is invisible on exactly the
-  rows a family exists to group, and the resolver answers *Press* the moment it is handed the chain.
-- **A family's muscle feel and joint pain are one arbitrary row, not the family's** (B97). N97 rolls a head up
-  because volume, reps, RPE and the two ratings "are sums or averages that mean the same thing over a family",
-  and [ExerciseTrendPoint.kt](app/src/main/java/com/example/androidapp/domain/model/ExerciseTrendPoint.kt)
-  averages RPE and sums the rest. The two ratings are `first().muscleFeel` and `first().jointPain`, which was
-  right while the type held one exercise: the rows arrive ordered by `startedAt, setIndex`
-  ([TrendsDao.kt](app/src/main/java/com/example/androidapp/data/local/TrendsDao.kt)), so a session that logged
-  two of the family's movements reports whichever one sorted first — the same two rows in the other order
-  report the other movement's numbers — and reports nothing when that first row happens to be unrated. The
-  domain test feeds one exercise and the repository test still passes a single id, so nothing holds this.
-- **The lift picker offers a head to the metrics that do not read one** (B98). `acceptsHead` is false for
-  *heaviest set*, *estimated 1RM* and *assistance* — N97's per-metric decision
-  ([MetricRegistry.kt](app/src/main/java/com/example/androidapp/ui/statistics/MetricRegistry.kt)) — and
-  [StatisticsViewModel.kt](app/src/main/java/com/example/androidapp/ui/statistics/StatisticsViewModel.kt)
-  honours it by asking for the one id, but the picker above it is metric-blind: `lifts` now holds every row,
-  and [StatisticsScreen.kt](app/src/main/java/com/example/androidapp/ui/statistics/StatisticsScreen.kt) labels
-  any row that heads others *· all variations*. *Bench Press* chosen under *Estimated 1RM* therefore draws an
-  empty chart under a label that promised the family, because a category is never named by a set (N95) and no
-  set answers to its id. The view-model test pins the one-id read as correct without asking what the screen
-  said above it.
-- **The adherence breakdown splits a family when a template names only a variation** (B99). The roll-up reads a
-  parent map, and
-  [RoomAdherenceRepository.kt](app/src/main/java/com/example/androidapp/data/RoomAdherenceRepository.kt) builds
-  it from the rows a template names: a variation's own parent is known, but *its* parent is not unless the
-  movement is named too, so `headOfExercise` stops at the movement. A plan that prescribes only *Bench Press —
-  Speed Day* counts it under *Barbell Bench Press*, while the same movement named beside its parent counts
-  under *Bench Press* — so one family's work lands in two rows of one breakdown, which is the fragmentation
-  N97 exists to remove. The domain test hands the function a complete map, which is why it passes.
-- **A family's trend window counts rows, not sessions** (B100). The repository promises that the window "counts
-  *sessions* … across the whole family, so a head's series is the family's sessions rather than each lift's
-  window stitched together"
-  ([TrendsRepository.kt](app/src/main/java/com/example/androidapp/domain/repository/TrendsRepository.kt)), but
-  the DAO's `LIMIT :limit` still bounds a `SELECT se2.id` over session-exercise rows
-  ([TrendsDao.kt](app/src/main/java/com/example/androidapp/data/local/TrendsDao.kt)): a family whose sessions
-  each log two of its movements answers with half the sessions asked for. No caller reaches it today — the
-  statistics screen passes `NO_LIMIT` — which is what makes it a defect waiting rather than one in use:
-  `TREND_WINDOW` is the parameter's **default**, so the next caller asking for a head with no limit named
-  walks into it.
-- **Home draws one action twice while a workout is open, and one of the two is mislabelled** (B101). N102 puts
-  *Start empty workout* in the body and keeps the *Resume* pill in the bar "drawn only while a workout is
-  open", and the body is drawn "whatever else is" — both carry the route's `onStartWorkout`, which is
-  `requestStart(StartIntent())`. An empty start is not the N89 question (`needsActiveWorkoutChoice` is
-  `templateId != null && hasActiveWorkout`) and the session call is find-or-create, so while a workout runs the
-  row reading *Start empty workout* opens the session already running: the pill's own act under the other
-  label, which is the "same action twice on one screen" N102's own rule cites as what N42 removed. The screen
-  and its test both branch on `activeWorkout` for the bar and never for the body.
 
 ## Parked — deliberately not planned
 
@@ -225,14 +161,12 @@ Everything that has stood in *Next* has shipped — the defects found in use, th
 workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch, a rest of
 zero, the planned-set prefill, the program document, the eight defects a review of that batch found and
 closed (B51-B58), the seven requests that were its last queue (N80-N86), the N87–N95 batch, and this round's
-N96–N102 with B95 — each with its entry in [CHANGELOG.md](CHANGELOG.md).
+N96–N102 with B95, and the six defects a review of *it* found (B96-B101) — each with its entry in
+[CHANGELOG.md](CHANGELOG.md).
 
-**N103 is the exception, and the one planned change left above it.** Its transfer half — a program document
-closing over a variation's ancestors — shipped with the rest; the nullable taxonomy the id is named for has
-not, and the entry says what is left of it and in what order. **The six defects the review recorded (B96–B101)
-are the other exception**: they are not planned work but claims the shipped batch does not keep, and each
-leaves this file when it is fixed and recorded in [CHANGELOG.md](CHANGELOG.md), the way B51–B58 and B79–B94
-did.
+**N103 is the exception, and the one entry left above it.** Its transfer half — a program document closing over
+a variation's ancestors — shipped with the rest; the nullable taxonomy the id is named for has not, and the
+entry says what is left of it and in what order.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what they named
 that is not a feature is a settled decision: no dated instances (N16), nothing automatic (the app states

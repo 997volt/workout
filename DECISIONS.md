@@ -883,10 +883,13 @@ the rule; that one argues it.
   that holds others — a category over its movements and their variations, or an exercise over its own
   variations — and its series reads the subtree's ids, which are distinct, so the union cannot double-count.
   The head's own row is included, because an exercise with variations can still be logged directly while a
-  category never can. **The statistics lift list is the one list where a head is offered**, a read-view
-  exception to N95's rule rather than a repeal of it: a head is still never offered while logging and never
-  named by a set, and the pickers that log keep their filter. Volume, total reps, RPE, muscle feel and joint
-  pain roll up, because each is a sum or an average that means the same thing over a family; **a heaviest set
+  category never can. **The statistics lift list is the one list where a head is offered — and only for the
+  metrics that read one** (B98), a read-view exception to N95's rule rather than a repeal of it: a head is
+  still never offered while logging and never named by a set, the pickers that log keep their filter, and a
+  metric that reads a single id is offered movements only, because choosing a category there would draw an
+  empty chart under a label promising a family. Volume, total reps, RPE, muscle feel and joint pain roll up,
+  because each is a sum or an average that means the same thing over a family — **the ratings counted once per
+  logged exercise, never once per set or from whichever row the query returned first** (B97); **a heaviest set
   or an estimated 1RM does not**, because a speed-day single merged into a competition bench reads as a
   decline that never happened. **Records and progression stay the exercise's**, and so does assistance: a
   record belongs to the lift that was performed, and whether a family is uniformly assisted is a fact about

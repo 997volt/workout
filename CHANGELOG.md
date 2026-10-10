@@ -75,6 +75,46 @@ repeated here.
   exercise it is a version of, and the receiving device had nothing to name it under. The whole parent chain
   travels now.
 
+- **A variation's detail screen states the family's movement pattern** (B96). N96 made the pattern the
+  category's fact, but the screen asked `effectiveMovementPattern` for the row and its **immediate** head —
+  and a variation's head is the movement it hangs under, so the walk stopped one row short of the category and
+  answered null. *3-Second Paused Bench Press* and *Bench Press — Speed Day* drew no Pattern row while
+  *Barbell Bench Press* drew *Press*. The walk now happens in the ViewModel, where the library is already read
+  whole, and the screen draws the answer.
+
+- **A family's muscle feel and joint pain are the family's average** (B97). N97 rolls a head up as sums and
+  averages, but the two ratings were `first().muscleFeel` and `first().jointPain` — right while the point held
+  one exercise, and arbitrary once a head fed several of a family into one session: the point reported
+  whichever movement sorted first, and reported nothing when that one happened to be unrated. Each rating is
+  now taken once per logged exercise and averaged, so a bench rated 9 beside a speed day rated 3 is 6 — not 9,
+  and not weighted by how many sets either logged.
+
+- **The lift picker offers a head only where the metric reads one** (B98). Volume rolls a family up; a
+  heaviest set, an estimated 1RM and assistance read one id. The picker offered every row under every metric
+  and labelled anything that headed others *· all variations*, so *Bench Press* chosen under *Estimated 1RM*
+  drew an empty chart under a label that promised the family — a category is never named by a set. The list is
+  filtered by the metric's own answer, the family label is drawn from it too, and switching to a metric that
+  cannot offer the chosen category drops it rather than leaving it selected behind a picker that no longer
+  lists it.
+
+- **The adherence breakdown rolls a variation up to its category** (B99). The parent map was built from the
+  rows a template names, so a variation's *movement* was in it only when a template happened to name the
+  movement as well: a plan prescribing only *Bench Press — Speed Day* counted it under *Barbell Bench Press*,
+  while the same movement named beside its parent counted under *Bench Press*. One family's work landed in two
+  rows of one breakdown. The map is the whole library now — removed rows included, because a removed head still
+  names its children and the walk still passes through it.
+
+- **A head's trend window counts sessions, not rows** (B100). The DAO's `LIMIT` bounded session-exercise rows,
+  so a family whose sessions each logged two of its movements answered with half the sessions asked for — and
+  `TREND_WINDOW` is the parameter's default. The inner query groups by session and orders by that session's
+  own start, so the window is `limit` sessions however many of the family's exercises each one logged.
+
+- **Home offers the empty start only while nothing is running** (B101). N102 put *Start empty workout* in the
+  body and kept *Resume* in the bar, and the body is drawn whatever else is — but both carried the same
+  callback, and an empty start is find-or-create, so while a session ran the row reading *Start empty workout*
+  opened the session already running: the pill's own act under the other label. The row is withheld while a
+  workout is open, which is B43's rule and N102's own.
+
 ## [1.17] — 2026-10-08 (versionCode 18)
 
 ### Added
