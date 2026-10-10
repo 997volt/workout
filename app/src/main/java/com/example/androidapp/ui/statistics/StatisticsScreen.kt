@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Straighten
 import com.example.androidapp.domain.model.Exercise
+import com.example.androidapp.domain.headsOthers
 import java.time.ZoneOffset
 import java.time.LocalDate
 import java.time.Instant
@@ -711,13 +712,33 @@ private fun LiftPicker(lifts: List<Exercise>, selectedId: String?, onSelectExerc
             onClick = { open = true },
             modifier = Modifier.testTag(TestTags.Statistics.LIFT),
         ) {
-            Text(selected?.name ?: stringResource(R.string.statistics_choose_lift))
+            // A head reads as a family rather than as another lift (ROADMAP N97): choosing it is choosing
+            // every row under it, and a name alone would promise one lift's numbers.
+            val chosenFamily = selected?.headsOthers(lifts) == true
+            Text(
+                text = when {
+                    selected == null -> stringResource(R.string.statistics_choose_lift)
+                    chosenFamily -> stringResource(R.string.statistics_lift_family, selected.name)
+                    else -> selected.name
+                },
+            )
         }
 
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             lifts.forEach { lift ->
                 DropdownMenuItem(
-                    text = { Text(lift.name) },
+                    text = {
+                        Column {
+                            Text(lift.name)
+                            if (lift.headsOthers(lifts)) {
+                                Text(
+                                    text = stringResource(R.string.statistics_lift_all_variations),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    },
                     onClick = {
                         open = false
                         onSelectExercise(lift.id)

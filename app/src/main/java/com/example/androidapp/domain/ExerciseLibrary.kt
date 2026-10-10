@@ -358,3 +358,65 @@ fun List<Exercise>.withValidLibraryShape(): List<Exercise> =
         isCategory = { it.rowKind == RowKind.CATEGORY },
         withParent = { row, parent -> row.copy(parentId = parent) },
     )
+
+/**
+ * The ids one lift's series reads: itself, and every row beneath it (ROADMAP N97).
+ *
+ * A *head* is any row that holds others — a category over its movements and their variations, or an
+ * exercise over its own variations — and a variation holds nothing, so a variation reads itself. The ids are
+ * distinct because the shape is a tree two rules deep, so reading the family cannot double-count a set.
+ *
+ * **The head's own row is included**, and the same expression is right for both kinds: an exercise with
+ * variations can still be logged directly, while a category never names a set, so including it costs a
+ * category nothing and keeps an exercise's own work in its own series.
+ *
+ * Two levels and no more, because that is the shape (N95); `seen` is what keeps a file that carries a cycle
+ * from looping, which is the guard every resolver here already has (B92).
+ */
+fun Exercise.seriesSubjectIds(library: List<Exercise>): List<String> {
+    val byParent = library.groupBy { it.parentId }
+    val ids = mutableListOf(id)
+    val seen = mutableSetOf(id)
+    // A frontier rather than two nested loops: same answer, one shape, and it reads as "walk down as far as
+    // the shape goes" instead of as an accidental depth.
+    var frontier: List<Exercise> = byParent[id].orEmpty()
+    repeat(SERIES_DEPTH) {
+        val fresh = frontier.filter { seen.add(it.id) }
+        ids += fresh.map { it.id }
+        frontier = fresh.flatMap { byParent[it.id].orEmpty() }
+    }
+    return ids
+}
+
+/** The library's shape is two rules deep and no deeper (N95), so a family is at most two steps down. */
+private const val SERIES_DEPTH = 2
+
+/**
+ * True when choosing this row reads a family rather than one lift (ROADMAP N97).
+ *
+ * A category always heads others — that is what it is for — and a movement heads its own variations when it
+ * has any. A variation heads nothing, so it reads as the single lift it is.
+ */
+fun Exercise.headsOthers(library: List<Exercise>): Boolean =
+    rowKind == RowKind.CATEGORY || library.any { it.parentId == id }
+
+/**
+ * The head an exercise is counted under: the top of its chain, or itself when it heads nothing
+ * (ROADMAP N97).
+ *
+ * A category for a movement filed under one, the movement for its own variations, and the row itself for
+ * anything unfiled — which is what makes the per-lift adherence breakdown count a family as one row while a
+ * loose movement still stands alone.
+ *
+ * A cycle is not a shape this app writes, but the walk must not hang on one, so `seen` ends it — the guard
+ * every resolver here carries (B92). Two levels are all the shape has, so the loop is bounded anyway.
+ */
+fun headOfExercise(id: String, parents: Map<String, String?>): String {
+    val seen = mutableSetOf(id)
+    var current = id
+    while (true) {
+        val parent = parents[current] ?: return current
+        if (!seen.add(parent)) return current
+        current = parent
+    }
+}

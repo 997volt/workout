@@ -1,5 +1,6 @@
 package com.example.androidapp.domain.model
 
+import com.example.androidapp.domain.headOfExercise
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -240,6 +241,14 @@ object ProgramSchedule {
         exercisesByTemplate: Map<String, List<String>> = emptyMap(),
         /** What those exercises are called, by exercise id (P3.14). */
         exerciseNames: Map<String, String> = emptyMap(),
+        /**
+         * Where each of those sits, by id, or null at the top (ROADMAP N97).
+         *
+         * The breakdown rolls a family up to its head, so a category's occurrences are one row rather than
+         * split across the movements a lifter thinks of as one lift. Absent means every exercise is its own
+         * row, which is what a caller with no library to hand gets.
+         */
+        exerciseParents: Map<String, String?> = emptyMap(),
         month: YearMonth,
         today: LocalDate,
     ): MonthAdherence {
@@ -280,7 +289,7 @@ object ProgramSchedule {
             trainedDays = trained,
             scheduledDays = counted.scheduledDays,
             bySlot = counted.bySlot,
-            byExercise = exerciseAdherence(counted.bySlot, exercisesByTemplate, exerciseNames),
+            byExercise = exerciseAdherence(counted.bySlot, exercisesByTemplate, exerciseNames, exerciseParents),
         )
     }
 
@@ -553,15 +562,23 @@ object ProgramSchedule {
         bySlot: List<SlotAdherence>,
         exercisesByTemplate: Map<String, List<String>>,
         exerciseNames: Map<String, String>,
+        exerciseParents: Map<String, String?> = emptyMap(),
     ): List<ExerciseAdherence> {
         val totals = mutableMapOf<String, IntArray>()
         bySlot.forEach { slot ->
-            exercisesByTemplate[slot.templateId].orEmpty().forEach { exerciseId ->
-                val counts = totals.getOrPut(exerciseId) { IntArray(COUNT_FIELDS) }
-                counts[0] += slot.done
-                counts[1] += slot.skipped
-                counts[2] += slot.missed
-            }
+            // Counted under the *head*, and once per head however many of its rows the template names
+            // (ROADMAP N97). A template prescribing the barbell bench and its speed day is not the bench family
+            // done twice, and summing the parts would say it was. A variation heads itself, so the ordinary
+            // one-row case is unchanged.
+            exercisesByTemplate[slot.templateId].orEmpty()
+                .map { headOfExercise(it, exerciseParents) }
+                .distinct()
+                .forEach { head ->
+                    val counts = totals.getOrPut(head) { IntArray(COUNT_FIELDS) }
+                    counts[0] += slot.done
+                    counts[1] += slot.skipped
+                    counts[2] += slot.missed
+                }
         }
 
         return totals.entries

@@ -1,6 +1,7 @@
 package com.example.androidapp.domain.model
 
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -718,5 +719,38 @@ class ProgramAdherenceTest {
     private companion object {
         /** A ratio of thirds is not exact in binary floating point. */
         const val TOLERANCE = 1e-9
+    }
+
+    @Test
+    fun thePerLiftBreakdown_countsAFamilyUnderItsHead() {
+        // ROADMAP N97: a category's occurrences are one row rather than split across the movements a lifter
+        // thinks of as one lift — and an unfiled movement still stands alone, because it heads nothing.
+        val slots = listOf(
+            SlotAdherence(slotId = "s1", templateId = "t1", templateName = "Upper", done = 3),
+            SlotAdherence(slotId = "s2", templateId = "t2", templateName = "Lower", done = 2, missed = 1),
+        )
+        val byTemplate = mapOf(
+            "t1" to listOf("barbell-bench-press", "bench-speed"),
+            "t2" to listOf("back-squat"),
+        )
+        val names = mapOf(
+            "cat-bench" to "Bench Press",
+            "barbell-bench-press" to "Barbell Bench Press",
+            "bench-speed" to "Speed Day",
+            "back-squat" to "Back Squat",
+        )
+        val parents = mapOf(
+            "barbell-bench-press" to "cat-bench",
+            "bench-speed" to "barbell-bench-press",
+            "back-squat" to null,
+        )
+
+        val rows = ProgramSchedule.exerciseAdherence(slots, byTemplate, names, parents)
+
+        val bench = rows.single { it.exerciseId == "cat-bench" }
+        assertThat(bench.exerciseName).isEqualTo("Bench Press")
+        assertWithMessage("the family's slot, counted once however many of its rows the template names")
+            .that(bench.done).isEqualTo(3)
+        assertThat(rows.single { it.exerciseId == "back-squat" }.done).isEqualTo(2)
     }
 }

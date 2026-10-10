@@ -230,6 +230,9 @@
     <string name="statistics_overview_records">Records</string>
     <string name="statistics_not_counted">—</string>
     <string name="statistics_choose_lift">Choose a lift to see its trend.</string>
+    <!-- A head reads as one number (ROADMAP N97), so the picker says which rows are a family. -->
+    <string name="statistics_lift_all_variations">All variations</string>
+    <string name="statistics_lift_family">%1$s · all variations</string>
     <string name="statistics_metric">Metric</string>
     <string name="statistics_custom_from">From</string>
     <string name="statistics_custom_to">To</string>

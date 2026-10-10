@@ -151,7 +151,7 @@ class StatisticsViewModelTest {
         viewModel.onSelectExercise("back-squat")
         advanceUntilIdle()
 
-        assertThat(trends.askedFor).isEqualTo("back-squat")
+        assertThat(trends.askedFor).containsExactly("back-squat")
         assertThat(viewModel.uiState.value.series?.readings?.single()?.value).isEqualTo(4_000_000.0)
         assertThat(viewModel.uiState.value.needsExercise).isEqualTo(false)
     }
@@ -208,24 +208,48 @@ class StatisticsViewModelTest {
     }
 
     @Test
-    fun theLiftPicker_doesNotOfferACategory() = runTest(dispatcher) {
-        // ROADMAP N95: a head is never offered. It is a row of the library, so it reaches this list the way
-        // every other row does — filtering it here is what keeps "never offered" true on the third surface
-        // that names a lift, not just on the two pickers.
+    fun theLiftPicker_offersAHead_andTheMetricDecidesWhetherItReadsAsOne() = runTest(dispatcher) {
+        // ROADMAP N97: this is the one list where a head *is* offered — N95's "never offered" is about
+        // logging, and a head is still never named by a set. Which metrics then read its family is per
+        // metric: volume is a sum over a family, while a heaviest set merged across a speed day and a
+        // competition single would read as a decline that never happened.
+        val trends = FakeTrendsRepository()
         val viewModel = viewModel(
             range = StatisticsRange(RangeKind.ALL),
             lifts = listOf(
                 lift("back-squat", "Back Squat"),
                 lift("cat-bench", "Bench Press", rowKind = RowKind.CATEGORY),
+                lift("barbell-bench-press", "Barbell Bench Press", parentId = "cat-bench"),
+                lift("paused-bench", "Paused Bench", parentId = "barbell-bench-press"),
             ),
+            trends = trends,
         )
         observe(viewModel)
         advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.lifts.map { it.name }).isEqualTo(listOf("Back Squat"))
+        assertWithMessage("a head is offered here").that(viewModel.uiState.value.lifts.map { it.name })
+            .containsExactly("Back Squat", "Bench Press", "Barbell Bench Press", "Paused Bench")
+
+        viewModel.onSelectExercise("cat-bench")
+        viewModel.onSelectMetric(MetricKey.Exercise(ExerciseTrendMetric.VOLUME))
+        advanceUntilIdle()
+        assertWithMessage("volume reads the whole family")
+            .that(trends.askedFor)
+            .containsExactly("cat-bench", "barbell-bench-press", "paused-bench")
+
+        viewModel.onSelectMetric(MetricKey.Exercise(ExerciseTrendMetric.HEAVIEST_SET))
+        advanceUntilIdle()
+        assertWithMessage("a heaviest set reads the row that was chosen")
+            .that(trends.askedFor)
+            .containsExactly("cat-bench")
     }
 
-    private fun lift(id: String, name: String, rowKind: RowKind = RowKind.MOVEMENT) = Exercise(
+    private fun lift(
+        id: String,
+        name: String,
+        rowKind: RowKind = RowKind.MOVEMENT,
+        parentId: String? = null,
+    ) = Exercise(
         id = id,
         name = name,
         primaryMuscle = MuscleGroup.QUADS,
@@ -233,6 +257,7 @@ class StatisticsViewModelTest {
         equipment = Equipment.BARBELL,
         movementPattern = MovementPattern.SQUAT,
         isCustom = false,
+        parentId = parentId,
         rowKind = rowKind,
     )
 
@@ -391,17 +416,17 @@ private class FakeTrendsRepository(
     private val points: List<TrendPoint> = emptyList(),
     private val exercisePoints: List<ExerciseTrendPoint> = emptyList(),
 ) : TrendsRepository {
-    var askedFor: String? = null
+    var askedFor: List<String>? = null
         private set
 
     override fun observeTrends(limit: Int): Flow<DataResult<List<TrendPoint>>> =
         flowOf(DataResult.Success(points))
 
     override fun observeExerciseTrends(
-        exerciseId: String,
+        exerciseIds: List<String>,
         limit: Int,
     ): Flow<DataResult<List<ExerciseTrendPoint>>> {
-        askedFor = exerciseId
+        askedFor = exerciseIds
         return flowOf(DataResult.Success(exercisePoints))
     }
 }

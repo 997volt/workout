@@ -204,6 +204,15 @@ data class MetricEntry(
     val fixedRange: ClosedRange<Double>? = null,
     /** True when the series means nothing until a lift is chosen. */
     val needsExercise: Boolean = false,
+    /**
+     * True when this series reads a *head* as one number rather than only the row that was chosen
+     * (ROADMAP N97).
+     *
+     * The decision is per metric — see [ExerciseTrendMetric.acceptsHead] — and it bounds the read-view
+     * exception N95's rule gets: a head may be *chosen* here, but only the metrics that answer true actually
+     * read its family.
+     */
+    val acceptsHead: Boolean = false,
 )
 
 /**
@@ -301,7 +310,35 @@ private fun exerciseEntry(metric: ExerciseTrendMetric): MetricEntry {
         // A load starts at zero; a rating does not (ROADMAP N17, N38).
         fromZero = metric.isLoad,
         needsExercise = true,
+        acceptsHead = metric.acceptsHead(),
     )
+}
+
+/**
+ * Whether this metric reads a *head* as one number (ROADMAP N97).
+ *
+ * Per metric rather than blanket, because the metrics do not agree about what merging means. Volume, reps
+ * and the three ratings are sums or averages that mean the same thing over a family. A **heaviest set** or an
+ * **estimated 1RM** merged across a speed day and a competition single reads as a decline that never
+ * happened, which is the number a lifter is most likely to misread.
+ *
+ * **Assistance does not take a head at all**, which is narrower than "only where every row under the head
+ * carries it": whether a family is uniformly assisted is a fact about its *sets*, and the picker decides
+ * this before any set is read. A series that quietly counted a free-weight set as zero assistance would be
+ * worse than the number not being offered.
+ */
+private fun ExerciseTrendMetric.acceptsHead(): Boolean = when (this) {
+    ExerciseTrendMetric.VOLUME,
+    ExerciseTrendMetric.TOTAL_REPS,
+    ExerciseTrendMetric.RPE,
+    ExerciseTrendMetric.MUSCLE_FEEL,
+    ExerciseTrendMetric.JOINT_PAIN,
+    -> true
+
+    ExerciseTrendMetric.HEAVIEST_SET,
+    ExerciseTrendMetric.ESTIMATED_1RM,
+    ExerciseTrendMetric.ASSISTANCE,
+    -> false
 }
 
 private fun tapeEntry(site: TapeSite) = MetricEntry(

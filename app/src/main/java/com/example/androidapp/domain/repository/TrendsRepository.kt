@@ -14,14 +14,15 @@ import kotlinx.coroutines.flow.Flow
 interface TrendsRepository {
 
     /**
-     * One exercise's own series over the most recent [limit] finished sessions that
-     * recorded it, **oldest first** (ROADMAP N17).
+     * The series for one lift — or for a **head** and everything filed under it — over the most recent
+     * [limit] finished sessions that recorded any of [exerciseIds], **oldest first** (ROADMAP N17, N97).
      *
      * The window counts *sessions*, not sets: a workout with eight sets of the lift is
-     * one point on the chart, the same way N13's trends count sessions.
+     * one point on the chart, the same way N13's trends count sessions. It counts them across the whole
+     * family, so a head's series is the family's sessions rather than each lift's window stitched together.
      */
     fun observeExerciseTrends(
-        exerciseId: String,
+        exerciseIds: List<String>,
         limit: Int = TREND_WINDOW,
     ): Flow<DataResult<List<ExerciseTrendPoint>>>
 

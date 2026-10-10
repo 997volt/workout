@@ -40,10 +40,10 @@ class RoomTrendsRepository @Inject constructor(
     private val dao = database.trendsDao()
 
     override fun observeExerciseTrends(
-        exerciseId: String,
+        exerciseIds: List<String>,
         limit: Int,
     ): Flow<DataResult<List<ExerciseTrendPoint>>> =
-        dao.observeExerciseTrendRows(exerciseId, limit)
+        dao.observeExerciseTrendRows(exerciseIds, limit)
             .map<List<ExerciseTrendRowEntity>, DataResult<List<ExerciseTrendPoint>>> { rows ->
                 // Grouping and arithmetic live in the domain type, where they are pure
                 // and tested; this is only the storage-to-domain translation.

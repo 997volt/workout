@@ -1,6 +1,7 @@
 package com.example.androidapp.data
 
 import com.example.androidapp.data.local.ExerciseDao
+import com.example.androidapp.domain.headOfExercise
 import com.example.androidapp.data.local.ProgramDao
 import com.example.androidapp.data.local.ProgramDeloadDao
 import com.example.androidapp.data.local.ProgramDeloadEntity
@@ -113,9 +114,13 @@ class RoomAdherenceRepository @Inject constructor(
             exercisesByTemplate[templateId] =
                 templateDao.findPlannedExercises(templateId).map { it.exerciseId }
         }
-        val exerciseNames = exercisesByTemplate.values.flatten().distinct().mapNotNull { id ->
-            exerciseDao.findById(id)?.let { id to it.name }
-        }.toMap()
+        val named = exercisesByTemplate.values.flatten().distinct()
+            .mapNotNull { id -> exerciseDao.findById(id)?.let { id to it } }
+            .toMap()
+        val exerciseNames = named.mapValues { (_, row) -> row.name }.toMutableMap()
+        // Where each named exercise sits, so the breakdown rolls a family up to its head (ROADMAP N97).
+        val exerciseParents = named.mapValues { (_, row) -> row.parentId }
+        addHeadNames(exerciseParents, exerciseNames)
 
         AdherenceReport(
             hasActiveProgram = true,
@@ -127,6 +132,7 @@ class RoomAdherenceRepository @Inject constructor(
                 substitutions = substitutions,
                 exercisesByTemplate = exercisesByTemplate,
                 exerciseNames = exerciseNames,
+                exerciseParents = exerciseParents,
                 month = month,
                 today = today,
             ),
@@ -137,6 +143,23 @@ class RoomAdherenceRepository @Inject constructor(
                 .groupBy({ it.programId }, { it.weekStart })
                 .mapValues { (_, weeks) -> weeks.toSet() },
         )
+    }
+
+    /**
+     * Adds the name of any head the templates never name (ROADMAP N97).
+     *
+     * A category is never named by a template — only a movement can be logged — so without this the roll-up's
+     * row would be labelled with an id. Extracted because `monthAdherence` had reached the length this project
+     * enforces, and it is a step of its own rather than part of the read.
+     */
+    private suspend fun addHeadNames(
+        parents: Map<String, String?>,
+        names: MutableMap<String, String>,
+    ) {
+        parents.keys.map { headOfExercise(it, parents) }
+            .distinct()
+            .filterNot { it in names }
+            .forEach { headId -> exerciseDao.findById(headId)?.let { names[headId] = it.name } }
     }
 
     override suspend fun occurrencesOn(

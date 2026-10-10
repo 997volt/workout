@@ -95,7 +95,11 @@ interface TrendsDao {
     fun observeFeelTrend(limit: Int): Flow<List<FeelTrendRow>>
 
     /**
-     * One exercise's finished sessions, one row per logged set (ROADMAP N17).
+     * The finished sessions that recorded any of [exerciseIds], one row per logged set (ROADMAP N17, N97).
+     *
+     * A list rather than one id because a **head** reads as one number: a category over its movements and a
+     * movement over its variations are one series, so the query is asked for the whole family at once. One id
+     * is the ordinary case and reads exactly as it did.
      *
      * Flat on purpose: the grouping, the warm-up exclusion and the one-rep-max estimate
      * are decisions rather than aggregations, and they live in
@@ -130,7 +134,7 @@ interface TrendsDao {
         FROM session_exercises se
         JOIN workout_sessions ws ON ws.id = se.sessionId
         LEFT JOIN set_entries s ON s.sessionExerciseId = se.id AND s.deletedAt IS NULL
-        WHERE se.exerciseId = :exerciseId
+        WHERE se.exerciseId IN (:exerciseIds)
           AND se.deletedAt IS NULL
           AND ws.deletedAt IS NULL
           AND ws.finishedAt IS NOT NULL
@@ -138,7 +142,7 @@ interface TrendsDao {
               SELECT se2.id
               FROM session_exercises se2
               JOIN workout_sessions ws2 ON ws2.id = se2.sessionId
-              WHERE se2.exerciseId = :exerciseId
+              WHERE se2.exerciseId IN (:exerciseIds)
                 AND se2.deletedAt IS NULL
                 AND ws2.deletedAt IS NULL
                 AND ws2.finishedAt IS NOT NULL
@@ -149,7 +153,7 @@ interface TrendsDao {
         """,
     )
     fun observeExerciseTrendRows(
-        exerciseId: String,
+        exerciseIds: List<String>,
         limit: Int,
     ): Flow<List<ExerciseTrendRowEntity>>
 }

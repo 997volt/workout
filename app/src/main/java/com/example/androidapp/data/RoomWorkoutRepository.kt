@@ -538,7 +538,12 @@ class RoomWorkoutRepository @Inject constructor(
     ): DataResult<PersonalRecords> = dataResultOf {
         // Every session, because a record is against all of them — the window that suits a
         // chart would silently forget an old best, which is the one thing a record is for.
-        val rows = database.trendsDao().observeExerciseTrendRows(exerciseId, limit = ALL_SESSIONS).first()
+        //
+        // One id, never a head's family (ROADMAP N97): a record belongs to the lift that was actually
+        // performed, so a family's aggregate is not a best anyone set.
+        val rows = database.trendsDao()
+            .observeExerciseTrendRows(listOf(exerciseId), limit = ALL_SESSIONS)
+            .first()
         PersonalRecords.from(
             rows.filter { it.sessionId != excludingSessionId }
                 .mapNotNull { it.toPerformedSetSpec() },

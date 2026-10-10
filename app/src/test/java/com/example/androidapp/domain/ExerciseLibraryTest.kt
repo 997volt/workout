@@ -304,4 +304,68 @@ class ExerciseLibraryTest {
         assertThat(shaped.getValue("barbell-bench-press").parentId).isEqualTo("cat-bench")
         assertThat(shaped.getValue("bench-speed").parentId).isEqualTo("barbell-bench-press")
     }
+
+    @Test
+    fun aHeadsSeries_readsItself_andEverythingFiledUnderIt() {
+        // ROADMAP N97: a category over its movements *and their variations*, which is the whole point — three
+        // rows of one barbell bench are one lift to a lifter, and only reading them together says so.
+        val library = listOf(
+            bench,
+            movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench"),
+            movement("bench-speed", "Speed Day", parent = "barbell-bench-press"),
+            movement("dumbbell-bench-press", "Dumbbell Bench Press", parent = "cat-bench"),
+            movement("squat", "Back Squat"),
+        )
+
+        val ids = library.first { it.id == "cat-bench" }.seriesSubjectIds(library)
+
+        assertThat(ids).containsExactly(
+            "cat-bench",
+            "barbell-bench-press",
+            "bench-speed",
+            "dumbbell-bench-press",
+        )
+    }
+
+    @Test
+    fun aVariation_readsNothingButItself() {
+        // The shape is two rules deep, so a variation heads nothing: its series is its own work, which is
+        // what keeps a paused bench's records and progression its own (N97).
+        val library = listOf(
+            bench,
+            movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench"),
+            movement("bench-speed", "Speed Day", parent = "barbell-bench-press"),
+        )
+
+        val ids = library.first { it.id == "bench-speed" }.seriesSubjectIds(library)
+
+        assertThat(ids).containsExactly("bench-speed")
+    }
+
+    @Test
+    fun anUnfiledMovement_readsItselfAndItsOwnVariations() {
+        // The other kind of head: a movement in no category still holds its variations, and including the
+        // movement's own row is what keeps the sets logged against it in its own series.
+        val library = listOf(
+            movement("overhead-press", "Overhead Press"),
+            movement("push-press", "Push Press", parent = "overhead-press"),
+            movement("squat", "Back Squat"),
+        )
+
+        val ids = library.first { it.id == "overhead-press" }.seriesSubjectIds(library)
+
+        assertThat(ids).containsExactly("overhead-press", "push-press")
+    }
+
+    @Test
+    fun aCycleInTheLibrary_doesNotLoopForever() {
+        // A file is the one place a link this app would never write can arrive (B92), and a resolver that
+        // trusted the shape would hang rather than answer.
+        val library = listOf(
+            movement("a", "A", parent = "b"),
+            movement("b", "B", parent = "a"),
+        )
+
+        assertThat(library.first { it.id == "a" }.seriesSubjectIds(library)).containsExactly("a", "b")
+    }
 }

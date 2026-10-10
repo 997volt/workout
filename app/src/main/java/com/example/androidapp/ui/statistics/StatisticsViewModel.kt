@@ -17,6 +17,7 @@ import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.window
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.SettingsRepository
+import com.example.androidapp.domain.seriesSubjectIds
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import java.time.LocalDate
@@ -162,23 +163,52 @@ class StatisticsViewModel @Inject constructor(
             range = range,
             selection = selection,
             summaries = library.first,
-            // Movements only (ROADMAP N95): a category is never offered, here as much as in a picker. A
-            // series is read for a lift that was performed, and a head has no sets of its own to read —
-            // its roll-up is parked as N97 rather than implied by this list.
-            lifts = library.second.filter { it.rowKind.isLoggable },
+            // Every row, because a *head* may be chosen here (ROADMAP N97): this is the one list where
+            // N95's "never offered" is read differently, and it is a read-view exception rather than a
+            // repeal — a head is still never offered while logging and never named by a set, and the pickers
+            // that log keep their filter.
+            lifts = library.second,
             workoutPoints = points,
             measurements = body,
         )
     }
 
-    /** The chosen lift's own series, or nothing when the metric does not need one. */
-    private val exercisePoints = selection.flatMapLatest { chosen ->
-        val metric = chosen.metric
-        val exerciseId = chosen.exerciseId
-        if (metric is MetricKey.Exercise && exerciseId != null) {
-            repositories.trends.observeExerciseTrends(exerciseId, NO_LIMIT)
+    /**
+     * The chosen lift's series, or nothing when the metric does not need one.
+     *
+     * The library is combined in because the *subject* is a question about the library's shape rather than
+     * about the selection: a head reads its own ids plus everything filed under it (ROADMAP N97).
+     */
+    private val exercisePoints = combine(selection, library) { chosen, lib -> chosen to lib.second }
+        .flatMapLatest { (chosen, exercises) ->
+            val metric = chosen.metric
+            val exerciseId = chosen.exerciseId
+            if (metric is MetricKey.Exercise && exerciseId != null) {
+                repositories.trends.observeExerciseTrends(
+                    subjectIds(metric, exerciseId, exercises),
+                    NO_LIMIT,
+                )
+            } else {
+                flowOf(DataResult.Success(emptyList()))
+            }
+        }
+
+    /**
+     * The ids one chosen lift's series reads (ROADMAP N97).
+     *
+     * A head reads its whole family only for a metric that takes one; every other metric — and every row
+     * that heads nothing, which is most of them — reads the row that was chosen, exactly as it did before.
+     */
+    private fun subjectIds(
+        metric: MetricKey.Exercise,
+        exerciseId: String,
+        library: List<Exercise>,
+    ): List<String> {
+        val chosen = library.firstOrNull { it.id == exerciseId } ?: return listOf(exerciseId)
+        return if (MetricRegistry.entryFor(metric).acceptsHead) {
+            chosen.seriesSubjectIds(library)
         } else {
-            flowOf(DataResult.Success(emptyList()))
+            listOf(exerciseId)
         }
     }
 
