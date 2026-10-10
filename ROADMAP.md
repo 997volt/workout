@@ -53,6 +53,16 @@ change is left**, and it is the only one that rebuilds a table.
   the backup's `schemaVersion` **must bump**, because a newer file carries `null` where an older build expects
   a value. A file written before this stays safe: it carries full copies, and a stated value still wins under
   the one rule both builds share.
+  **One winner rule or two — settled here, because implementing this would otherwise hit it mid-way.** N103
+  says the winner is own-if-stated for *every* field; N96, which has shipped, says the pattern belongs to the
+  category and reads the head. Those agree only while no movement states what its head also states, and the
+  selective clear makes that true of the **data** rather than of the model — so the two rules would diverge the
+  first time a lifter set a pattern by hand. **The resolution is own-if-stated, uniformly**, which is N103's
+  rule and one rule rather than two: the category is the pattern's home because nothing under it states one,
+  not because it outranks them. That keeps everything N96 bought — a family's pattern decided once, and a row
+  in no category with none — while dropping the absolute claim that a movement may never state its own. The
+  DECISIONS rule N96 landed is amended in the same change, since it currently says the pattern is read off the
+  head.
 
   **The pattern needs no separate work, and N96's remainder is this migration's own rule.** Its entry
   used to say the per-exercise column is dropped, which was written before it was clear that a category is
