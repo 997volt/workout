@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.statistics
 
+import kotlin.math.sqrt
 
 /**
  * A straight line fitted to a series, and what it says per week (ROADMAP N39).
@@ -13,6 +14,15 @@ data class TrendSlope(
     /** The fitted line itself, for drawing: value = intercept + slope × epochMillis. */
     val slope: Double,
     val intercept: Double,
+    /**
+     * How far [perWeek] could be out, in the metric's own units per week, or null where the fit cannot say.
+     *
+     * This is what the energy statement's band is made of (ROADMAP N98), so it is *measured* rather than
+     * assumed: the residuals around the line are the only honest source of it. Two readings report null
+     * because the line passes through both and every residual is zero — a certainty the data does not
+     * support, and the one place a perfect fit would be read as knowledge.
+     */
+    val perWeekStandardError: Double? = null,
 ) {
     /**
      * Where the line is at [fraction] across the series, for drawing it.
@@ -55,7 +65,31 @@ fun MetricSeries.trend(): TrendSlope? {
         perWeek = slope * MILLIS_PER_WEEK,
         slope = slope,
         intercept = intercept,
+        perWeekStandardError = slopeStandardError(times, values, slope, intercept, spread),
     )
+}
+
+/**
+ * The standard error of the slope, scaled to a week (ROADMAP N98).
+ *
+ * `sqrt(residualVariance / spread)`, which is the textbook error of a least-squares slope, and the reason it
+ * is computed here rather than guessed at by the caller: a band invented at the call site would be a second
+ * opinion about the same data. Null below three readings, for [TrendSlope.perWeekStandardError]'s reason.
+ */
+private fun slopeStandardError(
+    times: List<Double>,
+    values: List<Double>,
+    slope: Double,
+    intercept: Double,
+    spread: Double,
+): Double? {
+    if (times.size < MIN_READINGS_FOR_ERROR || spread == 0.0) return null
+    val residualSum = times.indices.sumOf { index ->
+        val residual = values[index] - (intercept + slope * times[index])
+        residual * residual
+    }
+    val variance = residualSum / (times.size - FIT_PARAMETERS)
+    return sqrt(variance / spread) * MILLIS_PER_WEEK
 }
 
 /**
@@ -72,3 +106,9 @@ fun slopeText(perWeek: Double, format: (Double) -> String): String {
 
 /** Kept here rather than in the data class so the arithmetic above reads as one thing. */
 private const val MILLIS_PER_WEEK = 7.0 * 24 * 60 * 60 * 1000
+
+/** What a fitted line costs the data: a slope and an intercept. Kept named so the division reads as one. */
+private const val FIT_PARAMETERS = 2
+
+/** A residual needs one reading more than the line's own parameters, or there is nothing left to measure. */
+private const val MIN_READINGS_FOR_ERROR = FIT_PARAMETERS + 1

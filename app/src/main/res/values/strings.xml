@@ -242,6 +242,17 @@
     <string name="statistics_goal_confirm">Set</string>
     <string name="statistics_goal_clear">Clear</string>
     <string name="statistics_per_week">%1$s %2$s per week</string>
+    <!-- The energy adjustment a weight trend implies (ROADMAP N98). It is deliberately a *relative*
+         change and never a number to eat: the app holds no food data, and the absolute target belongs
+         where the food is logged. -->
+    <string name="statistics_energy_target">Target rate</string>
+    <string name="statistics_energy_target_none">Set a rate</string>
+    <string name="statistics_energy_target_hint">kg per week — negative to lose</string>
+    <string name="statistics_energy_less">About %1$s kcal a day less than you are eating now</string>
+    <string name="statistics_energy_more">About %1$s kcal a day more than you are eating now</string>
+    <string name="statistics_energy_on_target">Your trend is where you asked it to be</string>
+    <string name="statistics_energy_waiting">Not enough weigh-ins yet</string>
+    <string name="statistics_energy_note">From your weight trend, not from what you eat. This app keeps no food data, and the number to eat is yours to set where you log it.</string>
     <string name="unit_kilograms">kg</string>
     <string name="unit_pounds">lb</string>
     <string name="unit_centimetres">cm</string>

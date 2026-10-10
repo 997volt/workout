@@ -57,6 +57,7 @@ class StatisticsScreenTest {
         onOpenMeasurements: (() -> Unit)? = null,
         onOpenAdherence: (() -> Unit)? = null,
         onSetGoal: (Double?) -> Unit = {},
+        onSetRateTarget: (Double?) -> Unit = {},
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -68,6 +69,7 @@ class StatisticsScreenTest {
                     onOpenMeasurements = onOpenMeasurements,
                     onOpenAdherence = onOpenAdherence,
                     onSetGoal = onSetGoal,
+                    onSetRateTarget = onSetRateTarget,
                 )
             }
         }
@@ -471,6 +473,77 @@ class StatisticsScreenTest {
 
         composeTestRule.onNodeWithText("Couldn’t save that. Your last change may not be stored.").assertExists()
     }
+
+    @Test
+    fun withNoRateTarget_theEnergySectionOffersOne_andSaysNothingElse() {
+        // N98: a rate that was never set has nothing to be short of, so the row that sets it is all there is.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_SET)
+            .assertTextEquals("Set a rate")
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_STATEMENT).assertDoesNotExist()
+    }
+
+    @Test
+    fun withARateTarget_andTooFewWeighIns_itSaysSoRatherThanGuessing() {
+        // The floor N98 sets: two weigh-ins are a number and not a trend, so there is no kcal figure to draw —
+        // and the section says that rather than leaving a gap where a number would be.
+        setScreen(state = stateWithRateTarget(rateTarget = -700.0))
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_STATEMENT)
+            .assertTextEquals("Not enough weigh-ins yet")
+    }
+
+    @Test
+    fun aLiftSeries_hasNoEnergySectionAtAll() {
+        // The rate is the weight metric's: a lift's trend is not something anybody eats against.
+        setScreen(
+            state = stateWithRateTarget(rateTarget = -700.0).copy(
+                series = MetricSeries(
+                    key = MetricKey.Exercise(ExerciseTrendMetric.ESTIMATED_1RM),
+                    readings = listOf(
+                        MetricReading(Instant.parse("2026-09-01T08:00:00Z"), 100_000.0),
+                        MetricReading(Instant.parse("2026-09-15T08:00:00Z"), 105_000.0),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY).assertDoesNotExist()
+    }
+
+    @Test
+    fun aRateTarget_isTypedInItsOwnDialog_andCanBeClearedFromIt() {
+        // N98: the rate is a target like the level one, so it is set the same way — typed in a dialog and
+        // cleared from the same place. The minus is the point: this is the one target with a direction, and a
+        // parser that refused it would leave no way to ask for losing.
+        var set: Double? = null
+        var cleared = false
+        setScreen(
+            state = stateWithRateTarget(rateTarget = -700.0),
+            onSetRateTarget = { value -> if (value == null) cleared = true else set = value },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_SET).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_FIELD).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_FIELD).performTextInput("-0.35")
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_CONFIRM).performClick()
+
+        assertThat(set).isEqualTo(-350.0)
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_SET).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_CLEAR).performClick()
+
+        assertThat(cleared).isTrue()
+    }
+
+    private fun stateWithRateTarget(rateTarget: Double) = StatisticsUiState(
+        isLoading = false,
+        range = StatisticsRange(RangeKind.LAST_MONTH),
+        series = weightSeries(),
+        rateTarget = rateTarget,
+    )
 }
 
 /** A pair of weigh-ins: enough for a chart, which is where the target line lives. */

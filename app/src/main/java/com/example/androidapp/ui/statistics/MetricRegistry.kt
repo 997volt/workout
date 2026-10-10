@@ -42,6 +42,15 @@ sealed interface MetricKey {
             is Body -> "BODY:${metric.name}"
             is Tape -> "TAPE:${site.name}"
         }
+
+    /**
+     * A stable name for this series' *rate* target, where it has one (ROADMAP N98).
+     *
+     * A second key rather than a second store: "−0.35 kg a week" is the same kind of thing as a target of
+     * "80 kg" — one number the user authored, per metric — so it rides in the same map, the same preference
+     * and the same backup field, and nothing had to move for it.
+     */
+    val rateId: String get() = "$id:RATE"
 }
 
 /** The body series that are not tape sites (ROADMAP N32). */
@@ -63,6 +72,11 @@ enum class MetricUnit(
 
         override fun parse(text: String): Double? =
             measure(text) { it.times(GRAMS_PER_KILOGRAM) }
+
+        // Signed, because this is the one metric with a rate target: "−0.35" a week means losing, and the
+        // reading's rule would refuse the sign and leave no way to ask for it (N98).
+        override fun parseRate(text: String): Double? =
+            signed(text) { it.times(GRAMS_PER_KILOGRAM) }
     },
     RATING(R.string.unit_rating) {
         override fun format(value: Double): String = value.asRating()
@@ -125,6 +139,15 @@ enum class MetricUnit(
      * against, and the guard is the same one: finite and not negative.
      */
     open fun parse(text: String): Double? = finite(text.trim().toDoubleOrNull())
+
+    /**
+     * What a typed *rate* means in the metric's stored units (ROADMAP N98).
+     *
+     * Separate from [parse] because a rate has a direction and a reading does not: "lose 0.35 kg a week" is
+     * −350 grams stored, while −80 kg is not a weight. Only the weight unit has a rate target today, so only
+     * it overrides this; every other unit keeps the reading's rule and refuses the negative.
+     */
+    open fun parseRate(text: String): Double? = parse(text)
 }
 
 /**
@@ -139,6 +162,16 @@ private inline fun measure(text: String, convert: (Double) -> Double): Double? =
 /** Finite and not negative: what every stored measurement in this app is. */
 private fun finite(value: Double?): Double? =
     value?.takeIf { it.isFinite() && it >= 0.0 }
+
+/**
+ * A typed *signed* measurement in stored units, or null when it is not a number.
+ *
+ * The rate counterpart of [measure]: a direction is the whole content of "lose 0.35 kg a week", so this is the
+ * one place a minus is not an error. Applied after the conversion as well as before it, for [measure]'s reason
+ * — the conversion can overflow.
+ */
+private inline fun signed(text: String, convert: (Double) -> Double): Double? =
+    text.trim().toDoubleOrNull()?.takeIf { it.isFinite() }?.let(convert)?.takeIf { it.isFinite() }
 
 /**
  * One series the Statistics screen can draw (ROADMAP N35).

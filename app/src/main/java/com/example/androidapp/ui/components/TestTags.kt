@@ -676,6 +676,14 @@ object TestTags {
         const val GOAL_CONFIRM = "statistics_goal_confirm"
         const val GOAL_CLEAR = "statistics_goal_clear"
 
+        /** The energy adjustment a weight trend implies (ROADMAP N98). */
+        const val ENERGY = "statistics_energy"
+        const val ENERGY_STATEMENT = "statistics_energy_statement"
+        const val ENERGY_TARGET_SET = "statistics_energy_target_set"
+        const val ENERGY_TARGET_FIELD = "statistics_energy_target_field"
+        const val ENERGY_TARGET_CONFIRM = "statistics_energy_target_confirm"
+        const val ENERGY_TARGET_CLEAR = "statistics_energy_target_clear"
+
         /** One period the moving average can be taken over. */
         fun movingAveragePeriod(period: Int) = "statistics_moving_average_$period"
 

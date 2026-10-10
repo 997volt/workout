@@ -77,6 +77,7 @@ fun StatisticsRoute(
         modifier = modifier,
         onSelectExercise = viewModel::onSelectExercise,
         onSetGoal = viewModel::onSetGoal,
+        onSetRateTarget = viewModel::onSetRateTarget,
         onOpenMeasurements = onOpenMeasurements,
         onOpenAdherence = onOpenAdherence,
     )
@@ -98,6 +99,8 @@ fun StatisticsScreen(
     onSelectExercise: (String) -> Unit = {},
     /** Sets or clears the chosen metric's target (ROADMAP N39). */
     onSetGoal: (Double?) -> Unit = {},
+    /** Sets or clears the chosen metric's target *rate*, where it has one (ROADMAP N98). */
+    onSetRateTarget: (Double?) -> Unit = {},
     /**
      * Opens body measurements (ROADMAP N35).
      *
@@ -167,6 +170,7 @@ fun StatisticsScreen(
                     series = state.series,
                     onSelectExercise = onSelectExercise,
                     onSetGoal = onSetGoal,
+                    onSetRateTarget = onSetRateTarget,
                     goal = state.goal,
                 )
             }
@@ -186,6 +190,7 @@ private fun StatisticsBody(
     series: com.example.androidapp.ui.statistics.MetricSeries?,
     onSelectExercise: (String) -> Unit,
     onSetGoal: (Double?) -> Unit,
+    onSetRateTarget: (Double?) -> Unit,
     goal: Double?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -217,6 +222,14 @@ private fun StatisticsBody(
                 // counterpart to a canvas this app blanks out for screen readers (ROADMAP N36).
                 ReadingsSection(series = series, metric = entry)
                 GoalRow(goal = state.goal, metric = entry, onSetGoal = onSetGoal)
+                // Under the level target, because the two are the same kind of thing — a target for this
+                // metric — and it is the rate that the adjustment below is measured against (N98).
+                EnergyAdjustmentSection(
+                    series = series,
+                    metric = entry,
+                    rateTarget = state.rateTarget,
+                    onSetRateTarget = onSetRateTarget,
+                )
         }
     }
 }

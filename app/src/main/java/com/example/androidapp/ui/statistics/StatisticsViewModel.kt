@@ -73,6 +73,13 @@ data class StatisticsUiState(
     val lifts: List<Exercise> = emptyList(),
     /** The target set for the chosen metric, in its own units, or null when there is none (ROADMAP N39). */
     val goal: Double? = null,
+    /**
+     * The target *rate* for the chosen metric, in its own units per week, or null (ROADMAP N98).
+     *
+     * Only the weight metric offers one, and only the energy statement reads it: a level target says where to
+     * get to, and a rate says how fast — which is the number an adjustment in kcal is computed from.
+     */
+    val rateTarget: Double? = null,
 ) {
     /**
      * True when the chosen metric needs a lift and none is chosen yet.
@@ -197,6 +204,7 @@ class StatisticsViewModel @Inject constructor(
                     error = workoutPoints.error,
                     lifts = sources.lifts,
                     goal = goals[sources.selection.metric.id],
+                    rateTarget = goals[sources.selection.metric.rateId],
                 )
             } else {
                 val body = sources.range.inWindow(
@@ -223,6 +231,7 @@ class StatisticsViewModel @Inject constructor(
                     series = MetricSeries(key = sources.selection.metric, readings = body),
                     lifts = sources.lifts,
                     goal = goals[sources.selection.metric.id],
+                    rateTarget = goals[sources.selection.metric.rateId],
                 )
             }
         }.stateIn(
@@ -239,6 +248,16 @@ class StatisticsViewModel @Inject constructor(
      */
     fun onSetGoal(value: Double?) {
         viewModelScope.launch { settings.setGoal(selection.value.metric.id, value) }
+    }
+
+    /**
+     * Sets or clears the chosen metric's target *rate* (ROADMAP N98).
+     *
+     * The same write to the same map under [MetricKey.rateId], for [onSetGoal]'s reason: one number the user
+     * typed and expects to be remembered, so it is written straight through rather than buffered.
+     */
+    fun onSetRateTarget(value: Double?) {
+        viewModelScope.launch { settings.setGoal(selection.value.metric.rateId, value) }
     }
 
     fun onSelectMetric(metric: MetricKey) {
