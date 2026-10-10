@@ -210,8 +210,9 @@ class ExerciseDetailViewModel @Inject constructor(
     /**
      * Starts a variation of this exercise, in the editor (ROADMAP N95, B83).
      *
-     * A variation **inherits the exercise it hangs under** — its muscles, its equipment — so the draft below
-     * is what "inherits" means in practice: only what is performed differently will be the new row's own.
+     * A variation **inherits the exercise it hangs under** — its muscles, its equipment, and the unit and
+     * step that equipment's weights move by — so the draft below is what "inherits" means in practice: only
+     * what is performed differently will be the new row's own.
      * It arrives in the editor rather than on a finished screen, because its name is the one thing the lifter
      * must supply: "three-second paused" is a name they write, not a value from a closed set.
      *
@@ -231,8 +232,6 @@ class ExerciseDetailViewModel @Inject constructor(
                     rowKind = RowKind.MOVEMENT,
                     restSeconds = null,
                     techniqueNote = null,
-                    weightUnit = null,
-                    stepGrams = null,
                 ),
                 variationParent = parent,
                 isEditing = true,

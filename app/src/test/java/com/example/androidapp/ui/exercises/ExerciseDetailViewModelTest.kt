@@ -166,8 +166,10 @@ class ExerciseDetailViewModelTest {
         // What is performed differently starts unset rather than copied from the parent.
         assertNull(variation?.restSeconds)
         assertNull(variation?.techniqueNote)
-        assertNull(variation?.stepGrams)
-        assertNull(variation?.weightUnit)
+        // The unit and the step are not in that set: they are facts about the equipment the copy above just
+        // carried, so clearing them left the variation on the *unit's* step while keeping the machine (B95).
+        assertEquals(WeightUnit.POUNDS, variation?.weightUnit)
+        assertEquals(5_000L, variation?.stepGrams)
         assertTrue(
             "and it opens for naming, which is the one thing it must be given",
             viewModel.uiState.value.isEditing,
@@ -365,7 +367,8 @@ class ExerciseDetailViewModelTest {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             // Mirrors `RoomExerciseRepository.createVariationOf`: everything inherited is copied, and what
             // is performed differently starts unset. A fake that resets less would let a regression through
-            // that the real one has.
+            // that the real one has — and one that resets *more* let B95 through, which is why the unit and
+            // step are no longer in this list.
             val variation = parent.copy(
                 id = "variation-${parent.id}",
                 name = "",
@@ -374,8 +377,6 @@ class ExerciseDetailViewModelTest {
                 rowKind = RowKind.MOVEMENT,
                 restSeconds = null,
                 techniqueNote = null,
-                weightUnit = null,
-                stepGrams = null,
             )
             state.value = state.value + variation
             return DataResult.Success(variation)

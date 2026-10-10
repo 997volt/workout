@@ -67,9 +67,10 @@ interface ExerciseRepository {
      * Stores a new variation of [parent] and returns it (ROADMAP N95).
      *
      * **The variation inherits everything the exercise is** — its muscles, its equipment, its movement
-     * pattern — except its name and the things performed differently, which start unset. That is the shape
-     * the entry settles rather than a convenience: a paused bench is the same lift, so restating its muscles
-     * would be a second place for them to disagree with the lift it hangs under.
+     * pattern, and the unit and step that equipment's weights move by — except its name, its cue and its
+     * rest, which start unset because those are what is performed differently. That is the shape the entry
+     * settles rather than a convenience: a paused bench is the same lift, so restating its muscles would be a
+     * second place for them to disagree with the lift it hangs under.
      *
      * The parent must be a movement: a variation of a *category* would be a third level, and the shape is
      * two rules deep.

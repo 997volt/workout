@@ -86,6 +86,12 @@ class RoomExerciseRepository @Inject constructor(
         // Everything inherited is copied; what is performed differently starts unset, **including the name**,
         // which the editor is about to ask for. Copying it stored a row already named after its parent, so
         // saving without typing left a duplicate (B83).
+        //
+        // The weight unit and the step travel with the equipment rather than being cleared beside the cue
+        // (B95). Both are facts about the equipment this function has just copied — a machine that jumps 5 kg,
+        // or one that reads in pounds — so clearing them handed the variation the *unit's* default step while
+        // keeping the machine, and the ± buttons, the warm-up ramp and the progression offer then moved a
+        // weight that machine does not have.
         val variation = parent.copy(
             id = UUID.randomUUID().toString(),
             name = "",
@@ -94,8 +100,6 @@ class RoomExerciseRepository @Inject constructor(
             rowKind = RowKind.MOVEMENT,
             restSeconds = null,
             techniqueNote = null,
-            weightUnit = null,
-            stepGrams = null,
         )
         dao.insert(variation.toEntity(now = timeSource.nowEpochMillis()))
         variation

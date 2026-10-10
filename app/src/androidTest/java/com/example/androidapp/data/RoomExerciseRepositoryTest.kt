@@ -274,6 +274,23 @@ class RoomExerciseRepositoryTest {
     }
 
     @Test
+    fun createVariation_carriesTheEquipmentsStepAndUnit() = runTest {
+        // B95: the unit and the step are facts about the equipment this copy has just carried, so clearing
+        // them handed the variation the *unit's* default step while keeping the machine — and the ± buttons,
+        // the warm-up ramp and the progression offer then moved a weight that machine does not have.
+        val parent = created("Lat Pulldown").copy(
+            weightUnit = WeightUnit.POUNDS,
+            stepGrams = 5_000L,
+        )
+        repository.updateExercise(parent)
+
+        val variation = (repository.createVariationOf(parent) as DataResult.Success<Exercise>).data
+
+        assertEquals(WeightUnit.POUNDS, variation.weightUnit)
+        assertEquals(5_000L, variation.stepGrams)
+    }
+
+    @Test
     fun createVariation_refusesAVariationOfAVariation() = runTest {
         // B82: the third level the shape does not have — nothing draws a variation of a variation.
         val parent = created("Barbell Bench Press")
