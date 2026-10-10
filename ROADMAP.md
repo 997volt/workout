@@ -8,9 +8,9 @@
 > is kept in this app and what that lets the trend say; four smaller requests — the template editor's order, a
 > history row's two numbers, an unrated exercise's prompt, and home's body in place of *Recent*; and, from
 > reading the library's inheritance, one fact in one home — the taxonomy a child states rather than copies,
-> and the equipment's own step that a variation was clearing. **All of it has since shipped except one
-> migration**: what is left of N96 and N103 is the single rebuild that drops the per-exercise pattern column
-> and makes the taxonomy nullable. A line-by-line reading of those N87–N95 changes
+> and the equipment's own step that a variation was clearing. **All of it has since shipped except N103**,
+> which is a nullable taxonomy — so a row states only what it knows and reads the rest from the head above it.
+> A line-by-line reading of those N87–N95 changes
 > found sixteen defects; all sixteen are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is

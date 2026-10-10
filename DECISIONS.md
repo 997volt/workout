@@ -605,7 +605,10 @@ the rule; that one argues it.
   workouts" left the *Recent* heading: a control that leaves a section duplicates the tab bar, and
   the screen the whole scheduling half is edited from does not belong behind a menu. Keeping both
   entry points "just in case" was rejected — it is what made the tab a second path to everywhere
-  else. ([evidence](DECISIONS-EVIDENCE.md#n42))
+  else. **The heading itself has since gone with the list it headed** (N102), which is this rule
+  taken to its end rather than a departure from it: a section that no longer exists cannot carry a
+  way out of itself, and the ways in are rows in the body.
+  ([evidence](DECISIONS-EVIDENCE.md#n42))
 - **A repeat is addressed to a workout, and a row's second action is an icon** (N48, amending N29).
   The one-tap copy of exercises and order is the same; what changed is that it names its source, so
   a History row repeats *that* workout rather than whatever is newest, and the repository reports a
