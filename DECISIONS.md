@@ -614,6 +614,12 @@ the rule; that one argues it.
   repeat is a start, it still goes through P3.3's missed-day question.
   ([evidence](DECISIONS-EVIDENCE.md#n48))
 
+- **Home's body is the ways in, and the bottom bar is what is next** (N102). A body of four ways in is never
+  blank, which is why the first-run message went with the list it explained. The bar carries the *Resume* pill
+  — only while a workout is open — and the next-up block, so **the bar is never a place to start**. Starting
+  empty moved into the body rather than being duplicated there, because the same action twice on one screen is
+  what N42 removed the last time it happened.
+
 ## The app's data
 
 - **An action on the whole database lives in Settings** (N43). Export, import and
@@ -623,6 +629,22 @@ the rule; that one argues it.
   matters: export, import, and the one that cannot be undone last and coloured.
   ([evidence](DECISIONS-EVIDENCE.md#n43))
 
+- **A statistic may state the energy implication of a weight trend, and never a calorie target** (N98). Body
+  weight is recorded here, so the statistics screen can answer what a scale implies: a target **rate**, the
+  fitted trend, and the gap between them as a daily figure. **It stores no food and no intake, and it never
+  will** — the nutrition non-goal is a line rather than a backlog — so what it gives is a *relative* change
+  ("about 200 kcal a day less than you are eating now") and the absolute target stays where the food is logged.
+  **The band is measured, never assumed**: it is the fitted line's own standard error, null below three
+  readings because a line through two points passes through both and every residual is zero. **Nothing is said
+  until there is enough to say it** — eight readings across twenty-one days — and below that the screen says so
+  rather than drawing a figure from noise, which is P2.8's bar. **Nothing is written**: the statement sets no
+  setting, no plan and no target, which is the app's oldest rule reaching a second surface.
+
+- **A target may be a *rate*, and it needs no store of its own** (N98). "−0.35 kg a week" is the same kind of
+  thing as a target of "80 kg" — one number the user authored, per metric — so it rides in the same map, the
+  same preference and the same backup field, under a key derived from the metric's own (`MetricKey.rateId`). A
+  rate is **signed** where a reading never is, so it parses and formats through its own pair of functions: the
+  reading's rule refuses a negative, which is right for a weight and wrong for a direction.
 ## Programs
 
 - **A slot's row acts through one menu, and its template is read-only from there** (N72, extending
