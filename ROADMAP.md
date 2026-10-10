@@ -28,22 +28,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Requests from use**, each with the decision it settles. Everything this round asked for has shipped — the
-pattern vocabulary and its move onto the category, a head that reads as one number, the energy adjustment, and
-the four small requests — each with its entry in [CHANGELOG.md](CHANGELOG.md). **What is left is one change the
-others deferred**, because it is the only one that rebuilds a table, and it is written below as the two halves
-it has: they land in the same migration.
+**Requests from use**, each with the decision it settles. Everything this round asked for has shipped —
+the pattern vocabulary and its move onto the category, a head that reads as one number, the energy
+adjustment, and the four small requests — each with its entry in [CHANGELOG.md](CHANGELOG.md). **One
+change is left**, and it is the only one that rebuilds a table.
 
-- **N96 (what is left) — the per-exercise pattern column is dropped.** The pattern belongs to the category and
-  is read from the top of the chain, which is live; the column that stored it on every movement is what
-  remains, and **a column can only be dropped in a migration that rebuilds the table**, because SQLite has no
-  way to drop one in place. **Nothing is lost with it** — a movement's stored value is read by nothing while
-  its head states one, and `effectiveMovementPattern` never looks at it — and the rebuild is also the only
-  place the four retired names are rewritten on the rows that still carry them, which the first half
-  deliberately left undone: the value goes with the column, so rewriting it separately would have been work on
-  a column about to disappear.
-
-- **N103 (what is left) — the taxonomy becomes nullable, and a row stops copying what it inherits.** A child's
+- **N103 — the taxonomy becomes nullable, and a row stops copying what it inherits.** A child's
   taxonomy is a *copy* today: a variation is `parent.copy(...)`, and the seed restates a movement's muscle,
   equipment and pattern on every variation it ships. **The model becomes one rule: a row stores what it
   states, and anything unstated is read from the nearest row above that states it.**
@@ -63,6 +53,15 @@ it has: they land in the same migration.
   the backup's `schemaVersion` **must bump**, because a newer file carries `null` where an older build expects
   a value. A file written before this stays safe: it carries full copies, and a stated value still wins under
   the one rule both builds share.
+
+  **The pattern needs no separate work, and N96's remainder is this migration's own rule.** Its entry
+  used to say the per-exercise column is dropped, which was written before it was clear that a category is
+  a row of the *same* table: there is one `movementPattern` column and it has to survive, because it is
+  where a category states its family's pattern. What N96 has left is the movement-level **values** — a
+  stale `HORIZONTAL_PUSH` still sitting on a filed movement — and clearing those is exactly the
+  selective-clear rule below: a value goes where the nearest stating ancestor states the same fact.
+  Nothing reads it either way, because `effectiveMovementPattern` reads the head; the cleanup is what
+  makes the stored shape say what the model says.
 
 ## Parked — deliberately not planned
 

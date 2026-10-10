@@ -31,7 +31,7 @@ repeated here.
 
 ### Changed
 
-- **Movement patterns are nine, and the pattern belongs to the category** (N96, first half). `HORIZONTAL_PUSH`
+- **Movement patterns are nine, and the pattern belongs to the category** (N96). `HORIZONTAL_PUSH`
   and `VERTICAL_PUSH` became `PRESS`; the two pulls became `PULL`; LUNGE stays out of SQUAT, because "have I
   been squatting?" has an answer and lunges are not it. The four retired names stay in the enum and are read
   but never offered, because every pattern is stored by name and an older row — or an export written before
