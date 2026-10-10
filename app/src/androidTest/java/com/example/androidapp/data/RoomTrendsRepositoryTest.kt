@@ -202,7 +202,7 @@ class RoomTrendsRepositoryTest {
             ),
         )
 
-        val point = (repository.observeExerciseTrends("back-squat").first() as DataResult.Success)
+        val point = (repository.observeExerciseTrends(listOf("back-squat")).first() as DataResult.Success)
             .data
             .single()
 
@@ -222,7 +222,7 @@ class RoomTrendsRepositoryTest {
             sets = listOf(PlannedSet(weightGrams = 0L, reps = 8, assistanceGrams = 20_000L)),
         )
 
-        val point = (repository.observeExerciseTrends("back-squat").first() as DataResult.Success)
+        val point = (repository.observeExerciseTrends(listOf("back-squat")).first() as DataResult.Success)
             .data
             .single()
 
@@ -243,7 +243,7 @@ class RoomTrendsRepositoryTest {
             sets = List(8) { PlannedSet(weightGrams = 100_000L, reps = 5) },
         )
 
-        val points = (repository.observeExerciseTrends("back-squat", limit = 1).first() as
+        val points = (repository.observeExerciseTrends(listOf("back-squat"), limit = 1).first() as
             DataResult.Success).data
 
         assertEquals(1, points.size)
@@ -256,7 +256,7 @@ class RoomTrendsRepositoryTest {
         seedSession(id = "new", startedAt = 3_000L, rpeHalves = emptyList(), finished = true)
         seedSession(id = "open", startedAt = 2_000L, rpeHalves = emptyList(), finished = false)
 
-        val points = (repository.observeExerciseTrends("back-squat").first() as DataResult.Success)
+        val points = (repository.observeExerciseTrends(listOf("back-squat")).first() as DataResult.Success)
             .data
 
         assertEquals(
@@ -283,7 +283,7 @@ class RoomTrendsRepositoryTest {
             ),
         )
 
-        val points = (repository.observeExerciseTrends("bench-press").first() as DataResult.Success)
+        val points = (repository.observeExerciseTrends(listOf("bench-press")).first() as DataResult.Success)
             .data
 
         assertEquals(1, points.size)

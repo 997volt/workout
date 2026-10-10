@@ -1,6 +1,8 @@
 package com.example.androidapp.data
 
 import androidx.room.withTransaction
+import com.example.androidapp.data.local.ExerciseDao
+import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.ProgramDao
 import com.example.androidapp.data.local.ProgramRunDao
 import com.example.androidapp.data.local.ProgramSkipDao
@@ -426,9 +428,14 @@ private suspend fun buildProgramDocument(
     val templateExercises = templateIds.flatMap { database.templateDao().findTemplateExercises(it) }
     val templateSets = templateIds.flatMap { database.templateDao().findTemplateSets(it) }
     // The definition of every exercise the plan names, so a receiving device can create the ones it
-    // has never seen — a user's own exercise id means nothing anywhere else (N47).
-    val exercises = templateExercises.map { it.exerciseId }.distinct()
-        .mapNotNull { database.exerciseDao().findById(it) }
+    // has never seen — a user's own exercise id means nothing anywhere else (N47) — **and of every row above
+    // them** (N103). A variation's parent is part of its definition: a document naming a variation without
+    // its head would arrive with nothing to name it under, and once a row inherits rather than copies,
+    // nothing to inherit from.
+    val exercises = withAncestors(
+        ids = templateExercises.map { it.exerciseId }.distinct(),
+        dao = database.exerciseDao(),
+    )
 
     return ProgramDocument(
         formatVersion = ProgramDocumentCodec.CURRENT_FORMAT_VERSION,
@@ -440,6 +447,30 @@ private suspend fun buildProgramDocument(
         templateSets = templateSets.map { it.toDto() },
         exercises = exercises.map { it.toDto() },
     )
+}
+
+/**
+ * [ids] and every row above them in the library (ROADMAP N103).
+ *
+ * The whole parent chain rather than one level, because a variation hangs under an exercise that may itself
+ * hang under a category — and a chain that stopped early would be the same silent loss in a shorter file. A
+ * cycle is not a shape this app writes, but a document is a place one can arrive, so an id already collected
+ * ends the walk (B92). A row the device does not hold is simply absent, which is what a receiving device's own
+ * miss already means.
+ */
+private suspend fun withAncestors(ids: List<String>, dao: ExerciseDao): List<ExerciseEntity> {
+    val found = linkedMapOf<String, ExerciseEntity>()
+    val pending = ArrayDeque(ids.distinct())
+    while (pending.isNotEmpty()) {
+        val id = pending.removeFirst()
+        // `found[id]` first, so a cycle costs no second read and no jump out of the loop: a row already
+        // collected has a non-null value here and adds nothing.
+        val row = found[id] ?: dao.findById(id)
+        if (row != null && found.put(id, row) == null) {
+            row.parentId?.let { pending.add(it) }
+        }
+    }
+    return found.values.toList()
 }
 
 /**

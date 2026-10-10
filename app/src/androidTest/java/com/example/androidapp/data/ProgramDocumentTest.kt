@@ -10,6 +10,7 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.repository.ProgramImportSummary
@@ -148,10 +149,10 @@ class ProgramDocumentTest {
     }
 
     /** A program with one template, one planned set and one slot, ready to export. */
-    private suspend fun seedProgram(): String {
+    private suspend fun seedProgram(exerciseId: String = "back-squat"): String {
         val programId = (programs.createProgram("Heavy lower") as DataResult.Success).data
         val templateId = (templates.createTemplate("Squat day") as DataResult.Success).data
-        templates.addExercise(templateId, "back-squat")
+        templates.addExercise(templateId, exerciseId)
         val planned = templates.observeExercises(templateId).first().single().id
         templates.addSet(
             planned,
@@ -171,16 +172,47 @@ class ProgramDocumentTest {
     /** Back to a bare database, which is what "another device" means for this feature. */
     private suspend fun wipe() = withContext(Dispatchers.IO) { database.clearAllTables() }
 
-    private fun exercise(id: String) = ExerciseEntity(
+    private fun exercise(
+        id: String,
+        name: String = id,
+        parentId: String? = null,
+        rowKind: RowKind = RowKind.MOVEMENT,
+    ) = ExerciseEntity(
         id = id,
-        name = id,
+        name = name,
         primaryMuscle = MuscleGroup.QUADS,
         secondaryMuscles = emptyList(),
         equipment = Equipment.BARBELL,
         movementPattern = MovementPattern.SQUAT,
         isCustom = false,
+        parentId = parentId,
+        rowKind = rowKind,
         createdAt = 0L,
         updatedAt = 0L,
         deletedAt = null,
     )
+
+    @Test
+    fun aDocumentCarryingAVariation_carriesItsAncestors() = runTest {
+        // ROADMAP N103: a variation's parent is part of its definition. Without the chain the receiving
+        // device would create the variation with nothing to name it under — and, once a row inherits rather
+        // than copies, nothing to inherit from.
+        database.exerciseDao().insertAll(
+            listOf(
+                exercise("cat-bench", name = "Bench Press", rowKind = RowKind.CATEGORY),
+                exercise("barbell-bench-press", name = "Barbell Bench Press", parentId = "cat-bench"),
+                exercise("paused-bench", name = "Paused Bench", parentId = "barbell-bench-press"),
+            ),
+        )
+
+        val file = exportOf(seedProgram(exerciseId = "paused-bench"))
+
+        wipe()
+        importOf(file)
+
+        val restored = database.exerciseDao().findAllIncludingDeleted().associateBy { it.id }
+        // The movement travels, and so does the head above it.
+        assertEquals("cat-bench", restored.getValue("barbell-bench-press").parentId)
+        assertEquals("barbell-bench-press", restored.getValue("paused-bench").parentId)
+    }
 }

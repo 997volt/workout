@@ -208,7 +208,7 @@ class TrendsDaoTest {
         joint("se1", Joint.KNEE, Side.LEFT, 4, position = 0)
         joint("se1", Joint.ANKLE, Side.RIGHT, 7, position = 1)
 
-        val withJoints = dao.observeExerciseTrendRows("library-se1", limit = 10).first()
+        val withJoints = dao.observeExerciseTrendRows(listOf("library-se1"), limit = 10).first()
 
         assertEquals(7, withJoints.first().jointPain)
     }
