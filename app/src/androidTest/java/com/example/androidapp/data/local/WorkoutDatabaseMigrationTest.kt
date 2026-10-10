@@ -1925,4 +1925,86 @@ class WorkoutDatabaseMigrationTest {
             arrayOf(id, name, parentId),
         )
     }
+
+    @Test
+    fun theSeededFamilies_stateTheirPattern() {
+        // ROADMAP N96: a head was seeded with `OTHER` because it had nothing to say, and it is the one home
+        // for its family's movement pattern now. A category a lifter made states nothing, because the seed has
+        // no opinion about it.
+        helper.createDatabase(TEST_DB, 37).apply {
+            insertCategory("bench-press", "Bench Press")
+            insertCategory("squat", "Squat")
+            insertCategory("mine", "My Own Family")
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 38, true, MIGRATION_37_38)
+
+        migrated.query("SELECT id, movementPattern FROM exercises").use { cursor ->
+            val pattern = mutableMapOf<String, String>()
+            while (cursor.moveToNext()) pattern[cursor.getString(0)] = cursor.getString(1)
+
+            assertEquals("PRESS", pattern["bench-press"])
+            assertEquals("SQUAT", pattern["squat"])
+            assertEquals("a family the seed does not ship says nothing", "OTHER", pattern["mine"])
+        }
+    }
+
+    @Test
+    fun aRetiredPatternName_isRewritten() {
+        // ROADMAP N96. The four names the merge retired are read through legacy enum values so an older row —
+        // and an export written before it — cannot throw. Stored rows do not need that mercy once a migration
+        // can rewrite them, and the picker can never produce them again.
+        helper.createDatabase(TEST_DB, 38).apply {
+            insertPattern("overhead-press", "Overhead Press", "VERTICAL_PUSH")
+            insertPattern("barbell-row", "Barbell Row", "HORIZONTAL_PULL")
+            insertPattern("pull-up", "Pull-Up", "VERTICAL_PULL")
+            insertPattern("bench", "Bench Press", "HORIZONTAL_PUSH")
+            insertPattern("squat", "Back Squat", "SQUAT")
+            close()
+        }
+
+        val migrated = helper.runMigrationsAndValidate(TEST_DB, 39, true, MIGRATION_38_39)
+
+        migrated.query("SELECT id, movementPattern FROM exercises").use { cursor ->
+            val pattern = mutableMapOf<String, String>()
+            while (cursor.moveToNext()) pattern[cursor.getString(0)] = cursor.getString(1)
+
+            assertEquals("both pushes became one", "PRESS", pattern["overhead-press"])
+            assertEquals("PRESS", pattern["bench"])
+            assertEquals("and both pulls", "PULL", pattern["barbell-row"])
+            assertEquals("PULL", pattern["pull-up"])
+            assertEquals("a name the merge kept is untouched", "SQUAT", pattern["squat"])
+        }
+    }
+
+    /** A category head at v37, where its pattern is still the placeholder the seeder wrote. */
+    private fun SupportSQLiteDatabase.insertCategory(id: String, name: String) {
+        execSQL(
+            """
+            INSERT INTO exercises
+                (id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, isCustom,
+                 parentId, rowKind, restSeconds, techniqueNote, weightUnit, stepGrams,
+                 createdAt, updatedAt, deletedAt)
+            VALUES (?, ?, 'OTHER', '', 'OTHER', 'OTHER', 0, NULL, 'CATEGORY',
+                    NULL, NULL, NULL, NULL, 1, 1, NULL)
+            """.trimIndent(),
+            arrayOf(id, name),
+        )
+    }
+
+    /** A movement carrying a chosen pattern, for the rewrite. */
+    private fun SupportSQLiteDatabase.insertPattern(id: String, name: String, pattern: String) {
+        execSQL(
+            """
+            INSERT INTO exercises
+                (id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, isCustom,
+                 parentId, rowKind, restSeconds, techniqueNote, weightUnit, stepGrams,
+                 createdAt, updatedAt, deletedAt)
+            VALUES (?, ?, 'CHEST', '', 'BARBELL', ?, 0, NULL, 'MOVEMENT',
+                    NULL, NULL, NULL, NULL, 1, 1, NULL)
+            """.trimIndent(),
+            arrayOf(id, name, pattern),
+        )
+    }
 }

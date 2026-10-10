@@ -1047,6 +1047,34 @@ val MIGRATION_37_38 = object : Migration(37, 38) {
 }
 
 /**
+ * The four names the movement-pattern merge retired are rewritten on the rows that still carry them
+ * (ROADMAP N96).
+ *
+ * N96's first half left these alone, on the reasoning that the column was about to be dropped and rewriting a
+ * value on a doomed column is wasted work. **That reasoning was wrong and is corrected here**: a category is a
+ * row of the same `exercises` table, so there is one `movementPattern` column and it has to survive — it is
+ * where a category states its family's pattern. The stored vocabulary therefore has to match the enum's
+ * offered set, or every movement a lifter filed keeps a name no picker can produce.
+ *
+ * **The timestamps are deliberately not stamped.** Every other seed-touching migration writes
+ * `updatedAt = MIGRATION_SEEDED_AT`, because it is *assigning* a fact to a row that had none. This one renames
+ * a value that was already there, and stamping a whole library with one migration time would say every row was
+ * edited on the day of the upgrade — which is a lie a future sync would believe (P4.9).
+ */
+val MIGRATION_38_39 = object : Migration(38, 39) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "UPDATE `exercises` SET `movementPattern` = 'PRESS' " +
+                "WHERE `movementPattern` IN ('HORIZONTAL_PUSH', 'VERTICAL_PUSH')",
+        )
+        db.execSQL(
+            "UPDATE `exercises` SET `movementPattern` = 'PULL' " +
+                "WHERE `movementPattern` IN ('HORIZONTAL_PULL', 'VERTICAL_PULL')",
+        )
+    }
+}
+
+/**
  * The timestamp this migration stamps the rows it writes.
  *
  * A constant rather than the clock: a migration's effect has to be the same whenever it runs, and a test
@@ -1208,4 +1236,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_35_36,
     MIGRATION_36_37,
     MIGRATION_37_38,
+    MIGRATION_38_39,
 )

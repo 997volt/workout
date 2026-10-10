@@ -56,6 +56,14 @@ repeated here.
   draws nothing now; a rating that *exists* stays readable, which is what N84 protected.
 
 ### Fixed
+- **The four retired pattern names are rewritten on stored rows** (N96). N96's first half left them alone, on
+  the reasoning that the column was about to be dropped and rewriting a value on a doomed column is wasted
+  work. **That reasoning was wrong**: a category is a row of the same `exercises` table, so there is one
+  `movementPattern` column and it has to survive — it is where a category states its family's pattern. The
+  stored vocabulary now matches the enum's offered set, where before every movement a lifter had filed kept a
+  name no picker can produce. The migration does **not** stamp `updatedAt`: it renames a value rather than
+  assigning a fact, and one migration time across a whole library is a lie a future sync would believe.
+
 
 - **A variation keeps the equipment's step and unit** (B95). Both are facts about the equipment the copy had
   just carried, so clearing them handed the variation the *unit's* default step while keeping the machine: a

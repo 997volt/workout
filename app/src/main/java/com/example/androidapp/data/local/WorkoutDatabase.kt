@@ -32,7 +32,7 @@ import androidx.room.TypeConverters
         SessionSoreMuscleEntity::class,
         SessionExerciseJointEntity::class,
     ],
-    version = 38,
+    version = 39,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
