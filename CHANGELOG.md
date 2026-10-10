@@ -10,6 +10,63 @@ alternatives rejected, the measurements, the argument — lives in
 [DECISIONS.md](DECISIONS.md) and [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md), and is not
 repeated here.
 
+## [Unreleased]
+
+### Added
+
+- **A head reads as one number, decided per metric** (N97). The statistics lift list offers a *head* — a
+  category, or an exercise with variations — and its series reads every row filed under it, so three rows of
+  one barbell bench stop splitting a lift a lifter thinks of as one. Which metrics take a head is per metric:
+  volume, total reps, RPE, muscle feel and joint pain are sums or averages that mean the same thing over a
+  family, while a heaviest set or an estimated 1RM merged across a speed day and a competition single reads as
+  a decline that never happened. Records keep reading exactly one id — a record belongs to the lift that was
+  performed — and assistance takes no head at all, because whether a family is uniformly assisted is a fact
+  about its *sets* and the picker decides before any set is read.
+
+- **The weight trend states an energy adjustment** (N98). A weight metric gains a target *rate*, and the
+  screen states the gap between the fitted trend and that rate as a daily figure — "about 200 kcal a day less
+  than you are eating now". It is relative and never a number to eat: the app stores no food, and the absolute
+  target stays where the food is logged. The band is the fitted line's own standard error, and below eight
+  weigh-ins across three weeks the screen says so rather than drawing a figure from noise.
+
+### Changed
+
+- **Movement patterns are nine, and the pattern belongs to the category** (N96, first half). `HORIZONTAL_PUSH`
+  and `VERTICAL_PUSH` became `PRESS`; the two pulls became `PULL`; LUNGE stays out of SQUAT, because "have I
+  been squatting?" has an answer and lunges are not it. The four retired names stay in the enum and are read
+  but never offered, because every pattern is stored by name and an older row — or an export written before
+  the merge — must not throw. The pattern is the **category's** fact now: it is read off the top of the chain,
+  a row in no category has none, and the exercise's edit form no longer offers it.
+
+- **Home's body is the ways in, and the bar is what is next** (N102). *Recent* is gone, and with it the state
+  field, the history query behind it and the first-run message that existed to explain an empty list. In its
+  place: Programs, Templates, Measurements and Start empty workout, in the shape the recent rows had. The bar
+  keeps the Resume pill — drawn only while a workout is open — and the next-up block.
+
+- **A history row names the workout and stops there** (N100). The date, the name and the number of sets, where
+  the row also carried a duration and a volume. Both are the workout detail's, which is what opening the row
+  is for.
+
+- **The template editor's block reads in the order it is filled in** (N99). *Add set* sits with the sets it
+  extends rather than at the block's foot, and the cue is read above the two numbers, giving name, sets, add
+  set, cue, rest, RPE.
+
+- **An unrated exercise is silent in history** (N101). Where the rating section was read-only and nothing had
+  been recorded it drew its title and "Tap to rate" — an offer to write on a screen that cannot write. It
+  draws nothing now; a rating that *exists* stays readable, which is what N84 protected.
+
+### Fixed
+
+- **A variation keeps the equipment's step and unit** (B95). Both are facts about the equipment the copy had
+  just carried, so clearing them handed the variation the *unit's* default step while keeping the machine: a
+  lat pulldown that jumps 5 kg arrived on a 2.5 kg step, and the ± buttons, the warm-up ramp and the
+  progression offer all moved a weight it does not have.
+
+- **A program document carries a variation's ancestors** (N103, transfer half). A document carried the
+  exercises its templates name and nothing above them, so a plan naming a variation travelled without the
+  exercise it is a version of, and the receiving device had nothing to name it under. The whole parent chain
+  travels now.
+
 ## [1.17] — 2026-10-08 (versionCode 18)
 
 ### Added
