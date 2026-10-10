@@ -10,7 +10,7 @@ alternatives rejected, the measurements, the argument — lives in
 [DECISIONS.md](DECISIONS.md) and [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md), and is not
 repeated here.
 
-## [Unreleased]
+## [1.18] — 2026-10-10 (versionCode 19)
 
 ### Added
 
