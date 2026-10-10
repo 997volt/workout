@@ -135,6 +135,35 @@ class ExerciseTrendPointTest {
     }
 
     @Test
+    fun aFamilysRatings_areAveragedOncePerExercise_notOncePerSet() {
+        // ROADMAP N97, B97: a head feeds two movements of one family into one session, and each states its
+        // own rating while the DAO repeats it on that movement's every set row. The family's value is the two
+        // exercises' average — 9 and 3 is 6 — not the first row's 9, and not weighted by set count, which
+        // would have made it 7.
+        val points = rows(
+            row(exercise = "bench", weight = 100_000L, reps = 5, muscleFeel = 9, jointPain = 1),
+            row(exercise = "bench", weight = 100_000L, reps = 5, muscleFeel = 9, jointPain = 1),
+            row(exercise = "speed", weight = 60_000L, reps = 5, muscleFeel = 3, jointPain = 7),
+        ).toExerciseTrendPoints()
+
+        assertEquals(6.0, points.single().averageMuscleFeel!!, 0.0001)
+        assertEquals(4.0, points.single().averageJointPain!!, 0.0001)
+    }
+
+    @Test
+    fun anUnratedExercisesRating_doesNotHideTheOneTheFamilyStated() {
+        // The same bug's other half: `first()` answered null when the row that happened to sort first had no
+        // rating, even though another movement of the family had recorded one.
+        val points = rows(
+            row(exercise = "speed", weight = 60_000L, reps = 5),
+            row(exercise = "bench", weight = 100_000L, reps = 5, muscleFeel = 8, jointPain = 2),
+        ).toExerciseTrendPoints()
+
+        assertEquals(8.0, points.single().averageMuscleFeel!!, 0.0001)
+        assertEquals(2.0, points.single().averageJointPain!!, 0.0001)
+    }
+
+    @Test
     fun sessions_comeBackOldestFirst() {
         // The chart draws left to right, so the order is part of the contract.
         val points = rows(
@@ -155,6 +184,7 @@ class ExerciseTrendPointTest {
         val points = listOf(
             ExerciseTrendRow(
                 sessionId = "s1",
+                sessionExerciseId = "se-1",
                 startedAt = Instant.ofEpochMilli(1_000L),
                 muscleFeel = 7,
                 jointPain = null,
@@ -195,9 +225,10 @@ class ExerciseTrendPointTest {
     ): List<ExerciseTrendRow> = sets.map {
             ExerciseTrendRow(
                 sessionId = it.session,
+                sessionExerciseId = it.exercise,
                 startedAt = Instant.ofEpochMilli(it.startedAt),
-                muscleFeel = muscleFeel,
-                jointPain = jointPain,
+                muscleFeel = it.muscleFeel ?: muscleFeel,
+                jointPain = it.jointPain ?: jointPain,
                 weightGrams = it.weight,
                 reps = it.reps,
                 rpeHalves = it.rpeHalves,
@@ -214,7 +245,11 @@ class ExerciseTrendPointTest {
         rpeHalves: Int? = null,
         type: SetType = SetType.NORMAL,
         assistance: Long? = null,
-    ) = SetRow(session, startedAt, weight, reps, rpeHalves, type, assistance)
+        /** The logged exercise this set belongs to (B97): one identity per exercise per session. */
+        exercise: String = "exercise-1",
+        muscleFeel: Int? = null,
+        jointPain: Int? = null,
+    ) = SetRow(session, startedAt, weight, reps, rpeHalves, type, assistance, exercise, muscleFeel, jointPain)
 
     private data class SetRow(
         val session: String,
@@ -224,5 +259,8 @@ class ExerciseTrendPointTest {
         val rpeHalves: Int?,
         val type: SetType,
         val assistance: Long?,
+        val exercise: String,
+        val muscleFeel: Int?,
+        val jointPain: Int?,
     )
 }

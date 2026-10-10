@@ -12,6 +12,7 @@ import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.Equipment
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -383,7 +384,57 @@ class StatisticsScreenTest {
         assertThat(chosen).isEqualTo("bench-press")
     }
 
-    private fun lift(id: String, name: String) = Exercise(
+    @Test
+    fun aHead_readsAsAFamily_whereTheMetricTakesOne() {
+        // ROADMAP N97, B98: a movement that heads variations reads as the whole family under a metric that
+        // takes a head, and the dropdown says so before it is chosen.
+        val movement = lift("bench-press", "Barbell Bench Press")
+        val variation = lift("paused-bench", "Paused Bench", parentId = movement.id)
+        setScreen(
+            state = StatisticsUiState(
+                isLoading = false,
+                selection = StatisticsSelection(
+                    metric = MetricKey.Exercise(ExerciseTrendMetric.VOLUME),
+                    exerciseId = movement.id,
+                ),
+                lifts = listOf(movement, variation),
+                acceptsHead = true,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.LIFT)
+            .assertTextContains("Barbell Bench Press · all variations")
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.LIFT).performClick()
+        composeTestRule.onNodeWithText("All variations").assertExists()
+    }
+
+    @Test
+    fun aMovementThatHeadsVariations_readsAsOneLift_whereTheMetricDoesNot() {
+        // The other half of B98: the same row is offered under every metric, so the label must be the
+        // *metric's* answer rather than the row's shape — under a heaviest set only the movement is read, and
+        // "all variations" would promise a family the chart does not draw.
+        val movement = lift("bench-press", "Barbell Bench Press")
+        val variation = lift("paused-bench", "Paused Bench", parentId = movement.id)
+        setScreen(
+            state = StatisticsUiState(
+                isLoading = false,
+                selection = StatisticsSelection(
+                    metric = MetricKey.Exercise(ExerciseTrendMetric.HEAVIEST_SET),
+                    exerciseId = movement.id,
+                ),
+                lifts = listOf(movement, variation),
+                acceptsHead = false,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.LIFT).assertTextEquals("Barbell Bench Press")
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.LIFT).performClick()
+        composeTestRule.onNodeWithText("All variations").assertDoesNotExist()
+    }
+
+    private fun lift(id: String, name: String, parentId: String? = null) = Exercise(
         id = id,
         name = name,
         primaryMuscle = MuscleGroup.QUADS,
@@ -391,6 +442,7 @@ class StatisticsScreenTest {
         equipment = Equipment.BARBELL,
         movementPattern = MovementPattern.SQUAT,
         isCustom = false,
+        parentId = parentId,
     )
 
     @Test

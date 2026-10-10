@@ -4,11 +4,14 @@ import java.time.Instant
 import kotlin.math.roundToLong
 
 /**
- * One finished workout's worth of *one exercise* (ROADMAP N17).
+ * One finished workout's worth of *one lift* (ROADMAP N17) — which is one exercise, or every row a **head**
+ * holds (ROADMAP N97).
  *
  * N13 reads the app's signals across everything; this is the narrower question a lifter
  * actually asks — how is my bench press going — so every value here comes from the sets
- * logged for a single exercise in a single session.
+ * logged for a single exercise in a single session. A head's family answers the same question about the
+ * lift a lifter thinks of as one: volume, reps and the ratings are then sums or averages over the family's
+ * rows, each computed once per exercise rather than once per set (B97).
  *
  * **Warm-up sets are excluded from every load series**, which is only expressible
  * because N14's roles exist: a warm-up must not become the "heaviest set" on a chart.
@@ -127,6 +130,13 @@ const val MAX_ESTIMATED_REPS = 12
  */
 data class ExerciseTrendRow(
     val sessionId: String,
+    /**
+     * The exercise's row in this session — one identity per logged exercise (ROADMAP B97).
+     *
+     * The DAO returns one row per logged set and repeats the exercise's own rating on each, so this is what
+     * makes "the exercise's rating" expressible when a **head** feeds several exercises of one family in.
+     */
+    val sessionExerciseId: String,
     val startedAt: Instant,
     val muscleFeel: Int?,
     val jointPain: Int?,
@@ -153,6 +163,11 @@ private fun List<ExerciseTrendRow>.toPoint(startedAt: Instant): ExerciseTrendPoi
     // And a set with no added weight is not a load: bodyweight and assisted work carry
     // reps and volume (both zero here), which is exactly what N15 decided they carry.
     val heaviest = working.filter { it.weightGrams!! > 0L }.maxByOrNull { it.weightGrams!! }
+    // One value per *exercise*, not per set (ROADMAP B97). A head feeds several exercises of one family into
+    // this session, each stating its own rating while the DAO repeats it on that exercise's every set row —
+    // so `first()` reported whichever row sorted first, and averaging the rows would weight a movement by how
+    // many sets it happened to log. The ratings are the family's, averaged over the rows that state one.
+    val perExercise = distinctBy { it.sessionExerciseId }
 
     return ExerciseTrendPoint(
         startedAt = startedAt,
@@ -166,10 +181,13 @@ private fun List<ExerciseTrendRow>.toPoint(startedAt: Instant): ExerciseTrendPoi
             .mapNotNull { it.assistanceGrams?.takeIf { help -> help > 0L } }
             .minOrNull(),
         averageRpe = averageRpeOf(this),
-        averageMuscleFeel = first().muscleFeel?.toDouble(),
-        averageJointPain = first().jointPain?.toDouble(),
+        averageMuscleFeel = perExercise.mapNotNull { it.muscleFeel }.averageOrNull(),
+        averageJointPain = perExercise.mapNotNull { it.jointPain }.averageOrNull(),
     )
 }
+
+/** The mean of these, or null when there is nothing to average — a rating nobody recorded. */
+private fun List<Int>.averageOrNull(): Double? = if (isEmpty()) null else average()
 
 /** The session's RPE average, in points, over the sets that recorded one (N6's halves). */
 private fun averageRpeOf(rows: List<ExerciseTrendRow>): Double? {

@@ -51,6 +51,7 @@ class RoomTrendsRepository @Inject constructor(
                     rows.map { row ->
                         ExerciseTrendRow(
                             sessionId = row.sessionId,
+                            sessionExerciseId = row.sessionExerciseId,
                             startedAt = Instant.ofEpochMilli(row.startedAt),
                             muscleFeel = row.muscleFeel,
                             jointPain = row.jointPain,

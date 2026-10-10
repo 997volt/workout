@@ -394,6 +394,33 @@ class ExerciseDetailScreenTest {
     }
 
     @Test
+    fun aVariationsPattern_isItsFamilys_andIsDrawn() {
+        // ROADMAP N96, B96: the pattern belongs to the category, so a variation of a filed movement reads the
+        // family's. It arrives already resolved because the walk needs the whole chain, and the screen holds
+        // only the immediate head — reading it here drew nothing for exactly these rows.
+        show(
+            ExerciseDetailUiState(
+                isLoading = false,
+                exercise = seeded.copy(id = "paused-squat", name = "Paused Squat", parentId = "back-squat"),
+                head = seeded,
+                headName = "Back Squat",
+                familyPattern = MovementPattern.SQUAT,
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Movement pattern").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Squat").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun aRowInNoCategory_drawsNoPatternRow() {
+        // A row in no category has no pattern (N96), and the block says nothing rather than "None".
+        show(ExerciseDetailUiState(isLoading = false, exercise = seeded, familyPattern = null))
+
+        composeTestRule.onNodeWithText("Movement pattern").assertDoesNotExist()
+    }
+
+    @Test
     fun aVariation_isOfferedForAMovement() {
         // ROADMAP N95: a variation hangs under an exercise, so a movement offers one.
         show(ExerciseDetailUiState(isLoading = false, exercise = seeded))

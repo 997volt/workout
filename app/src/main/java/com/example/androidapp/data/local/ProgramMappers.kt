@@ -1,10 +1,8 @@
 package com.example.androidapp.data.local
 
 import com.example.androidapp.domain.model.AdherenceSession
-import com.example.androidapp.domain.model.ExerciseTrendRow
 import com.example.androidapp.domain.model.ProgramSession
 import com.example.androidapp.domain.model.ProgramSlot
-import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.WorkoutProgram
 import java.time.Instant
 import java.time.ZoneId
@@ -52,25 +50,6 @@ internal fun FinishedSessionRow.toRunSession(fallbackZone: ZoneId): ProgramSessi
                 ?: fallbackZone,
         )
     }
-
-/**
- * One trend row as N17's per-exercise series reads it (ROADMAP P3.8).
- *
- * The projection keeps `setType` as its stored name — a database column, not an entity — so it is
- * resolved here; null stays null, because a row that left-joined no set has no role to resolve.
- * The trends screen reads the series through this.
- */
-internal fun ExerciseTrendRowEntity.toExerciseTrendRow(): ExerciseTrendRow = ExerciseTrendRow(
-    sessionId = sessionId,
-    startedAt = Instant.ofEpochMilli(startedAt),
-    muscleFeel = muscleFeel,
-    jointPain = jointPain,
-    weightGrams = weightGrams,
-    reps = reps,
-    rpeHalves = rpeHalves,
-    setType = setType?.let { name -> SetType.entries.firstOrNull { it.name == name } },
-    assistanceGrams = assistanceGrams,
-)
 
 /**
  * A session row as occurrence matching reads it.

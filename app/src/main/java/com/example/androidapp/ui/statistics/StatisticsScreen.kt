@@ -212,6 +212,7 @@ private fun StatisticsBody(
             LiftPicker(
                 lifts = state.lifts,
                 selectedId = state.selection.exerciseId,
+                acceptsHead = state.acceptsHead,
                 onSelectExercise = onSelectExercise,
             )
         }
@@ -701,9 +702,19 @@ private fun DateRow(labelRes: Int, date: LocalDate?, testTag: String, onClick: (
  *
  * Only shown when the metric needs one, and only the library's names: the same list the library screen
  * offers, because a second way to name a lift would be a second thing to keep in step.
+ *
+ * [acceptsHead] is the chosen metric's own answer (ROADMAP N97, B98), and it is what the family label is
+ * gated on: a movement with variations is offered under every metric, while only one that reads a head reads
+ * them together — so under the rest the same name must promise the one lift it actually draws. The list
+ * itself is already filtered by the ViewModel.
  */
 @Composable
-private fun LiftPicker(lifts: List<Exercise>, selectedId: String?, onSelectExercise: (String) -> Unit) {
+private fun LiftPicker(
+    lifts: List<Exercise>,
+    selectedId: String?,
+    acceptsHead: Boolean,
+    onSelectExercise: (String) -> Unit,
+) {
     var open by remember { mutableStateOf(false) }
     val selected = lifts.firstOrNull { it.id == selectedId }
 
@@ -714,7 +725,7 @@ private fun LiftPicker(lifts: List<Exercise>, selectedId: String?, onSelectExerc
         ) {
             // A head reads as a family rather than as another lift (ROADMAP N97): choosing it is choosing
             // every row under it, and a name alone would promise one lift's numbers.
-            val chosenFamily = selected?.headsOthers(lifts) == true
+            val chosenFamily = acceptsHead && selected?.headsOthers(lifts) == true
             Text(
                 text = when {
                     selected == null -> stringResource(R.string.statistics_choose_lift)
@@ -730,7 +741,7 @@ private fun LiftPicker(lifts: List<Exercise>, selectedId: String?, onSelectExerc
                     text = {
                         Column {
                             Text(lift.name)
-                            if (lift.headsOthers(lifts)) {
+                            if (acceptsHead && lift.headsOthers(lifts)) {
                                 Text(
                                     text = stringResource(R.string.statistics_lift_all_variations),
                                     style = MaterialTheme.typography.bodySmall,

@@ -11,6 +11,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TrendPoint
 import com.example.androidapp.domain.model.WorkoutSummary
@@ -81,6 +82,14 @@ data class StatisticsUiState(
      * get to, and a rate says how fast — which is the number an adjustment in kcal is computed from.
      */
     val rateTarget: Double? = null,
+    /**
+     * Whether the chosen metric reads a head as a family (ROADMAP N97, B98).
+     *
+     * The picker draws its family label from this rather than from the row's shape alone: a movement with
+     * variations is offered under every metric, but only one that takes a head reads them together — and a
+     * category is offered only where it does.
+     */
+    val acceptsHead: Boolean = false,
 ) {
     /**
      * True when the chosen metric needs a lift and none is chosen yet.
@@ -138,6 +147,8 @@ class StatisticsViewModel @Inject constructor(
         val workoutPoints: DataResult<List<TrendPoint>>,
         val measurements: List<BodyMeasurement>,
         val lifts: List<Exercise>,
+        /** Whether the chosen metric reads a head as a family (ROADMAP N97, B98). */
+        val acceptsHead: Boolean,
     )
 
     /**
@@ -159,15 +170,24 @@ class StatisticsViewModel @Inject constructor(
         repositories.trends.observeTrends(NO_LIMIT),
         repositories.measurements.observeAll(),
     ) { range, selection, library, points, body ->
+        val acceptsHead = MetricRegistry.entryFor(selection.metric).acceptsHead
+        val rows = library.second
         Sources(
             range = range,
             selection = selection,
             summaries = library.first,
-            // Every row, because a *head* may be chosen here (ROADMAP N97): this is the one list where
-            // N95's "never offered" is read differently, and it is a read-view exception rather than a
-            // repeal — a head is still never offered while logging and never named by a set, and the pickers
-            // that log keep their filter.
-            lifts = library.second,
+            // A head is offered only where the chosen metric **reads** one (ROADMAP N97, B98), and only where
+            // it actually heads something: a category a lifter has made and not yet filed anything under is
+            // not a family, and choosing it would draw an empty chart under a label promising one. For the
+            // rest — heaviest set, estimated 1RM, assistance — the rule N95 set still stands, because a
+            // category is never named by a set. This is the one list where a head may be chosen at all, a
+            // read-view exception rather than a repeal: the pickers that log keep their filter.
+            lifts = if (acceptsHead) {
+                rows.filter { row -> row.rowKind.isLoggable || rows.any { child -> child.parentId == row.id } }
+            } else {
+                rows.filter { it.rowKind.isLoggable }
+            },
+            acceptsHead = acceptsHead,
             workoutPoints = points,
             measurements = body,
         )
@@ -235,6 +255,7 @@ class StatisticsViewModel @Inject constructor(
                     lifts = sources.lifts,
                     goal = goals[sources.selection.metric.id],
                     rateTarget = goals[sources.selection.metric.rateId],
+                    acceptsHead = sources.acceptsHead,
                 )
             } else {
                 val body = sources.range.inWindow(
@@ -262,6 +283,7 @@ class StatisticsViewModel @Inject constructor(
                     lifts = sources.lifts,
                     goal = goals[sources.selection.metric.id],
                     rateTarget = goals[sources.selection.metric.rateId],
+                    acceptsHead = sources.acceptsHead,
                 )
             }
         }.stateIn(
@@ -290,12 +312,27 @@ class StatisticsViewModel @Inject constructor(
         viewModelScope.launch { settings.setGoal(selection.value.metric.rateId, value) }
     }
 
-    fun onSelectMetric(metric: MetricKey) {
-        selection.value = selection.value.copy(metric = metric)
-    }
-
     fun onSelectExercise(exerciseId: String?) {
         selection.value = selection.value.copy(exerciseId = exerciseId)
+    }
+
+    /**
+     * Chooses the metric, dropping a selection it can no longer offer (ROADMAP B98).
+     *
+     * A **category** is offered only under the metrics that read a head, so switching to one that reads a
+     * single id would otherwise leave the category selected behind a picker that no longer lists it — the
+     * picker reading "Choose a lift" while the empty chart behind it still read the hidden id. A movement
+     * that heads variations keeps its place: every metric offers it, and the ones that read one id read it
+     * as the single lift it is. The library is read from the state rather than re-queried, because the row's
+     * kind is the whole question and it cannot change with the metric.
+     */
+    fun onSelectMetric(metric: MetricKey) {
+        val chosen = uiState.value.lifts.firstOrNull { it.id == selection.value.exerciseId }
+        val offered = MetricRegistry.entryFor(metric).acceptsHead || chosen?.rowKind != RowKind.CATEGORY
+        selection.value = selection.value.copy(
+            metric = metric,
+            exerciseId = selection.value.exerciseId.takeIf { offered },
+        )
     }
 
     /** Stored, not held: the range has to mean the same thing the next time the tab is opened. */

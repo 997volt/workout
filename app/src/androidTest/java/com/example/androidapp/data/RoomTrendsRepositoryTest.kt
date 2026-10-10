@@ -175,6 +175,34 @@ class RoomTrendsRepositoryTest {
         }
     }
 
+    /**
+     * A second exercise of the family in an existing session (ROADMAP N97, B97), with its own rating.
+     *
+     * The family's rows carry one rating each and the query repeats each on its own sets, which is the shape
+     * the point's arithmetic has to see.
+     */
+    private suspend fun seedFamilyExercise(
+        sessionId: String,
+        exerciseId: String,
+        startedAt: Long,
+        muscleFeel: Int? = null,
+        jointPain: Int? = null,
+    ) {
+        database.workoutDao().insertSessionExercise(
+            SessionExerciseEntity(
+                id = "$sessionId-$exerciseId",
+                sessionId = sessionId,
+                exerciseId = exerciseId,
+                position = 1,
+                muscleFeel = muscleFeel,
+                jointPain = jointPain,
+                createdAt = startedAt,
+                updatedAt = startedAt,
+                deletedAt = null,
+            ),
+        )
+    }
+
     private fun exercise() = ExerciseEntity(
         id = "back-squat",
         name = "Back Squat",
@@ -248,6 +276,49 @@ class RoomTrendsRepositoryTest {
 
         assertEquals(1, points.size)
         assertEquals("all eight sets belong to the one session", 4_000_000L, points.single().volumeGrams)
+    }
+
+    @Test
+    fun aFamilysWindow_countsSessions_evenWhenOneLoggedTwoOfItsExercises() = runTest {
+        // ROADMAP B100: the window is `limit` *sessions*, so one workout that logged two movements of the
+        // family must not spend two of them. With the `LIMIT` over session-exercise rows it did — the newest
+        // session filled the whole window and the one before it fell off.
+        database.exerciseDao().insertAll(listOf(exercise().copy(id = "bench-press", name = "Bench Press")))
+        seedSession(id = "old", startedAt = 1_000L, rpeHalves = emptyList())
+        seedSession(id = "middle", startedAt = 2_000L, rpeHalves = emptyList())
+        seedSession(id = "new", startedAt = 3_000L, rpeHalves = emptyList())
+        seedFamilyExercise(sessionId = "new", exerciseId = "bench-press", startedAt = 3_000L)
+
+        val points = (repository.observeExerciseTrends(listOf("back-squat", "bench-press"), limit = 2).first()
+            as DataResult.Success).data
+
+        assertEquals(
+            "two sessions, not two rows of one",
+            listOf(Instant.ofEpochMilli(2_000L), Instant.ofEpochMilli(3_000L)),
+            points.map { it.startedAt },
+        )
+    }
+
+    @Test
+    fun aFamilysRatings_averageTheExercises_ratherThanTakingTheFirstRow() = runTest {
+        // ROADMAP B97 through real SQL: the DAO repeats each exercise's own rating on its rows, and the two
+        // movements of one family make **one** point — so that point's rating is their average (9 and 3 is 6),
+        // not whichever row the query happened to return first.
+        database.exerciseDao().insertAll(listOf(exercise().copy(id = "bench-press", name = "Bench Press")))
+        seedSession(id = "s1", startedAt = 1_000L, rpeHalves = emptyList(), muscleFeel = 9, jointPain = 1)
+        seedFamilyExercise(
+            sessionId = "s1",
+            exerciseId = "bench-press",
+            startedAt = 1_000L,
+            muscleFeel = 3,
+            jointPain = 7,
+        )
+
+        val point = (repository.observeExerciseTrends(listOf("back-squat", "bench-press")).first()
+            as DataResult.Success).data.single()
+
+        assertEquals(6.0, point.averageMuscleFeel!!, 0.0001)
+        assertEquals(4.0, point.averageJointPain!!, 0.0001)
     }
 
     @Test

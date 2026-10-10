@@ -51,7 +51,6 @@ import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.effectivePrimaryMuscle
-import com.example.androidapp.domain.effectiveMovementPattern
 import com.example.androidapp.domain.effectiveSecondaryMuscles
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
@@ -208,6 +207,7 @@ private fun ExerciseDetailBody(
             exercise = exercise,
             head = state.head,
             headName = state.headName,
+            familyPattern = state.familyPattern,
             modifier = modifier,
         )
     }
@@ -261,6 +261,11 @@ private fun ExerciseDetails(
     head: Exercise?,
     /** What that head is called, or null. Read apart from [head] because a removed head still names it. */
     headName: String?,
+    /**
+     * The family's movement pattern, already resolved through the whole chain (ROADMAP N96, B96), or null
+     * where the row is in no category.
+     */
+    familyPattern: MovementPattern?,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -288,9 +293,12 @@ private fun ExerciseDetails(
         HorizontalDivider()
 
         // The family's pattern, not the row's own (ROADMAP N96): it belongs to the category, so a movement
-        // reads the head it is filed under. **Shown only when there is one** — a row in no category has no
-        // pattern, and a third "None" in this block would say nothing a lifter could act on.
-        exercise.effectiveMovementPattern(listOfNotNull(head, exercise))?.let { pattern ->
+        // reads the top of its chain. **Resolved in the ViewModel** (B96) because that walk needs the whole
+        // library and this screen holds only the immediate head — reading it here stopped at a variation's
+        // movement and drew nothing for exactly the rows a family exists to group. **Shown only when there is
+        // one** — a row in no category has no pattern, and a third "None" in this block would say nothing a
+        // lifter could act on.
+        familyPattern?.let { pattern ->
             AttributeRow(
                 label = stringResource(R.string.exercise_detail_pattern),
                 value = pattern.label,

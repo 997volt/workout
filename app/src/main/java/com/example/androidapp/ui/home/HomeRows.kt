@@ -74,6 +74,9 @@ internal fun HomeBody(
     ) {
         todayPlanItems(state = state, onStartTemplate = onStartTemplate, onSubstitute = onSubstitute)
         wayInItems(
+            // Starting is offered only while nothing is running (B101): the bar's Resume pill is the same
+            // action, and a second row for it would be the pill under the wrong label.
+            showStart = state.activeWorkout == null,
             onStartWorkout = onStartWorkout,
             onOpenPrograms = onOpenPrograms,
             onOpenTemplates = onOpenTemplates,
@@ -204,8 +207,15 @@ private fun PlanHeading(
  *
  * No section header over them: they are the body rather than a category of content, and a heading over four
  * different destinations would be a label for "miscellaneous".
+ *
+ * **[showStart] is false while a workout is open** (ROADMAP B101), and that is B43's withholding rather than a
+ * gap: the bar already carries *Resume* for the session, and an empty start is find-or-create, so a second row
+ * reading *Start empty workout* would perform the pill's own act under the wrong label — the same action twice
+ * on one screen, which is what N102's own rule cites as what N42 removed. The three destinations stay, because
+ * looking is not starting (N78).
  */
 private fun LazyListScope.wayInItems(
+    showStart: Boolean,
     onStartWorkout: () -> Unit,
     onOpenPrograms: () -> Unit,
     onOpenTemplates: () -> Unit,
@@ -244,18 +254,20 @@ private fun LazyListScope.wayInItems(
             onClick = onOpenMeasurements,
         )
     }
-    item(key = "way-in-start") {
-        WayInRow(
-            // The row names its own action, so its label is that name rather than a second "Open".
-            headline = stringResource(R.string.home_start_empty_workout),
-            supporting = stringResource(R.string.home_start_supporting),
-            onClickLabel = stringResource(R.string.home_start_empty_workout),
-            icon = Icons.Filled.Add,
-            accent = TileAccent.Indigo,
-            testTag = TestTags.HOME_START,
-            onClick = onStartWorkout,
-            discloses = false,
-        )
+    if (showStart) {
+        item(key = "way-in-start") {
+            WayInRow(
+                // The row names its own action, so its label is that name rather than a second "Open".
+                headline = stringResource(R.string.home_start_empty_workout),
+                supporting = stringResource(R.string.home_start_supporting),
+                onClickLabel = stringResource(R.string.home_start_empty_workout),
+                icon = Icons.Filled.Add,
+                accent = TileAccent.Indigo,
+                testTag = TestTags.HOME_START,
+                onClick = onStartWorkout,
+                discloses = false,
+            )
+        }
     }
 }
 

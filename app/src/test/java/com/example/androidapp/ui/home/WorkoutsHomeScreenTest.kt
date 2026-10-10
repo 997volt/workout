@@ -519,7 +519,9 @@ class WorkoutsHomeScreenTest {
         // that and separates it from *looking*: the ways in open the plans, and the Start control in
         // the templates list is disabled for as long as the session lasts, which is where the
         // withholding lives now (TemplatesScreenTest holds that half). N102 moved them into the body,
-        // which is drawn whatever else is: the session changed which pill the bar carries, not the body.
+        // which is drawn whatever else is — and B101 extended B43 to the *empty* start, which the bar's
+        // Resume pill already performs while a session runs: offering it here as well was the same action
+        // twice on one screen, under a label that said "start" about a tap that resumes.
         setScreen(
             state = WorkoutsHomeUiState(
                 isLoading = false,
@@ -532,6 +534,8 @@ class WorkoutsHomeScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.HOME_MEASUREMENTS).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.HOME_START).assertDoesNotExist()
     }
 
     @Test

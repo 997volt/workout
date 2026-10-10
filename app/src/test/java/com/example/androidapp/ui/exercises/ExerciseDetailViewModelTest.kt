@@ -291,6 +291,32 @@ class ExerciseDetailViewModelTest {
         assertFalse("the row is never a head for itself", variation.id in ids)
     }
 
+    @Test
+    fun aVariationsFamilyPattern_isReadThroughTheWholeChain() = runTest(dispatcher) {
+        // ROADMAP N96, B96: the pattern is the category's, and a variation's head is the movement — so the
+        // chain is three rows deep and resolving it from the head alone answered null for exactly the rows a
+        // family exists to group. The movement deliberately states `OTHER`, which is what the walk must ignore.
+        val movement = seeded.copy(
+            id = "barbell-bench-press",
+            name = "Barbell Bench Press",
+            parentId = category.id,
+            movementPattern = MovementPattern.OTHER,
+        )
+        val variation = movement.copy(id = "paused-bench", name = "Paused Bench", parentId = movement.id)
+        val variationViewModel = viewModelFor(
+            FakeRepository(mutableListOf(category, movement, variation)),
+            exerciseId = variation.id,
+        )
+        val unfiledViewModel = viewModelFor(
+            FakeRepository(mutableListOf(category, movement, seeded)),
+            exerciseId = seeded.id,
+        )
+        advanceUntilIdle()
+
+        assertEquals(MovementPattern.PRESS, variationViewModel.uiState.value.familyPattern)
+        assertNull("a movement in no category has no pattern", unfiledViewModel.uiState.value.familyPattern)
+    }
+
     private fun viewModelFor(
         repository: FakeRepository,
         exerciseId: String = "custom-1",

@@ -208,17 +208,21 @@ class StatisticsViewModelTest {
     }
 
     @Test
-    fun theLiftPicker_offersAHead_andTheMetricDecidesWhetherItReadsAsOne() = runTest(dispatcher) {
-        // ROADMAP N97: this is the one list where a head *is* offered — N95's "never offered" is about
-        // logging, and a head is still never named by a set. Which metrics then read its family is per
-        // metric: volume is a sum over a family, while a heaviest set merged across a speed day and a
-        // competition single would read as a decline that never happened.
+    fun theLiftPicker_offersAHead_onlyWhereTheMetricReadsOne() = runTest(dispatcher) {
+        // ROADMAP N97, B98: this is the one list where a head *is* offered — N95's "never offered" is about
+        // logging, and a head is still never named by a set. But it is offered only where the metric reads a
+        // family: volume is a sum over one, while a heaviest set merged across a speed day and a competition
+        // single would read as a decline that never happened — and a category is never named by a set, so
+        // offering it there drew an empty chart under a label promising the family.
         val trends = FakeTrendsRepository()
         val viewModel = viewModel(
             range = StatisticsRange(RangeKind.ALL),
             lifts = listOf(
                 lift("back-squat", "Back Squat"),
                 lift("cat-bench", "Bench Press", rowKind = RowKind.CATEGORY),
+                // A category a lifter has made and filed nothing under: it is not a family, so offering it
+                // would promise one and draw nothing.
+                lift("cat-empty", "Empty Family", rowKind = RowKind.CATEGORY),
                 lift("barbell-bench-press", "Barbell Bench Press", parentId = "cat-bench"),
                 lift("paused-bench", "Paused Bench", parentId = "barbell-bench-press"),
             ),
@@ -227,11 +231,17 @@ class StatisticsViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
-        assertWithMessage("a head is offered here").that(viewModel.uiState.value.lifts.map { it.name })
+        assertWithMessage("the default metric reads one id, so no head is offered")
+            .that(viewModel.uiState.value.lifts.map { it.name })
+            .containsExactly("Back Squat", "Barbell Bench Press", "Paused Bench")
+
+        viewModel.onSelectMetric(MetricKey.Exercise(ExerciseTrendMetric.VOLUME))
+        advanceUntilIdle()
+        assertWithMessage("volume offers the heads that head something")
+            .that(viewModel.uiState.value.lifts.map { it.name })
             .containsExactly("Back Squat", "Bench Press", "Barbell Bench Press", "Paused Bench")
 
         viewModel.onSelectExercise("cat-bench")
-        viewModel.onSelectMetric(MetricKey.Exercise(ExerciseTrendMetric.VOLUME))
         advanceUntilIdle()
         assertWithMessage("volume reads the whole family")
             .that(trends.askedFor)
@@ -239,9 +249,18 @@ class StatisticsViewModelTest {
 
         viewModel.onSelectMetric(MetricKey.Exercise(ExerciseTrendMetric.HEAVIEST_SET))
         advanceUntilIdle()
+        assertWithMessage("a heaviest set offers movements only")
+            .that(viewModel.uiState.value.lifts.map { it.name })
+            .containsExactly("Back Squat", "Barbell Bench Press", "Paused Bench")
+        assertWithMessage("and the head it can no longer offer is dropped rather than left hidden")
+            .that(viewModel.uiState.value.selection.exerciseId)
+            .isNull()
+
+        viewModel.onSelectExercise("barbell-bench-press")
+        advanceUntilIdle()
         assertWithMessage("a heaviest set reads the row that was chosen")
             .that(trends.askedFor)
-            .containsExactly("cat-bench")
+            .containsExactly("barbell-bench-press")
     }
 
     private fun lift(

@@ -112,12 +112,16 @@ interface TrendsDao {
      * the Kotlin mapping is too.
      *
      * The inner subquery takes the *sessions*, not the rows: `LIMIT` on a join would cut
-     * a workout in half and silently drop the sets that did not fit the window.
+     * a workout in half and silently drop the sets that did not fit the window. It groups by the session
+     * and orders by that session's start, so the window is [limit] **sessions** however many of the family's
+     * exercises each one logged — a family that logged two of them per workout used to spend two of its
+     * [limit] on one workout (B100).
      */
     @Query(
         """
         SELECT se.sessionId AS sessionId,
                ws.startedAt AS startedAt,
+               se.id AS sessionExerciseId,
                se.muscleFeel AS muscleFeel,
                COALESCE(
                    (
@@ -138,15 +142,16 @@ interface TrendsDao {
           AND se.deletedAt IS NULL
           AND ws.deletedAt IS NULL
           AND ws.finishedAt IS NOT NULL
-          AND se.id IN (
-              SELECT se2.id
+          AND se.sessionId IN (
+              SELECT se2.sessionId
               FROM session_exercises se2
               JOIN workout_sessions ws2 ON ws2.id = se2.sessionId
               WHERE se2.exerciseId IN (:exerciseIds)
                 AND se2.deletedAt IS NULL
                 AND ws2.deletedAt IS NULL
                 AND ws2.finishedAt IS NOT NULL
-              ORDER BY ws2.startedAt DESC
+              GROUP BY se2.sessionId
+              ORDER BY MAX(ws2.startedAt) DESC
               LIMIT :limit
           )
         ORDER BY ws.startedAt ASC, s.setIndex ASC
@@ -184,6 +189,15 @@ data class FeelTrendRow(
 data class ExerciseTrendRowEntity(
     val sessionId: String,
     val startedAt: Long,
+    /**
+     * The `session_exercises` row this set belongs to (ROADMAP B97).
+     *
+     * Carried because a **head** reads a family: several exercises of one family are logged in one session,
+     * and each states its own rating while the DAO repeats that rating on every set row. Averaging the rows
+     * would weight a movement by how many sets it happened to log, so the rating is taken once per exercise —
+     * which needs the exercise's identity, and this is it.
+     */
+    val sessionExerciseId: String,
     val muscleFeel: Int?,
     val jointPain: Int?,
     val weightGrams: Long?,

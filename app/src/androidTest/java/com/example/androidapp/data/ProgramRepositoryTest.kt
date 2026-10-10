@@ -17,6 +17,7 @@ import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import java.time.DayOfWeek
 import java.time.Instant
@@ -307,6 +308,43 @@ class ProgramRepositoryTest {
         repository.addSlot(program, template, DayOfWeek.TUESDAY)
 
         assertTrue(repository.pendingOccurrences(today, utc).getOrNull().isNullOrEmpty())
+    }
+
+    @Test
+    fun thePerLiftBreakdown_rollsAVariationUpToItsCategory_notToItsMovement() = runTest {
+        // ROADMAP N97, B99: the parent map was built from the rows a template names, so a variation whose
+        // *movement* no template named stopped at that movement — while the same movement named beside it
+        // counted under the category. One family's work then landed in two rows of one breakdown, which is
+        // the fragmentation N97 exists to remove.
+        database.exerciseDao().insertAll(
+            listOf(
+                exercise("cat-bench").copy(name = "Bench Press", rowKind = RowKind.CATEGORY),
+                exercise("barbell-bench-press").copy(name = "Barbell Bench Press", parentId = "cat-bench"),
+                exercise("speed-day").copy(name = "Speed Day", parentId = "barbell-bench-press"),
+            ),
+        )
+        val templates = RoomTemplateRepository(database, clock)
+        val template = (templates.createTemplate("Speed") as DataResult.Success).data
+        templates.addExercise(template, "speed-day")
+        val program = create("Upper/Lower")
+        repository.addSlot(program, template, DayOfWeek.TUESDAY)
+        repository.activateProgram(program)
+        insertSession(id = "done", date = "2026-10-06T09:00:00Z", finished = true, templateId = template)
+
+        val report = adherence.monthAdherence(
+            month = YearMonth.of(2026, 10),
+            today = LocalDate.of(2026, 10, 15),
+            zone = utc,
+        ).getOrNull()!!
+
+        val rows = report.adherence.byExercise
+        assertEquals(
+            "the family is one row, under the category it is filed in",
+            listOf("cat-bench"),
+            rows.map { it.exerciseId },
+        )
+        assertEquals("Bench Press", rows.single().exerciseName)
+        assertEquals(1, rows.single().done)
     }
 
     @Test
@@ -756,7 +794,11 @@ class ProgramRepositoryTest {
         return id
     }
 
-    private fun exercise(id: String) = ExerciseEntity(
+    private fun exercise(
+        id: String,
+        parentId: String? = null,
+        rowKind: RowKind = RowKind.MOVEMENT,
+    ) = ExerciseEntity(
         id = id,
         // A display name that is *not* the id: `exerciseAdherence` falls back to the id when the
         // library has no row, so a fixture named after its own id could not tell the two apart.
@@ -766,6 +808,8 @@ class ProgramRepositoryTest {
         equipment = Equipment.BARBELL,
         movementPattern = MovementPattern.SQUAT,
         isCustom = false,
+        parentId = parentId,
+        rowKind = rowKind,
         createdAt = 0L,
         updatedAt = 0L,
         deletedAt = null,

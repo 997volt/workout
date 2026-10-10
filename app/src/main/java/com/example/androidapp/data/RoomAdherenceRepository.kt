@@ -1,7 +1,6 @@
 package com.example.androidapp.data
 
 import com.example.androidapp.data.local.ExerciseDao
-import com.example.androidapp.domain.headOfExercise
 import com.example.androidapp.data.local.ProgramDao
 import com.example.androidapp.data.local.ProgramDeloadDao
 import com.example.androidapp.data.local.ProgramDeloadEntity
@@ -114,13 +113,17 @@ class RoomAdherenceRepository @Inject constructor(
             exercisesByTemplate[templateId] =
                 templateDao.findPlannedExercises(templateId).map { it.exerciseId }
         }
-        val named = exercisesByTemplate.values.flatten().distinct()
-            .mapNotNull { id -> exerciseDao.findById(id)?.let { id to it } }
-            .toMap()
-        val exerciseNames = named.mapValues { (_, row) -> row.name }.toMutableMap()
-        // Where each named exercise sits, so the breakdown rolls a family up to its head (ROADMAP N97).
-        val exerciseParents = named.mapValues { (_, row) -> row.parentId }
-        addHeadNames(exerciseParents, exerciseNames)
+        // The breakdown's names and parent links (P3.14, N58, N97), from the **whole** library rather than
+        // from the rows a template happens to name. Neither question can be answered from the named rows
+        // alone: a head is never named by a template, so its name has to be fetched, and a variation's parent
+        // chain is only complete if the movement above it is in the map — building it from the named rows made
+        // a variation-only plan count under the movement while the same movement named elsewhere counted
+        // under the category, splitting one family across two rows of one breakdown (B99). Removed rows are
+        // included because a removed head still names its children and the walk still passes through it
+        // (N58's rule), and it is one read for the lot.
+        val library = exerciseDao.findAllIncludingDeleted().associateBy { it.id }
+        val exerciseNames = library.mapValues { (_, row) -> row.name }
+        val exerciseParents = library.mapValues { (_, row) -> row.parentId }
 
         AdherenceReport(
             hasActiveProgram = true,
@@ -143,23 +146,6 @@ class RoomAdherenceRepository @Inject constructor(
                 .groupBy({ it.programId }, { it.weekStart })
                 .mapValues { (_, weeks) -> weeks.toSet() },
         )
-    }
-
-    /**
-     * Adds the name of any head the templates never name (ROADMAP N97).
-     *
-     * A category is never named by a template — only a movement can be logged — so without this the roll-up's
-     * row would be labelled with an id. Extracted because `monthAdherence` had reached the length this project
-     * enforces, and it is a step of its own rather than part of the read.
-     */
-    private suspend fun addHeadNames(
-        parents: Map<String, String?>,
-        names: MutableMap<String, String>,
-    ) {
-        parents.keys.map { headOfExercise(it, parents) }
-            .distinct()
-            .filterNot { it in names }
-            .forEach { headId -> exerciseDao.findById(headId)?.let { names[headId] = it.name } }
     }
 
     override suspend fun occurrencesOn(

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.effectiveMovementPattern
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Exercise
@@ -77,6 +78,15 @@ data class ExerciseDetailUiState(
     /** This row's head, for the muscle it passes down (N95). Null when it hangs under nothing. */
     val head: Exercise? = null,
     /**
+     * This row's family movement pattern, or null when it has none (ROADMAP N96, B96).
+     *
+     * Resolved here rather than on the screen, because the walk needs the **whole chain** and the screen is
+     * handed only the immediate [head]: the pattern belongs to the category, and for a variation the category
+     * sits one row above the exercise the variation hangs under. Reading `listOfNotNull(head, exercise)` on
+     * the screen stopped at the movement, so exactly the rows a family exists to group drew no pattern at all.
+     */
+    val familyPattern: MovementPattern? = null,
+    /**
      * The exercise a variation being edited hangs under, while that variation is not stored yet (B83).
      *
      * The row is written on **Save**, not when the editor opens: creating it up front left a stray row named
@@ -147,7 +157,7 @@ class ExerciseDetailViewModel @Inject constructor(
                     it.copy(exercise = null, isLoading = false, error = result.error)
                 }
             }
-            loadCategoryOptions()
+            loadLibraryContext()
         }
     }
 
@@ -173,20 +183,23 @@ class ExerciseDetailViewModel @Inject constructor(
     }
 
     /**
-     * The heads this row may be filed under (ROADMAP N95, B85).
+     * The library context this row is read through (ROADMAP N95, B85, B96).
      *
-     * Read separately from the exercise itself and *not* wrapped in a failure branch: a list that could not
-     * be read leaves the picker empty, which hides a control rather than breaking the page. The exercise's
-     * own row is left out — filing something under itself is not a thing the shape allows — and so is a
-     * movement that is already a variation, because a variation of a variation is the third level there is
-     * no room for (B82).
+     * Three answers from one pair of reads, because they are the same question asked three ways: the heads
+     * the picker may offer, the head this row already hangs under, and the **family pattern** the chain
+     * resolves to. Read separately from the exercise itself and *not* wrapped in a failure branch: a list that
+     * could not be read leaves the picker empty, which hides a control rather than breaking the page. The
+     * exercise's own row is left out of the options — filing something under itself is not a thing the shape
+     * allows — and so is a movement that is already a variation, because a variation of a variation is the
+     * third level there is no room for (B82).
      */
-    private suspend fun loadCategoryOptions() {
+    private suspend fun loadLibraryContext() {
         // Two reads, because they answer two different questions. The **live** library is what the picker may
         // offer: filing a row under a head that was removed would be filing it nowhere, and N95's rule is
         // that a removed head keeps naming what is already under it rather than taking anything new. The
         // read *including* removed rows is what names the head this row already hangs under, because a
-        // removed head still names its children (N58's rule).
+        // removed head still names its children (N58's rule) — and it is the library the pattern walk needs,
+        // so a variation filed under a removed movement still reads its category's pattern.
         val live = (repository.observeExercises().first() as? DataResult.Success)?.data.orEmpty()
         val everything = (repository.getAllIncludingDeleted() as? DataResult.Success)?.data.orEmpty()
         val liveById = live.associateBy { it.id }
@@ -203,6 +216,7 @@ class ExerciseDetailViewModel @Inject constructor(
                 },
                 head = head,
                 headName = head?.name,
+                familyPattern = state.exercise?.effectiveMovementPattern(everything),
             )
         }
     }
@@ -270,7 +284,7 @@ class ExerciseDetailViewModel @Inject constructor(
                             error = null,
                         )
                     }
-                    loadCategoryOptions()
+                    loadLibraryContext()
                 }
 
                 is DataResult.Failure -> _uiState.update { it.copy(error = outcome.error) }
