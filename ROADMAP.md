@@ -63,6 +63,17 @@ change is left**, and it is the only one that rebuilds a table.
   in no category with none — while dropping the absolute claim that a movement may never state its own. The
   DECISIONS rule N96 landed is amended in the same change, since it currently says the pattern is read off the
   head.
+  **What the work touches, in the order that keeps it compiling.** The entity and its two mappers, where the
+  three columns become nullable — the enum-by-name storage is unchanged, which is what lets an older file keep
+  reading. The domain `Exercise` and the resolvers: `effectivePrimaryMuscle` flips to own-if-stated, and an
+  `effectiveEquipment` joins it, so all three read the same way and `effectiveMovementPattern` loses its
+  head-wins special case. The seed, whose `barbell(...)` helper stops demanding a taxonomy a movement inherits,
+  and the seeder's `INSERT OR IGNORE`. The repository's `create`, `createVariationOf` and `updateExercise` —
+  the three places a copy is written. The editor: the draft's fields, and the selectors that must stop offering
+  what a head supplies rather than the pattern alone. Both transfer formats, whose DTOs take the nulls and whose
+  codec version must bump. The migration itself, its exported schema, and its `MigrationTestHelper` case.
+  **Every one of those is a compile error until the whole set is done**, which is the shape of this change
+  rather than an accident of it — and the reason it cannot be landed in pieces.
 
   **The pattern needs no separate work, and N96's remainder is this migration's own rule.** Its entry
   used to say the per-exercise column is dropped, which was written before it was clear that a category is
