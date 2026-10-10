@@ -36,9 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
-import com.example.androidapp.domain.Weight
-import com.example.androidapp.ui.components.LocalWeightUnit
-import com.example.androidapp.ui.components.label
 import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.ui.components.AppRow
@@ -51,7 +48,6 @@ import com.example.androidapp.ui.programs.programStartGate
 import com.example.androidapp.ui.programs.StartIntent
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.theme.TileAccent
-import com.example.androidapp.ui.workout.WorkoutFormat
 import java.time.ZoneId
 import java.time.Instant
 import java.time.YearMonth
@@ -181,13 +177,6 @@ private fun WorkoutRow(
     onRepeat: (() -> Unit)? = null,
 ) {
     val setCount = pluralStringResource(R.plurals.history_sets, workout.setCount, workout.setCount)
-    val duration = workout.duration?.let { WorkoutFormat.elapsed(it) }.orEmpty()
-    val unit = LocalWeightUnit.current
-    val volume = stringResource(
-        R.string.history_volume,
-        Weight.format(workout.volumeGrams, unit),
-        unit.label(),
-    )
 
     AppRow(
         headline = HistoryFormat.historyHeadline(
@@ -197,7 +186,11 @@ private fun WorkoutRow(
         ),
         // The template's name comes first, because it is the half of the row that says what the
         // session *was* (ROADMAP N58); a workout with no plan behind it contributes nothing.
-        supporting = listOf(workout.templateName, duration, setCount, volume)
+        //
+        // The duration and the volume are deliberately not here (N100): a row in a month-grouped list is
+        // scanned for *which workout this was*, and those two answer a different question — they are the
+        // workout detail's, which is what opening the row is for.
+        supporting = listOf(workout.templateName, setCount)
             .filter { !it.isNullOrEmpty() }
             .joinToString(" · "),
         leading = { IconTile(icon = Icons.Filled.History, accent = TileAccent.Sky) },

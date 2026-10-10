@@ -3,6 +3,7 @@ package com.example.androidapp.ui.history
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.WorkoutSummary
@@ -65,6 +66,17 @@ class WorkoutHistoryScreenTest {
         show(stateWith(summary("session-1", repeatable = 0)))
 
         composeTestRule.onNodeWithTag(TestTags.historyRepeat("session-1")).assertDoesNotExist()
+    }
+
+    @Test
+    fun aRow_namesTheWorkoutAndItsSets_andStopsThere() {
+        // N100: the date, the name and the number of sets, and nothing else. The duration and the volume
+        // answer a different question and belong to the workout detail, which is what opening the row goes
+        // to — so the whole supporting line is asserted, and either of them reappearing here fails rather
+        // than passing quietly.
+        show(stateWith(summary("session-1", repeatable = 1).copy(templateName = "Lower A")))
+
+        composeTestRule.onNodeWithText("Lower A · 12 sets").assertIsDisplayed()
     }
 
     private fun stateWith(workout: WorkoutSummary) = WorkoutHistoryUiState(
