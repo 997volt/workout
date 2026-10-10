@@ -844,6 +844,28 @@ the rule; that one argues it.
   names its children**, N58's rule for templates. **A lifted pattern is settled here too** (see N96): with no
   category a row carries no pattern, rather than a guess about its joint action.
   ([evidence](DECISIONS-EVIDENCE.md#n95))
+- **The movement pattern belongs to the category, and the vocabulary is nine** (N96). Whether a family
+  presses or hinges is the family's to decide, so `effectiveMovementPattern` walks to the **top of the chain**
+  and reads the head: a movement's own stored value, and the copies its variations inherited, cannot then
+  disagree with the family they are filed under. **A row in no category has no pattern** — one fact, one home,
+  and a loose custom movement is exactly the case where "press or pull" says little. The merge took the
+  vocabulary from eleven to nine: `HORIZONTAL_PUSH` and `VERTICAL_PUSH` became `PRESS`, the two pulls became
+  `PULL`, and **LUNGE stays out of SQUAT** because "have I been squatting?" has an answer and lunges are not
+  it. **The four retired names stay in the enum and are never offered**, the rule N75's retired `BACK`
+  follows: every pattern is stored by name, so a row — or an export written before the merge — must read
+  rather than throw.
+- **A head reads as one number, and which metrics take one is decided per metric** (N97). A *head* is any row
+  that holds others — a category over its movements and their variations, or an exercise over its own
+  variations — and its series reads the subtree's ids, which are distinct, so the union cannot double-count.
+  The head's own row is included, because an exercise with variations can still be logged directly while a
+  category never can. **The statistics lift list is the one list where a head is offered**, a read-view
+  exception to N95's rule rather than a repeal of it: a head is still never offered while logging and never
+  named by a set, and the pickers that log keep their filter. Volume, total reps, RPE, muscle feel and joint
+  pain roll up, because each is a sum or an average that means the same thing over a family; **a heaviest set
+  or an estimated 1RM does not**, because a speed-day single merged into a competition bench reads as a
+  decline that never happened. **Records and progression stay the exercise's**, and so does assistance: a
+  record belongs to the lift that was performed, and whether a family is uniformly assisted is a fact about
+  its *sets*, which the picker cannot know before any set is read.
 - **A program document is its own format, and every exercise it names travels with it** (N47). The
   backup is a restore of a whole database, so it cannot be the way one program is handed over; this
   is a document with a **version of its own**, carrying the program's *definition* — slots, the
