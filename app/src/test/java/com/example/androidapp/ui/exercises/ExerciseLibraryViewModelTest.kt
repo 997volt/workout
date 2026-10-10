@@ -177,7 +177,7 @@ class ExerciseLibraryViewModelTest {
             name = "Barbell Bench Press",
             primaryMuscle = MuscleGroup.CHEST,
             equipment = Equipment.BARBELL,
-            movementPattern = MovementPattern.HORIZONTAL_PUSH,
+            movementPattern = MovementPattern.PRESS,
         )
         val custom = Exercise(
             id = "custom-1",

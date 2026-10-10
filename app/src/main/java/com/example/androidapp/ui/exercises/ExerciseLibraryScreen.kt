@@ -490,7 +490,7 @@ private fun previewExercise(
     name = name,
     primaryMuscle = MuscleGroup.CHEST,
     equipment = Equipment.BARBELL,
-    movementPattern = MovementPattern.HORIZONTAL_PUSH,
+    movementPattern = MovementPattern.PRESS,
     parentId = parent,
     rowKind = kind,
 )

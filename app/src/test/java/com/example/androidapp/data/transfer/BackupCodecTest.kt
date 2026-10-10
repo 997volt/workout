@@ -54,7 +54,7 @@ class BackupCodecTest {
                 primaryMuscle = MuscleGroup.BACK,
                 secondaryMuscles = emptyList(),
                 equipment = Equipment.CABLE,
-                movementPattern = MovementPattern.HORIZONTAL_PULL,
+                movementPattern = MovementPattern.PULL,
                 isCustom = true,
                 createdAt = 3L,
                 updatedAt = 4L,

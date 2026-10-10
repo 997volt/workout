@@ -360,7 +360,7 @@ class ExerciseDetailScreenTest {
             name = "Bench Press",
             primaryMuscle = MuscleGroup.CHEST,
             equipment = Equipment.OTHER,
-            movementPattern = MovementPattern.HORIZONTAL_PUSH,
+            movementPattern = MovementPattern.PRESS,
             rowKind = RowKind.CATEGORY,
         )
     }

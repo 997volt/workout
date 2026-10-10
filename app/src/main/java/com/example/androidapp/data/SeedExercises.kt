@@ -19,20 +19,20 @@ internal object SeedExercises {
 
     val all: List<Exercise> = listOf(
         // ---- Chest ----
-        barbell("barbell-bench-press", "Barbell Bench Press", MuscleGroup.CHEST, Equipment.BARBELL, MovementPattern.HORIZONTAL_PUSH, MuscleGroup.TRICEPS, MuscleGroup.SHOULDERS),
-        barbell("incline-dumbbell-press", "Incline Dumbbell Press", MuscleGroup.CHEST, Equipment.DUMBBELL, MovementPattern.HORIZONTAL_PUSH, MuscleGroup.SHOULDERS, MuscleGroup.TRICEPS),
+        barbell("barbell-bench-press", "Barbell Bench Press", MuscleGroup.CHEST, Equipment.BARBELL, MovementPattern.PRESS, MuscleGroup.TRICEPS, MuscleGroup.SHOULDERS),
+        barbell("incline-dumbbell-press", "Incline Dumbbell Press", MuscleGroup.CHEST, Equipment.DUMBBELL, MovementPattern.PRESS, MuscleGroup.SHOULDERS, MuscleGroup.TRICEPS),
         barbell("cable-fly", "Cable Fly", MuscleGroup.CHEST, Equipment.CABLE, MovementPattern.ISOLATION, MuscleGroup.SHOULDERS),
-        barbell("push-up", "Push-Up", MuscleGroup.CHEST, Equipment.BODYWEIGHT, MovementPattern.HORIZONTAL_PUSH, MuscleGroup.TRICEPS, MuscleGroup.CORE),
+        barbell("push-up", "Push-Up", MuscleGroup.CHEST, Equipment.BODYWEIGHT, MovementPattern.PRESS, MuscleGroup.TRICEPS, MuscleGroup.CORE),
 
         // ---- Back ----
         barbell("deadlift", "Deadlift", MuscleGroup.HAMSTRINGS, Equipment.BARBELL, MovementPattern.HINGE, MuscleGroup.GLUTES, MuscleGroup.FOREARMS, MuscleGroup.LOWER_BACK),
-        barbell("pull-up", "Pull-Up", MuscleGroup.LATS, Equipment.BODYWEIGHT, MovementPattern.VERTICAL_PULL, MuscleGroup.BICEPS, MuscleGroup.FOREARMS),
-        barbell("barbell-row", "Barbell Row", MuscleGroup.UPPER_BACK, Equipment.BARBELL, MovementPattern.HORIZONTAL_PULL, MuscleGroup.BICEPS, MuscleGroup.FOREARMS),
-        barbell("lat-pulldown", "Lat Pulldown", MuscleGroup.LATS, Equipment.CABLE, MovementPattern.VERTICAL_PULL, MuscleGroup.BICEPS),
-        barbell("seated-cable-row", "Seated Cable Row", MuscleGroup.UPPER_BACK, Equipment.CABLE, MovementPattern.HORIZONTAL_PULL, MuscleGroup.BICEPS),
+        barbell("pull-up", "Pull-Up", MuscleGroup.LATS, Equipment.BODYWEIGHT, MovementPattern.PULL, MuscleGroup.BICEPS, MuscleGroup.FOREARMS),
+        barbell("barbell-row", "Barbell Row", MuscleGroup.UPPER_BACK, Equipment.BARBELL, MovementPattern.PULL, MuscleGroup.BICEPS, MuscleGroup.FOREARMS),
+        barbell("lat-pulldown", "Lat Pulldown", MuscleGroup.LATS, Equipment.CABLE, MovementPattern.PULL, MuscleGroup.BICEPS),
+        barbell("seated-cable-row", "Seated Cable Row", MuscleGroup.UPPER_BACK, Equipment.CABLE, MovementPattern.PULL, MuscleGroup.BICEPS),
 
         // ---- Shoulders ----
-        barbell("overhead-press", "Overhead Press", MuscleGroup.SHOULDERS, Equipment.BARBELL, MovementPattern.VERTICAL_PUSH, MuscleGroup.TRICEPS, MuscleGroup.CORE),
+        barbell("overhead-press", "Overhead Press", MuscleGroup.SHOULDERS, Equipment.BARBELL, MovementPattern.PRESS, MuscleGroup.TRICEPS, MuscleGroup.CORE),
         barbell("lateral-raise", "Lateral Raise", MuscleGroup.SHOULDERS, Equipment.DUMBBELL, MovementPattern.ISOLATION),
         barbell("face-pull", "Face Pull", MuscleGroup.SHOULDERS, Equipment.CABLE, MovementPattern.ISOLATION, MuscleGroup.UPPER_BACK),
 
@@ -41,7 +41,7 @@ internal object SeedExercises {
         barbell("hammer-curl", "Hammer Curl", MuscleGroup.BICEPS, Equipment.DUMBBELL, MovementPattern.ISOLATION, MuscleGroup.FOREARMS),
         barbell("triceps-pushdown", "Triceps Pushdown", MuscleGroup.TRICEPS, Equipment.CABLE, MovementPattern.ISOLATION),
         barbell("overhead-triceps-extension", "Overhead Triceps Extension", MuscleGroup.TRICEPS, Equipment.DUMBBELL, MovementPattern.ISOLATION),
-        barbell("dip", "Dip", MuscleGroup.TRICEPS, Equipment.BODYWEIGHT, MovementPattern.VERTICAL_PUSH, MuscleGroup.CHEST, MuscleGroup.SHOULDERS),
+        barbell("dip", "Dip", MuscleGroup.TRICEPS, Equipment.BODYWEIGHT, MovementPattern.PRESS, MuscleGroup.CHEST, MuscleGroup.SHOULDERS),
 
         // ---- Legs ----
         barbell("back-squat", "Back Squat", MuscleGroup.QUADS, Equipment.BARBELL, MovementPattern.SQUAT, MuscleGroup.GLUTES, MuscleGroup.CORE),
@@ -60,14 +60,14 @@ internal object SeedExercises {
         barbell("hanging-leg-raise", "Hanging Leg Raise", MuscleGroup.CORE, Equipment.BODYWEIGHT, MovementPattern.CORE, MuscleGroup.FOREARMS),
         barbell("cable-crunch", "Cable Crunch", MuscleGroup.CORE, Equipment.CABLE, MovementPattern.CORE),
         // ---- Competition and paused variants, plus accessory work ----
-        barbell("competition-bench-press", "Competition Bench Press", MuscleGroup.CHEST, Equipment.BARBELL, MovementPattern.HORIZONTAL_PUSH, MuscleGroup.TRICEPS, MuscleGroup.SHOULDERS),
-        barbell("bench-press-speed-day", "Bench Press — Speed Day", MuscleGroup.CHEST, Equipment.BARBELL, MovementPattern.HORIZONTAL_PUSH, MuscleGroup.TRICEPS),
-        barbell("paused-bench-press-3s", "3-Second Paused Bench Press", MuscleGroup.CHEST, Equipment.BARBELL, MovementPattern.HORIZONTAL_PUSH, MuscleGroup.TRICEPS),
+        barbell("competition-bench-press", "Competition Bench Press", MuscleGroup.CHEST, Equipment.BARBELL, MovementPattern.PRESS, MuscleGroup.TRICEPS, MuscleGroup.SHOULDERS),
+        barbell("bench-press-speed-day", "Bench Press — Speed Day", MuscleGroup.CHEST, Equipment.BARBELL, MovementPattern.PRESS, MuscleGroup.TRICEPS),
+        barbell("paused-bench-press-3s", "3-Second Paused Bench Press", MuscleGroup.CHEST, Equipment.BARBELL, MovementPattern.PRESS, MuscleGroup.TRICEPS),
         barbell("conventional-deadlift", "Conventional Deadlift", MuscleGroup.HAMSTRINGS, Equipment.BARBELL, MovementPattern.HINGE, MuscleGroup.GLUTES, MuscleGroup.FOREARMS, MuscleGroup.LOWER_BACK),
         barbell("paused-back-squat", "Paused Back Squat", MuscleGroup.QUADS, Equipment.BARBELL, MovementPattern.SQUAT, MuscleGroup.GLUTES, MuscleGroup.CORE),
-        barbell("push-press", "Push Press", MuscleGroup.SHOULDERS, Equipment.BARBELL, MovementPattern.VERTICAL_PUSH, MuscleGroup.TRICEPS, MuscleGroup.QUADS),
-        barbell("machine-row", "Machine Row", MuscleGroup.UPPER_BACK, Equipment.MACHINE, MovementPattern.HORIZONTAL_PULL, MuscleGroup.BICEPS),
-        barbell("assisted-pull-up", "Assisted Pull-Up", MuscleGroup.LATS, Equipment.MACHINE, MovementPattern.VERTICAL_PULL, MuscleGroup.BICEPS),
+        barbell("push-press", "Push Press", MuscleGroup.SHOULDERS, Equipment.BARBELL, MovementPattern.PRESS, MuscleGroup.TRICEPS, MuscleGroup.QUADS),
+        barbell("machine-row", "Machine Row", MuscleGroup.UPPER_BACK, Equipment.MACHINE, MovementPattern.PULL, MuscleGroup.BICEPS),
+        barbell("assisted-pull-up", "Assisted Pull-Up", MuscleGroup.LATS, Equipment.MACHINE, MovementPattern.PULL, MuscleGroup.BICEPS),
         barbell("dumbbell-fly", "Dumbbell Fly", MuscleGroup.CHEST, Equipment.DUMBBELL, MovementPattern.ISOLATION),
         barbell("incline-dumbbell-arm-curl", "Incline Dumbbell Arm Curl", MuscleGroup.BICEPS, Equipment.DUMBBELL, MovementPattern.ISOLATION, MuscleGroup.FOREARMS),
         barbell("dumbbell-skullcrusher", "Dumbbell Skullcrusher", MuscleGroup.TRICEPS, Equipment.DUMBBELL, MovementPattern.ISOLATION),

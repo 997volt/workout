@@ -814,7 +814,7 @@ class WorkoutEditingTest {
                     primaryMuscle = MuscleGroup.CHEST,
                     secondaryMuscles = emptyList(),
                     equipment = Equipment.BARBELL,
-                    movementPattern = MovementPattern.HORIZONTAL_PUSH,
+                    movementPattern = MovementPattern.PRESS,
                     isCustom = false,
                     createdAt = 0L,
                     updatedAt = 0L,

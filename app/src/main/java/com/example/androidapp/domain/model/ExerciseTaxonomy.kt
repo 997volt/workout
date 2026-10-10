@@ -93,12 +93,23 @@ enum class RowKind {
     val isLoggable: Boolean get() = this == MOVEMENT
 }
 
-/** Movement pattern, the basis for the push/pull balance check (P2.8). */
+/**
+ * Movement pattern, the basis for the push/pull balance check (P2.8, reduced by N96).
+ *
+ * **Nine values, where there were eleven.** `HORIZONTAL_PUSH` and `VERTICAL_PUSH` became [PRESS], and the two
+ * pulls became [PULL]: the split bought nothing a lifter asks a question with — "how much pressing" is not two
+ * questions because one of them was overhead — while it cost a decision per exercise that nothing checked, so
+ * a dip was filed one way by one lifter and the other way by the next. **LUNGE stays out of SQUAT**, the one
+ * judgement inside the set: both are knee-dominant and differ by stance rather than by joint action, but "have
+ * I been squatting?" is a question a lifter asks and lunges are not the answer to it.
+ *
+ * **The four directional values stay, and are never offered** — the rule N75's retired `BACK` follows: every
+ * pattern is stored by name, so a row that still says `HORIZONTAL_PUSH`, or an export written before the
+ * merge, has to keep resolving rather than throw on read. Choices come from [SELECTABLE_MOVEMENT_PATTERNS].
+ */
 enum class MovementPattern(val label: String) {
-    HORIZONTAL_PUSH("Horizontal push"),
-    VERTICAL_PUSH("Vertical push"),
-    HORIZONTAL_PULL("Horizontal pull"),
-    VERTICAL_PULL("Vertical pull"),
+    PRESS("Press"),
+    PULL("Pull"),
     SQUAT("Squat"),
     HINGE("Hinge"),
     LUNGE("Lunge"),
@@ -106,7 +117,31 @@ enum class MovementPattern(val label: String) {
     ISOLATION("Isolation"),
     CORE("Core"),
     OTHER("Other"),
+
+    // Retired by N96 and kept only so an older row reads. Their labels are what those rows said.
+    HORIZONTAL_PUSH("Horizontal push"),
+    VERTICAL_PUSH("Vertical push"),
+    HORIZONTAL_PULL("Horizontal pull"),
+    VERTICAL_PULL("Vertical pull"),
 }
+
+/** The four the merge replaced: read, never offered (N96). */
+private val RETIRED_MOVEMENT_PATTERNS = setOf(
+    MovementPattern.HORIZONTAL_PUSH,
+    MovementPattern.VERTICAL_PUSH,
+    MovementPattern.HORIZONTAL_PULL,
+    MovementPattern.VERTICAL_PULL,
+)
+
+/**
+ * The movement patterns a lifter can choose (N96).
+ *
+ * The taxonomy minus the four the merge retired. Everything that *offers* a pattern reads this rather than
+ * [MovementPattern.entries], so nothing new is tagged with a value the merge replaced — while a stored row
+ * that carries one still reads.
+ */
+val SELECTABLE_MOVEMENT_PATTERNS: List<MovementPattern> =
+    MovementPattern.entries.filterNot { it in RETIRED_MOVEMENT_PATTERNS }
 
 /**
  * The `Quads · Barbell` line shown under an exercise's name, with any part that

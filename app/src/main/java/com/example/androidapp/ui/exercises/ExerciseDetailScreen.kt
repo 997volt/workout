@@ -54,6 +54,7 @@ import com.example.androidapp.domain.effectivePrimaryMuscle
 import com.example.androidapp.domain.effectiveSecondaryMuscles
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.SELECTABLE_MOVEMENT_PATTERNS
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SELECTABLE_MUSCLE_GROUPS
@@ -614,7 +615,9 @@ private fun ExerciseEditFields(
         AttributeSelector(
             label = stringResource(R.string.exercise_detail_pattern),
             selected = draft.movementPattern,
-            options = MovementPattern.entries,
+            // The selectable nine, not the enum's thirteen (ROADMAP N96): the four the merge retired are read
+            // where a row carries one and are never offered, so nothing new is tagged with them.
+            options = SELECTABLE_MOVEMENT_PATTERNS,
             optionLabel = { it.label },
             testTag = TestTags.EXERCISE_EDIT_PATTERN,
             onSelect = { onDraftChange(draft.copy(movementPattern = it)) },
