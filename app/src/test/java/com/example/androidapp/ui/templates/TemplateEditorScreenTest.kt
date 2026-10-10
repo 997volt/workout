@@ -79,9 +79,8 @@ class TemplateEditorScreenTest {
     /**
      * The block's own *Add set* (N81), reached the way a thumb reaches it.
      *
-     * It is the foot of a block that already carries the plan's lines and the exercise's fields, so with
-     * a set planned it sits below the window's fold in this test — the list is scrolled to it rather than
-     * clicked where it is not.
+     * It sits with the sets it extends (N99) rather than at the foot of the block; the list is scrolled to
+     * it, so the test does not depend on where in the viewport it falls.
      */
     private fun addSet() {
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
@@ -114,7 +113,8 @@ class TemplateEditorScreenTest {
     fun aPlannedExercisesBlock_startsFolded_andTheNameOpensIt() {
         // ROADMAP N91: a plan of five exercises was a long scroll of controls with the names — the thing
         // the screen is scanned by — lost among them. The row is the whole of a block until its name is
-        // tapped, and everything below it folds together: the sets, the fields and the foot.
+        // tapped, and everything below it folds together: the sets, the control that adds one, and the
+        // plan's own fields.
         setScreen(state = twoExercises)
 
         composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertDoesNotExist()
@@ -550,7 +550,7 @@ class TemplateEditorScreenTest {
     }
 
     @Test
-    fun oneRpeTargetPerExercise_isEdited_aboveTheCue() {
+    fun oneRpeTargetPerExercise_isEdited_besideTheRest() {
         // ROADMAP N59, amended by N80: the effort is one number for the exercise, shown next to the
         // rest — not a field on each planned set, and no longer in the cue's row. 9.5 is 19
         // half-points (N6).
@@ -563,21 +563,28 @@ class TemplateEditorScreenTest {
         )
         openBlock("te1")
 
+        // The cue is read above the numbers now (N99), so this row — and the save on it — sits at the foot of
+        // a block taller than this test's viewport. The save is therefore reached through its semantics
+        // action, the way the second row's ⋮ already is (N71), because a swallowed tap would read as a save
+        // that did nothing. The field is scrolled to first, so it takes the text.
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.TEMPLATE_EXERCISE_RPE))
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).assertTextContains("8")
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).performTextClearance()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).performTextInput("9.5")
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_CUE_SAVE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_CUE_SAVE)
+            .performSemanticsAction(SemanticsActions.OnClick)
 
         assertEquals(Triple(null, null, 19), saved)
     }
 
     @Test
-    fun theCue_getsALineOfItsOwn_insteadOfASliverOfTheNumbersRow() {
-        // ROADMAP N80. The cue took `weight(1f)` between two fixed-width number fields and the save,
-        // so a phone left it about a word wide with `singleLine` on top. Both halves are asserted,
-        // because the width is the point and the position is the decision: it is wider than the two
-        // numbers together, it sits below them, and the save stayed up on their row rather than
-        // following the cue down — which keeps the block's foot free for the sets' own Add set.
+    fun theCue_getsALineOfItsOwn_andIsReadAboveTheNumbers() {
+        // ROADMAP N80, moved by N99. The cue took `weight(1f)` between two fixed-width number fields and the
+        // save, so a phone left it about a word wide with `singleLine` on top. Both halves are asserted,
+        // because the width is the point and the position is the decision: it is wider than the two numbers
+        // together, it is read *above* them because the block now reads in the order it is filled in, and the
+        // save stayed on their row below it rather than following the cue into a line of its own.
         setScreen(
             state = twoExercises.copy(exercises = listOf(twoExercises.exercises.first())),
         )
@@ -588,12 +595,12 @@ class TemplateEditorScreenTest {
         val cue = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_CUE_FIELD).getUnclippedBoundsInRoot()
         val save = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_CUE_SAVE).getUnclippedBoundsInRoot()
 
-        assertTrue("the cue shares the numbers' row", cue.top >= rest.bottom)
+        assertTrue("the cue sits above the numbers, not on their row", cue.bottom <= rest.top)
         assertTrue(
             "the cue is no wider than the two numbers it used to sit between",
             cue.right - cue.left >= (rest.right - rest.left) + (rpe.right - rpe.left),
         )
-        assertTrue("the save followed the cue down out of the numbers' row", save.bottom <= cue.top)
+        assertTrue("the save stayed on the numbers' row below the cue", save.top >= cue.bottom)
     }
 
     @Test

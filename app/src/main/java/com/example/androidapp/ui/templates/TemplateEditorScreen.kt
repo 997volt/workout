@@ -479,7 +479,8 @@ private fun TemplateExerciseBlock(
             addWarmUps = addWarmUps,
             supersetLabels = supersetLabels,
         )
-        // Everything below the row folds together (N91): the sets, the fields and the foot.
+        // Everything below the row folds together (N91): the sets, the control that adds one, and the
+        // plan's own fields.
         if (isExpanded) {
             PlannedSets(
                 exerciseId = exercise.id,
@@ -488,8 +489,10 @@ private fun TemplateExerciseBlock(
                 onEdit = { editing = it.id },
                 onRemove = onRemoveSet,
             )
-            ExercisePlanFields(exercise = exercise, onSave = onSavePlan)
+            // *Add set* sits with the sets it extends rather than past three fields (N99), so a block reads
+            // in the order it is filled in: name, sets, add set, cue, rest, RPE.
             AddSetButton(exerciseId = exercise.id, onClick = { adding = true })
+            ExercisePlanFields(exercise = exercise, onSave = onSavePlan)
         }
     }
 
@@ -679,10 +682,11 @@ private fun PlanSetRow(
  * cue show through, and the workout's RPE stepper opens on its default — so the fields are empty
  * rather than zero.
  *
- * **The cue has a line of its own** (N80) — see [PlanCueField]. Its width is the point, so the save stays
- * up on the numbers' row rather than following the cue down: one press still writes all three, which is
- * what that control's own content description says, and keeping it up there leaves the block's foot to
- * the *Add set* button the plan's sets end on.
+ * **The cue has a line of its own** (N80) — see [PlanCueField] — and it is read *first*, above the two
+ * numbers (N99): the block reads in the order it is filled in, and the cue is the thing performed
+ * differently rather than a number the plan already had. Its width is still the point, so the save stays on
+ * the numbers' row rather than following the cue down: one press still writes all three, which is what that
+ * control's own content description says.
  */
 @Composable
 private fun ExercisePlanFields(
@@ -709,6 +713,7 @@ private fun ExercisePlanFields(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        PlanCueField(cue = cue, onCueChange = { cue = it })
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -747,7 +752,6 @@ private fun ExercisePlanFields(
                 )
             }
         }
-        PlanCueField(cue = cue, onCueChange = { cue = it })
     }
 }
 
