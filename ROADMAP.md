@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v1.17** is shipped. Last reviewed against the code: 2026-10-08 — the N87–N95 batch shipped as 1.17 and
+> **v1.17** is shipped. Last reviewed against the code: 2026-10-10 — the N87–N95 batch shipped as 1.17 and
 > emptied *Next*; the two *Later* requests had graduated into it as N95–N97 and the *Later* section went with
 > them, leaving N96 here. **N97 then came out of *Parked***, because the trigger it named has fired, and
 > **fourteen parked ids became non-goals** — the platforms, services, sensors and shapes this app will not
@@ -10,6 +10,8 @@
 > reading the library's inheritance, one fact in one home — the taxonomy a child states rather than copies,
 > and the equipment's own step that a variation was clearing. **All of it has since shipped except N103**,
 > which is a nullable taxonomy — so a row states only what it knows and reads the rest from the head above it.
+> Checked against the changelog as well as the code: every shipped id has its entry there, and N103 is the only
+> one this file still lists as planned.
 > A line-by-line reading of those N87–N95 changes
 > found sixteen defects; all sixteen are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
 >
@@ -157,8 +159,12 @@ unfound. Two of those four were this file describing itself wrongly.
 Everything that has stood in *Next* has shipped — the defects found in use, the workout screen's discard, the
 workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch, a rest of
 zero, the planned-set prefill, the program document, the eight defects a review of that batch found and
-closed (B51-B58), the seven requests that were its last queue (N80-N86), and the N87–N95 batch — each with
-its entry in [CHANGELOG.md](CHANGELOG.md).
+closed (B51-B58), the seven requests that were its last queue (N80-N86), the N87–N95 batch, and this round's
+N96–N102 with B95 — each with its entry in [CHANGELOG.md](CHANGELOG.md).
+
+**N103 is the exception, and the one entry left above it.** Its transfer half — a program document closing over
+a variation's ancestors — shipped with the rest; the nullable taxonomy the id is named for has not, and the
+entry says what is left of it and in what order.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what they named
 that is not a feature is a settled decision: no dated instances (N16), nothing automatic (the app states
