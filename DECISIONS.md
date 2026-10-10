@@ -888,6 +888,14 @@ the rule; that one argues it.
   decline that never happened. **Records and progression stay the exercise's**, and so does assistance: a
   record belongs to the lift that was performed, and whether a family is uniformly assisted is a fact about
   its *sets*, which the picker cannot know before any set is read.
+- **A variation starts unset only for what it performs differently** (B95). `createVariationOf` copies the row
+  and clears three things — its name, its cue and its rest — because those are what make it a variation. **The
+  weight unit and the step are copied with the equipment**, because they are facts about that equipment: a
+  machine that jumps 5 kg, or reads in pounds, does not stop being that machine because the same lift is
+  performed as a paused triple. Clearing them handed the variation the *unit's* default step while keeping the
+  machine, so the ± buttons, the warm-up ramp and the progression offer all moved a weight it does not have. A
+  field added to that copy later belongs on one side of the line or the other, and the line is: **is this what
+  the variation does, or what it is done with?**
 - **A program document is its own format, and every exercise it names travels with it** (N47). The
   backup is a restore of a whole database, so it cannot be the way one program is handed over; this
   is a document with a **version of its own**, carrying the program's *definition* — slots, the
