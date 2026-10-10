@@ -86,21 +86,21 @@ internal object SeedExercises {
      * [all]'s reason — a movement filed under a category references its id.
      */
     val categories: List<SeedCategory> = listOf(
-        SeedCategory("bench-press", "Bench Press"),
-        SeedCategory("incline-press", "Incline Press"),
-        SeedCategory("overhead-press-family", "Overhead Press"),
-        SeedCategory("squat", "Squat"),
-        SeedCategory("deadlift-family", "Deadlift"),
-        SeedCategory("lunge", "Lunge"),
-        SeedCategory("hip-thrust-family", "Hip Thrust"),
-        SeedCategory("row", "Row"),
-        SeedCategory("lat-pulldown-family", "Lat Pulldown"),
-        SeedCategory("fly", "Fly"),
-        SeedCategory("curl", "Curl"),
-        SeedCategory("triceps-extension", "Triceps Extension"),
-        SeedCategory("lateral-raise-family", "Lateral Raise"),
-        SeedCategory("calf-raise-family", "Calf Raise"),
-        SeedCategory("core", "Core"),
+        SeedCategory("bench-press", "Bench Press", MovementPattern.PRESS),
+        SeedCategory("incline-press", "Incline Press", MovementPattern.PRESS),
+        SeedCategory("overhead-press-family", "Overhead Press", MovementPattern.PRESS),
+        SeedCategory("squat", "Squat", MovementPattern.SQUAT),
+        SeedCategory("deadlift-family", "Deadlift", MovementPattern.HINGE),
+        SeedCategory("lunge", "Lunge", MovementPattern.LUNGE),
+        SeedCategory("hip-thrust-family", "Hip Thrust", MovementPattern.HINGE),
+        SeedCategory("row", "Row", MovementPattern.PULL),
+        SeedCategory("lat-pulldown-family", "Lat Pulldown", MovementPattern.PULL),
+        SeedCategory("fly", "Fly", MovementPattern.PRESS),
+        SeedCategory("curl", "Curl", MovementPattern.ISOLATION),
+        SeedCategory("triceps-extension", "Triceps Extension", MovementPattern.ISOLATION),
+        SeedCategory("lateral-raise-family", "Lateral Raise", MovementPattern.ISOLATION),
+        SeedCategory("calf-raise-family", "Calf Raise", MovementPattern.ISOLATION),
+        SeedCategory("core", "Core", MovementPattern.CORE),
     )
 
     /**
@@ -184,10 +184,15 @@ internal object SeedExercises {
 
 }
 /**
- * A family the seed ships (ROADMAP N95).
+ * A family the seed ships (ROADMAP N95, extended by N96).
  *
- * A name and a permanent slug: a category has no muscles, no equipment and no pattern of its own, and the
- * app never offers it. It exists so the movements filed under it can be read together.
+ * A name, a permanent slug and the family's **movement pattern** — which is the category's fact now that the
+ * pattern belongs to the head rather than to each movement under it (N96). Its muscles and equipment stay
+ * unstated: a family spans equipment, and its movements say their own.
  */
-internal data class SeedCategory(val id: String, val name: String)
+internal data class SeedCategory(
+    val id: String,
+    val name: String,
+    val pattern: MovementPattern,
+)
 

@@ -3,7 +3,6 @@ package com.example.androidapp.data.local
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.androidapp.data.SeedExercises
 import com.example.androidapp.domain.model.Equipment
-import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
 
@@ -44,13 +43,15 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                 arrayOf<Any?>(
                     category.id,
                     category.name,
-                    // The placeholders a head carries: it is never offered and never logged, so its taxonomy
-                    // says nothing rather than something untrue. Its equipment is the library's "other"
-                    // because a family deliberately spans equipment and every child sets its own.
+                    // The placeholders a head carries: it is never offered and never logged, so its muscles and
+                    // its equipment say nothing rather than something untrue — a family spans equipment, and
+                    // every child sets its own. **Its pattern is the exception** (N96): that is the fact the
+                    // category owns, because whether a family presses or hinges is the family's to decide, and
+                    // declaring it once is what stops a movement and its variations disagreeing.
                     converters.fromMuscleGroup(MuscleGroup.OTHER),
                     converters.fromMuscleGroups(emptyList()),
                     converters.fromEquipment(Equipment.OTHER),
-                    converters.fromMovementPattern(MovementPattern.OTHER),
+                    converters.fromMovementPattern(category.pattern),
                     0, // isCustom: seed, like every row this function writes
                     null, // parentId: a head sits at the top level
                     RowKind.CATEGORY.name,

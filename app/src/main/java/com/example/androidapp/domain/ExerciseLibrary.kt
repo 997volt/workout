@@ -1,6 +1,7 @@
 package com.example.androidapp.domain
 
 import com.example.androidapp.domain.model.Exercise
+import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.taxonomySubtitle
@@ -399,6 +400,34 @@ private const val SERIES_DEPTH = 2
  */
 fun Exercise.headsOthers(library: List<Exercise>): Boolean =
     rowKind == RowKind.CATEGORY || library.any { it.parentId == id }
+
+/**
+ * This row's movement pattern: its category's, or null where it has none (ROADMAP N96).
+ *
+ * The pattern belongs to the **category**, not to the exercise, so this walks to the top of the chain and
+ * reads the head. That is what stops a movement's stored value — and the copies its variations inherited —
+ * from disagreeing with the family they are filed under, and it is why the per-exercise column can be
+ * dropped without losing anything a lifter reads.
+ *
+ * **A row in no category has no pattern**, which the entry settles rather than leaving open: one fact should
+ * have one home, and a loose custom movement is exactly the case where "press or pull" says little.
+ *
+ * The walk goes all the way up, for [effectivePrimaryMuscle]'s reason (B86), and `seen` ends a cycle a file
+ * could carry (B92).
+ */
+fun Exercise.effectiveMovementPattern(library: List<Exercise>): MovementPattern? {
+    val byId = library.associateBy { it.id }
+    val seen = mutableSetOf(id)
+    var head = this
+    var parent = byId[head.parentId]
+    while (parent != null && seen.add(parent.id)) {
+        head = parent
+        parent = byId[head.parentId]
+    }
+    return head.movementPattern.takeIf {
+        head.rowKind == RowKind.CATEGORY && it != MovementPattern.OTHER
+    }
+}
 
 /**
  * The head an exercise is counted under: the top of its chain, or itself when it heads nothing

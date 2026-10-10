@@ -51,6 +51,7 @@ import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.effectivePrimaryMuscle
+import com.example.androidapp.domain.effectiveMovementPattern
 import com.example.androidapp.domain.effectiveSecondaryMuscles
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
@@ -286,11 +287,16 @@ private fun ExerciseDetails(
         )
         HorizontalDivider()
 
-        AttributeRow(
-            label = stringResource(R.string.exercise_detail_pattern),
-            value = exercise.movementPattern.label,
-        )
-        HorizontalDivider()
+        // The family's pattern, not the row's own (ROADMAP N96): it belongs to the category, so a movement
+        // reads the head it is filed under. **Shown only when there is one** — a row in no category has no
+        // pattern, and a third "None" in this block would say nothing a lifter could act on.
+        exercise.effectiveMovementPattern(listOfNotNull(head, exercise))?.let { pattern ->
+            AttributeRow(
+                label = stringResource(R.string.exercise_detail_pattern),
+                value = pattern.label,
+            )
+            HorizontalDivider()
+        }
 
         AttributeRow(
             label = stringResource(R.string.exercise_detail_rest),
@@ -382,6 +388,11 @@ private fun FamilyRows(exercise: Exercise, head: Exercise?, headName: String?) {
  * or unparseable value keeps Save disabled.
  */
 private data class ExerciseDraft(
+    /**
+     * Whether this row is a lift or a head (ROADMAP N95), carried so the form can offer a fact to the row that
+     * owns it — the movement pattern belongs to a category (N96), and to nothing else.
+     */
+    val rowKind: RowKind,
     val name: String,
     val primaryMuscle: MuscleGroup,
     val equipment: Equipment,
@@ -459,6 +470,7 @@ private data class ExerciseDraft(
 }
 
 private fun Exercise.toDraft(appUnit: WeightUnit) = ExerciseDraft(
+    rowKind = rowKind,
     name = name,
     primaryMuscle = primaryMuscle,
     equipment = equipment,
@@ -612,16 +624,21 @@ private fun ExerciseEditFields(
             onSelect = { onDraftChange(draft.copy(equipment = it)) },
         )
 
-        AttributeSelector(
-            label = stringResource(R.string.exercise_detail_pattern),
-            selected = draft.movementPattern,
-            // The selectable nine, not the enum's thirteen (ROADMAP N96): the four the merge retired are read
-            // where a row carries one and are never offered, so nothing new is tagged with them.
-            options = SELECTABLE_MOVEMENT_PATTERNS,
-            optionLabel = { it.label },
-            testTag = TestTags.EXERCISE_EDIT_PATTERN,
-            onSelect = { onDraftChange(draft.copy(movementPattern = it)) },
-        )
+        // The pattern is the **category's** fact (ROADMAP N96), so it is offered where a head is edited and
+        // nowhere else: offering it on a movement would be a write the resolver ignores, which is the trap
+        // N103's entry names for the primary muscle and not one worth adding a second of. The options are the
+        // selectable nine rather than the enum's thirteen — the four the merge retired are read where a row
+        // carries one, and never offered.
+        if (draft.rowKind == RowKind.CATEGORY) {
+            AttributeSelector(
+                label = stringResource(R.string.exercise_detail_pattern),
+                selected = draft.movementPattern,
+                options = SELECTABLE_MOVEMENT_PATTERNS,
+                optionLabel = { it.label },
+                testTag = TestTags.EXERCISE_EDIT_PATTERN,
+                onSelect = { onDraftChange(draft.copy(movementPattern = it)) },
+            )
+        }
     }
 }
 

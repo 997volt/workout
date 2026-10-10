@@ -6,6 +6,7 @@ import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
 /**
@@ -367,5 +368,28 @@ class ExerciseLibraryTest {
         )
 
         assertThat(library.first { it.id == "a" }.seriesSubjectIds(library)).containsExactly("a", "b")
+    }
+
+    @Test
+    fun aMovementsPattern_comesFromItsFamily_andAnUnfiledOneHasNone() {
+        // ROADMAP N96: the pattern belongs to the category, so a movement reads the head it is filed under
+        // whatever its own row says — which is what lets the per-exercise column go without losing anything.
+        val library = listOf(
+            category("cat-bench", "Bench Press").copy(movementPattern = MovementPattern.PRESS),
+            movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench")
+                .copy(movementPattern = MovementPattern.HORIZONTAL_PUSH),
+            movement("bench-speed", "Speed Day", parent = "barbell-bench-press")
+                .copy(movementPattern = MovementPattern.HORIZONTAL_PUSH),
+            movement("squat", "Back Squat").copy(movementPattern = MovementPattern.SQUAT),
+        )
+
+        assertThat(library.first { it.id == "barbell-bench-press" }.effectiveMovementPattern(library))
+            .isEqualTo(MovementPattern.PRESS)
+        assertWithMessage("a variation reads through its movement to the family")
+            .that(library.first { it.id == "bench-speed" }.effectiveMovementPattern(library))
+            .isEqualTo(MovementPattern.PRESS)
+        assertWithMessage("and a movement in no category has no pattern")
+            .that(library.first { it.id == "squat" }.effectiveMovementPattern(library))
+            .isNull()
     }
 }

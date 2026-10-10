@@ -1022,6 +1022,31 @@ val MIGRATION_36_37 = object : Migration(36, 37) {
 }
 
 /**
+ * The movement pattern moves onto the category (ROADMAP N96).
+ *
+ * A head was seeded with `OTHER` because it had nothing to say, and it is the one home for its family's
+ * pattern now — so each seeded family is given the pattern the seed says it has. **The map is the seed's own**,
+ * for [SeedExercises.parentOf]'s reason: a second copy in SQL would be a second thing to keep in step, and the
+ * two would disagree the first time a family's pattern changed.
+ *
+ * **The four names the merge retired are not rewritten here**, deliberately: this sets the *category's*
+ * pattern, and a movement's own stale value stops being read once the head states one. It goes with the
+ * column, in the rebuild that follows; until then a row that still says `HORIZONTAL_PUSH` reads through the
+ * legacy enum value, which is what that value is for.
+ */
+val MIGRATION_37_38 = object : Migration(37, 38) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        SeedExercises.categories.forEach { category ->
+            db.execSQL(
+                "UPDATE `exercises` SET `movementPattern` = ?, `updatedAt` = ? " +
+                    "WHERE id = ? AND `rowKind` = 'CATEGORY'",
+                arrayOf<Any?>(category.pattern.name, MIGRATION_SEEDED_AT, category.id),
+            )
+        }
+    }
+}
+
+/**
  * The timestamp this migration stamps the rows it writes.
  *
  * A constant rather than the clock: a migration's effect has to be the same whenever it runs, and a test
@@ -1182,4 +1207,5 @@ val ALL_MIGRATIONS = arrayOf(    MIGRATION_1_2,
     MIGRATION_34_35,
     MIGRATION_35_36,
     MIGRATION_36_37,
+    MIGRATION_37_38,
 )
