@@ -38,6 +38,11 @@ import com.example.androidapp.domain.model.label
  * being read rather than changed** (ROADMAP N84): History draws a past workout's ratings before *Edit* is
  * chosen, and the summary stays on the screen while the tap goes — a control that cannot write is worse
  * than no control (N67), and hiding the reading of a rating would take back what N8 and N50 bought.
+ *
+ * **A read-only section with nothing recorded draws nothing at all** (N101): no title, no *Tap to rate*.
+ * N84 protects showing a rating that exists; a title with nothing under it is a label for nothing, and
+ * advertising the absence of one is not what that rule bought. Every editable caller keeps the prompt,
+ * because there the prompt is the way to write.
  */
 @Composable
 fun ExerciseRatingSection(
@@ -50,8 +55,11 @@ fun ExerciseRatingSection(
 ) {
     var editing by remember { mutableStateOf(false) }
     val editLabel = stringResource(R.string.rating_edit_title)
-    val rated = muscleFeel != null || joints.isNotEmpty() ||
-        legacyJointPain != null || legacyJointPainNote != null
+    val rating = ratingSummary(muscleFeel, joints, legacyJointPain, legacyJointPainNote)
+    // Read-only, with nothing recorded: draw nothing at all (N101). A title with nothing under it is a label
+    // for nothing, and the absence of a rating is not something to advertise — N84's rule is that a rating
+    // which *exists* stays readable before *Edit* is chosen, never that a missing one must be announced.
+    if (rating == null && onRate == null) return
 
     Column(
         modifier = modifier
@@ -70,10 +78,9 @@ fun ExerciseRatingSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = ratingSummary(muscleFeel, joints, legacyJointPain, legacyJointPainNote)
-                ?: stringResource(R.string.rating_row_add),
+            text = rating ?: stringResource(R.string.rating_row_add),
             style = MaterialTheme.typography.bodyMedium,
-            color = if (rated) {
+            color = if (rating != null) {
                 MaterialTheme.colorScheme.onSurface
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant

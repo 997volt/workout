@@ -115,9 +115,34 @@ class WorkoutDetailScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.SET_ROW, useUnmergedTree = true)
             .assertHasNoClickAction()
+        // And nothing recorded is not advertised at all (N101): this fixture's exercise carries no rating, so
+        // there is no row here to read *or* to write — the absence is the whole of it.
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_RATING_ROW, useUnmergedTree = true)
-            .assertHasNoClickAction()
+            .assertDoesNotExist()
         composeTestRule.onNodeWithContentDescription(setDeleteLabel()).assertDoesNotExist()
+    }
+
+    @Test
+    fun aRecordedRating_isReadableWhileReading_andStillNotWritable() {
+        // The other half of N101, and N84's own rule: a rating that *exists* is still shown before *Edit
+        // workout* is chosen, and it keeps N67's — a control that cannot write is not offered as one.
+        setScreen(
+            uiState = state.copy(
+                exercises = listOf(
+                    HistoryExercise(
+                        id = "se1",
+                        exerciseId = "back-squat",
+                        name = "Back Squat",
+                        sets = emptyList(),
+                        muscleFeel = 8,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_RATING_ROW, useUnmergedTree = true)
+            .assertIsDisplayed()
+            .assertHasNoClickAction()
     }
 
     @Test
