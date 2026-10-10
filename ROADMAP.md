@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v1.17** is shipped. Last reviewed against the code: 2026-10-10 — the N87–N95 batch shipped as 1.17 and
+> **v1.18** is shipped. Last reviewed against the code: 2026-10-10 — the N87–N95 batch shipped as 1.17 and
 > emptied *Next*; the two *Later* requests had graduated into it as N95–N97 and the *Later* section went with
 > them, leaving N96 here. **N97 then came out of *Parked***, because the trigger it named has fired, and
 > **fourteen parked ids became non-goals** — the platforms, services, sensors and shapes this app will not
@@ -8,8 +8,9 @@
 > is kept in this app and what that lets the trend say; four smaller requests — the template editor's order, a
 > history row's two numbers, an unrated exercise's prompt, and home's body in place of *Recent*; and, from
 > reading the library's inheritance, one fact in one home — the taxonomy a child states rather than copies,
-> and the equipment's own step that a variation was clearing. **All of it has since shipped except N103**,
-> which is a nullable taxonomy — so a row states only what it knows and reads the rest from the head above it.
+> and the equipment's own step that a variation was clearing. **All of it has since shipped as 1.18 except
+> N103**, which is a nullable taxonomy — so a row states only what it knows and reads the rest from the head
+> above it.
 > Checked against the changelog as well as the code: every shipped id has its entry there, and N103 is the only
 > one this file still lists as planned. **Reading this batch line by line found six defects (B96–B101); all six
 > are fixed and recorded in [CHANGELOG.md](CHANGELOG.md)**, so *Next* holds N103 alone again.
