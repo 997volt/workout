@@ -43,9 +43,8 @@ import com.example.androidapp.ui.exercises.LoadingState
  * a movement can be chosen, so N95's "a category is never offered and never logged" is enforced by the list
  * rather than by leaving the heads out.
  *
- * A search opens what it touches. The picker is searched mid-workout, and a search that answered with a folded
- * family would cost a tap before the lifter could see what matched — the fold is a way of *browsing*, and a
- * query is not browsing.
+ * A search opens what it reaches into, so a query never answers with a folded family (N95) — the rule lives in
+ * `libraryRows`, because the library's list wants it too.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,9 +69,8 @@ fun ExercisePickerScreen(
         libraryRows(
             exercises = state.exercises,
             query = state.query,
-            // **Nothing is folded while a query is typed**, rather than the fold map merged with the query:
-            // the answer must not depend on which families happened to be open when the searching started.
-            foldedCategories = if (state.query.isBlank()) fold.foldedIds else emptySet(),
+            // A query opens what it draws, which `libraryRows` owns (N95) — both grouped screens want it.
+            foldedCategories = fold.foldedIds,
         )
     }
 

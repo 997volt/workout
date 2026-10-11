@@ -819,10 +819,12 @@ the rule; that one argues it.
   open — the mirror of what was asked for, which is why the two callers pass opposite values for one flag
   rather than sharing a mode. **Never *offered* is not the same as never *drawn*** (N95): the pickers that log
   draw the same heads the library does — grouped, folded on arrival, with the movements indented under them —
-  and route a head's tap to the fold, so what a tap can **choose** is still a movement alone. **A picker opens
-  what a query reaches into, and the library does not**: a picker is searched mid-workout, so a query that
-  answered with a folded family would cost a tap before the lifter could see what matched, while the library
-  is browsed and its fold is a preference that a search has no business clearing.
+  and route a head's tap to the fold, so what a tap can **choose** is still a movement alone. **A non-blank
+  query opens every family it draws, and the grouping owns that rule rather than either screen**: the fold is
+  how a list is *browsed* and a search is not browsing, so a query that reached inside a family must answer
+  with the movement rather than with a head the lifter has to open — and because both grouped lists want it,
+  one shared conditional beats the same one written twice. A blank query is not a search (it is trimmed), so
+  the folds a lifter set stand until they type.
   ([evidence](DECISIONS-EVIDENCE.md#n95))
 - **A movement reads its family's pattern, primary muscle and secondary muscles, and states its own equipment**
   (N110, on N103's rule). Those three are nullable and **null is *unstated*, not `OTHER`** — `OTHER` goes back

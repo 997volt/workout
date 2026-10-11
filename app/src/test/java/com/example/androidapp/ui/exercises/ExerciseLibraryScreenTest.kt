@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -181,14 +183,34 @@ class ExerciseLibraryScreenTest {
         onNewCategory: ((String) -> Unit)? = null,
     ) {
         composeTestRule.setContent {
+            // The screen is stateless, so the harness owns the query **and** reports it: a test can type into
+            // the search box and assert both what it wrote back and what the list did with it.
+            val current = remember { mutableStateOf(state) }
             ExerciseLibraryScreen(
-                state = state,
+                state = current.value,
                 title = "Exercise library",
-                onQueryChange = onQueryChange,
+                onQueryChange = { typed ->
+                    current.value = current.value.copy(query = typed)
+                    onQueryChange(typed)
+                },
                 onExerciseClick = onExerciseClick,
                 onNewCategory = onNewCategory,
             )
         }
+    }
+
+    @Test
+    fun aSearch_opensTheFamilyItReachesInto() {
+        // N95: the fold is how the library is browsed, so a query must not answer with a folded head. The
+        // library and the picker group the same way, and this is the half that says so on the library's own
+        // screen — searching a movement that lives inside a family shows the movement.
+        setScreen(ExerciseLibraryUiState(isLoading = false, exercises = groupedLibrary))
+
+        composeTestRule.onNodeWithText("Barbell Bench Press").assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_SEARCH_FIELD).performTextInput("barbell")
+
+        composeTestRule.onNodeWithText("Barbell Bench Press").assertExists()
     }
 
     @Test

@@ -254,16 +254,25 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun aFoldedFamily_theQueryOnlyReachesInside_isStillDrawn_asItsHead() {
-        // The interaction the folded default makes visible: the library opens every family folded, so a
-        // query that only a movement matches answers with **the family and its count** rather than with
-        // nothing (B81) or with a movement the lifter has to find behind a head. The count is the whole
-        // answer's shape — "1 exercise is in here" — and opening it is one tap.
+    fun aQuery_opensTheFamilyItReachesInto_ratherThanAnsweringWithAFoldedHead() {
+        // N95: the fold is how the library is *browsed*, and a search is not browsing. A query that only a
+        // movement matches must show that movement — answering with a head that has to be opened first is the
+        // wrong answer to "where is Back Squat", and it is what a folded default would otherwise do. Both
+        // grouped screens want this, so it is `libraryRows`' rule rather than either screen's.
         val rows = libraryRows(library, query = "Speed Day", foldedCategories = setOf("cat-bench"))
 
-        assertThat(rows.map { it.name }).containsExactly("Bench Press")
-        assertThat(rows.single().childCount).isEqualTo(1)
-        assertThat(rows.single().isExpanded).isFalse()
+        assertThat(rows.map { it.name }).containsExactly("Bench Press", "Speed Day").inOrder()
+        assertThat(rows.single { it.id == "cat-bench" }.isExpanded).isTrue()
+    }
+
+    @Test
+    fun aBlankQuery_leavesTheFoldsWhereTheLifterPutThem() {
+        // The other half: a query of spaces is not a search (B87 trims it), so the folds stand — otherwise
+        // merely clearing the field would unfold the whole library.
+        val rows = libraryRows(library, query = "   ", foldedCategories = setOf("cat-bench"))
+
+        assertThat(rows.single { it.id == "cat-bench" }.isExpanded).isFalse()
+        assertThat(rows.map { it.name }).doesNotContain("Speed Day")
     }
 
     @Test

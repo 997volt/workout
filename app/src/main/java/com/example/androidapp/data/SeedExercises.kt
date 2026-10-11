@@ -35,6 +35,16 @@ internal object SeedExercises {
      * wheel — and the four muscles that had no movement of their own — `FOREARMS`, `ADDUCTORS`, and
      * `LOWER_BACK` as a primary — are used here, so every value the pickers offer can be found in the library.
      *
+     * **Olympic lifts are deliberately absent.** A category states one primary muscle (N110), and a clean, a
+     * snatch or a jerk has no honest single answer — filing them under a family would invent a fact about the
+     * training rather than record one. They need a decision about whether a category's primary may be
+     * unstated before they need rows.
+     *
+     * **A row retired from this list is not deleted from a device that already has it.** The seeder only ever
+     * inserts what is missing (F15), and a logged set names its exercise by id, so retiring a name is a
+     * change to what a *fresh* install ships — `two-arm-cable-pushdown` and `machine-row` are the standing
+     * cases, both of them a second name for a movement that is still here.
+     *
      * A movement the seed leaves **unfiled** states its own three facts, because it has no category to read
      * them from — and one whose family would claim a muscle it does not work states its own for that field,
      * which is what own-if-stated is for. Two families are the standing cases: the lunge family holds no single
@@ -104,7 +114,6 @@ internal object SeedExercises {
         movement("pendlay-row", "Pendlay Row", Equipment.BARBELL),
         movement("t-bar-row", "T-Bar Row", Equipment.BARBELL),
         movement("seated-cable-row", "Seated Cable Row", Equipment.CABLE),
-        movement("machine-row", "Machine Row", Equipment.MACHINE),
         movement("chest-supported-row", "Chest-Supported Row", Equipment.MACHINE),
         movement("single-arm-dumbbell-row", "Single-Arm Dumbbell Row", Equipment.DUMBBELL),
         movement("inverted-row", "Inverted Row", Equipment.BODYWEIGHT),
@@ -139,7 +148,6 @@ internal object SeedExercises {
         movement("cable-arm-curl", "Cable Arm Curl", Equipment.CABLE),
         movement("incline-dumbbell-arm-curl", "Incline Dumbbell Arm Curl", Equipment.DUMBBELL),
         movement("triceps-pushdown", "Triceps Pushdown", Equipment.CABLE),
-        movement("two-arm-cable-pushdown", "Two-Arm Cable Pushdown", Equipment.CABLE),
         movement("overhead-triceps-extension", "Overhead Triceps Extension", Equipment.DUMBBELL),
         movement("cable-overhead-triceps-extension", "Cable Overhead Triceps Extension", Equipment.CABLE),
         movement("dumbbell-skullcrusher", "Dumbbell Skullcrusher", Equipment.DUMBBELL),
@@ -290,7 +298,6 @@ internal object SeedExercises {
         "pendlay-row" to "row",
         "t-bar-row" to "row",
         "seated-cable-row" to "row",
-        "machine-row" to "row",
         "chest-supported-row" to "row",
         "single-arm-dumbbell-row" to "row",
         "inverted-row" to "row",
@@ -320,7 +327,6 @@ internal object SeedExercises {
         "cable-arm-curl" to "curl",
         "incline-dumbbell-arm-curl" to "curl",
         "triceps-pushdown" to "triceps-extension",
-        "two-arm-cable-pushdown" to "triceps-extension",
         "overhead-triceps-extension" to "triceps-extension",
         "cable-overhead-triceps-extension" to "triceps-extension",
         "dumbbell-skullcrusher" to "triceps-extension",

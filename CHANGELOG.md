@@ -27,7 +27,8 @@ unreleased.
   `KETTLEBELL`, `BAND` and `OTHER` were carried by no row, and `FOREARMS`, `ADDUCTORS` and `LOWER_BACK` were
   no movement's primary muscle. **No existing row changed** and the seeder tops up on every open, so an
   installed library gains the new entries on its next start without a migration. A new unit test holds the
-  shape: unique ids, every file target a category, and no equipment, pattern or muscle left unanswered.
+  shape: unique ids, every file target a category, and no equipment, pattern or muscle left unanswered. Two
+  of the oldest rows are retired in the same release, so the library ships **104** — see *Removed*.
 
 ### Changed
 
@@ -36,17 +37,20 @@ unreleased.
   folded on arrival, with the movements indented under the head that holds them and the ones in no category at
   the top level. **A head still cannot be chosen**: its tap folds it, and only a movement reaches the add, so
   N95's "a category is never offered and never logged" now holds at the tap rather than by leaving the heads
-  out of the list. **A search opens what it reaches into**, which the library does not do: the picker is
-  searched mid-workout, and answering with a folded family would cost a tap before the lifter could see what
-  matched.
+  out of the list.
+
+- **A search opens every family it reaches into** (P1.1). Both grouped lists — the library and the picker that
+  logs from it — now show the movement a query matched rather than the folded head above it, so searching
+  "back squat" answers with *Back Squat* instead of *Squat · 1 exercise*. The rule lives in the grouping
+  rather than in either screen, because the fold is how a list is *browsed* and a search is not browsing; a
+  blank query is not a search, so the folds a lifter set stand until they type.
 
 - **The exercise library opens with every family folded** (P1.1). The list arrives as the families it is —
   the category heads, each with the count of what is inside, plus the movements filed under nothing — instead
   of as a wall of every movement. Tapping a head opens it, and that fold survives a rotation. The editor keeps
   N91's opposite rule, where a planned exercise's first set opens so it needs no second tap; the library
   cannot use that rule at all, because it loads asynchronously and nothing would look "already there", so
-  every family would open. A query behaves as it did (B81): a family the query only reaches *inside* is drawn
-  as its head with the count, so a search never answers "no exercises match" for something it found.
+  every family would open.
 
 - **The library is a category over movements, and a movement reads its family's taxonomy** (N110). The
   **variation level is gone**: it was one `parentId` carrying two meanings, told apart by the parent's
@@ -62,6 +66,17 @@ unreleased.
   seeded categories from the seed itself, writes down what each variation used to read from the lift above
   it, and re-files it under the category — leaving any value a lifter set alone. An older backup or program
   document is **flattened the same way on import** rather than refused, so the family survives the trip.
+
+### Removed
+
+- **Two movements that were a second name for one already in the library are retired** (P1.1).
+  `Two-Arm Cable Pushdown` was `Triceps Pushdown`, and `Machine Row` was `Chest-Supported Row` — one movement
+  under two names, which the picker offers side by side and a lifter cannot tell apart. **A row dropped from
+  the seed is not deleted from a device that already has it**: the seeder only ever inserts what is missing
+  and there is no delete for a library row, so an installed library keeps both names, and a set already
+  logged against a retired id still names its lift. A backup still carries the row and a program document
+  still recreates it, so the id is orphaned nowhere it is already referenced — what changed is what a *fresh*
+  install ships, which is one name per movement.
 
 ### Fixed
 

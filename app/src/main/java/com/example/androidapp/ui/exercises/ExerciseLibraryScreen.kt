@@ -126,7 +126,8 @@ fun ExerciseLibraryScreen(
     // no `configChanges`, so a rotation would otherwise fold what the lifter opened. **Every family starts
     // folded**, so the library opens as the list of families it is rather than as a wall of movements —
     // which is also why the editor's "what was already there is folded, what arrives opens" seed is not
-    // wanted here: this list loads asynchronously, so nothing would look "already there" (RowFold.kt).
+    // wanted here: this list loads asynchronously, so nothing would look "already there" (RowFold.kt). A
+    // **query** opens what it draws, and `libraryRows` is where that rule lives.
     val fold = rememberRowFold(ids = state.exercises.map { it.id }, newRowsOpen = false)
     val rows = remember(state.exercises, state.query, fold.foldedIds, state.removedHeads) {
         libraryRows(

@@ -73,7 +73,12 @@ fun libraryRows(
     val shape = LibraryShape(
         exercises = exercises,
         matched = matched,
-        folded = foldedCategories,
+        // **A query opens every family it draws.** The fold is how a lifter *browses* the library, and a
+        // search is not browsing: a family the query only reaches inside would otherwise answer with a head
+        // that has to be opened before the match can be seen, which is the wrong answer to "where is Back
+        // Squat". Both screens that group want this, so it lives here rather than as the same conditional in
+        // two of them — and a *blank* query is not a search, so the lifter's folds stand.
+        folded = if (trimmed.isEmpty()) foldedCategories else emptySet(),
         library = headResolver,
     )
     val drawn = mutableSetOf<String>()
@@ -93,7 +98,8 @@ fun libraryRows(
  * What both grouping passes need (ROADMAP N95, N110).
  *
  * [library] is the fuller list a row is named and read from, [matched] is which rows the query's answer
- * includes, and [folded] is the categories the lifter has closed.
+ * includes, and [folded] is the categories the lifter has closed — **already cleared by the caller when a
+ * query is present**, because a search opens what it reaches into.
  */
 private class LibraryShape(
     val exercises: List<Exercise>,
