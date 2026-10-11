@@ -254,6 +254,19 @@ class ExerciseLibraryTest {
     }
 
     @Test
+    fun aFoldedFamily_theQueryOnlyReachesInside_isStillDrawn_asItsHead() {
+        // The interaction the folded default makes visible: the library opens every family folded, so a
+        // query that only a movement matches answers with **the family and its count** rather than with
+        // nothing (B81) or with a movement the lifter has to find behind a head. The count is the whole
+        // answer's shape — "1 exercise is in here" — and opening it is one tap.
+        val rows = libraryRows(library, query = "Speed Day", foldedCategories = setOf("cat-bench"))
+
+        assertThat(rows.map { it.name }).containsExactly("Bench Press")
+        assertThat(rows.single().childCount).isEqualTo(1)
+        assertThat(rows.single().isExpanded).isFalse()
+    }
+
+    @Test
     fun aWhitespaceOnlyQuery_matchesTheWholeLibrary() {
         // B87: the trim lived in the filter the grouping no longer uses, so a query of only spaces matched
         // nothing where v1.16 answered with everything.

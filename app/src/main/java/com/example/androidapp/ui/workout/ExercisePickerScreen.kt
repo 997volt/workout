@@ -98,7 +98,6 @@ fun ExercisePickerScreen(
                 else -> ExerciseList(
                     items = state.items,
                     // A picker shows no families, so nothing here is a head and nothing folds (N95).
-                    isExpanded = { true },
                     onToggle = {},
                     onExerciseClick = onExerciseClick,
                 )

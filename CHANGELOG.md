@@ -31,6 +31,14 @@ unreleased.
 
 ### Changed
 
+- **The exercise library opens with every family folded** (P1.1). The list arrives as the families it is —
+  the category heads, each with the count of what is inside, plus the movements filed under nothing — instead
+  of as a wall of every movement. Tapping a head opens it, and that fold survives a rotation. The editor keeps
+  N91's opposite rule, where a planned exercise's first set opens so it needs no second tap; the library
+  cannot use that rule at all, because it loads asynchronously and nothing would look "already there", so
+  every family would open. A query behaves as it did (B81): a family the query only reaches *inside* is drawn
+  as its head with the count, so a search never answers "no exercises match" for something it found.
+
 - **The library is a category over movements, and a movement reads its family's taxonomy** (N110). The
   **variation level is gone**: it was one `parentId` carrying two meanings, told apart by the parent's
   `rowKind`, and the narrower roll-up it bought is one the category already offers — a category's series has

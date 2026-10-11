@@ -811,7 +811,13 @@ the rule; that one argues it.
   editing it — the move is one field of the row's own form, so a cancelled edit takes it back. A category's
   name is read live and a **removed category still names its children**, N58's rule for templates. **A lifted
   pattern is settled here too** (see N96): with no category a row carries no pattern, rather than a guess about
-  its joint action. ([evidence](DECISIONS-EVIDENCE.md#n95))
+  its joint action. **The list opens with every family folded** (N95): a family is a head the lifter opens, so
+  the library arrives as the families it is rather than as a wall of movements, and the count on each head says
+  what is inside without spending the room. The fold is screen state that survives a rotation (N84). The
+  rejected alternative is the rule the editor uses, N91's *what was already there is folded, what arrives
+  opens*: the library loads asynchronously, so nothing would look already-there and **every** family would
+  open — the mirror of what was asked for, which is why the two callers pass opposite values for one flag
+  rather than sharing a mode. ([evidence](DECISIONS-EVIDENCE.md#n95))
 - **A movement reads its family's pattern, primary muscle and secondary muscles, and states its own equipment**
   (N110, on N103's rule). Those three are nullable and **null is *unstated*, not `OTHER`** — `OTHER` goes back
   to meaning only *other*, which is a real answer a lifter gives. The winner is the same for all three, the

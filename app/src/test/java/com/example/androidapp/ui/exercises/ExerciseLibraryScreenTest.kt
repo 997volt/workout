@@ -114,24 +114,31 @@ class ExerciseLibraryScreenTest {
     }
 
     @Test
-    fun aFamily_isAHeadWithItsChildUnderIt_andFoldsOnItsName() {
+    fun aFamily_opensFolded_andItsNameOpensIt() {
         // ROADMAP N95: the head is a row that holds others, so the library reads as families rather than
-        // as a flat list. Its name is the control — the shape a planned exercise's row already uses (N91) —
-        // and its state is announced, because the same name does different things open and folded.
+        // as a flat list. **Every family starts folded**, so the screen opens as the list of families it is
+        // rather than as a wall of movements — and the head's name is the control, the shape a planned
+        // exercise's row already uses (N91), with its state announced because the same name does different
+        // things open and folded.
         setScreen(ExerciseLibraryUiState(isLoading = false, exercises = groupedLibrary))
 
         composeTestRule.onNodeWithTag(TestTags.libraryCategory("cat-bench")).assertIsDisplayed()
+        // The count is what a folded family is *for*: it says something is inside without spending the room.
         composeTestRule.onNodeWithText("1 exercise").assertExists()
+        composeTestRule.onNodeWithText("Barbell Bench Press").assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag(TestTags.libraryCategory("cat-bench")).performClick()
+
         // Read by existence rather than by display: this test's viewport is short, and what it asserts is
         // that the child is in the list under its head, which is N95's shape.
         composeTestRule.onNodeWithText("Barbell Bench Press").assertExists()
+        // A movement filed under nothing was never behind a fold, and still is not.
+        composeTestRule.onNodeWithText("Back Squat").assertExists()
 
         composeTestRule.onNodeWithTag(TestTags.libraryCategory("cat-bench")).performClick()
 
         composeTestRule.onNodeWithText("Barbell Bench Press").assertDoesNotExist()
-        // The head stays, and so does everything filed under nothing.
         composeTestRule.onNodeWithTag(TestTags.libraryCategory("cat-bench")).assertIsDisplayed()
-        composeTestRule.onNodeWithText("Back Squat").assertExists()
     }
 
     @Test

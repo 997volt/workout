@@ -123,8 +123,11 @@ fun ExerciseLibraryScreen(
     var namingCategory by remember { mutableStateOf(false) }
 
     // Which families are open is screen state (N95), and `rememberRowFold` is the sharing state N91 built:
-    // no `configChanges`, so a rotation would otherwise fold what the lifter opened. All start **open**.
-    val fold = rememberRowFold(ids = state.exercises.map { it.id }, initiallyOpen = true)
+    // no `configChanges`, so a rotation would otherwise fold what the lifter opened. **Every family starts
+    // folded**, so the library opens as the list of families it is rather than as a wall of movements —
+    // which is also why the editor's "what was already there is folded, what arrives opens" seed is not
+    // wanted here: this list loads asynchronously, so nothing would look "already there" (RowFold.kt).
+    val fold = rememberRowFold(ids = state.exercises.map { it.id }, newRowsOpen = false)
     val rows = remember(state.exercises, state.query, fold.foldedIds, state.removedHeads) {
         libraryRows(
             exercises = state.exercises,
@@ -225,7 +228,6 @@ private fun LibraryBody(
 
             else -> ExerciseList(
                 items = rows,
-                isExpanded = fold::isExpanded,
                 onToggle = fold::toggle,
                 onExerciseClick = onExerciseClick,
             )
@@ -364,17 +366,20 @@ internal fun LibrarySearchField(
 }
 
 /**
- * The library as rows: a family head, its children under it, and the movements filed under nothing.
+ * The library as rows: a family head, its movements under it, and the movements filed under nothing.
  *
  * A head's tap folds it (ROADMAP N95), the shape a planned exercise's row already uses (N91): the name is
  * the control, the label names the action, and the state is announced beside it rather than left to be
  * discovered. A child is indented by [LibraryRow.depth], which keeps "how deep is this" a fact about the
  * library rather than about this list.
+ *
+ * **Whether a head is open is [LibraryRow.isExpanded] and not a second lookup**, because that is already
+ * the answer the grouping drew the rows with: asking the fold state again here is how the arrow and the rows
+ * below it could disagree.
  */
 @Composable
 internal fun ExerciseList(
     items: List<LibraryRow>,
-    isExpanded: (String) -> Boolean,
     onToggle: (String) -> Unit,
     onExerciseClick: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -389,11 +394,7 @@ internal fun ExerciseList(
     ) {
         items(items = items, key = { it.id }) { row ->
             if (row.isCategory) {
-                CategoryRow(
-                    row = row,
-                    isExpanded = isExpanded(row.id),
-                    onToggle = { onToggle(row.id) },
-                )
+                CategoryRow(row = row, onToggle = { onToggle(row.id) })
             } else {
                 ExerciseRow(row = row, onExerciseClick = onExerciseClick)
             }
@@ -404,10 +405,10 @@ internal fun ExerciseList(
 @Composable
 private fun CategoryRow(
     row: LibraryRow,
-    isExpanded: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isExpanded = row.isExpanded
     val openLabel = stringResource(R.string.library_category_open)
     val foldedLabel = stringResource(R.string.library_category_folded)
     AppRow(
