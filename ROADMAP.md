@@ -3,13 +3,15 @@
 > **v1.18** is shipped, and **2.0's changes are on `main` with no release cut**. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17;
 > **N96–N102 with B95 shipped as 1.18**, with the six defects a line-by-line reading of that batch found
-> (B96–B101); and **N103–N105 are implemented**: the taxonomy becoming nullable, the store break that let it
+> (B96–B101); and **N103–N106 are implemented**: the taxonomy becoming nullable, the store break that let it
 > happen without a migration — a new database file, the 1.x chain and its schemas deleted, both transfer
 > formats refusing 1.x, and the five retired enum names (four patterns and `BACK`) gone with the files that
-> could carry them — and the rest of the legacy the new store cannot hold. The 1.x store is left on the
-> device by design, and the 1.18 APK is still the way to read it.
+> could carry them — the rest of the legacy the new store cannot hold, and the decisions a later id reversed
+> that were still reading as binding. The 1.x store is left on the device by design, and the 1.18 APK is
+> still the way to read it.
 > Checked against the changelog as well as the code: the unreleased work is under `[Unreleased]` there, every
-> shipped id has its entry, and *Next* holds only the text cleanup (N106). A
+> shipped id has its entry, and *Next* holds only N107, which shortens
+> [DECISIONS.md](DECISIONS.md) without dropping a decision. A
 > line-by-line reading of the N87–N95 changes found sixteen defects (B79–B94); all are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).
 >
@@ -29,17 +31,17 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-The taxonomy, the 2.0 break it rode on and the legacy cleanup that break entitled 2.0 to (N103, N104,
-N105) are implemented on `main` and wait under `[Unreleased]` in [CHANGELOG.md](CHANGELOG.md). What
-remains before the tag is N106, which is text rather than code.
+The taxonomy, the 2.0 break it rode on, the legacy cleanup that break entitled 2.0 to and the
+decision-document cleanup (N103–N106) are implemented on `main` and wait under `[Unreleased]` in
+[CHANGELOG.md](CHANGELOG.md). What remains is N107, which shortens [DECISIONS.md](DECISIONS.md) without
+dropping a decision.
 
-- **The decisions N73 and N56 reversed stop reading as binding** (N106). N73 reversed P3.8 and dropped the
-  slot's prescription tables, but the P3.8 bullets still describe `program_slot_exercises` and a slot-level
-  percentage as live, and N85, N47 and the program document's own doc repeat "what each slot prescribes".
-  N56 deleted the template's weekday pin, but P3.3 still says home "falls back to the template pins it
-  already reads" and the adherence entries still reason from the pins' missing skip record. The code is
-  already right; the decisions, and the comments the two reversals never reached, are what move — and the
-  review stamp at the top of [DECISIONS.md](DECISIONS.md) moves with them.
+- **The longest evidence-backed entries state the rule and defer their argument to the evidence** (N107).
+  The file's own contract is that an entry is the rule, the shortest honest reason and the rejected
+  alternative, with the longer argument in [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md). Twelve entries
+  that already have an evidence section run to 13–26 lines and carry the full argument anyway; enforcing
+  the contract on those twelve moves it to the section that exists for it, losing no decision. It is a text
+  change rather than a code one, so it can land before or after the tag.
 
 ## Parked — deliberately not planned
 

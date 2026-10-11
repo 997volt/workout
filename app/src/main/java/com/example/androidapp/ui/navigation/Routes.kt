@@ -89,9 +89,10 @@ data class ActiveWorkout(
      * The program slot this workout was started from, if any (ROADMAP P3.8).
      *
      * A start argument, not a stored fact: home already knows which slot it is starting, so the
-     * slot's prescription seeds the workout — and the session still records only the template
-     * (P3.3), so provenance and occurrence matching are unchanged. A resumed session ignores it,
-     * exactly as it ignores [templateId].
+     * route carries the id for the session's own prefill history to read (N73) — a slot prescribes
+     * nothing of its own (N73) — and the session still records only the template (P3.3), so
+     * provenance and occurrence matching are unchanged. A resumed session ignores it, exactly as it
+     * ignores [templateId].
      */
     val slotId: String? = null,
 )

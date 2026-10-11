@@ -58,8 +58,8 @@ data class ActiveWorkoutInfo(
  * of a dated plan (N56). It is deliberately not [templateId]: a program may put the same template in
  * two slots, and a list keyed by template would collide.
  *
- * [slotId] is set only for a program slot, and it is what carries the slot's prescription into
- * the workout (P3.8): the template is what is started, the slot is what it was scheduled as.
+ * [slotId] is set only for a program slot, and it is what the session's own history reads for the
+ * prefill (N73): the template is what is started, the slot is what it was scheduled as.
  */
 data class TodayPlan(
     val id: String,
@@ -72,9 +72,9 @@ data class TodayPlan(
 /**
  * A program's run, offered as home's next-up row (ROADMAP P3.9).
  *
- * [plan] is what a start needs — the slot's id travels with it so the slot's prescription seeds
- * the workout (P3.8) — and [programName] is there because more than one program may be active
- * (P3.12), so two next-up rows have to be tellable apart.
+ * [plan] is what a start needs — the slot's id travels with it so the session's per-slot prefill
+ * history can be read (N73) — and [programName] is there because more than one program may be
+ * active (P3.12), so two next-up rows have to be tellable apart.
  */
 data class NextUp(
     val plan: TodayPlan,
@@ -382,7 +382,7 @@ internal fun nextUpFor(
             templateId = run.slot.templateId,
             name = run.slot.templateName,
             exerciseCount = run.slot.exerciseCount,
-            // The slot travels with the start, so its prescription seeds the workout (P3.8).
+            // The slot travels with the start so the session's prefill reads that slot's history (N73).
             slotId = run.slot.id,
         ),
         programName = program.name,

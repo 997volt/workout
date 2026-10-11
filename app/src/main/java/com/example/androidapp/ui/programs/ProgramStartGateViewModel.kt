@@ -31,8 +31,9 @@ data class StartIntent(
     /**
      * The program slot the start came from, if any (ROADMAP P3.8).
      *
-     * Carried through the question so a start that answers *Do it now* seeds the missed slot's
-     * prescription, and one that carries on from a row seeds that row's.
+     * Carried through the question so a start that answers *Do it now* keeps the missed slot's id,
+     * and one that carries on from a row keeps that row's — the session's prefill history reads it
+     * (N73).
      */
     val slotId: String? = null,
     /**
@@ -139,7 +140,7 @@ class ProgramStartGateViewModel @Inject constructor(
         _started.value = StartIntent(
             templateId = missed.templateId,
             label = missed.templateName,
-            // The missed slot is the one being started, so its own prescription seeds it (P3.8).
+            // The missed slot is the one being started, so its id travels for the prefill (N73).
             slotId = missed.slotId,
         )
     }

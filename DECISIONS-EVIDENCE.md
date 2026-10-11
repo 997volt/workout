@@ -290,19 +290,6 @@ An unmeasured tape site stays blank rather than carrying the previous value forw
 carried number is indistinguishable from a measurement and would draw a flat line through a
 site nobody measured that day, which is an invented fact rather than a missing one.
 
-## N33
-
-One tap logs what happened; the app's idea of what should happen is an offer.
-
-The suggestion and the prefill were one value before, which is what made a suggestion into a
-decision — a proposal that *is* the prefill is committed by the next tap whether or not
-anyone agreed to it. They are now different fields: the prefill is the plan's target, what
-you just did, or last time unchanged, while the progression proposal is shown with its
-reason and applied only when accepted.
-
-The rule is global, not program-only: how a workout was started says nothing about whether
-its lifter progresses by hand.
-
 ## N38
 
 Test tags are exposed as resource ids. The app opts in with `testTagsAsResourceId`, so a

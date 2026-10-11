@@ -88,8 +88,8 @@ data class MonthAdherence(
     /**
      * The same counts, read per lift (ROADMAP P3.14).
      *
-     * Rolled up over the slots that prescribe each exercise, so unlike [bySlot] these rows do not
-     * sum to the month's total: a lift trained by two slots is counted in both on purpose.
+     * Rolled up over the slots whose template prescribes each exercise, so unlike [bySlot] these rows
+     * do not sum to the month's total: a lift trained by two slots is counted in both on purpose.
      */
     val byExercise: List<ExerciseAdherence> = emptyList(),
 ) {
@@ -142,7 +142,7 @@ data class SlotAdherence(
 }
 
 /**
- * One lift's share of the month, rolled up over the slots that prescribe it (ROADMAP P3.14).
+ * One lift's share of the month, rolled up over the slots whose template prescribes it (ROADMAP P3.14).
  *
  * The join N14 already has: a slot's template names the exercises it trains, so a lift's counts are
  * the occurrences of every slot whose template prescribes it. That is what answers "am I skipping

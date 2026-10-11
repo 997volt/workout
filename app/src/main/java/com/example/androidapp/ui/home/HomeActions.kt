@@ -63,8 +63,8 @@ internal fun startSubstitute(
         requestStart(
             StartIntent(
                 templateId = templateId,
-                // The slot is what the row stood for, so its prescription still seeds what it can
-                // (P3.8) — the same start a recorded substitute performs.
+                // The slot is what the row stood for, so it travels for the prefill history (N73) —
+                // the same start a recorded substitute performs.
                 slotId = slotId,
                 // The **picked** template's name, not the scheduled row's: the start's own question names
                 // the workout it is about to begin (B93). The scheduled name stays the fallback.
@@ -94,8 +94,8 @@ internal fun substituteOccurrence(
                     requestStart(
                         StartIntent(
                             templateId = templateId,
-                            // The slot is what it was scheduled as, so its prescription still
-                            // seeds what it can (P3.8, P3.11).
+                            // The slot is what it was scheduled as, so it travels for the prefill
+                            // history (N73, P3.11).
                             slotId = slotId,
                             // The picked substitute's name, for the reason [startSubstitute] gives (B93).
                             label = templateName ?: plan.name,

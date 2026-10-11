@@ -12,7 +12,7 @@ longer case against the rejected option — is in
 [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md), one entry per feature id. This file states
 the rule; that one argues it.
 
-> Reviewed against the code: 2026-10-04. Bump the date when this file is checked, the way
+> Reviewed against the code: 2026-10-11. Bump the date when this file is checked, the way
 > [ROADMAP.md](ROADMAP.md) does, so the next reader knows how old these rules are.
 
 ## Data model
@@ -64,7 +64,6 @@ the rule; that one argues it.
   the row the session and the plan already join from the library, and the pure functions take it as an
   argument. A step of zero is refused rather than stored: it is not a small step but no step, the ±
   buttons would do nothing and the ramp divides by it. ([evidence](DECISIONS-EVIDENCE.md#n77))
-
 
 - **Weights are whole grams in a `Long`**
   ([Weight.kt](app/src/main/java/com/example/androidapp/domain/Weight.kt)) — exact 0.5 kg
@@ -134,19 +133,13 @@ the rule; that one argues it.
   5–3600 bound (N21) — an app-wide zero would take the rest out of every exercise at once, which is
   the switch's job — and a stored zero is displayed as a word rather than `0:00`, which reads as a
   rest that has run out. ([evidence](DECISIONS-EVIDENCE.md#n45))
-- **A new planned set starts from the last one, and there is no Duplicate** (N46, narrowed by N81). The
-  surface that authors a planned set is the template editor's *Add set*, which opens the set dialog on the
-  last set, so a plan is extended by confirming rather than retyping and *any* count is reachable. N46 named
-  two surfaces — a template's plan dialog and a slot's prescription dialog — and neither exists now: N81
-  unfolded the plan dialog into the exercise block, and the slot's prescription dialog went with the program
-  rework that made a slot point at a template. The prefill is the same rule either way, which is why only its
-  name moved — the argument in [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md#n46) is about two because that
-  is what there was.
-  Duplicate doubled (1, 2, 4, 8), left the odd counts to manual adds, and appended the whole plan,
-  ramp included, into an order `setIndex` exists to keep. The accepted cost is that prefilled values
-  look like saved ones, so "Add set" then Save without touching a field is a plausible accidental
-  double-add; the title says it is adding and the list behind it shows the count, and a set-*count*
-  control would be the more honest affordance if that ever needs revisiting.
+- **A new planned set starts from the last one, and there is no Duplicate** (N46, narrowed by N81). *Add
+  set* in the template editor opens the set dialog on the last set, so a plan is extended by confirming
+  rather than retyping and *any* count is reachable. **Duplicate** doubled (1, 2, 4, 8), left the odd
+  counts to manual adds, and appended the whole plan, ramp included, into an order `setIndex` exists to
+  keep. The accepted cost is that prefilled values look like saved ones, so "Add set" then Save without
+  touching a field is a plausible accidental double-add; the title says it is adding and the list behind
+  it shows the count.
   ([evidence](DECISIONS-EVIDENCE.md#n46))
 
 - **Assistance is a magnitude in its own column, never a signed weight** (N15).
@@ -177,14 +170,11 @@ the rule; that one argues it.
   the name is the part that cannot be inferred from the workout.
   ([evidence](DECISIONS-EVIDENCE.md#n57))
 - **A day is a scheduling fact, and a template carries none** (N56). The N16 pin was the weaker of two
-  places answering "what am I doing on Tuesday", so it goes with its column, the `setWeekday` path
-  through DAO, repository and editor, and the `pinnedFor` fallback. A program's slots are the only
-  source of a dated plan; with no active program there is then **no *Today* list**, which is the point
-  rather than a regression. The backup DTO's `weekday` goes with the column rather than staying for
-  older files' sake: the codec already ignores keys this build does not know, so a file written before
-  the change still decodes and the pin is simply not read. The loss is accepted rather than mitigated —
-  a template pinned to a day comes out of the migration with no day, and getting the schedule back
-  means putting it in a program, which is the rule being stated.
+  places answering "what am I doing on Tuesday", so the column, the `setWeekday` path through DAO,
+  repository and editor, the `pinnedFor` fallback and the backup DTO's `weekday` went with it. A
+  program's slots are the only source of a dated plan; with no active program there is then **no *Today*
+  list**, which is the point rather than a regression. Getting a day back means putting the template in a
+  program, which is the rule being stated.
   ([evidence](DECISIONS-EVIDENCE.md#n56))
 - **Looking at a planned workout and starting it are two gestures** (N55). A program's next-up row is
   the one place a workout can be seen before it is begun, and it used to offer only the start. The row
@@ -309,33 +299,25 @@ the rule; that one argues it.
   outside 5–3600 seconds as `DataError.Invalid`. (It used to argue from the value becoming an
   alarm; the alert is gone with N26, and the bounds are still right.)
 
-- **Progression was double progression, and it only ever suggested** (N22, withdrawn by N59). Add reps
-  to the plan's rep ceiling, then the smallest loadable step (2.5 kg) and start the range again;
-  a percentage rule needs a true one-rep max this app estimates rather than measures, and
-  a linear weekly add ignores missed sessions. Assisted work inverts the direction, and
-  with no plan there is no ceiling. **Withdrawn**: N59 states the next set on the screen and leaves the
-  step to the lifter, so nothing computed a progression at the time; **N50 has since put one back at
-  *Done*, earned from the plan's own target RPE rather than from the rep ceiling** (below).
-  ([evidence](DECISIONS-EVIDENCE.md#n22))
-- **A suggestion carried its reason, and null meant "nothing to explain"** (N22, withdrawn by N59).
-  Only the three progression reasons drew a line; a line on a plain prefill would have trained the user
-  to ignore the line that mattered. With the offer withdrawn the lines are gone: nothing on the screen
-  is explained, because nothing on it was chosen by the app.
+- **Progression is not double progression** (N22, withdrawn by N59; N50/N74 put a gated version back).
+  Adding reps to the plan's rep ceiling and then the smallest loadable step was rejected: a percentage
+  rule needs a true one-rep max this app estimates rather than measures, a linear weekly add ignores
+  missed sessions, and assisted work inverts the direction. The offer that exists is earned from the
+  plan's own target RPE and asked at *Done* (below).
   ([evidence](DECISIONS-EVIDENCE.md#n22))
 - **The app suggests; it never writes.** A silently applied suggestion is a programme
   decision taken without the person training, and this app is a log, not a coach.
 - **Warm-ups are excluded from progression too** (N17, N20, N22) — a warm-up is not the
   work a target is measured against.
 - **The progression is asked at *Done*, and the plan's own target RPE is what earns it** (N50). A plan's
-  working set carries a target RPE (N14, P3.8), and where **every** prescribed working set was performed
+  working set carries a target RPE (N14, N59), and where **every** prescribed working set was performed
   with its reps met at or under that target the session had room in hand, so *Done* offers the next step
   as the lifter's choice: the smallest loadable step, or a rep — and **only a rep where the plan names no
   added weight**, because an assisted set stores the machine's help as a magnitude with zero kilograms
   and a bodyweight set stores zero, so neither has a load a step can raise: offering `0 → 2.5 kg` there
   would write a weight that `Weight.display` then hides behind the assistance. *Every* prescribed set is
-  **the plan the screen showed**, the slot's rows merged with the template's per index (P3.8), not the
-  slot's alone — otherwise a slot overriding one of three sets made "every" mean one, and paired it with
-  the wrong performance. **N74 amends both halves of that**: every set was judged as one, and the single
+  **the plan the screen showed** — the template's own rows, since N73 removed the slot's — where a slot
+  that overrode one of three sets used to make "every" mean one and pair it with the wrong performance. **N74 amends both halves of that**: every set was judged as one, and the single
   step always landed on the last of them, so a set that answered the plan earned nothing when a sibling
   missed and the dialog named no set at all. It is not N22's rule restored — that computed from the rep
   ceiling alone and offered itself beside the next set, where this one is conditioned on the session's own
@@ -345,10 +327,9 @@ the rule; that one argues it.
   *Done* simply finishes the exercise. **The rating is never on this path** — *How did that feel?* is
   opened from the exercise's own row, when the lifter reaches for it, because asking on the way out asks
   at the moment the answer is worth least.
-  **Accepting writes the plan** — the slot's prescription for a program start (P3.8), the
-  template's planned set for a direct one, and since N73 the template's alone, because a slot prescribes
-  nothing of its own — because the plan is what the next run reads; a "next target"
-  stored on the session was rejected as the forward view N16 removed. The write carries the **set's own**
+  **Accepting writes the plan** — the template's planned set, for a program start and a direct one
+  alike, because a slot prescribes nothing of its own (N73) — because the plan is what the next run
+  reads; a "next target" stored on the session was rejected as the forward view N16 removed. The write carries the **set's own**
   stored effort rather than the exercise's number the rule read, so a plan whose one field is cleared
   later is not resurrected by a copy the accept left behind.
 - **Progression is offered per prescribed set, inside the plan's rep range** (N74, amending N50). *Done*
@@ -384,12 +365,6 @@ the rule; that one argues it.
   app moves to the next member with no rest and starts the rest after the **last** one,
   otherwise pairing defeats itself; the rest is the group's longest member or the app
   default, and labels are giant-set notation: A1, A2, A3.
-- **N24 is a schema change, done by the book**: migration 15→16, an exported `16.json`, a
-  `MigrationTestHelper` case seeding a real superset, and registration in `ALL_MIGRATIONS`
-  — columns land with the code that reads them. It is the first *structural* change since
-  the features after N14, and those per-exercise features do not need revisiting.
-  ([evidence](DECISIONS-EVIDENCE.md#n24-codec))
-
 - **A major release may start a new store instead of migrating one** (N104). 2.0 opens a **new database
   file** at schema 1 and never opens 1.x's, so there is nothing to migrate and nothing to truncate:
   `fallbackToDestructiveMigration` stays absent, because the old store is left **alone** rather than
@@ -454,14 +429,6 @@ the rule; that one argues it.
 - **An unmeasured tape site stays blank** (N32) — carrying a value forward is
   indistinguishable from a measurement and draws a flat line through a site nobody
   measured.
-
-- **One tap logs what happened; the app's idea of what should happen was an offer** (N33, withdrawn by
-  N59). Prefill and progression proposal were separate fields, so a suggestion was not committed by
-  the next tap; the rule was global, not program-only, because how a workout was started
-  says nothing about whether its lifter progresses by hand. **Withdrawn**: N59 makes the next set's
-  values fields the lifter reads and changes before committing, so a separate proposal had nothing left
-  to add and there was no button left to accept one on.
-  ([evidence](DECISIONS-EVIDENCE.md#n33))
 
 - **CI runs nightly and before a release, not on every push** (N30). The emulator is the
   one piece of infrastructure that has failed without a test running, so a per-push run
@@ -609,11 +576,9 @@ the rule; that one argues it.
 - **A destination belongs in the action row, and a heading does not carry a way out of itself**
   (N42). Programs moved from the home overflow into the pair above the start pill, and "See all
   workouts" left the *Recent* heading: a control that leaves a section duplicates the tab bar, and
-  the screen the whole scheduling half is edited from does not belong behind a menu. Keeping both
-  entry points "just in case" was rejected — it is what made the tab a second path to everywhere
-  else. **The heading itself has since gone with the list it headed** (N102), which is this rule
-  taken to its end rather than a departure from it: a section that no longer exists cannot carry a
-  way out of itself, and the ways in are rows in the body.
+  keeping both entry points "just in case" is what made the tab a second path to everywhere else.
+  **The heading itself has since gone with the list it headed** (N102), which is this rule taken to its
+  end: a section that no longer exists cannot carry a way out of itself.
   ([evidence](DECISIONS-EVIDENCE.md#n42))
 - **A repeat is addressed to a workout, and a row's second action is an icon** (N48, amending N29).
   The one-tap copy of exercises and order is the same; what changed is that it names its source, so
@@ -676,12 +641,11 @@ the rule; that one argues it.
   and their contents discarded on upgrade; templates, planned sets and every logged workout stay. The
   **prefill history** is still the slot's own (`slotPreviousPerformance`), because that is what the
   lifter did rather than what the plan says.
-- **A program orders templates; a slot is a template plus an optional weekday** (P3.3). It is
-  the container N16's pins cannot be on their own: a pin says what happens on a Tuesday, but
-  nothing orders the pins against each other, so "which one is next" has no answer. A
-  weekday-less slot is order-only and is never "missed" — it has no day to miss. Today's plan
-  comes from the slot pinned to today, and **with no program active home falls back to the
-  template pins it already reads**.
+- **A program orders templates; a slot is a template plus an optional weekday** (P3.3). A weekday says
+  what happens on a Tuesday, but nothing orders the weekdays against each other, so "which one is next"
+  would have no answer; the slot is that order. A weekday-less slot is order-only and is never "missed"
+  — it has no day to miss. Today's plan comes from the slot pinned to today, and **with no active
+  program there is no *Today* list** (N56), because a template carries no day.
 - **A skipped occurrence is an event keyed by slot and week** (P3.3). `program_skips` stores the
   week's Monday as an epoch day, never a boolean on the slot: the same weekday recurs, so a flag
   would need resetting and would be wrong the moment two weeks in a row were missed. The
@@ -719,34 +683,11 @@ the rule; that one argues it.
   first is a decision the lifter made. The rows already on disk take their `rowid` as the
   position, which is the only order they carried; a name tie-break would have reshuffled them
   the moment one was moved.
-- **A slot prescribes its own intensity, and an empty prescription leaves the template's targets
-  standing** (P3.8, extending N14). The prescribed sets are rows of their own — a
-  `program_slot_exercises` row for the rest, the **one RPE** and the cue, `program_slot_sets` for the
-  sets — so two slots pointing at one template can train it differently, which naming a template alone
-  could not. The vocabulary is the plan's (role, the split load, the rep range, a note) plus one a
-  template's planned set cannot carry: a percentage of the estimated one-rep max. **The planned RPE is
-  the exercise's, one number for every set it prescribes** — a plan asks for an effort, while the set
-  logged against it records what that set actually felt like, one per set (N6, N59) — and a migration
-  seeds it from the per-set values a plan already carried, which stay in their columns so an older
-  backup still restores whole. **The fallback is for a plan that never named one at the exercise level,
-  not for one that was cleared**: saving a blank field over an exercise that had a number clears the
-  legacy per-set values in the same transaction, or the reader would resurrect the effort the lifter
-  just removed. Every target is nullable and nothing verifies it, for N14's reason.
-- **A percentage is derived, never assumed** (P3.8, from N17). The kilograms are Epley's estimate of
-  the exercise's heaviest working set, rounded to the loadable step. An exercise with nothing
-  estimable leaves the load open and history prefills it, which is "no number" said honestly rather
-  than a borrowed one; a weight the slot writes wins over its own percentage, because the two are
-  alternatives rather than a sum.
-- **The slot travels as a start argument, never as a stored fact** (P3.8). Home already knows which
-  slot it is starting, so the route carries the slot id and it seeds the rest, cue and targets; the
-  session still records only the template (P3.3), so provenance and occurrence matching are
-  unchanged. Storing it would make the session's provenance say two things and would go stale the
-  moment the slot moved.
-- **Progression is offered per slot, from that slot's own history** (P3.8, extending N22 and N33).
-  A session names only the template, so which slot it belongs to is P3.3's occurrence matching —
-  `sessionAssignments`, read where the session rather than the occurrence matters — and a heavy
-  Monday and a light Friday progress apart. Keying the history by template alone was rejected: it is
-  exactly what makes two slots progress together. Nothing is written unless the lifter accepts it.
+- **The slot travels as a start argument, never as a stored fact** (P3.8, narrowed by N73). Home knows
+  which slot it is starting, so the route carries the slot id and the session's own history reads it for
+  the prefill (N73); the session still records only the template (P3.3), so provenance and occurrence
+  matching are unchanged. Storing it would make the session's provenance say two things and would go
+  stale the moment the slot moved.
 - **A program's order is a run, derived from what was done rather than a stored cursor** (P3.9).
   The next slot follows the last slot trained or consciously skipped; a day simply missed leaves the
   run where it is, which is what the missed-day question is for, and an edited program re-derives
@@ -762,7 +703,7 @@ the rule; that one argues it.
   calendar**: a deload week's scheduled occurrences are neither done, skipped nor missed, so a
   deliberate back-off cannot read as a failure, while its sessions still mark their days and the
   missed-day question still asks in that week. **Nothing is scaled for you** — what a deload week
-  prescribes is what the slot prescribes (P3.8) — and a week that has not started cannot be marked,
+  prescribes is what the slot's template prescribes (N73) — and a week that has not started cannot be marked,
   because the app has no forward view and a deload is decided by how the block is going.
 - **A substitute is an event keyed by slot and week, and it stands in for matching** (P3.11). The
   pick is made at the point of starting, like the missed-day question, and recorded for that slot
@@ -783,7 +724,7 @@ the rule; that one argues it.
 - **A substitute trained from a next-up row is an ordinary session, and P3.9 advances the run past its
   template** (N85). A next-up row has no occurrence to key a substitution to — the run is calendar-free and
   `ProgramRun` carries no week — so the pick records nothing and the workout starts from the chosen template
-  with the slot's prescription seeding it (P3.8). What it does **not** do is hold the run still, which an
+  with the slot's id travelling for the prefill history (N73). What it does **not** do is hold the run still, which an
   earlier version of the entry claimed. The session names the template it trained, and P3.9's run follows the
   last slot trained, so a pick naming another slot of the same program moves the run past that slot exactly
   as starting that template from the templates tab would; recording no substitution means only that history
@@ -924,22 +865,21 @@ the rule; that one argues it.
   field added to that copy later belongs on one side of the line or the other, and the line is: **is this what
   the variation does, or what it is done with?**
 - **A program document is its own format, and every exercise it names travels with it** (N47). The
-  backup is a restore of a whole database, so it cannot be the way one program is handed over; this
-  is a document with a **version of its own**, carrying the program's *definition* — slots, the
-  templates they name, their planned work, what each slot prescribes — and not its history, because
-  skips, deloads and substitutions belong to the device that trained them. Exercise ids are why it
-  carries more than references: a seeded slug means the same thing everywhere, but a user's own
-  exercise id means nothing on the receiving device, so the definition travels whole and the
-  receiver creates what it lacks. Loading **merges by id and overwrites nothing**, so the same file
-  twice is a no-op, and the program arrives **inactive and last**, because following one is a choice
-  (P3.3) and the authored order is the user's (P3.12). A movement whose exercise is nowhere is
-  dropped rather than failing the foreign key and rolling the document back — and **"nowhere"
-  includes a row this device has deleted** (B51): a hidden row is not one the load may resurrect,
-  because un-deleting a lift is a write to the library, so the movement is dropped and the count is
-  worded "not in your library", which is true of both cases. A prescription is placed only where the
-  slot's template actually trains its exercise (B56), the rule the interactive writes already
-  enforced through `requireExerciseInTemplate` — the import writes raw rows, so it re-asks the
-  question against what the template holds *after* the carried exercises land.
+  backup is a restore of a whole database, so it cannot be the way one program is handed over; this is
+  a document with a **version of its own**, carrying the program's *definition* — the program, its
+  slots, the templates those slots name and their planned work — and not its history, because skips,
+  deloads and substitutions belong to the device that trained them. Exercise ids are why it carries
+  more than references: a seeded slug means the same thing everywhere, but a user's own exercise id
+  means nothing on the receiving device, so the definition travels whole and the receiver creates what
+  it lacks. Loading **merges by id and overwrites nothing**, so the same file twice is a no-op, and the
+  program arrives **inactive and last**, because following one is a choice (P3.3) and the authored
+  order is the user's (P3.12). A movement whose exercise is nowhere is dropped rather than failing the
+  foreign key and rolling the document back — and **"nowhere" includes a row this device has deleted**
+  (B51): a hidden row is not one the load may resurrect, because un-deleting a lift is a write to the
+  library, so the movement is dropped and the count is worded "not in your library". A carried planned
+  set is placed only where its template actually trains its exercise (B56), the rule the interactive
+  writes already enforced through `requireExerciseInTemplate` — the import writes raw rows, so it
+  re-asks the question against what the template holds *after* the carried exercises land.
   ([evidence](DECISIONS-EVIDENCE.md#n47))
 
 ## Adherence
@@ -960,10 +900,10 @@ the rule; that one argues it.
   A rolling window drawn beside the grid was rejected because the number and the grid would then
   be counting different things.
 - **With no active program there is no ratio, and the calendar still marks the days trained**
-  (P3.5). A trained day needs no schedule; a ratio does. The N16 pins home falls back to carry no
-  skip record, so a rest on a pinned day is indistinguishable from a miss, and scoring the pins
-  was rejected for exactly that reason: it would turn every deliberate rest into a failure. A
-  month with no elapsed scheduled day says so rather than reporting 0% or 100%.
+  (P3.5). A trained day needs no schedule; a ratio does, and without an active program there is no
+  schedule at all (N56). The template pins that used to stand in carried no skip record — a deliberate
+  rest on one was indistinguishable from a miss — so scoring them was rejected. A month with no elapsed
+  scheduled day says so rather than reporting 0% or 100%.
 - **A trained day is the finished session's own day, and a week is taken in that session's own
   zone** (P3.5, extending N25 and B45). A workout performed abroad marks the day it happened even
   when the device's month has moved on, and weeks stay Monday-start in that same zone because
@@ -994,8 +934,8 @@ the rule; that one argues it.
   trains — which is what answers "am I skipping *this lift*, or this day": a lift trained by two
   slots is counted in both, so those rows deliberately do **not** sum to the month's total the way
   the per-slot rows do. Counts, not a per-row percentage: two of three is not 67% of anything worth
-  printing. It needs an active program, for the ratio's reason (P3.5): the pins carry no skip
-  record to break down. No schema change — every row is the aggregate P3.5 already reads.
+  printing. It needs an active program, for the ratio's reason (P3.5): with no schedule there is
+  nothing to break down. No schema change — every row is the aggregate P3.5 already reads.
 
 - **A streak counts scheduled occurrences, not days, and is shown with its start** (P3.15).
   Consecutive calendar days was rejected because it would break on every rest day, and by P3.5's
@@ -1122,8 +1062,6 @@ stop being true:
 
 - Process death mid-workout resumes the session with its set and rest intact.
 - The library renders on the very first read after `pm clear`.
-- v1.1 installed over v1.0 and kept the history — dated, and now historical. 2.0 starts a new store
-  and the 1.x chain is gone with it (N104), so there is no upgrade step left to check.
 - The three-way muscle split reaches a fresh install's pickers (N75): the readiness note offers
   *Adductors* and has no *Back*, and the library reads *Lats* for a pull-up and *Upper back* for
   a row. The seed is what classifies a fresh store (N105); there is no migration, because 2.0 does

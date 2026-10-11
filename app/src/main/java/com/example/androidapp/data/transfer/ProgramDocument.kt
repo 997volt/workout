@@ -11,7 +11,8 @@ import kotlinx.serialization.Serializable
  * raw-storage shape the mappers speak.
  *
  * **What travels is the program's *definition***: the program, its slots, the templates those
- * slots name, their planned exercises and sets, and what each slot prescribes. **What does not** is
+ * slots name, and their planned exercises and sets — a slot prescribes nothing of its own (N73).
+ * **What does not** is
  * history — skips, deload weeks and substitutions are keyed to weeks and are the lifter's record
  * rather than the program, so a received program starts with no past rather than someone else's.
  *

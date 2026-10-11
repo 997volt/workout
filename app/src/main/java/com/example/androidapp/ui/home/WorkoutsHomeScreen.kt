@@ -95,7 +95,7 @@ fun WorkoutsHomeRoute(
         // Read when a start arrives rather than captured: the session can begin or end while this composes.
         isActive = { state.activeWorkout != null },
         onStart = { intent ->
-            // The slot travels with the template so its prescription seeds the workout (P3.8).
+            // The slot travels with the template so the session's prefill reads that slot's history (N73).
             if (intent.templateId != null) {
                 onStartTemplate(intent.templateId, intent.slotId)
             } else {
@@ -132,7 +132,7 @@ fun WorkoutsHomeRoute(
                 StartIntent(
                     templateId = plan.templateId,
                     // The row being started names it, so "continue with Bench" reads true, and its
-                    // slot is what carries the prescription (P3.8).
+                    // slot travels for the prefill history (N73).
                     slotId = plan.slotId,
                     label = plan.name,
                 ),
@@ -237,8 +237,8 @@ fun WorkoutsHomeScreen(
                 clock = clock,
                 nextUp = state.nextUp,
                 onStartWorkout = onStartWorkout,
-                // A next-up row starts the workout the same way a scheduled one does, so the slot's
-                // prescription travels with it (ROADMAP P3.8).
+                // A next-up row starts the workout the same way a scheduled one does, so the slot id
+                // travels with it for the prefill history (N73).
                 onStartTemplate = onStartTemplate,
                 onOpenPlannedWorkout = onOpenPlannedWorkout,
                 // A next-up row's pick starts the session and records nothing (N85).

@@ -81,9 +81,9 @@ import java.time.DayOfWeek
  * One program: its name, whether it is the active one, and its ordered slots (ROADMAP P3.3).
  *
  * The order is the feature: a slot's weekday answers "what happens on a Tuesday", and its
- * position answers "which one is next". Both are edited here, and neither is inferred. What a slot
- * *prescribes* is edited behind it (P3.8), because a slot pointing at a template is a schedule
- * until it says what to do.
+ * position answers "which one is next". Both are edited here, and neither is inferred. A slot
+ * prescribes nothing of its own (N73): the plan is the template's, and it is read from this screen
+ * rather than edited here.
  */
 @Composable
 fun ProgramEditorRoute(
@@ -234,8 +234,7 @@ private fun EditorErrorMessage(
  * The things the editor can be asked to do before it writes (P3.3, P3.8).
  *
  * Split out because the screen around them is at the length this project allows, and because all
- * are dialogs over the same state: which plan to add, whether to delete, and what a slot
- * prescribes.
+ * are dialogs over the same state: which plan to add, and whether to delete.
  */
 @Composable
 private fun ProgramEditorDialogs(
@@ -442,7 +441,7 @@ private fun ActiveSwitch(
     }
 }
 
-/** One slot: its template, the order it sits in, the day it falls on, and what it prescribes. */
+/** One slot: its template, the order it sits in, and the day it falls on. */
 @Composable
 private fun ProgramSlotBlock(
     slot: ProgramSlot,

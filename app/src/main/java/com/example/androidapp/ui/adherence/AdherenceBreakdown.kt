@@ -48,7 +48,7 @@ internal fun SlotBreakdown(rows: List<SlotAdherence>) {
     }
 }
 
-/** One lift's share of the month, over the slots that prescribe it (ROADMAP P3.14). */
+/** One lift's share of the month, over the slots whose template prescribes it (ROADMAP P3.14). */
 @Composable
 internal fun ExerciseBreakdown(rows: List<ExerciseAdherence>) {
     if (rows.isEmpty()) return

@@ -144,8 +144,9 @@ interface ProgramRepository {
     /**
      * One program as a shareable document, or a failure when it is gone (ROADMAP N47).
      *
-     * The program's **definition**: its slots, the templates they name, their planned work, what
-     * each slot prescribes, and the definition of every exercise those templates reference. History
+     * The program's **definition**: its slots, the templates they name, their planned work, and the
+     * definition of every exercise those templates reference — a slot prescribes nothing of its own
+     * (N73). History
      * — skips, deload weeks, substitutions — stays behind, because it belongs to the device that
      * trained it.
      */

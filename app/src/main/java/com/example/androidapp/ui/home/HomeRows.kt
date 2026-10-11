@@ -151,7 +151,7 @@ private fun TodayPlanCard(
             }
             Button(
                 // The row's identity is the slot's, and the whole row travels: what starts
-                // is the template, and the slot carries its prescription (P3.3, P3.8).
+                // is the template, and the slot id travels for the prefill history (P3.3, N73).
                 onClick = onStart,
                 // Today's planned start and the next-up pill are one action on one plan, so they are one
                 // colour (N83): the tonal container *Log set* draws, rather than the accent.
