@@ -31,8 +31,8 @@ internal object SeedExercises {
      *
      * **The list is a strength and bodybuilding set**: the powerlifting bar lifts with the assistance work
      * that carries them, and the machine, cable, dumbbell and band work a bodybuilding program is built from.
-     * The four equipment values that had no exercise of their own — `KETTLEBELL`, `BAND`, `OTHER` for the ab
-     * wheel — and the four muscles that had no movement of their own — `FOREARMS`, `ADDUCTORS`, and
+     * The three equipment values that had no exercise of their own — `KETTLEBELL`, `BAND` and `OTHER` for the
+     * ab wheel — and the three muscles that had no movement of their own — `FOREARMS`, `ADDUCTORS` and
      * `LOWER_BACK` as a primary — are used here, so every value the pickers offer can be found in the library.
      *
      * **Olympic lifts are deliberately absent.** A category states one primary muscle (N110), and a clean, a
@@ -47,9 +47,9 @@ internal object SeedExercises {
      *
      * A movement the seed leaves **unfiled** states its own three facts, because it has no category to read
      * them from — and one whose family would claim a muscle it does not work states its own for that field,
-     * which is what own-if-stated is for. Two families are the standing cases: the lunge family holds no single
-     * primary muscle, so each of its movements states its own, and a close-grip bench press is filed under
-     * *Bench Press* while stating the triceps it is actually trained for.
+     * which is what own-if-stated is for. Two rows are the standing cases: the walking and reverse lunges are
+     * filed under *Lunge* while stating the glutes that family does not name as its primary, and a close-grip
+     * bench press is filed under *Bench Press* while stating the triceps it is actually trained for.
      */
     val all: List<Exercise> = listOf(
         // ---- Chest ----

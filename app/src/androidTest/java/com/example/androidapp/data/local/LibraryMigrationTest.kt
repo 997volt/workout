@@ -10,6 +10,7 @@ import com.example.androidapp.domain.model.RowKind
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -133,6 +134,49 @@ class LibraryMigrationTest {
         assertEquals("cat-bench", row.parentId)
         assertEquals(MuscleGroup.CHEST, row.primaryMuscle)
         assertEquals(Equipment.BARBELL, row.equipment)
+    }
+
+    @Test
+    fun aCycle_isCleared_ratherThanLeftPointingAtItself() = runTest {
+        // B92, N110: the migration is the second place the shape rule runs, and a file is the one place a
+        // cycle can arrive. A cycle has no category to re-file onto, so the link goes rather than pointing at
+        // the row itself — which is what a one-hop reparent leaves, and what the import's walk already refuses.
+        val dao = database.exerciseDao()
+        dao.insertAll(
+            listOf(
+                movement("a", parent = "b", primary = null, secondary = emptyList(), equipment = null),
+                movement("b", parent = "a", primary = null, secondary = emptyList(), equipment = null),
+            ),
+        )
+
+        MIGRATION_1_2.migrate(database.openHelper.writableDatabase)
+
+        val rows = dao.findAllIncludingDeleted().associateBy { it.id }
+        assertNull(rows.getValue("a").parentId)
+        assertNull(rows.getValue("b").parentId)
+    }
+
+    @Test
+    fun aChainDeeperThanTheAppWrites_reachesTheFirstCategory() = runTest {
+        // The walk goes to the first category rather than one hop (B92, N110). The app's own store is at most
+        // category, movement, variation, but a file can carry a longer chain and a single hop would leave the
+        // row filed under a movement — the shape this migration exists to remove.
+        val dao = database.exerciseDao()
+        dao.insertAll(
+            listOf(
+                category("cat-bench", "Bench Press", MuscleGroup.CHEST, emptyList()),
+                movement("c", parent = "cat-bench", primary = null, secondary = emptyList(), equipment = null),
+                movement("b", parent = "c", primary = null, secondary = emptyList(), equipment = null),
+                movement("a", parent = "b", primary = null, secondary = emptyList(), equipment = null),
+            ),
+        )
+
+        MIGRATION_1_2.migrate(database.openHelper.writableDatabase)
+
+        val rows = dao.findAllIncludingDeleted().associateBy { it.id }
+        assertEquals("cat-bench", rows.getValue("a").parentId)
+        assertEquals("cat-bench", rows.getValue("b").parentId)
+        assertEquals("cat-bench", rows.getValue("c").parentId)
     }
 
     private fun category(

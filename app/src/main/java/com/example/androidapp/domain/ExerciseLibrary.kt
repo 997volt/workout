@@ -35,14 +35,6 @@ fun libraryRows(
     query: String,
     foldedCategories: Set<String> = emptySet(),
     /**
-     * False to list the movements flat, with no heads and no folding, but still filtered by [query].
-     *
-     * The pickers are why this exists: they share this list and this search, and a picker that offered
-     * families would be offering a row that cannot be logged (N95's "never offered"). Flat is also the
-     * honest shape there — a lifter choosing what they just did is looking for one name, not a tree.
-     */
-    grouped: Boolean = true,
-    /**
      * Every row by id, removed ones included, for resolving what a category passes down (ROADMAP N95).
      *
      * Defaults to [exercises], so a caller with nothing removed needs to say nothing. The library passes the
@@ -51,22 +43,11 @@ fun libraryRows(
      */
     headResolver: List<Exercise> = exercises,
 ): List<LibraryRow> {
-    // The query is trimmed **once**, here, so every caller searches the same way. The trim used to live in
-    // `ExerciseSearch.filter`, which the flat branch never went through, so a query of only spaces — blank to
-    // v1.16 — matched nothing (B87).
+    // The query is trimmed **once**, here, so every caller searches the same way. The trim used to live in a
+    // filter this list no longer has, so a query of only spaces — blank to v1.16 — matched nothing (B87).
     val trimmed = query.trim()
     val byId = exercises.associateBy { it.id }
     val matched = exercises.filter { it.matchesWithItsFamily(trimmed, byId) }.mapTo(mutableSetOf()) { it.id }
-
-    if (!grouped) {
-        // Movements only, and **filtered by the query** (B79): the picker passes its search text here, and
-        // the flat branch used to ignore it, so typing did nothing at all. A row matches through its family
-        // for the same reason it does in the library, so "bench" finds a movement that never says bench.
-        return exercises
-            .filter { it.rowKind.isLoggable && it.id in matched }
-            .sortedBy { it.name }
-            .map { it.toLibraryRow(depth = 0, library = headResolver) }
-    }
 
     // What both grouping passes read, in one value rather than six parameters: they are the same question
     // asked twice — what is filed under this, and what is left over — so they read the same facts.

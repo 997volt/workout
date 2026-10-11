@@ -192,15 +192,23 @@ class ProgramDocumentTest {
     )
 
     @Test
-    fun aDocumentCarryingAVariation_carriesItsAncestors() = runTest {
-        // ROADMAP N103: a variation's parent is part of its definition. Without the chain the receiving
-        // device would create the variation with nothing to name it under — and, once a row inherits rather
-        // than copies, nothing to inherit from.
+    fun aDocumentCarryingAFormerVariation_flattensItOntoItsCategory() = runTest {
+        // ROADMAP N103, N110: a movement's category is part of its definition, so the whole chain travels and a
+        // receiving device has something to file the movement under. What it **writes** is the new shape — a
+        // movement is nobody's head — so the link to the movement above is replaced by its category and what
+        // the row used to read from that movement is written down first, or the facts would be lost with it.
         database.exerciseDao().insertAll(
             listOf(
                 exercise("cat-bench", name = "Bench Press", rowKind = RowKind.CATEGORY),
                 exercise("barbell-bench-press", name = "Barbell Bench Press", parentId = "cat-bench"),
-                exercise("paused-bench", name = "Paused Bench", parentId = "barbell-bench-press"),
+                // A variation as an older build wrote one: it states nothing and read every fact from the row
+                // above it, which is why the fold has to run before the link moves.
+                exercise("paused-bench", name = "Paused Bench", parentId = "barbell-bench-press").copy(
+                    primaryMuscle = null,
+                    secondaryMuscles = emptyList(),
+                    equipment = null,
+                    movementPattern = null,
+                ),
             ),
         )
 
@@ -210,8 +218,13 @@ class ProgramDocumentTest {
         importOf(file)
 
         val restored = database.exerciseDao().findAllIncludingDeleted().associateBy { it.id }
-        // The movement travels, and so does the head above it.
+        // The chain travelled, so the category arrives and both movements are filed under it (N110).
         assertEquals("cat-bench", restored.getValue("barbell-bench-press").parentId)
-        assertEquals("barbell-bench-press", restored.getValue("paused-bench").parentId)
+        assertEquals("cat-bench", restored.getValue("paused-bench").parentId)
+        // And what the movement read from the row above it is written onto the row, so nothing the document
+        // carried is lost with the link.
+        assertEquals(MuscleGroup.QUADS, restored.getValue("paused-bench").primaryMuscle)
+        assertEquals(Equipment.BARBELL, restored.getValue("paused-bench").equipment)
+        assertEquals(MovementPattern.SQUAT, restored.getValue("paused-bench").movementPattern)
     }
 }

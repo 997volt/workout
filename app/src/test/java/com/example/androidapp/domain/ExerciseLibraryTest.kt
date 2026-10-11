@@ -284,20 +284,6 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun theFlatList_isFilteredByTheQuery_andOffersNoCategories() {
-        // B79: the picker's flat branch ignored its query. It is movements only, still, and a movement is
-        // found through the category it is filed under.
-        val rows = libraryRows(library, query = "bench", grouped = false)
-
-        assertThat(rows.map { it.name }).containsExactly(
-            "Barbell Bench Press",
-            "Dumbbell Bench Press",
-            "Speed Day",
-        ).inOrder()
-        assertThat(rows.none { it.isCategory }).isTrue()
-    }
-
-    @Test
     fun theShapeRule_flattensAMovementUnderAMovement_andClearsACycle() {
         // B92, N110: an imported file is the one place a link this app would never write can arrive. A
         // movement filed under a movement is what every variation in an older file is, so it is **folded onto
