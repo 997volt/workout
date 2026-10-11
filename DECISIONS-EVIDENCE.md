@@ -1189,10 +1189,10 @@ had been reading, and a paused bench with no bar would be a wrong row rather tha
 
 **The editor had to stop hiding fields.** N103's rule was "a field a head supplies is not offered at all", which
 was right while a head outranked its child. Under own-if-stated a movement *may* disagree with its family, and
-the lunge family is the standing case: it holds no single primary muscle, so each of its two movements states
-its own. A picker that cannot offer the field cannot express that, so all three are offered and the *not stated*
-option names the value it will resolve to — the first time the inherited value is visible where it is chosen
-rather than only behind it.
+the lunge family is the standing case: the family states Quads, and the walking and reverse lunges state Glutes
+instead while the split squat and step-up read the family's. A picker that cannot offer the field cannot express
+that, so all three are offered and the *not stated* option names the value it will resolve to — the first time
+the inherited value is visible where it is chosen rather than only behind it.
 
 **An existing store is migrated and a file is flattened, because neither may lose a family.** The schema does
 not change, so the migration is data: fill the seeded categories from the seed itself, write down what each

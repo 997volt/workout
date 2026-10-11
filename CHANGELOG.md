@@ -57,14 +57,15 @@ unreleased.
   `rowKind`, and the narrower roll-up it bought is one the category already offers — a category's series has
   always read its movements' variations too, so **no family's numbers move**. A movement's **movement
   pattern, primary muscle and secondary muscles are its category's until it states its own**, so a family
-  states what its members share and the odd one out states its own — the lunge family has no single primary
-  muscle, so each of its two movements keeps one. **Equipment is never inherited**, because a family spans
+  states what its members share and the odd one out states its own — the lunge family states Quads, and the
+  walking and reverse lunges state Glutes instead. **Equipment is never inherited**, because a family spans
   equipment: the lat pulldown family alone holds a cable, a bodyweight and a machine movement. The editor now
   offers those three fields rather than hiding the ones a category supplies, and shows what *not stated*
   resolves to, because under own-if-stated a movement may disagree with its family and a hidden picker cannot
   say so. A library written by the previous build is carried across by a **data migration** that fills the
   seeded categories from the seed itself, writes down what each variation used to read from the lift above
-  it, and re-files it under the category — leaving any value a lifter set alone. An older backup or program
+  it, and re-files it under the category — leaving any value a lifter set alone and clearing a link that is a
+  cycle rather than turning it into a self-parent. An older backup or program
   document is **flattened the same way on import** rather than refused, so the family survives the trip.
 
 ### Removed
@@ -97,6 +98,31 @@ unreleased.
   leads with its name rather than with *Other · Other*. Both joins also resolve the category a movement is
   filed under, so a movement that leaves the muscle to its family still reads it; equipment is not
   inherited, because a family spans equipment.
+
+- **The program document's import is pinned to the shape it now writes** (B104). N110 re-files a movement
+  filed under a movement onto its category on import, which is what a document written before the change
+  carries, and the test still asserted the old link — so the instrumented suite was red while the default gate,
+  which never compiles that source set, stayed green. The test now asserts the flattened parent **and** the
+  facts the fold writes onto the row, so the behaviour and the test agree.
+
+- **`libraryRows`' flat branch is gone** (B105). Its `grouped` parameter existed for the pickers, and the picker
+  was moved to the grouped list in the same release, so nothing under `main` passed `grouped = false` — the
+  branch, its parameter and the test that was its only caller are deleted, and the search's trim is documented
+  as what it is rather than as the flat branch's reason.
+
+- **The lunge family's documentation matches the seed** (B106). Four files said the family "holds no single
+  primary muscle" and had two movements stating their own; the seed gives it `QUADS` and files four movements
+  under it, of which the walking and reverse lunges state `GLUTES` and the other two read the family's. The
+  sentence now says what own-if-stated actually demonstrates: a member disagreeing with its family.
+
+- **The seed's own doc counts what was added** (B107). Its KDoc said "four" equipment values and "four" muscles
+  where three of each had no exercise of their own — `KETTLEBELL`, `BAND` and `OTHER`, and `FOREARMS`,
+  `ADDUCTORS` and `LOWER_BACK` as a primary. The counts now match the seed and this entry.
+
+- **The library migration clears a cycle instead of leaving a self-parent** (B108). The re-file was one SQL hop,
+  so a cycle — which a file can carry — became two rows pointing at themselves rather than the link going. The
+  walk now carries the same `seen` guard the import's shape rule does, and reaches the first category however
+  long the chain is. Two instrumented tests hold it.
 
 ## [2.0] — 2026-10-11 (versionCode 20)
 

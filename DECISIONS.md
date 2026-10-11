@@ -840,10 +840,11 @@ the rule; that one argues it.
   inherits**: a family spans equipment — the lat pulldown family alone holds a cable, a bodyweight and a machine
   movement — so a category cannot state one for its members, and the movement's own answer is the only one.
   **The seed follows**: a category states its pattern, its primary muscle and its secondary list once, and a
-  movement under it states its equipment alone unless its family's answer would be wrong — the lunge family has
-  no single primary muscle, so each of its two movements states its own. **The editor offers every field and
-  *not stated* names what it resolves to**, because under own-if-stated a movement may disagree with its family
-  and a picker that could not offer the field could not express it.
+  movement under it states its equipment alone unless its family's answer would be wrong. The lunge family is
+  the standing case: it states Quads, and the walking and reverse lunges state Glutes instead — a member
+  disagreeing with its family, which is what own-if-stated is for — while the split squat and step-up read the
+  family's. **The editor offers every field and *not stated* names what it resolves to**, because a movement may
+  disagree with its family and a picker that could not offer the field could not express it.
   ([evidence](DECISIONS-EVIDENCE.md#n110))
 - **The movement pattern is a row's own when it states one, and its family's when it does not** (N96,
   amended by N103 and N110). Whether a family presses or hinges is the family's to decide, so the seed states it once
