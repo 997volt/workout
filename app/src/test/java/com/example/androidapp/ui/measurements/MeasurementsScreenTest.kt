@@ -1,12 +1,17 @@
 package com.example.androidapp.ui.measurements
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.R
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.ui.components.TestTags
@@ -42,6 +47,8 @@ class MeasurementsScreenTest {
         state: MeasurementsUiState = MeasurementsUiState(isLoading = false, entries = listOf(today)),
         onSave: (BodyMeasurement) -> Unit = {},
         onDelete: (String) -> Unit = {},
+        error: DataError? = null,
+        onDismissError: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -50,9 +57,21 @@ class MeasurementsScreenTest {
                     onSave = onSave,
                     onDelete = onDelete,
                     onBack = {},
+                    error = error,
+                    onDismissError = onDismissError,
                 )
             }
         }
+    }
+
+    @Test
+    fun aFailedWrite_isSurfaced_ratherThanSilent() {
+        // B102: the ViewModel reported a failure, but nothing read it, so a save or delete that did not
+        // land said nothing at all. Every other screen shows the same message through a snackbar.
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        setScreen(error = DataError.Storage(IllegalStateException()))
+
+        composeTestRule.onNodeWithText(context.getString(R.string.workout_error_storage)).assertExists()
     }
 
     @Test

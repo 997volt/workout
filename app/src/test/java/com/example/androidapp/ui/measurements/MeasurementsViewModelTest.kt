@@ -70,6 +70,23 @@ class MeasurementsViewModelTest {
         assertNull("and cleared by the next save that works", viewModel.error.value)
     }
 
+    @Test
+    fun dismissingTheError_clearsIt() = runTest(dispatcher) {
+        val repository = FakeMeasurementRepository(entries)
+        repository.failNextSave = true
+        val viewModel = MeasurementsViewModel(repository)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(entry("", weight = 82_000L))
+        advanceUntilIdle()
+        assertTrue(viewModel.error.value is DataError.Storage)
+
+        viewModel.onDismissError()
+
+        assertNull("dismissing clears it, so the snackbar is not left owed", viewModel.error.value)
+    }
+
     private fun entry(id: String, weight: Long) = BodyMeasurement(
         id = id,
         measuredAt = Instant.parse("2026-10-02T08:00:00Z"),

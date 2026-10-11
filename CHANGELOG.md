@@ -64,3 +64,11 @@ it afterwards — and note that "delete everything" in 2.0 removes it.
   device-and-moment state the restore discarded — so the codec's one documented round-trip exclusion is
   gone with it.
 
+### Fixed
+
+- **A failed save or delete on Measurements is surfaced** (B102). The ViewModel reported the failure on its
+  error channel, but the screen never read it and `onDismissError` was never called, so a write that did not
+  land said nothing — the one screen that behaved that way while every other one shows the same message
+  through a snackbar. The screen now reads the channel, and the always-null `error` field on its UI state
+  went with the fix.
+

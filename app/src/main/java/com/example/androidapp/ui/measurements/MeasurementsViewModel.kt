@@ -21,7 +21,6 @@ data class MeasurementsUiState(
     val isLoading: Boolean = true,
     /** Entries, newest first — the order the list and the chart both read in. */
     val entries: List<BodyMeasurement> = emptyList(),
-    val error: DataError? = null,
 )
 
 /**

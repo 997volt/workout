@@ -3,13 +3,13 @@
 > **v1.18** is shipped, and **2.0's changes are on `main` with no release cut**. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17;
 > **N96–N102 with B95 shipped as 1.18**, with the six defects a line-by-line reading of that batch found
-> (B96–B101); and **N103–N106, N108 and N109 are implemented**: the taxonomy becoming nullable, the store
-> break that let it happen without a migration — a new database file, the 1.x chain and its schemas deleted,
-> both transfer formats refusing 1.x, and the five retired enum names (four patterns and `BACK`) gone with
-> the files that could carry them — the rest of the legacy the new store cannot hold, the decisions a later
-> id reversed that were still reading as binding, and the two columns and one transfer field nothing read,
-> gone while schema 1 is still unshipped. The 1.x store is left on the device by design, and the 1.18 APK is
-> still the way to read it.
+> (B96–B101); and **N103–N106, N108, N109 and B102 are implemented**: the taxonomy becoming nullable, the
+> store break that let it happen without a migration — a new database file, the 1.x chain and its schemas
+> deleted, both transfer formats refusing 1.x, and the five retired enum names (four patterns and `BACK`)
+> gone with the files that could carry them — the rest of the legacy the new store cannot hold, the decisions
+> a later id reversed that were still reading as binding, the two columns and one transfer field nothing
+> read while schema 1 is still unshipped, and the measurements screen's silent write failure. The 1.x store
+> is left on the device by design, and the 1.18 APK is still the way to read it.
 > Checked against the changelog as well as the code: the unreleased work is under `[Unreleased]` there, every
 > shipped id has its entry, and *Next* holds only N107, which shortens
 > [DECISIONS.md](DECISIONS.md) without dropping a decision. A

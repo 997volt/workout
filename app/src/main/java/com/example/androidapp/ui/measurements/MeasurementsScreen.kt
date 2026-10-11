@@ -20,6 +20,8 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -35,12 +37,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.at
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.MessageSnackbar
+import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.history.HistoryFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -53,12 +58,16 @@ fun MeasurementsRoute(
     viewModel: MeasurementsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
     MeasurementsScreen(
         state = state,
         onSave = viewModel::onSave,
         onDelete = viewModel::onDelete,
         onBack = onBack,
         modifier = modifier,
+        // A failed write is a snackbar, the surface every other screen uses (B102).
+        error = error,
+        onDismissError = viewModel::onDismissError,
     )
 }
 
@@ -70,8 +79,13 @@ fun MeasurementsScreen(
     onDelete: (String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /** A write that failed, or null (B102) — shown as a snackbar, like every other screen's. */
+    error: DataError? = null,
+    onDismissError: () -> Unit = {},
 ) {
     var adding by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    MessageSnackbar(error?.let { dataErrorMessage(it) }, snackbarHostState, onDismissError)
     if (adding) {
         MeasurementDialog(
             onDismiss = { adding = false },
@@ -84,6 +98,7 @@ fun MeasurementsScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.measurements_title)) },
