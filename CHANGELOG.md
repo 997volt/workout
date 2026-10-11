@@ -31,6 +31,15 @@ unreleased.
 
 ### Changed
 
+- **The exercise picker groups movements under their category, exactly as the library does** (P1.1). Adding an
+  exercise to a workout — or to a template, which shares this picker — now shows the families a lifter filed,
+  folded on arrival, with the movements indented under the head that holds them and the ones in no category at
+  the top level. **A head still cannot be chosen**: its tap folds it, and only a movement reaches the add, so
+  N95's "a category is never offered and never logged" now holds at the tap rather than by leaving the heads
+  out of the list. **A search opens what it reaches into**, which the library does not do: the picker is
+  searched mid-workout, and answering with a folded family would cost a tap before the lifter could see what
+  matched.
+
 - **The exercise library opens with every family folded** (P1.1). The list arrives as the families it is —
   the category heads, each with the count of what is inside, plus the movements filed under nothing — instead
   of as a wall of every movement. Tapping a head opens it, and that fold survives a rotation. The editor keeps

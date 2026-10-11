@@ -82,7 +82,6 @@ class TestTagCoverageTest {
             "GOAL",
             "HOME_CLEAR_DATA",
             "HOME_TITLE",
-            "LIBRARY_SEARCH_FIELD",
             "SETTINGS_KEEP_SCREEN_ON",
             "SETTINGS_REST_CUE",
             "SETTINGS_REST_CURRENT",

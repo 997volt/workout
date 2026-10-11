@@ -5,6 +5,7 @@ import com.example.androidapp.domain.model.TemplateSet
 import androidx.lifecycle.SavedStateHandle
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
@@ -106,10 +107,11 @@ class ExercisePickerViewModelTest {
     }
 
     @Test
-    fun theList_offersMovementsOnly_neverACategory() = runTest(dispatcher) {
-        // ROADMAP N95: a category is never offered and never logged. It is a real row of the library, so it
-        // arrives in the same list every other row does -- filtering it here, at the one place a lifter
-        // chooses what to log, is what keeps the rule true rather than merely intended.
+    fun theList_putsTheMovementsUnderTheirCategory() = runTest(dispatcher) {
+        // ROADMAP N95, N110: the picker draws the library's shape, so a lifter who keeps their bench lifts in
+        // one family browses them together here too rather than scrolling a hundred movements for one. What is
+        // *offered* is still a movement alone — a category is never logged — which the list enforces by sending
+        // a head's tap to the fold rather than to the choice.
         val exercises = FakeExerciseRepository(
             listOf(
                 movement("back-squat", "Back Squat"),
@@ -121,21 +123,30 @@ class ExercisePickerViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
+        val rows = viewModel.uiState.value.rows()
+
         assertEquals(
-            listOf("Back Squat", "Barbell Bench Press"),
-            viewModel.uiState.value.items.map { it.name },
+            "families first, each with its movements under it, then the movements filed under nothing",
+            listOf("Bench Press", "Barbell Bench Press", "Back Squat"),
+            rows.map { it.name },
         )
-        assertTrue(
-            "no row the picker offers is a head",
-            viewModel.uiState.value.items.none { it.isCategory },
+        assertEquals(
+            "the head is the one row that is not a movement, and it sits at the top",
+            listOf("Bench Press"),
+            rows.filter { it.isCategory }.map { it.name },
         )
+        assertEquals(
+            "the movement filed under it is drawn one step in",
+            1,
+            rows.single { it.id == "barbell-bench-press" }.depth,
+        )
+        assertEquals(0, rows.single { it.id == "back-squat" }.depth)
     }
 
     @Test
-    fun theList_isFlat_evenWhenAMovementIsFiledUnderACategory() = runTest(dispatcher) {
-        // The picker has nothing to fold: a lifter choosing what they just did is looking for one name, so
-        // a family's children are listed beside everything else rather than nested under a head that is not
-        // there (N95).
+    fun aMovementFiledUnderACategory_isNested_neverFlatBesideIt() = runTest(dispatcher) {
+        // N110's shape on the picker's own screen: one list browses the families and chooses from them, so a
+        // movement's depth is what says it belongs to the head above it.
         val exercises = FakeExerciseRepository(
             listOf(
                 category("cat-bench", "Bench Press"),
@@ -146,7 +157,10 @@ class ExercisePickerViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
-        assertEquals(listOf(0), viewModel.uiState.value.items.map { it.depth }.distinct())
+        val rows = viewModel.uiState.value.rows()
+
+        assertEquals(listOf(0, 1), rows.map { it.depth })
+        assertEquals(listOf("Bench Press", "Barbell Bench Press"), rows.map { it.name })
     }
 
     @Test
@@ -166,7 +180,7 @@ class ExercisePickerViewModelTest {
         viewModel.onQueryChange("back squat")
         advanceUntilIdle()
 
-        assertEquals(listOf("Back Squat"), viewModel.uiState.value.items.map { it.name })
+        assertEquals(listOf("Back Squat"), viewModel.uiState.value.rows().map { it.name })
         assertFalse(viewModel.uiState.value.isEmpty)
     }
 
@@ -215,6 +229,14 @@ class ExercisePickerViewModelTest {
         movementPattern = MovementPattern.OTHER,
         rowKind = RowKind.CATEGORY,
     )
+
+    /**
+     * The rows the picker draws, derived the way the screen derives them (ROADMAP N95).
+     *
+     * Without folds, which is the picker's own rule while a query is typed and the half this test owns: the
+     * state holds the library and the screen holds the folds, so a ViewModel test asserts the grouping.
+     */
+    private fun ExercisePickerUiState.rows() = libraryRows(exercises, query)
 
     @Test
     fun aFailedCreate_reportsIt_andAddsNothing() = runTest(dispatcher) {

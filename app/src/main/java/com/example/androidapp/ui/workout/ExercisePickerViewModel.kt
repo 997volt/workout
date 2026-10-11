@@ -10,8 +10,8 @@ import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.repository.ExerciseRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
-import com.example.androidapp.domain.LibraryRow
 import com.example.androidapp.domain.libraryRows
+import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.ui.navigation.ExercisePicker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -24,26 +24,38 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * What the picker's list shows (ROADMAP N95).
+ * What the picker's list shows (ROADMAP N95, N110).
  *
- * Its own type rather than the library's, because the two screens hold different things now: the library
- * keeps the **whole** library and derives its rows on screen, since which families are open is screen
- * state, while the picker has nothing to fold and holds the filtered list itself.
+ * The **whole** library rather than pre-grouped rows, and that is the library's own division of labour: which
+ * families are open is screen state (`rememberRowFold`, N84's rule), so a grouping done here would have to be
+ * told about it on every fold and would then lag the screen by a frame. The screen holds the folds and calls
+ * the pure [libraryRows] with them.
  */
 data class ExercisePickerUiState(
     val query: String = "",
-    val items: List<LibraryRow> = emptyList(),
+    val exercises: List<Exercise> = emptyList(),
     val isLoading: Boolean = true,
     val error: DataError? = null,
     /**
      * No movement exists at all, as opposed to none matching the query (ROADMAP P1.1a).
      *
-     * The picker offers movements only, so a library holding nothing a lifter can log — including one that
-     * holds categories but no movements — is empty here, and says so rather than blaming the search.
+     * The picker chooses movements, so a library holding nothing a lifter can log — including one that holds
+     * categories but no movements — is empty here, and says so rather than blaming the search.
      */
     val libraryIsEmpty: Boolean = false,
 ) {
-    val isEmpty: Boolean get() = !isLoading && items.isEmpty()
+    /**
+     * Nothing in the list can be chosen — whether because the library holds no movements or because the
+     * search reached none.
+     *
+     * **A head is not an answer here**, which is the difference from the library's own emptiness (N95): a
+     * picker's job is to choose a movement, so a list of families with nothing filed under them is an empty
+     * picker, while the library draws those same families as rows. **Asked without the folds**, because the
+     * answer must not depend on which families happen to be open — a family with movements inside is not
+     * empty either way, and the two kinds of empty are [libraryIsEmpty]'s to tell apart.
+     */
+    val isEmpty: Boolean
+        get() = !isLoading && libraryRows(exercises, query).none { !it.isCategory }
 }
 
 /**
@@ -98,10 +110,11 @@ class ExercisePickerViewModel @Inject constructor(
         val exercises = result.getOrNull().orEmpty()
         ExercisePickerUiState(
             query = currentQuery,
-            // Flat and movements-only (ROADMAP N95): a picker offers what can be logged, and a lifter
-            // choosing what they just did is looking for one name rather than a tree. The query reaches the
-            // flat list (B79), so typing filters it instead of doing nothing.
-            items = libraryRows(exercises, currentQuery, grouped = false),
+            // The whole library, grouped by the screen (ROADMAP N95, N110): the picker draws the same shape
+            // the library does — a category head with the movements filed under it — so a lifter browsing for
+            // what they just did sees the families they filed. What a tap may **choose** is still movements
+            // alone, which the list enforces by routing a head's tap to the fold rather than to the choice.
+            exercises = exercises,
             isLoading = false,
             error = (result as? DataResult.Failure)?.error,
             libraryIsEmpty = exercises.none { it.rowKind.isLoggable },
