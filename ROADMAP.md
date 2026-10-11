@@ -11,9 +11,11 @@
 > and the equipment's own step that a variation was clearing. **All of it has since shipped as 1.18 except
 > N103**, which is a nullable taxonomy — so a row states only what it knows and reads the rest from the head
 > above it.
-> Checked against the changelog as well as the code: every shipped id has its entry there, and N103 is the only
-> one this file still lists as planned. **Reading this batch line by line found six defects (B96–B101); all six
-> are fixed and recorded in [CHANGELOG.md](CHANGELOG.md)**, so *Next* holds N103 alone again.
+> Checked against the changelog as well as the code: every shipped id has its entry there, and **N103 and N104
+> are the only two this file still lists as planned**. Reading this batch line by line found six defects
+> (B96–B101); all six are fixed and recorded in [CHANGELOG.md](CHANGELOG.md), so *Next* holds the taxonomy
+> again — and, planned beside it, **the 2.0 break that makes it a new store instead of a migration (N104)**,
+> affordable only while the log on this device is the only one there is.
 > A line-by-line reading of those N87–N95 changes
 > found sixteen defects; all sixteen are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
 >
@@ -34,8 +36,10 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 **Requests from use**, each with the decision it settles. Everything this round asked for has shipped —
 the pattern vocabulary and its move onto the category, a head that reads as one number, the energy
-adjustment, and the four small requests — each with its entry in [CHANGELOG.md](CHANGELOG.md). **One
-change is left**, and it is the only one that rebuilds a table.
+adjustment, and the four small requests — each with its entry in [CHANGELOG.md](CHANGELOG.md). **Two
+changes are left, and they are one piece of work**: the taxonomy, and the 2.0 break it rides on. The break is
+the licence the taxonomy needed — with no other user yet, 1.x is left behind rather than carried, which
+deletes the migration half of the taxonomy change instead of writing it.
 
 - **N103 — the taxonomy becomes nullable, and a row stops copying what it inherits.** A child's
   taxonomy is a *copy* today: a variation is `parent.copy(...)`, and the seed restates a movement's muscle,
@@ -48,19 +52,17 @@ change is left**, and it is the only one that rebuilds a table.
   `effectivePrimaryMuscle` returns the nearest stating **ancestor** and treats the row's own value as a
   fallback, so a filed exercise's own muscle is written, exported and read by nothing while a head states one
   — and the edit form offers a picker that cannot visibly change anything. One rule ends that.
-  **The migration clears a stored value only where the nearest stating ancestor states the identical value —
-  never blanket-null**: a movement's equipment is genuinely its own, since `barbell-bench-press` states
-  `BARBELL` while the head above it states nothing, so blanking the column would stop the library drawing
-  "Barbell" on every bench. It is scoped to **seeded** rows, which carry one batch timestamp and are therefore
-  recognisable as seed rather than as a lifter's answer. **A row stops being self-contained, and that is the
-  price**: the program document already closes over the parent chain — that half shipped with this round — and
-  the backup's `schemaVersion` **must bump**, because a newer file carries `null` where an older build expects
-  a value. A file written before this stays safe: it carries full copies, and a stated value still wins under
-  the one rule both builds share.
+  **There is no migration, because N104 gives this a new store.** The selective-clear rule this entry used to
+  carry — clear a stored value only where the nearest stating ancestor states the identical value, and only on
+  seeded rows — existed to clean 1.x rows that state what they inherit, and a fresh store has none: the seed
+  writes a null wherever a row means *inherit*, so the library is right the first time it is opened. **A row
+  stops being self-contained, and that is the price**: the program document already closes over the parent
+  chain — that half shipped with this round — and a file written before 2.0 is refused rather than read, since
+  both formats move to v4 and the gate learns a minimum (N104).
   **One winner rule or two — settled here, because implementing this would otherwise hit it mid-way.** N103
   says the winner is own-if-stated for *every* field; N96, which has shipped, says the pattern belongs to the
   category and reads the head. Those agree only while no movement states what its head also states, and the
-  selective clear makes that true of the **data** rather than of the model — so the two rules would diverge the
+  seed makes that true of the **data** rather than of the model — so the two rules would diverge the
   first time a lifter set a pattern by hand. **The resolution is own-if-stated, uniformly**, which is N103's
   rule and one rule rather than two: the category is the pattern's home because nothing under it states one,
   not because it outranks them. That keeps everything N96 bought — a family's pattern decided once, and a row
@@ -68,25 +70,62 @@ change is left**, and it is the only one that rebuilds a table.
   DECISIONS rule N96 landed is amended in the same change, since it currently says the pattern is read off the
   head.
   **What the work touches, in the order that keeps it compiling.** The entity and its two mappers, where the
-  three columns become nullable — the enum-by-name storage is unchanged, which is what lets an older file keep
-  reading. The domain `Exercise` and the resolvers: `effectivePrimaryMuscle` flips to own-if-stated, and an
+  three columns become nullable — the enum-by-name storage is unchanged, so the column keeps reading names
+  rather than ordinals. The domain `Exercise` and the resolvers: `effectivePrimaryMuscle` flips to own-if-stated, and an
   `effectiveEquipment` joins it, so all three read the same way and `effectiveMovementPattern` loses its
   head-wins special case. The seed, whose `barbell(...)` helper stops demanding a taxonomy a movement inherits,
   and the seeder's `INSERT OR IGNORE`. The repository's `create`, `createVariationOf` and `updateExercise` —
   the three places a copy is written. The editor: the draft's fields, and the selectors that must stop offering
   what a head supplies rather than the pattern alone. Both transfer formats, whose DTOs take the nulls and whose
-  codec version must bump. The migration itself, its exported schema, and its `MigrationTestHelper` case.
+  version moves to 4 with the gate's new lower bound (N104). **No migration and no exported schema**: the store
+  is new, so there is nothing to carry.
   **Every one of those is a compile error until the whole set is done**, which is the shape of this change
   rather than an accident of it — and the reason it cannot be landed in pieces.
 
-  **The pattern needs no separate work, and N96's remainder is this migration's own rule.** Its entry
-  used to say the per-exercise column is dropped, which was written before it was clear that a category is
-  a row of the *same* table: there is one `movementPattern` column and it has to survive, because it is
-  where a category states its family's pattern. What N96 has left is the movement-level **values** — a
-  stale `HORIZONTAL_PUSH` still sitting on a filed movement — and clearing those is exactly the
-  selective-clear rule below: a value goes where the nearest stating ancestor states the same fact.
-  Nothing reads it either way, because `effectiveMovementPattern` reads the head; the cleanup is what
-  makes the stored shape say what the model says.
+  **N96's remainder is the seed, not a migration.** Its entry used to say the per-exercise column is
+  dropped, which was written before it was clear that a category is a row of the *same* table: there is one
+  `movementPattern` column and it has to survive, because it is where a category states its family's pattern.
+  What N96 has left is the movement-level **values** — a stale `HORIZONTAL_PUSH` sitting on a filed movement —
+  and on N104's new store the seed never writes one: a movement that inherits states nothing, and the four
+  retired names go with the shim, so there is no value left to clear.
+
+- **N104 — 2.0 starts a new store, and 1.x is not carried across.** The break N103 rides on, and the reason
+  the taxonomy change has no migration. **The mechanism is a new database file** — `workout-2.db` beside the
+  existing `workout.db` — so Room creates it fresh, the seeder populates the library, and the 1.x file is
+  never opened by this build: it stays on the device, untouched and app-private, and **the 1.18 APK is still
+  the way to read it**. Nothing is migrated and nothing is destroyed, which is why this leaves the standing
+  rule against `fallbackToDestructiveMigration()` exactly where it is: the old store is left alone rather
+  than truncated.
+  **What the break deletes, because nothing in 2.0 can reach it**: the 1.x migration chain (`Migrations.kt`
+  and `ALL_MIGRATIONS`), every schema it exported, and `WorkoutDatabaseMigrationTest`. The new store starts
+  at schema **1**, so a fresh `1.json` is written for it and the chained versions' schema files go with the
+  chain — a schema file nobody migrates to is a contract with no counterparty, and the git history holds
+  what they documented. The four retired pattern names and `SELECTABLE_MOVEMENT_PATTERNS` go with them
+  (N96's shim): no 2.0 row, and no file 2.0 will read, can carry one.
+  **Both transfer formats refuse 1.x rather than read it**, and that is a change *to* the gate rather than a
+  way around it (B62): `VersionGate` gains a **minimum** beside its maximum, so a 1.x backup or program
+  document is refused before the decoder, with a sentence that says "written by 1.x" rather than "corrupt" —
+  which is the only reason deleting the retired names is safe, since the decoder is what would have thrown
+  on them. The formats move to **4** and keep counting up, because 1.x files exist and a fresh "1" would
+  name both shapes. A 1.x device and a 2.0 device cannot hand each other a program or a backup either, which
+  is what *no backwards compatibility* means for the two formats.
+  **The price is the history on the device, and the window it is payable in.** A 2.0 install cannot read its
+  own 1.x log, and the export is one-way — 2.0 refuses the file 1.18 writes — so exporting from 1.18 *before*
+  upgrading is part of the release rather than a footnote, and the release notes say so. **This is affordable
+  only because there is no second user yet**: it is a door that closes the first time somebody else's log
+  exists, and after that the same change is a migration done by the book.
+  **"Delete everything" has to mean it**, which is the hard constraint reaching a second store:
+  `clearAllUserData` clears the open database, the goals and the crash logs today, and with two stores it
+  must delete the 1.x file too — otherwise a lifter's "delete everything" leaves their training history on
+  disk in a file no screen mentions.
+  **The release is 2.0**, and `versionCode` keeps increasing, so Android compares it the same way. The rule
+  this settles — **a major release may start a new store instead of migrating one** — amends the "done by
+  the book" schema rule (N24) and lands in [DECISIONS.md](DECISIONS.md) with the change: an exception this
+  large, left unrecorded, is the one the next person reads as an oversight.
+  **Rejected: keep the chain as documentation.** A migration suite and its schema files that no code path
+  can reach, to describe stores this build cannot open.
+  **Rejected: migrate by the book.** One selective `UPDATE` and a version bump, but it buys nothing for a
+  library whose only reader is its author, and it is the half of N103 this entry exists to delete.
 
 ## Parked — deliberately not planned
 
@@ -165,9 +204,11 @@ closed (B51-B58), the seven requests that were its last queue (N80-N86), the N87
 N96–N102 with B95, and the six defects a review of *it* found (B96-B101) — each with its entry in
 [CHANGELOG.md](CHANGELOG.md).
 
-**N103 is the exception, and the one entry left above it.** Its transfer half — a program document closing over
-a variation's ancestors — shipped with the rest; the nullable taxonomy the id is named for has not, and the
-entry says what is left of it and in what order.
+**N103 and N104 are the exception, and the two entries left above it.** N103's transfer half — a program
+document closing over a variation's ancestors — shipped with the rest; the nullable taxonomy the id is named
+for has not, and the entry says what is left of it and in what order. N104 is the 2.0 break that deletes that
+entry's migration half and strands the 1.x log on the device **by design**, which is why it is the one change
+here that has to be said in the release notes rather than only in the changelog.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what they named
 that is not a feature is a settled decision: no dated instances (N16), nothing automatic (the app states
