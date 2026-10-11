@@ -395,6 +395,19 @@ the rule; that one argues it.
   `MigrationTestHelper` case seeding a real superset, and registration in `ALL_MIGRATIONS`
   — columns land with the code that reads them. It is the first *structural* change since
   the features after N14, and those per-exercise features do not need revisiting.
+  ([evidence](DECISIONS-EVIDENCE.md#n24-codec))
+
+- **A major release may start a new store instead of migrating one** (N104). 2.0 opens a **new database
+  file** at schema 1 and never opens 1.x's, so there is nothing to migrate and nothing to truncate:
+  `fallbackToDestructiveMigration` stays absent, because the old store is left **alone** rather than
+  dropped, and the 1.18 build remains the way to read it. The migration chain, its exported schemas and its
+  suite go with the store they belonged to — a schema file nobody migrates to is a contract with no
+  counterparty. **The price is stated rather than hidden**: the app cannot read its own 1.x history, both
+  transfer formats set a floor at 2.0 and refuse an older file *before* the decoder so the refusal reads
+  "written by 1.x" rather than "corrupt", and **"delete everything" deletes the 1.x file too**, because user
+  data must not survive a clear in a file no screen mentions. It is affordable **only** while the only log in
+  existence is the author's; the first time another person's history exists, the same change is a migration
+  by the book.
 
 - **A new column joins the backup codec in the same change, and the codec is guarded by a
   round trip** (N24's preparation). The hand-written codec omits a column it does not know
@@ -869,16 +882,29 @@ the rule; that one argues it.
   names its children**, N58's rule for templates. **A lifted pattern is settled here too** (see N96): with no
   category a row carries no pattern, rather than a guess about its joint action.
   ([evidence](DECISIONS-EVIDENCE.md#n95))
-- **The movement pattern belongs to the category, and the vocabulary is nine** (N96). Whether a family
-  presses or hinges is the family's to decide, so `effectiveMovementPattern` walks to the **top of the chain**
-  and reads the head: a movement's own stored value, and the copies its variations inherited, cannot then
-  disagree with the family they are filed under. **A row in no category has no pattern** — one fact, one home,
-  and a loose custom movement is exactly the case where "press or pull" says little. The merge took the
-  vocabulary from eleven to nine: `HORIZONTAL_PUSH` and `VERTICAL_PUSH` became `PRESS`, the two pulls became
-  `PULL`, and **LUNGE stays out of SQUAT** because "have I been squatting?" has an answer and lunges are not
-  it. **The four retired names stay in the enum and are never offered**, the rule N75's retired `BACK`
-  follows: every pattern is stored by name, so a row — or an export written before the merge — must read
-  rather than throw.
+- **A row stores what it states, and reads anything unstated from the nearest row above that states it**
+  (N103). `primaryMuscle`, `equipment` and `movementPattern` are nullable, and **null is *unstated*, not
+  `OTHER`** — `OTHER` goes back to meaning only *other*, which is a real answer a lifter gives. The winner is
+  the same for every one of them, the secondary list included: **own-if-stated, else inherit**, one walk
+  (`statedOrInherited`) that goes all the way up, so a variation reads what its movement inherited from the
+  category above both (B86). **A row the walk finds nothing for answers null**, and every screen that draws it
+  says "None" rather than inventing a value. **A copy is what the model stopped writing**: the seed states a
+  movement's own muscle, equipment and secondary list and no pattern (the family's), a variation states
+  nothing at all, and a new exercise or category starts with a name. **The editor asks the same rule
+  backwards**: a field no row above states is the row's to set, and one a head supplies is not offered at
+  all — so a picker can never write a value the resolver ignores — while *not stated* is a first-class choice
+  in the pickers that remain.
+- **The movement pattern is a row's own when it states one, and its family's when it does not** (N96,
+  amended by N103). Whether a family presses or hinges is the family's to decide, so the seed states it once
+  on the category and no movement under it states one — but the **rule** is own-if-stated, the same one the
+  muscle and the equipment follow, because a rule that held only while no row stated what its head also
+  stated would diverge the first time a lifter set one by hand. **A row that states none, with nothing above
+  it that does, has no pattern** — one fact, one home, and a loose custom movement is exactly the case where
+  "press or pull" says little. The merge took the vocabulary from eleven to nine: `HORIZONTAL_PUSH` and
+  `VERTICAL_PUSH` became `PRESS`, the two pulls became `PULL`, and **LUNGE stays out of SQUAT** because "have
+  I been squatting?" has an answer and lunges are not it. **The four retired names are gone from the enum**
+  (N104): nothing can reach them, because 2.0 starts a store that never held one and refuses a 1.x file before
+  the decoder, which is what a legacy value was for while a 1.x row could still be read.
 - **A head reads as one number, and which metrics take one is decided per metric** (N97). A *head* is any row
   that holds others — a category over its movements and their variations, or an exercise over its own
   variations — and its series reads the subtree's ids, which are distinct, so the union cannot double-count.
@@ -894,9 +920,11 @@ the rule; that one argues it.
   decline that never happened. **Records and progression stay the exercise's**, and so does assistance: a
   record belongs to the lift that was performed, and whether a family is uniformly assisted is a fact about
   its *sets*, which the picker cannot know before any set is read.
-- **A variation starts unset only for what it performs differently** (B95). `createVariationOf` copies the row
-  and clears three things — its name, its cue and its rest — because those are what make it a variation. **The
-  weight unit and the step are copied with the equipment**, because they are facts about that equipment: a
+- **A variation states nothing it inherits, and keeps only what it is done with** (B95, N103). `createVariationOf`
+  starts from the parent and clears **everything inherited** — its name, its cue, its rest, its muscle, its
+  secondary list, its equipment and its pattern — because under one rule a copy here is a second home for a
+  fact the resolver already reads from the movement above (see N103's bullet). **The weight unit and the step
+  are copied with the equipment**, because they are facts about that equipment: a
   machine that jumps 5 kg, or reads in pounds, does not stop being that machine because the same lift is
   performed as a paused triple. Clearing them handed the variation the *unit's* default step while keeping the
   machine, so the ± buttons, the warm-up ramp and the progression offer all moved a weight it does not have. A

@@ -10,6 +10,39 @@ alternatives rejected, the measurements, the argument — lives in
 [DECISIONS.md](DECISIONS.md) and [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md), and is not
 repeated here.
 
+## [2.0] — 2026-10-10 (versionCode 20)
+
+**This release starts a new store, and it does not read the old one.** Upgrading leaves 1.x's file
+(`workout.db`) on the device, untouched, and starts an empty library-backed store beside it: **2.0 cannot
+read your 1.x history, and it refuses a backup or a program document written by 1.18 rather than
+misreading it.** Export from the 1.18 build first if you want the log — that build is still the way to read
+it afterwards — and note that "delete everything" in 2.0 removes it.
+
+### Changed
+
+- **A row states what it knows, and reads the rest from the head above it** (N103).
+  `primaryMuscle`, `equipment` and `movementPattern` are nullable, and **null is *unstated*** — `OTHER` goes
+  back to meaning only *other*, which is a real answer a lifter gives. One rule covers all of them, the
+  secondary list included: **own-if-stated, else inherit**, walking all the way up, so a variation reads what
+  its movement inherited from the category above both. A row nothing states a value for answers *none* rather
+  than a guess, and the editor offers a field only where no head supplies it — a picker can no longer write a
+  value the resolver would ignore, which is what the old head-wins rule did to a movement's own muscle. The
+  seed follows: a movement states its own muscle, equipment and secondary list and no pattern, a variation
+  states nothing at all, and a new exercise or category starts with a name.
+
+- **The detail screen reads the whole chain, not the head alone** (N103, B96). A variation's pattern and a
+  muscle stated two rows up were invisible on its page; the screen now draws the resolved answer — and the
+  family's secondary list is shown once, where it belongs, instead of twice.
+
+### Removed
+
+- **1.x's store, and everything that carried it** (N104). The database is a new file at schema 1, so the
+  migration chain, its exported schemas and its suite are gone — nothing in 2.0 can reach them. The four
+  retired movement-pattern names and the shim that filtered them go with it: both transfer formats move to
+  v4, and the version gate now refuses a **1.x file before the decoder**, which is what makes deleting a name
+  a 1.x row could carry safe. `fallbackToDestructiveMigration` stays absent: the old store is left alone
+  rather than dropped, which is the whole difference between this and losing data.
+
 ## [1.18] — 2026-10-10 (versionCode 19)
 
 ### Added

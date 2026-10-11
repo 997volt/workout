@@ -62,7 +62,7 @@ Match these — they are the existing ones. Reasons, scope and rejected alternat
   thrown exception lost in a coroutine.
 - **No mocking framework, and no new test dependency without asking.** Hand-written fakes,
   JUnit 4, Truth in new or touched tests. Compose UI tests run on the JVM under
-  Robolectric; the instrumented suite is Room, DAOs and migrations.
+  Robolectric; the instrumented suite is Room and DAOs.
 - **Migrations are numbered as they ship.** Never add a column ahead of the code that
   reads it, and never edit a shipped migration — procedure in DECISIONS.md.
 - **Enums by name, never ordinal**; weights are whole grams in a `Long`; RPE is
