@@ -161,6 +161,9 @@ class DocsConsistencyTest {
             "DECISIONS-EVIDENCE.md",
             "ROADMAP.md",
             "CHANGELOG.md",
+            // The 1.x entries, moved out of CHANGELOG.md so the live file stays about the current
+            // line. Gated like the file it left, or the archive's own links would rot unwatched.
+            "CHANGELOG-1.x.md",
             "RELEASING.md",
             // Loaded on demand, so its links and anchors rot with nothing to notice. Nested,
             // which is what resolveRelative exists for.

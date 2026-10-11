@@ -23,7 +23,8 @@ the app show you the difference and what to do next.
 Ids (`F#` foundations, `B#` defects, `N#` the next planned changes, `P#.#` the product
 backlog, `R#.#` releases) are stable and go in commit messages. They were assigned when the
 work was planned, so they do not always run in order — and an id this file does not list has
-shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
+shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the current line,
+[CHANGELOG-1.x.md](CHANGELOG-1.x.md) for the 1.x releases.
 
 ## Next
 
