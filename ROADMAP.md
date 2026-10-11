@@ -1,23 +1,22 @@
 # Workout — Roadmap
 
-> **v2.0** is shipped ([CHANGELOG.md](CHANGELOG.md)), **P1.1's library set, B103 and N110 are on `main` with no
-> release cut**, and *Next* holds N107. Last reviewed against the code: 2026-10-11 — the N87–N95 batch shipped
-> as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
+> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one item. Last reviewed against the
+> code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
 > database file, the 1.x chain and its schemas deleted, both transfer formats refusing 1.x, and the five
 > retired enum names (four patterns and `BACK`) gone with the files that could carry them — the rest of the
 > legacy the new store cannot hold, the decisions a later id reversed that were still reading as binding, the
 > two columns and one transfer field nothing read while schema 1 was still unshipped, and the measurements
-> screen's silent write failure; and **B103 with N110 is implemented** — the session and template reads no
-> longer throw on an exercise that states no muscle, and the library became a category over movements, with a
-> movement reading its family's pattern and muscles — **in the same unreleased batch as P1.1's strength and
-> bodybuilding set**, 61 movements joining the 45 and the picker grouped exactly as the library is. The 1.x store
-> is left on the device by design, and the 1.18 APK is still the way to read it.
+> screen's silent write failure; and **P1.1's library set, B103 and N110 shipped as 2.1**: the session and
+> template reads no longer throw on an exercise that states no muscle, the library became a category over
+> movements with a movement reading its family's pattern and muscles, 61 movements joined the 45, and the
+> picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
+> still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds N107,
-> which shortens [DECISIONS.md](DECISIONS.md) without dropping a decision. **Reading the unreleased P1.1, B103
-> and N110 batch line by line — and running it on a device — found five defects (B104–B108); all five are fixed
-> and recorded in [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen
+> which shortens [DECISIONS.md](DECISIONS.md) without dropping a decision. **Reading the P1.1, B103 and N110
+> batch line by line — and running it on a device — found five defects (B104–B108); all five are fixed and
+> recorded in [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen
 > defects (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
@@ -119,16 +118,18 @@ Everything that has stood in *Next* has shipped — the defects found in use, th
 workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch, a rest of
 zero, the planned-set prefill, the program document, the eight defects a review of that batch found and
 closed (B51-B58), the seven requests that were its last queue (N80-N86), the N87–N95 batch, the N96–N102
-batch with B95 and the six defects a review of *it* found (B96-B101), and 2.0 — the taxonomy and the store
+batch with B95 and the six defects a review of *it* found (B96-B101), 2.0 — the taxonomy and the store
 break (N103, N104), the legacy and dead weight it left behind (N105, N106, N108, N109) and the measurements
-screen's silent write failure (B102) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
+screen's silent write failure (B102) — and 2.1 — P1.1's strength and bodybuilding set, the library as a
+category over movements (N110), the unstated-taxonomy read (B103) and the five defects the reading of that
+batch found (B104–B108) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds one item**: N107's text shortening. **B103 and N110 landed together** — the defect first, because
-the rework leans on what it fixed — and the reading that checked them found five defects, all fixed (B104–B108):
-the one that mattered left the instrumented job red, because a program document's former variation imports under
-its family now and the test still asserted the link the shape no longer has. 2.0 shipped with the loudest note
-this project has written — the 1.x store stays on the device and 2.0 does not read it — and the rule that allowed
-that is in [DECISIONS.md](DECISIONS.md), with the window it stays payable in.
+***Next* holds one item**: N107's text shortening. **The reading that produced 2.1 found five defects in it, all
+fixed before the tag (B104–B108)** — the one that mattered left the instrumented job red, because a program
+document's former variation imports under its family now and the test still asserted the link the shape no
+longer has. 2.0 shipped with the loudest note this project has written — the 1.x store stays on the device and
+2.0 does not read it — and the rule that allowed that is in [DECISIONS.md](DECISIONS.md), with the window it
+stays payable in.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what they named
 that is not a feature is a settled decision: no dated instances (N16), nothing automatic (the app states
