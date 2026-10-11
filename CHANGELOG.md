@@ -10,9 +10,9 @@ alternatives rejected, the measurements, the argument — lives in
 [DECISIONS.md](DECISIONS.md) and [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md), and is not
 repeated here.
 
-## [2.0] — 2026-10-10 (versionCode 20)
+## [Unreleased]
 
-**This release starts a new store, and it does not read the old one.** Upgrading leaves 1.x's file
+**2.0 starts a new store, and it does not read the old one.** Upgrading leaves 1.x's file
 (`workout.db`) on the device, untouched, and starts an empty library-backed store beside it: **2.0 cannot
 read your 1.x history, and it refuses a backup or a program document written by 1.18 rather than
 misreading it.** Export from the 1.18 build first if you want the log — that build is still the way to read

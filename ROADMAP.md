@@ -1,15 +1,15 @@
 # Workout — Roadmap
 
-> **v2.0** is shipped, and *Next* is empty for the first time since 1.17. Last reviewed against the code:
-> 2026-10-10 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six defects
-> a line-by-line reading of that batch found (B96–B101); and **N103 and N104 shipped as 2.0**, which is the
-> taxonomy becoming nullable and the store break that let it happen without a migration — a new database file,
-> the 1.x chain and its schemas deleted, both transfer formats refusing 1.x, and the four retired pattern
-> names gone with the files that could carry them. The 1.x store is left on the device by design, and the 1.18
-> APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry there, and this file lists
-> nothing as planned. A line-by-line reading of the N87–N95 changes found sixteen defects (B79–B94); all are
-> fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
+> **v1.18** is shipped, and **2.0's changes are on `main` with no release cut** — so *Next* is empty for the
+> first time since 1.17. Last reviewed against the code: 2026-10-10 — the N87–N95 batch shipped as 1.17;
+> **N96–N102 with B95 shipped as 1.18**, with the six defects a line-by-line reading of that batch found
+> (B96–B101); and **N103 and N104 are implemented**, which is the taxonomy becoming nullable and the store
+> break that let it happen without a migration — a new database file, the 1.x chain and its schemas deleted,
+> both transfer formats refusing 1.x, and the four retired pattern names gone with the files that could carry
+> them. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
+> Checked against the changelog as well as the code: the unreleased work is under `[Unreleased]` there, every
+> shipped id has its entry, and this file lists nothing as planned. A line-by-line reading of the N87–N95
+> changes found sixteen defects (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -26,10 +26,10 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md).
 
 ## Next
 
-**Nothing.** The taxonomy and the 2.0 break it rode on (N103, N104) shipped as 2.0, each with its entry in
-[CHANGELOG.md](CHANGELOG.md) — a new store, a row that states only what it knows, and the four retired pattern
-names gone with the files that could carry them. What a release from here would take on first is in *Parked*,
-each row gated on the trigger it names.
+**Nothing.** The taxonomy and the 2.0 break it rode on (N103, N104) are implemented on `main` and wait under
+`[Unreleased]` in [CHANGELOG.md](CHANGELOG.md) — a new store, a row that states only what it knows, and the
+four retired pattern names gone with the files that could carry them. Cutting them is a version bump and a
+tag; what a release *after* that would take on first is in *Parked*, each row gated on the trigger it names.
 
 ## Parked — deliberately not planned
 
@@ -108,9 +108,9 @@ closed (B51-B58), the seven requests that were its last queue (N80-N86), the N87
 N96–N102 with B95, the six defects a review of *it* found (B96-B101), and the taxonomy with the 2.0 break it
 rode on (N103, N104) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-**Nothing is left in *Next*.** 2.0 is the first release that had to say something in its notes rather than only
-in the changelog — the 1.x store stays on the device and 2.0 does not read it — and the rule that allowed it
-is in [DECISIONS.md](DECISIONS.md), with the window it is payable in.
+**Nothing is left in *Next*.** The release that carries it will need the loudest note this project has written
+— the 1.x store stays on the device and 2.0 does not read it — and the rule that allows that is in
+[DECISIONS.md](DECISIONS.md), with the window it is payable in.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what they named
 that is not a feature is a settled decision: no dated instances (N16), nothing automatic (the app states
