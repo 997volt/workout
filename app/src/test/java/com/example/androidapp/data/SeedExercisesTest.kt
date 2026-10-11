@@ -29,6 +29,26 @@ class SeedExercisesTest {
     }
 
     @Test
+    fun noTwoMovementsShareAName() {
+        // The picker offers a movement by **name**, so two rows with the same one are two rows a lifter
+        // cannot tell apart — and the grouping cannot help there, because the picker is flat. Equipment
+        // variants are the case this has to allow: *Barbell* and *Dumbbell* Bench Press are different rows,
+        // which is exactly why the equipment is part of the name a lifter reads.
+        //
+        // Compared the way a reader would, so `Farmer's Carry` and `Farmers Carry` count as one name.
+        assertThat(SeedExercises.all.map { it.name.readable() }).containsNoDuplicates()
+    }
+
+    @Test
+    fun noTwoCategoriesShareAName() {
+        assertThat(SeedExercises.categories.map { it.name.readable() }).containsNoDuplicates()
+    }
+
+    /** A name as a lifter reads it: case, apostrophes, dashes and spacing set aside. */
+    private fun String.readable(): String =
+        lowercase().replace(Regex("[^a-z0-9]"), "")
+
+    @Test
     fun aMovementIsFiledUnderACategory_neverUnderAnotherMovement() {
         // N110's shape, checked on the data: a movement is nobody's head, so a `parentOf` target that is not
         // a category would be the variation level the model no longer has — and a link whose child is not in
