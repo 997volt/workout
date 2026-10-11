@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
-import com.example.androidapp.domain.effectiveMovementPattern
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Exercise
@@ -34,9 +33,15 @@ import kotlinx.coroutines.launch
  */
 data class ExerciseEdit(
     val name: String,
-    val primaryMuscle: MuscleGroup,
-    val equipment: Equipment,
-    val movementPattern: MovementPattern,
+    /**
+     * What the form states for this row's taxonomy, each null for *unstated* (ROADMAP N103).
+     *
+     * Nullable rather than defaulted to `OTHER`, because null is the row's real answer for a field it
+     * inherits: a variation saves with all three unset, and the form never offers a field a head supplies.
+     */
+    val primaryMuscle: MuscleGroup? = null,
+    val equipment: Equipment? = null,
+    val movementPattern: MovementPattern? = null,
     /** The exercise's own rest, or null for the app default (ROADMAP N5). */
     val restSeconds: Int? = null,
     /** A cue to read while lifting, or null (ROADMAP N5). */
@@ -78,14 +83,15 @@ data class ExerciseDetailUiState(
     /** This row's head, for the muscle it passes down (N95). Null when it hangs under nothing. */
     val head: Exercise? = null,
     /**
-     * This row's family movement pattern, or null when it has none (ROADMAP N96, B96).
+     * Every row above this one, nearest first, **removed rows included** (ROADMAP N103).
      *
-     * Resolved here rather than on the screen, because the walk needs the **whole chain** and the screen is
-     * handed only the immediate [head]: the pattern belongs to the category, and for a variation the category
-     * sits one row above the exercise the variation hangs under. Reading `listOfNotNull(head, exercise)` on
-     * the screen stopped at the movement, so exactly the rows a family exists to group drew no pattern at all.
+     * The chain rather than one resolved answer, because the screen asks four questions of it: what this
+     * row's muscle, equipment and pattern resolve to, and which of those a head already supplies — so the
+     * editor offers a field only where stating it would be read. Carrying the chain is also what fixed B96:
+     * a variation's pattern lives two rows up, and the screen's own copy of the walk stopped at its
+     * immediate head.
      */
-    val familyPattern: MovementPattern? = null,
+    val ancestors: List<Exercise> = emptyList(),
     /**
      * The exercise a variation being edited hangs under, while that variation is not stored yet (B83).
      *
@@ -216,17 +222,37 @@ class ExerciseDetailViewModel @Inject constructor(
                 },
                 head = head,
                 headName = head?.name,
-                familyPattern = state.exercise?.effectiveMovementPattern(everything),
+                ancestors = ancestorsOf(state.exercise, everything),
             )
         }
     }
 
     /**
+     * Every row above [exercise], nearest first, ending at the first cycle or missing link (ROADMAP N103).
+     *
+     * Read from the library including removed rows, because a removed head still supplies what it stated
+     * (N58's rule) — and a cycle is not a shape this app writes, but a file is a place one arrives, so
+     * `seen` ends the walk rather than hanging on it (B92).
+     */
+    private fun ancestorsOf(exercise: Exercise?, library: List<Exercise>): List<Exercise> {
+        val byId = library.associateBy { it.id }
+        val seen = mutableSetOf(exercise?.id)
+        val chain = mutableListOf<Exercise>()
+        var parent = exercise?.parentId?.let { byId[it] }
+        while (parent != null && seen.add(parent.id)) {
+            chain += parent
+            parent = byId[parent.parentId]
+        }
+        return chain
+    }
+
+    /**
      * Starts a variation of this exercise, in the editor (ROADMAP N95, B83).
      *
-     * A variation **inherits the exercise it hangs under** — its muscles, its equipment, and the unit and
-     * step that equipment's weights move by — so the draft below is what "inherits" means in practice: only
-     * what is performed differently will be the new row's own.
+     * A variation **inherits the exercise it hangs under** — its muscles, its equipment, its pattern, and the
+     * unit and step that equipment's weights move by — so the draft below is what "inherits" means in
+     * practice: only what is performed differently will be the new row's own. The taxonomy starts **unstated**
+     * (N103), which is the same thing the repository writes; the unit and the step come with the equipment.
      * It arrives in the editor rather than on a finished screen, because its name is the one thing the lifter
      * must supply: "three-second paused" is a name they write, not a value from a closed set.
      *
@@ -244,6 +270,10 @@ class ExerciseDetailViewModel @Inject constructor(
                     isCustom = true,
                     parentId = parent.id,
                     rowKind = RowKind.MOVEMENT,
+                    primaryMuscle = null,
+                    secondaryMuscles = emptyList(),
+                    equipment = null,
+                    movementPattern = null,
                     restSeconds = null,
                     techniqueNote = null,
                 ),

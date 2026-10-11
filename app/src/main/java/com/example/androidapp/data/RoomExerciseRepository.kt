@@ -11,11 +11,8 @@ import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.toDataError
-import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
-import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.RowKind
-import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.ExerciseRepository
 import java.util.UUID
@@ -83,21 +80,21 @@ class RoomExerciseRepository @Inject constructor(
         if (grandparent?.rowKind == RowKind.MOVEMENT) {
             throw InvalidInputException("A variation hangs under an exercise, not under another variation.")
         }
-        // Everything inherited is copied; what is performed differently starts unset, **including the name**,
-        // which the editor is about to ask for. Copying it stored a row already named after its parent, so
-        // saving without typing left a duplicate (B83).
-        //
-        // The weight unit and the step travel with the equipment rather than being cleared beside the cue
-        // (B95). Both are facts about the equipment this function has just copied — a machine that jumps 5 kg,
-        // or one that reads in pounds — so clearing them handed the variation the *unit's* default step while
-        // keeping the machine, and the ± buttons, the warm-up ramp and the progression offer then moved a
-        // weight that machine does not have.
+        // A variation states **nothing it inherits** (ROADMAP N103). Its muscles, its equipment and its
+        // pattern are read from the movement it hangs under, live — the copy this function used to write was
+        // a second home for a fact with one, and it is what the model stopped doing. What it does keep is
+        // what it is *done with*: the weight unit and the step are facts about the equipment it inherits
+        // (B95), and clearing them handed the variation the *unit's* default step while keeping the machine.
         val variation = parent.copy(
             id = UUID.randomUUID().toString(),
             name = "",
             isCustom = true,
             parentId = parent.id,
             rowKind = RowKind.MOVEMENT,
+            primaryMuscle = null,
+            secondaryMuscles = emptyList(),
+            equipment = null,
+            movementPattern = null,
             restSeconds = null,
             techniqueNote = null,
         )
@@ -139,19 +136,13 @@ class RoomExerciseRepository @Inject constructor(
         val trimmed = name.trim()
         if (trimmed.isEmpty()) throw InvalidInputException("Give the exercise a name.")
 
-        // The taxonomy is stored as unspecified rather than left null, because
-        // the columns are non-nullable. Enums are stored by name, so these values
-        // need no migration — which is what lets this land before the N3/N4-N8
-        // schema decision (ROADMAP N2). For a category the equipment value is a
-        // placeholder and says so: a family spans equipment, and each child sets
-        // its own, which is what `Equipment.OTHER` already means.
+        // Nothing is stated yet (ROADMAP N103): a custom exercise, and a category a lifter makes, start with
+        // a name and nothing else. `null` is *unstated* — the fields a head supplies are read from it, and a
+        // loose row simply has none — so there is no placeholder taxonomy to write and none to explain. The
+        // id is a UUID rather than a slug, because the seed's slugs are permanent and a lifter's row is not.
         val exercise = Exercise(
             id = UUID.randomUUID().toString(),
             name = trimmed,
-            primaryMuscle = MuscleGroup.OTHER,
-            secondaryMuscles = emptyList(),
-            equipment = Equipment.OTHER,
-            movementPattern = MovementPattern.OTHER,
             isCustom = true,
             rowKind = rowKind,
         )

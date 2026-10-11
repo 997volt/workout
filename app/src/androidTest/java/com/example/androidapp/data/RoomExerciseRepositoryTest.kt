@@ -58,7 +58,7 @@ class RoomExerciseRepositoryTest {
     }
 
     @Test
-    fun createCustomExercise_storesTheNameAndLeavesTheTaxonomyUnspecified() = runTest {
+    fun createCustomExercise_storesTheNameAndStatesNoTaxonomy() = runTest {
         val created = created("  Sled Push  ")
 
         // A UUID, not a seeded slug: user-created rows must not collide with the
@@ -66,9 +66,11 @@ class RoomExerciseRepositoryTest {
         UUID.fromString(created.id)
         assertEquals("Sled Push", created.name)
         assertTrue(created.isCustom)
-        assertEquals(MuscleGroup.OTHER, created.primaryMuscle)
-        assertEquals(Equipment.OTHER, created.equipment)
-        assertEquals(MovementPattern.OTHER, created.movementPattern)
+        // **Null is *unstated*** (ROADMAP N103), not `OTHER`: the row states nothing, and there is a separate
+        // `OTHER` for a lifter who means *other*.
+        assertNull(created.primaryMuscle)
+        assertNull(created.equipment)
+        assertNull(created.movementPattern)
         // N5: rest and cue start unset, i.e. "use the app default" and "no cue".
         assertNull(created.restSeconds)
         assertNull(created.techniqueNote)
@@ -206,10 +208,11 @@ class RoomExerciseRepositoryTest {
         assertEquals(RowKind.CATEGORY, category.rowKind)
         assertTrue("the library keeps it: a head is a row, not a hidden marker", category.isCustom)
         assertNull("a head hangs under nothing", category.parentId)
-        // Unspecified for a custom exercise's reason, and the equipment value is the documented
-        // placeholder: a family spans equipment and every child sets its own.
-        assertEquals(MuscleGroup.OTHER, category.primaryMuscle)
-        assertEquals(Equipment.OTHER, category.equipment)
+        // Unstated for a custom exercise's reason (N103): a family spans equipment and every child sets its
+        // own, so a head that claimed `OTHER` would be saying something it does not mean.
+        assertNull(category.primaryMuscle)
+        assertNull(category.equipment)
+        assertNull(category.movementPattern)
 
         val library = (repository.observeExercises().first() as DataResult.Success).data
         assertEquals(listOf(RowKind.CATEGORY), library.map { it.rowKind })
@@ -269,8 +272,11 @@ class RoomExerciseRepositoryTest {
 
         assertEquals("", variation.name)
         assertEquals(parent.id, variation.parentId)
-        assertEquals("it inherits what it does not perform differently", parent.primaryMuscle, variation.primaryMuscle)
-        assertEquals(parent.equipment, variation.equipment)
+        // It **states nothing** it inherits (N103): the resolver reads the parent's muscle, equipment and
+        // pattern, so a copy here would be a second home for a fact with one.
+        assertNull(variation.primaryMuscle)
+        assertNull(variation.equipment)
+        assertNull(variation.movementPattern)
     }
 
     @Test

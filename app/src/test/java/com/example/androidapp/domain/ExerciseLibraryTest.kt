@@ -152,14 +152,21 @@ class ExerciseLibraryTest {
 
     @Test
     fun aMovement_readsItsFamilysMuscles_live() {
-        // ROADMAP N95's inheritance, and the reason nothing is written to the child when it is filed: one
-        // fact with one home, so a family cannot disagree with itself.
-        assertThat(barbellBench.effectivePrimaryMuscle(library)).isEqualTo(MuscleGroup.CHEST)
-        // And the head's own value is untouched by the child reading it.
-        assertThat(bench.primaryMuscle).isEqualTo(MuscleGroup.CHEST)
+        // ROADMAP N95's inheritance under N103's one rule: a movement that **states nothing** reads its
+        // family's, live — one fact with one home, so a family cannot disagree with itself.
+        val silent = library.map {
+            if (it.id == "barbell-bench-press") it.copy(primaryMuscle = null) else it
+        }
 
-        // Changing the head changes every movement under it, which is what "live" buys.
-        val renamed = library.map { if (it.id == "cat-bench") it.copy(primaryMuscle = MuscleGroup.SHOULDERS) else it }
+        assertThat(silent.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(silent))
+            .isEqualTo(MuscleGroup.CHEST)
+        // And the head's own value is untouched by the child reading it.
+        assertThat(silent.first { it.id == "cat-bench" }.primaryMuscle).isEqualTo(MuscleGroup.CHEST)
+
+        // Changing the head changes every movement under it that states none, which is what "live" buys.
+        val renamed = silent.map {
+            if (it.id == "cat-bench") it.copy(primaryMuscle = MuscleGroup.SHOULDERS) else it
+        }
 
         assertThat(renamed.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(renamed))
             .isEqualTo(MuscleGroup.SHOULDERS)
@@ -252,9 +259,14 @@ class ExerciseLibraryTest {
     @Test
     fun aVariation_readsTheMuscleItsExerciseInherits() {
         // B86: the resolver read the parent's stored field, so a silent exercise's muscle came from the
-        // category but its variation's did not. The walk reaches the nearest row that states one.
+        // category but its variation's did not. The walk reaches the nearest row that states one — and under
+        // N103's one rule that means every row between them has to be silent for the category to be reached.
         val silentBench = library.map {
-            if (it.id == "barbell-bench-press") it.copy(primaryMuscle = MuscleGroup.OTHER) else it
+            if (it.id == "barbell-bench-press" || it.id == "bench-speed") {
+                it.copy(primaryMuscle = null)
+            } else {
+                it
+            }
         }
 
         assertThat(
@@ -371,16 +383,20 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun aMovementsPattern_comesFromItsFamily_andAnUnfiledOneHasNone() {
-        // ROADMAP N96: the pattern belongs to the category, so a movement reads the head it is filed under
-        // whatever its own row says — which is what lets the per-exercise column go without losing anything.
+    fun aPattern_isTheRowsOwnWhenItStatesOne_andTheFamilysWhenItDoesNot() {
+        // ROADMAP N96 amended by N103: the rule is own-if-stated, uniformly, so a filed movement that says
+        // nothing reads its family's and one that states a pattern keeps it — which is what the old head-wins
+        // special case refused, and what a lifter setting one by hand would have hit.
         val library = listOf(
             category("cat-bench", "Bench Press").copy(movementPattern = MovementPattern.PRESS),
             movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench")
-                .copy(movementPattern = MovementPattern.HORIZONTAL_PUSH),
+                .copy(movementPattern = null),
             movement("bench-speed", "Speed Day", parent = "barbell-bench-press")
-                .copy(movementPattern = MovementPattern.HORIZONTAL_PUSH),
+                .copy(movementPattern = null),
             movement("squat", "Back Squat").copy(movementPattern = MovementPattern.SQUAT),
+            movement("machine-pec-deck", "Pec Deck", parent = "cat-bench")
+                .copy(movementPattern = MovementPattern.ISOLATION),
+            movement("loose-carry", "Farmer's Walk").copy(movementPattern = null),
         )
 
         assertThat(library.first { it.id == "barbell-bench-press" }.effectiveMovementPattern(library))
@@ -388,8 +404,48 @@ class ExerciseLibraryTest {
         assertWithMessage("a variation reads through its movement to the family")
             .that(library.first { it.id == "bench-speed" }.effectiveMovementPattern(library))
             .isEqualTo(MovementPattern.PRESS)
-        assertWithMessage("and a movement in no category has no pattern")
+        assertWithMessage("its own value wins when it states one, even under a stating head")
+            .that(library.first { it.id == "machine-pec-deck" }.effectiveMovementPattern(library))
+            .isEqualTo(MovementPattern.ISOLATION)
+        assertWithMessage("an unfiled movement that states one keeps it")
             .that(library.first { it.id == "squat" }.effectiveMovementPattern(library))
+            .isEqualTo(MovementPattern.SQUAT)
+        assertWithMessage("and one that states nothing, with nothing above it, has none")
+            .that(library.first { it.id == "loose-carry" }.effectiveMovementPattern(library))
+            .isNull()
+    }
+
+    @Test
+    fun aMuscleAndEquipment_areTheRowsOwnWhenItStatesThem_andInheritedOtherwise() {
+        // The same one rule for the other two fields (ROADMAP N103), including the case the old resolver got
+        // wrong: a row's own muscle was written, exported and read by nothing while a head stated one.
+        val library = listOf(
+            category("cat-bench", "Bench Press"),
+            movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench")
+                .copy(primaryMuscle = MuscleGroup.CHEST, equipment = Equipment.BARBELL),
+            movement("paused-bench", "Paused Bench", parent = "barbell-bench-press")
+                .copy(primaryMuscle = null, equipment = null),
+            movement("own-answer", "Own Answer", parent = "cat-bench")
+                .copy(primaryMuscle = MuscleGroup.SHOULDERS, equipment = Equipment.MACHINE),
+            movement("loose", "Loose").copy(primaryMuscle = null, equipment = null),
+        )
+
+        assertThat(library.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(library))
+            .isEqualTo(MuscleGroup.CHEST)
+        assertWithMessage("a variation inherits through its movement to the stating row")
+            .that(library.first { it.id == "paused-bench" }.effectivePrimaryMuscle(library))
+            .isEqualTo(MuscleGroup.CHEST)
+        assertWithMessage("a row that states its own keeps it, head or no head")
+            .that(library.first { it.id == "own-answer" }.effectivePrimaryMuscle(library))
+            .isEqualTo(MuscleGroup.SHOULDERS)
+        assertWithMessage("equipment follows the same rule")
+            .that(library.first { it.id == "paused-bench" }.effectiveEquipment(library))
+            .isEqualTo(Equipment.BARBELL)
+        assertWithMessage("a row nothing states a muscle for has none rather than a guess")
+            .that(library.first { it.id == "loose" }.effectivePrimaryMuscle(library))
+            .isNull()
+        assertWithMessage("and the same for equipment")
+            .that(library.first { it.id == "loose" }.effectiveEquipment(library))
             .isNull()
     }
 }

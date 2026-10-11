@@ -14,10 +14,19 @@ import com.example.androidapp.domain.WeightUnit
 data class Exercise(
     val id: String,
     val name: String,
-    val primaryMuscle: MuscleGroup,
+    /**
+     * The muscle this row trains, or null when it states none (ROADMAP N103).
+     *
+     * Null means **unstated**, not "other": the value is read from the nearest row above that states one,
+     * and there is a separate [MuscleGroup.OTHER] for a lifter who means *other*. A row that states a
+     * value owns it — own-if-stated is the one winner rule for all three of these fields.
+     */
+    val primaryMuscle: MuscleGroup? = null,
     val secondaryMuscles: List<MuscleGroup> = emptyList(),
-    val equipment: Equipment,
-    val movementPattern: MovementPattern,
+    /** The equipment this row is performed with, or null when it states none (ROADMAP N103). */
+    val equipment: Equipment? = null,
+    /** The movement pattern this row states, or null when it states none (ROADMAP N103). */
+    val movementPattern: MovementPattern? = null,
     val isCustom: Boolean = false,
     /**
      * The row this one hangs under, or null for a top-level row (ROADMAP N95).

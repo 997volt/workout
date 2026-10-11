@@ -28,10 +28,20 @@ import com.example.androidapp.domain.model.RowKind
 data class ExerciseEntity(
     @PrimaryKey val id: String,
     val name: String,
-    val primaryMuscle: MuscleGroup,
+    /**
+     * The muscle this row states, or null for *unstated* (ROADMAP N103).
+     *
+     * Nullable because 2.0's model is "a row stores what it states, and anything unstated is read from the
+     * nearest row above that states it": a variation states nothing it inherits, and a category states
+     * nothing it leaves to its movements. [MuscleGroup.OTHER] stays a real answer. The column lands
+     * nullable in 2.0's *new* store, so there is no migration relaxing a NOT NULL.
+     */
+    val primaryMuscle: MuscleGroup? = null,
     val secondaryMuscles: List<MuscleGroup>,
-    val equipment: Equipment,
-    val movementPattern: MovementPattern,
+    /** The equipment this row states, or null for *unstated* (ROADMAP N103). */
+    val equipment: Equipment? = null,
+    /** The movement pattern this row states, or null for *unstated* (ROADMAP N103). */
+    val movementPattern: MovementPattern? = null,
     val isCustom: Boolean,
     /**
      * The row this one hangs under, or null for a top-level row (ROADMAP N95).

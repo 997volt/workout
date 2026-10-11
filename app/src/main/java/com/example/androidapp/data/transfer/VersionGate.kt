@@ -21,14 +21,21 @@ import kotlinx.serialization.json.intOrNull
  *
  * [field] is the format's own version key — `schemaVersion` for a backup, `formatVersion` for a
  * program document, because the two change for different reasons — and [noun] names the file in the
- * two sentences a lifter sees. Text that is not JSON, is not an object, or names no version is the
+ * sentences a lifter sees. Text that is not JSON, is not an object, or names no version is the
  * **corrupt** case rather than the newer one: there is nothing to compare it against.
+ *
+ * **A minimum as well as a maximum** (ROADMAP N104). 2.0 starts a new store and refuses 1.x rather than
+ * reading it, so the gate answers both ends of the range: too new is a build that cannot represent the
+ * data, too old is a shape this build no longer carries — and both are refused *here*, before the
+ * decoder, for the reason above. That is what lets 2.0 delete the four retired pattern names: a 1.x row
+ * carrying one is never decoded, where before the decoder was the thing that would have thrown on it.
  */
 internal fun gatedDocument(
     text: String,
     field: String,
     currentVersion: Int,
     noun: String,
+    minimumVersion: Int = 1,
 ): JsonElement {
     val element = try {
         Json.parseToJsonElement(text)
@@ -38,13 +45,17 @@ internal fun gatedDocument(
         throw InvalidInputException("That does not look like a $noun file.", malformed)
     }
     val version = ((element as? JsonObject)?.get(field) as? JsonPrimitive)?.intOrNull
-    // One refusal, two sentences: text that names no version is corrupt, and a version this build is
-    // too old to read is newer. They are decided together so the reader sees the whole answer.
+    // One refusal, three sentences: text that names no version is corrupt, a version above the top of the
+    // range is newer, and one below the bottom is older. They are decided together so the reader sees the
+    // whole answer.
     val refusal = when {
         version == null -> "That does not look like a $noun file."
         version > currentVersion ->
             "That $noun was written by a newer version of the app " +
                 "(file v$version, this build reads v$currentVersion)."
+        version < minimumVersion ->
+            "That $noun was written by an older version of the app " +
+                "(file v$version, this build reads v$minimumVersion and later)."
         else -> null
     }
     return refusal?.let { throw InvalidInputException(it) } ?: element

@@ -141,10 +141,10 @@ class ExerciseDetailViewModelTest {
     }
 
     @Test
-    fun aVariation_inheritsTheExerciseItHangsUnder() = runTest(dispatcher) {
-        // ROADMAP N95: "a variation inherits the exercise it hangs under — its muscles, its equipment — so
-        // only what is performed differently is its own". That inheritance is this copy, so the test is what
-        // the new row carries rather than that a row appeared.
+    fun aVariation_statesNothingItInherits() = runTest(dispatcher) {
+        // ROADMAP N95 amended by N103: a variation inherits the exercise it hangs under — its muscles, its
+        // equipment, its pattern — and **itself states none of them**, because the model reads an unstated
+        // field from the nearest row above. What it keeps is what it is *done with*: the unit and the step.
         val parent = seeded.copy(
             restSeconds = 180,
             techniqueNote = "Brace",
@@ -161,8 +161,12 @@ class ExerciseDetailViewModelTest {
         val variation = viewModel.uiState.value.exercise
         assertNotNull(variation)
         assertEquals("it hangs under the exercise", parent.id, variation?.parentId)
-        assertEquals(MuscleGroup.QUADS, variation?.primaryMuscle)
-        assertEquals(Equipment.BARBELL, variation?.equipment)
+        // Nothing inherited is copied (N103): the resolver reads the parent's value, so writing one here
+        // would be a second home for a fact with one.
+        assertNull(variation?.primaryMuscle)
+        assertNull(variation?.secondaryMuscles?.takeIf { it.isNotEmpty() })
+        assertNull(variation?.equipment)
+        assertNull(variation?.movementPattern)
         // What is performed differently starts unset rather than copied from the parent.
         assertNull(variation?.restSeconds)
         assertNull(variation?.techniqueNote)
@@ -313,8 +317,15 @@ class ExerciseDetailViewModelTest {
         )
         advanceUntilIdle()
 
-        assertEquals(MovementPattern.PRESS, variationViewModel.uiState.value.familyPattern)
-        assertNull("a movement in no category has no pattern", unfiledViewModel.uiState.value.familyPattern)
+        assertEquals(
+            "the chain above a variation is its movement and then the category",
+            listOf("barbell-bench-press", "cat-bench"),
+            variationViewModel.uiState.value.ancestors.map { it.id },
+        )
+        assertTrue(
+            "and a loose movement has nothing above it to inherit from",
+            unfiledViewModel.uiState.value.ancestors.isEmpty(),
+        )
     }
 
     private fun viewModelFor(

@@ -103,9 +103,10 @@ enum class RowKind {
  * judgement inside the set: both are knee-dominant and differ by stance rather than by joint action, but "have
  * I been squatting?" is a question a lifter asks and lunges are not the answer to it.
  *
- * **The four directional values stay, and are never offered** — the rule N75's retired `BACK` follows: every
- * pattern is stored by name, so a row that still says `HORIZONTAL_PUSH`, or an export written before the
- * merge, has to keep resolving rather than throw on read. Choices come from [SELECTABLE_MOVEMENT_PATTERNS].
+ * **The four directional values are gone** (ROADMAP N104). N96 kept them so a 1.x row — or an export written
+ * before the merge — still resolved instead of throwing, and 2.0 refuses a 1.x file before the decoder and
+ * starts a store that never held one, so nothing can reach a name that no longer exists. The list *is* the
+ * offered set again: no filter, no legacy values.
  */
 enum class MovementPattern(val label: String) {
     PRESS("Press"),
@@ -117,46 +118,23 @@ enum class MovementPattern(val label: String) {
     ISOLATION("Isolation"),
     CORE("Core"),
     OTHER("Other"),
-
-    // Retired by N96 and kept only so an older row reads. Their labels are what those rows said.
-    HORIZONTAL_PUSH("Horizontal push"),
-    VERTICAL_PUSH("Vertical push"),
-    HORIZONTAL_PULL("Horizontal pull"),
-    VERTICAL_PULL("Vertical pull"),
 }
-
-/** The four the merge replaced: read, never offered (N96). */
-private val RETIRED_MOVEMENT_PATTERNS = setOf(
-    MovementPattern.HORIZONTAL_PUSH,
-    MovementPattern.VERTICAL_PUSH,
-    MovementPattern.HORIZONTAL_PULL,
-    MovementPattern.VERTICAL_PULL,
-)
-
-/**
- * The movement patterns a lifter can choose (N96).
- *
- * The taxonomy minus the four the merge retired. Everything that *offers* a pattern reads this rather than
- * [MovementPattern.entries], so nothing new is tagged with a value the merge replaced — while a stored row
- * that carries one still reads.
- */
-val SELECTABLE_MOVEMENT_PATTERNS: List<MovementPattern> =
-    MovementPattern.entries.filterNot { it in RETIRED_MOVEMENT_PATTERNS }
 
 /**
  * The `Quads · Barbell` line shown under an exercise's name, with any part that
- * has not been filled in yet left out rather than rendered as `Other · Other`
- * (ROADMAP N2).
+ * is not stated left out rather than rendered as `Other · Other` (ROADMAP N2).
  *
- * Returns null when nothing is known: a custom exercise is created with a name
+ * Returns null when nothing is stated: a custom exercise is created with a name
  * only, and an empty line is more honest than one that says "Other · Other".
+ * Under 2.0's model (N103) `null` is *unstated* — the row inherits it, or has none — so the parts are
+ * [MuscleGroup.OTHER]/[Equipment.OTHER] **or absent**, and both answer nothing.
  * Shared by the library/picker row and the active workout's exercise header so
  * the two cannot drift apart.
  */
-fun taxonomySubtitle(primaryMuscle: MuscleGroup, equipment: Equipment): String? {
+fun taxonomySubtitle(primaryMuscle: MuscleGroup?, equipment: Equipment?): String? {
     val parts = buildList {
-        if (primaryMuscle != MuscleGroup.OTHER) add(primaryMuscle.label)
-        if (equipment != Equipment.OTHER) add(equipment.label)
+        primaryMuscle?.takeIf { it != MuscleGroup.OTHER }?.let { add(it.label) }
+        equipment?.takeIf { it != Equipment.OTHER }?.let { add(it.label) }
     }
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }

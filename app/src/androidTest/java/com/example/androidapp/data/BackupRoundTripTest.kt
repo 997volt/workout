@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -50,6 +51,7 @@ import org.junit.runner.RunWith
 class BackupRoundTripTest {
 
     private lateinit var database: WorkoutDatabase
+    private lateinit var context: android.content.Context
     private lateinit var repository: RoomBackupRepository
 
     /** The real delete path, so the test exercises what the UI does. */
@@ -70,7 +72,9 @@ class BackupRoundTripTest {
             WorkoutDatabase::class.java,
         ).build()
         settings = PreferencesSettingsRepository(ApplicationProvider.getApplicationContext())
+        context = ApplicationProvider.getApplicationContext()
         repository = RoomBackupRepository(
+            context = context,
             database = database,
             timeSource = clock,
             settings = settings,
@@ -566,6 +570,12 @@ class BackupRoundTripTest {
         )
         val before = counts()
         assertTrue("the fixture must have something to clear", before.total > 0)
+        // A 1.x store left on the device is user data too (ROADMAP N104): 2.0 never migrates it, so
+        // "delete everything" is the one place that has to reach it.
+        val legacy = context.getDatabasePath(WorkoutDatabase.LEGACY_NAME)
+        legacy.parentFile?.mkdirs()
+        legacy.writeBytes(byteArrayOf(1, 2, 3))
+        assertTrue("the fixture must look like a device that upgraded", legacy.exists())
 
         val cleared = repository.clearAllUserData()
 
@@ -587,6 +597,7 @@ class BackupRoundTripTest {
             emptyMap<String, Double>(),
             settings.observeGoals().first(),
         )
+        assertFalse("and the 1.x store goes with everything else", legacy.exists())
     }
 
     @Test

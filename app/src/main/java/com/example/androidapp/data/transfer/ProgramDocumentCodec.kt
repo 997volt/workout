@@ -24,8 +24,15 @@ object ProgramDocumentCodec {
      * **N95 moved it to 3**, again with the backup: the exercise DTOs now carry `rowKind` and `parentId`,
      * and a movement's place in the library is data a build without those fields drops rather than reads
      * (B90).
+     *
+     * **2.0 moved it to 4 and set the floor there** (ROADMAP N103, N104), with the backup and for its
+     * reasons: the exercise DTOs' taxonomy is nullable and the retired pattern names are gone, so a 1.x
+     * document is refused before the decoder.
      */
-    const val CURRENT_FORMAT_VERSION = 3
+    const val CURRENT_FORMAT_VERSION = 4
+
+    /** The oldest document this build reads: 2.0's own, and nothing earlier (ROADMAP N104). */
+    const val MINIMUM_FORMAT_VERSION = 4
 
     private val json = Json {
         prettyPrint = true
@@ -45,7 +52,13 @@ object ProgramDocumentCodec {
      * this build lacks makes the decoder throw before a gate behind it could run ([gatedDocument]).
      */
     fun decode(text: String): ProgramDocument {
-        val element = gatedDocument(text, "formatVersion", CURRENT_FORMAT_VERSION, "program")
+        val element = gatedDocument(
+            text = text,
+            field = "formatVersion",
+            currentVersion = CURRENT_FORMAT_VERSION,
+            noun = "program",
+            minimumVersion = MINIMUM_FORMAT_VERSION,
+        )
         return try {
             json.decodeFromJsonElement<ProgramDocument>(element)
         } catch (malformed: SerializationException) {

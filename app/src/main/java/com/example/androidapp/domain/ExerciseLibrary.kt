@@ -1,5 +1,6 @@
 package com.example.androidapp.domain
 
+import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
@@ -238,56 +239,66 @@ private fun Exercise.toLibraryRow(
 )
 
 /**
- * This exercise's **effective** primary muscle: the nearest row above it that states one, or its own.
+ * The **one winner rule** (ROADMAP N103): the row's own value when it states one, otherwise the nearest
+ * row above it that does, otherwise null.
  *
- * *Live*, not copied, which is what "an exercise inherits its category's primary muscle" means in practice
- * and why nothing is written to the child when it is filed: one fact with one home. Change the head's muscle
- * and every movement under it reads the new one, so a family cannot disagree with itself.
+ * N95 gave each of these facts its own rule — a muscle was read from the nearest *stating ancestor* while
+ * the row's own value was only a fallback, and a pattern was read off the head and only if the head was a
+ * category. Those agree only while no row states what its head also states, which the seed arranged but a
+ * lifter's own edit did not have to: a movement's own muscle was written, exported and read by nothing.
+ * One rule for all of them ends that, and it is what makes a **null** column meaningful — `null` is
+ * *unstated*, and the walk answers it, while a stated value (including `OTHER`) is the row's own answer.
  *
- * **The walk goes all the way up** (B86): the resolver used to read the parent's stored field, so a category's
- * Chest reached its movements but not *their* variations, which then read `OTHER` and disagreed with the
- * exercise above them. The nearest ancestor that states a muscle wins.
- *
- * **A head that says nothing is silent rather than authoritative**, so a row with no stating ancestor keeps
- * its own value and starts inheriting the moment a head is filled in. `OTHER` is how this app spells "not
- * specified yet" (N2), and it is every *new* category's value — so reading it literally would blank the
- * muscle of every movement filed under one on the day it was created, while the row still held a real answer
- * nobody could see. A row whose head is not in [library] keeps its own value for the same reason: nothing to
- * inherit is not the same as inheriting nothing.
+ * **The walk goes all the way up** (B86): reading only the parent left a variation disagreeing with the
+ * exercise above it. `seen` ends a cycle a file could carry (B92).
  */
-fun Exercise.effectivePrimaryMuscle(library: List<Exercise>): MuscleGroup {
+private fun <T : Any> Exercise.statedOrInherited(library: List<Exercise>, stated: (Exercise) -> T?): T? {
     val byId = library.associateBy { it.id }
-    // A cycle is not a shape this app writes, but a resolver must not hang on one (B92); `seen` ends the walk.
     val seen = mutableSetOf(id)
+    var found = stated(this)
     var ancestor = byId[parentId]
-    while (ancestor != null && seen.add(ancestor.id)) {
-        if (ancestor.primaryMuscle != MuscleGroup.OTHER) return ancestor.primaryMuscle
+    while (found == null && ancestor != null && seen.add(ancestor.id)) {
+        found = stated(ancestor)
         ancestor = byId[ancestor.parentId]
     }
-    return primaryMuscle
+    return found
 }
 
 /**
- * This exercise's **effective** secondary muscles: the nearest row above it that names one, or its own.
+ * This exercise's **effective** primary muscle: its own if it states one, else the nearest row above that
+ * does, else null (ROADMAP N103).
  *
- * "Secondary muscles default from the category and are the exercise's to change" — so the default applies
- * exactly while the exercise is silent, and the moment a lifter names one the exercise's own list is the
- * answer. That is the one place in this shape where the child's own value wins over its head's, and it is
- * deliberate: the default is a starting point, not a claim about every movement under the head. The walk goes
- * all the way up for [effectivePrimaryMuscle]'s reason (B86).
+ * *Live*, not copied, which is what "an exercise inherits its category's primary muscle" means in practice
+ * and why nothing is written to the child when it is filed: one fact with one home. Change the head's muscle
+ * and every movement under it that states none reads the new one, so a family cannot disagree with itself.
+ * **A head that states nothing is silent rather than authoritative**, and a row whose head is not in
+ * [library] keeps its own answer for the same reason: nothing to inherit is not the same as inheriting
+ * nothing.
  */
-fun Exercise.effectiveSecondaryMuscles(library: List<Exercise>): List<MuscleGroup> {
-    val byId = library.associateBy { it.id }
-    // A cycle is not a shape this app writes, but a resolver must not hang on one (B92); `seen` ends the walk.
-    val seen = mutableSetOf(id)
-    var ancestor = byId[parentId]
-    var found: List<MuscleGroup>? = secondaryMuscles.ifEmpty { null }
-    while (found == null && ancestor != null && seen.add(ancestor.id)) {
-        found = ancestor.secondaryMuscles.ifEmpty { null }
-        ancestor = byId[ancestor.parentId]
-    }
-    return found.orEmpty()
-}
+fun Exercise.effectivePrimaryMuscle(library: List<Exercise>): MuscleGroup? =
+    statedOrInherited(library) { it.primaryMuscle }
+
+/**
+ * This exercise's **effective** equipment: its own if it states one, else the nearest row above that does,
+ * else null (ROADMAP N103).
+ *
+ * The same one rule as the muscle, which is the point of N103: `barbell-bench-press` states `BARBELL`
+ * because that is a fact about *it*, while a variation of it states nothing and reads its equipment from
+ * the lift it is a version of.
+ */
+fun Exercise.effectiveEquipment(library: List<Exercise>): Equipment? =
+    statedOrInherited(library) { it.equipment }
+
+/**
+ * This exercise's **effective** secondary muscles, which are the one place a *list* is the value: its own
+ * when it names any, else the nearest row above that names some, else none (N95).
+ *
+ * "Secondary muscles default from the category and are the exercise's to change" — the default applies
+ * exactly while the exercise is silent, and the moment a lifter names one the exercise's own list is the
+ * answer.
+ */
+fun Exercise.effectiveSecondaryMuscles(library: List<Exercise>): List<MuscleGroup> =
+    statedOrInherited(library) { it.secondaryMuscles.ifEmpty { null } }.orEmpty()
 
 /** The name of the head this row hangs under, or null — read live, and readable after it is removed (N95). */
 fun Exercise.headName(library: List<Exercise>): String? =
@@ -402,32 +413,18 @@ fun Exercise.headsOthers(library: List<Exercise>): Boolean =
     rowKind == RowKind.CATEGORY || library.any { it.parentId == id }
 
 /**
- * This row's movement pattern: its category's, or null where it has none (ROADMAP N96).
+ * This row's movement pattern: its own if it states one, else the nearest row above that does, else null
+ * (ROADMAP N96, amended by N103).
  *
- * The pattern belongs to the **category**, not to the exercise, so this walks to the top of the chain and
- * reads the head. That is what stops a movement's stored value — and the copies its variations inherited —
- * from disagreeing with the family they are filed under, and it is why the per-exercise column can be
- * dropped without losing anything a lifter reads.
- *
- * **A row in no category has no pattern**, which the entry settles rather than leaving open: one fact should
- * have one home, and a loose custom movement is exactly the case where "press or pull" says little.
- *
- * The walk goes all the way up, for [effectivePrimaryMuscle]'s reason (B86), and `seen` ends a cycle a file
- * could carry (B92).
+ * N96 read this off the **category** — a row in no category had none, and a movement's own value was never
+ * consulted. N103 makes it the same rule as the muscle and the equipment: **own-if-stated**, so a category
+ * is the pattern's home because nothing under it states one rather than because it outranks them. The seed
+ * keeps that true of the data (a filed movement states no pattern, and an unfiled one is left to the
+ * lifter), which is what preserves everything N96 bought: a family's pattern decided once, and a loose
+ * movement with none unless somebody says otherwise.
  */
-fun Exercise.effectiveMovementPattern(library: List<Exercise>): MovementPattern? {
-    val byId = library.associateBy { it.id }
-    val seen = mutableSetOf(id)
-    var head = this
-    var parent = byId[head.parentId]
-    while (parent != null && seen.add(parent.id)) {
-        head = parent
-        parent = byId[head.parentId]
-    }
-    return head.movementPattern.takeIf {
-        head.rowKind == RowKind.CATEGORY && it != MovementPattern.OTHER
-    }
-}
+fun Exercise.effectiveMovementPattern(library: List<Exercise>): MovementPattern? =
+    statedOrInherited(library) { it.movementPattern }
 
 /**
  * The head an exercise is counted under: the top of its chain, or itself when it heads nothing

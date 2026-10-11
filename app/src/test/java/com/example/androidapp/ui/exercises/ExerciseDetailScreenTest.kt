@@ -5,11 +5,13 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.R
 import androidx.test.core.app.ApplicationProvider
 import android.content.Context
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.semantics.SemanticsActions
@@ -370,18 +372,20 @@ class ExerciseDetailScreenTest {
         // ROADMAP N95: the child reads the head's primary muscle rather than holding a copy, and a head that
         // has been removed still names it (N58's rule). Both are one row on the detail screen because they
         // answer one question — what is this filed under.
+        // The row states no muscle of its own (N103), which is what leaves the head's readable.
         show(
             ExerciseDetailUiState(
                 isLoading = false,
-                exercise = seeded.copy(parentId = "cat-bench"),
+                exercise = seeded.copy(parentId = "cat-bench", primaryMuscle = null),
                 head = bench,
                 headName = "Bench Press",
+                ancestors = listOf(bench),
             ),
         )
 
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_DETAIL_CATEGORY).assertIsDisplayed()
         composeTestRule.onNodeWithText("Bench Press").assertIsDisplayed()
-        // `bench` says Chest and the row itself says Quads, so reading Chest is the inheritance working.
+        // `bench` says Chest and the row states none of its own, so reading Chest is the inheritance working.
         composeTestRule.onNodeWithText("Chest").assertIsDisplayed()
     }
 
@@ -394,30 +398,59 @@ class ExerciseDetailScreenTest {
     }
 
     @Test
-    fun aVariationsPattern_isItsFamilys_andIsDrawn() {
-        // ROADMAP N96, B96: the pattern belongs to the category, so a variation of a filed movement reads the
-        // family's. It arrives already resolved because the walk needs the whole chain, and the screen holds
-        // only the immediate head — reading it here drew nothing for exactly these rows.
+    fun aVariationsTaxonomy_isResolvedThroughItsWholeChain() {
+        // ROADMAP N96, N103, B96: a variation states nothing, so its pattern, its muscle and its equipment
+        // are read through the movement it hangs under to the category above both. The chain arrives resolved
+        // because the walk needs it — reading the immediate head here is what left a variation with no pattern
+        // at all, and with `None` for a muscle its category states.
+        val category = bench.copy(movementPattern = MovementPattern.PRESS)
+        val movement = seeded.copy(
+            id = "barbell-bench-press",
+            name = "Barbell Bench Press",
+            parentId = category.id,
+            movementPattern = null,
+            primaryMuscle = MuscleGroup.CHEST,
+            equipment = Equipment.BARBELL,
+        )
+        val variation = movement.copy(
+            id = "paused-bench",
+            name = "Paused Bench",
+            parentId = movement.id,
+            primaryMuscle = null,
+            equipment = null,
+        )
         show(
             ExerciseDetailUiState(
                 isLoading = false,
-                exercise = seeded.copy(id = "paused-squat", name = "Paused Squat", parentId = "back-squat"),
-                head = seeded,
-                headName = "Back Squat",
-                familyPattern = MovementPattern.SQUAT,
+                exercise = variation,
+                head = movement,
+                headName = "Barbell Bench Press",
+                ancestors = listOf(movement, category),
             ),
         )
 
         composeTestRule.onNodeWithText("Movement pattern").performScrollTo().assertIsDisplayed()
-        composeTestRule.onNodeWithText("Squat").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Press").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Chest").performScrollTo().assertIsDisplayed()
+        composeTestRule.onNodeWithText("Barbell").performScrollTo().assertIsDisplayed()
     }
 
     @Test
-    fun aRowInNoCategory_drawsNoPatternRow() {
-        // A row in no category has no pattern (N96), and the block says nothing rather than "None".
-        show(ExerciseDetailUiState(isLoading = false, exercise = seeded, familyPattern = null))
+    fun aRowWhoseTaxonomyNothingStates_saysNoneRatherThanInventingOne() {
+        // A row nothing states a muscle, an equipment or a pattern for (N103) shows what it has: `None` for
+        // the two rows that always draw, and no Pattern row at all.
+        show(
+            ExerciseDetailUiState(
+                isLoading = false,
+                exercise = Exercise(id = "mine", name = "My Movement", isCustom = true),
+                ancestors = emptyList(),
+            ),
+        )
 
         composeTestRule.onNodeWithText("Movement pattern").assertDoesNotExist()
+        // Every row that always draws says so rather than inventing a value: primary, secondary and equipment
+        // have nothing stated anywhere, and the cue is unset.
+        composeTestRule.onAllNodesWithText("None").assertCountEquals(4)
     }
 
     @Test

@@ -34,8 +34,17 @@ object BackupCodec {
      * and turn every head into a loggable lift — flattening every family instead of refusing the file as
      * newer. Adding the two fields is exactly the case the paragraph above excludes (a plain addition), but
      * the *meaning* of a movement row is what changed when a second value appeared (B90).
+     *
+     * **2.0 moved it to 4 and set the floor there** (ROADMAP N103, N104). A row's taxonomy is nullable
+     * now — a row states what it knows and inherits the rest — so the meaning of a present value changed
+     * again, and the four retired pattern names are gone from the enum. [MINIMUM_SCHEMA_VERSION] equals
+     * it because 2.0 reads exactly the one shape it writes: a 1.x file is refused *before* the decoder
+     * rather than decoded into a model that no longer matches it.
      */
-    const val CURRENT_SCHEMA_VERSION = 3
+    const val CURRENT_SCHEMA_VERSION = 4
+
+    /** The oldest file this build reads: 2.0's own, and nothing earlier (ROADMAP N104). */
+    const val MINIMUM_SCHEMA_VERSION = 4
 
     private val json = Json {
         prettyPrint = true
@@ -56,7 +65,13 @@ object BackupCodec {
      * whose only fault is being new (B62).
      */
     fun decode(text: String): BackupFile {
-        val element = gatedDocument(text, "schemaVersion", CURRENT_SCHEMA_VERSION, "backup")
+        val element = gatedDocument(
+            text = text,
+            field = "schemaVersion",
+            currentVersion = CURRENT_SCHEMA_VERSION,
+            noun = "backup",
+            minimumVersion = MINIMUM_SCHEMA_VERSION,
+        )
         return try {
             json.decodeFromJsonElement<BackupFile>(element)
         } catch (malformed: SerializationException) {

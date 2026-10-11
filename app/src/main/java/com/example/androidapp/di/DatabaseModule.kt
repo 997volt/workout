@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.example.androidapp.data.local.ALL_MIGRATIONS
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.seedMissingExercises
 import com.example.androidapp.domain.TimeSource
@@ -22,9 +21,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
-    // Room takes migrations as a vararg, so the array must be spread — the
-    // suppressed copy is a handful of Migration objects, built once per process.
-    @Suppress("SpreadOperator")
     @Provides
     @Singleton
     fun provideDatabase(
@@ -32,9 +28,10 @@ object DatabaseModule {
         timeSource: TimeSource,
     ): WorkoutDatabase =
         Room.databaseBuilder(context, WorkoutDatabase::class.java, WorkoutDatabase.NAME)
-            // No fallbackToDestructiveMigration: a forgotten migration must fail
-            // loudly rather than silently wipe a user's training history.
-            .addMigrations(*ALL_MIGRATIONS)
+            // No migrations and no fallbackToDestructiveMigration (ROADMAP N104): this is 2.0's
+            // store, created at schema 1, and 1.x's file is a different one this build never opens —
+            // so there is nothing to migrate and nothing to truncate. A forgotten migration still
+            // fails loudly: a change to *this* store needs a migration like any other.
             .addCallback(
                 object : RoomDatabase.Callback() {
                     /**

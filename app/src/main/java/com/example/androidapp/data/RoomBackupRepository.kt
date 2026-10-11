@@ -1,5 +1,7 @@
 package com.example.androidapp.data
 
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.IOException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -32,6 +34,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class RoomBackupRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val database: WorkoutDatabase,
     private val timeSource: TimeSource,
     private val settings: SettingsRepository,
@@ -112,6 +115,12 @@ class RoomBackupRepository @Inject constructor(
             if (!crashLogStore.clear()) {
                 throw IOException("the crash logs could not be removed")
             }
+
+            // **The 1.x store is user data too** (ROADMAP N104), and 2.0 leaves it on the device rather than
+            // migrating it — so "delete everything" has to take it, or a lifter's training history survives
+            // on disk in a file no screen mentions. `deleteDatabase` removes the file and its `-wal`/`-shm`
+            // companions; a device that never had 1.x reports false, which is not a failure.
+            context.deleteDatabase(WorkoutDatabase.LEGACY_NAME)
 
             // Metric targets are the one setting the user *authored* rather than chose as a display
             // preference — which is why they are exported — so "delete everything" has to take them

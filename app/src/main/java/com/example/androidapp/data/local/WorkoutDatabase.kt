@@ -5,14 +5,21 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 /**
- * The app's local database (ROADMAP F5).
+ * The app's local database (ROADMAP F5, F14).
  *
  * `exportSchema = true` writes the schema to `app/schemas/` on every build; those
  * JSON files are committed and are what migration tests validate against.
  *
+ * **This is 2.0's store, and it starts at schema 1** (ROADMAP N104). 1.x's file — `workout.db` — is
+ * deliberately never opened by this build: it is left untouched on the device, where the 1.18 APK is
+ * still the way to read it, and the migration chain that would have carried it here went with the
+ * 1.x store. See [com.example.androidapp.data.RoomBackupRepository] for what "delete everything" owes
+ * a second store.
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
- * history. A missing migration must fail loudly in development instead.
+ * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
+ * starts a *new file* rather than truncating the old one.
  */
 @Database(
     entities = [
@@ -32,7 +39,7 @@ import androidx.room.TypeConverters
         SessionSoreMuscleEntity::class,
         SessionExerciseJointEntity::class,
     ],
-    version = 39,
+    version = 1,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -82,6 +89,10 @@ abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun trendsDao(): TrendsDao
 
     companion object {
-        const val NAME = "workout.db"
+        /** This store's file (ROADMAP N104). 1.x's `workout.db` is a different file on purpose. */
+        const val NAME = "workout-2.db"
+
+        /** The 1.x store, kept only so "delete everything" can remove it (ROADMAP N104). */
+        const val LEGACY_NAME = "workout.db"
     }
 }

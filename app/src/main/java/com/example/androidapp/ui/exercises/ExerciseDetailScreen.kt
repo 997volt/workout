@@ -50,11 +50,12 @@ import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.effectiveEquipment
+import com.example.androidapp.domain.effectiveMovementPattern
 import com.example.androidapp.domain.effectivePrimaryMuscle
 import com.example.androidapp.domain.effectiveSecondaryMuscles
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.SELECTABLE_MOVEMENT_PATTERNS
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SELECTABLE_MUSCLE_GROUPS
@@ -198,6 +199,7 @@ private fun ExerciseDetailBody(
             exercise = exercise,
             error = state.error,
             categoryOptions = state.categoryOptions,
+            ancestors = state.ancestors,
             onCancel = onCancelEdit,
             onSave = onSave,
             modifier = modifier,
@@ -205,9 +207,8 @@ private fun ExerciseDetailBody(
 
         exercise != null -> ExerciseDetails(
             exercise = exercise,
-            head = state.head,
             headName = state.headName,
-            familyPattern = state.familyPattern,
+            ancestors = state.ancestors,
             modifier = modifier,
         )
     }
@@ -257,15 +258,13 @@ private fun WeightStepRow(exercise: Exercise, modifier: Modifier = Modifier) {
 @Composable
 private fun ExerciseDetails(
     exercise: Exercise,
-    /** The head this row hangs under, or null (ROADMAP N95): what it inherits its muscles from. */
-    head: Exercise?,
-    /** What that head is called, or null. Read apart from [head] because a removed head still names it. */
+    /** What this row's head is called, or null (ROADMAP N95). Read live, and readable after removal. */
     headName: String?,
     /**
-     * The family's movement pattern, already resolved through the whole chain (ROADMAP N96, B96), or null
-     * where the row is in no category.
+     * Every row above this one, nearest first (ROADMAP N103). The resolvers walk it, so the screen does not
+     * keep a second copy of the rule — which is what B96 was.
      */
-    familyPattern: MovementPattern?,
+    ancestors: List<Exercise>,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -275,12 +274,13 @@ private fun ExerciseDetails(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        FamilyRows(exercise = exercise, head = head, headName = headName)
+        FamilyRows(exercise = exercise, headName = headName, ancestors = ancestors)
         HorizontalDivider()
 
         AttributeRow(
             label = stringResource(R.string.exercise_detail_secondary),
-            value = exercise.secondaryMuscles
+            // The **effective** list (N103): its own when it names one, else the nearest row above that does.
+            value = exercise.effectiveSecondaryMuscles(ancestors)
                 .joinToString(", ") { it.label }
                 .ifEmpty { stringResource(R.string.exercise_detail_none) },
         )
@@ -288,17 +288,17 @@ private fun ExerciseDetails(
 
         AttributeRow(
             label = stringResource(R.string.exercise_detail_equipment),
-            value = exercise.equipment.label,
+            // Inherited under the one rule (N103), which is what lets a variation state no equipment while
+            // still being performed with the movement's.
+            value = exercise.effectiveEquipment(ancestors)?.label
+                ?: stringResource(R.string.exercise_detail_none),
         )
         HorizontalDivider()
 
-        // The family's pattern, not the row's own (ROADMAP N96): it belongs to the category, so a movement
-        // reads the top of its chain. **Resolved in the ViewModel** (B96) because that walk needs the whole
-        // library and this screen holds only the immediate head — reading it here stopped at a variation's
-        // movement and drew nothing for exactly the rows a family exists to group. **Shown only when there is
-        // one** — a row in no category has no pattern, and a third "None" in this block would say nothing a
-        // lifter could act on.
-        familyPattern?.let { pattern ->
+        // The pattern resolves through the chain too (N96, N103) — its own if it states one, else the
+        // family's. **Shown only when there is one** — a row in no category, and a row that states none, has
+        // no pattern, and a third "None" in this block would say nothing a lifter could act on.
+        exercise.effectiveMovementPattern(ancestors)?.let { pattern ->
             AttributeRow(
                 label = stringResource(R.string.exercise_detail_pattern),
                 value = pattern.label,
@@ -342,15 +342,16 @@ private fun ExerciseDetails(
 
 
 /**
- * What this row takes from the head it hangs under (ROADMAP N95): the family's name, the muscle it inherits,
- * and the secondary list it defaults to.
+ * What this row takes from the head it hangs under (ROADMAP N95): the family's name and the muscle it
+ * resolves to.
  *
- * One subject — what this row is, by virtue of where it is filed — and split out of [ExerciseDetails], which
- * is at the length this project allows. A loose movement inherits nothing and shows only what it holds.
+ * One subject — what this row *is*, by virtue of where it is filed — and split out of [ExerciseDetails],
+ * which is at the length this project allows. The secondary list lives there rather than here because it is
+ * the same effective answer for both (N103): a row's own list when it names one, else its head's.
  */
 @Composable
-private fun FamilyRows(exercise: Exercise, head: Exercise?, headName: String?) {
-    // One emitting root, because three sibling `AttributeRow`s and their dividers are one block of content:
+private fun FamilyRows(exercise: Exercise, headName: String?, ancestors: List<Exercise>) {
+    // One emitting root, because two sibling `AttributeRow`s and their dividers are one block of content:
     // a composable that emits several siblings at its top level has no single anchor for them (N95's rows are
     // read together anyway, as the answer to "what is this filed under").
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -366,22 +367,12 @@ private fun FamilyRows(exercise: Exercise, head: Exercise?, headName: String?) {
 
         AttributeRow(
             label = stringResource(R.string.exercise_detail_primary),
-            // The head's muscle, because an exercise **inherits** it (N95). Nothing is written to the row for
-            // it, which is why this reads the head rather than the row's own value.
-            // Through the resolver rather than the head's field, so a head that says nothing is silent (N95):
-            // reading `head?.primaryMuscle` here was the bug the device caught, and it survived the domain fix
-            // because this call site was a second copy of the rule.
-            value = exercise.effectivePrimaryMuscle(listOfNotNull(head, exercise)).label,
-        )
-        HorizontalDivider()
-
-        AttributeRow(
-            label = stringResource(R.string.exercise_detail_secondary),
-            // The head's list while this exercise has named none of its own: "default from the category and
-            // are the exercise's to change", so the exercise's own list wins the moment it has one.
-            value = exercise.effectiveSecondaryMuscles(listOfNotNull(head, exercise))
-                .joinToString(", ") { it.label }
-                .ifEmpty { stringResource(R.string.exercise_detail_none) },
+            // The **effective** muscle (N95, N103), through the resolver rather than the head's field: a head
+            // that states nothing is silent, and the walk goes all the way up, so a variation reads the
+            // category's muscle when the exercise between them states none. A row nothing states one for says
+            // so rather than inventing `Other`.
+            value = exercise.effectivePrimaryMuscle(ancestors)?.label
+                ?: stringResource(R.string.exercise_detail_none),
         )
         HorizontalDivider()
     }
@@ -396,15 +387,16 @@ private fun FamilyRows(exercise: Exercise, head: Exercise?, headName: String?) {
  * or unparseable value keeps Save disabled.
  */
 private data class ExerciseDraft(
-    /**
-     * Whether this row is a lift or a head (ROADMAP N95), carried so the form can offer a fact to the row that
-     * owns it — the movement pattern belongs to a category (N96), and to nothing else.
-     */
-    val rowKind: RowKind,
     val name: String,
-    val primaryMuscle: MuscleGroup,
-    val equipment: Equipment,
-    val movementPattern: MovementPattern,
+    /**
+     * What this row states for its taxonomy, each null for *unstated* (ROADMAP N103).
+     *
+     * The form offers a field only where no row above states it, so a field left `null` here is one the row
+     * inherits — and saving it writes nothing, which is what keeps one fact in one home.
+     */
+    val primaryMuscle: MuscleGroup? = null,
+    val equipment: Equipment? = null,
+    val movementPattern: MovementPattern? = null,
     val restText: String,
     val techniqueNote: String,
     /** The step as typed, in this draft's unit (ROADMAP N77). Empty means the unit's own. */
@@ -478,7 +470,6 @@ private data class ExerciseDraft(
 }
 
 private fun Exercise.toDraft(appUnit: WeightUnit) = ExerciseDraft(
-    rowKind = rowKind,
     name = name,
     primaryMuscle = primaryMuscle,
     equipment = equipment,
@@ -505,6 +496,8 @@ private fun ExerciseEditForm(
     error: DataError?,
     /** The heads this row may be filed under (ROADMAP N95); empty for a category, which is top level. */
     categoryOptions: List<Exercise>,
+    /** The rows above this one, nearest first (ROADMAP N103): a field they state is not offered here. */
+    ancestors: List<Exercise>,
     onCancel: () -> Unit,
     onSave: (ExerciseEdit) -> Unit,
     modifier: Modifier = Modifier,
@@ -524,6 +517,7 @@ private fun ExerciseEditForm(
         ExerciseEditFields(
             draft = draft,
             onDraftChange = { draft = it },
+            ancestors = ancestors,
             categoryOptions = categoryOptions.takeIf { exercise.rowKind == RowKind.MOVEMENT },
         )
         ExercisePrescriptionFields(draft = draft, onDraftChange = { draft = it })
@@ -579,11 +573,21 @@ private fun CategoryPicker(
     )
 }
 
-/** The identity attributes — name and taxonomy (ROADMAP N2). */
+/**
+ * The identity attributes — name and taxonomy (ROADMAP N2, N103).
+ *
+ * **A field a head supplies is not offered** (N103): the resolver would read the head's value and ignore
+ * anything typed here, which is the trap the entry named for the primary muscle and refuses to reproduce for
+ * the other two. The rule is the same one the resolvers use, asked backwards — no row above states it, so
+ * this row's value is the one that is read — and it replaces N96's special case that offered the pattern to a
+ * category and to nothing else. Where a field is supplied, the *read* view names what it inherits.
+ */
 @Composable
 private fun ExerciseEditFields(
     draft: ExerciseDraft,
     onDraftChange: (ExerciseDraft) -> Unit,
+    /** The rows above this one, nearest first: whichever of them states a field owns it (N103). */
+    ancestors: List<Exercise>,
     modifier: Modifier = Modifier,
     /** The heads this row may be filed under, or null where it has nowhere to be filed (N95). */
     categoryOptions: List<Exercise>? = null,
@@ -610,39 +614,43 @@ private fun ExerciseEditFields(
             )
         }
 
-        AttributeSelector(
-            label = stringResource(R.string.exercise_detail_primary),
-            selected = draft.primaryMuscle,
-            // The retired `BACK` is not an option (N75); a row that carries it still reads as Back.
-            options = SELECTABLE_MUSCLE_GROUPS,
-            optionLabel = { it.label },
-            testTag = TestTags.Muscle.FIELD,
-            onSelect = { onDraftChange(draft.copy(primaryMuscle = it)) },
-            // Tagged by the enum's name rather than its label, so a test names the group and not the
-            // English word for it (B71).
-            optionTag = { TestTags.Muscle.option(it.name) },
-        )
+        // *Not stated* is a real answer for every one of them (N103) — it is what a variation saves, and
+        // what a row means when it inherits — so each picker leads with it, the shape the category picker
+        // already uses.
+        val notStated = stringResource(R.string.exercise_detail_none)
 
-        AttributeSelector(
-            label = stringResource(R.string.exercise_detail_equipment),
-            selected = draft.equipment,
-            options = Equipment.entries,
-            optionLabel = { it.label },
-            testTag = TestTags.EXERCISE_EDIT_EQUIPMENT,
-            onSelect = { onDraftChange(draft.copy(equipment = it)) },
-        )
+        if (ancestors.none { it.primaryMuscle != null }) {
+            AttributeSelector(
+                label = stringResource(R.string.exercise_detail_primary),
+                selected = draft.primaryMuscle,
+                // The retired `BACK` is not an option (N75); a row that carries it still reads as Back.
+                options = listOf<MuscleGroup?>(null) + SELECTABLE_MUSCLE_GROUPS,
+                optionLabel = { it?.label ?: notStated },
+                testTag = TestTags.Muscle.FIELD,
+                onSelect = { onDraftChange(draft.copy(primaryMuscle = it)) },
+                // Tagged by the enum's name rather than its label, so a test names the group and not the
+                // English word for it (B71).
+                optionTag = { group -> group?.let { TestTags.Muscle.option(it.name) } },
+            )
+        }
 
-        // The pattern is the **category's** fact (ROADMAP N96), so it is offered where a head is edited and
-        // nowhere else: offering it on a movement would be a write the resolver ignores, which is the trap
-        // N103's entry names for the primary muscle and not one worth adding a second of. The options are the
-        // selectable nine rather than the enum's thirteen — the four the merge retired are read where a row
-        // carries one, and never offered.
-        if (draft.rowKind == RowKind.CATEGORY) {
+        if (ancestors.none { it.equipment != null }) {
+            AttributeSelector(
+                label = stringResource(R.string.exercise_detail_equipment),
+                selected = draft.equipment,
+                options = listOf<Equipment?>(null) + Equipment.entries,
+                optionLabel = { it?.label ?: notStated },
+                testTag = TestTags.EXERCISE_EDIT_EQUIPMENT,
+                onSelect = { onDraftChange(draft.copy(equipment = it)) },
+            )
+        }
+
+        if (ancestors.none { it.movementPattern != null }) {
             AttributeSelector(
                 label = stringResource(R.string.exercise_detail_pattern),
                 selected = draft.movementPattern,
-                options = SELECTABLE_MOVEMENT_PATTERNS,
-                optionLabel = { it.label },
+                options = listOf<MovementPattern?>(null) + MovementPattern.entries,
+                optionLabel = { it?.label ?: notStated },
                 testTag = TestTags.EXERCISE_EDIT_PATTERN,
                 onSelect = { onDraftChange(draft.copy(movementPattern = it)) },
             )

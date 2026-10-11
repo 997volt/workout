@@ -28,9 +28,9 @@ object ExerciseSearch {
      */
     internal fun Exercise.matches(query: String): Boolean =
         matches(query, name, name) ||
-            (listOf(primaryMuscle) + secondaryMuscles).any { matches(query, it.label, it.name) } ||
-            matches(query, equipment.label, equipment.name) ||
-            matches(query, movementPattern.label, movementPattern.name)
+            (listOfNotNull(primaryMuscle) + secondaryMuscles).any { matches(query, it.label, it.name) } ||
+            listOfNotNull(equipment).any { matches(query, it.label, it.name) } ||
+            listOfNotNull(movementPattern).any { matches(query, it.label, it.name) }
 
     /** Matches against the display text *and* the locale-stable key. */
     private fun matches(query: String, label: String, stableKey: String): Boolean =

@@ -130,10 +130,18 @@ data class BackupFile(
 data class ExerciseDto(
     val id: String,
     val name: String,
-    val primaryMuscle: MuscleGroup,
+    /**
+     * What this row states, or null for *unstated* (ROADMAP N103).
+     *
+     * Nullable because 2.0's model is "a row stores what it states, and anything unstated is read from the
+     * nearest row above that states it". These four stay **required** rather than defaulted: a document that
+     * omits them is a pre-2.0 one, and the gate refuses that by its version rather than letting a default
+     * quietly answer for a row that meant to state something.
+     */
+    val primaryMuscle: MuscleGroup?,
     val secondaryMuscles: List<MuscleGroup>,
-    val equipment: Equipment,
-    val movementPattern: MovementPattern,
+    val equipment: Equipment?,
+    val movementPattern: MovementPattern?,
     val isCustom: Boolean,
     val createdAt: Long,
     val updatedAt: Long,

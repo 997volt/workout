@@ -2,8 +2,6 @@ package com.example.androidapp.data.local
 
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.androidapp.data.SeedExercises
-import com.example.androidapp.domain.model.Equipment
-import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
 
 /**
@@ -43,14 +41,14 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                 arrayOf<Any?>(
                     category.id,
                     category.name,
-                    // The placeholders a head carries: it is never offered and never logged, so its muscles and
-                    // its equipment say nothing rather than something untrue — a family spans equipment, and
-                    // every child sets its own. **Its pattern is the exception** (N96): that is the fact the
-                    // category owns, because whether a family presses or hinges is the family's to decide, and
-                    // declaring it once is what stops a movement and its variations disagreeing.
-                    converters.fromMuscleGroup(MuscleGroup.OTHER),
+                    // **Null is *unstated*** (ROADMAP N103): a head states nothing it leaves to its children,
+                    // and `OTHER` would be a claim — "another muscle", "other equipment" — that it does not
+                    // mean. **Its pattern is the exception**: whether a family presses or hinges is the
+                    // family's to decide, and stating it once is what stops a movement and its variations
+                    // disagreeing.
+                    null,
                     converters.fromMuscleGroups(emptyList()),
-                    converters.fromEquipment(Equipment.OTHER),
+                    null,
                     converters.fromMovementPattern(category.pattern),
                     0, // isCustom: seed, like every row this function writes
                     null, // parentId: a head sits at the top level
@@ -67,13 +65,16 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                 arrayOf<Any?>(
                     exercise.id,
                     exercise.name,
-                    converters.fromMuscleGroup(exercise.primaryMuscle),
+                    // What this row **states**, and nothing else (ROADMAP N103): a variation's copy of these
+                    // is what the model stopped writing, so the seed does not write one either. Null means
+                    // *inherit from the nearest row above that states it*.
+                    exercise.primaryMuscle?.let(converters::fromMuscleGroup),
                     converters.fromMuscleGroups(exercise.secondaryMuscles),
-                    converters.fromEquipment(exercise.equipment),
-                    converters.fromMovementPattern(exercise.movementPattern),
+                    exercise.equipment?.let(converters::fromEquipment),
+                    exercise.movementPattern?.let(converters::fromMovementPattern),
                     0, // isCustom
                     // The family this movement arrives filed under (ROADMAP N95), from the seed's own map so
-                    // the seeder and the migration cannot disagree about it. `INSERT OR IGNORE` is what
+                    // the seeder and the record of it cannot disagree. `INSERT OR IGNORE` is what
                     // keeps this from undoing a re-file: the row that already exists is left alone, and
                     // only a movement a database does not have yet arrives with its parent set.
                     SeedExercises.parentOf[exercise.id],
