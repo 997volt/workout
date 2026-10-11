@@ -1,0 +1,73 @@
+package com.example.androidapp.data
+
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.MuscleGroup
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Test
+
+/**
+ * The seed library's own shape (ROADMAP P1.1, N110).
+ *
+ * Pure JVM, because these are properties of the data rather than of the database that carries it: a list a
+ * lifter can actually reach is one where every movement has its own id, every link points at a **category**,
+ * and every value the pickers offer has an exercise behind it.
+ *
+ * The library grows, so nothing here pins a count — only the rules a new entry has to keep.
+ */
+class SeedExercisesTest {
+
+    @Test
+    fun everyMovementId_isUnique() {
+        assertThat(SeedExercises.all.map { it.id }).containsNoDuplicates()
+    }
+
+    @Test
+    fun everyCategoryId_isUnique() {
+        assertThat(SeedExercises.categories.map { it.id }).containsNoDuplicates()
+    }
+
+    @Test
+    fun aMovementIsFiledUnderACategory_neverUnderAnotherMovement() {
+        // N110's shape, checked on the data: a movement is nobody's head, so a `parentOf` target that is not
+        // a category would be the variation level the model no longer has — and a link whose child is not in
+        // the list would be a movement no database ever receives.
+        val categories = SeedExercises.categories.mapTo(mutableSetOf()) { it.id }
+        val movements = SeedExercises.all.mapTo(mutableSetOf()) { it.id }
+
+        assertWithMessage("a file target that is not a category is a variation level")
+            .that(SeedExercises.parentOf.values.filterNot { it in categories })
+            .isEmpty()
+        assertWithMessage("a filed movement has to exist in the seed")
+            .that(SeedExercises.parentOf.keys.filterNot { it in movements })
+            .isEmpty()
+    }
+
+    @Test
+    fun theSeedUsesEveryEquipment_theLibraryOffers() {
+        // A value a picker offers and no exercise carries is a menu entry that answers nothing — several sat
+        // unused until the strength and bodybuilding set arrived.
+        assertThat(SeedExercises.all.mapNotNull { it.equipment }.toSet())
+            .containsExactlyElementsIn(Equipment.entries)
+    }
+
+    @Test
+    fun theSeedUsesEveryPatternAndMuscle_exceptOther() {
+        // `OTHER` is the *unstated* answer a custom exercise is created with, so it is deliberately the one
+        // value no seeded row carries. Everything else is a question a lifter can ask of the library.
+        assertThat(SeedExercises.categories.map { it.pattern }.toSet())
+            .containsExactlyElementsIn(MovementPattern.entries - MovementPattern.OTHER)
+        assertThat(SeedExercises.categories.map { it.primaryMuscle }.toSet())
+            .containsExactlyElementsIn(MuscleGroup.entries - MuscleGroup.OTHER)
+    }
+
+    @Test
+    fun everyMovementStatesItsEquipment() {
+        // The one fact a category cannot supply (N110): a family spans equipment, so a movement without one
+        // would read as nothing at all.
+        assertWithMessage("a movement with no equipment reads as no equipment")
+            .that(SeedExercises.all.filter { it.equipment == null }.map { it.id })
+            .isEmpty()
+    }
+}

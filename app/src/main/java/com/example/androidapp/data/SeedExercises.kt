@@ -29,22 +29,45 @@ internal object SeedExercises {
      * gone, and the paused, competition and speed lifts are ordinary movements filed under the same category
      * as the lift they are a version of, which is exactly the family the category roll-up reads.
      *
+     * **The list is a strength and bodybuilding set**: the powerlifting bar lifts with the assistance work
+     * that carries them, and the machine, cable, dumbbell and band work a bodybuilding program is built from.
+     * The four equipment values that had no exercise of their own — `KETTLEBELL`, `BAND`, `OTHER` for the ab
+     * wheel — and the four muscles that had no movement of their own — `FOREARMS`, `ADDUCTORS`, and
+     * `LOWER_BACK` as a primary — are used here, so every value the pickers offer can be found in the library.
+     *
      * A movement the seed leaves **unfiled** states its own three facts, because it has no category to read
      * them from — and one whose family would claim a muscle it does not work states its own for that field,
-     * which is what own-if-stated is for. The lunge family is the standing case: it holds no single primary
-     * muscle, so each of its two movements states its own.
+     * which is what own-if-stated is for. Two families are the standing cases: the lunge family holds no single
+     * primary muscle, so each of its movements states its own, and a close-grip bench press is filed under
+     * *Bench Press* while stating the triceps it is actually trained for.
      */
     val all: List<Exercise> = listOf(
         // ---- Chest ----
         movement("barbell-bench-press", "Barbell Bench Press", Equipment.BARBELL),
-        movement("incline-dumbbell-press", "Incline Dumbbell Press", Equipment.DUMBBELL),
-        movement("cable-fly", "Cable Fly", Equipment.CABLE),
-        movement("dumbbell-fly", "Dumbbell Fly", Equipment.DUMBBELL),
+        movement("dumbbell-bench-press", "Dumbbell Bench Press", Equipment.DUMBBELL),
+        movement("decline-bench-press", "Decline Bench Press", Equipment.BARBELL),
+        movement("machine-chest-press", "Machine Chest Press", Equipment.MACHINE),
+        movement("floor-press", "Floor Press", Equipment.BARBELL),
+        // Filed under *Bench Press* and stating the triceps anyway: own-if-stated is what lets a movement be
+        // trained for a muscle its family does not name (N110).
+        movement(
+            "close-grip-bench-press",
+            "Close-Grip Bench Press",
+            Equipment.BARBELL,
+            MuscleGroup.TRICEPS,
+            listOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS),
+        ),
         // The same lift performed differently, so they are filed under the lift's own category rather than
         // under it (N110) — the family reads as one number either way.
         movement("competition-bench-press", "Competition Bench Press", Equipment.BARBELL),
         movement("bench-press-speed-day", "Bench Press — Speed Day", Equipment.BARBELL),
         movement("paused-bench-press-3s", "3-Second Paused Bench Press", Equipment.BARBELL),
+        movement("incline-dumbbell-press", "Incline Dumbbell Press", Equipment.DUMBBELL),
+        movement("incline-barbell-bench-press", "Incline Barbell Bench Press", Equipment.BARBELL),
+        movement("incline-machine-press", "Incline Machine Press", Equipment.MACHINE),
+        movement("cable-fly", "Cable Fly", Equipment.CABLE),
+        movement("dumbbell-fly", "Dumbbell Fly", Equipment.DUMBBELL),
+        movement("pec-deck", "Pec Deck", Equipment.MACHINE),
         movement(
             "push-up",
             "Push-Up",
@@ -62,41 +85,79 @@ internal object SeedExercises {
             listOf(MuscleGroup.GLUTES, MuscleGroup.FOREARMS, MuscleGroup.LOWER_BACK),
         ),
         movement("conventional-deadlift", "Conventional Deadlift", Equipment.BARBELL),
+        movement("sumo-deadlift", "Sumo Deadlift", Equipment.BARBELL),
+        movement("deficit-deadlift", "Deficit Deadlift", Equipment.BARBELL),
+        movement("rack-pull", "Rack Pull", Equipment.BARBELL),
         movement("romanian-deadlift", "Romanian Deadlift", Equipment.BARBELL),
+        movement("good-morning", "Good Morning", Equipment.BARBELL),
+        movement("kettlebell-swing", "Kettlebell Swing", Equipment.KETTLEBELL),
         movement("pull-up", "Pull-Up", Equipment.BODYWEIGHT, secondary = listOf(MuscleGroup.BICEPS, MuscleGroup.FOREARMS)),
+        movement("chin-up", "Chin-Up", Equipment.BODYWEIGHT),
         movement(
             "assisted-pull-up",
             "Assisted Pull-Up",
             Equipment.MACHINE,
         ),
+        movement("lat-pulldown", "Lat Pulldown", Equipment.CABLE),
+        movement("straight-arm-pulldown", "Straight-Arm Pulldown", Equipment.CABLE),
         movement("barbell-row", "Barbell Row", Equipment.BARBELL, secondary = listOf(MuscleGroup.BICEPS, MuscleGroup.FOREARMS)),
+        movement("pendlay-row", "Pendlay Row", Equipment.BARBELL),
+        movement("t-bar-row", "T-Bar Row", Equipment.BARBELL),
         movement("seated-cable-row", "Seated Cable Row", Equipment.CABLE),
         movement("machine-row", "Machine Row", Equipment.MACHINE),
-        movement("lat-pulldown", "Lat Pulldown", Equipment.CABLE),
+        movement("chest-supported-row", "Chest-Supported Row", Equipment.MACHINE),
+        movement("single-arm-dumbbell-row", "Single-Arm Dumbbell Row", Equipment.DUMBBELL),
+        movement("inverted-row", "Inverted Row", Equipment.BODYWEIGHT),
+        movement("barbell-shrug", "Barbell Shrug", Equipment.BARBELL),
+        movement("dumbbell-shrug", "Dumbbell Shrug", Equipment.DUMBBELL),
+        movement("back-extension", "Back Extension", Equipment.MACHINE),
+        movement("reverse-hyperextension", "Reverse Hyperextension", Equipment.MACHINE),
 
         // ---- Shoulders ----
         movement("overhead-press", "Overhead Press", Equipment.BARBELL),
         movement("push-press", "Push Press", Equipment.BARBELL),
+        movement("seated-dumbbell-press", "Seated Dumbbell Press", Equipment.DUMBBELL),
+        movement("arnold-press", "Arnold Press", Equipment.DUMBBELL),
+        movement("machine-shoulder-press", "Machine Shoulder Press", Equipment.MACHINE),
+        movement("z-press", "Z Press", Equipment.BARBELL),
         movement("lateral-raise", "Lateral Raise", Equipment.DUMBBELL),
+        movement("cable-lateral-raise", "Cable Lateral Raise", Equipment.CABLE),
+        movement("machine-lateral-raise", "Machine Lateral Raise", Equipment.MACHINE),
         movement("dumbbell-rotator-raise", "Dumbbell Rotator Raise", Equipment.DUMBBELL),
         movement("rotator-cable-to-side", "Rotator Cable to Side", Equipment.CABLE),
+        movement("rear-delt-fly", "Rear Delt Fly", Equipment.DUMBBELL),
+        movement("reverse-pec-deck", "Reverse Pec Deck", Equipment.MACHINE),
+        movement("band-pull-apart", "Band Pull-Apart", Equipment.BAND),
         movement("face-pull", "Face Pull", Equipment.CABLE, MuscleGroup.SHOULDERS, listOf(MuscleGroup.UPPER_BACK)),
 
         // ---- Arms ----
         movement("barbell-curl", "Barbell Curl", Equipment.BARBELL),
         movement("hammer-curl", "Hammer Curl", Equipment.DUMBBELL),
+        movement("preacher-curl", "Preacher Curl", Equipment.BARBELL),
+        movement("concentration-curl", "Concentration Curl", Equipment.DUMBBELL),
+        movement("machine-curl", "Machine Curl", Equipment.MACHINE),
         movement("cable-arm-curl", "Cable Arm Curl", Equipment.CABLE),
         movement("incline-dumbbell-arm-curl", "Incline Dumbbell Arm Curl", Equipment.DUMBBELL),
         movement("triceps-pushdown", "Triceps Pushdown", Equipment.CABLE),
         movement("two-arm-cable-pushdown", "Two-Arm Cable Pushdown", Equipment.CABLE),
         movement("overhead-triceps-extension", "Overhead Triceps Extension", Equipment.DUMBBELL),
+        movement("cable-overhead-triceps-extension", "Cable Overhead Triceps Extension", Equipment.CABLE),
         movement("dumbbell-skullcrusher", "Dumbbell Skullcrusher", Equipment.DUMBBELL),
+        movement("bench-dip", "Bench Dip", Equipment.BODYWEIGHT),
+        movement("diamond-push-up", "Diamond Push-Up", Equipment.BODYWEIGHT),
         movement("dip", "Dip", Equipment.BODYWEIGHT, MuscleGroup.TRICEPS, listOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS)),
+        movement("wrist-curl", "Wrist Curl", Equipment.DUMBBELL),
+        movement("reverse-wrist-curl", "Reverse Wrist Curl", Equipment.DUMBBELL),
+        movement("reverse-curl", "Reverse Curl", Equipment.BARBELL),
 
         // ---- Legs ----
         movement("back-squat", "Back Squat", Equipment.BARBELL),
         // The same lift performed differently: filed under the squat category, not under the bar (N110).
         movement("paused-back-squat", "Paused Back Squat", Equipment.BARBELL),
+        movement("front-squat", "Front Squat", Equipment.BARBELL),
+        movement("box-squat", "Box Squat", Equipment.BARBELL),
+        movement("hack-squat", "Hack Squat", Equipment.MACHINE),
+        movement("goblet-squat", "Goblet Squat", Equipment.KETTLEBELL),
         movement("leg-press", "Leg Press", Equipment.MACHINE),
         movement("bulgarian-split-squat", "Bulgarian Split Squat", Equipment.DUMBBELL),
         // The family holds no single primary muscle, so each lunge states its own (N110).
@@ -107,16 +168,37 @@ internal object SeedExercises {
             MuscleGroup.GLUTES,
             listOf(MuscleGroup.QUADS),
         ),
+        movement(
+            "reverse-lunge",
+            "Reverse Lunge",
+            Equipment.DUMBBELL,
+            MuscleGroup.GLUTES,
+            listOf(MuscleGroup.QUADS),
+        ),
+        movement("step-up", "Step-Up", Equipment.DUMBBELL),
         movement("leg-extension", "Leg Extension", Equipment.MACHINE, MuscleGroup.QUADS),
         movement("lying-leg-curl", "Lying Leg Curl", Equipment.MACHINE, MuscleGroup.HAMSTRINGS),
+        movement("seated-leg-curl", "Seated Leg Curl", Equipment.MACHINE, MuscleGroup.HAMSTRINGS),
+        movement("nordic-curl", "Nordic Curl", Equipment.BODYWEIGHT, MuscleGroup.HAMSTRINGS),
         movement("hip-thrust", "Hip Thrust", Equipment.BARBELL),
+        movement("glute-bridge", "Glute Bridge", Equipment.BARBELL),
+        movement("cable-kickback", "Cable Kickback", Equipment.CABLE),
+        movement("hip-adduction", "Hip Adduction", Equipment.MACHINE),
+        movement("copenhagen-plank", "Copenhagen Plank", Equipment.BODYWEIGHT, secondary = listOf(MuscleGroup.CORE)),
         movement("standing-calf-raise", "Standing Calf Raise", Equipment.MACHINE),
         movement("seated-calf-raise", "Seated Calf Raise", Equipment.MACHINE),
+        movement("donkey-calf-raise", "Donkey Calf Raise", Equipment.MACHINE),
 
-        // ---- Core ----
+        // ---- Core and carries ----
         movement("plank", "Plank", Equipment.BODYWEIGHT),
+        movement("side-plank", "Side Plank", Equipment.BODYWEIGHT),
         movement("hanging-leg-raise", "Hanging Leg Raise", Equipment.BODYWEIGHT, secondary = listOf(MuscleGroup.FOREARMS)),
         movement("cable-crunch", "Cable Crunch", Equipment.CABLE),
+        movement("ab-wheel-rollout", "Ab Wheel Rollout", Equipment.OTHER),
+        movement("pallof-press", "Pallof Press", Equipment.CABLE),
+        movement("turkish-get-up", "Turkish Get-Up", Equipment.KETTLEBELL, secondary = listOf(MuscleGroup.SHOULDERS)),
+        movement("farmers-carry", "Farmer's Carry", Equipment.DUMBBELL),
+        movement("suitcase-carry", "Suitcase Carry", Equipment.DUMBBELL),
     )
 
     /**
@@ -144,6 +226,15 @@ internal object SeedExercises {
         SeedCategory("lateral-raise-family", "Lateral Raise", MovementPattern.ISOLATION, MuscleGroup.SHOULDERS, emptyList()),
         SeedCategory("calf-raise-family", "Calf Raise", MovementPattern.ISOLATION, MuscleGroup.CALVES, emptyList()),
         SeedCategory("core", "Core", MovementPattern.CORE, MuscleGroup.CORE, emptyList()),
+        // The families added with the strength and bodybuilding set. Each holds a cluster that had no home:
+        // the rear delts are not lateral raises, a shrug is not a row, and a carry is the one family whose
+        // pattern is `CARRY`.
+        SeedCategory("rear-delt", "Rear Delt", MovementPattern.ISOLATION, MuscleGroup.SHOULDERS, listOf(MuscleGroup.UPPER_BACK)),
+        SeedCategory("shrug", "Shrug", MovementPattern.ISOLATION, MuscleGroup.UPPER_BACK, listOf(MuscleGroup.FOREARMS)),
+        SeedCategory("back-extension", "Back Extension", MovementPattern.HINGE, MuscleGroup.LOWER_BACK, listOf(MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS)),
+        SeedCategory("forearm", "Forearm", MovementPattern.ISOLATION, MuscleGroup.FOREARMS, emptyList()),
+        SeedCategory("adductor", "Adductor", MovementPattern.ISOLATION, MuscleGroup.ADDUCTORS, emptyList()),
+        SeedCategory("carry", "Carry", MovementPattern.CARRY, MuscleGroup.CORE, listOf(MuscleGroup.FOREARMS, MuscleGroup.UPPER_BACK)),
     )
 
     /**
@@ -162,49 +253,115 @@ internal object SeedExercises {
      * A movement absent from this map is unfiled, which is a real place to be.
      */
     val parentOf: Map<String, String> = mapOf(
-        // Bench Press: three equipment variants, plus the competition, speed and paused lifts.
+        // Bench Press: the equipment variants, the competition, speed and paused lifts, and the press that
+        // is trained for the triceps.
         "barbell-bench-press" to "bench-press",
         "competition-bench-press" to "bench-press",
         "bench-press-speed-day" to "bench-press",
         "paused-bench-press-3s" to "bench-press",
+        "dumbbell-bench-press" to "bench-press",
+        "decline-bench-press" to "bench-press",
+        "machine-chest-press" to "bench-press",
+        "floor-press" to "bench-press",
+        "close-grip-bench-press" to "bench-press",
         "incline-dumbbell-press" to "incline-press",
-        "overhead-press" to "overhead-press-family",
-        "push-press" to "overhead-press-family",
-        "back-squat" to "squat",
-        "leg-press" to "squat",
-        "paused-back-squat" to "squat",
-        "conventional-deadlift" to "deadlift-family",
-        "romanian-deadlift" to "deadlift-family",
-        "walking-lunge" to "lunge",
-        "bulgarian-split-squat" to "lunge",
-        "hip-thrust" to "hip-thrust-family",
-        "barbell-row" to "row",
-        "seated-cable-row" to "row",
-        "machine-row" to "row",
-        "lat-pulldown" to "lat-pulldown-family",
-        "pull-up" to "lat-pulldown-family",
-        "assisted-pull-up" to "lat-pulldown-family",
+        "incline-barbell-bench-press" to "incline-press",
+        "incline-machine-press" to "incline-press",
         "cable-fly" to "fly",
         "dumbbell-fly" to "fly",
+        "pec-deck" to "fly",
+        // Deadlift: the bar lifts, the hinges that assist them and the lower back.
+        "conventional-deadlift" to "deadlift-family",
+        "sumo-deadlift" to "deadlift-family",
+        "deficit-deadlift" to "deadlift-family",
+        "rack-pull" to "deadlift-family",
+        "romanian-deadlift" to "deadlift-family",
+        "good-morning" to "deadlift-family",
+        "kettlebell-swing" to "deadlift-family",
+        "back-extension" to "back-extension",
+        "reverse-hyperextension" to "back-extension",
+        // Pulling: the vertical pull, the rows, the shrugs.
+        "lat-pulldown" to "lat-pulldown-family",
+        "pull-up" to "lat-pulldown-family",
+        "chin-up" to "lat-pulldown-family",
+        "assisted-pull-up" to "lat-pulldown-family",
+        "straight-arm-pulldown" to "lat-pulldown-family",
+        "barbell-row" to "row",
+        "pendlay-row" to "row",
+        "t-bar-row" to "row",
+        "seated-cable-row" to "row",
+        "machine-row" to "row",
+        "chest-supported-row" to "row",
+        "single-arm-dumbbell-row" to "row",
+        "inverted-row" to "row",
+        "barbell-shrug" to "shrug",
+        "dumbbell-shrug" to "shrug",
+        // Shoulders: the press, the lateral raise, the rear delt.
+        "overhead-press" to "overhead-press-family",
+        "push-press" to "overhead-press-family",
+        "seated-dumbbell-press" to "overhead-press-family",
+        "arnold-press" to "overhead-press-family",
+        "machine-shoulder-press" to "overhead-press-family",
+        "z-press" to "overhead-press-family",
+        "lateral-raise" to "lateral-raise-family",
+        "cable-lateral-raise" to "lateral-raise-family",
+        "machine-lateral-raise" to "lateral-raise-family",
+        "dumbbell-rotator-raise" to "lateral-raise-family",
+        "rotator-cable-to-side" to "lateral-raise-family",
+        "rear-delt-fly" to "rear-delt",
+        "reverse-pec-deck" to "rear-delt",
+        "band-pull-apart" to "rear-delt",
+        // Arms.
         "barbell-curl" to "curl",
         "hammer-curl" to "curl",
+        "preacher-curl" to "curl",
+        "concentration-curl" to "curl",
+        "machine-curl" to "curl",
         "cable-arm-curl" to "curl",
         "incline-dumbbell-arm-curl" to "curl",
         "triceps-pushdown" to "triceps-extension",
         "two-arm-cable-pushdown" to "triceps-extension",
         "overhead-triceps-extension" to "triceps-extension",
+        "cable-overhead-triceps-extension" to "triceps-extension",
         "dumbbell-skullcrusher" to "triceps-extension",
-        "lateral-raise" to "lateral-raise-family",
-        "dumbbell-rotator-raise" to "lateral-raise-family",
-        "rotator-cable-to-side" to "lateral-raise-family",
+        "bench-dip" to "triceps-extension",
+        "diamond-push-up" to "triceps-extension",
+        "wrist-curl" to "forearm",
+        "reverse-wrist-curl" to "forearm",
+        "reverse-curl" to "forearm",
+        // Legs.
+        "back-squat" to "squat",
+        "paused-back-squat" to "squat",
+        "front-squat" to "squat",
+        "box-squat" to "squat",
+        "hack-squat" to "squat",
+        "goblet-squat" to "squat",
+        "leg-press" to "squat",
+        "walking-lunge" to "lunge",
+        "reverse-lunge" to "lunge",
+        "bulgarian-split-squat" to "lunge",
+        "step-up" to "lunge",
+        "hip-thrust" to "hip-thrust-family",
+        "glute-bridge" to "hip-thrust-family",
+        "cable-kickback" to "hip-thrust-family",
+        "hip-adduction" to "adductor",
+        "copenhagen-plank" to "adductor",
         "standing-calf-raise" to "calf-raise-family",
         "seated-calf-raise" to "calf-raise-family",
+        "donkey-calf-raise" to "calf-raise-family",
+        // Core and carries.
         "plank" to "core",
+        "side-plank" to "core",
         "hanging-leg-raise" to "core",
         "cable-crunch" to "core",
+        "ab-wheel-rollout" to "core",
+        "pallof-press" to "core",
+        "turkish-get-up" to "core",
+        "farmers-carry" to "carry",
+        "suitcase-carry" to "carry",
         // Deliberately unfiled, so the seed demonstrates both shapes: `face-pull`, `leg-extension`,
-        // `lying-leg-curl`, `dip`, `push-up` and `deadlift`'s own name are movements a lifter files
-        // themselves if they want a family around them.
+        // `lying-leg-curl`, `seated-leg-curl`, `nordic-curl`, `dip`, `push-up` and `deadlift`'s own
+        // name are movements a lifter files themselves if they want a family around them.
     )
 
     /**

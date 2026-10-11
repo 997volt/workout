@@ -16,6 +16,19 @@ unreleased.
 
 ## [Unreleased]
 
+### Added
+
+- **The library ships a strength and bodybuilding set** (P1.1). 61 movements join the 45, taking the seed to
+  106 across six new families — **Rear Delt**, **Shrug**, **Back Extension**, **Forearm**, **Adductor** and
+  **Carry**. The additions fill out the powerlifting bar lifts and the assistance work around them (front,
+  box, hack and goblet squats; sumo, deficit and rack pulls; good mornings; close-grip, floor and decline
+  presses; Pendlay and T-bar rows; chin-ups) and the machine, cable, dumbbell, band and kettlebell work a
+  bodybuilding program is built from. **Every value the pickers offer now has an exercise behind it**:
+  `KETTLEBELL`, `BAND` and `OTHER` were carried by no row, and `FOREARMS`, `ADDUCTORS` and `LOWER_BACK` were
+  no movement's primary muscle. **No existing row changed** and the seeder tops up on every open, so an
+  installed library gains the new entries on its next start without a migration. A new unit test holds the
+  shape: unique ids, every file target a category, and no equipment, pattern or muscle left unanswered.
+
 ### Changed
 
 - **The library is a category over movements, and a movement reads its family's taxonomy** (N110). The
