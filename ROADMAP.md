@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.0** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one item. Last reviewed against the
+> **v2.0** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds three items. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); and **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -31,7 +31,9 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-N107 is the only planned change, and it is text rather than code.
+Three items are planned: one text change, one defect, and one rework. **B103 and N110 are one piece of work
+in two commits** — the defect is what makes an inherited taxonomy safe to rely on, so its fix lands first and
+the rework builds on it.
 
 - **The longest evidence-backed entries state the rule and defer their argument to the evidence** (N107).
   The file's own contract is that an entry is the rule, the shortest honest reason and the rejected
@@ -39,6 +41,28 @@ N107 is the only planned change, and it is text rather than code.
   that already have an evidence section run to 13–26 lines and carry the full argument anyway; enforcing
   the contract on those twelve moves it to the section that exists for it, losing no decision. It is a text
   change rather than a code one, so it can land before or after the tag.
+
+- **A session or template row throws when its exercise states no muscle or equipment** (B103). The two joins
+  that carry a library exercise onto a workout and a template project `primaryMuscle` and `equipment` into
+  **non-null** fields, while N103 made both columns nullable: Room emits no null guard, so the non-null
+  converter throws on the NULL. It bites today on any custom exercise — created with a name and nothing else —
+  and N110 makes it ordinary rather than rare. The fields become nullable through the domain and each screen
+  says "None" rather than inventing a value, which is the rule N103 already set; the join also reads the
+  parent, so a filed movement still shows what its family states. Found by reading Room's generated reads
+  rather than from a report, so the instrumented suite gains the custom-exercise case that would have caught it.
+
+- **The library is a category over movements, and a movement inherits its family's taxonomy** (N110). The
+  **variation level is gone**: it was one `parentId` carrying two meanings, told apart by the parent's
+  `rowKind`, and the narrower roll-up it bought is one the category already offers — a category's series has
+  always read its movements' variations too, so the category's own numbers do not move. **A movement's
+  movement pattern, primary muscle and secondary muscles are its family's until it states its own**, one level
+  and own-if-stated, so a category states what its members share and the odd one out states its own — the lunge
+  family has no single primary, so both its members keep theirs. `equipment` stays the movement's own, because
+  a family spans equipment. The editor **always offers those three fields**, showing what an unstated one
+  resolves to, because suppressing a field a head supplies would stop a movement stating the value it
+  disagrees about. The migration fills the seeded categories from the seed itself and re-files whatever hung
+  under a movement, and it does not strip what a row already states — a lifter may have edited it, and a
+  family's value cannot be recomputed (the lunge case) — so an existing install reads exactly as it did.
 
 ## Parked — deliberately not planned
 
@@ -118,9 +142,10 @@ batch with B95 and the six defects a review of *it* found (B96-B101), and 2.0 �
 break (N103, N104), the legacy and dead weight it left behind (N105, N106, N108, N109) and the measurements
 screen's silent write failure (B102) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-**The only thing left in *Next* is N107.** 2.0 shipped with the loudest note this project has written — the
-1.x store stays on the device and 2.0 does not read it — and the rule that allowed that is in
-[DECISIONS.md](DECISIONS.md), with the window it stays payable in.
+***Next* holds three items**: N107's text shortening, B103's thrown read, and N110's rework of the library's
+shape. B103 lands first because N110 leans on what it fixes. 2.0 shipped with the loudest note this project
+has written — the 1.x store stays on the device and 2.0 does not read it — and the rule that allowed that is
+in [DECISIONS.md](DECISIONS.md), with the window it stays payable in.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what they named
 that is not a feature is a settled decision: no dated instances (N16), nothing automatic (the app states
