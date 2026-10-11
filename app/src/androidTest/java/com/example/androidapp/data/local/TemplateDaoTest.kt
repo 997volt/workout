@@ -4,6 +4,7 @@ import androidx.room.Room
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -110,6 +111,48 @@ class TemplateDaoTest {
         assertEquals(listOf("te1", "te2"), rows.map { it.id })
         assertEquals(listOf("Back Squat", "Bench Press"), rows.map { it.exerciseName })
         assertEquals(listOf("back-squat", "bench-press"), dao.findExerciseIdsInOrder("t1"))
+    }
+
+    @Test
+    fun anExerciseStatingNothing_comesBackAsNothing_ratherThanThrowing() = runTest {
+        // ROADMAP B103: this projection has the same nullable columns as the session DAO's, and it used
+        // to hand the NULL to a non-null field. A custom exercise is written with a name and nothing else.
+        dao.insertTemplate(template("t1", "Legs"))
+        database.exerciseDao().insertAll(
+            listOf(exercise("my-lift").copy(primaryMuscle = null, equipment = null)),
+        )
+        dao.insertTemplateExercise(templateExercise("te1", "t1", "my-lift", 0))
+
+        val row = dao.observeTemplateExercises("t1").first().single()
+
+        assertNull(row.primaryMuscle)
+        assertNull(row.equipment)
+    }
+
+    @Test
+    fun aMovementFiledUnderACategory_readsWhatTheCategoryStates() = runTest {
+        // The join resolves one level up (ROADMAP B103, N103); equipment is never inherited (N95).
+        dao.insertTemplate(template("t1", "Legs"))
+        database.exerciseDao().insertAll(
+            listOf(
+                exercise("chest-family").copy(
+                    primaryMuscle = MuscleGroup.CHEST,
+                    equipment = null,
+                    rowKind = RowKind.CATEGORY,
+                ),
+                exercise("my-press").copy(
+                    primaryMuscle = null,
+                    equipment = null,
+                    parentId = "chest-family",
+                ),
+            ),
+        )
+        dao.insertTemplateExercise(templateExercise("te1", "t1", "my-press", 0))
+
+        val row = dao.observeTemplateExercises("t1").first().single()
+
+        assertEquals(MuscleGroup.CHEST, row.primaryMuscle)
+        assertNull(row.equipment)
     }
 
     @Test

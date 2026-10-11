@@ -69,6 +69,7 @@ import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.isAnchoredAt
 import com.example.androidapp.domain.model.runAt
 import com.example.androidapp.domain.model.rungWeightAt
+import com.example.androidapp.domain.model.taxonomySubtitle
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
@@ -861,7 +862,9 @@ private fun TemplateExerciseRow(
             }
         },
         supportingContent = {
-            Text("${exercise.primaryMuscle.label} · ${exercise.equipment.label}")
+            // Stated facts only (ROADMAP B103, N103): a custom exercise has a name and nothing else, so
+            // the row leads with it rather than with "Other · Other".
+            taxonomySubtitle(exercise.primaryMuscle, exercise.equipment)?.let { Text(it) }
         },
         trailingContent = {
             ExerciseMenu(

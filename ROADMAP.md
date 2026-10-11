@@ -1,17 +1,19 @@
 # Workout — Roadmap
 
-> **v2.0** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds three items. Last reviewed against the
+> **v2.0** is shipped ([CHANGELOG.md](CHANGELOG.md)), **B103 is on `main` with no release cut**, and *Next*
+> holds two items. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
-> defects a line-by-line reading of that batch found (B96–B101); and **N103–N106, N108, N109 and B102 shipped
+> defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
 > database file, the 1.x chain and its schemas deleted, both transfer formats refusing 1.x, and the five
 > retired enum names (four patterns and `BACK`) gone with the files that could carry them — the rest of the
 > legacy the new store cannot hold, the decisions a later id reversed that were still reading as binding, the
 > two columns and one transfer field nothing read while schema 1 was still unshipped, and the measurements
-> screen's silent write failure. The 1.x store is left on the device by design, and the 1.18 APK is still the
-> way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds only
-> N107, which shortens [DECISIONS.md](DECISIONS.md) without dropping a decision. A line-by-line reading of
+> screen's silent write failure; and **B103 is implemented**: the session and template reads no longer throw
+> on an exercise that states no muscle or equipment, which is the ground N110 stands on. The 1.x store is
+> left on the device by design, and the 1.18 APK is still the way to read it.
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds N107,
+> which shortens [DECISIONS.md](DECISIONS.md) without dropping a decision, and N110. A line-by-line reading of
 > the N87–N95 changes found sixteen defects (B79–B94); all are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).
 >
@@ -31,9 +33,8 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Three items are planned: one text change, one defect, and one rework. **B103 and N110 are one piece of work
-in two commits** — the defect is what makes an inherited taxonomy safe to rely on, so its fix lands first and
-the rework builds on it.
+Two items are planned: one text change and one rework. N110 leans on B103, which has landed — an inherited
+taxonomy is only safe to rely on once an unstated muscle stops taking the read down.
 
 - **The longest evidence-backed entries state the rule and defer their argument to the evidence** (N107).
   The file's own contract is that an entry is the rule, the shortest honest reason and the rejected
@@ -41,15 +42,6 @@ the rework builds on it.
   that already have an evidence section run to 13–26 lines and carry the full argument anyway; enforcing
   the contract on those twelve moves it to the section that exists for it, losing no decision. It is a text
   change rather than a code one, so it can land before or after the tag.
-
-- **A session or template row throws when its exercise states no muscle or equipment** (B103). The two joins
-  that carry a library exercise onto a workout and a template project `primaryMuscle` and `equipment` into
-  **non-null** fields, while N103 made both columns nullable: Room emits no null guard, so the non-null
-  converter throws on the NULL. It bites today on any custom exercise — created with a name and nothing else —
-  and N110 makes it ordinary rather than rare. The fields become nullable through the domain and each screen
-  says "None" rather than inventing a value, which is the rule N103 already set; the join also reads the
-  parent, so a filed movement still shows what its family states. Found by reading Room's generated reads
-  rather than from a report, so the instrumented suite gains the custom-exercise case that would have caught it.
 
 - **The library is a category over movements, and a movement inherits its family's taxonomy** (N110). The
   **variation level is gone**: it was one `parentId` carrying two meanings, told apart by the parent's
@@ -142,8 +134,8 @@ batch with B95 and the six defects a review of *it* found (B96-B101), and 2.0 �
 break (N103, N104), the legacy and dead weight it left behind (N105, N106, N108, N109) and the measurements
 screen's silent write failure (B102) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds three items**: N107's text shortening, B103's thrown read, and N110's rework of the library's
-shape. B103 lands first because N110 leans on what it fixes. 2.0 shipped with the loudest note this project
+***Next* holds two items**: N107's text shortening and N110's rework of the library's shape. B103 landed
+first, because N110 leans on what it fixed. 2.0 shipped with the loudest note this project
 has written — the 1.x store stays on the device and 2.0 does not read it — and the rule that allowed that is
 in [DECISIONS.md](DECISIONS.md), with the window it stays payable in.
 

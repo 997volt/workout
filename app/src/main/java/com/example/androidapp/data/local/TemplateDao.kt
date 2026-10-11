@@ -99,7 +99,9 @@ interface TemplateDao {
                te.exerciseId AS exerciseId,
                te.position AS position,
                e.name AS exerciseName,
-               e.primaryMuscle AS primaryMuscle,
+               -- The effective muscle, resolved one level up, and nullable like the columns behind it
+               -- (ROADMAP B103, N103) — see `WorkoutDao.observeSessionExerciseDetails`.
+               COALESCE(e.primaryMuscle, parent.primaryMuscle) AS primaryMuscle,
                e.equipment AS equipment,
                te.restSeconds AS restSeconds,
                te.techniqueNote AS techniqueNote,
@@ -109,6 +111,7 @@ interface TemplateDao {
                te.supersetGroup AS supersetGroup
         FROM template_exercises te
         JOIN exercises e ON e.id = te.exerciseId
+        LEFT JOIN exercises parent ON parent.id = e.parentId
         WHERE te.templateId = :templateId
           AND te.deletedAt IS NULL
           AND e.deletedAt IS NULL

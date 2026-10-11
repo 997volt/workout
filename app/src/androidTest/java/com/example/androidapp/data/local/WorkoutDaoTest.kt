@@ -3,6 +3,10 @@ package com.example.androidapp.data.local
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -256,27 +260,89 @@ class WorkoutDaoTest {
         )
     }
 
-    private suspend fun insertExercise(
-        sessionId: String,
-        exerciseId: String,
-        position: Int,
+    @Test
+    fun anExerciseStatingNothing_comesBackAsNothing_ratherThanThrowing() = runTest {
+        // ROADMAP B103: both columns have been nullable since N103 made *unstated* a real value, and a
+        // custom exercise is written with a name and nothing else. The projection handed the NULL to a
+        // non-null field, so this read threw before it returned anything.
+        val session = dao.startSession()
+        insertExercise(session.id, "my-lift", position = 0, primaryMuscle = null, equipment = null)
+
+        val row = dao.observeSessionExerciseDetails(session.id).first().single()
+
+        assertNull(row.primaryMuscle)
+        assertNull(row.equipment)
+    }
+
+    @Test
+    fun aMovementFiledUnderACategory_readsWhatTheCategoryStates() = runTest {
+        // The join resolves one level up (ROADMAP B103, N103): the movement states no muscle, and the
+        // category it is filed under is that fact's one home. **Equipment is never inherited** — a family
+        // spans equipment (N95) — so it stays unstated here rather than borrowing the category's.
+        val session = dao.startSession()
+        insertLibraryRow(
+            id = "chest-family",
+            primaryMuscle = MuscleGroup.CHEST,
+            equipment = null,
+            rowKind = RowKind.CATEGORY,
+        )
+        insertExercise(
+            session.id,
+            "my-press",
+            position = 0,
+            primaryMuscle = null,
+            equipment = null,
+            parentId = "chest-family",
+        )
+
+        val row = dao.observeSessionExerciseDetails(session.id).first().single()
+
+        assertEquals(MuscleGroup.CHEST, row.primaryMuscle)
+        assertNull(row.equipment)
+    }
+
+    /**
+     * The library row a session exercise points at.
+     *
+     * Every field a caller does not name is stated, because the ordinary case is a seeded movement; a
+     * test that means *unstated* passes null on purpose (ROADMAP B103).
+     */
+    private suspend fun insertLibraryRow(
+        id: String,
+        primaryMuscle: MuscleGroup? = MuscleGroup.HAMSTRINGS,
+        equipment: Equipment? = Equipment.BARBELL,
+        parentId: String? = null,
+        rowKind: RowKind = RowKind.MOVEMENT,
     ) {
-        // Seed the library row first: session_exercises has a foreign key to it.
         database.exerciseDao().insertAll(
             listOf(
                 ExerciseEntity(
-                    id = exerciseId,
-                    name = exerciseId,
-                    primaryMuscle = com.example.androidapp.domain.model.MuscleGroup.HAMSTRINGS,
+                    id = id,
+                    name = id,
+                    primaryMuscle = primaryMuscle,
                     secondaryMuscles = emptyList(),
-                    equipment = com.example.androidapp.domain.model.Equipment.BARBELL,
-                    movementPattern = com.example.androidapp.domain.model.MovementPattern.HINGE,
+                    equipment = equipment,
+                    movementPattern = MovementPattern.HINGE,
+                    parentId = parentId,
+                    rowKind = rowKind,
                     createdAt = 0L,
                     updatedAt = 0L,
                     deletedAt = null,
                 ),
             ),
         )
+    }
+
+    private suspend fun insertExercise(
+        sessionId: String,
+        exerciseId: String,
+        position: Int,
+        primaryMuscle: MuscleGroup? = MuscleGroup.HAMSTRINGS,
+        equipment: Equipment? = Equipment.BARBELL,
+        parentId: String? = null,
+    ) {
+        // Seed the library row first: session_exercises has a foreign key to it.
+        insertLibraryRow(exerciseId, primaryMuscle, equipment, parentId)
         dao.insertSessionExercise(
             SessionExerciseEntity(
                 id = "$sessionId-$exerciseId",

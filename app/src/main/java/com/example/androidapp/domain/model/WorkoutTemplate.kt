@@ -31,8 +31,15 @@ data class TemplateExercise(
     val exerciseId: String,
     val position: Int,
     val exerciseName: String,
-    val primaryMuscle: MuscleGroup,
-    val equipment: Equipment,
+    /**
+     * The muscle this exercise trains, or null when nothing states one (ROADMAP B103, N103).
+     *
+     * Nullable for [SessionExercise.primaryMuscle]'s reason: the column is, and the read resolves the
+     * category the movement is filed under.
+     */
+    val primaryMuscle: MuscleGroup?,
+    /** The equipment, or null when unstated (ROADMAP B103). Never inherited: a family spans equipment. */
+    val equipment: Equipment?,
     /** A rest this exercise prescribes, or null to use the library's (N14). */
     val restSeconds: Int? = null,
     /** A cue this exercise prescribes, or null to use the library's (N14). */

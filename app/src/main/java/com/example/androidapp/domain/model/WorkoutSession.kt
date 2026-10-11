@@ -101,8 +101,16 @@ data class SessionExercise(
      */
     val supersetGroup: Int? = null,
     val exerciseName: String,
-    val primaryMuscle: MuscleGroup,
-    val equipment: Equipment,
+    /**
+     * The muscle this exercise trains, or null when nothing states one (ROADMAP B103, N103).
+     *
+     * Nullable because the column is: a custom exercise starts with a name and nothing else, and a
+     * movement may leave the fact to the category it is filed under. The read resolves that parent, so
+     * this is what the exercise effectively trains, and null means nothing above it states one.
+     */
+    val primaryMuscle: MuscleGroup?,
+    /** The equipment, or null when unstated (ROADMAP B103). Never inherited: a family spans equipment. */
+    val equipment: Equipment?,
     /** The library exercise's own rest, or null for the app default (ROADMAP N5). */
     val restSeconds: Int? = null,
     /** A cue to show under the name while lifting (ROADMAP N5). */

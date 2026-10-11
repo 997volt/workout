@@ -19,8 +19,15 @@ data class TemplateExerciseDetail(
     val exerciseId: String,
     val position: Int,
     val exerciseName: String,
-    val primaryMuscle: MuscleGroup,
-    val equipment: Equipment,
+    /**
+     * The muscle this exercise trains, or null when nothing states one (ROADMAP B103, N103).
+     *
+     * Nullable because the column is, and the query resolves the parent — see [SessionExerciseDetail],
+     * which carries the same projection for the same reason.
+     */
+    val primaryMuscle: MuscleGroup?,
+    /** The equipment, or null when unstated (ROADMAP B103). Never inherited: a family spans equipment. */
+    val equipment: Equipment?,
     val restSeconds: Int?,
     val techniqueNote: String?,
     /** The effort the plan builds to, in half-points, or null (N59, amended). */

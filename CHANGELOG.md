@@ -11,7 +11,22 @@ alternatives rejected, the measurements, the argument — lives in
 repeated here.
 
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
-id a 1.x commit names is still looked up by it. This file carries the current release.
+id a 1.x commit names is still looked up by it. This file carries the current release and what is
+unreleased.
+
+## [Unreleased]
+
+### Fixed
+
+- **A workout or template row reads an unstated muscle or equipment instead of throwing** (B103). The two
+  joins that carry a library exercise onto a session and a plan projected `primaryMuscle` and `equipment`
+  into non-null fields, while both columns have been nullable since N103 made *unstated* a real value — so
+  Room emitted no null guard and the NULL reached a non-null converter. **Any custom exercise triggered
+  it**, because one is created with a name and nothing else. The fields are nullable through the domain now
+  and the one screen that drew them asks the shared `taxonomySubtitle` helper, so a row that states neither
+  leads with its name rather than with *Other · Other*. Both joins also resolve the category a movement is
+  filed under, so a movement that leaves the muscle to its family still reads it; equipment is not
+  inherited, because a family spans equipment.
 
 ## [2.0] — 2026-10-11 (versionCode 20)
 

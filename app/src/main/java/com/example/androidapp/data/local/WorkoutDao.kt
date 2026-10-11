@@ -105,7 +105,11 @@ interface WorkoutDao {
                se.exerciseId AS exerciseId,
                se.position AS position,
                e.name AS exerciseName,
-               e.primaryMuscle AS primaryMuscle,
+               -- The muscle **the exercise effectively trains** (ROADMAP B103, N103): its own when it
+               -- states one, else the category it is filed under. Both columns are nullable since N103
+               -- made *unstated* a real value, so the projection is too — the join used to hand a NULL
+               -- to a non-null field and take the read down.
+               COALESCE(e.primaryMuscle, parent.primaryMuscle) AS primaryMuscle,
                e.equipment AS equipment,
                COALESCE(se.restSeconds, e.restSeconds) AS restSeconds,
                COALESCE(se.techniqueNote, e.techniqueNote) AS techniqueNote,
@@ -116,6 +120,9 @@ interface WorkoutDao {
                se.supersetGroup AS supersetGroup
         FROM session_exercises se
         JOIN exercises e ON e.id = se.exerciseId
+        -- The category, not filtered by `deletedAt`: a removed head still supplies its children
+        -- (ROADMAP N58), which is the rule the domain's own walk follows.
+        LEFT JOIN exercises parent ON parent.id = e.parentId
         WHERE se.sessionId = :sessionId
           AND se.deletedAt IS NULL
           AND e.deletedAt IS NULL

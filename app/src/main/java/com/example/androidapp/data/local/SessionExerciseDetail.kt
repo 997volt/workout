@@ -1,7 +1,9 @@
 package com.example.androidapp.data.local
 
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SessionExercise
 import java.time.Instant
 
@@ -18,8 +20,17 @@ data class SessionExerciseDetail(
     val exerciseId: String,
     val position: Int,
     val exerciseName: String,
-    val primaryMuscle: com.example.androidapp.domain.model.MuscleGroup,
-    val equipment: com.example.androidapp.domain.model.Equipment,
+    /**
+     * The muscle this exercise trains, or null when nothing states one (ROADMAP B103, N103).
+     *
+     * Nullable because the column is: N103 made *unstated* a real value, a custom exercise is created
+     * with a name and nothing else, and a movement may leave the fact to the category it is filed
+     * under. The query resolves that parent, so this is what the exercise **effectively** trains —
+     * and a row that resolves to nothing reads as absent rather than crashing the read.
+     */
+    val primaryMuscle: MuscleGroup?,
+    /** The equipment, or null when unstated (ROADMAP B103). Never inherited: a family spans equipment. */
+    val equipment: Equipment?,
     /** The library exercise's own rest, or null for the app default (ROADMAP N5). */
     val restSeconds: Int?,
     /** Shown under the exercise name while lifting (ROADMAP N5). */
