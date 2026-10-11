@@ -224,9 +224,12 @@ fun ActiveWorkoutScreen(
         topBar = {
             WorkoutTopBar(
                 canFinish = state.exercises.any { it.sets.isNotEmpty() },
-                // The empty workout already offers a prompt-free discard inside its own body, so
-                // there is nothing for the overflow to hold and it is not drawn (ROADMAP N41, N87).
-                canDiscard = state.sessionId != null && !state.isEmpty,
+                // **Drawn whenever a session is open, empty or not** (ROADMAP N41, N87 amended): the overflow
+                // is where a lifter looks for the way out, and an empty workout is exactly the one a mistap
+                // leaves open — the state that had no way out but to add a movement first.
+                canDiscard = state.sessionId != null,
+                // N41's other half stands: a discard with nothing to lose does not ask.
+                isEmpty = state.isEmpty,
                 setCount = state.exercises.sumOf { it.sets.size },
                 countsAgainstProgram = countsAgainstProgram,
                 onFinish = onFinish,
@@ -250,7 +253,6 @@ fun ActiveWorkoutScreen(
             onFinishExercise = onFinishExercise,
             onRateExercise = onRateExercise,
             onReopenExercise = onReopenExercise,
-            onDiscard = onDiscard,
             // The one action that used to float over the list is the list's own last item now (N82).
             onAddExercise = onAddExercise,
             personalRecord = personalRecord,
@@ -445,6 +447,8 @@ private fun ShowFinishSnackbar(
 private fun WorkoutTopBar(
     canFinish: Boolean,
     canDiscard: Boolean,
+    /** An open session with nothing in it, so a discard costs nothing and is not asked about (N41). */
+    isEmpty: Boolean,
     setCount: Int,
     countsAgainstProgram: Boolean,
     onFinish: (String?) -> Unit,
@@ -478,7 +482,14 @@ private fun WorkoutTopBar(
                 Text(stringResource(R.string.active_workout_finish))
             }
             if (canDiscard) {
-                WorkoutMenu(onDiscard = { confirmingDiscard = true })
+                WorkoutMenu(
+                    onDiscard = {
+                        // **Nothing to lose, so nothing to ask** (N41, N87): the dialog exists to name what a
+                        // discard costs, and an empty session has nothing to name — which is why that case was
+                        // prompt-free in the body before this entry replaced it.
+                        if (isEmpty) onDiscard() else confirmingDiscard = true
+                    },
+                )
             }
         },
     )
@@ -627,7 +638,6 @@ private fun WorkoutBody(
     onFinishExercise: (String) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
-    onDiscard: () -> Unit,
     onAddExercise: () -> Unit,
     modifier: Modifier = Modifier,
     personalRecord: PersonalRecordMoment? = null,
@@ -692,7 +702,7 @@ private fun WorkoutBody(
                             onSave = onSaveReadinessNote,
                         )
                     },
-                    empty = { EmptyWorkout(onDiscard = onDiscard) },
+                    empty = { EmptyWorkout() },
                     // Below the last exercise rather than over it (N82) — and drawn for an empty session
                     // too, which is drawn *instead of* the rows and had no other way to add a movement.
                     footer = { AddExerciseButton(onClick = onAddExercise) },
@@ -860,12 +870,19 @@ private fun ReadinessRow(
     }
 }
 
+/**
+ * What an empty session says: nothing is in it yet, and the one action that answers that is below it.
+ *
+ * It no longer carries a discard of its own (ROADMAP N41, N87 amended). The overflow is drawn for an empty
+ * session too now, so the action has one home rather than a second copy here — and the copy here is what a
+ * *test* anchors the order of the message and the add button on.
+ */
 @Composable
-private fun EmptyWorkout(onDiscard: () -> Unit, modifier: Modifier = Modifier) {
+private fun EmptyWorkout(modifier: Modifier = Modifier) {
     Column(
         // A list item since N82, so it takes the width it is given rather than the whole screen: the
         // centring it used was against a viewport this no longer owns.
-        modifier = modifier.fillMaxWidth().padding(24.dp),
+        modifier = modifier.fillMaxWidth().padding(24.dp).testTag(TestTags.ACTIVE_WORKOUT_EMPTY),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -878,12 +895,6 @@ private fun EmptyWorkout(onDiscard: () -> Unit, modifier: Modifier = Modifier) {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 8.dp),
         )
-        AppTextButton(
-            onClick = onDiscard,
-            modifier = Modifier.padding(top = 16.dp).testTag(TestTags.ACTIVE_WORKOUT_DISCARD_EMPTY),
-        ) {
-            Text(stringResource(R.string.active_workout_discard))
-        }
     }
 }
 

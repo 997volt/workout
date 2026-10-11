@@ -474,7 +474,9 @@ the rule; that one argues it.
 ## The workout screen
 
 - **A workout with something in it is discarded behind a prompt, and the prompt says what it costs**
-  (N41). The empty workout keeps its prompt-free discard because there is nothing to lose; a workout
+  (N41). **The empty workout keeps its prompt-free discard** because there is nothing to lose, and it lives
+  in the same overflow as every other session's: the way out is in one place whatever the workout holds (see
+  N87). A workout
   holding sets asks first and names the count, and when it was started from a program slot it says
   the second consequence: only a *finished* session settles an occurrence (P3.5), so dropping out is
   a miss rather than no workout at all. The action sits behind the top bar's overflow rather than
@@ -525,9 +527,12 @@ the rule; that one argues it.
   end a workout to look. **N87 keeps the second half and reverses the first**: mid-workout the overflow
   holds only *Discard*, because the two plans already live where the decision to train is taken, on home's
   start bar, which stays visible while a session is open — so the look is still one step back rather than
-  the end of the session, and the logger stops carrying a way out it does not own. The ⋮ is then drawn
-  **only when there is something to discard**: with the plan entries gone, an empty session's own discard
-  is prompt-free and drawn in the body (N41), so the menu would open on nothing.
+  the end of the session, and the logger stops carrying a way out it does not own. **The ⋮ is drawn whenever
+  a session is open, empty or not** (amended): with the plan entries gone it holds only *Discard*, and hiding
+  it for an empty session left that session with no way out but to add a movement first — which is the state
+  a mistap, or a resume, lands in. The empty state's own copy of the discard went with the change, because
+  one action with two homes is one too many, and **N41's prompt-free half stands**: the dialog exists to name
+  what a discard costs, and an empty session has nothing to name.
   **B43's withholding lives on in a narrower place**: starting is idempotent (`startOrResumeSession`
   hands back the open session), so the templates list asks the workout repository whether a session is
   open and disables *Start* when one is, with the row saying why. The button would not make a second

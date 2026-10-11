@@ -67,7 +67,7 @@ object TestTags {
     const val ACTIVE_WORKOUT_FINISH = "active_workout_finish"
 
     /**
-     * Leaving a workout that has something in it (ROADMAP N41): the overflow that holds the
+     * Leaving a workout, empty or not (ROADMAP N41, N87 amended): the overflow that holds the
      * destructive action, the action itself, and the prompt it asks before deleting anything.
      */
     const val ACTIVE_WORKOUT_MENU = "active_workout_menu"
@@ -78,8 +78,8 @@ object TestTags {
     const val ACTIVE_WORKOUT_DISCARD_CONFIRM = "active_workout_discard_confirm"
     const val ACTIVE_WORKOUT_DISCARD_CANCEL = "active_workout_discard_cancel"
 
-    /** The empty workout's prompt-free discard, which N41 deliberately leaves alone. */
-    const val ACTIVE_WORKOUT_DISCARD_EMPTY = "active_workout_discard_empty"
+    /** What an empty workout says, with the add button drawn under it (N82). */
+    const val ACTIVE_WORKOUT_EMPTY = "active_workout_empty"
 
     /** Adding a movement: the FAB over the list until N82, and the list's own last item since. */
     const val ACTIVE_WORKOUT_ADD_EXERCISE = "active_workout_add_exercise"

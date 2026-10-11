@@ -1097,11 +1097,16 @@ a second door to a room that was never locked. The reversal removes the door, no
 is the logger's own business, and *Templates* and *Programs* are one step back, where the decision to train
 is taken.
 
-**What follows is that the ⋮ must stop being unconditional.** It was drawn for every open session because the
-entry that had to be reachable from an empty one lived in it; with that entry gone, the only thing left is
-*Discard*, and an empty session's discard is prompt-free and drawn in the body (N41). A menu that opens on
-nothing is a control that lies, so its condition became the same one the entry already had. The two tags go
-with the entries, per the deletion rule.
+**The ⋮ stopped being unconditional, and then that half was reversed in turn.** It was drawn for every open
+session while the plan entries lived in it; with them gone the only thing left was *Discard*, and an empty
+session's discard was prompt-free and drawn in the body (N41), so the menu was hidden for an empty session —
+"a menu that opens on nothing is a control that lies". The finding since is that it lied the other way: a
+lifter who starts a workout by mistake, or resumes one by accident, had no way out but to **add a movement
+first**, while the discard that did exist sat in the body of the empty state, which is not where a lifter
+looks for a way out of a screen. The condition is now simply "a session is open", and the empty body's copy
+of the discard went with it — one action with two homes is one too many. **N41's own half is untouched**: an
+empty session's discard is still prompt-free, because the dialog exists to name what a discard costs and an
+empty one costs nothing.
 
 **B43's withholding is the part that did not move.** It was always about the *start*, not the look: starting
 is idempotent, so a live *Start* on another template would silently move the lifter into the session already

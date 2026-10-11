@@ -80,6 +80,14 @@ unreleased.
 
 ### Fixed
 
+- **An empty workout can be discarded without adding a movement first** (N41, N87). The overflow was hidden
+  for a session with nothing in it, on the reasoning that an empty session's discard was already drawn in the
+  body — which left a workout started by mistake, or resumed by accident, with no way out but to put an
+  exercise into it. **The overflow is now drawn whenever a session is open**, and it is where the discard
+  lives for every state; the empty state's own copy of the button went with it, so one action has one home.
+  The discard stays **prompt-free** for an empty workout: the dialog exists to name what a discard costs, and
+  there is nothing to name.
+
 - **A workout or template row reads an unstated muscle or equipment instead of throwing** (B103). The two
   joins that carry a library exercise onto a session and a plan projected `primaryMuscle` and `equipment`
   into non-null fields, while both columns have been nullable since N103 made *unstated* a real value — so

@@ -227,15 +227,6 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun withNothingLogged_theOverflowIsNotDrawn() {
-        // N87 follows N41: with the plan entries gone the ⋮ holds only the discard, so an empty
-        // session — whose discard is prompt-free and drawn in the body — has no use for it at all.
-        setScreen(ActiveWorkoutUiState(isLoading = false, sessionId = "s1", exercises = emptyList()))
-
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).assertDoesNotExist()
-    }
-
-    @Test
     fun theWeightSteppers_moveByTheMovementsOwnStep() {
         // ROADMAP N77: a machine that jumps 5 kg is edited in 5 kg steps rather than the unit's 2.5,
         // which is the whole reason the step stopped being a constant pair.
@@ -588,20 +579,23 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
-    fun theEmptyWorkout_discardsWithoutAPrompt() {
-        // N41 deliberately leaves the empty state alone: there is nothing to lose, so the
-        // prompt-free discard keeps behaving as it does.
+    fun theEmptyWorkout_isDiscardedFromTheOverflow_withoutAPrompt() {
+        // N41, N87 amended: the way out is in the same place whatever the session holds. An empty workout is
+        // the one a mistap leaves open, so hiding the overflow left it with no way out but to add a movement
+        // first — and the discard that *was* in the body is where only a lifter who scrolled would find it.
         var discarded = false
         setScreen(
             ActiveWorkoutUiState(isLoading = false, sessionId = "s1", exercises = emptyList()),
             actions = Actions(onDiscard = { discarded = true }),
         )
 
-        // N87: the ⋮ is gone too, since its only entry was the discard this state does not prompt for.
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_TEXT).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_EMPTY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD).performClick()
 
+        // N41's other half stands: nothing to lose, so nothing to ask — the dialog exists to name what a
+        // discard costs, and this one costs nothing.
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_TEXT).assertDoesNotExist()
         assertTrue("the empty workout's discard did not reach the action", discarded)
     }
 
@@ -772,7 +766,7 @@ class ActiveWorkoutScreenTest {
 
         // The name claims an order, so the order is asserted rather than left to the tag's presence (B77):
         // the empty message is drawn *instead of* the rows, and the action that answers it comes after it.
-        val message = composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_DISCARD_EMPTY)
+        val message = composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_EMPTY)
             .getUnclippedBoundsInRoot()
         val add = composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ADD_EXERCISE)
             .getUnclippedBoundsInRoot()
