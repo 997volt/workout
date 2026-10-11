@@ -1,19 +1,18 @@
 # Workout — Roadmap
 
-> **v1.18** is shipped, and **2.0's changes are on `main` with no release cut**. Last reviewed against the
-> code: 2026-10-11 — the N87–N95 batch shipped as 1.17;
-> **N96–N102 with B95 shipped as 1.18**, with the six defects a line-by-line reading of that batch found
-> (B96–B101); and **N103–N106, N108, N109 and B102 are implemented**: the taxonomy becoming nullable, the
-> store break that let it happen without a migration — a new database file, the 1.x chain and its schemas
-> deleted, both transfer formats refusing 1.x, and the five retired enum names (four patterns and `BACK`)
-> gone with the files that could carry them — the rest of the legacy the new store cannot hold, the decisions
-> a later id reversed that were still reading as binding, the two columns and one transfer field nothing
-> read while schema 1 is still unshipped, and the measurements screen's silent write failure. The 1.x store
-> is left on the device by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: the unreleased work is under `[Unreleased]` there, every
-> shipped id has its entry, and *Next* holds only N107, which shortens
-> [DECISIONS.md](DECISIONS.md) without dropping a decision. A
-> line-by-line reading of the N87–N95 changes found sixteen defects (B79–B94); all are fixed and recorded in
+> **v2.0** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one item. Last reviewed against the
+> code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
+> defects a line-by-line reading of that batch found (B96–B101); and **N103–N106, N108, N109 and B102 shipped
+> as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
+> database file, the 1.x chain and its schemas deleted, both transfer formats refusing 1.x, and the five
+> retired enum names (four patterns and `BACK`) gone with the files that could carry them — the rest of the
+> legacy the new store cannot hold, the decisions a later id reversed that were still reading as binding, the
+> two columns and one transfer field nothing read while schema 1 was still unshipped, and the measurements
+> screen's silent write failure. The 1.x store is left on the device by design, and the 1.18 APK is still the
+> way to read it.
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds only
+> N107, which shortens [DECISIONS.md](DECISIONS.md) without dropping a decision. A line-by-line reading of
+> the N87–N95 changes found sixteen defects (B79–B94); all are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
@@ -32,9 +31,7 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-The taxonomy, the 2.0 break it rode on, the legacy cleanup, the decision-document cleanup and the
-unshipped-schema cleanup (N103–N106, N108, N109) are implemented on `main` and wait under `[Unreleased]`
-in [CHANGELOG.md](CHANGELOG.md). N107 is what is left, and it is text rather than code.
+N107 is the only planned change, and it is text rather than code.
 
 - **The longest evidence-backed entries state the rule and defer their argument to the evidence** (N107).
   The file's own contract is that an entry is the rule, the shortest honest reason and the rejected
@@ -116,13 +113,14 @@ unfound. Two of those four were this file describing itself wrongly.
 Everything that has stood in *Next* has shipped — the defects found in use, the workout screen's discard, the
 workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch, a rest of
 zero, the planned-set prefill, the program document, the eight defects a review of that batch found and
-closed (B51-B58), the seven requests that were its last queue (N80-N86), the N87–N95 batch, and this round's
-N96–N102 with B95, the six defects a review of *it* found (B96-B101), and the taxonomy with the 2.0 break it
-rode on (N103, N104) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
+closed (B51-B58), the seven requests that were its last queue (N80-N86), the N87–N95 batch, the N96–N102
+batch with B95 and the six defects a review of *it* found (B96-B101), and 2.0 — the taxonomy and the store
+break (N103, N104), the legacy and dead weight it left behind (N105, N106, N108, N109) and the measurements
+screen's silent write failure (B102) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-**The only thing left in *Next* is the cleanup above.** The release that carries 2.0 will need the loudest
-note this project has written — the 1.x store stays on the device and 2.0 does not read it — and the rule
-that allows that is in [DECISIONS.md](DECISIONS.md), with the window it is payable in.
+**The only thing left in *Next* is N107.** 2.0 shipped with the loudest note this project has written — the
+1.x store stays on the device and 2.0 does not read it — and the rule that allowed that is in
+[DECISIONS.md](DECISIONS.md), with the window it stays payable in.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what they named
 that is not a feature is a settled decision: no dated instances (N16), nothing automatic (the app states

@@ -11,10 +11,9 @@ alternatives rejected, the measurements, the argument — lives in
 repeated here.
 
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
-id a 1.x commit names is still looked up by it. This file carries the current release and what is
-unreleased.
+id a 1.x commit names is still looked up by it. This file carries the current release.
 
-## [Unreleased]
+## [2.0] — 2026-10-11 (versionCode 20)
 
 **2.0 starts a new store, and it does not read the old one.** Upgrading leaves 1.x's file
 (`workout.db`) on the device, untouched, and starts an empty library-backed store beside it: **2.0 cannot
