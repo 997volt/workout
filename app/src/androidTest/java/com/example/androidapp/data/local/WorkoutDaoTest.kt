@@ -271,7 +271,6 @@ class WorkoutDaoTest {
                     secondaryMuscles = emptyList(),
                     equipment = com.example.androidapp.domain.model.Equipment.BARBELL,
                     movementPattern = com.example.androidapp.domain.model.MovementPattern.HINGE,
-                    isCustom = false,
                     createdAt = 0L,
                     updatedAt = 0L,
                     deletedAt = null,

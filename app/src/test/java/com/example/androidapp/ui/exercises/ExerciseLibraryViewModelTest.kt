@@ -185,7 +185,6 @@ class ExerciseLibraryViewModelTest {
             primaryMuscle = MuscleGroup.OTHER,
             equipment = Equipment.OTHER,
             movementPattern = MovementPattern.OTHER,
-            isCustom = true,
         )
     }
 

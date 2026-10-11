@@ -65,7 +65,6 @@ class RoomExerciseRepositoryTest {
         // seed library's human-readable ids.
         UUID.fromString(created.id)
         assertEquals("Sled Push", created.name)
-        assertTrue(created.isCustom)
         // **Null is *unstated*** (ROADMAP N103), not `OTHER`: the row states nothing, and there is a separate
         // `OTHER` for a lifter who means *other*.
         assertNull(created.primaryMuscle)
@@ -115,7 +114,6 @@ class RoomExerciseRepositoryTest {
         assertEquals("Drive the floor away", stored.techniqueNote)
         // Identity and origin are untouched by an attribute edit.
         assertEquals(created.id, stored.id)
-        assertTrue(stored.isCustom)
 
         val row = database.exerciseDao().findById(created.id)!!
         assertNotEquals("an edit must bump updatedAt", row.createdAt, row.updatedAt)
@@ -206,7 +204,6 @@ class RoomExerciseRepositoryTest {
         UUID.fromString(category.id)
         assertEquals("Bench Press", category.name)
         assertEquals(RowKind.CATEGORY, category.rowKind)
-        assertTrue("the library keeps it: a head is a row, not a hidden marker", category.isCustom)
         assertNull("a head hangs under nothing", category.parentId)
         // Unstated for a custom exercise's reason (N103): a family spans equipment and every child sets its
         // own, so a head that claimed `OTHER` would be saying something it does not mean.

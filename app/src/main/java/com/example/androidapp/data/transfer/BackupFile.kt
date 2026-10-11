@@ -140,7 +140,6 @@ data class ExerciseDto(
     val secondaryMuscles: List<MuscleGroup>,
     val equipment: Equipment?,
     val movementPattern: MovementPattern?,
-    val isCustom: Boolean,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
@@ -217,7 +216,6 @@ data class SessionDto(
     val startedAt: Long,
     val finishedAt: Long? = null,
     val notes: String? = null,
-    val restEndsAt: Long? = null,
     /** Defaulted for the same reason as [ExerciseDto.restSeconds] (ROADMAP N4). */
     val readinessNote: String? = null,
     /**
@@ -315,7 +313,6 @@ data class SetDto(
     /** Defaulted for the same reason as [ExerciseDto.restSeconds] (ROADMAP N6). */
     val rpeHalves: Int? = null,
     val note: String? = null,
-    val completedAt: Long? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

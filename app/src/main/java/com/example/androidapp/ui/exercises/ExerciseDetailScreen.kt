@@ -912,7 +912,6 @@ private fun ExerciseDetailEditPreview() {
                     primaryMuscle = MuscleGroup.OTHER,
                     equipment = Equipment.OTHER,
                     movementPattern = MovementPattern.OTHER,
-                    isCustom = true,
                 ),
             ),
             onBack = {},

@@ -42,7 +42,6 @@ data class ExerciseEntity(
     val equipment: Equipment? = null,
     /** The movement pattern this row states, or null for *unstated* (ROADMAP N103). */
     val movementPattern: MovementPattern? = null,
-    val isCustom: Boolean,
     /**
      * The row this one hangs under, or null for a top-level row (ROADMAP N95).
      *

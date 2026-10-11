@@ -171,7 +171,6 @@ class RoomTrendsRepositoryTest {
                     setType = set.setType,
                     // The rating stays on the set even when the test supplies its own.
                     rpeHalves = rpeHalves.getOrNull(index),
-                    completedAt = startedAt,
                     createdAt = startedAt,
                     updatedAt = startedAt,
                     deletedAt = null,
@@ -232,7 +231,6 @@ class RoomTrendsRepositoryTest {
         secondaryMuscles = emptyList(),
         equipment = Equipment.BARBELL,
         movementPattern = MovementPattern.SQUAT,
-        isCustom = false,
         createdAt = 0L,
         updatedAt = 0L,
         deletedAt = null,

@@ -409,7 +409,6 @@ class ExerciseDetailViewModelTest {
             val variation = parent.copy(
                 id = "variation-${parent.id}",
                 name = "",
-                isCustom = true,
                 parentId = parent.id,
                 rowKind = RowKind.MOVEMENT,
                 restSeconds = null,
@@ -442,7 +441,6 @@ class ExerciseDetailViewModelTest {
             primaryMuscle = MuscleGroup.OTHER,
             equipment = Equipment.OTHER,
             movementPattern = MovementPattern.OTHER,
-            isCustom = true,
         )
     }
 }

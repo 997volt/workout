@@ -88,7 +88,6 @@ class RoomExerciseRepository @Inject constructor(
         val variation = parent.copy(
             id = UUID.randomUUID().toString(),
             name = "",
-            isCustom = true,
             parentId = parent.id,
             rowKind = RowKind.MOVEMENT,
             primaryMuscle = null,
@@ -143,7 +142,6 @@ class RoomExerciseRepository @Inject constructor(
         val exercise = Exercise(
             id = UUID.randomUUID().toString(),
             name = trimmed,
-            isCustom = true,
             rowKind = rowKind,
         )
         dao.insert(exercise.toEntity(now = timeSource.nowEpochMillis()))

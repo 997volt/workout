@@ -50,7 +50,6 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                     converters.fromMuscleGroups(emptyList()),
                     null,
                     converters.fromMovementPattern(category.pattern),
-                    0, // isCustom: seed, like every row this function writes
                     null, // parentId: a head sits at the top level
                     RowKind.CATEGORY.name,
                     seededAt,
@@ -72,7 +71,6 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                     converters.fromMuscleGroups(exercise.secondaryMuscles),
                     exercise.equipment?.let(converters::fromEquipment),
                     exercise.movementPattern?.let(converters::fromMovementPattern),
-                    0, // isCustom
                     // The family this movement arrives filed under (ROADMAP N95), from the seed's own map so
                     // the seeder and the record of it cannot disagree. `INSERT OR IGNORE` is what
                     // keeps this from undoing a re-file: the row that already exists is left alone, and
@@ -98,4 +96,4 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
 internal const val INSERT_EXERCISE =
     "INSERT OR IGNORE INTO exercises " +
         "(id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, " +
-        "isCustom, parentId, rowKind, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "parentId, rowKind, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"

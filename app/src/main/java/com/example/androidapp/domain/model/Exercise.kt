@@ -27,7 +27,6 @@ data class Exercise(
     val equipment: Equipment? = null,
     /** The movement pattern this row states, or null when it states none (ROADMAP N103). */
     val movementPattern: MovementPattern? = null,
-    val isCustom: Boolean = false,
     /**
      * The row this one hangs under, or null for a top-level row (ROADMAP N95).
      *

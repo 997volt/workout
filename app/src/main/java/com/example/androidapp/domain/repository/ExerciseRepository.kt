@@ -45,8 +45,8 @@ interface ExerciseRepository {
      * Creation deliberately asks for the name only: the taxonomy fields are
      * non-nullable on disk, so an unedited custom exercise is stored as
      * unspecified (`OTHER`) and can be filled in later from the detail screen.
-     * A UUID id and `isCustom = true` are the two things that make it a
-     * user-created entry rather than a seeded one.
+     * A UUID id is what makes it a user-created entry rather than a seeded one,
+     * whose ids are permanent slugs.
      */
     suspend fun createCustomExercise(name: String): DataResult<Exercise>
 

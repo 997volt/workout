@@ -3,11 +3,12 @@
 > **v1.18** is shipped, and **2.0's changes are on `main` with no release cut**. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17;
 > **N96–N102 with B95 shipped as 1.18**, with the six defects a line-by-line reading of that batch found
-> (B96–B101); and **N103–N106 are implemented**: the taxonomy becoming nullable, the store break that let it
-> happen without a migration — a new database file, the 1.x chain and its schemas deleted, both transfer
-> formats refusing 1.x, and the five retired enum names (four patterns and `BACK`) gone with the files that
-> could carry them — the rest of the legacy the new store cannot hold, and the decisions a later id reversed
-> that were still reading as binding. The 1.x store is left on the device by design, and the 1.18 APK is
+> (B96–B101); and **N103–N106, N108 and N109 are implemented**: the taxonomy becoming nullable, the store
+> break that let it happen without a migration — a new database file, the 1.x chain and its schemas deleted,
+> both transfer formats refusing 1.x, and the five retired enum names (four patterns and `BACK`) gone with
+> the files that could carry them — the rest of the legacy the new store cannot hold, the decisions a later
+> id reversed that were still reading as binding, and the two columns and one transfer field nothing read,
+> gone while schema 1 is still unshipped. The 1.x store is left on the device by design, and the 1.18 APK is
 > still the way to read it.
 > Checked against the changelog as well as the code: the unreleased work is under `[Unreleased]` there, every
 > shipped id has its entry, and *Next* holds only N107, which shortens
@@ -31,10 +32,9 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-The taxonomy, the 2.0 break it rode on, the legacy cleanup that break entitled 2.0 to and the
-decision-document cleanup (N103–N106) are implemented on `main` and wait under `[Unreleased]` in
-[CHANGELOG.md](CHANGELOG.md). What remains is N107, which shortens [DECISIONS.md](DECISIONS.md) without
-dropping a decision.
+The taxonomy, the 2.0 break it rode on, the legacy cleanup, the decision-document cleanup and the
+unshipped-schema cleanup (N103–N106, N108, N109) are implemented on `main` and wait under `[Unreleased]`
+in [CHANGELOG.md](CHANGELOG.md). N107 is what is left, and it is text rather than code.
 
 - **The longest evidence-backed entries state the rule and defer their argument to the evidence** (N107).
   The file's own contract is that an entry is the rule, the shortest honest reason and the rejected

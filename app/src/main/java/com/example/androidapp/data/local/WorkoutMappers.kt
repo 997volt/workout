@@ -44,5 +44,4 @@ internal fun SetEntryEntity.toDomain(): SetEntry = SetEntry(
     setType = setType,
     rpeHalves = rpeHalves,
     note = note,
-    completedAt = completedAt?.let(Instant::ofEpochMilli),
 )

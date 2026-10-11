@@ -352,7 +352,6 @@ class ExerciseDetailScreenTest {
             primaryMuscle = MuscleGroup.OTHER,
             equipment = Equipment.OTHER,
             movementPattern = MovementPattern.OTHER,
-            isCustom = true,
         )
 
         val bench = Exercise(
@@ -440,7 +439,7 @@ class ExerciseDetailScreenTest {
         show(
             ExerciseDetailUiState(
                 isLoading = false,
-                exercise = Exercise(id = "mine", name = "My Movement", isCustom = true),
+                exercise = Exercise(id = "mine", name = "My Movement"),
                 ancestors = emptyList(),
             ),
         )

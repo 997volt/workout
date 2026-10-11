@@ -125,7 +125,6 @@ class BackupCodecRoundTripTest {
             note = "slow eccentric",
             setType = SetType.TOP_SET,
             assistanceGrams = 20_000L,
-            completedAt = 1_600_000_000_000L,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,
@@ -201,9 +200,8 @@ class BackupCodecRoundTripTest {
 
         val restored = entity.toDto().toEntity()
 
-        // The one field the codec drops on purpose: a rest countdown is device-and-moment
-        // state rather than training history, so a restored session must not come back
-        // mid-rest. Everything else is asserted field for field.
+        // The entity's own `restEndsAt` is runtime state the file does not carry (N109), so a restored
+        // session never comes back mid-rest; every field the file does carry is asserted for equality.
         assertThat(restored).isEqualTo(entity.copy(restEndsAt = null))
         assertThat(restored.restEndsAt).isNull()
     }
@@ -339,7 +337,6 @@ class BackupCodecRoundTripTest {
             secondaryMuscles = listOf(MuscleGroup.GLUTES, MuscleGroup.CORE),
             equipment = Equipment.BARBELL,
             movementPattern = MovementPattern.SQUAT,
-            isCustom = true,
             restSeconds = 150,
             techniqueNote = "elbows up",
             // The column N64 added: the exercise's own display unit. This is the field the codec

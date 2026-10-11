@@ -173,9 +173,9 @@ rather than bad luck.
 
 `BackupCodecRoundTripTest` therefore asserts that every field of every backed-up entity
 survives entity → DTO → entity, so the next column fails the suite where it is introduced.
-The one field deliberately excluded is a session's `restEndsAt`, because a rest countdown is
-device-and-moment state rather than training history — and that line now says so, since the
-guard could not tell it apart from a mistake.
+There is no exclusion left: the one there used to be — a session's `restEndsAt` — went with the
+field itself (N109), because a rest countdown is device-and-moment state rather than training
+history, and the file had been carrying a value it never restored.
 
 ## B16
 

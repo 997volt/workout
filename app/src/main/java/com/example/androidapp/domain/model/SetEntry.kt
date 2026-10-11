@@ -1,7 +1,5 @@
 package com.example.androidapp.domain.model
 
-import java.time.Instant
-
 /**
  * A single logged set (ROADMAP P1.3).
  *
@@ -33,7 +31,6 @@ data class SetEntry(
      * about the workout.
      */
     val note: String? = null,
-    val completedAt: Instant? = null,
 )
 
 /**

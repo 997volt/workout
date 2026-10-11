@@ -27,9 +27,8 @@ import kotlinx.coroutines.launch
  * What the detail screen's edit form produces (ROADMAP N2, N5).
  *
  * Deliberately a screen-level draft rather than an [Exercise]: the form edits the
- * attributes a user can change, and secondary muscles or `isCustom` are not among
- * them, so passing a whole exercise around would invite editing the rest by
- * accident.
+ * attributes a user can change, and secondary muscles are not among them, so
+ * passing a whole exercise around would invite editing the rest by accident.
  */
 data class ExerciseEdit(
     val name: String,
@@ -267,7 +266,6 @@ class ExerciseDetailViewModel @Inject constructor(
                 exercise = parent.copy(
                     id = "",
                     name = "",
-                    isCustom = true,
                     parentId = parent.id,
                     rowKind = RowKind.MOVEMENT,
                     primaryMuscle = null,

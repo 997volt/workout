@@ -184,7 +184,6 @@ class ProgramDocumentTest {
         secondaryMuscles = emptyList(),
         equipment = Equipment.BARBELL,
         movementPattern = MovementPattern.SQUAT,
-        isCustom = false,
         parentId = parentId,
         rowKind = rowKind,
         createdAt = 0L,

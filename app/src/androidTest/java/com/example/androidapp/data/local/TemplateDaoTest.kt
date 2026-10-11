@@ -191,7 +191,6 @@ class TemplateDaoTest {
         secondaryMuscles = emptyList(),
         equipment = Equipment.BARBELL,
         movementPattern = MovementPattern.SQUAT,
-        isCustom = false,
         createdAt = 0L,
         updatedAt = 0L,
         deletedAt = null,

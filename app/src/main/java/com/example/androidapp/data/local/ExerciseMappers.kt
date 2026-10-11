@@ -17,7 +17,6 @@ internal fun ExerciseEntity.toDomain(): Exercise = Exercise(
     secondaryMuscles = secondaryMuscles,
     equipment = equipment,
     movementPattern = movementPattern,
-    isCustom = isCustom,
     parentId = parentId,
     // A stored name this build does not know reads as a movement rather than as a category, so a row is
     // never hidden by a value the reader could not understand; see `Converters.toRowKind`.
@@ -39,7 +38,6 @@ internal fun Exercise.toEntity(now: Long): ExerciseEntity = ExerciseEntity(
     secondaryMuscles = secondaryMuscles,
     equipment = equipment,
     movementPattern = movementPattern,
-    isCustom = isCustom,
     parentId = parentId,
     // A stored name this build does not know reads as a movement rather than as a category, so a row is
     // never hidden by a value the reader could not understand; see `Converters.toRowKind`.

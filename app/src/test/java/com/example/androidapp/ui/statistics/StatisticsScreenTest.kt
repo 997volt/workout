@@ -441,7 +441,6 @@ class StatisticsScreenTest {
         secondaryMuscles = emptyList(),
         equipment = Equipment.BARBELL,
         movementPattern = MovementPattern.SQUAT,
-        isCustom = false,
         parentId = parentId,
     )
 

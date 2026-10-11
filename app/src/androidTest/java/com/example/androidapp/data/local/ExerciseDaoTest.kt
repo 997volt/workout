@@ -102,7 +102,6 @@ class ExerciseDaoTest {
     @Test
     fun update_writesEveryColumn_andReturnsOne() = runTest {
         val original = row("custom", "Sled Push").copy(
-            isCustom = true,
             createdAt = 10L,
             updatedAt = 10L,
         )
@@ -134,7 +133,6 @@ class ExerciseDaoTest {
         // An attribute edit is not a re-creation, and it does not change where the
         // row came from.
         assertEquals(10L, stored.createdAt)
-        assertEquals(true, stored.isCustom)
     }
 
     @Test
@@ -149,7 +147,6 @@ class ExerciseDaoTest {
         secondaryMuscles = emptyList(),
         equipment = Equipment.BARBELL,
         movementPattern = MovementPattern.PRESS,
-        isCustom = false,
         createdAt = 0L,
         updatedAt = 0L,
         deletedAt = null,

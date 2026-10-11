@@ -56,3 +56,11 @@ it afterwards — and note that "delete everything" in 2.0 removes it.
   also reads no pre-half `rpe` / `targetRpe` field (N6), which only a 1.x file ever wrote. Schema 1 is
   amended in place rather than migrated, which is legal because 2.0 has not shipped (B16).
 
+- **Two columns and a transfer field nothing read are gone** (N108, N109). `exercises.isCustom` and
+  `set_entries.completedAt` were written and round-tripped but read by no decision: the id scheme already
+  says which rows are the lifter's (seeded slugs against UUIDs), and `createdAt` is the same instant as
+  `completedAt`, because a set is never completed later than it is created. Schema 1 was amended in place
+  while it is still unshipped (B16). The backup also stops carrying a session's `restEndsAt` —
+  device-and-moment state the restore discarded — so the codec's one documented round-trip exclusion is
+  gone with it.
+

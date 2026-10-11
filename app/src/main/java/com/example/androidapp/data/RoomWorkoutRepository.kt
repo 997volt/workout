@@ -453,7 +453,6 @@ class RoomWorkoutRepository @Inject constructor(
                 rpeHalves = if (setType.recordsEffort) rpeHalves else null,
                 // A cleared comment is null, not "": one representation of nothing.
                 note = note?.trim()?.ifEmpty { null },
-                completedAt = now,
                 createdAt = now,
                 updatedAt = now,
                 deletedAt = null,
@@ -479,7 +478,7 @@ class RoomWorkoutRepository @Inject constructor(
             }
 
             // Read the stored row first, so the columns an edit does not touch
-            // (setIndex, completedAt, createdAt) are preserved rather than invented,
+            // (setIndex, createdAt) are preserved rather than invented,
             // and so a soft-deleted set cannot be resurrected by an edit.
             val stored = dao.findSetById(setId) ?: throw NotFoundException("set $setId")
             // Re-roling a logged set is a write like logging one, so it holds the same rule (B64): a

@@ -62,7 +62,6 @@ internal fun ExerciseEntity.toDto() = ExerciseDto(
     secondaryMuscles = secondaryMuscles,
     equipment = equipment,
     movementPattern = movementPattern,
-    isCustom = isCustom,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,
@@ -81,7 +80,6 @@ internal fun ExerciseDto.toEntity() = ExerciseEntity(
     secondaryMuscles = secondaryMuscles,
     equipment = equipment,
     movementPattern = movementPattern,
-    isCustom = isCustom,
     restSeconds = restSeconds,
     techniqueNote = techniqueNote,
     // The exercise's own display unit (ROADMAP N64). A restore that dropped it silently reverted
@@ -118,9 +116,8 @@ internal fun WorkoutSessionEntity.toDto() = SessionDto(
     startedAt = startedAt,
     finishedAt = finishedAt,
     notes = notes,
-    restEndsAt = restEndsAt,
     readinessNote = readinessNote,
-    // Carried, unlike the rest countdown: where a session happened is a fact about the training,
+    // Carried: where a session happened is a fact about the training,
     // not about the device it was written on (ROADMAP N25).
     zoneOffsetMinutes = zoneOffsetMinutes,
     // Provenance, and history once the session is done (ROADMAP P3.3) — it must survive a restore
@@ -141,8 +138,8 @@ internal fun SessionDto.toEntity() = WorkoutSessionEntity(
     startedAt = startedAt,
     finishedAt = finishedAt,
     notes = notes,
-    // Deliberate, not an oversight: a rest countdown is device-and-moment state rather than
-    // training history, so it is carried in the file but never restored — see the note above.
+    // A restored session must not still be "in progress" (see above): the store's own column keeps
+    // the value, the file does not carry it (N109).
     restEndsAt = null,
     readinessNote = readinessNote,
     zoneOffsetMinutes = zoneOffsetMinutes,
@@ -193,7 +190,6 @@ internal fun SetEntryEntity.toDto() = SetDto(
     setType = setType,
     rpeHalves = rpeHalves,
     note = note,
-    completedAt = completedAt,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,
@@ -211,7 +207,6 @@ internal fun SetDto.toEntity() = SetEntryEntity(
     // every other write boundary.
     rpeHalves = rpeHalves.takeIf { setType.recordsEffort },
     note = note,
-    completedAt = completedAt,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,

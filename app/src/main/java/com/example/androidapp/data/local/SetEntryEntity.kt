@@ -51,7 +51,6 @@ data class SetEntryEntity(
     val rpeHalves: Int? = null,
     /** A short comment on the set, or null (ROADMAP N6). */
     val note: String? = null,
-    val completedAt: Long?,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

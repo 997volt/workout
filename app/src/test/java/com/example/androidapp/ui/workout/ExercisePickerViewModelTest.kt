@@ -95,7 +95,6 @@ class ExercisePickerViewModelTest {
 
         // Created from the name alone, as an unedited custom exercise (N2).
         assertEquals("Sled Push", exercises.created?.name)
-        assertEquals(true, exercises.created?.isCustom)
         assertEquals(MuscleGroup.OTHER, exercises.created?.primaryMuscle)
         assertEquals(Equipment.OTHER, exercises.created?.equipment)
         assertEquals(MovementPattern.OTHER, exercises.created?.movementPattern)
@@ -362,7 +361,6 @@ class ExercisePickerViewModelTest {
                 primaryMuscle = MuscleGroup.OTHER,
                 equipment = Equipment.OTHER,
                 movementPattern = MovementPattern.OTHER,
-                isCustom = true,
             )
             created = exercise
             state.value = state.value + exercise

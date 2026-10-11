@@ -381,7 +381,8 @@ the rule; that one argues it.
   round trip** (N24's preparation). The hand-written codec omits a column it does not know
   without erroring — three silent losses so far (N9, N15, N16) — so
   `BackupCodecRoundTripTest` asserts every field of every backed-up entity survives
-  entity → DTO → entity. A session's `restEndsAt` is the one deliberate exclusion.
+  entity → DTO → entity, with no exclusion left: a session's runtime `restEndsAt` is not a field
+  of the file at all (N109).
   ([evidence](DECISIONS-EVIDENCE.md#n24-codec))
 
 - **A transfer file's version is read before its body is decoded** (B62). Both codecs used to decode the
