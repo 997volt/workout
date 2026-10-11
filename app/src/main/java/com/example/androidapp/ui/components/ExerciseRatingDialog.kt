@@ -45,8 +45,7 @@ import com.example.androidapp.domain.model.jointSiteLabel
  * one number about the whole exercise (N8), and the joint half is a picked list — a joint and, for the
  * paired ones, which side, each with its own score (N63). Muscle feel starts at [DEFAULT_MUSCLE_FEEL]
  * when nothing was recorded: a stepper always shows a number, so the point it starts on is also what
- * *Save* records if the lifter never touches it. The single joint-pain field and its note box are gone;
- * a session rated before them keeps the number and the text, which history still reads.
+ * *Save* records if the lifter never touches it.
  */
 @Composable
 fun ExerciseRatingDialog(
@@ -55,13 +54,6 @@ fun ExerciseRatingDialog(
     onDismiss: () -> Unit,
     onSave: (muscleFeel: Int?, joints: List<JointPain>) -> Unit,
     modifier: Modifier = Modifier,
-    /**
-     * A joint rating given before the picked list existed (N63), shown so that a save which retires it
-     * is not silent. Read-only: the old number and its free text cannot be represented as a picked
-     * joint, so the dialog states them rather than pretending they are one.
-     */
-    legacyJointPain: Int? = null,
-    legacyJointPainNote: String? = null,
 ) {
     var muscleFeel by rememberSaveable { mutableStateOf(initialMuscleFeel ?: DEFAULT_MUSCLE_FEEL) }
     // `rememberSaveable` for the same reason the stepper is: a rotation mid-edit must not throw away
@@ -90,8 +82,6 @@ fun ExerciseRatingDialog(
                 onRemoveJoint = { key ->
                     joints = joints.filterNot { jointSiteKey(it.joint, it.side) == key }
                 },
-                legacyJointPain = legacyJointPain,
-                legacyJointPainNote = legacyJointPainNote,
             )
         },
         confirmButton = {
@@ -122,8 +112,6 @@ private fun RatingFields(
     onAddJoint: (JointSite) -> Unit,
     onJointScore: (String, Int) -> Unit,
     onRemoveJoint: (String) -> Unit,
-    legacyJointPain: Int?,
-    legacyJointPainNote: String?,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         MuscleFeelRow(feel = muscleFeel, onFeelChange = onMuscleChange)
@@ -149,26 +137,8 @@ private fun RatingFields(
             onScore = onJointScore,
             onRemove = onRemoveJoint,
         )
-        // What this save retires (N63). A session rated before the picked list existed keeps its
-        // number and its text until it is rated again; showing them means the replacement is a
-        // decision the lifter can see rather than a silent loss.
-        val legacyLine = listOfNotNull(
-            legacyJointPain?.let { stringResource(R.string.rating_joint_value, it) },
-            legacyJointPainNote,
-        ).takeIf { it.isNotEmpty() }?.joinToString(LEGACY_JOINT_SEPARATOR)
-        legacyLine?.let {
-            Text(
-                text = stringResource(R.string.rating_joint_legacy, it),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.testTag(TestTags.RATING_LEGACY_JOINT),
-            )
-        }
     }
 }
-
-/** The same separator the rating summary uses between the parts of one rating. */
-private const val LEGACY_JOINT_SEPARATOR = " · "
 
 /**
  * Muscle feel as a −/+ stepper (ROADMAP N8), the shape the scored picks already use (N62, N63).

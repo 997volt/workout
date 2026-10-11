@@ -1004,27 +1004,21 @@ thing the derivation exists to prevent: two names for one idea, drifting the fir
 claimed a muscle the sore list did not know. One entry puts it in the picker, the exercise dropdown and
 the search at once, and it is the same word in all three.
 
-**Back could not simply be replaced.** Every muscle is stored by name and read back through
-`MuscleGroup.valueOf`, so removing the constant does not deprecate the value — it makes every row that
-still says `BACK` throw on read, and every export written before the split fail to restore with a
-decoder error. Keeping it as a legacy value costs one enum entry and one filter on two lists, and it is
-the shape N59 and N63 already chose for a value the app stopped offering but must still read. Excluding
-it from `SELECTABLE_MUSCLE_GROUPS` is what keeps anything new from being tagged with it.
+**Back could not simply be replaced while a 1.x row could carry it.** Every muscle is stored by name
+and read back through `MuscleGroup.valueOf`, so removing the constant then would have made every row
+that still said `BACK` throw on read, and every export written before the split fail to restore with a
+decoder error. Keeping it as a legacy value cost one enum entry and one filter on two lists, and it was
+the shape N59 and N63 chose for a value the app stopped offering but had to read.
 
-The seeded library had to move by migration rather than by editing the seed, because the seed only ever
-inserts: it is an `INSERT OR IGNORE` top-up on every database open that deliberately never updates an
-existing row (a REPLACE would fight the session exercises that reference the row by foreign key and
-would undo a soft delete). Re-classifying the seed list therefore reaches fresh installs and nothing
-else. The migration is written to touch only what the app itself wrote and only where the lifter has
-not answered for it — each statement is guarded by the seeded value and keyed to the seeded ids, and
-the secondary lists are rewritten token by token rather than replaced whole. A custom exercise tagged
-*Back* is left alone on purpose: nothing in the row says which of the three it is, and picking one would
-be exactly the guess this project refuses elsewhere.
+**2.0 made the value unreachable, and N105 removed it.** The store starts empty and the seed states the
+split directly, so nothing new is ever tagged `BACK`; and a 1.x file is refused *before* the decoder, so
+no export can carry it either. There is no migration chain to move an older library, because 2.0 does
+not read one — the same argument N104 made for the four retired movement-pattern names, applied to the
+muscle group it had left behind.
 
-The deadlifts are the case that shows the judgement is the lifter's rather than arithmetic: they leave
-the back group for `HAMSTRINGS`, which the Romanian deadlift already carried, and the `HAMSTRINGS` in
-their secondary list becomes `LOWER_BACK` — the erectors holding a heavy hinge, which is what the
-retired tag was standing for.
+The deadlifts show the judgement this took: they carry `HAMSTRINGS`, which the Romanian deadlift
+already had, with `LOWER_BACK` in their secondary list — the erectors holding a heavy hinge, which is
+what the retired tag was standing for.
 
 **`CURRENT_SCHEMA_VERSION` moved to 2**, and this is the first change that needed it. Its own rule says
 a bump is for a field that changes meaning *or* for a newer file carrying data an older build cannot

@@ -4,7 +4,6 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.SetType
@@ -56,44 +55,6 @@ class TemplateSetDialogTest {
         assertEquals(1, saved?.targetRepsMin)
         assertEquals(2, saved?.targetRepsMax)
         assertEquals("grind", saved?.note)
-    }
-
-    @Test
-    fun aLegacyPerSetRpe_isRoundTripped_thoughTheDialogNoLongerShowsIt() {
-        // ROADMAP N59, amended: the effort is one number per exercise now, so this form has no RPE
-        // field — but a set that still carries a value from before the change must come back from an
-        // edit with it intact rather than silently wiped.
-        show(initial = TemplateSetEdit(targetWeightGrams = 60_000L, targetRpeHalves = 19), isNew = false)
-
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).performTextClearance()
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).performTextInput("65")
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).performClick()
-
-        assertEquals(65_000L, saved?.targetWeightGrams)
-        assertEquals("the legacy per-set RPE is carried, not cleared", 19, saved?.targetRpeHalves)
-    }
-
-    @Test
-    fun reRolingASetToWarmUp_clearsTheLegacyPerSetEffort() {
-        // ROADMAP N67: a planned warm-up carries no effort. Migration 28→29 cleared the value off the
-        // rows already stored, so the one way it could come back is an edit that re-roles a set — and
-        // there the dialog has to drop it rather than round-trip it (the case above still holds for a
-        // role that records an effort).
-        show(
-            initial = TemplateSetEdit(
-                role = SetType.NORMAL,
-                targetWeightGrams = 60_000L,
-                targetRpeHalves = 19,
-            ),
-            isNew = false,
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
-        composeTestRule.onNodeWithTag(TestTags.templateSetRole("WARMUP")).performClick()
-        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).performClick()
-
-        assertEquals(SetType.WARMUP, saved?.role)
-        assertEquals("a planned warm-up carries no target effort", null, saved?.targetRpeHalves)
     }
 
     @Test

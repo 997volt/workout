@@ -193,9 +193,8 @@ fun plannedTargetFor(
             assistanceGrams = set.targetAssistanceGrams,
             // A planned set's role travels with its targets, so the ramp is armed, not retyped (B48).
             role = set.role,
-            // The exercise's one target RPE is what the stepper opens on (N59); a set's own value is
-            // only the fallback for a plan written before the effort moved to the exercise.
-            rpeHalves = planned?.targetRpeHalves ?: set.targetRpeHalves,
+            // The exercise's one target RPE is what the stepper opens on (N59).
+            rpeHalves = planned?.targetRpeHalves,
         )
     }
 }

@@ -22,7 +22,6 @@ import com.example.androidapp.data.local.TemplateSetEntity
 import com.example.androidapp.data.local.WorkoutSessionEntity
 import java.time.DayOfWeek
 import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
 /**
@@ -83,8 +82,6 @@ class BackupCodecRoundTripTest {
             techniqueNote = "brace hard",
             finishedAt = 1_700_000_000_000L,
             muscleFeel = 8,
-            jointPain = 2,
-            jointPainNote = "left knee",
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,
@@ -151,7 +148,6 @@ class BackupCodecRoundTripTest {
             targetRepsMin = 2,
             targetRepsMax = 4,
             targetRepsCurrent = 3,
-            targetRpeHalves = 19,
             note = "leave one in the tank",
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
@@ -162,9 +158,9 @@ class BackupCodecRoundTripTest {
     }
 
     @Test
-    fun aPlannedRung_survivesTheCodec_withoutItsEffort() {
-        // ROADMAP N79: a rung is not rated on its own, so an export carrying a drop's effort brings
-        // back a set that has none — the same boundary rule a warm-up has had since N67.
+    fun aPlannedRung_survivesTheCodec_withItsRunValue() {
+        // ROADMAP N79: the run's value is held by its first rung, and the codec must carry it or a
+        // restore silently leaves the ladder with nothing to take off (B70).
         val entity = TemplateSetEntity(
             id = "ts1",
             templateExerciseId = "te1",
@@ -175,10 +171,7 @@ class BackupCodecRoundTripTest {
             targetRepsMin = null,
             targetRepsMax = null,
             targetRepsCurrent = null,
-            // The run's value, held by its first rung (N79): the codec must carry it, or a restore
-            // silently leaves the ladder with nothing to take off (B70).
             dropValueGrams = 20_000L,
-            targetRpeHalves = 19,
             note = null,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
@@ -186,9 +179,7 @@ class BackupCodecRoundTripTest {
         )
 
         val roundTripped = entity.toDto().toEntity()
-        assertThat(roundTripped.targetRpeHalves).isNull()
-        assertWithMessage("and its value travels, or the ladder loses what to take off")
-            .that(roundTripped.dropValueGrams).isEqualTo(20_000L)
+        assertThat(roundTripped.dropValueGrams).isEqualTo(20_000L)
     }
 
     @Test

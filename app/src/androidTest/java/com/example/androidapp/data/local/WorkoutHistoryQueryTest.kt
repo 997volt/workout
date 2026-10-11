@@ -154,7 +154,7 @@ class WorkoutHistoryQueryTest {
                 ExerciseEntity(
                     id = id,
                     name = id,
-                    primaryMuscle = com.example.androidapp.domain.model.MuscleGroup.BACK,
+                    primaryMuscle = com.example.androidapp.domain.model.MuscleGroup.HAMSTRINGS,
                     secondaryMuscles = emptyList(),
                     equipment = com.example.androidapp.domain.model.Equipment.BARBELL,
                     movementPattern = com.example.androidapp.domain.model.MovementPattern.HINGE,

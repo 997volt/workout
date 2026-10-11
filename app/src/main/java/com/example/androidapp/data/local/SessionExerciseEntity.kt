@@ -61,14 +61,6 @@ data class SessionExerciseEntity(
      * when the exercise is marked done and editable from the workout detail.
      */
     val muscleFeel: Int? = null,
-    /** Discomfort in joints or connective tissue, 1–10, or null (ROADMAP N8). */
-    val jointPain: Int? = null,
-    /**
-     * Which joints hurt, or null (ROADMAP N9). Free text, and only meaningful
-     * beside [jointPain] — but stored either way, because the note is often what
-     * makes a past rating legible a month later.
-     */
-    val jointPainNote: String? = null,
     /**
      * Which superset or circuit this exercise belongs to, or null (ROADMAP N24).
      *

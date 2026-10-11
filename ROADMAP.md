@@ -3,12 +3,13 @@
 > **v1.18** is shipped, and **2.0's changes are on `main` with no release cut**. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17;
 > **N96–N102 with B95 shipped as 1.18**, with the six defects a line-by-line reading of that batch found
-> (B96–B101); and **N103 and N104 are implemented**, which is the taxonomy becoming nullable and the store
-> break that let it happen without a migration — a new database file, the 1.x chain and its schemas deleted,
-> both transfer formats refusing 1.x, and the four retired pattern names gone with the files that could carry
-> them. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
+> (B96–B101); and **N103–N105 are implemented**: the taxonomy becoming nullable, the store break that let it
+> happen without a migration — a new database file, the 1.x chain and its schemas deleted, both transfer
+> formats refusing 1.x, and the five retired enum names (four patterns and `BACK`) gone with the files that
+> could carry them — and the rest of the legacy the new store cannot hold. The 1.x store is left on the
+> device by design, and the 1.18 APK is still the way to read it.
 > Checked against the changelog as well as the code: the unreleased work is under `[Unreleased]` there, every
-> shipped id has its entry, and *Next* holds only the cleanup that break entitles 2.0 to (N105, N106). A
+> shipped id has its entry, and *Next* holds only the text cleanup (N106). A
 > line-by-line reading of the N87–N95 changes found sixteen defects (B79–B94); all are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).
 >
@@ -28,25 +29,10 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-The taxonomy and the 2.0 break it rode on (N103, N104) are implemented on `main` and wait under
-`[Unreleased]` in [CHANGELOG.md](CHANGELOG.md). What remains before the tag is the cleanup that break
-entitles 2.0 to.
+The taxonomy, the 2.0 break it rode on and the legacy cleanup that break entitled 2.0 to (N103, N104,
+N105) are implemented on `main` and wait under `[Unreleased]` in [CHANGELOG.md](CHANGELOG.md). What
+remains before the tag is N106, which is text rather than code.
 
-**N104's rule — a name nothing can reach is a name that should not exist — was applied to the four retired
-movement-pattern names and to nothing else.** Four legacy things and two renamed transfer fields are now just
-as unreachable, and two decisions a later id reversed still read as binding. **None of it is a migration
-while the 2.0 store is unshipped**: schema 1 can be amended in place, by B16's own rule, and the exported
-schema regenerated rather than chained — so cutting the tag first is what turns each drop into a migration.
-
-- **The legacy values 2.0's store can no longer hold go** (N105): `MuscleGroup.BACK`, N63's
-  `jointPain`/`jointPainNote`, N59's per-set `template_sets.targetRpeHalves` and N6's pre-half
-  `rpe`/`targetRpe` transfer fields each exist only so a 1.x row or a 1.x file keeps reading — and 2.0 starts
-  a store that never held one and refuses a 1.x file before the decoder. That takes the enum constant, its
-  `SELECTABLE_MUSCLE_GROUPS` filter and the reads that still show a row carrying it; the two rating columns
-  with the dialog, section and review paths that fall back to them; the per-set effort column with the `?:`
-  fallbacks that prefer the exercise's own number; and the renamed DTO fields with their mapping and the
-  tests that exercise them. The app-facing rules are N75, N63, N59 and N6; the argument is N104's, and each
-  drop is safe for exactly its reason.
 - **The decisions N73 and N56 reversed stop reading as binding** (N106). N73 reversed P3.8 and dropped the
   slot's prescription tables, but the P3.8 bullets still describe `program_slot_exercises` and a slot-level
   percentage as live, and N85, N47 and the program document's own doc repeat "what each slot prescribes".

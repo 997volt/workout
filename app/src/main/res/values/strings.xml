@@ -406,7 +406,6 @@
     <string name="rating_row_title">How it felt</string>
     <string name="rating_row_add">Tap to rate</string>
     <string name="rating_muscle_value">Muscle feel %1$d</string>
-    <string name="rating_joint_value">Joint pain %1$d</string>
     <!-- The picked joint list (ROADMAP N63). The one number and its note box are gone; each picked
          joint carries its own score, and left and right are separate entries. -->
     <string name="rating_joint_list_title">Painful joints</string>
@@ -415,9 +414,6 @@
     <string name="rating_joint_decrease">Lower %1$s pain</string>
     <string name="rating_joint_increase">Raise %1$s pain</string>
     <string name="rating_joint_remove">Remove %1$s</string>
-    <!-- A rating given before the joints were picked (ROADMAP N63): shown so a save that retires it
-         is not a silent loss. It cannot be represented as a picked joint, so it is stated, not edited. -->
-    <string name="rating_joint_legacy">Recorded before: %1$s</string>
 
     <!-- The next step each planned set earned, asked when an exercise is done (ROADMAP N50, N74). One
          row per working set states what the plan asked and what was done; a set below its rep range's
@@ -581,7 +577,6 @@
     <string name="summary_note">Note: %1$s</string>
     <string name="summary_ratings_title">How it felt</string>
     <string name="summary_rating_feel">felt %1$d/10</string>
-    <string name="summary_rating_pain">joints %1$d/10</string>
     <!-- The picked list's half (ROADMAP N63): the worst joint that exercise reported, named. -->
     <string name="summary_rating_joint">%1$s %2$d/10</string>
     <string name="summary_plan_title">Plan vs actual</string>

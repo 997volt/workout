@@ -227,25 +227,15 @@ class SetSuggestionTest {
     }
 
     @Test
-    fun aTemplatesOneTargetRpe_winsOverItsSetsLegacyValue() {
-        // ROADMAP N59, amended: the exercise's number is the plan's target, and a set's own value is
-        // only what a plan written before the change arrives with.
-        val target = plannedTargetFor(planned = plannedExercise(exerciseRpe = 18, setRpe = 16), nextIndex = 0)
+    fun aTemplatesOneTargetRpe_isTheSetsTarget() {
+        // ROADMAP N59, amended: the exercise's number is the plan's target, and a set carries none.
+        val target = plannedTargetFor(planned = plannedExercise(exerciseRpe = 18), nextIndex = 0)
 
         assertEquals(18, target?.rpeHalves)
     }
 
-    @Test
-    fun aSetsLegacyRpe_isTheFallback_whenTheExerciseNamesNone() {
-        // The `?:` a pre-change backup relies on: the plan has no exercise-level value, so the set's
-        // stands and the plan behaves exactly as it did before the effort moved.
-        val target = plannedTargetFor(planned = plannedExercise(exerciseRpe = null, setRpe = 16), nextIndex = 0)
-
-        assertEquals(16, target?.rpeHalves)
-    }
-
-    /** One planned exercise with one planned set, for the exercise-versus-set RPE fallback (N59). */
-    private fun plannedExercise(exerciseRpe: Int?, setRpe: Int?) = TemplateExercise(
+    /** One planned exercise with one planned set, for the plan's target RPE (N59). */
+    private fun plannedExercise(exerciseRpe: Int?) = TemplateExercise(
         id = "te1",
         templateId = "t1",
         exerciseId = "back-squat",
@@ -261,8 +251,6 @@ class SetSuggestionTest {
                 setIndex = 0,
                 targetWeightGrams = 100_000L,
                 targetRepsMax = 5,
-                // The value a plan written before the effort moved to the exercise carries.
-                targetRpeHalves = setRpe,
             ),
         ),
     )

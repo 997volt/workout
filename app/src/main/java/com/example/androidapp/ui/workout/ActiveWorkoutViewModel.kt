@@ -149,10 +149,6 @@ data class SessionExerciseRow(
      * The picked list a new rating writes; empty means none was picked.
      */
     val joints: List<JointPain> = emptyList(),
-    /** Legacy joint pain, 1–10, or null (ROADMAP N8) — shown for a session rated before N63. */
-    val jointPain: Int? = null,
-    /** Legacy "which joints" free text, or null (ROADMAP N9) — shown, never rewritten. */
-    val jointPainNote: String? = null,
     val sets: List<SetRow> = emptyList(),
     val suggestion: SetSuggestion = SetSuggestion(DEFAULT_REPS, Weight.DEFAULT_GRAMS),
     /**
@@ -1183,8 +1179,6 @@ data class ExerciseRating(
     val muscleFeel: Int?,
     /** The joints that hurt, each with its side and score (ROADMAP N63), or empty. */
     val joints: List<JointPain>,
-    /** Legacy joint pain, 1–10, or null (ROADMAP N8) — read for a session rated before N63. */
-    val jointPain: Int?,
 )
 
 /**
@@ -1243,16 +1237,13 @@ private fun buildSummary(
         totalVolumeGrams = allSets.sumOf { it.weightGrams * it.reps },
         ratings = state.exercises.mapNotNull { row ->
             val feel = row.muscleFeel
-            // The picked joints are the new half (N63); the legacy number is read so an exercise
-            // rated before the change is still a rating rather than an unrated one.
-            if (feel == null && row.joints.isEmpty() && row.jointPain == null) {
+            if (feel == null && row.joints.isEmpty()) {
                 null
             } else {
                 ExerciseRating(
                     name = row.name,
                     muscleFeel = feel,
                     joints = row.joints,
-                    jointPain = row.jointPain,
                 )
             }
         },
@@ -1368,8 +1359,6 @@ private fun SessionExercise.toRow(
         isFinished = isFinished,
         muscleFeel = muscleFeel,
         joints = joints,
-        jointPain = jointPain,
-        jointPainNote = jointPainNote,
         sets = loggedSets,
         suggestion = suggestionFor(loggedSets, previous, plan),
         // The step this exercise earned, read from the same plan the prefill reads (N50).
@@ -1413,12 +1402,11 @@ private fun List<SetEntry>.loggedRowsFor(
  * reconcile.
  *
  * The **target RPE is one number for the exercise** (N59), so every set carries it rather than its
- * own; a set's stored value is only the fallback a plan written before N59 arrives with. That is
- * what lets the rule check every working set against the exercise's single target.
+ * own, which is what lets the rule check every working set against that single target.
  */
 private fun PlanContext.progressionSets(): List<ProgressionPlanSet> =
     plannedEntry?.sets.orEmpty().map { set ->
-        set.toProgressionSet(rpeTarget = plannedEntry?.targetRpeHalves ?: set.targetRpeHalves)
+        set.toProgressionSet(rpeTarget = plannedEntry?.targetRpeHalves)
     }
 
 private fun TemplateSet.toProgressionSet(rpeTarget: Int?): ProgressionPlanSet = ProgressionPlanSet(
@@ -1431,9 +1419,8 @@ private fun TemplateSet.toProgressionSet(rpeTarget: Int?): ProgressionPlanSet = 
     targetRepsMax = targetRepsMax,
     // Where in the range the lifter has climbed (N74): the number the rule measures and a step moves.
     targetRepsCurrent = targetRepsCurrent,
-    targetRpeHalves = rpeTarget ?: targetRpeHalves,
+    targetRpeHalves = rpeTarget,
     note = note,
-    legacyRpeHalves = targetRpeHalves,
 )
 
 /** One logged set as the rule reads it: the role decides whether it is work at all (N50). */
@@ -1482,9 +1469,6 @@ private fun ProgressionPlanSet.toTemplateEdit(): TemplateSetEdit = TemplateSetEd
     // The lifter's place in the range travels with the write (N74), or the step would be lost and
     // the next session would ask for the floor again.
     targetRepsCurrent = targetRepsCurrent,
-    // The set's **own** legacy value, not the exercise's number the rule read: copying the latter
-    // into a column the reader falls back to is what made a cleared plan's RPE come back (N59).
-    targetRpeHalves = legacyRpeHalves,
     note = note,
 )
 

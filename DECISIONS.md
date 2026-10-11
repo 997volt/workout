@@ -36,25 +36,19 @@ the rule; that one argues it.
   shipped in so a preview or a test behaves as it always did. The allowance is named in
   [detekt.yml](config/detekt/detekt.yml) rather than left to the rule's default, so the next ambient
   is a decision rather than a habit.
-- **The muscles are one vocabulary, and a retired name stays readable** (N75). Adductors is a
+- **The muscles are one vocabulary, and the split is the list** (N75, completed by N105). Adductors is a
   `MuscleGroup` entry and nothing else: the readiness note's sore list is derived from the taxonomy
   (`SORE_MUSCLE_GROUPS` is the selectable groups minus *Other*), so a second list of "muscles you can
   be sore in" would be two vocabularies for one idea — and the same entry makes it an exercise's
   primary muscle, which is where the taxonomy belongs. **`BACK` split into `LATS`, `UPPER_BACK` and
-  `LOWER_BACK`, and `BACK` itself stays in the enum as a legacy value**: every muscle is stored by
-  name and read back through `valueOf`, so deleting it would make every row that still says it — and
-  every export written before the split — throw on read. It is excluded from every picker (through
-  `SELECTABLE_MUSCLE_GROUPS`) and still shown where a row carries it, the way N59's legacy per-set
-  effort and N63's legacy joint number are. **The seeded library is corrected by migration**, not by
-  editing the seed: the seed is an `INSERT OR IGNORE` top-up that never updates a row, so a
-  re-classified seed reaches fresh installs only. Each statement is guarded by the value the seed
-  wrote and keyed to the seeded ids, so an exercise a lifter re-classified keeps their answer, a custom
-  movement keeps its *Back*, and a secondary list is rewritten token by token so an added muscle
-  survives. The deadlifts leave the back group for `HAMSTRINGS` — which the Romanian deadlift already
-  had — with `LOWER_BACK` taking the retired tag's place in their secondaries, because the erectors
-  holding a heavy hinge is a fact about the lift. The new constants sit where they belong in anatomy
-  order rather than being appended, which is the one thing the enum's "append it, order is cosmetic"
-  habit does not cover: the order *is* the pickers' map.
+  `LOWER_BACK`, and the retired name is gone from the enum**: it was kept only so a 1.x row — which
+  stored every muscle by name and read it back through `valueOf` — still resolved, and 2.0 starts a
+  store that never held one and refuses a 1.x file before the decoder (N104, N105). **The seed states
+  the split directly**: it is an `INSERT OR IGNORE` top-up on every open, so a fresh store is
+  classified by the seed itself rather than by a migration, and the deadlifts carry `HAMSTRINGS` —
+  which the Romanian deadlift already had — with `LOWER_BACK` in their secondaries, because the
+  erectors holding a heavy hinge is a fact about the lift. The new constants sit where they belong in
+  anatomy order rather than being appended, because the order *is* the pickers' map.
   ([evidence](DECISIONS-EVIDENCE.md#n75))
 - **An exercise may name the step its weights move by** (N77). The ± buttons, the warm-up ramp and the
   progression offer all move a load by a step, and until this it came from the unit alone — 2.5 kg or
@@ -165,8 +159,7 @@ the rule; that one argues it.
 
 - **RPE is half-points in an `Int`; the feel and pain ratings are not** (N6, extended for
   9.5). `19` is exactly 9.5; it refuses anything finer than a half rather than rounding,
-  because a rounded 9.3 would claim something never measured. The column is `rpeHalves`,
-  and an older backup's whole-number `rpe` is read as halves rather than dropped.
+  because a rounded 9.3 would claim something never measured. The column is `rpeHalves`.
 
 - **A scheduled plan is a living template, not a dated instance** (N16). Dated instances
   would add a plan-per-date entity, plan generation and skipped-week handling for a
@@ -1129,13 +1122,12 @@ stop being true:
 
 - Process death mid-workout resumes the session with its set and rest intact.
 - The library renders on the very first read after `pm clear`.
-- v1.1 installed over v1.0 and kept the history — dated, and now historical. Every schema step
-  since is covered by the instrumented migration tests, which upgrade a real database holding
-  real rows; the next manual upgrade check belongs here with the two versions it compared.
+- v1.1 installed over v1.0 and kept the history — dated, and now historical. 2.0 starts a new store
+  and the 1.x chain is gone with it (N104), so there is no upgrade step left to check.
 - The three-way muscle split reaches a fresh install's pickers (N75): the readiness note offers
   *Adductors* and has no *Back*, and the library reads *Lats* for a pull-up and *Upper back* for
-  a row. The migration that moves an existing library is the instrumented suite's job; a fresh
-  seed proves only the list.
+  a row. The seed is what classifies a fresh store (N105); there is no migration, because 2.0 does
+  not read the library a 1.x row came from.
 - An exercise's own weight step reaches a live workout (N77): with a 5 kg step on the Assisted
   Pull-Up, the weight field's **+** took it from 20 to 25 — the 2.5 kg the unit alone would have
   given was not used. The detail screen showed *Unit default (2.5 kg)* before the edit and

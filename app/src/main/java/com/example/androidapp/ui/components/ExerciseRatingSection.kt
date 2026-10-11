@@ -27,10 +27,8 @@ import com.example.androidapp.domain.model.label
  * moment an exercise is marked done is a rating given from memory. The Done prompt
  * stays as the last chance rather than the only one.
  *
- * [joints] is the picked list a new rating writes (N63); [legacyJointPain] and [legacyJointPainNote]
- * are the single number and free text a session rated before that change still carries. The legacy
- * pair is **read and shown, never rewritten and never parsed** — the summary prefers the picked list
- * when there is one, and falls back to what was recorded when there is not.
+ * [joints] is the picked list a rating writes (N63) — one score per picked joint, left and right
+ * apart.
  *
  * [onRate] is called with the values the dialog collects; a caller that also
  * needs to finish the exercise (the Done prompt) keeps its own dialog for that, since
@@ -48,14 +46,12 @@ import com.example.androidapp.domain.model.label
 fun ExerciseRatingSection(
     muscleFeel: Int?,
     joints: List<JointPain>,
-    legacyJointPain: Int?,
-    legacyJointPainNote: String?,
     onRate: ((muscleFeel: Int?, joints: List<JointPain>) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     var editing by remember { mutableStateOf(false) }
     val editLabel = stringResource(R.string.rating_edit_title)
-    val rating = ratingSummary(muscleFeel, joints, legacyJointPain, legacyJointPainNote)
+    val rating = ratingSummary(muscleFeel, joints)
     // Read-only, with nothing recorded: draw nothing at all (N101). A title with nothing under it is a label
     // for nothing, and the absence of a rating is not something to advertise — N84's rule is that a rating
     // which *exists* stays readable before *Edit* is chosen, never that a missing one must be announced.
@@ -98,36 +94,24 @@ fun ExerciseRatingSection(
                 editing = false
                 rate(feel, picked)
             },
-            legacyJointPain = legacyJointPain,
-            legacyJointPainNote = legacyJointPainNote,
         )
     }
 }
 
 /**
- * `Muscle feel 8 · Left knee 6/10 · Neck 3/10`, or the legacy `Joint pain 2` and where it hurt
- * (N9, N63), or null when nothing was recorded.
+ * `Muscle feel 8 · Left knee 6/10 · Neck 3/10`, or null when nothing was recorded.
  *
  * The picked joints ride with the summary rather than being lines of their own: each is an aside to
- * the rating, and "left knee" means nothing on its own. The legacy text is shown as written — a
- * resource that only echoes its argument would give a translator nothing to decide — and a session
- * that has both shows the picked list, because that is the rating that was actually given.
+ * the rating, and "left knee" means nothing on its own.
  */
 @Composable
 private fun ratingSummary(
     muscleFeel: Int?,
     joints: List<JointPain>,
-    legacyJointPain: Int?,
-    legacyJointPainNote: String?,
 ): String? {
     val parts = buildList {
         muscleFeel?.let { add(stringResource(R.string.rating_muscle_value, it)) }
-        if (joints.isNotEmpty()) {
-            joints.forEach { add(stringResource(R.string.rating_joint_site, it.label, it.score)) }
-        } else {
-            legacyJointPain?.let { add(stringResource(R.string.rating_joint_value, it)) }
-            legacyJointPainNote?.let { add(it) }
-        }
+        joints.forEach { add(stringResource(R.string.rating_joint_site, it.label, it.score)) }
     }
     return parts.takeIf { it.isNotEmpty() }?.joinToString(" · ")
 }

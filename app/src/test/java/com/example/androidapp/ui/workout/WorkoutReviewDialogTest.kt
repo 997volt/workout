@@ -116,7 +116,6 @@ class WorkoutReviewDialogTest {
                         name = "Back Squat",
                         muscleFeel = 8,
                         joints = listOf(JointPain(Joint.KNEE, Side.LEFT, 2)),
-                        jointPain = null,
                     ),
                 ),
             ),
@@ -139,32 +138,12 @@ class WorkoutReviewDialogTest {
                             JointPain(Joint.KNEE, Side.LEFT, 6),
                             JointPain(Joint.KNEE, Side.RIGHT, 2),
                         ),
-                        jointPain = null,
                     ),
                 ),
             ),
         )
 
         composeTestRule.onNodeWithText("Back Squat — felt 8/10, Left knee 6/10").assertExists()
-    }
-
-    @Test
-    fun aLegacyRating_isStillReadBack() {
-        // N63: a session rated before the picked list keeps its number, and the review reads it.
-        show(
-            review(
-                ratings = listOf(
-                    ExerciseRating(
-                        name = "Back Squat",
-                        muscleFeel = 8,
-                        joints = emptyList(),
-                        jointPain = 2,
-                    ),
-                ),
-            ),
-        )
-
-        composeTestRule.onNodeWithText("Back Squat — felt 8/10, joints 2/10").assertExists()
     }
 
     @Test

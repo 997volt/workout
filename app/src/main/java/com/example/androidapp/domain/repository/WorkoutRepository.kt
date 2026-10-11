@@ -139,9 +139,7 @@ interface WorkoutRepository {
      *
      * An empty [joints] clears the picked list and a non-empty one **replaces** it rather than
      * merging, because the editor shows exactly what is stored. A score outside `TenPointScale` is
-     * refused as `Invalid` before anything is written. The rating **replaces the legacy
-     * `jointPain` / `jointPainNote`** columns too, so a list the lifter cleared stays cleared; a
-     * session nobody re-rates keeps its number and its free text, which history still reads.
+     * refused as `Invalid` before anything is written.
      *
      * Separate from [finishExercise] rather than folded into it: the ratings are
      * captured *at* Done but are skippable, and they stay editable from the workout

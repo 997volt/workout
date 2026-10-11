@@ -122,8 +122,9 @@ class TrendsDaoTest {
     fun theFeelAverage_skipsWhatWasNotRecorded() = runTest {
         val sessionId = "s1"
         database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
-        exercise(sessionId, "se1", feel = 6, pain = null)
-        exercise(sessionId, "se2", feel = 8, pain = 4)
+        exercise(sessionId, "se1", feel = 6)
+        exercise(sessionId, "se2", feel = 8)
+        joint("se2", Joint.KNEE, Side.LEFT, 4, position = 0)
 
         val row = dao.observeFeelTrend(limit = 10).first().single()
 
@@ -136,7 +137,8 @@ class TrendsDaoTest {
     fun aWorkoutThatRecordedOnlyPain_hasNoFeelAverage() = runTest {
         val sessionId = "s1"
         database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
-        exercise(sessionId, "se1", feel = null, pain = 3)
+        exercise(sessionId, "se1", feel = null)
+        joint("se1", Joint.KNEE, Side.LEFT, 3, position = 0)
 
         val row = dao.observeFeelTrend(limit = 10).first().single()
 
@@ -166,24 +168,12 @@ class TrendsDaoTest {
         // so the WHERE clause has to count it or the trend silently ignores the workout.
         val sessionId = "s1"
         database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
-        exercise(sessionId, "se1", feel = null, pain = null)
+        exercise(sessionId, "se1")
         joint("se1", Joint.SHOULDER, Side.LEFT, 5, position = 0)
 
         val row = dao.observeFeelTrend(limit = 10).first().single()
 
         assertEquals(5.0, row.averageJointPain)
-    }
-
-    @Test
-    fun aPickedJoint_winsOverTheLegacyNumber() = runTest {
-        // A session rated before N63 and rated again after it carries both; the picked list is the
-        // rating that was actually given, and the legacy column is the fallback.
-        val sessionId = "s1"
-        database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
-        exercise(sessionId, "se1", feel = null, pain = 2)
-        joint("se1", Joint.KNEE, Side.RIGHT, 6, position = 0)
-
-        assertEquals(6.0, dao.observeFeelTrend(limit = 10).first().single().averageJointPain)
     }
 
     @Test
@@ -200,11 +190,11 @@ class TrendsDaoTest {
     }
 
     @Test
-    fun theExerciseTrendRow_readsTheWorstJoint_withTheLegacyFallback() = runTest {
-        // ROADMAP N63, and the alias is unchanged so the Kotlin mapping is too (N17).
+    fun theExerciseTrendRow_readsTheWorstJoint() = runTest {
+        // ROADMAP N63: the exercise's worst picked joint that session (N17).
         val sessionId = "s1"
         database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
-        exercise(sessionId, "se1", feel = 8, pain = null)
+        exercise(sessionId, "se1", feel = 8)
         joint("se1", Joint.KNEE, Side.LEFT, 4, position = 0)
         joint("se1", Joint.ANKLE, Side.RIGHT, 7, position = 1)
 
@@ -264,7 +254,6 @@ class TrendsDaoTest {
         sessionId: String,
         id: String,
         feel: Int? = null,
-        pain: Int? = null,
     ) {
         database.exerciseDao().insertAll(
             listOf(
@@ -290,7 +279,6 @@ class TrendsDaoTest {
                 position = 0,
                 finishedAt = null,
                 muscleFeel = feel,
-                jointPain = pain,
                 createdAt = 0L,
                 updatedAt = 0L,
                 deletedAt = null,

@@ -51,7 +51,7 @@ class BackupCodecTest {
             ExerciseDto(
                 id = "gone",
                 name = "Removed Lift",
-                primaryMuscle = MuscleGroup.BACK,
+                primaryMuscle = MuscleGroup.LOWER_BACK,
                 secondaryMuscles = emptyList(),
                 equipment = Equipment.CABLE,
                 movementPattern = MovementPattern.PULL,
@@ -82,8 +82,6 @@ class BackupCodecTest {
                 position = 0,
                 finishedAt = 12L,
                 muscleFeel = 8,
-                jointPain = 2,
-                jointPainNote = "left shoulder",
                 createdAt = 10L,
                 updatedAt = 12L,
                 deletedAt = null,
@@ -165,7 +163,6 @@ class BackupCodecTest {
                 targetWeightGrams = 140_000L,
                 targetRepsMin = 1,
                 targetRepsMax = 2,
-                targetRpeHalves = 9,
                 note = "grind",
                 createdAt = 30L,
                 updatedAt = 30L,
@@ -197,8 +194,8 @@ class BackupCodecTest {
 
     @Test
     fun aFileWrittenBeforeTheJointListExisted_stillDecodes_seeingNone() {
-        // ROADMAP N63 added a whole collection, defaulted to empty like every other — which is what
-        // lets a file written before the picked list restore its legacy jointPain number cleanly.
+        // ROADMAP N63 added a whole collection, defaulted to empty like every other, so a file that
+        // carries none still decodes rather than failing.
         val json = Json { prettyPrint = false }
         val tree = json.parseToJsonElement(BackupCodec.encode(sample)).jsonObject
         val olderFile = JsonObject(tree - "sessionExerciseJoints")
@@ -206,7 +203,6 @@ class BackupCodecTest {
         val restored = BackupCodec.decode(olderFile.toString())
 
         assertEquals(emptyList<SessionExerciseJointDto>(), restored.sessionExerciseJoints)
-        assertEquals("the legacy number still decodes", 2, restored.sessionExercises.first().jointPain)
     }
 
     @Test
@@ -357,10 +353,7 @@ class BackupCodecTest {
         }
         val olderSessionExercises = tree.getValue("sessionExercises").jsonArray.map { element ->
             JsonObject(
-                element.jsonObject.filterKeys {
-                    it != "finishedAt" && it != "muscleFeel" &&
-                        it != "jointPain" && it != "jointPainNote"
-                },
+                element.jsonObject.filterKeys { it != "finishedAt" && it != "muscleFeel" },
             )
         }
         val olderSets = tree.getValue("sets").jsonArray.map { element ->
@@ -382,8 +375,6 @@ class BackupCodecTest {
         assertEquals(null, restored.sessions.first().readinessNote)
         assertEquals(null, restored.sessionExercises.first().finishedAt)
         assertEquals(null, restored.sessionExercises.first().muscleFeel)
-        assertEquals(null, restored.sessionExercises.first().jointPain)
-        assertEquals(null, restored.sessionExercises.first().jointPainNote)
         assertEquals(null, restored.sets.first().rpeHalves)
         assertEquals(null, restored.sets.first().note)
     }
@@ -416,10 +407,9 @@ class BackupCodecTest {
     }
 
     @Test
-    fun aFileWrittenBeforeTheExerciseTargetRpe_stillDecodes_keepingTheSetsOwnValue() {
+    fun aFileWrittenBeforeTheExerciseTargetRpe_stillDecodes_withNone() {
         // ROADMAP N59, amended: the effort moved from the set to the exercise, and the new field is
-        // defaulted so a file from before it decodes. What such a plan still reads is the per-set
-        // value it carries — the fallback that keeps a restored plan behaving as it did.
+        // defaulted so a file from before it decodes with no target rather than failing.
         val json = Json { prettyPrint = false }
         val tree = json.parseToJsonElement(BackupCodec.encode(sample)).jsonObject
         val exercises = tree["templateExercises"]!!.jsonArray.map { element ->
@@ -430,11 +420,6 @@ class BackupCodecTest {
         val restored = BackupCodec.decode(olderFile.toString())
 
         assertNull(restored.templateExercises.single().targetRpeHalves)
-        assertEquals(
-            "the set's own value is what a pre-change plan still reads",
-            9,
-            restored.templateSets.single().targetRpeHalves,
-        )
     }
 
     @Test
@@ -460,7 +445,6 @@ class BackupCodecTest {
         assertNull(set.targetWeightGrams)
         assertNull(set.targetRepsMin)
         assertNull(set.targetRepsMax)
-        assertNull(set.targetRpeHalves)
     }
 
     @Test
@@ -483,38 +467,6 @@ class BackupCodecTest {
 
         assertEquals(0L, restored.sets.first().assistanceGrams)
         assertNull(restored.templateSets.first().targetAssistanceGrams)
-    }
-
-    @Test
-    fun aFileWrittenWithWholeNumberRpe_restoresItAsHalves() {
-        // The field was renamed when RPE took halves (ROADMAP N6). Renaming alone would
-        // have dropped the RPE out of every earlier backup in silence — an unknown field
-        // decodes to nothing — so the old name is still read, and an 8 becomes 8.0.
-        val json = Json { prettyPrint = false }
-        val tree = json.parseToJsonElement(BackupCodec.encode(sample)).jsonObject
-        val sets = tree["sets"]!!.jsonArray.map { element ->
-            JsonObject(element.jsonObject - "rpeHalves" + ("rpe" to JsonPrimitive(8)))
-        }
-        val planSets = tree["templateSets"]!!.jsonArray.map { element ->
-            JsonObject(element.jsonObject - "targetRpeHalves" + ("targetRpe" to JsonPrimitive(7)))
-        }
-        val olderFile = JsonObject(
-            tree + ("sets" to JsonArray(sets)) + ("templateSets" to JsonArray(planSets)),
-        )
-
-        val restored = BackupCodec.decode(olderFile.toString())
-
-        assertEquals("the legacy field is what the file carried", 8, restored.sets.first().rpe)
-        assertEquals(16, restored.sets.first().toEntity().rpeHalves)
-        assertEquals(14, restored.templateSets.first().toEntity().targetRpeHalves)
-    }
-
-    @Test
-    fun aFileWithBothRpeShapes_prefersTheHalves() {
-        // A file written by this version carries both fields (the legacy one is null).
-        val restored = BackupCodec.decode(BackupCodec.encode(sample))
-
-        assertEquals(sample.sets.first().rpeHalves, restored.sets.first().rpeHalves)
     }
 
     @Test

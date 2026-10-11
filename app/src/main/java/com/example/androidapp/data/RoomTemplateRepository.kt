@@ -203,7 +203,6 @@ class RoomTemplateRepository @Inject constructor(
                         targetRepsMin = edit.targetRepsMin,
                         targetRepsMax = edit.targetRepsMax,
                         targetRepsCurrent = edit.targetRepsCurrent,
-                        targetRpeHalves = edit.effortOrNull,
                         note = edit.note,
                         createdAt = now,
                         updatedAt = now,
@@ -233,7 +232,6 @@ class RoomTemplateRepository @Inject constructor(
             targetRepsMin = edit.targetRepsMin,
             targetRepsMax = edit.targetRepsMax,
             targetRepsCurrent = edit.targetRepsCurrent,
-            targetRpeHalves = edit.effortOrNull,
             dropValueGrams = edit.dropValueGrams,
             note = edit.note?.trim()?.ifEmpty { null },
             createdAt = now,
@@ -260,7 +258,6 @@ class RoomTemplateRepository @Inject constructor(
                 targetRepsMin = edit.targetRepsMin,
                 targetRepsMax = edit.targetRepsMax,
                 targetRepsCurrent = edit.targetRepsCurrent,
-                targetRpeHalves = edit.effortOrNull,
                 dropValueGrams = edit.dropValueGrams,
                 note = edit.note?.trim()?.ifEmpty { null },
                 updatedAt = timeSource.nowEpochMillis(),
@@ -383,10 +380,6 @@ class RoomTemplateRepository @Inject constructor(
         }
         val now = timeSource.nowEpochMillis()
         database.withTransaction {
-            // The previous value decides whether a clear also has to reach the legacy per-set column,
-            // so it is read before the write that replaces it (N59).
-            val previous = dao.findTemplateExercise(templateExerciseId)
-                ?: throw NotFoundException("template exercise $templateExerciseId")
             val updated = dao.setExercisePlan(
                 id = templateExerciseId,
                 restSeconds = restSeconds,
@@ -395,13 +388,6 @@ class RoomTemplateRepository @Inject constructor(
                 at = now,
             )
             if (updated == 0) throw NotFoundException("template exercise $templateExerciseId")
-            // A clear has to reach the reader: the per-set column is the fallback the exercise's
-            // number wins over, so leaving it behind would resurrect the effort the lifter just
-            // removed. Only a transition to null clears, so a plan whose effort only ever lived on
-            // its sets — an imported pre-change backup — keeps it.
-            if (targetRpeHalves == null && previous.targetRpeHalves != null) {
-                dao.clearSetTargetRpe(templateExerciseId, at = now)
-            }
         }
     }
 
@@ -561,9 +547,6 @@ class RoomTemplateRepository @Inject constructor(
                 edit.targetRepsMin > edit.targetRepsMax ->
                 "The low end of a rep range cannot exceed the high end."
 
-            !Rpe.isValid(edit.targetRpeHalves) ->
-                "Target RPE must be between 1 and 10, in half steps."
-
             else -> null
         }
         if (problem != null) throw InvalidInputException(problem)
@@ -576,17 +559,6 @@ class RoomTemplateRepository @Inject constructor(
         return trimmed
     }
 }
-
-/**
- * The plan's per-set effort, or null for a role that records none (ROADMAP N67).
- *
- * A planned warm-up carries no target effort, so every write path takes the number through here
- * rather than each remembering the rule — the shape the logged set's own write boundary uses. A
- * value written before the rule existed (or restored from a file written then) is dropped the next
- * time the set is written, which is what migration 28→29 did for the rows already on disk.
- */
-private val TemplateSetEdit.effortOrNull: Int?
-    get() = targetRpeHalves.takeIf { role.recordsEffort }
 
 /**
  * Copies one performed exercise and its sets into a plan being built (ROADMAP N31).
@@ -619,11 +591,9 @@ private suspend fun copyExerciseInto(
             // grouping is what makes a copied superset arrive together (N24).
             restSeconds = exercise.restSeconds,
             techniqueNote = exercise.techniqueNote,
-            // One target RPE per exercise now, and the session's last set that named one is what the
-            // copy builds to (N59) — the same consolidation migration 27→28 made for plans already
-            // stored. The sets keep their own values below, as a plan imported from before does. A
-            // warm-up's effort is not a target for the exercise's working sets (N67), so it is not
-            // the one this reads.
+            // One target RPE per exercise (N59), and the session's last set that named one is what the
+            // copy builds to. A warm-up's effort is not a target for the exercise's working sets
+            // (N67), so it is not the one this reads.
             targetRpeHalves = sets.lastOrNull { it.rpeHalves != null && it.setType.recordsEffort }
                 ?.rpeHalves,
             supersetGroup = exercise.supersetGroup,
@@ -648,8 +618,6 @@ private suspend fun copyExerciseInto(
                 // A copied set is one number, so the range's floor and its current target are that
                 // same number — the shape a plan written by hand for "3 sets of 5" has (N74).
                 targetRepsCurrent = set.reps,
-                // A copied warm-up carries no effort, the rule the set itself already holds (N67).
-                targetRpeHalves = set.rpeHalves.takeIf { set.setType.recordsEffort },
                 note = set.note,
                 createdAt = plan.now,
                 updatedAt = plan.now,

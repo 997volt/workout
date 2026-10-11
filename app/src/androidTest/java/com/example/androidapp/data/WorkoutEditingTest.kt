@@ -355,40 +355,6 @@ class WorkoutEditingTest {
     }
 
     @Test
-    fun aRating_retiresTheLegacyColumns_itReplaces() = runTest {
-        // ROADMAP N63: the single number and its free text are what an old session recorded, and the
-        // row summary and the pain trend fall back to them whenever the picked list is empty. A new
-        // rating **replaces** the old one, so it retires them — left behind, a list the lifter cleared
-        // would resurrect the number they just removed.
-        val sessionId = seedOpenWorkoutWithASet()
-        database.workoutDao().insertSessionExercise(
-            SessionExerciseEntity(
-                id = "se-legacy",
-                sessionId = sessionId,
-                exerciseId = "back-squat",
-                position = 1,
-                muscleFeel = 4,
-                jointPain = 7,
-                jointPainNote = "left shoulder",
-                createdAt = 0L,
-                updatedAt = 0L,
-                deletedAt = null,
-            ),
-        )
-
-        repository.rateExercise(
-            "se-legacy",
-            muscleFeel = 8,
-            joints = listOf(JointPain(Joint.SHOULDER, Side.LEFT, 5)),
-        )
-
-        val stored = repository.observeSessionExercises(sessionId).first().single { it.id == "se-legacy" }
-        assertEquals("the picked list is the new rating", listOf(JointPain(Joint.SHOULDER, Side.LEFT, 5)), stored.joints)
-        assertNull("the legacy number is retired by the rating that replaces it", stored.jointPain)
-        assertNull("and its free text", stored.jointPainNote)
-    }
-
-    @Test
     fun clearingAPickedList_keepsItCleared() = runTest {
         // ROADMAP N63: the resurrection this guards against — a save with every joint removed leaves
         // no live row, and a reader that fell back to the legacy column would show the old pain again.

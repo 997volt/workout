@@ -37,8 +37,7 @@ data class ProgressionStep<T>(val from: T, val to: T)
  *
  * [targetRpeHalves] is the **exercise's one number**, carried onto every prescribed set by the
  * caller (N59, amended): the rule measures each set against the plan's single target, and a plan that
- * names none leaves every set here null. A set's own stored value is the caller's fallback for a plan
- * imported from a backup written before the effort moved to the exercise.
+ * names none leaves every set here null.
  */
 data class ProgressionPlanSet(
     val setId: String,
@@ -52,16 +51,6 @@ data class ProgressionPlanSet(
     val targetRepsCurrent: Int? = null,
     val targetRpeHalves: Int? = null,
     val note: String? = null,
-    /**
-     * The set's **own** stored value of the legacy per-set RPE column, or null (N59).
-     *
-     * [targetRpeHalves] is the exercise's one number, which the caller carries onto every set so the
-     * rule can measure each against it. This is what the set row itself holds, and it is what an
-     * accepted step must put back: writing [targetRpeHalves] into the set would copy the exercise's
-     * number into a column the reader falls back to, so clearing the exercise's field later would
-     * silently resurrect a value the lifter never gave that set.
-     */
-    val legacyRpeHalves: Int? = null,
 ) {
     /**
      * The reps this set asks for: where the lifter has climbed to, falling back to the range's floor

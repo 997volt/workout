@@ -584,8 +584,6 @@ private fun ExerciseBlock(
         ExerciseRatingSection(
             muscleFeel = exercise.muscleFeel,
             joints = exercise.joints,
-            legacyJointPain = exercise.jointPain,
-            legacyJointPainNote = exercise.jointPainNote,
             // Read-only while reading (N84). N8 and N50 went out of their way to make the ratings something
             // the lifter opens, so what stays on the screen is the *reading* of them — a summary with no
             // tap — rather than a block that disappears behind the mode. The exercise's name above is not

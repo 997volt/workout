@@ -146,14 +146,13 @@ class ReadinessNoteDialogTest {
     }
 
     @Test
-    fun theRetiredBack_isNotOffered_andAdductorsIs() {
-        // N75: Back is the one group the taxonomy now splits three ways, so a new note cannot pick it —
-        // while adductors, which joined the taxonomy, is a muscle a lifter can be sore in.
+    fun adductorsAndTheBackGroupsAreOffered() {
+        // N75: adductors joined the taxonomy, so it is a muscle a lifter can be sore in, and the three
+        // groups *Back* split into are each their own answer.
         show()
 
         composeTestRule.onNodeWithTag(TestTags.Readiness.SORE_ADD).performScrollTo().performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.Readiness.soreOption("BACK")).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.Readiness.soreOption("ADDUCTORS")).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Readiness.soreOption("LATS")).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Readiness.soreOption("UPPER_BACK")).assertExists()

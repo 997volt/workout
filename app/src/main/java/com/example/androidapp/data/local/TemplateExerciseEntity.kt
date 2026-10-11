@@ -51,9 +51,7 @@ data class TemplateExerciseEntity(
      * The effort this exercise's plan builds to, in half-points, or null.
      *
      * **One per exercise rather than one per set** (ROADMAP N59, amended): a plan states a single
-     * number to reach, so it lives where the rest and cue already do. A `template_sets` row may
-     * still carry a legacy [TemplateSetEntity.targetRpeHalves], left for a backup written before
-     * the change to carry; a reader prefers this value and falls back to the set's.
+     * number to reach, so it lives where the rest and cue already do.
      */
     val targetRpeHalves: Int? = null,
     /** The superset or circuit this exercise is planned in, or null (ROADMAP N24, B16). */

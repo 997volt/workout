@@ -47,3 +47,12 @@ it afterwards — and note that "delete everything" in 2.0 removes it.
   a 1.x row could carry safe. `fallbackToDestructiveMigration` stays absent: the old store is left alone
   rather than dropped, which is the whole difference between this and losing data.
 
+- **The rest of the legacy the new store cannot hold goes with it** (N105). N104's rule — a name nothing
+  can reach should not exist — reached the four retired movement-pattern names and nothing else. The
+  `BACK` group the N75 split retired is gone from the enum with its `SELECTABLE_MUSCLE_GROUPS` filter; a
+  session exercise no longer carries the single `jointPain` number or its free text (N63), so the rating
+  editors, the history row and the joint-pain trend read the picked list alone; and `template_sets` no
+  longer carries a per-set target effort (N59), so a plan's one RPE is the exercise's. The transfer format
+  also reads no pre-half `rpe` / `targetRpe` field (N6), which only a 1.x file ever wrote. Schema 1 is
+  amended in place rather than migrated, which is legal because 2.0 has not shipped (B16).
+

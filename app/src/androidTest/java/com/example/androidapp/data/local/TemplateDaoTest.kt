@@ -283,7 +283,6 @@ class TemplateDaoTest {
         targetRepsMin = 3,
         targetRepsMax = 3,
         targetRepsCurrent = 3,
-        targetRpeHalves = 8,
         note = null,
         createdAt = 1_000L,
         updatedAt = 1_000L,

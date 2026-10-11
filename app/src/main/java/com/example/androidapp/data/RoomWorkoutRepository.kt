@@ -274,10 +274,6 @@ class RoomWorkoutRepository @Inject constructor(
             )
         }
         val now = timeSource.nowEpochMillis()
-        // The write retires the legacy `jointPain` / `jointPainNote` columns (N63). A new rating
-        // replaces the old one, and both readers fall back to those columns when the picked list is
-        // empty — so leaving them would resurrect the number a cleared list just removed. A session
-        // nobody re-rates keeps them, which is what "history still reads them" means.
         val updated = dao.setSessionExerciseRating(
             id = sessionExerciseId,
             muscleFeel = muscleFeel,

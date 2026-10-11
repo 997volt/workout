@@ -61,7 +61,6 @@ internal fun TemplateSetEntity.toDomain(): TemplateSet = TemplateSet(
     targetRepsMin = targetRepsMin,
     targetRepsMax = targetRepsMax,
     targetRepsCurrent = targetRepsCurrent,
-    targetRpeHalves = targetRpeHalves,
     dropValueGrams = dropValueGrams,
     note = note,
 )

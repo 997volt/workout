@@ -40,9 +40,7 @@ data class TemplateExercise(
     /**
      * The effort this exercise's plan builds to, in half-points, or null (N59, amended).
      *
-     * One number per exercise rather than one per set: the plan states a single effort to reach, and
-     * a legacy per-set [TemplateSet.targetRpeHalves] is only a fallback for a plan imported from a
-     * backup written before the change.
+     * One number per exercise rather than one per set: the plan states a single effort to reach.
      */
     val targetRpeHalves: Int? = null,
     /**
@@ -97,7 +95,6 @@ data class TemplateSet(
      * its ceiling otherwise" — which is what every plan written before this column existed means.
      */
     val targetRepsCurrent: Int? = null,
-    val targetRpeHalves: Int? = null,
     /**
      * The drop value this run takes off the anchor, in grams, or null (ROADMAP N79).
      *

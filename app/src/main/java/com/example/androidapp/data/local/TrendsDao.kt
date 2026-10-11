@@ -55,10 +55,9 @@ interface TrendsDao {
      * `AVG` skips nulls, so an exercise that recorded only one of the two still contributes to that
      * one — which is what "skippable" has to mean for a trend to be readable.
      *
-     * Joint pain per exercise is the **worst** joint it reported (ROADMAP N63), falling back to the
-     * legacy single `se.jointPain` column for a session rated before the picked list existed. It is
-     * the worst rather than an average of sides because "left knee 6, right knee 2" is one bad knee,
-     * and averaging the two would report 4 for a knee that hurt 6.
+     * Joint pain per exercise is the **worst** joint it reported (ROADMAP N63). It is the worst rather
+     * than an average of sides because "left knee 6, right knee 2" is one bad knee, and averaging the
+     * two would report 4 for a knee that hurt 6.
      */
     @Query(
         """
@@ -66,12 +65,9 @@ interface TrendsDao {
                ws.startedAt AS startedAt,
                AVG(se.muscleFeel) AS averageMuscleFeel,
                AVG(
-                   COALESCE(
-                       (
-                           SELECT MAX(j.score) FROM session_exercise_joints j
-                           WHERE j.sessionExerciseId = se.id AND j.deletedAt IS NULL
-                       ),
-                       se.jointPain
+                   (
+                       SELECT MAX(j.score) FROM session_exercise_joints j
+                       WHERE j.sessionExerciseId = se.id AND j.deletedAt IS NULL
                    )
                ) AS averageJointPain
         FROM workout_sessions ws
@@ -80,7 +76,6 @@ interface TrendsDao {
          AND se.deletedAt IS NULL
          AND (
              se.muscleFeel IS NOT NULL
-             OR se.jointPain IS NOT NULL
              OR EXISTS (
                  SELECT 1 FROM session_exercise_joints j
                  WHERE j.sessionExerciseId = se.id AND j.deletedAt IS NULL
@@ -107,9 +102,7 @@ interface TrendsDao {
      * A session that recorded the exercise but logged no set still returns one row, with
      * the set columns null, so its ratings are not lost.
      *
-     * `jointPain` is the exercise's **worst** joint that session (ROADMAP N63), falling back to the
-     * legacy column for a session rated before the picked list existed — the alias is unchanged, so
-     * the Kotlin mapping is too.
+     * `jointPain` is the exercise's **worst** joint that session (ROADMAP N63).
      *
      * The inner subquery takes the *sessions*, not the rows: `LIMIT` on a join would cut
      * a workout in half and silently drop the sets that did not fit the window. It groups by the session
@@ -123,12 +116,9 @@ interface TrendsDao {
                ws.startedAt AS startedAt,
                se.id AS sessionExerciseId,
                se.muscleFeel AS muscleFeel,
-               COALESCE(
-                   (
-                       SELECT MAX(j.score) FROM session_exercise_joints j
-                       WHERE j.sessionExerciseId = se.id AND j.deletedAt IS NULL
-                   ),
-                   se.jointPain
+               (
+                   SELECT MAX(j.score) FROM session_exercise_joints j
+                   WHERE j.sessionExerciseId = se.id AND j.deletedAt IS NULL
                ) AS jointPain,
                s.weightGrams AS weightGrams,
                s.reps AS reps,

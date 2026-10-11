@@ -38,10 +38,6 @@ data class SessionExerciseDetail(
     val finishedAt: Long?,
     /** How well the target muscle was worked, 1–10, or null (ROADMAP N8). */
     val muscleFeel: Int?,
-    /** Legacy joint pain, 1–10, or null (ROADMAP N8) — read for a session rated before N63. */
-    val jointPain: Int?,
-    /** Legacy "which joints" free text, or null (ROADMAP N9) — read, never rewritten. */
-    val jointPainNote: String?,
     val supersetGroup: Int?,
 )
 
@@ -68,8 +64,6 @@ internal fun SessionExerciseDetail.toDomain(
     stepGrams = stepGrams,
     finishedAt = finishedAt?.let(Instant::ofEpochMilli),
     muscleFeel = muscleFeel,
-    jointPain = jointPain,
-    jointPainNote = jointPainNote,
     joints = joints.map { it.toDomain() },
     supersetGroup = supersetGroup,
 )

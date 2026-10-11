@@ -257,7 +257,6 @@ class TemplateRepositoryTest {
                 targetWeightGrams = 140_000L,
                 targetRepsMin = 1,
                 targetRepsMax = 2,
-                targetRpeHalves = 18,
                 note = "grind",
             ),
         )
@@ -268,7 +267,6 @@ class TemplateRepositoryTest {
         assertEquals(140_000L, stored.targetWeightGrams)
         assertEquals(1, stored.targetRepsMin)
         assertEquals(2, stored.targetRepsMax)
-        assertEquals(18, stored.targetRpeHalves)
         assertEquals("grind", stored.note)
     }
 
@@ -284,7 +282,6 @@ class TemplateRepositoryTest {
         val stored = repository.observeExercises(template).first().single().sets.single()
         assertNull(stored.targetWeightGrams)
         assertNull(stored.targetRepsMin)
-        assertNull(stored.targetRpeHalves)
     }
 
     @Test
@@ -295,12 +292,10 @@ class TemplateRepositoryTest {
         val negative = repository.addSet(exercise, TemplateSetEdit(targetWeightGrams = -1))
         val zeroReps = repository.addSet(exercise, TemplateSetEdit(targetRepsMin = 0))
         val backwards = repository.addSet(exercise, TemplateSetEdit(targetRepsMin = 8, targetRepsMax = 3))
-        val offScaleRpe = repository.addSet(exercise, TemplateSetEdit(targetRpeHalves = 21))
 
         assertTrue("a negative weight", negative is DataResult.Failure)
         assertTrue("a zero-rep target", zeroReps is DataResult.Failure)
         assertTrue("a range that runs backwards", backwards is DataResult.Failure)
-        assertTrue("an RPE off the scale", offScaleRpe is DataResult.Failure)
         assertTrue(
             "nothing is stored when the plan is refused",
             repository.observeExercises(template).first().single().sets.isEmpty(),
@@ -511,45 +506,6 @@ class TemplateRepositoryTest {
         repository.addExercise(templateId, "back-squat")
         return repository.observeExercises(templateId).first().single().id
     }
-
-    @Test
-    fun clearingTheExercisesEffort_clearsTheLegacyPerSetValues_too() = runTest {
-        // N59: the per-set column is the fallback the reader uses when the exercise names no effort, so
-        // a clear that left it behind would resurrect the number the lifter just removed. A plan that
-        // arrived with per-set values — a migrated one — is exactly this case.
-        val template = create("Legs")
-        val exercise = plannedExercise(template)
-        repository.setExercisePlan(exercise, restSeconds = null, techniqueNote = null, targetRpeHalves = 16)
-        repository.addSet(
-            exercise,
-            TemplateSetEdit(targetWeightGrams = 100_000L, targetRepsMax = 5, targetRpeHalves = 8),
-        )
-
-        repository.setExercisePlan(exercise, restSeconds = null, techniqueNote = null, targetRpeHalves = null)
-
-        val set = repository.observeExercises(template).first().single().sets.single()
-        assertNull("the set's legacy value goes with the exercise's", set.targetRpeHalves)
-    }
-
-    @Test
-    fun savingNoEffortOverAPlanThatNeverNamedOne_keepsTheSetsOwn() = runTest {
-        // A plan that came from a backup written before the effort moved to the exercise names none at
-        // the exercise level; its sets' values are the only target it has, and an edit that changes the
-        // rest must not erase them (N59).
-        val template = create("Legs")
-        val exercise = plannedExercise(template)
-        repository.addSet(
-            exercise,
-            TemplateSetEdit(targetWeightGrams = 100_000L, targetRepsMax = 5, targetRpeHalves = 8),
-        )
-
-        repository.setExercisePlan(exercise, restSeconds = 180, techniqueNote = null, targetRpeHalves = null)
-
-        val set = repository.observeExercises(template).first().single().sets.single()
-        assertEquals("the per-set value survives a save that names no effort", 8, set.targetRpeHalves)
-    }
-
-
 
     @Test
     fun aWarmUpRamp_writtenToAPlan_comesBackWithItsRolesAndWeights() = runTest {

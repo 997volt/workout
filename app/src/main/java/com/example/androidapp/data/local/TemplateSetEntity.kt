@@ -63,7 +63,6 @@ data class TemplateSetEntity(
      * migration has to say anything, and the ALTER is plain because the column is nullable.
      */
     val dropValueGrams: Long? = null,
-    val targetRpeHalves: Int?,
     val note: String?,
     val createdAt: Long,
     val updatedAt: Long,

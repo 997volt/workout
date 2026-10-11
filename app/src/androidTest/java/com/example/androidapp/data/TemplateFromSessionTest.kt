@@ -138,7 +138,6 @@ class TemplateFromSessionTest {
                 targetAssistanceGrams = plannedSet.targetAssistanceGrams,
                 targetRepsMin = plannedSet.targetRepsMin,
                 targetRepsMax = 99,
-                targetRpeHalves = plannedSet.targetRpeHalves,
                 note = plannedSet.note,
             ),
         )
@@ -232,11 +231,10 @@ class TemplateFromSessionTest {
         val templateId = saved("Push day")
         val planned = templates.observeExercises(templateId).first()
 
-        // First: the copy carried the numbers that were performed, RPE included.
+        // First: the copy carried the numbers that were performed.
         val target = planned.single().sets.first { it.setIndex == 0 }
         assertEquals(102_500L, target.targetWeightGrams)
         assertEquals(5, target.targetRepsMax)
-        assertEquals(16, target.targetRpeHalves)
         // The plan's one target RPE is the last set that named one (N59, amended): set index 1 named
         // none, so the first set's 16 is what the new plan builds to as well.
         assertEquals(16, planned.single().targetRpeHalves)

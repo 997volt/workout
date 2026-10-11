@@ -220,7 +220,7 @@ class TemplateEditorScreenTest {
         var undone = false
         setScreen(
             state = twoExercises.copy(
-                exercises = listOf(targetRpeSet(16)),
+                exercises = listOf(exerciseWithAPlannedSet()),
                 pendingUndo = TemplateSet(
                     id = "ts1",
                     templateExerciseId = "te1",
@@ -242,7 +242,7 @@ class TemplateEditorScreenTest {
         // ViewModel turns into a removal and then into an undo.
         var removed: String? = null
         setScreen(
-            state = twoExercises.copy(exercises = listOf(targetRpeSet(16))),
+            state = twoExercises.copy(exercises = listOf(exerciseWithAPlannedSet())),
             actions = Actions(onRemoveSet = { removed = it }),
         )
         openBlock("te1")
@@ -816,55 +816,21 @@ class TemplateEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.templateAddWarmUps("te1")).assertDoesNotExist()
     }
 
-    @Test
-    fun aHalfStepTargetRpe_readsAsALifterWritesIt() {
-        // ROADMAP B6, carried over from the plan dialog's own test when N81 deleted that dialog: a
-        // planned set stores its effort in half-points, and handing the count straight to the marker
-        // rendered a plan saying 9.5 as *RPE 19*. Displayed, not merely composed (B77) — the guard is
-        // that a lifter can read it, which `assertExists` does not say.
-        setScreen(state = twoExercises.copy(exercises = listOf(targetRpeSet(19))))
-        openBlock("te1")
-
-        composeTestRule.onNodeWithText("RPE 9.5", substring = true).assertIsDisplayed()
-    }
-
-    @Test
-    fun aWholeTargetRpe_hasNoTrailingZero() {
-        // The third guard the deleted plan-dialog test held, re-homed because the review found it had gone
-        // (B77): a whole effort prints as *RPE 8*, not *RPE 8.0* — 16 half-points — for the same reason the
-        // half-point case exists.
-        setScreen(state = twoExercises.copy(exercises = listOf(targetRpeSet(16))))
-        openBlock("te1")
-
-        composeTestRule.onNodeWithText("RPE 8", substring = true).assertIsDisplayed()
-        composeTestRule.onNodeWithText("RPE 8.0", substring = true).assertDoesNotExist()
-    }
-
-    @Test
-    fun aPlannedWarmUp_printsNoEffort_evenThoughTheRowStillCarriesOne() {
-        // ROADMAP N67, also carried over: a warm-up records no effort, and a plan written before that
-        // rule can still carry a legacy per-set target. Printing it beside *Warm-up* read as a number
-        // the ramp had been judged against, so the line leaves it off. The row is anchored first, or a
-        // regression that dropped the line altogether would satisfy the absence below (B77).
-        setScreen(state = twoExercises.copy(exercises = listOf(targetRpeSet(17, role = SetType.WARMUP))))
-        openBlock("te1")
-
-        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts1")).assertIsDisplayed()
-        composeTestRule.onNodeWithText("RPE 8.5", substring = true).assertDoesNotExist()
-    }
-
-    /** A first exercise carrying one planned set, so a summary line can be read on its own. */
-    private fun targetRpeSet(halves: Int, role: SetType = SetType.NORMAL) =
+    /**
+     * A first exercise carrying one planned set, so a summary line can be read on its own.
+     *
+     * The plan's target RPE is the exercise's own number (N59) and is covered by
+     * [oneRpeTargetPerExercise_isEdited_besideTheRest]; a set carries no effort of its own.
+     */
+    private fun exerciseWithAPlannedSet() =
         twoExercises.exercises.first().copy(
             sets = listOf(
                 TemplateSet(
                     id = "ts1",
                     templateExerciseId = "te1",
                     setIndex = 0,
-                    role = role,
                     targetWeightGrams = 140_000L,
                     targetRepsMax = 2,
-                    targetRpeHalves = halves,
                 ),
             ),
         )

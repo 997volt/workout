@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "10e3698cf3ddaf79883b8746d1108c36",
+    "identityHash": "6ff7556174778ef13d0ccf25f73618b8",
     "entities": [
       {
         "tableName": "exercises",
@@ -196,7 +196,7 @@
       },
       {
         "tableName": "session_exercises",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sessionId` TEXT NOT NULL, `exerciseId` TEXT NOT NULL, `position` INTEGER NOT NULL, `restSeconds` INTEGER, `techniqueNote` TEXT, `finishedAt` INTEGER, `muscleFeel` INTEGER, `jointPain` INTEGER, `jointPainNote` TEXT, `supersetGroup` INTEGER, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`sessionId`) REFERENCES `workout_sessions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`exerciseId`) REFERENCES `exercises`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sessionId` TEXT NOT NULL, `exerciseId` TEXT NOT NULL, `position` INTEGER NOT NULL, `restSeconds` INTEGER, `techniqueNote` TEXT, `finishedAt` INTEGER, `muscleFeel` INTEGER, `supersetGroup` INTEGER, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`sessionId`) REFERENCES `workout_sessions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`exerciseId`) REFERENCES `exercises`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -241,16 +241,6 @@
             "fieldPath": "muscleFeel",
             "columnName": "muscleFeel",
             "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "jointPain",
-            "columnName": "jointPain",
-            "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "jointPainNote",
-            "columnName": "jointPainNote",
-            "affinity": "TEXT"
           },
           {
             "fieldPath": "supersetGroup",
@@ -596,7 +586,7 @@
       },
       {
         "tableName": "template_sets",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `templateExerciseId` TEXT NOT NULL, `setIndex` INTEGER NOT NULL, `role` TEXT NOT NULL, `targetWeightGrams` INTEGER, `targetAssistanceGrams` INTEGER, `targetRepsMin` INTEGER, `targetRepsMax` INTEGER, `targetRepsCurrent` INTEGER, `dropValueGrams` INTEGER, `targetRpeHalves` INTEGER, `note` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`templateExerciseId`) REFERENCES `template_exercises`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `templateExerciseId` TEXT NOT NULL, `setIndex` INTEGER NOT NULL, `role` TEXT NOT NULL, `targetWeightGrams` INTEGER, `targetAssistanceGrams` INTEGER, `targetRepsMin` INTEGER, `targetRepsMax` INTEGER, `targetRepsCurrent` INTEGER, `dropValueGrams` INTEGER, `note` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `deletedAt` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`templateExerciseId`) REFERENCES `template_exercises`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -650,11 +640,6 @@
           {
             "fieldPath": "dropValueGrams",
             "columnName": "dropValueGrams",
-            "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "targetRpeHalves",
-            "columnName": "targetRpeHalves",
             "affinity": "INTEGER"
           },
           {
@@ -1399,7 +1384,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '10e3698cf3ddaf79883b8746d1108c36')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6ff7556174778ef13d0ccf25f73618b8')"
     ]
   }
 }

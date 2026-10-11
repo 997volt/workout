@@ -239,16 +239,14 @@ class ExerciseDetailScreenTest {
     }
 
     @Test
-    fun theRetiredBack_isNotAnOption_andTheSplitGroupsAre() {
-        // ROADMAP N75: a new exercise is never tagged with the group the taxonomy split three ways. The
-        // seeded rows that carried it are moved by a migration; the value itself stays readable.
-        // Addressed by the enum's name rather than its label (B71): the labels are enum literals today
-        // and a translated one would otherwise read as a missing option.
+    fun theBackGroups_areAllOptions() {
+        // The three groups *Back* split into are each an option, addressed by the enum's name rather
+        // than its label (B71): the labels are enum literals today and a translated one would
+        // otherwise read as a missing option.
         show(customState(isEditing = true))
 
         composeTestRule.onNodeWithTag(TestTags.Muscle.FIELD).performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.Muscle.option("BACK")).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.Muscle.option("LATS")).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Muscle.option("UPPER_BACK")).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Muscle.option("LOWER_BACK")).assertExists()

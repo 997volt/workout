@@ -3,10 +3,10 @@ package com.example.androidapp.domain.model
 /**
  * One joint a rating reported painful, which side of it, and how much (ROADMAP N63).
  *
- * The per-exercise rating used to carry a single `jointPain` number and a free-text "which joints"
- * line. A number with no location cannot be read back a month later, and the location as a sentence
- * cannot be charted — so the location is picked from the body's own joints and each picked one
- * carries its own score, the same shape N62's sore-muscle list uses.
+ * It replaced the single joint-pain number and its free-text "which joints" line: a number with no
+ * location cannot be read back a month later, and the location as a sentence cannot be charted — so
+ * the location is picked from the body's own joints and each picked one carries its own score, the
+ * same shape N62's sore-muscle list uses.
  *
  * [score] is on the shared [TenPointScale], so the app keeps one vocabulary for "how much".
  */

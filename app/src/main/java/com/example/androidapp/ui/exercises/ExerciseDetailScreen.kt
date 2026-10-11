@@ -58,7 +58,6 @@ import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
-import com.example.androidapp.domain.model.SELECTABLE_MUSCLE_GROUPS
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.restLabel
@@ -623,8 +622,9 @@ private fun ExerciseEditFields(
             AttributeSelector(
                 label = stringResource(R.string.exercise_detail_primary),
                 selected = draft.primaryMuscle,
-                // The retired `BACK` is not an option (N75); a row that carries it still reads as Back.
-                options = listOf<MuscleGroup?>(null) + SELECTABLE_MUSCLE_GROUPS,
+                // Every muscle the taxonomy has is offered here; the schema's own list is the source
+                // (N105 dropped the retired `BACK`, so there is no value to withhold).
+                options = listOf<MuscleGroup?>(null) + MuscleGroup.entries,
                 optionLabel = { it?.label ?: notStated },
                 testTag = TestTags.Muscle.FIELD,
                 onSelect = { onDraftChange(draft.copy(primaryMuscle = it)) },

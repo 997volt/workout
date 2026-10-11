@@ -116,9 +116,6 @@ object TestTags {
     const val RATING_DISMISS = "rating_dismiss"
     const val EXERCISE_RATING_ROW = "exercise_rating_row"
 
-    /** The rating a picked list retires when it is saved (ROADMAP N63), shown read-only. */
-    const val RATING_LEGACY_JOINT = "rating_legacy_joint"
-
     /**
      * The steps a plan earned, offered when an exercise is done (ROADMAP N50, N74).
      *

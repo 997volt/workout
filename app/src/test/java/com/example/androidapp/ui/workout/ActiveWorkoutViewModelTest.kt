@@ -206,7 +206,7 @@ class ActiveWorkoutViewModelTest {
                 position = 0,
                 // The plan's one target RPE now lives on the exercise, not the set (N59, amended).
                 targetRpeHalves = 8,
-                sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = null)),
+                sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
             ),
         ),
     )
@@ -537,8 +537,6 @@ class ActiveWorkoutViewModelTest {
         val row = viewModel.uiState.value.exercises.single()
         assertEquals(7, row.muscleFeel)
         assertEquals(listOf(JointPain(Joint.SHOULDER, Side.LEFT, 3)), row.joints)
-        assertNull("the legacy pair is not written by a new rating", row.jointPain)
-        assertNull(row.jointPainNote)
         assertFalse("rating an exercise must not close it", row.isFinished)
         assertNull(
             "and it is not a Done, so there is no undo to offer",
@@ -590,7 +588,8 @@ class ActiveWorkoutViewModelTest {
             planned = listOf(
                 plannedExercise(
                     position = 0,
-                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = 8)),
+                    targetRpeHalves = 8,
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
                 ),
             ),
         )
@@ -667,8 +666,9 @@ class ActiveWorkoutViewModelTest {
             planned = listOf(
                 plannedExercise(
                     position = 0,
+                    targetRpeHalves = 8,
                     sets = listOf(
-                        plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = 8),
+                        plannedSet(index = 0, reps = 5, weightGrams = 100_000L),
                         TemplateSet(
                             id = "ts-1",
                             templateExerciseId = "te-0",
@@ -771,43 +771,6 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
-    fun acceptingAStep_writesTheSetsOwnRpe_notTheExercisesNumber() = runTest(dispatcher) {
-        // N59: the exercise's one number rides on every set for the rule to read, but the set's own
-        // legacy value is what travels back. Copying the exercise's number into the set column would
-        // make a cleared plan's effort come back, because the reader falls back to it.
-        val repository = FakeWorkoutRepository()
-        val templates = FakeTemplateRepository(
-            planned = listOf(
-                plannedExercise(
-                    position = 0,
-                    targetRpeHalves = 18,
-                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = 6)),
-                ),
-            ),
-        )
-        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
-        observe(viewModel)
-        settle()
-        viewModel.onAddExercise("back-squat")
-        settle()
-        val id = viewModel.uiState.value.exercises.single().id
-        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
-
-        viewModel.onFinishExercise(id)
-        viewModel.onSelectProgression(setId = "ts-0", direction = ProgressionDirection.LOAD)
-        viewModel.onConfirmProgression()
-        settle()
-
-        val written = templates.updates.single()
-        assertEquals("the set's own legacy value, not the exercise's 9.0", 6, written.second.targetRpeHalves)
-        assertEquals(
-            "a plan written as one number earns the load at its ceiling (N74)",
-            102_500L,
-            written.second.targetWeightGrams,
-        )
-    }
-
-    @Test
     fun decliningTheStep_finishesTheExercise_withoutWritingThePlan() = runTest(dispatcher) {
         // "with doing neither equally available" (N50): Not now is a finish, not a nudge.
         val repository = FakeWorkoutRepository()
@@ -861,7 +824,7 @@ class ActiveWorkoutViewModelTest {
             planned = listOf(
                 plannedExercise(
                     position = 0,
-                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = null)),
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
                 ),
             ),
         )
@@ -885,7 +848,7 @@ class ActiveWorkoutViewModelTest {
                 plannedExercise(
                     position = 0,
                     targetRpeHalves = 8,
-                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = null)),
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
                 ),
             ),
         )
@@ -914,8 +877,8 @@ class ActiveWorkoutViewModelTest {
                     position = 0,
                     targetRpeHalves = 8,
                     sets = listOf(
-                        plannedSet(index = 0, reps = 5, weightGrams = 100_000L, rpe = null),
-                        plannedSet(index = 1, reps = 5, weightGrams = 100_000L, rpe = null),
+                        plannedSet(index = 0, reps = 5, weightGrams = 100_000L),
+                        plannedSet(index = 1, reps = 5, weightGrams = 100_000L),
                     ),
                 ),
             ),
@@ -2012,15 +1975,13 @@ class ActiveWorkoutViewModelTest {
         sets = sets,
     )
 
-    private fun plannedSet(index: Int, reps: Int, weightGrams: Long, rpe: Int? = null) = TemplateSet(
+    private fun plannedSet(index: Int, reps: Int, weightGrams: Long) = TemplateSet(
         id = "ts-$index",
         templateExerciseId = "te-0",
         setIndex = index,
         role = SetType.NORMAL,
         targetWeightGrams = weightGrams,
         targetRepsMax = reps,
-        // The target RPE is what earning a step is measured against (N50).
-        targetRpeHalves = rpe,
     )
 
     /**

@@ -13,18 +13,17 @@ package com.example.androidapp.domain.model
 /**
  * Primary muscle worked. Drives grouping and the volume-per-group charts (P2.3).
  *
- * **Order is the pickers' order** — storage is by name, so the list is free — and N75 uses that
- * freedom: the back group sits where *Back* sat rather than being appended at the end, because a
- * picker that reads *Adductors* after *Other* is a worse map than one whose order moved once.
+ * **Order is the pickers' order** — storage is by name, so the list is free — and the back group sits
+ * together where it belongs in anatomy order rather than being appended, because the order *is* the
+ * map a picker draws.
  *
- * [BACK] is **legacy and never offered** (ROADMAP N75): it was one group until the split into [LATS],
- * [UPPER_BACK] and [LOWER_BACK]. It stays in the enum because every muscle is stored and read back by
- * name, so a row that still says `BACK` — or an export written before the split — has to keep
- * resolving rather than throw on read. Choices come from [SELECTABLE_MUSCLE_GROUPS], and a row that
- * carries it is read and shown as *Back*.
+ * **The retired *Back* is gone from the enum** (N104, N105): it was one group until the split into
+ * [LATS], [UPPER_BACK] and [LOWER_BACK], and it was kept only so a 1.x row — which stored every muscle
+ * by name and read it back through `valueOf` — still resolved. 2.0 starts a store that never held one
+ * and refuses a 1.x file before the decoder, so nothing can reach the name.
  *
  * [OTHER] is the "not specified yet" value a custom exercise is created with (ROADMAP N2), next to
- * [Equipment.OTHER] which already existed; it sits last with the legacy value.
+ * [Equipment.OTHER] which already existed.
  */
 enum class MuscleGroup(val label: String) {
     CHEST("Chest"),
@@ -41,20 +40,8 @@ enum class MuscleGroup(val label: String) {
     GLUTES("Glutes"),
     CALVES("Calves"),
     CORE("Core"),
-    BACK("Back"),
     OTHER("Other"),
 }
-
-/**
- * The muscle groups a lifter can choose (ROADMAP N75).
- *
- * The taxonomy minus the legacy [MuscleGroup.BACK]. Everything that *offers* a muscle reads this
- * rather than [MuscleGroup.entries] — the exercise's own primary-muscle dropdown and the readiness
- * note's sore list (a movement's secondary muscles are shown, not edited) — so nothing new is ever
- * tagged with the value the split retired, while a stored row that carries it still reads.
- */
-val SELECTABLE_MUSCLE_GROUPS: List<MuscleGroup> =
-    MuscleGroup.entries.filter { it != MuscleGroup.BACK }
 
 /** Equipment required, used to filter a library down to what the user has access to. */
 enum class Equipment(val label: String) {

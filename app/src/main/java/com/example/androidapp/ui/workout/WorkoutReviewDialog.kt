@@ -79,14 +79,9 @@ fun WorkoutReviewDialog(
                         val parts = buildList {
                             rating.muscleFeel?.let { add(stringResource(R.string.summary_rating_feel, it)) }
                             // The worst joint it reported (N63): "left knee 6, right knee 2" is one
-                            // bad knee, and this line has room for one name and one number. A session
-                            // rated before the picked list falls back to its legacy number.
+                            // bad knee, and this line has room for one name and one number.
                             val worst = rating.joints.maxByOrNull { it.score }
-                            if (worst != null) {
-                                add(stringResource(R.string.summary_rating_joint, worst.label, worst.score))
-                            } else {
-                                rating.jointPain?.let { add(stringResource(R.string.summary_rating_pain, it)) }
-                            }
+                            worst?.let { add(stringResource(R.string.summary_rating_joint, it.label, it.score)) }
                         }
                         Text("${rating.name} — ${parts.joinToString(", ")}")
                     }

@@ -66,7 +66,7 @@ class ConvertersTest {
 
     @Test
     fun multipleSecondaryMuscles_preserveOrder() {
-        val muscles = listOf(MuscleGroup.GLUTES, MuscleGroup.CORE, MuscleGroup.BACK)
+        val muscles = listOf(MuscleGroup.GLUTES, MuscleGroup.CORE, MuscleGroup.HAMSTRINGS)
         assertEquals(muscles, converters.toMuscleGroups(converters.fromMuscleGroups(muscles)))
     }
 

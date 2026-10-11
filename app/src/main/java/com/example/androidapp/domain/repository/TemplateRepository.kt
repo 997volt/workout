@@ -159,7 +159,6 @@ data class TemplateSetEdit(
      * [targetRepsMin]. Null means "the floor where the plan wrote one, its ceiling otherwise".
      */
     val targetRepsCurrent: Int? = null,
-    val targetRpeHalves: Int? = null,
     /**
      * The value this run takes off the set above it, in grams, or null (ROADMAP N79).
      *

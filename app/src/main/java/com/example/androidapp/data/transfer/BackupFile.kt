@@ -50,10 +50,8 @@ data class BackupFile(
     /**
      * The joints each session exercise reported painful, with their sides and scores (ROADMAP N63).
      *
-     * Defaulted like every added collection: a file written before the list existed still decodes,
-     * and its exercises simply report none — the legacy `jointPain` number on the exercise's own row
-     * is carried in [SessionExerciseDto] as it always was. It must be here in the same change as the
-     * table, or an export would silently carry none of it.
+     * Defaulted like every added collection, and it must be here in the same change as the table, or
+     * an export would silently carry none of it.
      */
     val sessionExerciseJoints: List<SessionExerciseJointDto> = emptyList(),
     /**
@@ -250,9 +248,6 @@ data class SessionExerciseDto(
     /** Defaulted for the same reason as [ExerciseDto.restSeconds] (ROADMAP N7, N8). */
     val finishedAt: Long? = null,
     val muscleFeel: Int? = null,
-    val jointPain: Int? = null,
-    /** Which joints, or null (ROADMAP N9). Defaulted, like every added field. */
-    val jointPainNote: String? = null,
     /** The rest and cue the plan prescribed for this exercise, if any (N14). */
     val restSeconds: Int? = null,
     val techniqueNote: String? = null,
@@ -319,14 +314,6 @@ data class SetDto(
     val setType: SetType,
     /** Defaulted for the same reason as [ExerciseDto.restSeconds] (ROADMAP N6). */
     val rpeHalves: Int? = null,
-    /**
-     * The pre-N6.5 whole-number RPE, read only (ROADMAP N6).
-     *
-     * Kept because renaming the field above would otherwise drop the RPE out of every
-     * backup written before RPE took halves: an unknown field decodes to nothing, so
-     * the value would vanish on restore without a word.
-     */
-    val rpe: Int? = null,
     val note: String? = null,
     val completedAt: Long? = null,
     val createdAt: Long,
@@ -355,9 +342,7 @@ data class TemplateExerciseDto(
     /**
      * The effort the plan builds to, in half-points, or null (N59, amended).
      *
-     * Defaulted for the same reason every column added here is: a file written before the effort
-     * moved from the set to the exercise still decodes, and its per-set
-     * [TemplateSetDto.targetRpeHalves] stays the fallback a reader uses.
+     * One number per exercise rather than one per set. Defaulted, like every added field.
      */
     val targetRpeHalves: Int? = null,
     /** The superset this exercise is planned in, or null (ROADMAP N24, B16). */
@@ -379,9 +364,6 @@ data class TemplateSetDto(
     val targetRepsMax: Int? = null,
     /** Where in the range the lifter has climbed, or null (ROADMAP N74). */
     val targetRepsCurrent: Int? = null,
-    val targetRpeHalves: Int? = null,
-    /** The plan target's pre-half-step whole-number RPE, read only (ROADMAP N6). */
-    val targetRpe: Int? = null,
     /**
      * The run's drop value in grams, or null (ROADMAP N79).
      *

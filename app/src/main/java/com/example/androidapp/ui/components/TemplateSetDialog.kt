@@ -96,13 +96,6 @@ fun TemplateSetDialog(
  * A holder rather than five `remember`s in the dialog: the parsing and the validation
  * are the same thing read twice, and keeping them together is what stops the Save
  * button enabling on a number the repository would refuse.
- *
- * [targetRpeHalves] is carried but **not edited** (N59, amended): a plan's target RPE is one number
- * per exercise now and lives in the editor behind this dialog, while the per-set value a plan may
- * still hold from before the change is a legacy fallback — so the dialog round-trips it rather than
- * inventing one. It *is* dropped when the role is one that records no effort (ROADMAP N67): a
- * planned warm-up carries no target, which is what migration 28→29 cleared, so re-roling a set to
- * *Warm-up* has to be able to clear it as well.
  */
 data class TemplateSetDraft(
     val role: SetType = SetType.NORMAL,
@@ -116,8 +109,6 @@ data class TemplateSetDraft(
     val dropValueText: String = "",
     val repsMinText: String = "",
     val repsMaxText: String = "",
-    /** The plan's legacy per-set target RPE, passed through unchanged, or null (N59). */
-    val targetRpeHalves: Int? = null,
     /**
      * Where in the range the lifter has climbed, passed through and clamped (ROADMAP N74).
      *
@@ -149,7 +140,6 @@ data class TemplateSetDraft(
         unit = unit,
         repsMinText = edit.targetRepsMin?.toString().orEmpty(),
         repsMaxText = edit.targetRepsMax?.toString().orEmpty(),
-        targetRpeHalves = edit.targetRpeHalves,
         targetRepsCurrent = edit.targetRepsCurrent,
         note = edit.note.orEmpty(),
     )
@@ -200,9 +190,6 @@ data class TemplateSetDraft(
         targetRepsMin = repsMin.takeIf { !role.isRung },
         targetRepsMax = repsMax.takeIf { !role.isRung },
         targetRepsCurrent = currentRepsWithinRange(),
-        // A warm-up carries no effort, whatever the draft still held from before the role changed
-        // (ROADMAP N67) — the rule the logged set's own write boundary holds, for the plan side.
-        targetRpeHalves = targetRpeHalves.takeIf { role.recordsEffort },
         dropValueGrams = dropValueGrams.takeIf { writesTheRunValue },
         note = note.trim().ifEmpty { null },
     )
@@ -243,14 +230,12 @@ internal fun TemplateSet.summary(
     /** True on the rung that holds the run's value, so the line names what the run takes off (N79). */
     holdsTheRunValue: Boolean = false,
 ): String {
-    // A planned warm-up shows no effort, the rule a logged warm-up already holds (ROADMAP N67), and a
-    // rung shows none either (N79): `recordsEffort` is the one rule both read.
-    val rpeHalves = if (role.recordsEffort) targetRpeHalves?.let { rpeMarker(it) } else null
+    // The plan's target RPE is the exercise's one number (N59) and is drawn in the exercise block, so
+    // a set's own line states only what belongs to the set.
     return listOfNotNull(
         weightLine(unit, rungWeightGrams),
         dropValueLine(unit, holdsTheRunValue),
         repsLine(),
-        rpeHalves,
         note,
     ).joinToString(" · ")
 }

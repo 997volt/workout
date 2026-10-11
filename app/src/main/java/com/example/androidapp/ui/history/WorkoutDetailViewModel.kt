@@ -80,10 +80,6 @@ data class HistoryExercise(
     val muscleFeel: Int? = null,
     /** The joints that hurt, each with its side and own score (ROADMAP N63), or empty. */
     val joints: List<JointPain> = emptyList(),
-    /** Legacy joint pain, 1–10, or null (ROADMAP N8) — read for a session rated before N63. */
-    val jointPain: Int? = null,
-    /** Legacy "which joints" free text, or null (ROADMAP N9) — read, never rewritten. */
-    val jointPainNote: String? = null,
 )
 
 data class WorkoutDetailUiState(
@@ -215,8 +211,6 @@ class WorkoutDetailViewModel @Inject constructor(
                         weightUnit = row.weightUnit,
                         muscleFeel = row.muscleFeel,
                         joints = row.joints,
-                        jointPain = row.jointPain,
-                        jointPainNote = row.jointPainNote,
                         sets = logged
                             .filter { it.sessionExerciseId == row.id }
                             .sortedBy { it.setIndex }

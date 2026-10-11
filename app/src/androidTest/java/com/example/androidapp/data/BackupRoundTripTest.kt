@@ -113,11 +113,9 @@ class BackupRoundTripTest {
         assertEquals(5, set.reps)
         assertEquals(SetType.WARMUP, set.setType)
 
-        // What the ratings and N9's location look like after a restore.
+        // The muscle feel survives the restore.
         val exercise = database.backupDao().allSessionExercises().single()
         assertEquals(8, exercise.muscleFeel)
-        assertEquals(4, exercise.jointPain)
-        assertEquals("left shoulder", exercise.jointPainNote)
     }
 
     @Test
@@ -272,13 +270,10 @@ class BackupRoundTripTest {
                 exerciseId = "back-squat",
                 position = 0,
                 finishedAt = 2_000L,
-                // The ratings and N9's location are columns the hand-written codec
-                // has to name explicitly: one missing from the DTO is dropped by
-                // export and lost on restore, silently. The round trip is what
-                // catches that, so it seeds all three.
+                // The rating is a column the hand-written codec has to name explicitly: one
+                // missing from the DTO is dropped by export and lost on restore, silently. The
+                // round trip is what catches that.
                 muscleFeel = 8,
-                jointPain = 4,
-                jointPainNote = "left shoulder",
                 createdAt = 1_000L,
                 updatedAt = 1_000L,
                 deletedAt = null,
@@ -326,7 +321,6 @@ class BackupRoundTripTest {
                 targetRepsMin = 1,
                 targetRepsMax = 2,
                 targetRepsCurrent = 1,
-                targetRpeHalves = 18,
                 note = "grind",
                 createdAt = 1_000L,
                 updatedAt = 1_000L,
@@ -392,7 +386,6 @@ class BackupRoundTripTest {
         // The fixture seeded this from the start and nothing asserted it, so the column's round trip was
         // silent (ROADMAP B70).
         assertEquals("the climber's place in the range survives (N74)", 1, set.targetRepsCurrent)
-        assertEquals(18, set.targetRpeHalves)
         assertEquals("grind", set.note)
 
         val exercise = database.backupDao().allTemplateExercises().single()

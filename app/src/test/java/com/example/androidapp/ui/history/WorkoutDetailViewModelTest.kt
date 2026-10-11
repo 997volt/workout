@@ -169,24 +169,6 @@ class WorkoutDetailViewModelTest {
     }
 
     @Test
-    fun aLegacyRating_stillReachesTheScreen() = runTest(dispatcher) {
-        // ROADMAP N63: a session rated before the picked list keeps its number and its free text,
-        // and the detail reads both rather than showing it as unrated.
-        repository.exercises.value = repository.exercises.value.map {
-            it.copy(joints = emptyList(), jointPain = 4, jointPainNote = "left shoulder")
-        }
-
-        val viewModel = viewModelFor()
-        observe(viewModel)
-        advanceUntilIdle()
-
-        val exercise = viewModel.uiState.value.exercises.single()
-        assertEquals(4, exercise.jointPain)
-        assertEquals("left shoulder", exercise.jointPainNote)
-        assertEquals(emptyList<JointPain>(), exercise.joints)
-    }
-
-    @Test
     fun theVolume_theScreenShows_isTheSumTheSqlComputes() = runTest(dispatcher) {
         // The getter's KDoc claims this is "one formula in two places" and that the
         // instrumented test asserts they agree. This is the formula half of that claim;

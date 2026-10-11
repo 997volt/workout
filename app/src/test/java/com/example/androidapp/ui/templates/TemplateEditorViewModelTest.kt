@@ -474,7 +474,6 @@ class TemplateEditorViewModelTest {
                 targetWeightGrams = 140_000L,
                 targetRepsMin = 1,
                 targetRepsMax = 2,
-                targetRpeHalves = 9,
                 note = "grind",
             ),
         )
@@ -485,7 +484,6 @@ class TemplateEditorViewModelTest {
         assertEquals(SetType.TOP_SET, edit.role)
         assertEquals(140_000L, edit.targetWeightGrams)
         assertEquals(2, edit.targetRepsMax)
-        assertEquals(9, edit.targetRpeHalves)
     }
 
     @Test

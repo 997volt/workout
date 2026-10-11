@@ -245,8 +245,6 @@ private fun ExerciseSection(
             ExerciseRatingSection(
                 muscleFeel = row.muscleFeel,
                 joints = row.joints,
-                legacyJointPain = row.jointPain,
-                legacyJointPainNote = row.jointPainNote,
                 onRate = { feel, joints -> onRateExercise(row.id, feel, joints) },
                 // The rating gives up the width the action needs (N76): its click target covered the
                 // whole row, and a full-width one would swallow the button beside it.

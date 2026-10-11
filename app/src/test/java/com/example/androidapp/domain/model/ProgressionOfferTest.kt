@@ -296,24 +296,6 @@ class ProgressionOfferTest {
     }
 
     @Test
-    fun acceptingAStep_keepsTheSetsOwnLegacyRpe_ratherThanTheExercises() {
-        // The exercise's one number rides on every set so the rule can read it, but the write-back has
-        // to put the set's **own** stored value back (N59): copying the exercise's number into the
-        // legacy column would resurrect it after the plan's field was cleared.
-        val offer = singleOffer(
-            planned = listOf(planSet(rpe = 18, legacyRpe = 6)),
-            performed = listOf(done()),
-        )!!
-
-        val accepted = offer.accepted(ProgressionDirection.LOAD)!!
-
-        assertThat(accepted.legacyRpeHalves).isEqualTo(6)
-        assertWithMessage("the rule still read the exercise's target")
-            .that(accepted.targetRpeHalves)
-            .isEqualTo(18)
-    }
-
-    @Test
     fun theAcceptedSet_keepsEverythingTheStepDidNotMove() {
         val offer = singleOffer(
             planned = listOf(planSet(note = "belt on")),
@@ -482,8 +464,6 @@ class ProgressionOfferTest {
         repsCurrent: Int? = null,
         /** The exercise's one target RPE, which the caller carries onto each set (N59, amended). */
         rpe: Int? = 8,
-        /** The set's own legacy per-set value, which an accepted write puts back (N59). */
-        legacyRpe: Int? = null,
         note: String? = null,
     ) = ProgressionPlanSet(
         setId = id,
@@ -496,7 +476,6 @@ class ProgressionOfferTest {
         targetRepsCurrent = repsCurrent,
         targetRpeHalves = rpe,
         note = note,
-        legacyRpeHalves = legacyRpe,
     )
 
     private fun done(

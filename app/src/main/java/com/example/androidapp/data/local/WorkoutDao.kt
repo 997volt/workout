@@ -113,8 +113,6 @@ interface WorkoutDao {
                e.stepGrams AS stepGrams,
                se.finishedAt AS finishedAt,
                se.muscleFeel AS muscleFeel,
-               se.jointPain AS jointPain,
-               se.jointPainNote AS jointPainNote,
                se.supersetGroup AS supersetGroup
         FROM session_exercises se
         JOIN exercises e ON e.id = se.exerciseId
@@ -301,15 +299,10 @@ interface WorkoutDao {
     suspend fun findSessionIdForSessionExercise(id: String): String?
 
     /**
-     * Writes an exercise's rating: its muscle feel, and the retirement of the legacy joint columns
-     * (ROADMAP N8, N63).
+     * Writes an exercise's rating's muscle feel (ROADMAP N8). The picked joints live in their own table
+     * and are written by the caller in the same transaction, because a save **replaces** the list (N63).
      *
-     * Null clears the feel, because from the editor the field is the whole state. `jointPain` and
-     * `jointPainNote` are **legacy** data a session rated before the picked list keeps, which is why
-     * this does not write a value into them — but a new rating **replaces** the old one, and the row
-     * summary and the pain trend fall back to those columns whenever the picked list is empty. Left
-     * behind, a cleared list would resurrect the number the lifter just removed, so the save retires
-     * them. History still reads them for a session nobody re-rated.
+     * Null clears the feel, because from the editor the field is the whole state.
      *
      * Rows updated: 0 means the exercise is gone.
      */
@@ -317,8 +310,6 @@ interface WorkoutDao {
         """
         UPDATE session_exercises
         SET muscleFeel = :muscleFeel,
-            jointPain = NULL,
-            jointPainNote = NULL,
             updatedAt = :at
         WHERE id = :id AND deletedAt IS NULL
         """,

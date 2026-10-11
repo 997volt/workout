@@ -414,30 +414,6 @@ class WorkoutDetailScreenTest {
     }
 
     @Test
-    fun aLegacyJointRating_isStillShownInHistory() {
-        // ROADMAP N63: the number and its free text were not rewritten, so history still reads
-        // them for a session rated before the picked list existed.
-        setScreen(
-            uiState = state.copy(
-                exercises = listOf(
-                    HistoryExercise(
-                        id = "se1",
-                        exerciseId = "back-squat",
-                        name = "Back Squat",
-                        sets = emptyList(),
-                        muscleFeel = 8,
-                        jointPain = 2,
-                        jointPainNote = "left shoulder",
-                    ),
-                ),
-            ),
-        )
-
-        composeTestRule.onNodeWithText("Muscle feel 8 · Joint pain 2 · left shoulder")
-            .assertIsDisplayed()
-    }
-
-    @Test
     fun tappingTheFeelRow_opensTheRatingEditor() {
         setScreen()
         editWorkout()

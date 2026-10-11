@@ -6,14 +6,17 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.SessionExerciseJointEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.WorkoutSessionEntity
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
 import java.time.Instant
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -147,12 +150,14 @@ class RoomTrendsRepositoryTest {
                 exerciseId = "back-squat",
                 position = 0,
                 muscleFeel = muscleFeel,
-                jointPain = jointPain,
                 createdAt = startedAt,
                 updatedAt = startedAt,
                 deletedAt = null,
             ),
         )
+        if (jointPain != null) {
+            database.sessionExerciseJointDao().insertAll(listOf(joint("$id-se", jointPain, startedAt)))
+        }
         val planned = sets ?: rpeHalves.map { PlannedSet(weightGrams = 100_000L, reps = 5) }
         planned.forEachIndexed { index, set ->
             database.workoutDao().insertSet(
@@ -188,20 +193,37 @@ class RoomTrendsRepositoryTest {
         muscleFeel: Int? = null,
         jointPain: Int? = null,
     ) {
+        val sessionExerciseId = "$sessionId-$exerciseId"
         database.workoutDao().insertSessionExercise(
             SessionExerciseEntity(
-                id = "$sessionId-$exerciseId",
+                id = sessionExerciseId,
                 sessionId = sessionId,
                 exerciseId = exerciseId,
                 position = 1,
                 muscleFeel = muscleFeel,
-                jointPain = jointPain,
                 createdAt = startedAt,
                 updatedAt = startedAt,
                 deletedAt = null,
             ),
         )
+        if (jointPain != null) {
+            database.sessionExerciseJointDao()
+                .insertAll(listOf(joint(sessionExerciseId, jointPain, startedAt)))
+        }
     }
+
+    /** One picked joint, as a rating writes it (ROADMAP N63); the trend reads the worst one. */
+    private fun joint(sessionExerciseId: String, score: Int, at: Long) = SessionExerciseJointEntity(
+        id = "$sessionExerciseId-joint",
+        sessionExerciseId = sessionExerciseId,
+        joint = Joint.KNEE,
+        side = Side.LEFT,
+        score = score,
+        position = 0,
+        createdAt = at,
+        updatedAt = at,
+        deletedAt = null,
+    )
 
     private fun exercise() = ExerciseEntity(
         id = "back-squat",
