@@ -57,7 +57,6 @@ class ExerciseDetailScreenTest {
         onEdit: () -> Unit = {},
         onCancelEdit: () -> Unit = {},
         onSave: (ExerciseEdit) -> Unit = {},
-        onNewVariation: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             ExerciseDetailScreen(
@@ -66,7 +65,6 @@ class ExerciseDetailScreenTest {
                 onEdit = onEdit,
                 onCancelEdit = onCancelEdit,
                 onSave = onSave,
-                onNewVariation = onNewVariation,
             )
         }
     }
@@ -395,34 +393,25 @@ class ExerciseDetailScreenTest {
     }
 
     @Test
-    fun aVariationsTaxonomy_isResolvedThroughItsWholeChain() {
-        // ROADMAP N96, N103, B96: a variation states nothing, so its pattern, its muscle and its equipment
-        // are read through the movement it hangs under to the category above both. The chain arrives resolved
-        // because the walk needs it — reading the immediate head here is what left a variation with no pattern
-        // at all, and with `None` for a muscle its category states.
-        val category = bench.copy(movementPattern = MovementPattern.PRESS)
+    fun aMovementsTaxonomy_isResolvedFromItsCategory() {
+        // ROADMAP N96, N103, N110: a movement states its equipment and reads the pattern and the muscle from
+        // the category it is filed under. The read view draws the resolved answer rather than the row's nulls.
+        val category = bench.copy(movementPattern = MovementPattern.PRESS, primaryMuscle = MuscleGroup.CHEST)
         val movement = seeded.copy(
             id = "barbell-bench-press",
             name = "Barbell Bench Press",
             parentId = category.id,
             movementPattern = null,
-            primaryMuscle = MuscleGroup.CHEST,
-            equipment = Equipment.BARBELL,
-        )
-        val variation = movement.copy(
-            id = "paused-bench",
-            name = "Paused Bench",
-            parentId = movement.id,
             primaryMuscle = null,
-            equipment = null,
+            equipment = Equipment.BARBELL,
         )
         show(
             ExerciseDetailUiState(
                 isLoading = false,
-                exercise = variation,
-                head = movement,
-                headName = "Barbell Bench Press",
-                ancestors = listOf(movement, category),
+                exercise = movement,
+                head = category,
+                headName = "Bench Press",
+                ancestors = listOf(category),
             ),
         )
 
@@ -451,36 +440,7 @@ class ExerciseDetailScreenTest {
     }
 
     @Test
-    fun aVariation_isOfferedForAMovement() {
-        // ROADMAP N95: a variation hangs under an exercise, so a movement offers one.
-        show(ExerciseDetailUiState(isLoading = false, exercise = seeded))
-
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_NEW_VARIATION).assertIsDisplayed()
-    }
-
-    @Test
-    fun aVariation_isNotOfferedForACategory() {
-        // It would be the third level the shape does not have: a variation hangs under an exercise.
-        show(ExerciseDetailUiState(isLoading = false, exercise = bench))
-
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_NEW_VARIATION).assertDoesNotExist()
-    }
-
-    @Test
-    fun theVariationAction_isWiredThrough() {
-        var variation = false
-        show(
-            ExerciseDetailUiState(isLoading = false, exercise = seeded),
-            onNewVariation = { variation = true },
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.EXERCISE_NEW_VARIATION).performClick()
-
-        assertTrue(variation)
-    }
-
-    @Test
-    fun theEditor_filesAMovementUnderAHead_andCanUnfileIt() {
+    fun theEditor_filesAMovementUnderACategory_andCanUnfileIt() {
         // *Move to category* is one field of the row rather than a flow of its own (N95), so the picker is
         // in the form and what it writes travels out with the save.
         var saved: ExerciseEdit? = null

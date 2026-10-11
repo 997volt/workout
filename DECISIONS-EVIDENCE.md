@@ -1128,37 +1128,75 @@ The grouping is a link because the two halves pull opposite ways, and only one o
 lifter needs from a family is that its rows stop fragmenting the views — muscle-group volume, "how much pressing
 am I doing", the per-lift breakdown — and what they must not lose is that a paused bench is a different lift with
 its own records, its own step and its own prefill. A rename merges the rows and loses the second; a merge loses
-both. So the head is its own kind of row, and the whole design follows from that: it must never be offered, or a
-lifter logs against a category and the records it exists to keep apart are joined; and it must be a *statistic*,
-which is why it is not derived from `movementPattern` and `primaryMuscle`. Those two answer "horizontal chest
-pressing", which a fly and a dip are part of; a category answers "bench press", which is the cut a lifter
-actually makes. Only one of those can be computed, and it is not the useful one.
+both. So the category is its own kind of row, and the whole design follows from that: it must never be offered,
+or a lifter logs against a category and the records it exists to keep apart are joined; and it must be a
+*statistic*, which is why it is not derived from `movementPattern` and `primaryMuscle`. Those two answer
+"horizontal chest pressing", which a fly and a dip are part of; a category answers "bench press", which is the
+cut a lifter actually makes. Only one of those can be computed, and it is not the useful one.
 
-**Inheritance is live, and that is a decision rather than an implementation detail.** Copying a head's muscle
-onto its children looks simpler and fails the first time a lifter renames a family: the head then describes only
-the children that never disagreed with it, and the ones filed earlier keep a value nobody can see the source of.
-Resolving it means one fact has one home, which is the same argument N58 makes for a template's name and the same
-one a variation's muscles already rested on. The cost is that a head with an unspecified muscle — which every
-*new* category is — passes that on, and a seeded movement filed under one reads *Other* until the head is filled
-in. That is the honest answer under the rule rather than a bug in it: the head says nothing, so the child has
-nothing to inherit, and inventing a value would be the app claiming a fact the lifter has not stated.
+**Inheritance is live, and that is a decision rather than an implementation detail.** Copying a category's muscle
+onto its movements looks simpler and fails the first time a lifter renames a family: the category then describes
+only the movements that never disagreed with it, and the ones filed earlier keep a value nobody can see the
+source of. Resolving it means one fact has one home, which is the same argument N58 makes for a template's name.
+The cost is that a category with an unspecified muscle — which every *new* one is — passes that on, and a
+movement filed under it reads *None* until the category is filled in. That is the honest answer under the rule
+rather than a bug in it: the category says nothing, so the movement has nothing to read, and inventing a value
+would be the app claiming a fact the lifter has not stated.
 
 **Secondary muscles are the one place the child wins**, and the entry says so: they "default from the category
-and are the exercise's to change". So the default applies exactly while the exercise is silent, which is why the
-inheritance is a fallback on an empty list rather than an override flag — an empty list already means "I have
+and are the movement's to change". So the default applies exactly while the movement is silent, which is why the
+resolution is a fallback on an empty list rather than an override flag — an empty list already means "I have
 named none", and a second field would be a second way to say the same thing.
 
-**A removed head still names its children**, which needed a read the list deliberately does not use: every row,
-soft-deleted ones included, consulted for names and inheritance only. The list and the pickers keep reading the
-observer that hides removed rows, because a removed row must not be offered. The split is the same one the soft
-delete already relies on, applied to a *name* rather than to a row.
+**A removed category still names its children**, which needed a read the list deliberately does not use: every
+row, soft-deleted ones included, consulted for names and inheritance only. The list and the pickers keep reading
+the observer that hides removed rows, because a removed row must not be offered. The split is the same one the
+soft delete already relies on, applied to a *name* rather than to a row.
 
 **Both transfer formats carry the shape, and neither version moves.** An added field with a correct default is
 not a format change by this project's rule, and the default is load-bearing here: every row a file could have
 held before categories is a movement, so an absent kind has exactly one true meaning. The opposite default would
-turn an older file's whole library into heads, which are never offered. An older build reading a file with the
-fields present still opens it — unknown keys are ignored and the version is read before the body (B62) — which is
-why a bump would buy nothing.
+turn an older file's whole library into categories, which are never offered. An older build reading a file with
+the fields present still opens it — unknown keys are ignored and the version is read before the body (B62) —
+which is why a bump would buy nothing.
+
+## N110
+
+**The variation level was one `parentId` carrying two meanings, and that is what failed.** The parent's
+`rowKind` decided whether an edge meant "filed under this family" or "a version of this lift" — two questions
+with different cardinality behind one column — and every complication followed from it: a depth limit held in
+the repository, the shape rule and the seeder; "a variation of a variation" refused in three places; a
+`canCreateVariation` flag that had to ask what the row's *parent* was; and an editor that suppressed a picker
+because a head outranked its child. The concept was not the problem. The storage was.
+
+**What the third level bought was one narrower roll-up, and the category already gives it.** `seriesSubjectIds`
+walked two levels, so choosing *Bench Press* read the barbell lift and its paused, competition and speed
+versions. Every one of those rows is now a movement filed under `bench-press`, so the same choice reads the same
+ids — **no family's numbers move** — and all that is lost is the per-movement roll-up. That is the trade:
+*Barbell Bench Press* under Volume used to read four rows and now reads one, which is the honest answer to "how
+much barbell bench pressing have I done" once the paused triple is a lift of its own.
+
+**Equipment is deliberately outside the inherited set.** The retained families can span equipment — the lat
+pulldown family alone holds a cable, a bodyweight and a machine movement — so a category cannot state one for
+its members, and a movement's own equipment is the only answer there is. That is also why the fold that flattens
+an old variation *does* carry equipment onto the row: it is not inheriting it, it is writing down what the row
+had been reading, and a paused bench with no bar would be a wrong row rather than a lean one.
+
+**The editor had to stop hiding fields.** N103's rule was "a field a head supplies is not offered at all", which
+was right while a head outranked its child. Under own-if-stated a movement *may* disagree with its family, and
+the lunge family is the standing case: it holds no single primary muscle, so each of its two movements states
+its own. A picker that cannot offer the field cannot express that, so all three are offered and the *not stated*
+option names the value it will resolve to — the first time the inherited value is visible where it is chosen
+rather than only behind it.
+
+**An existing store is migrated and a file is flattened, because neither may lose a family.** The schema does
+not change, so the migration is data: fill the seeded categories from the seed itself, write down what each
+variation read from the lift above it, then re-file it under the category. The order is load-bearing — after the
+last statement the lift above is no longer reachable from the row — and it deliberately does **not** strip a
+value a row already states: a lifter may have edited it, and a family's value cannot be recomputed from its
+members (the lunge case again). A backup or program document written before this change is *readable*, so
+refusing it would throw away restorable data for no gain; `validLibraryShape` flattens it instead, with the same
+fold, which is why neither format's version moves.
 
 ## N94
 

@@ -50,7 +50,6 @@ import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.domain.model.Equipment
-import com.example.androidapp.domain.effectiveEquipment
 import com.example.androidapp.domain.effectiveMovementPattern
 import com.example.androidapp.domain.effectivePrimaryMuscle
 import com.example.androidapp.domain.effectiveSecondaryMuscles
@@ -78,7 +77,6 @@ fun ExerciseDetailRoute(
         onBack = onBack,
         onOpenTrends = onOpenTrends,
         onEdit = viewModel::onEdit,
-        onNewVariation = viewModel::onCreateVariation,
         onCancelEdit = viewModel::onCancelEdit,
         onSave = viewModel::onSave,
         modifier = modifier,
@@ -95,8 +93,6 @@ fun ExerciseDetailScreen(
     onEdit: () -> Unit = {},
     onCancelEdit: () -> Unit = {},
     onSave: (ExerciseEdit) -> Unit = {},
-    /** Files a new variation of the exercise on screen and opens it for naming (ROADMAP N95). */
-    onNewVariation: () -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -132,16 +128,6 @@ fun ExerciseDetailScreen(
                             modifier = Modifier.testTag(TestTags.EXERCISE_EDIT),
                         ) {
                             Text(stringResource(R.string.exercise_edit))
-                        }
-                    }
-                    // A variant of this movement (ROADMAP N95), offered for a movement only: a variation
-                    // hangs under an exercise, and one under a category would be a third level.
-                    if (state.canCreateVariation) {
-                        AppTextButton(
-                            onClick = onNewVariation,
-                            modifier = Modifier.testTag(TestTags.EXERCISE_NEW_VARIATION),
-                        ) {
-                            Text(stringResource(R.string.exercise_new_variation))
                         }
                     }
                 },
@@ -287,9 +273,10 @@ private fun ExerciseDetails(
 
         AttributeRow(
             label = stringResource(R.string.exercise_detail_equipment),
-            // Inherited under the one rule (N103), which is what lets a variation state no equipment while
-            // still being performed with the movement's.
-            value = exercise.effectiveEquipment(ancestors)?.label
+            // The movement's **own** equipment, never inherited (N110): a family spans equipment — the
+            // lat pulldown family alone holds a cable, a bodyweight and a machine movement — so the category
+            // is not the fact's home and there is nothing above to read.
+            value = exercise.equipment?.label
                 ?: stringResource(R.string.exercise_detail_none),
         )
         HorizontalDivider()
@@ -366,10 +353,9 @@ private fun FamilyRows(exercise: Exercise, headName: String?, ancestors: List<Ex
 
         AttributeRow(
             label = stringResource(R.string.exercise_detail_primary),
-            // The **effective** muscle (N95, N103), through the resolver rather than the head's field: a head
-            // that states nothing is silent, and the walk goes all the way up, so a variation reads the
-            // category's muscle when the exercise between them states none. A row nothing states one for says
-            // so rather than inventing `Other`.
+            // The **effective** muscle (N95, N103): its own when it states one, else its category's. The
+            // resolver walks the chain rather than reading the immediate row, because a file is a place a
+            // longer one can arrive. A row nothing states one for says so rather than inventing `Other`.
             value = exercise.effectivePrimaryMuscle(ancestors)?.label
                 ?: stringResource(R.string.exercise_detail_none),
         )
@@ -541,14 +527,13 @@ private fun ExerciseEditForm(
 }
 
 /**
- * Which head this movement is filed under (ROADMAP N95, B85).
+ * Which category this movement is filed under (ROADMAP N95, N110).
  *
- * The same labelled dropdown the taxonomy fields use, over the library's heads with a null first: moving a
- * row is *one field of the row*, and the shape's whole point is that keeping the taxonomy honest is cheap.
- * A head is a **category or an exercise** — a movement is filed under a family, and a variation under the
- * exercise it is performed as — so a variation's real head is among the options and the field reads it back
- * instead of falling through to the null label. *Not filed under anything* is an explicit choice rather than
- * an empty state, because a loose custom movement is a real place to be.
+ * The same labelled dropdown the taxonomy fields use, over the library's **categories** with a null first:
+ * moving a row is *one field of the row*, and the shape's whole point is that keeping the taxonomy honest is
+ * cheap. Only a category is offered, because a movement is nobody's head — so the field reads back the family
+ * the row actually belongs to instead of falling through to the null label. *Not filed under anything* is an
+ * explicit choice rather than an empty state, because a loose custom movement is a real place to be.
  */
 @Composable
 private fun CategoryPicker(
@@ -573,13 +558,16 @@ private fun CategoryPicker(
 }
 
 /**
- * The identity attributes — name and taxonomy (ROADMAP N2, N103).
+ * The identity attributes — name and taxonomy (ROADMAP N2, N103, N110).
  *
- * **A field a head supplies is not offered** (N103): the resolver would read the head's value and ignore
- * anything typed here, which is the trap the entry named for the primary muscle and refuses to reproduce for
- * the other two. The rule is the same one the resolvers use, asked backwards — no row above states it, so
- * this row's value is the one that is read — and it replaces N96's special case that offered the pattern to a
- * category and to nothing else. Where a field is supplied, the *read* view names what it inherits.
+ * **Every field is offered, always** (N110). Suppressing the ones a row above supplies was N103's rule while
+ * a head outranked its children; under own-if-stated a movement is allowed to disagree with its family — the
+ * lunge family has no single primary, so *Walking Lunge* states GLUTES while *Bulgarian Split Squat* states
+ * QUADS — and a picker that cannot offer the field cannot express that.
+ *
+ * *Not stated* therefore has to say **what it resolves to**, or the inherited value is invisible: the option
+ * carries the category's answer when one supplies it, and is plain "None" when nothing does. Equipment is the
+ * exception (N110) — a family spans equipment, so it is only ever the row's own.
  */
 @Composable
 private fun ExerciseEditFields(
@@ -588,7 +576,7 @@ private fun ExerciseEditFields(
     /** The rows above this one, nearest first: whichever of them states a field owns it (N103). */
     ancestors: List<Exercise>,
     modifier: Modifier = Modifier,
-    /** The heads this row may be filed under, or null where it has nowhere to be filed (N95). */
+    /** The categories this row may be filed under, or null where it has nowhere to be filed (N95). */
     categoryOptions: List<Exercise>? = null,
 ) {
     Column(
@@ -604,7 +592,7 @@ private fun ExerciseEditFields(
         )
 
         // Only a movement has somewhere to be filed: a category sits at the top level, because the shape is
-        // two rules deep and a head under a head would be a third (N95).
+        // one rule deep and a category under a category would be a second (N95, N110).
         categoryOptions?.let { options ->
             CategoryPicker(
                 selectedId = draft.parentId,
@@ -613,48 +601,48 @@ private fun ExerciseEditFields(
             )
         }
 
-        // *Not stated* is a real answer for every one of them (N103) — it is what a variation saves, and
-        // what a row means when it inherits — so each picker leads with it, the shape the category picker
-        // already uses.
+        // *Not stated* is a real answer for all of them (N103): it is what a row means when it reads the
+        // category above it. The label says which value that is, so the default is visible in the menu rather
+        // than only on the read view behind it.
         val notStated = stringResource(R.string.exercise_detail_none)
+        val primaryNotStated = ancestors.firstOrNull { it.primaryMuscle != null }?.primaryMuscle
+            ?.let { stringResource(R.string.exercise_detail_not_stated_inherits, it.label) }
+            ?: notStated
+        val patternNotStated = ancestors.firstOrNull { it.movementPattern != null }?.movementPattern
+            ?.let { stringResource(R.string.exercise_detail_not_stated_inherits, it.label) }
+            ?: notStated
 
-        if (ancestors.none { it.primaryMuscle != null }) {
-            AttributeSelector(
-                label = stringResource(R.string.exercise_detail_primary),
-                selected = draft.primaryMuscle,
-                // Every muscle the taxonomy has is offered here; the schema's own list is the source
-                // (N105 dropped the retired `BACK`, so there is no value to withhold).
-                options = listOf<MuscleGroup?>(null) + MuscleGroup.entries,
-                optionLabel = { it?.label ?: notStated },
-                testTag = TestTags.Muscle.FIELD,
-                onSelect = { onDraftChange(draft.copy(primaryMuscle = it)) },
-                // Tagged by the enum's name rather than its label, so a test names the group and not the
-                // English word for it (B71).
-                optionTag = { group -> group?.let { TestTags.Muscle.option(it.name) } },
-            )
-        }
+        AttributeSelector(
+            label = stringResource(R.string.exercise_detail_primary),
+            selected = draft.primaryMuscle,
+            // Every muscle the taxonomy has is offered here; the schema's own list is the source
+            // (N105 dropped the retired `BACK`, so there is no value to withhold).
+            options = listOf<MuscleGroup?>(null) + MuscleGroup.entries,
+            optionLabel = { it?.label ?: primaryNotStated },
+            testTag = TestTags.Muscle.FIELD,
+            onSelect = { onDraftChange(draft.copy(primaryMuscle = it)) },
+            // Tagged by the enum's name rather than its label, so a test names the group and not the
+            // English word for it (B71).
+            optionTag = { group -> group?.let { TestTags.Muscle.option(it.name) } },
+        )
 
-        if (ancestors.none { it.equipment != null }) {
-            AttributeSelector(
-                label = stringResource(R.string.exercise_detail_equipment),
-                selected = draft.equipment,
-                options = listOf<Equipment?>(null) + Equipment.entries,
-                optionLabel = { it?.label ?: notStated },
-                testTag = TestTags.EXERCISE_EDIT_EQUIPMENT,
-                onSelect = { onDraftChange(draft.copy(equipment = it)) },
-            )
-        }
+        AttributeSelector(
+            label = stringResource(R.string.exercise_detail_equipment),
+            selected = draft.equipment,
+            options = listOf<Equipment?>(null) + Equipment.entries,
+            optionLabel = { it?.label ?: notStated },
+            testTag = TestTags.EXERCISE_EDIT_EQUIPMENT,
+            onSelect = { onDraftChange(draft.copy(equipment = it)) },
+        )
 
-        if (ancestors.none { it.movementPattern != null }) {
-            AttributeSelector(
-                label = stringResource(R.string.exercise_detail_pattern),
-                selected = draft.movementPattern,
-                options = listOf<MovementPattern?>(null) + MovementPattern.entries,
-                optionLabel = { it?.label ?: notStated },
-                testTag = TestTags.EXERCISE_EDIT_PATTERN,
-                onSelect = { onDraftChange(draft.copy(movementPattern = it)) },
-            )
-        }
+        AttributeSelector(
+            label = stringResource(R.string.exercise_detail_pattern),
+            selected = draft.movementPattern,
+            options = listOf<MovementPattern?>(null) + MovementPattern.entries,
+            optionLabel = { it?.label ?: patternNotStated },
+            testTag = TestTags.EXERCISE_EDIT_PATTERN,
+            onSelect = { onDraftChange(draft.copy(movementPattern = it)) },
+        )
     }
 }
 

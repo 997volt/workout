@@ -224,7 +224,9 @@ class StatisticsViewModelTest {
                 // would promise one and draw nothing.
                 lift("cat-empty", "Empty Family", rowKind = RowKind.CATEGORY),
                 lift("barbell-bench-press", "Barbell Bench Press", parentId = "cat-bench"),
-                lift("paused-bench", "Paused Bench", parentId = "barbell-bench-press"),
+                // A brother, not a child (N110): the variation level is gone, so the paused lift is filed
+                // under the same category as the barbell one — which is exactly the family the roll-up reads.
+                lift("paused-bench", "Paused Bench", parentId = "cat-bench"),
             ),
             trends = trends,
         )
@@ -467,9 +469,6 @@ private class FakeExerciseRepository(private val lifts: List<Exercise>) : Exerci
         DataResult.Failure(DataError.Invalid("not used here"))
 
     override suspend fun createCategory(name: String): DataResult<Exercise> =
-        DataResult.Failure(DataError.Invalid("not used here"))
-
-    override suspend fun createVariationOf(parent: Exercise): DataResult<Exercise> =
         DataResult.Failure(DataError.Invalid("not used here"))
 
     override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> =

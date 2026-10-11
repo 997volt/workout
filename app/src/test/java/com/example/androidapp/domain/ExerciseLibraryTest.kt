@@ -10,7 +10,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
 /**
- * The grouped library and the search that reaches through it (ROADMAP N95).
+ * The grouped library and the search that reaches through it (ROADMAP N95, N110).
  *
  * Pure JVM, like [ExerciseSearchTest], because the grouping is a function of the library rather than of the
  * screen that draws it — and because the interesting cases (an orphaned child, a fold, a query that matches
@@ -23,38 +23,35 @@ class ExerciseLibraryTest {
 
     private val barbellBench = movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench")
     private val dumbbellBench = movement("dumbbell-bench-press", "Dumbbell Bench Press", parent = "cat-bench")
-    private val speedDay = movement("bench-speed", "Speed Day", parent = "barbell-bench-press")
+    private val speedDay = movement("bench-speed", "Speed Day", parent = "cat-bench")
     private val backSquat = movement("back-squat", "Back Squat", parent = "cat-squat")
     private val deadlift = movement("deadlift", "Deadlift")
 
     private val library = listOf(bench, squat, barbellBench, dumbbellBench, speedDay, backSquat, deadlift)
 
     @Test
-    fun aCategory_isARowWithItsChildrenUnderIt_atOneDepth() {
+    fun aCategory_isARowWithTheMovementsFiledUnderIt_atOneDepth() {
         val rows = libraryRows(library, query = "")
 
-        // Every family first, in name order, each with its children under it; then the movements filed
-        // under nothing. Grouping the whole library rather than interleaving families among loose rows is
-        // what makes the list scan as a shape — a family split by an unrelated row is two halves of one.
+        // Every category first, in name order, with its movements under it; then the movements filed under
+        // nothing. Grouping the whole library rather than interleaving categories among loose rows is what
+        // makes the list scan as a shape — a family split by an unrelated row is two halves of one.
         assertThat(rows.map { it.name }).containsExactly(
             "Bench Press",
             "Barbell Bench Press",
-            "Speed Day",
             "Dumbbell Bench Press",
+            "Speed Day",
             "Squat",
             "Back Squat",
             "Deadlift",
         ).inOrder()
 
         assertThat(rows.single { it.id == "cat-bench" }.let { it.isCategory to it.childCount })
-            .isEqualTo(true to 2)
-        // And a movement says how many variations are under it, which is what its own line reads.
-        assertThat(rows.single { it.id == "barbell-bench-press" }.childCount).isEqualTo(1)
-        // N95's two rules seen from the list: the family holds the exercises at one depth, and an exercise
-        // holds its variations at the next. *Speed Day* never says "bench", and it is found by the names it
-        // is filed under rather than by its own.
-        assertThat(rows.single { it.id == "barbell-bench-press" }.depth).isEqualTo(1)
-        assertThat(rows.single { it.id == "bench-speed" }.depth).isEqualTo(2)
+            .isEqualTo(true to 3)
+        // **One level and no deeper** (N110): a movement is a leaf, so it holds no count of its own.
+        assertThat(rows.single { it.id == "barbell-bench-press" }.let { it.depth to it.childCount })
+            .isEqualTo(1 to 0)
+        assertThat(rows.single { it.id == "bench-speed" }.depth).isEqualTo(1)
         assertThat(rows.single { it.id == "back-squat" }.depth).isEqualTo(1)
         // A movement in no category is a top-level row, not a child of nothing.
         assertThat(rows.single { it.id == "deadlift" }.depth).isEqualTo(0)
@@ -71,22 +68,21 @@ class ExerciseLibraryTest {
             "Deadlift",
         ).inOrder()
         assertThat(rows.single { it.id == "cat-bench" }.isExpanded).isFalse()
-        // The count still says what is inside, which is what a folded head's line promises: two movements,
-        // and the count is of *its own* children rather than of everything below it.
-        assertThat(rows.single { it.id == "cat-bench" }.childCount).isEqualTo(2)
+        // The count still says what is inside, which is what a folded category's line promises.
+        assertThat(rows.single { it.id == "cat-bench" }.childCount).isEqualTo(3)
     }
 
     @Test
-    fun aQueryThatNamesOnlyTheFamily_stillFindsItsVariations() {
-        // N95's inheritance, on the surface a lifter notices it: "Speed Day" never says "bench", and it is
-        // found by the head it is filed under. This is why a query is asked about the family first.
+    fun aQueryThatNamesOnlyTheFamily_stillFindsItsMovements() {
+        // N95's inheritance, on the surface a lifter notices it: *Speed Day* never says "bench", and it is
+        // found by the category it is filed under. This is why a query is asked about the family first.
         val rows = libraryRows(library, query = "bench")
 
         assertThat(rows.map { it.name }).containsExactly(
             "Bench Press",
             "Barbell Bench Press",
-            "Speed Day",
             "Dumbbell Bench Press",
+            "Speed Day",
         ).inOrder()
     }
 
@@ -100,8 +96,8 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun aChildWhoseHeadIsGone_isStillReachable() {
-        // A head is soft-deleted, not removed, and N58's rule is that it still names its children — so an
+    fun aChildWhoseCategoryIsGone_isStillReachable() {
+        // A category is soft-deleted, not removed, and N58's rule is that it still names its children — so an
         // orphan is possible and must not vanish with its head. It is drawn at the top level, which is what
         // it was before it was filed.
         val orphan = movement("lonely", "Lonely Lift", parent = "cat-gone")
@@ -114,7 +110,7 @@ class ExerciseLibraryTest {
 
     @Test
     fun aCategoryWithNoChildren_isStillARow() {
-        // An empty category is a head a lifter just made, waiting for its first movement. Hiding it would
+        // An empty category is a category a lifter just made, waiting for its first movement. Hiding it would
         // mean a category could only be seen once it was already in use.
         val fresh = category("cat-fresh", "Fresh Family")
 
@@ -151,19 +147,19 @@ class ExerciseLibraryTest {
     )
 
     @Test
-    fun aMovement_readsItsFamilysMuscles_live() {
-        // ROADMAP N95's inheritance under N103's one rule: a movement that **states nothing** reads its
-        // family's, live — one fact with one home, so a family cannot disagree with itself.
+    fun aMovement_readsItsCategorysMuscles_live() {
+        // ROADMAP N110's inheritance under N103's one rule: a movement that **states nothing** reads its
+        // category's, live — one fact with one home, so a family cannot disagree with itself.
         val silent = library.map {
             if (it.id == "barbell-bench-press") it.copy(primaryMuscle = null) else it
         }
 
         assertThat(silent.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(silent))
             .isEqualTo(MuscleGroup.CHEST)
-        // And the head's own value is untouched by the child reading it.
+        // And the category's own value is untouched by the child reading it.
         assertThat(silent.first { it.id == "cat-bench" }.primaryMuscle).isEqualTo(MuscleGroup.CHEST)
 
-        // Changing the head changes every movement under it that states none, which is what "live" buys.
+        // Changing the category changes every movement under it that states none, which is what "live" buys.
         val renamed = silent.map {
             if (it.id == "cat-bench") it.copy(primaryMuscle = MuscleGroup.SHOULDERS) else it
         }
@@ -173,26 +169,26 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun aMovementInNoFamily_keepsItsOwnMuscle() {
-        // "An exercise in no category carries no pattern" is N96's rule; this is its N95 half — with no head
-        // there is nothing to inherit, and the row's own value is the answer rather than a null.
+    fun aMovementInNoCategory_keepsItsOwnMuscle() {
+        // "An exercise in no category carries no pattern" is N96's rule; this is its N95 half — with no
+        // category there is nothing to inherit, and the row's own value is the answer rather than a null.
         assertThat(deadlift.effectivePrimaryMuscle(library)).isEqualTo(MuscleGroup.HAMSTRINGS)
     }
 
     @Test
-    fun secondaryMuscles_defaultFromTheHead_untilTheExerciseNamesItsOwn() {
-        // "Secondary muscles default from the category and are the exercise's to change" — the default
-        // applies exactly while the exercise is silent, which is the one place the child's own value wins.
-        val headWithSecondaries = library.map {
+    fun secondaryMuscles_defaultFromTheCategory_untilTheMovementNamesItsOwn() {
+        // "Secondary muscles default from the category and are the movement's to change" — the default applies
+        // exactly while the movement is silent, which is the one place the child's own value wins.
+        val categoryWithSecondaries = library.map {
             if (it.id == "cat-bench") it.copy(secondaryMuscles = listOf(MuscleGroup.TRICEPS)) else it
         }
 
         assertThat(
-            headWithSecondaries.first { it.id == "dumbbell-bench-press" }
-                .effectiveSecondaryMuscles(headWithSecondaries),
+            categoryWithSecondaries.first { it.id == "dumbbell-bench-press" }
+                .effectiveSecondaryMuscles(categoryWithSecondaries),
         ).containsExactly(MuscleGroup.TRICEPS)
 
-        val namedItsOwn = headWithSecondaries.map {
+        val namedItsOwn = categoryWithSecondaries.map {
             if (it.id == "dumbbell-bench-press") it.copy(secondaryMuscles = listOf(MuscleGroup.SHOULDERS)) else it
         }
 
@@ -201,79 +197,60 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun aRemovedHead_stillNamesItsChild() {
-        // N58's rule, inherited by N95: a head that has been removed is still the answer to "what is this
+    fun aMovementNeverBorrowsTheCategorysEquipment() {
+        // ROADMAP N110: a family spans equipment — the lat pulldown family alone holds a cable, a bodyweight
+        // and a machine movement — so a category is not the fact's home. A category that states one is not
+        // read, and a silent movement reads as no equipment at all rather than as the category's.
+        val library = listOf(
+            category("cat-bench", "Bench Press").copy(equipment = Equipment.BARBELL),
+            movement("silent", "Silent", parent = "cat-bench").copy(primaryMuscle = null, equipment = null),
+        )
+
+        val row = libraryRows(library, query = "").single { it.id == "silent" }
+
+        // The muscle is the category's — "Chest" alone is the proof, because the category's barbell is not
+        // on the line.
+        assertThat(row.subtitle).isEqualTo("Chest")
+    }
+
+    @Test
+    fun aRemovedCategory_stillNamesItsChild() {
+        // N58's rule, inherited by N95: a category that has been removed is still the answer to "what is this
         // filed under". The caller passes the library that includes removed rows, which is why this resolves
         // at all — the observer the list reads deliberately hides them.
-        val removedHead = bench.copy(id = "cat-gone", name = "Gone Family")
+        val removedCategory = bench.copy(id = "cat-gone", name = "Gone Family")
         val child = movement("filed", "Filed Lift", parent = "cat-gone")
 
-        assertThat(child.headName(listOf(child, removedHead))).isEqualTo("Gone Family")
+        assertThat(child.headName(listOf(child, removedCategory))).isEqualTo("Gone Family")
         assertThat(child.headName(listOf(child))).isNull()
     }
 
     @Test
-    fun aHeadThatSaysNothing_leavesTheMovementsOwnMuscle() {
+    fun aCategoryThatSaysNothing_leavesTheMovementsOwnMuscle() {
         // The device found this one: `OTHER` is how this app spells "not specified yet", and it is every new
-        // category's value — so reading it literally blanked the muscle of every movement filed under a head
-        // the lifter had just made, while the row still held a real answer nobody could see.
-        val silentHead = library.map {
+        // category's value — so reading it literally blanked the muscle of every movement filed under a
+        // category the lifter had just made, while the row still held a real answer nobody could see.
+        val silentCategory = library.map {
             if (it.id == "cat-bench") it.copy(primaryMuscle = MuscleGroup.OTHER) else it
         }
 
-        // The movement's own value — the fixture builds every movement with Hammers, and the point is that the
-        // silent head does not override it.
-        assertThat(silentHead.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(silentHead))
+        // The movement's own value — the fixture builds every movement with Hammers — wins, because a stated
+        // value is the row's own answer whatever sits above it (N103).
+        assertThat(silentCategory.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(silentCategory))
             .isEqualTo(MuscleGroup.HAMSTRINGS)
     }
 
     @Test
-    fun aQueryNamingOnlyAVariation_stillDrawsItUnderItsExercise() {
-        // B81: a variation matches on its own name, but its exercise does not, so the family pass used to
-        // emit nothing and the loose pass refused the row — an exact name search answered "no exercises
-        // match". The exercise above it is drawn to carry it.
+    fun aQueryNamingOnlyAMovement_stillDrawsItUnderItsCategory() {
+        // B81: a movement matches on its own name while its category does not, so an exact name search must
+        // still draw the category above it rather than answering "no exercises match".
         val rows = libraryRows(library, query = "Speed Day")
 
         assertThat(rows.map { it.name }).containsExactly(
             "Bench Press",
-            "Barbell Bench Press",
             "Speed Day",
         ).inOrder()
-        assertThat(rows.single { it.id == "barbell-bench-press" }.childCount).isEqualTo(1)
-    }
-
-    @Test
-    fun aVariationOfAMovementInNoFamily_isDrawnUnderIt() {
-        // B82: a custom exercise in no category can have variations, and they were dropped from the library
-        // (the flat picker still offered them). The unfiled movement now carries its own variations, one
-        // level down, the same shape a category child has.
-        val dip = movement("dip", "Dip")
-        val weightedDip = movement("weighted-dip", "Weighted Dip", parent = "dip")
-
-        val rows = libraryRows(library + dip + weightedDip, query = "")
-
-        assertThat(rows.single { it.id == "dip" }.childCount).isEqualTo(1)
-        assertThat(rows.single { it.id == "weighted-dip" }.depth).isEqualTo(1)
-    }
-
-    @Test
-    fun aVariation_readsTheMuscleItsExerciseInherits() {
-        // B86: the resolver read the parent's stored field, so a silent exercise's muscle came from the
-        // category but its variation's did not. The walk reaches the nearest row that states one — and under
-        // N103's one rule that means every row between them has to be silent for the category to be reached.
-        val silentBench = library.map {
-            if (it.id == "barbell-bench-press" || it.id == "bench-speed") {
-                it.copy(primaryMuscle = null)
-            } else {
-                it
-            }
-        }
-
-        assertThat(
-            silentBench.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(silentBench),
-        ).isEqualTo(MuscleGroup.CHEST)
-        assertThat(silentBench.first { it.id == "bench-speed" }.effectivePrimaryMuscle(silentBench))
-            .isEqualTo(MuscleGroup.CHEST)
+        assertThat(rows.single { it.id == "cat-bench" }.childCount).isEqualTo(1)
     }
 
     @Test
@@ -285,9 +262,9 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun theFlatList_isFilteredByTheQuery_andOffersNoHeads() {
-        // B79: the picker's flat branch ignored its query. It is movements only, still, and a variation is
-        // found through the exercise it hangs under.
+    fun theFlatList_isFilteredByTheQuery_andOffersNoCategories() {
+        // B79: the picker's flat branch ignored its query. It is movements only, still, and a movement is
+        // found through the category it is filed under.
         val rows = libraryRows(library, query = "bench", grouped = false)
 
         assertThat(rows.map { it.name }).containsExactly(
@@ -299,75 +276,65 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun theShapeRule_clearsACycle_aThirdLevel_andACategoryUnderACategory() {
-        // B92: an imported file is the one place a parent link this app would never write can arrive. A legal
-        // link is untouched, and an illegal one is cleared rather than stored and then hidden by the grouping.
+    fun theShapeRule_flattensAMovementUnderAMovement_andClearsACycle() {
+        // B92, N110: an imported file is the one place a link this app would never write can arrive. A
+        // movement filed under a movement is what every variation in an older file is, so it is **folded onto
+        // the category it belonged to** rather than cleared — clearing would trade a wrong shape for a lost
+        // family.
+        val variation = movement("old-variation", "Old Variation", parent = "barbell-bench-press")
+            .copy(primaryMuscle = null, secondaryMuscles = emptyList(), equipment = null, movementPattern = null)
+        val innerCategory = category("cat-inner", "Inner").copy(parentId = "cat-bench")
         val a = movement("a", "A", parent = "b")
         val b = movement("b", "B", parent = "a")
-        val innerCategory = category("cat-inner", "Inner").copy(parentId = "cat-bench")
-        val tooDeep = movement("deep", "Deep", parent = "bench-speed")
 
-        val shaped = (library + a + b + innerCategory + tooDeep).withValidLibraryShape().associateBy { it.id }
+        val shaped = (library + variation + innerCategory + a + b)
+            .withValidLibraryShape()
+            .associateBy { it.id }
 
+        // The variation lands under the family, with what it used to read from the bar written onto it.
+        assertThat(shaped.getValue("old-variation").parentId).isEqualTo("cat-bench")
+        assertThat(shaped.getValue("old-variation").primaryMuscle).isEqualTo(MuscleGroup.HAMSTRINGS)
+        assertThat(shaped.getValue("old-variation").equipment).isEqualTo(Equipment.BARBELL)
+
+        // A category sits at the top, and a cycle has no top to fold onto, so those links go.
         assertThat(shaped.getValue("cat-inner").parentId).isNull()
         assertThat(shaped.getValue("a").parentId).isNull()
         assertThat(shaped.getValue("b").parentId).isNull()
-        assertThat(shaped.getValue("deep").parentId).isNull()
-        // The legal links survive, including the two-level movement-under-movement.
+
+        // And a legal library is untouched.
         assertThat(shaped.getValue("barbell-bench-press").parentId).isEqualTo("cat-bench")
-        assertThat(shaped.getValue("bench-speed").parentId).isEqualTo("barbell-bench-press")
     }
 
     @Test
-    fun aHeadsSeries_readsItself_andEverythingFiledUnderIt() {
-        // ROADMAP N97: a category over its movements *and their variations*, which is the whole point — three
-        // rows of one barbell bench are one lift to a lifter, and only reading them together says so.
-        val library = listOf(
-            bench,
-            movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench"),
-            movement("bench-speed", "Speed Day", parent = "barbell-bench-press"),
-            movement("dumbbell-bench-press", "Dumbbell Bench Press", parent = "cat-bench"),
-            movement("squat", "Back Squat"),
-        )
+    fun aMoveIsLeftAlone_whenTheParentIsNotInTheList() {
+        // A program document may legitimately name a movement whose category it does not carry, so a link the
+        // list cannot judge is kept rather than cleared.
+        val orphan = movement("orphan", "Orphan", parent = "cat-elsewhere")
 
-        val ids = library.first { it.id == "cat-bench" }.seriesSubjectIds(library)
+        val shaped = listOf(orphan).withValidLibraryShape()
+
+        assertThat(shaped.single().parentId).isEqualTo("cat-elsewhere")
+    }
+
+    @Test
+    fun aCategorysSeries_readsItself_andTheMovementsFiledUnderIt() {
+        // ROADMAP N97, N110: a family is one number, which is the whole point — three rows of one barbell
+        // bench are one lift to a lifter, and only reading them together says so.
+        val ids = bench.seriesSubjectIds(library)
 
         assertThat(ids).containsExactly(
             "cat-bench",
             "barbell-bench-press",
-            "bench-speed",
             "dumbbell-bench-press",
+            "bench-speed",
         )
     }
 
     @Test
-    fun aVariation_readsNothingButItself() {
-        // The shape is two rules deep, so a variation heads nothing: its series is its own work, which is
+    fun aMovementsSeries_readsOnlyItself() {
+        // One level and no deeper (N110): a movement heads nothing, so its series is its own work, which is
         // what keeps a paused bench's records and progression its own (N97).
-        val library = listOf(
-            bench,
-            movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench"),
-            movement("bench-speed", "Speed Day", parent = "barbell-bench-press"),
-        )
-
-        val ids = library.first { it.id == "bench-speed" }.seriesSubjectIds(library)
-
-        assertThat(ids).containsExactly("bench-speed")
-    }
-
-    @Test
-    fun anUnfiledMovement_readsItselfAndItsOwnVariations() {
-        // The other kind of head: a movement in no category still holds its variations, and including the
-        // movement's own row is what keeps the sets logged against it in its own series.
-        val library = listOf(
-            movement("overhead-press", "Overhead Press"),
-            movement("push-press", "Push Press", parent = "overhead-press"),
-            movement("squat", "Back Squat"),
-        )
-
-        val ids = library.first { it.id == "overhead-press" }.seriesSubjectIds(library)
-
-        assertThat(ids).containsExactly("overhead-press", "push-press")
+        assertThat(barbellBench.seriesSubjectIds(library)).containsExactly("barbell-bench-press")
     }
 
     @Test
@@ -383,15 +350,13 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun aPattern_isTheRowsOwnWhenItStatesOne_andTheFamilysWhenItDoesNot() {
-        // ROADMAP N96 amended by N103: the rule is own-if-stated, uniformly, so a filed movement that says
-        // nothing reads its family's and one that states a pattern keeps it — which is what the old head-wins
-        // special case refused, and what a lifter setting one by hand would have hit.
+    fun aPattern_isTheRowsOwnWhenItStatesOne_andTheCategorysWhenItDoesNot() {
+        // ROADMAP N96 amended by N103 and N110: the rule is own-if-stated, uniformly, so a filed movement
+        // that says nothing reads its family's and one that states a pattern keeps it — which is what the old
+        // head-wins special case refused, and what a lifter setting one by hand would have hit.
         val library = listOf(
             category("cat-bench", "Bench Press").copy(movementPattern = MovementPattern.PRESS),
             movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench")
-                .copy(movementPattern = null),
-            movement("bench-speed", "Speed Day", parent = "barbell-bench-press")
                 .copy(movementPattern = null),
             movement("squat", "Back Squat").copy(movementPattern = MovementPattern.SQUAT),
             movement("machine-pec-deck", "Pec Deck", parent = "cat-bench")
@@ -401,10 +366,7 @@ class ExerciseLibraryTest {
 
         assertThat(library.first { it.id == "barbell-bench-press" }.effectiveMovementPattern(library))
             .isEqualTo(MovementPattern.PRESS)
-        assertWithMessage("a variation reads through its movement to the family")
-            .that(library.first { it.id == "bench-speed" }.effectiveMovementPattern(library))
-            .isEqualTo(MovementPattern.PRESS)
-        assertWithMessage("its own value wins when it states one, even under a stating head")
+        assertWithMessage("its own value wins when it states one, even under a stating category")
             .that(library.first { it.id == "machine-pec-deck" }.effectiveMovementPattern(library))
             .isEqualTo(MovementPattern.ISOLATION)
         assertWithMessage("an unfiled movement that states one keeps it")
@@ -416,36 +378,35 @@ class ExerciseLibraryTest {
     }
 
     @Test
-    fun aMuscleAndEquipment_areTheRowsOwnWhenItStatesThem_andInheritedOtherwise() {
-        // The same one rule for the other two fields (ROADMAP N103), including the case the old resolver got
-        // wrong: a row's own muscle was written, exported and read by nothing while a head stated one.
+    fun aMuscle_isTheRowsOwnWhenItStatesOne_andTheCategorysOtherwise() {
+        // The same one rule for the muscle (ROADMAP N103, N110), including the case the old resolver got
+        // wrong: a row's own muscle was written, exported and read by nothing while a category stated one.
         val library = listOf(
             category("cat-bench", "Bench Press"),
             movement("barbell-bench-press", "Barbell Bench Press", parent = "cat-bench")
-                .copy(primaryMuscle = MuscleGroup.CHEST, equipment = Equipment.BARBELL),
-            movement("paused-bench", "Paused Bench", parent = "barbell-bench-press")
-                .copy(primaryMuscle = null, equipment = null),
+                .copy(primaryMuscle = null),
             movement("own-answer", "Own Answer", parent = "cat-bench")
-                .copy(primaryMuscle = MuscleGroup.SHOULDERS, equipment = Equipment.MACHINE),
-            movement("loose", "Loose").copy(primaryMuscle = null, equipment = null),
+                .copy(primaryMuscle = MuscleGroup.SHOULDERS),
+            movement("loose", "Loose").copy(primaryMuscle = null),
         )
 
         assertThat(library.first { it.id == "barbell-bench-press" }.effectivePrimaryMuscle(library))
             .isEqualTo(MuscleGroup.CHEST)
-        assertWithMessage("a variation inherits through its movement to the stating row")
-            .that(library.first { it.id == "paused-bench" }.effectivePrimaryMuscle(library))
-            .isEqualTo(MuscleGroup.CHEST)
-        assertWithMessage("a row that states its own keeps it, head or no head")
+        assertWithMessage("a row that states its own keeps it, category or no category")
             .that(library.first { it.id == "own-answer" }.effectivePrimaryMuscle(library))
             .isEqualTo(MuscleGroup.SHOULDERS)
-        assertWithMessage("equipment follows the same rule")
-            .that(library.first { it.id == "paused-bench" }.effectiveEquipment(library))
-            .isEqualTo(Equipment.BARBELL)
         assertWithMessage("a row nothing states a muscle for has none rather than a guess")
             .that(library.first { it.id == "loose" }.effectivePrimaryMuscle(library))
             .isNull()
-        assertWithMessage("and the same for equipment")
-            .that(library.first { it.id == "loose" }.effectiveEquipment(library))
-            .isNull()
+    }
+
+    @Test
+    fun onlyACategory_headsOthers() {
+        // ROADMAP N110: the movements filed under a category are what a family is, and a movement holds
+        // nothing — so the statistics lift list offers a family label for a category and never for a movement.
+        assertThat(bench.headsOthers).isTrue()
+        assertThat(barbellBench.headsOthers).isFalse()
+        // Even a category nothing is filed under yet: it is what a category is *for*.
+        assertThat(category("cat-empty", "Empty").headsOthers).isTrue()
     }
 }

@@ -3,8 +3,7 @@
     <string name="nav_back">Back</string>
     <!-- Exercise library -->
     <string name="exercise_library_title">Exercise library</string>
-    <!-- A category and its variations (ROADMAP N95). -->
-    <string name="exercise_new_variation">New variation of this</string>
+    <!-- A category holds its movements (ROADMAP N95, N110). -->
     <string name="exercise_new_category">New category</string>
     <string name="exercise_new_category_hint">A category holds movements so they can be read as one — a barbell, a dumbbell and a machine bench under one Bench Press. It is never offered while logging; file movements into it from their own screen.</string>
     <string name="exercise_category_label">Filed under</string>
@@ -63,6 +62,9 @@
     <string name="exercise_detail_equipment">Equipment</string>
     <string name="exercise_detail_pattern">Movement pattern</string>
     <string name="exercise_detail_none">None</string>
+    <!-- What an unstated field resolves to (ROADMAP N110): the option says both that the row states nothing
+         and what the resolver will answer, so the inherited value is visible in the picker itself. -->
+    <string name="exercise_detail_not_stated_inherits">None · %1$s</string>
     <!-- Per-exercise rest and cue (ROADMAP N5). The default shows the app's own
          fallback rather than a bare dash, because it is what will actually run. -->
     <string name="exercise_detail_rest">Rest between sets</string>
@@ -230,9 +232,9 @@
     <string name="statistics_overview_records">Records</string>
     <string name="statistics_not_counted">—</string>
     <string name="statistics_choose_lift">Choose a lift to see its trend.</string>
-    <!-- A head reads as one number (ROADMAP N97), so the picker says which rows are a family. -->
-    <string name="statistics_lift_all_variations">All variations</string>
-    <string name="statistics_lift_family">%1$s · all variations</string>
+    <!-- A category reads as one number (ROADMAP N97), so the picker says which rows are a family. -->
+    <string name="statistics_lift_all_in_family">All in this family</string>
+    <string name="statistics_lift_family">%1$s · all exercises</string>
     <string name="statistics_metric">Metric</string>
     <string name="statistics_custom_from">From</string>
     <string name="statistics_custom_to">To</string>

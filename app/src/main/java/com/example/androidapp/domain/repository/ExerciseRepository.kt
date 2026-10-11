@@ -64,25 +64,11 @@ interface ExerciseRepository {
     suspend fun createCategory(name: String): DataResult<Exercise>
 
     /**
-     * Stores a new variation of [parent] and returns it (ROADMAP N95).
-     *
-     * **The variation inherits everything the exercise is** — its muscles, its equipment, its movement
-     * pattern, and the unit and step that equipment's weights move by — except its name, its cue and its
-     * rest, which start unset because those are what is performed differently. That is the shape the entry
-     * settles rather than a convenience: a paused bench is the same lift, so restating its muscles would be a
-     * second place for them to disagree with the lift it hangs under.
-     *
-     * The parent must be a movement: a variation of a *category* would be a third level, and the shape is
-     * two rules deep.
-     */
-    suspend fun createVariationOf(parent: Exercise): DataResult<Exercise>
-
-    /**
      * Saves the editable attributes of an existing exercise (ROADMAP N2).
      *
      * **This is also how a row is filed.** [Exercise.parentId] is one of those attributes, so *move to
-     * category* and *new variation of this* are this same write; two methods for one row edit would be two
-     * places to keep the validation in, and a screen that changes a parent already holds the row.
+     * category* is this same write rather than a flow of its own; two methods for one row edit would be two
+     * places to keep the validation in, and a screen that changes a category already holds the row.
      *
      * Fails with [com.example.androidapp.domain.DataError.NotFound] when [exercise]
      * no longer exists, so a stale detail screen cannot silently write nothing.

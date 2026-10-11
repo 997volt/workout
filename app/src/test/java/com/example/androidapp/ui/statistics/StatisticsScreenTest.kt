@@ -10,6 +10,7 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.RowKind
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertTextContains
@@ -385,37 +386,36 @@ class StatisticsScreenTest {
     }
 
     @Test
-    fun aHead_readsAsAFamily_whereTheMetricTakesOne() {
-        // ROADMAP N97, B98: a movement that heads variations reads as the whole family under a metric that
-        // takes a head, and the dropdown says so before it is chosen.
-        val movement = lift("bench-press", "Barbell Bench Press")
-        val variation = lift("paused-bench", "Paused Bench", parentId = movement.id)
+    fun aCategory_readsAsAFamily_whereTheMetricTakesOne() {
+        // ROADMAP N97, B98, N110: a **category** heads a family — the movements filed under it — so it reads
+        // as the whole family under a metric that takes a head, and the dropdown says so before it is chosen.
+        val category = lift("cat-bench", "Bench Press", rowKind = RowKind.CATEGORY)
+        val movement = lift("barbell-bench-press", "Barbell Bench Press", parentId = category.id)
         setScreen(
             state = StatisticsUiState(
                 isLoading = false,
                 selection = StatisticsSelection(
                     metric = MetricKey.Exercise(ExerciseTrendMetric.VOLUME),
-                    exerciseId = movement.id,
+                    exerciseId = category.id,
                 ),
-                lifts = listOf(movement, variation),
+                lifts = listOf(category, movement),
                 acceptsHead = true,
             ),
         )
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.LIFT)
-            .assertTextContains("Barbell Bench Press · all variations")
+            .assertTextContains("Bench Press · all exercises")
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.LIFT).performClick()
-        composeTestRule.onNodeWithText("All variations").assertExists()
+        composeTestRule.onNodeWithText("All in this family").assertExists()
     }
 
     @Test
-    fun aMovementThatHeadsVariations_readsAsOneLift_whereTheMetricDoesNot() {
-        // The other half of B98: the same row is offered under every metric, so the label must be the
-        // *metric's* answer rather than the row's shape — under a heaviest set only the movement is read, and
-        // "all variations" would promise a family the chart does not draw.
-        val movement = lift("bench-press", "Barbell Bench Press")
-        val variation = lift("paused-bench", "Paused Bench", parentId = movement.id)
+    fun aMovement_readsAsOneLift_whereTheMetricDoesNot() {
+        // The other half of B98: a movement is always the one lift it is (N110), so under a metric that reads
+        // a single id the label promises exactly that — "all exercises" would promise a family it never draws.
+        val category = lift("cat-bench", "Bench Press", rowKind = RowKind.CATEGORY)
+        val movement = lift("barbell-bench-press", "Barbell Bench Press", parentId = category.id)
         setScreen(
             state = StatisticsUiState(
                 isLoading = false,
@@ -423,7 +423,7 @@ class StatisticsScreenTest {
                     metric = MetricKey.Exercise(ExerciseTrendMetric.HEAVIEST_SET),
                     exerciseId = movement.id,
                 ),
-                lifts = listOf(movement, variation),
+                lifts = listOf(category, movement),
                 acceptsHead = false,
             ),
         )
@@ -431,10 +431,15 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.LIFT).assertTextEquals("Barbell Bench Press")
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.LIFT).performClick()
-        composeTestRule.onNodeWithText("All variations").assertDoesNotExist()
+        composeTestRule.onNodeWithText("All in this family").assertDoesNotExist()
     }
 
-    private fun lift(id: String, name: String, parentId: String? = null) = Exercise(
+    private fun lift(
+        id: String,
+        name: String,
+        rowKind: RowKind = RowKind.MOVEMENT,
+        parentId: String? = null,
+    ) = Exercise(
         id = id,
         name = name,
         primaryMuscle = MuscleGroup.QUADS,
@@ -442,6 +447,7 @@ class StatisticsScreenTest {
         equipment = Equipment.BARBELL,
         movementPattern = MovementPattern.SQUAT,
         parentId = parentId,
+        rowKind = rowKind,
     )
 
     @Test

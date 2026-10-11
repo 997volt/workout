@@ -5,7 +5,6 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
-import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
@@ -141,118 +140,19 @@ class ExerciseDetailViewModelTest {
     }
 
     @Test
-    fun aVariation_statesNothingItInherits() = runTest(dispatcher) {
-        // ROADMAP N95 amended by N103: a variation inherits the exercise it hangs under — its muscles, its
-        // equipment, its pattern — and **itself states none of them**, because the model reads an unstated
-        // field from the nearest row above. What it keeps is what it is *done with*: the unit and the step.
-        val parent = seeded.copy(
-            restSeconds = 180,
-            techniqueNote = "Brace",
-            stepGrams = 5_000L,
-            weightUnit = WeightUnit.POUNDS,
-        )
-        val repository = FakeRepository(mutableListOf(parent))
-        val viewModel = viewModelFor(repository, exerciseId = parent.id)
-        advanceUntilIdle()
-
-        viewModel.onCreateVariation()
-        advanceUntilIdle()
-
-        val variation = viewModel.uiState.value.exercise
-        assertNotNull(variation)
-        assertEquals("it hangs under the exercise", parent.id, variation?.parentId)
-        // Nothing inherited is copied (N103): the resolver reads the parent's value, so writing one here
-        // would be a second home for a fact with one.
-        assertNull(variation?.primaryMuscle)
-        assertNull(variation?.secondaryMuscles?.takeIf { it.isNotEmpty() })
-        assertNull(variation?.equipment)
-        assertNull(variation?.movementPattern)
-        // What is performed differently starts unset rather than copied from the parent.
-        assertNull(variation?.restSeconds)
-        assertNull(variation?.techniqueNote)
-        // The unit and the step are not in that set: they are facts about the equipment the copy above just
-        // carried, so clearing them left the variation on the *unit's* step while keeping the machine (B95).
-        assertEquals(WeightUnit.POUNDS, variation?.weightUnit)
-        assertEquals(5_000L, variation?.stepGrams)
-        assertTrue(
-            "and it opens for naming, which is the one thing it must be given",
-            viewModel.uiState.value.isEditing,
-        )
-    }
-
-    @Test
-    fun aVariation_isNotOfferedForACategory() = runTest(dispatcher) {
-        // A variation hangs under an exercise; one under a category would be the third level N95's shape
-        // does not have.
-        val repository = FakeRepository(mutableListOf(category))
-        val viewModel = viewModelFor(repository, exerciseId = category.id)
-        advanceUntilIdle()
-
-        assertFalse(viewModel.uiState.value.canCreateVariation)
-    }
-
-    @Test
-    fun aVariation_isWrittenOnSave_neverWhenTheEditorOpens() = runTest(dispatcher) {
-        // B83: the row used to be inserted the moment *New variation of this* was tapped, so cancelling the
-        // editor left a stray row named after its parent, and a library row has no delete.
-        val repository = FakeRepository(mutableListOf(seeded))
+    fun onlyCategories_areOfferedToFileUnder() = runTest(dispatcher) {
+        // N110: the shape is one rule deep, so a movement is nobody's head. Offering one would let the editor
+        // write a link the repository refuses and no grouped list would ever draw.
+        val other = seeded.copy(id = "front-squat", name = "Front Squat")
+        val repository = FakeRepository(mutableListOf(seeded, other, category))
         val viewModel = viewModelFor(repository, exerciseId = seeded.id)
         advanceUntilIdle()
 
-        viewModel.onCreateVariation()
-        advanceUntilIdle()
-        assertTrue(
-            "nothing is stored while the variation is only being named",
-            repository.stored.none { it.id.startsWith("variation-") },
+        assertEquals(
+            "the category, and neither the row itself nor another movement",
+            listOf(category.id),
+            viewModel.uiState.value.categoryOptions.map { it.id },
         )
-
-        viewModel.onSave(
-            ExerciseEdit(
-                name = "Paused Back Squat",
-                primaryMuscle = MuscleGroup.QUADS,
-                equipment = Equipment.BARBELL,
-                movementPattern = MovementPattern.SQUAT,
-                parentId = seeded.id,
-            ),
-        )
-        advanceUntilIdle()
-
-        val stored = repository.stored.single { it.id.startsWith("variation-") }
-        assertEquals("Paused Back Squat", stored.name)
-        assertEquals(seeded.id, stored.parentId)
-        assertEquals("Paused Back Squat", viewModel.uiState.value.exercise?.name)
-    }
-
-    @Test
-    fun cancellingANewVariation_leavesTheLibraryAsItWas() = runTest(dispatcher) {
-        // B83's other half: the way out of the editor writes nothing and returns to the exercise.
-        val repository = FakeRepository(mutableListOf(seeded))
-        val viewModel = viewModelFor(repository, exerciseId = seeded.id)
-        advanceUntilIdle()
-
-        viewModel.onCreateVariation()
-        viewModel.onCancelEdit()
-        advanceUntilIdle()
-
-        assertFalse(viewModel.uiState.value.isEditing)
-        assertEquals(seeded.id, viewModel.uiState.value.exercise?.id)
-        assertEquals(listOf(seeded), repository.stored)
-    }
-
-    @Test
-    fun aVariationOfAVariation_isNotOffered() = runTest(dispatcher) {
-        // B82: the shape is two rules deep. A movement whose own head is a movement is already the second
-        // level, so a variation of it would be the third the library never draws.
-        val variation = seeded.copy(id = "paused-squat", name = "Paused Back Squat", parentId = seeded.id)
-        val repository = FakeRepository(mutableListOf(seeded, variation))
-
-        val ofAVariation = viewModelFor(repository, exerciseId = variation.id)
-        advanceUntilIdle()
-        assertFalse(ofAVariation.uiState.value.canCreateVariation)
-
-        val ofAMovement = viewModelFor(FakeRepository(mutableListOf(seeded)), exerciseId = seeded.id)
-        advanceUntilIdle()
-        assertTrue(ofAMovement.uiState.value.canCreateVariation)
     }
 
     @Test
@@ -281,35 +181,17 @@ class ExerciseDetailViewModelTest {
     }
 
     @Test
-    fun aVariationsOwnExercise_isAmongTheHeadsItCanBeFiledUnder() = runTest(dispatcher) {
-        // B85: the picker offered categories only, so a variation's real head was not among the options and
-        // the field fell through to the null label while the page named the exercise above it.
-        val variation = seeded.copy(id = "paused-squat", name = "Paused Back Squat", parentId = seeded.id)
-        val repository = FakeRepository(mutableListOf(seeded, variation, category))
-        val viewModel = viewModelFor(repository, exerciseId = variation.id)
-        advanceUntilIdle()
-
-        val ids = viewModel.uiState.value.categoryOptions.map { it.id }
-        assertTrue("a movement that is not itself a variation may hold one", seeded.id in ids)
-        assertTrue("and a category always may", category.id in ids)
-        assertFalse("the row is never a head for itself", variation.id in ids)
-    }
-
-    @Test
-    fun aVariationsFamilyPattern_isReadThroughTheWholeChain() = runTest(dispatcher) {
-        // ROADMAP N96, B96: the pattern is the category's, and a variation's head is the movement — so the
-        // chain is three rows deep and resolving it from the head alone answered null for exactly the rows a
-        // family exists to group. The movement deliberately states `OTHER`, which is what the walk must ignore.
+    fun aMovementsChain_isItsCategory_andNoFurther() = runTest(dispatcher) {
+        // ROADMAP N110: the shape is one rule deep, so what sits above a movement is its category — and a
+        // movement in no category has nothing above it to read from.
         val movement = seeded.copy(
             id = "barbell-bench-press",
             name = "Barbell Bench Press",
             parentId = category.id,
-            movementPattern = MovementPattern.OTHER,
         )
-        val variation = movement.copy(id = "paused-bench", name = "Paused Bench", parentId = movement.id)
-        val variationViewModel = viewModelFor(
-            FakeRepository(mutableListOf(category, movement, variation)),
-            exerciseId = variation.id,
+        val filedViewModel = viewModelFor(
+            FakeRepository(mutableListOf(category, movement)),
+            exerciseId = movement.id,
         )
         val unfiledViewModel = viewModelFor(
             FakeRepository(mutableListOf(category, movement, seeded)),
@@ -318,9 +200,9 @@ class ExerciseDetailViewModelTest {
         advanceUntilIdle()
 
         assertEquals(
-            "the chain above a variation is its movement and then the category",
-            listOf("barbell-bench-press", "cat-bench"),
-            variationViewModel.uiState.value.ancestors.map { it.id },
+            "the chain above a filed movement is its category",
+            listOf("cat-bench"),
+            filedViewModel.uiState.value.ancestors.map { it.id },
         )
         assertTrue(
             "and a loose movement has nothing above it to inherit from",
@@ -399,24 +281,6 @@ class ExerciseDetailViewModelTest {
          */
         override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> =
             DataResult.Success(state.value)
-
-        override suspend fun createVariationOf(parent: Exercise): DataResult<Exercise> {
-            if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
-            // Mirrors `RoomExerciseRepository.createVariationOf`: everything inherited is copied, and what
-            // is performed differently starts unset. A fake that resets less would let a regression through
-            // that the real one has — and one that resets *more* let B95 through, which is why the unit and
-            // step are no longer in this list.
-            val variation = parent.copy(
-                id = "variation-${parent.id}",
-                name = "",
-                parentId = parent.id,
-                rowKind = RowKind.MOVEMENT,
-                restSeconds = null,
-                techniqueNote = null,
-            )
-            state.value = state.value + variation
-            return DataResult.Success(variation)
-        }
 
         override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))

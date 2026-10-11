@@ -16,6 +16,10 @@ import androidx.room.TypeConverters
  * 1.x store. See [com.example.androidapp.data.RoomBackupRepository] for what "delete everything" owes
  * a second store.
  *
+ * **Schema 2 is N110**, and it is a data migration rather than a structural one: the library's shape became
+ * a category over movements and nothing deeper, so a database written under the old shape has to be
+ * re-filed. See [MIGRATION_1_2].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -39,7 +43,7 @@ import androidx.room.TypeConverters
         SessionSoreMuscleEntity::class,
         SessionExerciseJointEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

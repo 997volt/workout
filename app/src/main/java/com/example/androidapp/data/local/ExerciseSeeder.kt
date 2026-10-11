@@ -41,16 +41,15 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                 arrayOf<Any?>(
                     category.id,
                     category.name,
-                    // **Null is *unstated*** (ROADMAP N103): a head states nothing it leaves to its children,
-                    // and `OTHER` would be a claim — "another muscle", "other equipment" — that it does not
-                    // mean. **Its pattern is the exception**: whether a family presses or hinges is the
-                    // family's to decide, and stating it once is what stops a movement and its variations
-                    // disagreeing.
-                    null,
-                    converters.fromMuscleGroups(emptyList()),
+                    // **The three facts a family holds** (ROADMAP N110): its pattern, its primary muscle and
+                    // its secondary list, stated once here so no movement under it has to. Its **equipment
+                    // stays unstated**: a family spans equipment — the lat pulldown family alone holds a
+                    // cable, a bodyweight and a machine movement — so there is no one value to write.
+                    converters.fromMuscleGroup(category.primaryMuscle),
+                    converters.fromMuscleGroups(category.secondaryMuscles),
                     null,
                     converters.fromMovementPattern(category.pattern),
-                    null, // parentId: a head sits at the top level
+                    null, // parentId: a category sits at the top level
                     RowKind.CATEGORY.name,
                     seededAt,
                     seededAt,
@@ -64,9 +63,9 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                 arrayOf<Any?>(
                     exercise.id,
                     exercise.name,
-                    // What this row **states**, and nothing else (ROADMAP N103): a variation's copy of these
-                    // is what the model stopped writing, so the seed does not write one either. Null means
-                    // *inherit from the nearest row above that states it*.
+                    // What this row **states**, and nothing else (ROADMAP N103, N110): a movement filed
+                    // under a category usually states only its equipment, because the family is the home of
+                    // the pattern and the muscles. Null means *read it from the category*.
                     exercise.primaryMuscle?.let(converters::fromMuscleGroup),
                     converters.fromMuscleGroups(exercise.secondaryMuscles),
                     exercise.equipment?.let(converters::fromEquipment),

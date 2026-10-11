@@ -6,6 +6,9 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.MuscleGroup
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -76,6 +79,30 @@ class ExerciseSeederTest {
                 "a user's soft-delete must survive a top-up",
                 dao.findById("back-squat"),
             )
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun aSeededCategory_statesTheFactsItsMovementsRead() = runTest {
+        // ROADMAP N110: a family is the home of the pattern, the primary muscle and the secondary list, so
+        // the seed has to write all three — and the seeder's own raw column list is what proves the seed, the
+        // entity and the statement still agree.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+
+            val bench = dao.findById("bench-press")
+            assertNotNull(bench)
+            assertEquals(MuscleGroup.CHEST, bench?.primaryMuscle)
+            assertEquals(listOf(MuscleGroup.TRICEPS, MuscleGroup.SHOULDERS), bench?.secondaryMuscles)
+            assertEquals(MovementPattern.PRESS, bench?.movementPattern)
+
+            // And the movement under it states its equipment alone, reading the rest from the family.
+            val bar = dao.findById("barbell-bench-press")
+            assertNull("the movement states no muscle of its own", bar?.primaryMuscle)
+            assertEquals(Equipment.BARBELL, bar?.equipment)
         } finally {
             database.close()
         }

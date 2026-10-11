@@ -115,12 +115,12 @@ class RoomAdherenceRepository @Inject constructor(
         }
         // The breakdown's names and parent links (P3.14, N58, N97), from the **whole** library rather than
         // from the rows a template happens to name. Neither question can be answered from the named rows
-        // alone: a head is never named by a template, so its name has to be fetched, and a variation's parent
-        // chain is only complete if the movement above it is in the map — building it from the named rows made
-        // a variation-only plan count under the movement while the same movement named elsewhere counted
-        // under the category, splitting one family across two rows of one breakdown (B99). Removed rows are
-        // included because a removed head still names its children and the walk still passes through it
-        // (N58's rule), and it is one read for the lot.
+        // alone: a category is never named by a template, so its name has to be fetched, and a movement's link
+        // to its category is only there if the category is in the map — building it from the named rows made a
+        // plan count under the movement while the same movement named elsewhere counted under the category,
+        // splitting one family across two rows of one breakdown (B99). Removed rows are included because a
+        // removed category still names its children and the walk still passes through it (N58's rule), and it
+        // is one read for the lot.
         val library = exerciseDao.findAllIncludingDeleted().associateBy { it.id }
         val exerciseNames = library.mapValues { (_, row) -> row.name }
         val exerciseParents = library.mapValues { (_, row) -> row.parentId }

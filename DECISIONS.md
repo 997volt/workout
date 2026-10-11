@@ -798,41 +798,38 @@ the rule; that one argues it.
   cost is that the row is taller, and **N86's gap to the start pill is a function of that height**, so the
   measurement was taken again with the change: it reads the same 8 dp.
   ([evidence](DECISIONS-EVIDENCE.md#n88))
-- **The library's rows are a two-rule shape: a category holds exercises, an exercise holds its variations**
-  (N95). The grouping is a **link**, so every exercise stays loggable and keeps its own records, step and
-  prefill — a paused bench is a different lift that moves less weight — while the views that fragment when one
-  movement is scattered across rows can be read as one thing. The head is a **category**: a row that exists to
-  hold others, is **never offered and never logged**, and carries a name. That is what makes it a *statistic*
-  rather than a classification, and it is why the category is not `movementPattern` plus `primaryMuscle` —
-  those answer a fuzzier question that takes in a fly or a dip, while a category cuts where the lifter cuts.
-  **Equipment variants are separate exercises under one head** rather than variations of each other, because
-  the number the category exists to produce would otherwise be a lie about the training. **Inheritance is
-  live, never copied**: a variation reads the muscles and equipment of the exercise above it, an exercise
-  reads its category's primary muscle, and its secondary muscles default from the category *until it names its
-  own* — the one place the child wins, because those are the exercise's to change. One fact, one home, which
-  is what stops a family disagreeing with itself. **The qualifier is a name the lifter writes**: a closed set
-  would need a migration every time the sport invents a technique. **The seeded families are a starting set,
-  not a closed one**, so a lifter makes their own and files a row by editing it — the move is one field of the
-  row's own form, so a cancelled edit takes it back. A head's name is read live and a **removed head still
-  names its children**, N58's rule for templates. **A lifted pattern is settled here too** (see N96): with no
-  category a row carries no pattern, rather than a guess about its joint action.
-  ([evidence](DECISIONS-EVIDENCE.md#n95))
-- **A row stores what it states, and reads anything unstated from the nearest row above that states it**
-  (N103). `primaryMuscle`, `equipment` and `movementPattern` are nullable, and **null is *unstated*, not
-  `OTHER`** — `OTHER` goes back to meaning only *other*, which is a real answer a lifter gives. The winner is
-  the same for every one of them, the secondary list included: **own-if-stated, else inherit**, one walk
-  (`statedOrInherited`) that goes all the way up, so a variation reads what its movement inherited from the
-  category above both (B86). **A row the walk finds nothing for answers null**, and every screen that draws it
-  says "None" rather than inventing a value. **A copy is what the model stopped writing**: the seed states a
-  movement's own muscle, equipment and secondary list and no pattern (the family's), a variation states
-  nothing at all, and a new exercise or category starts with a name. **The editor asks the same rule
-  backwards**: a field no row above states is the row's to set, and one a head supplies is not offered at
-  all — so a picker can never write a value the resolver ignores — while *not stated* is a first-class choice
-  in the pickers that remain.
+- **The library's rows are a two-rule shape: a category holds movements, and nothing holds a movement**
+  (N95, cut back by N110). The grouping is a **link**, so every movement stays loggable and keeps its own
+  records, step and prefill — a paused bench is a different lift that moves less weight — while the views that
+  fragment when one movement is scattered across rows can be read as one thing. The head is a **category**: a
+  row that exists to hold others, is **never offered and never logged**, and carries a name. That is what makes
+  it a *statistic* rather than a classification, and it is why the category is not `movementPattern` plus
+  `primaryMuscle` — those answer a fuzzier question that takes in a fly or a dip, while a category cuts where
+  the lifter cuts. **Equipment variants are separate movements under one category**, rather than each other's
+  versions, because the number the category exists to produce would otherwise be a lie about the training.
+  **The seeded families are a starting set, not a closed one**, so a lifter makes their own and files a row by
+  editing it — the move is one field of the row's own form, so a cancelled edit takes it back. A category's
+  name is read live and a **removed category still names its children**, N58's rule for templates. **A lifted
+  pattern is settled here too** (see N96): with no category a row carries no pattern, rather than a guess about
+  its joint action. ([evidence](DECISIONS-EVIDENCE.md#n95))
+- **A movement reads its family's pattern, primary muscle and secondary muscles, and states its own equipment**
+  (N110, on N103's rule). Those three are nullable and **null is *unstated*, not `OTHER`** — `OTHER` goes back
+  to meaning only *other*, which is a real answer a lifter gives. The winner is the same for all three, the
+  secondary list included: **own-if-stated, else the category's**, through one `statedOrInherited` walk, which a
+  file is the reason to keep rather than the shape. **A row the walk finds nothing for answers null**, and every
+  screen that draws it says "None" rather than inventing a value. **Equipment is the one fact that never
+  inherits**: a family spans equipment — the lat pulldown family alone holds a cable, a bodyweight and a machine
+  movement — so a category cannot state one for its members, and the movement's own answer is the only one.
+  **The seed follows**: a category states its pattern, its primary muscle and its secondary list once, and a
+  movement under it states its equipment alone unless its family's answer would be wrong — the lunge family has
+  no single primary muscle, so each of its two movements states its own. **The editor offers every field and
+  *not stated* names what it resolves to**, because under own-if-stated a movement may disagree with its family
+  and a picker that could not offer the field could not express it.
+  ([evidence](DECISIONS-EVIDENCE.md#n110))
 - **The movement pattern is a row's own when it states one, and its family's when it does not** (N96,
-  amended by N103). Whether a family presses or hinges is the family's to decide, so the seed states it once
+  amended by N103 and N110). Whether a family presses or hinges is the family's to decide, so the seed states it once
   on the category and no movement under it states one — but the **rule** is own-if-stated, the same one the
-  muscle and the equipment follow, because a rule that held only while no row stated what its head also
+  muscle follows, because a rule that held only while no row stated what its head also
   stated would diverge the first time a lifter set one by hand. **A row that states none, with nothing above
   it that does, has no pattern** — one fact, one home, and a loose custom movement is exactly the case where
   "press or pull" says little. The merge took the vocabulary from eleven to nine: `HORIZONTAL_PUSH` and
@@ -840,31 +837,32 @@ the rule; that one argues it.
   I been squatting?" has an answer and lunges are not it. **The four retired names are gone from the enum**
   (N104): nothing can reach them, because 2.0 starts a store that never held one and refuses a 1.x file before
   the decoder, which is what a legacy value was for while a 1.x row could still be read.
-- **A head reads as one number, and which metrics take one is decided per metric** (N97). A *head* is any row
-  that holds others — a category over its movements and their variations, or an exercise over its own
-  variations — and its series reads the subtree's ids, which are distinct, so the union cannot double-count.
-  The head's own row is included, because an exercise with variations can still be logged directly while a
-  category never can. **The statistics lift list is the one list where a head is offered — and only for the
+- **A head reads as one number, and which metrics take one is decided per metric** (N97, narrowed by N110). A
+  *head* is a row that holds others, and **only a category does** — a movement heads nothing — so its series
+  reads its own id and the ids of the movements filed under it, which are distinct, so the union cannot
+  double-count. The head's own row is included, which costs a category nothing because it never names a set.
+  **The statistics lift list is the one list where a head is offered — and only for the
   metrics that read one** (B98), a read-view exception to N95's rule rather than a repeal of it: a head is
   still never offered while logging and never named by a set, the pickers that log keep their filter, and a
   metric that reads a single id is offered movements only, because choosing a category there would draw an
   empty chart under a label promising a family. Volume, total reps, RPE, muscle feel and joint pain roll up,
   because each is a sum or an average that means the same thing over a family — **the ratings counted once per
   logged exercise, never once per set or from whichever row the query returned first** (B97); **a heaviest set
-  or an estimated 1RM does not**, because a speed-day single merged into a competition bench reads as a
+  or an estimated 1RM does not**, because a paused single merged into a competition bench reads as a
   decline that never happened. **Records and progression stay the exercise's**, and so does assistance: a
   record belongs to the lift that was performed, and whether a family is uniformly assisted is a fact about
   its *sets*, which the picker cannot know before any set is read.
-- **A variation states nothing it inherits, and keeps only what it is done with** (B95, N103). `createVariationOf`
-  starts from the parent and clears **everything inherited** — its name, its cue, its rest, its muscle, its
-  secondary list, its equipment and its pattern — because under one rule a copy here is a second home for a
-  fact the resolver already reads from the movement above (see N103's bullet). **The weight unit and the step
-  are copied with the equipment**, because they are facts about that equipment: a
-  machine that jumps 5 kg, or reads in pounds, does not stop being that machine because the same lift is
-  performed as a paused triple. Clearing them handed the variation the *unit's* default step while keeping the
-  machine, so the ± buttons, the warm-up ramp and the progression offer all moved a weight it does not have. A
-  field added to that copy later belongs on one side of the line or the other, and the line is: **is this what
-  the variation does, or what it is done with?**
+- **A movement filed under a movement is flattened onto its category, never cleared** (N110, on B92). A file is
+  the one place a link this app would never write can arrive, and **every variation in a file written before
+  this change is exactly that link**, so the shape rule walks up to the first category and files the row there.
+  What the row used to read from each movement above it is **folded onto the row first** — muscle, secondary
+  list, pattern and equipment — because a variation has become an ordinary movement and a movement states its
+  own facts, so this is the one moment a formerly inherited value has no other home; equipment travels with
+  them even though it is never inherited *live*, or a paused bench would arrive with no bar. A **cycle** is the
+  one case cleared rather than folded, because there is no top to reach. **The device's own store is carried
+  across the same way** by a migration, which also fills a seeded category's pattern and muscles from the seed
+  itself — but **only while it states nothing**: a value a lifter gave is never overwritten, and what a movement
+  already states is never stripped.
 - **A program document is its own format, and every exercise it names travels with it** (N47). The
   backup is a restore of a whole database, so it cannot be the way one program is handed over; this is
   a document with a **version of its own**, carrying the program's *definition* — the program, its

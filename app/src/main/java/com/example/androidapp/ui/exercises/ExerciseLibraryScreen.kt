@@ -449,15 +449,9 @@ private fun ExerciseRow(
 ) {
     AppRow(
         headline = row.name,
-        // Null while an unedited custom exercise has no taxonomy: the row
-        // shows its name alone rather than "Other · Other" (N2).
-        // A movement's own variations, when it has any (N95): the line says what is inside the row below
-        // rather than leaving the lifter to discover it by counting indents.
-        supporting = listOfNotNull(
-            row.subtitle,
-            pluralStringResource(R.plurals.library_exercises, row.childCount, row.childCount)
-                .takeIf { row.childCount > 0 },
-        ).joinToString(" · ").ifEmpty { null },
+        // What the row states and nothing else (N110): a movement holds no rows, so there is no count to
+        // add — the line is the taxonomy the resolver answers with, or absent.
+        supporting = row.subtitle,
         leading = { IconTile(icon = Icons.Filled.FitnessCenter, accent = TileAccent.Teal) },
         trailing = {
             Icon(
@@ -470,13 +464,13 @@ private fun ExerciseRow(
         // The headline is a lift's name, which names the thing but not the tap; the row
         // would otherwise announce "Back Squat, button".
         onClickLabel = stringResource(R.string.library_open_exercise, row.name),
-        // A variation filed under a family is drawn in from the edge, which is the only thing that says
-        // it belongs to the row above it rather than standing beside it.
+        // A movement filed under a category is drawn in from the edge, which is the only thing that says it
+        // belongs to the row above it rather than standing beside it.
         modifier = modifier.padding(start = (row.depth * CHILD_INDENT).dp),
     )
 }
 
-/** How far a family's child is inset, in dp. One step, because the shape is two rules deep (N95). */
+/** How far a family's movement is inset, in dp. One step, because a row is at depth 0 or 1 (N110). */
 private const val CHILD_INDENT = 16
 
 /** One preview row, so the two previews above stay short. */

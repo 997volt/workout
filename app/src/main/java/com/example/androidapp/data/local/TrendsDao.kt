@@ -92,9 +92,9 @@ interface TrendsDao {
     /**
      * The finished sessions that recorded any of [exerciseIds], one row per logged set (ROADMAP N17, N97).
      *
-     * A list rather than one id because a **head** reads as one number: a category over its movements and a
-     * movement over its variations are one series, so the query is asked for the whole family at once. One id
-     * is the ordinary case and reads exactly as it did.
+     * A list rather than one id because a **head** reads as one number: a category over the movements filed
+     * under it is one series (N110), so the query is asked for the whole family at once. One id is the
+     * ordinary case — a movement heads nothing — and reads exactly as it did.
      *
      * Flat on purpose: the grouping, the warm-up exclusion and the one-rep-max estimate
      * are decisions rather than aggregations, and they live in

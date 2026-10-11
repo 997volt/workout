@@ -29,29 +29,34 @@ data class ExerciseEntity(
     @PrimaryKey val id: String,
     val name: String,
     /**
-     * The muscle this row states, or null for *unstated* (ROADMAP N103).
+     * The muscle this row states, or null for *unstated* (ROADMAP N103, N110).
      *
-     * Nullable because 2.0's model is "a row stores what it states, and anything unstated is read from the
-     * nearest row above that states it": a variation states nothing it inherits, and a category states
-     * nothing it leaves to its movements. [MuscleGroup.OTHER] stays a real answer. The column lands
-     * nullable in 2.0's *new* store, so there is no migration relaxing a NOT NULL.
+     * Nullable because the model is "a row stores what it states, and anything unstated is read from the
+     * category above it": a movement filed under a category usually states only its equipment, and the family
+     * is where the pattern and the muscles live. An **unfiled** movement states its own, because there is
+     * nothing above it. [MuscleGroup.OTHER] stays a real answer. The column lands nullable in 2.0's *new*
+     * store, so there is no migration relaxing a NOT NULL.
      */
     val primaryMuscle: MuscleGroup? = null,
     val secondaryMuscles: List<MuscleGroup>,
-    /** The equipment this row states, or null for *unstated* (ROADMAP N103). */
+    /**
+     * The equipment this row states, or null for *unstated* (ROADMAP N103, N110).
+     *
+     * **Never inherited**: a family spans equipment — the lat pulldown family alone holds a cable, a
+     * bodyweight and a machine movement — so a category cannot state one for its members.
+     */
     val equipment: Equipment? = null,
     /** The movement pattern this row states, or null for *unstated* (ROADMAP N103). */
     val movementPattern: MovementPattern? = null,
     /**
-     * The row this one hangs under, or null for a top-level row (ROADMAP N95).
+     * The category this movement is filed under, or null when it is in none (ROADMAP N95, N110).
      *
-     * One column for both levels of the two-rule shape, because the *kind* decides what it means: a
-     * variation's parent is the exercise it is performed as a version of, and an exercise's parent is the
-     * category it is filed under. Every existing row is null, which reads as "top level" and is exactly
-     * what a flat library was.
+     * One column with one meaning: a movement's parent is the category it is filed under, and a movement is
+     * never another movement's parent. Every row was null before categories existed, which reads as "in no
+     * category" and is exactly what a flat library was.
      *
-     * Deliberately **not** a foreign key with a cascade: a head is soft-deleted like every other row
-     * (P1.12 keeps it for the export), and N58's rule is that a removed head still *names* its children —
+     * Deliberately **not** a foreign key with a cascade: a category is soft-deleted like every other row
+     * (P1.12 keeps it for the export), and N58's rule is that a removed category still *names* its children —
      * both of which a cascade would take away.
      */
     val parentId: String? = null,

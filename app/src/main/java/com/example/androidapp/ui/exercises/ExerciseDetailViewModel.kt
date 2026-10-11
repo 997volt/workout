@@ -35,8 +35,9 @@ data class ExerciseEdit(
     /**
      * What the form states for this row's taxonomy, each null for *unstated* (ROADMAP N103).
      *
-     * Nullable rather than defaulted to `OTHER`, because null is the row's real answer for a field it
-     * inherits: a variation saves with all three unset, and the form never offers a field a head supplies.
+     * Nullable rather than defaulted to `OTHER`, because null is the row's real answer for a field it reads
+     * from its category. **Every field is offered either way** (N110): a movement is allowed to disagree with
+     * its family, so the form cannot withhold a picker and still let the lifter say so.
      */
     val primaryMuscle: MuscleGroup? = null,
     val equipment: Equipment? = null,
@@ -50,11 +51,10 @@ data class ExerciseEdit(
     /** This exercise's own weight step in grams, or null for the unit's (ROADMAP N77). */
     val stepGrams: Long? = null,
     /**
-     * The row this one is filed under, or null for the top level (ROADMAP N95).
+     * The category this row is filed under, or null for none (ROADMAP N95, N110).
      *
-     * Part of the edit rather than a write of its own: *move to category* and *new variation of this* are
-     * both this same form saving one more field, which is what keeps the two from being separate flows that
-     * have to agree about validation.
+     * Part of the edit rather than a write of its own: *move to category* is this same form saving one more
+     * field, which is what keeps it from being a second flow that has to agree about validation.
      */
     val parentId: String? = null,
 )
@@ -65,39 +65,30 @@ data class ExerciseDetailUiState(
     val isEditing: Boolean = false,
     val error: DataError? = null,
     /**
-     * The heads this row can be filed under (ROADMAP N95, B85), live from the library.
+     * The categories this row can be filed under (ROADMAP N95, N110), live from the library.
      *
-     * A head is a category or an exercise that is not itself a variation: a movement is filed under a
-     * family, and a variation under the exercise it is performed as. Empty for a category, which sits at the
-     * top level because the shape is two rules deep and no deeper.
+     * A **category**, and only a category: the shape is one rule deep, so a movement is nobody's head.
+     * Empty for a category, which sits at the top level.
      */
     val categoryOptions: List<Exercise> = emptyList(),
     /**
-     * What this row's head is called, or null when it hangs under nothing (ROADMAP N95).
+     * What the category this row is filed under is called, or null when it is in none (ROADMAP N95).
      *
-     * Read rather than copied, and **still answered by a head that has been removed** (N58's rule), which is
-     * why the ViewModel reads the library including removed rows for this one question.
+     * Read rather than copied, and **still answered by a category that has been removed** (N58's rule),
+     * which is why the ViewModel reads the library including removed rows for this one question.
      */
     val headName: String? = null,
-    /** This row's head, for the muscle it passes down (N95). Null when it hangs under nothing. */
+    /** This row's category, for the muscle and pattern it passes down (N95). Null when it is in none. */
     val head: Exercise? = null,
     /**
-     * Every row above this one, nearest first, **removed rows included** (ROADMAP N103).
+     * Every row above this one, nearest first, **removed rows included** (ROADMAP N103, N110).
      *
-     * The chain rather than one resolved answer, because the screen asks four questions of it: what this
-     * row's muscle, equipment and pattern resolve to, and which of those a head already supplies — so the
-     * editor offers a field only where stating it would be read. Carrying the chain is also what fixed B96:
-     * a variation's pattern lives two rows up, and the screen's own copy of the walk stopped at its
-     * immediate head.
+     * The chain rather than one resolved answer, because the screen asks several questions of it: what this
+     * row's muscle and pattern resolve to, and which of those the category already supplies — so the picker
+     * can show what *not stated* will mean. The walk goes to the top because a file is a place a longer chain
+     * can arrive, even though the shape this app writes is one level (B92, B96).
      */
     val ancestors: List<Exercise> = emptyList(),
-    /**
-     * The exercise a variation being edited hangs under, while that variation is not stored yet (B83).
-     *
-     * The row is written on **Save**, not when the editor opens: creating it up front left a stray row named
-     * after its parent when the lifter cancelled, and there is no delete for a library row to take it back.
-     */
-    val variationParent: Exercise? = null,
 ) {
     /**
      * Loaded, but no such exercise — a real state, not an error to hide.
@@ -107,17 +98,6 @@ data class ExerciseDetailUiState(
      * thing that failed would be a lie.
      */
     val notFound: Boolean get() = !isLoading && exercise == null && error == null
-
-    /**
-     * Whether *new variation of this* is offered (ROADMAP N95).
-     *
-     * A movement that is **not already a variation** (B82): a variation hangs under an exercise, and a
-     * variation of a variation would be the third level the shape does not have. [head] is the row this one
-     * hangs under, so a movement whose head is a movement is one.
-     */
-    val canCreateVariation: Boolean
-        get() = !isLoading && !isEditing && exercise?.rowKind == RowKind.MOVEMENT &&
-            head?.rowKind != RowKind.MOVEMENT
 
     /**
      * Whether the editor is offered (ROADMAP N2, widened by N5).
@@ -171,17 +151,14 @@ class ExerciseDetailViewModel @Inject constructor(
     }
 
     /**
-     * Leaves the editor without writing (ROADMAP N95, B83).
+     * Leaves the editor without writing (ROADMAP N95).
      *
-     * A variation that was only being drafted goes back to the exercise it hangs under, and **nothing was
-     * ever stored**, so cancelling leaves the library exactly as it was.
+     * Nothing was stored, so cancelling leaves the library exactly as it was.
      */
     fun onCancelEdit() {
         _uiState.update { state ->
             state.copy(
-                exercise = state.variationParent ?: state.exercise,
                 isEditing = false,
-                variationParent = null,
                 error = null,
             )
         }
@@ -190,34 +167,29 @@ class ExerciseDetailViewModel @Inject constructor(
     /**
      * The library context this row is read through (ROADMAP N95, B85, B96).
      *
-     * Three answers from one pair of reads, because they are the same question asked three ways: the heads
-     * the picker may offer, the head this row already hangs under, and the **family pattern** the chain
-     * resolves to. Read separately from the exercise itself and *not* wrapped in a failure branch: a list that
-     * could not be read leaves the picker empty, which hides a control rather than breaking the page. The
-     * exercise's own row is left out of the options — filing something under itself is not a thing the shape
-     * allows — and so is a movement that is already a variation, because a variation of a variation is the
-     * third level there is no room for (B82).
+     * Three answers from one pair of reads, because they are the same question asked three ways: the
+     * categories the picker may offer, the one this row is already filed under, and the **family pattern**
+     * the row resolves to. Read separately from the exercise itself and *not* wrapped in a failure branch: a
+     * list that could not be read leaves the picker empty, which hides a control rather than breaking the
+     * page. The exercise's own row is left out of the options — filing something under itself is not a thing
+     * the shape allows — and **only categories are offered** (N110): a movement is nobody's head.
      */
     private suspend fun loadLibraryContext() {
         // Two reads, because they answer two different questions. The **live** library is what the picker may
-        // offer: filing a row under a head that was removed would be filing it nowhere, and N95's rule is
-        // that a removed head keeps naming what is already under it rather than taking anything new. The
-        // read *including* removed rows is what names the head this row already hangs under, because a
-        // removed head still names its children (N58's rule) — and it is the library the pattern walk needs,
-        // so a variation filed under a removed movement still reads its category's pattern.
+        // offer: filing a row under a category that was removed would be filing it nowhere, and N95's rule is
+        // that a removed category keeps naming what is already under it rather than taking anything new. The
+        // read *including* removed rows is what names the category this row is already filed under, because a
+        // removed category still names its children (N58's rule) — and it is the library the resolver walks,
+        // so a movement under a removed category still reads that category's pattern and muscle.
         val live = (repository.observeExercises().first() as? DataResult.Success)?.data.orEmpty()
         val everything = (repository.getAllIncludingDeleted() as? DataResult.Success)?.data.orEmpty()
-        val liveById = live.associateBy { it.id }
         _uiState.update { state ->
             val head = everything.firstOrNull { it.id == state.exercise?.parentId }
             state.copy(
+                // Only a category is a place to be filed (N110): the shape is one rule deep, so nothing
+                // else can be offered without offering a row the list would then refuse to draw.
                 categoryOptions = live.filter { candidate ->
-                    candidate.id != state.exercise?.id &&
-                        (
-                            candidate.rowKind == RowKind.CATEGORY ||
-                                // A movement may hold a variation only while it is not one itself.
-                                liveById[candidate.parentId]?.rowKind != RowKind.MOVEMENT
-                            )
+                    candidate.rowKind == RowKind.CATEGORY && candidate.id != state.exercise?.id
                 },
                 head = head,
                 headName = head?.name,
@@ -246,69 +218,23 @@ class ExerciseDetailViewModel @Inject constructor(
     }
 
     /**
-     * Starts a variation of this exercise, in the editor (ROADMAP N95, B83).
-     *
-     * A variation **inherits the exercise it hangs under** — its muscles, its equipment, its pattern, and the
-     * unit and step that equipment's weights move by — so the draft below is what "inherits" means in
-     * practice: only what is performed differently will be the new row's own. The taxonomy starts **unstated**
-     * (N103), which is the same thing the repository writes; the unit and the step come with the equipment.
-     * It arrives in the editor rather than on a finished screen, because its name is the one thing the lifter
-     * must supply: "three-second paused" is a name they write, not a value from a closed set.
-     *
-     * **Nothing is written yet** (B83): the row used to be inserted before the editor opened, so cancelling
-     * left a stray row named after its parent — and a library row has no delete. The insert moved to [onSave],
-     * which is the first moment the lifter has said they want it.
-     */
-    fun onCreateVariation() {
-        val parent = _uiState.value.exercise ?: return
-        _uiState.update {
-            it.copy(
-                exercise = parent.copy(
-                    id = "",
-                    name = "",
-                    parentId = parent.id,
-                    rowKind = RowKind.MOVEMENT,
-                    primaryMuscle = null,
-                    secondaryMuscles = emptyList(),
-                    equipment = null,
-                    movementPattern = null,
-                    restSeconds = null,
-                    techniqueNote = null,
-                ),
-                variationParent = parent,
-                isEditing = true,
-                error = null,
-            )
-        }
-    }
-
-    /**
      * Writes the edited attributes, keeping the row's id, secondary muscles and custom flag.
      *
-     * A variation being drafted is created **and then** filled in, in that order, because the create path is
-     * what copies the inherited fields (B83). A failure at either write keeps the form open with what was
-     * typed rather than pretending it saved. The heads are re-read on success, so a *move to category* shows
-     * the new family and the muscle it now inherits rather than the pre-move answers (B84).
+     * A failure keeps the form open with what was typed rather than pretending it saved. The library context
+     * is re-read on success, so a *move to category* shows the new family and the muscle it now inherits
+     * rather than the pre-move answers (B84).
      */
     fun onSave(edit: ExerciseEdit) {
         val state = _uiState.value
         val current = state.exercise ?: return
         viewModelScope.launch {
-            val outcome: DataResult<Exercise> = if (state.variationParent != null) {
-                when (val created = repository.createVariationOf(state.variationParent)) {
-                    is DataResult.Success -> write(created.data.withEdit(edit))
-                    is DataResult.Failure -> created
-                }
-            } else {
-                write(current.withEdit(edit))
-            }
+            val outcome: DataResult<Exercise> = write(current.withEdit(edit))
             when (outcome) {
                 is DataResult.Success -> {
                     _uiState.update {
                         it.copy(
                             exercise = outcome.data,
                             isEditing = false,
-                            variationParent = null,
                             error = null,
                         )
                     }

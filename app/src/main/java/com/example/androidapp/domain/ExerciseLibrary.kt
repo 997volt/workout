@@ -1,6 +1,5 @@
 package com.example.androidapp.domain
 
-import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
@@ -9,15 +8,14 @@ import com.example.androidapp.domain.model.taxonomySubtitle
 import com.example.androidapp.domain.ExerciseSearch.matches
 
 /**
- * The library as a list of rows: category heads with their children under them (ROADMAP N95).
+ * The library as a list of rows: category heads with the movements filed under them (ROADMAP N95, N110).
  *
  * Pure and free of Android types, like [ExerciseSearch], so the grouping and the search that reaches
  * through it are covered by fast JVM tests instead of by driving a screen.
  *
- * **Every category's children are its own rows**, and a movement in no category is a top-level row with its
- * variations under it. That is the two-rule shape seen from the list's side: a category holds exercises, an
- * exercise holds its variations, and a movement in no category holds its variations itself — so a row is at
- * depth 0, 1 or 2 and no deeper.
+ * **One rule and no deeper**: a category holds movements, a movement in no category is a top-level row, and
+ * nothing holds a movement — so a row is at depth 0 or 1. The third level the variation feature drew is gone
+ * rather than merely unused (N110).
  */
 
 /**
@@ -27,10 +25,10 @@ import com.example.androidapp.domain.ExerciseSearch.matches
  * here**, because [com.example.androidapp.ui.components.rememberRowFold] is what knows how to survive a
  * rotation (N84's rule) and this stays a pure function of its inputs.
  *
- * **A query is asked about the family before it is asked about the row.** Typing "bench" shows every bench
- * variation, including the ones whose own names never repeat the word — the inheritance N95 describes,
- * reaching the one surface where a lifter notices it. A category is therefore searchable at all, which it
- * would not be if matching stopped at the row.
+ * **A query is asked about the family before it is asked about the row.** Typing "bench" shows every
+ * movement filed under *Bench Press*, including one whose own name never repeats the word — the inheritance
+ * N95 describes, reaching the one surface where a lifter notices it. A category is therefore searchable at
+ * all, which it would not be if matching stopped at the row.
  */
 fun libraryRows(
     exercises: List<Exercise>,
@@ -45,11 +43,11 @@ fun libraryRows(
      */
     grouped: Boolean = true,
     /**
-     * Every row by id, removed ones included, for resolving what a head passes down (ROADMAP N95).
+     * Every row by id, removed ones included, for resolving what a category passes down (ROADMAP N95).
      *
      * Defaults to [exercises], so a caller with nothing removed needs to say nothing. The library passes the
-     * fuller map, because a head that was removed still names its children (N58's rule) — and the row's own
-     * muscle then comes from a head the list is not drawing.
+     * fuller list, because a category that was removed still names its children (N58's rule) — and the row's
+     * own muscle then comes from a head the list is not drawing.
      */
     headResolver: List<Exercise> = exercises,
 ): List<LibraryRow> {
@@ -59,37 +57,24 @@ fun libraryRows(
     val trimmed = query.trim()
     val byId = exercises.associateBy { it.id }
     val matched = exercises.filter { it.matchesWithItsFamily(trimmed, byId) }.mapTo(mutableSetOf()) { it.id }
-    // The variations, grouped once: N95's shape puts them one level below their exercise, so both passes
-    // below need to ask "what hangs under this movement" rather than walking the list again.
-    val variationsOf = exercises
-        .filter { it.rowKind == RowKind.MOVEMENT }
-        .groupBy { it.parentId }
 
     if (!grouped) {
         // Movements only, and **filtered by the query** (B79): the picker passes its search text here, and
         // the flat branch used to ignore it, so typing did nothing at all. A row matches through its family
-        // for the same reason it does in the library, so "bench" finds a variation that never says bench.
+        // for the same reason it does in the library, so "bench" finds a movement that never says bench.
         return exercises
             .filter { it.rowKind.isLoggable && it.id in matched }
             .sortedBy { it.name }
             .map { it.toLibraryRow(depth = 0, library = headResolver) }
     }
 
-    // The movements the answer includes: one that matched, and one that did not but has a variation that did
-    // — a variation is never drawn without its exercise above it, and a query naming only *Speed Day* used to
-    // emit nothing at all (B81).
-    val drawnMovements = exercises
-        .filter { it.rowKind == RowKind.MOVEMENT }
-        .filter { movement ->
-            movement.id in matched || variationsOf[movement.id].orEmpty().any { it.id in matched }
-        }
-        .mapTo(mutableSetOf()) { it.id }
-
+    // What both grouping passes read, in one value rather than six parameters: they are the same question
+    // asked twice — what is filed under this, and what is left over — so they read the same facts.
     val shape = LibraryShape(
         exercises = exercises,
-        variationsOf = variationsOf,
+        matched = matched,
+        folded = foldedCategories,
         library = headResolver,
-        drawnMovements = drawnMovements,
     )
     val drawn = mutableSetOf<String>()
     val rows = mutableListOf<LibraryRow>()
@@ -97,15 +82,28 @@ fun libraryRows(
     exercises
         .filter { it.rowKind == RowKind.CATEGORY }
         .sortedBy { it.name }
-        .forEach { category -> rows += familyRows(category, shape, matched, foldedCategories, drawn) }
+        .forEach { category -> rows += familyRows(category, shape, drawn) }
 
-    rows += looseRows(shape, matched, drawn)
+    rows += looseRows(shape, drawn)
 
     return rows
 }
 
 /**
- * One family's rows: the head, then its movements, then each movement's own variations.
+ * What both grouping passes need (ROADMAP N95, N110).
+ *
+ * [library] is the fuller list a row is named and read from, [matched] is which rows the query's answer
+ * includes, and [folded] is the categories the lifter has closed.
+ */
+private class LibraryShape(
+    val exercises: List<Exercise>,
+    val matched: Set<String>,
+    val folded: Set<String>,
+    val library: List<Exercise>,
+)
+
+/**
+ * One family's rows: the head, then the movements filed under it (ROADMAP N110).
  *
  * Empty when the query has nothing to say about the family — neither the head nor any movement under it
  * matches, and a family the query does not touch is not part of the answer. A folded head returns itself
@@ -114,15 +112,13 @@ fun libraryRows(
 private fun familyRows(
     category: Exercise,
     shape: LibraryShape,
-    matched: Set<String>,
-    folded: Set<String>,
     drawn: MutableSet<String>,
 ): List<LibraryRow> {
-    val isFolded = category.id in folded
+    val isFolded = category.id in shape.folded
     val children = shape.exercises
-        .filter { it.parentId == category.id && it.rowKind == RowKind.MOVEMENT && it.id in shape.drawnMovements }
+        .filter { it.parentId == category.id && it.rowKind == RowKind.MOVEMENT && it.id in shape.matched }
         .sortedBy { it.name }
-    if (children.isEmpty() && category.id !in matched) return emptyList()
+    if (children.isEmpty() && category.id !in shape.matched) return emptyList()
 
     drawn += category.id
     val head = LibraryRow(
@@ -139,76 +135,41 @@ private fun familyRows(
     if (!isFolded) {
         children.forEach { movement ->
             drawn += movement.id
-            val variations = shape.variationsOf[movement.id].orEmpty()
-                .filter { it.id in matched }
-                .sortedBy { it.name }
-            rows += movement.toLibraryRow(depth = 1, childCount = variations.size, library = shape.library)
-            variations.forEach { variation ->
-                drawn += variation.id
-                rows += variation.toLibraryRow(depth = 2, library = shape.library)
-            }
+            rows += movement.toLibraryRow(depth = 1, library = shape.library)
         }
     }
     return rows
 }
 
 /**
- * The movements drawn at the top level, each with its own variations under it: one in no family, and one
- * whose family the library no longer has.
+ * The movements drawn at the top level: one in no category, and one whose category the library no longer
+ * has.
  *
- * An orphan is possible because a head is soft-deleted and still names its children (N58's rule), and it has
- * to stay reachable rather than vanish with its head. A variation whose *exercise* is missing is here for the
- * same reason: the movement exists, so hiding it because a row above it is gone would hide a lift.
- *
- * **A variation of an unfiled movement hangs under that movement here** (B82). This pass used to draw the
- * movement alone, so a variation of a custom exercise in no category existed, was offered by the flat picker,
- * and could not be found in the library at all.
+ * An orphan is possible because a category is soft-deleted and still names its children (N58's rule), and it
+ * has to stay reachable rather than vanish with its head. The movement exists, so hiding it because a row
+ * above it is gone would hide a lift.
  */
 private fun looseRows(
     shape: LibraryShape,
-    matched: Set<String>,
     drawn: Set<String>,
 ): List<LibraryRow> {
     val known = shape.exercises.mapTo(mutableSetOf()) { it.id }
-    val rows = mutableListOf<LibraryRow>()
-    shape.exercises
+    return shape.exercises
         // `rowKind` as well as the parent, or a category is drawn twice: its own loop emits it, and its
         // `parentId` is null — which is "not under a family" — so this pass would take it too.
-        .filter { it.rowKind == RowKind.MOVEMENT && it.id in shape.drawnMovements && it.id !in drawn }
+        .filter { it.rowKind == RowKind.MOVEMENT && it.id in shape.matched && it.id !in drawn }
         // A row whose parent this library **has** belongs under it, and the family pass either drew it there
         // or left it out because the head is folded. Only a row with no parent, or a parent that is gone, is
-        // top level — which is what keeps a movement's variation from surfacing beside its exercise.
+        // top level.
         .filter { it.parentId == null || it.parentId !in known }
         .sortedBy { it.name }
-        .forEach { movement ->
-            val variations = shape.variationsOf[movement.id].orEmpty()
-                .filter { it.id in matched }
-                .sortedBy { it.name }
-            rows += movement.toLibraryRow(depth = 0, childCount = variations.size, library = shape.library)
-            variations.forEach { rows += it.toLibraryRow(depth = 1, library = shape.library) }
-        }
-    return rows
+        .map { it.toLibraryRow(depth = 0, library = shape.library) }
 }
 
 /**
- * What both grouping passes need, in one value rather than five parameters (ROADMAP N95).
+ * True when [query] finds this row, **or the category it is filed under**.
  *
- * The two passes are the same question asked of two row kinds — what hangs under this, and what is left over
- * — so they read the same facts: the rows to draw, the variations indexed by their exercise, the fuller
- * library a head is named and inherited from, and **which movements the query's answer includes**, which is
- * not the same as which movements matched (a movement is drawn to carry a matched variation).
- */
-private class LibraryShape(
-    val exercises: List<Exercise>,
-    val variationsOf: Map<String?, List<Exercise>>,
-    val library: List<Exercise>,
-    val drawnMovements: Set<String>,
-)
-
-/**
- * True when [query] finds this row, **or the head it hangs under**.
- *
- * The second half is what makes a family searchable: a variation called *Speed Day* is found by "bench"
+ * The second half is what makes a family searchable: a movement called *Speed Day* is found by "bench"
  * because that is what it is filed under, and the row a lifter is looking for is the one they would have
  * found by the name they know. A row whose own name matches is found whatever its parent says, so filing
  * never hides anything.
@@ -218,29 +179,27 @@ private fun Exercise.matchesWithItsFamily(
     byId: Map<String, Exercise>,
 ): Boolean {
     if (this.matches(query)) return true
-    // One level up, and one only: a row's parent is either the category it is filed under or the exercise
-    // it is a variation of, and the shape is two rules deep, so there is no third name to consult.
+    // One level up, and one only: a movement's parent is the category it is filed under, and the shape is a
+    // category over movements and no deeper, so there is no third name to consult (N110).
     return byId[parentId]?.matches(query) == true
 }
 
 private fun Exercise.toLibraryRow(
     depth: Int,
     library: List<Exercise>,
-    childCount: Int = 0,
 ) = LibraryRow(
     id = id,
     name = name,
-    // The **effective** muscle rather than the row's own (ROADMAP N95): an exercise inherits its head's, so
-    // a family whose head says Shoulders lists its members that way without a copy being written to any row.
+    // The **effective** muscle rather than the row's own (ROADMAP N95): a movement reads the one its category
+    // states, so a family lists its members that way without a copy being written to any row.
     subtitle = taxonomySubtitle(effectivePrimaryMuscle(library), equipment),
     depth = depth,
     isCategory = false,
-    childCount = childCount,
 )
 
 /**
- * The **one winner rule** (ROADMAP N103): the row's own value when it states one, otherwise the nearest
- * row above it that does, otherwise null.
+ * The **one winner rule** (ROADMAP N103): the row's own value when it states one, otherwise the row above it
+ * that does, otherwise null.
  *
  * N95 gave each of these facts its own rule — a muscle was read from the nearest *stating ancestor* while
  * the row's own value was only a fallback, and a pattern was read off the head and only if the head was a
@@ -249,8 +208,9 @@ private fun Exercise.toLibraryRow(
  * One rule for all of them ends that, and it is what makes a **null** column meaningful — `null` is
  * *unstated*, and the walk answers it, while a stated value (including `OTHER`) is the row's own answer.
  *
- * **The walk goes all the way up** (B86): reading only the parent left a variation disagreeing with the
- * exercise above it. `seen` ends a cycle a file could carry (B92).
+ * **One step is all the shape has** (N110): a movement's parent is a category, and a category has no parent.
+ * The loop stays because a file is a place a cycle can arrive and `seen` is what ends one (B92) — not because
+ * there is a second row to read.
  */
 private fun <T : Any> Exercise.statedOrInherited(library: List<Exercise>, stated: (Exercise) -> T?): T? {
     val byId = library.associateBy { it.id }
@@ -265,33 +225,22 @@ private fun <T : Any> Exercise.statedOrInherited(library: List<Exercise>, stated
 }
 
 /**
- * This exercise's **effective** primary muscle: its own if it states one, else the nearest row above that
- * does, else null (ROADMAP N103).
+ * This exercise's **effective** primary muscle: its own if it states one, else the category's, else null
+ * (ROADMAP N103, N110).
  *
- * *Live*, not copied, which is what "an exercise inherits its category's primary muscle" means in practice
- * and why nothing is written to the child when it is filed: one fact with one home. Change the head's muscle
- * and every movement under it that states none reads the new one, so a family cannot disagree with itself.
- * **A head that states nothing is silent rather than authoritative**, and a row whose head is not in
- * [library] keeps its own answer for the same reason: nothing to inherit is not the same as inheriting
- * nothing.
+ * *Live*, not copied, which is what "a movement inherits its category's primary muscle" means in practice
+ * and why nothing is written to the child when it is filed: one fact with one home. Change the category's
+ * muscle and every movement under it that states none reads the new one, so a family cannot disagree with
+ * itself. **A category that states nothing is silent rather than authoritative**, and a row whose category
+ * is not in [library] keeps its own answer for the same reason: nothing to inherit is not the same as
+ * inheriting nothing.
  */
 fun Exercise.effectivePrimaryMuscle(library: List<Exercise>): MuscleGroup? =
     statedOrInherited(library) { it.primaryMuscle }
 
 /**
- * This exercise's **effective** equipment: its own if it states one, else the nearest row above that does,
- * else null (ROADMAP N103).
- *
- * The same one rule as the muscle, which is the point of N103: `barbell-bench-press` states `BARBELL`
- * because that is a fact about *it*, while a variation of it states nothing and reads its equipment from
- * the lift it is a version of.
- */
-fun Exercise.effectiveEquipment(library: List<Exercise>): Equipment? =
-    statedOrInherited(library) { it.equipment }
-
-/**
  * This exercise's **effective** secondary muscles, which are the one place a *list* is the value: its own
- * when it names any, else the nearest row above that names some, else none (N95).
+ * when it names any, else the category's, else none (N95, N110).
  *
  * "Secondary muscles default from the category and are the exercise's to change" — the default applies
  * exactly while the exercise is silent, and the moment a lifter names one the exercise's own list is the
@@ -300,19 +249,28 @@ fun Exercise.effectiveEquipment(library: List<Exercise>): Equipment? =
 fun Exercise.effectiveSecondaryMuscles(library: List<Exercise>): List<MuscleGroup> =
     statedOrInherited(library) { it.secondaryMuscles.ifEmpty { null } }.orEmpty()
 
-/** The name of the head this row hangs under, or null — read live, and readable after it is removed (N95). */
+/**
+ * The name of the category this row is filed under, or null — read live, and readable after it is removed
+ * (N95).
+ */
 fun Exercise.headName(library: List<Exercise>): String? =
     library.firstOrNull { it.id == parentId }?.name
 
 /**
- * The library's shape, enforced on any list of rows about to be written (ROADMAP N95, B92).
+ * The library's shape, enforced on any list of rows about to be written (ROADMAP N95, N110, B92).
  *
- * A file is the one place a parent link this app would never write can arrive: a cycle, a category under a
- * category, a variation of a variation. The screen's own write refuses those at the repository, and the
- * importers write raw rows, so this is shared by both DTO and domain rows and clears the illegal link on the
- * way in rather than letting the row vanish from every grouped list. A parent that is not in the list is left
- * alone: the library already draws such a row top-level, and a program document may legitimately name a
- * movement whose head it does not carry.
+ * A file is the one place a link this app would never write can arrive: a cycle, a category filed under
+ * something, a movement filed under a movement. The screen's own write refuses those at the repository, and
+ * the importers write raw rows, so this is shared by both DTO and domain rows.
+ *
+ * **A movement under a movement is flattened, not cleared** (N110). It is what every variation in a file
+ * written before this change is, and dropping the link would trade one wrong shape for a lost category: the
+ * walk folds what the row used to read from the movement above it — [inherit] — because a variation has
+ * become an ordinary movement and a movement states its own facts, then files it under the first category it
+ * reaches. A **cycle** is the one case that is cleared rather than folded, because there is no top to reach.
+ *
+ * A parent that is not in the list is left alone: the library already draws such a row top-level, and a
+ * program document may legitimately name a movement whose category it does not carry.
  *
  * Generic over the row type because the transfer layer never builds a domain [Exercise] — it maps its own
  * DTO — and the rule must not exist twice.
@@ -322,67 +280,69 @@ internal fun <T> List<T>.validLibraryShape(
     parentId: (T) -> String?,
     isCategory: (T) -> Boolean,
     withParent: (T, String?) -> T,
+    inherit: (T, T) -> T,
 ): List<T> {
     val byId = associateBy(id)
-
-    // True when this row's parent chain is at most two links and reaches a category or nothing. A cycle is
-    // what `seen` ends; "too deep" is a third link, whatever that link points at.
-    fun parentIsUsable(row: T): Boolean {
-        var current = row
-        val seen = mutableSetOf(id(row))
-        var depth = 0
-        var usable = true
-        var atTop = false
-        while (!atTop && usable) {
-            val parent = byId[parentId(current)]
-            when {
-                parent == null -> atTop = true
-                isCategory(parent) -> {
-                    depth++
-                    if (depth > 2) usable = false else atTop = true
-                }
-
-                else -> {
-                    depth++
-                    if (depth > 2 || !seen.add(id(parent))) usable = false else current = parent
-                }
-            }
-        }
-        return usable
-    }
 
     return map { row ->
         when {
             // A category sits at the top level and may not be filed under anything.
             isCategory(row) -> withParent(row, null)
             parentId(row) == null -> row
-            parentIsUsable(row) -> row
-            else -> withParent(row, null)
+            // A parent this list does not carry cannot be judged, and clearing it would lose the link.
+            byId[parentId(row)] == null -> row
+            else -> {
+                var current = row
+                var parent = byId[parentId(current)]
+                val seen = mutableSetOf(id(row))
+                var usable = true
+                while (parent != null && !isCategory(parent)) {
+                    if (!seen.add(id(parent))) {
+                        usable = false
+                        break
+                    }
+                    current = inherit(current, parent)
+                    parent = byId[parentId(parent)]
+                }
+                if (usable) withParent(current, parent?.let { id(it) }) else withParent(row, null)
+            }
         }
     }
 }
 
-/** [validLibraryShape] for a domain row. */
+/** [validLibraryShape] for a domain row, folding what a flattened row used to read from the movement above. */
 fun List<Exercise>.withValidLibraryShape(): List<Exercise> =
     validLibraryShape(
         id = { it.id },
         parentId = { it.parentId },
         isCategory = { it.rowKind == RowKind.CATEGORY },
         withParent = { row, parent -> row.copy(parentId = parent) },
+        // **Materialised rather than inherited**: the row is becoming a movement in its own right, and a
+        // movement states its own facts. Equipment travels with them even though it is never inherited
+        // *live* (a family spans equipment) — this is the one moment a formerly inherited value has to be
+        // written down, or a paused bench would arrive with no bar.
+        inherit = { child, parent ->
+            child.copy(
+                primaryMuscle = child.primaryMuscle ?: parent.primaryMuscle,
+                secondaryMuscles = child.secondaryMuscles.ifEmpty { parent.secondaryMuscles },
+                equipment = child.equipment ?: parent.equipment,
+                movementPattern = child.movementPattern ?: parent.movementPattern,
+            )
+        },
     )
 
 /**
- * The ids one lift's series reads: itself, and every row beneath it (ROADMAP N97).
+ * The ids one lift's series reads: itself, and the movements filed under it (ROADMAP N97, N110).
  *
- * A *head* is any row that holds others — a category over its movements and their variations, or an
- * exercise over its own variations — and a variation holds nothing, so a variation reads itself. The ids are
- * distinct because the shape is a tree two rules deep, so reading the family cannot double-count a set.
+ * A *head* is a row that holds others, and only a **category** does: the movements under it are what a
+ * family is. A movement holds nothing, so it reads itself. The ids are distinct because a movement has one
+ * category, so reading the family cannot double-count a set.
  *
- * **The head's own row is included**, and the same expression is right for both kinds: an exercise with
- * variations can still be logged directly, while a category never names a set, so including it costs a
- * category nothing and keeps an exercise's own work in its own series.
+ * **The head's own row is included**: a category never names a set, so including it costs the family
+ * nothing, and the same expression is then right for a movement too — a category is the only head there is,
+ * but the shape of the answer does not have to care.
  *
- * Two levels and no more, because that is the shape (N95); `seen` is what keeps a file that carries a cycle
+ * One level and no more, because that is the shape (N110); `seen` is what keeps a file that carries a cycle
  * from looping, which is the guard every resolver here already has (B92).
  */
 fun Exercise.seriesSubjectIds(library: List<Exercise>): List<String> {
@@ -400,42 +360,43 @@ fun Exercise.seriesSubjectIds(library: List<Exercise>): List<String> {
     return ids
 }
 
-/** The library's shape is two rules deep and no deeper (N95), so a family is at most two steps down. */
-private const val SERIES_DEPTH = 2
+/** The library's shape is one rule deep (N110), so a family is at most one step down. */
+private const val SERIES_DEPTH = 1
 
 /**
- * True when choosing this row reads a family rather than one lift (ROADMAP N97).
+ * True when choosing this row reads a family rather than one lift (ROADMAP N97, N110).
  *
- * A category always heads others — that is what it is for — and a movement heads its own variations when it
- * has any. A variation heads nothing, so it reads as the single lift it is.
+ * **Only a category heads others**, because the movements filed under it are the whole of a family — a
+ * movement holds nothing, so it reads as the single lift it is. This is what the statistics lift list gates
+ * its family label on: a movement is offered under every metric, and a category only where the metric reads
+ * one (B98).
  */
-fun Exercise.headsOthers(library: List<Exercise>): Boolean =
-    rowKind == RowKind.CATEGORY || library.any { it.parentId == id }
+val Exercise.headsOthers: Boolean
+    get() = rowKind == RowKind.CATEGORY
 
 /**
- * This row's movement pattern: its own if it states one, else the nearest row above that does, else null
- * (ROADMAP N96, amended by N103).
+ * This row's movement pattern: its own if it states one, else the category's, else null (ROADMAP N96,
+ * amended by N103 and N110).
  *
  * N96 read this off the **category** — a row in no category had none, and a movement's own value was never
- * consulted. N103 makes it the same rule as the muscle and the equipment: **own-if-stated**, so a category
- * is the pattern's home because nothing under it states one rather than because it outranks them. The seed
- * keeps that true of the data (a filed movement states no pattern, and an unfiled one is left to the
- * lifter), which is what preserves everything N96 bought: a family's pattern decided once, and a loose
- * movement with none unless somebody says otherwise.
+ * consulted. N103 made it the same rule as the muscle: **own-if-stated**, so a category is the pattern's home
+ * because nothing under it states one rather than because it outranks them. The seed keeps that true of the
+ * data (a filed movement states no pattern, and an unfiled one is left to the lifter), which is what
+ * preserves everything N96 bought: a family's pattern decided once, and a loose movement with none unless
+ * somebody says otherwise.
  */
 fun Exercise.effectiveMovementPattern(library: List<Exercise>): MovementPattern? =
     statedOrInherited(library) { it.movementPattern }
 
 /**
- * The head an exercise is counted under: the top of its chain, or itself when it heads nothing
- * (ROADMAP N97).
+ * The head an exercise is counted under: the category it is filed under, or itself when it is in none
+ * (ROADMAP N97, N110).
  *
- * A category for a movement filed under one, the movement for its own variations, and the row itself for
- * anything unfiled — which is what makes the per-lift adherence breakdown count a family as one row while a
- * loose movement still stands alone.
+ * A category for a movement filed under one, and the row itself for anything unfiled — which is what makes
+ * the per-lift adherence breakdown count a family as one row while a loose movement still stands alone.
  *
  * A cycle is not a shape this app writes, but the walk must not hang on one, so `seen` ends it — the guard
- * every resolver here carries (B92). Two levels are all the shape has, so the loop is bounded anyway.
+ * every resolver here carries (B92). One level is all the shape has, so the loop is bounded anyway.
  */
 fun headOfExercise(id: String, parents: Map<String, String?>): String {
     val seen = mutableSetOf(id)

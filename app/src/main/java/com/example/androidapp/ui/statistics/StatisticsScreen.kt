@@ -704,9 +704,10 @@ private fun DateRow(labelRes: Int, date: LocalDate?, testTag: String, onClick: (
  * offers, because a second way to name a lift would be a second thing to keep in step.
  *
  * [acceptsHead] is the chosen metric's own answer (ROADMAP N97, B98), and it is what the family label is
- * gated on: a movement with variations is offered under every metric, while only one that reads a head reads
- * them together — so under the rest the same name must promise the one lift it actually draws. The list
- * itself is already filtered by the ViewModel.
+ * gated on: a movement is offered under every metric and reads as the one lift it is, while a **category** —
+ * the only row that heads others (N110) — is offered under the metrics that read a family, so under the rest
+ * the same name must promise the one lift it actually draws. The list itself is already filtered by the
+ * ViewModel.
  */
 @Composable
 private fun LiftPicker(
@@ -723,9 +724,9 @@ private fun LiftPicker(
             onClick = { open = true },
             modifier = Modifier.testTag(TestTags.Statistics.LIFT),
         ) {
-            // A head reads as a family rather than as another lift (ROADMAP N97): choosing it is choosing
-            // every row under it, and a name alone would promise one lift's numbers.
-            val chosenFamily = acceptsHead && selected?.headsOthers(lifts) == true
+            // A category reads as a family rather than as another lift (ROADMAP N97, N110): choosing it is
+            // choosing every movement filed under it, and a name alone would promise one lift's numbers.
+            val chosenFamily = acceptsHead && selected?.headsOthers == true
             Text(
                 text = when {
                     selected == null -> stringResource(R.string.statistics_choose_lift)
@@ -741,9 +742,9 @@ private fun LiftPicker(
                     text = {
                         Column {
                             Text(lift.name)
-                            if (acceptsHead && lift.headsOthers(lifts)) {
+                            if (acceptsHead && lift.headsOthers) {
                                 Text(
-                                    text = stringResource(R.string.statistics_lift_all_variations),
+                                    text = stringResource(R.string.statistics_lift_all_in_family),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )

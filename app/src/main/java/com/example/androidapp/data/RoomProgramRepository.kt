@@ -429,9 +429,9 @@ private suspend fun buildProgramDocument(
     val templateSets = templateIds.flatMap { database.templateDao().findTemplateSets(it) }
     // The definition of every exercise the plan names, so a receiving device can create the ones it
     // has never seen — a user's own exercise id means nothing anywhere else (N47) — **and of every row above
-    // them** (N103). A variation's parent is part of its definition: a document naming a variation without
-    // its head would arrive with nothing to name it under, and once a row inherits rather than copies,
-    // nothing to inherit from.
+    // them** (N103, N110). A movement's category is part of its definition: a document naming a movement
+    // without its family would arrive with nothing to file it under, and once a row reads rather than copies
+    // its taxonomy, nothing to read from.
     val exercises = withAncestors(
         ids = templateExercises.map { it.exerciseId }.distinct(),
         dao = database.exerciseDao(),
@@ -450,13 +450,13 @@ private suspend fun buildProgramDocument(
 }
 
 /**
- * [ids] and every row above them in the library (ROADMAP N103).
+ * [ids] and every row above them in the library (ROADMAP N103, N110).
  *
- * The whole parent chain rather than one level, because a variation hangs under an exercise that may itself
- * hang under a category — and a chain that stopped early would be the same silent loss in a shorter file. A
- * cycle is not a shape this app writes, but a document is a place one can arrive, so an id already collected
- * ends the walk (B92). A row the device does not hold is simply absent, which is what a receiving device's own
- * miss already means.
+ * The walk goes to the top rather than one level, because a **file** is not bound by the shape this app
+ * writes and a chain that stopped early would be the same silent loss in a shorter file. A cycle is not a
+ * shape this app writes either, but a document is a place one can arrive, so an id already collected ends the
+ * walk (B92). A row the device does not hold is simply absent, which is what a receiving device's own miss
+ * already means.
  */
 private suspend fun withAncestors(ids: List<String>, dao: ExerciseDao): List<ExerciseEntity> {
     val found = linkedMapOf<String, ExerciseEntity>()

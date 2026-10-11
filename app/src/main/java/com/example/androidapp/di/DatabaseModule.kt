@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.androidapp.data.local.MIGRATION_1_2
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.seedMissingExercises
 import com.example.androidapp.domain.TimeSource
@@ -28,10 +29,10 @@ object DatabaseModule {
         timeSource: TimeSource,
     ): WorkoutDatabase =
         Room.databaseBuilder(context, WorkoutDatabase::class.java, WorkoutDatabase.NAME)
-            // No migrations and no fallbackToDestructiveMigration (ROADMAP N104): this is 2.0's
-            // store, created at schema 1, and 1.x's file is a different one this build never opens —
-            // so there is nothing to migrate and nothing to truncate. A forgotten migration still
-            // fails loudly: a change to *this* store needs a migration like any other.
+            // 2.0's store was created at schema 1 and 1.x's file is a different one this build never
+            // opens, so the only migration is N110's: the library's shape became a category over
+            // movements, which re-files the rows a variation created (ROADMAP N110).
+            .addMigrations(MIGRATION_1_2)
             .addCallback(
                 object : RoomDatabase.Callback() {
                     /**

@@ -566,10 +566,10 @@ object ProgramSchedule {
     ): List<ExerciseAdherence> {
         val totals = mutableMapOf<String, IntArray>()
         bySlot.forEach { slot ->
-            // Counted under the *head*, and once per head however many of its rows the template names
-            // (ROADMAP N97). A template prescribing the barbell bench and its speed day is not the bench family
-            // done twice, and summing the parts would say it was. A variation heads itself, so the ordinary
-            // one-row case is unchanged.
+            // Counted under the *head*, and once per head however many of its movements the template names
+            // (ROADMAP N97, N110). A template prescribing the barbell bench and the paused bench is not the
+            // bench family done twice, and summing the parts would say it was. A movement in no category heads
+            // itself, so the ordinary one-row case is unchanged.
             exercisesByTemplate[slot.templateId].orEmpty()
                 .map { headOfExercise(it, exerciseParents) }
                 .distinct()

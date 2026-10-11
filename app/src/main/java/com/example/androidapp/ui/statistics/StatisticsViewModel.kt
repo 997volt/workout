@@ -83,11 +83,11 @@ data class StatisticsUiState(
      */
     val rateTarget: Double? = null,
     /**
-     * Whether the chosen metric reads a head as a family (ROADMAP N97, B98).
+     * Whether the chosen metric reads a head as a family (ROADMAP N97, B98, N110).
      *
-     * The picker draws its family label from this rather than from the row's shape alone: a movement with
-     * variations is offered under every metric, but only one that takes a head reads them together — and a
-     * category is offered only where it does.
+     * The picker draws its family label from this rather than from the row's shape alone: a **movement** is
+     * offered under every metric and reads as the one lift it is, while a **category** is offered only where
+     * the metric reads a family.
      */
     val acceptsHead: Boolean = false,
 ) {
@@ -322,8 +322,8 @@ class StatisticsViewModel @Inject constructor(
      * A **category** is offered only under the metrics that read a head, so switching to one that reads a
      * single id would otherwise leave the category selected behind a picker that no longer lists it — the
      * picker reading "Choose a lift" while the empty chart behind it still read the hidden id. A movement
-     * that heads variations keeps its place: every metric offers it, and the ones that read one id read it
-     * as the single lift it is. The library is read from the state rather than re-queried, because the row's
+     * keeps its place under every metric (N110): it heads nothing, and the ones that read one id read it as
+     * the single lift it is. The library is read from the state rather than re-queried, because the row's
      * kind is the whole question and it cannot change with the metric.
      */
     fun onSelectMetric(metric: MetricKey) {

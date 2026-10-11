@@ -137,9 +137,11 @@ class RoomBackupRepository @Inject constructor(
         // Throws InvalidInputException for a file we cannot use, before touching
         // anything — a rejected file must leave the database exactly as it was.
         //
-        // The library's shape is enforced before anything is written (B92): a file can carry a parent link the
-        // app would never write — a cycle, a category under a category, a variation of a variation — and the
-        // grouped list would then hide or duplicate the row rather than show it. A legal library is unchanged.
+        // The library's shape is enforced before anything is written (B92, N110): a file can carry a link the
+        // app would never write — a cycle, a category filed under something, a movement filed under a
+        // movement, which is what every variation in an older file is — and the grouped list would then hide
+        // or misplace the row rather than show it. A movement under a movement is **flattened onto its
+        // category** rather than cleared, so the family survives the trip. A legal library is unchanged.
         val file = BackupCodec.decode(text).let { decoded ->
             decoded.copy(exercises = decoded.exercises.withValidLibraryShape())
         }

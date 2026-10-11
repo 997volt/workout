@@ -16,6 +16,23 @@ unreleased.
 
 ## [Unreleased]
 
+### Changed
+
+- **The library is a category over movements, and a movement reads its family's taxonomy** (N110). The
+  **variation level is gone**: it was one `parentId` carrying two meanings, told apart by the parent's
+  `rowKind`, and the narrower roll-up it bought is one the category already offers — a category's series has
+  always read its movements' variations too, so **no family's numbers move**. A movement's **movement
+  pattern, primary muscle and secondary muscles are its category's until it states its own**, so a family
+  states what its members share and the odd one out states its own — the lunge family has no single primary
+  muscle, so each of its two movements keeps one. **Equipment is never inherited**, because a family spans
+  equipment: the lat pulldown family alone holds a cable, a bodyweight and a machine movement. The editor now
+  offers those three fields rather than hiding the ones a category supplies, and shows what *not stated*
+  resolves to, because under own-if-stated a movement may disagree with its family and a hidden picker cannot
+  say so. A library written by the previous build is carried across by a **data migration** that fills the
+  seeded categories from the seed itself, writes down what each variation used to read from the lift above
+  it, and re-files it under the category — leaving any value a lifter set alone. An older backup or program
+  document is **flattened the same way on import** rather than refused, so the family survives the trip.
+
 ### Fixed
 
 - **A workout or template row reads an unstated muscle or equipment instead of throwing** (B103). The two

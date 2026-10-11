@@ -99,9 +99,10 @@ internal fun ExerciseDto.toEntity() = ExerciseEntity(
 )
 
 /**
- * [validLibraryShape] for a backup DTO (ROADMAP N95, B92): the import writes raw rows, so the shape rule has
- * to run before the entity does. A legal library is unchanged; an illegal link is cleared rather than stored
- * and then hidden by the grouped list.
+ * [validLibraryShape] for a backup DTO (ROADMAP N95, N110, B92): the import writes raw rows, so the shape
+ * rule has to run before the entity does. A legal library is unchanged; a movement filed under a movement —
+ * what every variation in an older file is — is **flattened under the category it belonged to**, with what it
+ * used to read from that movement written onto it. Clearing the link instead would lose the family.
  */
 internal fun List<ExerciseDto>.withValidLibraryShape(): List<ExerciseDto> =
     validLibraryShape(
@@ -109,6 +110,14 @@ internal fun List<ExerciseDto>.withValidLibraryShape(): List<ExerciseDto> =
         parentId = { it.parentId },
         isCategory = { it.rowKind == RowKind.CATEGORY },
         withParent = { row, parent -> row.copy(parentId = parent) },
+        inherit = { child, parent ->
+            child.copy(
+                primaryMuscle = child.primaryMuscle ?: parent.primaryMuscle,
+                secondaryMuscles = child.secondaryMuscles.ifEmpty { parent.secondaryMuscles },
+                equipment = child.equipment ?: parent.equipment,
+                movementPattern = child.movementPattern ?: parent.movementPattern,
+            )
+        },
     )
 
 internal fun WorkoutSessionEntity.toDto() = SessionDto(

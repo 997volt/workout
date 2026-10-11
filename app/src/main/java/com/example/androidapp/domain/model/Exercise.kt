@@ -28,12 +28,11 @@ data class Exercise(
     /** The movement pattern this row states, or null when it states none (ROADMAP N103). */
     val movementPattern: MovementPattern? = null,
     /**
-     * The row this one hangs under, or null for a top-level row (ROADMAP N95).
+     * The category this movement is filed under, or null when it is in none (ROADMAP N95, N110).
      *
-     * One field for both levels of the two-rule shape, because [rowKind] decides what it means: a
-     * variation's parent is the exercise it is a version of, and an exercise's parent is the category it
-     * is filed under. Null is a top-level row, and for a movement that means "in no category" — a valid
-     * place to be rather than a missing value.
+     * One meaning, not two: the shape is a category over movements and no deeper, so a row's parent is always
+     * a category — a movement is nobody's head. Null is a real place to be rather than a missing value: an
+     * unfiled movement is drawn at the top level and states its own taxonomy.
      */
     val parentId: String? = null,
     /**

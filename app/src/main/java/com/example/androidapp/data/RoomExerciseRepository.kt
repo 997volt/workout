@@ -70,43 +70,13 @@ class RoomExerciseRepository @Inject constructor(
     override suspend fun createCategory(name: String): DataResult<Exercise> =
         create(name = name, rowKind = RowKind.CATEGORY)
 
-    override suspend fun createVariationOf(parent: Exercise): DataResult<Exercise> = dataResultOf {
-        if (parent.rowKind != RowKind.MOVEMENT) {
-            throw InvalidInputException("A variation hangs under a movement, not a category.")
-        }
-        // The third level the shape does not have (ROADMAP N95, B82): a variation of a variation would hang
-        // under an exercise that is itself a variation, and nothing draws that row.
-        val grandparent = parent.parentId?.let { dao.findById(it) }
-        if (grandparent?.rowKind == RowKind.MOVEMENT) {
-            throw InvalidInputException("A variation hangs under an exercise, not under another variation.")
-        }
-        // A variation states **nothing it inherits** (ROADMAP N103). Its muscles, its equipment and its
-        // pattern are read from the movement it hangs under, live — the copy this function used to write was
-        // a second home for a fact with one, and it is what the model stopped doing. What it does keep is
-        // what it is *done with*: the weight unit and the step are facts about the equipment it inherits
-        // (B95), and clearing them handed the variation the *unit's* default step while keeping the machine.
-        val variation = parent.copy(
-            id = UUID.randomUUID().toString(),
-            name = "",
-            parentId = parent.id,
-            rowKind = RowKind.MOVEMENT,
-            primaryMuscle = null,
-            secondaryMuscles = emptyList(),
-            equipment = null,
-            movementPattern = null,
-            restSeconds = null,
-            techniqueNote = null,
-        )
-        dao.insert(variation.toEntity(now = timeSource.nowEpochMillis()))
-        variation
-    }
-
     /**
-     * The library's shape, at the write boundary (ROADMAP N95, B92).
+     * The library's shape, at the write boundary (ROADMAP N95, N110, B92).
      *
-     * A category sits at the top, and a movement may hang under a category or under an exercise that is not
-     * itself a variation. A parent that is not among the live rows is left alone — a removed head still names
-     * its children (N58's rule) — so only a *live* parent is judged.
+     * A category sits at the top and a movement is filed under one: **a movement cannot be filed under a
+     * movement**, which is what the variation level used to be and what N110 removed. A parent that is not
+     * among the live rows is left alone — a removed category still names its children (N58's rule) — so only
+     * a *live* parent is judged.
      */
     private suspend fun requireValidLibraryShape(exercise: Exercise) {
         val parent = exercise.parentId?.let { dao.findById(it) }
@@ -115,10 +85,7 @@ class RoomExerciseRepository @Inject constructor(
             // No *live* parent is nothing to judge: a removed head still names its children (N58's rule).
             parent == null -> null
             exercise.rowKind != RowKind.MOVEMENT -> "A category sits at the top level."
-            parent.rowKind == RowKind.MOVEMENT &&
-                parent.parentId?.let { dao.findById(it) }?.rowKind == RowKind.MOVEMENT ->
-                "A variation cannot hang under another variation."
-
+            parent.rowKind != RowKind.CATEGORY -> "A movement is filed under a category."
             else -> null
         }
         if (refusal != null) throw InvalidInputException(refusal)
