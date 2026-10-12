@@ -52,6 +52,9 @@ class RoomBackupRepository @Inject constructor(
     /** The per-exercise joint rows (ROADMAP N63), the same shape. */
     private val joints = database.sessionExerciseJointDao()
 
+    /** The daily record's sore rows (ROADMAP N113), the same shape again. */
+    private val measurementSore = database.measurementSoreMuscleDao()
+
     override suspend fun export(): DataResult<String> = dataResultOf {
         BackupCodec.encode(
             BackupFile(
@@ -84,6 +87,9 @@ class RoomBackupRepository @Inject constructor(
                 // restored week reads as missed even though it was trained, with something else.
                 programSubstitutions = programBackup.allProgramSubstitutions().map { it.toDto() },
                 measurements = database.measurementDao().allForExport().map { it.toDto() },
+                // The soreness a daily entry reported (ROADMAP N113): a fact the lifter wrote, so a
+                // restore that dropped it would lose work in silence.
+                measurementSoreMuscles = measurementSore.allForBackup().map { it.toDto() },
                 // The user's metric targets (ROADMAP N39). They are settings rather than rows,
                 // which is exactly why they need naming here: the codec drops whatever it is not
                 // told about, and a restore was losing every target in silence.
@@ -190,6 +196,7 @@ class RoomBackupRepository @Inject constructor(
         val hiddenTemplateSets = dao.softDeletedTemplateSetIds().toSet()
         val hiddenSoreMuscles = soreMuscles.softDeletedIds().toSet()
         val hiddenJoints = joints.softDeletedIds().toSet()
+        val hiddenMeasurementSore = measurementSore.softDeletedIds().toSet()
 
         val exercises = file.exercises.filter { it.id in hiddenExercises }
         val sessions = file.sessions.filter { it.id in hiddenSessions }
@@ -200,6 +207,7 @@ class RoomBackupRepository @Inject constructor(
         val templateSets = file.templateSets.filter { it.id in hiddenTemplateSets }
         val soreMuscleRows = file.sessionSoreMuscles.filter { it.id in hiddenSoreMuscles }
         val jointRows = file.sessionExerciseJoints.filter { it.id in hiddenJoints }
+        val measurementSoreRows = file.measurementSoreMuscles.filter { it.id in hiddenMeasurementSore }
 
         dao.restoreExercises(exercises.map { it.toEntity() })
         dao.restoreSessions(sessions.map { it.toEntity() })
@@ -210,6 +218,7 @@ class RoomBackupRepository @Inject constructor(
         dao.restoreTemplateSets(templateSets.map { it.toEntity() })
         soreMuscles.restore(soreMuscleRows.map { it.toEntity() })
         joints.restore(jointRows.map { it.toEntity() })
+        measurementSore.restore(measurementSoreRows.map { it.toEntity() })
 
         return exercises.count { it.deletedAt == null } +
             sessions.count { it.deletedAt == null } +
@@ -219,7 +228,8 @@ class RoomBackupRepository @Inject constructor(
             templateExercises.count { it.deletedAt == null } +
             templateSets.count { it.deletedAt == null } +
             soreMuscleRows.count { it.deletedAt == null } +
-            jointRows.count { it.deletedAt == null }
+            jointRows.count { it.deletedAt == null } +
+            measurementSoreRows.count { it.deletedAt == null }
     }
 
     /**
@@ -241,7 +251,10 @@ class RoomBackupRepository @Inject constructor(
             dao.insertTemplates(file.templates.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertTemplateExercises(file.templateExercises.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertTemplateSets(file.templateSets.map { it.toEntity() }).count { it != SKIPPED } +
-            database.measurementDao().insertAll(file.measurements.map { it.toEntity() }).count { it != SKIPPED }
+            database.measurementDao().insertAll(file.measurements.map { it.toEntity() }).count { it != SKIPPED } +
+            // The sore rows hang off a daily measurement, so they go in after the entries above (N113).
+            measurementSore.insert(file.measurementSoreMuscles.map { it.toEntity() })
+                .count { it != SKIPPED }
 
     /**
      * Restores and adds the program tables (ROADMAP P3.3), returning what each step did.

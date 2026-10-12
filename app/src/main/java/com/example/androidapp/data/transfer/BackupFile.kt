@@ -3,6 +3,7 @@ package com.example.androidapp.data.transfer
 import java.time.DayOfWeek
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
@@ -103,6 +104,14 @@ data class BackupFile(
      */
     val measurements: List<MeasurementDto> = emptyList(),
     /**
+     * The muscles each daily measurement reported sore (ROADMAP N62, moved here by N113).
+     *
+     * Defaulted, like every added collection — and it must be here in the same change as the table, or
+     * an export would silently carry none of them. The session's own sore rows still travel in
+     * [sessionSoreMuscles]: they are what an older workout opened with, and history keeps reading them.
+     */
+    val measurementSoreMuscles: List<MeasurementSoreMuscleDto> = emptyList(),
+    /**
      * The user's metric targets, keyed by `MetricKey.id` in each metric's own units (ROADMAP N39).
      *
      * They live in settings rather than the database, which is why they needed naming here: a codec
@@ -182,18 +191,22 @@ data class ExerciseDto(
 )
 
 /**
- * One dated set of body measurements (ROADMAP N32).
+ * One dated set of body measurements (ROADMAP N32, two records since N113).
  *
- * Every field but the weight is nullable, and null means "not taken" rather than zero — a waist
- * recorded without a scale reading is a real entry, and a zero would be indistinguishable from a
- * measurement of nothing.
+ * [kind] is **required rather than defaulted**, for the reason [ExerciseDto]'s taxonomy is: a row must
+ * state which of the two records it is, and the version gate refuses a file that predates the split
+ * rather than letting a default quietly answer for a row that meant to state something. Every number is
+ * nullable and null means "not taken" rather than zero — a waist recorded without a scale reading is a
+ * real entry, and a zero would be indistinguishable from a measurement of nothing.
  */
 @Serializable
 data class MeasurementDto(
     val id: String,
     val measuredAt: Long,
-    /** Whole grams, the only required measurement. */
-    val weightGrams: Long,
+    /** Which of the two records this is (ROADMAP N113). */
+    val kind: MeasurementKind,
+    /** Whole grams, or null when the scale was not stepped on (ROADMAP N113). */
+    val weightGrams: Long? = null,
     /** Tenths of a percent, the unit RPE halves exist for. */
     val bodyFatTenths: Int? = null,
     val muscleTenths: Int? = null,
@@ -205,6 +218,25 @@ data class MeasurementDto(
     val upperArmMm: Long? = null,
     val thighMm: Long? = null,
     val calfMm: Long? = null,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+)
+
+/**
+ * One muscle a day's measurement reported sore, and its score (ROADMAP N62, moved by N113).
+ *
+ * Its own collection rather than a column, the shape it had on a session: one muscle's score is read
+ * on its own later, and a serialized list would have to be parsed to ask.
+ */
+@Serializable
+data class MeasurementSoreMuscleDto(
+    val id: String,
+    val measurementId: String,
+    val muscle: MuscleGroup,
+    /** 1–10, on `TenPointScale`. */
+    val score: Int,
+    val position: Int,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

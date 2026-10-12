@@ -17,6 +17,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
+import com.example.androidapp.domain.model.MeasurementKind
 
 /**
  * Measurements against a real database (ROADMAP N32).
@@ -99,6 +100,7 @@ class MeasurementRepositoryTest {
     ) = BodyMeasurement(
         id = "",
         measuredAt = at,
+        kind = MeasurementKind.DAILY,
         weightGrams = weightGrams,
         tape = listOfNotNull(waistMm?.let { TapeSite.WAIST to it }).toMap(),
     )

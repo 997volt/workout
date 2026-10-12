@@ -1,18 +1,20 @@
 package com.example.androidapp.ui.measurements
 
 import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import com.example.androidapp.R
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -25,9 +27,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The measurements screen's rules (ROADMAP N32).
+ * The measurements screen (ROADMAP N32, two records since N113).
  *
- * Matched by tag rather than by English, so a translation cannot break them.
+ * The screen's own wiring: that *Add* asks which of the two records before it opens a form, that each
+ * form states only its own kind's numbers, and that *Save* is offered once the entry states something
+ * rather than once it states a weight.
  */
 @RunWith(AndroidJUnit4::class)
 class MeasurementsScreenTest {
@@ -38,9 +42,9 @@ class MeasurementsScreenTest {
     private val today = BodyMeasurement(
         id = "m1",
         measuredAt = Instant.parse("2026-10-02T08:00:00Z"),
+        kind = MeasurementKind.DAILY,
         weightGrams = 82_400L,
         bodyFatTenths = 183,
-        tape = mapOf(TapeSite.WAIST to 864L),
     )
 
     private fun setScreen(
@@ -62,6 +66,18 @@ class MeasurementsScreenTest {
                 )
             }
         }
+    }
+
+    /** The two taps every add takes now: the button, then which of the two records (N113). */
+    private fun startAdding(kind: MeasurementKind) {
+        composeTestRule.onNodeWithTag(TestTags.Measurements.ADD).performClick()
+        composeTestRule.onNodeWithTag(
+            if (kind == MeasurementKind.DAILY) {
+                TestTags.Measurements.ADD_DAILY
+            } else {
+                TestTags.Measurements.ADD_TAPE
+            },
+        ).performClick()
     }
 
     @Test
@@ -93,21 +109,52 @@ class MeasurementsScreenTest {
     }
 
     @Test
-    fun theSaveIsGatedOnAWeight() {
+    fun theTwoRecords_areOfferedSeparately() {
+        // N113: one form for everything is what made a tape-only day invent a weight to save.
         setScreen()
+
         composeTestRule.onNodeWithTag(TestTags.Measurements.ADD).performClick()
 
-        // The one thing an entry cannot be without.
+        composeTestRule.onNodeWithTag(TestTags.Measurements.ADD_DAILY).assertIsEnabled()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.ADD_TAPE).assertIsEnabled()
+    }
+
+    @Test
+    fun theSaveIsGatedOnTheEntryStatingSomething() {
+        setScreen()
+        startAdding(MeasurementKind.DAILY)
+
+        // Nothing stated yet: an entry that says nothing is the one thing the form refuses.
         composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsNotEnabled()
         composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextInput("82.4")
         composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsEnabled()
     }
 
     @Test
+    fun aSorenessOnlyMorning_canBeSaved() {
+        // The rule the split exists for (N113): the weight stopped being the one thing an entry cannot
+        // be without, because a rest day reporting sore muscles is exactly what the record is for.
+        var saved: BodyMeasurement? = null
+        setScreen(onSave = { saved = it })
+        startAdding(MeasurementKind.DAILY)
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsNotEnabled()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.SORE.add).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.SORE.option(MuscleGroup.QUADS.name))
+            .performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsEnabled().performClick()
+
+        assertNull("no weight was stated, and none is invented", saved?.weightGrams)
+        assertEquals(listOf(MuscleGroup.QUADS), saved?.soreMuscles?.map { it.muscle })
+        assertEquals(MeasurementKind.DAILY, saved?.kind)
+    }
+
+    @Test
     fun theOptionalNumbers_stayOptional() {
         var saved: BodyMeasurement? = null
         setScreen(onSave = { saved = it })
-        composeTestRule.onNodeWithTag(TestTags.Measurements.ADD).performClick()
+        startAdding(MeasurementKind.DAILY)
         composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextInput("82.4")
 
         composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).performClick()
@@ -122,16 +169,21 @@ class MeasurementsScreenTest {
     }
 
     @Test
-    fun aTapeSiteIsRecorded_whenItIsFilledIn() {
+    fun aTapeEntry_statesItsSites_andAsksForNoWeight() {
         var saved: BodyMeasurement? = null
         setScreen(onSave = { saved = it })
-        composeTestRule.onNodeWithTag(TestTags.Measurements.ADD).performClick()
-        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextInput("82.4")
-        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.WAIST)).performTextInput("86.4")
+        startAdding(MeasurementKind.TAPE)
 
+        // The daily numbers are not on this form at all: a tape day has no weight to state (N113).
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsNotEnabled()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.WAIST)).performTextInput("86.4")
         composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).performClick()
 
+        assertEquals(MeasurementKind.TAPE, saved?.kind)
         assertEquals(864L, saved?.tape?.get(TapeSite.WAIST))
+        assertNull("and no weight is claimed by the tape record", saved?.weightGrams)
     }
 
     @Test
@@ -140,15 +192,24 @@ class MeasurementsScreenTest {
         // became a real 0.0% body-fat reading, a measurement nobody took, in a series that then draws it.
         var saved: BodyMeasurement? = null
         setScreen(onSave = { saved = it })
-        composeTestRule.onNodeWithTag(TestTags.Measurements.ADD).performClick()
+        startAdding(MeasurementKind.DAILY)
         composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextInput("82.4")
         composeTestRule.onNodeWithTag(TestTags.Measurements.BODY_FAT).performTextInput("NaN")
-        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.WAIST)).performTextInput("Infinity")
 
         composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).performClick()
-
         assertNull("a NaN body fat is not a measurement", saved?.bodyFatTenths)
-        assertTrue("an infinite tape reading is not one either", saved?.tape?.isEmpty() != false)
+    }
+
+    @Test
+    fun aTapeEntryWhoseOnlySiteIsNotANumber_statesNothing() {
+        setScreen(state = MeasurementsUiState(isLoading = false))
+        startAdding(MeasurementKind.TAPE)
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.tape(TapeSite.WAIST))
+            .performTextInput("Infinity")
+
+        // Save stays refused: an entry whose only number is not a number states nothing at all.
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsNotEnabled()
     }
 
     @Test
@@ -156,12 +217,30 @@ class MeasurementsScreenTest {
         // Nothing this screen collects is below zero, and a negative would draw as a real reading.
         var saved: BodyMeasurement? = null
         setScreen(onSave = { saved = it })
-        composeTestRule.onNodeWithTag(TestTags.Measurements.ADD).performClick()
+        startAdding(MeasurementKind.DAILY)
         composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextInput("82.4")
         composeTestRule.onNodeWithTag(TestTags.Measurements.BODY_FAT).performTextInput("-5")
 
         composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).performClick()
 
         assertNull("no body fat below zero", saved?.bodyFatTenths)
+    }
+
+    @Test
+    fun aRowSaysWhichOfTheTwoRecords_itIs() {
+        // N113: the kind leads the supporting line, so the list tells a tape day from a daily one.
+        val tape = BodyMeasurement(
+            id = "m2",
+            measuredAt = Instant.parse("2026-10-03T08:00:00Z"),
+            kind = MeasurementKind.TAPE,
+            tape = mapOf(TapeSite.WAIST to 860L),
+        )
+        setScreen(state = MeasurementsUiState(isLoading = false, entries = listOf(today, tape)))
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        composeTestRule.onNodeWithText(context.getString(R.string.measurements_kind_daily), substring = true)
+            .assertExists()
+        composeTestRule.onNodeWithText(context.getString(R.string.measurements_kind_tape), substring = true)
+            .assertExists()
     }
 }

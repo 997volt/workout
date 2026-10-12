@@ -648,14 +648,25 @@ object TestTags {
     /** The measurements screen's own tags (ROADMAP N32), grouped so this object stays under its ceiling. */
     object Measurements {
         const val ADD = "measurements_add"
+        /** The two adds the screen offers (ROADMAP N113): a daily record and a tape one. */
+        const val ADD_DAILY = "measurements_add_daily"
+        const val ADD_TAPE = "measurements_add_tape"
         const val WEIGHT = "measurements_weight"
         const val BODY_FAT = "measurements_body_fat"
         const val MUSCLE = "measurements_muscle"
         const val CONFIRM = "measurements_confirm"
-    
+
+        /**
+         * The soreness list a daily entry owns (ROADMAP N113), in the shared scored-picks editor.
+         *
+         * Its own prefix rather than the readiness note's, for the reason every tag has one: a tag
+         * addresses **one** control, and both dialogs exist in the same build.
+         */
+        internal val SORE = ScoredPickTags("measurements_sore")
+
         /** One per tape site, so a test names the site rather than a position. */
         fun tape(site: TapeSite) = "measurements_tape_${site.name.lowercase()}"
-    
+
         fun delete(id: String) = "measurements_delete_$id"
     }
 

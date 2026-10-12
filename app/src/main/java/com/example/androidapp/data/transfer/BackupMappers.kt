@@ -1,6 +1,7 @@
 package com.example.androidapp.data.transfer
 
 import com.example.androidapp.data.local.MeasurementEntity
+import com.example.androidapp.data.local.MeasurementSoreMuscleEntity
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
@@ -22,6 +23,7 @@ import com.example.androidapp.data.local.WorkoutSessionEntity
 internal fun MeasurementEntity.toDto() = MeasurementDto(
     id = id,
     measuredAt = measuredAt,
+    kind = kind,
     weightGrams = weightGrams,
     bodyFatTenths = bodyFatTenths,
     muscleTenths = muscleTenths,
@@ -40,6 +42,7 @@ internal fun MeasurementEntity.toDto() = MeasurementDto(
 internal fun MeasurementDto.toEntity() = MeasurementEntity(
     id = id,
     measuredAt = measuredAt,
+    kind = kind,
     weightGrams = weightGrams,
     bodyFatTenths = bodyFatTenths,
     muscleTenths = muscleTenths,
@@ -50,6 +53,28 @@ internal fun MeasurementDto.toEntity() = MeasurementEntity(
     upperArmMm = upperArmMm,
     thighMm = thighMm,
     calfMm = calfMm,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt,
+)
+
+internal fun MeasurementSoreMuscleEntity.toDto() = MeasurementSoreMuscleDto(
+    id = id,
+    measurementId = measurementId,
+    muscle = muscle,
+    score = score,
+    position = position,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt,
+)
+
+internal fun MeasurementSoreMuscleDto.toEntity() = MeasurementSoreMuscleEntity(
+    id = id,
+    measurementId = measurementId,
+    muscle = muscle,
+    score = score,
+    position = position,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,

@@ -42,8 +42,9 @@ import androidx.room.TypeConverters
         ProgramSubstitutionEntity::class,
         SessionSoreMuscleEntity::class,
         SessionExerciseJointEntity::class,
+        MeasurementSoreMuscleEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -52,6 +53,9 @@ abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun exerciseDao(): ExerciseDao
 
     abstract fun measurementDao(): MeasurementDao
+
+    /** The muscles a day's measurement reported sore, each with its own score (ROADMAP N113). */
+    abstract fun measurementSoreMuscleDao(): MeasurementSoreMuscleDao
 
     abstract fun statisticsDao(): StatisticsDao
 

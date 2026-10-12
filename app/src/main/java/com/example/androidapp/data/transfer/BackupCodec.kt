@@ -40,11 +40,17 @@ object BackupCodec {
      * again, and the four retired pattern names are gone from the enum. [MINIMUM_SCHEMA_VERSION] equals
      * it because 2.0 reads exactly the one shape it writes: a 1.x file is refused *before* the decoder
      * rather than decoded into a model that no longer matches it.
+     *
+     * **N113 moves it to 5 and the floor with it.** A measurement is one of two records now and may
+     * carry **no weight at all** — a soreness-only morning is a real entry — so a field that used to be
+     * required became absent, which is a change of meaning rather than an addition: a 2.x build must
+     * refuse the file rather than read a missing weight as zero. The floor moves for N104's reason,
+     * which is that this build reads exactly the one shape it writes.
      */
-    const val CURRENT_SCHEMA_VERSION = 4
+    const val CURRENT_SCHEMA_VERSION = 5
 
-    /** The oldest file this build reads: 2.0's own, and nothing earlier (ROADMAP N104). */
-    const val MINIMUM_SCHEMA_VERSION = 4
+    /** The oldest file this build reads: its own shape, and nothing earlier (ROADMAP N104, N113). */
+    const val MINIMUM_SCHEMA_VERSION = 5
 
     private val json = Json {
         prettyPrint = true

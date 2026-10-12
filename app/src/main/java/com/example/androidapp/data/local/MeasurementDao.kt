@@ -32,20 +32,21 @@ interface MeasurementDao {
     fun observeAll(): Flow<List<MeasurementEntity>>
 
     /**
-     * The live entry for a local day, if there is one (ROADMAP N32, and the decision in DECISIONS.md).
+     * The live entry of one **kind** for a local day, if there is one (ROADMAP N32, N113).
      *
      * The day is a half-open range in the caller's own zone rather than a stored date column: the entry
      * belongs to the day it was taken where it was taken, and the range is what makes that a query
-     * instead of a second source of truth.
+     * instead of a second source of truth. The kind is part of the key because a day holds **one entry
+     * of each** (N113): a tape day edits its own row rather than the one the scale wrote.
      */
     @Query(
         """
         SELECT * FROM measurements
-        WHERE measuredAt >= :from AND measuredAt < :to AND deletedAt IS NULL
+        WHERE measuredAt >= :from AND measuredAt < :to AND deletedAt IS NULL AND kind = :kind
         ORDER BY measuredAt DESC LIMIT 1
         """,
     )
-    suspend fun findOnDay(from: Long, to: Long): MeasurementEntity?
+    suspend fun findOnDay(from: Long, to: Long, kind: String): MeasurementEntity?
 
     @Query("SELECT * FROM measurements WHERE id = :id AND deletedAt IS NULL")
     suspend fun find(id: String): MeasurementEntity?

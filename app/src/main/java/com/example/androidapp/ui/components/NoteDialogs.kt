@@ -10,17 +10,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
-import com.example.androidapp.domain.model.MuscleGroup
-import com.example.androidapp.domain.model.SORE_MUSCLE_GROUPS
-import com.example.androidapp.domain.model.SoreMuscle
 
 /**
  * A skippable note: a title, an optional line of explanation, a text box, and a
@@ -96,31 +92,23 @@ fun NoteDialog(
 }
 
 /**
- * The session's readiness (ROADMAP N4, N62): the prompt a new workout opens with, and
- * the edit reached from the workout header.
+ * The session's readiness (ROADMAP N4): the prompt a new workout opens with, and the edit reached from
+ * the workout header.
  *
- * The free-text note is unchanged, and the sore-muscle list sits beside it — the note for what a
- * list cannot say, the list for the fact "quads 8, calves 3" that a sentence cannot be read back
- * one muscle at a time. Both are one save, so the two never disagree about which edit landed.
- *
- * The list is held here rather than inside the editor so the dialog's *Save* can read it: the
- * editor draws and reports, and the dialog decides what a save means.
+ * **The note is all it is.** The sore-muscle list sat beside it until N113, when soreness moved to the
+ * day's own record in the measurements screen: it is a fact about the body's recovery rather than about
+ * the workout, and on a session it could only exist on a day that was trained — the rest day, when it is
+ * the thing worth writing down, had nowhere to put it. A session that recorded one before the move keeps
+ * it, and history still reads it.
  */
 @Composable
 fun ReadinessNoteDialog(
     initialNote: String,
-    initialSoreMuscles: List<SoreMuscle>,
     isPrompt: Boolean,
     onDismiss: () -> Unit,
-    onSave: (note: String?, soreMuscles: List<SoreMuscle>) -> Unit,
+    onSave: (String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // `rememberSaveable` for the same reason the note field is: a rotation mid-edit must not throw
-    // away the muscles already picked.
-    var soreMuscles by rememberSaveable(stateSaver = SoreMusclesSaver) {
-        mutableStateOf(initialSoreMuscles)
-    }
-
     NoteDialog(
         title = stringResource(
             if (isPrompt) R.string.readiness_prompt_title else R.string.readiness_edit_title,
@@ -133,37 +121,7 @@ fun ReadinessNoteDialog(
         saveTag = TestTags.READINESS_SAVE,
         dismissTag = TestTags.READINESS_DISMISS,
         onDismiss = onDismiss,
-        onSave = { note -> onSave(note, soreMuscles) },
-        content = {
-            // The shared scored-picks editor (N63): the same interaction the per-exercise joint list
-            // uses, with the taxonomy's vocabulary passed in.
-            ScoredPicksEditor(
-                picked = soreMuscles.map { ScoredPick(it.muscle.name, it.muscle.label, it.score) },
-                options = SORE_MUSCLE_GROUPS.map {
-                    ScoredPick(it.name, it.label, DEFAULT_SCORED_PICK)
-                },
-                tags = ScoredPickTags(READINESS_SORE_TAG_PREFIX),
-                strings = ScoredPickStrings(
-                    title = stringResource(R.string.readiness_sore_title),
-                    add = stringResource(R.string.readiness_sore_add),
-                    decrease = { stringResource(R.string.readiness_sore_decrease, it) },
-                    increase = { stringResource(R.string.readiness_sore_increase, it) },
-                    remove = { stringResource(R.string.readiness_sore_remove, it) },
-                ),
-                onAdd = { key ->
-                    val muscle = MuscleGroup.valueOf(key)
-                    soreMuscles = soreMuscles + SoreMuscle(muscle, DEFAULT_SCORED_PICK)
-                },
-                onScore = { key, score ->
-                    soreMuscles = soreMuscles.map {
-                        if (it.muscle.name == key) it.copy(score = score) else it
-                    }
-                },
-                onRemove = { key ->
-                    soreMuscles = soreMuscles.filterNot { it.muscle.name == key }
-                },
-            )
-        },
+        onSave = onSave,
         modifier = modifier,
     )
 }
@@ -195,20 +153,3 @@ fun WorkoutNoteDialog(
         modifier = modifier,
     )
 }
-
-/**
- * Saves the picked list as `MUSCLE:score` strings — the shape saved instance state can hold.
- *
- * A name that no longer resolves and a score that no longer parses are both dropped rather than
- * guessed at: this is a restoration, and inventing a muscle would write something nobody picked.
- */
-private val SoreMusclesSaver = listSaver<List<SoreMuscle>, String>(
-    save = { muscles -> muscles.map { "${it.muscle.name}:${it.score}" } },
-    restore = { saved ->
-        saved.mapNotNull { entry ->
-            val muscle = MuscleGroup.entries.firstOrNull { it.name == entry.substringBefore(":") }
-            val score = entry.substringAfter(":").toIntOrNull()
-            if (muscle == null || score == null) null else SoreMuscle(muscle, score)
-        }
-    },
-)

@@ -276,6 +276,12 @@
     <string name="app_name">Workout</string>
     <string name="measurements_title">Measurements</string>
     <string name="measurements_add">Add measurement</string>
+    <!-- The body's record is two records (ROADMAP N113): a daily one and a tape one, added on their
+         own. These four label the two adds and the kind each row is. -->
+    <string name="measurements_add_daily">Daily measurement</string>
+    <string name="measurements_add_tape">Tape measurements</string>
+    <string name="measurements_kind_daily">Daily</string>
+    <string name="measurements_kind_tape">Tape</string>
     <string name="measurements_empty">No measurements yet.</string>
     <string name="measurements_weight">Weight</string>
     <string name="measurements_body_fat">Body fat %</string>

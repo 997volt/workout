@@ -3,7 +3,6 @@ package com.example.androidapp.ui.measurements
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.BodyMeasurement
-import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.repository.MeasurementRepository
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +21,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import com.example.androidapp.domain.model.MeasurementKind
 
 /** What the measurements screen's ViewModel owns: passing an entry on, and reporting what came back. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -90,8 +90,8 @@ class MeasurementsViewModelTest {
     private fun entry(id: String, weight: Long) = BodyMeasurement(
         id = id,
         measuredAt = Instant.parse("2026-10-02T08:00:00Z"),
+        kind = MeasurementKind.DAILY,
         weightGrams = weight,
-        tape = mapOf(TapeSite.WAIST to 860L),
     )
 }
 

@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.androidapp.data.local.MIGRATION_1_2
+import com.example.androidapp.data.local.MIGRATION_2_3
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.seedMissingExercises
 import com.example.androidapp.domain.TimeSource
@@ -30,9 +31,10 @@ object DatabaseModule {
     ): WorkoutDatabase =
         Room.databaseBuilder(context, WorkoutDatabase::class.java, WorkoutDatabase.NAME)
             // 2.0's store was created at schema 1 and 1.x's file is a different one this build never
-            // opens, so the only migration is N110's: the library's shape became a category over
-            // movements, which re-files the rows a variation created (ROADMAP N110).
-            .addMigrations(MIGRATION_1_2)
+            // opens, so there are two migrations: N110's, which re-files the rows a variation created
+            // when the library became a category over movements, and N113's, which splits the body's
+            // record in two and lets a measurement weigh nothing.
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .addCallback(
                 object : RoomDatabase.Callback() {
                     /**

@@ -37,7 +37,7 @@ the rule; that one argues it.
   [detekt.yml](config/detekt/detekt.yml) rather than left to the rule's default, so the next ambient
   is a decision rather than a habit.
 - **The muscles are one vocabulary, and the split is the list** (N75, completed by N105). Adductors is a
-  `MuscleGroup` entry and nothing else: the readiness note's sore list is derived from the taxonomy
+  `MuscleGroup` entry and nothing else: the daily record's sore list is derived from the taxonomy
   (`SORE_MUSCLE_GROUPS` is the selectable groups minus *Other*), so a second list of "muscles you can
   be sore in" would be two vocabularies for one idea — and the same entry makes it an exercise's
   primary muscle, which is where the taxonomy belongs. **`BACK` split into `LATS`, `UPPER_BACK` and
@@ -433,11 +433,24 @@ the rule; that one argues it.
   it as accepted instead leaves a trace of a deleted feature on a user's device to save
   four lines. ([evidence](DECISIONS-EVIDENCE.md#b37-and-b40))
 
-- **A measurement is one entry per day, edited rather than added to** (N32). Several per
-  day makes "what did I weigh today" a question with more than one answer, and a second
-  reading is nearly always a correction of the first; the day is the local day it was
-  taken, which is N25's rule for a session's time.
+- **A measurement is one entry per day, edited rather than added to** (N32, amended by N113 to one per
+  **kind**). Several per day makes "what did I weigh today" a question with more than one answer, and a
+  second reading is nearly always a correction of the first; the day is the local day it was taken, which
+  is N25's rule for a session's time. Since N113 the record is two records — a daily one and a tape one —
+  so a day holds one of each, and a tape day edits its own row rather than the one the scale wrote.
   ([evidence](DECISIONS-EVIDENCE.md#n32))
+- **The body's record is two records, and soreness belongs to the day** (N113). A *daily* entry holds what
+  a day says about the body — soreness, weight, body fat, muscle — and a *tape* entry holds the sites. They
+  are separate because they are taken on different days and ask different questions, which is what one form
+  could not be: **the weight stopped being required**, because a soreness-only morning is a real entry, and
+  the form asks for what its own kind states rather than for everything (`statesSomething` is the rule
+  *Save* reads). **Soreness is here rather than on the session** (N62's list, moved): it is a fact about the
+  body's recovery, and a session could carry it only on a day that was trained — the rest day, when it is
+  the thing worth writing down, had nowhere to put it. The rows an older session recorded stay on it and
+  keep reading in history. **Both kinds ride one table and one export list**, each row carrying only its own
+  kind's numbers, so the statistics screen's body and tape series keep reading one list — and the transfer
+  format moved to 5 with its floor, because a weight that may be absent is a field whose meaning changed
+  rather than one that was added.
 - **An unmeasured tape site stays blank** (N32) — carrying a value forward is
   indistinguishable from a measurement and draws a flat line through a site nobody
   measured.

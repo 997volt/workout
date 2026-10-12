@@ -42,7 +42,6 @@ import com.example.androidapp.domain.model.ProgressionChoice
 import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.domain.model.progressionPromptFor
 import com.example.androidapp.domain.repository.TemplateSetEdit
-import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.taxonomySubtitle
 import com.example.androidapp.domain.repository.ProgramRepository
@@ -202,8 +201,6 @@ data class ActiveWorkoutUiState(
     val pendingFinishedExerciseId: String? = null,
     /** What was not recovered today, or null (ROADMAP N4). */
     val readinessNote: String? = null,
-    /** The muscles it reported sore, each with its own score (ROADMAP N62). */
-    val readinessSoreMuscles: List<SoreMuscle> = emptyList(),
     /** True while a just-opened session is asking for that note. */
     val isReadinessPromptVisible: Boolean = false,
     /** Set when a write failed, so the screen can say so instead of lying. */
@@ -951,14 +948,15 @@ class ActiveWorkoutViewModel @Inject constructor(
     }
 
     /**
-     * Writes the readiness (ROADMAP N4, N62), from the prompt a new session opens with or from the
-     * workout header afterwards. A null or blank note clears it; the sore-muscle list replaces
-     * whatever was stored, so an empty one clears it.
+     * Writes the readiness note (ROADMAP N4), from the prompt a new session opens with or from the
+     * workout header afterwards. A null or blank note clears it.
+     *
+     * Soreness is not part of this any more (N113): it is recorded with the day, in measurements.
      */
-    fun onSaveReadinessNote(note: String?, soreMuscles: List<SoreMuscle>) {
+    fun onSaveReadinessNote(note: String?) {
         val sessionId = uiState.value.sessionId ?: return
         viewModelScope.launch {
-            when (val result = workoutRepository.setReadiness(sessionId, note, soreMuscles)) {
+            when (val result = workoutRepository.setReadiness(sessionId, note)) {
                 is DataResult.Success -> {
                     lastError.value = null
                     readinessPromptVisible.value = false
@@ -1162,7 +1160,6 @@ private fun Snapshot.toUiState(
         pendingUndo = undo,
         pendingFinishedExerciseId = pendingFinishedExerciseId,
         readinessNote = session?.readinessNote,
-        readinessSoreMuscles = session?.soreMuscles.orEmpty(),
         isReadinessPromptVisible = readinessPromptVisible,
         error = error,
     )

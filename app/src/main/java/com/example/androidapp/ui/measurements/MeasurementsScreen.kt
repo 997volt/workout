@@ -28,6 +28,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -40,8 +42,17 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SORE_MUSCLE_GROUPS
+import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.at
+import com.example.androidapp.domain.model.statesSomething
+import com.example.androidapp.ui.components.DEFAULT_SCORED_PICK
+import com.example.androidapp.ui.components.ScoredPick
+import com.example.androidapp.ui.components.ScoredPickStrings
+import com.example.androidapp.ui.components.ScoredPicksEditor
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.MessageSnackbar
@@ -50,7 +61,7 @@ import com.example.androidapp.ui.history.HistoryFormat
 import java.time.Instant
 import java.time.ZoneId
 
-/** Measurements, reached from home (ROADMAP N32). */
+/** Measurements, reached from home (ROADMAP N32, two records since N113). */
 @Composable
 fun MeasurementsRoute(
     onBack: () -> Unit,
@@ -83,14 +94,28 @@ fun MeasurementsScreen(
     error: DataError? = null,
     onDismissError: () -> Unit = {},
 ) {
-    var adding by remember { mutableStateOf(false) }
+    // Two steps rather than one: the record is two records, so *Add* asks which before it opens a form
+    // (N113). Null is "no form open"; `choosing` is the question.
+    var choosing by remember { mutableStateOf(false) }
+    var adding by remember { mutableStateOf<MeasurementKind?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(error?.let { dataErrorMessage(it) }, snackbarHostState, onDismissError)
-    if (adding) {
+
+    if (choosing) {
+        AddMeasurementDialog(
+            onDismiss = { choosing = false },
+            onPick = { kind ->
+                choosing = false
+                adding = kind
+            },
+        )
+    }
+    adding?.let { kind ->
         MeasurementDialog(
-            onDismiss = { adding = false },
+            kind = kind,
+            onDismiss = { adding = null },
             onConfirm = { measurement ->
-                adding = false
+                adding = null
                 onSave(measurement)
             },
         )
@@ -114,7 +139,7 @@ fun MeasurementsScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { adding = true },
+                onClick = { choosing = true },
                 modifier = Modifier.testTag(TestTags.Measurements.ADD),
             ) {
                 Icon(
@@ -124,19 +149,71 @@ fun MeasurementsScreen(
             }
         },
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            if (state.entries.isEmpty() && !state.isLoading) {
-                Text(
-                    text = stringResource(R.string.measurements_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(16.dp),
-                )
-            }
-            state.entries.forEach { entry ->
-                MeasurementRow(entry = entry, onDelete = { onDelete(entry.id) })
-            }
+        MeasurementList(state = state, onDelete = onDelete, modifier = Modifier.padding(innerPadding))
+    }
+}
+
+/** The list under the app bar, with the sentence an empty one says (N32, N113). */
+@Composable
+private fun MeasurementList(
+    state: MeasurementsUiState,
+    onDelete: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxSize()) {
+        if (state.entries.isEmpty() && !state.isLoading) {
+            Text(
+                text = stringResource(R.string.measurements_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+        state.entries.forEach { entry ->
+            MeasurementRow(entry = entry, onDelete = { onDelete(entry.id) })
         }
     }
+}
+
+/**
+ * Which of the two records to add (ROADMAP N113).
+ *
+ * A question rather than one form with everything on it: a tape day has no weight to state, and a daily
+ * entry has no business asking for seven sites — which is what the single form did, and why a tape-only
+ * day had to invent a scale reading to save at all.
+ */
+@Composable
+private fun AddMeasurementDialog(
+    onDismiss: () -> Unit,
+    onPick: (MeasurementKind) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.measurements_add)) },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AppTextButton(
+                    onClick = { onPick(MeasurementKind.DAILY) },
+                    modifier = Modifier.testTag(TestTags.Measurements.ADD_DAILY),
+                ) {
+                    Text(stringResource(R.string.measurements_add_daily))
+                }
+                AppTextButton(
+                    onClick = { onPick(MeasurementKind.TAPE) },
+                    modifier = Modifier.testTag(TestTags.Measurements.ADD_TAPE),
+                ) {
+                    Text(stringResource(R.string.measurements_add_tape))
+                }
+            }
+        },
+        // The two choices are the whole dialog, so there is nothing for a confirm button to confirm.
+        confirmButton = {},
+        dismissButton = {
+            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
 }
 
 /**
@@ -144,7 +221,8 @@ fun MeasurementsScreen(
  *
  * The date is rendered in the device's zone rather than the entry's own, which is the one place N25's
  * rule does not apply: a measurement is not performed anywhere in particular, and the day it belongs to
- * is already the local day the repository keyed it on.
+ * is already the local day the repository keyed it on. The kind leads the supporting line, so a row says
+ * which of the two records it is (N113).
  */
 @Composable
 private fun MeasurementRow(entry: BodyMeasurement, onDelete: () -> Unit) {
@@ -162,23 +240,38 @@ private fun MeasurementRow(entry: BodyMeasurement, onDelete: () -> Unit) {
     )
 }
 
-/** What an entry reads as: the weight, and whichever of the optional numbers were taken. */
+/** What an entry reads as: which record it is, then whichever of its own numbers were taken (N113). */
+@Composable
 private fun summary(entry: BodyMeasurement): String {
-    val parts = mutableListOf(Weight.kilograms(entry.weightGrams))
+    val parts = mutableListOf(stringResource(kindLabel(entry.kind)))
+    // The weight is the one number that may be absent, because a soreness-only morning is a real entry.
+    entry.weightGrams?.let { parts += Weight.kilograms(it) }
     entry.bodyFatTenths?.let { parts += MeasurementFormat.percent(it) }
     entry.muscleTenths?.let { parts += MeasurementFormat.percent(it) }
     TapeSite.entries.forEach { site -> entry.at(site)?.let { parts += MeasurementFormat.centimetres(it) } }
+    if (entry.soreMuscles.isNotEmpty()) {
+        parts += entry.soreMuscles.joinToString(", ") { "${it.muscle.label} ${it.score}" }
+    }
     return parts.joinToString(" · ")
 }
 
+private fun kindLabel(kind: MeasurementKind): Int = when (kind) {
+    MeasurementKind.DAILY -> R.string.measurements_kind_daily
+    MeasurementKind.TAPE -> R.string.measurements_kind_tape
+}
+
 /**
- * The entry form: a weight, and everything else only if it was measured (ROADMAP N32).
+ * One record's form: the numbers that kind states, and nothing of the other kind's (ROADMAP N113).
  *
  * A form rather than a single line, because the optional numbers are optional in the sense that a person
- * may have measured none of them — leaving one blank has to be as easy as filling it in.
+ * may have measured none of them — leaving one blank has to be as easy as filling it in. **Save is
+ * offered once the entry states at least one of its own numbers**: the weight used to be the one thing
+ * an entry could not be without, and a soreness-only morning is a real entry, so what the form refuses
+ * is an entry that states nothing at all.
  */
 @Composable
 private fun MeasurementDialog(
+    kind: MeasurementKind,
     onDismiss: () -> Unit,
     onConfirm: (BodyMeasurement) -> Unit,
 ) {
@@ -186,41 +279,50 @@ private fun MeasurementDialog(
     var bodyFat by remember { mutableStateOf("") }
     var muscle by remember { mutableStateOf("") }
     var tape by remember { mutableStateOf<Map<TapeSite, String>>(emptyMap()) }
+    // `rememberSaveable` for the same reason the note's other dialogs hold their picks that way: a
+    // rotation mid-edit must not throw away the muscles already picked (N113).
+    var soreMuscles by rememberSaveable(stateSaver = SoreMusclesSaver) {
+        mutableStateOf(emptyList<SoreMuscle>())
+    }
+    val measuredAt = remember { Instant.now() }
+
+    val draft = BodyMeasurement(
+        // A blank id is a new entry, which the repository places by its day and kind.
+        id = "",
+        measuredAt = measuredAt,
+        kind = kind,
+        weightGrams = Weight.parseKilograms(weight),
+        bodyFatTenths = tenths(bodyFat),
+        muscleTenths = tenths(muscle),
+        tape = tape.mapNotNull { (site, text) -> millimetres(text)?.let { site to it } }.toMap(),
+        soreMuscles = soreMuscles,
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.measurements_add)) },
+        title = { Text(stringResource(kindAddLabel(kind))) },
         text = {
-            MeasurementFields(
-                weight = weight,
-                onWeightChange = { weight = it },
-                bodyFat = bodyFat,
-                onBodyFatChange = { bodyFat = it },
-                muscle = muscle,
-                onMuscleChange = { muscle = it },
-                tape = tape,
-                onTapeChange = { site, text -> tape = tape + (site to text) },
-            )
+            when (kind) {
+                MeasurementKind.DAILY -> DailyFields(
+                    weight = weight,
+                    onWeightChange = { weight = it },
+                    bodyFat = bodyFat,
+                    onBodyFatChange = { bodyFat = it },
+                    muscle = muscle,
+                    onMuscleChange = { muscle = it },
+                    soreMuscles = soreMuscles,
+                    onSoreMusclesChange = { soreMuscles = it },
+                )
+
+                MeasurementKind.TAPE -> TapeFields(tape = tape, onTapeChange = { site, text ->
+                    tape = tape + (site to text)
+                })
+            }
         },
         confirmButton = {
             AppTextButton(
-                onClick = {
-                    onConfirm(
-                        BodyMeasurement(
-                            // A blank id is a new entry, which the repository places by its day.
-                            id = "",
-                            measuredAt = Instant.now(),
-                            weightGrams = Weight.parseKilograms(weight) ?: 0L,
-                            bodyFatTenths = tenths(bodyFat),
-                            muscleTenths = tenths(muscle),
-                            tape = tape.mapNotNull { (site, text) ->
-                                millimetres(text)?.let { site to it }
-                            }.toMap(),
-                        ),
-                    )
-                },
-                // The weight is the one thing an entry cannot be without.
-                enabled = Weight.parseKilograms(weight) != null,
+                onClick = { onConfirm(draft) },
+                enabled = draft.statesSomething(),
                 modifier = Modifier.testTag(TestTags.Measurements.CONFIRM),
             ) {
                 Text(stringResource(R.string.action_save))
@@ -231,6 +333,100 @@ private fun MeasurementDialog(
         },
     )
 }
+
+private fun kindAddLabel(kind: MeasurementKind): Int = when (kind) {
+    MeasurementKind.DAILY -> R.string.measurements_add_daily
+    MeasurementKind.TAPE -> R.string.measurements_add_tape
+}
+
+/** What a day says about the body: soreness, weight and the two percentages (N113). */
+@Composable
+private fun DailyFields(
+    weight: String,
+    onWeightChange: (String) -> Unit,
+    bodyFat: String,
+    onBodyFatChange: (String) -> Unit,
+    muscle: String,
+    onMuscleChange: (String) -> Unit,
+    soreMuscles: List<SoreMuscle>,
+    onSoreMusclesChange: (List<SoreMuscle>) -> Unit,
+) {
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        NumberField(
+            label = stringResource(R.string.measurements_weight),
+            value = weight,
+            onValueChange = onWeightChange,
+            testTag = TestTags.Measurements.WEIGHT,
+        )
+        NumberField(
+            label = stringResource(R.string.measurements_body_fat),
+            value = bodyFat,
+            onValueChange = onBodyFatChange,
+            testTag = TestTags.Measurements.BODY_FAT,
+        )
+        NumberField(
+            label = stringResource(R.string.measurements_muscle),
+            value = muscle,
+            onValueChange = onMuscleChange,
+            testTag = TestTags.Measurements.MUSCLE,
+        )
+        // The sore list, moved here from the workout's readiness note (N113): the same shared editor and
+        // the same taxonomy, so the vocabulary is the app's one list of muscles either way.
+        ScoredPicksEditor(
+            picked = soreMuscles.map { ScoredPick(it.muscle.name, it.muscle.label, it.score) },
+            options = SORE_MUSCLE_GROUPS.map { ScoredPick(it.name, it.label, DEFAULT_SCORED_PICK) },
+            tags = TestTags.Measurements.SORE,
+            strings = ScoredPickStrings(
+                title = stringResource(R.string.readiness_sore_title),
+                add = stringResource(R.string.readiness_sore_add),
+                decrease = { stringResource(R.string.readiness_sore_decrease, it) },
+                increase = { stringResource(R.string.readiness_sore_increase, it) },
+                remove = { stringResource(R.string.readiness_sore_remove, it) },
+            ),
+            onAdd = { key ->
+                onSoreMusclesChange(soreMuscles + SoreMuscle(MuscleGroup.valueOf(key), DEFAULT_SCORED_PICK))
+            },
+            onScore = { key, score ->
+                onSoreMusclesChange(
+                    soreMuscles.map { if (it.muscle.name == key) it.copy(score = score) else it },
+                )
+            },
+            onRemove = { key -> onSoreMusclesChange(soreMuscles.filterNot { it.muscle.name == key }) },
+        )
+    }
+}
+
+/** A tape day: the sites, and nothing else (N113). */
+@Composable
+private fun TapeFields(tape: Map<TapeSite, String>, onTapeChange: (TapeSite, String) -> Unit) {
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        TapeSite.entries.forEach { site ->
+            NumberField(
+                label = stringResource(tapeLabel(site)),
+                value = tape[site].orEmpty(),
+                onValueChange = { onTapeChange(site, it) },
+                testTag = TestTags.Measurements.tape(site),
+            )
+        }
+    }
+}
+
+/** Survives a rotation mid-edit, the shape the readiness note's own list used (N113). */
+private val SoreMusclesSaver = listSaver<List<SoreMuscle>, String>(
+    save = { muscles -> muscles.flatMap { listOf(it.muscle.name, it.score.toString()) } },
+    restore = { flat ->
+        flat.chunked(2).mapNotNull { (name, score) ->
+            val muscle = MuscleGroup.entries.firstOrNull { it.name == name }
+            if (muscle == null) null else SoreMuscle(muscle, score.toIntOrNull() ?: DEFAULT_SCORED_PICK)
+        }
+    },
+)
 
 @Composable
 private fun NumberField(
@@ -285,49 +481,4 @@ private fun tapeLabel(site: TapeSite): Int = when (site) {
     TapeSite.UPPER_ARM -> R.string.measurements_upper_arm
     TapeSite.THIGH -> R.string.measurements_thigh
     TapeSite.CALF -> R.string.measurements_calf
-}
-
-/** The form's fields, together so the dialog reads as a dialog (ROADMAP N32). */
-@Composable
-private fun MeasurementFields(
-    weight: String,
-    onWeightChange: (String) -> Unit,
-    bodyFat: String,
-    onBodyFatChange: (String) -> Unit,
-    muscle: String,
-    onMuscleChange: (String) -> Unit,
-    tape: Map<TapeSite, String>,
-    onTapeChange: (TapeSite, String) -> Unit,
-) {
-    Column(
-        modifier = Modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        NumberField(
-            label = stringResource(R.string.measurements_weight),
-            value = weight,
-            onValueChange = onWeightChange,
-            testTag = TestTags.Measurements.WEIGHT,
-        )
-        NumberField(
-            label = stringResource(R.string.measurements_body_fat),
-            value = bodyFat,
-            onValueChange = onBodyFatChange,
-            testTag = TestTags.Measurements.BODY_FAT,
-        )
-        NumberField(
-            label = stringResource(R.string.measurements_muscle),
-            value = muscle,
-            onValueChange = onMuscleChange,
-            testTag = TestTags.Measurements.MUSCLE,
-        )
-        TapeSite.entries.forEach { site ->
-            NumberField(
-                label = stringResource(tapeLabel(site)),
-                value = tape[site].orEmpty(),
-                onValueChange = { onTapeChange(site, it) },
-                testTag = TestTags.Measurements.tape(site),
-            )
-        }
-    }
 }

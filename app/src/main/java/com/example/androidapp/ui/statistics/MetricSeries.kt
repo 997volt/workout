@@ -48,9 +48,11 @@ fun metricSeries(
     }.sortedBy { it.at },
 )
 
-/** What a body metric reads from an entry, in the units the registry formats (ROADMAP N32). */
+/** What a body metric reads from an entry, in the units the registry formats (ROADMAP N32, N113). */
 private fun bodyValue(metric: BodyMetric, measurement: BodyMeasurement): Double? = when (metric) {
-    BodyMetric.WEIGHT -> measurement.weightGrams.toDouble()
+    // A daily entry may state no weight at all (N113), and a tape entry never does: null is a reading
+    // this series simply does not have, which is what the chart already skips.
+    BodyMetric.WEIGHT -> measurement.weightGrams?.toDouble()
     BodyMetric.BODY_FAT -> measurement.bodyFatTenths?.toDouble()
     BodyMetric.MUSCLE -> measurement.muscleTenths?.toDouble()
 }

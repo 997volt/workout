@@ -44,6 +44,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import com.example.androidapp.domain.model.MeasurementKind
 
 /**
  * What the Statistics screen reads (ROADMAP N35).
@@ -174,6 +175,7 @@ class StatisticsViewModelTest {
     private fun measurement(at: Instant, weight: Long) = BodyMeasurement(
         id = "m-$at",
         measuredAt = at,
+        kind = MeasurementKind.DAILY,
         weightGrams = weight,
         tape = emptyMap<TapeSite, Long>(),
     )

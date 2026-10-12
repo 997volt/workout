@@ -23,6 +23,8 @@ import com.example.androidapp.data.local.WorkoutSessionEntity
 import java.time.DayOfWeek
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import com.example.androidapp.data.local.MeasurementSoreMuscleEntity
+import com.example.androidapp.domain.model.MeasurementKind
 
 /**
  * Every column survives a trip through the backup codec.
@@ -51,6 +53,7 @@ class BackupCodecRoundTripTest {
         val entity = MeasurementEntity(
             id = "m1",
             measuredAt = 1_700_000_000_000L,
+            kind = MeasurementKind.DAILY,
             weightGrams = 82_450L,
             bodyFatTenths = 183,
             muscleTenths = 421,
@@ -64,6 +67,24 @@ class BackupCodecRoundTripTest {
             createdAt = 1_700_000_000_001L,
             updatedAt = 1_700_000_000_002L,
             deletedAt = 1_700_000_000_003L,
+        )
+
+        assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aDaySoreMuscles_surviveTheCodec() {
+        // The collection N113 added, on the shape this file exists to hold: a row whose only fault is a
+        // field the codec forgets comes back as its default, and nothing else would notice.
+        val entity = MeasurementSoreMuscleEntity(
+            id = "msm1",
+            measurementId = "m1",
+            muscle = MuscleGroup.QUADS,
+            score = 8,
+            position = 1,
+            createdAt = 1_700_000_000_000L,
+            updatedAt = 1_700_000_000_001L,
+            deletedAt = null,
         )
 
         assertThat(entity.toDto().toEntity()).isEqualTo(entity)

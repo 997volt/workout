@@ -8,7 +8,6 @@ import androidx.room.withTransaction
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
-import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.WorkoutDao
 import com.example.androidapp.data.local.toDomain
@@ -25,7 +24,6 @@ import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.nowEpochMillis
@@ -315,47 +313,19 @@ class RoomWorkoutRepository @Inject constructor(
         dao.updateRestTimer(id = sessionId, restEndsAt = null, at = now)
     }
 
-    override suspend fun setReadiness(
-        sessionId: String,
-        note: String?,
-        soreMuscles: List<SoreMuscle>,
-    ): DataResult<Unit> = dataResultOf {
-        // The same 1–10 scale as a set's RPE and the per-exercise ratings, so the one validator
-        // covers them (ROADMAP N8, N62). Checked before any write, so a bad score cannot leave a
-        // save half-landed.
-        if (soreMuscles.any { !TenPointScale.isValid(it.score) }) {
-            throw InvalidInputException(
-                "A sore-muscle score must be between ${TenPointScale.MIN} and ${TenPointScale.MAX}.",
-            )
-        }
-        // Blank is stored as null rather than "": two representations of "nothing
-        // written" would show up differently on the workout header.
+    /**
+     * Writes the session's readiness note (ROADMAP N4).
+     *
+     * A blank note is stored as null rather than "", so "nothing written" has one representation. The
+     * sore-muscle list this used to replace belongs to the **daily record** now (N113): a session's own
+     * rows are what an older workout opened with, they still read in history, and nothing new is written
+     * to them — so a workout no longer asks for a list that a rest day could not have given it.
+     */
+    override suspend fun setReadiness(sessionId: String, note: String?): DataResult<Unit> = dataResultOf {
         val cleaned = note?.trim()?.ifEmpty { null }
         val now = timeSource.nowEpochMillis()
-        val updated = dao.updateReadinessNote(id = sessionId, note = cleaned, at = now)
-        if (updated == 0) throw NotFoundException("session $sessionId")
-
-        // A save **replaces** the list (N62): the editor shows exactly what is stored, so a muscle
-        // missing from it was removed by the lifter. The two statements are not wrapped in a
-        // transaction, the shape `deleteSession` already uses — the session write above has already
-        // refused a dead session, so the only failure window hides the old list and shows the new
-        // one empty rather than mixing the two.
-        soreMuscleDao.softDeleteForSession(sessionId = sessionId, at = now)
-        if (soreMuscles.isNotEmpty()) {
-            soreMuscleDao.insertAll(
-                soreMuscles.mapIndexed { index, sore ->
-                    SessionSoreMuscleEntity(
-                        id = UUID.randomUUID().toString(),
-                        sessionId = sessionId,
-                        muscle = sore.muscle,
-                        score = sore.score,
-                        position = index,
-                        createdAt = now,
-                        updatedAt = now,
-                        deletedAt = null,
-                    )
-                },
-            )
+        if (dao.updateReadinessNote(id = sessionId, note = cleaned, at = now) == 0) {
+            throw NotFoundException("session $sessionId")
         }
     }
 

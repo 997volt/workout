@@ -10,6 +10,7 @@ import com.example.androidapp.domain.model.TrendMetric
 import com.example.androidapp.domain.model.TrendPoint
 import java.time.Instant
 import org.junit.Test
+import com.example.androidapp.domain.model.MeasurementKind
 
 /**
  * Reading a series out of whatever the metric is stored in (ROADMAP N35).
@@ -88,7 +89,7 @@ class MetricSeriesTest {
         // moment rather than as an entry that does not exist (ROADMAP N32).
         val series = metricSeries(
             key = MetricKey.Tape(TapeSite.WAIST),
-            measurements = listOf(measurement(weight = 82_400L, waist = null)),
+            measurements = listOf(measurement(waist = null, kind = MeasurementKind.TAPE)),
         )
 
         assertThat(series.readings.size).isEqualTo(1)
@@ -99,7 +100,7 @@ class MetricSeriesTest {
     fun aTapeSiteReadsItsOwnValue_whenItWasMeasured() {
         val series = metricSeries(
             key = MetricKey.Tape(TapeSite.WAIST),
-            measurements = listOf(measurement(weight = 82_400L, waist = 864L)),
+            measurements = listOf(measurement(waist = 864L, kind = MeasurementKind.TAPE)),
         )
 
         assertThat(series.readings.single().value).isEqualTo(864.0)
@@ -130,13 +131,15 @@ class MetricSeriesTest {
 
     private fun measurement(
         at: Instant = first,
-        weight: Long,
+        weight: Long? = null,
         bodyFat: Int? = null,
         muscle: Int? = null,
         waist: Long? = null,
+        kind: MeasurementKind = MeasurementKind.DAILY,
     ) = BodyMeasurement(
         id = "m",
         measuredAt = at,
+        kind = kind,
         weightGrams = weight,
         bodyFatTenths = bodyFat,
         muscleTenths = muscle,

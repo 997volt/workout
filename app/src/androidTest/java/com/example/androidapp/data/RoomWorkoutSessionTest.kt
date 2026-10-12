@@ -63,16 +63,11 @@ class RoomWorkoutSessionTest {
         assertTrue(started.isNew)
 
         assertTrue(
-            repository.setReadiness(
-                started.id,
-                "Shoulders still sore",
-                listOf(SoreMuscle(MuscleGroup.SHOULDERS, 7)),
-            ) is DataResult.Success,
+            repository.setReadiness(started.id, "Shoulders still sore") is DataResult.Success,
         )
 
         val stored = repository.observeSession(started.id).first()
         assertEquals("Shoulders still sore", stored?.readinessNote)
-        assertEquals(listOf(SoreMuscle(MuscleGroup.SHOULDERS, 7)), stored?.soreMuscles)
     }
 
     @Test
@@ -87,13 +82,13 @@ class RoomWorkoutSessionTest {
     @Test
     fun aBlankNote_isStoredAsNull_ratherThanAnEmptyString() = runTest {
         val started = start()
-        repository.setReadiness(started.id, "Shoulders sore", emptyList())
+        repository.setReadiness(started.id, "Shoulders sore")
         assertEquals(
             "Shoulders sore",
             repository.observeSession(started.id).first()?.readinessNote,
         )
 
-        repository.setReadiness(started.id, "   ", emptyList())
+        repository.setReadiness(started.id, "   ")
 
         assertNull(
             "clearing the field must leave one representation of nothing",
@@ -102,48 +97,8 @@ class RoomWorkoutSessionTest {
     }
 
     @Test
-    fun savingTheSoreMuscles_replacesTheList_ratherThanMergingIntoIt() = runTest {
-        // ROADMAP N62: a save is what the editor shows. Removing a muscle has to reach the
-        // database, or removing one would silently do nothing.
-        val started = start()
-        repository.setReadiness(
-            started.id,
-            null,
-            listOf(SoreMuscle(MuscleGroup.QUADS, 8), SoreMuscle(MuscleGroup.CALVES, 3)),
-        )
-        assertEquals(
-            listOf(SoreMuscle(MuscleGroup.QUADS, 8), SoreMuscle(MuscleGroup.CALVES, 3)),
-            repository.observeSession(started.id).first()?.soreMuscles,
-        )
-
-        repository.setReadiness(started.id, null, listOf(SoreMuscle(MuscleGroup.QUADS, 9)))
-
-        assertEquals(
-            "the list is replaced, so the calf is gone rather than kept",
-            listOf(SoreMuscle(MuscleGroup.QUADS, 9)),
-            repository.observeSession(started.id).first()?.soreMuscles,
-        )
-    }
-
-    @Test
-    fun aScoreOffTheScale_isRefused_andNothingIsWritten() = runTest {
-        val started = start()
-
-        val failure = repository.setReadiness(
-            started.id,
-            "Sore all over",
-            listOf(SoreMuscle(MuscleGroup.QUADS, 11)),
-        ) as DataResult.Failure
-
-        assertTrue(failure.error is DataError.Invalid)
-        val stored = repository.observeSession(started.id).first()
-        assertNull("a refused save must not write the note either", stored?.readinessNote)
-        assertEquals(emptyList<SoreMuscle>(), stored?.soreMuscles)
-    }
-
-    @Test
     fun setReadiness_onAGoneSession_isNotFound() = runTest {
-        val failure = repository.setReadiness("no-such-session", "x", emptyList()) as DataResult.Failure
+        val failure = repository.setReadiness("no-such-session", "x") as DataResult.Failure
 
         assertEquals(DataError.NotFound, failure.error)
     }
@@ -153,7 +108,7 @@ class RoomWorkoutSessionTest {
         // "everything in it" is the delete's contract (N62): a soft-deleted workout must not leave
         // its soreness live for the next read to find.
         val started = start()
-        repository.setReadiness(started.id, null, listOf(SoreMuscle(MuscleGroup.CORE, 4)))
+        repository.setReadiness(started.id, null)
 
         repository.deleteSession(started.id)
 

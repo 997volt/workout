@@ -33,7 +33,6 @@ import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
-import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.repository.StartedSession
@@ -280,7 +279,7 @@ class ActiveWorkoutViewModelTest {
         observe(viewModel)
         settle()
 
-        viewModel.onSaveReadinessNote("Shoulders still sore from Monday", emptyList())
+        viewModel.onSaveReadinessNote("Shoulders still sore from Monday")
         settle()
 
         assertEquals("Shoulders still sore from Monday", repository.lastReadinessNote)
@@ -309,7 +308,7 @@ class ActiveWorkoutViewModelTest {
             assertThat(before.isReadinessPromptVisible).isTrue()
             assertThat(before.readinessNote).isNull()
 
-            viewModel.onSaveReadinessNote("Shoulders still sore from Monday", emptyList())
+            viewModel.onSaveReadinessNote("Shoulders still sore from Monday")
             settle()
 
             // `StateFlow` conflates, so this yields the settled state rather than
@@ -347,48 +346,11 @@ class ActiveWorkoutViewModelTest {
         observe(viewModel)
         settle()
 
-        viewModel.onSaveReadinessNote("   ", emptyList())
+        viewModel.onSaveReadinessNote("   ")
         settle()
 
         assertNull(repository.lastReadinessNote)
         assertNull(viewModel.uiState.value.readinessNote)
-    }
-
-    @Test
-    fun savingTheSoreMuscles_writesThem_alongsideTheNote() = runTest(dispatcher) {
-        // ROADMAP N62: the note and the list are one save, so the workout header can never show one
-        // half of an edit that landed.
-        val repository = FakeWorkoutRepository()
-        val viewModel = viewModelFor(repository)
-        observe(viewModel)
-        settle()
-
-        val sore = listOf(SoreMuscle(MuscleGroup.QUADS, 8), SoreMuscle(MuscleGroup.CALVES, 3))
-        viewModel.onSaveReadinessNote("Slept badly", sore)
-        settle()
-
-        assertEquals(sore, repository.lastSoreMuscles)
-        assertEquals("Slept badly", repository.lastReadinessNote)
-        assertEquals(sore, viewModel.uiState.value.readinessSoreMuscles)
-        assertFalse("saving is still an answer to the prompt", viewModel.uiState.value.isReadinessPromptVisible)
-    }
-
-    @Test
-    fun aSavedEmptyList_clearsTheSoreMuscles_ratherThanKeepingTheOldOnes() = runTest(dispatcher) {
-        // A save replaces the list (N62): every muscle removed in the editor is a removal that has
-        // to reach the database, or removing one would silently do nothing.
-        val repository = FakeWorkoutRepository()
-        val viewModel = viewModelFor(repository)
-        observe(viewModel)
-        settle()
-
-        viewModel.onSaveReadinessNote(null, listOf(SoreMuscle(MuscleGroup.QUADS, 8)))
-        settle()
-        viewModel.onSaveReadinessNote(null, emptyList())
-        settle()
-
-        assertEquals(emptyList<SoreMuscle>(), repository.lastSoreMuscles)
-        assertEquals(emptyList<SoreMuscle>(), viewModel.uiState.value.readinessSoreMuscles)
     }
 
     @Test
@@ -1601,7 +1563,6 @@ class ActiveWorkoutViewModelTest {
         var lastReadinessNote: String? = null
 
         /** The sore-muscle list the ViewModel last wrote (ROADMAP N62). */
-        var lastSoreMuscles: List<SoreMuscle> = emptyList()
 
         /** The workout comment the ViewModel last wrote, or null if never written. */
         var lastWorkoutNotes: String? = null
@@ -1628,20 +1589,12 @@ class ActiveWorkoutViewModelTest {
             return DataResult.Success(StartedSession(created.id, isNew = true))
         }
 
-        override suspend fun setReadiness(
-            sessionId: String,
-            note: String?,
-            soreMuscles: List<SoreMuscle>,
-        ): DataResult<Unit> {
+        override suspend fun setReadiness(sessionId: String, note: String?): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
-            // Mirrors the repository: blank is stored as null, not as "", and the list replaces
-            // whatever was there rather than merging (ROADMAP N62).
+            // Mirrors the repository: blank is stored as null, not as "". The sore list is the daily
+            // record's now (N113), so nothing here writes one.
             lastReadinessNote = note?.trim()?.ifEmpty { null }
-            lastSoreMuscles = soreMuscles
-            sessions.value = sessions.value?.copy(
-                readinessNote = lastReadinessNote,
-                soreMuscles = soreMuscles,
-            )
+            sessions.value = sessions.value?.copy(readinessNote = lastReadinessNote)
             return DataResult.Success(Unit)
         }
 

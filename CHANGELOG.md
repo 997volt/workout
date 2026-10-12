@@ -44,6 +44,22 @@ unreleased.
   different question of what may be recorded (N79). The history row also gains the role label it never
   showed: with the number gone, a warm-up would otherwise be a row with nothing saying what it was.
 
+- **The body's record is two records, and soreness belongs to the day rather than to the workout** (N113).
+  Measurements offers **two** adds — a *daily* record (soreness, weight, body fat, muscle %) and a *tape*
+  one — and each row says which it is, so a tape day stops inventing a weight to save and a daily entry
+  stops being asked for seven sites nobody measured. **Soreness leaves the readiness note** for the daily
+  record, because it is a fact about the body's recovery and a session could carry it only on a day that
+  was trained: the rest day, when it is the thing worth writing down, had nowhere to put it. The day keeps
+  **one entry of each kind** — N32's rule narrowed, not dropped — and an entry states only what it has: the
+  weight is no longer required, so a soreness-only morning is a real entry, and *Save* is offered once an
+  entry states something rather than once it states a weight. Both kinds ride one table and one export
+  list, each row carrying only its own kind's numbers, so the statistics screen's body and tape series keep
+  reading what they read. **The transfer format moves to 5 and the floor with it**: a weight that may be
+  absent is a field whose meaning changed, so a 2.x build refuses the file rather than reading a missing
+  weight as zero. Existing rows are carried across by a migration — a legacy entry becomes that day's daily
+  record, and one that measured any site *also* becomes its tape record, so no measurement is dropped — and
+  the sore rows an older session recorded stay on it, still read in history.
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added
