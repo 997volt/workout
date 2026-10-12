@@ -29,6 +29,7 @@ import com.example.androidapp.ui.exercises.ExerciseLibraryRoute
 import com.example.androidapp.ui.history.WorkoutDetailRoute
 import com.example.androidapp.ui.history.WorkoutHistoryRoute
 import com.example.androidapp.ui.home.WorkoutsHomeRoute
+import com.example.androidapp.ui.programs.ProgramBalanceRoute
 import com.example.androidapp.ui.programs.ProgramEditorRoute
 import com.example.androidapp.ui.programs.ProgramsRoute
 import com.example.androidapp.ui.templates.TemplateEditorRoute
@@ -226,9 +227,16 @@ private fun NavGraphBuilder.programDestinations(navController: NavHostController
         )
     }
 
-    composable<ProgramEditor> {
+    composable<ProgramBalance> {
+        ProgramBalanceRoute(onBack = { navController.popBackStack() })
+    }
+
+    composable<ProgramEditor> { entry ->
+        val programId = entry.toRoute<ProgramEditor>().programId
         ProgramEditorRoute(
             onBack = { navController.popBackStack() },
+            // The program that is open, read as a week (N119).
+            onOpenBalance = { navController.navigate(ProgramBalance(programId)) },
             // The way across a program's own schedule: a slot names a workout, and this reaches the workout
             // itself (N120). Templates is where that editor otherwise lives.
             onOpenTemplate = { templateId -> navController.navigate(TemplateEditor(templateId)) },

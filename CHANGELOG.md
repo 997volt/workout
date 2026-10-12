@@ -175,6 +175,24 @@ unreleased.
   say "Quads" a second time is how a vocabulary forks. The two sources are exclusive and one is always present,
   which the registry test asserts. Nothing is stored and no transfer format moves — the data was already there.
 
+- **A program can be read for the work it spreads where** (N119). The editor's bar now carries an overflow with
+  three entries — *Muscle balance*, *Export* and *Delete* — where it carried an export text button and a delete
+  icon. That is N43's order for the database's own actions: three entries with one of them destructive puts the
+  one that cannot be undone last and coloured, and it stops Delete sitting a thumb's width from a button a lifter
+  presses often, at the cost of a tap each. *Muscle balance* is a destination of its own that counts the
+  program's **planned working sets per muscle group**, so "does this week train what I think it does" is
+  answerable while the week is still being written rather than after it is over. Two rules are inherited rather
+  than restated: a **warm-up is not work** (N112), so a ramp does not inflate the muscle it warms up, and a
+  movement's muscle is **own-if-stated, else its category's** (N110) — which is why the read includes the
+  library. A set counts once, for its primary muscle; assisted work is not split off and secondaries are not
+  credited, because a set is not half a set for a muscle that assists. **Work that states a muscle nowhere gets
+  a bucket of its own rather than being dropped**, since dropping it would make the rest of the plan look more
+  balanced than it is. **The read is new**: the editor loads one slot's template at a time for its preview (N72),
+  so this is the first thing to read every template the program's slots name. Nothing is stored and no schema
+  moves. The counting is a pure function (`muscleBalance`) with its own test; the screen states counts and shares
+  rather than a verdict, because a range a lifter *should* hit is a claim this app has no evidence for — that is
+  the parked P2.8, which stays parked with its trigger intact.
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added

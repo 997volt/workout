@@ -19,7 +19,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -95,6 +94,8 @@ fun ProgramEditorRoute(
      * in-place preview, and this goes and changes the thing being previewed.
      */
     onOpenTemplate: (String) -> Unit,
+    /** Opens this program's balance view (ROADMAP N119), which the bar's ⋮ carries. */
+    onOpenBalance: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProgramEditorViewModel = hiltViewModel(),
 ) {
@@ -109,9 +110,7 @@ fun ProgramEditorRoute(
 
     // Deleting — or opening a program that is already gone — leaves the editor, rather than
     // leaving an empty shell behind with a live Delete button.
-    LaunchedEffect(deleted, state.notFound) {
-        if (deleted || state.notFound) currentOnBack()
-    }
+    LaunchedEffect(deleted, state.notFound) { if (deleted || state.notFound) currentOnBack() }
 
     ProgramEditorScreen(
         state = state,
@@ -122,6 +121,7 @@ fun ProgramEditorRoute(
         onMoveSlot = viewModel::onMoveSlot,
         onRemoveSlot = viewModel::onRemoveSlot,
         onOpenTemplate = onOpenTemplate,
+        onOpenBalance = onOpenBalance,
         onPreviewSlot = viewModel::onPreviewSlot,
         onClosePreview = viewModel::onClosePreview,
         onDeleteProgram = viewModel::onDeleteProgram,
@@ -145,6 +145,7 @@ fun ProgramEditorScreen(
     onMoveSlot: (String, Int) -> Unit,
     onRemoveSlot: (String) -> Unit,
     onOpenTemplate: (String) -> Unit,
+    onOpenBalance: () -> Unit,
     onPreviewSlot: (String, String) -> Unit,
     onClosePreview: () -> Unit,
     onDeleteProgram: () -> Unit,
@@ -160,11 +161,8 @@ fun ProgramEditorScreen(
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
     var pickingTemplate by rememberSaveable { mutableStateOf(false) }
 
-    EditorErrorMessage(
-        error = state.error,
-        snackbarHostState = snackbarHostState,
-        onDismiss = onDismissMessage,
-    )
+    // One line, because this screen is at the length this project allows and the call is short.
+    EditorErrorMessage(error = state.error, snackbarHostState = snackbarHostState, onDismiss = onDismissMessage)
     MessageSnackbar(transferMessage, snackbarHostState, onDismissTransferMessage)
 
     Scaffold(
@@ -174,6 +172,7 @@ fun ProgramEditorScreen(
             ProgramEditorTopBar(
                 name = state.program?.name,
                 onBack = onBack,
+                onOpenBalance = onOpenBalance,
                 onDelete = { confirmingDelete = true },
                 onExport = onExportProgram,
             )
@@ -281,9 +280,11 @@ private fun ProgramEditorDialogs(
 private fun ProgramEditorTopBar(
     name: String?,
     onBack: () -> Unit,
+    onOpenBalance: () -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
 ) {
+    var open by rememberSaveable { mutableStateOf(false) }
     TopAppBar(
         title = { Text(name ?: stringResource(R.string.program_edit_title)) },
         navigationIcon = {
@@ -295,21 +296,51 @@ private fun ProgramEditorTopBar(
             }
         },
         actions = {
-            // Export is per program, so it is here rather than on the list (ROADMAP N47).
-            AppTextButton(
-                onClick = onExport,
-                modifier = Modifier.testTag(TestTags.Programs.EXPORT),
-            ) {
-                Text(stringResource(R.string.program_export))
-            }
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.testTag(TestTags.Programs.DELETE),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Delete,
-                    contentDescription = stringResource(R.string.program_delete),
-                )
+            // One control, three entries (N119): the bar carried a text button and a delete icon beside it,
+            // and the destructive one at that distance from a frequently pressed neighbour is the shape N43
+            // settled against for the database's own actions — the one that cannot be undone goes last and
+            // reads as destructive. Export is per program, so it stays here rather than on the list (N47).
+            Box {
+                IconButton(
+                    onClick = { open = true },
+                    modifier = Modifier.testTag(TestTags.Programs.MENU),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = stringResource(R.string.program_menu, name.orEmpty()),
+                    )
+                }
+                DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.program_balance)) },
+                        onClick = {
+                            open = false
+                            onOpenBalance()
+                        },
+                        modifier = Modifier.testTag(TestTags.Programs.BALANCE),
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.program_export)) },
+                        onClick = {
+                            open = false
+                            onExport()
+                        },
+                        modifier = Modifier.testTag(TestTags.Programs.EXPORT),
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = stringResource(R.string.program_delete),
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        },
+                        onClick = {
+                            open = false
+                            onDelete()
+                        },
+                        modifier = Modifier.testTag(TestTags.Programs.DELETE),
+                    )
+                }
             }
         },
     )
@@ -888,6 +919,7 @@ private fun ProgramEditorScreenPreview() {
             onMoveSlot = { _, _ -> },
             onRemoveSlot = {},
             onOpenTemplate = {},
+            onOpenBalance = {},
             onPreviewSlot = { _, _ -> },
             onClosePreview = {},
             onDeleteProgram = {},

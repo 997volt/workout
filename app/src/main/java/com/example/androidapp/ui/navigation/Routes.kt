@@ -58,6 +58,15 @@ data object Settings
 data class Measurements(val openDaily: Boolean = false)
 
 /**
+ * One program's planned work per muscle (ROADMAP N119).
+ *
+ * Pushed from the program editor's overflow rather than being a sixth tab: it is about the program that is
+ * open, and N34's five surfaces stand.
+ */
+@Serializable
+data class ProgramBalance(val programId: String)
+
+/**
  * Adherence: how often the scheduled days happened, over the month the grid shows (ROADMAP P3.5).
  *
  * A destination of its own, reached from Statistics the way Measurements already is, because

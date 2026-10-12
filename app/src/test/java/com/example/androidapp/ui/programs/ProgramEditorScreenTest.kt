@@ -43,6 +43,7 @@ class ProgramEditorScreenTest {
         onMoveSlot: (String, Int) -> Unit = { _, _ -> },
         onRemoveSlot: (String) -> Unit = {},
         onOpenTemplate: (String) -> Unit = {},
+        onOpenBalance: () -> Unit = {},
         onPreviewSlot: (String, String) -> Unit = { _, _ -> },
         onClosePreview: () -> Unit = {},
         onDeleteProgram: () -> Unit = {},
@@ -58,6 +59,7 @@ class ProgramEditorScreenTest {
                 onMoveSlot = onMoveSlot,
                 onRemoveSlot = onRemoveSlot,
                 onOpenTemplate = onOpenTemplate,
+                onOpenBalance = onOpenBalance,
                 onPreviewSlot = onPreviewSlot,
                 onClosePreview = onClosePreview,
                 onDeleteProgram = onDeleteProgram,
@@ -68,11 +70,34 @@ class ProgramEditorScreenTest {
     }
 
     @Test
+    fun theBarsMenu_carriesBalance_exportAndDelete_inThatOrder() {
+        // ROADMAP N119: one control with three entries, and the destructive one last and coloured — the order
+        // N43 settled for the database's own actions. Balance first, because it is the only one that reads.
+        var balanced = false
+        setScreen(onOpenBalance = { balanced = true })
+
+        // Nothing is on the bar itself: the three entries are the menu's.
+        composeTestRule.onNodeWithTag(TestTags.Programs.EXPORT).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Programs.BALANCE).assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.BALANCE).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Programs.EXPORT).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Programs.DELETE).assertExists()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.BALANCE).performClick()
+
+        assertThat(balanced).isTrue()
+    }
+
+    @Test
     fun theExportAction_writesThisProgramToAFile() {
         // ROADMAP N47: export is per program, so it lives in the editor rather than on the list.
         var exported = false
         setScreen(onExportProgram = { exported = true })
 
+        // The bar's ⋮ carries it now (N119), so reaching export is opening the menu first.
+        composeTestRule.onNodeWithTag(TestTags.Programs.MENU).performClick()
         composeTestRule.onNodeWithTag(TestTags.Programs.EXPORT).performClick()
 
         assertThat(exported).isTrue()
@@ -334,6 +359,7 @@ class ProgramEditorScreenTest {
         var deleted = false
         setScreen(onDeleteProgram = { deleted = true })
 
+        composeTestRule.onNodeWithTag(TestTags.Programs.MENU).performClick()
         composeTestRule.onNodeWithTag(TestTags.Programs.DELETE).performClick()
         composeTestRule.onNodeWithTag(TestTags.Programs.DELETE_CONFIRM).performClick()
 

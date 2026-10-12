@@ -703,6 +703,21 @@
          templates and their planned work, plus the definition of every exercise it names. -->
     <string name="program_load">Load</string>
     <string name="program_export">Export</string>
+    <!-- A program's planned work per muscle (ROADMAP N119). Counts and shares, never a verdict: a range a
+         lifter should hit is a claim this app has no evidence for. -->
+    <string name="program_balance">Muscle balance</string>
+    <!-- The bar's ⋮, named so a screen reader says whose actions these are. -->
+    <string name="program_menu">%1$s actions</string>
+    <string name="program_balance_empty">This program plans no working sets yet.</string>
+    <plurals name="program_balance_total">
+        <item quantity="one">%1$d working set planned</item>
+        <item quantity="other">%1$d working sets planned</item>
+    </plurals>
+    <string name="program_balance_unstated">No muscle stated</string>
+    <plurals name="program_balance_sets">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
     <string name="program_loaded">Program loaded.</string>
     <string name="program_already_loaded">That program is already here.</string>
     <!-- What a load could not place (ROADMAP B51). "Not in your library" rather than "not on this

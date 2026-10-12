@@ -374,6 +374,13 @@ object TestTags {
      */
     fun libraryCategory(id: String) = "library_category_$id"
 
+    /** A program's balance view (ROADMAP N119): the destination, its empty state, its total and its rows. */
+    const val PROGRAM_BALANCE = "program_balance"
+    const val PROGRAM_BALANCE_EMPTY = "program_balance_empty"
+    const val PROGRAM_BALANCE_TOTAL = "program_balance_total"
+
+    fun programBalanceRow(muscle: String) = "program_balance_row_$muscle"
+
     /** What holding a family shows (ROADMAP N117): the facts it states for its movements. */
     const val LIBRARY_CATEGORY_DETAILS = "library_category_details_dialog"
 
@@ -632,6 +639,12 @@ object TestTags {
         /** A slot's ⋮: the order and remove entries it opens (ROADMAP N72). */
         /** The slot menu's entry that opens the template it names (ROADMAP N120). */
         fun openSlot(id: String) = "program_open_slot_$id"
+
+        /** The bar's ⋮ (ROADMAP N119), which carries the balance view, export and delete. */
+        const val MENU = "program_menu"
+
+        /** The bar's ⋮ entry that opens the balance view (ROADMAP N119). */
+        const val BALANCE = "program_balance_open"
 
         fun slotMenu(id: String) = "program_slot_menu_$id"
 
