@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two items. Last reviewed against the
+> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds three items. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -13,9 +13,10 @@
 > movements with a movement reading its family's pattern and muscles, 61 movements joined the 45, and the
 > picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
 > still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds two
-> items — a row on home that offers to record the day's measurements when today has none, and moving today's
-> workout to the bottom of that screen. **Reading the P1.1, B103 and N110 batch line by
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds three
+> items — a row on home that offers to record the day's measurements when today has none, moving today's workout
+> to the bottom of that screen, and one line in the template editor's set dialog. **Reading the P1.1, B103 and
+> N110 batch line by
 > line — and running it on a device — found five defects (B104–B108); all five are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen defects
 > (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
@@ -36,7 +37,7 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Two items are planned, and both are the home screen's row order.
+Three items are planned: the home screen's row order twice, and one row in the template editor's set dialog.
 
 - **Home offers to record the day's measurements, and only while today has none** (N114). A row below *Start
   empty workout* opens the **daily** form directly — soreness, weight, body fat and muscle — so the one thing the
@@ -74,6 +75,22 @@ Two items are planned, and both are the home screen's row order.
   test pins the order today, and an untested reversal drifts back. Rejected: leaving *Today* first and treating
   the ways in as the tail — the destinations are what the screen is for on a day with nothing scheduled, and that
   is most days.
+
+- **A plan's effort, its rest and the accept are one line** (N116). The set dialog's `ExercisePlanFields` draws them as a
+  single row in that order — the RPE stepper, the rest field, the check that commits all three — instead of the rest and the
+  check on one line with the RPE on the next. Reading them together is the point: the effort the plan wants, the rest it
+  prescribes and the control that writes both are one statement about one set. The cue keeps the full-width row of its own
+  that N80 gave it.
+  **This supersedes the row-of-its-own call N111 made**, and N68's precedent with it — but only here: the workout screen's
+  own RPE stepper is untouched. What N111 priced was a label, a value and two buttons beside another number; the label is
+  the field's own floating one rather than a leading word and both numbers are one or two characters, so the row fits by
+  giving the stepper `weight(1f)` and narrowing the fixed rest field (110 → 96 dp). The `Spacer(weight 1f)` that held the
+  check at the right margin goes with it: with three controls the check is last by construction. **The 48 dp step and check
+  targets do not shrink** — they are the app's touch-target floor, so on a narrower device the field's label is what gives
+  way, never a control. Rejected: keeping two rows, which is what makes the effort look like a different kind of fact from
+  the rest beside it. Its test reuses the bounds idiom `ActiveWorkoutScreenTest` already has for *Done* — a left-edge
+  comparison plus overlapping tops and bottoms — because the failure to catch is the row silently wrapping, which no
+  tag-level `assertIsDisplayed` can see.
 
 ## Parked — deliberately not planned
 
@@ -157,8 +174,8 @@ batch found (B104–B108), the warm-ups out of the set numbering and the plan's 
 record split in two with soreness moved to the day (N113), and the long entries deferring their argument to
 the evidence (N107) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds two items** (N114, N115), written after the queue drained and the section stood empty — the state
-it is meant to reach rather than a gap to fill, and these are the first things planned since. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
+***Next* holds three items** (N114, N115, N116), written after the queue drained and the section stood empty — the
+state it is meant to reach rather than a gap to fill, and these are the first things planned since. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
 that mattered left the instrumented job red, because a program document's former variation imports under its
 family now and the test still asserted the link the shape no longer has. 2.0 shipped with the loudest note this project has written — the 1.x store stays on the device and
 2.0 does not read it — and the rule that allowed that is in [DECISIONS.md](DECISIONS.md), with the window it
