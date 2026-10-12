@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two items. Last reviewed against the
+> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds three items. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -14,11 +14,12 @@
 > picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
 > still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds N107,
-> which shortens [DECISIONS.md](DECISIONS.md) without dropping a decision, and N112, which makes a set's
-> number and the plan's remainder count only the sets that stand on their own. **Reading the P1.1, B103 and
-> N110 batch line by line — and running it on a device — found five defects (B104–B108); all five are fixed
-> and recorded in [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found
-> sixteen defects (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
+> which shortens [DECISIONS.md](DECISIONS.md) without dropping a decision, N112, which makes a set's number
+> and the plan's remainder count only the sets that stand on their own, and N113, which splits the body's
+> record in two and moves soreness off the workout's start. **Reading the P1.1, B103 and N110 batch line by
+> line — and running it on a device — found five defects (B104–B108); all five are fixed and recorded in
+> [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen defects
+> (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -36,8 +37,8 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Two items are planned: one is text rather than code, and one changes how a plan's sets are numbered and
-counted.
+Three items are planned: a text shortening, how a plan's sets are numbered and counted, and the body's own
+record.
 
 - **The longest evidence-backed entries state the rule and defer their argument to the evidence** (N107).
   The file's own contract is that an entry is the rule, the shortest honest reason and the rejected
@@ -60,6 +61,25 @@ counted.
   preparation — and the history row gains the role label it never showed, since a warm-up with neither a
   number nor a label is a row with nothing to say what it was. N70's count is **amended with the code**
   rather than left reading as binding, which is the cleanup N105 had to do once already.
+
+- **The body's record is two records, and soreness belongs to the day rather than to the workout** (N113).
+  Measurements offers **two** adds — a *daily* one (soreness, weight, body fat, muscle %) and a *tape* one —
+  and each row says which it is, so a tape day stops inventing a weight and a daily entry stops asking for
+  seven sites nobody measured. Soreness leaves the readiness note at the workout's start and is recorded with
+  the day, because it is a fact about recovery and a session can carry it only on a day that was trained: the
+  rest day, when soreness is the thing worth writing down, has nowhere to put it. The day keeps **one entry
+  of each kind** — N32's rule narrowed, not dropped — and an entry states only what it has, so the daily
+  numbers are all optional: a soreness-only morning is a real entry, and a zero weight is a claim the scale
+  did not make. Save is offered once the entry states **at least one** of its own numbers, so an empty row
+  cannot be written either. Both kinds ride the same collection, one row per record carrying only its own
+  kind's numbers, so the statistics screen's body and tape series and the export's one list keep reading what
+  they read.
+  **Three things are amended with the code**: N32's one-per-day becomes one per kind, the N75 entry names the
+  readiness note as the sore list's home, and the **transfer format moves** — a weight that may be absent is
+  a field whose meaning changed, so a 2.x build must refuse the file rather than read the missing weight as
+  zero; rows already recorded on a session stay there and keep reading in history. Rejected: adding soreness
+  to measurements while leaving the readiness picker in place, since two places to write one day's soreness is
+  how they come to disagree, and one form for both kinds, since a tape-only day still invents a weight.
 
 ## Parked — deliberately not planned
 
@@ -141,11 +161,11 @@ screen's silent write failure (B102) — and 2.1 — P1.1's strength and bodybui
 category over movements (N110), the unstated-taxonomy read (B103) and the five defects the reading of that
 batch found (B104–B108) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds two items**: N107's text shortening and N112's numbering. **The reading that produced 2.1
-found five defects in it, all fixed before the tag (B104–B108)** — the one that mattered left the
-instrumented job red, because a program document's former variation imports under its family now and the test
-still asserted the link the shape no longer has. 2.0 shipped with the loudest note this project has written —
-the 1.x store stays on the device and 2.0 does not read it — and the rule that allowed that is in
+***Next* holds three items**: N107's text shortening, N112's numbering and N113's two records. **The reading
+that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one that mattered
+left the instrumented job red, because a program document's former variation imports under its family now and
+the test still asserted the link the shape no longer has. 2.0 shipped with the loudest note this project has
+written — the 1.x store stays on the device and 2.0 does not read it — and the rule that allowed that is in
 [DECISIONS.md](DECISIONS.md), with the window it stays payable in.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what they named
