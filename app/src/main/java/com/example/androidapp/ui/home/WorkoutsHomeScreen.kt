@@ -70,6 +70,10 @@ fun WorkoutsHomeRoute(
      * the other ways in rather than inside a chart tab.
      */
     onOpenMeasurements: () -> Unit,
+    /**
+     * The way into today's daily measurement (ROADMAP N114), which opens that form rather than the list.
+     */
+    onMeasureToday: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WorkoutsHomeViewModel = hiltViewModel(),
 ) {
@@ -151,6 +155,7 @@ fun WorkoutsHomeRoute(
         onStartSubstituteTemplate = startSubstitute(requestStart = requestStart),
         onOpenPrograms = onOpenPrograms,
         onOpenMeasurements = onOpenMeasurements,
+        onMeasureToday = onMeasureToday,
         onOpenPlannedWorkout = viewModel::onOpenPlannedWorkout,
         message = message,
         onDismissMessage = { message = null },
@@ -179,6 +184,14 @@ fun WorkoutsHomeScreen(
     onStartTemplate: (TodayPlan) -> Unit = {},
     onOpenPrograms: () -> Unit = {},
     onOpenMeasurements: () -> Unit = {},
+    /**
+     * Opens the measurements screen with today's daily form already up (ROADMAP N114).
+     *
+     * A second entry rather than a flag on [onOpenMeasurements]: the two rows reach one destination for
+     * different reasons — reading the record, and answering today — and the row that answers is drawn only
+     * while today has no entry to read.
+     */
+    onMeasureToday: () -> Unit = {},
     /**
      * Opens what a program's next run has planned, without starting it (ROADMAP N55).
      *
@@ -252,6 +265,7 @@ fun WorkoutsHomeScreen(
             onOpenPrograms = onOpenPrograms,
             onOpenTemplates = onOpenTemplates,
             onOpenMeasurements = onOpenMeasurements,
+            onMeasureToday = onMeasureToday,
             onStartTemplate = onStartTemplate,
             onSubstitute = { plan -> substituting = SubstituteRequest(plan, records = true) },
             modifier = Modifier.padding(innerPadding),
@@ -369,6 +383,7 @@ private fun HomeContent(
     onOpenPrograms: () -> Unit,
     onOpenTemplates: () -> Unit,
     onOpenMeasurements: () -> Unit,
+    onMeasureToday: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
     modifier: Modifier = Modifier,
@@ -385,6 +400,7 @@ private fun HomeContent(
             onOpenPrograms = onOpenPrograms,
             onOpenTemplates = onOpenTemplates,
             onOpenMeasurements = onOpenMeasurements,
+            onMeasureToday = onMeasureToday,
             onStartTemplate = onStartTemplate,
             onSubstitute = onSubstitute,
             modifier = modifier,

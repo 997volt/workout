@@ -52,6 +52,7 @@ class WorkoutsHomeScreenTest {
         val onStartSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
         val onOpenPrograms: () -> Unit = {},
         val onOpenMeasurements: () -> Unit = {},
+        val onMeasureToday: () -> Unit = {},
         val onOpenPlannedWorkout: (NextUp) -> Unit = {},
     )
 
@@ -84,6 +85,7 @@ class WorkoutsHomeScreenTest {
                     onStartSubstituteTemplate = actions.onStartSubstituteTemplate,
                     onOpenPrograms = actions.onOpenPrograms,
                     onOpenMeasurements = actions.onOpenMeasurements,
+                    onMeasureToday = actions.onMeasureToday,
                     message = message,
                 )
             }
@@ -532,6 +534,52 @@ class WorkoutsHomeScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.Home.startPlan("slot-1")).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Home.startPlan("slot-2")).assertExists()
+    }
+
+    /**
+     * While today has no daily entry, home offers to write one (ROADMAP N114).
+     *
+     * The row is the shortcut the measurements screen's own FAB cannot be: it opens the daily form directly
+     * rather than asking which of N113's two records was meant, and it is drawn on the evidence — what is
+     * stored for today — rather than on whether the lifter was ever asked.
+     */
+    @Test
+    fun whileTodayHasNoEntry_theMeasureTodayRow_isOffered_andOpensTheForm() {
+        var opened = false
+        setScreen(
+            state = WorkoutsHomeUiState(isLoading = false, todayIsMeasured = false),
+            actions = Actions(onMeasureToday = { opened = true }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_MEASURE_TODAY).assertIsDisplayed().performClick()
+
+        assertWithMessage("the row opens today's form, not the list").that(opened).isTrue()
+    }
+
+    @Test
+    fun withTodaysMeasurementsRecorded_theRowIsGone() {
+        // N113's rule is what makes this true for a soreness-only morning too: an entry states what it has,
+        // and the day is answered.
+        setScreen(WorkoutsHomeUiState(isLoading = false, todayIsMeasured = true))
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_MEASURE_TODAY).assertDoesNotExist()
+    }
+
+    @Test
+    fun withAWorkoutRunning_theMeasureTodayRow_stays() {
+        // B101 withholds *Start empty workout* while a session is open, because the bar's Resume pill is the
+        // same action. **Recording is not starting**, so N114's row is not withheld with it: a lifter mid
+        // workout is exactly who has something to write down.
+        setScreen(
+            WorkoutsHomeUiState(
+                isLoading = false,
+                activeWorkout = ActiveWorkoutInfo(startedAt = Instant.parse("2026-10-12T09:00:00Z"), exerciseCount = 4),
+                todayIsMeasured = false,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_MEASURE_TODAY).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.HOME_START).assertDoesNotExist()
     }
 
     @Test

@@ -36,6 +36,8 @@ import com.example.androidapp.ui.statistics.StatisticsRoute
 import com.example.androidapp.ui.templates.TemplatesRoute
 import com.example.androidapp.ui.workout.ActiveWorkoutRoute
 import com.example.androidapp.ui.workout.ExercisePickerRoute
+import androidx.navigation.toRoute
+
 
 /**
  * The app's single navigation graph (ROADMAP F2, P1.2).
@@ -95,8 +97,11 @@ fun AppNavHost(
 
 /** Home, the exercise library, one exercise's detail, and the app's settings. */
 private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
-    composable<Measurements> {
-        MeasurementsRoute(onBack = { navController.popBackStack() })
+    composable<Measurements> { entry ->
+        MeasurementsRoute(
+            onBack = { navController.popBackStack() },
+            openDaily = entry.toRoute<Measurements>().openDaily,
+        )
     }
 
     // Adherence is pushed from Statistics, next to Measurements: both answer a question the tab
@@ -123,8 +128,10 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
             // The schedule the today's-plan section is read from (ROADMAP P3.3), now a row in the
             // body rather than the overflow it got lost in (N42, N102).
             onOpenPrograms = { navController.navigate(Programs) },
-            // Home is where the weight the chart reads gets written, so the way in is here too (N102).
-            onOpenMeasurements = { navController.navigate(Measurements) },
+            // Home is where the weight the chart reads gets written, so the way in is here too (N102) —
+            // and while today has none, the row above it opens the daily form directly (N114).
+            onOpenMeasurements = { navController.navigate(Measurements()) },
+            onMeasureToday = { navController.navigate(Measurements(openDaily = true)) },
         )
     }
 
@@ -132,7 +139,7 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
         StatisticsRoute(
             // Recording and reading are different jobs, so the measurements screen stays a destination of
             // its own — reached from here, which is the tab that answers how everything is going (N35).
-            onOpenMeasurements = { navController.navigate(Measurements) },
+            onOpenMeasurements = { navController.navigate(Measurements()) },
             // The aggregate over the session-level plan-versus-actual: how often the scheduled
             // days happened (ROADMAP P3.5).
             onOpenAdherence = { navController.navigate(Adherence) },

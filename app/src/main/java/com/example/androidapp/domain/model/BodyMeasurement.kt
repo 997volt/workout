@@ -1,6 +1,8 @@
 package com.example.androidapp.domain.model
 
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * One dated set of body measurements (ROADMAP N32, split in two by N113).
@@ -71,6 +73,26 @@ enum class TapeSite {
 
 /** The value taken at [site], or null when it was not measured. */
 fun BodyMeasurement.at(site: TapeSite): Long? = tape[site]
+
+/**
+ * The local day an instant falls on, in [zone] (ROADMAP N25, N32).
+ *
+ * **One rule, in one place.** It decided which day a measurement belongs to inside the repository alone until
+ * N114 needed the same answer for the home row that offers to record one, and the two disagreeing is the one
+ * failure that would read as the data being wrong — a row hidden while the measurements screen shows nothing
+ * for today.
+ */
+fun Instant.localDay(zone: ZoneId): LocalDate = atZone(zone).toLocalDate()
+
+/**
+ * Whether this entry is [day]'s **daily** record, in [zone] (ROADMAP N114).
+ *
+ * The daily kind, not either kind: a day keeps one entry of each (N113), so a tape day is no reason to stop
+ * offering to write down soreness, weight and the two percentages. And the zone is the caller's, because the
+ * day an entry belongs to is the day it was taken on.
+ */
+fun BodyMeasurement.isDailyOn(day: LocalDate, zone: ZoneId): Boolean =
+    kind == MeasurementKind.DAILY && measuredAt.localDay(zone) == day
 
 /**
  * Whether this entry states any of its own numbers (ROADMAP N113).

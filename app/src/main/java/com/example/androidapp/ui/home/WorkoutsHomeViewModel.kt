@@ -5,6 +5,8 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.MeasurementRepository
+import com.example.androidapp.domain.model.isDailyOn
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSchedule
@@ -116,6 +118,14 @@ data class WorkoutsHomeUiState(
     val nextUp: List<NextUp> = emptyList(),
     /** The templates a substitution can choose from (ROADMAP P3.11). */
     val templates: List<WorkoutTemplate> = emptyList(),
+    /**
+     * Whether today's daily measurement is already recorded (ROADMAP N114).
+     *
+     * False offers the row that opens the daily form; true is the ordinary state of a day that has been
+     * written down, and the row is simply absent — an entry that states only soreness counts (N113), while a
+     * tape entry does not, because the two are separate records.
+     */
+    val todayIsMeasured: Boolean = false,
 )
 
 /**
@@ -131,6 +141,7 @@ class WorkoutsHomeViewModel @Inject constructor(
     private val workoutRepository: WorkoutRepository,
     private val templateRepository: TemplateRepository,
     private val programRepository: ProgramRepository,
+    private val measurementRepository: MeasurementRepository,
     private val timeSource: TimeSource,
 ) : ViewModel() {
 
@@ -211,6 +222,15 @@ class WorkoutsHomeViewModel @Inject constructor(
     private val today: DayOfWeek = todayDate.dayOfWeek
 
     /**
+     * The zone [todayDate] was read in, captured with it (ROADMAP N114).
+     *
+     * The row that offers to record today's measurement asks the same question the repository answers when it
+     * keys an entry to a day, so it reads the same zone the day was captured in rather than taking a second
+     * reading that could cross a boundary the first one did not.
+     */
+    private val zone: ZoneId = ZoneId.systemDefault()
+
+    /**
      * Every program home follows, in the authored order (ROADMAP P3.12).
      *
      * A list rather than one row: more than one program may be active, and the union of their
@@ -266,11 +286,14 @@ class WorkoutsHomeViewModel @Inject constructor(
         activeWorkout,
         templateRepository.observeTemplates(),
         programsPart,
-    ) { workout, templates, programs ->
+        measurementRepository.observeAll(),
+    ) { workout, templates, programs, measurements ->
         WorkoutsHomeUiState(
             isLoading = false,
             activeWorkout = workout,
             today = today,
+            // N114: the day the row is about is this screen's own captured one, not a live reading.
+            todayIsMeasured = measurements.any { it.isDailyOn(todayDate, zone) },
             todaysPlan = todaysPlanFor(
                 programs = programs.programs,
                 slots = programs.slots,

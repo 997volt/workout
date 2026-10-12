@@ -66,6 +66,8 @@ import java.time.ZoneId
 fun MeasurementsRoute(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    /** True to arrive with the daily form already open (ROADMAP N114), from home's own row. */
+    openDaily: Boolean = false,
     viewModel: MeasurementsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -79,6 +81,7 @@ fun MeasurementsRoute(
         // A failed write is a snackbar, the surface every other screen uses (B102).
         error = error,
         onDismissError = viewModel::onDismissError,
+        initialAdd = if (openDaily) MeasurementKind.DAILY else null,
     )
 }
 
@@ -93,11 +96,18 @@ fun MeasurementsScreen(
     /** A write that failed, or null (B102) — shown as a snackbar, like every other screen's. */
     error: DataError? = null,
     onDismissError: () -> Unit = {},
+    /**
+     * A form to open on arrival, or null (ROADMAP N114).
+     *
+     * Read once, as `rememberSaveable`'s initial value: dismissing the form sets it back to null, and a
+     * rotation keeps that dismissal rather than reopening what the lifter just closed.
+     */
+    initialAdd: MeasurementKind? = null,
 ) {
     // Two steps rather than one: the record is two records, so *Add* asks which before it opens a form
     // (N113). Null is "no form open"; `choosing` is the question.
     var choosing by remember { mutableStateOf(false) }
-    var adding by remember { mutableStateOf<MeasurementKind?>(null) }
+    var adding by rememberSaveable { mutableStateOf(initialAdd) }
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(error?.let { dataErrorMessage(it) }, snackbarHostState, onDismissError)
 

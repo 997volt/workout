@@ -17,6 +17,9 @@
     <string name="exercise_library_no_exercises_hint">Your exercise library is empty.</string>
     <!-- Home (ROADMAP N1) -->
     <string name="home_title">Workouts</string>
+    <!-- The row that offers to write the day down while today has none (ROADMAP N114). -->
+    <string name="home_measure_today">Record today’s measurements</string>
+    <string name="home_measure_today_supporting">Soreness, weight, body fat and muscle</string>
     <string name="home_start_empty_workout">Start empty workout</string>
     <!-- The body's ways in (ROADMAP N102). Each says what the destination is for, because a bare name
          in a list of four names is a menu rather than a way in. -->

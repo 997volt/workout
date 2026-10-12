@@ -13,6 +13,7 @@ import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
+import com.example.androidapp.domain.model.localDay
 import com.example.androidapp.domain.repository.MeasurementRepository
 import java.time.Instant
 import java.time.ZoneId
@@ -109,9 +110,10 @@ class RoomMeasurementRepository @Inject constructor(
      * The device's own zone, read at the moment of writing: N25's rule for a session's time, applied to
      * a measurement's date.
      */
-    private fun startOfDay(instant: Instant): Long =
-        instant.atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay(ZoneId.systemDefault())
-            .toInstant().toEpochMilli()
+    private fun startOfDay(instant: Instant): Long {
+        val zone = ZoneId.systemDefault()
+        return instant.localDay(zone).atStartOfDay(zone).toInstant().toEpochMilli()
+    }
 }
 
 private const val SECONDS_PER_DAY = 86_400L

@@ -181,6 +181,13 @@ object TestTags {
     const val HOME_TEMPLATES = "home_templates"
     const val HOME_PROGRAMS = "home_programs"
     const val HOME_MEASUREMENTS = "home_measurements"
+    /**
+     * The row that writes today's measurements (ROADMAP N114), drawn only while today has none.
+     *
+     * Its own tag rather than the measurements row's: the two open the same screen, but one opens it with the
+     * daily form already up, and a test has to say which control it means.
+     */
+    const val HOME_MEASURE_TODAY = "home_measure_today"
 
     /**
      * The question a planned start asks while a workout is already running (ROADMAP N89), and its two

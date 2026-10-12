@@ -61,6 +61,7 @@ internal fun HomeBody(
     onOpenPrograms: () -> Unit,
     onOpenTemplates: () -> Unit,
     onOpenMeasurements: () -> Unit,
+    onMeasureToday: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
     modifier: Modifier = Modifier,
@@ -76,10 +77,16 @@ internal fun HomeBody(
             // Starting is offered only while nothing is running (B101): the bar's Resume pill is the same
             // action, and a second row for it would be the pill under the wrong label.
             showStart = state.activeWorkout == null,
-            onStartWorkout = onStartWorkout,
-            onOpenPrograms = onOpenPrograms,
-            onOpenTemplates = onOpenTemplates,
-            onOpenMeasurements = onOpenMeasurements,
+            // **Recording is not starting**, so B101's withholding does not reach this row: it is drawn
+            // whenever today has no daily entry, a workout running or not (N114).
+            showMeasureToday = !state.todayIsMeasured,
+            actions = WayInActions(
+                onStartWorkout = onStartWorkout,
+                onOpenPrograms = onOpenPrograms,
+                onOpenTemplates = onOpenTemplates,
+                onOpenMeasurements = onOpenMeasurements,
+                onMeasureToday = onMeasureToday,
+            ),
         )
         // Today's plans come **after** the ways in (N115): the destinations are what this screen is for on a
         // day with nothing scheduled, and the thing the app says is next belongs at the bottom edge the start
@@ -220,10 +227,8 @@ private fun PlanHeading(
  */
 private fun LazyListScope.wayInItems(
     showStart: Boolean,
-    onStartWorkout: () -> Unit,
-    onOpenPrograms: () -> Unit,
-    onOpenTemplates: () -> Unit,
-    onOpenMeasurements: () -> Unit,
+    showMeasureToday: Boolean,
+    actions: WayInActions,
 ) {
     item(key = "way-in-programs") {
         WayInRow(
@@ -233,7 +238,7 @@ private fun LazyListScope.wayInItems(
             icon = Icons.Filled.EventAvailable,
             accent = TileAccent.Teal,
             testTag = TestTags.HOME_PROGRAMS,
-            onClick = onOpenPrograms,
+            onClick = actions.onOpenPrograms,
         )
     }
     item(key = "way-in-templates") {
@@ -244,7 +249,7 @@ private fun LazyListScope.wayInItems(
             icon = Icons.Filled.FitnessCenter,
             accent = TileAccent.Sky,
             testTag = TestTags.HOME_TEMPLATES,
-            onClick = onOpenTemplates,
+            onClick = actions.onOpenTemplates,
         )
     }
     item(key = "way-in-measurements") {
@@ -255,25 +260,70 @@ private fun LazyListScope.wayInItems(
             icon = Icons.Filled.Straighten,
             accent = TileAccent.Coral,
             testTag = TestTags.HOME_MEASUREMENTS,
-            onClick = onOpenMeasurements,
+            onClick = actions.onOpenMeasurements,
         )
     }
-    if (showStart) {
-        item(key = "way-in-start") {
-            WayInRow(
-                // The row names its own action, so its label is that name rather than a second "Open".
-                headline = stringResource(R.string.home_start_empty_workout),
-                supporting = stringResource(R.string.home_start_supporting),
-                onClickLabel = stringResource(R.string.home_start_empty_workout),
-                icon = Icons.Filled.Add,
-                accent = TileAccent.Indigo,
-                testTag = TestTags.HOME_START,
-                onClick = onStartWorkout,
-                discloses = false,
-            )
-        }
+    if (showStart) startEmptyRow(onStartWorkout = actions.onStartWorkout)
+    if (showMeasureToday) measureTodayRow(onMeasureToday = actions.onMeasureToday)
+}
+
+/**
+ * Starting a workout with nothing planned (ROADMAP N102).
+ *
+ * Split out of the ways in with the row below it: together they were past the length this project allows a
+ * function, and each carries reasoning of its own.
+ */
+private fun LazyListScope.startEmptyRow(onStartWorkout: () -> Unit) {
+    item(key = "way-in-start") {
+        WayInRow(
+            // The row names its own action, so its label is that name rather than a second "Open".
+            headline = stringResource(R.string.home_start_empty_workout),
+            supporting = stringResource(R.string.home_start_supporting),
+            onClickLabel = stringResource(R.string.home_start_empty_workout),
+            icon = Icons.Filled.Add,
+            accent = TileAccent.Indigo,
+            testTag = TestTags.HOME_START,
+            onClick = onStartWorkout,
+            discloses = false,
+        )
     }
 }
+
+/**
+ * Writing today down, while today has no entry (ROADMAP N114).
+ *
+ * Last of the ways in, and the only one that is not always drawn: the row is the prompt, so an entry for
+ * today takes it away rather than leaving a row whose only news is that the day is already answered.
+ */
+private fun LazyListScope.measureTodayRow(onMeasureToday: () -> Unit) {
+    item(key = "way-in-measure-today") {
+        WayInRow(
+            headline = stringResource(R.string.home_measure_today),
+            supporting = stringResource(R.string.home_measure_today_supporting),
+            onClickLabel = stringResource(R.string.home_measure_today),
+            // The measurements destination's own icon with the one accent no other row uses: the same place,
+            // today's half of it, rather than a fifth destination.
+            icon = Icons.Filled.Straighten,
+            accent = TileAccent.Amber,
+            testTag = TestTags.HOME_MEASURE_TODAY,
+            onClick = onMeasureToday,
+        )
+    }
+}
+
+/**
+ * What the ways in do, bundled (ROADMAP N114).
+ *
+ * Five callbacks passed one by one pushed the list builder past the parameter ceiling this project sets, and
+ * they belong together anyway: every one of them is "where a row goes".
+ */
+internal class WayInActions(
+    val onStartWorkout: () -> Unit,
+    val onOpenPrograms: () -> Unit,
+    val onOpenTemplates: () -> Unit,
+    val onOpenMeasurements: () -> Unit,
+    val onMeasureToday: () -> Unit,
+)
 
 /**
  * One way in: a tile, a name, a line about it, and a chevron where the tap opens a screen.

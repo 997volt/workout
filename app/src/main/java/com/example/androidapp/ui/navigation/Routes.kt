@@ -47,9 +47,15 @@ data class Statistics(val exerciseId: String? = null)
 @Serializable
 data object Settings
 
-/** Body measurements (ROADMAP N32). */
+/**
+ * Body measurements (ROADMAP N32).
+ *
+ * [openDaily] is the home row's shortcut (N114): it opens the screen with the **daily** form already up,
+ * rather than leaving the lifter to find the FAB and answer which of the two records they meant. A default
+ * rather than a second destination, so both entries are one screen and a dismiss lands on the list either way.
+ */
 @Serializable
-data object Measurements
+data class Measurements(val openDaily: Boolean = false)
 
 /**
  * Adherence: how often the scheduled days happened, over the month the grid shows (ROADMAP P3.5).

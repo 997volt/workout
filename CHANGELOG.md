@@ -108,6 +108,31 @@ unreleased.
   `performTouchInput { longClick() }`. Rejected: a trailing info icon, which is discoverable but puts a second
   control in a slot that already means fold.
 
+- **Home offers to record the day's measurements, and only while today has none** (N114). A row below *Start
+  empty workout* opens the **daily** form directly — soreness, weight, body fat and muscle — so the thing the app
+  wants every day sits where the lifter already starts, rather than behind the measurements screen's FAB and its
+  question about which of N113's two records was meant. It is drawn on what is stored rather than on whether the
+  lifter was asked: today's entry makes it go, deleting today's entry brings it back, a tape day does not hide it
+  (the two records are separate) and a soreness-only morning does, because an entry states what it has (N113).
+  Recording is not starting, so B101's withholding of the start row while a workout is open does not reach it.
+  **The rule is a pure domain predicate**, `BodyMeasurement.isDailyOn(day, zone)`, and the "which local day is
+  this instant" helper moved out of `RoomMeasurementRepository` to sit beside it — `findOnDay` is its second
+  caller, and the row's day and the query's day drifting apart is the one failure that would read as the data
+  being wrong. The home ViewModel reads the day it already captured for the *Today* heading and the substitution
+  write, in the zone it captured it in, and fills one field from `MeasurementRepository.observeAll()` — which is
+  what makes the row live: saving makes it go, with nothing to refresh. The destination carries the intent
+  (`Measurements(openDaily = true)`, the screen seeding the form it already opens from the FAB, in
+  `rememberSaveable` so a dismiss stays dismissed across a rotation), so a dismiss lands on the list rather than
+  back on home. Rejected: drawing the row always and letting it open today's entry for editing — a row that
+  cannot say whether the day is answered is the one thing this row is for; a second destination or a
+  ViewModel-held dialog, which duplicates one screen and puts transient UI state in a database-driven flow
+  (N19); and a `COUNT` query of its own, cheap only by adding a port API and a second source of "today".
+  Covered by `BodyMeasurementDayTest` (the day, the two kinds and the local-midnight boundary), the home
+  screen's three row tests and the measurements screen's arrival test. **The ViewModel's own combine is not
+  directly tested**: a home ViewModel test would need `TemplateRepository`'s 19 and `ProgramRepository`'s 21
+  members stubbed, which neither has in shared form, and the one line it adds is the predicate above applied to
+  the day it already holds.
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added

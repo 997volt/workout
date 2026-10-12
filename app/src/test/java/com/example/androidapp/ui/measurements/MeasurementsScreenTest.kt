@@ -3,6 +3,7 @@ package com.example.androidapp.ui.measurements
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.androidapp.R
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -53,6 +54,7 @@ class MeasurementsScreenTest {
         onDelete: (String) -> Unit = {},
         error: DataError? = null,
         onDismissError: () -> Unit = {},
+        initialAdd: MeasurementKind? = null,
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -63,9 +65,22 @@ class MeasurementsScreenTest {
                     onBack = {},
                     error = error,
                     onDismissError = onDismissError,
+                    initialAdd = initialAdd,
                 )
             }
         }
+    }
+
+    @Test
+    fun arrivingWithTheDailyFormOpen_skipsTheQuestion() {
+        // ROADMAP N114: home's row opens the *daily* form directly, rather than leaving the lifter to find the
+        // FAB and answer which of N113's two records they meant. The list is behind it, so dismissing lands on
+        // what was recorded rather than back on home.
+        setScreen(initialAdd = MeasurementKind.DAILY)
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.ADD_DAILY).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsNotEnabled()
     }
 
     /** The two taps every add takes now: the button, then which of the two records (N113). */
