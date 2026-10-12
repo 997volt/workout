@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -690,23 +689,29 @@ private fun PlanSetRow(
 }
 
 /**
- * The effort, the rest and the cue this exercise's plan prescribes (N14, N59, N80, N111).
+ * The effort, the rest, the accept and the cue this exercise's plan prescribes (N14, N59, N80, N111, N116).
  *
- * The **target RPE is one number for the exercise**, below the rest the plan already carried rather
+ * The **target RPE is one number for the exercise**, beside the rest the plan already carried rather
  * than on every planned set. All three blank means "the plan says nothing" — the library's rest and
  * cue show through, and the workout's RPE stepper opens on its default — so the fields are empty
  * rather than zero.
  *
- * **The cue has a line of its own** (N80) — see [PlanCueField] — and it is read *first*, above the two
+ * **The cue has a line of its own** (N80) — see [PlanCueField] — and it is read *first*, above the
  * numbers (N99): the block reads in the order it is filled in, and the cue is the thing performed
- * differently rather than a number the plan already had. The save stays on the rest's row rather than
- * following the cue down: one press still writes all three, which is what that control's own content
- * description says.
+ * differently rather than a number the plan already had.
  *
- * **The RPE moved off that row when it gained a ± pair** (N111). A label, a value and two buttons do
- * not fit beside another number on a phone — the squeeze N68 gave the workout's own RPE stepper a row
- * for — and the field stays typeable beside the buttons, because every planned field is optional and a
- * stepper alone could never put a target back to none (N14).
+ * **The effort, the rest and the save share one line, in that order** (N116). The number the plan
+ * wants, the rest it prescribes and the control that writes both are one statement about one set, and
+ * splitting them made the effort look like a different kind of fact from the rest beside it. This
+ * supersedes the row of its own that N111 gave the RPE, and N68's squeeze behind it — but only here:
+ * the workout screen's own RPE stepper is untouched. What N111 priced was a label, a value and two
+ * buttons beside another number, and the arithmetic has changed: the label is the field's own floating
+ * one rather than a leading word, and both numbers are one or two characters. So the stepper takes
+ * `weight(1f)` and the fixed rest field narrows to [REST_FIELD_WIDTH] — and the two 48 dp step buttons
+ * and the save's own 48 dp target do not shrink, because that is the app's touch-target floor. If a
+ * narrower device runs out of room, a label gives way rather than a control. The field stays typeable
+ * beside the buttons, because every planned field is optional and a stepper alone could never put a
+ * target back to none (N14).
  */
 @Composable
 private fun ExercisePlanFields(
@@ -739,19 +744,36 @@ private fun ExercisePlanFields(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            // The effort, then the rest, then the control that writes both (N116). Reading them on one line
+            // is the point: they are one statement about one set, and the stepper is the flexible member —
+            // its field takes what is left, which is what makes room for the two 48 dp buttons beside a rest
+            // field and a save.
+            NumberStepper(
+                label = stringResource(R.string.set_rpe_label),
+                testTag = TestTags.TEMPLATE_EXERCISE_RPE,
+                increaseTag = TestTags.TEMPLATE_EXERCISE_INCREASE_RPE,
+                decreaseTag = TestTags.TEMPLATE_EXERCISE_DECREASE_RPE,
+                value = rpe,
+                onValueChange = { rpe = it },
+                keyboardType = KeyboardType.Decimal,
+                isError = !rpeIsValid,
+                // The workout's own RPE rule (N59): a blank target states the working end a logged set
+                // opens on rather than stepping a number that was never there, and neither button can
+                // leave 1–10.
+                onStep = { delta -> rpe = steppedRpeText(Rpe.parse(rpe), delta) },
+                modifier = Modifier.weight(1f),
+            )
             OutlinedTextField(
                 value = rest,
                 onValueChange = { rest = it },
-                modifier = Modifier.width(110.dp).testTag(TestTags.TEMPLATE_REST_FIELD),
+                modifier = Modifier.width(REST_FIELD_WIDTH).testTag(TestTags.TEMPLATE_REST_FIELD),
                 singleLine = true,
                 isError = !restIsValid,
                 label = { Text(stringResource(R.string.template_rest_label)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             )
-            // Holds the check at the block's right margin, where it was before the cue moved out of
-            // this row (N80) — the field is fixed-width, so without this the control that commits all
-            // three would jump to sit between it and the page's edge.
-            Spacer(modifier = Modifier.weight(1f))
+            // Last by construction now that there are three controls on the line, so the spacer that held
+            // it at the right margin when the rest field was the only thing here (N80) is gone.
             IconButton(
                 onClick = { onSave(restSeconds, cue.trim().ifEmpty { null }, rpeHalves) },
                 enabled = changed && restIsValid && rpeIsValid,
@@ -763,22 +785,18 @@ private fun ExercisePlanFields(
                 )
             }
         }
-        NumberStepper(
-            label = stringResource(R.string.set_rpe_label),
-            testTag = TestTags.TEMPLATE_EXERCISE_RPE,
-            increaseTag = TestTags.TEMPLATE_EXERCISE_INCREASE_RPE,
-            decreaseTag = TestTags.TEMPLATE_EXERCISE_DECREASE_RPE,
-            value = rpe,
-            onValueChange = { rpe = it },
-            keyboardType = KeyboardType.Decimal,
-            isError = !rpeIsValid,
-            // The workout's own RPE rule (N59): a blank target states the working end a logged set
-            // opens on rather than stepping a number that was never there, and neither button can
-            // leave 1–10.
-            onStep = { delta -> rpe = steppedRpeText(Rpe.parse(rpe), delta) },
-        )
     }
 }
+
+/**
+ * How wide the rest field is on the shared line (N116).
+ *
+ * Narrower than the 110 dp it held alone: a three- or four-digit rest still fits, and the 14 dp it gives
+ * back is what lets the stepper's field keep a readable width beside it on the smallest phone this app
+ * targets. Fixed rather than weighted because the *rest* is the one of the three whose width does not
+ * depend on its content — the stepper's field and the save are already the flexible and the fixed members.
+ */
+private val REST_FIELD_WIDTH = 96.dp
 
 /**
  * The cue, on a full-width line of its own (N80).

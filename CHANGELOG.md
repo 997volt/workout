@@ -81,6 +81,18 @@ unreleased.
   test that reaches it has to scroll the *list* to it, since a row the lazy list has not composed cannot be
   scrolled to by addressing the row.
 
+- **A plan's effort, its rest and the accept are one line** (N116). The template editor's set dialog drew the
+  rest and the check on one row with the RPE stepper on the next; the three are one statement about one set, so
+  they now read across in the order effort, rest, accept. **This supersedes the row of its own N111 gave the
+  RPE** — and N68's squeeze behind it — but only here: the workout screen's own RPE stepper is untouched. What
+  N111 priced was a label, a value and two buttons beside another number, and the arithmetic had changed: the
+  label is the field's own floating one rather than a leading word, and both numbers are one or two characters.
+  So the stepper takes the flexible width and the rest field narrows from 110 dp to 96 dp, and the spacer that
+  held the check at the right margin goes — with three controls it is last by construction. **The 48 dp step and
+  check targets do not shrink**: they are the app's touch-target floor, so if a narrower device runs out of room
+  a label gives way rather than a control. The layout is pinned by bounds rather than by tags, because the
+  failure worth catching is the row quietly wrapping — the idiom the workout screen already uses for *Done*.
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added

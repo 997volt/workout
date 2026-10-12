@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.templates
 
+import com.google.common.truth.Truth.assertThat
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -619,12 +620,13 @@ class TemplateEditorScreenTest {
 
     @Test
     fun theCue_getsALineOfItsOwn_andIsReadAboveTheNumbers() {
-        // ROADMAP N80, moved by N99 and re-laid-out by N111. The cue took `weight(1f)` between two fixed-width
-        // number fields and the save, so a phone left it about a word wide with `singleLine` on top. It is read
-        // *above* the numbers because the block reads in the order it is filled in; the save stayed on the
-        // rest's row rather than following the cue into a line of its own; and the RPE now takes a row of its
-        // own too, because a label, a value and a ± pair do not fit beside another number on a phone — the
-        // squeeze N68 gave the workout's own RPE stepper a row for.
+        // ROADMAP N80, moved by N99, re-laid-out by N111 and re-laid-out again by N116. The cue took
+        // `weight(1f)` between two fixed-width number fields and the save, so a phone left it about a word wide
+        // with `singleLine` on top; it is read *above* the numbers because the block reads in the order it is
+        // filled in. Below it the effort, the rest and the save share one line in that order (N116), which is
+        // where the row of its own N111 gave the RPE — and N68's squeeze behind it — were superseded: the label
+        // is the field's own floating one rather than a leading word, so the stepper fits beside the rest once
+        // it takes the flexible width and the rest field narrows.
         setScreen(
             state = twoExercises.copy(exercises = listOf(twoExercises.exercises.first())),
         )
@@ -637,13 +639,16 @@ class TemplateEditorScreenTest {
 
         assertTrue("the cue sits above the numbers, not on their row", cue.bottom <= rest.top)
         assertTrue(
-            "the cue is as wide as the number rows below it, not squeezed between them",
+            "the cue is as wide as the number row below it, not squeezed between them",
             cue.right - cue.left >= rpe.right - rpe.left,
         )
-        assertTrue("the RPE dropped to a row of its own for its ± pair", rpe.top >= rest.bottom)
         assertTrue(
-            "the save stayed on the rest's row rather than following the RPE down",
-            save.top >= cue.bottom && save.top < rpe.top,
+            "the effort and the rest share a line, the effort first (N116)",
+            rpe.top < rest.bottom && rest.top < rpe.bottom && rpe.right <= rest.left,
+        )
+        assertTrue(
+            "and the save is on that same line, at its end",
+            save.top < rest.bottom && rest.top < save.bottom && save.left >= rest.right,
         )
     }
 
@@ -906,6 +911,32 @@ class TemplateEditorScreenTest {
             .performScrollToNode(hasTestTag(TestTags.templatePlanSet("ts1")))
         composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts1"))
             .assertTextContains("1 · Working", substring = true)
+    }
+
+    /**
+     * The effort, the rest and the save are one line, in that order (ROADMAP N116).
+     *
+     * The three are one statement about one set, so a tag-level assertion cannot see the thing worth
+     * protecting: that they are on the same line rather than stacked. Bounds can — the idiom the workout
+     * screen uses for *Done* — and the failure to catch is the row silently wrapping.
+     */
+    @Test
+    fun theEffortTheRest_andTheSave_shareOneLine_inThatOrder() {
+        setScreen(state = twoExercises)
+        openBlock("te1")
+
+        val rpe = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE)
+            .getUnclippedBoundsInRoot()
+        val rest = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_FIELD)
+            .getUnclippedBoundsInRoot()
+        val save = composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_CUE_SAVE)
+            .getUnclippedBoundsInRoot()
+
+        assertThat(rest.left >= rpe.right).isTrue()
+        assertThat(save.left >= rest.right).isTrue()
+        // And within one line's height, so the order is read across rather than down.
+        assertThat(rpe.top < rest.bottom && rest.top < rpe.bottom).isTrue()
+        assertThat(rest.top < save.bottom && save.top < rest.bottom).isTrue()
     }
 
     /**
