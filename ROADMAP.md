@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one item. Last reviewed against the
+> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two items. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -14,10 +14,11 @@
 > picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
 > still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds N107,
-> which shortens [DECISIONS.md](DECISIONS.md) without dropping a decision. **Reading the P1.1, B103 and N110
-> batch line by line — and running it on a device — found five defects (B104–B108); all five are fixed and
-> recorded in [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen
-> defects (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
+> which shortens [DECISIONS.md](DECISIONS.md) without dropping a decision, and N112, which makes a set's
+> number and the plan's remainder count only the sets that stand on their own. **Reading the P1.1, B103 and
+> N110 batch line by line — and running it on a device — found five defects (B104–B108); all five are fixed
+> and recorded in [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found
+> sixteen defects (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -35,7 +36,8 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-One item is planned, and it is text rather than code.
+Two items are planned: one is text rather than code, and one changes how a plan's sets are numbered and
+counted.
 
 - **The longest evidence-backed entries state the rule and defer their argument to the evidence** (N107).
   The file's own contract is that an entry is the rule, the shortest honest reason and the rejected
@@ -43,6 +45,21 @@ One item is planned, and it is text rather than code.
   that already have an evidence section run to 13–26 lines and carry the full argument anyway; enforcing
   the contract on those twelve moves it to the section that exists for it, losing no decision. It is a text
   change rather than a code one, so it can land before or after the tag.
+
+- **A set's number, and the plan's remainder, count only the sets that stand on their own** (N112). A
+  warm-up takes no number, so an exercise's first working set is **1** — on the plan, in the workout and in
+  the history, which are three readings of one sequence and have to be numbered by one rule. The remainder
+  follows: *planned sets left* counts the plan's working sets against the logged working ones, so a ramp the
+  plan opens with stops being asked for as if it were the work. **The app already reads a plan this way
+  everywhere but here**: N20 leaves warm-ups out of both sides of the comparison, as N17 and N67 leave them
+  out of progression and effort, while N70's count still compares every logged set with every planned one —
+  so four warm-ups and three working sets report **seven** left, and the first working set is numbered 5.
+  Rejected: moving the numbers alone, because N70's own rule is that the line and the label share **one**
+  count, so numbering the work while counting the preparation is the same disagreement one row down. A rung
+  keeps its number — a run is work the plan prescribes and the lifter performs, where a warm-up is
+  preparation — and the history row gains the role label it never showed, since a warm-up with neither a
+  number nor a label is a row with nothing to say what it was. N70's count is **amended with the code**
+  rather than left reading as binding, which is the cleanup N105 had to do once already.
 
 ## Parked — deliberately not planned
 
@@ -124,12 +141,12 @@ screen's silent write failure (B102) — and 2.1 — P1.1's strength and bodybui
 category over movements (N110), the unstated-taxonomy read (B103) and the five defects the reading of that
 batch found (B104–B108) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds one item**: N107's text shortening. **The reading that produced 2.1 found five defects in it, all
-fixed before the tag (B104–B108)** — the one that mattered left the instrumented job red, because a program
-document's former variation imports under its family now and the test still asserted the link the shape no
-longer has. 2.0 shipped with the loudest note this project has written — the 1.x store stays on the device and
-2.0 does not read it — and the rule that allowed that is in [DECISIONS.md](DECISIONS.md), with the window it
-stays payable in.
+***Next* holds two items**: N107's text shortening and N112's numbering. **The reading that produced 2.1
+found five defects in it, all fixed before the tag (B104–B108)** — the one that mattered left the
+instrumented job red, because a program document's former variation imports under its family now and the test
+still asserted the link the shape no longer has. 2.0 shipped with the loudest note this project has written —
+the 1.x store stays on the device and 2.0 does not read it — and the rule that allowed that is in
+[DECISIONS.md](DECISIONS.md), with the window it stays payable in.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what they named
 that is not a feature is a settled decision: no dated instances (N16), nothing automatic (the app states
