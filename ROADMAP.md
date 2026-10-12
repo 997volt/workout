@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds three items. Last reviewed against the
+> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds four items. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -13,10 +13,10 @@
 > movements with a movement reading its family's pattern and muscles, 61 movements joined the 45, and the
 > picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
 > still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds three
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds four
 > items — a row on home that offers to record the day's measurements when today has none, moving today's workout
-> to the bottom of that screen, and one line in the template editor's set dialog. **Reading the P1.1, B103 and
-> N110 batch line by
+> to the bottom of that screen, one line in the template editor's set dialog, and a long press on a library
+> family. **Reading the P1.1, B103 and N110 batch line by
 > line — and running it on a device — found five defects (B104–B108); all five are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen defects
 > (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
@@ -37,7 +37,8 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Three items are planned: the home screen's row order twice, and one row in the template editor's set dialog.
+Four items are planned: the home screen's row order twice, one row in the template editor's set dialog, and a
+long press in the library.
 
 - **Home offers to record the day's measurements, and only while today has none** (N114). A row below *Start
   empty workout* opens the **daily** form directly — soreness, weight, body fat and muscle — so the one thing the
@@ -91,6 +92,24 @@ Three items are planned: the home screen's row order twice, and one row in the t
   the rest beside it. Its test reuses the bounds idiom `ActiveWorkoutScreenTest` already has for *Done* — a left-edge
   comparison plus overlapping tops and bottoms — because the failure to catch is the row silently wrapping, which no
   tag-level `assertIsDisplayed` can see.
+
+- **A long press on a library family shows the facts it hands down** (N117). The category head's tap already means
+  fold (N91), so the details of a *category* — the pattern, primary and secondary muscles it states for its
+  movements, and how many it holds — are reached by holding the row instead. Those three are exactly the fields
+  N110's own-if-stated rule resolves a movement against, so this is where a lifter sees what a family is
+  contributing; each reads as **unstated** when the row states nothing, which is what null means (N110), not
+  *Other*. **Equipment is deliberately not among them**: a family spans equipment and never inherits it (N110), so
+  a dialog showing one would imply an inheritance the model refuses.
+  **A dialog, not a destination**: this is a peek at a row rather than a screen, and `ExerciseDetail` is built for
+  a movement — its fields are a lift's unit, step, rest and note, none of which a category can use. Rejected too:
+  a trailing info icon, which is discoverable but puts a second control in a slot that already means fold.
+  **`AppRow` grows an optional `onLongClick` and `onLongClickLabel`**, and must take `combinedClickable` *only*
+  when a long press is given: `combinedClickable`'s `onClick` is not nullable, so defaulting it would make every
+  row without an action clickable — a ripple and a focus target that do nothing. **The label is not optional
+  either**: this is the app's first long press (nothing uses `combinedClickable` today), and `onLongClickLabel` is
+  what makes a gesture with no visible control announceable beside the row's existing action and state (N95, B21).
+  Its test is the suite's first `performTouchInput { longClick() }` — asserting the dialog opens on a folded *and*
+  an expanded head — plus the tag's entry in the coverage test.
 
 ## Parked — deliberately not planned
 
@@ -174,8 +193,8 @@ batch found (B104–B108), the warm-ups out of the set numbering and the plan's 
 record split in two with soreness moved to the day (N113), and the long entries deferring their argument to
 the evidence (N107) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds three items** (N114, N115, N116), written after the queue drained and the section stood empty — the
-state it is meant to reach rather than a gap to fill, and these are the first things planned since. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
+***Next* holds four items** (N114–N117), written after the queue drained and the section stood empty — the state it
+is meant to reach rather than a gap to fill, and these are the first things planned since. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
 that mattered left the instrumented job red, because a program document's former variation imports under its
 family now and the test still asserted the link the shape no longer has. 2.0 shipped with the loudest note this project has written — the 1.x store stays on the device and
 2.0 does not read it — and the rule that allowed that is in [DECISIONS.md](DECISIONS.md), with the window it
