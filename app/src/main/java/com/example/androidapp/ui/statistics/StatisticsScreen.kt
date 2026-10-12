@@ -304,8 +304,7 @@ private fun MetricPicker(selected: MetricKey, onSelectMetric: (MetricKey) -> Uni
             modifier = Modifier.testTag(TestTags.Statistics.METRIC),
         ) {
             Text(
-                text = stringResource(R.string.statistics_metric) + ": " +
-                    stringResource(selectedEntry.labelRes),
+                text = stringResource(R.string.statistics_metric) + ": " + selectedEntry.label(),
             )
         }
 
@@ -313,7 +312,7 @@ private fun MetricPicker(selected: MetricKey, onSelectMetric: (MetricKey) -> Uni
         MetricGroup.entries.forEach { group ->
             MetricRegistry.entries.filter { it.group == group }.forEach { entry ->
                 DropdownMenuItem(
-                    text = { Text(stringResource(entry.labelRes)) },
+                    text = { Text(entry.label()) },
                     onClick = {
                         open = false
                         onSelectMetric(entry.key)

@@ -11,6 +11,8 @@ import com.example.androidapp.domain.model.TrendPoint
 import java.time.Instant
 import org.junit.Test
 import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SoreMuscle
 
 /**
  * Reading a series out of whatever the metric is stored in (ROADMAP N35).
@@ -81,6 +83,25 @@ class MetricSeriesTest {
                 .readings.single().value).isEqualTo(183.0)
         assertThat(metricSeries(MetricKey.Body(BodyMetric.MUSCLE), measurements = listOf(entry))
                 .readings.single().value).isEqualTo(421.0)
+    }
+
+    @Test
+    fun sorenessReadsTheMuscleItNames_andLeavesTheOthersGaps() {
+        // N118: the daily record states soreness one muscle at a time (N113), so one series per muscle is
+        // what the data already is. A muscle the day did not mention is a **gap**, not a zero — a line at
+        // zero would claim the lifter was not sore rather than that they did not say.
+        val entry = BodyMeasurement(
+            id = "m",
+            measuredAt = first,
+            kind = MeasurementKind.DAILY,
+            soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 8)),
+        )
+
+        val quads = metricSeries(MetricKey.Soreness(MuscleGroup.QUADS), measurements = listOf(entry))
+        val calves = metricSeries(MetricKey.Soreness(MuscleGroup.CALVES), measurements = listOf(entry))
+
+        assertThat(quads.readings.single().value).isEqualTo(8.0)
+        assertThat(calves.readings.single().value).isNull()
     }
 
     @Test

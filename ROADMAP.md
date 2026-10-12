@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two items. Last reviewed against the
+> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one item. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -14,8 +14,7 @@
 > picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
 > still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds four
-> items — soreness becoming a statistic, which is the reading N113's own record was missing, and a program's own
-> muscle balance read from its overflow. **Reading the P1.1, B103 and N110 batch line by
+> item — a program's own muscle balance read from its overflow. **Reading the P1.1, B103 and N110 batch line by
 > line — and running it on a device — found five defects (B104–B108); all five are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen defects
 > (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
@@ -36,29 +35,8 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Two items are planned: the reading for the soreness N113 records, and a program's muscle balance.
+One item is planned: a program's muscle balance.
 
-- **Soreness becomes a statistic, one series per muscle** (N118). N113 had the app start recording the muscles a
-  day reports sore, each with its own score, and **nothing reads them back**: the measurements list and a
-  session's own history rows are the only places they appear, so the one number the app asks for every day is
-  the one it never shows. This adds the reading, not the record — a fifth `MetricKey` beside `Tape`, with the
-  registry, chart, axis, readings and picker the other series already use.
-  **It is shaped like a tape site because it is the same kind of fact**: `MetricKey.Soreness(muscle)`, listed
-  under `MetricGroup.BODY`, labelled with the taxonomy's own `MuscleGroup.label`, and offered for
-  `SORE_MUSCLE_GROUPS` — the selectable muscles minus *Other* (N62, N75) — so the picker offers exactly what the
-  daily form lets a lifter choose, and cannot offer a muscle nobody can be sore in. The unit is the
-  `MetricUnit.RATING` the workout's own effort, muscle feel and joint pain already plot, on the same fixed
-  1–10 `RATING_SCALE`, and **`higherIsBetter = false`** is the one difference: like joint pain, more soreness is
-  worse, and the chart already knows how to say which way is forward (N17, N39). `MetricKey.id` gains
-  `SORE:<muscle>`, so a stored preference — and the rate target N98 gives every metric for free — names a stable
-  series like every other metric's. The registry's own test asserts each key and each entry exist in both
-  directions, so a half-added series cannot ship.
-  **A day that states nothing for a muscle is a gap, not a zero**, which is the rule the tape series already
-  follows: null is *unstated* (N110), and a line drawn at zero would claim a lifter was not sore on a day they
-  simply did not answer. No schema moves and no transfer format moves, because the data is already in the daily
-  record — it is a reading change, which is what makes it the cheapest way to close what N113 left open.
-  Rejected: one aggregate "soreness" series counting how many muscles were sore in a day, which cannot say
-  *which* muscle and answers only the question the list already answers.
 
 - **A program can be read for the work it spreads where** (N119). The program editor's overflow gains *Muscle
   balance*: a destination of its own that counts the program's **planned working sets per muscle group**, so
@@ -163,11 +141,11 @@ batch found (B104–B108), the warm-ups out of the set numbering and the plan's 
 record split in two with soreness moved to the day (N113), and the long entries deferring their argument to
 the evidence (N107), the four that followed it — today's workout to the foot of home (N115), the set dialog's
 one-line effort, rest and accept (N116), the library's long-press family details (N117) and home's row that
-records the day (N114), a program slot's ⋮ opening its template (N120) and a planned row's ⋮ opening the lift
-(N121) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
+records the day (N114), a program slot's ⋮ opening its template (N120), a planned row's ⋮ opening the lift
+(N121) and soreness becoming a statistic (N118) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds two items.** N118 was found by asking what the app now records and never reads back; N119 asked
-the same question of the *plan* — what it prescribes is read today only slot by slot, so a week's shape is
+***Next* holds one item.** N118 was found by asking what the app now records and never reads back, and N119
+asks the same question of the *plan* — what it prescribes is read today only slot by slot, so a week's shape is
 nowhere. The section is filled from what the log and the plan hold, never to keep itself full. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
 that mattered left the instrumented job red, because a program document's former variation imports under its
 family now and the test still asserted the link the shape no longer has. 2.0 shipped with the loudest note this project has written — the 1.x store stays on the device and

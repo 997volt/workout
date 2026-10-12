@@ -160,6 +160,21 @@ unreleased.
   ceiling, so its fold label is compacted rather than a helper added (which moved the *file* to its own ceiling,
   and then put `stringResource` inside a `SemanticsPropertyReceiver` lambda, where it cannot be called).
 
+- **Soreness is a statistic, one series per muscle** (N118). N113 had the app start recording the muscles a day
+  reports sore, each with its own score, and nothing read them back: the measurements list and a session's own
+  history rows were the only places they appeared, so the one number the app asks for every day was the one it
+  never showed. The statistics picker now offers a series per **selectable** muscle — the taxonomy minus *Other*,
+  exactly what the daily form lets a lifter choose — read from the daily record's own list. A day that does not
+  state a muscle is a **gap, not a zero**, which is the rule the tape sites already follow: a line at zero would
+  claim a lifter was not sore on a day they simply did not answer. The scale is the `RATING` unit the workout's
+  effort, muscle feel and joint pain already plot, on the same fixed 1–10 axis, and **more is worse** like pain —
+  which is the one thing that differs from every other body series, and the change that made an existing test
+  fail on purpose (it names the metrics where less is better, so soreness had to be added there rather than
+  sliding in). **`MetricEntry` can now take its label from the domain**: a muscle's name is the taxonomy's own
+  word, which the diary, the picker and the session rows already share, and inventing twenty string resources to
+  say "Quads" a second time is how a vocabulary forks. The two sources are exclusive and one is always present,
+  which the registry test asserts. Nothing is stored and no transfer format moves — the data was already there.
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added

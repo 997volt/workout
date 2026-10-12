@@ -45,6 +45,15 @@ fun metricSeries(
         is MetricKey.Exercise -> exercises.map { MetricReading(it.startedAt, key.metric.valueOf(it)) }
         is MetricKey.Body -> measurements.map { MetricReading(it.measuredAt, bodyValue(key.metric, it)) }
         is MetricKey.Tape -> measurements.map { MetricReading(it.measuredAt, it.at(key.site)?.toDouble()) }
+        // N118: the daily record's own list. A day that does not state this muscle is a null reading — the
+        // gap the tape sites already leave — because a zero would claim a lifter was not sore on a day they
+        // simply did not answer.
+        is MetricKey.Soreness -> measurements.map {
+            MetricReading(
+                it.measuredAt,
+                it.soreMuscles.firstOrNull { sore -> sore.muscle == key.muscle }?.score?.toDouble(),
+            )
+        }
     }.sortedBy { it.at },
 )
 

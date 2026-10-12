@@ -10,6 +10,10 @@ import com.example.androidapp.domain.model.TrendMetric
 import com.example.androidapp.domain.model.asRating
 import com.example.androidapp.domain.model.asTenthsOrWhole
 import com.example.androidapp.ui.measurements.MeasurementFormat
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SORE_MUSCLE_GROUPS
 
 /** The three groups the picker offers, in the order it offers them (ROADMAP N35). */
 enum class MetricGroup { WORKOUT, EXERCISE, BODY }
@@ -29,6 +33,14 @@ sealed interface MetricKey {
     data class Tape(val site: TapeSite) : MetricKey
 
     /**
+     * One muscle's soreness, a body series the daily record states (ROADMAP N118).
+     *
+     * Per muscle rather than one series, because "how sore was I" is not a number a lifter can act on: the
+     * question is which muscle, and the record already answers it one muscle at a time (N113).
+     */
+    data class Soreness(val muscle: MuscleGroup) : MetricKey
+
+    /**
      * A stable name for this series.
      *
      * Built from the enums' own names rather than hand-written, so a test tag, a stored preference and a
@@ -41,6 +53,7 @@ sealed interface MetricKey {
             is Exercise -> "EXERCISE:${metric.name}"
             is Body -> "BODY:${metric.name}"
             is Tape -> "TAPE:${site.name}"
+            is Soreness -> "SORE:${muscle.name}"
         }
 
     /**
@@ -182,7 +195,15 @@ private inline fun signed(text: String, convert: (Double) -> Double): Double? =
 data class MetricEntry(
     val key: MetricKey,
     val group: MetricGroup,
-    @StringRes val labelRes: Int,
+    /**
+     * The series' name as a string resource, or null when the domain already names it ([labelText]).
+     *
+     * Two sources rather than one because a muscle's name is the taxonomy's own (`MuscleGroup.label`), which
+     * the soreness picker, the diary and the session rows all read — inventing twenty string resources to say
+     * "Quads" a second time is how a vocabulary forks. Every entry states exactly one of the two, which
+     * `MetricRegistryTest` asserts.
+     */
+    @StringRes val labelRes: Int? = null,
     val unit: MetricUnit,
     /** Bars for count-like series, a line for continuous ones (ROADMAP N38). */
     val isBars: Boolean,
@@ -213,7 +234,17 @@ data class MetricEntry(
      * read its family.
      */
     val acceptsHead: Boolean = false,
+    /** A label the domain already carries: a muscle group's own name (ROADMAP N118). */
+    val labelText: String? = null,
 )
+
+/** The series' own name, from whichever of the two sources its entry states. */
+@Composable
+fun MetricEntry.label(): String {
+    labelText?.let { return it }
+    val res = requireNotNull(labelRes) { "metric ${key.id} states no label" }
+    return stringResource(res)
+}
 
 /**
  * Every series, in one place (ROADMAP N35).
@@ -255,6 +286,7 @@ object MetricRegistry {
             ),
         )
         TapeSite.entries.forEach { add(tapeEntry(it)) }
+        SORE_MUSCLE_GROUPS.forEach { add(sorenessEntry(it)) }
     }
 
     /** The entry for a key. Every key has one, which a test asserts in both directions. */
@@ -340,6 +372,23 @@ private fun ExerciseTrendMetric.acceptsHead(): Boolean = when (this) {
     ExerciseTrendMetric.ASSISTANCE,
     -> false
 }
+
+/**
+ * One muscle's soreness (ROADMAP N118).
+ *
+ * A rating on the same fixed scale as the workout's own effort and joint pain, and **more is worse** like
+ * pain — the one thing that differs from a weight or a tape site. The label is the taxonomy's, so the picker
+ * says "Quads" with the same word the diary and the session rows use.
+ */
+private fun sorenessEntry(muscle: MuscleGroup) = MetricEntry(
+    key = MetricKey.Soreness(muscle),
+    group = MetricGroup.BODY,
+    labelText = muscle.label,
+    unit = MetricUnit.RATING,
+    isBars = false,
+    higherIsBetter = false,
+    fixedRange = RATING_SCALE,
+)
 
 private fun tapeEntry(site: TapeSite) = MetricEntry(
     key = MetricKey.Tape(site),

@@ -6,6 +6,7 @@ import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.TrendMetric
 import org.junit.Test
+import com.example.androidapp.domain.model.SORE_MUSCLE_GROUPS
 
 /**
  * The registry covers every series, and says the truth about each (ROADMAP N35).
@@ -37,9 +38,27 @@ class MetricRegistryTest {
             assertWithMessage("every tape site is a series").that(entries.count { it.key == MetricKey.Tape(site) })
                 .isEqualTo(1)
         }
+        SORE_MUSCLE_GROUPS.forEach { muscle ->
+            assertWithMessage("every muscle a lifter can be sore in is a series (N118)")
+                .that(entries.count { it.key == MetricKey.Soreness(muscle) })
+                .isEqualTo(1)
+        }
 
-        // Three ratings, eight exercise metrics, three body metrics and seven tape sites.
-        assertThat(entries.size).isEqualTo(21)
+        // Three ratings, eight exercise metrics, three body metrics, seven tape sites and one soreness
+        // series per selectable muscle (N118).
+        assertThat(entries.size).isEqualTo(21 + SORE_MUSCLE_GROUPS.size)
+    }
+
+    @Test
+    fun everyEntry_statesExactlyOneLabel() {
+        // N118: a label comes from the taxonomy for a sore muscle — the word the diary and the session rows
+        // already use — and from a string resource for every other series. "Both" or "neither" would be a
+        // metric whose name is a coin toss, so the two sources are exclusive and one of them is always there.
+        entries.forEach { entry ->
+            assertWithMessage("${entry.key.id} states one label, not two and not none")
+                .that((entry.labelRes != null) != (entry.labelText != null))
+                .isTrue()
+        }
     }
 
     @Test
@@ -142,9 +161,12 @@ class MetricRegistryTest {
     @Test
     fun withinAGroup_theLabelsAreDistinct() {
         // The three rating strings are shared on purpose — RPE means the same thing at both levels — so
-        // the invariant is per group, which is how the picker shows them.
+        // the invariant is per group, which is how the picker shows them. A label is compared by its
+        // **source** (N118): a muscle's name is the taxonomy's word, and a string resource is the other kind,
+        // so `res:2131099` and "Quads" can never collide while two nulls would look alike.
         MetricGroup.entries.forEach { group ->
-            val labels = entries.filter { it.group == group }.map { it.labelRes }
+            val labels = entries.filter { it.group == group }
+                .map { it.labelText ?: "res:${it.labelRes}" }
             assertWithMessage("two series in $group share a label, so one of them is unreadable")
                 .that(labels.distinct().size)
                 .isEqualTo(labels.size)
@@ -155,11 +177,14 @@ class MetricRegistryTest {
     fun onlyAssistanceAndPain_areBetterWhenLower() {
         val lower = entries.filterNot { it.higherIsBetter }.map { it.key }.toSet()
 
-        assertWithMessage("assistance and joint pain are the two where less is better").that(lower).isEqualTo(setOf(
+        // Soreness joins them (N118): more of it is worse, which is the one thing that differs from every
+        // other body series. The set is written out rather than counted, so a metric that quietly flipped
+        // would have to be added here on purpose.
+        assertWithMessage("assistance, joint pain and soreness are where less is better").that(lower).isEqualTo(setOf(
                 MetricKey.Exercise(ExerciseTrendMetric.ASSISTANCE),
                 MetricKey.Workout(TrendMetric.JOINT_PAIN),
                 MetricKey.Exercise(ExerciseTrendMetric.JOINT_PAIN),
-            ))
+            ) + SORE_MUSCLE_GROUPS.map { MetricKey.Soreness(it) }.toSet())
     }
 
     @Test
