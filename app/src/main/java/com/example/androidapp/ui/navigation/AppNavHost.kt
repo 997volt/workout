@@ -207,6 +207,9 @@ private fun NavGraphBuilder.templateDestinations(navController: NavHostControlle
                 navController.navigate(ExercisePicker(templateId = templateId))
             },
             onBack = { navController.popBackStack() },
+            // The lift behind a planned row (N121): the same destination the library reaches, so a plan and
+            // the library cannot show one lift two ways.
+            onOpenExercise = { exerciseId -> navController.navigate(ExerciseDetail(exerciseId)) },
         )
     }
 }

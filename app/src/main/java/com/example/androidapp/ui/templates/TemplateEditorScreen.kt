@@ -81,6 +81,7 @@ import com.example.androidapp.ui.components.ExerciseMenuTags
 import com.example.androidapp.ui.components.NumberStepper
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TemplateSetDialog
+import com.example.androidapp.ui.components.OpenExerciseAction
 import com.example.androidapp.ui.components.WarmUpAction
 import com.example.androidapp.ui.components.warmUpActionFor
 import com.example.androidapp.ui.components.setNumbers
@@ -101,6 +102,13 @@ import com.example.androidapp.ui.theme.AndroidAppTheme
 fun TemplateEditorRoute(
     onAddExercise: (String) -> Unit,
     onBack: () -> Unit,
+    /**
+     * Opens a planned exercise's own screen (ROADMAP N121), which is the destination the library reaches.
+     *
+     * Planning is where a lifter notices the lift's facts matter — its unit, step, rest and cue — and the only
+     * way to them was to leave the template and find the lift in the library.
+     */
+    onOpenExercise: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TemplateEditorViewModel = hiltViewModel(),
 ) {
@@ -119,6 +127,7 @@ fun TemplateEditorRoute(
         state = state,
         onRename = viewModel::onRename,
         onRemoveExercise = viewModel::onRemoveExercise,
+        onOpenExercise = onOpenExercise,
         onToggleSuperset = viewModel::onToggleSuperset,
         onMoveExercise = viewModel::onMoveExercise,
         onDeleteTemplate = viewModel::onDeleteTemplate,
@@ -142,6 +151,7 @@ fun TemplateEditorScreen(
     state: TemplateEditorUiState,
     onRename: (String) -> Unit,
     onRemoveExercise: (String) -> Unit,
+    onOpenExercise: (String) -> Unit,
     onMoveExercise: (String, Int) -> Unit,
     onDeleteTemplate: () -> Unit,
     onAddExercise: () -> Unit,
@@ -199,6 +209,7 @@ fun TemplateEditorScreen(
             state = state,
             onRename = onRename,
             onRemoveExercise = onRemoveExercise,
+            onOpenExercise = onOpenExercise,
             onToggleSuperset = onToggleSuperset,
             onMoveExercise = onMoveExercise,
             onAddSet = onAddSet,
@@ -314,6 +325,7 @@ private fun TemplateEditorBody(
     state: TemplateEditorUiState,
     onRename: (String) -> Unit,
     onRemoveExercise: (String) -> Unit,
+    onOpenExercise: (String) -> Unit,
     onMoveExercise: (String, Int) -> Unit,
     onAddSet: (String, TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
@@ -365,6 +377,7 @@ private fun TemplateEditorBody(
                         onMoveUp = { onMoveExercise(exercise.id, -1) },
                         onMoveDown = { onMoveExercise(exercise.id, 1) },
                         onRemove = { onRemoveExercise(exercise.id) },
+                        onOpenExercise = { onOpenExercise(exercise.exerciseId) },
                         // Same rule as the workout screen: the first planned exercise has no
                         // exercise above it to pair with (ROADMAP B28).
                         onToggleSuperset = if (index == 0) null else { { onToggleSuperset(exercise.id) } },
@@ -450,6 +463,7 @@ private fun TemplateExerciseBlock(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
+    onOpenExercise: () -> Unit,
     onAddSet: (TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
@@ -478,6 +492,7 @@ private fun TemplateExerciseBlock(
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
             onRemove = onRemove,
+            onOpenExercise = onOpenExercise,
             onToggleSuperset = onToggleSuperset,
             addWarmUps = addWarmUps,
             supersetLabels = supersetLabels,
@@ -852,12 +867,14 @@ private fun TemplateExerciseRow(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
+    onOpenExercise: () -> Unit,
     modifier: Modifier = Modifier,
     onToggleSuperset: (() -> Unit)? = null,
     /** The warm-up entry this row's ⋮ offers, or null where no ramp can be built (N28, B50, N81). */
     addWarmUps: WarmUpAction? = null,
     supersetLabels: Map<String, String> = emptyMap(),
 ) {
+    // Read here rather than inside the semantics lambda below, which is not a composable context (N91).
     val openLabel = stringResource(R.string.template_exercise_open)
     val foldedLabel = stringResource(R.string.template_exercise_folded)
     ListItem(
@@ -871,15 +888,13 @@ private fun TemplateExerciseRow(
                     .fillMaxWidth()
                     .clickable(
                         onClickLabel = stringResource(
-                            if (isExpanded) {
-                                R.string.template_close_exercise
-                            } else {
-                                R.string.template_open_exercise
-                            },
+                            if (isExpanded) R.string.template_close_exercise else R.string.template_open_exercise,
                             exercise.exerciseName,
                         ),
                         onClick = onToggle,
                     )
+                    // Announced beside the action, because the same name behaves differently depending on a
+                    // state a reader cannot see (B21's rule, applied to a fold).
                     .semantics { stateDescription = if (isExpanded) openLabel else foldedLabel }
                     .testTag(TestTags.templateFold(exercise.id)),
             ) {
@@ -915,6 +930,7 @@ private fun TemplateExerciseRow(
                 canMoveDown = !isLast,
                 canToggleSuperset = onToggleSuperset != null,
                 addWarmUps = addWarmUps,
+                onOpenExercise = onOpenExercise,
                 onToggleSuperset = { onToggleSuperset?.invoke() },
                 onMove = { delta -> if (delta < 0) onMoveUp() else onMoveDown() },
                 onRemove = onRemove,
@@ -940,6 +956,7 @@ private fun ExerciseMenu(
     /** False for the first planned exercise, which has nothing above it to pair with (B28). */
     canToggleSuperset: Boolean,
     addWarmUps: WarmUpAction?,
+    onOpenExercise: () -> Unit,
     onToggleSuperset: () -> Unit,
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
@@ -951,6 +968,12 @@ private fun ExerciseMenu(
         // Not offered rather than writing a group that rewrites every ungrouped row.
         supersetGrouped = if (canToggleSuperset) exercise.supersetGroup != null else null,
         addWarmUps = addWarmUps,
+        // Only this screen supplies it: the live workout's menu must not grow a way out of a running
+        // session (N121).
+        openExercise = OpenExerciseAction(
+            tag = TestTags.templateOpenExercise(exercise.id),
+            onClick = onOpenExercise,
+        ),
         removeTitle = stringResource(R.string.template_remove_confirm_title),
         removeText = stringResource(R.string.template_remove_confirm_text, exercise.exerciseName),
         onToggleSuperset = onToggleSuperset,
@@ -1019,6 +1042,7 @@ private fun TemplateEditorScreenPreview() {
             ),
             onRename = {},
             onRemoveExercise = {},
+            onOpenExercise = {},
             onMoveExercise = { _, _ -> },
             onDeleteTemplate = {},
             onAddExercise = {},

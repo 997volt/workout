@@ -494,6 +494,19 @@ class ActiveWorkoutScreenTest {
     }
 
     @Test
+    fun theWorkoutsMenu_doesNotOfferToOpenTheExercise() {
+        // ROADMAP N121: the shared ⋮ gained an *Open exercise* entry, and a template supplies it. The live
+        // workout deliberately does not — leaving a running session to look at one lift is its own decision,
+        // and a mis-tap mid-session costs more than the look is worth — so the entry's absence is the
+        // assertion, by the words this menu would show.
+        setScreen(state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.exerciseMenu("se1")).performClick()
+
+        composeTestRule.onNodeWithText("Open exercise").assertDoesNotExist()
+    }
+
+    @Test
     fun removingAnExercise_asksFirst_andWritesNothingUntilConfirmed() {
         // ROADMAP B2: the removal has no undo, so the dialog is the guard — and N53 moved the action
         // into the exercise's own overflow without changing that.

@@ -124,6 +124,9 @@
     <!-- Reordering an exercise inside its own list (ROADMAP N54). The words name the effect on the
          list, not a direction on screen, so they read the same way in a right-to-left layout. -->
     <string name="exercise_menu_move_up">Move up</string>
+    <!-- Opens the lift's own screen from a plan's row (ROADMAP N121). It names no lift, because this menu's
+         entries do not: the ⋮ sits inside one exercise's block. -->
+    <string name="exercise_menu_open">Open exercise</string>
     <string name="exercise_menu_move_down">Move down</string>
     <!-- The rest an exercise prescribes, shown as a fixed label when the timer is switched off
          (ROADMAP N44): the same value the countdown would have used, with nothing running. -->

@@ -8,6 +8,11 @@ import com.example.androidapp.domain.model.TapeSite
  * Tests target these instead of English literals, so a translated string cannot
  * break a test — and so a test failure means behaviour changed, not wording.
  */
+@Suppress("TooManyFunctions")
+// The registry is one name per control the app has, so its count grows with the app by design and this ceiling
+// is the wrong shape of check for it. The principled remedy is the one this file already uses — a nested object
+// per area, which `Programs`, `Home` and `Measurements` are — and the template tags are the next group to move
+// there; that is a rename across ninety-odd call sites, so it is its own change rather than a rider on N121.
 object TestTags {
     const val SET_WEIGHT_FIELD = "set_weight_field"
     const val SET_REPS_FIELD = "set_reps_field"
@@ -380,6 +385,9 @@ object TestTags {
     fun templateExerciseRow(id: String) = "template_exercise_$id"
 
     /** A planned exercise's ⋮: the entries it opens are tagged by the helpers below (ROADMAP N71). */
+    /** The ⋮ entry that opens the lift itself from a planned row (ROADMAP N121). */
+    fun templateOpenExercise(id: String) = "template_open_exercise_$id"
+
     fun templateMenu(id: String) = "template_menu_$id"
 
     /** Reordering a template's exercises: one helper, because up and down are one idea. */

@@ -58,6 +58,7 @@ class TemplateEditorScreenTest {
     private data class Actions(
         val onRename: (String) -> Unit = {},
         val onRemoveExercise: (String) -> Unit = {},
+        val onOpenExercise: (String) -> Unit = {},
         val onMoveExercise: (String, Int) -> Unit = { _, _ -> },
         val onDeleteTemplate: () -> Unit = {},
         val onAddExercise: () -> Unit = {},
@@ -98,6 +99,7 @@ class TemplateEditorScreenTest {
                 state = state,
                 onRename = actions.onRename,
                 onRemoveExercise = actions.onRemoveExercise,
+                onOpenExercise = actions.onOpenExercise,
                 onMoveExercise = actions.onMoveExercise,
                 onDeleteTemplate = actions.onDeleteTemplate,
                 onAddExercise = actions.onAddExercise,
@@ -166,6 +168,7 @@ class TemplateEditorScreenTest {
                 state = state.value,
                 onRename = {},
                 onRemoveExercise = {},
+                onOpenExercise = {},
                 onMoveExercise = { _, _ -> },
                 onDeleteTemplate = {},
                 onAddExercise = {},
@@ -196,6 +199,7 @@ class TemplateEditorScreenTest {
                 state = state.value,
                 onRename = {},
                 onRemoveExercise = {},
+                onOpenExercise = {},
                 onMoveExercise = { _, _ -> },
                 onDeleteTemplate = {},
                 onAddExercise = {},
@@ -920,6 +924,36 @@ class TemplateEditorScreenTest {
      * protecting: that they are on the same line rather than stacked. Bounds can — the idiom the workout
      * screen uses for *Done* — and the failure to catch is the row silently wrapping.
      */
+    /**
+     * A planned exercise's ⋮ opens the lift itself (ROADMAP N121).
+     *
+     * Planning is where a lifter notices the lift's facts matter — its unit, step, rest and cue — and the only
+     * way to them was to leave the template, go to the library and find it. It reports the **exercise's** id
+     * rather than the row's: a planned row is the plan's copy, and the destination is the lift.
+     */
+    @Test
+    fun aPlannedExercisesMenu_opensTheLiftItself() {
+        val opened = mutableListOf<String>()
+        setScreen(actions = Actions(onOpenExercise = { opened += it }))
+        openBlock("te1")
+
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateOpenExercise("te1")).performClick()
+
+        assertThat(opened).containsExactly("back-squat")
+    }
+
+    @Test
+    fun theOpenEntry_isOnlyInsideTheMenu() {
+        // N91 leaves the row's own tap as the fold, so the way to the lift is the ⋮ and nothing on the row.
+        setScreen()
+        openBlock("te1")
+
+        composeTestRule.onNodeWithTag(TestTags.templateOpenExercise("te1")).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.templateMenu("te1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateOpenExercise("te1")).assertExists()
+    }
+
     @Test
     fun theEffortTheRest_andTheSave_shareOneLine_inThatOrder() {
         setScreen(state = twoExercises)

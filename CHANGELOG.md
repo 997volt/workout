@@ -143,6 +143,23 @@ unreleased.
   destructive entry last and coloured (N53). Nothing is stored and the route already existed, so this is one
   callback and one `DropdownMenuItem`.
 
+- **A planned exercise's ⋮ opens the lift itself** (N121). From a template's exercise row the entry opens the
+  exercise detail — its unit, step, rest, cue and taxonomy — which meant leaving the template, going to the
+  library and finding the lift; planning is exactly where a lifter notices those facts matter. It reads "Open
+  exercise", beside "Remove exercise", because this menu names no lift in any of its entries — the ⋮ sits inside
+  one exercise's block — and its order puts it first among the optional ones: going to look at the lift changes
+  nothing, so it comes after the entries that change the round and before those that write or take away (N53).
+  **It is an optional entry of the shared menu**, in the shape N81's *Add warm-ups* established, and **the live
+  workout deliberately does not carry it**: `ExerciseActionsMenu` is one menu for the workout's rows and a
+  template's (N71), leaving a running session to look at one lift is its own decision, and a mis-tap mid-session
+  costs more than the look is worth. A test asserts the absence by the words the workout's menu would show.
+  The tag registry reached its function ceiling while adding this entry, so it carries a local
+  `@Suppress("TooManyFunctions")` with the reason: the principled remedy is the nested-object grouping this file
+  already uses for `Programs`, `Home` and `Measurements`, and moving the template tags there is a rename across
+  ninety-odd call sites — its own change, not a rider on this one. The exercise row itself was one line over its
+  ceiling, so its fold label is compacted rather than a helper added (which moved the *file* to its own ceiling,
+  and then put `stringResource` inside a `SemanticsPropertyReceiver` lambda, where it cannot be called).
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added

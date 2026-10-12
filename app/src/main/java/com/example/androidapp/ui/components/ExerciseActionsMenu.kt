@@ -58,6 +58,22 @@ data class WarmUpAction(
 )
 
 /**
+ * The optional *Open exercise* entry one screen's ⋮ may carry (ROADMAP N121): the tag it answers to, and
+ * where it goes.
+ *
+ * A record rather than two parameters because the two travel together, and optional for the reason
+ * [WarmUpAction] is: this is **not every screen's** entry. A template offers it, because planning is where a
+ * lifter notices the lift's facts matter; the live workout deliberately does not, since leaving a running
+ * session to look at one lift is its own decision and a mis-tap there costs more than the look is worth. Its
+ * tag is the caller's for N71's reason — a template's rows and the workout's rows can be on screen in the
+ * same process, so a tag has to address one control.
+ */
+data class OpenExerciseAction(
+    val tag: String,
+    val onClick: () -> Unit,
+)
+
+/**
  * One exercise's rare actions, behind its own ⋮: order, pairing, and the destructive one last
  * (ROADMAP N53, N71).
  *
@@ -98,6 +114,8 @@ fun ExerciseActionsMenu(
     modifier: Modifier = Modifier,
     /** The warm-up entry, or null where this screen offers none — which is the workout's own (N81). */
     addWarmUps: WarmUpAction? = null,
+    /** The *Open exercise* entry, or null where this screen offers none — which is the workout's own (N121). */
+    openExercise: OpenExerciseAction? = null,
 ) {
     // `rememberSaveable`, like the program slot's own menu (N72): the activity declares no
     // `configChanges`, so rotation rebuilds it, and a confirmation the lifter had open would
@@ -119,6 +137,7 @@ fun ExerciseActionsMenu(
             canMoveDown = canMoveDown,
             supersetGrouped = supersetGrouped,
             addWarmUps = addWarmUps,
+            openExercise = openExercise,
             onToggleSuperset = onToggleSuperset,
             onMove = onMove,
             onRemove = { confirmingRemoval = true },
@@ -154,6 +173,7 @@ private fun ExerciseMenuEntries(
     canMoveDown: Boolean,
     supersetGrouped: Boolean?,
     addWarmUps: WarmUpAction?,
+    openExercise: OpenExerciseAction?,
     onToggleSuperset: () -> Unit,
     onMove: (Int) -> Unit,
     onRemove: () -> Unit,
@@ -189,6 +209,15 @@ private fun ExerciseMenuEntries(
                 },
                 onClick = menuClick(onDismiss, onToggleSuperset),
                 modifier = Modifier.testTag(tags.superset),
+            )
+        }
+        // First of the optional entries: going to look at the lift changes nothing, so N53's order puts it
+        // after the entries that change the round and before the ones that write or take away (N121).
+        openExercise?.let { entry ->
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.exercise_menu_open)) },
+                onClick = menuClick(onDismiss, entry.onClick),
+                modifier = Modifier.testTag(entry.tag),
             )
         }
         // Above Remove and below pairing: it writes sets rather than taking them away, so N53's order
