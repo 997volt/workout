@@ -37,33 +37,17 @@ the rule; that one argues it.
   [detekt.yml](config/detekt/detekt.yml) rather than left to the rule's default, so the next ambient
   is a decision rather than a habit.
 - **The muscles are one vocabulary, and the split is the list** (N75, completed by N105). Adductors is a
-  `MuscleGroup` entry and nothing else: the daily record's sore list is derived from the taxonomy
-  (`SORE_MUSCLE_GROUPS` is the selectable groups minus *Other*), so a second list of "muscles you can
-  be sore in" would be two vocabularies for one idea — and the same entry makes it an exercise's
-  primary muscle, which is where the taxonomy belongs. **`BACK` split into `LATS`, `UPPER_BACK` and
-  `LOWER_BACK`, and the retired name is gone from the enum**: it was kept only so a 1.x row — which
-  stored every muscle by name and read it back through `valueOf` — still resolved, and 2.0 starts a
-  store that never held one and refuses a 1.x file before the decoder (N104, N105). **The seed states
-  the split directly**: it is an `INSERT OR IGNORE` top-up on every open, so a fresh store is
-  classified by the seed itself rather than by a migration, and the deadlifts carry `HAMSTRINGS` —
-  which the Romanian deadlift already had — with `LOWER_BACK` in their secondaries, because the
-  erectors holding a heavy hinge is a fact about the lift. The new constants sit where they belong in
-  anatomy order rather than being appended, because the order *is* the pickers' map.
+  `MuscleGroup` entry and nothing else, because the daily sore list is derived from the taxonomy, so a
+  second list of "muscles you can be sore in" would be two vocabularies for one idea. `BACK` became
+  `LATS`, `UPPER_BACK` and `LOWER_BACK`, and the retired name is gone from the enum (N104, N105).
   ([evidence](DECISIONS-EVIDENCE.md#n75))
 - **An exercise may name the step its weights move by** (N77). The ± buttons, the warm-up ramp and the
-  progression offer all move a load by a step, and until this it came from the unit alone — 2.5 kg or
-  5 lb — so a machine that jumps 5 kg, or 1 kg, was always edited against a step it did not have. The
-  value is `stepGrams: Long?` beside `restSeconds` and `techniqueNote`, typed in the exercise's own
-  unit to a tenth of it and stored in whole grams, with null meaning the unit's own; **every** call site
-  reads `Weight.stepGramsFor` — the workout's fields, the warm-up ramp, the progression offer and the
-  history editor, the last of which the feature's first pass missed (B65) — and the ramp follows it
-  because a ramp rounded to a step the machine cannot load is the same defect one screen over. **It is a
-  property of the movement, not presentation** — unlike the unit it is not cleared when the unit changes,
-  and that change carries the typed number, re-expressed to the new unit's tenth, rather than reading
-  "5" as the other unit (B66) — and it is deliberately *not* an ambient the way the unit is: it rides on
-  the row the session and the plan already join from the library, and the pure functions take it as an
-  argument. A step of zero is refused rather than stored: it is not a small step but no step, the ±
-  buttons would do nothing and the ramp divides by it. ([evidence](DECISIONS-EVIDENCE.md#n77))
+  progression offer all move a load by a step, and a machine that jumps 5 kg — or 1 kg — was always
+  edited against the unit's, so the value is the movement's own: `stepGrams: Long?`, with null meaning
+  the unit's. It is a property of the movement rather than presentation, so it is not cleared when the
+  unit changes, and zero is refused rather than stored. Rejected: making it a setting, since the
+  machine varies by movement, and deriving it from the equipment enum, which does not say how a stack
+  jumps. ([evidence](DECISIONS-EVIDENCE.md#n77))
 
 - **Weights are whole grams in a `Long`**
   ([Weight.kt](app/src/main/java/com/example/androidapp/domain/Weight.kt)) — exact 0.5 kg
@@ -89,30 +73,11 @@ the rule; that one argues it.
   rather than a parallel plan enum, so one idea keeps one name; storing enums by name meant
   no row changed.
 - **A drop or a cluster is a group, and its rungs carry no targets of their own** (N79). The two roles
-  are one *shape*: a contiguous run of sets hanging off a working set, which is the run's **anchor**.
-  Adjacency is the parent link — the run is contiguous and its rows share a role — so no column ties a
-  rung to its set, and the model needed none. **What separates the two roles is the load**: a cluster
-  rung repeats the anchor's, assistance included, while a drop rung is the anchor's less the run's
-  value, once per rung, so 100 kg with a 20 kg value is 80 and then 60. That is why the plan stores the
-  **value**, once, on the run's first rung, and not a weight per rung: editing the anchor or accepting a
-  progression step moves the whole ladder, one row is written, and no rung can drift. A rung therefore
-  stores no reps either — the group's target is the anchor's — and its **reps prefill from that same
-  set's last performance in a previous training**, matched by the set's place in the plan, because "what
-  you just did" would answer with the anchor's reps. Four rules make the shape work at the write
-  boundary: a value belongs to a drop and is above zero; **a rung needs an anchor** that stands on its
-  own, so a warm-up cannot anchor a run and a plan cannot begin with one; a run names its value on its
-  first rung and nowhere else; and every rung has to come out with something to load, which is false
-  under an anchor with **no added weight** (an assisted or bodyweight set has no 20 kg to take off) and
-  false once the ladder runs past zero — a **negative weight being assistance in this app, not a small
-  weight** (N15), so a rung that would compute to −20 reads as carrying no
-  derived weight rather than becoming an assisted set. **The anchor rule is `recordsEffort`, and every
-  boundary asks it** (B63, B64): the plan's write, the live log, the re-role of a logged set, the
-  prefill that reads which bar a drop comes off, and the picker — which offers a rung only where the
-  boundary would accept one, because a control that cannot write is removed rather than shown. Deleting
-  an anchor takes its rungs with it, so a run cannot be left hanging — and `removeSet` now does it, the
-  rule having been recorded here before any code held it (B60). [runAt](app/src/main/java/com/example/androidapp/domain/model/RungRun.kt)
-  is the one reader of the shape, and `isAnchoredAt` answers the same question for a position a row
-  *would* take, which is what lets a picker and a boundary share one rule.
+  are one shape — a contiguous run hanging off a working set, the run's **anchor**, found by adjacency
+  rather than by a column — and they differ in the load: a cluster rung repeats the anchor's, a drop
+  rung is the anchor's less the run's value, once per rung. The plan therefore stores the **value** once,
+  on the run's first rung, so a weight per rung — rejected — cannot drift from the anchor, and a rung
+  names no reps because the group's target is the anchor's. Deleting an anchor takes its rungs with it.
   ([evidence](DECISIONS-EVIDENCE.md#n79), [B59–B72](DECISIONS-EVIDENCE.md#b59-b72))
 - **A plan's numbers are stated with the same ± steppers as a logged set's, and stay typeable** (N111).
   A target and a performed set are the same two numbers (N59), so the plan is authored with the control
@@ -198,31 +163,17 @@ the rule; that one argues it.
   destination holding a handful of names with nothing to do on it.
   ([evidence](DECISIONS-EVIDENCE.md#n55))
 - **A session's exercise order is its own, and it is written as it changes** (N54). The template is
-  never touched: N16's "a template is living, and a session reads it at the start" applies to order the
-  same way it applies to targets, so a rack taken on one afternoon cannot rewrite every future run.
-  Persisting the order with the session is the decision — a repeat (N48) copies the session's own
-  order rather than the plan's, and a process death mid-session keeps the order that was arranged, which
-  is the same "the session exists before anything is logged" rule P1.8 rests on. The alternative, an
-  in-memory order that is written at *Finish*, was rejected: it would show one order and store another
-  if the app died, and a repeat would silently disagree with the workout it repeats. Where the plan is
-  read, it is paired by **movement** rather than by the slot a row occupies: the order was what the
-  session was seeded from, and letting that order be edited is exactly what stopped that being true, so
-  a moved exercise would otherwise read its new neighbour's targets and its neighbour's count for
-  whether the planned work is done (N52).
+  never touched, so a rack taken on one afternoon cannot rewrite every future run. Persisting the order
+  with the session is the decision — a repeat (N48) copies the session's own order, and a process death
+  mid-session keeps the order that was arranged. Rejected: an in-memory order written at *Finish*, which
+  would show one order and store another if the app died.
   ([evidence](DECISIONS-EVIDENCE.md#n54))
 - **The next set is stated on the workout screen, and *Log set* writes what is on it** (N59, superseding
-  N51 and restoring B7 for this path). N51 put the set editor in front of every set so that a set
-  differing from the prefill was corrected before it was written; the cost was a dialog between every
-  set and a button whose label could not describe what it wrote. The values the plan and history
-  prefill are now the exercise block's own fields — weight, reps, RPE and the role picker — so they are
-  read and changed before anything is committed, the button beside them carries no values because the
-  fields beside it *are* the values, and the editor is what correcting an already-logged set still
-  opens. N19's role picker moved out of the dialog rather than away: it is still one set's decision
-  made before the write, and it still clears itself, because the fields are keyed on the logged-set
-  count and re-arm from the plan's next unlogged set (B48). The **correction dialog invents nothing**:
-  it states a set that exists, so a set that recorded no effort shows *Not recorded* and keeps that on
-  save — correcting a weight must not turn an absence into a 9.0 measurement — and the stepper's first
-  tap states the default rather than stepping a number that was never there. ([evidence](DECISIONS-EVIDENCE.md#n59))
+  N51 and restoring B7 for this path). The values the plan and history prefill are the exercise block's
+  own fields, so they are read and changed before anything is committed, and the button beside them
+  carries no values because the fields beside it *are* the values. Rejected: N51's editor in front of
+  every set, which put a dialog between every set and a button whose label could not describe what it
+  wrote. ([evidence](DECISIONS-EVIDENCE.md#n59))
 - **An exercise's rare actions live behind its own overflow, and what cannot be done is not offered**
   (N53). *Superset with above* was a text link in every exercise header and *Delete* an icon beside
   *Done*; both are rarely used, and the header is read constantly mid-session, so the two of them cost
@@ -344,28 +295,11 @@ the rule; that one argues it.
   stored effort rather than the exercise's number the rule read, so a plan whose one field is cleared
   later is not resurrected by a copy the accept left behind.
 - **Progression is offered per prescribed set, inside the plan's rep range** (N74, amending N50). *Done*
-  states **one row per working set** — its number, the plan, what was done, and the step that set earned
-  or why it earned none — and the lifter picks a step per row, written by **one *Done***; *Not now*, a
-  dismiss and the back gesture all write nothing. **Earning is per set**: a set performed with its reps
-  met at or under the exercise's one target RPE (N59) earns its own step whatever its siblings did, where
-  N50 required every prescribed set and offered a single step on the last of them. **The range decides the
-  direction.** "Reps from"/"Reps to" are the range the plan was authored with and progression never edits
-  them; the number a session asks for is a third one, `targetRepsCurrent`, which starts on the range's
-  floor (`from`, else `to`) and climbs. Below the ceiling a set earns the **rep** — one past what was
-  actually done, capped at the ceiling, so asked 5 and did 7 of an 8 the plan follows the lifter to 8 —
-  and the weight is **withheld**, because there are reps left to take; at the ceiling it earns the
-  **weight**, which puts the climb back on the floor, so a range is walked 5→6→7→8 and started again a
-  step heavier. A plan that wrote no ceiling keeps both directions, as it did under N50; a plan whose ends
-  are equal, or that named only a ceiling, offers the weight alone and keeps its reps; and a set at the
-  ceiling with no added weight to raise — bodyweight or assisted (N15) — is offered **nothing** and says
-  so, because the app has neither a rep inside the range nor a weight to move. **The question is frozen
-  when *Done* is tapped**: the offer is computed from the plan's target and the session's work, so the
-  first step written would re-arm the very offer it answered, and a pick is not a write. **A finished
-  exercise that is reopened is judged against the plan as it now stands**, because the target a set was
-  answered against is not stored: accept a rep step, finish, undo the finish, and that same set can read
-  as short of the target its own step created. Storing the answered target on the session is what N16
-  refused, so the app states the plan it has rather than the one the set met. The setting (N66)
-  and "no plan, no question" (N50) still hold. ([evidence](DECISIONS-EVIDENCE.md#n74))
+  states one row per working set, and a set performed with its reps met at or under the exercise's one
+  target RPE earns its own step whatever its siblings did. The range decides the direction: below the
+  ceiling a set earns the **rep**, at the ceiling the **weight** and the climb restarts on the floor.
+  Rejected: N50's single exercise-wide step on the last set, because a set that answered the plan earned
+  nothing when a sibling missed. ([evidence](DECISIONS-EVIDENCE.md#n74))
 
 - **A superset is a group of exercises performed in rounds** (N24). The model is a
   nullable `supersetGroup: Int?` ordinal on `session_exercises` and `template_exercises`; a
@@ -527,43 +461,18 @@ the rule; that one argues it.
   **absent** for a warm-up rather than disabled: a control that cannot write invites a tap that does
   nothing. Migration 28→29 clears the numbers already stored — logged and planned alike — while the
   plan's exercise-level target stays, because it belongs to the exercise's working sets.
-- **A group is rated, judged and rested once** (N79, extending N67). A drop or cluster **rung is work, so
-  it is not excluded from the app the way a warm-up is — but it is not rated on its own**, because the
-  group is one effort: the rating lives on the set the group hangs off, and `recordsEffort` is the one
-  rule that hides the field, nulls the value at every write boundary and keeps it out of a backup. The
-  reason is deliberately **not** N67's, and the two live on one property because they have one answer:
-  a set that records no effort is not a record either, so a rung cannot set a personal record while its
-  work still counts as **volume**, which sums every set and every rep. **The group is judged on its
-  first set** — the plan's reps met and the effort inside the exercise's target, then N74's step applied
-  once, with a rung stating that reason where it earned nothing rather than being measured against
-  numbers that are not its own. A rung cut short therefore does **not** hold the group back: it has no
-  target of its own to miss. **The rest waits for the run to close**, which needs no new field: the
-  exercise's rest runs once after the last rung, the shape a superset round already has. And **the
-  Done question pairs by class rather than by raw position** — prescribed work sets with performed work
-  sets, prescribed rungs with performed rungs — because a drop logged after a working set used to shift
-  every later pair, judging a prescribed set against a lighter drop's reps and offering it a heavier
-  weight that accepting wrote into the plan.
-  ([evidence](DECISIONS-EVIDENCE.md#n79))
+- **A group is rated, judged and rested once** (N79, extending N67). A rung is work, so it is not
+  excluded from the app the way a warm-up is, but it is **not rated on its own**: the rating lives on
+  the anchor, and `recordsEffort` is the one rule that hides the field, nulls the value at every write
+  boundary and keeps it out of a backup. The group is judged on its first set, a rung cut short does not
+  hold it back, and the rest waits for the run to close. Rejected: a per-rung rating, because the group
+  is one effort. ([evidence](DECISIONS-EVIDENCE.md#n79))
 - **The workout's overflow is the logger's own business, and the templates list withholds the start**
-  (N78, narrowed by N87). The tab bar stays off the logger (N34): a bar under a live set logger invites
-  losing the session, while an overflow entry is a deliberate step. N78 put Programs and Templates there
-  and un-hid Home's two plan links for the same reason — a lifter checking what is next should not have to
-  end a workout to look. **N87 keeps the second half and reverses the first**: mid-workout the overflow
-  holds only *Discard*, because the two plans already live where the decision to train is taken, on home's
-  start bar, which stays visible while a session is open — so the look is still one step back rather than
-  the end of the session, and the logger stops carrying a way out it does not own. **The ⋮ is drawn whenever
-  a session is open, empty or not** (amended): with the plan entries gone it holds only *Discard*, and hiding
-  it for an empty session left that session with no way out but to add a movement first — which is the state
-  a mistap, or a resume, lands in. The empty state's own copy of the discard went with the change, because
-  one action with two homes is one too many, and **N41's prompt-free half stands**: the dialog exists to name
-  what a discard costs, and an empty session has nothing to name.
-  **B43's withholding lives on in a narrower place**: starting is idempotent (`startOrResumeSession`
-  hands back the open session), so the templates list asks the workout repository whether a session is
-  open and disables *Start* when one is, with the row saying why. The button would not make a second
-  workout — it would silently take a lifter who tapped *Start* on one template into the workout already
-  running from another, and that is the lie it prevents. Making Templates a tab, or showing the bar
-  mid-workout, was rejected for N34's reason.
-  ([evidence](DECISIONS-EVIDENCE.md#n78); N87's reversal is argued at
+  (N78, narrowed by N87). The tab bar stays off the logger (N34), and N87 leaves the overflow holding
+  only *Discard* mid-workout because the two plan screens already live on home's start bar, which stays
+  visible while a session is open. Starting is idempotent, so the templates list asks whether a session
+  is open and disables *Start* when one is. Rejected: making Templates a tab, or showing the bar
+  mid-workout. ([evidence](DECISIONS-EVIDENCE.md#n78); N87's reversal is argued at
   [its own section](DECISIONS-EVIDENCE.md#n87))
 - **A start with a workout already running asks rather than resumes** (N89). N78 stopped the silent
   hand-back in the templates list by disabling *Start*; home's own start actions had no guard, so tapping
@@ -840,47 +749,16 @@ the rule; that one argues it.
   ([evidence](DECISIONS-EVIDENCE.md#n88))
 - **The library's rows are a two-rule shape: a category holds movements, and nothing holds a movement**
   (N95, cut back by N110). The grouping is a **link**, so every movement stays loggable and keeps its own
-  records, step and prefill — a paused bench is a different lift that moves less weight — while the views that
-  fragment when one movement is scattered across rows can be read as one thing. The head is a **category**: a
-  row that exists to hold others, is **never offered and never logged**, and carries a name. That is what makes
-  it a *statistic* rather than a classification, and it is why the category is not `movementPattern` plus
-  `primaryMuscle` — those answer a fuzzier question that takes in a fly or a dip, while a category cuts where
-  the lifter cuts. **Equipment variants are separate movements under one category**, rather than each other's
-  versions, because the number the category exists to produce would otherwise be a lie about the training.
-  **The seeded families are a starting set, not a closed one**, so a lifter makes their own and files a row by
-  editing it — the move is one field of the row's own form, so a cancelled edit takes it back. A category's
-  name is read live and a **removed category still names its children**, N58's rule for templates. **A lifted
-  pattern is settled here too** (see N96): with no category a row carries no pattern, rather than a guess about
-  its joint action. **The list opens with every family folded** (N95): a family is a head the lifter opens, so
-  the library arrives as the families it is rather than as a wall of movements, and the count on each head says
-  what is inside without spending the room. The fold is screen state that survives a rotation (N84). The
-  rejected alternative is the rule the editor uses, N91's *what was already there is folded, what arrives
-  opens*: the library loads asynchronously, so nothing would look already-there and **every** family would
-  open — the mirror of what was asked for, which is why the two callers pass opposite values for one flag
-  rather than sharing a mode. **Never *offered* is not the same as never *drawn*** (N95): the pickers that log
-  draw the same heads the library does — grouped, folded on arrival, with the movements indented under them —
-  and route a head's tap to the fold, so what a tap can **choose** is still a movement alone. **A non-blank
-  query opens every family it draws, and the grouping owns that rule rather than either screen**: the fold is
-  how a list is *browsed* and a search is not browsing, so a query that reached inside a family must answer
-  with the movement rather than with a head the lifter has to open — and because both grouped lists want it,
-  one shared conditional beats the same one written twice. A blank query is not a search (it is trimmed), so
-  the folds a lifter set stand until they type.
-  ([evidence](DECISIONS-EVIDENCE.md#n95))
-- **A movement reads its family's pattern, primary muscle and secondary muscles, and states its own equipment**
-  (N110, on N103's rule). Those three are nullable and **null is *unstated*, not `OTHER`** — `OTHER` goes back
-  to meaning only *other*, which is a real answer a lifter gives. The winner is the same for all three, the
-  secondary list included: **own-if-stated, else the category's**, through one `statedOrInherited` walk, which a
-  file is the reason to keep rather than the shape. **A row the walk finds nothing for answers null**, and every
-  screen that draws it says "None" rather than inventing a value. **Equipment is the one fact that never
-  inherits**: a family spans equipment — the lat pulldown family alone holds a cable, a bodyweight and a machine
-  movement — so a category cannot state one for its members, and the movement's own answer is the only one.
-  **The seed follows**: a category states its pattern, its primary muscle and its secondary list once, and a
-  movement under it states its equipment alone unless its family's answer would be wrong. The lunge family is
-  the standing case: it states Quads, and the walking and reverse lunges state Glutes instead — a member
-  disagreeing with its family, which is what own-if-stated is for — while the split squat and step-up read the
-  family's. **The editor offers every field and *not stated* names what it resolves to**, because a movement may
-  disagree with its family and a picker that could not offer the field could not express it.
-  ([evidence](DECISIONS-EVIDENCE.md#n110))
+  records, step and prefill, while the views that fragment when one movement is scattered across rows can
+  be read as one thing. The head is a **category**: it is **never offered and never logged**, and it is a
+  *statistic* rather than a classification. Rejected: merging a family into one row, because a paused
+  bench is a different lift with its own records. ([evidence](DECISIONS-EVIDENCE.md#n95))
+- **A movement reads its family's pattern, primary muscle and secondary muscles, and states its own
+  equipment** (N110, on N103's rule). Those three are nullable, **null is *unstated*, not `OTHER`**, and
+  the winner is the same for all three, the secondary list included: **own-if-stated, else the
+  category's**. **Equipment is the one fact that never inherits**, because a family spans equipment, so a
+  category cannot state one for its members. Rejected: copying a category's values onto its movements,
+  which fails the first time a lifter renames a family. ([evidence](DECISIONS-EVIDENCE.md#n110))
 - **The movement pattern is a row's own when it states one, and its family's when it does not** (N96,
   amended by N103 and N110). Whether a family presses or hinges is the family's to decide, so the seed states it once
   on the category and no movement under it states one — but the **rule** is own-if-stated, the same one the
@@ -918,22 +796,13 @@ the rule; that one argues it.
   across the same way** by a migration, which also fills a seeded category's pattern and muscles from the seed
   itself — but **only while it states nothing**: a value a lifter gave is never overwritten, and what a movement
   already states is never stripped.
-- **A program document is its own format, and every exercise it names travels with it** (N47). The
-  backup is a restore of a whole database, so it cannot be the way one program is handed over; this is
-  a document with a **version of its own**, carrying the program's *definition* — the program, its
-  slots, the templates those slots name and their planned work — and not its history, because skips,
-  deloads and substitutions belong to the device that trained them. Exercise ids are why it carries
-  more than references: a seeded slug means the same thing everywhere, but a user's own exercise id
-  means nothing on the receiving device, so the definition travels whole and the receiver creates what
-  it lacks. Loading **merges by id and overwrites nothing**, so the same file twice is a no-op, and the
-  program arrives **inactive and last**, because following one is a choice (P3.3) and the authored
-  order is the user's (P3.12). A movement whose exercise is nowhere is dropped rather than failing the
-  foreign key and rolling the document back — and **"nowhere" includes a row this device has deleted**
-  (B51): a hidden row is not one the load may resurrect, because un-deleting a lift is a write to the
-  library, so the movement is dropped and the count is worded "not in your library". A carried planned
-  set is placed only where its template actually trains its exercise (B56), the rule the interactive
-  writes already enforced through `requireExerciseInTemplate` — the import writes raw rows, so it
-  re-asks the question against what the template holds *after* the carried exercises land.
+- **A program document is its own format, and every exercise it names travels with it** (N47). It has a
+  **version of its own** and carries the program's *definition* — the program, its slots, the templates
+  those slots name and their planned work — not its history, because skips, deloads and substitutions
+  belong to the device that trained them. A user's own exercise id means nothing on the receiving
+  device, so the definition travels whole and the receiver creates what it lacks. Loading **merges by id
+  and overwrites nothing**, and the program arrives **inactive and last**. Rejected: restoring a row
+  this device has deleted, as the backup does, because this is an additive share (B51).
   ([evidence](DECISIONS-EVIDENCE.md#n47))
 
 ## Adherence
@@ -1034,20 +903,10 @@ the rule; that one argues it.
 - **The app is dark, and its colours are its own.** One fixed scheme — the palette in
   [`Color.kt`](app/src/main/java/com/example/androidapp/ui/theme/Color.kt) reached through the
   roles in [`Theme.kt`](app/src/main/java/com/example/androidapp/ui/theme/Theme.kt) — and not
-  `isSystemInDarkTheme`, not `dynamicColor`. Material You was rejected because a palette derived
-  from the launcher's wallpaper cannot be *this* app's palette, and following the system would
-  mean designing, testing and maintaining two schemes to say one thing. Separation is by
-  **tone**, never by elevation: a shadow is invisible on a near-black page, which is why the
-  scheme fills in Material's whole `surfaceContainer` ladder rather than three roles, the rest
-  of which would otherwise stay at the baseline purples. Accents (`TileAccent`) are named by
-  colour and handed out per row, never bound to a meaning — binding a hue to a concept means
-  inventing one the day a new kind of row appears and reusing a colour, losing the distinction,
-  every time one retires. The window theme and the system-bar styles are part of the rule rather
-  than decoration on it: a dark app whose window is light flashes white on every cold start, and
-  bars tinted from the *system's* light/dark setting draw dark icons onto a black bar on a
-  light-mode device. A coloured surface also names the colour that reads *on* it rather than
-  assuming white (B55): white is 2.5:1 on `Amber` and 2.9:1 on `Teal`, under the contrast a graphic
-  needs, so each accent carries an `onColor` and a test holds every pair at 3:1 or better.
+  `isSystemInDarkTheme`, not `dynamicColor`. Separation is by **tone**, never by elevation, and
+  accents (`TileAccent`) are named by colour and handed out per row, never bound to a meaning.
+  Rejected: Material You, because a palette derived from the launcher's wallpaper cannot be *this*
+  app's palette, and following the system, which would mean maintaining two schemes to say one thing.
   ([evidence](DECISIONS-EVIDENCE.md#b55))
 - **The app's colour fills; a link has a role of its own** (N49, extended by N83). `primary` is the app's
   own colour and it *fills* — the selected tab, a chip that is on, and home's *Resume* — and as a label it is

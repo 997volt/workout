@@ -60,6 +60,16 @@ unreleased.
   record, and one that measured any site *also* becomes its tape record, so no measurement is dropped — and
   the sore rows an older session recorded stay on it, still read in history.
 
+- **The longest evidence-backed decisions state the rule and defer their argument** (N107). [DECISIONS.md](DECISIONS.md)'s
+  own contract is that an entry is the rule, the shortest honest reason and the rejected alternative, with the
+  longer argument in [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md) — and twelve entries that already had an
+  evidence section carried the full argument in the entry anyway, running to 13–28 lines. Enforcing the contract
+  on those twelve moves the argument to the section that exists for it and leaves each entry four to eight lines:
+  the rule in bold, why, and what was rejected. **No decision is lost** — every claim, name, measurement and
+  reference in the moved prose is in the evidence section, and the two entries sharing the `#n79` anchor are kept
+  in order there. The file is a reference, so this is a reading change rather than a code one: nothing in the app
+  behaves differently.
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added
