@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one item. Last reviewed against the
+> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two items. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -13,9 +13,9 @@
 > movements with a movement reading its family's pattern and muscles, 61 movements joined the 45, and the
 > picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
 > still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds one
-> item — soreness becoming a statistic, which is the reading N113's own record was missing. **Reading the P1.1,
-> B103 and N110 batch line by
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds two
+> items — soreness becoming a statistic, which is the reading N113's own record was missing, and a program's own
+> muscle balance read from its overflow. **Reading the P1.1, B103 and N110 batch line by
 > line — and running it on a device — found five defects (B104–B108); all five are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen defects
 > (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
@@ -36,7 +36,7 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-One item is planned: the reading for the soreness N113 records.
+Two items are planned: the reading for the soreness N113 records, and a program's muscle balance.
 
 - **Soreness becomes a statistic, one series per muscle** (N118). N113 had the app start recording the muscles a
   day reports sore, each with its own score, and **nothing reads them back**: the measurements list and a
@@ -59,6 +59,27 @@ One item is planned: the reading for the soreness N113 records.
   record — it is a reading change, which is what makes it the cheapest way to close what N113 left open.
   Rejected: one aggregate "soreness" series counting how many muscles were sore in a day, which cannot say
   *which* muscle and answers only the question the list already answers.
+
+- **A program can be read for the work it spreads where** (N119). The program editor's overflow gains *Muscle
+  balance*: a destination of its own that counts the program's **planned working sets per muscle group**, so
+  "does this week train what I think it does" is answerable before the week is trained rather than after. Two
+  rules it inherits rather than inventing: a **warm-up is not work** (N112), so a ramp does not inflate the
+  muscle it warms up, and a movement's muscle is **own-if-stated, else its category's** (N110) — which makes the
+  read the program's templates *plus the library's categories*, because a movement that states none inherits the
+  one it is filed under, and one that states none anywhere is a bucket of its own rather than being dropped:
+  dropping it would make the rest look more balanced than the plan is. A set counts once, for its primary
+  muscle, and assisted work is listed beside the count rather than folded into it — splitting a set between
+  primary and secondary muscles would invent a fraction the plan never stated.
+  **The read is new**: the editor loads one slot's template at a time for its preview (N72), so this is the first
+  thing to read every template the program's slots name. Nothing is stored and no schema moves — it is the plan
+  read as a week, drawn as a row per group with its count and its share of the program's total. **The bar drops
+  to one control**: *Export* and *Delete* move into that same overflow, which is where *Muscle balance* arrives.
+  Three actions with one of them destructive is the order N43 settled for the database's own actions — the one
+  that cannot be undone goes last and reads as destructive — and it stops Delete being a one-tap icon beside a
+  button a lifter presses often, at the cost of a tap each, which is what the overflow is for.
+  Rejected: counting exercises rather than sets, which reads eight sets of squats and one set of curls as
+  balanced; and reading **logged** history instead of the plan, because that is P2.8 — a rolling window with a
+  verdict in it — which stays parked with its trigger intact, since this reads what is prescribed.
 
 ## Parked — deliberately not planned
 
@@ -144,9 +165,10 @@ the evidence (N107), the four that followed it — today's workout to the foot o
 one-line effort, rest and accept (N116), the library's long-press family details (N117) and home's row that
 records the day (N114) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds one item** (N118), written after the four that followed the drained queue all shipped. It was
-found by asking what the app now records and never reads back, which is also the test a later item should have
-to pass: the section is filled from what the log holds, never to keep itself full. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
+***Next* holds two items**: N118, found by asking what the app now records and never reads back, and N119,
+which asks the same question of the *plan* — what it prescribes is read today only slot by slot, so a week's
+shape is nowhere. The section is filled from what the log and the plan hold, never to keep itself full, and the
+second item came with a bar that had grown a control too many. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
 that mattered left the instrumented job red, because a program document's former variation imports under its
 family now and the test still asserted the link the shape no longer has. 2.0 shipped with the loudest note this project has written — the 1.x store stays on the device and
 2.0 does not read it — and the rule that allowed that is in [DECISIONS.md](DECISIONS.md), with the window it
