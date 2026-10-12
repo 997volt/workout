@@ -93,6 +93,21 @@ unreleased.
   a label gives way rather than a control. The layout is pinned by bounds rather than by tags, because the
   failure worth catching is the row quietly wrapping — the idiom the workout screen already uses for *Done*.
 
+- **A long press on a library family shows what it states for its movements** (N117). A category head's tap
+  already means fold, so its own facts — the pattern, the primary and secondary muscles — are reached by holding
+  the row. Those are exactly the fields N110's own-if-stated rule resolves a movement against, which makes this
+  the one place they can be read: a head is never offered and never logged, so it has no screen of its own. A
+  value the row does not state reads as the detail screen's *None*, because null is **unstated** rather than
+  *Other*; **equipment is deliberately absent**, since a family spans equipment and never inherits it (N110), so
+  showing one would state an inheritance the model refuses.
+  **The label is what carries it.** This is the app's first long press, and a hold has no control anyone can see,
+  so `AppRow`'s new `onLongClickLabel` is the only thing that tells a screen reader the action exists — announced
+  beside the fold action and the row's own state (B21). `AppRow` takes `combinedClickable` **only** when a long
+  press is given, because that function's `onClick` is not nullable and a default would make every row without an
+  action clickable: a ripple and a focus target that do nothing. Its test is the suite's first
+  `performTouchInput { longClick() }`. Rejected: a trailing info icon, which is discoverable but puts a second
+  control in a slot that already means fold.
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added

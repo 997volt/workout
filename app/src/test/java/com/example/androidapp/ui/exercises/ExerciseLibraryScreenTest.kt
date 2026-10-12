@@ -13,6 +13,9 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
@@ -174,6 +177,78 @@ class ExerciseLibraryScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.LIBRARY_NO_MATCH).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.LIBRARY_EMPTY_LIBRARY).assertDoesNotExist()
+    }
+
+    /**
+     * Holding a family shows the facts its movements inherit (ROADMAP N117).
+     *
+     * A category head is never offered and never logged (N95), so its own taxonomy has no other screen — and
+     * it is the taxonomy that matters, because own-if-stated-else-the-category's is the rule a movement under
+     * it is read by (N110). The row's tap already means fold (N91), so the hold is what reaches this.
+     */
+    @Test
+    fun holdingAFamily_showsTheFactsItsMovementsInherit() {
+        val chest = Exercise(
+            id = "cat-chest",
+            name = "Chest",
+            primaryMuscle = MuscleGroup.CHEST,
+            secondaryMuscles = listOf(MuscleGroup.TRICEPS, MuscleGroup.QUADS),
+            movementPattern = MovementPattern.PRESS,
+            rowKind = RowKind.CATEGORY,
+        )
+        setScreen(
+            ExerciseLibraryUiState(
+                isLoading = false,
+                exercises = listOf(
+                    chest,
+                    exercise(
+                        "barbell-bench-press",
+                        "Barbell Bench Press",
+                        "Chest",
+                        "Barbell",
+                        parent = "cat-chest",
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.libraryCategory("cat-chest"))
+            .performTouchInput { longClick() }
+
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_CATEGORY_DETAILS).assertExists()
+        composeTestRule.onNodeWithText(MovementPattern.PRESS.label).assertExists()
+        composeTestRule.onNodeWithText(
+            listOf(MuscleGroup.TRICEPS.label, MuscleGroup.QUADS.label).joinToString(", "),
+        ).assertExists()
+    }
+
+    /**
+     * A family that states nothing says so, rather than naming *Other* (ROADMAP N110, N117).
+     *
+     * Null means **unstated** and `OTHER` is a real answer a lifter gives, so a details view that answered
+     * "Other" for a blank row would invent a taxonomy the movement is not read by. Three fields say it here —
+     * the pattern, the primary muscle and the secondary list — which is also what makes the count exact.
+     */
+    @Test
+    fun holdingAFamilyThatStatesNothing_saysNone_ratherThanOther() {
+        setScreen(
+            ExerciseLibraryUiState(
+                isLoading = false,
+                exercises = listOf(Exercise(id = "cat-bare", name = "Bare", rowKind = RowKind.CATEGORY)),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.libraryCategory("cat-bare"))
+            .performTouchInput { longClick() }
+
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_CATEGORY_DETAILS).assertExists()
+        assertEquals(
+            3,
+            composeTestRule.onAllNodesWithText(
+                ApplicationProvider.getApplicationContext<Context>()
+                    .getString(R.string.exercise_detail_none),
+            ).fetchSemanticsNodes().size,
+        )
     }
 
     private fun setScreen(

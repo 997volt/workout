@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -121,6 +122,9 @@ fun ExerciseLibraryScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var namingCategory by remember { mutableStateOf(false) }
+    // Which family's details are open, if any (ROADMAP N117). Held by id rather than by row so a delete or a
+    // rename behind the dialog cannot leave it showing a stale copy.
+    var detailsFor by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Which families are open is screen state (N95), and `rememberRowFold` is the sharing state N91 built:
     // no `configChanges`, so a rotation would otherwise fold what the lifter opened. **Every family starts
@@ -160,7 +164,20 @@ fun ExerciseLibraryScreen(
             fold = fold,
             onQueryChange = onQueryChange,
             onExerciseClick = onExerciseClick,
+            onCategoryDetails = { detailsFor = it },
             modifier = Modifier.padding(innerPadding),
+        )
+    }
+
+    // The row the hold was made on, resolved from what the list is showing: a family that has gone since —
+    // removed, or filtered out by a query — simply draws nothing.
+    val detailed = detailsFor?.let { id -> rows.firstOrNull { it.id == id } }
+    val detailedExercise = detailsFor?.let { id -> state.exercises.firstOrNull { it.id == id } }
+    if (detailed != null && detailedExercise != null) {
+        CategoryDetailsDialog(
+            exercise = detailedExercise,
+            movementCount = detailed.childCount,
+            onDismiss = { detailsFor = null },
         )
     }
 
@@ -212,6 +229,7 @@ private fun LibraryBody(
     fold: RowFold,
     onQueryChange: (String) -> Unit,
     onExerciseClick: (String) -> Unit,
+    onCategoryDetails: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -231,6 +249,7 @@ private fun LibraryBody(
                 items = rows,
                 onToggle = fold::toggle,
                 onExerciseClick = onExerciseClick,
+                onCategoryDetails = onCategoryDetails,
             )
         }
     }
@@ -384,6 +403,13 @@ internal fun ExerciseList(
     onToggle: (String) -> Unit,
     onExerciseClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * What holding a family shows (ROADMAP N117): the facts it states for its movements.
+     *
+     * Defaulted because only the library fills it: the picker draws the same rows flat, with every category
+     * filtered out, so it has no head to hold and nothing to pass.
+     */
+    onCategoryDetails: (String) -> Unit = {},
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -395,7 +421,11 @@ internal fun ExerciseList(
     ) {
         items(items = items, key = { it.id }) { row ->
             if (row.isCategory) {
-                CategoryRow(row = row, onToggle = { onToggle(row.id) })
+                CategoryRow(
+                    row = row,
+                    onToggle = { onToggle(row.id) },
+                    onDetails = { onCategoryDetails(row.id) },
+                )
             } else {
                 ExerciseRow(row = row, onExerciseClick = onExerciseClick)
             }
@@ -407,6 +437,7 @@ internal fun ExerciseList(
 private fun CategoryRow(
     row: LibraryRow,
     onToggle: () -> Unit,
+    onDetails: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val isExpanded = row.isExpanded
@@ -440,6 +471,11 @@ private fun CategoryRow(
         stateDescription = if (isExpanded) openLabel else foldedLabel,
         testTag = TestTags.libraryCategory(row.id),
         modifier = modifier,
+        // The tap already means fold (N91), so what the family *states* — the facts its movements inherit
+        // (N110) — is reached by holding the row (N117). The label is what carries that to a screen reader,
+        // because a hold is the one action here with no control to see.
+        onLongClick = onDetails,
+        onLongClickLabel = stringResource(R.string.library_category_details, row.name),
     )
 }
 

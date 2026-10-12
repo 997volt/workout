@@ -362,6 +362,9 @@ object TestTags {
      */
     fun libraryCategory(id: String) = "library_category_$id"
 
+    /** What holding a family shows (ROADMAP N117): the facts it states for its movements. */
+    const val LIBRARY_CATEGORY_DETAILS = "library_category_details_dialog"
+
     fun templateStart(id: String) = "template_start_$id"
 
     /** Why a template's Start is disabled — a session is already open (ROADMAP N78). */

@@ -34,6 +34,9 @@
     <!-- What tapping an exercise row does, with the lift's own name in it: "Open Back Squat"
          rather than "Open exercise", so a screen-reader user knows which row they are on. -->
     <string name="library_open_exercise">Open %1$s</string>
+    <!-- What holding a family does (ROADMAP N117). A long press has no control to read, so this label is the
+         only thing that tells a screen reader the action exists. -->
+    <string name="library_category_details">Details for %1$s</string>
     <!-- A category's row in the library (ROADMAP N95): the name is the control that folds it, and the
          state is announced beside it, the shape a planned exercise's row already uses (N91). -->
     <string name="library_open_category">Open %1$s</string>
