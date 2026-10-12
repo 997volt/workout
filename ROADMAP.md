@@ -39,25 +39,41 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 Two items are planned, and both are the home screen's row order.
 
 - **Home offers to record the day's measurements, and only while today has none** (N114). A row below *Start
-  empty workout* opens the **daily** form directly — soreness, weight, body fat and muscle — so the one thing
-  the app wants every day sits where the lifter already starts, rather than three taps into a screen whose FAB
-  asks which of N113's two records. It is drawn **only while today has no live daily entry**: a day keeps one
-  entry of each kind, so a tape day does not hide it while a soreness-only morning does — N113's "an entry
-  states what it has" — and today's entry being deleted brings the row back, because the condition is what is
-  stored rather than whether it was once asked. Recording is not starting, so B101's withholding of the start
-  row while a workout is open does not reach this one: it is the last of the ways in, and it stays. The
-  destination remains the one Measurements screen with the form opening over its list, so a dismiss lands on
-  what was recorded rather than back on home; that needs the route to carry which form to open, while the FAB's
-  chooser keeps the other kind. Rejected: drawing the row always and letting it open today's entry for
-  editing — a row that cannot say whether the day is answered is the one thing this row is for.
+  empty workout* opens the **daily** form directly — soreness, weight, body fat and muscle — so the one thing the
+  app wants every day sits where the lifter already starts, rather than three taps into a screen whose FAB asks
+  which of N113's two records. It is drawn **only while today has no live daily entry**: a day keeps one entry of
+  each kind, so a tape day does not hide it while a soreness-only morning does — N113's "an entry states what it
+  has" — and deleting today's entry brings the row back, because the condition is what is stored rather than
+  whether it was once asked. Recording is not starting, so B101's withholding of the start row while a workout is
+  open does not reach this one: it is the last of the ways in, and it stays.
+  **Its day is the one the ViewModel already captured.** `todayDate` supplies the *Today* heading, the scheduled
+  lookup and the substitution write today, precisely so a tap across midnight cannot disagree with the row it was
+  made on (P3.3); the visibility rule reads that same value in that same zone, because a second reading is how the
+  row hides itself while the screen under it shows nothing for today. One field on the existing `combine`, filled
+  from `MeasurementRepository.observeAll()`, makes it live for free — saving makes the row go, deleting today's
+  entry brings it back. **The rule is a pure domain predicate**, `BodyMeasurement.isDailyOn(day, zone)`, and the
+  "which local day is this instant" helper moves out of `RoomMeasurementRepository` to sit beside it: `findOnDay`
+  is its second caller, and the row's day and the query's day drifting apart is the one failure that would read as
+  the data being wrong. **The destination carries the intent**: `Measurements` becomes a `data class` with
+  `openDaily`, and the screen seeds the form it already opens from the FAB — in `rememberSaveable`, so a dismiss
+  stays dismissed across a rotation — while the FAB's chooser keeps the other kind. The row is the fifth
+  `WayInRow`, placed after the `showStart` gate so a running workout does not hide it, and the home test's fake
+  measurement repository is lifted rather than copied a third time. Rejected: drawing the row always and letting
+  it open today's entry for editing, because a row that cannot say whether the day is answered is the one thing
+  this row is for; a second destination or a ViewModel-held dialog, which duplicates one screen and puts
+  transient UI state in a database-driven flow (N19); and a `COUNT` query of its own, cheap only by adding a port
+  API and a second source of "today".
 
 - **Today's workout is the last thing on home, not the first** (N115). The *Today* block — its weekday heading and
   each scheduled plan's card — moves below the ways in, so the screen reads as the destinations first and the
   thing the app is telling you to do last. That is where the start bar's own next-up rows already sit (P3.9, N55)
-  and where the thumb already is, so the two ways of saying "here is today" stop pointing at opposite ends of
-  one screen. The heading travels with the cards: a section header left at the top would name a list that is no
-  longer under it. Rejected: leaving *Today* first and treating the ways in as the tail — the destinations are
-  what the screen is for on a day with nothing scheduled, and that is most days.
+  and where the thumb already is, so the two ways of saying "here is today" stop pointing at opposite ends of one
+  screen. The heading travels with the cards because both already live in one call — `HomeBody` swaps
+  `todayPlanItems` and `wayInItems`, two lines — and on a day with nothing scheduled the block draws nothing at
+  all, so only a day that has a workout to show looks different. The move carries one assertion of its own: no
+  test pins the order today, and an untested reversal drifts back. Rejected: leaving *Today* first and treating
+  the ways in as the tail — the destinations are what the screen is for on a day with nothing scheduled, and that
+  is most days.
 
 ## Parked — deliberately not planned
 
