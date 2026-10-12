@@ -165,6 +165,14 @@ object TestTags {
     }
 
     const val HOME_TITLE = "home_title"
+    /**
+     * The scrolling body itself (ROADMAP N115).
+     *
+     * A lazy list composes only what is near the viewport, so a test that reaches today's plan — which N115
+     * puts last — has to scroll the *list* to it; addressing the row directly cannot work, because the node
+     * it would scroll to does not exist until the scroll has happened.
+     */
+    const val HOME_LIST = "home_list"
     /** The body's row that starts an empty workout (ROADMAP N102). */
     const val HOME_START = "home_start"
     /** The bar's pill, drawn only while a workout is running (ROADMAP N102). */

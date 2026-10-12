@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.home
 
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsDisplayed
@@ -9,6 +10,8 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -51,6 +54,17 @@ class WorkoutsHomeScreenTest {
         val onOpenMeasurements: () -> Unit = {},
         val onOpenPlannedWorkout: (NextUp) -> Unit = {},
     )
+
+    /**
+     * Scrolls the body to a scheduled plan's card (N115).
+     *
+     * Through the list rather than the row: today's plan is last now, and a lazy list has not composed a row
+     * that far down, so `onNodeWithTag(row).performScrollTo()` cannot resolve the node it is asked to scroll.
+     */
+    private fun scrollToToday(id: String = "slot-1") {
+        composeTestRule.onNodeWithTag(TestTags.HOME_LIST)
+            .performScrollToNode(hasTestTag(TestTags.Home.startPlan(id)))
+    }
 
     private fun setScreen(
         state: WorkoutsHomeUiState,
@@ -240,6 +254,9 @@ class WorkoutsHomeScreenTest {
             actions = Actions(onStartTemplate = { started += it }),
         )
 
+        // N115 moved this block below the ways in, so on a short viewport it is reached by scrolling the
+        // list to it — the row itself is not composed until that has happened.
+        scrollToToday()
         composeTestRule.onNodeWithText("Today · Friday").assertExists()
         composeTestRule.onNodeWithText("Heavy lower").assertExists()
         composeTestRule.onNodeWithTag(TestTags.Home.startPlan("slot-1")).performClick()
@@ -490,6 +507,8 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
+        scrollToToday("t1")
+
         composeTestRule.onNodeWithText("Heavy lower").assertExists()
         composeTestRule.onNodeWithText("Push").assertExists()
     }
@@ -509,8 +528,36 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
+        scrollToToday()
+
         composeTestRule.onNodeWithTag(TestTags.Home.startPlan("slot-1")).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Home.startPlan("slot-2")).assertExists()
+    }
+
+    @Test
+    fun todaysPlan_sitsBelowTheWaysIn() {
+        // N115: the ways in are the body and today's workout is the last thing in the view, where the start
+        // bar's own next-up rows already sit (P3.9, N55) rather than at the top pointing the other way. A
+        // tag-level assertion cannot see an order, so this is the bounds idiom the workout screen uses for
+        // *Done* — and without it an untested reversal drifts back.
+        setScreen(
+            state = WorkoutsHomeUiState(
+                isLoading = false,
+                today = DayOfWeek.FRIDAY,
+                todaysPlan = listOf(
+                    TodayPlan(id = "slot-1", templateId = "t1", name = "Heavy lower", exerciseCount = 4),
+                ),
+            ),
+        )
+
+        scrollToToday()
+        val today = composeTestRule.onNodeWithTag(TestTags.Home.startPlan("slot-1"))
+            .getUnclippedBoundsInRoot()
+        val start = composeTestRule.onNodeWithTag(TestTags.HOME_START).getUnclippedBoundsInRoot()
+
+        assertWithMessage("today's plan must come after the last way in, not before the first (N115)")
+            .that(today.top >= start.bottom)
+            .isTrue()
     }
 
     @Test
@@ -553,6 +600,7 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
+        scrollToToday()
         composeTestRule.onNodeWithTag(TestTags.homeSubstitute("slot-1")).performClick()
         composeTestRule.onNodeWithTag(TestTags.HOME_SUBSTITUTE_DIALOG).assertExists()
         composeTestRule.onNodeWithTag(TestTags.homeSubstituteTemplate("t2")).performClick()
@@ -649,6 +697,7 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
+        scrollToToday()
         composeTestRule.onNodeWithTag(TestTags.homeSubstitute("slot-1")).performClick()
         composeTestRule.onNodeWithTag(TestTags.HOME_SUBSTITUTE_CLEAR).performClick()
 

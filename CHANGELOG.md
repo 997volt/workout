@@ -70,6 +70,17 @@ unreleased.
   in order there. The file is a reference, so this is a reading change rather than a code one: nothing in the app
   behaves differently.
 
+- **Today's workout is the last thing on home, not the first** (N115). The *Today* block — its weekday heading
+  and each scheduled plan's card — moved below the ways in, so the screen reads as the destinations first and
+  the thing the app is telling you to do last. That is where the start bar's own next-up rows already sat
+  (P3.9, N55), so the two ways of saying "here is today" no longer pointed at opposite ends of one screen; the
+  heading travelled with the cards because both are drawn by one call. Nothing changes on a day with nothing
+  scheduled, where the block draws nothing at all. The move needed an assertion of its own — two nodes' bounds,
+  the idiom the workout screen uses for *Done* — because a tag-level assertion cannot see an order, and it left
+  the body's LazyColumn with a tag (`HOME_LIST`): today's card is now below the fold on a short viewport, so a
+  test that reaches it has to scroll the *list* to it, since a row the lazy list has not composed cannot be
+  scrolled to by addressing the row.
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added

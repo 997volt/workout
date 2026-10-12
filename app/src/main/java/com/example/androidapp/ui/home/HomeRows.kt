@@ -66,13 +66,12 @@ internal fun HomeBody(
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().testTag(TestTags.HOME_LIST),
         // Rows are cards now, so the list owns the page margins that a plain ListItem used to
         // supply for itself — and the bottom inset is the bar's job, through the scaffold.
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        todayPlanItems(state = state, onStartTemplate = onStartTemplate, onSubstitute = onSubstitute)
         wayInItems(
             // Starting is offered only while nothing is running (B101): the bar's Resume pill is the same
             // action, and a second row for it would be the pill under the wrong label.
@@ -82,6 +81,11 @@ internal fun HomeBody(
             onOpenTemplates = onOpenTemplates,
             onOpenMeasurements = onOpenMeasurements,
         )
+        // Today's plans come **after** the ways in (N115): the destinations are what this screen is for on a
+        // day with nothing scheduled, and the thing the app says is next belongs at the bottom edge the start
+        // bar's own next-up rows already sit at (P3.9, N55) rather than at the top, pointing the other way.
+        // The heading travels with the cards, because both are drawn by this one call.
+        todayPlanItems(state = state, onStartTemplate = onStartTemplate, onSubstitute = onSubstitute)
     }
 }
 
