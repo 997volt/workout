@@ -163,7 +163,11 @@
     <string name="template_add_warmups">Add warm-ups</string>
     <string name="template_plan_add">Add set</string>
     <string name="template_plan_set">%1$d · %2$s</string>
+    <!-- A warm-up takes no number (ROADMAP N112), so its line reads its role alone. -->
+    <string name="template_plan_set_unnumbered">%1$s</string>
     <string name="template_plan_remove">Remove planned set %1$d</string>
+    <!-- And its delete names the role rather than a number the row does not show (N112). -->
+    <string name="template_plan_remove_unnumbered">Remove %1$s</string>
     <string name="template_set_title">Planned set</string>
     <string name="template_set_title_new">Add a planned set</string>
     <string name="template_set_role">Role: %1$s</string>

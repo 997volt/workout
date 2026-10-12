@@ -84,6 +84,7 @@ import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TemplateSetDialog
 import com.example.androidapp.ui.components.WarmUpAction
 import com.example.androidapp.ui.components.warmUpActionFor
+import com.example.androidapp.ui.components.setNumbers
 import com.example.androidapp.ui.components.steppedRpeText
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.AppTextButton
@@ -610,9 +611,12 @@ private fun PlannedSets(
                     .testTag(TestTags.templatePlanEmpty(exerciseId)),
             )
         }
+        // Numbered by the rule every list of sets numbers by, so the plan's ramp does not push its
+        // working sets to 5, 6, 7 (N112).
+        val numbers = sets.setNumbers { it.role }
         sets.forEachIndexed { index, set ->
             PlanSetRow(
-                number = index + 1,
+                number = numbers[index],
                 set = set,
                 unit = unit,
                 // A rung has no weight written down, so the row states what it derives from its anchor
@@ -627,15 +631,18 @@ private fun PlannedSets(
 }
 
 /**
- * One planned set as a line: its number and role, what it loads and asks for, and its delete (N14, N79).
+ * One planned set as a line: its number and role, what it loads and asks for, and its delete
+ * (N14, N79, N112).
  *
  * Moved out of the plan dialog and into the block by N81, unchanged but for the padding: the dialog
  * supplied it, the block does now. Its two tags are per set, because a plan of a working set and two
- * rungs is three rows on one screen.
+ * rungs is three rows on one screen. A **warm-up has no number** (N112), so its line reads its role
+ * alone — and its delete names the role rather than a number nobody can see.
  */
 @Composable
 private fun PlanSetRow(
-    number: Int,
+    /** The set's place among the sets that stand on their own, or null for a warm-up (N112). */
+    number: Int?,
     set: TemplateSet,
     unit: WeightUnit,
     onEdit: () -> Unit,
@@ -656,7 +663,9 @@ private fun PlanSetRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stringResource(R.string.template_plan_set, number, set.role.label),
+                // A warm-up reads its role alone, because it has no number to lead with (N112).
+                text = number?.let { stringResource(R.string.template_plan_set, it, set.role.label) }
+                    ?: stringResource(R.string.template_plan_set_unnumbered, set.role.label),
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(
@@ -671,10 +680,10 @@ private fun PlanSetRow(
         ) {
             Icon(
                 imageVector = Icons.Filled.Delete,
-                contentDescription = stringResource(
-                    R.string.template_plan_remove,
-                    number,
-                ),
+                // Names the row the way the row reads: by number, or by role where it has none (N112).
+                contentDescription = number?.let {
+                    stringResource(R.string.template_plan_remove, it)
+                } ?: stringResource(R.string.template_plan_remove_unnumbered, set.role.label),
             )
         }
     }

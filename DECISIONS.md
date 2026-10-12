@@ -579,9 +579,20 @@ the rule; that one argues it.
 - **The plan's line states the remainder, and the finished sentence only at zero** (N70). N52's notice
   could speak only once the plan was complete, which left the sets still to write — the part of the
   session a count is for — with nothing to read. The remainder and the *Log extra set* label are
-  computed from **one** rule (every logged set against every planned one), so the line cannot say work
-  is done while the button still promises the plan's next set; a null plan stays null rather than
-  reading zero, because "nothing was planned" and "all of it is done" are different statements.
+  computed from **one** rule, so the line cannot say work is done while the button still promises the
+  plan's next set; a null plan stays null rather than reading zero, because "nothing was planned" and
+  "all of it is done" are different statements. **What that rule counts is the working sets on both
+  sides** (N112): a plan's ramp is preparation the plan did not ask to be finished, so four warm-ups and
+  three working sets are a plan of three — which is how the plan is compared with the work everywhere
+  else too (N20).
+- **A set's number, and the plan's remainder, count only the sets that stand on their own** (N112). The
+  three lists that number sets — the plan's own, the workout's logged rows and the history detail's —
+  read one rule, because they are three readings of one sequence: a **warm-up takes no number**, so an
+  exercise's first working set is 1 whatever its ramp did, and a ramp of five no longer pushes the work
+  to 6. The remainder follows the same rule on both sides, and a **rung does take a number**, because a
+  run is work the plan prescribes and the lifter performs even though it is not rated on its own (N79).
+  The rule lives on the role, beside `recordsEffort` and deliberately not the same one: that asks what
+  may be recorded, this asks what the plan asked for.
 - **An exercise's rare actions are one menu, and removing one always asks** (N71, extending N53 and
   B2). The workout and the template editor draw the same component, because a second screen carrying
   a near-copy of a menu is how two vocabularies for one idea start. Each entry is offered only where

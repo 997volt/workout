@@ -49,6 +49,7 @@ import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.ui.components.SetEdit
+import com.example.androidapp.ui.components.setNumbers
 import com.example.androidapp.ui.navigation.ActiveWorkout
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Duration
@@ -72,7 +73,14 @@ import kotlinx.coroutines.launch
 /** A logged set as the screen shows it: position, weight, reps, and N6's extras. */
 data class SetRow(
     val id: String,
-    val number: Int,
+    /**
+     * The set's place among the sets that stand on their own, or null for a warm-up (ROADMAP N112).
+     *
+     * Nullable rather than zero: a warm-up takes no number at all, and the row draws a blank column
+     * where one would be ([com.example.androidapp.ui.components.SetNumber]) rather than the 1 a zero
+     * would read as.
+     */
+    val number: Int?,
     val reps: Int,
     val weightGrams: Long,
     /** 1–10, or null when none was recorded (ROADMAP N6). */
@@ -1294,13 +1302,14 @@ private data class PlanContext(
 )
 
 /**
- * How many sets the plan behind this workout writes for this exercise, or null (ROADMAP N52).
+ * How many sets the plan behind this workout writes for this exercise, or null (ROADMAP N52, N112).
  *
  * No plan at all is null rather than zero, so an empty workout's control never says the work is
- * finished before it has started.
+ * finished before it has started — and so is a plan of **nothing but warm-ups**: a ramp is preparation,
+ * so an exercise whose plan never asked for a working set has nothing to be done with either (N112).
  */
 private val PlanContext.plannedSetCount: Int?
-    get() = plannedEntry?.sets?.size?.takeIf { it > 0 }
+    get() = plannedEntry?.sets?.count { it.role.isWork }?.takeIf { it > 0 }
 
 /**
  * The plan entry each session exercise follows, keyed by the session exercise's own id (ROADMAP N54).
@@ -1375,24 +1384,25 @@ private fun List<SetEntry>.loggedRowsFor(
     sessionExerciseId: String,
     /** The movement's own step, carried onto every row so its editor steps the same way (N77). */
     stepGrams: Long?,
-): List<SetRow> =
-    filter { it.sessionExerciseId == sessionExerciseId }
-        .sortedBy { it.setIndex }
-        .mapIndexed { index, set ->
-            SetRow(
-                id = set.id,
-                // Displayed 1-based and renumbered, so deleting the first set leaves the rest
-                // reading 1, 2, 3 rather than 2, 3, 4.
-                number = index + 1,
-                reps = set.reps,
-                weightGrams = set.weightGrams,
-                rpeHalves = set.rpeHalves,
-                note = set.note,
-                setType = set.setType,
-                assistanceGrams = set.assistanceGrams,
-                stepGrams = stepGrams,
-            )
-        }
+): List<SetRow> {
+    val mine = filter { it.sessionExerciseId == sessionExerciseId }.sortedBy { it.setIndex }
+    // Numbered by `setNumbers`, so a warm-up takes none and the working sets read 1, 2, 3 (N112) —
+    // and renumbered on every read, so deleting the first leaves the rest reading 1, 2, 3.
+    val numbers = mine.setNumbers { it.setType }
+    return mine.mapIndexed { index, set ->
+        SetRow(
+            id = set.id,
+            number = numbers[index],
+            reps = set.reps,
+            weightGrams = set.weightGrams,
+            rpeHalves = set.rpeHalves,
+            note = set.note,
+            setType = set.setType,
+            assistanceGrams = set.assistanceGrams,
+            stepGrams = stepGrams,
+        )
+    }
+}
 
 /**
  * The plan's sets for one exercise, reduced for the progression rule (ROADMAP N50, N73).

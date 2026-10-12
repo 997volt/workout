@@ -33,6 +33,17 @@ unreleased.
   on a phone. The ± pair is not new: it is the one the workout's fields and the correction dialog already
   share, so this is its third caller rather than a third copy (B53).
 
+- **A set's number, and the plan's remainder, count only the sets that stand on their own** (N112). A
+  warm-up takes no number, so an exercise's first working set is **1** — on the plan, in the workout and
+  in the history, which are the three lists that number sets and now read one rule for it. Four warm-ups
+  and three working sets no longer number the work 5, 6, 7. *Planned sets left* follows the same rule on
+  both sides, so that plan reports **three** left rather than seven, and the *Log extra set* notice
+  arrives with the third working set — which is how the plan is compared with the work everywhere else
+  (N20). A **rung keeps its number**, because a run is work the plan prescribes and the lifter performs,
+  where a warm-up is preparation; the rule lives on the role beside `recordsEffort`, which answers the
+  different question of what may be recorded (N79). The history row also gains the role label it never
+  showed: with the number gone, a warm-up would otherwise be a row with nothing saying what it was.
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added

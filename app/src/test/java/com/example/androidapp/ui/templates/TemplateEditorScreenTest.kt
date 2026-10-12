@@ -861,6 +861,54 @@ class TemplateEditorScreenTest {
     }
 
     /**
+     * A plan's ramp does not number its working sets (ROADMAP N112).
+     *
+     * One rule numbers the plan, the workout and the history, and it is the rule asserted here: a
+     * **warm-up takes no number**, so the working set after it reads 1 rather than 2 — which is what a
+     * lifter's own sheet says, where the ramp is `w1, w2` and the work is `s1`.
+     */
+    @Test
+    fun aPlannedWarmUp_readsItsRole_whereTheWorkingSetAfterItIsOne() {
+        setScreen(
+            state = twoExercises.copy(
+                exercises = listOf(
+                    twoExercises.exercises.first().copy(
+                        sets = listOf(
+                            TemplateSet(
+                                id = "ts0",
+                                templateExerciseId = "te1",
+                                setIndex = 0,
+                                role = SetType.WARMUP,
+                                targetWeightGrams = 60_000L,
+                                targetRepsMax = 5,
+                            ),
+                            TemplateSet(
+                                id = "ts1",
+                                templateExerciseId = "te1",
+                                setIndex = 1,
+                                role = SetType.NORMAL,
+                                targetWeightGrams = 140_000L,
+                                targetRepsMax = 2,
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        openBlock("te1")
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.templatePlanSet("ts0")))
+        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts0"))
+            .assertTextContains("Warm-up", substring = true)
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.templatePlanSet("ts1")))
+        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts1"))
+            .assertTextContains("1 · Working", substring = true)
+    }
+
+    /**
      * A first exercise carrying one planned set, so a summary line can be read on its own.
      *
      * The plan's target RPE is the exercise's own number (N59) and is covered by

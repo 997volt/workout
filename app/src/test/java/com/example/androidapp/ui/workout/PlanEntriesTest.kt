@@ -3,6 +3,7 @@ package com.example.androidapp.ui.workout
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SessionExercise
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -80,6 +81,54 @@ class PlanEntriesTest {
         assertThat(loggedRow(planned = 3, logged = 3).plannedSetsLeft).isEqualTo(0)
         assertThat(loggedRow(planned = 3, logged = 4).plannedSetsLeft).isEqualTo(0)
         assertThat(loggedRow(planned = null, logged = 2).plannedSetsLeft).isNull()
+    }
+
+    @Test
+    fun warmUpsCountOnNeitherSide_ofTheRemainder() {
+        // ROADMAP N112. The plan's ramp is preparation, so it is not part of the count — and the four
+        // warm-ups already logged do not pay any of it off. Three working sets are what remain.
+        val row = SessionExerciseRow(
+            id = "se1",
+            exerciseId = "back-squat",
+            name = "Back Squat",
+            subtitle = null,
+            plannedSetCount = 3,
+            sets = List(4) { index ->
+                SetRow(
+                    id = "w$index",
+                    number = null,
+                    reps = 5,
+                    weightGrams = 60_000,
+                    setType = SetType.WARMUP,
+                )
+            },
+        )
+
+        assertThat(row.plannedSetsLeft).isEqualTo(3)
+        assertThat(row.isPastPlan).isFalse()
+    }
+
+    @Test
+    fun aWorkingSetPaysThePlanOff_whereAWarmUpDoesNot() {
+        // The two sides move together: one working set of three leaves two, and the notice arrives
+        // when the third lands — never early because a ramp was logged, never late because it was not.
+        fun row(vararg roles: SetType) = SessionExerciseRow(
+            id = "se1",
+            exerciseId = "back-squat",
+            name = "Back Squat",
+            subtitle = null,
+            plannedSetCount = 2,
+            sets = roles.mapIndexed { index, role ->
+                SetRow(id = "s$index", number = null, reps = 5, weightGrams = 100_000, setType = role)
+            },
+        )
+
+        assertThat(row(SetType.WARMUP, SetType.NORMAL).plannedSetsLeft).isEqualTo(1)
+        assertThat(row(SetType.WARMUP, SetType.NORMAL).isPastPlan).isFalse()
+        assertThat(row(SetType.NORMAL, SetType.NORMAL).plannedSetsLeft).isEqualTo(0)
+        assertThat(row(SetType.NORMAL, SetType.NORMAL).isPastPlan).isTrue()
+        // A rung is work, so it pays the plan off too — only a warm-up is preparation (N79, N112).
+        assertThat(row(SetType.NORMAL, SetType.DROP).isPastPlan).isTrue()
     }
 
     private fun loggedRow(planned: Int?, logged: Int) = SessionExerciseRow(

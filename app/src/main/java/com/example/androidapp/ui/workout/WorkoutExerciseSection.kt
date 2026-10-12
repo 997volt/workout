@@ -44,11 +44,13 @@ import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.SetEntryDraft
 import com.example.androidapp.ui.components.SetEntryNumbers
+import com.example.androidapp.ui.components.SetNumber
 import com.example.androidapp.ui.components.SetRoleSelector
 import com.example.androidapp.ui.components.SetRpeField
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.restLabel
 import com.example.androidapp.ui.components.rpeMarker
+import com.example.androidapp.ui.components.setRoleMarker
 import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.toEdit
 import com.example.androidapp.ui.components.values
@@ -69,27 +71,39 @@ import com.example.androidapp.ui.components.AppTextButton
 private const val DIMMED = 0.45f
 
 /**
- * True once this exercise has written every set its plan asked for (ROADMAP N52).
+ * True once this exercise has written every set its plan asked for (ROADMAP N52, N112).
  *
  * Every set rather than more than every set, because the moment the last planned one lands is the
- * moment the notice is worth reading: the next set is the extra one. A null `plannedSetCount` is
- * "no plan", which is never past it — an empty workout, or an exercise added by hand, has nothing
- * to be done with and must not be told its work is finished.
+ * moment the notice is worth reading: the next set is the extra one. **Warm-ups are counted on
+ * neither side** (N112): the plan's ramp is preparation the plan did not ask to be finished, so the
+ * working sets are compared with the working sets, which is also how the plan is compared with the
+ * work everywhere else (N20). A null `plannedSetCount` is "no plan", which is never past it — an
+ * empty workout, an exercise added by hand, or a plan that is nothing but a ramp has nothing to be
+ * done with and must not be told its work is finished.
  */
 internal val SessionExerciseRow.isPastPlan: Boolean
-    get() = plannedSetCount != null && sets.size >= plannedSetCount
+    get() = plannedSetCount != null && workingSetsLogged >= plannedSetCount
 
 /**
  * How many of the plan's own sets this exercise has still to write, or null when there is no plan
- * (ROADMAP N70).
+ * (ROADMAP N70, N112).
  *
- * Counted exactly as [isPastPlan] counts — every logged set against every planned one — so the line
- * and the label can never disagree: at zero the plan's work is done, which is the sentence that
- * replaces the count. A null plan stays null rather than reading zero, because "nothing planned" and
- * "all of it done" are different things to say to somebody.
+ * Counted exactly as [isPastPlan] counts — the logged **working** sets against the planned ones — so
+ * the line and the label can never disagree: at zero the plan's work is done, which is the sentence
+ * that replaces the count. A null plan stays null rather than reading zero, because "nothing planned"
+ * and "all of it done" are different things to say to somebody.
  */
 internal val SessionExerciseRow.plannedSetsLeft: Int?
-    get() = plannedSetCount?.let { (it - sets.size).coerceAtLeast(0) }
+    get() = plannedSetCount?.let { (it - workingSetsLogged).coerceAtLeast(0) }
+
+/**
+ * How many sets this exercise has logged that the plan would count (ROADMAP N112).
+ *
+ * A warm-up is preparation, so it neither advances the plan nor is owed by it; a rung is work and
+ * counts, which is [SetType.isWork]'s rule read off the logged rows.
+ */
+private val SessionExerciseRow.workingSetsLogged: Int
+    get() = sets.count { it.setType.isWork }
 
 /**
  * The workout's exercises, and the things that belong in the same scroll as them (ROADMAP N82).
@@ -642,11 +656,8 @@ private fun SetLine(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = stringResource(R.string.set_number, set.number),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            // A warm-up leaves this column blank rather than taking a number (N112).
+            SetNumber(set.number)
             Text(
                 text = stringResource(
                     R.string.set_summary,
@@ -688,15 +699,12 @@ private fun SetLine(
  * comment itself belongs on the workout detail. The RPE is no longer one of these — it reads on the
  * set's own line, because the stepper records one per set (N59) and a marker could only hint at the
  * number — so nothing is emitted when the set carries neither a role nor a note, which is the state
- * the one-tap log path leaves it in.
+ * the one-tap log path leaves it in. The role half is [setRoleMarker], which the history row reads too
+ * since a warm-up stopped taking a number (N112).
  */
 @Composable
 private fun SetExtrasMarker(set: SetRow, modifier: Modifier = Modifier) {
-    // A working set is the default and needs no label; anything else is worth
-    // showing, because the role is the thing the user chose (ROADMAP N14).
-    val roleMarker = set.setType
-        .takeIf { it != SetType.NORMAL }
-        ?.let { stringResource(R.string.set_role_marker, it.label) }
+    val roleMarker = setRoleMarker(set.setType)
     val noteMarker = if (set.note != null) stringResource(R.string.set_note_marker) else null
     val marker = listOfNotNull(roleMarker, noteMarker).joinToString(" · ")
 

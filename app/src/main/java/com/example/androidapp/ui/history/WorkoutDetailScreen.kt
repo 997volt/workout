@@ -59,8 +59,11 @@ import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.SetEditorDialog
+import com.example.androidapp.ui.components.SetNumber
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.rpeMarker
+import com.example.androidapp.ui.components.setNumbers
+import com.example.androidapp.ui.components.setRoleMarker
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -570,10 +573,13 @@ private fun ExerciseBlock(
                 .clickable(onClickLabel = trendsLabel) { onOpenTrends(exercise.exerciseId) },
         )
 
+        // Numbered by the same rule the workout screen numbers by, so one session does not read two
+        // ways: a warm-up takes no number (N112).
+        val numbers = exercise.sets.setNumbers { it.setType }
         exercise.sets.forEachIndexed { index, set ->
             HistorySetRow(
                 set = set,
-                number = index + 1,
+                number = numbers[index],
                 editLabel = editLabel,
                 editable = editing,
                 onEditSet = onEditSet,
@@ -602,7 +608,8 @@ private fun ExerciseBlock(
 @Composable
 private fun HistorySetRow(
     set: HistorySet,
-    number: Int,
+    /** The set's place among the sets that stand on their own, or null for a warm-up (N112). */
+    number: Int?,
     editLabel: String,
     /** False while the workout is only being read: the row stops being tappable (N84). */
     editable: Boolean,
@@ -643,21 +650,19 @@ private fun HistorySetRow(
 }
 
 /**
- * What one logged set says: its number, its load and reps, its effort and its note (N6).
+ * What one logged set says: its number, its load and reps, its effort, its role and its note
+ * (N6, N112).
  *
  * Split out of [HistorySetRow] when N84's read-only branch pushed that function past the length this
  * project allows, and it is the piece that reads on its own — the write affordances around it are the
  * other half.
  */
 @Composable
-private fun HistorySetNumbers(set: HistorySet, number: Int, modifier: Modifier = Modifier) {
+private fun HistorySetNumbers(set: HistorySet, number: Int?, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(
-                text = "$number",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            // A warm-up leaves this column blank rather than taking a number (N112).
+            SetNumber(number)
             Text(
                 text = stringResource(
                     R.string.set_summary,
@@ -676,6 +681,15 @@ private fun HistorySetNumbers(set: HistorySet, number: Int, modifier: Modifier =
             set.rpeHalves?.takeIf { set.setType.recordsEffort }?.let { rpeHalves ->
                 Text(
                     text = rpeMarker(rpeHalves),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            // What the set was, which this row never used to say (N112): with a warm-up no longer
+            // numbered, a role marker is the only thing left that says it was preparation.
+            setRoleMarker(set.setType)?.let { role ->
+                Text(
+                    text = role,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

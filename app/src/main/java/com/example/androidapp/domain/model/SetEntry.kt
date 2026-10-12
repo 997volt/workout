@@ -89,6 +89,17 @@ enum class SetType(val label: String) {
      * the record scan all read the same one, rather than each deciding for itself.
      */
     val recordsEffort: Boolean get() = !isRung && this != WARMUP
+
+    /**
+     * Whether this role is the plan's work rather than its preparation (ROADMAP N112).
+     *
+     * A warm-up is preparation, so it takes no set number and counts neither towards the plan's
+     * remainder nor against it: five warm-ups and three working sets is a plan of **three**, numbered
+     * 1, 2, 3. A **rung is work** — it keeps its number and its place in the count — even though it is
+     * not rated on its own. That is what separates this from [recordsEffort]: that one asks what may be
+     * recorded, this one asks what the plan asked for.
+     */
+    val isWork: Boolean get() = this != WARMUP
 }
 
 /**
