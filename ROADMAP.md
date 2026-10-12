@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two items. Last reviewed against the
+> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one item. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -14,11 +14,10 @@
 > picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
 > still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds N107,
-> which shortens [DECISIONS.md](DECISIONS.md) without dropping a decision, and N111, the template editor's
-> ± steppers. **Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five
-> defects (B104–B108); all five are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).** A line-by-line
-> reading of the N87–N95 changes found sixteen defects (B79–B94); all are fixed and recorded in
-> [CHANGELOG.md](CHANGELOG.md).
+> which shortens [DECISIONS.md](DECISIONS.md) without dropping a decision. **Reading the P1.1, B103 and N110
+> batch line by line — and running it on a device — found five defects (B104–B108); all five are fixed and
+> recorded in [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen
+> defects (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -36,7 +35,7 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Two items are planned: one is text rather than code, and one is a small change to the template editor.
+One item is planned, and it is text rather than code.
 
 - **The longest evidence-backed entries state the rule and defer their argument to the evidence** (N107).
   The file's own contract is that an entry is the rule, the shortest honest reason and the rejected
@@ -44,18 +43,6 @@ Two items are planned: one is text rather than code, and one is a small change t
   that already have an evidence section run to 13–26 lines and carry the full argument anyway; enforcing
   the contract on those twelve moves it to the section that exists for it, losing no decision. It is a text
   change rather than a code one, so it can land before or after the tag.
-
-- **A planned set is stated with the same ± steppers as a logged one** (N111). The template editor is the
-  last place a load and a rep count are typed with no way to step them — the set dialog's load, its rep range
-  and a drop run's value, and the exercise's target RPE beside them — and they are the same numbers the
-  workout screen states: the load steps by the exercise's own `Weight.stepGramsFor` (N77) in its own unit,
-  signed so `+` on an assisted target reduces the help (N15); reps by one with a floor of 1; the drop value by
-  that same step; and the RPE by half a point clamped to the scale, its blank stating the working end a
-  logged set opens on (N59). The ± pair is already shared by the workout's fields and the correction dialog,
-  so this is that control's third caller rather than a copy (B53). A plan's reps are a range, so each end
-  keeps its own pair and a backwards range stays the invalid state the dialog already refuses. Rejected:
-  leaving the fields as typed text, which asks the lifter to author on a phone the numbers they will then
-  step on the same phone.
 
 ## Parked — deliberately not planned
 
@@ -137,12 +124,12 @@ screen's silent write failure (B102) — and 2.1 — P1.1's strength and bodybui
 category over movements (N110), the unstated-taxonomy read (B103) and the five defects the reading of that
 batch found (B104–B108) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds two items**: N107's text shortening and N111's ± steppers in the template editor. **The reading
-that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one that mattered
-left the instrumented job red, because a program document's former variation imports under its family now
-and the test still asserted the link the shape no longer has. 2.0 shipped with the loudest note this project
-has written — the 1.x store stays on the device and 2.0 does not read it — and the rule that allowed that is
-in [DECISIONS.md](DECISIONS.md), with the window it stays payable in.
+***Next* holds one item**: N107's text shortening. **The reading that produced 2.1 found five defects in it, all
+fixed before the tag (B104–B108)** — the one that mattered left the instrumented job red, because a program
+document's former variation imports under its family now and the test still asserted the link the shape no
+longer has. 2.0 shipped with the loudest note this project has written — the 1.x store stays on the device and
+2.0 does not read it — and the rule that allowed that is in [DECISIONS.md](DECISIONS.md), with the window it
+stays payable in.
 
 The last two rounds of deferred scope — P3.3's and P3.5's — are built as P3.8-P3.16, and what they named
 that is not a feature is a settled decision: no dated instances (N16), nothing automatic (the app states

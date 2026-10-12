@@ -550,10 +550,11 @@ class TemplateEditorScreenTest {
     }
 
     @Test
-    fun oneRpeTargetPerExercise_isEdited_besideTheRest() {
-        // ROADMAP N59, amended by N80: the effort is one number for the exercise, shown next to the
-        // rest — not a field on each planned set, and no longer in the cue's row. 9.5 is 19
-        // half-points (N6).
+    fun oneRpeTargetPerExercise_isEdited_inTheBlocksFoot() {
+        // ROADMAP N59, amended by N80 and laid out by N111: the effort is one number for the exercise,
+        // in the block's foot rather than a field on each planned set. 9.5 is 19 half-points (N6). It
+        // stays **typeable** beside its ± pair, because every planned field is optional and a stepper
+        // alone could never put a target back to none (N14).
         var saved: Triple<Int?, String?, Int?>? = null
         setScreen(
             state = twoExercises.copy(
@@ -579,12 +580,51 @@ class TemplateEditorScreenTest {
     }
 
     @Test
+    fun theTargetRpe_stepsByAHalfPoint_andStopsAtTheScale() {
+        // ROADMAP N111: the plan's effort moves the way a logged set's does — half a point a tap, and
+        // clamped at both ends of the scale rather than wrapped, so holding a button down cannot leave
+        // 1–10 (the shape N59 gave the workout's own stepper).
+        var saved: Triple<Int?, String?, Int?>? = null
+        setScreen(
+            state = twoExercises.copy(
+                exercises = listOf(twoExercises.exercises.first().copy(targetRpeHalves = 18)),
+            ),
+            actions = Actions(onSaveExercisePlan = { _, rest, cue, rpe -> saved = Triple(rest, cue, rpe) }),
+        )
+        openBlock("te1")
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.TEMPLATE_EXERCISE_INCREASE_RPE))
+        // The ± pair sits low in a block taller than this test's viewport, so the buttons are reached
+        // through their semantics action the way the save below them already is (N71): a swallowed tap
+        // would read as a step that did nothing, which is the one thing this test is about.
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_INCREASE_RPE)
+            .performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).assertTextContains("9.5")
+
+        // Held down past the bottom of the scale: 9.5, then 1.0 and no further. `substring = false`
+        // because the field's own label carries a 1 and a 10, and a substring match would pass on
+        // either of them rather than on the value.
+        repeat(20) {
+            composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_DECREASE_RPE)
+                .performSemanticsAction(SemanticsActions.OnClick)
+        }
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_EXERCISE_RPE).assertTextContains("1", substring = false)
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_REST_CUE_SAVE)
+            .performSemanticsAction(SemanticsActions.OnClick)
+
+        assertEquals(Triple(null, null, 2), saved)
+    }
+
+    @Test
     fun theCue_getsALineOfItsOwn_andIsReadAboveTheNumbers() {
-        // ROADMAP N80, moved by N99. The cue took `weight(1f)` between two fixed-width number fields and the
-        // save, so a phone left it about a word wide with `singleLine` on top. Both halves are asserted,
-        // because the width is the point and the position is the decision: it is wider than the two numbers
-        // together, it is read *above* them because the block now reads in the order it is filled in, and the
-        // save stayed on their row below it rather than following the cue into a line of its own.
+        // ROADMAP N80, moved by N99 and re-laid-out by N111. The cue took `weight(1f)` between two fixed-width
+        // number fields and the save, so a phone left it about a word wide with `singleLine` on top. It is read
+        // *above* the numbers because the block reads in the order it is filled in; the save stayed on the
+        // rest's row rather than following the cue into a line of its own; and the RPE now takes a row of its
+        // own too, because a label, a value and a ± pair do not fit beside another number on a phone — the
+        // squeeze N68 gave the workout's own RPE stepper a row for.
         setScreen(
             state = twoExercises.copy(exercises = listOf(twoExercises.exercises.first())),
         )
@@ -597,10 +637,14 @@ class TemplateEditorScreenTest {
 
         assertTrue("the cue sits above the numbers, not on their row", cue.bottom <= rest.top)
         assertTrue(
-            "the cue is no wider than the two numbers it used to sit between",
-            cue.right - cue.left >= (rest.right - rest.left) + (rpe.right - rpe.left),
+            "the cue is as wide as the number rows below it, not squeezed between them",
+            cue.right - cue.left >= rpe.right - rpe.left,
         )
-        assertTrue("the save stayed on the numbers' row below the cue", save.top >= cue.bottom)
+        assertTrue("the RPE dropped to a row of its own for its ± pair", rpe.top >= rest.bottom)
+        assertTrue(
+            "the save stayed on the rest's row rather than following the RPE down",
+            save.top >= cue.bottom && save.top < rpe.top,
+        )
     }
 
     @Test
@@ -820,7 +864,7 @@ class TemplateEditorScreenTest {
      * A first exercise carrying one planned set, so a summary line can be read on its own.
      *
      * The plan's target RPE is the exercise's own number (N59) and is covered by
-     * [oneRpeTargetPerExercise_isEdited_besideTheRest]; a set carries no effort of its own.
+     * [oneRpeTargetPerExercise_isEdited_inTheBlocksFoot]; a set carries no effort of its own.
      */
     private fun exerciseWithAPlannedSet() =
         twoExercises.exercises.first().copy(

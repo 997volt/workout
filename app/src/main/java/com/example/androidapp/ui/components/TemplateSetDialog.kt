@@ -2,9 +2,9 @@ package com.example.androidapp.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -45,6 +45,14 @@ fun TemplateSetDialog(
     /** The unit this target load is typed and shown in (ROADMAP N64). */
     unit: WeightUnit = WeightUnit.KILOGRAMS,
     /**
+     * The step this exercise's ± taps take, or null for the unit's own (ROADMAP N77, N111).
+     *
+     * Nullable rather than pre-resolved because the unit travels with it, the same shape the
+     * workout's fields take: a caller holding what the exercise says and the unit its numbers read
+     * in has everything the step needs.
+     */
+    stepGrams: Long? = null,
+    /**
      * Which roles this set may be given (ROADMAP N79, B64).
      *
      * A rung hangs off the set above it, so the caller — which knows the position this row holds, or
@@ -69,7 +77,14 @@ fun TemplateSetDialog(
                 ),
             )
         },
-        text = { TargetFields(draft = draft, onChange = { draft = it }, offers = offers) },
+        text = {
+            TargetFields(
+                draft = draft,
+                onChange = { draft = it },
+                offers = offers,
+                stepGrams = stepGrams,
+            )
+        },
         confirmButton = {
             AppTextButton(
                 enabled = draft.isValid,
@@ -246,8 +261,18 @@ private fun TargetFields(
     onChange: (TemplateSetDraft) -> Unit,
     /** Which roles this position can take (ROADMAP N79, B64). */
     offers: (SetType) -> Boolean,
+    /** The step this exercise's ± taps take, or null for the unit's own (ROADMAP N77, N111). */
+    stepGrams: Long?,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    // The step once, for every field that moves a load: the exercise's own, or the unit's (N77).
+    val step = Weight.stepGramsFor(stepGrams, draft.unit)
+
+    Column(
+        // The dialog grew a row when the ± pairs arrived (N111), and a plan is authored on whatever
+        // screen the lifter has, so the fields scroll rather than the note being clipped off the end.
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         SetRoleSelector(
             role = draft.role,
             onSelect = { onChange(draft.copy(role = it)) },
@@ -260,49 +285,93 @@ private fun TargetFields(
         // A rung has no load of its own to type: a cluster repeats the anchor's and a drop is the
         // anchor less the run's value, so the only field it can hold is that value — and only the rung
         // that opens the run holds it (ROADMAP N79).
-        if (draft.writesTheRunValue) DropValueField(draft = draft, onChange = onChange)
-        if (!draft.role.isRung) LoadField(draft = draft, onChange = onChange)
+        if (draft.writesTheRunValue) DropValueField(draft = draft, onChange = onChange, step = step)
+        if (!draft.role.isRung) LoadField(draft = draft, onChange = onChange, step = step)
         RepsFields(draft = draft, onChange = onChange)
         NoteField(draft = draft, onChange = onChange)
     }
 }
 
-/** The one number a drop run is authored with: what each rung takes off the anchor (N79). */
+/**
+ * The one number a drop run is authored with: what each rung takes off the anchor (N79).
+ *
+ * Stepped by the exercise's own step like the load it comes off (N111), and floored at zero the way a
+ * weight is rather than the way assistance is: a drop value is a magnitude, so stepping down from
+ * nothing states 0 — which this field already refuses — rather than inventing a drop nobody named.
+ */
 @Composable
 private fun DropValueField(
     draft: TemplateSetDraft,
     onChange: (TemplateSetDraft) -> Unit,
+    step: Long,
 ) {
-    OutlinedTextField(
+    NumberStepper(
+        label = stringResource(R.string.template_set_drop_value_label, draft.unit.label()),
+        supportingText = stringResource(R.string.template_set_drop_value_hint),
+        testTag = TestTags.TEMPLATE_SET_DROP_VALUE,
+        increaseTag = TestTags.TEMPLATE_SET_INCREASE_DROP_VALUE,
+        decreaseTag = TestTags.TEMPLATE_SET_DECREASE_DROP_VALUE,
         value = draft.dropValueText,
         onValueChange = { onChange(draft.copy(dropValueText = it)) },
-        modifier = Modifier.fillMaxWidth().testTag(TestTags.TEMPLATE_SET_DROP_VALUE),
-        singleLine = true,
+        keyboardType = KeyboardType.Decimal,
         isError = !draft.dropValueIsValid,
-        label = { Text(stringResource(R.string.template_set_drop_value_label, draft.unit.label())) },
-        supportingText = { Text(stringResource(R.string.template_set_drop_value_hint)) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        onStep = { delta ->
+            val stepped = ((draft.dropValueGrams ?: 0L) + delta * step).coerceAtLeast(0L)
+            onChange(draft.copy(dropValueText = Weight.format(stepped, draft.unit)))
+        },
     )
 }
 
-/** The load a set of its own names, which a rung does not have (N15, N79). */
+/**
+ * The load a set of its own names, which a rung does not have (N15, N79).
+ *
+ * The ± pair holds the workout's own rule (N111): the field is one *signed* number, so a target of
+ * `-20` is 20 kg of assistance and `+` makes the target harder rather than adding weight to a bar
+ * that is not there.
+ */
 @Composable
 private fun LoadField(
     draft: TemplateSetDraft,
     onChange: (TemplateSetDraft) -> Unit,
+    step: Long,
 ) {
-    OutlinedTextField(
+    val load = draft.load
+
+    NumberStepper(
+        label = stringResource(R.string.template_set_weight, draft.unit.label()),
+        testTag = TestTags.TEMPLATE_SET_WEIGHT,
+        increaseTag = TestTags.TEMPLATE_SET_INCREASE_WEIGHT,
+        decreaseTag = TestTags.TEMPLATE_SET_DECREASE_WEIGHT,
         value = draft.weightText,
         onValueChange = { onChange(draft.copy(weightText = it)) },
-        modifier = Modifier.fillMaxWidth().testTag(TestTags.TEMPLATE_SET_WEIGHT),
-        singleLine = true,
+        keyboardType = KeyboardType.Decimal,
         isError = !draft.weightIsValid,
-        label = { Text(stringResource(R.string.template_set_weight, draft.unit.label())) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        onStep = { delta ->
+            val stepped = Weight.stepLoad(
+                signedGrams = load?.signedGrams ?: 0L,
+                deltaGrams = delta * step,
+            )
+            onChange(
+                draft.copy(
+                    weightText = Weight.display(
+                        weightGrams = stepped.weightGrams,
+                        assistanceGrams = stepped.assistanceGrams,
+                        unit = draft.unit,
+                    ),
+                ),
+            )
+        },
     )
 }
 
-/** The target range, which a rung does not carry either — the group's is the anchor's (N14, N79). */
+/**
+ * The target range, which a rung does not carry either — the group's is the anchor's (N14, N79).
+ *
+ * One pair per end (N111): a plan writes `(max 2)` or a range, and each end moves on its own by the
+ * rule the workout's reps field holds — one rep a tap, floored at 1. A range that runs backwards is
+ * left for this dialog's own validity to refuse rather than being swapped here, because swapping
+ * would silently change what the lifter asked for.
+ */
 @Composable
 private fun RepsFields(
     draft: TemplateSetDraft,
@@ -310,27 +379,41 @@ private fun RepsFields(
 ) {
     if (draft.role.isRung) return
 
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        NumberStepper(
+            label = stringResource(R.string.template_set_reps_min),
+            testTag = TestTags.TEMPLATE_SET_REPS_MIN,
+            increaseTag = TestTags.TEMPLATE_SET_INCREASE_REPS_MIN,
+            decreaseTag = TestTags.TEMPLATE_SET_DECREASE_REPS_MIN,
             value = draft.repsMinText,
             onValueChange = { onChange(draft.copy(repsMinText = it)) },
-            modifier = Modifier.weight(1f).testTag(TestTags.TEMPLATE_SET_REPS_MIN),
-            singleLine = true,
+            keyboardType = KeyboardType.Number,
             isError = !draft.repsAreValid,
-            label = { Text(stringResource(R.string.template_set_reps_min)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            onStep = { delta -> onChange(draft.copy(repsMinText = steppedReps(draft.repsMin, delta))) },
         )
-        OutlinedTextField(
+        NumberStepper(
+            label = stringResource(R.string.template_set_reps_max),
+            testTag = TestTags.TEMPLATE_SET_REPS_MAX,
+            increaseTag = TestTags.TEMPLATE_SET_INCREASE_REPS_MAX,
+            decreaseTag = TestTags.TEMPLATE_SET_DECREASE_REPS_MAX,
             value = draft.repsMaxText,
             onValueChange = { onChange(draft.copy(repsMaxText = it)) },
-            modifier = Modifier.weight(1f).testTag(TestTags.TEMPLATE_SET_REPS_MAX),
-            singleLine = true,
+            keyboardType = KeyboardType.Number,
             isError = !draft.repsAreValid,
-            label = { Text(stringResource(R.string.template_set_reps_max)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            onStep = { delta -> onChange(draft.copy(repsMaxText = steppedReps(draft.repsMax, delta))) },
         )
     }
 }
+
+/**
+ * The plan's rep count after one ± tap (ROADMAP N111).
+ *
+ * The workout's reps rule (N59) for a field that may be empty: blank is where a count starts, so the
+ * first tap states 1 rather than stepping a number that was never there, and no tap can reach 0 —
+ * a set of zero reps is not a set.
+ */
+private fun steppedReps(current: Int?, delta: Int): String =
+    ((current ?: 1) + delta).coerceAtLeast(1).toString()
 
 /** A note is the one thing every role can carry, a rung included (N14, N79). */
 @Composable

@@ -392,10 +392,28 @@ object TestTags {
     const val TEMPLATE_SET_NOTE = "template_set_note"
     const val TEMPLATE_SET_SAVE = "template_set_save"
     const val TEMPLATE_SET_CANCEL = "template_set_cancel"
+
+    /**
+     * The ± pairs the planned-set dialog shares with the workout's fields (ROADMAP N111).
+     *
+     * Its own tags rather than the logging path's, for the reason the correction dialog has a set:
+     * a tag addresses **one** control, and every one of these fields is composed while a workout
+     * screen holding the same four may be behind the dialog.
+     */
+    const val TEMPLATE_SET_INCREASE_WEIGHT = "template_set_increase_weight"
+    const val TEMPLATE_SET_DECREASE_WEIGHT = "template_set_decrease_weight"
+    const val TEMPLATE_SET_INCREASE_DROP_VALUE = "template_set_increase_drop_value"
+    const val TEMPLATE_SET_DECREASE_DROP_VALUE = "template_set_decrease_drop_value"
+    const val TEMPLATE_SET_INCREASE_REPS_MIN = "template_set_increase_reps_min"
+    const val TEMPLATE_SET_DECREASE_REPS_MIN = "template_set_decrease_reps_min"
+    const val TEMPLATE_SET_INCREASE_REPS_MAX = "template_set_increase_reps_max"
+    const val TEMPLATE_SET_DECREASE_REPS_MAX = "template_set_decrease_reps_max"
     const val TEMPLATE_REST_FIELD = "template_rest_field"
     const val TEMPLATE_CUE_FIELD = "template_cue_field"
-    /** The exercise's one target RPE, on the row the rest shares and above the cue's own (N59, N80). */
+    /** The exercise's one target RPE, on its own row below the rest's (N59, N80, N111). */
     const val TEMPLATE_EXERCISE_RPE = "template_exercise_rpe"
+    const val TEMPLATE_EXERCISE_INCREASE_RPE = "template_exercise_increase_rpe"
+    const val TEMPLATE_EXERCISE_DECREASE_RPE = "template_exercise_decrease_rpe"
     const val TEMPLATE_REST_CUE_SAVE = "template_rest_cue_save"
 
     fun templatePlanSet(id: String) = "template_plan_set_$id"

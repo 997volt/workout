@@ -308,13 +308,16 @@ internal fun SetRpeField(
 private const val RPE_STEPPER_NAME = "RPE"
 
 /**
- * The text one tap of the RPE stepper writes (ROADMAP N59).
+ * The text one tap of the RPE stepper writes (ROADMAP N59, shared by N111).
  *
- * Blank is a real state — a set that recorded no effort — and the first tap **states the default**
- * rather than stepping a number that was never there. After that it steps by a half and clamps at the
- * ends of the scale, so holding a button down cannot leave 1–10.
+ * Blank is a real state — a set that recorded no effort, or a plan that asks for none — and the first
+ * tap **states the default** rather than stepping a number that was never there. After that it steps by
+ * a half and clamps at the ends of the scale, so holding a button down cannot leave 1–10.
+ *
+ * The workout's field and the template editor's target read it, because they state the same number
+ * (N59): only the template's is typeable as well, since every planned field is optional (N14).
  */
-private fun steppedRpeText(current: Int?, delta: Int): String = when {
+internal fun steppedRpeText(current: Int?, delta: Int): String = when {
     current == null -> Rpe.format(DEFAULT_RPE_HALVES)
     delta < 0 -> Rpe.format((current - 1).coerceAtLeast(Rpe.MIN_HALVES))
     else -> Rpe.format((current + 1).coerceAtMost(Rpe.MAX_HALVES))
@@ -332,9 +335,13 @@ private fun steppedRpeText(current: Int?, delta: Int): String = when {
  * `Icon(…, contentDescription = …)` inside a merged `IconButton` did not answer to
  * `onNodeWithContentDescription`, and material-icons-core ships no `Remove` glyph
  * anyway. Two characters beat an icon-artifact dependency.
+ *
+ * **Shared rather than copied** (B53). The workout's fields and the correction dialog were its first
+ * two callers; the template editor's planned-set dialog is the third (N111), which is why the error
+ * state and the supporting line are parameters rather than something each caller draws for itself.
  */
 @Composable
-private fun NumberStepper(
+internal fun NumberStepper(
     label: String,
     testTag: String,
     increaseTag: String,
@@ -344,6 +351,10 @@ private fun NumberStepper(
     keyboardType: KeyboardType,
     onStep: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    /** True where what is typed is not a usable number, so the field says so rather than only the save. */
+    isError: Boolean = false,
+    /** A line under the field, or null (the drop run's value carries the rule it follows). */
+    supportingText: String? = null,
 ) {
     val decreaseDescription = stringResource(R.string.set_stepper_decrease, label)
     val increaseDescription = stringResource(R.string.set_stepper_increase, label)
@@ -364,7 +375,9 @@ private fun NumberStepper(
             onValueChange = onValueChange,
             modifier = Modifier.weight(1f).testTag(testTag),
             singleLine = true,
+            isError = isError,
             label = { Text(label) },
+            supportingText = supportingText?.let { { Text(it) } },
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         )
         StepButton(

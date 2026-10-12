@@ -114,6 +114,17 @@ the rule; that one argues it.
   is the one reader of the shape, and `isAnchoredAt` answers the same question for a position a row
   *would* take, which is what lets a picker and a boundary share one rule.
   ([evidence](DECISIONS-EVIDENCE.md#n79), [B59–B72](DECISIONS-EVIDENCE.md#b59-b72))
+- **A plan's numbers are stated with the same ± steppers as a logged set's, and stay typeable** (N111).
+  A target and a performed set are the same two numbers (N59), so the plan is authored with the control
+  the workout already has rather than with a second one: the load moves by the exercise's own
+  `Weight.stepGramsFor` (N77) in its own unit and keeps the one signed field assistance is written in
+  (N15), reps by one with a floor of 1, and the effort by half a point clamped to the scale. **The field
+  is not replaced by the stepper**, which is where the plan and the log deliberately differ: every
+  planned target is optional (N14), blank means "the plan asks for nothing", and a control that could
+  only step could never put a target back to none — the workout's RPE is step-only because a set being
+  logged always states one. A plan's reps are a range where a logged set is one number, so each end
+  keeps its own pair and a range stepped backwards stays the invalid state the dialog already refused
+  rather than being swapped.
 - **A template is living, and a session reads it at the start** (N16). Nothing links a
   session to its plan beyond the route that started it, so editing a plan changes the next
   prefill; writing targets onto the session would freeze them and make "living" false.

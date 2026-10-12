@@ -79,10 +79,12 @@ import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.ExerciseActionsMenu
 import com.example.androidapp.ui.components.ExerciseMenuTags
+import com.example.androidapp.ui.components.NumberStepper
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TemplateSetDialog
 import com.example.androidapp.ui.components.WarmUpAction
 import com.example.androidapp.ui.components.warmUpActionFor
+import com.example.androidapp.ui.components.steppedRpeText
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.rememberRowFold
@@ -558,6 +560,9 @@ private fun TemplateSetEditor(
 
     TemplateSetDialog(
         unit = unit,
+        // The step a target's ± pair takes is this exercise's own, exactly as its ramp's is
+        // (ROADMAP N77, N111), so the plan is authored in the numbers the machine actually jumps.
+        stepGrams = exercise.stepGrams,
         // The plan answers whether a rung may be chosen here, by the same rule the write boundary
         // holds: a run is contiguous, so its anchor is the set above the run's first row and that set
         // has to stand on its own — never a warm-up and never another kind of rung.
@@ -676,18 +681,23 @@ private fun PlanSetRow(
 }
 
 /**
- * The effort, the rest and the cue this exercise's plan prescribes (N14, N59, N80).
+ * The effort, the rest and the cue this exercise's plan prescribes (N14, N59, N80, N111).
  *
- * The **target RPE is one number for the exercise**, beside the rest the plan already carried rather
+ * The **target RPE is one number for the exercise**, below the rest the plan already carried rather
  * than on every planned set. All three blank means "the plan says nothing" — the library's rest and
  * cue show through, and the workout's RPE stepper opens on its default — so the fields are empty
  * rather than zero.
  *
  * **The cue has a line of its own** (N80) — see [PlanCueField] — and it is read *first*, above the two
  * numbers (N99): the block reads in the order it is filled in, and the cue is the thing performed
- * differently rather than a number the plan already had. Its width is still the point, so the save stays on
- * the numbers' row rather than following the cue down: one press still writes all three, which is what that
- * control's own content description says.
+ * differently rather than a number the plan already had. The save stays on the rest's row rather than
+ * following the cue down: one press still writes all three, which is what that control's own content
+ * description says.
+ *
+ * **The RPE moved off that row when it gained a ± pair** (N111). A label, a value and two buttons do
+ * not fit beside another number on a phone — the squeeze N68 gave the workout's own RPE stepper a row
+ * for — and the field stays typeable beside the buttons, because every planned field is optional and a
+ * stepper alone could never put a target back to none (N14).
  */
 @Composable
 private fun ExercisePlanFields(
@@ -729,18 +739,9 @@ private fun ExercisePlanFields(
                 label = { Text(stringResource(R.string.template_rest_label)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             )
-            OutlinedTextField(
-                value = rpe,
-                onValueChange = { rpe = it },
-                modifier = Modifier.width(90.dp).testTag(TestTags.TEMPLATE_EXERCISE_RPE),
-                singleLine = true,
-                isError = !rpeIsValid,
-                label = { Text(stringResource(R.string.set_rpe_label)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            )
             // Holds the check at the block's right margin, where it was before the cue moved out of
-            // this row (N80) — the two number fields are fixed-width, so without this the control that
-            // commits all three would jump to sit between them and the page's edge.
+            // this row (N80) — the field is fixed-width, so without this the control that commits all
+            // three would jump to sit between it and the page's edge.
             Spacer(modifier = Modifier.weight(1f))
             IconButton(
                 onClick = { onSave(restSeconds, cue.trim().ifEmpty { null }, rpeHalves) },
@@ -753,6 +754,20 @@ private fun ExercisePlanFields(
                 )
             }
         }
+        NumberStepper(
+            label = stringResource(R.string.set_rpe_label),
+            testTag = TestTags.TEMPLATE_EXERCISE_RPE,
+            increaseTag = TestTags.TEMPLATE_EXERCISE_INCREASE_RPE,
+            decreaseTag = TestTags.TEMPLATE_EXERCISE_DECREASE_RPE,
+            value = rpe,
+            onValueChange = { rpe = it },
+            keyboardType = KeyboardType.Decimal,
+            isError = !rpeIsValid,
+            // The workout's own RPE rule (N59): a blank target states the working end a logged set
+            // opens on rather than stepping a number that was never there, and neither button can
+            // leave 1–10.
+            onStep = { delta -> rpe = steppedRpeText(Rpe.parse(rpe), delta) },
+        )
     }
 }
 

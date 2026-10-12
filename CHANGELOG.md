@@ -11,7 +11,27 @@ alternatives rejected, the measurements, the argument — lives in
 repeated here.
 
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
-id a 1.x commit names is still looked up by it. This file carries the current release.
+id a 1.x commit names is still looked up by it. This file carries the current release and what is
+unreleased.
+
+## [Unreleased]
+
+### Changed
+
+- **A planned set is stated with the same ± steppers as a logged one** (N111). The template editor's set
+  dialog was the last place a load and a rep count were typed with no way to step them, and they are the
+  same numbers the workout screen states. The target load steps by the exercise's own
+  `Weight.stepGramsFor` (N77) in its own unit, keeping the one signed field a plan already wrote
+  assistance in — so `+` on a `-20` target makes it **harder** rather than adding weight (N15); reps step
+  by one with a floor of 1; and a drop run's value steps by that same amount. **A plan's reps are a
+  range**, so each end keeps its own pair, and a range stepped backwards stays the invalid state the
+  dialog already refused rather than being swapped. The exercise's target RPE steps by half a point
+  clamped to 1–10 and **stays typeable** beside its buttons: every planned target is optional, and a
+  control that could only step could never put one back to none (N14). The dialog grew a row, so its
+  fields scroll rather than the note being clipped off the end, and the RPE took a row of its own for the
+  reason N68 gave the workout's one — a label, a value and two buttons do not fit beside another number
+  on a phone. The ± pair is not new: it is the one the workout's fields and the correction dialog already
+  share, so this is its third caller rather than a third copy (B53).
 
 ## [2.1] — 2026-10-11 (versionCode 21)
 
