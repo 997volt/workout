@@ -133,6 +133,16 @@ unreleased.
   members stubbed, which neither has in shared form, and the one line it adds is the predicate above applied to
   the day it already holds.
 
+- **A program slot's ⋮ opens the template that slot names** (N120). A program is a schedule *over* templates, and
+  the only way from one of its slots to the workout it points at was the library, so the slot's menu gained the
+  entry the Templates screen reaches — the template editor, which is where a template is edited. The slot's
+  *name* keeps the in-place preview it already had ("See what %1$s trains"), so the two gestures stay distinct:
+  the tap reads a day without leaving the program, the menu entry goes and changes it. It reads "Open %1$s" with
+  the template's name, because every sibling in that menu names its target (*Move %1$s up*, *Remove %1$s*), and it
+  sits after the two moves and before the removal, which is that menu's documented order — order first, the
+  destructive entry last and coloured (N53). Nothing is stored and the route already existed, so this is one
+  callback and one `DropdownMenuItem`.
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added

@@ -88,6 +88,13 @@ import java.time.DayOfWeek
 @Composable
 fun ProgramEditorRoute(
     onBack: () -> Unit,
+    /**
+     * Opens the template a slot names (ROADMAP N120), which is the editor Templates reaches.
+     *
+     * A program is a schedule *over* templates, so this is the way across: the slot's name keeps the
+     * in-place preview, and this goes and changes the thing being previewed.
+     */
+    onOpenTemplate: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProgramEditorViewModel = hiltViewModel(),
 ) {
@@ -114,6 +121,7 @@ fun ProgramEditorRoute(
         onSetSlotWeekday = viewModel::onSetSlotWeekday,
         onMoveSlot = viewModel::onMoveSlot,
         onRemoveSlot = viewModel::onRemoveSlot,
+        onOpenTemplate = onOpenTemplate,
         onPreviewSlot = viewModel::onPreviewSlot,
         onClosePreview = viewModel::onClosePreview,
         onDeleteProgram = viewModel::onDeleteProgram,
@@ -136,6 +144,7 @@ fun ProgramEditorScreen(
     onSetSlotWeekday: (String, DayOfWeek?) -> Unit,
     onMoveSlot: (String, Int) -> Unit,
     onRemoveSlot: (String) -> Unit,
+    onOpenTemplate: (String) -> Unit,
     onPreviewSlot: (String, String) -> Unit,
     onClosePreview: () -> Unit,
     onDeleteProgram: () -> Unit,
@@ -185,6 +194,7 @@ fun ProgramEditorScreen(
             onSetSlotWeekday = onSetSlotWeekday,
             onMoveSlot = onMoveSlot,
             onRemoveSlot = onRemoveSlot,
+            onOpenTemplate = onOpenTemplate,
             onPreviewSlot = onPreviewSlot,
             modifier = Modifier.padding(innerPadding),
         )
@@ -313,6 +323,7 @@ private fun ProgramEditorBody(
     onSetSlotWeekday: (String, DayOfWeek?) -> Unit,
     onMoveSlot: (String, Int) -> Unit,
     onRemoveSlot: (String) -> Unit,
+    onOpenTemplate: (String) -> Unit,
     onPreviewSlot: (String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -356,6 +367,7 @@ private fun ProgramEditorBody(
                         onMoveUp = { onMoveSlot(slot.id, -1) },
                         onMoveDown = { onMoveSlot(slot.id, 1) },
                         onRemove = { onRemoveSlot(slot.id) },
+                        onOpenTemplate = { onOpenTemplate(slot.templateId) },
                         onSetWeekday = { weekday -> onSetSlotWeekday(slot.id, weekday) },
                         onOpenPreview = { onPreviewSlot(slot.templateId, slot.templateName) },
                     )
@@ -451,6 +463,7 @@ private fun ProgramSlotBlock(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
+    onOpenTemplate: () -> Unit,
     onSetWeekday: (DayOfWeek?) -> Unit,
     onOpenPreview: () -> Unit,
     modifier: Modifier = Modifier,
@@ -502,6 +515,7 @@ private fun ProgramSlotBlock(
                     onMoveUp = onMoveUp,
                     onMoveDown = onMoveDown,
                     onRemove = onRemove,
+                    onOpenTemplate = onOpenTemplate,
                 )
             },
             modifier = Modifier.testTag(TestTags.Programs.slot(slot.id)),
@@ -511,7 +525,8 @@ private fun ProgramSlotBlock(
 }
 
 /**
- * One slot's ⋮: its order, and the removal that takes the day out of the schedule (ROADMAP N72).
+ * One slot's ⋮: the template it names, its order, and the removal that takes the day out of the schedule
+ * (ROADMAP N72, N120).
  *
  * The row used to carry an arrow for each direction and a delete icon, and the delete fired on the
  * tap. They are one menu now, in the shape the workout and the template editor already use (N53,
@@ -526,6 +541,7 @@ private fun SlotActionsMenu(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
+    onOpenTemplate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var open by rememberSaveable { mutableStateOf(false) }
@@ -550,6 +566,7 @@ private fun SlotActionsMenu(
             onMoveUp = onMoveUp,
             onMoveDown = onMoveDown,
             onRemove = { confirming = true },
+            onOpenTemplate = onOpenTemplate,
         )
     }
 
@@ -582,6 +599,7 @@ private fun SlotMenuEntries(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
+    onOpenTemplate: () -> Unit,
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         if (!isFirst) {
@@ -604,6 +622,16 @@ private fun SlotMenuEntries(
                 modifier = Modifier.testTag(TestTags.Programs.move(slot.id, up = false)),
             )
         }
+        // After the moves and before the removal: the order this menu documents — order first, the
+        // destructive entry last and coloured (N53) — and opening the template is neither (N120).
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.program_open_slot, slot.templateName)) },
+            onClick = {
+                onDismiss()
+                onOpenTemplate()
+            },
+            modifier = Modifier.testTag(TestTags.Programs.openSlot(slot.id)),
+        )
         DropdownMenuItem(
             text = {
                 Text(
@@ -859,6 +887,7 @@ private fun ProgramEditorScreenPreview() {
             onSetSlotWeekday = { _, _ -> },
             onMoveSlot = { _, _ -> },
             onRemoveSlot = {},
+            onOpenTemplate = {},
             onPreviewSlot = { _, _ -> },
             onClosePreview = {},
             onDeleteProgram = {},

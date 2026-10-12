@@ -622,6 +622,9 @@ object TestTags {
         const val SKIP_CONTINUE = "program_skip_continue"
 
         /** A slot's ⋮: the order and remove entries it opens (ROADMAP N72). */
+        /** The slot menu's entry that opens the template it names (ROADMAP N120). */
+        fun openSlot(id: String) = "program_open_slot_$id"
+
         fun slotMenu(id: String) = "program_slot_menu_$id"
 
         /** The read-only view of what a slot's template prescribes (ROADMAP N72). */

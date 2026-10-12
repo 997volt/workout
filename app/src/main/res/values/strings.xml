@@ -727,6 +727,8 @@
     <string name="program_move_program_up">Move %1$s up the list</string>
     <string name="program_move_program_down">Move %1$s down the list</string>
     <string name="program_remove_slot">Remove %1$s</string>
+    <!-- Opens the template a slot names (ROADMAP N120), the destination Templates reaches. -->
+    <string name="program_open_slot">Open %1$s</string>
     <!-- A slot's ⋮, and the question behind its remove (ROADMAP N72): the schedule loses a day, and
          the workout it pointed at is untouched, which is what the sentence has to say. -->
     <string name="program_slot_menu">%1$s actions</string>

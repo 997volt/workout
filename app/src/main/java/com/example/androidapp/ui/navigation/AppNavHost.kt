@@ -224,7 +224,12 @@ private fun NavGraphBuilder.programDestinations(navController: NavHostController
     }
 
     composable<ProgramEditor> {
-        ProgramEditorRoute(onBack = { navController.popBackStack() })
+        ProgramEditorRoute(
+            onBack = { navController.popBackStack() },
+            // The way across a program's own schedule: a slot names a workout, and this reaches the workout
+            // itself (N120). Templates is where that editor otherwise lives.
+            onOpenTemplate = { templateId -> navController.navigate(TemplateEditor(templateId)) },
+        )
     }
 }
 

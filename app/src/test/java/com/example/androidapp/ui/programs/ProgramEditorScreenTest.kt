@@ -42,6 +42,7 @@ class ProgramEditorScreenTest {
         onSetSlotWeekday: (String, DayOfWeek?) -> Unit = { _, _ -> },
         onMoveSlot: (String, Int) -> Unit = { _, _ -> },
         onRemoveSlot: (String) -> Unit = {},
+        onOpenTemplate: (String) -> Unit = {},
         onPreviewSlot: (String, String) -> Unit = { _, _ -> },
         onClosePreview: () -> Unit = {},
         onDeleteProgram: () -> Unit = {},
@@ -56,6 +57,7 @@ class ProgramEditorScreenTest {
                 onSetSlotWeekday = onSetSlotWeekday,
                 onMoveSlot = onMoveSlot,
                 onRemoveSlot = onRemoveSlot,
+                onOpenTemplate = onOpenTemplate,
                 onPreviewSlot = onPreviewSlot,
                 onClosePreview = onClosePreview,
                 onDeleteProgram = onDeleteProgram,
@@ -159,6 +161,31 @@ class ProgramEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Programs.ADD_SLOT).performClick()
 
         composeTestRule.onNodeWithTag(TestTags.Programs.PICKER_EMPTY).assertIsDisplayed()
+    }
+
+    @Test
+    fun aSlotOpensTheTemplateItNames() {
+        // ROADMAP N120: a program is a schedule over templates, and the only way to the workout a slot
+        // names was the library. The row's own ⋮ carries it, and it reports the *template's* id rather
+        // than the slot's — a slot is the schedule, and the destination is the workout.
+        val opened = mutableListOf<String>()
+        setScreen(onOpenTemplate = { opened += it })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.slotMenu("s1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.openSlot("s1")).performClick()
+
+        assertThat(opened).containsExactly("t1")
+    }
+
+    @Test
+    fun openingASlot_staysDistinctFromPreviewingIt() {
+        // The name keeps the in-place preview and the menu entry goes to the editor (N72, N120), so the two
+        // gestures cannot be confused: one is offered on the row, the other inside the ⋮.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.openSlot("s1")).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Programs.slotMenu("s1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.openSlot("s1")).assertExists()
     }
 
     @Test
