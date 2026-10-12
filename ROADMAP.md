@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two items. Last reviewed against the
+> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds four items. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -13,9 +13,10 @@
 > movements with a movement reading its family's pattern and muscles, 61 movements joined the 45, and the
 > picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
 > still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds two
-> items — soreness becoming a statistic, which is the reading N113's own record was missing, and a program's own
-> muscle balance read from its overflow. **Reading the P1.1, B103 and N110 batch line by
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds four
+> items — soreness becoming a statistic, which is the reading N113's own record was missing; a program's own
+> muscle balance read from its overflow; and the two menu entries that reach a template from a program's slot and
+> an exercise from a plan's row. **Reading the P1.1, B103 and N110 batch line by
 > line — and running it on a device — found five defects (B104–B108); all five are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen defects
 > (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
@@ -36,7 +37,8 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Two items are planned: the reading for the soreness N113 records, and a program's muscle balance.
+Four items are planned: the reading for the soreness N113 records, a program's muscle balance, and the two
+menu entries that reach the thing a row names.
 
 - **Soreness becomes a statistic, one series per muscle** (N118). N113 had the app start recording the muscles a
   day reports sore, each with its own score, and **nothing reads them back**: the measurements list and a
@@ -80,6 +82,37 @@ Two items are planned: the reading for the soreness N113 records, and a program'
   Rejected: counting exercises rather than sets, which reads eight sets of squats and one set of curls as
   balanced; and reading **logged** history instead of the plan, because that is P2.8 — a rolling window with a
   verdict in it — which stays parked with its trigger intact, since this reads what is prescribed.
+
+- **A slot's ⋮ offers the template itself** (N120). A program is a schedule *over* templates, and the only way
+  from one of its slots to the workout it names is the library, so the slot's menu gains an entry that opens the
+  template editor on that template — the same destination Templates reaches, which is where a template is edited
+  (N72's own rule: a program is a schedule over it, and the template is edited in its own editor). The slot's
+  name keeps the in-place preview it already has ("See what %1$s trains"), so the two gestures stay distinct:
+  the tap reads a day without leaving the program, the menu entry goes and changes it.
+  **It reads "Open %1$s", with the template's name**, because that menu's entries are parameterised — *Move %1$s
+  up*, *Remove %1$s* — and an entry that said "Open template" in a list where every sibling names its target
+  would be the one row a lifter has to guess about. Rejected: "Edit %1$s", which promises editing when opening is
+  the act, and which reads as a lie on a template a lifter only wants to look at.
+  **It sits after the two moves and before the remove**: that menu's order is documented as order first, then the
+  destructive entry last and coloured (N53), and opening is neither a move nor a deletion. Nothing new is stored
+  and the route exists (`TemplateEditor(templateId)`) — it is one callback and one `DropdownMenuItem`, with the
+  back stack returning to the program because that is where the lifter was.
+
+- **A planned exercise's ⋮ offers the lift's own screen** (N121). From a template's exercise row the entry opens
+  the exercise detail — its unit, step, rest, cue and taxonomy — which today means leaving the template, going to
+  the library and finding the lift: the one thing a lifter wants while planning an exercise is the facts about
+  the exercise, and the plan is where they notice they are wrong.
+  **It reads "Open exercise", beside "Remove exercise"**, because this menu names no lift in any of its entries
+  (*Move up*, *Move down*, *Remove exercise*) — the ⋮ is inside one exercise's block, so the context is the row.
+  Rejected: "Exercise details", which reads read-only while that screen writes, and parameterising it with the
+  name, which no sibling does.
+  **It is an optional entry, and the live workout does not carry it.** `ExerciseActionsMenu` is one menu for the
+  workout's rows and a template's (N71), and N81's *Add warm-ups* already established the shape for an entry that
+  is not every screen's: it rides as its own record so "no entry" stays expressible. A mid-session row is exactly
+  where that matters — leaving a running session to look at a lift is its own decision, and a mis-tap there costs
+  more than the look is worth — so this ships in the template editor, with the workout's menu deliberately
+  unchanged. Its tag is per screen for N71's reason, since a template's rows and the workout's rows can be on
+  screen in the same process.
 
 ## Parked — deliberately not planned
 
@@ -165,10 +198,10 @@ the evidence (N107), the four that followed it — today's workout to the foot o
 one-line effort, rest and accept (N116), the library's long-press family details (N117) and home's row that
 records the day (N114) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds two items**: N118, found by asking what the app now records and never reads back, and N119,
-which asks the same question of the *plan* — what it prescribes is read today only slot by slot, so a week's
-shape is nowhere. The section is filled from what the log and the plan hold, never to keep itself full, and the
-second item came with a bar that had grown a control too many. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
+***Next* holds four items.** N118 was found by asking what the app now records and never reads back; N119 asked
+the same question of the *plan* — what it prescribes is read today only slot by slot, so a week's shape is
+nowhere; and N120 and N121 are the same gap twice more, a row that names something with no way to reach it. The
+section is filled from what the log and the plan hold, never to keep itself full. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
 that mattered left the instrumented job red, because a program document's former variation imports under its
 family now and the test still asserted the link the shape no longer has. 2.0 shipped with the loudest note this project has written — the 1.x store stays on the device and
 2.0 does not read it — and the rule that allowed that is in [DECISIONS.md](DECISIONS.md), with the window it
