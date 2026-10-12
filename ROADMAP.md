@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nothing. Last reviewed against the
+> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two items. Last reviewed against the
 > code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -13,9 +13,9 @@
 > movements with a movement reading its family's pattern and muscles, 61 movements joined the 45, and the
 > picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
 > still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds
-> nothing — its last item, which shortened [DECISIONS.md](DECISIONS.md) without dropping a decision, has
-> shipped. **Reading the P1.1, B103 and N110 batch line by
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds two
+> items — a row on home that offers to record the day's measurements when today has none, and moving today's
+> workout to the bottom of that screen. **Reading the P1.1, B103 and N110 batch line by
 > line — and running it on a device — found five defects (B104–B108); all five are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen defects
 > (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
@@ -36,8 +36,28 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Nothing. Everything planned has shipped; the next item is written here when there is one, and never
-invented to keep the section full.
+Two items are planned, and both are the home screen's row order.
+
+- **Home offers to record the day's measurements, and only while today has none** (N114). A row below *Start
+  empty workout* opens the **daily** form directly — soreness, weight, body fat and muscle — so the one thing
+  the app wants every day sits where the lifter already starts, rather than three taps into a screen whose FAB
+  asks which of N113's two records. It is drawn **only while today has no live daily entry**: a day keeps one
+  entry of each kind, so a tape day does not hide it while a soreness-only morning does — N113's "an entry
+  states what it has" — and today's entry being deleted brings the row back, because the condition is what is
+  stored rather than whether it was once asked. Recording is not starting, so B101's withholding of the start
+  row while a workout is open does not reach this one: it is the last of the ways in, and it stays. The
+  destination remains the one Measurements screen with the form opening over its list, so a dismiss lands on
+  what was recorded rather than back on home; that needs the route to carry which form to open, while the FAB's
+  chooser keeps the other kind. Rejected: drawing the row always and letting it open today's entry for
+  editing — a row that cannot say whether the day is answered is the one thing this row is for.
+
+- **Today's workout is the last thing on home, not the first** (N115). The *Today* block — its weekday heading and
+  each scheduled plan's card — moves below the ways in, so the screen reads as the destinations first and the
+  thing the app is telling you to do last. That is where the start bar's own next-up rows already sit (P3.9, N55)
+  and where the thumb already is, so the two ways of saying "here is today" stop pointing at opposite ends of
+  one screen. The heading travels with the cards: a section header left at the top would name a list that is no
+  longer under it. Rejected: leaving *Today* first and treating the ways in as the tail — the destinations are
+  what the screen is for on a day with nothing scheduled, and that is most days.
 
 ## Parked — deliberately not planned
 
@@ -121,8 +141,8 @@ batch found (B104–B108), the warm-ups out of the set numbering and the plan's 
 record split in two with soreness moved to the day (N113), and the long entries deferring their argument to
 the evidence (N107) — each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds nothing**, which is the state this section is meant to be in rather than a gap to fill.
-**The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
+***Next* holds two items** (N114, N115), written after the queue drained and the section stood empty — the state
+it is meant to reach rather than a gap to fill, and these are the first things planned since. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
 that mattered left the instrumented job red, because a program document's former variation imports under its
 family now and the test still asserted the link the shape no longer has. 2.0 shipped with the loudest note this project has written — the 1.x store stays on the device and
 2.0 does not read it — and the rule that allowed that is in [DECISIONS.md](DECISIONS.md), with the window it
