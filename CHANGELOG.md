@@ -193,6 +193,50 @@ unreleased.
   rather than a verdict, because a range a lifter *should* hit is a claim this app has no evidence for — that is
   the parked P2.8, which stays parked with its trigger intact.
 
+### Fixed
+
+- **The N107 shortening had dropped a rung's reps prefill** (B109). The move's claim that no decision was lost
+  was false: the N79 sentence saying a rung's reps prefill from that same set's last performance in a previous
+  training — matched by the set's place in the plan, because "what you just did" would answer with the anchor's
+  reps — left with the prose while the rule stayed in the code. It is back in the N79 evidence, where the
+  contract sends the argument, with the `RungRun.kt` reference the same move dropped.
+
+- **`MIGRATION_2_3` has the migration test the rules ask for** (B110). The migration that split the body's
+  record in two shipped its exported schema and no test, though every migration gets one. A schema-2 store is
+  rewound to its old shape and migrated with real rows: a weight-only entry becomes that day's daily record, a
+  weight-and-waist entry becomes both records with the numbers split between them, a deleted one stays hidden
+  on both, and the sore table is created and takes a row keyed to the daily record.
+
+- **The blank-site rule and the split's keying are tested again** (B111). The test named for the blank-site
+  rule was stamped `kind = DAILY` when the record was split, and a daily row drops every tape column by
+  construction, so neither save wrote a site and the assertion held whatever the repository did. It is a
+  **tape** correction now, and the split's own rules are covered with it: a day holds one entry of each kind,
+  a save replaces the sore list, a score off the 1–10 scale is refused before anything is written, and a
+  delete hides the rows that hang off the entry.
+
+- **The session delete's sore rows are seeded before they are asserted on** (B112). N113 took the sore list
+  off `setReadiness` and the test was reduced to a null note while its comment and its count still claimed to
+  prove that deleting a workout hides an older session's soreness. With no row written the count was zero
+  however the delete behaved. The row is written through the DAO now — a live session cannot write one, but
+  the rows a pre-N113 workout left are still on disk — and a second assertion checks it is live *before* the
+  delete.
+
+- **The tag file lost six dead sore-picker helpers and got two comments back** (B113–B115). The readiness
+  dialog's sore list moved to the daily form at N113, and six `TestTags.Readiness` helpers that named its
+  picker, rows, score controls and remove were left with nothing calling them; they are deleted, with the
+  object's KDoc and a dangling reference to the row helper gone too. The comments that describe
+  `templateMenu` and `slotMenu` are back above the members they describe, rather than above the two entries
+  N120 and N121 inserted between them and their declarations. And `TEMPLATE_EXERCISE_RPE`'s comment no longer
+  gives the effort a row of its own — N116 put it on the line the rest and the accept share.
+
+- **A measurement comes back from an import with its soreness** (B116). The daily record's sore rows gained a
+  restore path the entry they hang off did not have, so an import could un-hide a record's soreness onto a
+  record nothing could read. Writing the test found the larger half: the measurements insert was the one
+  import that used `ABORT` rather than `IGNORE`, so a row the device already held — live, or hidden by a
+  delete the import was meant to undo — **aborted the whole import and rolled it back** instead of being
+  skipped. It is `IGNORE` now, the DAO has the `softDeletedIds`/`restore` pair every other table has, and the
+  parent is restored before its child.
+
 ## [2.1] — 2026-10-11 (versionCode 21)
 
 ### Added
