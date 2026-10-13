@@ -1479,7 +1479,9 @@ separates the two roles is the load: a cluster rung repeats the anchor's, assist
 drop rung is the anchor's less the run's value, once per rung, so 100 kg with a 20 kg value is 80 and
 then 60. That is why the plan stores the **value**, once, on the run's first rung, and not a weight per
 rung: editing the anchor or accepting a progression step moves the whole ladder, one row is written, and
-no rung can drift. A rung therefore stores no reps either — the group's target is the anchor's. Four
+no rung can drift. A rung therefore stores no reps either — the group's target is the anchor's — and its
+**reps prefill from that same set's last performance in a previous training**, matched by the set's place
+in the plan, because "what you just did" would answer with the anchor's reps. Four
 rules make the shape work at the write boundary: a value belongs to a drop and is above zero; **a rung
 needs an anchor** that stands on its own, so a warm-up cannot anchor a run and a plan cannot begin with
 one; a run names its value on its first rung and nowhere else; and every rung has to come out with
@@ -1489,7 +1491,8 @@ plan's write, the live log, the re-role of a logged set, the prefill that reads 
 off, and the picker — which offers a rung only where the boundary would accept one, because a control
 that cannot write is removed rather than shown. Deleting an anchor takes its rungs with it, so a run
 cannot be left hanging — and `removeSet` now does it, the rule having been recorded before any code held
-it (B60). `runAt` is the one reader of the shape, and `isAnchoredAt` answers the same question for a
+it (B60). [runAt](app/src/main/java/com/example/androidapp/domain/model/RungRun.kt) is the one reader of
+the shape, and `isAnchoredAt` answers the same question for a
 position a row *would* take, which is what lets a picker and a boundary share one rule.
 
 **Null is the answer wherever the arithmetic cannot be done**, and that is a correctness rule rather
