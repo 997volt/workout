@@ -1,7 +1,8 @@
 # Workout — Roadmap
 
-> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nothing. Last reviewed against the
-> code: 2026-10-11 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
+> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), **N107 and the N111–N121 batch are on `main` with no
+> release cut**, and *Next* holds the defects a reading of that batch found. Last reviewed against the
+> code: 2026-10-13 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
 > database file, the 1.x chain and its schemas deleted, both transfer formats refusing 1.x, and the five
@@ -13,12 +14,11 @@
 > movements with a movement reading its family's pattern and muscles, 61 movements joined the 45, and the
 > picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
 > still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds four
-> nothing — a program's own muscle balance read from its overflow was the last of it. **Reading the P1.1, B103
-> and N110 batch line by
-> line — and running it on a device — found five defects (B104–B108); all five are fixed and recorded in
-> [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found sixteen defects
-> (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds the
+> defects a reading of the unreleased N107 and N111–N121 batch found (B109–B116). **Reading the P1.1, B103
+> and N110 batch line by line — and running it on a device — found five defects (B104–B108); all five are
+> fixed and recorded in [CHANGELOG.md](CHANGELOG.md).** A line-by-line reading of the N87–N95 changes found
+> sixteen defects (B79–B94); all are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).
 >
 > Forward-looking only. What shipped is [CHANGELOG.md](CHANGELOG.md), how a release is cut is
 > [RELEASING.md](RELEASING.md), and settled decisions with the rules that apply to every
@@ -36,8 +36,75 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Nothing. Everything planned has shipped; the next item is written here when there is one, and never
+Nothing is planned. Everything *Next* ever held has shipped, and the section now carries the defects a reading
+of the unreleased N107 and N111–N121 change found; the next item is written here when there is one, and never
 invented to keep the section full.
+
+### Defects found in review
+
+The unreleased N107 and N111–N121 changes were read line by line against what [CHANGELOG.md](CHANGELOG.md)
+says they do, with the gate set green — `testDebugUnitTest`, `lint`, `detekt`, `assembleDebug`,
+`assembleRelease` — and the instrumented suite run on `pixel6_api36` (268 declared, 268 executed, none red).
+The reading found one decision the N107 move dropped while its own commit says it dropped none, a migration
+that ships without the test the rules require, two tests whose setup no longer creates the state their comment
+claims to test, six tag helpers nothing calls, and comments left describing a row layout or a declaration that
+moved.
+
+- **The N107 move dropped a rung's reps-prefill rule, and its "no decision is lost" claim is false** (B109).
+  The removed N79 sentence said a rung's **reps prefill from that same set's last performance in a previous
+  training**, matched by the set's place in the plan, because "what you just did" would answer with the
+  anchor's reps. It is in neither [DECISIONS.md](DECISIONS.md) nor
+  [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md) today — the shortened entry and the added evidence block both
+  stop at "the group's target is the anchor's" — while the rule is still implemented and reasoned in
+  [SetSuggestion.kt](app/src/main/java/com/example/androidapp/ui/workout/SetSuggestion.kt). Either the rule and
+  its rejected alternative go into the N79 evidence block or the claim comes out of the changelog and the
+  commit message.
+- **`MIGRATION_2_3` ships with no migration test** (B110). [DECISIONS.md](DECISIONS.md)'s schema rule requires
+  every migration to get an exported schema and a `MigrationTestHelper` test that upgrades a database with real
+  rows. The batch added [3.json](app/schemas/com.example.androidapp.data.local.WorkoutDatabase/3.json) and the
+  migration — a table rebuild that copies every legacy row into a **daily** record and *additionally* copies one
+  that measured any site into a **tape** record
+  ([MeasurementMigrations.kt](app/src/main/java/com/example/androidapp/data/local/MeasurementMigrations.kt)) —
+  but the only migration test in the repository is
+  [LibraryMigrationTest.kt](app/src/androidTest/java/com/example/androidapp/data/local/LibraryMigrationTest.kt),
+  which drives `MIGRATION_1_2`. The row-copying this migration is for has no test that runs it, and the
+  instrumented job is where it would live.
+- **`aSiteThatWasNotMeasured_staysBlank` no longer reaches the rule it names** (B111). The test's own comment
+  says a correction that did not measure a site must not let the old value survive, but its helper now stamps
+  `kind = DAILY` ([MeasurementRepositoryTest.kt](app/src/androidTest/java/com/example/androidapp/data/MeasurementRepositoryTest.kt))
+  and [RoomMeasurementRepository.kt](app/src/main/java/com/example/androidapp/data/RoomMeasurementRepository.kt)
+  drops every tape site from a **daily** row, so neither save writes a waist and the assertion is `0 == 0`. The
+  split's own keying — a day holding one entry of each kind, and a save replacing the sore list — is not tested
+  at the repository either; the tests that cover it are the screen's, against a fake.
+- **`deletingASession_hidesItsSoreMuscles_too` writes no sore muscles** (B112). N113 took the sore list off
+  `setReadiness`, and the test was reduced to `setReadiness(id, null)`
+  ([RoomWorkoutSessionTest.kt](app/src/androidTest/java/com/example/androidapp/data/RoomWorkoutSessionTest.kt))
+  while its comment and its `assertEquals(0, …observeForSession…)` still claim to test that deleting a workout
+  hides the soreness an older session recorded. With no row written, the assertion holds however the delete
+  behaves. The production path is intact and still matters — the rows a pre-N113 session recorded stay on it —
+  so the fix is to seed one through the DAO before deleting.
+- **Six `TestTags.Readiness` sore helpers have no caller** (B113). Moving the list to the daily form left
+  `soreOption`, `soreRow`, `soreScore`, `soreDecrease`, `soreIncrease` and `soreRemove` referenced by nothing —
+  only `SORE_ADD`, still asserted *absent*, and `soreLine`, read by history, survive — and the object's own KDoc
+  still calls itself "The sore-muscle list beside that note". AGENTS.md's rule is to delete an API the moment
+  nothing calls it, so the six go and the KDoc with them.
+- **`TEMPLATE_EXERCISE_RPE`'s comment still gives the RPE a row of its own** (B114).
+  [TestTags.kt](app/src/main/java/com/example/androidapp/ui/components/TestTags.kt) says the target effort is "on
+  its own row below the rest's (N59, N80, N111)" — the layout N116 superseded — while
+  [TemplateEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateEditorScreen.kt) draws
+  the stepper, the rest field and the save on one line in that order.
+- **Two members' comments were left detached when new members were inserted above them** (B115). The comments
+  that describe `templateMenu` (N71) and `slotMenu` (N72) in
+  [TestTags.kt](app/src/main/java/com/example/androidapp/ui/components/TestTags.kt) now sit above the new
+  `templateOpenExercise` (N121) and `openSlot` (N120) entries, because those were inserted between each comment
+  and its declaration. Both members are left undocumented and each comment floats.
+- **A restored sore row can outlive the measurement it belongs to** (B116). The backup gained the
+  measurement-sore collection on both import paths, and `restoreSoftDeleted` un-hides its soft-deleted rows
+  ([RoomBackupRepository.kt](app/src/main/java/com/example/androidapp/data/RoomBackupRepository.kt)) — but
+  [MeasurementDao.kt](app/src/main/java/com/example/androidapp/data/local/MeasurementDao.kt) has no
+  `softDeletedIds`/`restore`, so the measurement stays hidden while its sore rows come back live, and the import
+  counts them as restored. Either measurements get the restore path every other table has, or the child stays
+  hidden with its parent.
 
 ## Parked — deliberately not planned
 
@@ -125,7 +192,8 @@ records the day (N114), a program slot's ⋮ opening its template (N120), a plan
 (N121), soreness becoming a statistic (N118) and a program's muscle balance with the bar's overflow (N119) —
 each with its entry in [CHANGELOG.md](CHANGELOG.md).
 
-***Next* holds nothing again.** N118 was found by asking what the app now records and never reads back, and N119
+***Next* holds the eight defects a reading of the unreleased N107 and N111–N121 batch found (B109–B116).** N118
+was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
 from what the log and the plan hold, never to keep itself full. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
