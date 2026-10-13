@@ -4,13 +4,13 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.data.local.ExerciseEntity
+import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
-import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
@@ -106,9 +106,30 @@ class RoomWorkoutSessionTest {
     @Test
     fun deletingASession_hidesItsSoreMuscles_too() = runTest {
         // "everything in it" is the delete's contract (N62): a soft-deleted workout must not leave
-        // its soreness live for the next read to find.
+        // its soreness live for the next read to find. A live session cannot record the list any more
+        // (N113 moved it to the day), but the rows an older workout wrote are still on disk, so the row
+        // is seeded through the DAO rather than through setReadiness — which is the only way this test
+        // can assert anything at all.
         val started = start()
-        repository.setReadiness(started.id, null)
+        database.sessionSoreMuscleDao().insertAll(
+            listOf(
+                SessionSoreMuscleEntity(
+                    id = "sore-1",
+                    sessionId = started.id,
+                    muscle = MuscleGroup.CORE,
+                    score = 4,
+                    position = 0,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                    deletedAt = null,
+                ),
+            ),
+        )
+        assertEquals(
+            "the row has to be live before the delete, or this asserts nothing",
+            1,
+            database.sessionSoreMuscleDao().observeForSession(started.id).first().size,
+        )
 
         repository.deleteSession(started.id)
 
