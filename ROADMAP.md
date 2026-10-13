@@ -1,7 +1,7 @@
 # Workout — Roadmap
 
-> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds the two defects a lifter found in use
-> (B117, B118). Last reviewed against the
+> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds the three defects a lifter found in use
+> (B117–B119). Last reviewed against the
 > code: 2026-10-13 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -19,8 +19,8 @@
 > the library's long-press family details, a program read for the work it spreads where, and the three menu
 > entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
 > before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds two
-> defects a lifter found in use (B117, B118). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds three
+> defects a lifter found in use (B117–B119). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
 > defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
 > Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five defects
 > (B104–B108); all five are fixed and recorded in [CHANGELOG.md](CHANGELOG.md). A line-by-line reading of the
@@ -43,10 +43,10 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Nothing is planned beyond the two defects below, which were reported from real use rather than found in a
-reading. They are independent — one loses the plan a workout was started from, the other claims a record the
-workout already holds — and the mechanism under each was read in the code while the reproduction is the
-lifter's.
+Nothing is planned beyond the three defects below, which were reported from real use rather than found in a
+reading. They are independent — one loses the plan a workout was started from, one claims a record the workout
+already holds, one is the keyboard over the fields — and the mechanism under each was read in the code while
+the reproduction is the lifter's.
 
 ### Defects found in use
 
@@ -79,6 +79,21 @@ lifter's.
   rung above is not a record (B17, N79), and a heavier set at a **different rep count** is a different record
   (N23). A second candidate on the same symptom, to rule in or out while reproducing: `onLogSet` reads
   `uiState.value` once, so two sets logged faster than the state emits would merge a stale list.
+
+- **The keyboard covers the bottom of a running workout** (B119). With a set's fields in focus and the soft
+  keyboard up, scrolling the workout leaves the lower fields **under the keyboard** rather than lifting them
+  clear. The app is edge-to-edge — `enableEdgeToEdge()` in
+  [MainActivity.kt](app/src/main/java/com/example/androidapp/MainActivity.kt), and `targetSdk = 37` — so the
+  window no longer resizes for the IME, and **nothing applies the IME inset**: there is no `imePadding()`
+  anywhere under `app/src/main`, and the workout's `LazyColumn`
+  ([WorkoutExerciseSection.kt](app/src/main/java/com/example/androidapp/ui/workout/WorkoutExerciseSection.kt))
+  is padded only by the `Scaffold`'s `innerPadding`, which is the system bars. The keyboard therefore overlays
+  the list's lower edge and what is behind it cannot be scrolled into view. Setting the activity's
+  `windowSoftInputMode` is not the fix on an edge-to-edge window; the IME inset has to reach the scrollable
+  body, so its viewport and its bottom padding shrink by the keyboard's height. The rest bar and the *Add
+  exercise* row at the foot of the list are the two things to keep clear of it, and the other screens with
+  fields near the bottom — the template editor, the measurements form, the exercise detail — share the gap and
+  are worth checking in the same pass, though this id is the running workout the lifter hit.
 
 ## Parked — deliberately not planned
 
@@ -167,7 +182,7 @@ records the day (N114), a program slot's ⋮ opening its template (N120), a plan
 each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading of that batch found
 (B109–B116) among them — and N122, the half-credit a movement's secondary muscles now take.
 
-***Next* holds the two defects a lifter found in use (B117, B118).** N118
+***Next* holds the three defects a lifter found in use (B117–B119).** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
