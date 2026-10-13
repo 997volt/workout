@@ -19,11 +19,14 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneOffsetSource
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.platform.CrashLogStore
 import java.nio.file.Files
 import java.time.DayOfWeek
@@ -182,6 +185,42 @@ class BackupRoundTripTest {
             "the deleted workout should be back in history",
             1,
             database.workoutDao().observeHistory().first().size,
+        )
+    }
+
+    @Test
+    fun importingAfterDeletingAMeasurement_bringsBackItAndItsSoreness() = runTest {
+        // N113: the daily record's sore rows hang off the entry, and they were given a restore path the
+        // entry itself did not have — so an import un-hid the soreness onto a record nothing could read,
+        // and counted the rows as restored while the measurement stayed hidden.
+        val measurements = RoomMeasurementRepository(database, clock)
+        measurements.save(
+            BodyMeasurement(
+                id = "",
+                measuredAt = Instant.parse("2026-09-28T08:00:00Z"),
+                kind = MeasurementKind.DAILY,
+                weightGrams = 82_000L,
+                soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 8)),
+            ),
+        )
+        val json = exportedJson()
+        val id = measurements.observeAll().first().single().id
+
+        measurements.delete(id)
+        assertTrue(
+            "the entry should be gone from the list first",
+            measurements.observeAll().first().isEmpty(),
+        )
+
+        val summary = (repository.import(json) as DataResult.Success).data
+
+        assertTrue("the import reported nothing to do: $summary", summary.total > 0)
+        val restored = measurements.observeAll().first().single()
+        assertEquals("the entry comes back, not only its sore rows", id, restored.id)
+        assertEquals(
+            "and its soreness comes back with it",
+            listOf(SoreMuscle(MuscleGroup.QUADS, 8)),
+            restored.soreMuscles,
         )
     }
 

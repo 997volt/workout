@@ -2,6 +2,7 @@ package com.example.androidapp.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
@@ -25,8 +26,34 @@ interface MeasurementDao {
     @Query("SELECT * FROM measurements")
     suspend fun allForExport(): List<MeasurementEntity>
 
-    @Insert
+    /**
+     * Returns one rowid per input row, `-1` where a row was skipped as a duplicate (P1.12).
+     *
+     * `IGNORE` like every other table's import, because a row already on the device — live, or hidden by
+     * a delete the restore step is about to undo — is a row the file has nothing to add to. A plain
+     * `@Insert` **aborts** on the first of those and rolls the whole import back, which is what importing
+     * a second time, or a file whose measurement was deleted here, used to do.
+     */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(rows: List<MeasurementEntity>): List<Long>
+
+    // ------------------------------------------------------- backup (P1.12, N32)
+
+    /**
+     * The ids of the rows a delete hid, so an import can bring the live ones back (P1.12).
+     *
+     * Measurements had no half of this until N113's sore rows arrived: the child could be restored while
+     * its parent stayed hidden, which un-hid a daily record's soreness onto a record nothing could read.
+     */
+    @Query("SELECT id FROM measurements WHERE deletedAt IS NOT NULL")
+    suspend fun softDeletedIds(): List<String>
+
+    /**
+     * Rewrites rows by primary key, which restores a soft-deleted row *and* clears its `deletedAt`
+     * because the file's value overwrites it. Only ever called for ids already soft-deleted.
+     */
+    @Update
+    suspend fun restore(rows: List<MeasurementEntity>): Int
 
     @Query("SELECT * FROM measurements WHERE deletedAt IS NULL ORDER BY measuredAt DESC, createdAt DESC")
     fun observeAll(): Flow<List<MeasurementEntity>>
