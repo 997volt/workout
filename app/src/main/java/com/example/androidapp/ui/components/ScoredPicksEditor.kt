@@ -169,11 +169,13 @@ internal data class ScoredPick(
 )
 
 /**
- * The tag prefixes the two scored-picks lists derive their controls from (N62, N63).
+ * The tag prefixes the scored-picks controls are named under (N62, N63).
  *
  * They live beside [ScoredPickTags] rather than in `TestTags` because they are the editor's own naming
  * scheme and `TestTags`' constants are derived from them: the coverage gate reads every `const val` in
- * `TestTags` as a tag a test must assert on, and a prefix is not a tag.
+ * `TestTags` as a tag a test must assert on, and a prefix is not a tag. [RATING_JOINT_TAG_PREFIX] still
+ * names a live list's seven controls; [READINESS_SORE_TAG_PREFIX] survives as the two tags N113 left
+ * behind — the add control a test asserts is gone, and the read-only line history draws.
  */
 internal const val READINESS_SORE_TAG_PREFIX = "readiness_sore"
 internal const val RATING_JOINT_TAG_PREFIX = "rating_joint"
@@ -181,7 +183,7 @@ internal const val RATING_JOINT_TAG_PREFIX = "rating_joint"
 /**
  * The test tags of one scored-picks list, derived from its prefix (N62, N63).
  *
- * A prefix rather than seven tag values: the scheme is `"<prefix>_<control>[_<key>]"` for both lists,
+ * A prefix rather than seven tag values: the scheme is `"<prefix>_<control>[_<key>]"` for either list,
  * and the constants that spell it out live in `TestTags`, derived from the same prefixes.
  */
 internal class ScoredPickTags(private val prefix: String) {

@@ -296,31 +296,22 @@ object TestTags {
     const val READINESS_DISMISS = "readiness_dismiss"
 
     /**
-     * The sore-muscle list beside that note (ROADMAP N62), grouped so this object stays under its
-     * ceiling: every control is addressed by the muscle's own enum name rather than by position.
+     * The readiness note's own controls (ROADMAP N4, N62).
+     *
+     * The sore-muscle *list* left this dialog for the daily measurement at N113, so what is left is the
+     * add control the picker used to open — kept so its **absence** can be asserted, which is how "a
+     * workout no longer asks for it" is held — and the read-only line history still draws for the
+     * soreness an older session recorded.
      */
     object Readiness {
-        /** The control that opens the muscle picker. */
+        /** The control that opened the muscle picker, kept so a test can assert it is gone (N113). */
         const val SORE_ADD = "${READINESS_SORE_TAG_PREFIX}_add"
 
-        /** One option of the picker, addressed by the `MuscleGroup` name. */
-        fun soreOption(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_option_$muscle"
-
-        /** One picked muscle's row, and that row's own score controls. */
-        fun soreRow(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_row_$muscle"
-        fun soreScore(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_score_$muscle"
-        fun soreDecrease(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_decrease_$muscle"
-        fun soreIncrease(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_increase_$muscle"
-
-        /** Takes the muscle off the list. */
-        fun soreRemove(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_remove_$muscle"
-
         /**
-         * One muscle's **read-only** line where the editor is not open (ROADMAP N62).
+         * One muscle's **read-only** line in history (ROADMAP N62).
          *
-         * Separate from [soreRow] because a tag addresses one control: the workout header draws the
-         * stored list under the note and the editor draws the same muscles while it is open, so the
-         * shared name matched two nodes whenever the dialog was up over the screen.
+         * A live session no longer writes the list (N113), and the rows an older one recorded still read
+         * here rather than nowhere.
          */
         fun soreLine(muscle: String) = "${READINESS_SORE_TAG_PREFIX}_line_$muscle"
     }
@@ -392,10 +383,10 @@ object TestTags {
     fun templateExerciseRow(id: String) = "template_exercise_$id"
 
     /** A planned exercise's ⋮: the entries it opens are tagged by the helpers below (ROADMAP N71). */
+    fun templateMenu(id: String) = "template_menu_$id"
+
     /** The ⋮ entry that opens the lift itself from a planned row (ROADMAP N121). */
     fun templateOpenExercise(id: String) = "template_open_exercise_$id"
-
-    fun templateMenu(id: String) = "template_menu_$id"
 
     /** Reordering a template's exercises: one helper, because up and down are one idea. */
     fun templateMove(id: String, up: Boolean) = "template_move_${if (up) "up" else "down"}_$id"
@@ -443,7 +434,7 @@ object TestTags {
     const val TEMPLATE_SET_DECREASE_REPS_MAX = "template_set_decrease_reps_max"
     const val TEMPLATE_REST_FIELD = "template_rest_field"
     const val TEMPLATE_CUE_FIELD = "template_cue_field"
-    /** The exercise's one target RPE, on its own row below the rest's (N59, N80, N111). */
+    /** The exercise's one target RPE, on the line the rest and the accept share (N59, N80, N116). */
     const val TEMPLATE_EXERCISE_RPE = "template_exercise_rpe"
     const val TEMPLATE_EXERCISE_INCREASE_RPE = "template_exercise_increase_rpe"
     const val TEMPLATE_EXERCISE_DECREASE_RPE = "template_exercise_decrease_rpe"
@@ -637,6 +628,8 @@ object TestTags {
         const val SKIP_CONTINUE = "program_skip_continue"
 
         /** A slot's ⋮: the order and remove entries it opens (ROADMAP N72). */
+        fun slotMenu(id: String) = "program_slot_menu_$id"
+
         /** The slot menu's entry that opens the template it names (ROADMAP N120). */
         fun openSlot(id: String) = "program_open_slot_$id"
 
@@ -645,8 +638,6 @@ object TestTags {
 
         /** The bar's ⋮ entry that opens the balance view (ROADMAP N119). */
         const val BALANCE = "program_balance_open"
-
-        fun slotMenu(id: String) = "program_slot_menu_$id"
 
         /** The read-only view of what a slot's template prescribes (ROADMAP N72). */
         const val PREVIEW = "program_preview"
