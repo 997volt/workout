@@ -1,7 +1,7 @@
 # Workout — Roadmap
 
-> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds the three defects a lifter found in use
-> (B117–B119). Last reviewed against the
+> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one planned change (N123) with the four
+> defects a lifter found in use (B117–B120) queued beside it. Last reviewed against the
 > code: 2026-10-13 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -19,8 +19,8 @@
 > the library's long-press family details, a program read for the work it spreads where, and the three menu
 > entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
 > before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds three
-> defects a lifter found in use (B117–B119). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds one
+> planned change (N123) and the four defects a lifter found in use (B117–B120). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
 > defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
 > Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five defects
 > (B104–B108); all five are fixed and recorded in [CHANGELOG.md](CHANGELOG.md). A line-by-line reading of the
@@ -43,10 +43,22 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Nothing is planned beyond the three defects below, which were reported from real use rather than found in a
-reading. They are independent — one loses the plan a workout was started from, one claims a record the workout
-already holds, one is the keyboard over the fields — and the mechanism under each was read in the code while
-the reproduction is the lifter's.
+One planned change — a lift to add to the seed — with the four defects a lifter found in use queued beside it.
+The defects were reported from real use rather than found in a reading, and the mechanism under each was read
+in the code while the reproduction is the lifter's.
+
+- **A behind-the-back cable curl joins the seed** (N123). The curl family carries a barbell, a dumbbell, a
+  machine and a plain cable curl, and not the single-arm curl taken behind the back — the one that keeps
+  tension on the biceps at the bottom of the range, which is what it is reached for. It is a **seed** row
+  rather than a user-created exercise, so it is filed under the `curl` family
+  ([SeedExercises.kt](app/src/main/java/com/example/androidapp/data/SeedExercises.kt)) and states its own
+  equipment (`CABLE`) while reading *Biceps* and *Forearms* from the family by the
+  own-if-stated-else-the-category's rule (N110) — equipment is the one fact a family never hands down, because
+  a family spans equipment. The seeder is an `INSERT OR IGNORE` top-up on every open
+  ([ExerciseSeeder.kt](app/src/main/java/com/example/androidapp/data/local/ExerciseSeeder.kt)), so a store
+  that already exists gets the row on its next launch and **no migration and no transfer-format change** is
+  involved. What has to move with it is the count the family's own line and the seed's doc state, which is the
+  shape B107 was.
 
 ### Defects found in use
 
@@ -94,6 +106,23 @@ the reproduction is the lifter's.
   exercise* row at the foot of the list are the two things to keep clear of it, and the other screens with
   fields near the bottom — the template editor, the measurements form, the exercise detail — share the gap and
   are worth checking in the same pass, though this id is the running workout the lifter hit.
+
+- **A second drop set cannot be added to a template** (B120). *Add set* after a drop rung opens the dialog with
+  the run's value already in the field — the new row is prefilled from the last planned set (N46) — and saving
+  it is refused with **"A run's drop value is written on its first rung."**
+  ([RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)), so a
+  drop run can never grow past its first rung. The dialog is never told **which rung it is authoring**:
+  `TemplateSetEditor` calls `TemplateSetDialog` without `holdsTheRunValue`
+  ([TemplateEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateEditorScreen.kt)),
+  so it takes that parameter's `true` default — `writesTheRunValue = role == DROP && holdsTheRunValue` — and
+  the run's value is then both **required** by `dropValueIsValid` and written onto the new row
+  ([TemplateSetDialog.kt](app/src/main/java/com/example/androidapp/ui/components/TemplateSetDialog.kt)). The
+  two halves deadlock: the value cannot be left blank because the dialog demands one, and it cannot be saved
+  because the write boundary refuses it on any rung but the first. The rule the dialog needs is already
+  computed one screen over — `sets.runAt(index)?.rung == 1` decides the summary line's own value
+  (`PlanSetRow`) — so the fix is to tell the dialog whether the row it is authoring **opens** the run or
+  continues one, which for an appended row is "the row above is not already a rung of it". Editing an existing
+  later rung has the same fault for the same reason.
 
 ## Parked — deliberately not planned
 
@@ -182,7 +211,7 @@ records the day (N114), a program slot's ⋮ opening its template (N120), a plan
 each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading of that batch found
 (B109–B116) among them — and N122, the half-credit a movement's secondary muscles now take.
 
-***Next* holds the three defects a lifter found in use (B117–B119).** N118
+***Next* holds N123 and the four defects a lifter found in use (B117–B120).** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
