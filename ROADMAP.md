@@ -1,6 +1,7 @@
 # Workout — Roadmap
 
-> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nothing. Last reviewed against the
+> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds the two defects a lifter found in use
+> (B117, B118). Last reviewed against the
 > code: 2026-10-13 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -18,8 +19,8 @@
 > the library's long-press family details, a program read for the work it spreads where, and the three menu
 > entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
 > before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds
-> nothing. **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds two
+> defects a lifter found in use (B117, B118). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
 > defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
 > Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five defects
 > (B104–B108); all five are fixed and recorded in [CHANGELOG.md](CHANGELOG.md). A line-by-line reading of the
@@ -42,8 +43,42 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Nothing. Everything planned has shipped; the next item is written here when there is one, and never
-invented to keep the section full.
+Nothing is planned beyond the two defects below, which were reported from real use rather than found in a
+reading. They are independent — one loses the plan a workout was started from, the other claims a record the
+workout already holds — and the mechanism under each was read in the code while the reproduction is the
+lifter's.
+
+### Defects found in use
+
+- **Resuming a workout from home loses the plan it was started from** (B117). Starting from a template shows
+  every set as planned; going back to home and taking the *Resume* pill shows the same workout with **no plan
+  at all** — no planned sets, no remainder, and no plan-versus-actual in the review. `ActiveWorkoutViewModel`
+  reads the plan from the **route's** argument —
+  `plannedExercises = templateId?.let { templateRepository.observeExercises(it) } ?: flowOf(emptyList())`
+  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt))
+  — while the *Resume* pill navigates `ActiveWorkout()` with no argument
+  ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)). A resumed session
+  therefore resolves no plan entries, and every row reads as improvised. The route's own KDoc says
+  `templateId` "is consumed once, when the session is actually opened, and a resumed session ignores it" —
+  true of the *start* decision, false of the read, which needs it for the whole session. **The opening of the
+  template in the reproduction is incidental**: any resume drops it. The session already records the template
+  (`WorkoutSession.templateId`, written by `startOrResumeSession`), so the fix is to read the plan from the
+  session and leave the route meaning how the workout was asked to begin.
+
+- **A set is announced as a personal best over a better one logged in the same session** (B118). Finishing a
+  set can raise the PR banner while a heavier set at the same rep count is already in the workout. History is
+  read with this session **excluded** (`personalRecords(exerciseId, excludingSessionId = sessionId)`) and what
+  the session has logged is merged back in from **one row's** sets alone —
+  `PersonalRecords.from(row.sets)`
+  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt))
+  — so a set on a **second row of the same movement** is in neither side: excluded from history, absent from
+  the merge, and a lighter set there beats nothing. The plan supports that shape deliberately — `planEntriesFor`
+  matches a movement named twice by occurrence (N54) — and a superset or a second block of the same lift
+  reaches it too. Within one row the merge is what B18 fixed, so the scope is **the movement in this session**
+  rather than the row. Two look-alikes are by design and must not go with the fix: a heavier **warm-up** or
+  rung above is not a record (B17, N79), and a heavier set at a **different rep count** is a different record
+  (N23). A second candidate on the same symptom, to rule in or out while reproducing: `onLogSet` reads
+  `uiState.value` once, so two sets logged faster than the state emits would merge a stale list.
 
 ## Parked — deliberately not planned
 
@@ -132,7 +167,7 @@ records the day (N114), a program slot's ⋮ opening its template (N120), a plan
 each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading of that batch found
 (B109–B116) among them — and N122, the half-credit a movement's secondary muscles now take.
 
-***Next* holds nothing again.** N118
+***Next* holds the two defects a lifter found in use (B117, B118).** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
