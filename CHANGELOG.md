@@ -11,7 +11,25 @@ alternatives rejected, the measurements, the argument — lives in
 repeated here.
 
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
-id a 1.x commit names is still looked up by it. This file carries the current release.
+id a 1.x commit names is still looked up by it. This file carries the current release and what is
+unreleased.
+
+## [Unreleased]
+
+### Changed
+
+- **A set's secondary muscles are credited half each** (N122). The balance view counted every planned working
+  set once, for its movement's primary muscle, and credited the secondaries nothing — so a week of rows read as
+  training lats alone, though the seed's own barbell row names biceps and forearms. A working set is now **one
+  set for the movement's effective primary and half a set for each of its effective secondaries**, resolved by
+  the same own-if-stated-else-the-category's rule the primary already reads (N110), so a family's muscles are
+  inherited here too. **A muscle is counted once per set**: one named both primary and secondary, or twice in
+  the secondary list, takes the primary's share and no more. Work that states a muscle nowhere keeps its own
+  row rather than being dropped, and work that states secondaries but no primary credits them — no primary is
+  invented for it. **The count is held in half-sets** — an `Int` and not a float, for the reason RPE is
+  half-points — and the screen writes the halves back as sets (`1.5 sets`). The header still states the plan's
+  own working-set count, so the screen says in words how a set is split, rather than letting the rows sum past
+  the total unexplained; the bars divide by the credited work, which is what makes a lopsided week obvious.
 
 ## [2.2] — 2026-10-13 (versionCode 22)
 

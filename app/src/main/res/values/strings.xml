@@ -713,11 +713,15 @@
         <item quantity="one">%1$d working set planned</item>
         <item quantity="other">%1$d working sets planned</item>
     </plurals>
+    <!-- How a set is counted across muscles (ROADMAP N122): said in words because a secondary's half makes
+         the rows sum past the total above them. -->
+    <string name="program_balance_weighting">A set counts once for its main muscle, and half for each assisting one.</string>
     <string name="program_balance_unstated">No muscle stated</string>
-    <plurals name="program_balance_sets">
-        <item quantity="one">%1$d set</item>
-        <item quantity="other">%1$d sets</item>
-    </plurals>
+    <!-- One muscle's share (ROADMAP N122). The number is a formatted sets figure and may carry a half, so it
+         is a string rather than a plural: "1 set" and "1.5 sets" are chosen by the count, not by the plural
+         rules, which only ever see whole numbers. -->
+    <string name="program_balance_set_one">%1$s set</string>
+    <string name="program_balance_sets_many">%1$s sets</string>
     <string name="program_loaded">Program loaded.</string>
     <string name="program_already_loaded">That program is already here.</string>
     <!-- What a load could not place (ROADMAP B51). "Not in your library" rather than "not on this

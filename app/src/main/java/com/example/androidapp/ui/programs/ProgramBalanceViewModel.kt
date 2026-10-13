@@ -8,6 +8,7 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.MuscleSets
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.muscleBalance
+import com.example.androidapp.domain.model.plannedWorkingSets
 import com.example.androidapp.domain.repository.ExerciseRepository
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
@@ -29,7 +30,13 @@ data class ProgramBalanceUiState(
     val programName: String? = null,
     /** The plan's work per muscle, largest first, with the unresolved bucket last (see `muscleBalance`). */
     val balance: List<MuscleSets> = emptyList(),
-    val totalSets: Int = 0,
+    /**
+     * The plan's own working-set count, warm-ups excluded (ROADMAP N112, N122).
+     *
+     * The header's number, and deliberately not the sum of the rows: a set is worth a full one to its primary
+     * and half to each secondary, so the credits no longer add up to the plan's size.
+     */
+    val plannedSets: Int = 0,
 )
 
 /**
@@ -81,7 +88,7 @@ class ProgramBalanceViewModel @Inject constructor(
             isLoading = false,
             programName = program?.name,
             balance = balance,
-            totalSets = balance.sumOf { it.sets },
+            plannedSets = plannedWorkingSets(plannedRows),
         )
     }.stateIn(
         scope = viewModelScope,
