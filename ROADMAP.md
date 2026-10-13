@@ -1,7 +1,6 @@
 # Workout — Roadmap
 
-> **v2.1** is shipped ([CHANGELOG.md](CHANGELOG.md)), **N107 and the N111–N121 batch are on `main` with no
-> release cut**, and *Next* holds nothing. Last reviewed against the
+> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nothing. Last reviewed against the
 > code: 2026-10-13 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -12,11 +11,16 @@
 > screen's silent write failure; and **P1.1's library set, B103 and N110 shipped as 2.1**: the session and
 > template reads no longer throw on an exercise that states no muscle, the library became a category over
 > movements with a movement reading its family's pattern and muscles, 61 movements joined the 45, and the
-> picker groups exactly as the library is. The 1.x store is left on the device by design, and the 1.18 APK is
-> still the way to read it.
+> picker groups exactly as the library is; and **N107 with the N111–N121 batch shipped as 2.2**: the body's
+> record split in two with soreness moved to the day and read back as a statistic, a set's number and the
+> plan's remainder counting only the sets that stand on their own, the planned-set dialog's ± steppers and its
+> one-line effort, rest and accept, today's workout at the foot of home beside the row that records the day,
+> the library's long-press family details, a program read for the work it spreads where, and the three menu
+> entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
+> before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds
-> nothing. **Reading the unreleased N107 and N111–N121 batch line by line — and running it on a device —
-> found eight defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
+> nothing. **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
+> defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
 > Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five defects
 > (B104–B108); all five are fixed and recorded in [CHANGELOG.md](CHANGELOG.md). A line-by-line reading of the
 > N87–N95 changes found sixteen defects (B79–B94); all are fixed and recorded in
