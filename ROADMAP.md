@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nothing. Last reviewed against the
+> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one item. Last reviewed against the
 > code: 2026-10-13 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -18,8 +18,8 @@
 > the library's long-press family details, a program read for the work it spreads where, and the three menu
 > entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
 > before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds
-> nothing. **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds one
+> item (N122). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
 > defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
 > Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five defects
 > (B104–B108); all five are fixed and recorded in [CHANGELOG.md](CHANGELOG.md). A line-by-line reading of the
@@ -42,8 +42,26 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Nothing. Everything planned has shipped; the next item is written here when there is one, and never
-invented to keep the section full.
+One item is planned: the balance view counting a movement's secondary muscles, at half a set each.
+
+- **A secondary muscle takes half of every working set whose movement names it** (N122). The balance view counts
+  each planned working set **once, for its movement's primary muscle**, and credits the secondaries nothing — the
+  rule N119 recorded, with the reason that a set is not half a set for a muscle that assists. That reason is
+  what this reverses: a movement's declared secondaries are muscles the set really works, and the seed's own
+  barbell row names biceps and forearms, so a week of rows reads as training lats alone. A working set becomes
+  **one set for the effective primary and half a set for each effective secondary**, resolved by the same
+  own-if-stated-else-the-category's rule the primary already reads (N110), with a **warm-up still not work**
+  (N112) and work that states a muscle nowhere still a bucket of its own.
+  **The count is held in halves rather than in a fraction**:
+  [MuscleSets.kt](app/src/main/java/com/example/androidapp/domain/model/MuscleSets.kt)'s `sets: Int` becomes
+  half-sets in an `Int`, the shape RPE already uses for the same reason — a half is exact where a float is not —
+  and the screen formats at its edge. Two things have to be settled with it, because the rows stop summing to
+  the set count once the secondaries are credited:
+  [ProgramBalanceScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramBalanceScreen.kt)'s
+  *"N working sets planned"* total and each row's share cannot both divide by the number of sets, and a muscle
+  that is both a primary and a secondary of one movement — or named twice in one list — is counted once.
+  [DECISIONS.md](DECISIONS.md) carries N119's "secondaries are not credited" as binding, so the rule is amended
+  with the change rather than quietly contradicted.
 
 ## Parked — deliberately not planned
 
@@ -132,7 +150,7 @@ records the day (N114), a program slot's ⋮ opening its template (N120), a plan
 each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading of that batch found
 (B109–B116) among them.
 
-***Next* holds nothing again.** N118
+***Next* holds one item: N122's half-credit for a movement's secondary muscles.** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
