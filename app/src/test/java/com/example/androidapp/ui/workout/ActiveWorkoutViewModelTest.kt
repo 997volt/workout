@@ -243,6 +243,38 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aResumedSession_keepsThePlanItsSessionRecords() = runTest(dispatcher) {
+        // B117: the plan is read from the **session**, which records the template it was started from
+        // (`startOrResumeSession`), not from the route — whose argument says only how the workout was
+        // *asked to begin* and is absent when home's *Resume* pill rebuilds the destination. Reading the
+        // route alone dropped the plan on every resume.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+
+        val started = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(started)
+        settle()
+        started.onAddExercise("back-squat")
+        settle()
+        assertEquals(
+            "the route's template is the plan while the session is being created",
+            100_000L,
+            started.uiState.value.exercises.single().suggestion.weightGrams,
+        )
+
+        // The resume: a fresh ViewModel over the same open session, with no template argument.
+        val resumed = viewModelFor(repository, templateId = null, templates = templates)
+        observe(resumed)
+        settle()
+
+        assertEquals(
+            "the session's own template keeps the plan after a resume",
+            100_000L,
+            resumed.uiState.value.exercises.single().suggestion.weightGrams,
+        )
+    }
+
+    @Test
     fun aFreshlyOpenedSession_asksForAReadinessNote() = runTest(dispatcher) {
         val viewModel = viewModelFor(FakeWorkoutRepository())
         observe(viewModel)
@@ -1575,7 +1607,12 @@ class ActiveWorkoutViewModelTest {
             templateId: String?,
         ): DataResult<StartedSession> {
             sessions.value?.let { return DataResult.Success(StartedSession(it.id, isNew = false)) }
-            val created = WorkoutSession(id = "s1", startedAt = Instant.parse("2026-09-28T07:00:00Z"))
+            // Mirrors the repository: the session records the template it was started from (B117).
+            val created = WorkoutSession(
+                id = "s1",
+                startedAt = Instant.parse("2026-09-28T07:00:00Z"),
+                templateId = templateId,
+            )
             sessions.value = created
             return DataResult.Success(StartedSession(created.id, isNew = true))
         }

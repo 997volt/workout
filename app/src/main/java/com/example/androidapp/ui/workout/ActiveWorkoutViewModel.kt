@@ -60,6 +60,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -286,17 +287,6 @@ class ActiveWorkoutViewModel @Inject constructor(
      */
     val startedFromProgram: Boolean get() = slotId != null
 
-    /**
-     * The plan this workout was started from, or empty (ROADMAP N14).
-     *
-     * Nothing is stored on the session to link it: the route already carries the
-     * template, and the back stack keeps it across process death, so the plan stays a
-     * plan — editing it changes what the next workout prefills, which is what N16
-     * calls a living template.
-     */
-    private val plannedExercises: Flow<List<TemplateExercise>> =
-        templateId?.let { templateRepository.observeExercises(it) } ?: flowOf(emptyList())
-
     private val lastError = MutableStateFlow<DataError?>(null)
 
     /**
@@ -405,6 +395,25 @@ class ActiveWorkoutViewModel @Inject constructor(
      */
     private val activeSession = workoutRepository.observeActiveSession()
         .shareIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), replay = 1)
+
+    /**
+     * The plan the open session follows (ROADMAP N14, B117).
+     *
+     * Read from the **session**, which records the template it was started from (`startOrResumeSession`),
+     * rather than from the route alone: the route's argument says how the workout was *asked to begin* and
+     * is absent on a resume, which is why resuming from home used to drop the plan. It still answers while
+     * the session is being created, before there is a row to read.
+     *
+     * Nothing is snapshotted: editing the template changes what the plan says, which is what N16 calls a
+     * living template.
+     */
+    private val plannedExercises: Flow<List<TemplateExercise>> =
+        activeSession
+            .map { it?.templateId ?: templateId }
+            .distinctUntilChanged()
+            .flatMapLatest { id ->
+                if (id == null) flowOf(emptyList()) else templateRepository.observeExercises(id)
+            }
 
     private val sessionExercises: Flow<List<SessionExercise>> = activeSession
         .flatMapLatest { session ->

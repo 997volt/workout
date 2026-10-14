@@ -1,7 +1,7 @@
 # Workout — Roadmap
 
 > **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two planned changes (N123, N124) with
-> the four defects a lifter found in use (B117–B120) queued beside them. Last reviewed against the
+> the three defects a lifter found in use (B118–B120) queued beside them. Last reviewed against the
 > code: 2026-10-13 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -20,7 +20,7 @@
 > entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
 > before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds two
-> planned changes (N123, N124) and the four defects a lifter found in use (B117–B120). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
+> planned changes (N123, N124) and the three defects a lifter found in use (B118–B120). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
 > defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
 > Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five defects
 > (B104–B108); all five are fixed and recorded in [CHANGELOG.md](CHANGELOG.md). A line-by-line reading of the
@@ -43,7 +43,7 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Two planned changes — a lift for the seed, and one surface for where the next workout is — with the four
+Two planned changes — a lift for the seed, and one surface for where the next workout is — with the three
 defects a lifter found in use queued beside them. The defects were reported from real use rather than found in
 a reading, and the mechanism under each was read in the code while the reproduction is the lifter's.
 
@@ -89,21 +89,6 @@ a reading, and the mechanism under each was read in the code while the reproduct
   ([WorkoutsHomeScreenTest.kt](app/src/test/java/com/example/androidapp/ui/home/WorkoutsHomeScreenTest.kt)).
 
 ### Defects found in use
-
-- **Resuming a workout from home loses the plan it was started from** (B117). Starting from a template shows
-  every set as planned; going back to home and taking the *Resume* pill shows the same workout with **no plan
-  at all** — no planned sets, no remainder, and no plan-versus-actual in the review. `ActiveWorkoutViewModel`
-  reads the plan from the **route's** argument —
-  `plannedExercises = templateId?.let { templateRepository.observeExercises(it) } ?: flowOf(emptyList())`
-  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt))
-  — while the *Resume* pill navigates `ActiveWorkout()` with no argument
-  ([AppNavHost.kt](app/src/main/java/com/example/androidapp/ui/navigation/AppNavHost.kt)). A resumed session
-  therefore resolves no plan entries, and every row reads as improvised. The route's own KDoc says
-  `templateId` "is consumed once, when the session is actually opened, and a resumed session ignores it" —
-  true of the *start* decision, false of the read, which needs it for the whole session. **The opening of the
-  template in the reproduction is incidental**: any resume drops it. The session already records the template
-  (`WorkoutSession.templateId`, written by `startOrResumeSession`), so the fix is to read the plan from the
-  session and leave the route meaning how the workout was asked to begin.
 
 - **A set is announced as a personal best over a better one logged in the same session** (B118). Finishing a
   set can raise the PR banner while a heavier set at the same rep count is already in the workout. History is
@@ -239,7 +224,7 @@ records the day (N114), a program slot's ⋮ opening its template (N120), a plan
 each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading of that batch found
 (B109–B116) among them — and N122, the half-credit a movement's secondary muscles now take.
 
-***Next* holds N123 and N124 with the four defects a lifter found in use (B117–B120).** N118
+***Next* holds N123 and N124 with the three defects a lifter found in use (B118–B120).** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled

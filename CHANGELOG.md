@@ -31,6 +31,15 @@ unreleased.
   own working-set count, so the screen says in words how a set is split, rather than letting the rows sum past
   the total unexplained; the bars divide by the credited work, which is what makes a lopsided week obvious.
 
+### Fixed
+
+- **Resuming a workout from home keeps its plan** (B117). The plan was read from the route's `templateId`, and
+  the *Resume* pill builds the destination with no argument — so a workout started from a template showed every
+  set as planned, and the same workout resumed from home showed **no plan at all**: no planned sets, no
+  remainder, and nothing for the review to compare against. The route's argument says only how the workout was
+  *asked to begin*; the template the session follows is recorded on the session itself, so the plan is read from
+  there now, with the route still answering while the session is being created.
+
 ## [2.2] — 2026-10-13 (versionCode 22)
 
 ### Changed
