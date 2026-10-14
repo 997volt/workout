@@ -700,6 +700,24 @@ class TemplateEditorScreenTest {
     }
 
     @Test
+    fun addingASecondDropSet_doesNotAskForTheValueAgain() {
+        // B120: a run names its value on its **first** rung (N79), so a drop appended to the run continues
+        // it. The dialog used to be told only that a drop was *allowed* at this position — which is true of
+        // every rung of a run — and so treated the new row as an opener: it demanded a value the write
+        // boundary then refused ("A run's drop value is written on its first rung"), and a drop run could
+        // never grow past one rung.
+        setScreen(state = droppingExercise())
+        openBlock("te1")
+
+        addSet()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.DROP.name)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsEnabled()
+    }
+
+    @Test
     fun aPlansFirstSet_cannotBeArmedWithARung() {
         // ROADMAP B64: a rung hangs off the set above it, so the plan's picker does not offer one where
         // there is nothing above — the write boundary would refuse the save, and the project's rule is

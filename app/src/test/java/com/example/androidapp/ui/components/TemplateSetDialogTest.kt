@@ -36,6 +36,8 @@ class TemplateSetDialogTest {
         initial: TemplateSetEdit = TemplateSetEdit(),
         isNew: Boolean = true,
         stepGrams: Long? = null,
+        /** Whether this row opens its run, which is where a run's value is written (N79, B120). */
+        holdsTheRunValue: Boolean = true,
     ) {
         composeTestRule.setContent {
             TemplateSetDialog(
@@ -44,6 +46,7 @@ class TemplateSetDialogTest {
                 onDismiss = {},
                 onSave = { saved = it },
                 stepGrams = stepGrams,
+                holdsTheRunValue = holdsTheRunValue,
             )
         }
     }
@@ -212,5 +215,19 @@ class TemplateSetDialogTest {
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_INCREASE_DROP_VALUE).performClick()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE).assertTextContains("20")
+    }
+
+    @Test
+    fun aRungThatContinuesARun_isNotAskedForTheValue() {
+        // B120: `holdsTheRunValue` is "this row **opens** the run", not "a drop is allowed here" — a rung
+        // appended to an existing run inherits the value, so the dialog must not demand a second one. The
+        // value it must not write is the half that made the write boundary refuse the row.
+        show(initial = TemplateSetEdit(role = SetType.DROP), holdsTheRunValue = false)
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).performClick()
+
+        assertEquals(SetType.DROP, saved?.role)
+        assertNull("and it writes no value of its own", saved?.dropValueGrams)
     }
 }

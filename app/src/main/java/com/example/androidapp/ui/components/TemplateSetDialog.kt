@@ -56,16 +56,26 @@ fun TemplateSetDialog(
      * Which roles this set may be given (ROADMAP N79, B64).
      *
      * A rung hangs off the set above it, so the caller — which knows the position this row holds, or
-     * would hold when it is being added — answers whether one is available here. It decides two things
-     * at once: the roles the picker offers, and whether this row is the place a run's value is authored.
-     * The default offers everything, which is what a dialog with no position to speak of wants.
+     * would hold when it is being added — answers whether one is available here. The default offers
+     * everything, which is what a dialog with no position to speak of wants.
      */
     offers: (SetType) -> Boolean = { true },
+    /**
+     * Whether this row is the one that **opens** its run, which is the only place the value is written
+     * (ROADMAP N79, B120).
+     *
+     * Not the same question as [offers]. A drop appended to an existing run is anchored, so it is offered
+     * — and it *inherits* the run's value rather than naming it, which the write boundary enforces ("A
+     * run's drop value is written on its first rung"). Deriving this from "is a drop allowed here" made
+     * every rung an opener: the dialog demanded a value the boundary then refused on any rung but the
+     * first, so a second drop set could not be authored at all.
+     */
+    holdsTheRunValue: Boolean = true,
 ) {
     // `remember`, not `rememberSaveable`: a data class is not something a Bundle can
     // hold, and registering one throws when the dialog opens. The set editor's own
     // draft is held the same way for the same reason.
-    var draft by remember { mutableStateOf(TemplateSetDraft(initial, unit, offers(SetType.DROP))) }
+    var draft by remember { mutableStateOf(TemplateSetDraft(initial, unit, holdsTheRunValue)) }
 
     AlertDialog(
         modifier = modifier,

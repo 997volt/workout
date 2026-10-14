@@ -50,6 +50,15 @@ unreleased.
   *asked to begin*; the template the session follows is recorded on the session itself, so the plan is read from
   there now, with the route still answering while the session is being created.
 
+- **A second drop set can be added to a template** (B120). *Add set* after a drop rung prefilled the dialog from
+  the last planned set — the run's value included — and saving it was refused with *"A run's drop value is
+  written on its first rung"*, so a drop run could never grow past one rung. The dialog was asked the wrong
+  question: whether a drop was **allowed** at that position, which is true of every rung of a run, instead of
+  whether the row being authored **opens** the run — the only row a value is written on (N79). It is told now,
+  from `runAt` for a row that exists and from the row above for one being added, so a rung that continues a run
+  inherits the value instead of being asked for a second one. **Editing an existing later rung was broken the
+  same way**, and is fixed with it.
+
 ## [2.2] — 2026-10-13 (versionCode 22)
 
 ### Changed

@@ -66,6 +66,7 @@ import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.isAnchoredAt
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.runAt
 import com.example.androidapp.domain.model.rungWeightAt
 import com.example.androidapp.domain.model.taxonomySubtitle
@@ -582,6 +583,13 @@ private fun TemplateSetEditor(
         // holds: a run is contiguous, so its anchor is the set above the run's first row and that set
         // has to stand on its own — never a warm-up and never another kind of rung.
         offers = { role -> exercise.sets.isAnchoredAt(position, role) },
+        // A run writes its value on its **first** rung (N79). `runAt` answers that for the row being
+        // edited; for the row being added — which does not exist yet, so there is nothing at `position`
+        // to read — it is whether the row above is already a drop rung of the run it would join.
+        // "A rung is allowed here" is a different question, and answering this one with it is what made a
+        // second drop set unauthorable (B120).
+        holdsTheRunValue = exercise.sets.runAt(position)?.rung == 1 ||
+            (edited == null && exercise.sets.getOrNull(position - 1)?.role != SetType.DROP),
         // Add set starts from the last planned set rather than from nothing (ROADMAP N46): a set is
         // nearly always the one before it again, and Duplicate — which doubled the whole plan and
         // left the odd counts to manual adds — is gone. Blank only while there is no set to start
