@@ -1,7 +1,7 @@
 # Workout — Roadmap
 
-> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nothing. Last reviewed against the
-> code: 2026-10-15 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
+> **v2.3** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nothing. Last reviewed against the
+> code: 2026-10-14 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
 > database file, the 1.x chain and its schemas deleted, both transfer formats refusing 1.x, and the five
@@ -17,9 +17,13 @@
 > one-line effort, rest and accept, today's workout at the foot of home beside the row that records the day,
 > the library's long-press family details, a program read for the work it spreads where, and the three menu
 > entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
-> before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
+> before the tag; and **N122–N124 with B117–B126 shipped as 2.3**: a movement's secondary muscles take half a
+> set each, the seed gained the behind-the-back cable curl, where the next workout is became one surface in
+> home's body, and the four defects a lifter found in use (B117–B120) with the six a review of the batch found
+> (B121–B126) are fixed. The 1.x store is left on the device by design, and the 1.18 APK is still the way to
+> read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds
-> nothing. **Reading the unreleased batch line by line found five defects (B121–B125), and the race B125
+> nothing. **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
 > it on a device — found eight
