@@ -1705,3 +1705,92 @@ had to change to test any of this** — it used one fixed instant for every writ
 ordering the guard reads did not exist — and it now advances a second per call, which is also what the real
 clock does. That dependency is the same one N90 recorded for its own correlation: a fixed clock collapses
 "before" and "after" into one value, and a test that does not move it cannot see the rule at all.
+
+## N128
+
+The four checks were done by hand on every release, and the certificate is the one that has no
+undo: a mismatch means the APK is refused as an update and the only fix is an uninstall, which
+deletes a user's workout history because platform backup is off. A check with that consequence is
+the last one that should depend on a person reading two hex strings correctly.
+
+**The certificate is read from the keystore, not from the previous release's APK.** The roadmap
+worded it as "against the previous release's tag", and the tag is where the previous APK attaches —
+but the keystore answers the same question with fewer moving parts: it is the key the build is
+*signing with right now*, so comparing the APK to it catches a wrong key at the moment it is used
+rather than one release later, and it is present on the machine cutting the release while the
+previous asset needs a download and a token. The published-asset check keeps the tag, because there
+the tag *is* the thing being questioned.
+
+**Only the remote half is opt-in, and the split is the point.** Steps 1–3 need `aapt2`, `apksigner`
+and the keystore: no network, no token, nothing that a fresh checkout lacks. That is what lets the
+same script run in CI on every change, so a version bump that was forgotten, or an APK built before
+it, is caught by the pipeline rather than at the tag. CI has no keystore and signs nothing, so the
+certificate is reported as unchecked there — the alternative, requiring a keystore in CI, would mean
+copying a signing key into CI to test the check that exists to protect it. The refusal stays where
+the key is: on a machine without `keystore.properties`, the script fails rather than warns.
+
+**`--remote` exists because the two failures it catches are invisible.** A wrong file attached to
+the right release, and the right file under the wrong name, both look correct on the release page.
+Every other check here reads the APK on disk, so none of them can see the asset at all.
+
+**B128 is the same lesson one step earlier.** `git add -A` in the release procedure takes whatever
+is in the tree, and the 2.4 round proved what that means: a scratch directory of HTTP header and
+JSON dumps went into the release commit, and only reading that commit's own `--stat` caught it
+before the push. Naming `CHANGELOG.md ROADMAP.md version.properties` makes the command a check as
+well as a command — those three are the complete set a release is allowed to touch — and the
+procedure says so, so a release that must carry a fourth file stages it deliberately.
+
+## N129
+
+B123's measurement was reproduced before anything was built: **detekt-formatting reports 642
+findings across 155 files** on today's code (B123 recorded 603, and the difference is drift, not a
+different ruleset). The distribution is what decides the shape:
+
+| rule | findings | files |
+| --- | --- | --- |
+| `Indentation` | 163 | 17 |
+| `ImportOrdering` | 151 | 150 |
+| `ArgumentListWrapping` | 136 | 3 |
+| `NoConsecutiveBlankLines` | 50 | 32 |
+| `Wrapping` | 45 | 15 |
+| `MaximumLineLength` | 17 | 2 |
+| everything else (16 rules) | 80 | — |
+
+**150 of 155 files carry an `ImportOrdering` finding.** That single number kills the whole-file
+version of this check: an edit that adds one function to `AppNavHost.kt` would be failed for the
+file's import order, which the edit never touched, and the reasonable response — stop running it —
+is how a check dies. So the line is the unit, not the file.
+
+**The lines are the diff's, computed from `git diff -U0`.** The `-U0` matters: with context, the
+hunk's line numbers include lines nobody changed. Three sources are merged, because a change can be
+committed, staged or neither, and a **fourth** was needed after the first cut failed its own test:
+a brand-new file is untracked, and **no form of `git diff` mentions it** — `git diff HEAD` does not
+either — so untracked Kotlin files are listed with `git ls-files --others` and every line of them is
+the change. That bug was found by running the check against a scratch file rather than by reading it.
+
+**The rule set is named explicitly rather than inferred from the report.** `detektFormattingCheck`
+runs with `buildUponDefaultConfig` so the plugin's own configuration is active, and the Compose
+ruleset is a plugin too — `CompositionLocalAllowlist` appeared in the first report, because the
+Compose ruleset registers it as a default. A finding the gate already reports must not appear twice,
+so the script keeps only the formatting ruleset's 77 rule names.
+
+**Nothing is switched off, and that needs the explicit exclusion.** Loading the plugin registers its
+rules as detekt defaults for *every* task, so the gate's own `detekt` run picks up all 642 findings
+the moment the dependency is added — verified, not assumed: the first `./gradlew detekt` after
+wiring failed with "Analysis failed with 599 weighted issues". `detekt.yml` therefore carries
+`formatting: active: false` with its reason beside it. That is the opposite of the silent
+`active: false` B123 refused: it is one ruleset, off in one task, with the config file that turns it
+on named in the same comment.
+
+**Rejected: turning on the rules the repository already passes.** The tempting subset — `NoSemicolons`,
+`NoTrailingSpaces`, `FinalNewline`, `AnnotationSpacing` — has only a handful of findings, so it could
+be fixed and put in the gate outright. It was rejected because it is a different check wearing this
+one's name: the rules that actually caught the malformed `BalanceRow` line are `Wrapping` and
+`ArgumentListWrapping`, both of which fail hundreds of times today, and a subset chosen for being
+already-green is chosen for the wrong reason. The changed-lines check runs the *whole* ruleset, which
+is what makes it able to catch that class of defect at all.
+
+**`--fix` exists and is off by default.** `autoCorrect` rewrites files, so a check that turned it on
+would report on what it read rather than on what is there — the script turns it on only for its own
+`--fix`, confirmed by rewriting a scratch file into shape. It is not a substitute for reading the
+finding: it does not fix everything, and it is the caller's commit either way.

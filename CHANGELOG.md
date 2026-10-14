@@ -61,6 +61,26 @@ unreleased.
   instead. Rejected: a confirmation dialog on the per-row button — that is the guard for an act with no way
   back at all, and it would have left the delete on every row while interrupting every deliberate one.
 
+### Added
+
+- **The release's mechanical checks are one script** (N128). Badging, the signing certificate, the
+  hash and — after upload — the published asset were all done by hand on every release, and the
+  certificate is the one where a slip means every user has to uninstall and lose their history,
+  because platform backup is off. `tools/verify-release.py` does all four. The first three need no
+  token and no network, so the same script runs in CI on every change and from a checkout that has
+  never seen a release; only the asset round-trip is opt-in, and it is the half that catches a wrong
+  file on the right release, which nothing else here can see. **RELEASING.md step 3 names its three
+  files instead of `git add -A`** (B128) — the 2.4 round put a scratch directory of HTTP dumps into a
+  release commit, and only the commit's own `--stat` caught it.
+
+- **A change's layout is checked where the change is** (N129). `detekt-formatting` stays out of the
+  gate — it reports 642 findings across 155 files, and 150 of those files carry an `ImportOrdering`
+  finding, so a whole-file check would fail an edit that never went near an import. `tools/format-changed.py`
+  runs the whole ruleset over the files a diff names and reports a finding only when it lands on a
+  line the diff added or rewrote; `--fix` lets the rules rewrite those files, and `--all` shows what
+  turning a rule on would cost. This is B123's own revisit trigger — a layout defect a review missed —
+  answered without either alternative it rejected: nothing is reformatted and no rule is switched off.
+
 ### Fixed
 
 - **The measurements list scrolls** (B130). The list was a `Column` that ran `forEach` over the entries, so

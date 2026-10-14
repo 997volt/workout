@@ -11,7 +11,7 @@ The files are the diff's, and so are the lines:
 
   * the files, so the repository is not reformatted and no rule is switched off;
   * the lines, because "every finding in a changed file" is decided by the file's own history
-    rather than by the change. 137 files carry an ImportOrdering finding today, so a whole-file
+    rather than by the change. 150 files carry an ImportOrdering finding today, so a whole-file
     check would fail an edit that never went near an import, and the first thing anyone would do
     is stop running it.
 
@@ -107,9 +107,10 @@ def changed_files(base: str) -> dict[str, set[int]]:
     """
     head = merge_base(base)
     diff = run("git", "diff", "--unified=0", "--diff-filter=ACMR", f"{head}...HEAD", "--", "*.kt")
-    # Work that is not committed yet is checked just as often as a branch is.
-    diff += run("git", "diff", "--unified=0", "--diff-filter=ACMR", "--", "*.kt")
-    diff += run("git", "diff", "--unified=0", "--diff-filter=ACMR", "--cached", "--", "*.kt")
+    # Work that is not committed yet is checked just as often as a branch is — and `HEAD` rather than
+    # no revision, because a new file is untracked and `git diff` (index against working tree) does
+    # not mention it at all. This one range covers staged and unstaged changes both.
+    diff += run("git", "diff", "--unified=0", "--diff-filter=ACMR", "HEAD", "--", "*.kt")
 
     files: dict[str, set[int]] = {}
     current: str | None = None
@@ -124,6 +125,13 @@ def changed_files(base: str) -> dict[str, set[int]]:
             start = int(hunk.group(1))
             length = int(hunk.group(2) or 1)
             files[current].update(range(start, start + length))
+    # A brand-new file is untracked, and no form of `git diff` mentions it — so it is asked for by
+    # name. Every line of it is the change, which is what the whole-file case reduces to.
+    for name in run("git", "ls-files", "--others", "--exclude-standard", "--", "*.kt").splitlines():
+        path = ROOT / name
+        if path.is_file():
+            files.setdefault(name, set()).update(range(1, len(path.read_text().splitlines()) + 1))
+
     # A file with no hunks (a pure mode change) has nothing to check.
     return {name: lines for name, lines in files.items() if lines}
 

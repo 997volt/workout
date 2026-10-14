@@ -1004,13 +1004,32 @@ the rule; that one argues it.
 
 - **The lint baseline is unwired on purpose.** Accepting a warning is a two-step, reviewed
   act, not a side effect of running the build.
-- **Formatting is held by review, and `detekt-formatting` stays unwired** (B123). The ruleset
-  reports **603 findings across 155 files**, so loading it means either a repository-wide reformat,
-  which buries every real change in whitespace, or a set of `active: false` entries — the silent gate
-  [detekt.yml](config/detekt/detekt.yml) refuses by its own contract. What the build does still hold is
-  the line ceiling, through detekt's `MaxLineLength` and the [.editorconfig](.editorconfig) that matches
-  it; everything else about layout is a reading, and this is recorded so a malformed line reads as a
-  decided limit rather than an unnoticed one. ([evidence](DECISIONS-EVIDENCE.md#b123))
+- **Formatting is checked on the lines a change touched, not on the tree** (B123, answered by N129).
+  The ruleset reports **642 findings across 155 files** on today's code — 151 of them `ImportOrdering`
+  alone, in **150** files — so putting it in the gate means either the repository-wide reformat B123
+  rejected or a set of `active: false` entries, which is the silent gate
+  [detekt.yml](config/detekt/detekt.yml) refuses by its own contract. B123 named its own revisit
+  trigger: a layout defect that ships because a review missed it. **`tools/format-changed.py` answers
+  that trigger without either rejected alternative.** The rules load from a second config file
+  ([detekt-formatting.yml](config/detekt/detekt-formatting.yml)) over the files the diff names, and a
+  finding is reported only when it lands on a line the change **added or rewrote** — because a
+  whole-file check is decided by the file's own history rather than by the change, and a gate that
+  fails an edit which never went near an import is a gate nobody runs twice. Nothing is reformatted
+  and no rule is switched off: `detekt.yml` keeps every rule and excludes this ruleset **explicitly**
+  (`formatting: active: false`), because loading the plugin registers its rules as defaults for every
+  detekt task and the exclusion is what makes the gate's own run unchanged.
+  ([evidence](DECISIONS-EVIDENCE.md#b123))
+- **A release's mechanical checks are one script, and its commit is named rather than swept** (N128, B128).
+  Two of the release's four mechanical checks are about the APK an update is installed over, and one of
+  those — the certificate — is the only defect here whose repair **deletes a user's history**, because
+  platform backup is off. So the certificate is compared against the *keystore the build signs with*
+  rather than against the previous release's APK: the two answer the same question, and the keystore is
+  always on the machine. **Nothing in that path needs a token or the network**, so it runs on CI, on a
+  release machine and from a checkout that has never seen a release; only the published-asset round trip
+  is opt-in, and it is there because it catches a wrong file on the right release and a right file under
+  the wrong name, neither of which any other check can see. **The release commit names its three files**
+  and never `git add -A`: the 2.4 round put a scratch directory of HTTP dumps into a release commit and
+  only `--stat` caught it. ([evidence](DECISIONS-EVIDENCE.md#n128))
 - **Releases are manual**, and the tag must point at the commit that built the APK. The
   procedure is in [RELEASING.md](RELEASING.md); why it stays manual is in
   [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md#releases).

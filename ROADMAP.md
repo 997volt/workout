@@ -1,9 +1,11 @@
 # Workout — Roadmap
 
-> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds six items — four the release rounds
-> turned up (B128, B129, N128, N129) and two candidates to choose between (N130, N131) — with four decided
-> changes waiting in *Later* (N134–N137). The measurements batch shipped unversioned (B130, N132, N133):
-> the list scrolls, a delete is a mode, and a deleted entry can be put back unless the day was re-entered.
+> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two items — two candidates to choose
+> between (N130, N131) — with four decided changes waiting in *Later* (N134–N137). Two batches shipped
+> unversioned: measurements (B130, N132, N133), where the list scrolls, a delete is a mode and a deleted
+> entry can be put back unless the day was re-entered; and what cutting 2.3 and 2.4 turned up (B128, B129,
+> N128, N129), where the release commit names its files, its checks are one script, every set write is
+> ordered, and a change's layout is checked on the lines it touched.
 > Last reviewed against the code: 2026-10-15 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -26,8 +28,8 @@
 > (B121–B126) are fixed. **B127 shipped as 2.4** the same day, because the keyboard's black band was found in
 > use on the released 2.3 and the window's soft input mode was the cause. The 1.x store is left on the device
 > by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, *Next* holds six items
-> (B128, B129, N128, N129, N130, N131) and *Later* holds four (N134–N137). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
+> Checked against the changelog as well as the code: every shipped id has its entry, *Next* holds two items
+> (N130, N131) and *Later* holds four (N134–N137). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
 > it on a device — found eight
@@ -53,54 +55,11 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Six items in two groups. The first is what cutting 2.3 and 2.4 turned up: a release procedure that invites
-its own mistake, the verification it leaves to a human, a race left in a comment, and the cheaper answer to
-the formatting decision (B128, B129, N128, N129). The second is two candidates of one shape — a dimension the
-app already records and reduces before reading it back — put here as **alternatives, one to be taken rather
-than both** (N130, N131). Home's plan surface (N125–N127) and the measurements batch (B130, N132, N133) left
-this section for the changelog, and the decided-but-not-started work (N134–N137) sits in *Later*.
-
-### What cutting 2.3 and 2.4 turned up (B128, B129, N128, N129)
-
-- **The release procedure invites its own mistake** (B128). [RELEASING.md](RELEASING.md) step 3 is
-  `git add -A && git commit -m "release: …"`, and `-A` takes whatever is in the tree. The 2.4 round proved
-  it: a scratch directory of HTTP header and JSON dumps from checking the API went into the release commit,
-  and only reading the commit's own `--stat` caught it before the push. **Name the three files** —
-  `CHANGELOG.md ROADMAP.md version.properties` — which is also the complete set a release is allowed to
-  touch, so the command becomes a check as well as a command. A release that has to carry a fix stages that
-  file by name too; the invariant is that the release commit's content is *named* rather than swept.
-
-- **A known race is filed in a comment and nowhere else** (B129). B126 put logging under a mutex so two
-  sets cannot both compare against a session that has recorded neither. An **edit or a delete landing beside
-  a log** can still move the picture that log compared against, because only logging is ordered. It is low
-  severity and not the same defect: neither an edit nor a delete announces anything, so the end of it is a
-  comparison that was briefly stale rather than a false banner. It is queued because this repository's rule
-  is that a known gap gets an id rather than living in a KDoc — which is the only place it is today. The
-  decision to make when it is taken up is *what* to order: the set-writing paths together, or the comparison
-  against a snapshot the write path owns. What must not travel with the fix: the logging order itself, and
-  the reason this is not B126.
-
-- **The release verification is done by hand, twice now** (N128). Step 5's checks are
-  `aapt2 dump badging` for the version, `apksigner verify --print-certs` against the **previous release's**
-  certificate, `sha256sum`, and — after upload — re-downloading the published asset to confirm it is the
-  file the notes describe. Every one is mechanical, and the certificate is the one where a slip means every
-  user must uninstall and lose their history, because platform backup is off. A
-  `tools/verify-release.py` beside [`ci-check-instrumented.py`](tools/ci-check-instrumented.py) would take
-  the built APK and the previous tag and assert all four. It keeps the local half — badging, certificate,
-  hash — runnable **without a token or network**, so it also works from CI and from a machine that has
-  never seen the release before; the remote half (fetching the previous APK, the asset round-trip) is the
-  part that needs credentials, and is the part worth making opt-in.
-
-- **A diff-scoped formatting check answers B123 more cheaply than the reformat it rejected** (N129). B123
-  settled that formatting stays a review rule, because loading `detekt-formatting` reports ~600 findings
-  across 155 files and the alternatives were a repository-wide reformat or a set of `active: false` entries.
-  Its **revisit trigger** is a layout defect that ships because a review missed it where a tool would have
-  caught it. Running the ruleset over **only the files a change touches** meets that trigger without either
-  rejected alternative: it would have caught the malformed `BalanceRow` line, which sits inside the
-  120-column ceiling and is therefore silent to every rule wired today. What must not travel with it: the
-  decision itself (no wholesale reformat, no rule switched off), and `MaxLineLength`, which stays the
-  build's own ceiling. Rejected alternative: **new files only** — a rule that sees only additions misses the
-  edit that breaks an old file, which is exactly how the malformed line arrived.
+Two items, and they are alternatives rather than a batch: a candidate each of one shape — a dimension the app
+already records and reduces before reading it back — put here as **one to be taken rather than both** (N130,
+N131). What cutting 2.3 and 2.4 turned up (B128, B129, N128, N129), home's plan surface (N125–N127) and the
+measurements batch (B130, N132, N133) all left this section for the changelog, and the decided-but-not-started
+work (N134–N137) sits in *Later*.
 
 ### Candidates, one to be taken rather than both (N130, N131)
 
@@ -360,8 +319,9 @@ tag, and **N125–N127 shipped next** — today's plan as home's only answer, th
 none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds six items (B128, B129, N128, N129, N130, N131) and *Later* four
-(N134–N137); home's plan surface (N125–N127) and the measurements batch (B130, N132, N133) shipped.** N118
+***Next* holds two items (N130, N131) and *Later* four
+(N134–N137); home's plan surface (N125–N127), the measurements batch (B130, N132, N133) and what cutting
+2.3 and 2.4 turned up (B128, B129, N128, N129) shipped.** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
