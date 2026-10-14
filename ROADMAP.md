@@ -1,8 +1,8 @@
 # Workout — Roadmap
 
-> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds seven items — three changes to what
-> home's plan surface says (N125–N127) and four the release rounds turned up (B128, B129, N128, N129). Last
-> reviewed against the
+> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nine items — three changes to what
+> home's plan surface says (N125–N127), four the release rounds turned up (B128, B129, N128, N129), and two
+> candidates to choose between (N130, N131). Last reviewed against the
 > code: 2026-10-14 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -25,8 +25,8 @@
 > (B121–B126) are fixed. **B127 shipped as 2.4** the same day, because the keyboard's black band was found in
 > use on the released 2.3 and the window's soft input mode was the cause. The 1.x store is left on the device
 > by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds seven
-> items (N125–N127, B128, B129, N128, N129). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds nine
+> items (N125–N127, B128, B129, N128, N129, N130, N131). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
 > it on a device — found eight
@@ -52,10 +52,12 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Seven items in two groups. The first is what using 2.3 asked for — home's plan surface, read three ways
+Nine items in three groups. The first is what using 2.3 asked for — home's plan surface, read three ways
 (N125–N127). The second is what cutting 2.3 and 2.4 turned up: a release procedure that invites its own
 mistake, the verification it leaves to a human, a race left in a comment, and the cheaper answer to the
-formatting decision (B128, B129, N128, N129).
+formatting decision (B128, B129, N128, N129). The third is two candidates of one shape — a dimension the app
+already records and reduces before reading it back — put here as **alternatives, one to be taken rather than
+both** (N130, N131).
 
 ### Home's plan surface (N125–N127)
 
@@ -136,6 +138,36 @@ together, and N125 is the one that makes N126 and N127 necessary rather than opt
   decision itself (no wholesale reformat, no rule switched off), and `MaxLineLength`, which stays the
   build's own ceiling. Rejected alternative: **new files only** — a rule that sees only additions misses the
   edit that breaks an old file, which is exactly how the malformed line arrived.
+
+### Candidates, one to be taken rather than both (N130, N131)
+
+Both are the same shape of question — a dimension the app already records, reduces, and then reads back —
+and either is a real feature, so they are recorded as alternatives rather than as a batch. Neither should be
+started to keep the section full.
+
+- **The joint-pain trend averages away the joint and the side it is about** (N130). A rating records **which
+  joint, which side, how much** —
+  [`JointPain`](app/src/main/java/com/example/androidapp/domain/model/JointPain.kt) is a `Joint` with a
+  `Side` and a score, and its own KDoc says "knee 6" is half a sentence — and what is read back is a single
+  number: an average, as a workout trend and again as a per-exercise one (`TrendMetric.JOINT_PAIN`,
+  `ExerciseTrendMetric.JOINT_PAIN`), plus one name-and-number line in the finish review that names the worst
+  joint because it has room for one. So "left knee 6, right knee 2" charts as 4, and the question the
+  recorded shape exists to answer — **which** joint keeps hurting, on which side, after which movements — is
+  the one the average cannot. An earlier reading of this called it "no statistic at all"; that was **wrong**
+  and is corrected here, because it nearly went into this file: the statistic exists, and the missing thing
+  is the dimension. Shape deliberately left open — a series per joint, or a joint chosen beside the metric —
+  since the recorded value already carries both halves the average drops.
+
+- **The plan's target RPE never reaches the review** (N131).
+  [`PlanComparison`](app/src/main/java/com/example/androidapp/domain/model/PlanComparison.kt) compares weight,
+  assistance, reps and set counts; **effort is not in it**. The plan's `targetRpeHalves` is not dead — it
+  prefills the field and drives the progression decision — and the logged RPE has trends of its own, so
+  nothing here is unread either. What is missing is the *comparison*: "you prescribed RPE 8 and logged 9.5
+  across the board" is invisible. That is **N119's question asked of the one column it did not cover**, and
+  it is the last one. The difference to design around: the plan states **one effort per exercise** (N59)
+  while the log records one per **set**, so unlike weight and reps this comparison has to choose what to line
+  up against — the heaviest set's effort, the exercise's average, or the rating the lifter gave the exercise
+  afterwards. What must not travel with it: the prefill and the progression use of the target, which work.
 
 ## Parked — deliberately not planned
 
@@ -228,7 +260,7 @@ surface moving into the body, with the five defects a review of that batch found
 tag. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds seven items (N125–N127, B128, B129, N128, N129), the first group asked for in use.** N118
+***Next* holds nine items (N125–N127, B128, B129, N128, N129, N130, N131), the first group asked for in use.** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
