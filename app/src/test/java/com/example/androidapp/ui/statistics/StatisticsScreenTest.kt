@@ -17,6 +17,8 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseTrendMetric
+import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RangeKind
@@ -146,6 +148,27 @@ class StatisticsScreenTest {
             .performClick()
 
         assertThat(chosen).isEqualTo(volume)
+    }
+
+    @Test
+    fun thePicker_saysWhichGroup_eachSeriesIsIn() {
+        // ROADMAP N130: the list went flat once two series could share a label — *Left knee* is both a
+        // workout series (a session's ratings for the lift chosen) and a per-lift one (that lift's own
+        // points) — and the trigger shows the label alone, so without headings the two are the same word
+        // before and after choosing.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC).performClick()
+
+        MetricGroup.entries.forEach { group ->
+            composeTestRule.onNodeWithTag(TestTags.Statistics.metricGroup(group.name)).assertExists()
+        }
+        composeTestRule.onNodeWithTag(
+            TestTags.Statistics.metric(MetricKey.JointSite(Joint.KNEE, Side.LEFT).id),
+        ).assertExists()
+        composeTestRule.onNodeWithTag(
+            TestTags.Statistics.metric(MetricKey.ExerciseJointSite(Joint.KNEE, Side.LEFT).id),
+        ).assertExists()
     }
 
     @Test

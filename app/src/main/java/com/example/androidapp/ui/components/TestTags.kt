@@ -756,6 +756,17 @@ object TestTags {
         const val ENERGY_TARGET_CONFIRM = "statistics_energy_target_confirm"
         const val ENERGY_TARGET_CLEAR = "statistics_energy_target_clear"
 
+        /**
+         * One group's heading in the picker (ROADMAP N130), by the group's own name.
+         *
+         * The name rather than the enum, so this file keeps its one dependency direction: tags are read by
+         * every feature, and a shared file reaching into one of them is the dependency this avoids.
+         *
+         * The picker had no headings until two series could share a label, so this is what makes the two
+         * *Left knee* entries — a workout series and a per-lift one — tellable apart.
+         */
+        fun metricGroup(groupName: String) = "statistics_group_${groupName.lowercase()}"
+
         /** One period the moving average can be taken over. */
         fun movingAveragePeriod(period: Int) = "statistics_moving_average_$period"
 

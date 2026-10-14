@@ -309,15 +309,27 @@ private fun MetricPicker(selected: MetricKey, onSelectMetric: (MetricKey) -> Uni
         }
 
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-        MetricGroup.entries.forEach { group ->
-            MetricRegistry.entries.filter { it.group == group }.forEach { entry ->
-                DropdownMenuItem(
-                    text = { Text(entry.label()) },
-                    onClick = {
-                        open = false
-                        onSelectMetric(entry.key)
-                    },
-                    modifier = Modifier.testTag(TestTags.Statistics.metric(entry.key.id)),
+            MetricGroup.entries.forEach { group ->
+                // A heading per group, because two series can share a label (N130): *Left knee* is a
+                // workout series and a per-lift one, and without this the list offered the same words
+                // twice with nothing to tell them apart — including after choosing, since the trigger
+                // shows the label alone.
+                Text(
+                    text = stringResource(group.labelRes),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .testTag(TestTags.Statistics.metricGroup(group.name)),
+                )
+                MetricRegistry.entries.filter { it.group == group }.forEach { entry ->
+                    DropdownMenuItem(
+                        text = { Text(entry.label()) },
+                        onClick = {
+                            open = false
+                            onSelectMetric(entry.key)
+                        },
+                        modifier = Modifier.testTag(TestTags.Statistics.metric(entry.key.id)),
                     )
                 }
             }

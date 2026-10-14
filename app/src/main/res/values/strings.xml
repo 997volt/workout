@@ -617,6 +617,11 @@
     <string name="summary_shape_weight">%1$s at %2$s %3$s</string>
     <string name="summary_sets_only">Sets: %1$d</string>
     <string name="summary_not_performed">not performed</string>
+    <!-- N130: the picker's headings. Two series can share a label across groups now — "Left knee" is a
+         workout series and a per-lift one — so the list says which is which. -->
+    <string name="statistics_group_workout">Workout</string>
+    <string name="statistics_group_exercise">Per lift</string>
+    <string name="statistics_group_body">Body</string>
     <!-- N131: the plan names one effort per exercise, the log one per set, so the review compares
          the working sets' mean against the target. -->
     <string name="summary_rpe">RPE %1$s</string>

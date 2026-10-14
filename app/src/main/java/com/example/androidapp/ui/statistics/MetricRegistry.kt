@@ -20,7 +20,20 @@ import com.example.androidapp.domain.model.jointSiteLabel
 import com.example.androidapp.ui.measurements.MeasurementFormat
 
 /** The three groups the picker offers, in the order it offers them (ROADMAP N35). */
-enum class MetricGroup { WORKOUT, EXERCISE, BODY }
+enum class MetricGroup(
+    /**
+     * What the picker calls this group (ROADMAP N130).
+     *
+     * The headings became necessary when two series could share a label: *Left knee* is both a workout
+     * series (a session's rating for the lift chosen) and a per-lift one (that lift's own points), and a
+     * flat list of sixty items with no separation left the lifter picking between two identical words.
+     */
+    @StringRes val labelRes: Int,
+) {
+    WORKOUT(R.string.statistics_group_workout),
+    EXERCISE(R.string.statistics_group_exercise),
+    BODY(R.string.statistics_group_body),
+}
 
 /**
  * Which stored series an entry reads.
