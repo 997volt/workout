@@ -1,7 +1,7 @@
 # Workout — Roadmap
 
-> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one planned change (N124) with the two
-> defects a lifter found in use (B118, B119) queued beside it. Last reviewed against the
+> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one planned change (N124) with the one
+> defect a lifter found in use (B119) queued beside it. Last reviewed against the
 > code: 2026-10-13 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -20,7 +20,7 @@
 > entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
 > before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds one
-> planned change (N124) and the two defects a lifter found in use (B118, B119). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
+> planned change (N124) and the one defect a lifter found in use (B119). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
 > defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
 > Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five defects
 > (B104–B108); all five are fixed and recorded in [CHANGELOG.md](CHANGELOG.md). A line-by-line reading of the
@@ -43,9 +43,9 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-One planned change — one surface for where the next workout is — with the two defects a lifter found in use
-queued beside it. The defects were reported from real use rather than found in a reading, and the mechanism
-under each was read in the code while the reproduction is the lifter's.
+One planned change — one surface for where the next workout is — with the one defect a lifter found in use
+queued beside it. It was reported from real use rather than found in a reading, and the mechanism under it was
+read in the code while the reproduction is the lifter's.
 
 - **Where the next workout is becomes one surface, in the body** (N124). Home says it twice today — a dated
   *Today* card in the scrollable body and a *Next up* row in the start bar (P3.9, N55) — and one question asked
@@ -76,21 +76,6 @@ under each was read in the code while the reproduction is the lifter's.
   ([WorkoutsHomeScreenTest.kt](app/src/test/java/com/example/androidapp/ui/home/WorkoutsHomeScreenTest.kt)).
 
 ### Defects found in use
-
-- **A set is announced as a personal best over a better one logged in the same session** (B118). Finishing a
-  set can raise the PR banner while a heavier set at the same rep count is already in the workout. History is
-  read with this session **excluded** (`personalRecords(exerciseId, excludingSessionId = sessionId)`) and what
-  the session has logged is merged back in from **one row's** sets alone —
-  `PersonalRecords.from(row.sets)`
-  ([ActiveWorkoutViewModel.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutViewModel.kt))
-  — so a set on a **second row of the same movement** is in neither side: excluded from history, absent from
-  the merge, and a lighter set there beats nothing. The plan supports that shape deliberately — `planEntriesFor`
-  matches a movement named twice by occurrence (N54) — and a superset or a second block of the same lift
-  reaches it too. Within one row the merge is what B18 fixed, so the scope is **the movement in this session**
-  rather than the row. Two look-alikes are by design and must not go with the fix: a heavier **warm-up** or
-  rung above is not a record (B17, N79), and a heavier set at a **different rep count** is a different record
-  (N23). A second candidate on the same symptom, to rule in or out while reproducing: `onLogSet` reads
-  `uiState.value` once, so two sets logged faster than the state emits would merge a stale list.
 
 - **The keyboard covers the bottom of a running workout** (B119). With a set's fields in focus and the soft
   keyboard up, scrolling the workout leaves the lower fields **under the keyboard** rather than lifting them
@@ -194,7 +179,7 @@ records the day (N114), a program slot's ⋮ opening its template (N120), a plan
 each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading of that batch found
 (B109–B116) among them — and N122, the half-credit a movement's secondary muscles now take.
 
-***Next* holds N124 with the two defects a lifter found in use (B118, B119).** N118
+***Next* holds N124 with the one defect a lifter found in use (B119).** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled

@@ -59,6 +59,15 @@ unreleased.
   inherits the value instead of being asked for a second one. **Editing an existing later rung was broken the
   same way**, and is fixed with it.
 
+- **A personal best is no longer announced over a better set logged in the same session** (B118). History is
+  read with the live session excluded, and what the session had already done was merged back in from **the row
+  being written to** alone — so a set on a second row of the same movement was on neither side, and a lighter
+  set there was announced as a record. A plan may name a movement twice (N54), and a superset or a second block
+  of the same lift reaches the same shape. The comparison now covers **every set this session has logged for
+  the movement**, read from the repository rather than from the screen's state, so a set written a moment
+  earlier cannot be missed either. Two look-alikes stay by design: a heavier **warm-up** or rung above is not a
+  record (B17, N79), and a heavier set at a different rep count is a different record (N23).
+
 ## [2.2] — 2026-10-13 (versionCode 22)
 
 ### Changed

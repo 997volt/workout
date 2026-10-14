@@ -761,32 +761,8 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onLogSet(sessionExerciseId: String, edit: SetEdit) {
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId } ?: return
         viewModelScope.launch {
-            // Read *before* the set is written, and excluding this session (ROADMAP N23): a
-            // record is about beating history, and the set being logged is not history yet.
-            // A failed read means no claim either way rather than a missed record.
-            val records = when (
-                val read = workoutRepository.personalRecords(
-                    exerciseId = row.exerciseId,
-                    excludingSessionId = uiState.value.sessionId,
-                )
-            ) {
-                is DataResult.Success -> read.data
-                is DataResult.Failure -> null
-            }
-            // History *and* what this session has already logged: without the second half the
-            // same record is announced on every set that repeats it (found by a test).
-            val against = records?.mergedWith(
-                PersonalRecords.from(
-                    row.sets.map {
-                        PerformedSetSpec(
-                            role = it.setType,
-                            weightGrams = it.weightGrams,
-                            assistanceGrams = it.assistanceGrams,
-                            reps = it.reps,
-                        )
-                    },
-                ),
-            )
+            // Read *before* the set is written (ROADMAP N23, B118): the set being logged is not history.
+            val against = recordsAgainst(row)
             _personalRecord.value = null
 
             val result = workoutRepository.logSet(
@@ -843,6 +819,53 @@ class ActiveWorkoutViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    /**
+     * What the set about to be logged is judged against: history, plus every set this session has already
+     * logged **for the movement** (ROADMAP N23, B118).
+     *
+     * History is read with the live session **excluded** — the set being logged is not history, and neither
+     * is any other set of this workout — so what the session has already done is the other half of the
+     * comparison, and without it the same record is announced on every set that repeats it. That half is
+     * every row of the movement rather than the row being written to: a plan may name a movement twice
+     * (N54), and a set on the second row is history for the first (B118).
+     *
+     * Read from the repository rather than from the screen's state, because a state that has not caught up
+     * with the set just written would do the same thing one set in. Null when the history read failed, which
+     * leaves the screen making no claim either way rather than a false one.
+     */
+    private suspend fun recordsAgainst(row: SessionExerciseRow): PersonalRecords? {
+        val records = when (
+            val read = workoutRepository.personalRecords(
+                exerciseId = row.exerciseId,
+                excludingSessionId = uiState.value.sessionId,
+            )
+        ) {
+            is DataResult.Success -> read.data
+            is DataResult.Failure -> null
+        } ?: return null
+
+        val movementRowIds = uiState.value.exercises
+            .filter { it.exerciseId == row.exerciseId }
+            .mapTo(mutableSetOf()) { it.id }
+        val loggedForMovement = uiState.value.sessionId
+            ?.let { workoutRepository.observeSets(it).first() }
+            .orEmpty()
+            .filter { it.sessionExerciseId in movementRowIds }
+
+        return records.mergedWith(
+            PersonalRecords.from(
+                loggedForMovement.map {
+                    PerformedSetSpec(
+                        role = it.setType,
+                        weightGrams = it.weightGrams,
+                        assistanceGrams = it.assistanceGrams,
+                        reps = it.reps,
+                    )
+                },
+            ),
+        )
     }
 
     /**

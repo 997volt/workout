@@ -2259,6 +2259,35 @@ class ActiveWorkoutViewModelTest {
         assertNull("the second set repeats the first, and repeats are not records", viewModel.personalRecord.value)
     }
 
+    @Test
+    fun aRecord_isNotClaimedOver_aBetterSetOnAnotherRowOfTheSameMovement() = runTest(dispatcher) {
+        // B118: history is read with this session **excluded**, so what the session has already logged is
+        // the other half of the comparison — and a plan may name a movement twice (N54), which puts a
+        // second row's sets on the same movement. Merging only the row being written to left those sets on
+        // neither side, so a lighter set there beat nothing and was announced.
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val rows = viewModel.uiState.value.exercises
+        assertEquals(2, rows.size)
+
+        // A heavy set on the first row …
+        viewModel.onLogSet(rows[0].id, offeredSet(viewModel, reps = 8, weightGrams = 100_000L))
+        settle()
+
+        // … and a lighter one at the same rep count on the second: no record, because this movement has
+        // already done better in this session.
+        viewModel.onLogSet(rows[1].id, offeredSet(viewModel, reps = 8, weightGrams = 90_000L))
+        settle()
+
+        assertNull(viewModel.personalRecord.value)
+    }
+
 
     @Test
     fun pairing_putsBothExercisesInOneGroup() = runTest(dispatcher) {
