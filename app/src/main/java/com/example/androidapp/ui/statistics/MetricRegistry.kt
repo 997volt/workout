@@ -1,19 +1,23 @@
 package com.example.androidapp.ui.statistics
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.ExerciseTrendMetric
+import com.example.androidapp.domain.model.JOINT_SITES
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SORE_MUSCLE_GROUPS
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.TenPointScale
 import com.example.androidapp.domain.model.TrendMetric
 import com.example.androidapp.domain.model.asRating
 import com.example.androidapp.domain.model.asTenthsOrWhole
+import com.example.androidapp.domain.model.jointSiteLabel
 import com.example.androidapp.ui.measurements.MeasurementFormat
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
-import com.example.androidapp.domain.model.MuscleGroup
-import com.example.androidapp.domain.model.SORE_MUSCLE_GROUPS
 
 /** The three groups the picker offers, in the order it offers them (ROADMAP N35). */
 enum class MetricGroup { WORKOUT, EXERCISE, BODY }
@@ -41,6 +45,20 @@ sealed interface MetricKey {
     data class Soreness(val muscle: MuscleGroup) : MetricKey
 
     /**
+     * One joint site's pain, a workout series the exercise ratings state (ROADMAP N130).
+     *
+     * Per **site** — the joint *and* the side — rather than one series per joint: "knee 6" is half a
+     * sentence (N63), and a series that pooled left and right would draw the same average N130 exists to
+     * remove. The record already carries both halves, one row per picked site, so this reads what is
+     * stored rather than inventing a dimension.
+     *
+     * A workout series rather than a body one, because joint pain is recorded against an **exercise in a
+     * session** (N63): its readings are dated by the workout that produced them, exactly like RPE and
+     * muscle feel, and [ExerciseTrendPoint.jointPainBySite] answers the same question for one lift.
+     */
+    data class JointSite(val joint: Joint, val side: Side) : MetricKey
+
+    /**
      * A stable name for this series.
      *
      * Built from the enums' own names rather than hand-written, so a test tag, a stored preference and a
@@ -54,6 +72,7 @@ sealed interface MetricKey {
             is Body -> "BODY:${metric.name}"
             is Tape -> "TAPE:${site.name}"
             is Soreness -> "SORE:${muscle.name}"
+            is JointSite -> "JOINT:${joint.name}:${side.name}"
         }
 
     /**
@@ -287,6 +306,10 @@ object MetricRegistry {
         )
         TapeSite.entries.forEach { add(tapeEntry(it)) }
         SORE_MUSCLE_GROUPS.forEach { add(sorenessEntry(it)) }
+        // N130: one series per joint *site*, so the picker offers "Left knee" beside "Right knee" rather
+        // than an average that is about neither. A workout group, because the readings come from the
+        // ratings on a session's exercises.
+        JOINT_SITES.forEach { (joint, side) -> add(jointPainEntry(joint, side)) }
     }
 
     /** The entry for a key. Every key has one, which a test asserts in both directions. */
@@ -396,6 +419,24 @@ private fun tapeEntry(site: TapeSite) = MetricEntry(
     labelRes = tapeLabel(site),
     unit = MetricUnit.CENTIMETRES,
     isBars = false,
+)
+
+/**
+ * One joint site's pain (ROADMAP N130).
+ *
+ * The label is the taxonomy's, through the same [jointSiteLabel] the picker and the rating rows use, so
+ * the chart says "Left knee" with the words the body does — and a central joint says "Neck" rather than
+ * "Centre neck". **More is worse**, like the overall joint-pain series and for the same reason, and a
+ * rating keeps the scale's ends (N39).
+ */
+private fun jointPainEntry(joint: Joint, side: Side) = MetricEntry(
+    key = MetricKey.JointSite(joint, side),
+    group = MetricGroup.WORKOUT,
+    labelText = jointSiteLabel(joint, side),
+    unit = MetricUnit.RATING,
+    isBars = false,
+    higherIsBetter = false,
+    fixedRange = RATING_SCALE,
 )
 
 private fun tapeLabel(site: TapeSite): Int = when (site) {

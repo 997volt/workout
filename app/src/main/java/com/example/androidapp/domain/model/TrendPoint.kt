@@ -18,7 +18,24 @@ data class TrendPoint(
     val averageRpe: Double? = null,
     val averageMuscleFeel: Double? = null,
     val averageJointPain: Double? = null,
+    /**
+     * Each joint site's own worst score in this workout, keyed by [jointSiteKey] (ROADMAP N130).
+     *
+     * The dimension [averageJointPain] drops. A rating records which joint, which side and how much, and
+     * a session's ratings rolled into one average is a number about no particular joint — "left knee 6,
+     * right knee 2" reads 4, which is neither. A site absent from this map is one this workout did not
+     * name, which is a **gap rather than a zero**: the series reads null there, the way an unmeasured
+     * tape site does, so a recovered knee is not drawn as a measurement of nothing.
+     *
+     * The worst score per site, for N63's reason: the same knee aching through three movements is one
+     * sore knee, not three readings to average into a milder one.
+     */
+    val jointPainBySite: Map<String, Double> = emptyMap(),
 )
+
+/** The value one joint site this workout recorded, or null when it named none (ROADMAP N130). */
+fun TrendPoint.jointPainAt(joint: Joint, side: Side): Double? =
+    jointPainBySite[jointSiteKey(joint, side)]
 
 /** The three series the trends screen draws (ROADMAP N13). */
 enum class TrendMetric {

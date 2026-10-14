@@ -1,12 +1,15 @@
 package com.example.androidapp.ui.statistics
 
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import com.example.androidapp.domain.model.ExerciseTrendMetric
+import com.example.androidapp.domain.model.JOINT_SITES
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.SORE_MUSCLE_GROUPS
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.TrendMetric
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
-import com.example.androidapp.domain.model.SORE_MUSCLE_GROUPS
 
 /**
  * The registry covers every series, and says the truth about each (ROADMAP N35).
@@ -43,10 +46,16 @@ class MetricRegistryTest {
                 .that(entries.count { it.key == MetricKey.Soreness(muscle) })
                 .isEqualTo(1)
         }
+        JOINT_SITES.forEach { (joint, side) ->
+            assertWithMessage("every joint site a rating can name is a series (N130)")
+                .that(entries.count { it.key == MetricKey.JointSite(joint, side) })
+                .isEqualTo(1)
+        }
 
-        // Three ratings, eight exercise metrics, three body metrics, seven tape sites and one soreness
-        // series per selectable muscle (N118).
-        assertThat(entries.size).isEqualTo(21 + SORE_MUSCLE_GROUPS.size)
+        // Three ratings, eight exercise metrics, three body metrics, seven tape sites, one soreness
+        // series per selectable muscle (N118), and one joint-pain series per site a rating may name
+        // (N130) — the site being the joint *and* the side.
+        assertThat(entries.size).isEqualTo(21 + SORE_MUSCLE_GROUPS.size + JOINT_SITES.size)
     }
 
     @Test
@@ -174,27 +183,47 @@ class MetricRegistryTest {
     }
 
     @Test
+    fun aJointSiteSeries_isNamedTheWayTheBodySaysIt() {
+        // ROADMAP N130: the label is the taxonomy's, through the same `jointSiteLabel` the rating rows
+        // use, so the chart and the picker cannot drift into two names for one knee — and a central joint
+        // says "Neck" rather than a "Centre neck" nobody says (N63).
+        assertThat(MetricRegistry.entryFor(MetricKey.JointSite(Joint.KNEE, Side.LEFT)).labelText)
+            .isEqualTo("Left knee")
+        assertThat(MetricRegistry.entryFor(MetricKey.JointSite(Joint.SHOULDER, Side.RIGHT)).labelText)
+            .isEqualTo("Right shoulder")
+        assertThat(MetricRegistry.entryFor(MetricKey.JointSite(Joint.NECK, Side.CENTRE)).labelText)
+            .isEqualTo("Neck")
+    }
+
+    @Test
     fun onlyAssistanceAndPain_areBetterWhenLower() {
         val lower = entries.filterNot { it.higherIsBetter }.map { it.key }.toSet()
 
         // Soreness joins them (N118): more of it is worse, which is the one thing that differs from every
         // other body series. The set is written out rather than counted, so a metric that quietly flipped
         // would have to be added here on purpose.
-        assertWithMessage("assistance, joint pain and soreness are where less is better").that(lower).isEqualTo(setOf(
+        // Every per-site joint series joins them (N130): it reads the same rating the overall one does, so
+        // it points the same way, and a metric that quietly flipped would have to be added here on purpose.
+        assertWithMessage("assistance, joint pain and soreness are where less is better").that(lower).isEqualTo(
+            setOf(
                 MetricKey.Exercise(ExerciseTrendMetric.ASSISTANCE),
                 MetricKey.Workout(TrendMetric.JOINT_PAIN),
                 MetricKey.Exercise(ExerciseTrendMetric.JOINT_PAIN),
-            ) + SORE_MUSCLE_GROUPS.map { MetricKey.Soreness(it) }.toSet())
+            ) + SORE_MUSCLE_GROUPS.map { MetricKey.Soreness(it) }.toSet() +
+                JOINT_SITES.map { (joint, side) -> MetricKey.JointSite(joint, side) }.toSet()
+        )
     }
 
     @Test
     fun countLikeSeriesAreBars_andTheRestAreLines() {
         val bars = entries.filter { it.isBars }.map { it.key }.toSet()
 
-        assertWithMessage("a quantity is bars; a position on a scale is a line").that(bars).isEqualTo(setOf(
+        assertWithMessage("a quantity is bars; a position on a scale is a line").that(bars).isEqualTo(
+            setOf(
                 MetricKey.Exercise(ExerciseTrendMetric.VOLUME),
                 MetricKey.Exercise(ExerciseTrendMetric.TOTAL_REPS),
-            ))
+            )
+        )
     }
 
     @Test

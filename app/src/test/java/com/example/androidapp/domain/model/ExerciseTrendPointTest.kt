@@ -1,9 +1,9 @@
 package com.example.androidapp.domain.model
 
-import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.Instant
 
 /**
  * The per-exercise series maths (ROADMAP N17).
@@ -218,24 +218,59 @@ class ExerciseTrendPointTest {
         assertEquals(true, ExerciseTrendMetric.VOLUME.higherIsBetter)
     }
 
+    @Test
+    fun aSitesScore_isThatSessionsWorst_whenAFamilyFeedsSeveralExercisesIn() {
+        // ROADMAP N130, and the head case (N97): a family logs two exercises in one session, and the same
+        // knee is rated in both. The site's reading is the worse of the two — the sore knee — rather than
+        // an average that would report it as milder than either rating, or whichever row happened to
+        // arrive first.
+        val points = rows(
+            row(exercise = "bench", weight = 100_000L, reps = 5),
+            row(exercise = "incline", weight = 80_000L, reps = 5),
+        ).toExerciseTrendPoints(
+            jointPainBySite = mapOf(
+                "bench" to mapOf(jointSiteKey(Joint.KNEE, Side.LEFT) to 7.0),
+                "incline" to mapOf(jointSiteKey(Joint.KNEE, Side.LEFT) to 3.0),
+            ),
+        )
+
+        assertEquals(7.0, points.single().jointPainAt(Joint.KNEE, Side.LEFT)!!, 0.0001)
+    }
+
+    @Test
+    fun aSiteNobodyNamed_isNull_ratherThanTheOverallWorst() {
+        // The distinction this whole id turns on: the session reported a right knee and nothing else, so
+        // the left knee has no reading. Falling back to the overall worst — or to zero — would draw a
+        // series for a joint nobody said anything about.
+        val points = rows(row(weight = 100_000L, reps = 5), jointPain = 8).toExerciseTrendPoints(
+            jointPainBySite = mapOf(
+                "exercise-1" to mapOf(jointSiteKey(Joint.KNEE, Side.RIGHT) to 8.0),
+            ),
+        )
+
+        assertEquals(8.0, points.single().jointPainAt(Joint.KNEE, Side.RIGHT)!!, 0.0001)
+        assertNull("the left knee was never mentioned", points.single().jointPainAt(Joint.KNEE, Side.LEFT))
+        assertEquals("and the overall figure is untouched", 8.0, points.single().averageJointPain!!, 0.0001)
+    }
+
     private fun rows(
         vararg sets: SetRow,
         muscleFeel: Int? = null,
         jointPain: Int? = null,
     ): List<ExerciseTrendRow> = sets.map {
-            ExerciseTrendRow(
-                sessionId = it.session,
-                sessionExerciseId = it.exercise,
-                startedAt = Instant.ofEpochMilli(it.startedAt),
-                muscleFeel = it.muscleFeel ?: muscleFeel,
-                jointPain = it.jointPain ?: jointPain,
-                weightGrams = it.weight,
-                reps = it.reps,
-                rpeHalves = it.rpeHalves,
-                setType = it.type,
-                assistanceGrams = it.assistance,
-            )
-        }
+        ExerciseTrendRow(
+            sessionId = it.session,
+            sessionExerciseId = it.exercise,
+            startedAt = Instant.ofEpochMilli(it.startedAt),
+            muscleFeel = it.muscleFeel ?: muscleFeel,
+            jointPain = it.jointPain ?: jointPain,
+            weightGrams = it.weight,
+            reps = it.reps,
+            rpeHalves = it.rpeHalves,
+            setType = it.type,
+            assistanceGrams = it.assistance,
+        )
+    }
 
     private fun row(
         session: String = "s1",

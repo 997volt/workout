@@ -90,6 +90,66 @@ interface TrendsDao {
     fun observeFeelTrend(limit: Int): Flow<List<FeelTrendRow>>
 
     /**
+     * Each joint site's **worst** score per finished workout, newest first (ROADMAP N130).
+     *
+     * The per-site counterpart of the worst-joint number above, and the read that gives joint pain back
+     * the dimension the average dropped: a rating records which joint, which side and how much, and
+     * rolling "left knee 6, right knee 2" into one 4 is a number about neither knee.
+     *
+     * **`MAX` within the session, not `AVG`**, for N63's reason one level up: a knee that ached through
+     * three movements is one sore knee, and averaging the three would report it as milder than any of
+     * them. `joint` and `side` are grouped by their **stored names**, because that is what the converter
+     * writes and what [jointSiteKey] is built from — grouping by anything else would need a second
+     * vocabulary for the same fact.
+     *
+     * One read for every site rather than a query per series: the caller builds the map once and each
+     * joint-pain series indexes into it, which keeps the query count flat as the picker grows.
+     */
+    @Query(
+        """
+        SELECT ws.id AS sessionId,
+               ws.startedAt AS startedAt,
+               j.joint AS joint,
+               j.side AS side,
+               MAX(j.score) AS score
+        FROM workout_sessions ws
+        JOIN session_exercises se ON se.sessionId = ws.id AND se.deletedAt IS NULL
+        JOIN session_exercise_joints j
+          ON j.sessionExerciseId = se.id AND j.deletedAt IS NULL
+        WHERE ws.deletedAt IS NULL AND ws.finishedAt IS NOT NULL
+        GROUP BY ws.id, j.joint, j.side
+        ORDER BY ws.startedAt DESC
+        LIMIT :limit
+        """,
+    )
+    fun observeJointPainBySite(limit: Int): Flow<List<JointPainSiteRow>>
+
+    /**
+     * Each joint site's worst score per session exercise (ROADMAP N130).
+     *
+     * The per-lift counterpart of the read above, and it keys on the *exercise* row rather than the
+     * session: [observeExerciseTrendRows] already carries that identity (B97), so the two join up on
+     * [JointPainSiteRow.sessionExerciseId] without a second grouping decision here.
+     */
+    @Query(
+        """
+        SELECT se.sessionId AS sessionId,
+               se.id AS sessionExerciseId,
+               ws.startedAt AS startedAt,
+               j.joint AS joint,
+               j.side AS side,
+               MAX(j.score) AS score
+        FROM session_exercises se
+        JOIN workout_sessions ws ON ws.id = se.sessionId
+        JOIN session_exercise_joints j
+          ON j.sessionExerciseId = se.id AND j.deletedAt IS NULL
+        WHERE se.deletedAt IS NULL AND ws.deletedAt IS NULL AND ws.finishedAt IS NOT NULL
+        GROUP BY se.id, j.joint, j.side
+        """,
+    )
+    fun observeJointPainByExercise(): Flow<List<JointPainSiteRow>>
+
+    /**
      * The finished sessions that recorded any of [exerciseIds], one row per logged set (ROADMAP N17, N97).
      *
      * A list rather than one id because a **head** reads as one number: a category over the movements filed
@@ -166,6 +226,25 @@ data class FeelTrendRow(
     val startedAt: Long,
     val averageMuscleFeel: Double?,
     val averageJointPain: Double?,
+)
+
+/**
+ * One (joint, side) site's worst score in one finished workout or one session exercise (ROADMAP N130).
+ *
+ * The joint and side arrive as their **stored names**, which is what the converter writes; the
+ * repository turns them into [Joint]/[Side] with `valueOf`, the same way it does for a set's role, so a
+ * name that is not a value of the enum is a data problem rather than a silently different site.
+ *
+ * [sessionExerciseId] is null for the workout-level read and the exercise's own row for the per-lift
+ * one — the two queries differ only in what they group by.
+ */
+data class JointPainSiteRow(
+    val sessionId: String,
+    val sessionExerciseId: String?,
+    val startedAt: Long,
+    val joint: String,
+    val side: String,
+    val score: Int,
 )
 
 /**

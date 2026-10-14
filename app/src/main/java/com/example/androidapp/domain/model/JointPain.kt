@@ -90,3 +90,13 @@ fun jointSiteLabel(joint: Joint, side: Side): String =
 /** The label a picked joint is shown under, e.g. `Left knee` or `Neck`. */
 val JointPain.label: String
     get() = jointSiteLabel(joint, side)
+
+/**
+ * One joint site's score in a point, or null when that session did not name it (ROADMAP N130).
+ *
+ * Null rather than zero, and null rather than the point's overall worst: a session that reported a right
+ * knee and nothing else says **nothing** about the left one, and a zero would draw a recovered knee into
+ * a series that never had a reading. [ExerciseTrendPoint.jointPainBySite] is keyed by [jointSiteKey].
+ */
+fun ExerciseTrendPoint.jointPainAt(joint: Joint, side: Side): Double? =
+    jointPainBySite[jointSiteKey(joint, side)]

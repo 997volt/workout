@@ -43,6 +43,24 @@ class JointPainTest {
     }
 
     @Test
+    fun oneSitesReading_isTheSitesOwn_orNullWhenTheSessionDidNotNameIt() {
+        // ROADMAP N130. The overall figure is 9 and neither knee is a 9: a series per site reads the site,
+        // and a site the workout did not name is a gap rather than the overall worst or a zero.
+        val point = TrendPoint(
+            startedAt = java.time.Instant.ofEpochMilli(1_000L),
+            averageJointPain = 9.0,
+            jointPainBySite = mapOf(
+                jointSiteKey(Joint.KNEE, Side.LEFT) to 9.0,
+                jointSiteKey(Joint.KNEE, Side.RIGHT) to 4.0,
+            ),
+        )
+
+        assertEquals(9.0, point.jointPainAt(Joint.KNEE, Side.LEFT)!!, 0.0001)
+        assertEquals(4.0, point.jointPainAt(Joint.KNEE, Side.RIGHT)!!, 0.0001)
+        assertThat(point.jointPainAt(Joint.HIP, Side.LEFT)).isNull()
+    }
+
+    @Test
     fun theKeyIsBuiltFromTheEnumNames_notOrdinals() {
         // Enums are stored by name (ROADMAP N63), and the key is what a test tag and a callback use.
         assertEquals("LOWER_BACK_CENTRE", jointSiteKey(Joint.LOWER_BACK, Side.CENTRE))

@@ -4,6 +4,7 @@ import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.ExerciseTrendPoint
 import com.example.androidapp.domain.model.TrendPoint
 import com.example.androidapp.domain.model.at
+import com.example.androidapp.domain.model.jointPainAt
 import java.time.Instant
 
 /**
@@ -53,6 +54,12 @@ fun metricSeries(
                 it.measuredAt,
                 it.soreMuscles.firstOrNull { sore -> sore.muscle == key.muscle }?.score?.toDouble(),
             )
+        }
+        // N130: the dimension the average drops. Null where the session did not name *this* site, which is
+        // the difference between "the left knee was fine that day" and "nobody said" — the same gap the
+        // tape sites and the sore list leave.
+        is MetricKey.JointSite -> workouts.map {
+            MetricReading(it.startedAt, it.jointPainAt(key.joint, key.side))
         }
     }.sortedBy { it.at },
 )

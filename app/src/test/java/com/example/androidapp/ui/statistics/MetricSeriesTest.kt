@@ -1,18 +1,21 @@
 package com.example.androidapp.ui.statistics
 
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.ExerciseTrendPoint
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.TrendMetric
 import com.example.androidapp.domain.model.TrendPoint
-import java.time.Instant
+import com.example.androidapp.domain.model.jointSiteKey
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
-import com.example.androidapp.domain.model.MeasurementKind
-import com.example.androidapp.domain.model.MuscleGroup
-import com.example.androidapp.domain.model.SoreMuscle
+import java.time.Instant
 
 /**
  * Reading a series out of whatever the metric is stored in (ROADMAP N35).
@@ -37,6 +40,32 @@ class MetricSeriesTest {
 
         assertThat(series.readings.map { it.value }).isEqualTo(listOf(7.5, 8.0))
         assertThat(series.readings.map { it.at }).isEqualTo(listOf(first, second))
+    }
+
+    @Test
+    fun aJointSiteSeriesReadsItsOwnSite_notTheSessionsAverage() {
+        // ROADMAP N130: the dimension the average drops. One session, two knees, and each series takes
+        // only its own — a chart for the left knee must not be drawn from the 4 that is about neither.
+        val series = metricSeries(
+            key = MetricKey.JointSite(Joint.KNEE, Side.LEFT),
+            workouts = listOf(
+                TrendPoint(
+                    startedAt = first,
+                    averageJointPain = 6.0,
+                    jointPainBySite = mapOf(
+                        jointSiteKey(Joint.KNEE, Side.LEFT) to 6.0,
+                        jointSiteKey(Joint.KNEE, Side.RIGHT) to 2.0,
+                    ),
+                ),
+                TrendPoint(
+                    startedAt = second,
+                    averageJointPain = 2.0,
+                    jointPainBySite = mapOf(jointSiteKey(Joint.KNEE, Side.RIGHT) to 2.0),
+                ),
+            ),
+        )
+
+        assertThat(series.readings.map { it.value }).isEqualTo(listOf(6.0, null))
     }
 
     @Test
@@ -65,24 +94,36 @@ class MetricSeriesTest {
             leastAssistanceGrams = 20_000L,
         )
 
-        assertThat(metricSeries(MetricKey.Exercise(ExerciseTrendMetric.HEAVIEST_SET), exercises = listOf(point))
-                .readings.single().value).isEqualTo(102_500.0)
-        assertThat(metricSeries(MetricKey.Exercise(ExerciseTrendMetric.TOTAL_REPS), exercises = listOf(point))
-                .readings.single().value).isEqualTo(40.0)
-        assertThat(metricSeries(MetricKey.Exercise(ExerciseTrendMetric.ASSISTANCE), exercises = listOf(point))
-                .readings.single().value).isEqualTo(20_000.0)
+        assertThat(
+            metricSeries(MetricKey.Exercise(ExerciseTrendMetric.HEAVIEST_SET), exercises = listOf(point))
+                .readings.single().value
+        ).isEqualTo(102_500.0)
+        assertThat(
+            metricSeries(MetricKey.Exercise(ExerciseTrendMetric.TOTAL_REPS), exercises = listOf(point))
+                .readings.single().value
+        ).isEqualTo(40.0)
+        assertThat(
+            metricSeries(MetricKey.Exercise(ExerciseTrendMetric.ASSISTANCE), exercises = listOf(point))
+                .readings.single().value
+        ).isEqualTo(20_000.0)
     }
 
     @Test
     fun theBodyMetricsReadTheirOwnFields() {
         val entry = measurement(weight = 82_400L, bodyFat = 183, muscle = 421)
 
-        assertThat(metricSeries(MetricKey.Body(BodyMetric.WEIGHT), measurements = listOf(entry))
-                .readings.single().value).isEqualTo(82_400.0)
-        assertThat(metricSeries(MetricKey.Body(BodyMetric.BODY_FAT), measurements = listOf(entry))
-                .readings.single().value).isEqualTo(183.0)
-        assertThat(metricSeries(MetricKey.Body(BodyMetric.MUSCLE), measurements = listOf(entry))
-                .readings.single().value).isEqualTo(421.0)
+        assertThat(
+            metricSeries(MetricKey.Body(BodyMetric.WEIGHT), measurements = listOf(entry))
+                .readings.single().value
+        ).isEqualTo(82_400.0)
+        assertThat(
+            metricSeries(MetricKey.Body(BodyMetric.BODY_FAT), measurements = listOf(entry))
+                .readings.single().value
+        ).isEqualTo(183.0)
+        assertThat(
+            metricSeries(MetricKey.Body(BodyMetric.MUSCLE), measurements = listOf(entry))
+                .readings.single().value
+        ).isEqualTo(421.0)
     }
 
     @Test

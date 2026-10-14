@@ -35,7 +35,26 @@ data class ExerciseTrendPoint(
     val leastAssistanceGrams: Long? = null,
     val averageRpe: Double? = null,
     val averageMuscleFeel: Double? = null,
+    /**
+     * The **worst** joint this session's work reported, whichever it was (ROADMAP N63).
+     *
+     * Kept beside [jointPainBySite] rather than replaced by it: this is the one number that says "this
+     * session hurt", and the sites say *where*. Averaging the two sides of a knee into one figure is
+     * exactly what N130 fixed, and dropping the overall figure would lose the question it still answers.
+     */
     val averageJointPain: Double? = null,
+    /**
+     * Each joint site's own worst score in this session, keyed by [jointSiteKey] (ROADMAP N130).
+     *
+     * **The dimension the average drops.** A rating records which joint, which side, how much — and
+     * "left knee 6, right knee 2" charting as one 4 is a number about neither knee. A site absent from
+     * this map is one this session did not name, which is a gap rather than a zero: it reads as null,
+     * the same way an unmeasured tape site does.
+     *
+     * The **worst** rather than a mean over this session's exercises, for N63's reason: the same joint
+     * aching through three movements is one sore knee, not three readings to average.
+     */
+    val jointPainBySite: Map<String, Double> = emptyMap(),
 )
 
 /** The series a per-exercise screen can draw (ROADMAP N17). */
@@ -150,14 +169,23 @@ data class ExerciseTrendRow(
 /**
  * Groups the rows by session, in the order they arrived (oldest first), and computes
  * each session's series.
+ *
+ * [jointPainBySite] is passed in rather than derived from [rows] because the rows carry only the worst
+ * joint's *score*, not which joint it was: the per-site read is its own query, and this function stays
+ * the place the arithmetic lives.
  */
-fun List<ExerciseTrendRow>.toExerciseTrendPoints(): List<ExerciseTrendPoint> =
+fun List<ExerciseTrendRow>.toExerciseTrendPoints(
+    jointPainBySite: Map<String, Map<String, Double>> = emptyMap(),
+): List<ExerciseTrendPoint> =
     groupBy { it.sessionId }
         .map { (_, rows) -> rows.first().let { it.startedAt to rows } }
         .sortedBy { it.first }
-        .map { (startedAt, rows) -> rows.toPoint(startedAt) }
+        .map { (startedAt, rows) -> rows.toPoint(startedAt, jointPainBySite) }
 
-private fun List<ExerciseTrendRow>.toPoint(startedAt: Instant): ExerciseTrendPoint {
+private fun List<ExerciseTrendRow>.toPoint(
+    startedAt: Instant,
+    jointPainBySite: Map<String, Map<String, Double>>,
+): ExerciseTrendPoint {
     // A warm-up is not a working set: it must not become the heaviest set on the chart.
     val working = filter { it.weightGrams != null && it.setType != SetType.WARMUP }
     // And a set with no added weight is not a load: bodyweight and assisted work carry
@@ -168,6 +196,12 @@ private fun List<ExerciseTrendRow>.toPoint(startedAt: Instant): ExerciseTrendPoi
     // so `first()` reported whichever row sorted first, and averaging the rows would weight a movement by how
     // many sets it happened to log. The ratings are the family's, averaged over the rows that state one.
     val perExercise = distinctBy { it.sessionExerciseId }
+    // A head is several exercises in one session, so a site's score in this session is the worst of them —
+    // the same rule N63 applies within one exercise, one level up (ROADMAP N130).
+    val sites = perExercise
+        .flatMap { jointPainBySite[it.sessionExerciseId].orEmpty().entries }
+        .groupBy({ it.key }, { it.value })
+        .mapValues { (_, scores) -> scores.max() }
 
     return ExerciseTrendPoint(
         startedAt = startedAt,
@@ -183,6 +217,7 @@ private fun List<ExerciseTrendRow>.toPoint(startedAt: Instant): ExerciseTrendPoi
         averageRpe = averageRpeOf(this),
         averageMuscleFeel = perExercise.mapNotNull { it.muscleFeel }.averageOrNull(),
         averageJointPain = perExercise.mapNotNull { it.jointPain }.averageOrNull(),
+        jointPainBySite = sites,
     )
 }
 

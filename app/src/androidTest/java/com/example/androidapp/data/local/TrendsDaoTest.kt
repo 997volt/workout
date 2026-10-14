@@ -9,6 +9,7 @@ import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.jointSiteKey
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -204,6 +205,85 @@ class TrendsDaoTest {
     }
 
     @Test
+    fun eachJointSite_isItsOwnSeries_notOneAverageOfSides() = runTest {
+        // ROADMAP N130: the read that gives joint pain back the dimension the average drops. This
+        // workout's one number is 6 — the worst of the three — and the lifter never said 6 about either
+        // knee. This read keeps left and right apart, so each series can be read on its own.
+        val sessionId = "s1"
+        database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
+        exercise(sessionId, "se1")
+        joint("se1", Joint.KNEE, Side.LEFT, 6, position = 0)
+        joint("se1", Joint.KNEE, Side.RIGHT, 2, position = 1)
+        joint("se1", Joint.NECK, Side.CENTRE, 4, position = 2)
+
+        // Keyed the way the repository keys it, so the test and the series cannot disagree about what
+        // "one site" means.
+        val rows = dao.observeJointPainBySite(limit = 10).first()
+            .associateBy { jointSiteKey(Joint.valueOf(it.joint), Side.valueOf(it.side)) }
+
+        assertEquals(6, rows[jointSiteKey(Joint.KNEE, Side.LEFT)]?.score)
+        assertEquals(2, rows[jointSiteKey(Joint.KNEE, Side.RIGHT)]?.score)
+        assertEquals(4, rows[jointSiteKey(Joint.NECK, Side.CENTRE)]?.score)
+    }
+
+    @Test
+    fun aSitesScore_isTheWorstAcrossTheSessionsExercises() = runTest {
+        // The same rule N63 applies within one exercise, one level up: a knee that ached through two
+        // movements is one sore knee. Averaging them would report the second movement as milder than
+        // the pain the lifter actually recorded.
+        val sessionId = "s1"
+        database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
+        exercise(sessionId, "se1")
+        exercise(sessionId, "se2")
+        joint("se1", Joint.KNEE, Side.LEFT, 7, position = 0)
+        joint("se2", Joint.KNEE, Side.LEFT, 3, position = 0)
+
+        val row = dao.observeJointPainBySite(limit = 10).first().single()
+
+        assertEquals(7, row.score)
+    }
+
+    @Test
+    fun aSitesScore_perExercise_isThatExercisesWorst_ofIt() = runTest {
+        // The per-lift read keeps the exercise rows apart, because N17's series is about one lift: the
+        // knee that hurt during the squat says nothing about the knee during the bench press.
+        val sessionId = "s1"
+        database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
+        exercise(sessionId, "se1")
+        exercise(sessionId, "se2")
+        joint("se1", Joint.KNEE, Side.LEFT, 7, position = 0)
+        joint("se2", Joint.KNEE, Side.LEFT, 3, position = 0)
+
+        val rows = dao.observeJointPainByExercise().first().associateBy { it.sessionExerciseId }
+
+        assertEquals(7, rows["se1"]?.score)
+        assertEquals(3, rows["se2"]?.score)
+    }
+
+    @Test
+    fun aHiddenOrUnfinishedSessionsJoints_areNotASeries() = runTest {
+        // The same two filters every other trend applies: a replaced list is hidden rather than gone
+        // (N63), and a session nobody finished is not history.
+        val open = "open"
+        database.workoutDao().insertSession(session(id = open, startedAt = 3_000L, finishedAt = null))
+        exercise(open, "open-se")
+        joint("open-se", Joint.KNEE, Side.LEFT, 9, position = 0)
+
+        val sessionId = "s1"
+        database.workoutDao().insertSession(session(id = sessionId, startedAt = 1_000L))
+        exercise(sessionId, "se1")
+        joint("se1", Joint.KNEE, Side.LEFT, 8, position = 0, deleted = true)
+        joint("se1", Joint.ANKLE, Side.RIGHT, 2, position = 1)
+
+        val rows = dao.observeJointPainBySite(limit = 10).first()
+
+        assertEquals(
+            listOf(jointSiteKey(Joint.ANKLE, Side.RIGHT)),
+            rows.map { jointSiteKey(Joint.valueOf(it.joint), Side.valueOf(it.side)) },
+        )
+    }
+
+    @Test
     fun theWindow_keepsTheNewestWorkouts() = runTest {
         (1..12).forEach { index ->
             seedWorkout(sessionId = "s$index", startedAt = index * 1_000L, rpes = listOf(7))
@@ -227,9 +307,9 @@ class TrendsDaoTest {
             session(id = sessionId, startedAt = startedAt, finishedAt = finishedAt, deleted = deleted),
         )
         if (rpes.isEmpty()) return
-        exercise(sessionId, "${sessionId}-se")
+        exercise(sessionId, "$sessionId-se")
         rpes.forEachIndexed { index, rpeHalves ->
-            database.workoutDao().insertSet(set("$sessionId-set$index", "${sessionId}-se", rpeHalves = rpeHalves))
+            database.workoutDao().insertSet(set("$sessionId-set$index", "$sessionId-se", rpeHalves = rpeHalves))
         }
     }
 

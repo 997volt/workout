@@ -1,35 +1,35 @@
 package com.example.androidapp.ui.statistics
 
-import com.example.androidapp.domain.DataError
-import java.io.IOException
-import androidx.compose.ui.test.onNodeWithText
-import com.google.common.truth.Truth.assertThat
-import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTextClearance
-import com.example.androidapp.domain.model.MuscleGroup
-import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.Exercise
-import com.example.androidapp.domain.model.Equipment
-import com.example.androidapp.domain.model.RowKind
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseTrendMetric
+import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RangeKind
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
-import java.time.Instant
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
+import java.time.Instant
 
 /** What the Statistics screen offers (ROADMAP N35). */
 @RunWith(AndroidJUnit4::class)
@@ -124,14 +124,26 @@ class StatisticsScreenTest {
         // and this is about the picker showing what the registry holds.
         val volume = MetricKey.Exercise(ExerciseTrendMetric.VOLUME)
         composeTestRule.onNodeWithTag(TestTags.Statistics.metric(volume.id)).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(MetricKey.Workout(
-            com.example.androidapp.domain.model.TrendMetric.RPE,
-        ).id)).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(MetricKey.Tape(
-            com.example.androidapp.domain.model.TapeSite.WAIST,
-        ).id)).assertExists()
+        composeTestRule.onNodeWithTag(
+            TestTags.Statistics.metric(
+                MetricKey.Workout(
+                    com.example.androidapp.domain.model.TrendMetric.RPE,
+                ).id
+            )
+        ).assertExists()
+        composeTestRule.onNodeWithTag(
+            TestTags.Statistics.metric(
+                MetricKey.Tape(
+                    com.example.androidapp.domain.model.TapeSite.WAIST,
+                ).id
+            )
+        ).assertExists()
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(volume.id)).performClick()
+        // Scrolled to rather than clicked where it sits: the registry has grown past a screenful, so the
+        // picker scrolls and an off-screen item is a node that exists but takes no click (N130).
+        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(volume.id))
+            .performScrollTo()
+            .performClick()
 
         assertThat(chosen).isEqualTo(volume)
     }
@@ -174,7 +186,10 @@ class StatisticsScreenTest {
         var called = false
         setScreen(
             state = StatisticsUiState(isLoading = false, series = weightSeries(), goal = 80_000.0),
-            onSetGoal = { called = true; reported = it },
+            onSetGoal = {
+                called = true
+                reported = it
+            },
         )
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_SET).performScrollTo()
