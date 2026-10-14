@@ -6,10 +6,12 @@ import com.example.androidapp.R
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
@@ -55,6 +57,9 @@ class MeasurementsScreenTest {
         error: DataError? = null,
         onDismissError: () -> Unit = {},
         initialAdd: MeasurementKind? = null,
+        pendingUndo: BodyMeasurement? = null,
+        onUndo: () -> Unit = {},
+        onDismissUndo: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -66,6 +71,9 @@ class MeasurementsScreenTest {
                     error = error,
                     onDismissError = onDismissError,
                     initialAdd = initialAdd,
+                    pendingUndo = pendingUndo,
+                    onUndo = onUndo,
+                    onDismissUndo = onDismissUndo,
                 )
             }
         }
@@ -106,21 +114,95 @@ class MeasurementsScreenTest {
     }
 
     @Test
+    fun aLongList_canBeScrolledToItsOldestEntry() {
+        // B130: the list was a `Column` that could not scroll, so the first screenful was all there was —
+        // a lifter with a few weeks of daily entries could not see, edit or delete anything older.
+        val stale = (1..30).map { day ->
+            BodyMeasurement(
+                id = "m$day",
+                measuredAt = Instant.parse("2026-10-02T08:00:00Z").minusSeconds(day * 86_400L),
+                kind = MeasurementKind.DAILY,
+                weightGrams = 82_000L,
+            )
+        }
+        setScreen(state = MeasurementsUiState(isLoading = false, entries = stale))
+
+        // The last entry is the oldest, which is the one a non-scrolling list could never reach.
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.LIST)
+            .performScrollToNode(hasTestTag(TestTags.Measurements.delete("m30")))
+        composeTestRule.onNodeWithTag(TestTags.Measurements.delete("m30")).assertIsDisplayed()
+    }
+
+    @Test
     fun withNothingRecorded_itSaysSo() {
         setScreen(state = MeasurementsUiState(isLoading = false))
 
-        // The empty state is the whole point of the list being empty rather than blank.
+        // The empty state is the whole point of the list being empty rather than blank — and it is an
+        // item of the list now (B130), so it scrolls with everything else.
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EMPTY).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.Measurements.ADD).assertIsEnabled()
     }
 
     @Test
-    fun anEntryCanBeDeleted_byItsOwnId() {
+    fun anEntryCanBeDeleted_byItsOwnId_onceTheModeIsEntered() {
+        // N132: the delete is behind the toggle, so the same button that was on every row of a reading
+        // screen is now two deliberate taps — enter the mode, then delete.
         var deleted: String? = null
         setScreen(onDelete = { deleted = it })
 
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT).performClick()
         composeTestRule.onNodeWithTag(TestTags.Measurements.delete("m1")).performClick()
 
         assertEquals("m1", deleted)
+    }
+
+    @Test
+    fun theDelete_isNotOnTheScreenTheLifterOpenedToRead() {
+        // The complaint N132 answers: a delete button on every row of a screen opened to read or add, one
+        // tap from a fact that cannot be re-derived.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.delete("m1")).assertDoesNotExist()
+    }
+
+    @Test
+    fun leavingTheMode_takesTheDeleteAwayAgain() {
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.delete("m1")).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.delete("m1")).assertDoesNotExist()
+    }
+
+    @Test
+    fun theAddButton_isOutOfTheWayWhileDeleting() {
+        // The default view is scroll and add, the edit mode is delete (N132): the two are not offered at
+        // once, so a finger aiming at a row cannot land on the button that writes a new one.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.ADD).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.ADD).assertDoesNotExist()
+    }
+
+    @Test
+    fun aDeletedEntry_isOfferedBack_andUndoTakesIt() {
+        // N133: a snackbar naming what went, with *Undo* — the shape the workout and template screens use.
+        var undone = false
+        setScreen(pendingUndo = today, onUndo = { undone = true })
+
+        composeTestRule.onNodeWithText(
+            ApplicationProvider.getApplicationContext<Context>().getString(R.string.measurements_deleted),
+        ).assertExists()
+        composeTestRule.onNodeWithText(
+            ApplicationProvider.getApplicationContext<Context>().getString(R.string.measurements_undo),
+        ).performClick()
+
+        assertTrue("the snackbar's action is the undo", undone)
     }
 
     @Test

@@ -87,6 +87,76 @@ class MeasurementsViewModelTest {
         assertNull("dismissing clears it, so the snackbar is not left owed", viewModel.error.value)
     }
 
+    @Test
+    fun deleting_offersTheEntryBack() = runTest(dispatcher) {
+        // N133: what the snackbar's Undo puts back is the entry itself, read before the write — after it
+        // the row is not in the list, and the message has to name what went.
+        entries.value = listOf(entry("m1", weight = 82_000L))
+        val viewModel = MeasurementsViewModel(FakeMeasurementRepository(entries))
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onDelete("m1")
+        advanceUntilIdle()
+
+        assertEquals("m1", viewModel.pendingUndo.value?.id)
+    }
+
+    @Test
+    fun undo_restoresTheEntry_itOffered() = runTest(dispatcher) {
+        entries.value = listOf(entry("m1", weight = 82_000L))
+        val repository = FakeMeasurementRepository(entries)
+        val viewModel = MeasurementsViewModel(repository)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onDelete("m1")
+        advanceUntilIdle()
+        viewModel.onUndoDelete()
+        advanceUntilIdle()
+
+        assertEquals("the undo reached the row the delete took", "m1", repository.restored)
+        assertNull("and the offer is taken rather than left standing", viewModel.pendingUndo.value)
+    }
+
+    @Test
+    fun aRefusedUndo_saysWhy_ratherThanFailingSilently() = runTest(dispatcher) {
+        // The collision N133 names: the day was re-entered, so the restore is refused with a sentence.
+        entries.value = listOf(entry("m1", weight = 82_000L))
+        val repository = FakeMeasurementRepository(entries)
+        repository.failNextRestore = true
+        val viewModel = MeasurementsViewModel(repository)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onDelete("m1")
+        advanceUntilIdle()
+        viewModel.onUndoDelete()
+        advanceUntilIdle()
+
+        assertEquals(
+            "the refusal is the sentence, which the snackbar shows",
+            DataError.Invalid("That day has a newer daily measurement."),
+            viewModel.error.value,
+        )
+    }
+
+    @Test
+    fun dismissingTheUndo_dropsTheOffer_withoutWritingAnything() = runTest(dispatcher) {
+        entries.value = listOf(entry("m1", weight = 82_000L))
+        val repository = FakeMeasurementRepository(entries)
+        val viewModel = MeasurementsViewModel(repository)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onDelete("m1")
+        advanceUntilIdle()
+        viewModel.onDismissUndo()
+
+        assertNull(viewModel.pendingUndo.value)
+        assertNull("taking the message is not a restore", repository.restored)
+    }
+
     private fun entry(id: String, weight: Long) = BodyMeasurement(
         id = id,
         measuredAt = Instant.parse("2026-10-02T08:00:00Z"),
@@ -100,6 +170,13 @@ private class FakeMeasurementRepository(
 ) : MeasurementRepository {
 
     var failNextSave = false
+    var failNextRestore = false
+
+    /** What the repository was asked to delete, so a test can read the write back. */
+    var deleted: String? = null
+
+    /** What the repository was asked to restore (ROADMAP N133). */
+    var restored: String? = null
 
     override fun observeAll(): Flow<List<BodyMeasurement>> = entries
 
@@ -110,7 +187,16 @@ private class FakeMeasurementRepository(
     }
 
     override suspend fun delete(id: String): DataResult<Unit> {
+        deleted = id
         entries.value = entries.value.filterNot { it.id == id }
+        return DataResult.Success(Unit)
+    }
+
+    override suspend fun restore(id: String): DataResult<Unit> {
+        restored = id
+        if (failNextRestore) {
+            return DataResult.Failure(DataError.Invalid("That day has a newer daily measurement."))
+        }
         return DataResult.Success(Unit)
     }
 }

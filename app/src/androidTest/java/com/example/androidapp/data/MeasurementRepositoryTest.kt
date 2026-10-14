@@ -38,7 +38,17 @@ class MeasurementRepositoryTest {
     private lateinit var database: WorkoutDatabase
     private lateinit var repository: RoomMeasurementRepository
 
-    private val clock = TimeSource { Instant.parse("2026-10-02T09:00:00Z") }
+    /**
+     * A clock that advances a second per call (ROADMAP N133).
+     *
+     * The suite's writes used to share one instant, which is fine until an undo has to tell "before the
+     * delete" from "after it" — and the whole refusal is that comparison. One second per call is also
+     * what the real clock does, so the suite exercises the ordering the device will.
+     */
+    private var now = Instant.parse("2026-10-02T09:00:00Z")
+    private val clock = TimeSource {
+        now.also { now = it.plusSeconds(1) }
+    }
 
     /** Morning and evening of the same local day, whatever zone the device is in. */
     private val today = LocalDate.now(ZoneId.systemDefault())
@@ -188,6 +198,68 @@ class MeasurementRepositoryTest {
             "the rows hang off the entry, so they go with it",
             emptyList<MeasurementSoreMuscleEntity>(),
             database.measurementSoreMuscleDao().observeAll().first(),
+        )
+    }
+
+    @Test
+    fun aDeletedEntry_comesBackWithItsSoreRows() = runTest {
+        // N133: the delete is soft, so the way back is clearing `deletedAt` — the same mechanism N90's
+        // restore uses — and the rows the delete hid return with the entry that owns them.
+        repository.save(
+            entry(
+                at = localHour(8),
+                weightGrams = 82_000L,
+                soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 8)),
+            ),
+        )
+        val saved = repository.observeAll().first().single()
+        repository.delete(saved.id)
+
+        assertTrue(repository.restore(saved.id) is DataResult.Success)
+
+        val restored = repository.observeAll().first().single()
+        assertEquals(saved.id, restored.id)
+        assertEquals(82_000L, restored.weightGrams)
+        assertEquals(
+            "the sore list comes back whole, not empty",
+            listOf(SoreMuscle(MuscleGroup.QUADS, 8)),
+            restored.soreMuscles,
+        )
+    }
+
+    @Test
+    fun restore_isRefused_whenTheDayHasBeenReEnteredSince() = runTest {
+        // A measurement's identity is its day and its kind (N32, N113), so an undo that landed on a day
+        // re-entered since would silently replace the newer reading — the one thing an undo must not do.
+        repository.save(entry(at = localHour(8), weightGrams = 82_000L))
+        val deleted = repository.observeAll().first().single()
+        repository.delete(deleted.id)
+        repository.save(entry(at = localHour(20), weightGrams = 81_000L))
+
+        val failure = repository.restore(deleted.id) as DataResult.Failure
+
+        assertTrue("the refusal is a sentence, not a storage error", failure.error is DataError.Invalid)
+        assertEquals(
+            "and the newer reading is left exactly as the lifter wrote it",
+            81_000L,
+            repository.observeAll().first().single().weightGrams,
+        )
+    }
+
+    @Test
+    fun restore_isRefused_onlyForTheSameKindAsTheReEntry() = runTest {
+        // The identity an undo has to respect is the day **and** the kind (N32, N113), so a tape entry
+        // written after the daily one went is a different record: it does not occupy the daily one's
+        // place, and the undo is not refused on its account.
+        repository.save(entry(at = localHour(8), weightGrams = 82_000L))
+        val deleted = repository.observeAll().first().single()
+        repository.delete(deleted.id)
+        repository.save(entry(at = localHour(20), kind = MeasurementKind.TAPE, waistMm = 860L))
+
+        assertTrue(repository.restore(deleted.id) is DataResult.Success)
+        assertEquals(
+            setOf(MeasurementKind.DAILY, MeasurementKind.TAPE),
+            repository.observeAll().first().map { it.kind }.toSet(),
         )
     }
 

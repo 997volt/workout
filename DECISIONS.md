@@ -12,7 +12,7 @@ longer case against the rejected option — is in
 [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md), one entry per feature id. This file states
 the rule; that one argues it.
 
-> Reviewed against the code: 2026-10-11. Bump the date when this file is checked, the way
+> Reviewed against the code: 2026-10-15. Bump the date when this file is checked, the way
 > [ROADMAP.md](ROADMAP.md) does, so the next reader knows how old these rules are.
 
 ## Data model
@@ -569,6 +569,41 @@ the rule; that one argues it.
   same preference and the same backup field, under a key derived from the metric's own (`MetricKey.rateId`). A
   rate is **signed** where a reading never is, so it parses and formats through its own pair of functions: the
   reading's rule refuses a negative, which is right for a weight and wrong for a direction.
+
+## Measurements
+
+- **The measurements list scrolls, and its empty sentence is an item of it** (B130). It was a `Column` with
+  `fillMaxSize()` and a `forEach`, which is the one list in the app that predates the pattern every other
+  screen has: the first screenful was all there was, so a lifter with a few weeks of daily entries could not
+  see, edit or delete anything older, and the add button floated over whichever row happened to be last. It
+  is a `LazyColumn` with the empty sentence as a **keyed item** rather than a sibling above the rows — an
+  empty list has no rows to hang a sentence off, and the two states are mutually exclusive anyway.
+  ([evidence](DECISIONS-EVIDENCE.md#b130-n132-n133))
+
+- **Deleting a measurement is a mode, not a button on every row** (N132). A measurement is the one thing here
+  that cannot be re-derived: a set can be logged again and a plan re-authored, but a weight on a morning is a
+  fact about the body. So the default view is what the screen is opened for — **scroll and add** — and the
+  destructive action lives behind one explicit toggle that **says which mode the list is in** and leaves
+  again, while the add button is out of the way for as long as it is on. What did not travel with it: the
+  add path with its two kinds (N113), the empty sentence, and the mode is **not** a way to change a reading —
+  correcting a measurement's numbers is a different question this id does not ask. Rejected: a confirmation
+  dialog on the existing per-row button. That is the guard for an act with **no way back at all** (deleting a
+  workout, a template, an exercise), and it answers the wrong problem — the complaint is a delete button on
+  every row of a reading screen, and a dialog leaves it exactly there while adding an interruption to every
+  deliberate one.
+
+- **A deleted measurement comes back through the soft delete, unless the day was re-entered** (N133). The
+  delete already set `deletedAt` on the entry and on its sore rows, so the way back is clearing that field
+  rather than re-inserting anything — N90's mechanism, and its correlation rule with it: `deletedAt` is the
+  identity of the write that hid the row, so an undo reaches **its own** removal and cannot resurrect an
+  entry deleted deliberately a moment earlier. The shape on screen is N7's: a snackbar naming what went, with
+  *Undo*, held by the ViewModel until the message is taken and offered one at a time. What is *not* N90's
+  shape is the collision, because a measurement's identity is **its day and its kind** (N32, N113): if the
+  day has been re-entered since, the restore would have to overwrite a newer reading the lifter wrote, so it
+  is **refused with a sentence** (`DataError.Invalid`) instead. "Re-entered" is read from `createdAt`, not
+  `updatedAt` — an edit moves the latter without the day ever being re-entered.
+  ([evidence](DECISIONS-EVIDENCE.md#b130-n132-n133))
+
 ## Programs
 
 - **A slot's row acts through one menu, and its template is read-only from there** (N72, extending

@@ -2,9 +2,12 @@ package com.example.androidapp.ui.measurements
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -20,14 +23,18 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -49,13 +56,13 @@ import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.at
 import com.example.androidapp.domain.model.statesSomething
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.DEFAULT_SCORED_PICK
+import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.ScoredPick
 import com.example.androidapp.ui.components.ScoredPickStrings
 import com.example.androidapp.ui.components.ScoredPicksEditor
 import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.AppTextButton
-import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.history.HistoryFormat
 import java.time.Instant
@@ -72,6 +79,7 @@ fun MeasurementsRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val pendingUndo by viewModel.pendingUndo.collectAsStateWithLifecycle()
     MeasurementsScreen(
         state = state,
         onSave = viewModel::onSave,
@@ -82,6 +90,10 @@ fun MeasurementsRoute(
         error = error,
         onDismissError = viewModel::onDismissError,
         initialAdd = if (openDaily) MeasurementKind.DAILY else null,
+        // The way back out of a delete (N133), held by the ViewModel until the message is taken.
+        pendingUndo = pendingUndo,
+        onUndo = viewModel::onUndoDelete,
+        onDismissUndo = viewModel::onDismissUndo,
     )
 }
 
@@ -103,13 +115,21 @@ fun MeasurementsScreen(
      * rotation keeps that dismissal rather than reopening what the lifter just closed.
      */
     initialAdd: MeasurementKind? = null,
+    /** The entry a delete just took, awaiting the snackbar's undo, or null (ROADMAP N133). */
+    pendingUndo: BodyMeasurement? = null,
+    onUndo: () -> Unit = {},
+    onDismissUndo: () -> Unit = {},
 ) {
     // Two steps rather than one: the record is two records, so *Add* asks which before it opens a form
     // (N113). Null is "no form open"; `choosing` is the question.
     var choosing by remember { mutableStateOf(false) }
     var adding by rememberSaveable { mutableStateOf(initialAdd) }
+    // Whether the list is in its edit mode, the one that offers a delete (N132). Saveable so a rotation
+    // does not drop the lifter out of the mode they deliberately entered, or worse, back into it.
+    var editing by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(error?.let { dataErrorMessage(it) }, snackbarHostState, onDismissError)
+    ShowDeletedMeasurementUndo(pendingUndo, snackbarHostState, onUndo, onDismissUndo)
 
     if (choosing) {
         AddMeasurementDialog(
@@ -134,52 +154,101 @@ fun MeasurementsScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.measurements_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.nav_back),
-                        )
-                    }
-                },
-            )
-        },
+        topBar = { MeasurementsTopBar(editing = editing, onToggleEditing = { editing = !editing }, onBack = onBack) },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { choosing = true },
-                modifier = Modifier.testTag(TestTags.Measurements.ADD),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = stringResource(R.string.measurements_add),
-                )
+            // The default view is scroll and add, the edit mode is delete (N132): while deleting, the
+            // one control that would write a new entry is out of the way.
+            if (!editing) {
+                FloatingActionButton(
+                    onClick = { choosing = true },
+                    modifier = Modifier.testTag(TestTags.Measurements.ADD),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.measurements_add),
+                    )
+                }
             }
         },
     ) { innerPadding ->
-        MeasurementList(state = state, onDelete = onDelete, modifier = Modifier.padding(innerPadding))
+        MeasurementList(
+            state = state,
+            editing = editing,
+            onDelete = onDelete,
+            modifier = Modifier.padding(innerPadding),
+        )
     }
 }
 
-/** The list under the app bar, with the sentence an empty one says (N32, N113). */
+/**
+ * The bar over the list: back, the title, and the one control that changes the mode (ROADMAP N132).
+ *
+ * The mode lives in the button rather than beside it: one control that says which state the list is in
+ * and changes it, so entering and leaving are one tap.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MeasurementsTopBar(editing: Boolean, onToggleEditing: () -> Unit, onBack: () -> Unit) {
+    TopAppBar(
+        title = { Text(stringResource(R.string.measurements_title)) },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.nav_back),
+                )
+            }
+        },
+        actions = {
+            AppTextButton(
+                onClick = onToggleEditing,
+                modifier = Modifier.testTag(TestTags.Measurements.EDIT),
+            ) {
+                Text(
+                    stringResource(
+                        if (editing) R.string.measurements_editing else R.string.measurements_edit,
+                    ),
+                )
+            }
+        },
+    )
+}
+
+/**
+ * The list under the app bar, with the sentence an empty one says (N32, N113).
+ *
+ * A `LazyColumn` with the empty sentence as an item rather than a `Column` of rows (B130): a `Column`
+ * measured every entry and could not scroll, so a few weeks of daily entries were unreachable — and the
+ * add button floated over whichever row happened to be last. The empty state is an *item* because an
+ * empty list has no rows to hang a sentence off, and the two are mutually exclusive anyway.
+ */
 @Composable
 private fun MeasurementList(
     state: MeasurementsUiState,
+    editing: Boolean,
     onDelete: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize().testTag(TestTags.Measurements.LIST),
+        // The last row must clear the add button, which floats over the list's foot.
+        contentPadding = PaddingValues(bottom = LIST_FOOT_CLEARANCE),
+    ) {
         if (state.entries.isEmpty() && !state.isLoading) {
-            Text(
-                text = stringResource(R.string.measurements_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(16.dp),
-            )
+            item(key = EMPTY_KEY) {
+                Text(
+                    text = stringResource(R.string.measurements_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag(TestTags.Measurements.EMPTY).padding(16.dp),
+                )
+            }
         }
-        state.entries.forEach { entry ->
-            MeasurementRow(entry = entry, onDelete = { onDelete(entry.id) })
+        items(items = state.entries, key = { it.id }) { entry ->
+            MeasurementRow(
+                entry = entry,
+                editing = editing,
+                onDelete = { onDelete(entry.id) },
+            )
         }
     }
 }
@@ -233,22 +302,68 @@ private fun AddMeasurementDialog(
  * rule does not apply: a measurement is not performed anywhere in particular, and the day it belongs to
  * is already the local day the repository keyed it on. The kind leads the supporting line, so a row says
  * which of the two records it is (N113).
+ *
+ * **The delete is only drawn in the edit mode** (N132). A measurement is the one thing here that cannot
+ * be reconstructed — a set can be logged again, a plan re-authored, but a weight on a morning is a fact
+ * about the body — so the destructive action leaves the screen the lifter opened to read or add, rather
+ * than sitting on every row of it.
  */
 @Composable
-private fun MeasurementRow(entry: BodyMeasurement, onDelete: () -> Unit) {
+private fun MeasurementRow(entry: BodyMeasurement, editing: Boolean, onDelete: () -> Unit) {
     ListItem(
         headlineContent = { Text(HistoryFormat.date(entry.measuredAt, zone = ZoneId.systemDefault())) },
         supportingContent = { Text(summary(entry)) },
         trailingContent = {
-            AppTextButton(
-                onClick = onDelete,
-                modifier = Modifier.testTag(TestTags.Measurements.delete(entry.id)),
-            ) {
-                Text(stringResource(R.string.measurements_delete))
+            if (editing) {
+                AppTextButton(
+                    onClick = onDelete,
+                    modifier = Modifier.testTag(TestTags.Measurements.delete(entry.id)),
+                ) {
+                    Text(stringResource(R.string.measurements_delete))
+                }
             }
         },
     )
 }
+
+/**
+ * Undo for an entry a delete just took (ROADMAP N133).
+ *
+ * A soft delete is what makes the way back possible, and the snackbar naming what went is the shape the
+ * workout screen's deleted set already uses (N7, B3, N90) — not a modal "are you sure?" in front of a
+ * reversible act, which is the interruption that shape exists to avoid. One undo at a time: the
+ * ViewModel holds the single [pendingUndo], so the offer is that entry rather than a queue.
+ */
+@Composable
+private fun ShowDeletedMeasurementUndo(
+    pendingUndo: BodyMeasurement?,
+    hostState: SnackbarHostState,
+    onUndo: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val message = stringResource(R.string.measurements_deleted)
+    val undoLabel = stringResource(R.string.measurements_undo)
+    val currentOnUndo by rememberUpdatedState(onUndo)
+    val currentOnDismiss by rememberUpdatedState(onDismiss)
+
+    // Held as a State so the effect's key stays the removed entry, the workout screen's rule (B3): a
+    // second delete of the same row must still offer its own undo.
+    LaunchedEffect(pendingUndo) {
+        if (pendingUndo == null) return@LaunchedEffect
+        val result = hostState.showSnackbar(
+            message = message,
+            actionLabel = undoLabel,
+            duration = SnackbarDuration.Short,
+        )
+        if (result == SnackbarResult.ActionPerformed) currentOnUndo() else currentOnDismiss()
+    }
+}
+
+/** The empty sentence is a keyed item of a list that may hold none (B130). */
+private const val EMPTY_KEY = "measurements_empty"
+
+/** Clearance for the add button, which floats over the list's last row. */
+private val LIST_FOOT_CLEARANCE = 88.dp
 
 /** What an entry reads as: which record it is, then whichever of its own numbers were taken (N113). */
 @Composable

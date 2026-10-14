@@ -48,6 +48,27 @@ unreleased.
   gestures (N55). **This is what kept that dialog**: the next-up rows were its only entry point, so N125
   without N127 would have deleted the preview rather than moved it.
 
+- **Deleting a measurement is a mode, and it can be taken back** (N132, N133). Every row of the measurements
+  list carried its own *Delete*, one tap from a screen opened to **read or add** — and a measurement is the
+  one thing here that cannot be re-derived: a set can be logged again and a plan re-authored, but a weight on
+  a morning is a fact about the body that no later write recovers. The default view is **scroll and add**
+  again, and deletion lives behind one *Edit* toggle that becomes *Done* and takes the add button out of the
+  way while it is on. **A delete now says what went and offers *Undo***, in the snackbar shape the workout and
+  template screens already use (N7, B3, N90): the delete was always a soft one, so the way back is clearing
+  `deletedAt` — on the entry and on the sore rows the same write hid — rather than re-inserting anything. The
+  one case it refuses, because a measurement's identity is **its day and its kind** (N32, N113): if the day
+  has been re-entered since, the undo would have to replace a newer reading the lifter wrote, so it says so
+  instead. Rejected: a confirmation dialog on the per-row button — that is the guard for an act with no way
+  back at all, and it would have left the delete on every row while interrupting every deliberate one.
+
+### Fixed
+
+- **The measurements list scrolls** (B130). The list was a `Column` that ran `forEach` over the entries, so
+  the first screenful was all there was: a lifter with a few weeks of daily entries could not see, edit or
+  delete anything older, and the add button floated over whichever row happened to be last. It is the
+  `LazyColumn` every other screen already has, with the empty sentence as an item of the list rather than a
+  sibling above rows that may not exist.
+
 ## [2.4] — 2026-10-14 (versionCode 24)
 
 ### Fixed

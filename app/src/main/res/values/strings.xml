@@ -230,6 +230,12 @@
     <string name="detail_saved_as_plan">Saved as a plan</string>
     <string name="detail_open_plan">Open plan</string>
     <string name="measurements_delete">Delete</string>
+    <!-- N132: one control that says which mode the list is in, and changes it. -->
+    <string name="measurements_edit">Edit</string>
+    <string name="measurements_editing">Done</string>
+    <!-- N133: the snackbar naming what went, with the way back. -->
+    <string name="measurements_deleted">Measurement deleted</string>
+    <string name="measurements_undo">Undo</string>
     <string name="tab_workouts">Workouts</string>
     <string name="tab_history">History</string>
     <string name="tab_statistics">Statistics</string>

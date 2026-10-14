@@ -79,6 +79,47 @@ interface MeasurementDao {
     suspend fun find(id: String): MeasurementEntity?
 
     /**
+     * One row by id **whether or not it is hidden** (ROADMAP N133).
+     *
+     * [find] deliberately cannot see a soft-deleted row, and an undo acts on exactly such a row. The
+     * `deletedAt` it returns is also the identity of the one write that hid it, which is what the
+     * restore keys on rather than trusting an id alone.
+     */
+    @Query("SELECT * FROM measurements WHERE id = :id")
+    suspend fun findIncludingDeleted(id: String): MeasurementEntity?
+
+    /**
+     * The **live** entry of this kind on this day that was written at or after [at] (ROADMAP N133).
+     *
+     * The guard an undo needs: a measurement's identity is its day and its kind (N32, N113), so a day
+     * that has been re-entered since the delete must not be overwritten by the restore. `createdAt >=` rather
+     * than `>`, because a save and a delete can share a millisecond — and a re-entered day is exactly the
+     * case the undo has to refuse, so the boundary belongs on the refusing side.
+     */
+    @Query(
+        """
+        SELECT * FROM measurements
+        WHERE measuredAt >= :from AND measuredAt < :to AND deletedAt IS NULL
+            AND kind = :kind AND createdAt >= :at
+        ORDER BY createdAt ASC LIMIT 1
+        """,
+    )
+    suspend fun findLiveWrittenSince(from: Long, to: Long, kind: String, at: Long): MeasurementEntity?
+
+    /**
+     * Un-hides one row, and only one that is still hidden (ROADMAP N133).
+     *
+     * `deletedAt = :hiddenAt` is the same rule N90's restore follows: it reaches the removal that hid
+     * this row and nothing else, so an undo cannot resurrect a later deliberate delete. Rows updated: 0
+     * means it was not hidden by that write, so the caller reports a missing row rather than a success.
+     */
+    @Query(
+        "UPDATE measurements SET deletedAt = NULL, updatedAt = :now " +
+            "WHERE id = :id AND deletedAt = :hiddenAt",
+    )
+    suspend fun restore(id: String, hiddenAt: Long, now: Long): Int
+
+    /**
      * Writes an edited entry. The caller builds the row, `updatedAt` included.
      *
      * `@Update` rather than a query with a parameter per column: thirteen parameters is not a

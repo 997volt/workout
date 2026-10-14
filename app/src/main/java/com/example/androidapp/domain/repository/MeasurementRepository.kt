@@ -25,4 +25,21 @@ interface MeasurementRepository {
     suspend fun save(measurement: BodyMeasurement): DataResult<Unit>
 
     suspend fun delete(id: String): DataResult<Unit>
+
+    /**
+     * Puts a deleted entry back (ROADMAP N133).
+     *
+     * The delete is a soft one — [delete] sets `deletedAt` rather than removing the row — so the way back
+     * is clearing that field, the mechanism N90's restore uses: nothing is re-inserted, and the entry
+     * keeps its id and the sore rows that went with it.
+     *
+     * **Keyed to the write that hid it.** Only the row hidden by *this* removal comes back, so an undo
+     * cannot resurrect an entry the lifter deleted deliberately a moment earlier.
+     *
+     * **Refused when the day has been re-entered since.** A measurement's identity is its **day and its
+     * kind** (N32, N113), so restoring one onto a day and kind that now holds a newer reading would
+     * silently replace that reading — the report is a [DataError.Invalid] carrying the sentence, not a
+     * write.
+     */
+    suspend fun restore(id: String): DataResult<Unit>
 }

@@ -47,6 +47,20 @@ interface MeasurementSoreMuscleDao {
     )
     suspend fun softDeleteForMeasurement(measurementId: String, at: Long): Int
 
+    /**
+     * Un-hides the rows one **delete** hid (ROADMAP N133).
+     *
+     * Keyed on the timestamp that delete wrote, exactly as the measurement's own restore is. The save
+     * path writes the same field, so without that key a row the lifter had already replaced would come
+     * back with an undo. Returns the rows restored, which the caller may ignore — an entry deleted
+     * before any soreness was recorded has none.
+     */
+    @Query(
+        "UPDATE measurement_sore_muscles SET deletedAt = NULL, updatedAt = :now " +
+            "WHERE measurementId = :measurementId AND deletedAt = :hiddenAt",
+    )
+    suspend fun restoreForMeasurement(measurementId: String, hiddenAt: Long, now: Long): Int
+
     // ------------------------------------------------------- backup (P1.12, N113)
 
     /** Deliberately unfiltered: a soft-deleted row is data an export must carry. */

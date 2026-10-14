@@ -692,6 +692,22 @@ object TestTags {
         const val CONFIRM = "measurements_confirm"
 
         /**
+         * The mode toggle (ROADMAP N132): the control that enters and leaves the mode a delete lives in.
+         *
+         * One tag rather than two, because it is one button — its label says which mode the list is in.
+         */
+        const val EDIT = "measurements_edit"
+
+        /**
+         * The list itself (ROADMAP B130), so a test can scroll it rather than assume the first screenful
+         * is everything — which is the defect it answers.
+         */
+        const val LIST = "measurements_list"
+
+        /** The sentence an empty list says, an item of the list rather than a screen of its own. */
+        const val EMPTY = "measurements_empty"
+
+        /**
          * The soreness list a daily entry owns (ROADMAP N113), in the shared scored-picks editor.
          *
          * Its own prefix rather than the readiness note's, for the reason every tag has one: a tag

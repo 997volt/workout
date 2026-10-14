@@ -1659,3 +1659,49 @@ for was silent: it is inside that ceiling, and layout below it has no reader but
 revisit is the cost of reading it: a layout defect that ships because a review missed it, where a tool would
 have caught it, makes the reformat worth its diff. Until then the price is recorded here rather than to be
 measured again.
+
+## B130 N132 N133
+
+The request came from use: a delete in the measurements view is one tap on a fact that cannot be re-derived,
+and the list it sits in cannot even be scrolled. The defect came out of the request and had to go first,
+because a mode that offers a delete is no use for a row nobody can reach — so the three ids are one batch
+with one order, and the instrumented suite holds the two rules the UI cannot state.
+
+**B130 is a one-line shape with a real consequence.** `MeasurementList` was a `Column` with `fillMaxSize()`
+and a `forEach`, which is the pattern every other list in the app had already left behind (the library,
+history, the plan's own rows). A `Column` measures every child it is given and then clips what does not fit;
+a `LazyColumn` composes what the viewport can show and scrolls to the rest. Nothing about the entries
+themselves changed, so the defect is not data loss — it is that the app held readings it would not show, and
+the add button floated over the last row that happened to fit. The empty sentence moved *into* the list as a
+keyed item rather than staying a sibling above it: the two states are mutually exclusive, and a sibling would
+have been the one row that did not scroll with the rest once the list could scroll.
+
+**N132's rejected alternative is the part worth keeping.** A confirmation dialog on the existing per-row
+button is the guard this repo already uses, and it was rejected twice over: the complaint is a delete button
+on **every row of a reading screen**, so a dialog leaves the button exactly where it was and adds an
+interruption to every deliberate deletion; and the act is *reversible* now (N133), so an "are you sure?" in
+front of it is the interruption the snackbar shape exists to avoid (N7, B3, N90). A mode is the only one of
+the two that changes what the default view is: **scroll and add**, the two things the screen is opened for.
+The add button leaving while the mode is on is the same decision read from the other side — the two actions
+are not offered at once, so a finger aiming at a row cannot land on the button that writes a new one.
+
+**N133 is N90's mechanism with one rule N90 did not need.** The delete was already soft — `delete` sets
+`deletedAt` on the entry and on its sore rows — so the way back is clearing that field rather than
+re-inserting a row, and `deletedAt` doubles as the correlation id of the write that hid it, exactly as it
+does for a removed planned set: an undo reaches its own removal and nothing else. What a *measurement* adds
+is a collision, because its identity is **its day and its kind** (N32, N113) rather than a row id it owns
+alone. Restoring onto a day and kind that now holds a newer reading would silently replace a fact the lifter
+wrote, and an undo that overwrites a newer value is worse than no undo: it turns one mistaken tap into two
+writes and the second one destroys data. So the restore is refused with a sentence (`DataError.Invalid`,
+which the screen already knows how to show) and the newer reading is left untouched.
+
+**"Newer" is `createdAt`, not `updatedAt`, and the boundary is inclusive.** `updatedAt` moves under an
+ordinary edit — a correction to a measurement that was never deleted — so it cannot answer "was this day
+re-entered since the delete"; `createdAt` is the one field that only moves when a row is born. The comparison
+is `createdAt >= deletedAt` rather than `>`, because a save and a delete can share a millisecond, and the
+case where they do is precisely the one the undo has to refuse: if a re-entry is not recognised it is
+overwritten, while if an honest undo is refused it says so and costs a tap. **The instrumented suite's clock
+had to change to test any of this** — it used one fixed instant for every write, so the save-after-delete
+ordering the guard reads did not exist — and it now advances a second per call, which is also what the real
+clock does. That dependency is the same one N90 recorded for its own correlation: a fixed clock collapses
+"before" and "after" into one value, and a test that does not move it cannot see the rule at all.

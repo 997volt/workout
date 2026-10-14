@@ -47,6 +47,17 @@ class MeasurementsViewModel @Inject constructor(
     val error: StateFlow<DataError?> = lastError.asStateFlow()
 
     /**
+     * The entry a delete just took, awaiting the snackbar's undo (ROADMAP N133).
+     *
+     * Held until the message is taken, one at a time, the shape the workout and template screens use
+     * (N7, B3, N90). The screen reads this rather than the repository, so the undo cannot outlive its
+     * own snackbar.
+     */
+    private val _pendingUndo = MutableStateFlow<BodyMeasurement?>(null)
+
+    val pendingUndo: StateFlow<BodyMeasurement?> = _pendingUndo.asStateFlow()
+
+    /**
      * Saves an entry.
      *
      * An entry with a blank id is a new one, placed by its day; one with an id edits that row. Which is
@@ -62,12 +73,42 @@ class MeasurementsViewModel @Inject constructor(
     }
 
     fun onDelete(id: String) {
+        // The row is read before it goes: what the snackbar offers back is the entry itself, and after
+        // the write it is no longer in the list (N133).
+        val entry = uiState.value.entries.firstOrNull { it.id == id } ?: return
         viewModelScope.launch {
             when (val result = repository.delete(id)) {
+                is DataResult.Success -> {
+                    lastError.value = null
+                    _pendingUndo.value = entry
+                }
+
+                is DataResult.Failure -> lastError.value = result.error
+            }
+        }
+    }
+
+    /**
+     * Puts a deleted entry back (ROADMAP N133).
+     *
+     * The delete was soft, so the way back is clearing `deletedAt` rather than re-inserting anything —
+     * N90's mechanism. The collision is the repository's to refuse: a measurement is identified by its
+     * **day and kind** (N32, N113), so if the day has been re-entered since, the restore must not
+     * overwrite the newer reading. That refusal arrives as an [DataError.Invalid] with the sentence.
+     */
+    fun onUndoDelete() {
+        val entry = _pendingUndo.value ?: return
+        _pendingUndo.value = null
+        viewModelScope.launch {
+            when (val result = repository.restore(entry.id)) {
                 is DataResult.Success -> lastError.value = null
                 is DataResult.Failure -> lastError.value = result.error
             }
         }
+    }
+
+    fun onDismissUndo() {
+        _pendingUndo.value = null
     }
 
     fun onDismissError() {

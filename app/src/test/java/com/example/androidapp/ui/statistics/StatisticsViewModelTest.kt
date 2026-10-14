@@ -459,6 +459,7 @@ private class FakeMeasurementRepository(
     override fun observeAll(): Flow<List<BodyMeasurement>> = flowOf(entries)
     override suspend fun save(measurement: BodyMeasurement): DataResult<Unit> = DataResult.Success(Unit)
     override suspend fun delete(id: String): DataResult<Unit> = DataResult.Success(Unit)
+    override suspend fun restore(id: String): DataResult<Unit> = DataResult.Success(Unit)
 }
 
 private class FakeExerciseRepository(private val lifts: List<Exercise>) : ExerciseRepository {

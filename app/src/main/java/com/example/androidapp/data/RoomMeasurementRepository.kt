@@ -66,10 +66,11 @@ class RoomMeasurementRepository @Inject constructor(
         val now = timeSource.nowEpochMillis()
         // One entry of each kind for a day, so a tape entry edits its own row rather than the one the
         // scale wrote (N113).
+        val (dayStart, dayEnd) = dayBounds(measurement.measuredAt)
         val existing = dao.find(measurement.id)
             ?: dao.findOnDay(
-                from = startOfDay(measurement.measuredAt),
-                to = startOfDay(measurement.measuredAt.plusSeconds(SECONDS_PER_DAY)),
+                from = dayStart,
+                to = dayEnd,
                 kind = measurement.kind.name,
             )
         val row = measurement.toEntity(
@@ -105,14 +106,53 @@ class RoomMeasurementRepository @Inject constructor(
     }
 
     /**
-     * Midnight where the entry was taken, which is the day it belongs to.
+     * Puts a deleted entry back, and refuses the one collision a restore can cause (ROADMAP N133).
+     *
+     * The row's own `deletedAt` is the identity of the write that hid it, so the restore clears exactly
+     * that and nothing else — N90's rule, which is what stops an undo from resurrecting an entry deleted
+     * deliberately a moment earlier. The sore rows went with the entry on the same timestamp, so they
+     * come back whole.
+     *
+     * What a restore of a *measurement* adds to that shape is the refusal: its identity is **its day and
+     * its kind** (N32, N113), and the day it belongs to may have been re-entered since the delete. A
+     * newer reading for that day and kind is a fact the lifter wrote, so the undo is refused with a
+     * sentence rather than allowed to overwrite it — and "newer" is read from `createdAt`, because a
+     * live row's `updatedAt` moves under an edit that was never a delete at all.
+     */
+    override suspend fun restore(id: String): DataResult<Unit> = dataResultOf {
+        val removed = dao.findIncludingDeleted(id) ?: throw NotFoundException("measurement $id")
+        val hiddenAt = removed.deletedAt
+            ?: throw InvalidInputException("That measurement was not deleted")
+
+        val (dayStart, dayEnd) = dayBounds(Instant.ofEpochMilli(removed.measuredAt))
+        if (dao.findLiveWrittenSince(dayStart, dayEnd, removed.kind.name, hiddenAt) != null) {
+            throw InvalidInputException(
+                "That day has a newer ${removed.kind.name.lowercase()} measurement, " +
+                    "so this one cannot come back.",
+            )
+        }
+
+        val now = timeSource.nowEpochMillis()
+        database.withTransaction {
+            if (dao.restore(id, hiddenAt, now) == 0) {
+                throw NotFoundException("measurement $id")
+            }
+            // The rows the same delete hid, and nothing else: that is what the timestamp buys.
+            soreDao.restoreForMeasurement(id, hiddenAt, now)
+        }
+    }
+
+    /**
+     * Midnight to midnight where the entry was taken, which is the day it belongs to.
      *
      * The device's own zone, read at the moment of writing: N25's rule for a session's time, applied to
-     * a measurement's date.
+     * a measurement's date. The day is a half-open range in the caller's zone rather than a stored date
+     * column, so a day is a query rather than a second source of truth.
      */
-    private fun startOfDay(instant: Instant): Long {
+    private fun dayBounds(instant: Instant): Pair<Long, Long> {
         val zone = ZoneId.systemDefault()
-        return instant.localDay(zone).atStartOfDay(zone).toInstant().toEpochMilli()
+        val start = instant.localDay(zone).atStartOfDay(zone).toInstant()
+        return start.toEpochMilli() to start.plusSeconds(SECONDS_PER_DAY).toEpochMilli()
     }
 }
 
