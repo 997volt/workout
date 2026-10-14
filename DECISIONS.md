@@ -406,7 +406,11 @@ the rule; that one argues it.
   neither knee. The picker now offers a series **per site** — *Left knee* and *Right knee* are two, and a
   central joint is one — which is N118's answer for soreness and for the same two reasons: a per-metric
   filter would have to be answered twice, at the workout level and again per lift, and the stored choice
-  stays one id. A site a session did not name is **null, not zero and not the overall worst**: a knee nobody
+  stays one id. **Both of those levels get it**, because the average dropped the joint in both: the workout
+  series reads a session's ratings for the lift chosen, and the per-lift one reads that lift's own points
+  (N17). **Two series can now share a label**, so the picker carries a heading per group — the trigger shows
+  the label alone, and without headings the two *Left knee* entries were indistinguishable before and after
+  choosing. A site a session did not name is **null, not zero and not the overall worst**: a knee nobody
   mentioned has no reading, and a zero would draw one. Each site reads the session's **worst** score for it
   rather than a mean over the movements that reported it — N63's rule one level up, because three exercises
   that hurt the same knee are one sore knee, and averaging reports it as milder than any rating given. The

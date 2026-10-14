@@ -1905,3 +1905,37 @@ and how hard) and one line carrying both would read as a single claim.
 `targetRpeHalves` and both work; nothing about this comparison touches them. `ExercisePlan` and
 `PerformedSetSpec` gained one nullable field each, and the review is still built from state the screen
 already holds — no read, no schema, no migration (N20's own rule).
+
+**The first cut wired one level and the result was a lie in these notes.** N130 asks for the dimension at
+both levels the ratings live at, and the first version built only the workout series — while the changelog
+and this file described the per-lift one as reading the same dimension. It did not: the per-lift trend still
+read `averageJointPain`, the family's average of each exercise's worst joint, which is the very reduction
+N130 exists to remove. What the first cut had actually built was a data path no UI reached
+(`observeJointPainByExercise`, `ExerciseTrendPoint.jointPainBySite`, its `jointPainAt`), which this repo's own
+rule calls dead code. It was found by auditing the change rather than by a test, which is the honest note to
+keep: **nothing here failed** — the tests covered the path that existed, and the claim about the path that
+did not was prose.
+
+The fix is `MetricKey.ExerciseJointSite`, the per-lift half of `MetricKey.JointSite`. Two keys rather than one
+because the two questions are different — "how is this lift treating my left knee" reads the chosen
+exercise's own points (N17), "how is my left knee in general" reads a session's ratings for it — and a single
+key carrying a lift would have had to mean both. It needs a lift and takes a head exactly as the averaged
+joint metric does (N97), and the ViewModel's load gate is now the registry's own `needsExercise` rather than
+`metric is MetricKey.Exercise`: that type test is what silently left the new series drawing an empty chart
+over data the repository already had, and a test pins it by failing when the type test is put back.
+
+**Wiring it made the picker equivocal, and that is a finding rather than a detail.** Two series now render
+the same words: *Left knee* is a workout series and a per-lift one. The menu drew no headings — the group
+order was the only grouping — and the trigger shows the label alone, so the lifter picked between two
+identical words and could not tell afterwards which they had chosen. `MetricGroup` carries its own label
+resource now and the menu draws one heading per group. The registry's own test had assumed this all along
+("the invariant is per group, **which is how the picker shows them**"), which was true of nothing until now.
+The heading's test tag takes the group's *name* rather than the enum, so `TestTags` keeps its one dependency
+direction: it is read by every feature, and reaching into one of them is the dependency its import list
+avoids.
+
+**One more duplicate survives, and it is older than this id.** `withinAGroup_theLabelsAreDistinct` compares a
+label by its *source* — a string resource or the taxonomy's own word — so it cannot see that the tape site
+*Chest* and the soreness muscle *Chest* both render "Chest", in the same BODY group. Both are in one group, so
+even the new headings do not separate them. Nothing here changed that, and it is recorded rather than fixed:
+it wants an id of its own, and inventing one is what this repository's rule forbids.

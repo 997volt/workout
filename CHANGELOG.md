@@ -89,9 +89,12 @@ unreleased.
   which side, how much** (N63), and what the trends screen read back was one number per workout — so
   "left knee 6, right knee 2" charted as a 4 that is about neither knee. The picker now offers a series
   per **site**, the joint and the side together, exactly as N118 offers one per muscle: *Left knee* and
-  *Right knee* are two lines, and the record already carried both halves. The per-lift screen's joint
-  series reads the same dimension, keyed by the exercise the rating belongs to. A site a session did not
-  name is a **gap, not a zero** — the rule the tape sites and the sore list already follow — so a knee
+  *Right knee* are two lines, and the record already carried both halves. **Both levels the ratings live
+  at** get the dimension — a workout series read from a session's ratings for the lift chosen, and a
+  per-lift one read from that lift's own points — because the average dropped the joint in both. Room for
+  the second one was needed at the picker: two series can now share a label, so the list carries a heading
+  per group and *Left knee* is no longer the same words in two places. A site a session did not name is a
+  **gap, not a zero** — the rule the tape sites and the sore list already follow — so a knee
   nobody mentioned is not drawn as a measurement of nothing. Each site's number is that session's
   **worst** score for it, not an average over the movements that reported it: a knee aching through three
   exercises is one sore knee, and averaging would report it as milder than any rating the lifter gave.
