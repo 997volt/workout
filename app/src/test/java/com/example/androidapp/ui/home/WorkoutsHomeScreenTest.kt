@@ -65,6 +65,17 @@ class WorkoutsHomeScreenTest {
             .performScrollToNode(hasTestTag(TestTags.Home.startPlan(id)))
     }
 
+    /**
+     * Scrolls the body to the line a day with nothing on it draws (N126).
+     *
+     * Through the list for the reason [scrollToToday] is: it sits at the foot, below the ways in, and a lazy
+     * list has not composed it until the list is scrolled.
+     */
+    private fun scrollToNoPlan() {
+        composeTestRule.onNodeWithTag(TestTags.HOME_LIST)
+            .performScrollToNode(hasTestTag(TestTags.HOME_NO_PLAN))
+    }
+
     private fun setScreen(
         state: WorkoutsHomeUiState,
         actions: Actions = Actions(),
@@ -267,11 +278,38 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun aDayWithNothingScheduled_showsNoTodaySection() {
-        // An empty "Today" heading would be a promise the app cannot keep.
+    fun aDayWithNothingScheduled_showsNoTodayHeading() {
+        // An empty "Today" heading would be a promise the app cannot keep — the line under it names the day.
         setScreen(WorkoutsHomeUiState(isLoading = false, today = DayOfWeek.MONDAY))
 
         composeTestRule.onNodeWithText("Today · Monday").assertDoesNotExist()
+    }
+
+    @Test
+    fun withNothingFollowed_theSurfaceSaysNoWorkoutIsPlanned() {
+        // ROADMAP N126: the day said nothing at all before this — the list simply ended.
+        setScreen(WorkoutsHomeUiState(isLoading = false, hasActiveProgram = false))
+
+        scrollToNoPlan()
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_NO_PLAN).assertExists()
+        composeTestRule.onNodeWithText("No workout planned today").assertExists()
+        // And it is not the rest-day sentence: there is no schedule to be resting from.
+        composeTestRule.onNodeWithText("Rest day").assertDoesNotExist()
+    }
+
+    @Test
+    fun anActiveProgramWithNothingToday_saysRest_ratherThanNothingPlanned() {
+        // ROADMAP N126, and the case P3.9's rows existed for: a program is followed and schedules nothing
+        // today. That is a rest day, not a screen with nothing to say.
+        setScreen(WorkoutsHomeUiState(isLoading = false, hasActiveProgram = true))
+
+        scrollToNoPlan()
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_NO_PLAN).assertExists()
+        composeTestRule.onNodeWithText("Rest day").assertExists()
+        composeTestRule.onNodeWithText("Your program schedules nothing today.").assertExists()
+        composeTestRule.onNodeWithText("No workout planned today").assertDoesNotExist()
     }
 
     @Test

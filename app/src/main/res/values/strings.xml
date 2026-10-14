@@ -357,6 +357,13 @@
          accessibility label names the action, because the card's text names the workout. -->
     <string name="home_plan_open">See what is planned in %1$s</string>
     <string name="home_planned_empty">This workout has no exercises planned yet.</string>
+    <!-- What the plan surface says when the day has nothing on it (ROADMAP N126). Two lines and not one,
+         because "nothing is followed" and "followed, and today is rest" are different facts — and a
+         weekday-less program is the second one on every day, never scheduled and never missed. -->
+    <string name="home_no_plan">No workout planned today</string>
+    <string name="home_no_plan_hint">Follow a program to schedule your week.</string>
+    <string name="home_rest_day">Rest day</string>
+    <string name="home_rest_day_hint">Your program schedules nothing today.</string>
     <!-- Substituting one occurrence, this week only (ROADMAP P3.11). -->
     <string name="home_substitute">Substitute</string>
     <string name="home_substitute_title">Train something else?</string>

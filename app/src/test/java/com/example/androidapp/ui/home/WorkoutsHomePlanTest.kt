@@ -64,6 +64,28 @@ class WorkoutsHomePlanTest {
     }
 
     @Test
+    fun anEmptyDay_isRest_onlyWhileAProgramIsFollowed() {
+        // ROADMAP N126: the two empty days are different facts, and the surface says which. A program with
+        // no slot today is a rest day on every day it schedules nothing; with nothing followed there is no
+        // schedule to be resting from.
+        val restDay = WorkoutsHomeUiState(
+            isLoading = false,
+            todaysPlan = emptyList(),
+            hasActiveProgram = true,
+        )
+        val nothingFollowed = restDay.copy(hasActiveProgram = false)
+        val planned = restDay.copy(
+            todaysPlan = listOf(
+                TodayPlan(id = "s1", templateId = "t1", name = "Push", exerciseCount = 3, slotId = "s1"),
+            ),
+        )
+
+        assertThat(restDay.planIsRestDay).isTrue()
+        assertThat(nothingFollowed.planIsRestDay).isFalse()
+        assertThat(planned.planIsRestDay).isFalse()
+    }
+
+    @Test
     fun aProgramsRowIsKeyedByItsSlot_notByItsTemplate() {
         // The same template twice in a program is legal, and a list keyed by template would
         // collide the moment it happened.

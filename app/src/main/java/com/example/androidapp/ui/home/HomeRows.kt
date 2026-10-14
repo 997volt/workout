@@ -103,7 +103,7 @@ internal fun HomeBody(
 }
 
 /**
- * Today's plan, headed by the weekday (ROADMAP N115, P3.3, N125).
+ * Today's plan, headed by the weekday (ROADMAP N115, P3.3, N125), or a line saying there is none (N126).
  *
  * **The one answer home gives to "what am I doing today".** Until N125 there was a second — a next-up row
  * per active program with nothing scheduled today — and the two were shown on opposite conditions. The row
@@ -112,8 +112,9 @@ internal fun HomeBody(
  * with no weekday, and every rest day of one that has them, is reached through the Programs screen now
  * (P3.9's home surface is superseded).
  *
- * It sits at the **foot** of the list, where N115 put it, and is drawn only when the day has work; the
- * state of a day that has none is N126's.
+ * It sits at the **foot** of the list, where N115 put it. An empty day used to draw nothing at all, which
+ * read as a screen that simply ended; it says which kind of empty it is now, because "nothing is followed"
+ * and "followed, and today is rest" are different facts ([WorkoutsHomeUiState.planIsRestDay]).
  */
 private fun LazyListScope.planItems(
     state: WorkoutsHomeUiState,
@@ -121,7 +122,14 @@ private fun LazyListScope.planItems(
     onSubstitute: (TodayPlan) -> Unit,
     onOpenPlannedWorkout: (TodayPlan) -> Unit,
 ) {
-    if (state.todaysPlan.isEmpty()) return
+    if (state.todaysPlan.isEmpty()) {
+        // No heading: an empty *Today · Monday* would be a promise the app cannot keep (N115), and the line
+        // names the day itself.
+        item(key = "no_plan") {
+            NoPlanLine(restDay = state.planIsRestDay)
+        }
+        return
+    }
     item(key = "today") {
         SectionHeader(text = stringResource(R.string.home_today, state.today.longLabel()))
     }
@@ -132,6 +140,35 @@ private fun LazyListScope.planItems(
             onOpen = { onOpenPlannedWorkout(plan) },
             onStart = { onStartTemplate(plan) },
             onSubstitute = { onSubstitute(plan) },
+        )
+    }
+}
+
+/**
+ * What the plan surface says on a day with nothing on it (ROADMAP N126).
+ *
+ * Quiet on purpose: a card here would compete with the ways in above for the day's attention, and this is
+ * the absence of a plan rather than a fourth destination.
+ */
+@Composable
+private fun NoPlanLine(restDay: Boolean, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .testTag(TestTags.HOME_NO_PLAN),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = stringResource(if (restDay) R.string.home_rest_day else R.string.home_no_plan),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Text(
+            text = stringResource(
+                if (restDay) R.string.home_rest_day_hint else R.string.home_no_plan_hint,
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

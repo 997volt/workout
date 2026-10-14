@@ -195,6 +195,14 @@ object TestTags {
     const val HOME_MEASURE_TODAY = "home_measure_today"
 
     /**
+     * The line that says the day has nothing on it (ROADMAP N126).
+     *
+     * One tag for both states: what a test has to tell apart is *which line* it is, and the two sentences
+     * are user-visible strings a translation changes.
+     */
+    const val HOME_NO_PLAN = "home_no_plan"
+
+    /**
      * The question a planned start asks while a workout is already running (ROADMAP N89), and its two
      * answers. Constants rather than a per-id helper: there is one of this dialog, whatever it is starting.
      */

@@ -101,10 +101,12 @@ data class WorkoutsHomeUiState(
      * What is scheduled today: the union of the active programs' slots for this weekday (ROADMAP P3.3,
      * unioned by P3.12).
      *
-     * Empty is the ordinary state of a rest day, and of a day with no program followed at all; the two
-     * are told apart by [todaySurface] (N126), not here.
+     * Empty is both a rest day and a day with nothing followed at all; [planIsRestDay] is what tells the
+     * two apart (N126), and the surface says which one it is.
      */
     val todaysPlan: List<TodayPlan> = emptyList(),
+    /** Whether any program is followed, which is what makes an empty day a rest day (ROADMAP N126). */
+    val hasActiveProgram: Boolean = false,
     /** The templates a substitution can choose from (ROADMAP P3.11). */
     val templates: List<WorkoutTemplate> = emptyList(),
     /**
@@ -115,7 +117,17 @@ data class WorkoutsHomeUiState(
      * tape entry does not, because the two are separate records.
      */
     val todayIsMeasured: Boolean = false,
-)
+) {
+    /**
+     * Whether today is a **rest day** rather than a day with nothing planned (ROADMAP N126).
+     *
+     * The distinction the plan surface draws, in one place. A program is followed and schedules nothing
+     * today, so the day is *rest* — which is the answer on every day for a weekday-less program, never
+     * scheduled and never missed. With no program followed there is no schedule to be resting from, and a
+     * line that could not tell the two apart would be wrong on one of them every single day.
+     */
+    val planIsRestDay: Boolean get() = hasActiveProgram && todaysPlan.isEmpty()
+}
 
 /**
  * The home screen (ROADMAP N1).
@@ -274,6 +286,8 @@ class WorkoutsHomeViewModel @Inject constructor(
                 slots = programs.slots,
                 day = today,
             ),
+            // N126: what makes an empty day a rest day rather than a day with nothing to say.
+            hasActiveProgram = programs.programs.isNotEmpty(),
             templates = templates,
         )
     }.stateIn(
