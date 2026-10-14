@@ -68,6 +68,14 @@ unreleased.
   earlier cannot be missed either. Two look-alikes stay by design: a heavier **warm-up** or rung above is not a
   record (B17, N79), and a heavier set at a different rep count is a different record (N23).
 
+- **The keyboard no longer covers the bottom of a running workout** (B119). The window is edge-to-edge
+  (`enableEdgeToEdge`, `targetSdk 37`), so it does **not** resize for the keyboard, and nothing applied the IME
+  inset — a set's fields below the fold stayed under the keyboard however far the list was scrolled. The
+  workout's body carries the inset now, so its viewport and its bottom padding shrink by the keyboard's height
+  and what is behind it can be reached. Setting `windowSoftInputMode` is not the fix on an edge-to-edge window.
+  The other screens with fields near the bottom — the template editor, the measurements form, the exercise
+  detail — share the gap and are **not** covered by this entry.
+
 ## [2.2] — 2026-10-13 (versionCode 22)
 
 ### Changed

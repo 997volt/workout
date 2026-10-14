@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -258,7 +259,11 @@ fun ActiveWorkoutScreen(
             onToggleSuperset = onToggleSuperset,
             restTimerEnabled = restTimerEnabled,
             defaultRestSeconds = defaultRestSeconds,
-            modifier = Modifier.padding(innerPadding),
+            // The IME inset is added to the body, not the whole Scaffold: the window is edge-to-edge
+            // (`enableEdgeToEdge`, targetSdk 37), so it does **not** resize for the keyboard and nothing
+            // else lifts the fields clear of it — a set's fields further down the list stayed under the
+            // keyboard however far the list was scrolled (B119).
+            modifier = Modifier.padding(innerPadding).imePadding(),
         )
     }
 
