@@ -64,6 +64,9 @@ internal fun HomeBody(
     onMeasureToday: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
+    /** A next-up row's substitute picker records nothing, where a scheduled day's records a substitution. */
+    onSubstituteNextUp: (TodayPlan) -> Unit,
+    onOpenPlannedWorkout: (NextUp) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -88,31 +91,64 @@ internal fun HomeBody(
                 onMeasureToday = onMeasureToday,
             ),
         )
-        // Today's plans come **after** the ways in (N115): the destinations are what this screen is for on a
-        // day with nothing scheduled, and the thing the app says is next belongs at the bottom edge the start
-        // bar's own next-up rows already sit at (P3.9, N55) rather than at the top, pointing the other way.
-        // The heading travels with the cards, because both are drawn by this one call.
-        todayPlanItems(state = state, onStartTemplate = onStartTemplate, onSubstitute = onSubstitute)
+        // Where the next workout is comes **after** the ways in (N115, N124): the destinations are what this
+        // screen is for on a day with nothing scheduled, and the thing the app says is next belongs at the
+        // bottom edge the thumb is already at.
+        planItems(
+            state = state,
+            onStartTemplate = onStartTemplate,
+            onSubstitute = onSubstitute,
+            onSubstituteNextUp = onSubstituteNextUp,
+            onOpenPlannedWorkout = onOpenPlannedWorkout,
+        )
     }
 }
 
-/** Today's scheduled plans, headed by the weekday (ROADMAP N16, P3.3, P3.11). */
-private fun LazyListScope.todayPlanItems(
+/**
+ * Where the next workout is, as the **one** surface for it (ROADMAP N115, P3.9, N124).
+ *
+ * Two facts in one place, because they are the two answers the app has: a slot dated today (P3.3) and the
+ * run a program with nothing scheduled today is up to (P3.9). They used to be a body block and a bar row
+ * apiece, shown on opposite conditions; the bar's block is gone (N124), so both are drawn here — each still
+ * on its own condition, and a program with a slot today is left out of the next-up list because a row beside
+ * the day's plan would be a second, contradictory answer (`nextUpFor`).
+ *
+ * It sits at the **foot** of the list, where N115 put the day's plan. The section is drawn whenever either
+ * answer exists — not only on a scheduled day — so a program with no weekday, and every rest day of one that
+ * has them, still says where its run is (P3.9).
+ */
+private fun LazyListScope.planItems(
     state: WorkoutsHomeUiState,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
+    onSubstituteNextUp: (TodayPlan) -> Unit,
+    onOpenPlannedWorkout: (NextUp) -> Unit,
 ) {
-    if (state.todaysPlan.isEmpty()) return
-    item(key = "today") {
-        SectionHeader(text = stringResource(R.string.home_today, state.today.longLabel()))
+    if (state.todaysPlan.isNotEmpty()) {
+        item(key = "today") {
+            SectionHeader(text = stringResource(R.string.home_today, state.today.longLabel()))
+        }
+        items(state.todaysPlan.size, key = { state.todaysPlan[it].id }) { index ->
+            val plan = state.todaysPlan[index]
+            TodayPlanCard(
+                plan = plan,
+                onStart = { onStartTemplate(plan) },
+                onSubstitute = { onSubstitute(plan) },
+            )
+        }
     }
-    items(state.todaysPlan.size, key = { state.todaysPlan[it].id }) { index ->
-        val plan = state.todaysPlan[index]
-        TodayPlanCard(
-            plan = plan,
-            onStart = { onStartTemplate(plan) },
-            onSubstitute = { onSubstitute(plan) },
-        )
+    if (state.nextUp.isNotEmpty()) {
+        // No heading: the row states *Next up* over the workout it names, so a section header would say it
+        // twice (and a list of runs would say it once per row rather than once per group).
+        items(state.nextUp.size, key = { state.nextUp[it].plan.id }) { index ->
+            val nextUp = state.nextUp[index]
+            NextUpRow(
+                nextUp = nextUp,
+                onOpen = { onOpenPlannedWorkout(nextUp) },
+                onStart = { onStartTemplate(nextUp.plan) },
+                onSubstitute = { onSubstituteNextUp(nextUp.plan) },
+            )
+        }
     }
 }
 

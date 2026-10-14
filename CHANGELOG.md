@@ -41,6 +41,19 @@ unreleased.
   own working-set count, so the screen says in words how a set is split, rather than letting the rows sum past
   the total unexplained; the bars divide by the credited work, which is what makes a lopsided week obvious.
 
+- **Where the next workout is became one surface** (N124). Home said it twice — a dated *Today* card in the
+  body and a *Next up* row in the start bar (P3.9, N55) — and the two were shown on **opposite conditions**:
+  the card only when a program scheduled today, the row only when none did. The bar's block is gone and the
+  body's section carries both, so one question has one answer in one place: today's plan, and the run a
+  program with nothing scheduled today is up to. It stays at the **foot of the body**, where N115 put the
+  day's plan, and is drawn whenever either answer exists — **not only on a scheduled day**, so a program with
+  no weekday, and every rest day of one that has them, still says where its run is (P3.9). Looking at a
+  planned workout and starting it stay **two gestures** (N55): a run's entry keeps the field that opens the
+  read-only plan beside *Start*. The start bar keeps the *Resume* pill and is drawn only while a workout is
+  open — it used to draw an empty column when nothing was scheduled. A program with a slot today is still left
+  out of the next-up list, so a dated plan and an undated run never wear the same heading. Nothing stored
+  changes: no schema, no transfer format, no program document.
+
 ### Fixed
 
 - **Resuming a workout from home keeps its plan** (B117). The plan was read from the route's `templateId`, and

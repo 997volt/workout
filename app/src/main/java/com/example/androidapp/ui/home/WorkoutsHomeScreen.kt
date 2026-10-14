@@ -244,19 +244,17 @@ fun WorkoutsHomeScreen(
         // A bottom bar rather than a floating button. The primary action on this screen is the
         // one thing the reference never floats: it is a full-width pill resting on the bar,
         // because the thing you came to do should not be a target you have to aim at.
+        //
+        // The *Resume* pill is all it carries now (N124): where the next workout is lives in the body with
+        // the day's plan, so with nothing running the bar has nothing to say and is not drawn at all.
         bottomBar = {
-            StartActions(
-                activeWorkout = state.activeWorkout,
-                clock = clock,
-                nextUp = state.nextUp,
-                onStartWorkout = onStartWorkout,
-                // A next-up row starts the workout the same way a scheduled one does, so the slot id
-                // travels with it for the prefill history (N73).
-                onStartTemplate = onStartTemplate,
-                onOpenPlannedWorkout = onOpenPlannedWorkout,
-                // A next-up row's pick starts the session and records nothing (N85).
-                onSubstitute = { plan -> substituting = SubstituteRequest(plan, records = false) },
-            )
+            state.activeWorkout?.let { running ->
+                StartActions(
+                    activeWorkout = running,
+                    clock = clock,
+                    onStartWorkout = onStartWorkout,
+                )
+            }
         },
     ) { innerPadding ->
         HomeContent(
@@ -268,6 +266,9 @@ fun WorkoutsHomeScreen(
             onMeasureToday = onMeasureToday,
             onStartTemplate = onStartTemplate,
             onSubstitute = { plan -> substituting = SubstituteRequest(plan, records = true) },
+            // A next-up row's pick starts the session and records nothing (N85).
+            onSubstituteNextUp = { plan -> substituting = SubstituteRequest(plan, records = false) },
+            onOpenPlannedWorkout = onOpenPlannedWorkout,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -372,9 +373,9 @@ private fun SubstituteDialog(
 /**
  * The list body, split out so the screen itself stays a scaffold and a state.
  *
- * Two things the screen can be showing rather than four (ROADMAP N102): the body is the ways in, always,
- * with today's plans above them when there are any. There is no empty state left to draw — a body of four
- * ways in is never blank — which is why the first-run message went with the list it was explaining.
+ * The body is the ways in, always, with the one surface for where the next workout is below them: today's
+ * plan and each active program's next run (N115, N124). There is no empty state left to draw — a body of
+ * four ways in is never blank — which is why the first-run message went with the list it was explaining.
  */
 @Composable
 private fun HomeContent(
@@ -386,6 +387,9 @@ private fun HomeContent(
     onMeasureToday: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
+    /** A next-up row's substitute picker records nothing, where a scheduled day's records a substitution. */
+    onSubstituteNextUp: (TodayPlan) -> Unit,
+    onOpenPlannedWorkout: (NextUp) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.isLoading) {
@@ -403,32 +407,31 @@ private fun HomeContent(
             onMeasureToday = onMeasureToday,
             onStartTemplate = onStartTemplate,
             onSubstitute = onSubstitute,
+            onSubstituteNextUp = onSubstituteNextUp,
+            onOpenPlannedWorkout = onOpenPlannedWorkout,
             modifier = modifier,
         )
     }
 }
 
 /**
- * The home start bar: resuming, then where a program's run is up to (ROADMAP P3.9, N55, N102).
+ * The home start bar: the *Resume* pill, for the workout already running (ROADMAP P1.16, N102, N124).
  *
- * Read top to bottom, it is the *Resume* pill — drawn only while a workout is open — and the next-up block,
- * so the thing the app is telling you to do next sits at the very edge the thumb is already at. Starting
- * empty is one of the body's rows now (N102), and this bar no longer offers it: the same action twice on one
- * screen is what N42 removed the last time it happened.
+ * It carried where a program's run was up to as well until N124 moved that into the body, which is now the
+ * **one** surface for "where is the next workout" — day's plan and next-up rows together. So the bar is
+ * drawn only while a workout is open, and resuming is the only thing it offers. It stays a bottom bar rather
+ * than a floating button because the primary action is the one thing you should not have to aim at.
  *
- * The *Programs* and *Templates* links left with it, for that reason and to that place — the body's ways in,
- * where a destination can say what it is instead of being one word in a row of words.
+ * Starting empty is one of the body's rows (N102), and this bar does not offer it: the same action twice on
+ * one screen is what N42 removed the last time it happened. The *Programs* and *Templates* links left with
+ * it, for that reason and to that place — the body's ways in, where a destination can say what it is instead
+ * of being one word in a row of words.
  */
 @Composable
 private fun StartActions(
-    activeWorkout: ActiveWorkoutInfo?,
+    activeWorkout: ActiveWorkoutInfo,
     clock: State<WorkoutClock>,
-    nextUp: List<NextUp>,
     onStartWorkout: () -> Unit,
-    onStartTemplate: (TodayPlan) -> Unit,
-    onOpenPlannedWorkout: (NextUp) -> Unit,
-    /** Opens the substitute picker for one next-up row (ROADMAP N85). */
-    onSubstitute: (TodayPlan) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -438,27 +441,13 @@ private fun StartActions(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // Resuming offers no choice: there is exactly one workout in progress, so the button means one
-        // thing. Nothing to resume means no pill at all (N102): this bar is not a place to start.
-        activeWorkout?.let { running ->
-            ResumeButton(
-                activeWorkout = running,
-                clock = clock,
-                onClick = onStartWorkout,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        // Where each active program's run is, at the bottom edge of the screen the thumb is already
-        // at (ROADMAP P3.9, N55). It sits under the resume pill so the thing the app says is next is
-        // the last thing the thumb reaches, and the field stays compact above its own full-width pill
-        // because more than one active program (P3.12) means the bar can carry several.
-        nextUp.forEach { nextUpRow ->
-            NextUpRow(
-                nextUp = nextUpRow,
-                onOpen = { onOpenPlannedWorkout(nextUpRow) },
-                onStart = { onStartTemplate(nextUpRow.plan) },
-                onSubstitute = { onSubstitute(nextUpRow.plan) },
-            )
-        }
+        // thing. The caller draws the bar only when there is one (N102, N124).
+        ResumeButton(
+            activeWorkout = activeWorkout,
+            clock = clock,
+            onClick = onStartWorkout,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -503,16 +492,16 @@ private fun ResumeButton(
 }
 
 /**
- * One program's next run, at the bottom of the bar (ROADMAP P3.9, N55).
+ * One program's next run, in the body's surface for where the next workout is (ROADMAP P3.9, N55, N124).
  *
  * The field opens what is planned and the full-width pill under it starts it, so looking and starting
  * stay two gestures (N55). The pill keeps the empty start's shape but not its colour: it draws the tonal
  * container *Log set* draws (N83), which is what the two planned-workout starts have in common and what
- * tells them apart from the empty start's deep indigo. The field above it stays compact, because more than
- * one program can be active (P3.12) and the bar may carry several.
+ * tells them apart from the empty start's deep indigo. The field stays compact, because more than one
+ * program can be active (P3.12) and the section may carry several.
  */
 @Composable
-private fun NextUpRow(
+internal fun NextUpRow(
     nextUp: NextUp,
     onOpen: () -> Unit,
     onStart: () -> Unit,

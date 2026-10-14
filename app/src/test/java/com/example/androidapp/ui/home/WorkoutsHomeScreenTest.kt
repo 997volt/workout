@@ -67,6 +67,17 @@ class WorkoutsHomeScreenTest {
             .performScrollToNode(hasTestTag(TestTags.Home.startPlan(id)))
     }
 
+    /**
+     * Scrolls the body to a program's next-up row (N124).
+     *
+     * The row is in the body now, in the same surface as the day's plan, so a lazy list has not composed it
+     * until the list is scrolled — the shape [scrollToToday] already deals with.
+     */
+    private fun scrollToNextUp(id: String = "slot-2") {
+        composeTestRule.onNodeWithTag(TestTags.HOME_LIST)
+            .performScrollToNode(hasTestTag(TestTags.Home.nextUp(id)))
+    }
+
     private fun setScreen(
         state: WorkoutsHomeUiState,
         actions: Actions = Actions(),
@@ -301,6 +312,7 @@ class WorkoutsHomeScreenTest {
             actions = Actions(onStartTemplate = { started += it }),
         )
 
+        scrollToNextUp()
         composeTestRule.onNodeWithText("Next up").assertExists()
         // The small Start became the screen's second full-width pill, named apart from the empty one.
         // Addressed by tag: the caption is a user-visible string a translation changes.
@@ -316,11 +328,11 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun theNextUpBlock_sitsBelowTheResumePill() {
-        // The start bar reads top to bottom: the resume pill, then the next-up block, so the app's own
-        // suggestion is the last thing the thumb reaches. Checked by position rather than by the order
-        // things happen to be composed in, which a rearranged Column would not show. N102 left the pill
-        // drawn only while a workout is open, so the state carries one.
+    fun withAWorkoutRunning_theBarHoldsOnlyTheResume_andTheRunIsInTheBody() {
+        // N124: the bar's next-up block is gone. With a workout open the bar carries the *Resume* pill alone,
+        // and the program's run is drawn in the body's one surface — above the bar, at the foot of the list,
+        // where N115 put the day's plan. Asserted by position: a bar that still drew its own block could not
+        // put the row above the pill.
         setScreen(
             state = WorkoutsHomeUiState(
                 isLoading = false,
@@ -345,10 +357,20 @@ class WorkoutsHomeScreenTest {
         )
 
         val pill = composeTestRule.onNodeWithTag(TestTags.HOME_RESUME).getUnclippedBoundsInRoot()
+        scrollToNextUp()
         val nextUp = composeTestRule.onNodeWithTag(TestTags.Home.nextUp("slot-2"))
             .getUnclippedBoundsInRoot()
 
-        assertThat(nextUp.top).isGreaterThan(pill.bottom)
+        assertThat(nextUp.bottom <= pill.top).isTrue()
+    }
+
+    @Test
+    fun withNothingRunning_theBarIsNotDrawnAtAll() {
+        // N124: the bar was the *Resume* pill plus the run. With neither there is nothing to say, so it is
+        // not drawn rather than drawn empty.
+        setScreen(state = WorkoutsHomeUiState(isLoading = false))
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_RESUME).assertDoesNotExist()
     }
 
     @Test
@@ -375,6 +397,7 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
+        scrollToNextUp()
         composeTestRule.onNodeWithTag(TestTags.Home.nextUp("slot-2")).performClick()
 
         assertThat(opened.single()).isEqualTo(nextUp)
@@ -400,6 +423,7 @@ class WorkoutsHomeScreenTest {
         )
         setScreen(state = WorkoutsHomeUiState(isLoading = false, nextUp = listOf(nextUp)))
 
+        scrollToNextUp()
         val field = composeTestRule.onNodeWithTag(TestTags.Home.nextUp("slot-2")).getUnclippedBoundsInRoot()
         val pill = composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).getUnclippedBoundsInRoot()
 
@@ -425,6 +449,7 @@ class WorkoutsHomeScreenTest {
         )
         setScreen(state = WorkoutsHomeUiState(isLoading = false, nextUp = listOf(nextUp)))
 
+        scrollToNextUp()
         // Unmerged, because the row is one clickable node to a screen reader: the merged parent carries
         // both lines' text and would answer every lookup with the same box.
         val program = composeTestRule.onNodeWithText("A", useUnmergedTree = true).getUnclippedBoundsInRoot()
@@ -693,6 +718,7 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
+        scrollToNextUp()
         composeTestRule.onNodeWithTag(TestTags.Home.nextUpSubstitute("slot-2")).performClick()
         composeTestRule.onNodeWithTag(TestTags.HOME_SUBSTITUTE_DIALOG).assertExists()
         composeTestRule.onNodeWithTag(TestTags.homeSubstituteTemplate("t2")).performClick()
@@ -727,6 +753,7 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
+        scrollToNextUp()
         composeTestRule.onNodeWithTag(TestTags.Home.nextUpSubstitute("slot-2")).performClick()
 
         composeTestRule.onNodeWithTag(TestTags.HOME_SUBSTITUTE_DIALOG).assertExists()
