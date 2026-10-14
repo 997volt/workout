@@ -16,6 +16,9 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseTrendMetric
+import com.example.androidapp.domain.model.jointSiteKey
+import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.ExerciseTrendPoint
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.StatisticsRange
@@ -131,6 +134,39 @@ class StatisticsViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.series?.readings?.single()?.value).isEqualTo(8.0)
+    }
+
+    @Test
+    fun aPerSiteJointMetric_readsTheChosenLiftsPoints() = runTest(dispatcher) {
+        // ROADMAP N130's per-lift half, and the wiring a type test got wrong: the ViewModel used to load
+        // the per-exercise read only for `MetricKey.Exercise`, so a per-site joint series would have drawn
+        // an empty chart over data the repository already had. The registry answers instead.
+        val trends = FakeTrendsRepository(
+            exercisePoints = listOf(
+                ExerciseTrendPoint(
+                    startedAt = daysAgo(2),
+                    jointPainBySite = mapOf(jointSiteKey(Joint.KNEE, Side.LEFT) to 7.0),
+                ),
+            ),
+        )
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), trends = trends)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onSelectMetric(MetricKey.ExerciseJointSite(Joint.KNEE, Side.LEFT))
+        advanceUntilIdle()
+        assertWithMessage("a joint site is about a lift, so the screen asks for one")
+            .that(viewModel.uiState.value.needsExercise)
+            .isTrue()
+        assertWithMessage("and it does not read the per-lift series until one is chosen")
+            .that(trends.askedFor)
+            .isNull()
+
+        viewModel.onSelectExercise("back-squat")
+        advanceUntilIdle()
+
+        assertThat(trends.askedFor).containsExactly("back-squat")
+        assertThat(viewModel.uiState.value.series?.readings?.single()?.value).isEqualTo(7.0)
     }
 
     @Test

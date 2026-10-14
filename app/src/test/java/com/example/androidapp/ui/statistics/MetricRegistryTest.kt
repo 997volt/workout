@@ -50,12 +50,15 @@ class MetricRegistryTest {
             assertWithMessage("every joint site a rating can name is a series (N130)")
                 .that(entries.count { it.key == MetricKey.JointSite(joint, side) })
                 .isEqualTo(1)
+            assertWithMessage("at the per-lift level too (N130), or the dimension is half-dropped")
+                .that(entries.count { it.key == MetricKey.ExerciseJointSite(joint, side) })
+                .isEqualTo(1)
         }
 
         // Three ratings, eight exercise metrics, three body metrics, seven tape sites, one soreness
-        // series per selectable muscle (N118), and one joint-pain series per site a rating may name
-        // (N130) — the site being the joint *and* the side.
-        assertThat(entries.size).isEqualTo(21 + SORE_MUSCLE_GROUPS.size + JOINT_SITES.size)
+        // series per selectable muscle (N118), and a joint-pain series per site a rating may name
+        // (N130) — the site being the joint *and* the side, at both of the levels ratings live at.
+        assertThat(entries.size).isEqualTo(21 + SORE_MUSCLE_GROUPS.size + JOINT_SITES.size * 2)
     }
 
     @Test
@@ -202,15 +205,17 @@ class MetricRegistryTest {
         // Soreness joins them (N118): more of it is worse, which is the one thing that differs from every
         // other body series. The set is written out rather than counted, so a metric that quietly flipped
         // would have to be added here on purpose.
-        // Every per-site joint series joins them (N130): it reads the same rating the overall one does, so
-        // it points the same way, and a metric that quietly flipped would have to be added here on purpose.
+        // Every per-site joint series joins them (N130): each reads the same rating the overall one does,
+        // so each points the same way, and a metric that quietly flipped would have to be added here on
+        // purpose. Both levels, because both are offered.
         assertWithMessage("assistance, joint pain and soreness are where less is better").that(lower).isEqualTo(
             setOf(
                 MetricKey.Exercise(ExerciseTrendMetric.ASSISTANCE),
                 MetricKey.Workout(TrendMetric.JOINT_PAIN),
                 MetricKey.Exercise(ExerciseTrendMetric.JOINT_PAIN),
             ) + SORE_MUSCLE_GROUPS.map { MetricKey.Soreness(it) }.toSet() +
-                JOINT_SITES.map { (joint, side) -> MetricKey.JointSite(joint, side) }.toSet()
+                JOINT_SITES.map { (joint, side) -> MetricKey.JointSite(joint, side) }.toSet() +
+                JOINT_SITES.map { (joint, side) -> MetricKey.ExerciseJointSite(joint, side) }.toSet()
         )
     }
 

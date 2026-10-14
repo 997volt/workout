@@ -69,6 +69,28 @@ class MetricSeriesTest {
     }
 
     @Test
+    fun anExerciseJointSiteSeriesReadsThatLiftsOwnSite() {
+        // ROADMAP N130's per-lift half. The same session reports a left knee in two ways: the workout's
+        // own point carries it, and the chosen lift's point carries it — and a lift that named no site
+        // is a gap, not the workout's number borrowed.
+        val series = metricSeries(
+            key = MetricKey.ExerciseJointSite(Joint.KNEE, Side.LEFT),
+            exercises = listOf(
+                ExerciseTrendPoint(
+                    startedAt = first,
+                    jointPainBySite = mapOf(jointSiteKey(Joint.KNEE, Side.LEFT) to 7.0),
+                ),
+                ExerciseTrendPoint(
+                    startedAt = second,
+                    jointPainBySite = mapOf(jointSiteKey(Joint.KNEE, Side.RIGHT) to 4.0),
+                ),
+            ),
+        )
+
+        assertThat(series.readings.map { it.value }).isEqualTo(listOf(7.0, null))
+    }
+
+    @Test
     fun aMomentThatRecordedNothing_isKeptAsAGap() {
         // The assertion that matters for N37: three sessions, one of which rated nothing, must not come
         // back as two readings a week apart with the gap quietly closed.

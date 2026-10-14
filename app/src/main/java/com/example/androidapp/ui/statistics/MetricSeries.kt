@@ -61,6 +61,11 @@ fun metricSeries(
         is MetricKey.JointSite -> workouts.map {
             MetricReading(it.startedAt, it.jointPainAt(key.joint, key.side))
         }
+        // N130's per-lift half: the same site, read off the chosen exercise's own points (N17) instead of
+        // the session's. A site this lift did not name is a gap, for the reason the workout-level one is.
+        is MetricKey.ExerciseJointSite -> exercises.map {
+            MetricReading(it.startedAt, it.jointPainAt(key.joint, key.side))
+        }
     }.sortedBy { it.at },
 )
 

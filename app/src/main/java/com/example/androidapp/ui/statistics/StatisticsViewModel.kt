@@ -203,7 +203,10 @@ class StatisticsViewModel @Inject constructor(
         .flatMapLatest { (chosen, exercises) ->
             val metric = chosen.metric
             val exerciseId = chosen.exerciseId
-            if (metric is MetricKey.Exercise && exerciseId != null) {
+            // Asked of the registry rather than of the key's type: a metric that needs a lift is exactly
+            // the set whose series comes from the per-exercise read, and that now includes the per-site
+            // joint series (N130) — a type test here silently left it drawing nothing.
+            if (MetricRegistry.entryFor(metric).needsExercise && exerciseId != null) {
                 repositories.trends.observeExerciseTrends(
                     subjectIds(metric, exerciseId, exercises),
                     NO_LIMIT,
@@ -220,7 +223,7 @@ class StatisticsViewModel @Inject constructor(
      * that heads nothing, which is most of them — reads the row that was chosen, exactly as it did before.
      */
     private fun subjectIds(
-        metric: MetricKey.Exercise,
+        metric: MetricKey,
         exerciseId: String,
         library: List<Exercise>,
     ): List<String> {

@@ -59,6 +59,19 @@ sealed interface MetricKey {
     data class JointSite(val joint: Joint, val side: Side) : MetricKey
 
     /**
+     * One joint site's pain for one lift — or for a **head** and everything filed under it (ROADMAP N130).
+     *
+     * The per-lift half of [JointSite], and the reason the two are separate keys rather than one: the
+     * workout-level series reads a session's ratings for the movement the lifter chose, while this one
+     * reads the ratings *of that exercise* (N17). Same site, same dimension, two different questions —
+     * "how is this lift treating my left knee" and "how is my left knee in general".
+     *
+     * It needs a lift for [MetricKey.Exercise]'s reason, and takes a head for the same reason too: a
+     * family that logged two movements in one session states each site once, worst of the two (N97).
+     */
+    data class ExerciseJointSite(val joint: Joint, val side: Side) : MetricKey
+
+    /**
      * A stable name for this series.
      *
      * Built from the enums' own names rather than hand-written, so a test tag, a stored preference and a
@@ -73,6 +86,7 @@ sealed interface MetricKey {
             is Tape -> "TAPE:${site.name}"
             is Soreness -> "SORE:${muscle.name}"
             is JointSite -> "JOINT:${joint.name}:${side.name}"
+            is ExerciseJointSite -> "EXERCISE_JOINT:${joint.name}:${side.name}"
         }
 
     /**
@@ -307,9 +321,13 @@ object MetricRegistry {
         TapeSite.entries.forEach { add(tapeEntry(it)) }
         SORE_MUSCLE_GROUPS.forEach { add(sorenessEntry(it)) }
         // N130: one series per joint *site*, so the picker offers "Left knee" beside "Right knee" rather
-        // than an average that is about neither. A workout group, because the readings come from the
-        // ratings on a session's exercises.
-        JOINT_SITES.forEach { (joint, side) -> add(jointPainEntry(joint, side)) }
+        // than an average that is about neither — at both levels the ratings are recorded at, because the
+        // average dropped the dimension in both. The workout pair reads a session's ratings for the lift
+        // chosen; the exercise pair reads that lift's own (N17).
+        JOINT_SITES.forEach { (joint, side) ->
+            add(jointPainEntry(joint, side))
+            add(exerciseJointPainEntry(joint, side))
+        }
     }
 
     /** The entry for a key. Every key has one, which a test asserts in both directions. */
@@ -437,6 +455,26 @@ private fun jointPainEntry(joint: Joint, side: Side) = MetricEntry(
     isBars = false,
     higherIsBetter = false,
     fixedRange = RATING_SCALE,
+)
+
+/**
+ * One joint site's pain for one lift (ROADMAP N130).
+ *
+ * Everything [jointPainEntry] says holds here too — the taxonomy's own label, more is worse, the fixed
+ * 1–10 axis — plus the two the exercise group adds: it means nothing until a lift is chosen, and a **head**
+ * reads its whole family, which is what [ExerciseTrendMetric.JOINT_PAIN] already does for the averaged
+ * version.
+ */
+private fun exerciseJointPainEntry(joint: Joint, side: Side) = MetricEntry(
+    key = MetricKey.ExerciseJointSite(joint, side),
+    group = MetricGroup.EXERCISE,
+    labelText = jointSiteLabel(joint, side),
+    unit = MetricUnit.RATING,
+    isBars = false,
+    higherIsBetter = false,
+    fixedRange = RATING_SCALE,
+    needsExercise = true,
+    acceptsHead = true,
 )
 
 private fun tapeLabel(site: TapeSite): Int = when (site) {
