@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -160,15 +161,28 @@ class StatisticsScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC).performClick()
 
-        MetricGroup.entries.forEach { group ->
-            composeTestRule.onNodeWithTag(TestTags.Statistics.metricGroup(group.name)).assertExists()
+        val headingTops = MetricGroup.entries.map { group ->
+            composeTestRule.onNodeWithTag(TestTags.Statistics.metricGroup(group.name))
+                .assertExists()
+                .getUnclippedBoundsInRoot()
+                .top
         }
-        composeTestRule.onNodeWithTag(
+        // In the enum's order, which is the order the menu draws them in: three headings, not one label
+        // repeated wherever the registry happened to list it.
+        assertThat(headingTops).isInOrder()
+
+        // Both sites exist, and each sits after its own group's heading and before the next one — which is
+        // what makes the two *Left knee* entries distinguishable rather than the same words twice.
+        val workoutSite = composeTestRule.onNodeWithTag(
             TestTags.Statistics.metric(MetricKey.JointSite(Joint.KNEE, Side.LEFT).id),
-        ).assertExists()
-        composeTestRule.onNodeWithTag(
+        ).assertExists().getUnclippedBoundsInRoot().top
+        val liftSite = composeTestRule.onNodeWithTag(
             TestTags.Statistics.metric(MetricKey.ExerciseJointSite(Joint.KNEE, Side.LEFT).id),
-        ).assertExists()
+        ).assertExists().getUnclippedBoundsInRoot().top
+        assertThat(workoutSite).isGreaterThan(headingTops[MetricGroup.WORKOUT.ordinal])
+        assertThat(workoutSite).isLessThan(headingTops[MetricGroup.EXERCISE.ordinal])
+        assertThat(liftSite).isGreaterThan(headingTops[MetricGroup.EXERCISE.ordinal])
+        assertThat(liftSite).isLessThan(headingTops[MetricGroup.BODY.ordinal])
     }
 
     @Test
