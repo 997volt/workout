@@ -25,8 +25,117 @@ class PlanComparisonTest {
     private fun working(weightGrams: Long?, reps: Int) =
         PlannedSetSpec(role = SetType.NORMAL, weightGrams = weightGrams, maxReps = reps)
 
-    private fun did(weightGrams: Long, reps: Int, role: SetType = SetType.NORMAL) =
-        PerformedSetSpec(role = role, weightGrams = weightGrams, reps = reps)
+    private fun did(weightGrams: Long, reps: Int, role: SetType = SetType.NORMAL, rpeHalves: Int? = null) =
+        PerformedSetSpec(role = role, weightGrams = weightGrams, reps = reps, rpeHalves = rpeHalves)
+
+    /** A plan that names the one effort N59 gives an exercise, with no load to confuse the question. */
+    private fun plannedAt(name: String, targetRpeHalves: Int?, vararg sets: PlannedSetSpec) =
+        ExercisePlan(
+            exerciseId = name.lowercase().replace(" ", "-"),
+            name = name,
+            sets = sets.toList(),
+            targetRpeHalves = targetRpeHalves,
+        )
+
+    @Test
+    fun theEffort_isTheWorkingSetsMean_notTheHeaviestSetsRating() {
+        // ROADMAP N131. Prescribed 8; the sets were 8, 8 and 9 — a mean of 8.33, rounded to the
+        // half-point the scale can express, 8.5. The heaviest set's own rating would have been 9,
+        // which answers a different question: what the top set felt like, not whether the work
+        // landed where the plan put it.
+        val comparison = comparePlanToActual(
+            planned = listOf(
+                plannedAt("Squat", targetRpeHalves = 16, working(100_000L, 5)),
+            ),
+            performed = listOf(
+                performed(
+                    "Squat",
+                    did(100_000L, 5, rpeHalves = 16),
+                    did(95_000L, 5, rpeHalves = 16),
+                    did(90_000L, 5, rpeHalves = 18),
+                ),
+            ),
+        ).single()
+
+        assertEquals(16, comparison.prescribedRpeHalves)
+        assertEquals("(16 + 16 + 18) / 3 = 16.67 halves, rounded to 17", 17, comparison.performedAverageRpeHalves)
+        assertEquals(1, comparison.rpeDeltaHalves)
+        assertFalse(comparison.matchedEffort)
+    }
+
+    @Test
+    fun anUnratedSet_isNotAZeroInTheMean() {
+        // RPE is skippable (N6): a set nobody rated must not pull the average down as if it had been
+        // "no effort". Prescribed 8, two rated sets at 8 and 9 — 8.5, not (8 + 9 + 0) / 3.
+        val comparison = comparePlanToActual(
+            planned = listOf(plannedAt("Squat", targetRpeHalves = 16, working(100_000L, 5))),
+            performed = listOf(
+                performed(
+                    "Squat",
+                    did(100_000L, 5, rpeHalves = 16),
+                    did(100_000L, 5, rpeHalves = 18),
+                    did(100_000L, 5),
+                ),
+            ),
+        ).single()
+
+        assertEquals(17, comparison.performedAverageRpeHalves)
+        assertEquals(1, comparison.rpeDeltaHalves)
+    }
+
+    @Test
+    fun aWarmUpsRating_isNotTheWorksEffort() {
+        // N67: a warm-up records no effort, so one that somehow carries a rating is ignored here for
+        // the same reason it is excluded from the rep and weight sums.
+        val comparison = comparePlanToActual(
+            planned = listOf(plannedAt("Squat", targetRpeHalves = 16, working(100_000L, 5))),
+            performed = listOf(
+                performed(
+                    "Squat",
+                    did(60_000L, 5, role = SetType.WARMUP, rpeHalves = 20),
+                    did(100_000L, 5, rpeHalves = 16),
+                ),
+            ),
+        ).single()
+
+        assertEquals("only the working set counts", 16, comparison.performedAverageRpeHalves)
+        assertTrue(comparison.matchedEffort)
+    }
+
+    @Test
+    fun effortIsNull_ratherThanZero_whenEitherSideSaysNothing() {
+        // The rule every nullable field here follows: a difference from nothing is not a comparison,
+        // and a zero would read as "matched".
+        val noTarget = comparePlanToActual(
+            planned = listOf(plannedAt("Squat", targetRpeHalves = null, working(100_000L, 5))),
+            performed = listOf(performed("Squat", did(100_000L, 5, rpeHalves = 16))),
+        ).single()
+        assertNull("the plan named no effort", noTarget.rpeDeltaHalves)
+        assertNull(noTarget.prescribedRpeHalves)
+        assertEquals("but what was done is still reported", 16, noTarget.performedAverageRpeHalves)
+
+        val noRating = comparePlanToActual(
+            planned = listOf(plannedAt("Squat", targetRpeHalves = 16, working(100_000L, 5))),
+            performed = listOf(performed("Squat", did(100_000L, 5))),
+        ).single()
+        assertNull("nothing was rated", noRating.rpeDeltaHalves)
+        assertNull(noRating.performedAverageRpeHalves)
+        assertEquals(16, noRating.prescribedRpeHalves)
+    }
+
+    @Test
+    fun anImprovisedExercise_hasNoEffortTargetToCompare() {
+        // It was not in the plan, so the plan named no effort for it — the same reason its prescribed
+        // line is absent.
+        val comparison = comparePlanToActual(
+            planned = emptyList(),
+            performed = listOf(performed("Curl", did(30_000L, 10, rpeHalves = 16))),
+        ).single()
+
+        assertFalse(comparison.wasPlanned)
+        assertNull(comparison.prescribedRpeHalves)
+        assertNull(comparison.rpeDeltaHalves)
+    }
 
     @Test
     fun aPlanAnsweredExactly_reportsNoDelta() {

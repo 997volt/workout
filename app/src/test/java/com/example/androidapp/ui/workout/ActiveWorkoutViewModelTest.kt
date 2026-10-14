@@ -1454,6 +1454,38 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun theReview_carriesThePlansTargetEffort_andWhatTheSetsWereRated() = runTest(dispatcher) {
+        // ROADMAP N131, and the wiring only a test through the ViewModel can hold: the plan's target
+        // lives on the *exercise* (N59) while the ratings are on the sets (N6), so the review is built
+        // from two different levels of the state. The plan asks for RPE 8 (16 halves) and the set is
+        // answered at RPE 7 (14 halves), so the effort came in half a point under plan.
+        val repository = FakeWorkoutRepository()
+        val templates = FakeTemplateRepository(
+            planned = listOf(
+                plannedExercise(
+                    position = 0,
+                    targetRpeHalves = 16,
+                    sets = listOf(plannedSet(index = 0, reps = 5, weightGrams = 100_000L)),
+                ),
+            ),
+        )
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 14)
+
+        viewModel.onFinish()
+        settle()
+
+        val comparison = viewModel.summary.value!!.comparisons.single()
+        assertEquals("the plan's one number for the exercise", 16, comparison.prescribedRpeHalves)
+        assertEquals("the set was logged at RPE 7, which is 14 halves", 14, comparison.performedAverageRpeHalves)
+        assertEquals("and the delta is in halves, like both sides", -2, comparison.rpeDeltaHalves)
+    }
+
+    @Test
     fun finishingWithAComment_writesIt_thenClosesTheWorkout() = runTest(dispatcher) {
         // ROADMAP N11: the moment of finishing is when the reason is remembered.
         val repository = FakeWorkoutRepository()

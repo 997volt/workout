@@ -83,6 +83,96 @@ class WorkoutReviewDialogTest {
     }
 
     @Test
+    fun theEffortEachSideWasDoneAt_isReadable_nextToTheWeight() {
+        // ROADMAP N131: the plan names one effort per exercise and the log holds one per set, so the
+        // prescribed line carries the target, the performed line the working sets' mean, and the
+        // verdict the difference — at the half-point resolution an RPE is logged in.
+        show(
+            review(
+                comparisons = listOf(
+                    PlanComparison(
+                        name = "Squat",
+                        prescribedSets = 3,
+                        performedSets = 3,
+                        prescribedReps = 15,
+                        performedReps = 15,
+                        prescribedTopWeightGrams = 100_000L,
+                        performedTopWeightGrams = 95_000L,
+                        topSetDeltaGrams = -5_000L,
+                        prescribedRpeHalves = 16,
+                        performedAverageRpeHalves = 19,
+                        rpeDeltaHalves = 3,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("prescribed 3×15 at 100 kg · RPE 8").assertExists()
+        composeTestRule.onNodeWithText("performed 3×15 at 95 kg · RPE 9.5").assertExists()
+        composeTestRule.onNodeWithText("5 kg under plan").assertExists()
+        composeTestRule.onNodeWithText("RPE 1.5 over plan").assertExists()
+    }
+
+    @Test
+    fun anEffortThePlanNamedAndNobodyLogged_saysSo_ratherThanReadingAsMatched() {
+        // Silence there would read as "as prescribed", which is the one thing it is not.
+        show(
+            review(
+                comparisons = listOf(
+                    PlanComparison(
+                        name = "Squat",
+                        prescribedSets = 3,
+                        performedSets = 3,
+                        prescribedReps = 15,
+                        performedReps = 15,
+                        prescribedTopWeightGrams = 100_000L,
+                        performedTopWeightGrams = 100_000L,
+                        topSetDeltaGrams = 0L,
+                        prescribedRpeHalves = 16,
+                        performedAverageRpeHalves = null,
+                        rpeDeltaHalves = null,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("prescribed 3×15 at 100 kg · RPE 8").assertExists()
+        composeTestRule.onNodeWithText("performed 3×15 at 100 kg").assertExists()
+        composeTestRule.onNodeWithText("no RPE recorded").assertExists()
+    }
+
+    @Test
+    fun aPlanThatNamedNoEffort_saysNothingAboutIt() {
+        // The prescribed line loses its effort, and no verdict claims a comparison the plan never asked
+        // for. What the sets were actually rated is still worth reading, so it stays on the line.
+        show(
+            review(
+                comparisons = listOf(
+                    PlanComparison(
+                        name = "Squat",
+                        prescribedSets = 1,
+                        performedSets = 1,
+                        prescribedReps = 5,
+                        performedReps = 5,
+                        prescribedTopWeightGrams = 100_000L,
+                        performedTopWeightGrams = 100_000L,
+                        topSetDeltaGrams = 0L,
+                        prescribedRpeHalves = null,
+                        performedAverageRpeHalves = 17,
+                        rpeDeltaHalves = null,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("prescribed 1×5 at 100 kg").assertExists()
+        composeTestRule.onNodeWithText("performed 1×5 at 100 kg · RPE 8.5").assertExists()
+        composeTestRule.onNodeWithText("as planned").assertExists()
+        composeTestRule.onNodeWithText("RPE as prescribed").assertDoesNotExist()
+        composeTestRule.onNodeWithText("no RPE recorded").assertDoesNotExist()
+    }
+
+    @Test
     fun aSkippedExercise_isNotQuietlyOmitted() {
         // A review that only lists what was done is a compliment, not a record.
         show(

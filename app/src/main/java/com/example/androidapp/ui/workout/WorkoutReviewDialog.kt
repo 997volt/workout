@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.PlanComparison
+import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.label
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.ui.components.LocalWeightUnit
@@ -122,6 +123,38 @@ private fun PlanComparisonRow(comparison: PlanComparison) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.primary,
         )
+        // The effort's own verdict, on its own line (ROADMAP N131): the plan answers two questions
+        // here — how heavy, and how hard — and a single line carrying both would read as one claim.
+        effortVerdictText(comparison)?.let { effort ->
+            Text(
+                text = effort,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+    }
+}
+
+/**
+ * How the effort landed, or null when the plan named no target for it (ROADMAP N131).
+ *
+ * The comparison the review had none of: the plan's one effort per exercise (N59) against the
+ * working sets' mean (N6). The three questions and their answers:
+ *
+ *  - the plan named no effort — nothing to compare, so nothing is said;
+ *  - it named one and no working set recorded one — "no RPE recorded", because silence there would
+ *    read as *matched* rather than as *unanswered*;
+ *  - both exist — as prescribed, or the difference in the scale's own half-points.
+ */
+@Composable
+private fun effortVerdictText(comparison: PlanComparison): String? {
+    comparison.prescribedRpeHalves ?: return null
+    val delta = comparison.rpeDeltaHalves
+    return when {
+        delta == null -> stringResource(R.string.summary_no_rpe)
+        comparison.matchedEffort -> stringResource(R.string.summary_effort_matched)
+        delta > 0 -> stringResource(R.string.summary_effort_over, Rpe.format(delta))
+        else -> stringResource(R.string.summary_effort_under, Rpe.format(-delta))
     }
 }
 
@@ -136,7 +169,7 @@ private fun prescribedText(comparison: PlanComparison): String? {
     } else {
         null
     }
-    return when {
+    val base = when {
         shape != null && weight != null -> {
             val unit = exerciseWeightUnit(comparison.weightUnit)
             stringResource(
@@ -151,6 +184,7 @@ private fun prescribedText(comparison: PlanComparison): String? {
         weight != null -> Weight.display(weight, 0, exerciseWeightUnit(comparison.weightUnit))
         else -> stringResource(R.string.summary_sets_only, comparison.prescribedSets)
     }
+    return base.withRpe(comparison.prescribedRpeHalves)
 }
 
 /** `6×2 at 92.5 kg`, or "not performed" when the user never touched it. */
@@ -160,7 +194,7 @@ private fun performedText(comparison: PlanComparison): String {
     val weight = comparison.performedTopWeightGrams
     val shape = stringResource(R.string.summary_shape, comparison.performedSets, comparison.performedReps)
     val unit = exerciseWeightUnit(comparison.weightUnit)
-    return if (weight != null && weight > 0L) {
+    val base = if (weight != null && weight > 0L) {
         stringResource(
             R.string.summary_shape_weight,
             shape,
@@ -170,7 +204,18 @@ private fun performedText(comparison: PlanComparison): String {
     } else {
         shape
     }
+    return base.withRpe(comparison.performedAverageRpeHalves)
 }
+
+/**
+ * The line plus the effort it was done at, or the line alone when no effort was recorded (N131).
+ *
+ * `Rpe.format` rather than a decimal: the rating is a half-point scale, so a mean is stated in the
+ * halves a lifter could have logged — `8` or `8.5`, never `8.0` or `8.3`.
+ */
+@Composable
+private fun String.withRpe(halves: Int?): String =
+    if (halves == null) this else "$this · " + stringResource(R.string.summary_rpe, Rpe.format(halves))
 
 /** The line the whole screen exists for: how the top set landed. */
 @Composable

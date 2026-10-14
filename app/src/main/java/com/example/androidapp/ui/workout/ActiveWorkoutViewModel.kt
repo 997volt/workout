@@ -1284,6 +1284,9 @@ private fun buildSummary(
                     weightGrams = it.weightGrams,
                     assistanceGrams = it.assistanceGrams,
                     reps = it.reps,
+                    // What the set felt like, so the review can compare the effort with the plan's
+                    // target (ROADMAP N131). Null stays null: RPE is skippable (N6).
+                    rpeHalves = it.rpeHalves,
                 )
             },
         )
@@ -1302,6 +1305,9 @@ private fun buildSummary(
                     maxReps = it.targetRepsMax,
                 )
             },
+            // The exercise's one target, read from the plan rather than from a set: N59's number is
+            // carried onto every prescribed set, and the review compares against the exercise (N131).
+            targetRpeHalves = plannedExercise.targetRpeHalves,
         )
     }
     val allSets = state.exercises.flatMap { it.sets }
