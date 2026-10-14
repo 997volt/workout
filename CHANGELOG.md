@@ -11,7 +11,42 @@ alternatives rejected, the measurements, the argument — lives in
 repeated here.
 
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
-id a 1.x commit names is still looked up by it. This file carries the current release.
+id a 1.x commit names is still looked up by it. This file carries the current release and what is
+unreleased.
+
+## [Unreleased]
+
+### Changed
+
+- **Today's plan is the only answer home gives** (N125). Home answered *where is the next workout* twice: a
+  dated plan in the body, and a **next-up row per active program with nothing scheduled today** — the run it
+  was up to, with its own *Start* and substitute (P3.9, N55, N124). The second is gone, because a day's
+  workout is the question the screen exists for and a program's position on some other day is an answer
+  nothing on it can act on. **That has a cost, named rather than discovered**: a program with no weekday, and
+  every rest day of one that has them, is no longer reachable from home — the Programs screen is where a run
+  is read now, and P3.9's home surface and the next-up half of N124 are superseded with it. Everything that
+  only the rows called went with them: `nextUp`, `nextUpFor`, the `NextUp` model, the row and its label, its
+  tags and strings, the program-runs read that fed it, and N85's whole unrecorded-substitute path — with no
+  next-up row left, every *Substitute* belongs to a card, and a card **is** today's occurrence, so all of
+  them are written. Rejected: keeping the rows behind a "show more" — the complaint is that the answer is the
+  wrong one, and a disclosure hides it.
+
+- **Home says when nothing is planned today, and which kind of nothing** (N126). An empty day drew **nothing
+  at all**, so a rest day read as a screen that simply ended — survivable while a next-up row could be there
+  instead, and not survivable once N125 removed them. The surface now says which empty it is, because the two
+  are different facts: **no active program** (nothing is scheduled because nothing is being followed, so the
+  line points at the way to plan one) and **an active program with no slot today** (*Rest day* — the answer
+  on every day for a weekday-less program, never scheduled and never missed). Two quiet lines where a card
+  would be, and no heading above them: an empty *Today · Monday* is the promise N115 removed, and the line
+  names the day itself.
+
+- **Today's planned workout can be read before it is started** (N127). A day's card offered *Start* and the
+  substitute picker and nothing else, so the day's own workout was the one plan that could only be seen by
+  beginning it. Its name is the field now, opening the same read-only
+  [`PlannedWorkoutDialog`](app/src/main/java/com/example/androidapp/ui/home/PlannedWorkoutDialog.kt) a next-up
+  row used to — with the program as a subtitle, read from the plan itself — so looking and starting stay two
+  gestures (N55). **This is what kept that dialog**: the next-up rows were its only entry point, so N125
+  without N127 would have deleted the preview rather than moved it.
 
 ## [2.4] — 2026-10-14 (versionCode 24)
 

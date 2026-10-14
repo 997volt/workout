@@ -152,10 +152,9 @@ the rule; that one argues it.
   list**, which is the point rather than a regression. Getting a day back means putting the template in a
   program, which is the rule being stated.
   ([evidence](DECISIONS-EVIDENCE.md#n56))
-- **Looking at a planned workout and starting it are two gestures** (N55). A program's next-up row is
-  the one place a workout can be seen before it is begun, and it used to offer only the start. The row
-  moves to the bottom bar — the edge of the screen the thumb is already at, and off the list it shared
-  with today's plans and recent history — with the field and *Start* as separate targets. What the field
+- **Looking at a planned workout and starting it are two gestures** (N55, N127). A card's own name is
+  the one place a workout can be seen before it is begun, and a card used to offer only the start. The
+  field and *Start* are separate targets. What the name
   opens is a **read-only dialog of the workout's ordered exercises**, which settles the choice the
   roadmap left: a template's only destination was its editor, and reading a plan does not need the
   power to rewrite it. Reusing the editor with a read-only flag and previewing on a screen of its own
@@ -538,11 +537,12 @@ the rule; that one argues it.
   repeat is a start, it still goes through P3.3's missed-day question.
   ([evidence](DECISIONS-EVIDENCE.md#n48))
 
-- **Home's body is the ways in, and the bottom bar is what is next** (N102). A body of four ways in is never
-  blank, which is why the first-run message went with the list it explained. The bar carries the *Resume* pill
-  — only while a workout is open — and the next-up block, so **the bar is never a place to start**. Starting
-  empty moved into the body rather than being duplicated there, because the same action twice on one screen is
-  what N42 removed the last time it happened.
+- **Home's body is the ways in, and the bottom bar is what is next** (N102, narrowed by N124 and N125). A body
+  of four ways in is never blank, which is why the first-run message went with the list it explained. The bar
+  carries the *Resume* pill — only while a workout is open, and nothing else: the next-up block it once held
+  went into the body (N124) and then out of the app altogether (N125) — so **the bar is never a place to
+  start**. Starting empty moved into the body rather than being duplicated there, because the same action
+  twice on one screen is what N42 removed the last time it happened.
 
 ## The app's data
 
@@ -643,7 +643,9 @@ the rule; that one argues it.
   run where it is, which is what the missed-day question is for, and an edited program re-derives
   its place rather than leaving a pointer at a slot that is gone. A program with **no weekdays**
   still runs A → B → C, because a cursor rather than a day attributes an order-only session to its
-  slot. Home offers it as a next-up row for a program with nothing scheduled today, and the editor
+  slot. **Home does not offer the run** — the next-up row that used to is gone (N125), because a day's
+  workout is the question home is for and the run is an answer no part of that screen can act on; the
+  Programs screen is where a run is read, and the editor
   marks the place. **Rotation is by what was done, never by load**: choosing the next template from
   fatigue, soreness or accumulated load was rejected, because nothing the app records measures
   recovery and a rotation whose reason the lifter cannot see is a coach, not a log (N22's rule).
@@ -671,17 +673,15 @@ the rule; that one argues it.
   settles an occurrence in **both** and advances both runs. Telling them apart would need the
   session to record the slot, which P3.8 deliberately did not do; it is recorded here so the
   overlap is a known limit rather than a surprise.
-- **A substitute trained from a next-up row is an ordinary session, and P3.9 advances the run past its
-  template** (N85). A next-up row has no occurrence to key a substitution to — the run is calendar-free and
-  `ProgramRun` carries no week — so the pick records nothing and the workout starts from the chosen template
-  with the slot's id travelling for the prefill history (N73). What it does **not** do is hold the run still, which an
-  earlier version of the entry claimed. The session names the template it trained, and P3.9's run follows the
-  last slot trained, so a pick naming another slot of the same program moves the run past that slot exactly
-  as starting that template from the templates tab would; recording no substitution means only that history
-  does not mark the session as a stand-in. The alternative — a session that names a template but settles no
-  occurrence — was rejected: it needs the session to carry a second fact, and it contradicts P3.9's one rule.
-  The picker offers *Restore the scheduled workout* only where the pick was written, because a control that
-  cannot do anything is worse than no control (N53, N67).
+- **Superseded by N125: a substitute trained from a next-up row recorded nothing** (N85). The row is gone,
+  and with it the whole path — `startSubstitute`, the second substitute callback, and the picker's
+  conditional *Restore the scheduled workout* — so nothing offers an unrecorded substitute now: every
+  *Substitute* belongs to a card, and a card *is* today's occurrence by construction. The entry is kept
+  because the rules it settled are still P3.9's: a run advances past the template a session **trained**,
+  and nothing here ever held it still, which an earlier version of this entry had claimed. A next-up row
+  had no occurrence to key a substitution to — the run is calendar-free and `ProgramRun` carries no week —
+  and the alternative then rejected (a session naming a template but settling no occurrence, needing the
+  session to carry a second fact) stays rejected for the same reason.
 - **A template exercise's block is folded until its name is opened** (N91). A plan's controls are the
   editor's job, but the *names* are what the screen is scanned by, and by N81 every block drew its plan
   lines, its rest/cue/RPE fields and *Add set* — five exercises made a long scroll of controls with the
@@ -738,14 +738,11 @@ the rule; that one argues it.
   to start anything**: it asks nothing about a session being open, and a running workout is still answered by
   the templates list's own disabled *Start* (N78, B43) rather than by this entry being hidden.
   ([evidence](DECISIONS-EVIDENCE.md#n93))
-- **A next-up row states the program and the count on lines of their own** (N88). Joined by a separator the
-  two read as one sentence — *Upper/Lower · 5 exercises* — so they are two `Text`s rather than one. **It is
-  the row's shape, not a wrap**: the count is its own line whatever the program is called, so a one-word
-  program name cannot pull it back up, which is why the split is structural rather than a flexible line. The
-  *today* card keeps its single supporting line, because it is a different layout (N16, N61) and the request
-  names the next-up row; the shared plural string stays shared, and only one of its two call sites moved. The
-  cost is that the row is taller, and **N86's gap to the start pill is a function of that height**, so the
-  measurement was taken again with the change: it reads the same 8 dp.
+- **Superseded by N125: a next-up row stated the program and the count on lines of their own** (N88). The
+  row is gone, so the shape it argued for has no control left to describe — and the *today* card, which the
+  entry deliberately left alone, is the only card standing. Kept for the reason it was written: the split
+  was **the row's shape, not a wrap**, and a count that shares a line with a name is at the mercy of how long
+  that name happens to be. If a card ever states two such facts again, that is the argument to reuse.
   ([evidence](DECISIONS-EVIDENCE.md#n88))
 - **The library's rows are a two-rule shape: a category holds movements, and nothing holds a movement**
   (N95, cut back by N110). The grouping is a **link**, so every movement stays loggable and keeps its own
@@ -925,11 +922,12 @@ the rule; that one argues it.
   down to a surface (`TealDeep`, 5.94:1). What holds this is a source scan, not a ratio: a contrast
   assertion on a constant no control reads is how the first attempt shipped the role while every label
   went on drawing the fill colour.
-  **A planned workout's start fills that tonal container too** (N83). Starting a plan and logging its
-  next set are one move — the plan stated, and then committed — so both planned-workout starts, the
-  next-up pill and today's card, wear *Log set*'s colour, and `primary` no longer fills either of them.
-  N61's ladder on home's start bar survives as a difference of hue rather than of emphasis: the empty
-  start keeps the deep indigo container it was given, the planned pills are the teal container, and
+  **A planned workout's start fills that tonal container too** (N83, narrowed by N125). Starting a plan and
+  logging its next set are one move — the plan stated, and then committed — so a planned-workout start wears
+  *Log set*'s colour, and `primary` no longer fills it. **One control now, not two**: the next-up pill that
+  shared the rule went with its row, and the palette scan holds the pair on the card's start alone. N61's
+  ladder on home's start bar survives as a difference of hue rather than of emphasis: the empty
+  start keeps the deep indigo container it was given, the planned pill is the teal container, and
   *Resume* is the only one left carrying the accent.
 - **Privacy: local-only.** No `INTERNET` permission, no ads, no analytics. Crash logs stay
   in app-private storage and leave only in an export the user chose to make.

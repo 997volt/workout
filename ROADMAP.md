@@ -1,8 +1,8 @@
 # Workout — Roadmap
 
-> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nine items — three changes to what
-> home's plan surface says (N125–N127), four the release rounds turned up (B128, B129, N128, N129), and two
-> candidates to choose between (N130, N131). Last reviewed against the
+> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds six items — four the release rounds
+> turned up (B128, B129, N128, N129) and two candidates to choose between (N130, N131). Last reviewed
+> against the
 > code: 2026-10-14 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -25,8 +25,8 @@
 > (B121–B126) are fixed. **B127 shipped as 2.4** the same day, because the keyboard's black band was found in
 > use on the released 2.3 and the window's soft input mode was the cause. The 1.x store is left on the device
 > by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds nine
-> items (N125–N127, B128, B129, N128, N129, N130, N131). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds six
+> items (B128, B129, N128, N129, N130, N131). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
 > it on a device — found eight
@@ -52,50 +52,11 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Nine items in three groups. The first is what using 2.3 asked for — home's plan surface, read three ways
-(N125–N127). The second is what cutting 2.3 and 2.4 turned up: a release procedure that invites its own
-mistake, the verification it leaves to a human, a race left in a comment, and the cheaper answer to the
-formatting decision (B128, B129, N128, N129). The third is two candidates of one shape — a dimension the app
-already records and reduces before reading it back — put here as **alternatives, one to be taken rather than
-both** (N130, N131).
-
-### Home's plan surface (N125–N127)
-
-They are one reading of the same complaint — that home answers a question nobody asked — so they are queued
-together, and N125 is the one that makes N126 and N127 necessary rather than optional.
-
-- **Today's plan is the only answer home gives, and the next-up rows go** (N125). Home currently answers
-  *where is the next workout* twice over: today's scheduled plan in the body, and a **next-up row per
-  active program with nothing scheduled today** — the run it is up to, with its own *Start* and substitute
-  (P3.9, N55, N124). The second is the one being dropped: a day's workout is the question home is for, and a
-  row that says "some program, some other day" is an answer the lifter did not ask for and cannot act on
-  today. This **supersedes the next-up half of N124** and P3.9's home surface, and it is a real loss to name
-  rather than discover: **a program with no weekday, and every rest day of one that has them, stops being
-  reachable from home** — the Programs screen is then the only way to its run. What goes with it: `nextUp`,
-  `nextUpFor`, `NextUp`, `NextUpRow` and `onOpenPlannedWorkout`'s row plumbing have no other caller, so they
-  are deleted rather than left behind (the rule every dead API here follows). Rejected alternative: keeping
-  the rows behind a "show more" — the complaint is that the answer is the wrong one, and a disclosure hides
-  it rather than fixing it.
-
-- **Home says when nothing is planned today** (N126). Today the surface draws **nothing at all** when no
-  slot falls on the day, so a rest day reads as a screen that simply ends — the ways in and no statement
-  about the day. It says so instead: a line where the plan would be, naming that nothing is scheduled,
-  which is what makes N125's removal of the next-up rows honest rather than a blank. The sentence has to
-  tell two states apart, because they are not the same fact: **no active program** (nothing is scheduled
-  because nothing is being followed) and **an active program with no slot today** (the day is rest, and the
-  program is still there). A weekday-less program is the second state on every day — it is never scheduled
-  and never missed — which is exactly the case P3.9's rows existed for, and the one this line has to cover
-  without them.
-
-- **Today's planned workout can be read before it is started** (N127). A today card offers *Start* and the
-  substitute picker and nothing else: the plan itself — what movements, how many sets — can only be seen by
-  starting it. A next-up row already opens a **read-only plan** (N55's two gestures: the field opens it, the
-  pill starts it), and today's card should have the same field, reading the same
-  [`PlannedWorkoutDialog`](app/src/main/java/com/example/androidapp/ui/home/PlannedWorkoutDialog.kt) rather
-  than a second preview. **N125 without this deletes that dialog**: the next-up rows are its only entry
-  point, so the preview would become dead code and be removed with them — the pairing is why the three are
-  queued as one batch. The plan is read live, as it already is, so an edit in the editor shows here too
-  (N16's living template).
+Six items in two groups. The first is what cutting 2.3 and 2.4 turned up: a release procedure that invites
+its own mistake, the verification it leaves to a human, a race left in a comment, and the cheaper answer to
+the formatting decision (B128, B129, N128, N129). The second is two candidates of one shape — a dimension the
+app already records and reduces before reading it back — put here as **alternatives, one to be taken rather
+than both** (N130, N131). Home's plan surface (N125–N127) left this section for the changelog.
 
 ### What cutting 2.3 and 2.4 turned up (B128, B129, N128, N129)
 
@@ -257,10 +218,11 @@ each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading
 (B109–B116) and the four a lifter found in use (B117–B120) among them — and N122, the half-credit a movement's
 secondary muscles now take, N123, the behind-the-back cable curl the seed gained, and N124, the next-up
 surface moving into the body, with the five defects a review of that batch found (B121–B125) fixed before the
-tag. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
+tag, and **N125–N127 shipped next** — today's plan as home's only answer, the line that says when there is
+none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds nine items (N125–N127, B128, B129, N128, N129, N130, N131), the first group asked for in use.** N118
+***Next* holds six items (B128, B129, N128, N129, N130, N131); home's plan surface (N125–N127) shipped.** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
