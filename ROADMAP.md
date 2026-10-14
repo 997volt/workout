@@ -1,7 +1,7 @@
 # Workout — Roadmap
 
-> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one planned change (N123) with the four
-> defects a lifter found in use (B117–B120) queued beside it. Last reviewed against the
+> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two planned changes (N123, N124) with
+> the four defects a lifter found in use (B117–B120) queued beside them. Last reviewed against the
 > code: 2026-10-13 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -19,8 +19,8 @@
 > the library's long-press family details, a program read for the work it spreads where, and the three menu
 > entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
 > before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds one
-> planned change (N123) and the four defects a lifter found in use (B117–B120). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds two
+> planned changes (N123, N124) and the four defects a lifter found in use (B117–B120). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
 > defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
 > Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five defects
 > (B104–B108); all five are fixed and recorded in [CHANGELOG.md](CHANGELOG.md). A line-by-line reading of the
@@ -43,9 +43,9 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-One planned change — a lift to add to the seed — with the four defects a lifter found in use queued beside it.
-The defects were reported from real use rather than found in a reading, and the mechanism under each was read
-in the code while the reproduction is the lifter's.
+Two planned changes — a lift for the seed, and one surface for where the next workout is — with the four
+defects a lifter found in use queued beside them. The defects were reported from real use rather than found in
+a reading, and the mechanism under each was read in the code while the reproduction is the lifter's.
 
 - **A behind-the-back cable curl joins the seed** (N123). The curl family carries a barbell, a dumbbell, a
   machine and a plain cable curl, and not the single-arm curl taken behind the back — the one that keeps
@@ -59,6 +59,24 @@ in the code while the reproduction is the lifter's.
   that already exists gets the row on its next launch and **no migration and no transfer-format change** is
   involved. What has to move with it is the count the family's own line and the seed's doc state, which is the
   shape B107 was.
+
+- **Where the next workout is becomes one surface, in the body** (N124). Home says it twice today — a dated
+  *Today* card in the scrollable body and a *Next up* row in the start bar (P3.9, N55) — and one question asked
+  twice is what this removes: the bar's block goes and the body's section carries both cases, a plan the
+  schedule puts on today and the run a program with nothing scheduled today is up to, which is what keeps a
+  weekday-less rotation on the screen at all (P3.3). The merged section is the **first block of the scroll**
+  again, where it sat before N115 moved it to the foot to meet the bar's rows; with those rows gone there is
+  nothing at the foot to align with. **N55's preview survives the move**: looking at a planned workout and
+  starting it stay two gestures, so an entry for a run carries the field that opens the read-only dialog beside
+  *Start*, which the dated card does not have today and the one component now must. The bar keeps the *Resume*
+  pill and is therefore drawn only while a workout is open (N102, B101) — it also draws an empty column when
+  nothing is scheduled, which goes with the block.
+  Nothing stored changes: no schema, no transfer format, no program document. The rule that keeps a program out
+  of both surfaces stays as it is — `nextUpFor` already skips a program with a slot today, because a row beside
+  the day's plan is a second, contradictory answer — and the exclusion is what the merged list has to keep, so
+  a dated plan and an undated run never wear the same heading. The *Next up* strings, the `TestTags.Home`
+  next-up tags and the two surfaces' screen tests move with it
+  ([WorkoutsHomeScreenTest.kt](app/src/test/java/com/example/androidapp/ui/home/WorkoutsHomeScreenTest.kt)).
 
 ### Defects found in use
 
@@ -211,7 +229,7 @@ records the day (N114), a program slot's ⋮ opening its template (N120), a plan
 each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading of that batch found
 (B109–B116) among them — and N122, the half-credit a movement's secondary muscles now take.
 
-***Next* holds N123 and the four defects a lifter found in use (B117–B120).** N118
+***Next* holds N123 and N124 with the four defects a lifter found in use (B117–B120).** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
