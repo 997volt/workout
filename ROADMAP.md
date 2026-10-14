@@ -1,9 +1,9 @@
 # Workout — Roadmap
 
-> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds ten items — four the release
-> rounds turned up (B128, B129, N128, N129), two candidates to choose between (N130, N131), three about
-> measurements (B130, N132, N133) and a template keeping a version (N134). Last reviewed against the
-> code: 2026-10-14 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
+> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nine items — four the release rounds
+> turned up (B128, B129, N128, N129), two candidates to choose between (N130, N131) and three about
+> measurements (B130, N132, N133) — with one decided change waiting in *Later* (N134). Last reviewed against
+> the code: 2026-10-14 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
 > database file, the 1.x chain and its schemas deleted, both transfer formats refusing 1.x, and the five
@@ -25,8 +25,8 @@
 > (B121–B126) are fixed. **B127 shipped as 2.4** the same day, because the keyboard's black band was found in
 > use on the released 2.3 and the window's soft input mode was the cause. The 1.x store is left on the device
 > by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds ten
-> items (B128, B129, N128, N129, N130, N131, B130, N132, N133, N134). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
+> Checked against the changelog as well as the code: every shipped id has its entry, *Next* holds nine items
+> (B128, B129, N128, N129, N130, N131, B130, N132, N133) and *Later* holds one (N134). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
 > it on a device — found eight
@@ -52,13 +52,13 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Ten items in four groups. The first is what cutting 2.3 and 2.4 turned up: a release procedure that invites
+Nine items in three groups. The first is what cutting 2.3 and 2.4 turned up: a release procedure that invites
 its own mistake, the verification it leaves to a human, a race left in a comment, and the cheaper answer to
 the formatting decision (B128, B129, N128, N129). The second is two candidates of one shape — a dimension the
 app already records and reduces before reading it back — put here as **alternatives, one to be taken rather
 than both** (N130, N131). The third is measurements: a defect the request turned up, and the two changes that
-make a deletion deliberate (B130, N132, N133). The fourth is a template that can keep a version (N134), asked
-for in use. Home's plan surface (N125–N127) left this section for the changelog.
+make a deletion deliberate (B130, N132, N133). Home's plan surface (N125–N127) left this section for the
+changelog, and keeping a template's version (N134) sits in *Later*.
 
 ### What cutting 2.3 and 2.4 turned up (B128, B129, N128, N129)
 
@@ -173,41 +173,48 @@ go first — an edit mode is no use for an entry that cannot be reached.
   — the restored row keeps `deletedAt` as the identity of the one write that hid it (N90's rule), and a day
   that has been re-entered since has to be refused with a sentence rather than overwritten.
 
-### Templates keep their versions (N134)
+## Later — decided, and not being started
 
-- **A template can keep a version, and the versions are attached to it** (N134). Asked for in use: *sometimes I want to
-  update a template but keep its previous version for future reference*. **A version is a template row of its own**,
+Agreed work that is not next: the design is settled so it does not have to be re-argued, and nothing here is being
+built. It is **not** *Parked* — a parked row is a decision not to plan something, while these are planned and simply
+not now — and it is not *Next*, which is what is actually being worked on. Each row names **what brings it forward**,
+for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
+**It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
+
+- **A template can keep a version, and the versions are attached to it** (N134). Asked for in use: *sometimes I want
+  to update a template but keep its previous version for future reference*. **A version is a template row of its own**,
   flagged by a nullable `versionOf` naming the template it was kept from, with its exercises and sets in the tables they
   already live in. Nothing new is created for the plan's tree: the read paths, the copy machinery
   `createTemplateFromSession` already uses, and the soft-delete convention all apply unchanged, and the templates list
   gains one more predicate of the kind it already has — `versionOf IS NULL` beside `deletedAt IS NULL` — so a version
-  never appears as a template. **That dissolves the hide button** the duplicate idea needed: the kept copies are inside
-  the template they belong to rather than loose in the list, so there is nothing to hide and no count to hold down.
+  never appears as a template. **That dissolves the hide button** a *duplicate* would have needed: the kept copies live
+  inside the template they belong to rather than loose in the list, so there is nothing to hide and no count to hold
+  down. The four decisions are settled, not open:
 
-  **The trigger is explicit, and a version is read-only.** Nothing is versioned automatically: the lifter presses
-  *Keep a version* at the moment they decide to change something, and what is kept is the state as it stands.
-  Automatic versioning was rejected — a rename or a note tweak would become a "version", and writing rows nobody asked
-  for is what this app's own rule refuses. A version opens as a **read-only plan**, the rendering the planned-workout
-  preview already uses, so it can never be edited into something that looks live.
+  - **Never automatic.** The lifter presses *Keep a version* at the moment they decide to change something, and what is
+    kept is the state as it stands. Automatic versioning was rejected: a rename or a note tweak would become a
+    "version", and it writes rows nobody asked for.
+  - **A version is never edited.** It opens as a **read-only plan**, the rendering the planned-workout preview already
+    uses, so it cannot be changed into something that looks live.
+  - **No restore.** The request is future *reference*, and reading it back is the whole of it. Restoring was rejected
+    rather than deferred: it turns a record into an editing path, and a restore is destructive in its own right — the
+    state it overwrites would then need keeping, which is the problem this feature exists to solve, one level down.
+  - **The export carries everything**, versions and the `versionOf` link with them, so an import re-attaches versions
+    instead of flattening them into ordinary templates. An export that dropped them was rejected: the file is the only
+    path off the device, and a silent loss found after a restore is the worst form of this feature.
 
   **A version stores its own name, and that is what makes this safe.** The live template's name is read **live** by
   history — a rename relabels the past (P3.3's provenance rule) — so anything that renamed the live row to mark a
-  version would rewrite how past sessions read. Keeping a version renames nothing and repoints nothing: no session,
-  slot or substitution is touched, which is also why this needs no part of the slot-repointing a *duplicate* would.
+  version would rewrite how past sessions read. Keeping a version renames nothing and repoints nothing, which is also
+  why it needs no part of the slot-repointing a *duplicate* would have required.
 
-  **Not in this id: restoring a version.** The request is future *reference*, and reading it back is the whole of it.
-  Restoring is a second path with a rule of its own — does the version being replaced get kept in turn? — and it is one
-  id away.
-
-  **What must travel with it: the export.** A version is reference material and the export file is the only path off
-  the device, so the transfer format gains the field and moves its version, rather than versions quietly dying with the
-  phone. Excluding them was rejected: a silent loss discovered after a restore is the worst form of this feature.
-
-  **The shape was revised while deciding it**, and the first sketch is worth recording as the rejected alternative: new
-  revision tables (revision, revision exercises, revision sets) plus a migration, on the reading that a version is a
-  different kind of thing from a template. It is not — it is a plan with exercises and sets, which is what a template
-  already is, and the flag is the only thing missing. One nullable column and one predicate against three tables and a
+  **The shape was revised while deciding it**, and the first sketch is kept as the rejected alternative: three revision
+  tables and a migration, on the reading that a version is a different kind of thing from a template. It is not — it is
+  a plan with exercises and sets, and the flag is the only thing missing. One nullable column against three tables and a
   second copy of the tree is the whole of the difference.
+
+  **Brought forward when** a template is next edited with the thought "I wish I still had the old one" — which is the
+  moment the feature pays for itself, and is why it sits here rather than in *Next*.
 
 ## Parked — deliberately not planned
 
@@ -301,8 +308,8 @@ tag, and **N125–N127 shipped next** — today's plan as home's only answer, th
 none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds ten items (B128, B129, N128, N129, N130, N131, B130, N132, N133, N134); home's plan surface
-(N125–N127) shipped.** N118
+***Next* holds nine items (B128, B129, N128, N129, N130, N131, B130, N132, N133) and *Later* one (N134);
+home's plan surface (N125–N127) shipped.** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
