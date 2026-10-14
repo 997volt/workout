@@ -1,8 +1,7 @@
 # Workout — Roadmap
 
-> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds the five defects a review of the
-> unreleased batch found (B121–B125). Last reviewed against the code: 2026-10-15 — the N87–N95 batch
-> shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
+> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nothing. Last reviewed against the
+> code: 2026-10-15 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
 > database file, the 1.x chain and its schemas deleted, both transfer formats refusing 1.x, and the five
@@ -19,10 +18,11 @@
 > the library's long-press family details, a program read for the work it spreads where, and the three menu
 > entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
 > before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds the
-> five defects a review of the unreleased batch found (B121–B125). **Reading the N107 and N111–N121 batch
-> line by line — and running it on a device — found eight defects (B109–B116); all eight are fixed and
-> recorded in [CHANGELOG.md](CHANGELOG.md).**
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds
+> nothing. **Reading the unreleased batch line by line found five defects (B121–B125); all five are fixed and
+> recorded in [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
+> it on a device — found eight
+> defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
 > Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five defects
 > (B104–B108); all five are fixed and recorded in [CHANGELOG.md](CHANGELOG.md). A line-by-line reading of the
 > N87–N95 changes found sixteen defects (B79–B94); all are fixed and recorded in
@@ -44,89 +44,8 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-The five defects a **review of the unreleased batch** found (B121–B125), queued before the tag. They were
-found by reading rather than in use, and one of them by running a test against the reading; each names the
-mechanism in the code, the fix wanted, and what must not travel with it.
-
-### Defects found in review
-
-- **An existing set cannot be edited into the drop that opens a run** (B121). A plan of two working sets,
-  the second to become a drop off the first, cannot be authored: the dialog shows **no drop-value field**,
-  *Save* is enabled, and the write is then refused with *"A drop run needs the value it takes off the set
-  above it."* `TemplateSetEditor` answers `holdsTheRunValue` with
-  `exercise.sets.runAt(position)?.rung == 1 || (edited == null && exercise.sets.getOrNull(position - 1)?.role != SetType.DROP)`
-  ([TemplateEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateEditorScreen.kt)),
-  where `edited == null` is doing duty for "the row being authored is not a rung yet" — which is also true of
-  the row that **exists** and is being changed into one. There `runAt(position)` is null (the row is not a
-  rung yet) and the second disjunct is false (the row exists), so the field is hidden
-  ([TemplateSetDialog.kt](app/src/main/java/com/example/androidapp/ui/components/TemplateSetDialog.kt)) and
-  `toEdit()` writes `dropValueGrams = null`, which the boundary refuses: `run.rung == 1 && set.dropValueGrams == null`
-  ([RoomTemplateRepository.kt](app/src/main/java/com/example/androidapp/data/RoomTemplateRepository.kt)).
-  **This is B120's fault inverted** — that fix stopped the dialog demanding a value the boundary refuses on a
-  later rung, and this is the same dialog asking for nothing where the boundary requires something — and it is
-  a regression the fix introduced rather than a gap it left: the old answer here was
-  `holdsTheRunValue = offers(SetType.DROP)`, which is true at this position because the row above records
-  effort, so the field was shown and the save worked. **Reproduced rather than reasoned**: a probe test that
-  converts the second of two ordinary sets to *Drop* fails on the missing `TEMPLATE_SET_DROP_VALUE` node —
-  the class's other 40 tests pass and the probe is the only failure — while the click that selects *Drop*
-  itself succeeds, which is what shows the option is offered and only the field is missing. The wanted
-  question is "would this position **open** a drop run", answered by the row-above test for every row that is
-  not already a rung rather than only for a row being added. The two cases B120 did cover — appending a rung
-  to a run, and editing a later rung — are right and pinned; the third needs its test beside them, which is
-  what would have caught this. What must not move with it: those two cases, and a continuing rung inheriting
-  the run's value instead of naming one (N79).
-
-- **The keyboard still covers the bottom of the three screens B119 left alone** (B122). The B119 entry says
-  the template editor, the measurements form and the exercise detail "share the gap"; they still do.
-  `imePadding()` appears **once** under `app/src/main`, on the running workout's body
-  ([ActiveWorkoutScreen.kt](app/src/main/java/com/example/androidapp/ui/workout/ActiveWorkoutScreen.kt)), and
-  no screen sets `windowSoftInputMode`, so on an edge-to-edge window the fields at the foot of
-  [TemplateEditorScreen.kt](app/src/main/java/com/example/androidapp/ui/templates/TemplateEditorScreen.kt),
-  [MeasurementsScreen.kt](app/src/main/java/com/example/androidapp/ui/measurements/MeasurementsScreen.kt) and
-  [ExerciseDetailScreen.kt](app/src/main/java/com/example/androidapp/ui/exercises/ExerciseDetailScreen.kt)
-  stay under the keyboard exactly as the workout's did. The template editor is the one that costs most: a plan
-  is authored in a dialog whose save button sits at the screen's bottom edge and whose fields scroll above it.
-  The fix is the inset on each, and **the measurement B119 recorded moves with it** — DECISIONS.md's *Verified
-  on device* reads the body's viewport shrinking by the keyboard's height — because this is the class of
-  layout that quietly stops applying. It is **not one edit copied three times**: the set dialog is an
-  `AlertDialog` rather than a Scaffold body, so each screen needs its own reading of where the inset belongs.
-
-- **The balance row's signature line is malformed, and no gate can see it** (B123).
-  [ProgramBalanceScreen.kt](app/src/main/java/com/example/androidapp/ui/programs/ProgramBalanceScreen.kt)
-  line 143 reads `private fun BalanceRow(row: MuscleSets, creditedHalfSets: Int) {    Column(` — the opening
-  brace and the call that belongs on the next line share one. Every other composable in the file keeps the
-  4-space indent [.editorconfig](.editorconfig) states, and **nothing in the gate reads Kotlin layout**: detekt
-  loads the Compose ruleset alone ([build.gradle.kts](app/build.gradle.kts)) with no formatting rules
-  configured ([detekt.yml](config/detekt/detekt.yml)), lint does not check indentation, and the line is inside
-  the 120-column ceiling both files set, so `MaxLineLength` is silent too. So the defect is **the gate as much
-  as the line**: style here is enforced by review for everything a formatting ruleset would hold. The fix is to
-  rejoin the line, and to decide the ruleset deliberately — either wire `detekt-formatting` at the detekt
-  version already pinned, with the reason for every exclusion recorded the way detekt.yml's own contract
-  demands, or write down here that formatting stays a review rule.
-
-- **The counting's last filter can no longer fire** (B124). `muscleBalance` ends `.filter { it.halfSets > 0 }`
-  ([MuscleSets.kt](app/src/main/java/com/example/androidapp/domain/model/MuscleSets.kt)), and no credit can be
-  zero: a row with no working set returns before it credits anything, and every credit is
-  `working * PRIMARY_HALF_SETS` or `working * SECONDARY_HALF_SETS` with `working >= 1`. The filter was
-  load-bearing in the `groupBy` shape N122 replaced — a group could hold a row with no working sets, and the
-  filter is what kept it off the screen — and the rewrite left it behind. It is dead under this repository's
-  own rule, and dead in the worst place for it: the next person to change the counting will read the filter as
-  the live guard that keeps empty rows out. **Delete it**, and do not carry the unresolved bucket out with it —
-  the bucket is a real row whose credits are positive, and what puts it last is the ordering's
-  `muscle == null` tie-break, not this filter.
-
-- **Two sentences in the unreleased changelog claim more than the code does** (B125). The `[Unreleased]`
-  entries are what a future reader trusts, and two of them state more than the code delivers. B120's says the
-  run's value is read "from `runAt` for a row that exists and from the row above for one being added" — true
-  of a row that is **already** a rung, false of the row that exists and is being changed into one, which is
-  B121. B118's says the comparison is "read from the repository rather than from the screen's state, so a set
-  written a moment earlier cannot be missed either" — the repository read closes the window between a write
-  committing and the state emitting, which was the defect, and does not close two `onLogSet` calls whose reads
-  both run before either write commits, the candidate the reading that found B118 recorded on the same symptom
-  and the shipped fix narrows rather than closes. The wording is the work for the second ("the read no longer
-  depends on the screen's state having caught up"), and B121's fix is the work for the first, which should
-  describe the **position** rather than the row. If the residual window is to be closed rather than described,
-  that is a further id: two sets logged faster than the first write commits would still merge a stale list.
+Nothing. Everything planned has shipped; the next item is written here when there is one, and never
+invented to keep the section full.
 
 ## Parked — deliberately not planned
 
@@ -215,13 +134,14 @@ records the day (N114), a program slot's ⋮ opening its template (N120), a plan
 each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading of that batch found
 (B109–B116) and the four a lifter found in use (B117–B120) among them — and N122, the half-credit a movement's
 secondary muscles now take, N123, the behind-the-back cable curl the seed gained, and N124, the next-up
-surface moving into the body.
+surface moving into the body, with the five defects a review of that batch found (B121–B125) fixed before the
+tag.
 
-***Next* holds the five defects a review of the unreleased batch found (B121–B125).** N118
+***Next* holds nothing again.** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
-from what the log and the plan hold and from what a reading finds, never to keep itself full. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
+from what the log and the plan hold, never to keep itself full. **The reading that produced 2.1 found five defects in it, all fixed before the tag (B104–B108)** — the one
 that mattered left the instrumented job red, because a program document's former variation imports under its
 family now and the test still asserted the link the shape no longer has. 2.0 shipped with the loudest note this project has written — the 1.x store stays on the device and
 2.0 does not read it — and the rule that allowed that is in [DECISIONS.md](DECISIONS.md), with the window it

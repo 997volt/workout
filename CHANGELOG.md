@@ -54,7 +54,51 @@ unreleased.
   out of the next-up list, so a dated plan and an undated run never wear the same heading. Nothing stored
   changes: no schema, no transfer format, no program document.
 
+- **The muscle balance's last filter is gone** (B124). `muscleBalance` ended `.filter { it.halfSets > 0 }`, left
+  over from the `groupBy` shape N122 replaced — a group there could hold a row with no working sets, and the
+  filter is what kept it off the screen. No credit can be zero now: a row with no working set is skipped before
+  it credits anything, and every credit is one or two halves per working set. So the filter could never fire,
+  and it sat where it read as the live guard that keeps empty rows out. What actually puts the unresolved
+  bucket last is the ordering's `muscle == null` tie-break, and the counting's own doc says why it needs no
+  filter, so the next reader does not put one back.
+
 ### Fixed
+
+- **An ordinary set can be edited into the drop that opens a run** (B121). B120 taught the dialog to tell a
+  run's first rung from its later ones, and asked `runAt` — which answers `null` for a row that is not a rung
+  yet — with the row above as the fallback **for a row being added**. A row that already exists and is being
+  changed into a drop was neither: the field was hidden, *Save* was enabled, and the write was refused with
+  *"A drop run needs the value it takes off the set above it"*. That is B120's fault inverted, and a regression
+  rather than a gap — the answer it replaced (`offers(SetType.DROP)`) showed the field here. The question is
+  now asked of the **position**: a row already carrying a rung is answered by `runAt`, and one that is not — an
+  ordinary set being changed, or a row not yet added — opens its run exactly when the row above is not a drop
+  rung. The case B120 shipped without is pinned by a test beside the two it has.
+
+- **The keyboard no longer covers the template editor or the exercise detail** (B122). B119 gave the running
+  workout's body the IME inset and named the other screens with fields near the bottom; these are the two whose
+  fields are the activity window's own — the editor's block fields and the detail's edit form both scroll in
+  the Scaffold body — so both carry `imePadding()` for the same reason: the window is edge-to-edge and does not
+  resize for the keyboard. **The measurements form is deliberately not touched**, which is a finding rather
+  than an omission: its fields are inside an `AlertDialog`, and Compose leaves a dialog's window
+  non-edge-to-edge (`DialogProperties.decorFitsSystemWindows` defaults to true), so the platform still resizes
+  it and an inset there would do nothing. B119's own entry is corrected to name the two bodies. **The device
+  measurement B119 set the pattern for was not made here** — no device was available — so the two insets are
+  reasoned from the window's shape rather than measured, and the viewport reading is outstanding.
+
+- **A malformed line, and the formatting gate that stays unwired** (B123). The balance row's signature shared
+  its line with the `Column(` that should follow it, and nothing in the gate could see it: detekt loads the
+  Compose ruleset alone, lint does not read Kotlin layout, and the line is inside the ceiling `.editorconfig`
+  and detekt's `MaxLineLength` agree on. The line is rejoined, and the question behind it is settled rather
+  than left implicit — **the formatting ruleset is not wired**, because it reports ~600 findings across 155
+  files, which is a repository-wide reformat or a set of `active: false` entries. The decision, the rule-by-rule
+  measurement and the trigger to revisit are in [DECISIONS.md](DECISIONS.md), and
+  [detekt.yml](config/detekt/detekt.yml)'s header says so where the next person would wire it.
+
+- **Two unreleased entries stated more than the code delivers** (B125). B120's said the run's value is read
+  "from `runAt` for a row that exists", which is the case B121 contradicted; B118's promised that a set written
+  a moment earlier "cannot be missed", where the read moving to the repository narrows that window rather than
+  closing it — two sets whose reads both run before either write commits still merge a stale list. Both
+  sentences are corrected above, and the residual window is recorded rather than claimed away.
 
 - **Resuming a workout from home keeps its plan** (B117). The plan was read from the route's `templateId`, and
   the *Resume* pill builds the destination with no argument — so a workout started from a template showed every
@@ -67,27 +111,32 @@ unreleased.
   the last planned set — the run's value included — and saving it was refused with *"A run's drop value is
   written on its first rung"*, so a drop run could never grow past one rung. The dialog was asked the wrong
   question: whether a drop was **allowed** at that position, which is true of every rung of a run, instead of
-  whether the row being authored **opens** the run — the only row a value is written on (N79). It is told now,
-  from `runAt` for a row that exists and from the row above for one being added, so a rung that continues a run
-  inherits the value instead of being asked for a second one. **Editing an existing later rung was broken the
-  same way**, and is fixed with it.
+  whether the row being authored **opens** the run — the only row a value is written on (N79). It is told now
+  whether the **position** opens the run it would be part of: `runAt` answers that for a row already carrying a
+  rung, and the row above for one that is not, so a rung that continues a run inherits the value instead of
+  being asked for a second one. **Editing an existing later rung was broken the same way**, and is fixed with
+  it. The first cut of this fix read "a row that exists" as "a row that is already a rung" and missed the
+  ordinary set being changed into one, which B121 fixed.
 
 - **A personal best is no longer announced over a better set logged in the same session** (B118). History is
   read with the live session excluded, and what the session had already done was merged back in from **the row
   being written to** alone — so a set on a second row of the same movement was on neither side, and a lighter
   set there was announced as a record. A plan may name a movement twice (N54), and a superset or a second block
   of the same lift reaches the same shape. The comparison now covers **every set this session has logged for
-  the movement**, read from the repository rather than from the screen's state, so a set written a moment
-  earlier cannot be missed either. Two look-alikes stay by design: a heavier **warm-up** or rung above is not a
-  record (B17, N79), and a heavier set at a different rep count is a different record (N23).
+  the movement**, read from the repository rather than from the screen's state — so the read no longer depends
+  on that state having caught up with a set just written. It does **not** close two sets whose reads both run
+  before either write commits, which is recorded rather than claimed away (B125). Two look-alikes stay by
+  design: a heavier **warm-up** or rung above is not a record (B17, N79), and a heavier set at a different rep
+  count is a different record (N23).
 
 - **The keyboard no longer covers the bottom of a running workout** (B119). The window is edge-to-edge
   (`enableEdgeToEdge`, `targetSdk 37`), so it does **not** resize for the keyboard, and nothing applied the IME
   inset — a set's fields below the fold stayed under the keyboard however far the list was scrolled. The
   workout's body carries the inset now, so its viewport and its bottom padding shrink by the keyboard's height
   and what is behind it can be reached. Setting `windowSoftInputMode` is not the fix on an edge-to-edge window.
-  The other screens with fields near the bottom — the template editor, the measurements form, the exercise
-  detail — share the gap and are **not** covered by this entry.
+  The other screens with fields near the bottom — the template editor and the exercise detail — share the gap
+  and are **not** covered by this entry. The measurements form's fields are a dialog's, and a dialog's window
+  is not edge-to-edge, so the platform still resizes it (B122).
 
 ## [2.2] — 2026-10-13 (versionCode 22)
 
