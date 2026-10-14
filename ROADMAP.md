@@ -64,18 +64,26 @@ a reading, and the mechanism under each was read in the code while the reproduct
   *Today* card in the scrollable body and a *Next up* row in the start bar (P3.9, N55) — and one question asked
   twice is what this removes: the bar's block goes and the body's section carries both cases, a plan the
   schedule puts on today and the run a program with nothing scheduled today is up to, which is what keeps a
-  weekday-less rotation on the screen at all (P3.3). The merged section is the **first block of the scroll**
-  again, where it sat before N115 moved it to the foot to meet the bar's rows; with those rows gone there is
-  nothing at the foot to align with. **N55's preview survives the move**: looking at a planned workout and
-  starting it stay two gestures, so an entry for a run carries the field that opens the read-only dialog beside
-  *Start*, which the dated card does not have today and the one component now must. The bar keeps the *Resume*
-  pill and is therefore drawn only while a workout is open (N102, B101) — it also draws an empty column when
-  nothing is scheduled, which goes with the block.
+  weekday-less rotation on the screen at all (P3.3). The merged section **stays at the foot of the scroll**,
+  where N115 put it to meet the bar's rows: the block it was aligned with is gone, but the placement that
+  argued for it — the thing the app says is next at the bottom edge the thumb is already at — is what was
+  asked to keep, so N115's move is not reversed. **N55's preview survives the move**: looking at a planned
+  workout and starting it stay two gestures, so an entry for a run carries the field that opens the read-only
+  dialog beside *Start*, which the dated card does not have today and the one component now must. The bar keeps
+  the *Resume* pill and is therefore drawn only while a workout is open (N102, B101) — it also draws an empty
+  column when nothing is scheduled, which goes with the block.
+  **Visibility is the one rule the merge has to state**, because the two blocks it replaces were shown on
+  opposite conditions: the body's *Today* section today is drawn only when a program schedules something for
+  today's weekday (`todayPlanItems` returns when `todaysPlan` is empty), while the bar's row was the block that
+  showed **when nothing was scheduled today**. A single surface that keeps both cases is therefore drawn
+  whenever **today has a plan or an active program has a run** — and a surface drawn only on a scheduled day
+  would leave the next-up case with nowhere to live, which is what a weekday-less rotation and a day off both
+  depend on. Which of the two it is forms part of this change rather than a detail of it.
   Nothing stored changes: no schema, no transfer format, no program document. The rule that keeps a program out
-  of both surfaces stays as it is — `nextUpFor` already skips a program with a slot today, because a row beside
-  the day's plan is a second, contradictory answer — and the exclusion is what the merged list has to keep, so
-  a dated plan and an undated run never wear the same heading. The *Next up* strings, the `TestTags.Home`
-  next-up tags and the two surfaces' screen tests move with it
+  of both halves of the one surface stays as it is — `nextUpFor` already skips a program with a slot today,
+  because a row beside the day's plan is a second, contradictory answer — and the exclusion is what the merged
+  list has to keep, so a dated plan and an undated run never wear the same heading. The *Next up* strings, the
+  `TestTags.Home` next-up tags and the two surfaces' screen tests move with it
   ([WorkoutsHomeScreenTest.kt](app/src/test/java/com/example/androidapp/ui/home/WorkoutsHomeScreenTest.kt)).
 
 ### Defects found in use
