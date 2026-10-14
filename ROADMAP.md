@@ -1,8 +1,8 @@
 # Workout — Roadmap
 
-> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds six items — four the release rounds
-> turned up (B128, B129, N128, N129) and two candidates to choose between (N130, N131). Last reviewed
-> against the
+> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nine items — four the release
+> rounds turned up (B128, B129, N128, N129), two candidates to choose between (N130, N131), and three about
+> measurements (B130, N132, N133). Last reviewed against the
 > code: 2026-10-14 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -25,8 +25,8 @@
 > (B121–B126) are fixed. **B127 shipped as 2.4** the same day, because the keyboard's black band was found in
 > use on the released 2.3 and the window's soft input mode was the cause. The 1.x store is left on the device
 > by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds six
-> items (B128, B129, N128, N129, N130, N131). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds nine
+> items (B128, B129, N128, N129, N130, N131, B130, N132, N133). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
 > it on a device — found eight
@@ -52,11 +52,13 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Six items in two groups. The first is what cutting 2.3 and 2.4 turned up: a release procedure that invites
+Nine items in three groups. The first is what cutting 2.3 and 2.4 turned up: a release procedure that invites
 its own mistake, the verification it leaves to a human, a race left in a comment, and the cheaper answer to
 the formatting decision (B128, B129, N128, N129). The second is two candidates of one shape — a dimension the
 app already records and reduces before reading it back — put here as **alternatives, one to be taken rather
-than both** (N130, N131). Home's plan surface (N125–N127) left this section for the changelog.
+than both** (N130, N131). The third is measurements: a defect the request turned up, and the two changes that
+make a deletion deliberate (B130, N132, N133). Home's plan surface (N125–N127) left this section for the
+changelog.
 
 ### What cutting 2.3 and 2.4 turned up (B128, B129, N128, N129)
 
@@ -129,6 +131,47 @@ started to keep the section full.
   while the log records one per **set**, so unlike weight and reps this comparison has to choose what to line
   up against — the heaviest set's effort, the exercise's average, or the rating the lifter gave the exercise
   afterwards. What must not travel with it: the prefill and the progression use of the target, which work.
+
+### Measurements: making a deletion deliberate (B130, N132, N133)
+
+Asked for after using the app: a delete in the measurements view is one tap on a fact that cannot be
+re-derived, and the list it sits in cannot even be scrolled. The defect came out of the request, and it has to
+go first — an edit mode is no use for an entry that cannot be reached.
+
+- **The measurements list does not scroll** (B130). `MeasurementList` is a
+  [`Column`](app/src/main/java/com/example/androidapp/ui/measurements/MeasurementsScreen.kt) with
+  `fillMaxSize()` that runs `forEach` over the entries — not a `LazyColumn`, not even `verticalScroll` — and
+  the Scaffold hands it `innerPadding` and nothing else. So the first screenful is all there is: a lifter with
+  a few weeks of daily entries cannot see, edit or delete anything older, and the add button floats over the
+  last row that happens to fit. Every other list in the app scrolls (the library, history, the plan's own
+  rows); this is the one that predates the pattern. Fixed by making it the list every other screen has, with
+  the empty sentence as an item of it. Queued on its own rather than folded into N132, because it is a defect
+  whatever is decided about deletes — and because N132's edit mode is unreachable for rows that cannot be
+  scrolled to.
+
+- **Deleting leaves the default view, behind an edit mode** (N132). Every row carries its own *Delete* today,
+  so the destructive action is one tap away on a screen the lifter opened to **read or add** — and a
+  measurement is the one thing here that cannot be reconstructed: a set can be logged again and a plan
+  re-authored, but a weight on a morning is a fact about the body that no later write recovers. The default
+  view becomes what it is for — **scroll and add** — and deletion moves behind an explicit edit toggle that
+  the lifter enters and leaves, with the button saying which mode it is in. What must not travel with it: the
+  add path with its two kinds (N113), the empty sentence, and the edit mode must not quietly become a way to
+  *change* a reading — correcting a measurement's numbers is a different question, and this id does not ask
+  it. Rejected alternative: a confirmation dialog on the existing per-row button. That is the guard this repo
+  uses where an act is big and has no way back at all (deleting a workout, a template, an exercise), and it
+  answers the wrong problem here — the complaint is a delete button on **every row of a reading screen**, and
+  a dialog leaves it exactly there while adding an interruption to every deliberate one.
+
+- **A deleted measurement can be put back** (N133). There is no way back today, and there is no need to
+  invent one: the delete is already a **soft** delete — `RoomMeasurementRepository.delete` sets `deletedAt`
+  on the entry and on its sore rows — so the way back is clearing that field rather than re-inserting
+  anything, the same mechanism N90's restore uses. The shape is settled too, and it is **a snackbar naming
+  what went, with *Undo*** (N7, B3, N90), held by the ViewModel until the message is taken and offered one at
+  a time — not a modal "are you sure?" before a reversible act, which is the interruption that shape exists to
+  avoid. The wrinkle to settle while building it: a measurement's identity is **its day and its kind** (N32,
+  N113), so an undo must not resurrect a row that would collide with a newer entry for the same day and kind
+  — the restored row keeps `deletedAt` as the identity of the one write that hid it (N90's rule), and a day
+  that has been re-entered since has to be refused with a sentence rather than overwritten.
 
 ## Parked — deliberately not planned
 
@@ -222,7 +265,8 @@ tag, and **N125–N127 shipped next** — today's plan as home's only answer, th
 none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds six items (B128, B129, N128, N129, N130, N131); home's plan surface (N125–N127) shipped.** N118
+***Next* holds nine items (B128, B129, N128, N129, N130, N131, B130, N132, N133); home's plan surface
+(N125–N127) shipped.** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
