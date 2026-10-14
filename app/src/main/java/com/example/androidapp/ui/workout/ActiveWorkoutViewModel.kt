@@ -69,6 +69,8 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** A logged set as the screen shows it: position, weight, reps, and N6's extras. */
 data class SetRow(
@@ -288,6 +290,22 @@ class ActiveWorkoutViewModel @Inject constructor(
     val startedFromProgram: Boolean get() = slotId != null
 
     private val lastError = MutableStateFlow<DataError?>(null)
+
+    /**
+     * Orders one set's record comparison against another's write (ROADMAP N23, B118, B126).
+     *
+     * Logging a set reads what this session has already done, compares the set against it, and only then
+     * writes. Each of those is a suspension point, so two taps close together used to interleave: both
+     * reads ran before either write landed, both compared against **history alone**, and the lighter set
+     * was announced as a record over the heavier one beside it. B118 moved that read to the repository,
+     * which closed the gap between a write committing and the screen's state catching up; this closes the
+     * gap between two writes.
+     *
+     * It orders **logging** and nothing else. An edit or a delete landing beside a log can still move the
+     * picture the log compared against, which is a different race with no false banner at the end of it:
+     * neither of those announces anything.
+     */
+    private val loggingASet = Mutex()
 
     /**
      * The review of the workout that just finished, published instead of closing the
@@ -761,61 +779,66 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onLogSet(sessionExerciseId: String, edit: SetEdit) {
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId } ?: return
         viewModelScope.launch {
-            // Read *before* the set is written (ROADMAP N23, B118): the set being logged is not history.
-            val against = recordsAgainst(row)
-            _personalRecord.value = null
+            // **One set is logged at a time** (ROADMAP N23, B118, B126): the comparison, the write and the
+            // banner that follows it are one step, so a second tap cannot read a session that has not
+            // recorded the first yet and announce a record over it.
+            loggingASet.withLock {
+                // Read *before* the set is written (ROADMAP N23, B118): the set being logged is not history.
+                val against = recordsAgainst(row)
+                _personalRecord.value = null
 
-            val result = workoutRepository.logSet(
-                sessionExerciseId = sessionExerciseId,
-                reps = edit.reps,
-                weightGrams = edit.weightGrams,
-                // What the fields hold is what *Log set* writes (N59, N6). Leaving these out is what
-                // made every inline set come back with no effort recorded.
-                rpeHalves = edit.rpeHalves,
-                note = edit.note,
-                setType = edit.setType,
-                assistanceGrams = edit.assistanceGrams,
-            )
-            handle(result)
-            if (result is DataResult.Success) {
-                // A record noticed a week later in a list is a record nobody feels (N23).
-                // The role goes in, or a heavy warm-up raises a best (B17); and what it beat is
-                // read from the *merged* view, because the bar may have been set earlier in this
-                // same session — saying "the first time at this rep count" then would be false
-                // while claiming a record over that very set (B18).
-                if (
-                    against != null &&
-                    against.isRecord(edit.reps, edit.weightGrams, edit.setType)
-                ) {
-                    _personalRecord.value = PersonalRecordMoment(
-                        exerciseName = row.name,
-                        reps = edit.reps,
-                        weightGrams = edit.weightGrams,
-                        previousBestGrams = against.bestAt(edit.reps),
-                        weightUnit = row.weightUnit,
-                    )
-                }
+                val result = workoutRepository.logSet(
+                    sessionExerciseId = sessionExerciseId,
+                    reps = edit.reps,
+                    weightGrams = edit.weightGrams,
+                    // What the fields hold is what *Log set* writes (N59, N6). Leaving these out is what
+                    // made every inline set come back with no effort recorded.
+                    rpeHalves = edit.rpeHalves,
+                    note = edit.note,
+                    setType = edit.setType,
+                    assistanceGrams = edit.assistanceGrams,
+                )
+                handle(result)
+                if (result is DataResult.Success) {
+                    // A record noticed a week later in a list is a record nobody feels (N23).
+                    // The role goes in, or a heavy warm-up raises a best (B17); and what it beat is
+                    // read from the *merged* view, because the bar may have been set earlier in this
+                    // same session — saying "the first time at this rep count" then would be false
+                    // while claiming a record over that very set (B18).
+                    if (
+                        against != null &&
+                        against.isRecord(edit.reps, edit.weightGrams, edit.setType)
+                    ) {
+                        _personalRecord.value = PersonalRecordMoment(
+                            exerciseName = row.name,
+                            reps = edit.reps,
+                            weightGrams = edit.weightGrams,
+                            previousBestGrams = against.bestAt(edit.reps),
+                            weightUnit = row.weightUnit,
+                        )
+                    }
 
-                // ROADMAP N24: in a superset the rest belongs to the round, not the set, so
-                // it waits until nothing else in the group is behind. Resting here would
-                // defeat the pairing the user just asked for.
-                // And the group's own rest waits for the run to close (N79): a rung has no rest of its
-                // own between it and the next, because the point of a drop or a cluster is that the
-                // sets follow each other.
-                val runContinues = row.sets.size in row.runContinuesAfter
-                if (!runContinues && uiState.value.roundIsCompleteFor(row)) {
-                    // The group's own rest wins in a superset, then this exercise's, then the
-                    // app setting (ROADMAP N5, N21, B15). Taking the rest from whichever member
-                    // happened to close the round made the wait depend on the order the user
-                    // logged in — the same round resting differently every time round — and the
-                    // settled rule is the group's longest, so the pair is paced by its slowest
-                    // member.
-                    val rest = uiState.value.longestRestInRound(row)
-                        ?: row.restSeconds
-                        ?: defaultRestSeconds.value
-                    // Off means the timer is genuinely not running (N44): the end instant is simply
-                    // never written, and the screen shows the prescription as a fixed label instead.
-                    if (restTimerEnabled.value) startRest(rest)
+                    // ROADMAP N24: in a superset the rest belongs to the round, not the set, so
+                    // it waits until nothing else in the group is behind. Resting here would
+                    // defeat the pairing the user just asked for.
+                    // And the group's own rest waits for the run to close (N79): a rung has no rest of its
+                    // own between it and the next, because the point of a drop or a cluster is that the
+                    // sets follow each other.
+                    val runContinues = row.sets.size in row.runContinuesAfter
+                    if (!runContinues && uiState.value.roundIsCompleteFor(row)) {
+                        // The group's own rest wins in a superset, then this exercise's, then the
+                        // app setting (ROADMAP N5, N21, B15). Taking the rest from whichever member
+                        // happened to close the round made the wait depend on the order the user
+                        // logged in — the same round resting differently every time round — and the
+                        // settled rule is the group's longest, so the pair is paced by its slowest
+                        // member.
+                        val rest = uiState.value.longestRestInRound(row)
+                            ?: row.restSeconds
+                            ?: defaultRestSeconds.value
+                        // Off means the timer is genuinely not running (N44): the end instant is simply
+                        // never written, and the screen shows the prescription as a fixed label instead.
+                        if (restTimerEnabled.value) startRest(rest)
+                    }
                 }
             }
         }

@@ -58,6 +58,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.yield
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -1573,6 +1574,16 @@ class ActiveWorkoutViewModelTest {
         var previous: PreviousPerformance = PreviousPerformance(emptyList())
         var failWrites = false
 
+        /**
+         * Makes [logSet] suspend before the row lands, so two logs can be made to interleave (B126).
+         *
+         * A real write is a suspend call that has committed by the time it returns, and what a second
+         * coroutine sees while it is in flight is the whole question. Yielding here is the smallest model
+         * of that. Opt-in, because a fake that yielded by default would change the interleaving every
+         * other test in this class reads.
+         */
+        var yieldBeforeWritingSet = false
+
         /** What the next added exercise carries, so N5's plumbing can be asserted. */
         var restSecondsForNextExercise: Int? = null
 
@@ -1762,6 +1773,8 @@ class ActiveWorkoutViewModelTest {
         assistanceGrams: Long,
         ): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
+            // The write is in flight: a second log's read can land before this row does (B126).
+            if (yieldBeforeWritingSet) yield()
             sets.value = sets.value + SetEntry(
                 id = "set-${sets.value.size}",
                 sessionExerciseId = sessionExerciseId,
@@ -2286,6 +2299,36 @@ class ActiveWorkoutViewModelTest {
         settle()
 
         assertNull(viewModel.personalRecord.value)
+    }
+
+    @Test
+    fun twoSetsLoggedAtOnce_doNotBothAnnounceARecord() = runTest(dispatcher) {
+        // B126: B118 moved the "what has this session already done" read to the repository, which closes
+        // the window between a write committing and the screen's state catching up — but not two logs
+        // whose *reads* both run before either write commits. Both then compare against history alone, so
+        // the second announces a record over a heavier set logged beside it a moment earlier.
+        val repository = FakeWorkoutRepository().apply { yieldBeforeWritingSet = true }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val rows = viewModel.uiState.value.exercises
+        assertEquals(2, rows.size)
+
+        // Both taps land before either write: the fake yields inside `logSet`, so the second log's read
+        // runs while the first is still in flight. No settle between them, which is the whole point.
+        viewModel.onLogSet(rows[0].id, offeredSet(viewModel, reps = 8, weightGrams = 100_000L))
+        viewModel.onLogSet(rows[1].id, offeredSet(viewModel, reps = 8, weightGrams = 90_000L))
+        settle()
+
+        assertNull(
+            "the lighter set is not a record over the heavier one logged beside it",
+            viewModel.personalRecord.value,
+        )
+        assertEquals("and both sets were still written", 2, repository.sets.value.size)
     }
 
 

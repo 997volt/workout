@@ -19,8 +19,9 @@
 > entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
 > before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds
-> nothing. **Reading the unreleased batch line by line found five defects (B121–B125); all five are fixed and
-> recorded in [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
+> nothing. **Reading the unreleased batch line by line found five defects (B121–B125), and the race B125
+> recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
+> [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
 > it on a device — found eight
 > defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
 > Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five defects
@@ -135,7 +136,8 @@ each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading
 (B109–B116) and the four a lifter found in use (B117–B120) among them — and N122, the half-credit a movement's
 secondary muscles now take, N123, the behind-the-back cable curl the seed gained, and N124, the next-up
 surface moving into the body, with the five defects a review of that batch found (B121–B125) fixed before the
-tag.
+tag. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
+B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
 ***Next* holds nothing again.** N118
 was found by asking what the app now records and never reads back, and N119

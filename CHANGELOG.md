@@ -94,11 +94,24 @@ unreleased.
   measurement and the trigger to revisit are in [DECISIONS.md](DECISIONS.md), and
   [detekt.yml](config/detekt/detekt.yml)'s header says so where the next person would wire it.
 
+- **Two sets logged together no longer both announce a record** (B126). B118 moved the "what has this session
+  already done" read off the screen's state and into the repository, which closed the window between a write
+  committing and that state catching up — but **not** two logs whose reads both run before either write
+  commits. Both then compared against history alone, so a lighter set logged beside a heavier one a moment
+  earlier was announced as a personal best: the exact false banner B118 set out to remove, reached a different
+  way. Logging is now **one set at a time** — the comparison, the write and the banner are a single step under
+  a lock — so the second log reads a session that has recorded the first. The lock orders logging and nothing
+  else: an edit or a delete landing beside a log can still move the picture that log compared against, and
+  neither of those announces anything. Rejected alternative: accumulating this session's sets in the
+  ViewModel, which would be a second record of what the store already holds. Pinned by a test whose fake
+  suspends inside the write, so both logs' reads land before either write does — it fails on the code before
+  this fix and passes after.
+
 - **Two unreleased entries stated more than the code delivers** (B125). B120's said the run's value is read
   "from `runAt` for a row that exists", which is the case B121 contradicted; B118's promised that a set written
-  a moment earlier "cannot be missed", where the read moving to the repository narrows that window rather than
-  closing it — two sets whose reads both run before either write commits still merge a stale list. Both
-  sentences are corrected above, and the residual window is recorded rather than claimed away.
+  a moment earlier "cannot be missed", where the read moving to the repository narrowed that window rather than
+  closing it. Both sentences are corrected above — and the window the second one overstated is now closed by
+  B126 rather than recorded as open.
 
 - **Resuming a workout from home keeps its plan** (B117). The plan was read from the route's `templateId`, and
   the *Resume* pill builds the destination with no argument — so a workout started from a template showed every
@@ -124,8 +137,8 @@ unreleased.
   set there was announced as a record. A plan may name a movement twice (N54), and a superset or a second block
   of the same lift reaches the same shape. The comparison now covers **every set this session has logged for
   the movement**, read from the repository rather than from the screen's state — so the read no longer depends
-  on that state having caught up with a set just written. It does **not** close two sets whose reads both run
-  before either write commits, which is recorded rather than claimed away (B125). Two look-alikes stay by
+  on that state having caught up with a set just written. Two of those reads racing each other is a separate
+  gap, closed with logging one set at a time (B126). Two look-alikes stay by
   design: a heavier **warm-up** or rung above is not a record (B17, N79), and a heavier set at a different rep
   count is a different record (N23).
 
