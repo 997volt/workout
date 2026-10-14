@@ -1001,3 +1001,8 @@ stop being true:
   being true if the enum and the pickers drift. The derived ladder, the one-rating rule and the pairing
   are covered by the JVM and instrumented suites — the arithmetic is a pure function, so tapping it
   would prove less than the tests do.
+- **A running workout's body takes the keyboard's height** (B119). On pixel6_api36 with a set's weight field
+  focused, the body's `exercise_list` viewport measured **1859 px** with the IME hidden and **958 px** with it
+  up — the 901 px the keyboard occupies — so a field behind the keyboard can be scrolled clear of it rather
+  than staying under it. Measured rather than eyeballed because the inset is the kind of layout that quietly
+  stops applying: `enableEdgeToEdge` and a target SDK are what removed it in the first place.
