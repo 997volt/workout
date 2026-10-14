@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -218,7 +219,10 @@ fun TemplateEditorScreen(
             onRemoveSet = onRemoveSet,
             onAddWarmUpSets = onAddWarmUpSets,
             onSaveExercisePlan = onSaveExercisePlan,
-            modifier = Modifier.padding(innerPadding),
+            // The IME inset reaches the body for the reason B119 gave the workout's: the window is
+            // edge-to-edge, so it does not resize for the keyboard, and a block's fields near the foot of
+            // the list stayed under it however far the list was scrolled (B122).
+            modifier = Modifier.padding(innerPadding).imePadding(),
         )
     }
 
