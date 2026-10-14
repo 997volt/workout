@@ -1,6 +1,6 @@
 # Workout — Roadmap
 
-> **v2.3** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nothing. Last reviewed against the
+> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nothing. Last reviewed against the
 > code: 2026-10-14 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -20,8 +20,9 @@
 > before the tag; and **N122–N124 with B117–B126 shipped as 2.3**: a movement's secondary muscles take half a
 > set each, the seed gained the behind-the-back cable curl, where the next workout is became one surface in
 > home's body, and the four defects a lifter found in use (B117–B120) with the six a review of the batch found
-> (B121–B126) are fixed. The 1.x store is left on the device by design, and the 1.18 APK is still the way to
-> read it.
+> (B121–B126) are fixed. **B127 shipped as 2.4** the same day, because the keyboard's black band was found in
+> use on the released 2.3 and the window's soft input mode was the cause. The 1.x store is left on the device
+> by design, and the 1.18 APK is still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds
 > nothing. **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
