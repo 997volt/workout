@@ -574,6 +574,19 @@ private fun TemplateSetEditor(
         ?.let { set -> exercise.sets.indexOfFirst { it.id == set.id } }
         ?: exercise.sets.size
 
+    // Whether this position **opens** the run it would be part of, which is the only place a run's value is
+    // written (ROADMAP N79, B120, B121). Neither "is a drop allowed here", which is true of every rung
+    // (B120), nor "is this row being added", which says nothing about a row that already exists and is being
+    // changed into one (B121).
+    //
+    // A row that is already a rung is answered by `runAt`. One that is not — an ordinary set being turned
+    // into a drop, or a row that does not exist yet — opens its run exactly when the row above is not a drop
+    // rung, because a drop placed under one continues that run and inherits its value rather than naming a
+    // second.
+    val above = exercise.sets.getOrNull(position - 1)
+    val opensItsRun = exercise.sets.runAt(position)?.rung == 1 ||
+        (exercise.sets.getOrNull(position)?.role?.isRung != true && above?.role != SetType.DROP)
+
     TemplateSetDialog(
         unit = unit,
         // The step a target's ± pair takes is this exercise's own, exactly as its ramp's is
@@ -583,13 +596,7 @@ private fun TemplateSetEditor(
         // holds: a run is contiguous, so its anchor is the set above the run's first row and that set
         // has to stand on its own — never a warm-up and never another kind of rung.
         offers = { role -> exercise.sets.isAnchoredAt(position, role) },
-        // A run writes its value on its **first** rung (N79). `runAt` answers that for the row being
-        // edited; for the row being added — which does not exist yet, so there is nothing at `position`
-        // to read — it is whether the row above is already a drop rung of the run it would join.
-        // "A rung is allowed here" is a different question, and answering this one with it is what made a
-        // second drop set unauthorable (B120).
-        holdsTheRunValue = exercise.sets.runAt(position)?.rung == 1 ||
-            (edited == null && exercise.sets.getOrNull(position - 1)?.role != SetType.DROP),
+        holdsTheRunValue = opensItsRun,
         // Add set starts from the last planned set rather than from nothing (ROADMAP N46): a set is
         // nearly always the one before it again, and Duplicate — which doubled the whole plan and
         // left the odd counts to manual adds — is gone. Blank only while there is no set to start

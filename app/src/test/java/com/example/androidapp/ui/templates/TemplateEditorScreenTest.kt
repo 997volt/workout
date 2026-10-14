@@ -527,6 +527,37 @@ class TemplateEditorScreenTest {
         ),
     )
 
+    /**
+     * Two ordinary working sets, so the second can be turned into the drop that opens a run (B121).
+     *
+     * [droppingExercise] cannot serve: its second row is already a rung, and the case that went wrong is a
+     * row that **exists**, is not a rung, and is being changed into one.
+     */
+    private fun twoOrdinarySets() = droppingExercise().let { state ->
+        state.copy(
+            exercises = listOf(
+                state.exercises.first().copy(
+                    sets = listOf(
+                        TemplateSet(
+                            id = "ts1",
+                            templateExerciseId = "te1",
+                            setIndex = 0,
+                            targetWeightGrams = 100_000L,
+                            targetRepsMax = 5,
+                        ),
+                        TemplateSet(
+                            id = "ts2",
+                            templateExerciseId = "te1",
+                            setIndex = 1,
+                            targetWeightGrams = 80_000L,
+                            targetRepsMax = 5,
+                        ),
+                    ),
+                ),
+            ),
+        )
+    }
+
     private companion object {
         val twoExercises = TemplateEditorUiState(
             isLoading = false,
@@ -714,6 +745,31 @@ class TemplateEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.DROP.name)).performClick()
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsEnabled()
+    }
+
+    @Test
+    fun editingAnOrdinarySetIntoADrop_asksForTheValueItTakesOff() {
+        // B121: the row that **exists** and is being changed into a run's opener is neither a rung — so
+        // `runAt` answers null — nor a row being added, which is all the fallback covered. The dialog hid
+        // the field, Save was enabled, and the write boundary then refused the null value it wrote ("A drop
+        // run needs the value it takes off the set above it"), so an ordinary set could not be turned into
+        // the drop that opens a run at all. The position does open a run — the row above is not a drop — so
+        // the value has to be asked for here, exactly as it is when that row is being added instead.
+        setScreen(state = twoOrdinarySets())
+        openBlock("te1")
+
+        composeTestRule.onNodeWithTag(TestTags.templatePlanSet("ts2")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_ROLE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateSetRole(SetType.DROP.name)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE).assertExists()
+        // And the guard an opener is authored under: an empty value is refused, because the run would have
+        // no ladder to load — where the continuing rung of B120's test inherits one and saves without it.
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsNotEnabled()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DROP_VALUE).performTextInput("20")
+
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsEnabled()
     }
 
