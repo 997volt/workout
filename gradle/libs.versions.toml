@@ -90,6 +90,9 @@ truth = { group = "com.google.truth", name = "truth", version.ref = "truth" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 # Compose-specific detekt ruleset (F12): catches modifier/state mistakes lint does not.
 detekt-rules-compose = { group = "io.nlopez.compose.rules", name = "detekt", version.ref = "detektComposeRules" }
+# The formatting ruleset N129 loads over changed files. Same version as the plugin: a mismatch
+# loads silently and registers nothing, which is the failure the Compose ruleset is pinned for.
+detekt-formatting = { group = "io.gitlab.arturbosch.detekt", name = "detekt-formatting", version.ref = "detekt" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxJunit" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

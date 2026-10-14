@@ -78,6 +78,27 @@ deliberately: the failure signatures and the API-level split are in
 [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md#n30-emulator).
 
 ```bash
+./tools/verify-release.py
+```
+
+It asserts the four things by hand used to be, and prints the numbers the notes need:
+
+```
+version     1.3 (4) — matches version.properties
+certificate matches the keystore
+size        2455012 bytes
+sha256      bdd4705ac9b0a8b3e92d20254afcd62827cc94c1b27272bb24f6b5a27f1287ea
+```
+
+**The certificate is the one that matters.** It is read from the keystore the build signs with
+(the gitignored `keystore.properties`), and any other value means the APK is refused as an update
+and the only fix is an uninstall — which deletes the workout history, because platform backup is
+off. If it reports a mismatch, stop and work out why; do not publish.
+
+None of that needs a token or the network, so it runs on CI and from a checkout that has never seen
+a release. The commands behind it, when you want to see them yourself:
+
+```bash
 APK=app/build/outputs/apk/release/app-release.apk
 BT=.toolchain/android-sdk/build-tools/36.0.0    # or the runner's build-tools
 
@@ -85,10 +106,6 @@ $BT/aapt2 dump badging "$APK" | grep '^package:'          # versionCode/versionN
 $BT/apksigner verify --print-certs "$APK" | grep SHA-256  # must match the last release
 sha256sum "$APK"                                          # goes in the release notes
 ```
-
-**The certificate must be unchanged.** Any other value means the APK is refused as an update and
-the only fix is an uninstall — which deletes the workout history, because platform backup is off.
-If it differs, stop and work out why.
 
 ### 6. Tag the commit you built
 
@@ -120,6 +137,18 @@ Install with `adb install -r workout-1.3.apk`, or copy it to the phone and tap i
 the same key as previous releases, so it upgrades in place — do not uninstall first, which would
 delete the history.
 ```
+
+Then check that what is published is the file the notes describe. This is the one step that needs
+the network and a token, so it is opt-in — it downloads the asset with `gh` and compares it to the
+APK just verified:
+
+```bash
+./tools/verify-release.py --remote v1.3
+```
+
+**Do not skip it because the upload looked right.** The two failures it catches are a wrong file
+attached to the right release, and a right file attached under the wrong name; neither is visible
+on the release page, and both are invisible to every other check here.
 
 ## Traps
 

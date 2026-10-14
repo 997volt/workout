@@ -84,6 +84,15 @@ Match these — they are the existing ones. Reasons, scope and rejected alternat
 keeps that task set equal to CI's and these links resolving. The configuration cache is on
 by default, so reruns are fast.
 
+Formatting is not in that set: `detekt-formatting` reports ~600 findings across the tree, so
+turning it on wholesale is the reformat B123 rejected. Run it over **what you changed**
+instead — it reports a finding only when it lands on a line the diff added or rewrote:
+
+```sh
+tools/format-changed.py            # the branch against origin/main
+tools/format-changed.py --fix      # let the rules rewrite those files
+```
+
 The instrumented job is not the default — `connectedDebugAndroidTest` needs a device — and
 a green report is not proof it ran: no failures looks like a complete run, so
 `tools/ci-check-instrumented.py` fails the job when the executed count disagrees with the

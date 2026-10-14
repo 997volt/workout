@@ -86,6 +86,14 @@ jobs:
           --configuration-cache
           --console=plain
 
+      # N128. The mechanical half of the release checklist, run on every change rather than by hand at
+      # the tag: the built APK's versionCode/versionName against version.properties, and the hash the
+      # notes will carry. CI has no keystore and signs nothing, so the certificate — the check that
+      # actually matters, because a wrong key means every phone refuses the update — is reported as
+      # unchecked here and required on the machine cutting the release.
+      - name: Verify the release APK
+        run: python3 tools/verify-release.py
+
       # F18. Gradle prints only "There were failing tests" with --console=plain; the
       # names live in the JUnit XML. Without this a red run says nothing about what
       # broke — which cost real time here twice.

@@ -11,13 +11,24 @@
 # NOTE: YAML duplicate keys silently let the last one win, which would drop part
 # of a configuration without any warning. Keep one entry per rule.
 #
-# The formatting ruleset (`detekt-formatting`) is deliberately **not** loaded, so an indentation or wrapping
-# defect is a review's to catch and not this gate's. Wiring it reports ~600 findings across 155 files, which
-# is a repository-wide reformat or a set of `active: false` entries — the silent gate the line above forbids.
-# The decision, the rule-by-rule measurement and the trigger to revisit are in DECISIONS.md (B123).
+# The formatting ruleset (`detekt-formatting`) is deliberately **not** in this gate, so an indentation or
+# wrapping defect is a review's to catch here. It reports ~600 findings across 155 files, which is a
+# repository-wide reformat or a set of `active: false` entries — the silent gate the line above forbids.
+# The decision and the rule-by-rule measurement are in DECISIONS.md (B123).
+#
+# N129 added the middle path, and it needs the block below. The plugin is on the classpath so that
+# `detektFormattingCheck` can load it, and loading it registers its rules as *defaults* for every detekt
+# task — so the gate has to switch them off by name rather than by not asking for them. That is what
+# `formatting: active: false` is: an exclusion with a reason, not a rule quietly disabled. The rules
+# themselves live in [detekt-formatting.yml](detekt-formatting.yml), which
+# [tools/format-changed.py](../../tools/format-changed.py) loads over the files a change touches.
 
 config:
   validation: true
+
+formatting:
+  # Off in this gate; on in detekt-formatting.yml over changed files. See the header.
+  active: false
 
 Compose:
   CompositionLocalAllowlist:

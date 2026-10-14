@@ -231,7 +231,71 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     detektPlugins(libs.detekt.rules.compose)
+    // N129: not loaded by the gate above — see detektFormattingCheck below.
+    detektPlugins(libs.detekt.formatting)
 }
+
+/**
+ * The formatting ruleset, over a **file list** rather than the tree (ROADMAP N129).
+ *
+ * B123 settled that `detekt-formatting` stays out of the gate: loading it reports ~600 findings
+ * across 155 files, and the alternatives were a repository-wide reformat or a set of
+ * `active: false` entries — the silent gate `detekt.yml`'s header forbids. Its revisit trigger is a
+ * layout defect that ships because a review missed it, which is what the malformed `BalanceRow` line
+ * was.
+ *
+ * This is that trigger answered without either rejected alternative. The rules load from a **second
+ * config file** and only over the files named in `-PdetektFormattingFiles`, so nothing is switched
+ * off and nothing is reformatted: the check sees what a change touches and leaves the rest of the
+ * repository at the layout it already has. It is deliberately **not** a task the gate depends on —
+ * `tools/format-changed.py` runs it over a diff and reads the report.
+ *
+ * With no `-PdetektFormattingFiles` it runs over the whole tree, which is the measurement that
+ * decides whether a rule can be turned on at all: a rule whose every finding today is a defect worth
+ * fixing goes into the config, and one that disagrees with settled layout stays out.
+ */
+val detektFormattingCheck by tasks.registering(io.gitlab.arturbosch.detekt.Detekt::class) {
+    description = "Runs detekt-formatting over the files named in -PdetektFormattingFiles."
+    group = "verification"
+    setSource(
+        files(
+            rootProject.file("app/src/main/java"),
+            rootProject.file("app/src/test/java"),
+            rootProject.file("app/src/androidTest/java"),
+        ),
+    )
+    config.setFrom(rootProject.files("config/detekt/detekt-formatting.yml"))
+    // The formatting rules are inactive in detekt's own defaults, so the plugin's own configuration
+    // has to be laid under this file for them to be active at all. The library rulesets are switched
+    // off in the same breath: they are the gate's job, and this run's report must contain formatting
+    // findings only, or a caller reading it cannot tell which rule spoke.
+    buildUponDefaultConfig = true
+    disableDefaultRuleSets = true
+    // Off unless asked for: this task reports, and the caller decides. A rule that rewrites the file
+    // under a check is a check whose report no longer describes what it read, which is why the script
+    // only turns this on for its own `--fix`.
+    autoCorrect = providers.gradleProperty("detektFormattingAutoCorrect").isPresent
+    parallel = true
+
+    val named = providers.gradleProperty("detektFormattingFiles").orNull
+    if (!named.isNullOrBlank()) {
+        setSource(named.split(",").map { rootProject.file(it) })
+    }
+
+    reports {
+        html.required.set(false)
+        xml.required.set(false)
+        sarif.required.set(false)
+        md.required.set(false)
+        txt.required.set(true)
+        txt.outputLocation.set(
+            rootProject.layout.buildDirectory.file("reports/detekt-formatting/report.txt"),
+        )
+    }
+    // A report is the output here, so a finding is not a build failure: the caller reads the file.
+    ignoreFailures = true
+}
+
 
 
 // Robolectric writes a download lock and caches SDK jars under the user's home
