@@ -72,13 +72,15 @@ a reading, and the mechanism under each was read in the code while the reproduct
   dialog beside *Start*, which the dated card does not have today and the one component now must. The bar keeps
   the *Resume* pill and is therefore drawn only while a workout is open (N102, B101) — it also draws an empty
   column when nothing is scheduled, which goes with the block.
-  **Visibility is the one rule the merge has to state**, because the two blocks it replaces were shown on
-  opposite conditions: the body's *Today* section today is drawn only when a program schedules something for
-  today's weekday (`todayPlanItems` returns when `todaysPlan` is empty), while the bar's row was the block that
-  showed **when nothing was scheduled today**. A single surface that keeps both cases is therefore drawn
-  whenever **today has a plan or an active program has a run** — and a surface drawn only on a scheduled day
-  would leave the next-up case with nowhere to live, which is what a weekday-less rotation and a day off both
-  depend on. Which of the two it is forms part of this change rather than a detail of it.
+  **Visibility is stated rather than left implied**, because the two blocks it replaces were shown on opposite
+  conditions: the body's *Today* section is drawn only when a program schedules something for today's weekday
+  (`todayPlanItems` returns when `todaysPlan` is empty), while the bar's row was the block that showed **when
+  nothing was scheduled today**. The one surface is therefore drawn whenever **today has a plan or an active
+  program has a run** — which is what the bar's row did on a day off, and what a weekday-less rotation depends
+  on to appear anywhere. **Rejected: drawing it only on a scheduled day**, which is what the body's section does
+  today. That reads as the tidier rule and it deletes the next-up case rather than moving it: a program with no
+  weekday, and every rest day of one that has them, would say nothing about where its run is — which is P3.9's
+  whole question and the reason the bar's block existed at all.
   Nothing stored changes: no schema, no transfer format, no program document. The rule that keeps a program out
   of both halves of the one surface stays as it is — `nextUpFor` already skips a program with a slot today,
   because a row beside the day's plan is a second, contradictory answer — and the exclusion is what the merged
