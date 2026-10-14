@@ -2,8 +2,8 @@
 
 > **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nine items — four the release rounds
 > turned up (B128, B129, N128, N129), two candidates to choose between (N130, N131) and three about
-> measurements (B130, N132, N133) — with one decided change waiting in *Later* (N134). Last reviewed against
-> the code: 2026-10-14 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
+> measurements (B130, N132, N133) — with three decided changes waiting in *Later* (N134–N136). Last reviewed
+> against the code: 2026-10-14 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
 > database file, the 1.x chain and its schemas deleted, both transfer formats refusing 1.x, and the five
@@ -26,7 +26,7 @@
 > use on the released 2.3 and the window's soft input mode was the cause. The 1.x store is left on the device
 > by design, and the 1.18 APK is still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, *Next* holds nine items
-> (B128, B129, N128, N129, N130, N131, B130, N132, N133) and *Later* holds one (N134). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
+> (B128, B129, N128, N129, N130, N131, B130, N132, N133) and *Later* holds three (N134–N136). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
 > it on a device — found eight
@@ -58,7 +58,7 @@ the formatting decision (B128, B129, N128, N129). The second is two candidates o
 app already records and reduces before reading it back — put here as **alternatives, one to be taken rather
 than both** (N130, N131). The third is measurements: a defect the request turned up, and the two changes that
 make a deletion deliberate (B130, N132, N133). Home's plan surface (N125–N127) left this section for the
-changelog, and keeping a template's version (N134) sits in *Later*.
+changelog, and the decided-but-not-started work (N134–N136) sits in *Later*.
 
 ### What cutting 2.3 and 2.4 turned up (B128, B129, N128, N129)
 
@@ -216,6 +216,64 @@ for the reason a parked row names its revisit trigger: a queue that cannot say w
   **Brought forward when** a template is next edited with the thought "I wish I still had the old one" — which is the
   moment the feature pays for itself, and is why it sits here rather than in *Next*.
 
+- **A weight goal sets the rate, instead of the rate being typed** (N135). Asked for in use: the lifter sets a goal —
+  a **target weight**, a **direction** with no target, or **maintenance** — and the app derives the **rate** from the
+  goal and the current weight. Half of it is already here, which is what makes this small: a per-metric **level goal**
+  exists and exports (`goals: Map<String, Double>`, `SettingsRepository.setGoal`), and a **rate target** is its sibling
+  that the energy adjustment is measured against
+  ([`EnergyAdjustmentSection`](app/src/main/java/com/example/androidapp/ui/statistics/EnergyAdjustmentSection.kt), "it
+  is the rate that the adjustment below is measured against", N98). So the lifter types two numbers that can disagree —
+  a target weight and an unrelated rate — and the missing thing is the **kind** of goal and the derivation.
+
+  The rule follows [health-center](https://github.com/997volt/health-center), read rather than assumed: it fits weight
+  over the **last 10 days**, prunes iteratively any reading more than **1 kg** off the fit, and judges the slope against
+  **0.025–0.05 kg/day** — "around 0.25% weekly" — calling anything above too fast and below too slow. What transfers is
+  the **shape**: the rate is a share of bodyweight per week, judged from a fit rather than from a pair of readings.
+  The reference is the citation for the numbers, not a spec copied by value, because its own inputs are not all here
+  (below).
+
+  - **Maintenance is a corridor, not a rate of zero.** "Hold within ±X of the goal weight" is what makes it a goal; a
+    literal 0.0 kg/week is broken by the first glass of water.
+  - **A direction-only goal invents no target.** The band decides the rate; the app never manufactures an end weight
+    the lifter did not state.
+  - **The rate is clamped to the band, and never derived from a deadline.** If a date is wanted, the band's rate gives
+    the *estimate* of the date — the other way round demands exactly the rates the band exists to refuse.
+  - **The typed rate goes.** The statistics row shows the derived rate rather than offering it for editing. Rejected:
+    keeping the two side by side, which is two sources that can disagree — the thing being fixed.
+  - **The goal kind travels.** The goals map already exports, so this is a transfer-format move with it: a goal the
+    lifter set is body data, and the export remains the only path off the device.
+
+  **Brought forward when** the goal is next changed and the rate has to be re-derived by hand — which is the friction
+  that says the two numbers should never have been separate.
+
+- **A weigh-in says whether the rate is on target** (N136). The sentence is already written: [`EnergyAdjustment`](app/src/main/java/com/example/androidapp/ui/statistics/EnergyAdjustment.kt)
+  says how far current intake has to move for the trend to become the target — "about 200 kcal a day less than you are
+  eating now" — but it lives **under a chart in Statistics**, so the lifter has to go and look for it. The request is to
+  say it where the weighing happens: entering a daily weight answers whether the trend's rate is the goal's rate, and
+  when it is not, the adjustment is what it prompts with.
+
+  **The boundary that shapes it, stated rather than crossed.** This app stores **no food and no intake** — a non-goal,
+  not an omission: "the app states the energy implication of a weight trend it already owns (N98) and stores no food and
+  no intake." health-center's verdict compares the rate against **average calories from a diary**; that half cannot come
+  across, so the prompt is **relative** — how far intake must move — and never "you ate X". Importing the calorie half
+  was rejected because it needs the store this app refuses to keep.
+
+  **And it must not fire on noise.** The reference judges on 10 days; this app refuses to speak before N98's floor —
+  **8 recorded readings across 21 days** — on the ground that "a rate from three weigh-ins is noise". The floor is kept:
+  a prompt that fires on water weight is worse than no prompt, and it is the standard P2.8 is parked on. The reference's
+  shorter window is the one number to decide deliberately when this is built, not to adopt by copying.
+
+  **Never a direction the lifter did not set.** The reference's "bodyfat > 20% → you should be cutting" is rejected: the
+  goal is the lifter's and the app does arithmetic against it rather than diagnosing. A prompt telling somebody with no
+  such goal to lose weight is the one prompt this app must never grow.
+
+  **A line after the save, not a dialog.** It states; it is dismissible; it does not pursue (P4.7). And it is not P1.11
+  — that parked row is about personalising defaults for a new user, while this is a target a lifter sets about their own
+  body.
+
+  **Brought forward when** N135 is built, since it is that goal's other half — or when the lifter next wants to know
+  *this week* whether the rate is right and has to open Statistics to find out.
+
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
@@ -308,8 +366,8 @@ tag, and **N125–N127 shipped next** — today's plan as home's only answer, th
 none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds nine items (B128, B129, N128, N129, N130, N131, B130, N132, N133) and *Later* one (N134);
-home's plan surface (N125–N127) shipped.** N118
+***Next* holds nine items (B128, B129, N128, N129, N130, N131, B130, N132, N133) and *Later* three
+(N134–N136); home's plan surface (N125–N127) shipped.** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
