@@ -16,6 +16,16 @@ unreleased.
 
 ## [Unreleased]
 
+### Added
+
+- **A behind-the-back cable curl joins the seed** (N123). The curl family carried a barbell, a dumbbell, a
+  machine and a plain cable curl, and not the single-arm curl taken behind the back — the one that holds
+  tension on the biceps at the bottom of the range, which is what it is reached for. It states its own
+  equipment (`Cable`) and reads *Biceps* and *Forearms* from the family by the own-if-stated-else-the-
+  category's rule (N110), because equipment is the one fact a family never hands down. The seeder is an
+  `INSERT OR IGNORE` top-up on every open, so a library that already exists gains the row on its next launch:
+  **no migration and no transfer-format change**.
+
 ### Changed
 
 - **A set's secondary muscles are credited half each** (N122). The balance view counted every planned working

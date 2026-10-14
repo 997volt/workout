@@ -103,6 +103,14 @@ class ExerciseSeederTest {
             val bar = dao.findById("barbell-bench-press")
             assertNull("the movement states no muscle of its own", bar?.primaryMuscle)
             assertEquals(Equipment.BARBELL, bar?.equipment)
+
+            // The same link carries the movement N123 added: a movement the seed writes is filed under the
+            // family its `parentOf` entry names, which is where its muscles then come from.
+            val curl = dao.findById("behind-the-back-cable-curl")
+            assertNotNull(curl)
+            assertEquals(Equipment.CABLE, curl?.equipment)
+            assertNull("it states no muscle of its own either", curl?.primaryMuscle)
+            assertEquals("curl", curl?.parentId)
         } finally {
             database.close()
         }

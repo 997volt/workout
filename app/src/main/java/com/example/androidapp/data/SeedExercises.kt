@@ -146,6 +146,9 @@ internal object SeedExercises {
         movement("concentration-curl", "Concentration Curl", Equipment.DUMBBELL),
         movement("machine-curl", "Machine Curl", Equipment.MACHINE),
         movement("cable-arm-curl", "Cable Arm Curl", Equipment.CABLE),
+        // The single-arm curl taken behind the back: it holds tension on the biceps at the bottom of the
+        // range, which the plain cable curl does not, and the family had no movement for it.
+        movement("behind-the-back-cable-curl", "Behind-the-Back Cable Curl", Equipment.CABLE),
         movement("incline-dumbbell-arm-curl", "Incline Dumbbell Arm Curl", Equipment.DUMBBELL),
         movement("triceps-pushdown", "Triceps Pushdown", Equipment.CABLE),
         movement("overhead-triceps-extension", "Overhead Triceps Extension", Equipment.DUMBBELL),
@@ -325,6 +328,7 @@ internal object SeedExercises {
         "concentration-curl" to "curl",
         "machine-curl" to "curl",
         "cable-arm-curl" to "curl",
+        "behind-the-back-cable-curl" to "curl",
         "incline-dumbbell-arm-curl" to "curl",
         "triceps-pushdown" to "triceps-extension",
         "overhead-triceps-extension" to "triceps-extension",

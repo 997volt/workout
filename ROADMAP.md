@@ -1,7 +1,7 @@
 # Workout — Roadmap
 
-> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds two planned changes (N123, N124) with
-> the three defects a lifter found in use (B118–B120) queued beside them. Last reviewed against the
+> **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one planned change (N124) with the
+> three defects a lifter found in use (B118–B120) queued beside it. Last reviewed against the
 > code: 2026-10-13 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -19,8 +19,8 @@
 > the library's long-press family details, a program read for the work it spreads where, and the three menu
 > entries that reach what a row names — with the eight defects a reading of that batch found (B109–B116) fixed
 > before the tag. The 1.x store is left on the device by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds two
-> planned changes (N123, N124) and the three defects a lifter found in use (B118–B120). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
+> Checked against the changelog as well as the code: every shipped id has its entry, and *Next* holds one
+> planned change (N124) and the three defects a lifter found in use (B118–B120). **Reading the N107 and N111–N121 batch line by line — and running it on a device — found eight
 > defects (B109–B116); all eight are fixed and recorded in [CHANGELOG.md](CHANGELOG.md).**
 > Reading the P1.1, B103 and N110 batch line by line — and running it on a device — found five defects
 > (B104–B108); all five are fixed and recorded in [CHANGELOG.md](CHANGELOG.md). A line-by-line reading of the
@@ -43,22 +43,9 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-Two planned changes — a lift for the seed, and one surface for where the next workout is — with the three
-defects a lifter found in use queued beside them. The defects were reported from real use rather than found in
-a reading, and the mechanism under each was read in the code while the reproduction is the lifter's.
-
-- **A behind-the-back cable curl joins the seed** (N123). The curl family carries a barbell, a dumbbell, a
-  machine and a plain cable curl, and not the single-arm curl taken behind the back — the one that keeps
-  tension on the biceps at the bottom of the range, which is what it is reached for. It is a **seed** row
-  rather than a user-created exercise, so it is filed under the `curl` family
-  ([SeedExercises.kt](app/src/main/java/com/example/androidapp/data/SeedExercises.kt)) and states its own
-  equipment (`CABLE`) while reading *Biceps* and *Forearms* from the family by the
-  own-if-stated-else-the-category's rule (N110) — equipment is the one fact a family never hands down, because
-  a family spans equipment. The seeder is an `INSERT OR IGNORE` top-up on every open
-  ([ExerciseSeeder.kt](app/src/main/java/com/example/androidapp/data/local/ExerciseSeeder.kt)), so a store
-  that already exists gets the row on its next launch and **no migration and no transfer-format change** is
-  involved. What has to move with it is the count the family's own line and the seed's doc state, which is the
-  shape B107 was.
+One planned change — one surface for where the next workout is — with the three defects a lifter found in use
+queued beside it. The defects were reported from real use rather than found in a reading, and the mechanism
+under each was read in the code while the reproduction is the lifter's.
 
 - **Where the next workout is becomes one surface, in the body** (N124). Home says it twice today — a dated
   *Today* card in the scrollable body and a *Next up* row in the start bar (P3.9, N55) — and one question asked
@@ -224,7 +211,7 @@ records the day (N114), a program slot's ⋮ opening its template (N120), a plan
 each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading of that batch found
 (B109–B116) among them — and N122, the half-credit a movement's secondary muscles now take.
 
-***Next* holds N123 and N124 with the three defects a lifter found in use (B118–B120).** N118
+***Next* holds N124 with the three defects a lifter found in use (B118–B120).** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled

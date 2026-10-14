@@ -90,4 +90,20 @@ class SeedExercisesTest {
             .that(SeedExercises.all.filter { it.equipment == null }.map { it.id })
             .isEmpty()
     }
+
+    @Test
+    fun theBehindTheBackCableCurl_readsTheCurlFamilysMuscles() {
+        // N123: the movement states only its equipment, and the family it is filed under is what supplies
+        // the rest — the link the seeder writes from `parentOf` and the resolution the library, the session
+        // rows and the balance view read live (N110).
+        val curl = SeedExercises.all.single { it.id == "behind-the-back-cable-curl" }
+        val family = SeedExercises.categories.single { it.id == "curl" }
+
+        assertThat(SeedExercises.parentOf["behind-the-back-cable-curl"]).isEqualTo("curl")
+        assertThat(curl.equipment).isEqualTo(Equipment.CABLE)
+        assertThat(curl.primaryMuscle).isNull()
+        assertThat(curl.secondaryMuscles).isEmpty()
+        assertThat(family.primaryMuscle).isEqualTo(MuscleGroup.BICEPS)
+        assertThat(family.secondaryMuscles).containsExactly(MuscleGroup.FOREARMS)
+    }
 }
