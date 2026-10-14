@@ -2,7 +2,7 @@
 
 > **v2.2** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nothing. Last
 > reviewed against the
-> code: 2026-10-13 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
+> code: 2026-10-14 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
 > database file, the 1.x chain and its schemas deleted, both transfer formats refusing 1.x, and the five
@@ -131,8 +131,9 @@ one-line effort, rest and accept (N116), the library's long-press family details
 records the day (N114), a program slot's ⋮ opening its template (N120), a planned row's ⋮ opening the lift
 (N121), soreness becoming a statistic (N118) and a program's muscle balance with the bar's overflow (N119) —
 each with its entry in [CHANGELOG.md](CHANGELOG.md), the eight defects a reading of that batch found
-(B109–B116) among them — and N122, the half-credit a movement's secondary muscles now take, N123, the
-behind-the-back cable curl the seed gained, and N124, the next-up surface moving into the body.
+(B109–B116) and the four a lifter found in use (B117–B120) among them — and N122, the half-credit a movement's
+secondary muscles now take, N123, the behind-the-back cable curl the seed gained, and N124, the next-up
+surface moving into the body.
 
 ***Next* holds nothing again.** N118
 was found by asking what the app now records and never reads back, and N119
