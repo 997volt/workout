@@ -2,7 +2,7 @@
 
 > **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds nine items — four the release rounds
 > turned up (B128, B129, N128, N129), two candidates to choose between (N130, N131) and three about
-> measurements (B130, N132, N133) — with three decided changes waiting in *Later* (N134–N136). Last reviewed
+> measurements (B130, N132, N133) — with four decided changes waiting in *Later* (N134–N137). Last reviewed
 > against the code: 2026-10-14 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -26,7 +26,7 @@
 > use on the released 2.3 and the window's soft input mode was the cause. The 1.x store is left on the device
 > by design, and the 1.18 APK is still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, *Next* holds nine items
-> (B128, B129, N128, N129, N130, N131, B130, N132, N133) and *Later* holds three (N134–N136). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
+> (B128, B129, N128, N129, N130, N131, B130, N132, N133) and *Later* holds four (N134–N137). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
 > it on a device — found eight
@@ -58,7 +58,7 @@ the formatting decision (B128, B129, N128, N129). The second is two candidates o
 app already records and reduces before reading it back — put here as **alternatives, one to be taken rather
 than both** (N130, N131). The third is measurements: a defect the request turned up, and the two changes that
 make a deletion deliberate (B130, N132, N133). Home's plan surface (N125–N127) left this section for the
-changelog, and the decided-but-not-started work (N134–N136) sits in *Later*.
+changelog, and the decided-but-not-started work (N134–N137) sits in *Later*.
 
 ### What cutting 2.3 and 2.4 turned up (B128, B129, N128, N129)
 
@@ -274,6 +274,41 @@ for the reason a parked row names its revisit trigger: a queue that cannot say w
   **Brought forward when** N135 is built, since it is that goal's other half — or when the lifter next wants to know
   *this week* whether the rate is right and has to open Statistics to find out.
 
+- **A goal's past is kept, and each period says whether it was met** (N137). Asked for in use: when a goal changes,
+  the old one should be recoverable, so a later reading can say **what the goal was in a given period and whether it
+  was achieved**. Today there is one value per metric and no past at all — goals are a newline-joined
+  `metricId=value` map in a preferences string (`PreferencesSettingsRepository`, `KEY_GOALS`), **rewritten on every
+  change**. So changing a goal silently **re-judges the whole past**: the chart's goal line is the current target drawn
+  across a range it never applied to, and "did I hit the cut I set in March" has no answer, because March's goal is
+  gone. The measurements are dated; the goal is the only half of the question missing.
+
+  **Goals become rows** — one per metric per period, with the periods running from a row to the next and the last one
+  open. A prefs string cannot hold this: the history is unbounded and every period needs a date range to answer
+  anything, and the import path already says so out loud — `restoreMissingGoals` runs "outside the database transaction
+  … because goals live outside the database", which is the seam this removes. Rejected: appending to the string, which
+  keeps an unqueryable, ever-growing blob and keeps that seam.
+
+  - **The migration cannot know when today's goal was set**, so the first row records its start as **unknown** rather
+    than inventing the moment of the upgrade. Inventing that date would be inventing history, which is the thing this
+    feature exists to stop.
+  - **The derived rate is not stored.** N135 derives it from the goal and the weight series, so the goal is the input
+    and arithmetic is not a fact. The trade is named rather than hidden: if the band rule ever changes, an old period
+    re-derives under the new rule — the honest reading is "by today's rule, March was X". Storing each period's verdict
+    instead was rejected as caching something fully derivable from rows the app already has.
+  - **Achievement is a reader over the same rows**: clip the weight series to the period and compare it with the goal —
+    a rate goal is met when the trend sat in its band, a target weight when it was reached within tolerance, maintenance
+    when the weight stayed in the corridor. So the answer is only well defined once **N135's goal kinds** exist, and
+    this is that trio's third part.
+  - **The chart's goal line becomes segments**, one per period. That is the visible payoff, and it is the thing that is
+    simply wrong today.
+  - **Only goals move into the database.** The other settings — unit, rest timer, step defaults — are preferences about
+    how the app behaves, not facts about a body, so they stay where they are.
+  - **The export carries the rows** (the standing preference that it carries everything), and the goals' special
+    missing-only import rule goes with the prefs store, because rows merge like every other table.
+
+  **Brought forward when** a goal is changed a second time and the chart's line stops being true for the earlier range —
+  or when N135 lands, since a goal's kinds without its past is half a feature.
+
 ## Parked — deliberately not planned
 
 Each row is a product in its own right, contradicts "local-only", or both. Parking is a
@@ -366,8 +401,8 @@ tag, and **N125–N127 shipped next** — today's plan as home's only answer, th
 none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds nine items (B128, B129, N128, N129, N130, N131, B130, N132, N133) and *Later* three
-(N134–N136); home's plan surface (N125–N127) shipped.** N118
+***Next* holds nine items (B128, B129, N128, N129, N130, N131, B130, N132, N133) and *Later* four
+(N134–N137); home's plan surface (N125–N127) shipped.** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
