@@ -73,6 +73,18 @@ unreleased.
   files instead of `git add -A`** (B128) — the 2.4 round put a scratch directory of HTTP dumps into a
   release commit, and only the commit's own `--stat` caught it.
 
+- **The review compares the effort the plan asked for** (N131). A plan's target effort prefilled the
+  fields and drove the progression, and the review — the one place a plan is held up against what was
+  actually lifted — said nothing about it, so "you prescribed RPE 8 and logged 9.5" was invisible. The
+  comparison now sits on the row: the prescribed line carries the target, the performed line the effort
+  the working sets were actually taken to, and a verdict states the difference. **The reduction this
+  needed is the decision**: the plan names *one* effort per exercise (N59) while the log holds one rating
+  per *set* (N6), so the sets are averaged — the heaviest set's rating answers what the top set felt
+  like, not whether the work landed where the plan put it, and a session with one on-target top set and
+  three back-offs would read as matched. A mean is rounded to half a point, the resolution an RPE is
+  logged in, so the row never prints a rating nobody gave. A plan that named no effort says nothing about
+  it; one that named an effort and got no rating says so, because silence there would read as matched.
+
 - **Joint pain is a series per joint, and per side** (N130). A rating already recorded **which joint,
   which side, how much** (N63), and what the trends screen read back was one number per workout — so
   "left knee 6, right knee 2" charted as a 4 that is about neither knee. The picker now offers a series

@@ -1847,3 +1847,61 @@ clicked a metric without scrolling; with fourteen more series the item was off-s
 and the click landed nowhere. The fix is `performScrollTo` — and the failure is worth recording because it
 is the first evidence that the picker has outgrown a screen, which is a fact about the screen rather than
 about this change.
+
+## N131
+
+The road map called this "N119's question asked of the one column it did not cover", and the shape is the
+same: something the app records, reduces, and then never reads back in the form it was recorded. Weight,
+assistance, reps and set counts were compared; effort was not. Neither side was dead — the plan's target
+prefills the set fields and drives the progression offer, and the logged RPE has trends of its own — so the
+missing thing was exactly the comparison, and the whole of the work was deciding how to make it.
+
+**The two sides' granularity is the problem, and it is the only one.** The plan names one effort per
+exercise (N59, and `ProgressionOffer`'s own KDoc says the number is "carried onto every prescribed set by
+the caller"); the log holds one rating per set (N6). Weight and reps never needed a decision like this: the
+heaviest working set is *the* number a load target is about, and the rep sums are sums. Effort needed a
+reduction, and there were three candidates on the table.
+
+**The mean was chosen because the target is stated for every set.** N59's rule is one number per exercise
+precisely so that each prescribed set can be measured against it — that is what the progression decision
+reads. So the honest question is "did the work land where the plan put it", and the mean over the working
+sets answers it. **The heaviest set's rating was rejected** because it answers a different question — what
+the top set felt like — and because it fails the case that matters most: a session with one on-target top
+set and three back-offs well off the target would be reported as matched, which is the kind of flattering
+comparison the review exists to avoid. **The third candidate — the rating the lifter gives the exercise
+afterwards — does not exist**: the per-exercise ratings this app records are muscle feel and joint pain
+(N62, N63), neither of which is effort, so choosing it would have meant adding a second per-exercise
+rating whose only caller would be this comparison. That is a different feature, and inventing it here
+would have doubled the change.
+
+**The mean is rounded to half a point, and that is a claim about honesty rather than convenience.** RPE is
+recorded in halves; a mean of `8.33` is not a number a lifter could have entered, and printing it in the
+review would dress arithmetic as a rating. The rounding is the same move `estimatedOneRepMax` already
+makes — its KDoc: "the estimate is not precise to the gram, and printing 25.333 kg would dress a formula's
+output as a measurement" — and the same reason `Rpe.parse` refuses a value finer than a half rather than
+silently rounding it. It also keeps the whole row in one vocabulary: every number on it, prescribed,
+performed and the delta, is formatted by `Rpe.format`, which prints `8` or `8.5` and never `8.0`.
+
+**Unrated sets are skipped, not counted as zero.** RPE is skippable by design (N6), so a set nobody rated
+must not pull the mean down as though it had been rated "no effort" — that would report a lighter session
+the more sets the lifter declined to rate. Warm-ups are excluded whatever a stale row carries, for the
+reason the rep and weight sums exclude them (N20, N67).
+
+**Silence and null are two different things here, and both are deliberate.** A plan that names no effort
+says nothing about effort anywhere on the row: there is no comparison to make, and a verdict would claim
+one. A plan that names an effort and got no rating says **"no RPE recorded"** — silence in that position
+would read as *matched*, which is the one thing it is not. That is `summary_no_weight_to_compare`'s rule
+from the other side: the review states a comparison it could not make rather than letting the reader infer
+one. And `rpeDeltaHalves` is null whenever either side is missing, for the reason `topSetDeltaGrams` is: a
+difference from nothing is not a comparison, and a zero would claim the lifter matched a plan that never
+spoke.
+
+**The prescribed line carries the target rather than the target being repeated per set.** It is one number
+on the exercise, so it appears once — and the row's shape stays "what was asked, what was done, how it
+landed", with the effort's verdict on its own line because the plan answers two questions here (how heavy
+and how hard) and one line carrying both would read as a single claim.
+
+**What did not travel is the point of the id's boundary.** The prefill and the progression both read
+`targetRpeHalves` and both work; nothing about this comparison touches them. `ExercisePlan` and
+`PerformedSetSpec` gained one nullable field each, and the review is still built from state the screen
+already holds — no read, no schema, no migration (N20's own rule).

@@ -245,6 +245,18 @@ the rule; that one argues it.
   screen already holds, so no reads and no schema; the accepted cost is that it is not
   revisitable from history, and the honest fix for that is storing the plan with the
   session rather than re-deriving it.
+- **The plan's effort is compared to the working sets' mean** (N131). The plan names **one effort per
+  exercise** (N59) and the log holds **one rating per set** (N6), so unlike weight and reps this
+  comparison has to reduce the sets to one number — and the reduction is the decision. It is the
+  **mean of the working sets that recorded one**, because N59's target is carried onto *every*
+  prescribed set: the question is whether the work landed where the plan put it. The **heaviest set's
+  rating was rejected**: it answers what the top set felt like, and a session with one on-target top
+  set and three off-target back-offs would read as matched. A mean is **rounded to half a point**,
+  the app's own RPE resolution — `8.3` is not a rating anybody gave, the same reason
+  `estimatedOneRepMax` rounds to the nearest 500 g. **Null stays null**: a plan naming no effort says
+  nothing about it, and nothing rated reads "no RPE recorded" rather than silence, because silence
+  there reads as *matched*. What did not travel: the prefill and the progression use of the target.
+  ([evidence](DECISIONS-EVIDENCE.md#n131))
 
 - **Settings live in `SharedPreferences`, not DataStore** (N21) — integers, booleans and two
   small maps owned by one process; writes are **committed**, so the screen never reports a

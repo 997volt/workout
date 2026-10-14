@@ -1,12 +1,13 @@
 # Workout — Roadmap
 
-> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), and *Next* holds one item — the plan's target effort
-> reaching the review (N131) — with four decided changes waiting in *Later* (N134–N137). Three batches
-> shipped unversioned: measurements (B130, N132, N133), where the list scrolls, a delete is a mode and a
-> deleted entry can be put back unless the day was re-entered; what cutting 2.3 and 2.4 turned up (B128,
-> B129, N128, N129), where the release commit names its files, its checks are one script, every set write is
-> ordered, and a change's layout is checked on the lines it touched; and N130, where joint pain is read back
-> one joint site at a time instead of as an average about no particular joint.
+> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), *Next* is **empty** — everything it held has shipped —
+> and four decided changes wait in *Later* (N134–N137). Four batches shipped unversioned: measurements (B130,
+> N132, N133), where the list scrolls, a delete is a mode and a deleted entry can be put back unless the day
+> was re-entered; what cutting 2.3 and 2.4 turned up (B128, B129, N128, N129), where the release commit names
+> its files, its checks are one script, every set write is ordered, and a change's layout is checked on the
+> lines it touched; N130, where joint pain is read back one joint site at a time instead of as an average
+> about no particular joint; and N131, where the review holds the plan's effort next to the one the sets
+> were actually taken to.
 > Last reviewed against the code: 2026-10-15 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -29,8 +30,8 @@
 > (B121–B126) are fixed. **B127 shipped as 2.4** the same day, because the keyboard's black band was found in
 > use on the released 2.3 and the window's soft input mode was the cause. The 1.x store is left on the device
 > by design, and the 1.18 APK is still the way to read it.
-> Checked against the changelog as well as the code: every shipped id has its entry, *Next* holds one item
-> (N131) and *Later* holds four (N134–N137). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
+> Checked against the changelog as well as the code: every shipped id has its entry, *Next* holds nothing
+> and *Later* holds four (N134–N137). **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
 > it on a device — found eight
@@ -56,28 +57,16 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-One item: **the plan's target effort never reaches the review** (N131). It is the second of the two candidates
-that shared one shape — a dimension the app already records, reduces, and then reads back — and the first
-(N130) shipped as joint pain read back one site at a time. What cutting 2.3 and 2.4 turned up (B128, B129,
-N128, N129), home's plan surface (N125–N127), the measurements batch (B130, N132, N133) and N130 all left this
-section for the changelog, and the decided-but-not-started work (N134–N137) sits in *Later*.
+**Nothing.** Every item this section held has shipped: home's plan surface (N125–N127), the measurements
+batch (B130, N132, N133), what cutting 2.3 and 2.4 turned up (B128, B129, N128, N129), and the two candidates
+of one shape — a dimension the app already records, reduces, and then reads back — N130 (joint pain read back
+one joint site at a time) and N131 (the plan's effort reaching the review), which was the last of them. All
+are in [CHANGELOG.md](CHANGELOG.md).
 
-### The plan's target RPE never reaches the review (N131)
-
-N130 was the other candidate of this shape and shipped: joint pain is now read back one **site** at a time,
-the joint and the side, so the dimension that average dropped is the series. This one remains, and it is no
-longer an alternative to anything — it is the last question of that kind the app's own record can answer.
-
-- **The plan's target RPE never reaches the review** (N131).
-  [`PlanComparison`](app/src/main/java/com/example/androidapp/domain/model/PlanComparison.kt) compares weight,
-  assistance, reps and set counts; **effort is not in it**. The plan's `targetRpeHalves` is not dead — it
-  prefills the field and drives the progression decision — and the logged RPE has trends of its own, so
-  nothing here is unread either. What is missing is the *comparison*: "you prescribed RPE 8 and logged 9.5
-  across the board" is invisible. That is **N119's question asked of the one column it did not cover**, and
-  it is the last one. The difference to design around: the plan states **one effort per exercise** (N59)
-  while the log records one per **set**, so unlike weight and reps this comparison has to choose what to line
-  up against — the heaviest set's effort, the exercise's average, or the rating the lifter gave the exercise
-  afterwards. What must not travel with it: the prefill and the progression use of the target, which work.
+That is a state, not a gap, and it is worth saying what fills it: this section holds only work a **reading or
+a use** turns up — a defect found by using the app, a question the log or the plan can answer and the screen
+cannot, a batch's own batch-reading — and it is never filled to keep itself full. What is decided and simply
+not being started is in *Later* (N134–N137).
 
 ## Later — decided, and not being started
 
@@ -307,7 +296,7 @@ tag, and **N125–N127 shipped next** — today's plan as home's only answer, th
 none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds one item (N131) and *Later* four
+***Next* holds nothing and *Later* four
 (N134–N137); home's plan surface (N125–N127), the measurements batch (B130, N132, N133) and what cutting
 2.3 and 2.4 turned up (B128, B129, N128, N129) shipped.** N118
 was found by asking what the app now records and never reads back, and N119
