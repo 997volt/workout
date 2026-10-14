@@ -48,6 +48,11 @@ data class MuscleSets(val muscle: MuscleGroup?, val halfSets: Int)
  * its own** rather than being dropped from the total, and a movement that states secondaries but no primary
  * credits them — its own share has no muscle to be counted against, so none is invented for it.
  *
+ * **Every credit is positive**, which is why the rows are built without a filter: a row with no working set is
+ * skipped before it credits anything, and each credit is one or two halves per working set. The unresolved
+ * bucket is one of those rows rather than something excluded from them — what puts it last is the ordering's
+ * `muscle == null` tie-break (B124).
+ *
  * Ordered by count, largest first, ties in the taxonomy's own order, and the unresolved bucket last: the row a
  * lifter is looking for is the one at the top, and the one that says "this plan states no muscle" is a caveat
  * rather than a category.
@@ -83,7 +88,6 @@ fun muscleBalance(
 
     return credits
         .map { (muscle, halfSets) -> MuscleSets(muscle, halfSets) }
-        .filter { it.halfSets > 0 }
         .sortedWith(
             compareBy({ it.muscle == null }, { -it.halfSets }, { it.muscle?.ordinal ?: 0 }),
         )
