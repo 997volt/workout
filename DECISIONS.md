@@ -900,6 +900,13 @@ the rule; that one argues it.
 - **Accessibility accompanies each screen**; it is not a later phase. Name what a control
   does (`onClickLabel`), *announce* state changes rather than only drawing them, and tag
   things so tests do not assert on English literals.
+- **One mechanism makes room for the keyboard, and it is the app's** (B119, B122, B127).
+  The activity's window is pinned to `android:windowSoftInputMode="adjustResize"` — which
+  `enableEdgeToEdge()` does not set, and which the platform otherwise resolves to `adjustPan` —
+  so the system never pans a window the inset has already padded, and each screen's scrolling
+  body applies `imePadding()` once. Two mechanisms leaving space for one keyboard is not a
+  layout that looks slightly wrong: it is a black band whose size changes with the focused
+  field, because a pan is measured from that field.
 - **The app is dark, and its colours are its own.** One fixed scheme — the palette in
   [`Color.kt`](app/src/main/java/com/example/androidapp/ui/theme/Color.kt) reached through the
   roles in [`Theme.kt`](app/src/main/java/com/example/androidapp/ui/theme/Theme.kt) — and not
@@ -1013,3 +1020,11 @@ stop being true:
   up — the 901 px the keyboard occupies — so a field behind the keyboard can be scrolled clear of it rather
   than staying under it. Measured rather than eyeballed because the inset is the kind of layout that quietly
   stops applying: `enableEdgeToEdge` and a target SDK are what removed it in the first place.
+- **The same reading, corrected** (B127). That measurement was taken while the window was also free to pan for
+  the keyboard, and a viewport measurement cannot see a *window* translation: the same `pixel6_api36` window
+  reported `sim={adjust=pan}`, and the pan it applied depends on which field has focus — which is a black band
+  between the content and the keyboard whose size changes between attempts. Pinning the window to
+  `adjustResize` leaves the inset as the only mechanism; re-measured after it, the viewport is still 958 px
+  with the keyboard up and 1859 px with it down, and the window reports `sim={adjust=resize}`. The lesson is
+  kept because it is the trap: **a viewport measurement proves the inset landed, not that nothing else moved
+  the window**.

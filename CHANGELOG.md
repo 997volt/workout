@@ -13,6 +13,27 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Fixed
+
+- **The window no longer pans as well as reserving the keyboard's height** (B127). With a workout running and
+  a set's field focused, a black band sat between the content and the keyboard — and **its size changed
+  between attempts**. Two mechanisms were making room for one keyboard. `imePadding()` reserved the
+  keyboard's height, which is B119's fix and is measured working (the body's viewport 1859 px → 958 px with
+  the keyboard up, and back again with it down); the window itself was left at the platform's default soft
+  input mode, which resolved to **`adjustPan`** — measured on `pixel6_api36`, the running workout's window
+  reported `sim={adjust=pan}` — so the system *also* panned the window by an amount that depends on **which
+  field is focused**. That is why the band had no fixed size, and why it was worst with a field low in the
+  list. Android's own edge-to-edge guidance requires `android:windowSoftInputMode="adjustResize"` on every
+  activity with a soft keyboard, and `enableEdgeToEdge()` does not set it; the manifest does now, so the
+  window never pans and the inset is the app's alone to apply. Measured after the fix: the window reports
+  `sim={adjust=resize}` and the viewport is unchanged at 958 px, so nothing was double-reserved by adding
+  it. A test asserts the attribute, because nothing else in the build can notice it going missing. The B119
+  entry in [DECISIONS.md](DECISIONS.md) said setting `windowSoftInputMode` "is not the fix on an
+  edge-to-edge window", and is corrected with it: it is not the *whole* fix, and leaving it out is what put
+  a second mechanism in the same place as the first.
+
 ## [2.3] — 2026-10-14 (versionCode 23)
 
 ### Added
