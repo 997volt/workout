@@ -388,6 +388,19 @@ the rule; that one argues it.
   indistinguishable from a measurement and draws a flat line through a site nobody
   measured.
 
+- **A rating is read back one site at a time, and the site is the joint *and* the side** (N130). The trend
+  used to be one number per workout, so a rating that records **which joint, which side, how much** (N63)
+  was reduced to an average about no particular joint: "left knee 6, right knee 2" charted as a 4, which is
+  neither knee. The picker now offers a series **per site** — *Left knee* and *Right knee* are two, and a
+  central joint is one — which is N118's answer for soreness and for the same two reasons: a per-metric
+  filter would have to be answered twice, at the workout level and again per lift, and the stored choice
+  stays one id. A site a session did not name is **null, not zero and not the overall worst**: a knee nobody
+  mentioned has no reading, and a zero would draw one. Each site reads the session's **worst** score for it
+  rather than a mean over the movements that reported it — N63's rule one level up, because three exercises
+  that hurt the same knee are one sore knee, and averaging reports it as milder than any rating given. The
+  overall *Joint pain* series stays: it answers "did this session hurt", and the sites answer *where*.
+  ([evidence](DECISIONS-EVIDENCE.md#n130))
+
 - **CI runs nightly and before a release, not on every push** (N30). The emulator is the
   one piece of infrastructure that has failed without a test running, so a per-push run
   would mostly report on the runner; the per-change guard is the local gate set in

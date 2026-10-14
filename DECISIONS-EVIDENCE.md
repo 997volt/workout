@@ -1794,3 +1794,56 @@ is what makes it able to catch that class of defect at all.
 would report on what it read rather than on what is there — the script turns it on only for its own
 `--fix`, confirmed by rewriting a scratch file into shape. It is not a substitute for reading the
 finding: it does not fix everything, and it is the caller's commit either way.
+
+## N130
+
+The roadmap left the shape open on purpose — "a series per joint, or a joint chosen beside the metric" —
+and the deciding evidence was already in the repository: N118 had answered the identical question for
+soreness, and its answer was one series per site. The parallel is exact. A muscle's soreness is recorded
+per muscle with its own score and read back per muscle; a joint's pain is recorded per (joint, side) with
+its own score, and reading it back as one number is the same reduction N118 removed. So joint pain gets the
+same shape, and the second candidate for that shape — a filter chosen beside the metric — was rejected for
+the same two reasons it was rejected there: the filter has to be answered **twice**, once for the
+workout-level series and again for the per-lift one, and the stored preference becomes a pair rather than
+one id every existing preference and export already carries.
+
+**The dimension is the site, not the joint.** "Knee 6" is half a sentence (N63) — the enum's own KDoc says
+so — and the record stores the side as a separate column for that reason. A per-joint series would pool
+left and right and reproduce, one level down, exactly the average this id exists to remove. The label comes
+from `jointSiteLabel`, the same function the rating rows and the picker use, so the chart cannot invent a
+second name for one knee; a central joint renders as *Neck* rather than *Centre neck*, which is a sentence
+the body does not say.
+
+**It is a workout series, and that is not a contradiction of its source.** Joint pain is recorded against an
+**exercise in a session** (N63), not against a day, so its readings are dated by the workout that produced
+them — the same basis as RPE and muscle feel, which is why the entries join `MetricGroup.WORKOUT`. Grouping
+it with the body readings would have dated it by a measurement it has nothing to do with.
+
+**`MAX` within the level, not `AVG` — twice.** N63 already resolved one exercise's picked joints to the
+worst of them, and the same question reappears at two more levels once sites are separated: a workout has
+several exercises, and a *head* (N97) has several of a family in one session. Averaging either would report
+a knee as milder than any score the lifter actually gave it, which is the wrong direction for pain and
+inconsistent with the rule already settled one level down. So both reads group with `MAX`, and each site's
+number is the worst rating it received in that session.
+
+**A site nobody named is a gap.** This is the same rule as an unmeasured tape site (N32) and an unanswered
+sore muscle (N118), and it is the reason the map exists rather than a fallback: a session that rated a right
+knee says *nothing* about the left one, so the left series reads null there. Falling back to the session's
+overall joint pain would draw a line for a joint nobody mentioned, and falling back to zero would draw a
+recovered knee as a measurement of nothing. The overall joint-pain series is deliberately **kept** beside
+the sites rather than replaced by them: it is the one number that says a session hurt, and the sites say
+where — removing it to avoid an overlap would have dropped a question the data still answers.
+
+**Two query shapes rather than one, because the two levels key differently.** The workout read groups by
+`session`, the per-lift read by `session_exercises.id` — the identity B97 added so a family's ratings are
+counted once per exercise. Neither is a projection of the other: the same session exercise contributes to
+one workout's site value and to its own series, and collapsing them would make the per-lift series read the
+workout's max. Both return the same `JointPainSiteRow`, with `sessionExerciseId` null for the workout-level
+read, so the repository has one mapper and the enums are converted from their **stored names** in one place
+— the same boundary rule a set's role follows.
+
+**Adding fourteen entries cost one test its footing, and that was the right outcome.** The picker's test
+clicked a metric without scrolling; with fourteen more series the item was off-screen, so the node existed
+and the click landed nowhere. The fix is `performScrollTo` — and the failure is worth recording because it
+is the first evidence that the picker has outgrown a screen, which is a fact about the screen rather than
+about this change.

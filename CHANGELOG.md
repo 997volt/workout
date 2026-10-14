@@ -73,6 +73,19 @@ unreleased.
   files instead of `git add -A`** (B128) — the 2.4 round put a scratch directory of HTTP dumps into a
   release commit, and only the commit's own `--stat` caught it.
 
+- **Joint pain is a series per joint, and per side** (N130). A rating already recorded **which joint,
+  which side, how much** (N63), and what the trends screen read back was one number per workout — so
+  "left knee 6, right knee 2" charted as a 4 that is about neither knee. The picker now offers a series
+  per **site**, the joint and the side together, exactly as N118 offers one per muscle: *Left knee* and
+  *Right knee* are two lines, and the record already carried both halves. The per-lift screen's joint
+  series reads the same dimension, keyed by the exercise the rating belongs to. A site a session did not
+  name is a **gap, not a zero** — the rule the tape sites and the sore list already follow — so a knee
+  nobody mentioned is not drawn as a measurement of nothing. Each site's number is that session's
+  **worst** score for it, not an average over the movements that reported it: a knee aching through three
+  exercises is one sore knee, and averaging would report it as milder than any rating the lifter gave.
+  The overall *Joint pain* series stays beside them, because "this session hurt" is still a question it
+  answers and the sites answer *where*.
+
 - **A change's layout is checked where the change is** (N129). `detekt-formatting` stays out of the
   gate — it reports 642 findings across 155 files, and 150 of those files carry an `ImportOrdering`
   finding, so a whole-file check would fail an edit that never went near an import. `tools/format-changed.py`
