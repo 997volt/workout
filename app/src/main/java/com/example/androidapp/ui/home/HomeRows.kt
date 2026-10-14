@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -64,9 +65,7 @@ internal fun HomeBody(
     onMeasureToday: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
-    /** A next-up row's substitute picker records nothing, where a scheduled day's records a substitution. */
-    onSubstituteNextUp: (TodayPlan) -> Unit,
-    onOpenPlannedWorkout: (NextUp) -> Unit,
+    onOpenPlannedWorkout: (TodayPlan) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -91,69 +90,59 @@ internal fun HomeBody(
                 onMeasureToday = onMeasureToday,
             ),
         )
-        // Where the next workout is comes **after** the ways in (N115, N124): the destinations are what this
-        // screen is for on a day with nothing scheduled, and the thing the app says is next belongs at the
-        // bottom edge the thumb is already at.
+        // Today's plan comes **after** the ways in (N115, N124): the destinations are what this screen is
+        // for on a day with nothing scheduled, and the day's own work belongs at the bottom edge the thumb
+        // is already at.
         planItems(
             state = state,
             onStartTemplate = onStartTemplate,
             onSubstitute = onSubstitute,
-            onSubstituteNextUp = onSubstituteNextUp,
             onOpenPlannedWorkout = onOpenPlannedWorkout,
         )
     }
 }
 
 /**
- * Where the next workout is, as the **one** surface for it (ROADMAP N115, P3.9, N124).
+ * Today's plan, headed by the weekday (ROADMAP N115, P3.3, N125).
  *
- * Two facts in one place, because they are the two answers the app has: a slot dated today (P3.3) and the
- * run a program with nothing scheduled today is up to (P3.9). They used to be a body block and a bar row
- * apiece, shown on opposite conditions; the bar's block is gone (N124), so both are drawn here — each still
- * on its own condition, and a program with a slot today is left out of the next-up list because a row beside
- * the day's plan would be a second, contradictory answer (`nextUpFor`).
+ * **The one answer home gives to "what am I doing today".** Until N125 there was a second — a next-up row
+ * per active program with nothing scheduled today — and the two were shown on opposite conditions. The row
+ * is gone: a day's workout is the question this screen is for, and a program's position on some other day
+ * is an answer nothing on the screen can act on. What that costs is named rather than discovered: a program
+ * with no weekday, and every rest day of one that has them, is reached through the Programs screen now
+ * (P3.9's home surface is superseded).
  *
- * It sits at the **foot** of the list, where N115 put the day's plan. The section is drawn whenever either
- * answer exists — not only on a scheduled day — so a program with no weekday, and every rest day of one that
- * has them, still says where its run is (P3.9).
+ * It sits at the **foot** of the list, where N115 put it, and is drawn only when the day has work; the
+ * state of a day that has none is N126's.
  */
 private fun LazyListScope.planItems(
     state: WorkoutsHomeUiState,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
-    onSubstituteNextUp: (TodayPlan) -> Unit,
-    onOpenPlannedWorkout: (NextUp) -> Unit,
+    onOpenPlannedWorkout: (TodayPlan) -> Unit,
 ) {
-    if (state.todaysPlan.isNotEmpty()) {
-        item(key = "today") {
-            SectionHeader(text = stringResource(R.string.home_today, state.today.longLabel()))
-        }
-        items(state.todaysPlan.size, key = { state.todaysPlan[it].id }) { index ->
-            val plan = state.todaysPlan[index]
-            TodayPlanCard(
-                plan = plan,
-                onStart = { onStartTemplate(plan) },
-                onSubstitute = { onSubstitute(plan) },
-            )
-        }
+    if (state.todaysPlan.isEmpty()) return
+    item(key = "today") {
+        SectionHeader(text = stringResource(R.string.home_today, state.today.longLabel()))
     }
-    if (state.nextUp.isNotEmpty()) {
-        // No heading: the row states *Next up* over the workout it names, so a section header would say it
-        // twice (and a list of runs would say it once per row rather than once per group).
-        items(state.nextUp.size, key = { state.nextUp[it].plan.id }) { index ->
-            val nextUp = state.nextUp[index]
-            NextUpRow(
-                nextUp = nextUp,
-                onOpen = { onOpenPlannedWorkout(nextUp) },
-                onStart = { onStartTemplate(nextUp.plan) },
-                onSubstitute = { onSubstituteNextUp(nextUp.plan) },
-            )
-        }
+    items(state.todaysPlan.size, key = { state.todaysPlan[it].id }) { index ->
+        val plan = state.todaysPlan[index]
+        TodayPlanCard(
+            plan = plan,
+            onOpen = { onOpenPlannedWorkout(plan) },
+            onStart = { onStartTemplate(plan) },
+            onSubstitute = { onSubstitute(plan) },
+        )
     }
 }
 
 /**
  * One scheduled workout, as a card.
+ *
+ * The name is the way into the plan and the button underneath is the way to start it, which is the two
+ * gestures **looking and starting** have always been here (N55): the card states what the workout is, and
+ * tapping it answers "what is in it" without starting anything (N127). The subtitle names the program when
+ * there is one, because two programs can schedule the same workout on the same day (P3.12).
  *
  * The row's two actions sit *under* its name rather than beside it. Beside it they were
  * competing with the name for the width of the card, and "Substitute" plus "Start" left the
@@ -163,6 +152,7 @@ private fun LazyListScope.planItems(
 @Composable
 private fun TodayPlanCard(
     plan: TodayPlan,
+    onOpen: () -> Unit,
     onStart: () -> Unit,
     onSubstitute: () -> Unit,
     modifier: Modifier = Modifier,
@@ -172,13 +162,28 @@ private fun TodayPlanCard(
         plan.exerciseCount,
         plan.exerciseCount,
     )
+    // The whole heading is the field, so the target is the row rather than a caption inside it, and
+    // `clickable` carries an `onClickLabel` because the headline names the workout and never the action
+    // (the rule every row here follows).
+    val openLabel = stringResource(R.string.home_plan_open, plan.name)
     AppCard(modifier = modifier) {
-        PlanHeading(
-            name = plan.name,
-            supporting = exercises,
-            icon = Icons.Filled.FitnessCenter,
-            accent = TileAccent.Indigo,
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(TestTags.Home.planPreview(plan.id))
+                .clickable(onClickLabel = openLabel, onClick = onOpen),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconTile(icon = Icons.Filled.FitnessCenter, accent = TileAccent.Indigo)
+            Column(modifier = Modifier.padding(start = 12.dp)) {
+                Text(text = plan.name, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = plan.programName?.let { "$exercises · $it" } ?: exercises,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -212,34 +217,6 @@ private fun TodayPlanCard(
             ) {
                 Text(stringResource(R.string.home_plan_start))
             }
-        }
-    }
-}
-
-/**
- * A card's leading tile and its two lines.
- *
- * Shared by the scheduled and the next-up card, which differ in their glyph, their accent and
- * what sits under them — not in how they are headed. Extracted at its second caller, which is
- * this one.
- */
-@Composable
-private fun PlanHeading(
-    name: String,
-    supporting: String,
-    icon: ImageVector,
-    accent: TileAccent,
-    modifier: Modifier = Modifier,
-) {
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        IconTile(icon = icon, accent = accent)
-        Column(modifier = Modifier.padding(start = 12.dp)) {
-            Text(text = name, style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = supporting,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }

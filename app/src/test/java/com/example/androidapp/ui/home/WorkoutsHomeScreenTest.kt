@@ -12,7 +12,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.TestTags
@@ -49,11 +48,10 @@ class WorkoutsHomeScreenTest {
         val onOpenTemplates: () -> Unit = {},
         val onStartTemplate: (TodayPlan) -> Unit = {},
         val onSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
-        val onStartSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
         val onOpenPrograms: () -> Unit = {},
         val onOpenMeasurements: () -> Unit = {},
         val onMeasureToday: () -> Unit = {},
-        val onOpenPlannedWorkout: (NextUp) -> Unit = {},
+        val onOpenPlannedWorkout: (TodayPlan) -> Unit = {},
     )
 
     /**
@@ -65,17 +63,6 @@ class WorkoutsHomeScreenTest {
     private fun scrollToToday(id: String = "slot-1") {
         composeTestRule.onNodeWithTag(TestTags.HOME_LIST)
             .performScrollToNode(hasTestTag(TestTags.Home.startPlan(id)))
-    }
-
-    /**
-     * Scrolls the body to a program's next-up row (N124).
-     *
-     * The row is in the body now, in the same surface as the day's plan, so a lazy list has not composed it
-     * until the list is scrolled — the shape [scrollToToday] already deals with.
-     */
-    private fun scrollToNextUp(id: String = "slot-2") {
-        composeTestRule.onNodeWithTag(TestTags.HOME_LIST)
-            .performScrollToNode(hasTestTag(TestTags.Home.nextUp(id)))
     }
 
     private fun setScreen(
@@ -93,7 +80,6 @@ class WorkoutsHomeScreenTest {
                     onStartTemplate = actions.onStartTemplate,
                     onOpenPlannedWorkout = actions.onOpenPlannedWorkout,
                     onSubstituteTemplate = actions.onSubstituteTemplate,
-                    onStartSubstituteTemplate = actions.onStartSubstituteTemplate,
                     onOpenPrograms = actions.onOpenPrograms,
                     onOpenMeasurements = actions.onOpenMeasurements,
                     onMeasureToday = actions.onMeasureToday,
@@ -289,50 +275,9 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun aProgramWithNothingToday_offersWhereItsRunIs() {
-        // ROADMAP P3.9: the run gives "which one is next" an answer on a day nothing is scheduled.
-        val started = mutableListOf<TodayPlan>()
-        setScreen(
-            state = WorkoutsHomeUiState(
-                isLoading = false,
-                nextUp = listOf(
-                    NextUp(
-                        plan = TodayPlan(
-                            id = "slot-2",
-                            templateId = "t2",
-                            name = "Push",
-                            exerciseCount = 5,
-                            slotId = "slot-2",
-                        ),
-                        programName = "Upper/Lower",
-                        isAtStart = true,
-                    ),
-                ),
-            ),
-            actions = Actions(onStartTemplate = { started += it }),
-        )
-
-        scrollToNextUp()
-        composeTestRule.onNodeWithText("Next up").assertExists()
-        // The small Start became the screen's second full-width pill, named apart from the empty one.
-        // Addressed by tag: the caption is a user-visible string a translation changes.
-        composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).assertExists()
-        // N88: the program and the count are two lines rather than one *Upper/Lower · 5 exercises*.
-        composeTestRule.onNodeWithText("Upper/Lower").assertExists()
-        composeTestRule.onNodeWithText("5 exercises").assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).performClick()
-
-        // The slot travels with the start, so its prescription seeds the workout (P3.8).
-        assertThat(started.single().slotId).isEqualTo("slot-2")
-        assertThat(started.single().templateId).isEqualTo("t2")
-    }
-
-    @Test
-    fun withAWorkoutRunning_theBarHoldsOnlyTheResume_andTheRunIsInTheBody() {
-        // N124: the bar's next-up block is gone. With a workout open the bar carries the *Resume* pill alone,
-        // and the program's run is drawn in the body's one surface — above the bar, at the foot of the list,
-        // where N115 put the day's plan. Asserted by position: a bar that still drew its own block could not
-        // put the row above the pill.
+    fun withAWorkoutRunning_theBarHoldsOnlyTheResume() {
+        // N124 kept the bar to the *Resume* pill, and N125 took the next-up rows out of the body: with a
+        // workout open the bar carries the pill alone and the body carries the day's plan, nothing else.
         setScreen(
             state = WorkoutsHomeUiState(
                 isLoading = false,
@@ -340,28 +285,10 @@ class WorkoutsHomeScreenTest {
                     startedAt = Instant.parse("2026-10-01T10:00:00Z"),
                     exerciseCount = 2,
                 ),
-                nextUp = listOf(
-                    NextUp(
-                        plan = TodayPlan(
-                            id = "slot-2",
-                            templateId = "t2",
-                            name = "Push",
-                            exerciseCount = 5,
-                            slotId = "slot-2",
-                        ),
-                        programName = "Upper/Lower",
-                        isAtStart = true,
-                    ),
-                ),
             ),
         )
 
-        val pill = composeTestRule.onNodeWithTag(TestTags.HOME_RESUME).getUnclippedBoundsInRoot()
-        scrollToNextUp()
-        val nextUp = composeTestRule.onNodeWithTag(TestTags.Home.nextUp("slot-2"))
-            .getUnclippedBoundsInRoot()
-
-        assertThat(nextUp.bottom <= pill.top).isTrue()
+        composeTestRule.onNodeWithTag(TestTags.HOME_RESUME).assertExists()
     }
 
     @Test
@@ -374,90 +301,33 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun theNextUpField_opensWhatIsPlanned_insteadOfStartingIt() {
-        // ROADMAP N55: looking and starting stop being the same gesture.
-        val opened = mutableListOf<NextUp>()
+    fun todaysCard_opensWhatIsPlanned_insteadOfStartingIt() {
+        // ROADMAP N55, N127: looking and starting are two gestures, and the card's own name is the one that
+        // looks. Before N127 the preview was reachable only from a next-up row, so the day's own workout was
+        // the one plan that could only be started.
+        val opened = mutableListOf<TodayPlan>()
         val started = mutableListOf<TodayPlan>()
-        val nextUp = NextUp(
-            plan = TodayPlan(
-                id = "slot-2",
-                templateId = "t2",
-                name = "Push",
-                exerciseCount = 5,
-                slotId = "slot-2",
-            ),
+        val plan = TodayPlan(
+            id = "slot-1",
+            templateId = "t1",
+            name = "Push",
+            exerciseCount = 5,
+            slotId = "slot-1",
             programName = "Upper/Lower",
-            isAtStart = true,
         )
         setScreen(
-            state = WorkoutsHomeUiState(isLoading = false, nextUp = listOf(nextUp)),
+            state = WorkoutsHomeUiState(isLoading = false, todaysPlan = listOf(plan)),
             actions = Actions(
                 onStartTemplate = { started += it },
                 onOpenPlannedWorkout = { opened += it },
             ),
         )
 
-        scrollToNextUp()
-        composeTestRule.onNodeWithTag(TestTags.Home.nextUp("slot-2")).performClick()
+        scrollToToday()
+        composeTestRule.onNodeWithTag(TestTags.Home.planPreview("slot-1")).performClick()
 
-        assertThat(opened.single()).isEqualTo(nextUp)
+        assertThat(opened.single()).isEqualTo(plan)
         assertThat(started).isEmpty()
-    }
-
-    @Test
-    fun aNextUpRow_givesItsStartRoom_underItsOwnText() {
-        // ROADMAP N86. Of the three gaps the entry named, a device showed this one to be the tight one: the
-        // row's text ended about 4 dp above its pill, where the space between two rows measured ~24 dp and
-        // the block's own top ~14 dp — both of which read fine. A minimum rather than a number, because what
-        // matters is that the text is not against the action it offers.
-        val nextUp = NextUp(
-            plan = TodayPlan(
-                id = "slot-2",
-                templateId = "t2",
-                name = "Push",
-                exerciseCount = 5,
-                slotId = "slot-2",
-            ),
-            programName = "Upper/Lower",
-            isAtStart = true,
-        )
-        setScreen(state = WorkoutsHomeUiState(isLoading = false, nextUp = listOf(nextUp)))
-
-        scrollToNextUp()
-        val field = composeTestRule.onNodeWithTag(TestTags.Home.nextUp("slot-2")).getUnclippedBoundsInRoot()
-        val pill = composeTestRule.onNodeWithTag(TestTags.Home.nextUpStart("slot-2")).getUnclippedBoundsInRoot()
-
-        assertThat(pill.top - field.bottom >= 8.dp).isTrue()
-    }
-
-    @Test
-    fun aNextUpRowsCount_isAlwaysOnItsOwnLine() {
-        // ROADMAP N88: the point is the shape of the row, not a wrap that happens once the text is long,
-        // so a **one-word** program name must not pull the count back up beside it. Asserted by position:
-        // the two lines share no vertical overlap, which a separator-joined line could not satisfy.
-        val nextUp = NextUp(
-            plan = TodayPlan(
-                id = "slot-2",
-                templateId = "t2",
-                name = "Push",
-                exerciseCount = 5,
-                slotId = "slot-2",
-            ),
-            // Deliberately short: this is the case a natural wrap would put back on one line.
-            programName = "A",
-            isAtStart = true,
-        )
-        setScreen(state = WorkoutsHomeUiState(isLoading = false, nextUp = listOf(nextUp)))
-
-        scrollToNextUp()
-        // Unmerged, because the row is one clickable node to a screen reader: the merged parent carries
-        // both lines' text and would answer every lookup with the same box.
-        val program = composeTestRule.onNodeWithText("A", useUnmergedTree = true).getUnclippedBoundsInRoot()
-        val count = composeTestRule.onNodeWithText("5 exercises", useUnmergedTree = true).getUnclippedBoundsInRoot()
-
-        assertThat(count.top >= program.bottom).isTrue()
-        // And the joined sentence is gone rather than drawn somewhere else.
-        composeTestRule.onNodeWithText("A · 5 exercises").assertDoesNotExist()
     }
 
     @Test
@@ -681,85 +551,6 @@ class WorkoutsHomeScreenTest {
         assertThat(picked?.first?.slotId).isEqualTo("slot-1")
         assertThat(picked?.second).isEqualTo("t2")
         assertThat(picked?.third).isEqualTo("Dumbbell version")
-    }
-
-    @Test
-    fun aNextUpSubstitute_startsThePick_andRecordsNothing() {
-        // ROADMAP N85: a substitution is an event keyed by slot *and* week (P3.11), and a next-up row has no
-        // week to key one by — the run is calendar-free (P3.9) and `ProgramRun` carries no week — so its pick
-        // starts the session and records nothing. That is not the same as the run standing still, which an
-        // earlier version of this comment claimed: the session names the template it trained, and P3.9's run
-        // follows the last slot trained (see ProgramRunTest.aSessionNamingALaterSlot_advancesPastIt). The
-        // recording callback is watched to prove the absence rather than assumed.
-        var recorded: Pair<TodayPlan, String?>? = null
-        var started: Pair<TodayPlan, String?>? = null
-        val nextUp = NextUp(
-            plan = TodayPlan(
-                id = "slot-2",
-                // The row's own plan, which the picker excludes from the list it offers (N55) — so "t2" is
-                // still there to be chosen.
-                templateId = "t1",
-                name = "Push",
-                exerciseCount = 5,
-                slotId = "slot-2",
-            ),
-            programName = "Upper/Lower",
-            isAtStart = true,
-        )
-        setScreen(
-            state = WorkoutsHomeUiState(
-                isLoading = false,
-                nextUp = listOf(nextUp),
-                templates = todayPlanWithTemplates.templates,
-            ),
-            actions = Actions(
-                onSubstituteTemplate = { plan, templateId, _ -> recorded = plan to templateId },
-                onStartSubstituteTemplate = { plan, templateId, _ -> started = plan to templateId },
-            ),
-        )
-
-        scrollToNextUp()
-        composeTestRule.onNodeWithTag(TestTags.Home.nextUpSubstitute("slot-2")).performClick()
-        composeTestRule.onNodeWithTag(TestTags.HOME_SUBSTITUTE_DIALOG).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.homeSubstituteTemplate("t2")).performClick()
-
-        assertThat(started?.first?.slotId).isEqualTo("slot-2")
-        assertThat(started?.second).isEqualTo("t2")
-        assertThat(recorded).isNull()
-    }
-
-    @Test
-    fun aNextUpSubstitutesDialog_offersNothingToRestore() {
-        // ROADMAP N85: a next-up row records no substitution, so the picker's *Restore the scheduled
-        // workout* row has no pick to clear. It was offered anyway and dismissed without doing anything —
-        // a control that cannot do anything is worse than no control (N53, N67) — so it is left out here,
-        // while the card, which does write, still offers it (the test below).
-        val nextUp = NextUp(
-            plan = TodayPlan(
-                id = "slot-2",
-                templateId = "t1",
-                name = "Push",
-                exerciseCount = 5,
-                slotId = "slot-2",
-            ),
-            programName = "Upper/Lower",
-            isAtStart = true,
-        )
-        setScreen(
-            state = WorkoutsHomeUiState(
-                isLoading = false,
-                nextUp = listOf(nextUp),
-                templates = todayPlanWithTemplates.templates,
-            ),
-        )
-
-        scrollToNextUp()
-        composeTestRule.onNodeWithTag(TestTags.Home.nextUpSubstitute("slot-2")).performClick()
-
-        composeTestRule.onNodeWithTag(TestTags.HOME_SUBSTITUTE_DIALOG).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.HOME_SUBSTITUTE_CLEAR).assertDoesNotExist()
-        // The templates are still offered, so the dialog still does its one job.
-        composeTestRule.onNodeWithTag(TestTags.homeSubstituteTemplate("t2")).assertExists()
     }
 
     @Test

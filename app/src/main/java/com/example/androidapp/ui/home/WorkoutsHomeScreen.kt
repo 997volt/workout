@@ -4,20 +4,17 @@ import com.example.androidapp.domain.DataError
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -34,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -150,9 +146,6 @@ fun WorkoutsHomeRoute(
             requestStart = requestStart,
             onFailure = { failure = it },
         ),
-        // A next-up row's pick starts the session and writes nothing (N85): the run it stands for is
-        // deliberately calendar-free, so there is no week to key a substitution to.
-        onStartSubstituteTemplate = startSubstitute(requestStart = requestStart),
         onOpenPrograms = onOpenPrograms,
         onOpenMeasurements = onOpenMeasurements,
         onMeasureToday = onMeasureToday,
@@ -164,14 +157,12 @@ fun WorkoutsHomeRoute(
 }
 
 /**
- * A substitute picker that has been opened (ROADMAP N85): which row asked, and whether the pick is recorded.
+ * The plan whose card opened the picker, or null (P3.11).
  *
- * The two rows that offer *Substitute* do different things with the answer — a scheduled occurrence is
- * written for its slot and week (P3.11), while a next-up row is not written at all — so the picker has to
- * remember which kind of row opened it. A record rather than two states because the two only travel
- * together.
+ * One shape now, not two: *Substitute* is offered by a scheduled card alone (N125), so every pick is
+ * written for the slot and week it belongs to. The next-up rows' unrecorded variant went with them (N85).
  */
-private data class SubstituteRequest(val plan: TodayPlan, val records: Boolean)
+private data class SubstituteRequest(val plan: TodayPlan)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -193,12 +184,12 @@ fun WorkoutsHomeScreen(
      */
     onMeasureToday: () -> Unit = {},
     /**
-     * Opens what a program's next run has planned, without starting it (ROADMAP N55).
+     * Opens what a card has planned, without starting it (ROADMAP N55, N127).
      *
-     * Looking and starting stopped being the same gesture: the field opens the plan, and *Start* keeps
-     * starting it.
+     * Looking and starting stopped being the same gesture: the card's own name opens the plan, and *Start*
+     * keeps starting it.
      */
-    onOpenPlannedWorkout: (NextUp) -> Unit = {},
+    onOpenPlannedWorkout: (TodayPlan) -> Unit = {},
     message: String? = null,
     onDismissMessage: () -> Unit = {},
     /**
@@ -209,18 +200,8 @@ fun WorkoutsHomeScreen(
      * the one that was scheduled (B93).
      */
     onSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
-    /**
-     * Starts the workout a next-up row's pick chose, and records nothing (ROADMAP N85).
-     *
-     * Beside [onSubstituteTemplate] rather than folded into it, because the two rows' picks are not the same
-     * act: one writes a substitution for an occurrence it belongs to, and the other has no occurrence to
-     * write against.
-     */
-    onStartSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
 ) {
-    // The row whose substitute picker is open, and whether that row's pick is recorded, or null
-    // (P3.11, N85). `substituting?.plan` is what the dialog draws; which callback answers it is decided by
-    // *which kind of row* opened it, which is the whole of N85's decision.
+    // The card whose substitute picker is open, or null (P3.11). `substituting?.plan` is what the dialog draws.
     var substituting by remember { mutableStateOf<SubstituteRequest?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(message, snackbarHostState, onDismissMessage)
@@ -229,16 +210,13 @@ fun WorkoutsHomeScreen(
         request = substituting,
         templates = state.templates,
         onChoose = { request, templateId, templateName ->
-            if (request.records) {
-                onSubstituteTemplate(request.plan, templateId, templateName)
-            } else {
-                onStartSubstituteTemplate(request.plan, templateId, templateName)
-            }
+            onSubstituteTemplate(request.plan, templateId, templateName)
         },
         onDismiss = { substituting = null },
     )
 
-    Scaffold(        modifier = modifier.fillMaxSize(),
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { HomeTopBar() },
         // A bottom bar rather than a floating button. The primary action on this screen is the
@@ -265,9 +243,7 @@ fun WorkoutsHomeScreen(
             onOpenMeasurements = onOpenMeasurements,
             onMeasureToday = onMeasureToday,
             onStartTemplate = onStartTemplate,
-            onSubstitute = { plan -> substituting = SubstituteRequest(plan, records = true) },
-            // A next-up row's pick starts the session and records nothing (N85).
-            onSubstituteNextUp = { plan -> substituting = SubstituteRequest(plan, records = false) },
+            onSubstitute = { plan -> substituting = SubstituteRequest(plan) },
             onOpenPlannedWorkout = onOpenPlannedWorkout,
             modifier = Modifier.padding(innerPadding),
         )
@@ -310,9 +286,6 @@ private fun SubstitutePicker(
             onDismiss()
             onChoose(current, null, null)
         },
-        // A next-up row records no substitution (N85), so there is nothing for it to restore: the entry
-        // would dismiss and do nothing at all. Offered only where the pick was written (N53, N67).
-        showClear = current.records,
         onDismiss = onDismiss,
     )
 }
@@ -321,17 +294,15 @@ private fun SubstitutePicker(
  * What stands in for one occurrence this week (ROADMAP P3.11).
  *
  * The scheduled workout is offered first and clears the pick, because a substitution is the
- * lifter's statement rather than the app's and a mis-pick would otherwise be permanent — but only where
- * the pick is recorded at all ([showClear]): a next-up row's substitute writes no event, so it has no
- * pick to clear and the entry is left out rather than offered as a control that cannot do anything.
+ * lifter's statement rather than the app's and a mis-pick would otherwise be permanent. The next-up rows
+ * that wrote no event — so had no pick to clear — went with the rows themselves (N85, N125), which is why
+ * the entry is unconditional now.
  */
 @Composable
 private fun SubstituteDialog(
     templates: List<WorkoutTemplate>,
     onPick: (WorkoutTemplate) -> Unit,
     onClear: () -> Unit,
-    /** False where the row records nothing, so there is no pick for the clearing row to clear (N85). */
-    showClear: Boolean,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -341,15 +312,13 @@ private fun SubstituteDialog(
         title = { Text(stringResource(R.string.home_substitute_title)) },
         text = {
             LazyColumn {
-                if (showClear) {
-                    item(key = "scheduled") {
-                        ListItem(
-                            headlineContent = { Text(stringResource(R.string.home_substitute_clear)) },
-                            modifier = Modifier
-                                .testTag(TestTags.HOME_SUBSTITUTE_CLEAR)
-                                .clickable(onClick = onClear),
-                        )
-                    }
+                item(key = "scheduled") {
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.home_substitute_clear)) },
+                        modifier = Modifier
+                            .testTag(TestTags.HOME_SUBSTITUTE_CLEAR)
+                            .clickable(onClick = onClear),
+                    )
                 }
                 items(items = templates, key = { it.id }) { template ->
                     ListItem(
@@ -387,9 +356,7 @@ private fun HomeContent(
     onMeasureToday: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
-    /** A next-up row's substitute picker records nothing, where a scheduled day's records a substitution. */
-    onSubstituteNextUp: (TodayPlan) -> Unit,
-    onOpenPlannedWorkout: (NextUp) -> Unit,
+    onOpenPlannedWorkout: (TodayPlan) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.isLoading) {
@@ -407,7 +374,6 @@ private fun HomeContent(
             onMeasureToday = onMeasureToday,
             onStartTemplate = onStartTemplate,
             onSubstitute = onSubstitute,
-            onSubstituteNextUp = onSubstituteNextUp,
             onOpenPlannedWorkout = onOpenPlannedWorkout,
             modifier = modifier,
         )
@@ -417,10 +383,9 @@ private fun HomeContent(
 /**
  * The home start bar: the *Resume* pill, for the workout already running (ROADMAP P1.16, N102, N124).
  *
- * It carried where a program's run was up to as well until N124 moved that into the body, which is now the
- * **one** surface for "where is the next workout" — day's plan and next-up rows together. So the bar is
- * drawn only while a workout is open, and resuming is the only thing it offers. It stays a bottom bar rather
- * than a floating button because the primary action is the one thing you should not have to aim at.
+ * So the bar is drawn only while a workout is open, and resuming is the only thing it offers. It stays a
+ * bottom bar rather than a floating button because the primary action is the one thing you should not have
+ * to aim at.
  *
  * Starting empty is one of the body's rows (N102), and this bar does not offer it: the same action twice on
  * one screen is what N42 removed the last time it happened. The *Programs* and *Templates* links left with
@@ -489,117 +454,6 @@ private fun ResumeButton(
         // Tagged by state, not caption: the caption is user-visible text a translation changes.
         modifier = modifier.testTag(TestTags.HOME_RESUME),
     )
-}
-
-/**
- * One program's next run, in the body's surface for where the next workout is (ROADMAP P3.9, N55, N124).
- *
- * The field opens what is planned and the full-width pill under it starts it, so looking and starting
- * stay two gestures (N55). The pill keeps the empty start's shape but not its colour: it draws the tonal
- * container *Log set* draws (N83), which is what the two planned-workout starts have in common and what
- * tells them apart from the empty start's deep indigo. The field stays compact, because more than one
- * program can be active (P3.12) and the section may carry several.
- */
-@Composable
-internal fun NextUpRow(
-    nextUp: NextUp,
-    onOpen: () -> Unit,
-    onStart: () -> Unit,
-    /** Opens the substitute picker for this row (ROADMAP N85). */
-    onSubstitute: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val openLabel = stringResource(R.string.home_next_up_open, nextUp.plan.name)
-    Column(modifier = modifier.fillMaxWidth().padding(top = 8.dp)) {
-        // The whole line is the field, so the target is the row rather than a caption inside it.
-        // `clickable` carries an `onClickLabel` because the headline names the workout and never the
-        // action (the rule the restyle's rows follow).
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(TestTags.Home.nextUp(nextUp.plan.id))
-                .clickable(onClickLabel = openLabel, onClick = onOpen),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            NextUpLabel(nextUp = nextUp, modifier = Modifier.weight(1f))
-            // The rare action beside the field rather than under the pill (N85): the pill is the screen's
-            // full-width start and stays that way (N61), so a second action goes on the row above it —
-            // which is where today's card offers the same one (P3.11). Leaving it unrecorded is N85's
-            // decision, and `startSubstitute` is where the argument for it lives.
-            AppTextButton(
-                onClick = onSubstitute,
-                modifier = Modifier.testTag(TestTags.Home.nextUpSubstitute(nextUp.plan.id)),
-            ) {
-                Text(stringResource(R.string.home_substitute))
-            }
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        PrimaryActionButton(
-            text = stringResource(R.string.home_start_planned_workout),
-            icon = Icons.Filled.PlayArrow,
-            onClick = onStart,
-            // Log set's container (N83). A planned-workout start is the same action as the workout's own
-            // next set — the plan, stated and then committed — so it wears the same colour, and
-            // `PrimaryActionButton` takes the pair rather than assuming the accent.
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier
-                .fillMaxWidth()
-                // Room between the row's own text and the action it offers (N86). Of the three gaps the
-                // entry named, a device showed this one to be the tight one: the supporting line's box
-                // ended about 4 dp above the pill, while the space between two rows measured ~24 dp and
-                // the block's own top ~14 dp — both of which read fine. 8 dp makes this one their equal.
-                // N88 gave the text a fourth line, and the device re-measure with it still read 8 dp.
-                .padding(top = 8.dp)
-                .testTag(TestTags.Home.nextUpStart(nextUp.plan.id)),
-        )
-    }
-}
-
-/**
- * A next-up row's text: what is next, the workout, the program, and how many exercises (ROADMAP N88).
- *
- * The program and the count are two lines rather than one joined sentence, and **always**: the point is the
- * shape of the row rather than a wrap that happens once the text is long, so a one-word program name must
- * not pull the count back up beside it. Split out of [NextUpRow] because the row is at the length this
- * project allows, and the count's plural is what this half owns.
- */
-@Composable
-private fun NextUpLabel(nextUp: NextUp, modifier: Modifier = Modifier) {
-    val exercises = pluralStringResource(
-        R.plurals.home_plan_exercises,
-        nextUp.plan.exerciseCount,
-        nextUp.plan.exerciseCount,
-    )
-    Column(modifier = modifier) {
-        Text(
-            text = stringResource(R.string.home_next_up),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = nextUp.plan.name,
-            style = MaterialTheme.typography.titleLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            // The program's name is here because more than one program may be active
-            // (P3.12), so two rows have to be tellable apart.
-            text = nextUp.programName,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = exercises,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
 }
 
 @Preview(showBackground = true)

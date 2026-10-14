@@ -20,10 +20,10 @@ import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.AppTextButton
 
 /**
- * What a next-up row has planned, read on the tap that opened it (ROADMAP N55).
+ * What a card has planned, read on the tap that opened it (ROADMAP N55, N127).
  *
  * A dialog rather than the template's editor, which is the only destination a template had: the
- * question the field answers is "what is in this workout", and opening the editor to answer it would
+ * question the card answers is "what is in this workout", and opening the editor to answer it would
  * put every target in the plan one mis-tap from being rewritten on the way to reading it. It is also
  * a dialog rather than a screen because the answer is short — the workout's ordered exercises — and a
  * destination for a list of names would be a screen with a back button and nothing to do on it.
@@ -41,11 +41,15 @@ fun PlannedWorkoutDialog(
         title = {
             Column {
                 Text(workout.plan.name, modifier = Modifier.testTag(TestTags.Home.PLANNED_WORKOUT_TITLE))
-                Text(
-                    text = workout.programName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                // Only when the plan belongs to a program (P3.12): a workout reached from the day's
+                // schedule always does, but the field is the plan's, not this dialog's, to promise.
+                workout.programName?.let { program ->
+                    Text(
+                        text = program,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         },
         text = {

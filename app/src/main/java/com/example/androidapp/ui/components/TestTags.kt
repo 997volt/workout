@@ -550,33 +550,27 @@ object TestTags {
     fun historyRepeat(sessionId: String) = "history_repeat_$sessionId"
 
     /**
-     * Home's own tags (ROADMAP N16, P3.9, N55), grouped so this object stays under its ceiling —
+     * Home's own tags (ROADMAP N16, N55, N125), grouped so this object stays under its ceiling —
      * the same reason Programs, Measurements and Statistics are objects.
      */
     object Home {
-        /** Today's plan on home (ROADMAP N16). */
+        /**
+         * Today's card's *Start* (ROADMAP N16).
+         *
+         * The card's own name is tagged by [planPreview], which is the separate gesture: looking and
+         * starting stopped being the same thing (N55, N127), so a test says which one it means.
+         */
         fun startPlan(id: String) = "home_start_plan_$id"
 
         /**
-         * A next-up row's *Substitute* (ROADMAP N85).
+         * The field that opens what a card has planned, without starting it (ROADMAP N55, N127).
          *
-         * Per row for the reason [historyRepeat] is: the pick is addressed to *which* run is standing in,
-         * and more than one program may be active (P3.12), so the bar can carry several.
+         * Per card, because a day can carry slots from more than one program (P3.12) and two cards can
+         * name the same workout.
          */
-        fun nextUpSubstitute(id: String) = "home_next_up_substitute_$id"
+        fun planPreview(id: String) = "home_plan_preview_$id"
 
-        /**
-         * The run's next-up field (ROADMAP P3.9, N55).
-         *
-         * It tags the *field*, which opens what is planned, and [nextUpStart] tags the separate start
-         * beside it: looking and starting stopped being the same gesture, so a test has to say which
-         * one it means.
-         */
-        fun nextUp(id: String) = "home_next_up_$id"
-
-        fun nextUpStart(id: String) = "home_next_up_start_$id"
-
-        /** What is planned, opened from that field (ROADMAP N55). */
+        /** What is planned, opened from a card (ROADMAP N55). */
         const val PLANNED_WORKOUT = "home_planned_workout"
         const val PLANNED_WORKOUT_TITLE = "home_planned_workout_title"
         const val PLANNED_WORKOUT_EMPTY = "home_planned_workout_empty"

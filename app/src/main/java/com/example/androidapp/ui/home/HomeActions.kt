@@ -38,47 +38,14 @@ internal suspend fun discardActiveSession(
 }
 
 /**
- * Starts a next-up row's substitute, and writes no substitution (ROADMAP N85).
- *
- * A substitution is an event keyed by slot *and week* (P3.11), and there is no week to key one by here: the
- * run is deliberately calendar-free (P3.9), advancing when a slot is trained or skipped rather than because
- * a day passed, and `ProgramRun` carries the slot and a flag with the week nowhere in it. Recording it
- * against the week of *today* — what [substituteOccurrence] does for the card — would write an event for an
- * occurrence other than the one being started: on a Sunday it keys the next-up Monday to a week whose Monday
- * has already gone. So the pick starts the session and records no substitution, and the accepted cost is
- * that history does not say the run was substituted.
- *
- * That is **not** the same as the run standing still, which an earlier version of this comment claimed. The
- * session names the template it trained, and P3.9's run follows the last slot trained, so a pick naming
- * another slot of the same program moves the run past that slot — exactly what starting that template from
- * anywhere else does. The alternative was rejected: a session that names a template but settles no
- * occurrence would need the session to carry a second fact, and it contradicts P3.9. DECISIONS.md's N85
- * entry holds the rule. The card keeps its write, because the card *is* today's occurrence by construction.
- */
-internal fun startSubstitute(
-    requestStart: (StartIntent) -> Unit,
-): (TodayPlan, String?, String?) -> Unit = { plan, templateId, templateName ->
-    val slotId = plan.slotId
-    if (slotId != null && templateId != null) {
-        requestStart(
-            StartIntent(
-                templateId = templateId,
-                // The slot is what the row stood for, so it travels for the prefill history (N73) —
-                // the same start a recorded substitute performs.
-                slotId = slotId,
-                // The **picked** template's name, not the scheduled row's: the start's own question names
-                // the workout it is about to begin (B93). The scheduled name stays the fallback.
-                label = templateName ?: plan.name,
-            ),
-        )
-    }
-}
-
-/**
  * Records a substitute for one occurrence and starts it (ROADMAP P3.11).
  *
  * The pick is made at the point of starting, so the write and the start are one action — and
  * clearing writes nothing to start.
+ *
+ * The former next-up variant, which started the pick and wrote nothing (N85), went with the next-up rows
+ * (N125): every substitute offered now belongs to a card, and a card *is* today's occurrence, so all of
+ * them are recorded.
  */
 internal fun substituteOccurrence(
     scope: CoroutineScope,
@@ -97,7 +64,8 @@ internal fun substituteOccurrence(
                             // The slot is what it was scheduled as, so it travels for the prefill
                             // history (N73, P3.11).
                             slotId = slotId,
-                            // The picked substitute's name, for the reason [startSubstitute] gives (B93).
+                            // The picked substitute's name, so the start's own question names the workout
+                            // it is about to begin rather than the one that was scheduled (B93).
                             label = templateName ?: plan.name,
                         ),
                     )

@@ -99,26 +99,22 @@ class PaletteContrastTest {
     }
 
     @Test
-    fun thePlannedWorkoutStarts_drawTheTonalContainer_thePairAboveHolds() {
+    fun thePlannedWorkoutStart_drawsTheTonalContainer_thePairAboveHolds() {
         // N83, and N49's own lesson applied to the change that extended it: a ratio on a colour no control
         // draws is a claim nobody can check, which is why the link half of this file is a scan rather than
-        // an assertion. The pair above is worth holding because these two read it — and both of them,
-        // because the two planned-workout starts are one action and only one of them carried the accent.
+        // an assertion. The pair above is worth holding because this control reads it.
         //
-        // The *pair*, not the container alone (B77): a scan for one literal passes on a comment, or on a
-        // control whose content colour was left at the default, so the two lines have to arrive together.
+        // **One control now, not two** (N125): the twin this used to be checked against was the next-up
+        // row's start, and the next-up rows are gone. The scan stays a scan — and stays about the *pair*,
+        // not the container alone (B77): matching one literal would pass on a comment, or on a control whose
+        // content colour was left at the default, so the two lines still have to arrive together.
         val tonalStart = Regex(
             "containerColor = MaterialTheme\\.colorScheme\\.secondaryContainer,\\s+" +
                 "contentColor = MaterialTheme\\.colorScheme\\.onSecondaryContainer",
         )
-        val plannedStarts = listOf(
-            "app/src/main/java/com/example/androidapp/ui/home/HomeRows.kt",
-            "app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeScreen.kt",
-        )
+        val plannedStart = "app/src/main/java/com/example/androidapp/ui/home/HomeRows.kt"
 
-        plannedStarts.forEach { path ->
-            assertThat(File(repoRoot, path).readText()).containsMatch(tonalStart.toPattern())
-        }
+        assertThat(File(repoRoot, plannedStart).readText()).containsMatch(tonalStart.toPattern())
     }
 
     /** WCAG's ratio: 4.5:1 for body-size text. */

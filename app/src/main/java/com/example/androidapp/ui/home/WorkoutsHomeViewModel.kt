@@ -8,7 +8,6 @@ import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.model.isDailyOn
 import com.example.androidapp.domain.repository.TemplateRepository
-import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
@@ -69,24 +68,17 @@ data class TodayPlan(
     val name: String,
     val exerciseCount: Int,
     val slotId: String? = null,
+    /**
+     * The program the slot belongs to, or null (ROADMAP N127).
+     *
+     * Read for the preview's subtitle: a day can carry slots from more than one active program (P3.12),
+     * and two cards may name the same workout, so the program is what tells them apart.
+     */
+    val programName: String? = null,
 )
 
 /**
- * A program's run, offered as home's next-up row (ROADMAP P3.9).
- *
- * [plan] is what a start needs — the slot's id travels with it so the session's per-slot prefill
- * history can be read (N73) — and [programName] is there because more than one program may be
- * active (P3.12), so two next-up rows have to be tellable apart.
- */
-data class NextUp(
-    val plan: TodayPlan,
-    val programName: String,
-    /** True when nothing has been done yet, so the row words itself as a start (P3.9). */
-    val isAtStart: Boolean,
-)
-
-/**
- * What is planned for one next-up row, read when the field is tapped (ROADMAP N55).
+ * What is planned for one workout, read when its card is tapped (ROADMAP N55, N127).
  *
  * [exercises] is empty while the read is in flight and after one that returned nothing — the two are
  * told apart by [isLoading], because "the plan is empty" and "the plan is not read yet" would
@@ -94,7 +86,8 @@ data class NextUp(
  */
 data class PlannedWorkout(
     val plan: TodayPlan,
-    val programName: String,
+    /** The program the plan came from, or null when it belongs to none. */
+    val programName: String? = null,
     val exercises: List<String> = emptyList(),
     val isLoading: Boolean = true,
 )
@@ -105,17 +98,13 @@ data class WorkoutsHomeUiState(
     /** The device's weekday, for the "Today" heading (ROADMAP N16). */
     val today: DayOfWeek = DayOfWeek.MONDAY,
     /**
-     * What is scheduled today: the union of the active programs' slots for this weekday, or —
-     * with no program active — the plans pinned to it (ROADMAP P3.3, unioned by P3.12).
+     * What is scheduled today: the union of the active programs' slots for this weekday (ROADMAP P3.3,
+     * unioned by P3.12).
+     *
+     * Empty is the ordinary state of a rest day, and of a day with no program followed at all; the two
+     * are told apart by [todaySurface] (N126), not here.
      */
     val todaysPlan: List<TodayPlan> = emptyList(),
-    /**
-     * Where each active program's run is, for a program with nothing scheduled today (ROADMAP P3.9).
-     *
-     * Empty when every active program has a weekday slot today: the today plan is then the answer,
-     * and a next-up row would be a second, contradictory one.
-     */
-    val nextUp: List<NextUp> = emptyList(),
     /** The templates a substitution can choose from (ROADMAP P3.11). */
     val templates: List<WorkoutTemplate> = emptyList(),
     /**
@@ -148,33 +137,33 @@ class WorkoutsHomeViewModel @Inject constructor(
     private val activeSession = workoutRepository.observeActiveSession()
 
     /**
-     * The next-up row whose plan is being looked at, or null (ROADMAP N55).
+     * The plan whose card is being looked at, or null (ROADMAP N55, N127).
      *
-     * Separate from [uiState] because it is a transient question about *one* row: folding it in would
-     * rebuild the whole list every time a dialog opens, and the list is what the field sits under.
+     * Separate from [uiState] because it is a transient question about *one* card: folding it in would
+     * rebuild the whole list every time a dialog opens, and the list is what the card sits in.
      */
     private val _plannedWorkout = MutableStateFlow<PlannedWorkout?>(null)
     val plannedWorkout: StateFlow<PlannedWorkout?> = _plannedWorkout.asStateFlow()
 
     /**
-     * Reads what one next-up row has planned, and holds it until the dialog closes (ROADMAP N55).
+     * Reads what one card has planned, and holds it until the dialog closes (ROADMAP N55, N127).
      *
-     * A read per tap rather than a flow per row: the dialog is a look at one plan, and keeping a flow
-     * open for every active program would be a live query behind a field nobody has tapped. The
-     * template is read through the same repository the editor uses, so a rename shows here too — N16's
-     * living template, seen from the other end.
+     * A read per tap rather than a flow per card: the dialog is a look at one plan, and keeping a flow
+     * open for every card would be a live query behind a field nobody has tapped. The template is read
+     * through the same repository the editor uses, so a rename shows here too — N16's living template,
+     * seen from the other end.
      */
-    fun onOpenPlannedWorkout(nextUp: NextUp) {
+    fun onOpenPlannedWorkout(plan: TodayPlan) {
         _plannedWorkout.value = PlannedWorkout(
-            plan = nextUp.plan,
-            programName = nextUp.programName,
+            plan = plan,
+            programName = plan.programName,
         )
         viewModelScope.launch {
-            val exercises = templateRepository.observeExercises(nextUp.plan.templateId).first()
-            // Only the row that opened it may fill it in: a dialog closed while the read was in
+            val exercises = templateRepository.observeExercises(plan.templateId).first()
+            // Only the card that opened it may fill it in: a dialog closed while the read was in
             // flight must not come back.
             _plannedWorkout.update { current ->
-                current?.takeIf { it.plan.id == nextUp.plan.id }?.copy(
+                current?.takeIf { it.plan.id == plan.id }?.copy(
                     exercises = exercises.map { it.exerciseName },
                     isLoading = false,
                 )
@@ -257,29 +246,15 @@ class WorkoutsHomeViewModel @Inject constructor(
         }
 
     /** Each active program's run, keyed by program id (ROADMAP P3.9). */
-    private val programRuns: Flow<Map<String, ProgramRun?>> = activePrograms
-        .flatMapLatest { programs ->
-            if (programs.isEmpty()) {
-                flowOf(emptyMap())
-            } else {
-                combine(
-                    programs.map { program ->
-                        programRepository.observeProgramRun(program.id).map { run -> program.id to run }
-                    },
-                ) { perProgram -> perProgram.toMap() }
-            }
-        }
-
-    /** The three program-shaped sources, kept together so the combine below stays four deep. */
+    /** The program-shaped sources the plan surface reads, kept together so the combine below stays flat. */
     private data class ProgramsPart(
         val programs: List<WorkoutProgram>,
         val slots: List<ProgramSlot>,
-        val runs: Map<String, ProgramRun?>,
     )
 
     private val programsPart: Flow<ProgramsPart> =
-        combine(activePrograms, activeProgramSlots, programRuns) { programs, slots, runs ->
-            ProgramsPart(programs, slots, runs)
+        combine(activePrograms, activeProgramSlots) { programs, slots ->
+            ProgramsPart(programs, slots)
         }
 
     val uiState: StateFlow<WorkoutsHomeUiState> = combine(
@@ -297,12 +272,6 @@ class WorkoutsHomeViewModel @Inject constructor(
             todaysPlan = todaysPlanFor(
                 programs = programs.programs,
                 slots = programs.slots,
-                day = today,
-            ),
-            nextUp = nextUpFor(
-                programs = programs.programs,
-                slots = programs.slots,
-                runs = programs.runs,
                 day = today,
             ),
             templates = templates,
@@ -382,38 +351,6 @@ internal fun todaysPlanFor(
     if (programs.isEmpty()) emptyList() else slots.scheduledFor(day, programs)
 
 /**
- * Where each active program's run is, as home's next-up rows (ROADMAP P3.9).
- *
- * A program with a weekday slot today is left out: the today plan already says what to do, and a
- * next-up row beside it would be a second, contradictory answer. The order follows the programs'
- * authored order (P3.12), so several rows read the way the union does.
- *
- * File-level and pure so the rule can be tested without a database or a ViewModel.
- */
-internal fun nextUpFor(
-    programs: List<WorkoutProgram>,
-    slots: List<ProgramSlot>,
-    runs: Map<String, ProgramRun?>,
-    day: DayOfWeek,
-): List<NextUp> = programs.mapNotNull { program ->
-    val programSlots = slots.filter { it.programId == program.id }
-    if (programSlots.any { it.weekday == day }) return@mapNotNull null
-    val run = runs[program.id] ?: return@mapNotNull null
-    NextUp(
-        plan = TodayPlan(
-            id = run.slot.id,
-            templateId = run.slot.templateId,
-            name = run.slot.templateName,
-            exerciseCount = run.slot.exerciseCount,
-            // The slot travels with the start so the session's prefill reads that slot's history (N73).
-            slotId = run.slot.id,
-        ),
-        programName = program.name,
-        isAtStart = run.isAtStart,
-    )
-}
-
-/**
  * The active programs' slots that fall on [day], in the union's order (ROADMAP P3.12).
  *
  * Ordered by the **program's authored position first, the slot's position second**: two
@@ -440,6 +377,9 @@ private fun List<ProgramSlot>.scheduledFor(
                 name = slot.templateName,
                 exerciseCount = slot.exerciseCount,
                 slotId = slot.id,
+                // Named for the preview's subtitle (N127): a day can carry slots from more than one
+                // program (P3.12), and two cards may name the same workout.
+                programName = programs.firstOrNull { it.id == slot.programId }?.name,
             )
         }
 }

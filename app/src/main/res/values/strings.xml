@@ -353,13 +353,9 @@
     <!-- Today's plan (ROADMAP N16). -->
     <string name="home_today">Today · %1$s</string>
     <string name="home_plan_start">Start</string>
-    <!-- Where a program's run is, for a day it schedules nothing (ROADMAP P3.9). -->
-    <string name="home_next_up">Next up</string>
-    <!-- The next-up field opens what is planned rather than starting it (ROADMAP N55); the
-         accessibility label names the action, because the field's own text names the workout. -->
-    <string name="home_next_up_open">See what is planned in %1$s</string>
-    <!-- The big action under the field, the same shape as the empty start above the bar. -->
-    <string name="home_start_planned_workout">Start planned workout</string>
+    <!-- A card's own name opens what is planned rather than starting it (ROADMAP N55, N127); the
+         accessibility label names the action, because the card's text names the workout. -->
+    <string name="home_plan_open">See what is planned in %1$s</string>
     <string name="home_planned_empty">This workout has no exercises planned yet.</string>
     <!-- Substituting one occurrence, this week only (ROADMAP P3.11). -->
     <string name="home_substitute">Substitute</string>

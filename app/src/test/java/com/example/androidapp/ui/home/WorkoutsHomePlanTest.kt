@@ -1,6 +1,5 @@
 package com.example.androidapp.ui.home
 
-import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.google.common.truth.Truth.assertThat
@@ -46,6 +45,22 @@ class WorkoutsHomePlanTest {
 
         assertThat(plan.map { it.id }).containsExactly("s1", "s2").inOrder()
         assertThat(plan.map { it.templateId }).containsExactly("t1", "t2").inOrder()
+    }
+
+    @Test
+    fun aDaysPlan_namesTheProgramItCameFrom() {
+        // ROADMAP N127: the preview's subtitle names the program, because a day can carry slots from
+        // more than one active program (P3.12) and two cards may name the same workout.
+        val slots = listOf(
+            slot("s1", DayOfWeek.FRIDAY, position = 0, templateId = "t1"),
+            slot("s2", DayOfWeek.FRIDAY, position = 0, templateId = "t2", programId = "p2"),
+        )
+
+        val plan = todaysPlanFor(listOf(program, second), slots, day = DayOfWeek.FRIDAY)
+
+        assertThat(plan.map { it.programName })
+            .containsExactly("Upper/Lower", "Conditioning")
+            .inOrder()
     }
 
     @Test
@@ -97,70 +112,5 @@ class WorkoutsHomePlanTest {
         val plan = todaysPlanFor(programs = emptyList(), slots = slots, day = DayOfWeek.FRIDAY)
 
         assertThat(plan).isEmpty()
-    }
-
-    @Test
-    fun aProgramWithNothingToday_showsWhereItsRunIs() {
-        // ROADMAP P3.9: the order is a run, so a day the program schedules nothing still has an
-        // answer to "which one is next".
-        val slots = listOf(slot("s2", weekday = null, position = 1, templateId = "t2"))
-        val run = ProgramRun(slot = slots.single(), isAtStart = false)
-
-        val nextUp = nextUpFor(
-            programs = listOf(program),
-            slots = slots,
-            runs = mapOf("p1" to run),
-            day = DayOfWeek.FRIDAY,
-        )
-
-        assertThat(nextUp.map { it.plan.slotId }).containsExactly("s2")
-        assertThat(nextUp.single().programName).isEqualTo("Upper/Lower")
-        assertThat(nextUp.single().isAtStart).isFalse()
-    }
-
-    @Test
-    fun aProgramWithASlotToday_hasNoNextUpRow() {
-        // The today plan is then the answer; a next-up row beside it would contradict it.
-        val slots = listOf(slot("s1", DayOfWeek.FRIDAY, position = 0, templateId = "t1"))
-
-        val nextUp = nextUpFor(
-            programs = listOf(program),
-            slots = slots,
-            runs = mapOf("p1" to ProgramRun(slot = slots.single(), isAtStart = true)),
-            day = DayOfWeek.FRIDAY,
-        )
-
-        assertThat(nextUp).isEmpty()
-    }
-
-    @Test
-    fun aProgramWithNoRunYet_hasNoNextUpRow() {
-        val nextUp = nextUpFor(
-            programs = listOf(program),
-            slots = emptyList(),
-            runs = mapOf("p1" to null),
-            day = DayOfWeek.FRIDAY,
-        )
-
-        assertThat(nextUp).isEmpty()
-    }
-
-    @Test
-    fun twoPrograms_offerTheirRuns_inTheAuthoredOrder() {
-        val slotA = slot("a", weekday = null, position = 0, templateId = "ta", programId = "p1")
-        val slotB = slot("b", weekday = null, position = 0, templateId = "tb", programId = "p2")
-
-        val nextUp = nextUpFor(
-            programs = listOf(program, second),
-            slots = listOf(slotA, slotB),
-            runs = mapOf(
-                "p1" to ProgramRun(slot = slotA, isAtStart = true),
-                "p2" to ProgramRun(slot = slotB, isAtStart = true),
-            ),
-            day = DayOfWeek.FRIDAY,
-        )
-
-        assertThat(nextUp.map { it.plan.slotId }).containsExactly("a", "b").inOrder()
-        assertThat(nextUp.map { it.programName }).containsExactly("Upper/Lower", "Conditioning").inOrder()
     }
 }
