@@ -292,7 +292,7 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val lastError = MutableStateFlow<DataError?>(null)
 
     /**
-     * Orders one set's record comparison against another's write (ROADMAP N23, B118, B126).
+     * Orders every write to a set against every other (ROADMAP N23, B118, B126, B129).
      *
      * Logging a set reads what this session has already done, compares the set against it, and only then
      * writes. Each of those is a suspension point, so two taps close together used to interleave: both
@@ -301,11 +301,22 @@ class ActiveWorkoutViewModel @Inject constructor(
      * which closed the gap between a write committing and the screen's state catching up; this closes the
      * gap between two writes.
      *
-     * It orders **logging** and nothing else. An edit or a delete landing beside a log can still move the
-     * picture the log compared against, which is a different race with no false banner at the end of it:
-     * neither of those announces anything.
+     * **B129 widened it from logging to every set write.** The comparison is made of two reads —
+     * history, then this session's sets for the movement — and an edit or a delete landing between them
+     * moves the picture the log compared against: the comparison sees a row the write beside it is
+     * removing, or misses one it is lowering, and the banner is announced over a set that is no longer
+     * what it was. Neither of those announces anything, so that is the whole of the defect — a comparison
+     * briefly stale rather than a false banner, which is what makes it lower severity than B126 and not
+     * the same one. Ordering all three writes is the answer rather than snapshotting the comparison: the
+     * log's reads and its write stay one step, so what it compared is what it wrote against.
+     *
+     * A write here is the repository's, and two of these already take one another's place by
+     * construction — `onUndoDelete` and `onAddExercise` both run to their first suspension on the single
+     * main dispatcher, so they cannot land inside a comparison between its two reads. The lock covers
+     * **the three paths that touch a set the comparison reads**; adding the others would widen it past
+     * the defect.
      */
-    private val loggingASet = Mutex()
+    private val writingASet = Mutex()
 
     /**
      * The review of the workout that just finished, published instead of closing the
@@ -779,10 +790,10 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onLogSet(sessionExerciseId: String, edit: SetEdit) {
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId } ?: return
         viewModelScope.launch {
-            // **One set is logged at a time** (ROADMAP N23, B118, B126): the comparison, the write and the
-            // banner that follows it are one step, so a second tap cannot read a session that has not
-            // recorded the first yet and announce a record over it.
-            loggingASet.withLock {
+            // **One set is written at a time** (ROADMAP N23, B118, B126, B129): the comparison, the write
+            // and the banner that follows it are one step, so neither a second tap nor an edit or delete
+            // beside it can move the picture this compared against.
+            writingASet.withLock {
                 // Read *before* the set is written (ROADMAP N23, B118): the set being logged is not history.
                 val against = recordsAgainst(row)
                 _personalRecord.value = null
@@ -939,26 +950,33 @@ class ActiveWorkoutViewModel @Inject constructor(
         assistanceGrams: Long = 0,
     ) {
         viewModelScope.launch {
-            handle(
-                workoutRepository.updateSet(
-                    setId = setId,
-                    reps = reps,
-                    weightGrams = weightGrams,
-                    rpeHalves = rpeHalves,
-                    note = note,
-                    setType = setType,
-                    assistanceGrams = assistanceGrams,
-                ),
-            )
+            // An edit moves a set a log's comparison may be reading, so it takes its turn with logging
+            // (ROADMAP B129). The edit itself compares nothing.
+            writingASet.withLock {
+                handle(
+                    workoutRepository.updateSet(
+                        setId = setId,
+                        reps = reps,
+                        weightGrams = weightGrams,
+                        rpeHalves = rpeHalves,
+                        note = note,
+                        setType = setType,
+                        assistanceGrams = assistanceGrams,
+                    ),
+                )
+            }
         }
     }
 
     fun onDeleteSet(setId: String) {
         val set = setsState.value.firstOrNull { it.id == setId } ?: return
         viewModelScope.launch {
-            when (val result = workoutRepository.deleteSet(set.id)) {
-                is DataResult.Success -> pendingUndo.value = set
-                is DataResult.Failure -> lastError.value = result.error
+            // A delete removes a set a log's comparison may be reading, for the same reason (ROADMAP B129).
+            writingASet.withLock {
+                when (val result = workoutRepository.deleteSet(set.id)) {
+                    is DataResult.Success -> pendingUndo.value = set
+                    is DataResult.Failure -> lastError.value = result.error
+                }
             }
         }
     }

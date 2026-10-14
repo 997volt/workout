@@ -33,8 +33,18 @@ its binary: invisible, and misleading exactly to the person who trusts it.
 
 ```bash
 # edit version.properties, then:
-git add -A && git commit -m "release: 1.3 (versionCode 4)"
+git add CHANGELOG.md ROADMAP.md version.properties
+git commit -m "release: 1.3 (versionCode 4)"
 ```
+
+**Name the files; never `git add -A`.** `-A` takes whatever is in the tree, and the 2.4 round
+proved it: a scratch directory of HTTP header and JSON dumps from checking the API went into the
+release commit, and only reading that commit's own `--stat` caught it before the push. Those three
+files are also the complete set a release is allowed to touch, so the command is a check as well as
+a command. A release that genuinely has to carry something else — a fix found while verifying —
+stages that file **by name** too; the invariant is that the release commit's content is named rather
+than swept. If `git status` after committing shows anything you did not name, stop and look at it
+before tagging.
 
 ### 4. Build the signed APK
 

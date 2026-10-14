@@ -1584,6 +1584,19 @@ class ActiveWorkoutViewModelTest {
          */
         var yieldBeforeWritingSet = false
 
+        /**
+         * Makes [updateSet] suspend before the row changes, so an edit can be made to land inside a log's
+         * comparison (B129). Opt-in for [yieldBeforeWritingSet]'s reason: a fake that yielded by default
+         * would change the interleaving every other test in this class reads.
+         */
+        var yieldBeforeUpdatingSet = false
+
+        /**
+         * Makes [deleteSet] suspend before the row goes, so a delete can be made to land inside a log's
+         * comparison (B129). Opt-in for the same reason.
+         */
+        var yieldBeforeDeletingSet = false
+
         /** What the next added exercise carries, so N5's plumbing can be asserted. */
         var restSecondsForNextExercise: Int? = null
 
@@ -1803,6 +1816,8 @@ class ActiveWorkoutViewModelTest {
         assistanceGrams: Long,
         ): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
+            // The edit is in flight: a log's comparison can run before this row changes (B129).
+            if (yieldBeforeUpdatingSet) yield()
             sets.value = sets.value.map {
                 if (it.id == setId) {
                     it.copy(
@@ -1821,6 +1836,8 @@ class ActiveWorkoutViewModelTest {
 
         override suspend fun deleteSet(setId: String): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
+            // The delete is in flight: a log's comparison can run before this row goes (B129).
+            if (yieldBeforeDeletingSet) yield()
             sets.value = sets.value.filterNot { it.id == setId }
             return DataResult.Success(Unit)
         }
@@ -2216,6 +2233,81 @@ class ActiveWorkoutViewModelTest {
     }
 
 
+
+    @Test
+    fun anEditBesideALog_waitsItsTurn() = runTest(dispatcher) {
+        // B129: a log's comparison is two reads (history, then this session's sets) with suspension points
+        // between them, so an edit landing inside that window moved the picture the comparison was made
+        // against. The fake yields before committing the edit — the smallest model of a real suspend call —
+        // so without the ordering the log's comparison reads the history the edit has not lowered yet, and
+        // reports the 20 kg the lift no longer holds as what was beaten.
+        val repository = FakeWorkoutRepository().apply { yieldBeforeUpdatingSet = true }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val row = viewModel.uiState.value.exercises.single()
+        // A 20 kg set on the board and no history, so the session is the only thing to compare against.
+        viewModel.onLogSet(row.id, offeredSet(viewModel, reps = 8, weightGrams = 20_000L))
+        settle()
+        val logged = repository.sets.value.single()
+
+        // The lifter corrects that set down and, without waiting, logs a set that now beats the corrected
+        // value. Both land before either write commits: the edit yields, the log runs its comparison, and
+        // the order the two are put in is the whole of the fix.
+        viewModel.onUpdateSet(
+            setId = logged.id,
+            reps = 8,
+            weightGrams = 10_000L,
+            rpeHalves = logged.rpeHalves,
+            note = logged.note,
+            setType = logged.setType,
+            assistanceGrams = logged.assistanceGrams,
+        )
+        viewModel.onLogSet(row.id, offeredSet(viewModel, reps = 8, weightGrams = 15_000L))
+        settle()
+
+        // The comparison has to have seen the correction: 15 kg beats the 10 kg the set now holds, and
+        // does not beat the 20 kg it held before the edit. A read that straddles the two announces nothing.
+        val moment = viewModel.personalRecord.value
+        assertNotNull("15 kg beats the corrected 10 kg, so it is a record", moment)
+        assertEquals(15_000L, moment!!.weightGrams)
+        assertEquals("and what it beat is the correction", 10_000L, moment.previousBestGrams)
+    }
+
+    @Test
+    fun aDeleteBesideALog_waitsItsTurn() = runTest(dispatcher) {
+        // B129's other half: the row a comparison is reading must not be removed underneath it. The delete
+        // yields for the same reason the edit does, so without the ordering the log's comparison still sees
+        // the heavy set the delete is in the middle of taking — and announces a record over it.
+        val repository = FakeWorkoutRepository().apply { yieldBeforeDeletingSet = true }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val row = viewModel.uiState.value.exercises.single()
+        viewModel.onLogSet(row.id, offeredSet(viewModel, reps = 8, weightGrams = 100_000L))
+        settle()
+        val logged = repository.sets.value.single()
+
+        viewModel.onDeleteSet(logged.id)
+        viewModel.onLogSet(row.id, offeredSet(viewModel, reps = 8, weightGrams = 90_000L))
+        settle()
+
+        // Only the lighter set is left, so it beats nothing that is still there. A comparison that
+        // straddled the delete judged it against the 100 kg row the delete was taking, and says so in
+        // `previousBestGrams` — a number for a set that is already gone.
+        val moment = viewModel.personalRecord.value
+        assertNotNull("the only set left is a first, so it is a record", moment)
+        assertEquals(90_000L, moment!!.weightGrams)
+        assertNull(
+            "and nothing was beaten, because the heavier set is no longer in the session",
+            moment.previousBestGrams,
+        )
+        assertEquals("the delete landed, and the later set is what is left", 1, repository.sets.value.size)
+    }
 
     @Test
     fun loggingASetThatBeatsHistory_raisesTheRecord() = runTest(dispatcher) {
