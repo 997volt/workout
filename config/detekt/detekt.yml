@@ -10,6 +10,11 @@
 #
 # NOTE: YAML duplicate keys silently let the last one win, which would drop part
 # of a configuration without any warning. Keep one entry per rule.
+#
+# The formatting ruleset (`detekt-formatting`) is deliberately **not** loaded, so an indentation or wrapping
+# defect is a review's to catch and not this gate's. Wiring it reports ~600 findings across 155 files, which
+# is a repository-wide reformat or a set of `active: false` entries — the silent gate the line above forbids.
+# The decision, the rule-by-rule measurement and the trigger to revisit are in DECISIONS.md (B123).
 
 config:
   validation: true

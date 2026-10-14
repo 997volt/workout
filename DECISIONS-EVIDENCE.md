@@ -1628,3 +1628,34 @@ against another. Renumbering the survivors makes position mean the plan's order 
 the invariant `prependSets` already holds from the other direction. The assumption is older than N79 — the
 prefill leaned on it — but N79 was the first rule where getting it wrong changed what the screen *does*,
 which is what made it worth fixing rather than tolerating.
+
+## B123
+
+Formatting is held by review, and `detekt-formatting` stays unwired. It was wired and run before the
+answer was written, so the price is measured rather than guessed: **603 findings across 155 files**, 88 of
+them under `app/src/main` and 67 under the JVM test source set. The mix is `Indentation` (162),
+`ImportOrdering` (138), `ArgumentListWrapping` (135), `NoConsecutiveBlankLines` (50), `Wrapping` (35),
+`SpacingBetweenDeclarationsWithComments` (23), `MaximumLineLength` (16), `NoBlankLineBeforeRbrace` (15) and
+twelve smaller rules — two of which detekt already covers itself (`NoUnusedImports`, `ParameterListWrapping`).
+
+Two ways to load it, both rejected. **Fix them all** is one commit that rewrites whitespace and import order
+across 155 files: it would make the layout consistent and make every other change unreadable in review for as
+long as the diff lives, and a commit subject is expected to carry the reason for its change. **Turn the noisy
+rules off** is the silent gate detekt.yml exists to prevent — its own header says "No rule is switched off
+wholesale, because a silent `active: false` is how a gate stops catching anything" — so a ruleset loaded with
+half its rules inactive would report a clean run while catching the same nothing.
+
+The measurement also shows the two rulesets disagreeing about a settled exclusion. All sixteen
+`MaximumLineLength` findings are in
+[SeedExercises.kt](app/src/main/java/com/example/androidapp/data/SeedExercises.kt), the one file
+[detekt.yml](config/detekt/detekt.yml) deliberately excludes from `MaxLineLength` because "one row per
+exercise keeps this seed table reviewable, and a wrapped row would bury a changed value in a large diff. It
+is data, not logic." Wiring the formatting ruleset would re-raise the question the project already answered,
+which is a second reason it is a decision rather than a switch.
+
+What remains enforced is the ceiling the two config files already agree on, detekt's `MaxLineLength` and the
+`max_line_length = 120` in [.editorconfig](.editorconfig) — which is why the malformed line B123 was filed
+for was silent: it is inside that ceiling, and layout below it has no reader but a person. The trigger to
+revisit is the cost of reading it: a layout defect that ships because a review missed it, where a tool would
+have caught it, makes the reformat worth its diff. Until then the price is recorded here rather than to be
+measured again.

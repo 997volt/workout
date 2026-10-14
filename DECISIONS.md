@@ -964,6 +964,13 @@ the rule; that one argues it.
 
 - **The lint baseline is unwired on purpose.** Accepting a warning is a two-step, reviewed
   act, not a side effect of running the build.
+- **Formatting is held by review, and `detekt-formatting` stays unwired** (B123). The ruleset
+  reports **603 findings across 155 files**, so loading it means either a repository-wide reformat,
+  which buries every real change in whitespace, or a set of `active: false` entries — the silent gate
+  [detekt.yml](config/detekt/detekt.yml) refuses by its own contract. What the build does still hold is
+  the line ceiling, through detekt's `MaxLineLength` and the [.editorconfig](.editorconfig) that matches
+  it; everything else about layout is a reading, and this is recorded so a malformed line reads as a
+  decided limit rather than an unnoticed one. ([evidence](DECISIONS-EVIDENCE.md#b123))
 - **Releases are manual**, and the tag must point at the commit that built the APK. The
   procedure is in [RELEASING.md](RELEASING.md); why it stays manual is in
   [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md#releases).

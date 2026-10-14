@@ -140,7 +140,8 @@ private fun LazyListScope.balanceSummary(plannedSets: Int) {
 
 /** One muscle's line: what it is, how much of the plan it is, and the bar that says so at a glance. */
 @Composable
-private fun BalanceRow(row: MuscleSets, creditedHalfSets: Int) {    Column(
+private fun BalanceRow(row: MuscleSets, creditedHalfSets: Int) {
+    Column(
         modifier = Modifier.fillMaxWidth().testTag(TestTags.programBalanceRow(row.muscle?.name ?: "unstated")),
     ) {
         Row(
