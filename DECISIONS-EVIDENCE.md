@@ -1685,6 +1685,16 @@ the two that changes what the default view is: **scroll and add**, the two thing
 The add button leaving while the mode is on is the same decision read from the other side — the two actions
 are not offered at once, so a finger aiming at a row cannot land on the button that writes a new one.
 
+**The correcting half was asked for later, and the mode is where it went.** The first cut of N132 read
+"correcting a measurement's numbers" as a different question and left it unasked; a request in use then asked
+it, and the answer needed no second mode: the row's tap is already its own gesture, so inside the mode it opens
+the form on that record instead of the read-only details, and the form opens holding what the record states —
+a number left out can be added and a wrong one changed. The draft keeps the entry's **day and id**, which is
+what makes the edit a correction rather than a second entry on the day: `save` finds a row by id first and only
+falls back to the day and kind when the id is blank, so the collision the restore guard has to refuse cannot
+arise on this path. The default view's tap is unchanged, and the details dialog stays read-only — it is now the
+one place a record is read where nothing can write.
+
 **N133 is N90's mechanism with one rule N90 did not need.** The delete was already soft — `delete` sets
 `deletedAt` on the entry and on its sore rows — so the way back is clearing that field rather than
 re-inserting a row, and `deletedAt` doubles as the correlation id of the write that hid it, exactly as it

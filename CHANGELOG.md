@@ -43,6 +43,17 @@ unreleased.
   that a version is a different kind of thing from a template — it is a plan with exercises and sets, and one
   nullable column is the whole of the difference.
 
+### Changed
+
+- **The measurements edit mode corrects a record as well as deleting it** (no roadmap id — a request in use,
+  later than N132, whose revised rule is in [DECISIONS.md](DECISIONS.md)). N132 had put "correcting a
+  measurement's numbers" aside as a different question; asked later, it needed no second mode. Inside the mode
+  a row now opens its form **on the record it names**, holding what that entry already states, so a number that
+  was left out can be added and one that is wrong can be changed. The draft keeps the entry's **own day and
+  id**, so the write corrects that row rather than landing as a second entry on the day — the collision the
+  undo's guard has to refuse cannot arise here. The default view is unchanged: its tap still opens the
+  read-only details, which stays the one place a record is read where nothing can write.
+
 ## [2.5] — 2026-10-15 (versionCode 25)
 
 ### Changed

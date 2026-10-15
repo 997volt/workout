@@ -128,9 +128,10 @@ fun MeasurementsScreen(
     // Whether the list is in its edit mode, the one that offers a delete (N132). Saveable so a rotation
     // does not drop the lifter out of the mode they deliberately entered, or worse, back into it.
     var editing by rememberSaveable { mutableStateOf(false) }
-    // The record being read, or null (a request in use; no roadmap id covers it). Not saveable: it is a
-    // look at one row, and a rotation closing it lands back on the list the lifter opened.
+    // The record being read, and the record the edit mode is correcting: each a look at one row rather
+    // than a mode, so neither is restored after a rotation (requests in use; no roadmap id covers them).
     var openEntry by remember { mutableStateOf<BodyMeasurement?>(null) }
+    var editingEntry by remember { mutableStateOf<BodyMeasurement?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(error?.let { dataErrorMessage(it) }, snackbarHostState, onDismissError)
     ShowDeletedMeasurementUndo(pendingUndo, snackbarHostState, onUndo, onDismissUndo)
@@ -144,16 +145,15 @@ fun MeasurementsScreen(
             },
         )
     }
-    adding?.let { kind ->
-        MeasurementDialog(
-            kind = kind,
-            onDismiss = { adding = null },
-            onConfirm = { measurement ->
-                adding = null
-                onSave(measurement)
-            },
-        )
-    }
+    MeasurementFormDialogs(
+        adding = adding,
+        editingEntry = editingEntry,
+        onDismiss = {
+            adding = null
+            editingEntry = null
+        },
+        onSave = onSave,
+    )
     openEntry?.let { entry ->
         MeasurementDetailsDialog(entry = entry, onDismiss = { openEntry = null })
     }
@@ -181,7 +181,9 @@ fun MeasurementsScreen(
         MeasurementList(
             state = state,
             editing = editing,
-            onOpen = { openEntry = it },
+            // In the edit mode the row opens its form — that is where the writes live — and in the
+            // default view it opens the record read-only (N132, and the request in use).
+            onOpen = { entry -> if (editing) editingEntry = entry else openEntry = entry },
             onDelete = onDelete,
             modifier = Modifier.padding(innerPadding),
         )
@@ -264,6 +266,43 @@ private fun MeasurementList(
 }
 
 /**
+ * The one form the screen opens, for a new record or for the one the edit mode is correcting (N113, and a
+ * request in use; no roadmap id covers it).
+ *
+ * Both are the same dialog: which fields it shows follows from the kind, and whether it corrects follows
+ * from [editingEntry] — which is also what makes it open holding the record and keep its day and id.
+ */
+@Composable
+private fun MeasurementFormDialogs(
+    adding: MeasurementKind?,
+    editingEntry: BodyMeasurement?,
+    onDismiss: () -> Unit,
+    onSave: (BodyMeasurement) -> Unit,
+) {
+    adding?.let { kind ->
+        MeasurementDialog(
+            kind = kind,
+            onDismiss = onDismiss,
+            onConfirm = { measurement ->
+                onDismiss()
+                onSave(measurement)
+            },
+        )
+    }
+    editingEntry?.let { entry ->
+        MeasurementDialog(
+            kind = entry.kind,
+            onDismiss = onDismiss,
+            onConfirm = { measurement ->
+                onDismiss()
+                onSave(measurement)
+            },
+            initial = entry,
+        )
+    }
+}
+
+/**
  * Which of the two records to add (ROADMAP N113).
  *
  * A question rather than one form with everything on it: a tape day has no weight to state, and a daily
@@ -318,9 +357,11 @@ private fun AddMeasurementDialog(
  * about the body — so the destructive action leaves the screen the lifter opened to read or add, rather
  * than sitting on every row of it.
  *
- * **The row itself opens the record.** The supporting line is a summary and says nothing about which
- * number is which, so tapping the row is how a reading is read in full; the delete button beside it keeps
- * its own tap.
+ * **The row's own tap depends on the mode**, because the two modes are two jobs: the default view reads,
+ * so the row opens the record in full (its supporting line is a summary and says nothing about which
+ * number is which), and the edit mode writes, so the row opens the form holding what the record already
+ * states — a number left out can be added there, and a wrong one changed. The delete button beside it
+ * keeps its own tap either way.
  */
 @Composable
 private fun MeasurementRow(
@@ -348,7 +389,10 @@ private fun MeasurementRow(
             // The date names the row and never the action, so the tap says what it does — the rule every
             // row in this app follows.
             .clickable(
-                onClickLabel = stringResource(R.string.measurements_open, date),
+                onClickLabel = stringResource(
+                    if (editing) R.string.measurements_edit_entry else R.string.measurements_open,
+                    date,
+                ),
                 onClick = onOpen,
             ),
     )
@@ -421,27 +465,35 @@ internal fun kindLabel(kind: MeasurementKind): Int = when (kind) {
  * offered once the entry states at least one of its own numbers**: the weight used to be the one thing
  * an entry could not be without, and a soreness-only morning is a real entry, so what the form refuses
  * is an entry that states nothing at all.
+ *
+ * **[initial] opens it on a record that exists** (a request in use; no roadmap id covers it): every field
+ * starts at what that entry states — including the numbers it left out, which start empty and can be
+ * filled in — and the draft keeps the entry's **own day and id**, so saving corrects the row it came from
+ * rather than placing a second one on the day.
  */
 @Composable
 private fun MeasurementDialog(
     kind: MeasurementKind,
     onDismiss: () -> Unit,
     onConfirm: (BodyMeasurement) -> Unit,
+    /** The entry being corrected, or null when this adds one. */
+    initial: BodyMeasurement? = null,
 ) {
-    var weight by remember { mutableStateOf("") }
-    var bodyFat by remember { mutableStateOf("") }
-    var muscle by remember { mutableStateOf("") }
-    var tape by remember { mutableStateOf<Map<TapeSite, String>>(emptyMap()) }
+    var weight by remember { mutableStateOf(initial?.weightGrams?.let { Weight.kilograms(it) }.orEmpty()) }
+    var bodyFat by remember { mutableStateOf(initial?.bodyFatTenths?.let { MeasurementFormat.percent(it) }.orEmpty()) }
+    var muscle by remember { mutableStateOf(initial?.muscleTenths?.let { MeasurementFormat.percent(it) }.orEmpty()) }
+    var tape by remember { mutableStateOf(MeasurementFormat.tape(initial?.tape.orEmpty())) }
     // `rememberSaveable` for the same reason the note's other dialogs hold their picks that way: a
     // rotation mid-edit must not throw away the muscles already picked (N113).
     var soreMuscles by rememberSaveable(stateSaver = SoreMusclesSaver) {
-        mutableStateOf(emptyList<SoreMuscle>())
+        mutableStateOf(initial?.soreMuscles.orEmpty())
     }
-    val measuredAt = remember { Instant.now() }
+    val measuredAt = remember { initial?.measuredAt ?: Instant.now() }
 
     val draft = BodyMeasurement(
-        // A blank id is a new entry, which the repository places by its day and kind.
-        id = "",
+        // A blank id is a new entry, which the repository places by its day and kind; an edit keeps the
+        // id it came from, which is how it corrects that row rather than writing beside it.
+        id = initial?.id.orEmpty(),
         measuredAt = measuredAt,
         kind = kind,
         weightGrams = Weight.parseKilograms(weight),
@@ -453,7 +505,9 @@ private fun MeasurementDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(kindAddLabel(kind))) },
+        title = {
+            Text(stringResource(if (initial == null) kindAddLabel(kind) else R.string.measurements_edit_title))
+        },
         text = {
             when (kind) {
                 MeasurementKind.DAILY -> DailyFields(

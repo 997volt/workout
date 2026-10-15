@@ -6,12 +6,14 @@ import com.example.androidapp.R
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
@@ -230,8 +232,8 @@ class MeasurementsScreenTest {
 
     @Test
     fun theDetails_areReadOnly_andCloseIsHowTheyGo() {
-        // Correcting a reading is a different question (N132), so there is no field here — and the one
-        // control takes the dialog away.
+        // Correcting a reading is the edit mode's job — its row opens the form there — so the details
+        // dialog has no field, and its one control takes it away.
         setScreen()
 
         composeTestRule.onNodeWithTag(TestTags.Measurements.row("m1")).performClick()
@@ -239,6 +241,60 @@ class MeasurementsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Measurements.DETAILS_CLOSE).performClick()
 
         composeTestRule.onNodeWithTag(TestTags.Measurements.DETAILS).assertDoesNotExist()
+    }
+
+    @Test
+    fun inTheEditMode_tappingARecord_opensItsForm_holdingWhatItStates() {
+        // The mode is where the writes live, so the row opens the form rather than the read-only details —
+        // and it opens **on the record**, so a wrong number can be changed and a missing one filled in.
+        setScreen(state = MeasurementsUiState(isLoading = false, entries = listOf(today)))
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.row("m1")).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).assertTextContains("82.4")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.BODY_FAT).assertTextContains("18.3")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.DETAILS).assertDoesNotExist()
+    }
+
+    @Test
+    fun inTheEditMode_aNumberTheRecordNeverStated_canBeAdded() {
+        // The request this answers: a record that left a number out — muscle here — can be completed later
+        // rather than being fixed the moment it was written.
+        var saved: BodyMeasurement? = null
+        setScreen(
+            state = MeasurementsUiState(isLoading = false, entries = listOf(today)),
+            onSave = { saved = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.row("m1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.MUSCLE).performTextInput("41.5")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).performClick()
+
+        assertEquals("the record it came from is the one corrected", "m1", saved?.id)
+        assertEquals("its own day is kept", today.measuredAt, saved?.measuredAt)
+        assertEquals("what it already stated is kept", 82_400L, saved?.weightGrams)
+        assertEquals("and what was blank is now stated", 415, saved?.muscleTenths)
+    }
+
+    @Test
+    fun inTheEditMode_aNumberThatIsWrong_canBeChanged() {
+        var saved: BodyMeasurement? = null
+        setScreen(
+            state = MeasurementsUiState(isLoading = false, entries = listOf(today)),
+            onSave = { saved = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.row("m1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).performTextInput("81.2")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).performClick()
+
+        assertEquals("m1", saved?.id)
+        assertEquals(81_200L, saved?.weightGrams)
+        assertEquals("and the number beside it was not disturbed", 183, saved?.bodyFatTenths)
     }
 
     @Test

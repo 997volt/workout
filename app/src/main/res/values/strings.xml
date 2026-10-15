@@ -242,6 +242,10 @@
     <!-- N132: one control that says which mode the list is in, and changes it. -->
     <string name="measurements_edit">Edit</string>
     <string name="measurements_editing">Done</string>
+    <!-- The edit mode corrects a record as well as deleting it, so its form opens holding what the
+         record already states. -->
+    <string name="measurements_edit_title">Edit measurement</string>
+    <string name="measurements_edit_entry">Edit %1$s</string>
     <!-- N133: the snackbar naming what went, with the way back. -->
     <string name="measurements_deleted">Measurement deleted</string>
     <string name="measurements_undo">Undo</string>

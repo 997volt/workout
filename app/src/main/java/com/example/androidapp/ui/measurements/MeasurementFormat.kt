@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.measurements
 
+import com.example.androidapp.domain.model.TapeSite
 import java.util.Locale
 
 /**
@@ -34,6 +35,15 @@ object MeasurementFormat {
             String.format(locale, "%.1f", centimetres)
         }
     }
+
+    /**
+     * A whole tape as an editable field each: the same [centimetres] per site.
+     *
+     * For the form that opens on an existing record, which needs every measured site as text at once —
+     * the same translation the read-only rendering uses, so the two cannot round-trip a value differently.
+     */
+    fun tape(tape: Map<TapeSite, Long>, locale: Locale = Locale.getDefault()): Map<TapeSite, String> =
+        tape.mapValues { (_, millimetres) -> centimetres(millimetres, locale) }
 }
 
 private const val TENTHS_PER_PERCENT = 10.0

@@ -620,17 +620,20 @@ the rule; that one argues it.
   empty list has no rows to hang a sentence off, and the two states are mutually exclusive anyway.
   ([evidence](DECISIONS-EVIDENCE.md#b130-n132-n133))
 
-- **Deleting a measurement is a mode, not a button on every row** (N132). A measurement is the one thing here
-  that cannot be re-derived: a set can be logged again and a plan re-authored, but a weight on a morning is a
-  fact about the body. So the default view is what the screen is opened for — **scroll and add** — and the
-  destructive action lives behind one explicit toggle that **says which mode the list is in** and leaves
-  again, while the add button is out of the way for as long as it is on. What did not travel with it: the
-  add path with its two kinds (N113), the empty sentence, and the mode is **not** a way to change a reading —
-  correcting a measurement's numbers is a different question this id does not ask. Rejected: a confirmation
-  dialog on the existing per-row button. That is the guard for an act with **no way back at all** (deleting a
-  workout, a template, an exercise), and it answers the wrong problem — the complaint is a delete button on
-  every row of a reading screen, and a dialog leaves it exactly there while adding an interruption to every
-  deliberate one.
+- **Changing or deleting a measurement is a mode, not a button on every row** (N132; the correcting half is a
+  request in use, later than the id). A measurement is the one thing here that cannot be re-derived: a set can
+  be logged again and a plan re-authored, but a weight on a morning is a fact about the body. So the default
+  view is what the screen is opened for — **scroll and add** — and the writes live behind one explicit toggle
+  that **says which mode the list is in** and leaves again, while the add button is out of the way for as long
+  as it is on. What did not travel with it: the add path with its two kinds (N113) and the empty sentence.
+  **Inside the mode a row opens its form on the record it names**, so a number that was left out can be added
+  and one that is wrong can be changed — the question this id had put aside as a different one, answered where
+  the writes already live rather than behind a second mode. The draft keeps the entry's **own day and id**,
+  because the record being corrected is the one that was tapped, so an edit cannot land as a second entry on
+  the day. Rejected: a confirmation dialog on the existing per-row button. That is the guard for an act with
+  **no way back at all** (deleting a workout, a template, an exercise), and it answers the wrong problem — the
+  complaint is a delete button on every row of a reading screen, and a dialog leaves it exactly there while
+  adding an interruption to every deliberate one.
 
 - **A deleted measurement comes back through the soft delete, unless the day was re-entered** (N133). The
   delete already set `deletedAt` on the entry and on its sore rows, so the way back is clearing that field
