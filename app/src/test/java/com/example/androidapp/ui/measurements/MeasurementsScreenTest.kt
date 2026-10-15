@@ -15,9 +15,11 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -187,6 +189,56 @@ class MeasurementsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT).performClick()
 
         composeTestRule.onNodeWithTag(TestTags.Measurements.ADD).assertDoesNotExist()
+    }
+
+    @Test
+    fun tappingARecord_opensItInFull_withEachNumberNamed() {
+        // A request in use: the supporting line is a summary — "Daily · 82.4 kg · 18.3%" — and says
+        // nothing about which number is which, so the row itself opens the record.
+        setScreen()
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.row("m1")).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.DETAILS).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.DETAILS_TITLE).assertExists()
+        composeTestRule.onNodeWithText(context.getString(R.string.measurements_weight)).assertExists()
+        composeTestRule.onNodeWithText(Weight.kilograms(82_400L)).assertExists()
+        composeTestRule.onNodeWithText(context.getString(R.string.measurements_body_fat)).assertExists()
+    }
+
+    @Test
+    fun theDetails_drawOnlyWhatTheRecordStates() {
+        // A daily entry that states soreness and nothing else is a real entry (N113), so the details show
+        // the sore list and no weight: an absent number is not a zero, so it is not a row either.
+        val soreOnly = BodyMeasurement(
+            id = "m1",
+            measuredAt = Instant.parse("2026-10-02T08:00:00Z"),
+            kind = MeasurementKind.DAILY,
+            soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 8)),
+        )
+        setScreen(state = MeasurementsUiState(isLoading = false, entries = listOf(soreOnly)))
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.row("m1")).performClick()
+
+        composeTestRule.onNodeWithText(context.getString(R.string.readiness_sore_title)).assertExists()
+        composeTestRule.onNodeWithText(MuscleGroup.QUADS.label).assertExists()
+        composeTestRule.onNodeWithText(context.getString(R.string.scored_pick_score, 8)).assertExists()
+        composeTestRule.onNodeWithText(context.getString(R.string.measurements_weight)).assertDoesNotExist()
+    }
+
+    @Test
+    fun theDetails_areReadOnly_andCloseIsHowTheyGo() {
+        // Correcting a reading is a different question (N132), so there is no field here — and the one
+        // control takes the dialog away.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.row("m1")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.DETAILS_CLOSE).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.DETAILS).assertDoesNotExist()
     }
 
     @Test

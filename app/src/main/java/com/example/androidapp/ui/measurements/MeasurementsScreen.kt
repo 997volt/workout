@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.measurements
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -127,6 +128,9 @@ fun MeasurementsScreen(
     // Whether the list is in its edit mode, the one that offers a delete (N132). Saveable so a rotation
     // does not drop the lifter out of the mode they deliberately entered, or worse, back into it.
     var editing by rememberSaveable { mutableStateOf(false) }
+    // The record being read, or null (a request in use; no roadmap id covers it). Not saveable: it is a
+    // look at one row, and a rotation closing it lands back on the list the lifter opened.
+    var openEntry by remember { mutableStateOf<BodyMeasurement?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(error?.let { dataErrorMessage(it) }, snackbarHostState, onDismissError)
     ShowDeletedMeasurementUndo(pendingUndo, snackbarHostState, onUndo, onDismissUndo)
@@ -149,6 +153,9 @@ fun MeasurementsScreen(
                 onSave(measurement)
             },
         )
+    }
+    openEntry?.let { entry ->
+        MeasurementDetailsDialog(entry = entry, onDismiss = { openEntry = null })
     }
 
     Scaffold(
@@ -174,6 +181,7 @@ fun MeasurementsScreen(
         MeasurementList(
             state = state,
             editing = editing,
+            onOpen = { openEntry = it },
             onDelete = onDelete,
             modifier = Modifier.padding(innerPadding),
         )
@@ -226,6 +234,7 @@ private fun MeasurementsTopBar(editing: Boolean, onToggleEditing: () -> Unit, on
 private fun MeasurementList(
     state: MeasurementsUiState,
     editing: Boolean,
+    onOpen: (BodyMeasurement) -> Unit,
     onDelete: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -247,6 +256,7 @@ private fun MeasurementList(
             MeasurementRow(
                 entry = entry,
                 editing = editing,
+                onOpen = { onOpen(entry) },
                 onDelete = { onDelete(entry.id) },
             )
         }
@@ -307,11 +317,21 @@ private fun AddMeasurementDialog(
  * be reconstructed — a set can be logged again, a plan re-authored, but a weight on a morning is a fact
  * about the body — so the destructive action leaves the screen the lifter opened to read or add, rather
  * than sitting on every row of it.
+ *
+ * **The row itself opens the record.** The supporting line is a summary and says nothing about which
+ * number is which, so tapping the row is how a reading is read in full; the delete button beside it keeps
+ * its own tap.
  */
 @Composable
-private fun MeasurementRow(entry: BodyMeasurement, editing: Boolean, onDelete: () -> Unit) {
+private fun MeasurementRow(
+    entry: BodyMeasurement,
+    editing: Boolean,
+    onOpen: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val date = HistoryFormat.date(entry.measuredAt, zone = ZoneId.systemDefault())
     ListItem(
-        headlineContent = { Text(HistoryFormat.date(entry.measuredAt, zone = ZoneId.systemDefault())) },
+        headlineContent = { Text(date) },
         supportingContent = { Text(summary(entry)) },
         trailingContent = {
             if (editing) {
@@ -323,6 +343,14 @@ private fun MeasurementRow(entry: BodyMeasurement, editing: Boolean, onDelete: (
                 }
             }
         },
+        modifier = Modifier
+            .testTag(TestTags.Measurements.row(entry.id))
+            // The date names the row and never the action, so the tap says what it does — the rule every
+            // row in this app follows.
+            .clickable(
+                onClickLabel = stringResource(R.string.measurements_open, date),
+                onClick = onOpen,
+            ),
     )
 }
 
@@ -380,7 +408,7 @@ private fun summary(entry: BodyMeasurement): String {
     return parts.joinToString(" · ")
 }
 
-private fun kindLabel(kind: MeasurementKind): Int = when (kind) {
+internal fun kindLabel(kind: MeasurementKind): Int = when (kind) {
     MeasurementKind.DAILY -> R.string.measurements_kind_daily
     MeasurementKind.TAPE -> R.string.measurements_kind_tape
 }
@@ -598,7 +626,7 @@ private fun finite(text: String): Double? =
 private const val TENTHS_PER_PERCENT = 10.0
 private const val MILLIMETRES_PER_CENTIMETRE = 10.0
 
-private fun tapeLabel(site: TapeSite): Int = when (site) {
+internal fun tapeLabel(site: TapeSite): Int = when (site) {
     TapeSite.NECK -> R.string.measurements_neck
     TapeSite.CHEST -> R.string.measurements_chest
     TapeSite.WAIST -> R.string.measurements_waist

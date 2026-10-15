@@ -245,6 +245,9 @@
     <!-- N133: the snackbar naming what went, with the way back. -->
     <string name="measurements_deleted">Measurement deleted</string>
     <string name="measurements_undo">Undo</string>
+    <!-- A request in use: a row opens the record it names, read-only. The label names the action,
+         because the row's own text names the day. -->
+    <string name="measurements_open">See the details of %1$s</string>
     <string name="tab_workouts">Workouts</string>
     <string name="tab_history">History</string>
     <string name="tab_statistics">Statistics</string>

@@ -728,6 +728,19 @@ object TestTags {
         const val EMPTY = "measurements_empty"
 
         /**
+         * One record opened to read (a request in use; no roadmap id covers it).
+         *
+         * The row is the field that opens it, so a test names the entry rather than a position in the
+         * list — the same shape [delete] and the other per-row tags use.
+         */
+        fun row(id: String) = "measurements_row_$id"
+
+        /** The dialog a row opens, its title, and its one control. */
+        const val DETAILS = "measurements_details"
+        const val DETAILS_TITLE = "measurements_details_title"
+        const val DETAILS_CLOSE = "measurements_details_close"
+
+        /**
          * The soreness list a daily entry owns (ROADMAP N113), in the shared scored-picks editor.
          *
          * Its own prefix rather than the readiness note's, for the reason every tag has one: a tag

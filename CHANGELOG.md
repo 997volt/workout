@@ -18,6 +18,14 @@ unreleased.
 
 ### Added
 
+- **A measurement opens its own details** (no roadmap id — a request in use, which the roadmap does not
+  cover). The list's supporting line is a summary: `82.4 kg · 18.3%` does not say which number is which,
+  and the tape sites and the sore list read there as bare numbers and bare words. Tapping a row now opens
+  the record read in full, each number under the name of what it measured, and **only what the record
+  states is drawn** — an absent weight or an unmeasured site is not a zero, so it is not a row either
+  (N113). It is a look and nothing else: correcting a reading is a different question (N132), so the one
+  control is *Close*.
+
 - **A template can keep a version, and the versions are attached to it** (N134). Asked for in use:
   *sometimes I want to update a template but keep its previous version for future reference*. A version is a
   **template row of its own** — its exercises and sets in the tables they already live in, flagged by a
