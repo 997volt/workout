@@ -25,7 +25,7 @@ enum class MetricGroup(
      * What the picker calls this group (ROADMAP N130).
      *
      * The headings became necessary when two series could share a label: *Left knee* is both a workout
-     * series (a session's rating for the lift chosen) and a per-lift one (that lift's own points), and a
+     * series (a session's worst rating for that site) and a per-lift one (that lift's own points), and a
      * flat list of sixty items with no separation left the lifter picking between two identical words.
      */
     @StringRes val labelRes: Int,
@@ -75,7 +75,7 @@ sealed interface MetricKey {
      * One joint site's pain for one lift — or for a **head** and everything filed under it (ROADMAP N130).
      *
      * The per-lift half of [JointSite], and the reason the two are separate keys rather than one: the
-     * workout-level series reads a session's ratings for the movement the lifter chose, while this one
+     * workout-level series reads a whole session's ratings for that site, while this one
      * reads the ratings *of that exercise* (N17). Same site, same dimension, two different questions —
      * "how is this lift treating my left knee" and "how is my left knee in general".
      *

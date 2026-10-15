@@ -117,6 +117,16 @@ unreleased.
   `LazyColumn` every other screen already has, with the empty sentence as an item of the list rather than a
   sibling above rows that may not exist.
 
+- **The prose the batches left describing what they removed** (B136). N125 took the next-up rows and the
+  read of a program's run with them, but left comments that still describe both: an orphaned KDoc above
+  home's `ProgramsPart` promising "each active program's run", and a KDoc on `planEntriesFor` citing
+  `nextUpFor`, a function that no longer exists. The same reading corrects the per-site joint series'
+  description — in the registry and in [DECISIONS.md](DECISIONS.md)'s N130 entry — which had the
+  workout-level series reading "a session's ratings for the movement the lifter chose" when it needs no
+  lift and reads the whole session, and the `PrimaryActionButton` KDoc's account of a second caller that
+  went with the rows. A reference to a function that is gone is how the next reader learns to distrust the
+  rest, so they are deleted or corrected rather than left to age.
+
 ## [2.4] — 2026-10-14 (versionCode 24)
 
 ### Fixed

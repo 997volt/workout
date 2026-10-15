@@ -1399,7 +1399,7 @@ private val PlanContext.plannedSetCount: Int?
  * is simply absent, which is what leaves an improvised workout with no plan at all.
  *
  * File-level and pure, so the pairing can be tested without a database or a ViewModel: the shape
- * `todaysPlanFor` and `nextUpFor` already use.
+ * `todaysPlanFor` already uses.
  */
 internal fun planEntriesFor(
     exercises: List<SessionExercise>,

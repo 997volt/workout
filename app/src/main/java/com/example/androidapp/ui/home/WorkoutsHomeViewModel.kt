@@ -257,7 +257,6 @@ class WorkoutsHomeViewModel @Inject constructor(
             }
         }
 
-    /** Each active program's run, keyed by program id (ROADMAP P3.9). */
     /** The program-shaped sources the plan surface reads, kept together so the combine below stays flat. */
     private data class ProgramsPart(
         val programs: List<WorkoutProgram>,

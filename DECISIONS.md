@@ -407,7 +407,7 @@ the rule; that one argues it.
   central joint is one — which is N118's answer for soreness and for the same two reasons: a per-metric
   filter would have to be answered twice, at the workout level and again per lift, and the stored choice
   stays one id. **Both of those levels get it**, because the average dropped the joint in both: the workout
-  series reads a session's ratings for the lift chosen, and the per-lift one reads that lift's own points
+  series reads a whole session's ratings for that site, and the per-lift one reads that lift's own points
   (N17). **Two series can now share a label**, so the picker carries a heading per group — the trigger shows
   the label alone, and without headings the two *Left knee* entries were indistinguishable before and after
   choosing. A site a session did not name is **null, not zero and not the overall worst**: a knee nobody

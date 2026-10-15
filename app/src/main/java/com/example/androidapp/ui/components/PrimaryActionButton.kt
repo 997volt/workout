@@ -20,9 +20,9 @@ private val PRIMARY_ACTION_HEIGHT = 52.dp
 /**
  * The app's primary action: a full-width filled pill with a leading glyph (ROADMAP P1.16, N1).
  *
- * Extracted from home's start button at its second caller — the planned-workout pill under a
- * next-up row — so the two full-width actions the screen offers cannot drift apart in height or
- * shape.
+ * Extracted from home's start button at its second caller — the planned-workout pill, which went with
+ * the next-up rows (N125) — and kept as the app's one primary-action shape: a full-width pill that
+ * cannot drift from itself.
  *
  * A filled pill rather than the extended floating button this used to be, and full width in its
  * bar: the reference's own call to action is a wide violet pill resting on the bottom of the
