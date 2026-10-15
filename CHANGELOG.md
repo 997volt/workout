@@ -126,6 +126,14 @@ unreleased.
   an unsigned build is checked for the version **and** the hash the notes carry, with the certificate
   reported as unchecked.
 
+- **The changed-lines gate no longer blames a change for a pre-existing import order** (B132). detekt's
+  `ImportOrdering` reports at the file's *first* import line, not at the import that is out of order, so a
+  change that added the first import to one of the ~150 files whose block was already misordered failed the
+  gate on a defect it did not cause — exactly what the docstring and [AGENTS.md](AGENTS.md) promise will not
+  happen. `tools/format-changed.py` now reads the base version of the file for that one rule and keeps the
+  finding only when the base block was already in order: a change that breaks the order is still caught,
+  and one that merely touches the block is not asked to fix what predates it.
+
 - **A measurement's day is the local day, not 86 400 seconds** (B133). The repository ended a day at
   midnight plus a fixed span, which is the next local midnight only when the day is 24 hours long. On a
   23-hour day it ran an hour past, so a save at 00:30 found and overwrote the previous day's entry; on a

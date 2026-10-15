@@ -20,6 +20,12 @@ an untouched line is left alone. This is a gate on what you wrote, not a reforma
 else did. --all drops that restriction for the changed files, which is how to see what turning a
 rule on in detekt-formatting.yml would cost.
 
+**One rule needs more than the line.** detekt's `ImportOrdering` reports at the file's *first* import
+line, not at the import that is out of order — so a change that adds the first import would carry a
+misordering it never touched, which is the whole class the line filter exists to leave alone (B132).
+For that rule the file's base version is read instead, and the finding is kept only when the base
+block was already ordered (this change introduced it) or the file is new.
+
 Usage:
     tools/format-changed.py                 # HEAD against the merge base with origin/main
     tools/format-changed.py --base main     # against another ref
@@ -98,8 +104,8 @@ def merge_base(base: str) -> str:
     raise Failure(f"no ref named {base} (or origin/{base}) to diff against")
 
 
-def changed_files(base: str) -> dict[str, set[int]]:
-    """The changed Kotlin files, each with the lines the change added or rewrote.
+def changed_files(base: str) -> tuple[str, dict[str, set[int]]]:
+    """The base commit and the changed Kotlin files, each with the lines the change added or rewrote.
 
     Renames, additions and modifications are kept and deletions skipped (--diff-filter=ACMR): a
     file that is gone has no lines to check. git diff -U0 gives the hunks with no context, so every
@@ -133,7 +139,49 @@ def changed_files(base: str) -> dict[str, set[int]]:
             files.setdefault(name, set()).update(range(1, len(path.read_text().splitlines()) + 1))
 
     # A file with no hunks (a pure mode change) has nothing to check.
-    return {name: lines for name, lines in files.items() if lines}
+    return head, {name: lines for name, lines in files.items() if lines}
+
+
+def base_imports_are_ordered(head: str, path: str) -> bool:
+    """Whether [path]'s import block was already in order at [head] (B132).
+
+    The check behind the ImportOrdering rule's line filter: detekt reports that rule at the file's
+    first import, so a changed first line carries whatever misordering the block already had. This
+    reads the base version and applies ktlint's own rule — the imports in ASCII order with `java`,
+    `javax`, `kotlin` and aliases last — so a finding is kept only when the change itself broke the
+    order. A file the base does not have (an addition) counts as ordered: everything in it is new.
+    """
+    result = subprocess.run(
+        ["git", "show", f"{head}:{path}"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return True
+    imports = [
+        line.strip()
+        for line in result.stdout.splitlines()
+        if line.strip().startswith("import ")
+    ]
+    return _imports_ordered(imports)
+
+
+def _imports_ordered(imports: list[str]) -> bool:
+    """ktlint's default ImportOrdering: `*`, then `java`, `javax`, `kotlin`, then aliases last."""
+
+    def group(statement: str) -> int:
+        if " as " in statement:
+            return 4
+        package = statement[len("import "):]
+        for index, prefix in enumerate(("java.", "javax.", "kotlin."), start=1):
+            if package.startswith(prefix):
+                return index
+        return 0
+
+    order = [(group(statement), statement) for statement in imports]
+    return order == sorted(order)
 
 
 def analyse(files: list[str], fix: bool) -> None:
@@ -183,7 +231,7 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        touched = changed_files(args.base)
+        head, touched = changed_files(args.base)
         if not touched:
             print("no Kotlin files changed -- nothing to check")
             return 0
@@ -207,6 +255,11 @@ def main() -> int:
             # diff never named even when the file is in the list.
             continue
         if args.all or line in lines:
+            # ImportOrdering anchors at the file's first import, not at the import that is out of
+            # order, so the line test alone cannot tell a new misordering from one the base already
+            # had — that needs the base block (B132).
+            if not args.all and rule == "ImportOrdering" and not base_imports_are_ordered(head, relative):
+                continue
             kept.append((relative, where, rule, message))
 
     if not kept:
