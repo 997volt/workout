@@ -56,6 +56,61 @@ class RoomTemplateRepository @Inject constructor(
     override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> =
         dao.observeTemplate(templateId).map { it?.toDomain() }
 
+    override fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>> =
+        dao.observeVersions(templateId).map { rows -> rows.map { it.toDomain() } }
+
+    /**
+     * Keeps the live plan as a version attached to it (ROADMAP N134).
+     *
+     * One transaction over the two reads and the copy, so a version cannot be half-written: a version
+     * whose exercise rows were copied and whose sets were not would read as a plan with no targets, and
+     * nothing on the screen could tell that apart from one authored that way.
+     */
+    override suspend fun keepVersion(templateId: String): DataResult<Unit> = dataResultOf {
+        // `findById` hides a version, so a version of a version is refused here rather than at the UI.
+        val template = dao.findById(templateId) ?: throw NotFoundException("template $templateId")
+        val exercises = dao.findTemplateExercises(templateId)
+        val sets = dao.findTemplateSets(templateId).groupBy { it.templateExerciseId }
+        val now = timeSource.nowEpochMillis()
+
+        database.withTransaction {
+            val versionId = UUID.randomUUID().toString()
+            dao.insertTemplate(
+                TemplateEntity(
+                    id = versionId,
+                    // The version stores its own name: the live row's name is read live by history, so
+                    // marking a version by renaming anything would rewrite how past sessions read.
+                    name = template.name,
+                    versionOf = templateId,
+                    createdAt = now,
+                    updatedAt = now,
+                    deletedAt = null,
+                ),
+            )
+            exercises.forEach { exercise ->
+                val copyId = UUID.randomUUID().toString()
+                dao.insertTemplateExercise(
+                    exercise.copy(
+                        id = copyId,
+                        templateId = versionId,
+                        createdAt = now,
+                        updatedAt = now,
+                    ),
+                )
+                sets[exercise.id].orEmpty().forEach { set ->
+                    dao.insertTemplateSet(
+                        set.copy(
+                            id = UUID.randomUUID().toString(),
+                            templateExerciseId = copyId,
+                            createdAt = now,
+                            updatedAt = now,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
     override fun observeTemplateName(templateId: String): Flow<String?> =
         dao.observeTemplateName(templateId)
 
@@ -74,7 +129,7 @@ class RoomTemplateRepository @Inject constructor(
         dao.observeTemplateSets(templateId).map { rows -> rows.map { it.toDomain() } }
 
     override suspend fun createTemplate(name: String): DataResult<String> = dataResultOf {
-        val trimmed = requireName(name)
+        val trimmed = requireTemplateName(name)
         val id = UUID.randomUUID().toString()
         val now = timeSource.nowEpochMillis()
         dao.insertTemplate(
@@ -93,7 +148,7 @@ class RoomTemplateRepository @Inject constructor(
         sessionId: String,
         name: String,
     ): DataResult<String> = dataResultOf {
-        val trimmed = requireName(name)
+        val trimmed = requireTemplateName(name)
         database.withTransaction {
             val exercises = database.sessionExerciseDao().findLiveSessionExercises(sessionId)
             if (exercises.isEmpty()) {
@@ -129,7 +184,7 @@ class RoomTemplateRepository @Inject constructor(
 
     override suspend fun renameTemplate(templateId: String, name: String): DataResult<Unit> =
         dataResultOf {
-            if (dao.rename(id = templateId, name = requireName(name), at = timeSource.nowEpochMillis()) == 0) {
+            if (dao.rename(id = templateId, name = requireTemplateName(name), at = timeSource.nowEpochMillis()) == 0) {
                 throw NotFoundException("template $templateId")
             }
         }
@@ -419,19 +474,6 @@ class RoomTemplateRepository @Inject constructor(
             }
         }
 
-    /**
-     * A plan's targets have to be usable numbers.
-     *
-     * Nothing here checks the plan against what the user actually lifts — that is
-     * deliberate (N14): a plan describes a shape, and a logged set is expected to
-     * differ. What it does check is that the shape is not nonsense: a negative
-     * weight, a zero-rep set, or a range that runs backwards.
-     */
-    private fun validate(edit: TemplateSetEdit) {
-        validateLoad(edit)
-        validateEffort(edit)
-    }
-
     /** This exercise's planned sets in stored order, for the rules that are about the run (N79). */
     private suspend fun plannedSetsOf(exercise: TemplateExerciseEntity): List<TemplateSet> =
         dao.findTemplateSets(exercise.templateId)
@@ -521,43 +563,63 @@ class RoomTemplateRepository @Inject constructor(
         val load = Load(anchor.targetWeightGrams ?: 0L, anchor.targetAssistanceGrams ?: 0L)
         return rungLoad(load, SetType.DROP, run) != null
     }
+}
 
-    /** A load is a weight or a magnitude of assistance, never a negative either way. */
-    private fun validateLoad(edit: TemplateSetEdit) {
-        val problem = when {
-            edit.targetWeightGrams != null && edit.targetWeightGrams < 0 ->
-                "A target weight cannot be negative."
+/**
+ * A plan's targets have to be usable numbers.
+ *
+ * Nothing here checks the plan against what the user actually lifts — that is deliberate (N14): a plan
+ * describes a shape, and a logged set is expected to differ. What it does check is that the shape is not
+ * nonsense: a negative weight, a zero-rep set, or a range that runs backwards.
+ *
+ * File-level rather than private members for [requireTemplateName]'s reason: the class is at its function
+ * ceiling, and these judge a value rather than the store.
+ */
+private fun validate(edit: TemplateSetEdit) {
+    validateLoad(edit)
+    validateEffort(edit)
+}
 
-            edit.targetAssistanceGrams != null && edit.targetAssistanceGrams < 0 ->
-                "Assistance is a magnitude, not a negative weight."
+/** A load is a weight or a magnitude of assistance, never a negative either way. */
+private fun validateLoad(edit: TemplateSetEdit) {
+    val problem = when {
+        edit.targetWeightGrams != null && edit.targetWeightGrams < 0 ->
+            "A target weight cannot be negative."
 
-            else -> null
-        }
-        if (problem != null) throw InvalidInputException(problem)
+        edit.targetAssistanceGrams != null && edit.targetAssistanceGrams < 0 ->
+            "Assistance is a magnitude, not a negative weight."
+
+        else -> null
     }
+    if (problem != null) throw InvalidInputException(problem)
+}
 
-    /** Reps are a range that can be absent at either end, and RPE sits on the scale. */
-    private fun validateEffort(edit: TemplateSetEdit) {
-        val problem = when {
-            edit.targetRepsMin != null && edit.targetRepsMin < 1 -> "Target reps must be at least 1."
-            edit.targetRepsMax != null && edit.targetRepsMax < 1 -> "Target reps must be at least 1."
-            edit.targetRepsCurrent != null && edit.targetRepsCurrent < 1 ->
-                "The reps the session asks for must be at least 1."
-            edit.targetRepsMin != null && edit.targetRepsMax != null &&
-                edit.targetRepsMin > edit.targetRepsMax ->
-                "The low end of a rep range cannot exceed the high end."
+/** Reps are a range that can be absent at either end, and RPE sits on the scale. */
+private fun validateEffort(edit: TemplateSetEdit) {
+    val problem = when {
+        edit.targetRepsMin != null && edit.targetRepsMin < 1 -> "Target reps must be at least 1."
+        edit.targetRepsMax != null && edit.targetRepsMax < 1 -> "Target reps must be at least 1."
+        edit.targetRepsCurrent != null && edit.targetRepsCurrent < 1 ->
+            "The reps the session asks for must be at least 1."
+        edit.targetRepsMin != null && edit.targetRepsMax != null &&
+            edit.targetRepsMin > edit.targetRepsMax ->
+            "The low end of a rep range cannot exceed the high end."
 
-            else -> null
-        }
-        if (problem != null) throw InvalidInputException(problem)
+        else -> null
     }
+    if (problem != null) throw InvalidInputException(problem)
+}
 
-    /** A template with no name is a list row nobody can tell apart from the next. */
-    private fun requireName(name: String): String {
-        val trimmed = name.trim()
-        if (trimmed.isEmpty()) throw InvalidInputException("Give the template a name.")
-        return trimmed
-    }
+/**
+ * A template with no name is a list row nobody can tell apart from the next.
+ *
+ * File-level rather than a private member for the reason below: the class was at its function ceiling
+ * before N134, and this is one of the helpers that reads the same from outside it.
+ */
+private fun requireTemplateName(name: String): String {
+    val trimmed = name.trim()
+    if (trimmed.isEmpty()) throw InvalidInputException("Give the template a name.")
+    return trimmed
 }
 
 /**

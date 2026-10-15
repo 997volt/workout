@@ -93,6 +93,17 @@ the rule; that one argues it.
 - **A template is living, and a session reads it at the start** (N16). Nothing links a
   session to its plan beyond the route that started it, so editing a plan changes the next
   prefill; writing targets onto the session would freeze them and make "living" false.
+- **A template can keep a version, and a version is a template row of its own** (N134). A version is a plan
+  with exercises and sets, so it lives in the tables they already live in, flagged by a nullable `versionOf`
+  naming the template it was kept from; the templates list adds one predicate, `versionOf IS NULL` beside
+  `deletedAt IS NULL`, so a version never appears among them. **Never automatic** — the lifter presses *Keep a
+  version* at the moment they decide to change something — and **never edited nor restored**: it opens as a
+  read-only plan, because the request is reference and a restore turns a record into an editing path whose
+  overwritten state would then need keeping in turn. **It stores its own name**, because history reads the
+  live template's name live (P3.3), so marking a version by renaming would rewrite how past sessions read.
+  **The export carries versions and the link with them**, since the file is the only path off the device.
+  Rejected: three revision tables and a migration — a version is a plan, and one nullable column is the whole
+  of the difference. ([evidence](DECISIONS-EVIDENCE.md#n134))
 - **A plan is read by position, and position stays contiguous** (B72). A running session matches its
   logged sets to the plan by `setIndex` against the number logged, and a run's continuation is keyed by
   the same index, so a stored index *is* the plan's order rather than a durable id. Removing a planned set

@@ -22,7 +22,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
@@ -33,10 +36,8 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -88,7 +89,6 @@ import com.example.androidapp.ui.components.WarmUpAction
 import com.example.androidapp.ui.components.warmUpActionFor
 import com.example.androidapp.ui.components.setNumbers
 import com.example.androidapp.ui.components.steppedRpeText
-import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.rememberRowFold
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -116,6 +116,8 @@ fun TemplateEditorRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
+    val openVersion by viewModel.openVersion.collectAsStateWithLifecycle()
+    val versionKept by viewModel.versionKept.collectAsStateWithLifecycle()
     val currentOnBack by rememberUpdatedState(onBack)
     val templateId = state.template?.id
 
@@ -141,6 +143,15 @@ fun TemplateEditorRoute(
         onDismissUndo = viewModel::onDismissUndo,
         onAddWarmUpSets = viewModel::onAddWarmUpSets,
         onSaveExercisePlan = viewModel::onSaveExercisePlan,
+        versionUi = TemplateVersionUi(
+            versions = state.versions,
+            openVersion = openVersion,
+            versionKept = versionKept,
+            onKeepVersion = viewModel::onKeepVersion,
+            onDismissVersionNotice = viewModel::onDismissVersionNotice,
+            onOpenVersion = viewModel::onOpenVersion,
+            onDismissVersion = viewModel::onDismissVersion,
+        ),
         onDismissMessage = viewModel::onErrorShown,
         onBack = onBack,
         modifier = modifier,
@@ -169,24 +180,22 @@ fun TemplateEditorScreen(
     onDismissUndo: () -> Unit = {},
     onToggleSuperset: (String) -> Unit = {},
     onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
+    /** The versions kept of this plan, and what may be done with them (ROADMAP N134). */
+    versionUi: TemplateVersionUi = TemplateVersionUi(),
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
+    var showingVersions by rememberSaveable { mutableStateOf(false) } // the versions list, open
     val currentOnDismissMessage by rememberUpdatedState(onDismissMessage)
 
-    // A removed planned set offers the way back (ROADMAP N90), on the screen's own host: the same box the
-    // workout shows, worded by the same strings, because it is the same act. It sits at the scaffold's
-    // foot rather than over the block, so the *Add set* a delete lives beside is not covered.
-    ShowRemovedSetUndo(
-        pendingUndo = state.undoableSet,
+    TemplateEditorMessages(
+        state = state,
+        versionUi = versionUi,
         hostState = snackbarHostState,
-        onUndo = onUndoRemoveSet,
-        onDismiss = onDismissUndo,
+        onDismissMessage = currentOnDismissMessage,
+        onUndoRemoveSet = onUndoRemoveSet,
+        onDismissUndo = onDismissUndo,
     )
-
-    // A write that failed says so through the same host, rather than leaving the screen lying about what
-    // is stored (F7).
-    ShowEditorError(state, snackbarHostState, currentOnDismissMessage)
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -194,18 +203,14 @@ fun TemplateEditorScreen(
         topBar = {
             TemplateEditorTopBar(
                 name = state.template?.name,
+                versionCount = state.versions.size,
                 onBack = onBack,
                 onDelete = { confirmingDelete = true },
+                onKeepVersion = versionUi.onKeepVersion,
+                onOpenVersions = { showingVersions = true },
             )
         },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddExercise,
-                text = { Text(stringResource(R.string.template_add_exercise)) },
-                icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
-                modifier = Modifier.testTag(TestTags.TEMPLATE_ADD_EXERCISE),
-            )
-        },
+        floatingActionButton = { AddExerciseButton(onClick = onAddExercise) },
     ) { innerPadding ->
         TemplateEditorBody(
             state = state,
@@ -219,76 +224,54 @@ fun TemplateEditorScreen(
             onRemoveSet = onRemoveSet,
             onAddWarmUpSets = onAddWarmUpSets,
             onSaveExercisePlan = onSaveExercisePlan,
-            // The IME inset reaches the body for the reason B119 gave the workout's: the window is
-            // edge-to-edge, so it does not resize for the keyboard, and a block's fields near the foot of
-            // the list stayed under it however far the list was scrolled (B122).
             modifier = Modifier.padding(innerPadding).imePadding(),
         )
     }
 
-    if (confirmingDelete) {
+    DeleteTemplateConfirmation(
+        confirming = confirmingDelete,
+        onDelete = onDeleteTemplate,
+        onDismiss = { confirmingDelete = false },
+    )
+
+    TemplateVersionOverlays(
+        versionUi = versionUi,
+        showingVersions = showingVersions,
+        onDismissVersions = { showingVersions = false },
+    )
+}
+
+/** The plan's own *Add exercise*, the screen's one floating action (ROADMAP N3). */
+@Composable
+private fun AddExerciseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    ExtendedFloatingActionButton(
+        onClick = onClick,
+        text = { Text(stringResource(R.string.template_add_exercise)) },
+        icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
+        modifier = modifier.testTag(TestTags.TEMPLATE_ADD_EXERCISE),
+    )
+}
+
+/**
+ * The delete confirmation, drawn only while it is being asked (ROADMAP N3).
+ *
+ * The confirm leaves the editor, so the dismissal and the write are one step here rather than two lines
+ * at the call site.
+ */
+@Composable
+private fun DeleteTemplateConfirmation(
+    confirming: Boolean,
+    onDelete: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (confirming) {
         DeleteTemplateDialog(
-            onDismiss = { confirmingDelete = false },
+            onDismiss = onDismiss,
             onConfirm = {
-                confirmingDelete = false
-                onDeleteTemplate()
+                onDismiss()
+                onDelete()
             },
         )
-    }
-}
-
-/**
- * A failed write, said once and then dismissed (F7).
- *
- * Resolved during composition and shown from the effect, because a string resource cannot be read inside
- * `LaunchedEffect`. Split out with the undo offer so the screen itself stays inside the length this
- * project allows.
- */
-@Composable
-private fun ShowEditorError(
-    state: TemplateEditorUiState,
-    hostState: SnackbarHostState,
-    onDismiss: () -> Unit,
-) {
-    val failure = state.error ?: return
-    val message = dataErrorMessage(failure)
-    // Held as a State, so the effect's key stays the message (B3's rule for the workout's two boxes):
-    // reading the lambda directly inside a restarting effect is what the Compose rules warn about.
-    val currentOnDismiss by rememberUpdatedState(onDismiss)
-    LaunchedEffect(message) {
-        hostState.showSnackbar(message)
-        currentOnDismiss()
-    }
-}
-
-/**
- * Undo for a planned set just removed (ROADMAP N90).
- *
- * The workout's deleted-set snackbar, one screen over: a mis-tap on a set's delete used to be
- * unrecoverable, and the plan was simply missing a set with nothing said. One undo at a time, so the
- * offered [pendingUndo] is a single set rather than a queue; the screen's own host means it cannot
- * outlive the screen either.
- */
-@Composable
-private fun ShowRemovedSetUndo(
-    pendingUndo: TemplateSet?,
-    hostState: SnackbarHostState,
-    onUndo: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val message = stringResource(R.string.set_deleted)
-    val undoLabel = stringResource(R.string.set_undo)
-    val currentOnUndo by rememberUpdatedState(onUndo)
-    val currentOnDismiss by rememberUpdatedState(onDismiss)
-
-    LaunchedEffect(pendingUndo) {
-        if (pendingUndo == null) return@LaunchedEffect
-        val result = hostState.showSnackbar(
-            message = message,
-            actionLabel = undoLabel,
-            duration = SnackbarDuration.Short,
-        )
-        if (result == SnackbarResult.ActionPerformed) currentOnUndo() else currentOnDismiss()
     }
 }
 
@@ -296,9 +279,18 @@ private fun ShowRemovedSetUndo(
 @Composable
 private fun TemplateEditorTopBar(
     name: String?,
+    versionCount: Int,
     onBack: () -> Unit,
     onDelete: () -> Unit,
+    onKeepVersion: () -> Unit,
+    onOpenVersions: () -> Unit,
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
+    val versionsLabel = if (versionCount > 0) {
+        stringResource(R.string.template_versions_with_count, versionCount)
+    } else {
+        stringResource(R.string.template_versions)
+    }
     TopAppBar(
         title = {
             Text(
@@ -315,6 +307,35 @@ private fun TemplateEditorTopBar(
             }
         },
         actions = {
+            // Keeping a version is done at the moment the lifter decides to change something, so it
+            // sits with the plan's own actions rather than behind a settings screen (N134).
+            IconButton(
+                onClick = { menuOpen = true },
+                modifier = Modifier.testTag(TestTags.TEMPLATE_VERSIONS_MENU),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.MoreVert,
+                    contentDescription = versionsLabel,
+                )
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.template_keep_version)) },
+                    onClick = {
+                        menuOpen = false
+                        onKeepVersion()
+                    },
+                    modifier = Modifier.testTag(TestTags.TEMPLATE_KEEP_VERSION),
+                )
+                DropdownMenuItem(
+                    text = { Text(versionsLabel) },
+                    onClick = {
+                        menuOpen = false
+                        onOpenVersions()
+                    },
+                    modifier = Modifier.testTag(TestTags.TEMPLATE_VERSIONS),
+                )
+            }
             IconButton(onClick = onDelete, modifier = Modifier.testTag(TestTags.TEMPLATE_DELETE)) {
                 Icon(
                     imageVector = Icons.Filled.Delete,
@@ -325,6 +346,13 @@ private fun TemplateEditorTopBar(
     )
 }
 
+/**
+ * The plan's own list of blocks (ROADMAP N3).
+ *
+ * The caller applies `imePadding()` for the reason B119 gave the workout's: the window is edge-to-edge,
+ * so it does not resize for the keyboard, and a block's fields near the foot of the list stayed under it
+ * however far the list was scrolled (B122).
+ */
 @Composable
 private fun TemplateEditorBody(
     state: TemplateEditorUiState,

@@ -2072,6 +2072,8 @@ class ActiveWorkoutViewModelTest {
         override fun observeTemplates(): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
         override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> = flowOf(null)
         override fun observeTemplateName(templateId: String): Flow<String?> = flowOf(null)
+        override fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
+        override suspend fun keepVersion(templateId: String): DataResult<Unit> = DataResult.Success(Unit)
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> =
             flowOf(planned)
 

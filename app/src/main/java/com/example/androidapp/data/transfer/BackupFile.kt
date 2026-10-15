@@ -354,6 +354,15 @@ data class SetDto(
 data class TemplateDto(
     val id: String,
     val name: String,
+    /**
+     * The template this row is a kept version of, or null (ROADMAP N134).
+     *
+     * Defaulted like every added field, so a file written before versions existed imports as the
+     * templates it holds. The export **carries versions** rather than dropping them: the file is the
+     * only path off the device, and flattening a kept version into an ordinary template — or losing it
+     * — is the one loss this feature cannot survive.
+     */
+    val versionOf: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

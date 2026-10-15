@@ -22,6 +22,30 @@ interface TemplateRepository {
     fun observeTemplate(templateId: String): Flow<WorkoutTemplate?>
 
     /**
+     * Every live kept version of [templateId], newest first (ROADMAP N134).
+     *
+     * The rows the templates list hides, read back where they belong: a version is attached to the
+     * template it was kept from rather than loose in the list.
+     */
+    fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>>
+
+    /**
+     * Keeps [templateId]'s state **as it stands**, as a version attached to it (ROADMAP N134).
+     *
+     * The lifter presses this at the moment they decide to change something, and what is kept is the
+     * live plan — name, ordered exercises, sets, targets, grouping — copied into a template row of its
+     * own flagged `versionOf`. Nothing about the live template moves: keeping a version renames nothing
+     * and repoints nothing, which is why history, which reads a template's name live, is unaffected.
+     *
+     * **Never automatic.** A rename or a note tweak would otherwise become a "version", writing rows
+     * nobody asked for. **Never editable and never restorable**: the version opens as a read-only plan,
+     * because the request is future reference, and a restore would turn a record into an editing path
+     * whose overwritten state then needed keeping in turn. The copy is the same shape
+     * [createTemplateFromSession] writes, read from the plan tables instead of a session's.
+     */
+    suspend fun keepVersion(templateId: String): DataResult<Unit>
+
+    /**
      * One template's name, **including a soft-deleted one**, or null when no such row exists (N58, B74).
      *
      * The name alone, and unfiltered, because that is what a past workout needs: [observeTemplate] hides a

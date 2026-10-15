@@ -1,6 +1,7 @@
 package com.example.androidapp.domain.model
 
 import com.example.androidapp.domain.WeightUnit
+import java.time.Instant
 
 /**
  * A named, reusable workout (ROADMAP N3): a name and an ordered list of exercises,
@@ -17,6 +18,21 @@ data class WorkoutTemplate(
     val id: String,
     val name: String,
     val exerciseCount: Int = 0,
+    /**
+     * The template this row is a kept **version** of, or null when it is a template (ROADMAP N134).
+     *
+     * A version is a template row of its own — its exercises and sets live in the tables they already
+     * live in — so this one flag is the whole of the difference, and the templates list reads
+     * `versionOf IS NULL` beside `deletedAt IS NULL` so a version never appears among them.
+     */
+    val versionOf: String? = null,
+    /**
+     * When a kept version was taken, or null for a live template (ROADMAP N134).
+     *
+     * Read only for a version: it is what tells two versions of one plan apart in the list, and the
+     * templates read leaves it null because a template's age is a fact nothing on screen asks for.
+     */
+    val keptAt: Instant? = null,
 )
 
 /**

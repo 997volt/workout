@@ -14,6 +14,27 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
+## [Unreleased]
+
+### Added
+
+- **A template can keep a version, and the versions are attached to it** (N134). Asked for in use:
+  *sometimes I want to update a template but keep its previous version for future reference*. A version is a
+  **template row of its own** — its exercises and sets in the tables they already live in, flagged by a
+  nullable `versionOf` naming the template it was kept from — so nothing new was created for the plan's tree:
+  the read paths, the copy machinery and the soft-delete convention all apply unchanged, and the templates
+  list gained one more predicate of the kind it already has, `versionOf IS NULL` beside `deletedAt IS NULL`,
+  so a version never appears as a template. That also dissolves the hide button a *duplicate* would have
+  needed: the kept copies live inside the template they belong to rather than loose in the list. *Keep a
+  version* sits in the editor's overflow, because it is pressed at the moment the lifter decides to change
+  something, and the versions open as a **read-only plan** — never edited, never restored, which is the
+  request: future reference, not a way back. **A version stores its own name**, because the live template's
+  name is read live by history and renaming anything to mark a version would rewrite how past sessions read.
+  **The export carries versions and the `versionOf` link with them**, so an import re-attaches them instead
+  of flattening them into ordinary templates. Rejected: three revision tables and a migration, on the reading
+  that a version is a different kind of thing from a template — it is a plan with exercises and sets, and one
+  nullable column is the whole of the difference.
+
 ## [2.5] — 2026-10-15 (versionCode 25)
 
 ### Changed

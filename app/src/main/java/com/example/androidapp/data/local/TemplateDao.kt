@@ -33,7 +33,12 @@ interface TemplateDao {
     )
     suspend fun setSupersetGroup(ids: List<String>, group: Int?, at: Long): Int
 
-    /** Every live template with its exercise count, name-ordered. */
+    /**
+     * Every live template with its exercise count, name-ordered.
+     *
+     * `versionOf IS NULL` beside `deletedAt IS NULL` (ROADMAP N134): a kept version is a template row of
+     * its own, and this one predicate is what keeps it out of the list rather than a second table.
+     */
     @Query(
         """
         SELECT t.id AS id,
@@ -41,15 +46,41 @@ interface TemplateDao {
                (
                    SELECT COUNT(*) FROM template_exercises te
                    WHERE te.templateId = t.id AND te.deletedAt IS NULL
-               ) AS exerciseCount
+               ) AS exerciseCount,
+               t.versionOf AS versionOf,
+               t.createdAt AS createdAt
         FROM templates t
-        WHERE t.deletedAt IS NULL
+        WHERE t.deletedAt IS NULL AND t.versionOf IS NULL
         ORDER BY t.name ASC
         """,
     )
     fun observeTemplates(): Flow<List<TemplateSummaryRow>>
 
-    @Query("SELECT * FROM templates WHERE id = :id AND deletedAt IS NULL")
+    /**
+     * Every live kept version of one template, newest first (ROADMAP N134).
+     *
+     * The other side of [observeTemplates]' predicate: these are the rows it hides, read back where
+     * they belong — inside the template they were kept from.
+     */
+    @Query(
+        """
+        SELECT t.id AS id,
+               t.name AS name,
+               (
+                   SELECT COUNT(*) FROM template_exercises te
+                   WHERE te.templateId = t.id AND te.deletedAt IS NULL
+               ) AS exerciseCount,
+               t.versionOf AS versionOf,
+               t.createdAt AS createdAt
+        FROM templates t
+        WHERE t.deletedAt IS NULL AND t.versionOf = :templateId
+        ORDER BY t.createdAt DESC
+        """,
+    )
+    fun observeVersions(templateId: String): Flow<List<TemplateSummaryRow>>
+
+    /** A live template, and **not a version of one**: a version is never edited (ROADMAP N134). */
+    @Query("SELECT * FROM templates WHERE id = :id AND deletedAt IS NULL AND versionOf IS NULL")
     suspend fun findById(id: String): TemplateEntity?
 
     /** One template with its count, re-emitting when it is renamed (N3). */
@@ -60,9 +91,11 @@ interface TemplateDao {
                (
                    SELECT COUNT(*) FROM template_exercises te
                    WHERE te.templateId = t.id AND te.deletedAt IS NULL
-               ) AS exerciseCount
+               ) AS exerciseCount,
+               t.versionOf AS versionOf,
+               t.createdAt AS createdAt
         FROM templates t
-        WHERE t.id = :id AND t.deletedAt IS NULL
+        WHERE t.id = :id AND t.deletedAt IS NULL AND t.versionOf IS NULL
         """,
     )
     fun observeTemplate(id: String): Flow<TemplateSummaryRow?>
@@ -84,8 +117,19 @@ interface TemplateDao {
     @Insert
     suspend fun insertTemplate(template: TemplateEntity)
 
-    /** Rows updated: 0 means the template is gone or was already deleted. */
-    @Query("UPDATE templates SET name = :name, updatedAt = :at WHERE id = :id AND deletedAt IS NULL")
+    /**
+     * Rows updated: 0 means the template is gone, was already deleted, or is a **version** (ROADMAP N134).
+     *
+     * The version predicate is the "never edited" rule at the storage boundary: a version stores its own
+     * name, and renaming one would change what a kept plan says it was.
+     */
+    @Query(
+        """
+        UPDATE templates
+        SET name = :name, updatedAt = :at
+        WHERE id = :id AND deletedAt IS NULL AND versionOf IS NULL
+        """,
+    )
     suspend fun rename(id: String, name: String, at: Long): Int
 
     @Query("UPDATE templates SET deletedAt = :at, updatedAt = :at WHERE id = :id AND deletedAt IS NULL")

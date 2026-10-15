@@ -66,6 +66,11 @@ class TemplateEditorScreenTest {
         val onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
         val onRemoveSet: (String) -> Unit = {},
         val onUndoRemoveSet: () -> Unit = {},
+        /** Keeping a version, and reading one back (ROADMAP N134). */
+        val onKeepVersion: () -> Unit = {},
+        val onDismissVersionNotice: () -> Unit = {},
+        val onOpenVersion: (WorkoutTemplate) -> Unit = {},
+        val onDismissVersion: () -> Unit = {},
     )
 
     /**
@@ -93,6 +98,8 @@ class TemplateEditorScreenTest {
     private fun setScreen(
         state: TemplateEditorUiState = twoExercises,
         actions: Actions = Actions(),
+        openVersion: TemplateVersionPlan? = null,
+        versionKept: Boolean = false,
     ) {
         composeTestRule.setContent {
             TemplateEditorScreen(
@@ -107,9 +114,102 @@ class TemplateEditorScreenTest {
                 onSaveExercisePlan = actions.onSaveExercisePlan,
                 onRemoveSet = actions.onRemoveSet,
                 onUndoRemoveSet = actions.onUndoRemoveSet,
+                versionUi = TemplateVersionUi(
+                    versions = state.versions,
+                    openVersion = openVersion,
+                    versionKept = versionKept,
+                    onKeepVersion = actions.onKeepVersion,
+                    onDismissVersionNotice = actions.onDismissVersionNotice,
+                    onOpenVersion = actions.onOpenVersion,
+                    onDismissVersion = actions.onDismissVersion,
+                ),
                 onBack = {},
             )
         }
+    }
+
+    @Test
+    fun theEditorsMenu_keepsAVersion() {
+        // ROADMAP N134: *Keep a version* is pressed at the moment the lifter decides to change
+        // something, so it sits in the editor's own overflow rather than on a surface of its own.
+        var kept = false
+        setScreen(actions = Actions(onKeepVersion = { kept = true }))
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSIONS_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_KEEP_VERSION).performClick()
+
+        assertTrue("the menu's item is the write", kept)
+    }
+
+    @Test
+    fun theVersionsItem_opensTheList_andAnEmptyOneSaysWhatToDo() {
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSIONS_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSIONS).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSIONS_DIALOG).assertExists()
+        composeTestRule.onNodeWithText("No versions yet. Keep one before you change this plan.")
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun aKeptVersion_isOpenedFromTheList_andReportsWhichOne() {
+        val version = WorkoutTemplate(id = "v1", name = "Push day", versionOf = "t1")
+        var opened: WorkoutTemplate? = null
+        setScreen(
+            state = twoExercises.copy(versions = listOf(version)),
+            actions = Actions(onOpenVersion = { opened = it }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSIONS_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSIONS).performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateVersion("v1")).performClick()
+
+        assertEquals(version, opened)
+    }
+
+    @Test
+    fun theReadOnlyPlan_showsTheExercisesTheVersionPlanned() {
+        val plan = TemplateVersionPlan(
+            version = WorkoutTemplate(id = "v1", name = "Push day", versionOf = "t1"),
+            exercises = listOf(twoExercises.exercises.first()),
+            isLoading = false,
+        )
+        setScreen(openVersion = plan)
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSION_DIALOG).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSION_TITLE).assertTextContains("Push day")
+        composeTestRule.onNodeWithText("Back Squat").assertIsDisplayed()
+        // Nothing on it writes: the editor's own *Add set* for that exercise is not here.
+        composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).assertDoesNotExist()
+    }
+
+    @Test
+    fun aVersionWhosePlanIsEmpty_saysSo_ratherThanDrawingNothing() {
+        val plan = TemplateVersionPlan(
+            version = WorkoutTemplate(id = "v1", name = "Push day", versionOf = "t1"),
+            exercises = emptyList(),
+            isLoading = false,
+        )
+        setScreen(openVersion = plan)
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSION_EMPTY).assertExists()
+    }
+
+    @Test
+    fun theReadOnlyPlansClose_isTheDismissal() {
+        var dismissed = false
+        val plan = TemplateVersionPlan(
+            version = WorkoutTemplate(id = "v1", name = "Push day", versionOf = "t1"),
+            exercises = emptyList(),
+            isLoading = false,
+        )
+        setScreen(openVersion = plan, actions = Actions(onDismissVersion = { dismissed = true }))
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSION_CLOSE).performClick()
+
+        assertTrue("closing the plan is the one control it has", dismissed)
     }
 
     @Test

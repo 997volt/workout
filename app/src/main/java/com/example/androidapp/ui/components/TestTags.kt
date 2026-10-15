@@ -354,6 +354,26 @@ object TestTags {
     const val TEMPLATE_DELETE = "template_delete"
     const val TEMPLATE_DELETE_CONFIRM = "template_delete_confirm"
 
+    /**
+     * Keeping a version, and the versions already kept (ROADMAP N134).
+     *
+     * The two live in the editor's own overflow, because keeping a version is done at the moment the
+     * lifter decides to change something.
+     */
+    const val TEMPLATE_VERSIONS_MENU = "template_versions_menu"
+    const val TEMPLATE_KEEP_VERSION = "template_keep_version"
+    const val TEMPLATE_VERSIONS = "template_versions"
+
+    /** The versions kept of one template, one row per version (ROADMAP N134). */
+    const val TEMPLATE_VERSIONS_DIALOG = "template_versions_dialog"
+    fun templateVersion(id: String) = "template_version_$id"
+
+    /** One kept version read as a plan, read-only (ROADMAP N134). */
+    const val TEMPLATE_VERSION_DIALOG = "template_version_dialog"
+    const val TEMPLATE_VERSION_TITLE = "template_version_title"
+    const val TEMPLATE_VERSION_EMPTY = "template_version_empty"
+    const val TEMPLATE_VERSION_CLOSE = "template_version_close"
+
     /** A template in the list; tapping it edits, its button starts a workout. */
     fun templateRow(id: String) = "template_row_$id"
 

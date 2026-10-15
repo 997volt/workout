@@ -19,8 +19,11 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class TemplateEditorUiState(
@@ -32,6 +35,8 @@ data class TemplateEditorUiState(
     val error: DataError? = null,
     /** A just-removed planned set awaiting undo; the screen shows it as a snackbar (ROADMAP N90). */
     val pendingUndo: TemplateSet? = null,
+    /** The versions kept of this template, newest first (ROADMAP N134). */
+    val versions: List<WorkoutTemplate> = emptyList(),
 ) {
     /** The template was deleted, or never existed — either way there is no editor. */
     val notFound: Boolean get() = !isLoading && template == null
@@ -46,6 +51,19 @@ data class TemplateEditorUiState(
     val undoableSet: TemplateSet?
         get() = pendingUndo?.takeIf { set -> exercises.any { it.id == set.templateExerciseId } }
 }
+
+/**
+ * A kept version's plan, read when the version is opened (ROADMAP N134).
+ *
+ * [exercises] is empty while the read is in flight and after one that returned nothing — the two are
+ * told apart by [isLoading], because "this version planned nothing" and "it is not read yet" would
+ * otherwise read the same on screen.
+ */
+data class TemplateVersionPlan(
+    val version: WorkoutTemplate,
+    val exercises: List<TemplateExercise> = emptyList(),
+    val isLoading: Boolean = true,
+)
 
 /**
  * One template's name and its ordered exercises (ROADMAP N3).
@@ -71,12 +89,21 @@ class TemplateEditorViewModel @Inject constructor(
     private val _deleted = MutableStateFlow(false)
     val deleted: StateFlow<Boolean> = _deleted
 
+    /** The version being read, or null (ROADMAP N134). */
+    private val _openVersion = MutableStateFlow<TemplateVersionPlan?>(null)
+    val openVersion: StateFlow<TemplateVersionPlan?> = _openVersion.asStateFlow()
+
+    /** True once a version has just been kept, so the screen can say so and then clear it (N134). */
+    private val _versionKept = MutableStateFlow(false)
+    val versionKept: StateFlow<Boolean> = _versionKept.asStateFlow()
+
     val uiState: StateFlow<TemplateEditorUiState> = combine(
         repository.observeTemplate(templateId),
         repository.observeExercises(templateId),
         error,
         pendingUndo,
-    ) { template, exercises, currentError, undo ->
+        repository.observeVersions(templateId),
+    ) { template, exercises, currentError, undo, versions ->
         TemplateEditorUiState(
             isLoading = false,
             template = template,
@@ -92,6 +119,7 @@ class TemplateEditorViewModel @Inject constructor(
             }.toMap(),
             error = currentError,
             pendingUndo = undo,
+            versions = versions,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -251,6 +279,56 @@ class TemplateEditorViewModel @Inject constructor(
 
     fun onErrorShown() {
         error.value = null
+    }
+
+    /**
+     * Keeps this plan as it stands, as a version attached to it (ROADMAP N134).
+     *
+     * The lifter presses this at the moment they decide to change something. Nothing about the live
+     * plan moves, so the only new state is the version, and the confirmation is a sentence the screen
+     * shows rather than a change to what is on it.
+     */
+    fun onKeepVersion() {
+        viewModelScope.launch {
+            when (val result = repository.keepVersion(templateId)) {
+                is DataResult.Success -> {
+                    error.value = null
+                    _versionKept.value = true
+                }
+
+                is DataResult.Failure -> error.value = result.error
+            }
+        }
+    }
+
+    /** The "version kept" sentence has been shown, so it is not shown again. */
+    fun onDismissVersionNotice() {
+        _versionKept.value = false
+    }
+
+    /**
+     * Reads one kept version's plan (ROADMAP N134).
+     *
+     * A read per open rather than a flow per version, the shape the planned-workout preview uses: the
+     * dialog is a look at one plan, and a live query behind every version would be a subscription
+     * nobody asked for. Only the version that opened it may fill it in, so a dialog closed while the
+     * read was in flight does not come back.
+     */
+    fun onOpenVersion(version: WorkoutTemplate) {
+        _openVersion.value = TemplateVersionPlan(version = version)
+        viewModelScope.launch {
+            val exercises = repository.observeExercises(version.id).first()
+            _openVersion.update { current ->
+                current?.takeIf { it.version.id == version.id }?.copy(
+                    exercises = exercises,
+                    isLoading = false,
+                )
+            }
+        }
+    }
+
+    fun onDismissVersion() {
+        _openVersion.value = null
     }
 
     private fun write(action: suspend () -> DataResult<Unit>) {

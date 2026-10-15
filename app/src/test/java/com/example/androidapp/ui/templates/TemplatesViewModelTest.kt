@@ -178,6 +178,9 @@ class TemplatesViewModelTest {
         override fun observeTemplateName(templateId: String): Flow<String?> =
             templates.map { rows -> rows.firstOrNull { it.id == templateId }?.name }
 
+        override fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
+        override suspend fun keepVersion(templateId: String): DataResult<Unit> = DataResult.Success(Unit)
+
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = exercises
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
         /** Recorded as one call, since writing the ramp in front is a single write (B34). */

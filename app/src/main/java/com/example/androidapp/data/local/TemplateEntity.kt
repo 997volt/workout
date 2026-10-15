@@ -17,10 +17,22 @@ import androidx.room.PrimaryKey
 data class TemplateEntity(
     @PrimaryKey val id: String,
     val name: String,
+    /**
+     * The template this row is a **kept version** of, or null when it is a template (ROADMAP N134).
+     *
+     * A version is a template row of its own rather than a second tree: its exercises and sets live in
+     * the tables they already live in, every read path applies unchanged, and the templates list adds
+     * one predicate — `versionOf IS NULL` — so a version never appears as a template. Nullable with no
+     * default so [MIGRATION_3_4] is a plain `ALTER`, and an existing row is simply not a version.
+     *
+     * It stores its own [name]: the live template's name is read **live** by history, so renaming the
+     * live row to mark a version would rewrite how past sessions read.
+     */
+    val versionOf: String? = null,
     // A template carries no weekday (ROADMAP N56). The pin lived here from N16, and it was the weaker
     // of two places answering "what am I doing on Tuesday" — a template has no order, no next-up and
-    // no adherence to belong to. The day belongs to a program's slot, and the column was dropped in
-    // v25 rather than left unread.
+    // no adherence to belong to. The day belongs to a program's slot, and the column was dropped
+    // rather than left unread.
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

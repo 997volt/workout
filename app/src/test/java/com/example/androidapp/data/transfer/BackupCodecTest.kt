@@ -502,4 +502,33 @@ class BackupCodecTest {
 
         assertEquals(emptyMap<String, Double>(), BackupCodec.decode(olderFile.toString()).goals)
     }
+
+    @Test
+    fun aKeptVersion_survivesTheRoundTrip_withTheTemplateItCameFrom() {
+        // ROADMAP N134: the export carries versions and the `versionOf` link with them, so an import
+        // re-attaches them instead of flattening them into ordinary templates. The file is the only path
+        // off the device, and a silent loss found after a restore is the worst form of this feature.
+        val version = sample.templates.first().copy(versionOf = "template-1")
+
+        val restored = BackupCodec.decode(BackupCodec.encode(sample.copy(templates = listOf(version))))
+
+        assertEquals(listOf(version), restored.templates)
+    }
+
+    @Test
+    fun aFileWrittenBeforeVersionsExisted_stillDecodes_asPlainTemplates() {
+        // The field is defaulted, so a file that never named it reads as it was written: no row is a
+        // version of anything (N134). Written before versions existed is the same schemaVersion, because
+        // an added nullable field is not a format break.
+        val json = Json { prettyPrint = false }
+        val tree = json.parseToJsonElement(BackupCodec.encode(sample)).jsonObject
+        val templates = tree["templates"]!!.jsonArray.map { element ->
+            JsonObject(element.jsonObject - "versionOf")
+        }
+        val olderFile = JsonObject(tree + ("templates" to JsonArray(templates)))
+
+        val restored = BackupCodec.decode(olderFile.toString())
+
+        assertNull(restored.templates.first().versionOf)
+    }
 }

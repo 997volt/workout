@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -910,5 +911,99 @@ class TemplateRepositoryTest {
             listOf(SetType.NORMAL),
             repository.observeExercises(template).first().single().sets.map { it.role },
         )
+    }
+
+    @Test
+    fun keepingAVersion_copiesThePlan_asItStands() = runTest {
+        // ROADMAP N134: the lifter presses *Keep a version* at the moment they decide to change
+        // something, and what is kept is the state as it stands — the exercises, their order and their
+        // targets — under a name of its own.
+        val template = create("Legs")
+        val exercise = plannedExercise(template)
+        repository.addSet(
+            exercise,
+            TemplateSetEdit(
+                role = SetType.TOP_SET,
+                targetWeightGrams = 140_000L,
+                targetRepsMin = 1,
+                targetRepsMax = 2,
+            ),
+        )
+
+        assertTrue(repository.keepVersion(template) is DataResult.Success)
+
+        val version = repository.observeVersions(template).first().single()
+        assertEquals("the live plan's name is the version's own", "Legs", version.name)
+        assertEquals(template, version.versionOf)
+        assertEquals(1, version.exerciseCount)
+        assertNotNull("and it is stamped with when it was kept", version.keptAt)
+
+        val copied = repository.observeExercises(version.id).first().single()
+        assertEquals("back-squat", copied.exerciseId)
+        assertEquals("the targets travel with the copy", listOf(SetType.TOP_SET), copied.sets.map { it.role })
+        assertEquals(140_000L, copied.sets.single().targetWeightGrams)
+    }
+
+    @Test
+    fun aKeptVersion_isNotATemplate_andIsNeverEdited() = runTest {
+        val template = create("Legs")
+        plannedExercise(template)
+        repository.keepVersion(template)
+        val version = repository.observeVersions(template).first().single()
+
+        assertEquals(
+            "the templates list holds the template and not its version",
+            listOf(template),
+            repository.observeTemplates().first().map { it.id },
+        )
+        assertNull("the editor's read refuses a version", repository.observeTemplate(version.id).first())
+        assertTrue(
+            "and a version cannot be renamed",
+            repository.renameTemplate(version.id, "Old legs") is DataResult.Failure,
+        )
+        assertEquals("Legs", repository.observeVersions(template).first().single().name)
+    }
+
+    @Test
+    fun aVersionIsUnchanged_whenTheLivePlanChanges() = runTest {
+        // The whole point of keeping one: the record does not follow the plan it came from.
+        val template = create("Legs")
+        plannedExercise(template)
+        repository.keepVersion(template)
+        val version = repository.observeVersions(template).first().single()
+
+        repository.renameTemplate(template, "Legs (new)")
+        repository.addExercise(template, "bench-press")
+
+        assertEquals("the live plan moved on", "Legs (new)", repository.observeTemplate(template).first()?.name)
+        assertEquals("and the version did not", "Legs", repository.observeVersions(template).first().single().name)
+        assertEquals(1, repository.observeExercises(version.id).first().size)
+    }
+
+    @Test
+    fun aVersionOfAVersion_isRefused() = runTest {
+        val template = create("Legs")
+        plannedExercise(template)
+        repository.keepVersion(template)
+        val version = repository.observeVersions(template).first().single()
+
+        assertTrue(
+            "only a live plan can be kept",
+            repository.keepVersion(version.id) is DataResult.Failure,
+        )
+    }
+
+    @Test
+    fun twoVersions_areNewestFirst() = runTest {
+        val template = create("Legs")
+        plannedExercise(template)
+        repository.keepVersion(template)
+        now = now.plusSeconds(60)
+        repository.keepVersion(template)
+
+        val versions = repository.observeVersions(template).first()
+
+        assertEquals(2, versions.size)
+        assertTrue("the newest is first", versions[0].keptAt!!.isAfter(versions[1].keptAt!!))
     }
 }

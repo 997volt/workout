@@ -1,7 +1,8 @@
 # Workout — Roadmap
 
-> **v2.5** is shipped ([CHANGELOG.md](CHANGELOG.md)), *Next* is **empty** and *Later* holds four decided
-> changes (N134–N137). **2.5 carried four batches and the seven defects a reading of them found**: home's
+> **v2.5** is shipped ([CHANGELOG.md](CHANGELOG.md)), *Next* is **empty**, *Later* holds three decided
+> changes (N135–N137), and **N134 — a template keeping a version — is built** and recorded in the changelog's
+> unreleased section. **2.5 carried four batches and the seven defects a reading of them found**: home's
 > plan surface (N125–N127), where the next-up rows go and a day's plan is home's only answer; measurements
 > (B130, N132, N133), where the list scrolls, a delete is a mode and a deleted entry can be put back unless
 > the day was re-entered; what cutting 2.3 and 2.4 turned up (B128, B129, N128, N129), where the release
@@ -37,8 +38,8 @@
 > by design, and the 1.18 APK is still the way to read it. **The four batches above shipped as 2.5**, with
 > the seven defects a reading of them found (B131–B137) fixed before the tag — including the release
 > verifier's own CI step, which the batch had broken and 2.5 repairs.
-> Checked against the changelog as well as the code: every shipped id has its entry, *Later* holds four
-> (N134–N137) and *Next* holds nothing. **A line-by-line reading of the unversioned batches — N125–N127,
+> Checked against the changelog as well as the code: every shipped id has its entry, *Later* holds three
+> (N135–N137) and *Next* holds nothing. **A line-by-line reading of the unversioned batches — N125–N127,
 > B128/B129/N128/N129, B130/N132/N133, N130 and N131 — found seven defects (B131–B137), and all seven are
 > fixed and recorded in [CHANGELOG.md](CHANGELOG.md).** **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
@@ -84,7 +85,7 @@ An empty section is a state, not a gap, and it is worth saying what fills it —
 this section holds only work a **reading or a use** turns up — a defect found by using the app, a question
 the log or the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled
 to keep itself full. What is decided and simply
-not being started is in *Later* (N134–N137).
+not being started is in *Later* (N135–N137).
 
 ## Later — decided, and not being started
 
@@ -93,41 +94,6 @@ built. It is **not** *Parked* — a parked row is a decision not to plan somethi
 not now — and it is not *Next*, which is what is actually being worked on. Each row names **what brings it forward**,
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
-
-- **A template can keep a version, and the versions are attached to it** (N134). Asked for in use: *sometimes I want
-  to update a template but keep its previous version for future reference*. **A version is a template row of its own**,
-  flagged by a nullable `versionOf` naming the template it was kept from, with its exercises and sets in the tables they
-  already live in. Nothing new is created for the plan's tree: the read paths, the copy machinery
-  `createTemplateFromSession` already uses, and the soft-delete convention all apply unchanged, and the templates list
-  gains one more predicate of the kind it already has — `versionOf IS NULL` beside `deletedAt IS NULL` — so a version
-  never appears as a template. **That dissolves the hide button** a *duplicate* would have needed: the kept copies live
-  inside the template they belong to rather than loose in the list, so there is nothing to hide and no count to hold
-  down. The four decisions are settled, not open:
-
-  - **Never automatic.** The lifter presses *Keep a version* at the moment they decide to change something, and what is
-    kept is the state as it stands. Automatic versioning was rejected: a rename or a note tweak would become a
-    "version", and it writes rows nobody asked for.
-  - **A version is never edited.** It opens as a **read-only plan**, the rendering the planned-workout preview already
-    uses, so it cannot be changed into something that looks live.
-  - **No restore.** The request is future *reference*, and reading it back is the whole of it. Restoring was rejected
-    rather than deferred: it turns a record into an editing path, and a restore is destructive in its own right — the
-    state it overwrites would then need keeping, which is the problem this feature exists to solve, one level down.
-  - **The export carries everything**, versions and the `versionOf` link with them, so an import re-attaches versions
-    instead of flattening them into ordinary templates. An export that dropped them was rejected: the file is the only
-    path off the device, and a silent loss found after a restore is the worst form of this feature.
-
-  **A version stores its own name, and that is what makes this safe.** The live template's name is read **live** by
-  history — a rename relabels the past (P3.3's provenance rule) — so anything that renamed the live row to mark a
-  version would rewrite how past sessions read. Keeping a version renames nothing and repoints nothing, which is also
-  why it needs no part of the slot-repointing a *duplicate* would have required.
-
-  **The shape was revised while deciding it**, and the first sketch is kept as the rejected alternative: three revision
-  tables and a migration, on the reading that a version is a different kind of thing from a template. It is not — it is
-  a plan with exercises and sets, and the flag is the only thing missing. One nullable column against three tables and a
-  second copy of the tree is the whole of the difference.
-
-  **Brought forward when** a template is next edited with the thought "I wish I still had the old one" — which is the
-  moment the feature pays for itself, and is why it sits here rather than in *Next*.
 
 - **A weight goal sets the rate, instead of the rate being typed** (N135). Asked for in use: the lifter sets a goal —
   a **target weight**, a **direction** with no target, or **maintenance** — and the app derives the **rate** from the
@@ -314,7 +280,7 @@ tag, and **N125–N127 shipped next** — today's plan as home's only answer, th
 none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds nothing and *Later* four (N134–N137); the seven defects this reading found (B131–B137),
+***Next* holds nothing and *Later* three (N135–N137); the seven defects this reading found (B131–B137),
 home's plan surface (N125–N127), the measurements batch (B130, N132, N133) and what cutting 2.3 and 2.4
 turned up (B128, B129, N128, N129) are all recorded in [CHANGELOG.md](CHANGELOG.md).** N118
 was found by asking what the app now records and never reads back, and N119

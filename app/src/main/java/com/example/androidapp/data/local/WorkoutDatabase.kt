@@ -20,6 +20,9 @@ import androidx.room.TypeConverters
  * a category over movements and nothing deeper, so a database written under the old shape has to be
  * re-filed. See [MIGRATION_1_2].
  *
+ * **Schema 4 is N134**, one nullable column: a template can keep a version, and a version is a template row
+ * naming the template it was kept from. See [MIGRATION_3_4].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -44,7 +47,7 @@ import androidx.room.TypeConverters
         SessionExerciseJointEntity::class,
         MeasurementSoreMuscleEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

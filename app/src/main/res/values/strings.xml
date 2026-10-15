@@ -224,6 +224,15 @@
     <string name="template_delete">Delete template</string>
     <string name="template_delete_confirm_title">Delete this template?</string>
     <string name="template_delete_confirm_text">The plan goes away. Workouts you already did with it stay in your history.</string>
+    <!-- N134: keeping a version of a plan, and reading one back. -->
+    <string name="template_keep_version">Keep a version</string>
+    <string name="template_version_kept">Version kept</string>
+    <string name="template_versions">Versions</string>
+    <string name="template_versions_with_count">Versions (%1$d)</string>
+    <string name="template_versions_empty">No versions yet. Keep one before you change this plan.</string>
+    <string name="template_version_kept_at">Kept %1$s</string>
+    <string name="template_version_empty">This version planned no exercises.</string>
+    <string name="template_open_version">See what this version planned in %1$s</string>
     <string name="home_templates">Templates</string>
     <string name="detail_save_as_plan">Save as plan</string>
     <string name="detail_plan_name">Plan name</string>

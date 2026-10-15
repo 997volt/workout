@@ -1941,3 +1941,39 @@ headings could not separate them. The series now sit in a **Soreness** group of 
 label the taxonomy's own word — the reason a rename was rejected — and a new `MetricLabelRenderTest` resolves
 the resources and asserts the words a lifter actually reads are distinct, which is the comparison the source
 test could not make.
+
+## N134
+
+The request is future *reference* — "keep the previous version so I can look at what it was" — so the whole of
+the deciding was the shape, because everything else in this app already has a template whose exercises and sets
+live in rows.
+
+**A version is a template row, not a second tree.** The first sketch was three revision tables and a
+migration, on the reading that a version is a different kind of thing from a template. It is not: a version is
+a plan with exercises and sets, and the flag is the only thing missing. One nullable `versionOf` against three
+tables and a second copy of the tree is the whole of the difference, and it is also what makes the read paths,
+the copy machinery and the soft-delete convention apply unchanged. The templates list gains one predicate of
+the kind it already has — `versionOf IS NULL` beside `deletedAt IS NULL` — so a version never appears as a
+template, and the versions are read back with `observeVersions`, the same projection with the predicate the
+other way round.
+
+**A version stores its own name, and that is what makes it safe to keep one.** The live template's name is
+read **live** by history (P3.3's provenance rule), so renaming the live row to mark a version would rewrite
+how past sessions read. Keeping a version renames nothing and repoints nothing — which is also why it needs
+no part of the slot-repointing a *duplicate* would have required, and why program slots and history are
+untouched by the feature.
+
+**Never automatic, never edited, never restorable.** Automatic versioning was rejected because a rename or a
+note tweak would become a "version", writing rows nobody asked for. A version opens as a read-only plan
+rather than the editor, so it cannot be changed into something that looks live. Restoring was rejected rather
+than deferred: the request is reference, and a restore turns a record into an editing path whose overwritten
+state would then need keeping in turn — the problem this feature exists to solve, one level down.
+
+**The export carries versions and the link.** The file is the only path off the device, so an export that
+dropped them, or flattened them into ordinary templates, would be a silent loss found after a restore — the
+worst form of this feature. `TemplateDto.versionOf` is defaulted like every added field, so a file written
+before versions existed still imports as the templates it holds, and the format version did not move for it.
+
+**The migration adds the column and nothing else.** No row is copied: the versions are the rows the feature
+writes from here on, and null is what a template is, so every row already on disk migrates to exactly the
+state it was in. A backfill was neither possible — there is nothing to invent a version from — nor wanted.

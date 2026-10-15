@@ -82,4 +82,13 @@ data class TemplateSummaryRow(
     val id: String,
     val name: String,
     val exerciseCount: Int,
+    /** The template this row is a kept version of, or null (ROADMAP N134). */
+    val versionOf: String?,
+    /**
+     * When the row was written (ROADMAP N134).
+     *
+     * A version's kept-at is read off it; the templates query selects it too because one row type
+     * serves both reads, and the mapper only lets a version keep the timestamp.
+     */
+    val createdAt: Long,
 )

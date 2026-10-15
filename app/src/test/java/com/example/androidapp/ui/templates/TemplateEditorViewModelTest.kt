@@ -119,6 +119,86 @@ class TemplateEditorViewModelTest {
     }
 
     @Test
+    fun keepingAVersion_writesIt_andSaysSo() = runTest(dispatcher) {
+        // ROADMAP N134: the lifter presses *Keep a version* at the moment they decide to change
+        // something; nothing about the live plan changes, so the confirmation is the whole of it.
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onKeepVersion()
+        advanceUntilIdle()
+
+        assertEquals(listOf("t1"), repository.keptVersions)
+        assertTrue("the screen is told so it can say it", viewModel.versionKept.value)
+
+        viewModel.onDismissVersionNotice()
+        assertFalse("and the sentence is not shown twice", viewModel.versionKept.value)
+    }
+
+    @Test
+    fun aVersionThatCouldNotBeKept_saysWhy_andClaimsNothing() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
+            failWrites = true
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onKeepVersion()
+        advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.error)
+        assertFalse("no sentence claims a version was kept", viewModel.versionKept.value)
+    }
+
+    @Test
+    fun theVersionsKept_comeBackInTheState_readyToOpen() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
+            versions.value = listOf(
+                WorkoutTemplate(id = "v2", name = "Push day", versionOf = "t1"),
+                WorkoutTemplate(id = "v1", name = "Push day", versionOf = "t1"),
+            )
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertEquals(listOf("v2", "v1"), viewModel.uiState.value.versions.map { it.id })
+    }
+
+    @Test
+    fun openingAVersion_readsItsPlan_thenDismissingForgetsIt() = runTest(dispatcher) {
+        // N134: a version opens as a read-only plan, which is a read per open rather than a live query
+        // behind every version on the list.
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
+            exercises.value = listOf(exerciseWithSets("te1", plannedSet("s1", 0)))
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+        val version = WorkoutTemplate(id = "v1", name = "Push day", versionOf = "t1")
+
+        viewModel.onOpenVersion(version)
+        advanceUntilIdle()
+
+        val plan = viewModel.openVersion.value
+        assertEquals("v1", plan?.version?.id)
+        assertFalse("the read has answered", plan!!.isLoading)
+        assertEquals(listOf("te1"), plan.exercises.map { it.id })
+
+        viewModel.onDismissVersion()
+
+        assertNull("closing forgets it rather than keeping it alive", viewModel.openVersion.value)
+    }
+
+    @Test
     fun dismissingTheUndo_leavesTheSetRemoved() = runTest(dispatcher) {
         val repository = FakeTemplateRepository().apply {
             templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
@@ -356,6 +436,23 @@ class TemplateEditorViewModelTest {
 
         override fun observeTemplateName(templateId: String): Flow<String?> =
             templates.map { rows -> rows.firstOrNull { it.id == templateId }?.name }
+
+        /** The versions kept, so a test can read the write back (ROADMAP N134). */
+        val versions = MutableStateFlow<List<WorkoutTemplate>>(emptyList())
+        val keptVersions = mutableListOf<String>()
+
+        override fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>> = versions
+
+        override suspend fun keepVersion(templateId: String): DataResult<Unit> {
+            if (failWrites) return failure()
+            keptVersions += templateId
+            versions.value = versions.value + WorkoutTemplate(
+                id = "v${versions.value.size + 1}",
+                name = "Push day",
+                versionOf = templateId,
+            )
+            return DataResult.Success(Unit)
+        }
 
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = exercises
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
