@@ -172,6 +172,13 @@ unreleased.
   went with the rows. A reference to a function that is gone is how the next reader learns to distrust the
   rest, so they are deleted or corrected rather than left to age.
 
+- **The picker tells its two *Chest* entries apart** (B137). The tape site `Chest` and the soreness muscle
+  `Chest` rendered the same word inside the BODY group, so the headings added for *Left knee* could not
+  separate them — and `withinAGroup_theLabelsAreDistinct` compared a label's *source*, which cannot see two
+  sources rendering one word. The soreness series now sit in a **Soreness** group of their own, so every
+  label stays the taxonomy's own word (a rename was rejected), and `MetricLabelRenderTest` resolves the
+  resources and asserts the words a lifter actually reads are distinct.
+
 ## [2.4] — 2026-10-14 (versionCode 24)
 
 ### Fixed

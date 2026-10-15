@@ -175,7 +175,8 @@ class MetricRegistryTest {
         // The three rating strings are shared on purpose — RPE means the same thing at both levels — so
         // the invariant is per group, which is how the picker shows them. A label is compared by its
         // **source** (N118): a muscle's name is the taxonomy's word, and a string resource is the other kind,
-        // so `res:2131099` and "Quads" can never collide while two nulls would look alike.
+        // so `res:2131099` and "Quads" can never collide while two nulls would look alike. A source
+        // comparison cannot see two sources rendering one word — that is `MetricLabelRenderTest` (B137).
         MetricGroup.entries.forEach { group ->
             val labels = entries.filter { it.group == group }
                 .map { it.labelText ?: "res:${it.labelRes}" }

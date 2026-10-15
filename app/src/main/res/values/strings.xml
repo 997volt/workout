@@ -622,6 +622,9 @@
     <string name="statistics_group_workout">Workout</string>
     <string name="statistics_group_exercise">Per lift</string>
     <string name="statistics_group_body">Body</string>
+    <!-- B137: soreness gets a heading of its own, because the tape site Chest and the soreness muscle
+         Chest render the same word inside Body. -->
+    <string name="statistics_group_soreness">Soreness</string>
     <!-- N131: the plan names one effort per exercise, the log one per set, so the review compares
          the working sets' mean against the target. -->
     <string name="summary_rpe">RPE %1$s</string>

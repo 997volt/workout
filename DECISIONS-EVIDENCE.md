@@ -1934,8 +1934,10 @@ The heading's test tag takes the group's *name* rather than the enum, so `TestTa
 direction: it is read by every feature, and reaching into one of them is the dependency its import list
 avoids.
 
-**One more duplicate survives, and it is older than this id.** `withinAGroup_theLabelsAreDistinct` compares a
-label by its *source* — a string resource or the taxonomy's own word — so it cannot see that the tape site
-*Chest* and the soreness muscle *Chest* both render "Chest", in the same BODY group. Both are in one group, so
-even the new headings do not separate them. Nothing here changed that, and it is recorded rather than fixed:
-it wants an id of its own, and inventing one is what this repository's rule forbids.
+**One more duplicate was older than this id, and B137 fixed it.** `withinAGroup_theLabelsAreDistinct`
+compares a label by its *source* — a string resource or the taxonomy's own word — so it could not see that
+the tape site *Chest* and the soreness muscle *Chest* both rendered "Chest" inside BODY, where even the new
+headings could not separate them. The series now sit in a **Soreness** group of their own, which keeps every
+label the taxonomy's own word — the reason a rename was rejected — and a new `MetricLabelRenderTest` resolves
+the resources and asserts the words a lifter actually reads are distinct, which is the comparison the source
+test could not make.

@@ -167,8 +167,8 @@ class StatisticsScreenTest {
                 .getUnclippedBoundsInRoot()
                 .top
         }
-        // In the enum's order, which is the order the menu draws them in: three headings, not one label
-        // repeated wherever the registry happened to list it.
+        // In the enum's order, which is the order the menu draws them in: a heading per group, not one
+        // label repeated wherever the registry happened to list it.
         assertThat(headingTops).isInOrder()
 
         // Both sites exist, and each sits after its own group's heading and before the next one — which is

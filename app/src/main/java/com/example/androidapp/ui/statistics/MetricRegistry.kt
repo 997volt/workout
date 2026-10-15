@@ -19,20 +19,24 @@ import com.example.androidapp.domain.model.asTenthsOrWhole
 import com.example.androidapp.domain.model.jointSiteLabel
 import com.example.androidapp.ui.measurements.MeasurementFormat
 
-/** The three groups the picker offers, in the order it offers them (ROADMAP N35). */
+/** The groups the picker offers, in the order it offers them (ROADMAP N35). */
 enum class MetricGroup(
     /**
-     * What the picker calls this group (ROADMAP N130).
+     * What the picker calls this group (ROADMAP N130, B137).
      *
      * The headings became necessary when two series could share a label: *Left knee* is both a workout
      * series (a session's worst rating for that site) and a per-lift one (that lift's own points), and a
      * flat list of sixty items with no separation left the lifter picking between two identical words.
+     * **Soreness is a group of its own for the same reason, one level down** (B137): every soreness
+     * series' label is the taxonomy's word, and the tape site *Chest* renders that same word inside
+     * BODY — a heading is the only thing that can tell two identical entries apart.
      */
     @StringRes val labelRes: Int,
 ) {
     WORKOUT(R.string.statistics_group_workout),
     EXERCISE(R.string.statistics_group_exercise),
     BODY(R.string.statistics_group_body),
+    SORENESS(R.string.statistics_group_soreness),
 }
 
 /**
@@ -432,11 +436,12 @@ private fun ExerciseTrendMetric.acceptsHead(): Boolean = when (this) {
  *
  * A rating on the same fixed scale as the workout's own effort and joint pain, and **more is worse** like
  * pain — the one thing that differs from a weight or a tape site. The label is the taxonomy's, so the picker
- * says "Quads" with the same word the diary and the session rows use.
+ * says "Quads" with the same word the diary and the session rows use — and the series sit in a group of
+ * their own (B137), because that shared word is also the tape site *Chest*.
  */
 private fun sorenessEntry(muscle: MuscleGroup) = MetricEntry(
     key = MetricKey.Soreness(muscle),
-    group = MetricGroup.BODY,
+    group = MetricGroup.SORENESS,
     labelText = muscle.label,
     unit = MetricUnit.RATING,
     isBars = false,
