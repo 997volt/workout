@@ -126,6 +126,16 @@ unreleased.
   an unsigned build is checked for the version **and** the hash the notes carry, with the certificate
   reported as unchecked.
 
+- **A measurement's day is the local day, not 86 400 seconds** (B133). The repository ended a day at
+  midnight plus a fixed span, which is the next local midnight only when the day is 24 hours long. On a
+  23-hour day it ran an hour past, so a save at 00:30 found and overwrote the previous day's entry; on a
+  25-hour day it stopped an hour short, so a save at 23:30 missed the day's own row and wrote a second —
+  both breaking the rule that a day holds one entry of each kind. The restore's collision guard was
+  computed from the same bounds, so the undo could be allowed onto an occupied day or refused on an empty
+  one. `localDayBounds` now ends the day at `day.plusDays(1).atStartOfDay(zone)`, beside `localDay` so the
+  repository and the screen cannot disagree about which day a moment is, and the DST bounds are pinned by a
+  JVM test in `BodyMeasurementDayTest`.
+
 - **The prose the batches left describing what they removed** (B136). N125 took the next-up rows and the
   read of a program's run with them, but left comments that still describe both: an orphaned KDoc above
   home's `ProgramsPart` promising "each active program's run", and a KDoc on `planEntriesFor` citing

@@ -85,6 +85,25 @@ fun BodyMeasurement.at(site: TapeSite): Long? = tape[site]
 fun Instant.localDay(zone: ZoneId): LocalDate = atZone(zone).toLocalDate()
 
 /**
+ * The half-open `[start, end)` range of [instant]'s local day, in [zone] (ROADMAP N32, N113).
+ *
+ * The repository's form of [localDay]: it asks which instant range is "this day" when it looks for the
+ * day's existing entry (one of each kind, N113) and when it decides whether a day has been re-entered
+ * since a delete (N133). Two callers, one answer, so it lives beside the rule it applies.
+ *
+ * **A day is not 86 400 seconds.** A local day is 23 hours on a spring-forward date and 25 on a
+ * fall-back one, so the end is the *next* day's midnight — `day.plusDays(1)` in the same zone — rather
+ * than midnight plus a fixed span. A fixed span runs an hour into the next day on the 23-hour one, so a
+ * save finds and overwrites the previous day's entry, and stops an hour short on the 25-hour one, so a
+ * late-evening save misses the day's own row and writes a second.
+ */
+fun Instant.localDayBounds(zone: ZoneId): Pair<Long, Long> {
+    val day = localDay(zone)
+    return day.atStartOfDay(zone).toInstant().toEpochMilli() to
+        day.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+}
+
+/**
  * Whether this entry is [day]'s **daily** record, in [zone] (ROADMAP N114).
  *
  * The daily kind, not either kind: a day keeps one entry of each (N113), so a tape day is no reason to stop

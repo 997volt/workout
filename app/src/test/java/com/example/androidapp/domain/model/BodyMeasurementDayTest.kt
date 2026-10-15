@@ -81,4 +81,35 @@ class BodyMeasurementDayTest {
 
         assertThat(entries.any { it.isDailyOn(day, berlin) }).isTrue()
     }
+
+    @Test
+    fun aDaysBounds_areTheNextMidnight_notAFixedSpan() {
+        // ROADMAP B133. A local day is 23 hours on a spring-forward date and 25 on a fall-back one, so
+        // the end of a day is the *next* day's midnight rather than midnight plus 86 400 seconds: the
+        // fixed span reached an hour into the next day in March and stopped an hour short in November.
+        val newYork = ZoneId.of("America/New_York")
+        val (springStart, springEnd) = Instant.parse("2026-03-08T17:00:00Z").localDayBounds(newYork)
+        val (fallStart, fallEnd) = Instant.parse("2026-11-01T16:00:00Z").localDayBounds(newYork)
+
+        assertThat(springStart).isEqualTo(Instant.parse("2026-03-08T05:00:00Z").toEpochMilli())
+        assertThat(springEnd).isEqualTo(Instant.parse("2026-03-09T04:00:00Z").toEpochMilli())
+        assertThat(fallStart).isEqualTo(Instant.parse("2026-11-01T04:00:00Z").toEpochMilli())
+        assertThat(fallEnd).isEqualTo(Instant.parse("2026-11-02T05:00:00Z").toEpochMilli())
+    }
+
+    @Test
+    fun theNextMorningsEarlyHour_isOutsideTheDay_andTheLateEveningIsInside() {
+        // The two saves B133 named, at the boundaries the fixed span got wrong: 00:30 the morning after a
+        // spring-forward day belongs to the *next* day, and 23:30 on a fall-back day is still its own. A
+        // span of 86 400 seconds put the first inside the previous day and the second outside its own.
+        val newYork = ZoneId.of("America/New_York")
+        val (springStart, springEnd) = Instant.parse("2026-03-08T17:00:00Z").localDayBounds(newYork)
+        val (fallStart, fallEnd) = Instant.parse("2026-11-01T16:00:00Z").localDayBounds(newYork)
+
+        val nextMorning = Instant.parse("2026-03-09T04:30:00Z").toEpochMilli() // 00:30 EDT
+        val lateEvening = Instant.parse("2026-11-02T04:30:00Z").toEpochMilli() // 23:30 EST
+
+        assertThat(nextMorning >= springStart && nextMorning < springEnd).isFalse()
+        assertThat(lateEvening >= fallStart && lateEvening < fallEnd).isTrue()
+    }
 }

@@ -13,7 +13,7 @@ import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
-import com.example.androidapp.domain.model.localDay
+import com.example.androidapp.domain.model.localDayBounds
 import com.example.androidapp.domain.repository.MeasurementRepository
 import java.time.Instant
 import java.time.ZoneId
@@ -65,8 +65,8 @@ class RoomMeasurementRepository @Inject constructor(
         }
         val now = timeSource.nowEpochMillis()
         // One entry of each kind for a day, so a tape entry edits its own row rather than the one the
-        // scale wrote (N113).
-        val (dayStart, dayEnd) = dayBounds(measurement.measuredAt)
+        // scale wrote (N113). The day is the local one, not a fixed span (N32, B133).
+        val (dayStart, dayEnd) = measurement.measuredAt.localDayBounds(ZoneId.systemDefault())
         val existing = dao.find(measurement.id)
             ?: dao.findOnDay(
                 from = dayStart,
@@ -124,7 +124,8 @@ class RoomMeasurementRepository @Inject constructor(
         val hiddenAt = removed.deletedAt
             ?: throw InvalidInputException("That measurement was not deleted")
 
-        val (dayStart, dayEnd) = dayBounds(Instant.ofEpochMilli(removed.measuredAt))
+        val (dayStart, dayEnd) = Instant.ofEpochMilli(removed.measuredAt)
+            .localDayBounds(ZoneId.systemDefault())
         if (dao.findLiveWrittenSince(dayStart, dayEnd, removed.kind.name, hiddenAt) != null) {
             throw InvalidInputException(
                 "That day has a newer ${removed.kind.name.lowercase()} measurement, " +
@@ -141,22 +142,7 @@ class RoomMeasurementRepository @Inject constructor(
             soreDao.restoreForMeasurement(id, hiddenAt, now)
         }
     }
-
-    /**
-     * Midnight to midnight where the entry was taken, which is the day it belongs to.
-     *
-     * The device's own zone, read at the moment of writing: N25's rule for a session's time, applied to
-     * a measurement's date. The day is a half-open range in the caller's zone rather than a stored date
-     * column, so a day is a query rather than a second source of truth.
-     */
-    private fun dayBounds(instant: Instant): Pair<Long, Long> {
-        val zone = ZoneId.systemDefault()
-        val start = instant.localDay(zone).atStartOfDay(zone).toInstant()
-        return start.toEpochMilli() to start.plusSeconds(SECONDS_PER_DAY).toEpochMilli()
-    }
 }
-
-private const val SECONDS_PER_DAY = 86_400L
 
 /** The picked list as stored rows, in the order it was picked (ROADMAP N62, N113). */
 private fun List<SoreMuscle>.toRows(measurementId: String, now: Long): List<MeasurementSoreMuscleEntity> =
