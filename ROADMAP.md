@@ -1,18 +1,18 @@
 # Workout — Roadmap
 
-> **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), *Later* holds four decided changes (N134–N137), and
-> *Next* is **empty** again: the **seven defects a reading of the four unversioned batches found
-> (B131–B137)** are fixed, with their entries in the changelog — the release verifier reads CI's unsigned
-> APK, the formatting gate stops blaming a change for a pre-existing import order, a measurement's day is
-> its local day, the undo path takes the write lock, the restore's two holes are closed, the prose the
-> batches left is corrected, and the picker's two *Chest* entries are separated by a group of their own.
-> Four batches shipped unversioned: measurements (B130,
-> N132, N133), where the list scrolls, a delete is a mode and a deleted entry can be put back unless the day
-> was re-entered; what cutting 2.3 and 2.4 turned up (B128, B129, N128, N129), where the release commit names
-> its files, its checks are one script, every set write is ordered, and a change's layout is checked on the
-> lines it touched; N130, where joint pain is read back one joint site at a time instead of as an average
-> about no particular joint; and N131, where the review holds the plan's effort next to the one the sets
-> were actually taken to.
+> **v2.5** is shipped ([CHANGELOG.md](CHANGELOG.md)), *Next* is **empty** and *Later* holds four decided
+> changes (N134–N137). **2.5 carried four batches and the seven defects a reading of them found**: home's
+> plan surface (N125–N127), where the next-up rows go and a day's plan is home's only answer; measurements
+> (B130, N132, N133), where the list scrolls, a delete is a mode and a deleted entry can be put back unless
+> the day was re-entered; what cutting 2.3 and 2.4 turned up (B128, B129, N128, N129), where the release
+> commit names its files, its checks are one script, every set write is ordered, and a change's layout is
+> checked on the lines it touched; N130, where joint pain is read back one joint site at a time instead of
+> as an average about no particular joint; N131, where the review holds the plan's effort next to the one
+> the sets were actually taken to; and **the seven defects that reading found (B131–B137)**, fixed before
+> the tag — the release verifier reads CI's unsigned APK, the formatting gate stops blaming a change for a
+> pre-existing import order, a measurement's day is its local day, the undo path takes the write lock, the
+> restore's two holes are closed, the prose the batches left is corrected, and the picker's two *Chest*
+> entries are separated by a group of their own.
 > Last reviewed against the code: 2026-10-15 — the N87–N95 batch shipped as 1.17; **N96–N102 with B95 shipped as 1.18**, with the six
 > defects a line-by-line reading of that batch found (B96–B101); **N103–N106, N108, N109 and B102 shipped
 > as 2.0**: the taxonomy becoming nullable, the store break that let it happen without a migration — a new
@@ -34,7 +34,9 @@
 > home's body, and the four defects a lifter found in use (B117–B120) with the six a review of the batch found
 > (B121–B126) are fixed. **B127 shipped as 2.4** the same day, because the keyboard's black band was found in
 > use on the released 2.3 and the window's soft input mode was the cause. The 1.x store is left on the device
-> by design, and the 1.18 APK is still the way to read it.
+> by design, and the 1.18 APK is still the way to read it. **The four batches above shipped as 2.5**, with
+> the seven defects a reading of them found (B131–B137) fixed before the tag — including the release
+> verifier's own CI step, which the batch had broken and 2.5 repairs.
 > Checked against the changelog as well as the code: every shipped id has its entry, *Later* holds four
 > (N134–N137) and *Next* holds nothing. **A line-by-line reading of the unversioned batches — N125–N127,
 > B128/B129/N128/N129, B130/N132/N133, N130 and N131 — found seven defects (B131–B137), and all seven are
