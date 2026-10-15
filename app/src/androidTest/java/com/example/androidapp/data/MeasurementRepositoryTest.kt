@@ -263,6 +263,40 @@ class MeasurementRepositoryTest {
         )
     }
 
+    @Test
+    fun aSaveAndADelete_inOneMillisecond_doNotConfuseTheUndo() = runTest {
+        // B135. The restore correlates the rows a delete hid by the timestamp that delete wrote, and the
+        // save path writes the same field when it replaces a list — so a save and a delete sharing a
+        // millisecond would be one marker, and the undo would restore the soreness the save replaced. The
+        // clock is frozen on purpose: only a unique write timestamp can tell the two apart.
+        val frozen = Instant.parse("2026-10-02T09:00:00Z")
+        val frozenClock = RoomMeasurementRepository(database, TimeSource { frozen })
+
+        frozenClock.save(
+            entry(
+                at = localHour(8),
+                weightGrams = 82_000L,
+                soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 8)),
+            ),
+        )
+        frozenClock.save(
+            entry(
+                at = localHour(8),
+                weightGrams = 82_000L,
+                soreMuscles = listOf(SoreMuscle(MuscleGroup.CALVES, 7)),
+            ),
+        )
+        val saved = frozenClock.observeAll().first().single()
+        frozenClock.delete(saved.id)
+
+        assertTrue(frozenClock.restore(saved.id) is DataResult.Success)
+        assertEquals(
+            "only what the delete hid comes back, not what the save replaced",
+            listOf(SoreMuscle(MuscleGroup.CALVES, 7)),
+            frozenClock.observeAll().first().single().soreMuscles,
+        )
+    }
+
     private fun entry(
         at: Instant,
         kind: MeasurementKind = MeasurementKind.DAILY,

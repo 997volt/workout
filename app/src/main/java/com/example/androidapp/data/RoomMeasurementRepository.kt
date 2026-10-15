@@ -18,6 +18,7 @@ import com.example.androidapp.domain.repository.MeasurementRepository
 import java.time.Instant
 import java.time.ZoneId
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -43,6 +44,26 @@ class RoomMeasurementRepository @Inject constructor(
     private val soreDao = database.measurementSoreMuscleDao()
 
     /**
+     * The timestamp the last write in this process took (ROADMAP B135).
+     *
+     * A restore correlates the sore rows a delete hid by the timestamp that delete wrote, and the save
+     * path writes the same field when it replaces a list. Two writes that shared a millisecond would then
+     * be indistinguishable — the undo would resurrect the soreness the lifter had already replaced — so
+     * every write takes a value strictly greater than the last, falling back to the clock once it has
+     * moved on.
+     */
+    private val lastWriteAt = AtomicLong(0)
+
+    /** A write timestamp no other write here has used (ROADMAP B135). */
+    private fun nextWriteAt(): Long {
+        while (true) {
+            val last = lastWriteAt.get()
+            val next = maxOf(timeSource.nowEpochMillis(), last + 1)
+            if (lastWriteAt.compareAndSet(last, next)) return next
+        }
+    }
+
+    /**
      * Every live entry, newest first, each carrying its own sore list.
      *
      * One read of each table rather than a query per entry: the screen shows every measurement at once,
@@ -63,7 +84,7 @@ class RoomMeasurementRepository @Inject constructor(
                 "A sore-muscle score must be between ${TenPointScale.MIN} and ${TenPointScale.MAX}.",
             )
         }
-        val now = timeSource.nowEpochMillis()
+        val now = nextWriteAt()
         // One entry of each kind for a day, so a tape entry edits its own row rather than the one the
         // scale wrote (N113). The day is the local one, not a fixed span (N32, B133).
         val (dayStart, dayEnd) = measurement.measuredAt.localDayBounds(ZoneId.systemDefault())
@@ -95,7 +116,7 @@ class RoomMeasurementRepository @Inject constructor(
     }
 
     override suspend fun delete(id: String): DataResult<Unit> = dataResultOf {
-        val now = timeSource.nowEpochMillis()
+        val now = nextWriteAt()
         database.withTransaction {
             if (dao.softDelete(id, now) == 0) {
                 throw NotFoundException("measurement $id")
@@ -111,7 +132,9 @@ class RoomMeasurementRepository @Inject constructor(
      * The row's own `deletedAt` is the identity of the write that hid it, so the restore clears exactly
      * that and nothing else — N90's rule, which is what stops an undo from resurrecting an entry deleted
      * deliberately a moment earlier. The sore rows went with the entry on the same timestamp, so they
-     * come back whole.
+     * come back whole — and that correlation is why every write takes a **unique** timestamp (B135): the
+     * save path writes the same field when it replaces a list, so a save and a delete in one millisecond
+     * would share a marker and the undo would restore soreness the lifter had replaced.
      *
      * What a restore of a *measurement* adds to that shape is the refusal: its identity is **its day and
      * its kind** (N32, N113), and the day it belongs to may have been re-entered since the delete. A
@@ -126,15 +149,17 @@ class RoomMeasurementRepository @Inject constructor(
 
         val (dayStart, dayEnd) = Instant.ofEpochMilli(removed.measuredAt)
             .localDayBounds(ZoneId.systemDefault())
-        if (dao.findLiveWrittenSince(dayStart, dayEnd, removed.kind.name, hiddenAt) != null) {
-            throw InvalidInputException(
-                "That day has a newer ${removed.kind.name.lowercase()} measurement, " +
-                    "so this one cannot come back.",
-            )
-        }
 
-        val now = timeSource.nowEpochMillis()
+        val now = nextWriteAt()
         database.withTransaction {
+            // The guard is inside the transaction (B135): a save committing between the check and the
+            // write would leave two live rows for one day and kind — the collision this refuses.
+            if (dao.findLiveWrittenSince(dayStart, dayEnd, removed.kind.name, hiddenAt) != null) {
+                throw InvalidInputException(
+                    "That day has a newer ${removed.kind.name.lowercase()} measurement, " +
+                        "so this one cannot come back.",
+                )
+            }
             if (dao.restore(id, hiddenAt, now) == 0) {
                 throw NotFoundException("measurement $id")
             }

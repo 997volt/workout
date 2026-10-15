@@ -136,6 +136,15 @@ unreleased.
   repository and the screen cannot disagree about which day a moment is, and the DST bounds are pinned by a
   JVM test in `BodyMeasurementDayTest`.
 
+- **The restore's guard and its sore-row correlation are closed** (B135). Two small holes in
+  `RoomMeasurementRepository.restore`: the "day re-entered" check ran **outside** the transaction that
+  does the write, so a `save` committing between them could leave two live rows for one day and kind —
+  the collision the check exists to refuse — and the sore rows were correlated by `deletedAt = hiddenAt`,
+  the same field the save path writes when it replaces a list, so a save and a delete in one millisecond
+  shared a marker and the undo resurrected the soreness the lifter had replaced. The guard is now inside
+  the transaction, and every write takes a timestamp strictly greater than the last, so the delete's
+  marker can never be a save's.
+
 - **The prose the batches left describing what they removed** (B136). N125 took the next-up rows and the
   read of a program's run with them, but left comments that still describe both: an orphaned KDoc above
   home's `ProgramsPart` promising "each active program's run", and a KDoc on `planEntriesFor` citing
