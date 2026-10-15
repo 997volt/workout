@@ -124,6 +124,16 @@ data class BackupFile(
      */
     val goals: Map<String, Double> = emptyMap(),
     /**
+     * The **kind** of each goal in [goals], by `WeightGoalKind`'s name, keyed the same way (ROADMAP N135).
+     *
+     * Beside the values rather than folded into them: the goals map is one number per metric and is already
+     * in files this app has written, so a goal's kind travels as its own map. A metric with a value and no
+     * kind here is a goal from a file written before kinds existed, and reads as a **target**.
+     *
+     * Defaulted so a file written before this field existed still decodes.
+     */
+    val goalKinds: Map<String, String> = emptyMap(),
+    /**
      * Diagnostics, not user data (ROADMAP F11). They ride along with an export
      * because a release build is not debuggable and this is the only way a crash log
      * reaches the user; import deliberately ignores them.

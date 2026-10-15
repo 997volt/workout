@@ -604,11 +604,27 @@ the rule; that one argues it.
   rather than drawing a figure from noise, which is P2.8's bar. **Nothing is written**: the statement sets no
   setting, no plan and no target, which is the app's oldest rule reaching a second surface.
 
-- **A target may be a *rate*, and it needs no store of its own** (N98). "−0.35 kg a week" is the same kind of
-  thing as a target of "80 kg" — one number the user authored, per metric — so it rides in the same map, the
-  same preference and the same backup field, under a key derived from the metric's own (`MetricKey.rateId`). A
-  rate is **signed** where a reading never is, so it parses and formats through its own pair of functions: the
-  reading's rule refuses a negative, which is right for a weight and wrong for a direction.
+- **A weight goal sets the rate, instead of the rate being typed** (N135, revising N98's stored rate). "−0.35 kg
+  a week" used to be a number the lifter authored beside a target, which is two answers to one question — and the
+  pair could disagree, which is what the change fixes. Now the goal states a **kind**: a target weight, a
+  direction with no target, or a weight to hold. The kind is what is stored, in a **sibling map** to the goals
+  under the same key (`MetricKey.id`), because the goals map is one number per metric and is already in files
+  this app has written; the kind travels in the export beside it. A goal written before kinds existed — a value
+  with no kind — reads as a **target**, because that is exactly what a level goal was; a kind this build does not
+  know is no goal rather than a guess (the enum-by-name rule). A maintenance goal asks for **no rate at all**,
+  because its answer is a corridor. ([evidence](DECISIONS-EVIDENCE.md#n135))
+
+- **The band decides the rate, and a direction-only goal invents no target** (N135). The band is the reference's
+  **shape** rather than its numbers: **0.25–0.5% of bodyweight a week**, so the same rule reads correctly for a
+  50 kg lifter and a 120 kg one — and the derived rate is its **centre**, clamped into the band, because the band
+  is the range the app will not call too fast or too slow and the middle is the one rate that is neither edge. A
+  **target** takes its direction from where the lifter is now; a **direction** takes the direction the lifter
+  stated and never manufactures an end weight; **maintenance is a corridor**, ±1 kg around the stated weight,
+  because a literal 0.0 kg/week is broken by the first glass of water and "hold within ±X" is what makes it a
+  goal. A rate is **never derived from a deadline**: if a date is wanted, the band's rate gives the *estimate* of
+  the date, not the other way round. The rate is **derived, never typed**, so the statistics row shows it rather
+  than offering it for editing — rejected: keeping the two side by side, which is two sources that can disagree,
+  the thing being fixed.
 
 ## Measurements
 

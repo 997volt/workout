@@ -61,6 +61,7 @@ import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.TrendChartFrame
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.EyebrowStyle
+import com.example.androidapp.domain.model.WeightGoal
 
 /** The Statistics tab (ROADMAP N35). */
 @Composable
@@ -78,7 +79,7 @@ fun StatisticsRoute(
         modifier = modifier,
         onSelectExercise = viewModel::onSelectExercise,
         onSetGoal = viewModel::onSetGoal,
-        onSetRateTarget = viewModel::onSetRateTarget,
+        onSetWeightGoal = viewModel::onSetWeightGoal,
         onOpenMeasurements = onOpenMeasurements,
         onOpenAdherence = onOpenAdherence,
     )
@@ -100,8 +101,8 @@ fun StatisticsScreen(
     onSelectExercise: (String) -> Unit = {},
     /** Sets or clears the chosen metric's target (ROADMAP N39). */
     onSetGoal: (Double?) -> Unit = {},
-    /** Sets or clears the chosen metric's target *rate*, where it has one (ROADMAP N98). */
-    onSetRateTarget: (Double?) -> Unit = {},
+    /** Sets or clears the **weight** goal, kind and all (ROADMAP N135). */
+    onSetWeightGoal: (WeightGoal?) -> Unit = {},
     /**
      * Opens body measurements (ROADMAP N35).
      *
@@ -171,8 +172,7 @@ fun StatisticsScreen(
                     series = state.series,
                     onSelectExercise = onSelectExercise,
                     onSetGoal = onSetGoal,
-                    onSetRateTarget = onSetRateTarget,
-                    goal = state.goal,
+                    onSetWeightGoal = onSetWeightGoal,
                 )
             }
         }
@@ -191,8 +191,7 @@ private fun StatisticsBody(
     series: com.example.androidapp.ui.statistics.MetricSeries?,
     onSelectExercise: (String) -> Unit,
     onSetGoal: (Double?) -> Unit,
-    onSetRateTarget: (Double?) -> Unit,
-    goal: Double?,
+    onSetWeightGoal: (WeightGoal?) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Overview(overview = state.overview)
@@ -218,20 +217,26 @@ private fun StatisticsBody(
         }
 
         series?.let { series ->
-                val entry = MetricRegistry.entryFor(series.key)
-                SeriesChart(series = series, metric = entry, goal = state.goal)
-                // Under the chart, and the literal answer to "see everything" — which is also the accessible
-                // counterpart to a canvas this app blanks out for screen readers (ROADMAP N36).
-                ReadingsSection(series = series, metric = entry)
+            val entry = MetricRegistry.entryFor(series.key)
+            SeriesChart(series = series, metric = entry, goal = state.goal)
+            // Under the chart, and the literal answer to "see everything" — which is also the accessible
+            // counterpart to a canvas this app blanks out for screen readers (ROADMAP N36).
+            ReadingsSection(series = series, metric = entry)
+            // The weight goal states a **kind** as well as a number (N135), so it has its own row where
+            // the number alone had one; every other metric's target is still one number.
+            if (entry.key == MetricKey.Body(BodyMetric.WEIGHT)) {
+                WeightGoalRow(goal = state.weightGoal, metric = entry, onSetGoal = onSetWeightGoal)
+            } else {
                 GoalRow(goal = state.goal, metric = entry, onSetGoal = onSetGoal)
-                // Under the level target, because the two are the same kind of thing — a target for this
-                // metric — and it is the rate that the adjustment below is measured against (N98).
-                EnergyAdjustmentSection(
-                    series = series,
-                    metric = entry,
-                    rateTarget = state.rateTarget,
-                    onSetRateTarget = onSetRateTarget,
-                )
+            }
+            // Under the goal, because the rate is now *derived* from it rather than typed beside it
+            // (N135): it is the same fact read at the speed the goal asks for.
+            EnergyAdjustmentSection(
+                series = series,
+                metric = entry,
+                weightGoal = state.weightGoal,
+                rateTarget = state.rateTarget,
+            )
         }
     }
 }
@@ -533,7 +538,6 @@ private fun SeriesChart(series: MetricSeries, metric: MetricEntry, goal: Double?
     }
 }
 
-
 /**
  * Everything the chart draws, worked out away from the canvas (ROADMAP N37, N39, N40).
  *
@@ -598,8 +602,6 @@ private fun recordedSpan(series: MetricSeries): Pair<Instant, Instant> =
     series.readings.first { it.value != null }.at to series.readings.last { it.value != null }.at
 
 /** The ends of the axis, so the chart can be read without the readings list. */
-
-
 
 /**
  * The custom range, with its From and To (ROADMAP N35).

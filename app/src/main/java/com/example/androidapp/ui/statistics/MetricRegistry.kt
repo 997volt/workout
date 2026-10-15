@@ -105,15 +105,6 @@ sealed interface MetricKey {
             is JointSite -> "JOINT:${joint.name}:${side.name}"
             is ExerciseJointSite -> "EXERCISE_JOINT:${joint.name}:${side.name}"
         }
-
-    /**
-     * A stable name for this series' *rate* target, where it has one (ROADMAP N98).
-     *
-     * A second key rather than a second store: "−0.35 kg a week" is the same kind of thing as a target of
-     * "80 kg" — one number the user authored, per metric — so it rides in the same map, the same preference
-     * and the same backup field, and nothing had to move for it.
-     */
-    val rateId: String get() = "$id:RATE"
 }
 
 /** The body series that are not tape sites (ROADMAP N32). */

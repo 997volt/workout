@@ -138,8 +138,29 @@ class PreferencesSettingsRepository @Inject constructor(
         return DataResult.Success(Unit)
     }
 
+    override fun observeGoalKinds(): Flow<Map<String, String>> = callbackFlow {
+        trySend(currentGoalKinds())
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
+            if (changed == null || changed == KEY_GOAL_KINDS) trySend(currentGoalKinds())
+        }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate().distinctUntilChanged()
+
+    override suspend fun setGoalKind(metricId: String, kind: String?): DataResult<Unit> {
+        preferences.edit(commit = true) {
+            val kinds = currentGoalKinds().toMutableMap()
+            if (kind == null) kinds.remove(metricId) else kinds[metricId] = kind
+            putString(KEY_GOAL_KINDS, encodeGoalKinds(kinds))
+        }
+        return DataResult.Success(Unit)
+    }
+
     private fun currentGoals(): Map<String, Double> =
         decodeGoals(preferences.getString(KEY_GOALS, null))
+
+    private fun currentGoalKinds(): Map<String, String> =
+        decodeGoalKinds(preferences.getString(KEY_GOAL_KINDS, null))
 
     override suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit> {
         preferences.edit(commit = true) {
@@ -256,5 +277,25 @@ private fun decodeGoals(text: String?): Map<String, Double> {
         val parts = line.split('=', limit = 2)
         val value = parts.getOrNull(1)?.toDoubleOrNull()
         if (parts.size == 2 && value != null) parts[0] to value else null
+    }.toMap()
+}
+
+/** The kind of the goal each metric has, one line per metric that has one (ROADMAP N135). */
+private const val KEY_GOAL_KINDS = "metric_goal_kinds"
+
+/**
+ * Goal kinds as `id=KIND`, the same shape [encodeGoals] uses and for the same reasons (ROADMAP N135).
+ *
+ * A kind is an enum **name**, never an ordinal, so a line this build cannot read is dropped by the reader
+ * rather than becoming whichever kind happens to sit at that number.
+ */
+private fun encodeGoalKinds(kinds: Map<String, String>): String =
+    kinds.entries.joinToString("\n") { "${it.key}=${it.value}" }
+
+private fun decodeGoalKinds(text: String?): Map<String, String> {
+    if (text.isNullOrBlank()) return emptyMap()
+    return text.lineSequence().mapNotNull { line ->
+        val parts = line.split('=', limit = 2)
+        if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) parts[0] to parts[1] else null
     }.toMap()
 }

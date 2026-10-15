@@ -97,6 +97,10 @@ class RoomBackupRepository @Inject constructor(
                 // which is exactly why they need naming here: the codec drops whatever it is not
                 // told about, and a restore was losing every target in silence.
                 goals = settings.observeGoals().first(),
+                // The kind of each of those goals (ROADMAP N135). The same argument as the values above,
+                // read from the other side: a goal whose kind did not travel would come back as a target,
+                // which for a maintenance goal is a different goal rather than an incomplete one.
+                goalKinds = settings.observeGoalKinds().first(),
                 // Diagnostics ride along so they are reachable on a release
                 // build; import ignores them, deliberately.
                 crashLogs = crashLogStore.all(),
@@ -175,6 +179,7 @@ class RoomBackupRepository @Inject constructor(
         }
 
         restoreMissingGoals(file.goals)
+        restoreMissingGoalKinds(file.goalKinds)
 
         summary
     }
@@ -325,6 +330,27 @@ class RoomBackupRepository @Inject constructor(
                 val stored = settings.setGoal(metricId, value)
                 if (stored is DataResult.Failure) {
                     throw IOException("the goal for $metricId was not stored")
+                }
+            }
+        }
+    }
+
+    /**
+     * Adds the goal kinds in [kinds] that this device does not already have (ROADMAP N135).
+     *
+     * *Missing-only* by the same rule [restoreMissingGoals] follows, and for the same reason: a kind set
+     * after the export was taken is newer than the file. Reading the goals first is what keeps the two
+     * halves consistent — a kind is only restored for a metric whose value is already here or was just
+     * added, so a kind can never arrive without the goal it describes.
+     */
+    private suspend fun restoreMissingGoalKinds(kinds: Map<String, String>) {
+        val goalsHere = settings.observeGoals().first()
+        val kindsHere = settings.observeGoalKinds().first()
+        kinds.forEach { (metricId, kind) ->
+            if (metricId in goalsHere && metricId !in kindsHere) {
+                val stored = settings.setGoalKind(metricId, kind)
+                if (stored is DataResult.Failure) {
+                    throw IOException("the goal kind for $metricId was not stored")
                 }
             }
         }

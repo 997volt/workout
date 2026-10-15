@@ -504,6 +504,30 @@ class BackupCodecTest {
     }
 
     @Test
+    fun goalKinds_surviveTheRoundTrip_besideTheirValues() {
+        // ROADMAP N135: a goal's *kind* is what its rate is derived from, so a file that carried the value and
+        // not the kind would restore a maintenance goal as a target — a different goal, not an incomplete one.
+        val withKinds = sample.copy(
+            goals = mapOf("BODY:WEIGHT" to 80_000.0),
+            goalKinds = mapOf("BODY:WEIGHT" to "MAINTAIN"),
+        )
+
+        val restored = BackupCodec.decode(BackupCodec.encode(withKinds))
+
+        assertEquals(withKinds.goalKinds, restored.goalKinds)
+        assertEquals(withKinds.goals, restored.goals)
+    }
+
+    @Test
+    fun aFileWrittenBeforeGoalKindsExisted_stillDecodes_seeingNone() {
+        val json = Json { prettyPrint = false }
+        val tree = json.parseToJsonElement(BackupCodec.encode(sample)).jsonObject
+        val olderFile = JsonObject(tree - "goalKinds")
+
+        assertEquals(emptyMap<String, String>(), BackupCodec.decode(olderFile.toString()).goalKinds)
+    }
+
+    @Test
     fun aKeptVersion_survivesTheRoundTrip_withTheTemplateItCameFrom() {
         // ROADMAP N134: the export carries versions and the `versionOf` link with them, so an import
         // re-attaches them instead of flattening them into ordinary templates. The file is the only path

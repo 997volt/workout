@@ -4,6 +4,8 @@ import java.time.Duration
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
+import com.example.androidapp.domain.model.MAINTENANCE_CORRIDOR_GRAMS
+import kotlin.math.roundToInt
 
 /**
  * What a weight trend implies about eating (ROADMAP N98).
@@ -82,6 +84,38 @@ private fun adjustmentFor(fitted: TrendSlope, targetPerWeekGrams: Double): Energ
         lowKcal = floor(gap - uncertainty).toInt(),
         highKcal = ceil(gap + uncertainty).toInt(),
     )
+}
+
+/**
+ * The adjustment that would bring the weight back inside a corridor around [targetGrams] (ROADMAP N135).
+ *
+ * Maintenance is a **corridor**, not a rate of zero, so this is a *level* gap rather than a rate gap: the
+ * question is whether the weight is inside the band, not whether the slope is zero. The **fitted line**
+ * answers it rather than the newest reading — the daily wobble is what a corridor exists to absorb — falling
+ * back to the newest reading when there is nothing to fit.
+ *
+ * A point rather than a range: the corridor is already the band, and the fit's own scatter added on top would
+ * be a second band around a band. Null when the series holds no weight to ask about.
+ */
+fun MetricSeries.energyAdjustmentToCorridor(
+    targetGrams: Double,
+    corridorGrams: Double = MAINTENANCE_CORRIDOR_GRAMS.toDouble(),
+): EnergyAdjustment? {
+    val latest = readings.lastOrNull { it.value != null }
+    // The fitted line's own value at the newest reading, so the corridor is judged on the trend rather than on
+    // the day's water — falling back to that reading when there is nothing to fit.
+    val fitted = latest?.let { reading ->
+        trend()?.let { line -> line.intercept + line.slope * reading.at.toEpochMilli().toDouble() }
+            ?: reading.value
+    }
+    if (fitted == null) return null
+    val gapGrams = when {
+        fitted > targetGrams + corridorGrams -> targetGrams + corridorGrams - fitted
+        fitted < targetGrams - corridorGrams -> targetGrams - corridorGrams - fitted
+        else -> 0.0
+    }
+    val kcal = (gapGrams * KCAL_PER_KILOGRAM / GRAMS_PER_KILOGRAM).roundToInt()
+    return EnergyAdjustment(lowKcal = kcal, highKcal = kcal)
 }
 
 /**

@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.components
 
 import com.example.androidapp.domain.model.TapeSite
+import com.example.androidapp.domain.model.WeightGoalKind
 
 /**
  * Test tags for shared controls (ROADMAP P1.17).
@@ -8,11 +9,11 @@ import com.example.androidapp.domain.model.TapeSite
  * Tests target these instead of English literals, so a translated string cannot
  * break a test — and so a test failure means behaviour changed, not wording.
  */
-@Suppress("TooManyFunctions")
 // The registry is one name per control the app has, so its count grows with the app by design and this ceiling
 // is the wrong shape of check for it. The principled remedy is the one this file already uses — a nested object
 // per area, which `Programs`, `Home` and `Measurements` are — and the template tags are the next group to move
 // there; that is a rename across ninety-odd call sites, so it is its own change rather than a rider on N121.
+@Suppress("TooManyFunctions")
 object TestTags {
     const val SET_WEIGHT_FIELD = "set_weight_field"
     const val SET_REPS_FIELD = "set_reps_field"
@@ -26,6 +27,7 @@ object TestTags {
 
     /** A logged set, tappable to edit it. */
     const val SET_ROW = "set_row"
+
     /** The role a performed set was (ROADMAP N14). */
     const val SET_ROLE = "set_role"
 
@@ -170,6 +172,7 @@ object TestTags {
     }
 
     const val HOME_TITLE = "home_title"
+
     /**
      * The scrolling body itself (ROADMAP N115).
      *
@@ -178,14 +181,18 @@ object TestTags {
      * it would scroll to does not exist until the scroll has happened.
      */
     const val HOME_LIST = "home_list"
+
     /** The body's row that starts an empty workout (ROADMAP N102). */
     const val HOME_START = "home_start"
+
     /** The bar's pill, drawn only while a workout is running (ROADMAP N102). */
     const val HOME_RESUME = "home_resume"
+
     /** The ways in, as rows in the body rather than words in the action row (ROADMAP N3, N42, N102). */
     const val HOME_TEMPLATES = "home_templates"
     const val HOME_PROGRAMS = "home_programs"
     const val HOME_MEASUREMENTS = "home_measurements"
+
     /**
      * The row that writes today's measurements (ROADMAP N114), drawn only while today has none.
      *
@@ -220,9 +227,11 @@ object TestTags {
     const val DATA_IMPORT = "data_import"
 
     const val DETAIL_SAVE_AS_PLAN = "detail_save_as_plan"
+
     /** The past workout's title — its plan's name, or its date — and the date under it (N84). */
     const val HISTORY_DETAIL_TITLE = "history_detail_title"
     const val HISTORY_DETAIL_DATE = "history_detail_date"
+
     /** The one ⋮ on a past workout, and the two entries that write (N84). */
     const val HISTORY_DETAIL_MENU = "history_detail_menu"
     const val HISTORY_DETAIL_EDIT = "history_detail_edit"
@@ -239,7 +248,6 @@ object TestTags {
      */
     const val LIBRARY_EMPTY_LIBRARY = "library_empty_library"
     const val LIBRARY_NO_MATCH = "library_no_match"
-
 
     /** A read that failed, shown where the data would have been (ROADMAP B4). */
     const val LIBRARY_READ_ERROR = "library_read_error"
@@ -258,6 +266,7 @@ object TestTags {
     /** The exercise detail screen's edit mode (ROADMAP N2, N5). */
     const val EXERCISE_EDIT = "exercise_edit"
     const val EXERCISE_EDIT_NAME = "exercise_edit_name"
+
     /**
      * The primary-muscle dropdown and its options (ROADMAP N75, B71).
      *
@@ -462,6 +471,7 @@ object TestTags {
     const val TEMPLATE_SET_DECREASE_REPS_MAX = "template_set_decrease_reps_max"
     const val TEMPLATE_REST_FIELD = "template_rest_field"
     const val TEMPLATE_CUE_FIELD = "template_cue_field"
+
     /** The exercise's one target RPE, on the line the rest and the accept share (N59, N80, N116). */
     const val TEMPLATE_EXERCISE_RPE = "template_exercise_rpe"
     const val TEMPLATE_EXERCISE_INCREASE_RPE = "template_exercise_increase_rpe"
@@ -488,7 +498,6 @@ object TestTags {
     const val TAB_LIBRARY = "tab_library"
     const val TAB_SETTINGS = "tab_settings"
 
-
     /** The settings screen (ROADMAP N21): the screen, the current value, and each choice. */
     /** The exercise's own weight unit (ROADMAP N64): its row on the detail, and the edit choice. */
     const val EXERCISE_WEIGHT_UNIT = "exercise_weight_unit"
@@ -501,14 +510,18 @@ object TestTags {
     const val SETTINGS_REST_CURRENT = "settings_rest_current"
     const val SETTINGS_REST_CUE = "settings_rest_cue"
     const val SETTINGS_KEEP_SCREEN_ON = "settings_keep_screen_on"
+
     /** The rest-timer switch (ROADMAP N44), and the workout screen's static prescription it turns on. */
     const val SETTINGS_REST_TIMER = "settings_rest_timer"
     const val EXERCISE_REST_PRESCRIPTION = "exercise_rest_prescription"
+
     /** The switch that decides whether *Done* asks about the next step a plan earned (ROADMAP N66). */
     const val SETTINGS_PROGRESSION = "settings_progression"
+
     /** The two unit chips on Settings (ROADMAP N64). */
     const val SETTINGS_WEIGHT_UNIT_KG = "setting_weight_unit_kg"
     const val SETTINGS_WEIGHT_UNIT_LB = "setting_weight_unit_lb"
+
     /** The row that opens the typed delete-everything confirmation (ROADMAP N43). */
     const val SETTINGS_CLEAR_DATA = "settings_clear_data"
 
@@ -703,6 +716,7 @@ object TestTags {
     /** The measurements screen's own tags (ROADMAP N32), grouped so this object stays under its ceiling. */
     object Measurements {
         const val ADD = "measurements_add"
+
         /** The two adds the screen offers (ROADMAP N113): a daily record and a tape one. */
         const val ADD_DAILY = "measurements_add_daily"
         const val ADD_TAPE = "measurements_add_tape"
@@ -755,7 +769,7 @@ object TestTags {
     }
 
     /** The Statistics screen's own tags (ROADMAP N35), grouped so this object stays under its ceiling. */
-    object Statistics {        /** The Statistics screen (ROADMAP N35). */
+    object Statistics {
         const val OVERVIEW_WORKOUTS = "statistics_overview_workouts"
         const val OVERVIEW_VOLUME = "statistics_overview_volume"
         const val OVERVIEW_RECORDS = "statistics_overview_records"
@@ -784,10 +798,29 @@ object TestTags {
         /** The energy adjustment a weight trend implies (ROADMAP N98). */
         const val ENERGY = "statistics_energy"
         const val ENERGY_STATEMENT = "statistics_energy_statement"
-        const val ENERGY_TARGET_SET = "statistics_energy_target_set"
-        const val ENERGY_TARGET_FIELD = "statistics_energy_target_field"
-        const val ENERGY_TARGET_CONFIRM = "statistics_energy_target_confirm"
-        const val ENERGY_TARGET_CLEAR = "statistics_energy_target_clear"
+
+        /**
+         * The derived rate itself (ROADMAP N135).
+         *
+         * A value rather than the button it used to be: the rate is derived from the goal, so there is
+         * nothing here to press — the goal row above is where the number that sets it is chosen.
+         */
+        const val ENERGY_TARGET = "statistics_energy_target_value"
+
+        /**
+         * The weight goal's own row, its kind choices and its field (ROADMAP N135).
+         *
+         * One tag per kind rather than a position, so a test names the goal it sets — the shape
+         * [tape] and the other per-value tags here already use, named by the enum rather than by an
+         * ordinal that a reordering would silently change.
+         */
+        const val WEIGHT_GOAL = "statistics_weight_goal"
+        const val WEIGHT_GOAL_SET = "statistics_weight_goal_set"
+        const val WEIGHT_GOAL_FIELD = "statistics_weight_goal_field"
+        const val WEIGHT_GOAL_CONFIRM = "statistics_weight_goal_confirm"
+        const val WEIGHT_GOAL_CLEAR = "statistics_weight_goal_clear"
+
+        fun weightGoalKind(kind: WeightGoalKind) = "statistics_weight_goal_kind_${kind.name.lowercase()}"
 
         /**
          * One group's heading in the picker (ROADMAP N130), by the group's own name.
@@ -811,10 +844,10 @@ object TestTags {
         const val CUSTOM_FROM = "statistics_custom_from"
         const val CUSTOM_TO = "statistics_custom_to"
         const val CUSTOM_APPLY = "statistics_custom_apply"
-    
+
         /** One range chip, and one picker row, named by what they select. */
         fun range(kind: String) = "statistics_range_$kind"
-    
+
         fun metric(id: String) = "statistics_metric_$id"
     }
 

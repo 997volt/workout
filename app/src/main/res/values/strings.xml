@@ -284,12 +284,24 @@
     <string name="statistics_goal_confirm">Set</string>
     <string name="statistics_goal_clear">Clear</string>
     <string name="statistics_per_week">%1$s %2$s per week</string>
+    <!-- N135: the weight goal's kind, which is what its rate is derived from. Only the weight metric
+         states one, so these are beside the generic target above rather than replacing it. -->
+    <string name="statistics_weight_goal">Weight goal</string>
+    <string name="statistics_weight_goal_none">Set a goal</string>
+    <string name="statistics_weight_goal_target">Target weight</string>
+    <string name="statistics_weight_goal_lose">Lose</string>
+    <string name="statistics_weight_goal_gain">Gain</string>
+    <string name="statistics_weight_goal_maintain">Maintain</string>
+    <string name="statistics_weight_goal_losing">Losing weight</string>
+    <string name="statistics_weight_goal_gaining">Gaining weight</string>
+    <!-- A maintenance goal is a corridor, so its target reads as the weight and the corridor either way. -->
+    <string name="statistics_weight_goal_corridor">%1$s ±%2$s</string>
     <!-- The energy adjustment a weight trend implies (ROADMAP N98). It is deliberately a *relative*
          change and never a number to eat: the app holds no food data, and the absolute target belongs
          where the food is logged. -->
     <string name="statistics_energy_target">Target rate</string>
-    <string name="statistics_energy_target_none">Set a rate</string>
-    <string name="statistics_energy_target_hint">kg per week — negative to lose</string>
+    <string name="statistics_energy_target_none">Set a goal</string>
+    <string name="statistics_energy_needs_weigh_in">Needs a weigh-in</string>
     <string name="statistics_energy_less">About %1$s kcal a day less than you are eating now</string>
     <string name="statistics_energy_more">About %1$s kcal a day more than you are eating now</string>
     <string name="statistics_energy_on_target">Your trend is where you asked it to be</string>

@@ -1987,3 +1987,46 @@ before versions existed still imports as the templates it holds, and the format 
 **The migration adds the column and nothing else.** No row is copied: the versions are the rows the feature
 writes from here on, and null is what a template is, so every row already on disk migrates to exactly the
 state it was in. A backfill was neither possible — there is nothing to invent a version from — nor wanted.
+
+## N135
+
+The request came from use: the lifter sets a goal and then types the rate as well, and the two are answers to
+one question. That is the whole defect — a target of 80 kg beside "−0.35 kg a week" can say two things at
+once — and the fix is not a better validation between them but removing one of them as an input.
+
+**The half that was already here is what makes it small.** A weight goal is a level target in the same
+`goals: Map<String, Double>` the statistics screen has written since N39, and it exports. What was missing was
+the **kind**, and a kind is a name in a sibling map under the same key rather than a richer value: the goals
+map is one number per metric and is in files this app has already written, so folding a kind into it would
+change the shape of a field that is already out there. The export gained `goalKinds` as a defaulted map beside
+`goals`, which is why the format version did not move — a file written before kinds existed decodes with no
+kinds, and a value with no kind reads as a **target**, exactly what a level goal was.
+
+**Why the kinds are three shapes rather than one number with a flag.** A target is a weight to reach, a
+direction is a way to go with no weight invented for it, and maintenance is a weight to hold within a corridor.
+Two of the four settled decisions follow from that: a direction-only goal must not manufacture an end weight
+(the reference's own "bodyfat > 20% → you should be cutting" is the same mistake in a different direction), and
+maintenance must not be a rate of zero, because a literal zero is broken by the first glass of water and "hold
+within ±X" is what makes it a goal at all.
+
+**The band is the reference's shape, not its numbers.** health-center fits weight over ten days, prunes readings
+more than a kilogram off the fit, and judges the slope against 0.025–0.05 kg/day — "around 0.25% weekly". Its
+inputs are not all here (it reads a food diary), so what transfers is the **share**: the band is 0.25–0.5% of
+bodyweight a week, which reads the same for a 50 kg lifter and a 120 kg one, and the derived rate is its
+**centre** — the band is the range the app will not call too fast or too slow, and the middle is the one point
+that is neither edge. Rejected: the band's top, "the fastest allowed", which aims a goal at the edge of too
+fast; and a fixed kg/week, which is the same number for two very different bodies. The clamp into the band is
+what keeps any future change to the derivation inside it.
+
+**The typed rate went, and the row that held it became a value.** The statistics row shows the derived rate and
+has nothing to press: the goal row above is where the number that sets it is chosen. A goal with no weigh-in
+behind it cannot have a rate — a share of nothing is not a rate — so it says so rather than showing a number the
+app made up, and a maintenance goal shows its corridor instead. The maintenance **judgment** is a level one, not
+a rate one: `energyAdjustmentToCorridor` measures the fitted line against the corridor's edge, because judging
+maintenance by "the slope is within the fit's error of zero" is a rate rule wearing a corridor's clothes. It
+reports a point rather than a range, because the corridor is already the band and adding the fit's scatter on top
+would be a second band around a band.
+
+**The derived rate is a share of the body *now*, which is why it is computed from the unwindowed series.** The
+chart is windowed by the chosen range; the rate is not, because a range that excluded the latest weigh-in would
+change the rate the goal asks for — and the goal did not change.

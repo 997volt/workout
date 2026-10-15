@@ -54,6 +54,18 @@ unreleased.
   undo's guard has to refuse cannot arise here. The default view is unchanged: its tap still opens the
   read-only details, which stays the one place a record is read where nothing can write.
 
+- **A weight goal sets the rate, instead of the rate being typed** (N135). Asked for in use: the lifter set a
+  target *and* a rate, two answers to one question that could disagree. The weight goal now states a **kind** —
+  a target weight, a direction with no target, or a weight to hold — and the **rate is derived** from that kind
+  and the weight the lifter is now, as the band's centre: **0.25–0.5% of bodyweight a week**, the reference's
+  shape rather than its numbers, so the same rule reads correctly for a 50 kg lifter and a 120 kg one. A
+  **direction-only** goal invents no end weight; **maintenance is a corridor** of ±1 kg rather than a rate of
+  zero, which the first glass of water would break; a rate is never derived from a deadline. The **typed rate
+  went**: the statistics row shows the derived rate and has nothing to press, and a goal with no weigh-in behind
+  it says so rather than inventing a number. The **kind travels in the export** beside the goals, so a restore
+  re-attaches it — and a value written before kinds existed reads as a target, which is what a level goal was.
+  Rejected: keeping the two numbers side by side, which is the disagreement being fixed.
+
 ## [2.5] — 2026-10-15 (versionCode 25)
 
 ### Changed

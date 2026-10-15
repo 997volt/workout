@@ -33,6 +33,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
 import java.time.Instant
+import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.domain.model.WeightGoalKind
 
 /** What the Statistics screen offers (ROADMAP N35). */
 @RunWith(AndroidJUnit4::class)
@@ -62,7 +64,7 @@ class StatisticsScreenTest {
         onOpenMeasurements: (() -> Unit)? = null,
         onOpenAdherence: (() -> Unit)? = null,
         onSetGoal: (Double?) -> Unit = {},
-        onSetRateTarget: (Double?) -> Unit = {},
+        onSetWeightGoal: (WeightGoal?) -> Unit = {},
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -74,7 +76,7 @@ class StatisticsScreenTest {
                     onOpenMeasurements = onOpenMeasurements,
                     onOpenAdherence = onOpenAdherence,
                     onSetGoal = onSetGoal,
-                    onSetRateTarget = onSetRateTarget,
+                    onSetWeightGoal = onSetWeightGoal,
                 )
             }
         }
@@ -222,7 +224,7 @@ class StatisticsScreenTest {
         var reported: Double? = null
         var called = false
         setScreen(
-            state = StatisticsUiState(isLoading = false, series = weightSeries(), goal = 80_000.0),
+            state = StatisticsUiState(isLoading = false, series = fatSeries(), goal = 1_800.0),
             onSetGoal = {
                 called = true
                 reported = it
@@ -230,20 +232,20 @@ class StatisticsScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_SET).performScrollTo()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_SET).assertTextEquals("80")
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_SET).assertTextEquals("180.0")
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_SET).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_FIELD).performTextClearance()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_FIELD).performTextInput("82")
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_FIELD).performTextInput("18")
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_CONFIRM).performClick()
 
         assertThat(called).isTrue()
-        assertThat(reported).isEqualTo(82_000.0)
+        assertThat(reported).isEqualTo(180.0)
     }
 
     @Test
     fun clearingATarget_isOfferedOnlyWhenThereIsOne() {
-        setScreen(state = StatisticsUiState(isLoading = false, series = weightSeries(), goal = 80_000.0))
+        setScreen(state = StatisticsUiState(isLoading = false, series = fatSeries(), goal = 1_800.0))
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_SET).performScrollTo().performClick()
 
@@ -253,7 +255,7 @@ class StatisticsScreenTest {
     @Test
     fun withNoTarget_theRowAsksForOne_ratherThanShowingZero() {
         // A target of zero would be a line along the bottom of every chart and a claim nobody made.
-        setScreen(state = StatisticsUiState(isLoading = false, series = weightSeries()))
+        setScreen(state = StatisticsUiState(isLoading = false, series = fatSeries()))
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_SET).performScrollTo()
 
@@ -584,21 +586,33 @@ class StatisticsScreenTest {
     }
 
     @Test
-    fun withNoRateTarget_theEnergySectionOffersOne_andSaysNothingElse() {
-        // N98: a rate that was never set has nothing to be short of, so the row that sets it is all there is.
+    fun withNoGoal_theWeightSectionSaysSo_andSaysNothingElse() {
+        // N135: the rate is derived from the goal, so a lifter with no goal has nothing to be short of — and
+        // the row that sets the goal is the one above this.
         setScreen()
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_SET)
-            .assertTextEquals("Set a rate")
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET).assertTextEquals("Set a goal")
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_STATEMENT).assertDoesNotExist()
     }
 
     @Test
-    fun withARateTarget_andTooFewWeighIns_itSaysSoRatherThanGuessing() {
+    fun theDerivedRate_isShown_andThereIsNoFieldToTypeItIn() {
+        // The pair that could disagree is gone: the goal sets the rate and this row reads it, so the field the
+        // rate used to be typed into does not exist any more.
+        setScreen(state = stateWithGoal(WeightGoal.Direction(gain = false)).copy(rateTarget = -262.5))
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET)
+            .assertTextEquals("−0.262 kg per week")
+    }
+
+    @Test
+    fun withAGoal_andTooFewWeighIns_itSaysSoRatherThanGuessing() {
         // The floor N98 sets: two weigh-ins are a number and not a trend, so there is no kcal figure to draw —
         // and the section says that rather than leaving a gap where a number would be.
-        setScreen(state = stateWithRateTarget(rateTarget = -700.0))
+        setScreen(
+            state = stateWithGoal(WeightGoal.Direction(gain = false)).copy(rateTarget = -700.0),
+        )
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_STATEMENT)
             .assertTextEquals("Not enough weigh-ins yet")
@@ -608,7 +622,7 @@ class StatisticsScreenTest {
     fun aLiftSeries_hasNoEnergySectionAtAll() {
         // The rate is the weight metric's: a lift's trend is not something anybody eats against.
         setScreen(
-            state = stateWithRateTarget(rateTarget = -700.0).copy(
+            state = stateWithGoal(WeightGoal.Target(80_000L)).copy(
                 series = MetricSeries(
                     key = MetricKey.Exercise(ExerciseTrendMetric.ESTIMATED_1RM),
                     readings = listOf(
@@ -623,35 +637,65 @@ class StatisticsScreenTest {
     }
 
     @Test
-    fun aRateTarget_isTypedInItsOwnDialog_andCanBeClearedFromIt() {
-        // N98: the rate is a target like the level one, so it is set the same way — typed in a dialog and
-        // cleared from the same place. The minus is the point: this is the one target with a direction, and a
-        // parser that refused it would leave no way to ask for losing.
-        var set: Double? = null
+    fun theWeightGoal_isChosenKindFirst_andClearedFromTheSameDialog() {
+        // N135: the kind is the question and the weight only where the kind asks for one, so the two are set
+        // in one place rather than as two numbers that can disagree.
+        var set: WeightGoal? = null
         var cleared = false
         setScreen(
-            state = stateWithRateTarget(rateTarget = -700.0),
-            onSetRateTarget = { value -> if (value == null) cleared = true else set = value },
+            state = stateWithGoal(WeightGoal.Target(80_000L)),
+            onSetWeightGoal = { value -> if (value == null) cleared = true else set = value },
         )
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_SET).performScrollTo().performClick()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_FIELD).performTextClearance()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_FIELD).performTextInput("-0.35")
-        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_CONFIRM).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.weightGoalKind(WeightGoalKind.MAINTAIN)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextInput("80")
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
 
-        assertThat(set).isEqualTo(-350.0)
+        assertThat(set).isEqualTo(WeightGoal.Maintain(80_000L))
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_SET).performScrollTo().performClick()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_CLEAR).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CLEAR).performClick()
 
         assertThat(cleared).isTrue()
     }
 
-    private fun stateWithRateTarget(rateTarget: Double) = StatisticsUiState(
+    @Test
+    fun aDirectionGoal_offersNoWeight_andInventsNone() {
+        // N135's rule: the band decides the rate, and the app never manufactures an end weight the lifter did
+        // not state — so the field is not offered at all, and a stale one cannot become a target.
+        var set: WeightGoal? = null
+        setScreen(
+            state = stateWithGoal(WeightGoal.Target(80_000L)),
+            onSetWeightGoal = { value -> set = value },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.weightGoalKind(WeightGoalKind.LOSE)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
+
+        assertThat(set).isEqualTo(WeightGoal.Direction(gain = false))
+    }
+
+    @Test
+    fun aMaintenanceGoal_readsAsACorridor_ratherThanARateOfZero() {
+        // N135: "hold within ±X" is what makes maintenance a goal; a literal 0.0 kg/week is broken by the
+        // first glass of water, so neither the goal row nor the rate row draws one.
+        setScreen(state = stateWithGoal(WeightGoal.Maintain(80_000L)))
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).assertTextEquals("80 ±1")
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET).assertTextEquals("80 ±1")
+    }
+
+    private fun stateWithGoal(goal: WeightGoal?) = StatisticsUiState(
         isLoading = false,
         range = StatisticsRange(RangeKind.LAST_MONTH),
         series = weightSeries(),
-        rateTarget = rateTarget,
+        weightGoal = goal,
     )
 }
 
@@ -661,5 +705,18 @@ private fun weightSeries() = MetricSeries(
     readings = listOf(
         MetricReading(Instant.parse("2026-09-01T08:00:00Z"), 83_000.0),
         MetricReading(Instant.parse("2026-09-15T08:00:00Z"), 82_000.0),
+    ),
+)
+
+/**
+ * A body series that is **not** weight, for the tests of the plain level target (N135).
+ *
+ * The weight metric states a *kind* as well, so it has its own row; every other metric still sets one number.
+ */
+private fun fatSeries() = MetricSeries(
+    key = MetricKey.Body(BodyMetric.BODY_FAT),
+    readings = listOf(
+        MetricReading(Instant.parse("2026-09-01T08:00:00Z"), 1_830.0),
+        MetricReading(Instant.parse("2026-09-15T08:00:00Z"), 1_800.0),
     ),
 )

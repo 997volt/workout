@@ -115,4 +115,41 @@ class EnergyAdjustmentTest {
 
         assertThat(trend.perWeekStandardError).isNull()
     }
+
+    @Test
+    fun aMaintenanceGoal_isJudgedAgainstItsCorridor_ratherThanARateOfZero() {
+        // N135: holding 80 kg within ±1 kg. A weight inside the corridor is on target however the last two
+        // readings wobbled — which is exactly what a rate of zero would get wrong.
+        val inside = series(0L to 80_400.0, 7L to 80_600.0, 14L to 80_500.0)
+
+        val adjustment = inside.energyAdjustmentToCorridor(targetGrams = 80_000.0)!!
+
+        assertThat(adjustment.isOnTarget).isTrue()
+    }
+
+    @Test
+    fun aboveTheCorridor_theAdjustmentIsToEatLess_andBelowItToEatMore() {
+        val above = series(0L to 82_000.0, 7L to 82_100.0, 14L to 82_200.0)
+            .energyAdjustmentToCorridor(targetGrams = 80_000.0)!!
+        val below = series(0L to 78_000.0, 7L to 77_900.0, 14L to 77_800.0)
+            .energyAdjustmentToCorridor(targetGrams = 80_000.0)!!
+
+        assertThat(above.eatsMore).isFalse()
+        assertThat(below.eatsMore).isTrue()
+    }
+
+    @Test
+    fun theCorridorGap_isTheDistanceToTheEdge_notToTheMiddle() {
+        // 82.2 kg against a corridor of 79–81 is 1.2 kg over the *edge*, and 1.2 kg × 7700 = 9240 kcal — the
+        // figure a lifter eats back over days, not the 2.2 kg to the middle of the band.
+        val adjustment = series(0L to 82_200.0, 7L to 82_200.0, 14L to 82_200.0)
+            .energyAdjustmentToCorridor(targetGrams = 80_000.0)!!
+
+        assertThat(adjustment.magnitude.last).isEqualTo(9_240)
+    }
+
+    @Test
+    fun aCorridorWithNothingWeighed_isSilent() {
+        assertThat(series(0L to null).energyAdjustmentToCorridor(targetGrams = 80_000.0)).isNull()
+    }
 }

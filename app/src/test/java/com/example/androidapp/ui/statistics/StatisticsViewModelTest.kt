@@ -48,6 +48,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.domain.model.WeightGoalKind
 
 /**
  * What the Statistics screen reads (ROADMAP N35).
@@ -338,10 +340,11 @@ class StatisticsViewModelTest {
         records: Int? = null,
         lifts: List<Exercise> = emptyList(),
         goals: Map<String, Double> = emptyMap(),
+        goalKinds: Map<String, String> = emptyMap(),
         // Defaults may reference earlier parameters, which is what keeps `points` from being a parameter
         // nobody reads — the bug this test found in its own fixture.
         trends: FakeTrendsRepository = FakeTrendsRepository(points = points),
-        settings: FakeSettingsRepository = FakeSettingsRepository(range, goals),
+        settings: FakeSettingsRepository = FakeSettingsRepository(range, goals, goalKinds),
         statistics: FakeStatisticsRepository = FakeStatisticsRepository(sessions, records),
     ) = StatisticsViewModel(
         settings = settings,
@@ -363,7 +366,6 @@ class StatisticsViewModelTest {
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
     }
 
-
     @Test
     fun aGoalForTheChosenMetric_reachesTheState() = runTest(dispatcher) {
         // The chart draws it and the row shows it, so this is where the screen's copy comes from.
@@ -375,6 +377,109 @@ class StatisticsViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.goal).isEqualTo(80_000.0)
+    }
+
+    @Test
+    fun aStoredValueWithNoKind_readsAsATarget_soOldGoalsStillDraw() = runTest(dispatcher) {
+        // N135: every goal written before kinds existed was one number, which is exactly a target.
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            goals = mapOf("BODY:WEIGHT" to 80_000.0),
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.weightGoal).isEqualTo(WeightGoal.Target(80_000L))
+    }
+
+    @Test
+    fun theDerivedRate_followsTheGoal_andTheWeightTheLifterIsNow() = runTest(dispatcher) {
+        // A lose goal on an 80 kg lifter: the band's centre is 0.375% of the body a week, and losing is
+        // negative — the sign the energy adjustment reads its direction from.
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            goals = mapOf("BODY:WEIGHT" to 80_000.0),
+            goalKinds = mapOf("BODY:WEIGHT" to WeightGoalKind.LOSE.name),
+            body = listOf(measurement(at = now, weight = 80_000L)),
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.weightGoal).isEqualTo(WeightGoal.Direction(gain = false))
+        assertThat(viewModel.uiState.value.rateTarget).isWithin(0.001).of(-300.0)
+    }
+
+    @Test
+    fun aGoalWithNoWeighInBehindIt_hasNoRateRatherThanAnInventedOne() = runTest(dispatcher) {
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            goals = mapOf("BODY:WEIGHT" to 80_000.0),
+            goalKinds = mapOf("BODY:WEIGHT" to WeightGoalKind.LOSE.name),
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.rateTarget).isNull()
+    }
+
+    @Test
+    fun aMaintenanceGoal_leavesTheRateUnset_andKeepsItsWeightForTheChart() = runTest(dispatcher) {
+        // A corridor is the goal, so there is no rate to measure an adjustment against — and the weight it
+        // holds is still a level the chart can draw.
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            goals = mapOf("BODY:WEIGHT" to 80_000.0),
+            goalKinds = mapOf("BODY:WEIGHT" to WeightGoalKind.MAINTAIN.name),
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.weightGoal).isEqualTo(WeightGoal.Maintain(80_000L))
+        assertThat(viewModel.uiState.value.rateTarget).isNull()
+        assertThat(viewModel.uiState.value.goal).isEqualTo(80_000.0)
+    }
+
+    @Test
+    fun aDirectionGoal_leavesTheChartWithNoLine() = runTest(dispatcher) {
+        // N135's rule: the app never manufactures an end weight the lifter did not state, so there is no
+        // level to draw — only the direction, which the rate carries.
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            goals = mapOf("BODY:WEIGHT" to 80_000.0),
+            goalKinds = mapOf("BODY:WEIGHT" to WeightGoalKind.LOSE.name),
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.goal).isNull()
+    }
+
+    @Test
+    fun settingADirectionGoal_clearsTheStoredWeight_andWritesTheKind() = runTest(dispatcher) {
+        val settings = FakeSettingsRepository(StatisticsRange(), mapOf("BODY:WEIGHT" to 80_000.0))
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onSetWeightGoal(WeightGoal.Direction(gain = true))
+        advanceUntilIdle()
+
+        assertThat(settings.goals.value).doesNotContainKey("BODY:WEIGHT")
+        assertThat(settings.goalKinds.value).containsEntry("BODY:WEIGHT", WeightGoalKind.GAIN.name)
+    }
+
+    @Test
+    fun settingATargetGoal_writesBothTheWeight_andItsKind() = runTest(dispatcher) {
+        val settings = FakeSettingsRepository(StatisticsRange())
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onSetWeightGoal(WeightGoal.Target(75_000L))
+        advanceUntilIdle()
+
+        assertThat(settings.goals.value).containsEntry("BODY:WEIGHT", 75_000.0)
+        assertThat(settings.goalKinds.value).containsEntry("BODY:WEIGHT", WeightGoalKind.TARGET.name)
     }
 
     @Test
@@ -419,15 +524,26 @@ class StatisticsViewModelTest {
 private class FakeSettingsRepository(
     initial: StatisticsRange = StatisticsRange(),
     initialGoals: Map<String, Double> = emptyMap(),
+    initialGoalKinds: Map<String, String> = emptyMap(),
 ) : SettingsRepository {
     val stored = MutableStateFlow(initial)
-    private val goals = MutableStateFlow(initialGoals)
+    val goals = MutableStateFlow(initialGoals)
+    val goalKinds = MutableStateFlow(initialGoalKinds)
 
     override fun observeGoals(): Flow<Map<String, Double>> = goals
 
     override suspend fun setGoal(metricId: String, value: Double?): DataResult<Unit> {
         goals.value = goals.value.toMutableMap().apply {
             if (value == null) remove(metricId) else put(metricId, value)
+        }
+        return DataResult.Success(Unit)
+    }
+
+    override fun observeGoalKinds(): Flow<Map<String, String>> = goalKinds
+
+    override suspend fun setGoalKind(metricId: String, kind: String?): DataResult<Unit> {
+        goalKinds.value = goalKinds.value.toMutableMap().apply {
+            if (kind == null) remove(metricId) else put(metricId, kind)
         }
         return DataResult.Success(Unit)
     }
@@ -514,6 +630,4 @@ private class FakeExerciseRepository(private val lifts: List<Exercise>) : Exerci
         DataResult.Success(lifts)
 
     override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> = DataResult.Success(Unit)
-
-
 }

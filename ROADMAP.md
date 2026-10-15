@@ -1,7 +1,8 @@
 # Workout — Roadmap
 
-> **v2.5** is shipped ([CHANGELOG.md](CHANGELOG.md)), *Next* is **empty**, *Later* holds three decided
-> changes (N135–N137), and **N134 — a template keeping a version — is built** and recorded in the changelog's
+> **v2.5** is shipped ([CHANGELOG.md](CHANGELOG.md)), *Next* is **empty**, *Later* holds two decided
+> changes (N136–N137), and **N134 — a template keeping a version — and N135 — a weight goal setting its own
+> rate — are built** and recorded in the changelog's
 > unreleased section. **2.5 carried four batches and the seven defects a reading of them found**: home's
 > plan surface (N125–N127), where the next-up rows go and a day's plan is home's only answer; measurements
 > (B130, N132, N133), where the list scrolls, a delete is a mode and a deleted entry can be put back unless
@@ -39,7 +40,7 @@
 > the seven defects a reading of them found (B131–B137) fixed before the tag — including the release
 > verifier's own CI step, which the batch had broken and 2.5 repairs.
 > Checked against the changelog as well as the code: every shipped id has its entry, *Later* holds three
-> (N135–N137) and *Next* holds nothing. **A line-by-line reading of the unversioned batches — N125–N127,
+> (N136–N137) and *Next* holds nothing. **A line-by-line reading of the unversioned batches — N125–N127,
 > B128/B129/N128/N129, B130/N132/N133, N130 and N131 — found seven defects (B131–B137), and all seven are
 > fixed and recorded in [CHANGELOG.md](CHANGELOG.md).** **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
@@ -85,7 +86,7 @@ An empty section is a state, not a gap, and it is worth saying what fills it —
 this section holds only work a **reading or a use** turns up — a defect found by using the app, a question
 the log or the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled
 to keep itself full. What is decided and simply
-not being started is in *Later* (N135–N137).
+not being started is in *Later* (N136–N137).
 
 ## Later — decided, and not being started
 
@@ -94,36 +95,6 @@ built. It is **not** *Parked* — a parked row is a decision not to plan somethi
 not now — and it is not *Next*, which is what is actually being worked on. Each row names **what brings it forward**,
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
-
-- **A weight goal sets the rate, instead of the rate being typed** (N135). Asked for in use: the lifter sets a goal —
-  a **target weight**, a **direction** with no target, or **maintenance** — and the app derives the **rate** from the
-  goal and the current weight. Half of it is already here, which is what makes this small: a per-metric **level goal**
-  exists and exports (`goals: Map<String, Double>`, `SettingsRepository.setGoal`), and a **rate target** is its sibling
-  that the energy adjustment is measured against
-  ([`EnergyAdjustmentSection`](app/src/main/java/com/example/androidapp/ui/statistics/EnergyAdjustmentSection.kt), "it
-  is the rate that the adjustment below is measured against", N98). So the lifter types two numbers that can disagree —
-  a target weight and an unrelated rate — and the missing thing is the **kind** of goal and the derivation.
-
-  The rule follows [health-center](https://github.com/997volt/health-center), read rather than assumed: it fits weight
-  over the **last 10 days**, prunes iteratively any reading more than **1 kg** off the fit, and judges the slope against
-  **0.025–0.05 kg/day** — "around 0.25% weekly" — calling anything above too fast and below too slow. What transfers is
-  the **shape**: the rate is a share of bodyweight per week, judged from a fit rather than from a pair of readings.
-  The reference is the citation for the numbers, not a spec copied by value, because its own inputs are not all here
-  (below).
-
-  - **Maintenance is a corridor, not a rate of zero.** "Hold within ±X of the goal weight" is what makes it a goal; a
-    literal 0.0 kg/week is broken by the first glass of water.
-  - **A direction-only goal invents no target.** The band decides the rate; the app never manufactures an end weight
-    the lifter did not state.
-  - **The rate is clamped to the band, and never derived from a deadline.** If a date is wanted, the band's rate gives
-    the *estimate* of the date — the other way round demands exactly the rates the band exists to refuse.
-  - **The typed rate goes.** The statistics row shows the derived rate rather than offering it for editing. Rejected:
-    keeping the two side by side, which is two sources that can disagree — the thing being fixed.
-  - **The goal kind travels.** The goals map already exports, so this is a transfer-format move with it: a goal the
-    lifter set is body data, and the export remains the only path off the device.
-
-  **Brought forward when** the goal is next changed and the rate has to be re-derived by hand — which is the friction
-  that says the two numbers should never have been separate.
 
 - **A weigh-in says whether the rate is on target** (N136). The sentence is already written: [`EnergyAdjustment`](app/src/main/java/com/example/androidapp/ui/statistics/EnergyAdjustment.kt)
   says how far current intake has to move for the trend to become the target — "about 200 kcal a day less than you are
@@ -150,8 +121,8 @@ for the reason a parked row names its revisit trigger: a queue that cannot say w
   — that parked row is about personalising defaults for a new user, while this is a target a lifter sets about their own
   body.
 
-  **Brought forward when** N135 is built, since it is that goal's other half — or when the lifter next wants to know
-  *this week* whether the rate is right and has to open Statistics to find out.
+  **Ready, since N135 is built** — this is that goal's other half — and brought forward when the lifter next wants to
+  know *this week* whether the rate is right and has to open Statistics to find out.
 
 - **A goal's past is kept, and each period says whether it was met** (N137). Asked for in use: when a goal changes,
   the old one should be recoverable, so a later reading can say **what the goal was in a given period and whether it
@@ -176,7 +147,7 @@ for the reason a parked row names its revisit trigger: a queue that cannot say w
     instead was rejected as caching something fully derivable from rows the app already has.
   - **Achievement is a reader over the same rows**: clip the weight series to the period and compare it with the goal —
     a rate goal is met when the trend sat in its band, a target weight when it was reached within tolerance, maintenance
-    when the weight stayed in the corridor. So the answer is only well defined once **N135's goal kinds** exist, and
+    when the weight stayed in the corridor. So the answer needs **N135's goal kinds**, which now exist, and
     this is that trio's third part.
   - **The chart's goal line becomes segments**, one per period. That is the visible payoff, and it is the thing that is
     simply wrong today.
@@ -186,7 +157,7 @@ for the reason a parked row names its revisit trigger: a queue that cannot say w
     missing-only import rule goes with the prefs store, because rows merge like every other table.
 
   **Brought forward when** a goal is changed a second time and the chart's line stops being true for the earlier range —
-  or when N135 lands, since a goal's kinds without its past is half a feature.
+  **N135 having landed**, since a goal's kinds without its past is half a feature.
 
 ## Parked — deliberately not planned
 
@@ -280,7 +251,7 @@ tag, and **N125–N127 shipped next** — today's plan as home's only answer, th
 none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds nothing and *Later* three (N135–N137); the seven defects this reading found (B131–B137),
+***Next* holds nothing and *Later* two (N136–N137); the seven defects this reading found (B131–B137),
 home's plan surface (N125–N127), the measurements batch (B130, N132, N133) and what cutting 2.3 and 2.4
 turned up (B128, B129, N128, N129) are all recorded in [CHANGELOG.md](CHANGELOG.md).** N118
 was found by asking what the app now records and never reads back, and N119

@@ -34,6 +34,11 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.domain.model.kind
+import com.example.androidapp.domain.model.ratePerWeekGrams
+import com.example.androidapp.domain.model.statedWeightGrams
+import com.example.androidapp.domain.model.weightGoalOf
 
 /**
  * What the picker starts on (ROADMAP N35).
@@ -76,10 +81,19 @@ data class StatisticsUiState(
     /** The target set for the chosen metric, in its own units, or null when there is none (ROADMAP N39). */
     val goal: Double? = null,
     /**
-     * The target *rate* for the chosen metric, in its own units per week, or null (ROADMAP N98).
+     * The chosen metric's goal, when it is the weight one (ROADMAP N135).
      *
-     * Only the weight metric offers one, and only the energy statement reads it: a level target says where to
-     * get to, and a rate says how fast — which is the number an adjustment in kcal is computed from.
+     * The weight goal is the only one with a **kind** — a target to reach, a direction with no target, or a
+     * weight to hold within a corridor — and the kind is what sets the rate below. Every other metric keeps
+     * [goal] alone.
+     */
+    val weightGoal: WeightGoal? = null,
+    /**
+     * The rate the goal asks for, in the metric's own units per week, or null (ROADMAP N98, N135).
+     *
+     * **Derived, never typed.** N135: the goal and the weight the lifter is now are what set it, so the
+     * screen shows it rather than offering it for editing — two numbers that can disagree were the thing
+     * being fixed.
      */
     val rateTarget: Double? = null,
     /**
@@ -247,8 +261,30 @@ class StatisticsViewModel @Inject constructor(
     }
 
     val uiState: StateFlow<StatisticsUiState> =
-        combine(sources, exercisePoints, records, settings.observeGoals()) { sources, points, records, goals ->
+        combine(
+            sources,
+            exercisePoints,
+            records,
+            settings.observeGoals(),
+            settings.observeGoalKinds(),
+        ) { sources, points, records, goals, goalKinds ->
             val workoutPoints = sources.workoutPoints
+            // The weight goal, and the level the chart draws (N135): the weight the goal *states*, which a
+            // direction-only goal deliberately does not have — the app never manufactures an end weight the
+            // lifter did not state.
+            val weightGoal = if (sources.selection.metric == MetricKey.Body(BodyMetric.WEIGHT)) {
+                weightGoalOf(
+                    kind = goalKinds[sources.selection.metric.id],
+                    valueGrams = goals[sources.selection.metric.id],
+                )
+            } else {
+                null
+            }
+            val levelGoal = if (sources.selection.metric == MetricKey.Body(BodyMetric.WEIGHT)) {
+                weightGoal?.statedWeightGrams()?.toDouble()
+            } else {
+                goals[sources.selection.metric.id]
+            }
             if (workoutPoints is DataResult.Failure) {
                 StatisticsUiState(
                     isLoading = false,
@@ -256,21 +292,26 @@ class StatisticsViewModel @Inject constructor(
                     selection = sources.selection,
                     error = workoutPoints.error,
                     lifts = sources.lifts,
-                    goal = goals[sources.selection.metric.id],
-                    rateTarget = goals[sources.selection.metric.rateId],
+                    goal = levelGoal,
+                    weightGoal = weightGoal,
                     acceptsHead = sources.acceptsHead,
                 )
             } else {
+                val allReadings = metricSeries(
+                    key = sources.selection.metric,
+                    workouts = (workoutPoints as DataResult.Success).data,
+                    exercises = (points as? DataResult.Success)?.data.orEmpty(),
+                    measurements = sources.measurements,
+                ).readings
                 val body = sources.range.inWindow(
-                    readings = metricSeries(
-                        key = sources.selection.metric,
-                        workouts = (workoutPoints as DataResult.Success).data,
-                        exercises = (points as? DataResult.Success)?.data.orEmpty(),
-                        measurements = sources.measurements,
-                    ).readings,
+                    readings = allReadings,
                     today = today(),
                     zone = currentZone(),
                 )
+                // The current weight is the newest reading in the **whole** series rather than the windowed
+                // one: the rate is a share of the body now, and a range that excluded the latest weigh-in
+                // could not state it (N135).
+                val currentWeightGrams = allReadings.mapNotNull { it.value }.lastOrNull()?.toLong()
                 StatisticsUiState(
                     isLoading = false,
                     range = sources.range,
@@ -284,8 +325,9 @@ class StatisticsViewModel @Inject constructor(
                     ),
                     series = MetricSeries(key = sources.selection.metric, readings = body),
                     lifts = sources.lifts,
-                    goal = goals[sources.selection.metric.id],
-                    rateTarget = goals[sources.selection.metric.rateId],
+                    goal = levelGoal,
+                    weightGoal = weightGoal,
+                    rateTarget = weightGoal?.ratePerWeekGrams(currentWeightGrams ?: 0L),
                     acceptsHead = sources.acceptsHead,
                 )
             }
@@ -306,13 +348,19 @@ class StatisticsViewModel @Inject constructor(
     }
 
     /**
-     * Sets or clears the chosen metric's target *rate* (ROADMAP N98).
+     * Sets or clears the **weight** goal, kind and all (ROADMAP N135).
      *
-     * The same write to the same map under [MetricKey.rateId], for [onSetGoal]'s reason: one number the user
-     * typed and expects to be remembered, so it is written straight through rather than buffered.
+     * Two writes rather than one, because a goal is a value and a kind and they live in two maps. A failure
+     * between them leaves a value with no kind, which reads as a **target** — the one kind a value alone can
+     * mean, and exactly what this metric's goals meant before kinds existed. A **direction-only** goal clears
+     * the value instead, because it deliberately states no weight.
      */
-    fun onSetRateTarget(value: Double?) {
-        viewModelScope.launch { settings.setGoal(selection.value.metric.rateId, value) }
+    fun onSetWeightGoal(goal: WeightGoal?) {
+        val metricId = MetricKey.Body(BodyMetric.WEIGHT).id
+        viewModelScope.launch {
+            settings.setGoal(metricId, goal?.statedWeightGrams()?.toDouble())
+            settings.setGoalKind(metricId, goal?.kind()?.name)
+        }
     }
 
     fun onSelectExercise(exerciseId: String?) {
@@ -361,6 +409,7 @@ class StatisticsViewModel @Inject constructor(
          */
         const val NO_LIMIT = Int.MAX_VALUE
         const val STOP_TIMEOUT_MILLIS = 5_000L
+
         /**
          * The zone "today" is measured in, read when it is asked for.
          *

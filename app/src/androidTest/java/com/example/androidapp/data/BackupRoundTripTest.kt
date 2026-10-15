@@ -265,6 +265,28 @@ class BackupRoundTripTest {
         assertEquals("a target changed locally is newer than the file", 9.5, goals[keptGoal]!!, 0.0001)
     }
 
+    @Test
+    fun aGoalsKind_comesBackWithItsTarget_butOneAlreadyHereIsLeftAlone() = runTest {
+        // ROADMAP N135: the kind is what the rate is derived from, so a restore that dropped it would turn a
+        // maintenance goal into a target — a different goal rather than an incomplete one.
+        val restored = "BODY:WEIGHT"
+        val kept = "BODY:WAIST"
+        settings.setGoal(restored, 80_000.0)
+        settings.setGoalKind(restored, "MAINTAIN")
+        settings.setGoal(kept, 800.0)
+        settings.setGoalKind(kept, "TARGET")
+        val json = exportedJson()
+
+        settings.setGoalKind(restored, null)
+        settings.setGoalKind(kept, "MAINTAIN")
+
+        repository.import(json)
+
+        val kinds = settings.observeGoalKinds().first()
+        assertEquals("a kind the file had and the device did not", "MAINTAIN", kinds[restored])
+        assertEquals("a kind changed locally is newer than the file", "MAINTAIN", kinds[kept])
+    }
+
     private suspend fun exportedJson(): String =
         (repository.export() as DataResult.Success).data
 
