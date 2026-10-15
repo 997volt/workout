@@ -1629,6 +1629,16 @@ class ActiveWorkoutViewModelTest {
          */
         var yieldBeforeDeletingSet = false
 
+        /**
+         * The most [logSet] writes that were ever in flight at once (B134).
+         *
+         * Every log yields before it commits, so two writes that are not ordered against each other
+         * overlap here. The lock's whole promise is that this never exceeds one, and an undo that is a
+         * write too is the case the first cut left out.
+         */
+        var maxConcurrentSetWrites = 0
+        private var setWritesInFlight = 0
+
         /** What the next added exercise carries, so N5's plumbing can be asserted. */
         var restSecondsForNextExercise: Int? = null
 
@@ -1819,22 +1829,28 @@ class ActiveWorkoutViewModelTest {
         ): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             // The write is in flight: a second log's read can land before this row does (B126).
-            if (yieldBeforeWritingSet) yield()
-            sets.value = sets.value + SetEntry(
-                id = "set-${sets.value.size}",
-                sessionExerciseId = sessionExerciseId,
-                setIndex = sets.value.size,
-                reps = reps,
-                weightGrams = weightGrams,
-                setType = setType,
-                // Without this the fake silently dropped the help, which is how B7's
-                // fix could have gone unnoticed by its own test.
-                assistanceGrams = assistanceGrams,
-                // The same for the effort and the comment: the screen states both before
-                // *Log set*, so a fake that drops them hides the write path losing them (N6, N59).
-                rpeHalves = rpeHalves,
-                note = note,
-            )
+            setWritesInFlight++
+            maxConcurrentSetWrites = maxOf(maxConcurrentSetWrites, setWritesInFlight)
+            try {
+                if (yieldBeforeWritingSet) yield()
+                sets.value = sets.value + SetEntry(
+                    id = "set-${sets.value.size}",
+                    sessionExerciseId = sessionExerciseId,
+                    setIndex = sets.value.size,
+                    reps = reps,
+                    weightGrams = weightGrams,
+                    setType = setType,
+                    // Without this the fake silently dropped the help, which is how B7's
+                    // fix could have gone unnoticed by its own test.
+                    assistanceGrams = assistanceGrams,
+                    // The same for the effort and the comment: the screen states both before
+                    // *Log set*, so a fake that drops them hides the write path losing them (N6, N59).
+                    rpeHalves = rpeHalves,
+                    note = note,
+                )
+            } finally {
+                setWritesInFlight--
+            }
             return DataResult.Success(Unit)
         }
 
@@ -2339,6 +2355,38 @@ class ActiveWorkoutViewModelTest {
             moment.previousBestGrams,
         )
         assertEquals("the delete landed, and the later set is what is left", 1, repository.sets.value.size)
+    }
+
+    @Test
+    fun anUndoBesideALog_waitsItsTurn() = runTest(dispatcher) {
+        // B134: onUndoDelete writes a set — it logs the row a soft delete hid — so it has to take the
+        // same turn logging does. The fake counts the log writes in flight at once, each yielding before
+        // it commits, so without the ordering the undo overlaps the log beside it: the restored set can
+        // land between the comparison's two reads and be missed, or announced as beaten once it is back.
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val row = viewModel.uiState.value.exercises.single()
+        viewModel.onLogSet(row.id, offeredSet(viewModel, reps = 8, weightGrams = 20_000L))
+        settle()
+        val logged = repository.sets.value.single()
+        // The delete leaves the undo on offer, so the snackbar's write is the one under test.
+        viewModel.onDeleteSet(logged.id)
+        settle()
+
+        repository.yieldBeforeWritingSet = true
+        viewModel.onLogSet(row.id, offeredSet(viewModel, reps = 8, weightGrams = 15_000L))
+        viewModel.onUndoDelete()
+        settle()
+
+        assertEquals(
+            "one set write at a time, the undo included",
+            1,
+            repository.maxConcurrentSetWrites,
+        )
     }
 
     @Test

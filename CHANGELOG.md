@@ -136,6 +136,15 @@ unreleased.
   repository and the screen cannot disagree about which day a moment is, and the DST bounds are pinned by a
   JVM test in `BodyMeasurementDayTest`.
 
+- **The undo path is inside the write lock** (B134). B129 widened `writingASet` from logging to every set
+  write, but `onUndoDelete` calls `logSet` to put back the row a soft delete hid and was left outside it.
+  A log's comparison is two suspending reads, and the snackbar offering the undo is on screen while one
+  can be in flight, so the restored set could land between them and be missed — or announced as beaten
+  once it was back, the false banner B126 and B129 exist to close. The first cut's ground for omitting it
+  (that it runs to its first suspension on the main dispatcher) does not hold: `logSet`'s first suspension
+  **is** the write. It takes the lock now, and `onAddExercise` stays out because it adds an exercise row
+  rather than a set.
+
 - **The restore's guard and its sore-row correlation are closed** (B135). Two small holes in
   `RoomMeasurementRepository.restore`: the "day re-entered" check ran **outside** the transaction that
   does the write, so a `save` committing between them could leave two live rows for one day and kind —

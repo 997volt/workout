@@ -307,14 +307,18 @@ class ActiveWorkoutViewModel @Inject constructor(
      * removing, or misses one it is lowering, and the banner is announced over a set that is no longer
      * what it was. Neither of those announces anything, so that is the whole of the defect — a comparison
      * briefly stale rather than a false banner, which is what makes it lower severity than B126 and not
-     * the same one. Ordering all three writes is the answer rather than snapshotting the comparison: the
-     * log's reads and its write stay one step, so what it compared is what it wrote against.
+     * the same one. Ordering the writes is the answer rather than snapshotting the comparison: the log's
+     * reads and its write stay one step, so what it compared is what it wrote against.
      *
-     * A write here is the repository's, and two of these already take one another's place by
-     * construction — `onUndoDelete` and `onAddExercise` both run to their first suspension on the single
-     * main dispatcher, so they cannot land inside a comparison between its two reads. The lock covers
-     * **the three paths that touch a set the comparison reads**; adding the others would widen it past
-     * the defect.
+     * **B134 brought the undo in too.** `onUndoDelete` writes a set — it calls `logSet` to put back the
+     * row a soft delete hid — and the snackbar offering it is on screen while a log can be in flight, so
+     * leaving it out let the restored set land between the comparison's two reads and be missed, or
+     * announced as beaten when it is already back. The first cut argued it could not interleave because
+     * it runs to its first suspension on the main dispatcher, but `logSet`'s first suspension **is** the
+     * write; the lock is what actually orders it.
+     *
+     * `onAddExercise` stays outside, and that is not the same omission: it adds an exercise row rather
+     * than a set, so it moves nothing a comparison reads.
      */
     private val writingASet = Mutex()
 
@@ -1000,19 +1004,23 @@ class ActiveWorkoutViewModel @Inject constructor(
             return
         }
         viewModelScope.launch {
-            handle(
-                workoutRepository.logSet(
-                    sessionExerciseId = set.sessionExerciseId,
-                    reps = set.reps,
-                    weightGrams = set.weightGrams,
-                    // An undo puts back the set that was deleted, help included (B7) — and what the row
-                    // said about itself, which is its RPE and comment (N6).
-                    rpeHalves = set.rpeHalves,
-                    note = set.note,
-                    setType = set.setType,
-                    assistanceGrams = set.assistanceGrams,
-                ),
-            )
+            // An undo writes a set, so it takes its turn with logging (B134): without the lock the
+            // restored row can land between a log's two reads and be missed, or announced as beaten.
+            writingASet.withLock {
+                handle(
+                    workoutRepository.logSet(
+                        sessionExerciseId = set.sessionExerciseId,
+                        reps = set.reps,
+                        weightGrams = set.weightGrams,
+                        // An undo puts back the set that was deleted, help included (B7) — and what the row
+                        // said about itself, which is its RPE and comment (N6).
+                        rpeHalves = set.rpeHalves,
+                        note = set.note,
+                        setType = set.setType,
+                        assistanceGrams = set.assistanceGrams,
+                    ),
+                )
+            }
         }
     }
 
