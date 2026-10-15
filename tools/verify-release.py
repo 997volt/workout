@@ -40,12 +40,29 @@ import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-DEFAULT_APK = ROOT / "app/build/outputs/apk/release/app-release.apk"
+# A release machine signs and writes app-release.apk; CI has no keystore and writes only the
+# unsigned fallback, so the version and hash checks have to read either name (B131).
+SIGNED_APK = ROOT / "app/build/outputs/apk/release/app-release.apk"
+UNSIGNED_APK = ROOT / "app/build/outputs/apk/release/app-release-unsigned.apk"
 VERSION_FILE = ROOT / "version.properties"
 KEYSTORE_FILE = ROOT / "keystore.properties"
 
 # Where a released APK is attached (RELEASING.md step 7 names it `workout-<version>.apk`).
 ASSET = "workout-{version}.apk"
+
+
+def default_apk() -> pathlib.Path:
+    """The APK to check when `--apk` is not given (B131).
+
+    Prefer the signed output a release machine writes, and fall back to CI's unsigned one, whose
+    `versionCode`/`versionName` and SHA-256 are readable just the same — only the certificate needs a
+    keystore. With neither present, name the signed one, which is what a release machine forgot.
+    """
+    if SIGNED_APK.is_file():
+        return SIGNED_APK
+    if UNSIGNED_APK.is_file():
+        return UNSIGNED_APK
+    return SIGNED_APK
 
 
 class CheckFailed(Exception):
@@ -219,14 +236,18 @@ def verify_asset(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--apk", default=str(DEFAULT_APK), help="the built release APK")
+    parser.add_argument(
+        "--apk",
+        default=None,
+        help="the built release APK (default: the signed one, else CI's unsigned one)",
+    )
     parser.add_argument(
         "--remote",
         metavar="TAG",
         help="also check the asset published against this tag (needs gh)",
     )
     args = parser.parse_args()
-    apk = pathlib.Path(args.apk)
+    apk = pathlib.Path(args.apk) if args.apk else default_apk()
 
     try:
         properties = read_properties(VERSION_FILE)
@@ -250,23 +271,24 @@ def main() -> int:
         if not signing:
             # CI has no keystore and signs nothing, so the *absence* is not a defect there — but it
             # is on the machine cutting the release, which is where this refuses rather than warns.
-            if "CI" in os.environ:
-                print("certificate not checked: no keystore.properties (CI signs nothing)")
-                print("\nOK: the APK is the version and the file the notes will describe")
-                return 0
-            raise CheckFailed(
-                "keystore.properties is missing, so the certificate cannot be checked "
-                "(see README: Install on your own phone)",
-            )
-        built = apk_certificate(apk, apksigner)
-        expected = keystore_certificate(signing)
-        if built != expected:
-            raise CheckFailed(
-                "the APK is signed with a different key than the keystore — every phone "
-                "would refuse it as an update, and an uninstall would delete the history",
-            )
-        print("certificate matches the keystore")
+            if "CI" not in os.environ:
+                raise CheckFailed(
+                    "keystore.properties is missing, so the certificate cannot be checked "
+                    "(see README: Install on your own phone)",
+                )
+            print("certificate not checked: no keystore.properties (CI signs nothing)")
+        else:
+            built = apk_certificate(apk, apksigner)
+            expected = keystore_certificate(signing)
+            if built != expected:
+                raise CheckFailed(
+                    "the APK is signed with a different key than the keystore — every phone "
+                    "would refuse it as an update, and an uninstall would delete the history",
+                )
+            print("certificate matches the keystore")
 
+        # CI reaches the hash too (B131): the version and the hash are the two things an unsigned
+        # build can still be checked against, and the hash is the number the notes will carry.
         digest = sha256(apk)
         print(f"size        {apk.stat().st_size} bytes")
         print(f"sha256      {digest}")
@@ -285,7 +307,10 @@ def main() -> int:
         print(f"\nFAIL: {failure}", file=sys.stderr)
         return 1
 
-    print("\nOK: the APK is the version, the key and the file the notes will describe")
+    if signing:
+        print("\nOK: the APK is the version, the key and the file the notes will describe")
+    else:
+        print("\nOK: the APK is the version and the file the notes will describe (no keystore)")
     return 0
 
 

@@ -117,6 +117,15 @@ unreleased.
   `LazyColumn` every other screen already has, with the empty sentence as an item of the list rather than a
   sibling above rows that may not exist.
 
+- **The release verifier runs on the APK CI builds** (B131). `tools/verify-release.py` defaulted to the
+  signed `app-release.apk`, but the CI `build` job has no keystore and writes only
+  `app-release-unsigned.apk`, so the step N128 added failed on every run with `no APK at
+  …/app-release.apk` and never reached the version check it exists for. It now prefers the signed output and
+  falls back to the unsigned one: `versionCode`, `versionName` and the SHA-256 are readable on either, and
+  only the certificate needs a keystore. The same pass stopped the CI branch returning before the hash, so
+  an unsigned build is checked for the version **and** the hash the notes carry, with the certificate
+  reported as unchecked.
+
 - **The prose the batches left describing what they removed** (B136). N125 took the next-up rows and the
   read of a program's run with them, but left comments that still describe both: an orphaned KDoc above
   home's `ProgramsPart` promising "each active program's run", and a KDoc on `planEntriesFor` citing
