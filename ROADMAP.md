@@ -1,11 +1,12 @@
 # Workout — Roadmap
 
 > **v2.4** is shipped ([CHANGELOG.md](CHANGELOG.md)), *Later* holds four decided changes (N134–N137), and
-> *Next* holds the **seven defects a reading of the four unversioned batches found (B131–B137)** — the
-> release verifier cannot run on CI's unsigned APK, the changed-lines formatting gate blames a change for a
-> pre-existing import order, a measurement's day is a fixed 86 400 seconds, the undo path sits outside
-> B129's write lock, the restore has two small holes, and the batches left three pieces of prose and one
-> duplicate label behind. Four batches shipped unversioned: measurements (B130,
+> *Next* is **empty** again: the **seven defects a reading of the four unversioned batches found
+> (B131–B137)** are fixed, with their entries in the changelog — the release verifier reads CI's unsigned
+> APK, the formatting gate stops blaming a change for a pre-existing import order, a measurement's day is
+> its local day, the undo path takes the write lock, the restore's two holes are closed, the prose the
+> batches left is corrected, and the picker's two *Chest* entries are separated by a group of their own.
+> Four batches shipped unversioned: measurements (B130,
 > N132, N133), where the list scrolls, a delete is a mode and a deleted entry can be put back unless the day
 > was re-entered; what cutting 2.3 and 2.4 turned up (B128, B129, N128, N129), where the release commit names
 > its files, its checks are one script, every set write is ordered, and a change's layout is checked on the
@@ -35,9 +36,9 @@
 > use on the released 2.3 and the window's soft input mode was the cause. The 1.x store is left on the device
 > by design, and the 1.18 APK is still the way to read it.
 > Checked against the changelog as well as the code: every shipped id has its entry, *Later* holds four
-> (N134–N137) and *Next* the **seven defects below (B131–B137)**, which a line-by-line reading of the
-> unversioned batches — N125–N127, B128/B129/N128/N129, B130/N132/N133, N130 and N131 — found and queued
-> rather than fixed. **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
+> (N134–N137) and *Next* holds nothing. **A line-by-line reading of the unversioned batches — N125–N127,
+> B128/B129/N128/N129, B130/N132/N133, N130 and N131 — found seven defects (B131–B137), and all seven are
+> fixed and recorded in [CHANGELOG.md](CHANGELOG.md).** **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
 > [CHANGELOG.md](CHANGELOG.md).** **Reading the N107 and N111–N121 batch line by line — and running
 > it on a device — found eight
@@ -63,86 +64,13 @@ shipped, with its entry in the changelog: [CHANGELOG.md](CHANGELOG.md) for the c
 
 ## Next
 
-**The seven defects a reading of the four unversioned batches found (B131–B137).** Each is something a
-change left rather than a missing feature, and each is queued here because fixing it is a decision: the
-release check the batch added, the formatting gate added beside it, a day's boundary, a write lock, a
-restore, and the prose and the one label the removals forgot.
-
-- **The release verifier cannot check the APK CI builds** (B131). `tools/verify-release.py` defaults to
-  `app/build/outputs/apk/release/app-release.apk`, the **signed** name. The CI `build` job has no keystore
-  (`keystore.properties` is gitignored and no step writes one), so `assembleRelease` there writes
-  **`app-release-unsigned.apk`** and nothing else — which [tools/build-apk.sh](tools/build-apk.sh),
-  [README.md](README.md) and the script's own KDoc all say. `apk_version` runs **before** the branch that
-  reports the certificate as unchecked on CI, so the step N128 added to
-  [android.yml](.github/workflows/android.yml) fails on every run with `no APK at …/app-release.apk` and
-  never reaches the version check it exists for. Only the certificate genuinely needs a keystore;
-  `versionCode`/`versionName` and the SHA-256 are readable on an unsigned APK. Verified by building the
-  release variant in a keystore-less checkout — the only file under `outputs/apk/release/` was the unsigned
-  one — and running the script there with `CI=true`: exit 1. Fix: fall back to the unsigned name when the
-  signed one is absent, or pass `--apk` from the workflow. Rejected alternative: making CI sign — it holds
-  no key, and the certificate is the release machine's check.
-
-- **The changed-lines gate blames a change for a pre-existing import order** (B132).
-  `tools/format-changed.py` keeps a finding when its **line** is one the diff touched, and detekt's
-  `ImportOrdering` reports at the file's **first import line** rather than at the import that is out of
-  order. `HomeRows.kt` has had `…components.longLabel` before `…components.AppTextButton` since v2.4; the
-  batch adds `import androidx.compose.foundation.clickable` above them, so `tools/format-changed.py --base
-  v2.4` fails with `HomeRows.kt:3:1: ImportOrdering` — a finding the change did not cause, on a line it did.
-  That is exactly what the docstring and [AGENTS.md](AGENTS.md) promise will not happen ("a pre-existing
-  defect on an untouched line is left alone"), and `ImportOrdering` is the finding 150 files already carry,
-  so the promise is what makes the gate usable at all. Fix: either order `HomeRows.kt`'s imports (and say
-  which rules anchor a whole block), or compare the import block rather than the line.
-
-- **A measurement's day is 86 400 seconds, not the local day** (B133).
-  `RoomMeasurementRepository.dayBounds` ends a day at `start.plusSeconds(SECONDS_PER_DAY)`, which is the next
-  local midnight only when the local day is 24 hours long. On a **23-hour** day it runs an hour past, so a
-  save at 00:30 the next day finds and overwrites the previous day's entry; on a **25-hour** day it stops an
-  hour short, so a save at 23:30 misses the day's own row and writes a second — both breaking the rule that a
-  day holds one entry of each kind (N32, N113). `restore`'s collision guard is computed from the same
-  bounds, so the undo can be allowed onto an occupied day or refused on an empty one, and the expression
-  disagrees with `localDay`/`isDailyOn` itself. Every other window in the app ends at
-  `date.plusDays(n).atStartOfDay(zone)`
-  ([RoomProgramRepository.kt](app/src/main/java/com/example/androidapp/data/RoomProgramRepository.kt),
-  [RoomAdherenceRepository.kt](app/src/main/java/com/example/androidapp/data/RoomAdherenceRepository.kt)).
-  Fix: `localDay(zone).plusDays(1).atStartOfDay(zone)`.
-
-- **The undo path is outside B129's write lock** (B134). B129 widened `writingASet` to "every set write",
-  but `ActiveWorkoutViewModel.onUndoDelete` calls `workoutRepository.logSet` without it. A log's comparison
-  is two suspending reads (history, then this session's sets), and the undo is reachable while one is in
-  flight — the snackbar the delete leaves is still on screen. A restored set can land after the second read,
-  so the comparison misses a set the lifter has just put back and can announce a record over it, the false
-  banner B126 and B129 exist to close. The KDoc's ground for omitting it ("they cannot land inside a
-  comparison between its two reads") does not hold: `logSet`'s first suspension **is** the write. Fix: take
-  the lock in `onUndoDelete` too, and give it the interleaving test the edit and delete paths have.
-
-- **The restore has two small holes** (B135). Both in `RoomMeasurementRepository.restore`: its guard
-  (`findLiveWrittenSince`) runs **outside** the `database.withTransaction` that does the write, so a `save`
-  committing between them leaves two live rows for one day and kind — the outcome the guard's sentence
-  exists to prevent; and the sore rows are correlated by `deletedAt = hiddenAt`, the same field the **save**
-  path writes (`softDeleteForMeasurement`), so a save and a delete that share a millisecond — the case
-  `MeasurementDao` already allows for with `createdAt >=` — makes the undo clear both and resurrect the
-  soreness the lifter had replaced. Fix: move the guard inside the transaction, and give the save path a
-  marker the delete cannot collide with.
-
-- **The batch left prose describing what it removed** (B136). Three leftovers reachable from the unversioned
-  changes: an orphaned KDoc above
-  [`ProgramsPart`](app/src/main/java/com/example/androidapp/ui/home/WorkoutsHomeViewModel.kt) still reads
-  "Each active program's run, keyed by program id (ROADMAP P3.9)" although the run read went with the
-  next-up rows; a KDoc on `planEntriesFor` still cites "`todaysPlanFor` and `nextUpFor`", and `nextUpFor`
-  was deleted; and the per-site joint entry's KDoc in
-  [MetricRegistry.kt](app/src/main/java/com/example/androidapp/ui/statistics/MetricRegistry.kt) — with
-  [DECISIONS.md](DECISIONS.md)'s N130 entry — says the workout-level series reads "a session's ratings for
-  the movement the lifter chose", while that series needs no lift and reads every movement's. Fix: delete
-  the two and correct the third; a comment naming a function that is gone is how the next reader learns to
-  distrust the rest.
-
-- **The picker still offers two *Chest* entries its new headings cannot separate** (B137). N130's own
-  evidence records it rather than fixing it: the tape site `Chest` and the soreness muscle `Chest` render
-  the same word, in the same BODY group, so the headings added for *Left knee* do not tell them apart. It is
-  older than N130 and was turned up by N130's analysis, and it is the same question N130 answered — two
-  series sharing a label — left open because the label test compares a label's *source* rather than what a
-  lifter reads. Fix: decide how a tape site and a muscle with one name are told apart (a rename, or a group
-  of their own), and pin it with a test over rendered labels.
+**Nothing.** The seven defects a reading of the four unversioned batches found (B131–B137) are fixed,
+and their entries are in [CHANGELOG.md](CHANGELOG.md): the release verifier reads CI's unsigned APK, the
+changed-lines gate stops blaming a change for a pre-existing import order, a measurement's day is its
+local day, the undo path takes the write lock, the restore's guard and its sore-row correlation are
+closed, the prose the batches left is corrected, and the picker's two *Chest* entries are separated by a
+group of their own. Each stood here first and left for the changelog as it was fixed, which is how this
+section drains.
 
 The four batches that were this section's whole content have shipped: home's plan surface (N125–N127), the
 measurements batch (B130, N132, N133), what cutting 2.3 and 2.4 turned up (B128, B129, N128, N129), and the
@@ -362,7 +290,7 @@ unfound. Two of those four were this file describing itself wrongly.
    that apply to every change are a reference, not a queue, and the two age differently. A
    section here that accumulates rather than drains belongs there.
 
-Everything that has **left** *Next* has shipped — the defects found in use, the workout screen's discard, the
+Everything that has **left** *Next* has its entry in [CHANGELOG.md](CHANGELOG.md) — the defects found in use, the workout screen's discard, the
 workouts tab cut back, repeat-last in History, Settings' data section and rest-timer switch, a rest of
 zero, the planned-set prefill, the program document, the eight defects a review of that batch found and
 closed (B51-B58), the seven requests that were its last queue (N80-N86), the N87–N95 batch, the N96–N102
@@ -384,9 +312,9 @@ tag, and **N125–N127 shipped next** — today's plan as home's only answer, th
 none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds the seven defects this reading found
-(B131–B137) and *Later* four (N134–N137); home's plan surface (N125–N127), the measurements batch (B130,
-N132, N133) and what cutting 2.3 and 2.4 turned up (B128, B129, N128, N129) shipped.** N118
+***Next* holds nothing and *Later* four (N134–N137); the seven defects this reading found (B131–B137),
+home's plan surface (N125–N127), the measurements batch (B130, N132, N133) and what cutting 2.3 and 2.4
+turned up (B128, B129, N128, N129) are all recorded in [CHANGELOG.md](CHANGELOG.md).** N118
 was found by asking what the app now records and never reads back, and N119
 asked the same question of the *plan* — what it prescribes was read only slot by slot, so a week's shape was
 nowhere. Both shipped, along with the three menu entries that reached a thing a row named. The section is filled
