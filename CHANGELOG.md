@@ -153,6 +153,18 @@ unreleased.
 
 ### Fixed
 
+- **A seeded movement is no longer dropped by an id it shares with a family** (B148). The seed declared *Back
+  Extension* twice — once as the machine movement, once as the family over it — and a category and a movement are
+  two **key spaces over one table**: the families are seeded first, and `INSERT OR IGNORE` (the rule that keeps a
+  lifter's own rename) then discarded the movement without a word, so a lift the app ships could never be offered
+  by a picker or named by a logged set. The `parentOf` entry was the tell: it pointed at itself, which no write
+  path can produce. The family takes the `-family` suffix every other colliding name already carries, and
+  `SeedExercisesTest` now asserts the two lists never intersect rather than trusting that the naming kept up. **A
+  database already holding the collision is repaired on open**, inside the seeder's transaction and before the
+  top-up, so the id is freed and the movement can land — guarded on the row still being a category, still called
+  *Back Extension* and still its own parent, because a lifter's rename is exactly what `INSERT OR IGNORE` exists
+  to protect.
+
 - **An activity can be finished with no sets** (B138). N141's one changed rule was not implemented where it is
   enforced: the top bar's *Finish* was gated on a logged set, and an activity holds **no** exercises at all, so
   it stayed disabled for the session's whole life. The only way out was *Discard workout*, which **deletes** the

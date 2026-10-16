@@ -29,6 +29,33 @@ class SeedExercisesTest {
     }
 
     @Test
+    fun noMovementSharesAnIdWithACategory() {
+        // B148, and the two uniqueness tests above are why it happened: each list was clean on its own, and a
+        // category and a movement are two **key spaces over one table**. The categories are seeded first and
+        // `INSERT OR IGNORE` keeps what exists, so a shared slug is not a clash the database reports — it is
+        // the movement being discarded without a word, which is exactly what `back-extension` did until this
+        // assertion existed. A family whose bare name is a movement's says `-family`; this is the check that
+        // the naming kept up.
+        val movements = SeedExercises.all.mapTo(mutableSetOf()) { it.id }
+        val shared = SeedExercises.categories.map { it.id }.filter { it in movements }
+
+        assertWithMessage("a slug in both lists is a seeded movement the database will drop")
+            .that(shared)
+            .isEmpty()
+    }
+
+    @Test
+    fun everyMovementTheSeedFiles_landsUnderACategoryTheSeedAlsoDeclares() {
+        // B148's other half: the collision was visible in `parentOf` as the self-parent no write path can
+        // produce (`requireValidLibraryShape` refuses it), so the map is checked as a shape and not only as a
+        // set of ids. A movement filed under itself reads as a top-level row and takes its family's muscles
+        // with it.
+        assertWithMessage("a movement filed under itself is a link nothing can write")
+            .that(SeedExercises.parentOf.filter { (movement, parent) -> movement == parent })
+            .isEmpty()
+    }
+
+    @Test
     fun noTwoMovementsShareAName() {
         // The picker offers a movement by **name**, so two rows with the same one are two rows a lifter
         // cannot tell apart — and the grouping cannot help there, because the picker is flat. Equipment

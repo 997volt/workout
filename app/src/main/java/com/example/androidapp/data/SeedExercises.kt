@@ -242,7 +242,15 @@ internal object SeedExercises {
         // pattern is `CARRY`.
         SeedCategory("rear-delt", "Rear Delt", MovementPattern.ISOLATION, MuscleGroup.SHOULDERS, listOf(MuscleGroup.UPPER_BACK)),
         SeedCategory("shrug", "Shrug", MovementPattern.ISOLATION, MuscleGroup.UPPER_BACK, listOf(MuscleGroup.FOREARMS)),
-        SeedCategory("back-extension", "Back Extension", MovementPattern.HINGE, MuscleGroup.LOWER_BACK, listOf(MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS)),
+        // B148: a slug in **both** lists is a movement `INSERT OR IGNORE` silently drops, so the family
+        // must not take the movement's bare name. `SeedExercisesTest` asserts they never intersect.
+        SeedCategory(
+            id = "back-extension-family",
+            name = "Back Extension",
+            pattern = MovementPattern.HINGE,
+            primaryMuscle = MuscleGroup.LOWER_BACK,
+            secondaryMuscles = listOf(MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS),
+        ),
         SeedCategory("forearm", "Forearm", MovementPattern.ISOLATION, MuscleGroup.FOREARMS, emptyList()),
         SeedCategory("adductor", "Adductor", MovementPattern.ISOLATION, MuscleGroup.ADDUCTORS, emptyList()),
         SeedCategory("carry", "Carry", MovementPattern.CARRY, MuscleGroup.CORE, listOf(MuscleGroup.FOREARMS, MuscleGroup.UPPER_BACK)),
@@ -289,8 +297,8 @@ internal object SeedExercises {
         "romanian-deadlift" to "deadlift-family",
         "good-morning" to "deadlift-family",
         "kettlebell-swing" to "deadlift-family",
-        "back-extension" to "back-extension",
-        "reverse-hyperextension" to "back-extension",
+        "back-extension" to "back-extension-family",
+        "reverse-hyperextension" to "back-extension-family",
         // Pulling: the vertical pull, the rows, the shrugs.
         "lat-pulldown" to "lat-pulldown-family",
         "pull-up" to "lat-pulldown-family",

@@ -24,7 +24,6 @@ the 1320 JVM tests — which is the finding behind the findings.
 
 | # | Severity | What | Fix |
 | --- | --- | --- | --- |
-| B148 | **high** | A seeded movement and a seeded category share the id `back-extension`, so `INSERT OR IGNORE` keeps the category and silently drops the movement: *Back Extension* can never be offered or logged, and the head reads "1 exercise" where the seed declares two. The `parentOf` entry is the self-parent the write boundary refuses. | Give the key spaces disjoint slugs, repair the row an upgrade already holds, and assert the two lists never intersect. |
 | B149 | **high** | An import restores soft-deleted rows **by id alone**, so it un-hides a row a *save* replaced: two live measurements for one day and kind, or one measurement with quads twice. | Un-hide only what the parent's own delete hid, correlated by the timestamp the delete wrote. |
 | B150 | medium | A backup's open session is imported with `finishedAt` null, so the file decides what the app is currently doing. Import during a workout and two open rows exist, the older unreachable. | Close a restored session at the boundary. |
 | B151 | medium | `save` reads the day's existing entry **before** its transaction, so a save committing in the window leaves two live rows for one day and kind. B135 fixed the mirror half; this half is open. | Move the read inside the transaction. |

@@ -32,6 +32,11 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
 
     db.beginTransaction()
     try {
+        // **The repair runs first, so the corrected seed can use the id it frees** (B148): a 2.6 database
+        // holds the *category* under `back-extension`, and `INSERT OR IGNORE` would keep it there, so the
+        // movement this releases is inserted by the loop below, in this same transaction.
+        repairSeededCategoryCollision(db)
+
         // The families first (ROADMAP N95). A category is a row of the library like any other, so it is
         // seeded by the same statement with the same conflict rule — which is what keeps a lifter's rename
         // or re-file from being undone on the next start.
@@ -89,6 +94,41 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
     } finally {
         db.endTransaction()
     }
+}
+
+/**
+ * Moves the category a 2.6 database filed under a movement's own id (B148).
+ *
+ * The seed declared *Back Extension* twice — once as a movement, once as a family — and because the
+ * families are seeded first and `INSERT OR IGNORE` keeps what exists, the row a database holds under
+ * `back-extension` is the **category**, with a `parentId` pointing at itself. Nothing can be done about
+ * the movement on that file by re-seeding: the id is taken, so the corrected seed still cannot insert it.
+ * The id has to be freed, and the row holding it has to become the family it was meant to be.
+ *
+ * **Guarded, because the row may not be the seed's any more.** A lifter can rename a category and re-file
+ * its children (N95's rule, which `INSERT OR IGNORE` exists to protect), and this runs on every open. The
+ * id is only moved while the row still looks like the seed's: a category, still named *Back Extension*, and
+ * still its own parent — the last being the one field no write path can produce, since
+ * `requireValidLibraryShape` refuses a self-parent. A row a lifter has touched in any other way fails at
+ * least one of those and is left alone.
+ *
+ * The secondary list and the muscles are the seed's own values, so the move does not rewrite them: only the
+ * key and the link that key broke.
+ *
+ * The replacement family arrives from the corrected seed in the same [seedMissingExercises] transaction,
+ * which is why this runs before the inserts rather than after them.
+ */
+internal fun repairSeededCategoryCollision(db: SupportSQLiteDatabase) {
+    db.execSQL(
+        """
+        UPDATE exercises
+        SET id = 'back-extension-family', parentId = NULL
+        WHERE id = 'back-extension'
+          AND name = 'Back Extension'
+          AND rowKind = 'CATEGORY'
+          AND parentId = 'back-extension'
+        """.trimIndent(),
+    )
 }
 
 /** `deletedAt` is omitted so it keeps its NULL default. */

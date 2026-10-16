@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -111,6 +112,89 @@ class ExerciseSeederTest {
             assertEquals(Equipment.CABLE, curl?.equipment)
             assertNull("it states no muscle of its own either", curl?.primaryMuscle)
             assertEquals("curl", curl?.parentId)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun theBackExtensionMovement_isSeededAndFiledUnderItsFamily() = runTest {
+        // B148, on the shape the fix produces: the movement is a movement (so every picker offers it and a
+        // logged set may name it) and it is filed under the family, which is where its muscles come from.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+
+            val movement = dao.findById("back-extension")
+            assertNotNull("the movement the id collision evicted", movement)
+            assertEquals(RowKind.MOVEMENT, movement?.rowKind)
+            assertEquals("back-extension-family", movement?.parentId)
+
+            val family = dao.findById("back-extension-family")
+            assertNotNull("the family the movement is filed under", family)
+            assertEquals(RowKind.CATEGORY, family?.rowKind)
+            assertEquals(MuscleGroup.LOWER_BACK, family?.primaryMuscle)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun aDatabaseHoldingTheCollidedCategory_movesItAsideAndKeepsItsChildren() = runTest {
+        // The upgrade path. A 2.6 file holds the *category* under `back-extension` with a self-parent, and
+        // `INSERT OR IGNORE` would keep it there for ever — so the seeder moves the id aside before it tops
+        // up, and the movement the corrected seed declares can land. The self-parent is planted with raw SQL
+        // on purpose: no write path can produce one (`requireValidLibraryShape` refuses it), and this is the
+        // only faithful reproduction of what 2.6 wrote.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+            val raw = database.openHelper.writableDatabase
+
+            raw.execSQL(
+                "UPDATE exercises SET id = 'back-extension', parentId = 'back-extension' " +
+                    "WHERE id = 'back-extension-family'",
+            )
+            raw.execSQL("DELETE FROM exercises WHERE id = 'back-extension' AND rowKind = 'MOVEMENT'")
+            assertNull("the broken shape is the starting point", dao.findById("back-extension-family"))
+
+            seedMissingExercises(raw, SEEDED_AT + 1_000L)
+
+            val repaired = dao.findById("back-extension-family")
+            assertNotNull("the family kept the row, under the id the seed now declares", repaired)
+            assertEquals(RowKind.CATEGORY, repaired?.rowKind)
+            assertNull("a category sits at the top level", repaired?.parentId)
+
+            val movement = dao.findById("back-extension")
+            assertEquals("and the movement is the row that id now names", RowKind.MOVEMENT, movement?.rowKind)
+            assertNotNull("the family's other child is untouched", dao.findById("reverse-hyperextension"))
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun aCategoryALifterHasRenamed_isNeverMoved() = runTest {
+        // The repair's guard. A rename is exactly what `INSERT OR IGNORE` exists to protect (N95's rule), and
+        // the repair runs on **every** open — so the id may only be moved while the row still looks like the
+        // seed's. The self-parent alone is not enough to identify it: this plants the same broken link under a
+        // name the lifter chose, which is the state a guard reading `parentId` alone would clobber.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+            val raw = database.openHelper.writableDatabase
+
+            raw.execSQL(
+                "UPDATE exercises SET id = 'back-extension', parentId = 'back-extension', " +
+                    "name = 'Lower Back Machine' WHERE id = 'back-extension-family'",
+            )
+
+            seedMissingExercises(raw, SEEDED_AT + 1_000L)
+
+            val renamed = dao.findById("back-extension")
+            assertEquals("the row stays where the lifter left it", "Lower Back Machine", renamed?.name)
+            assertEquals(RowKind.CATEGORY, renamed?.rowKind)
+            assertNull("and a fresh family arrives beside it", dao.findById("back-extension-family"))
         } finally {
             database.close()
         }
