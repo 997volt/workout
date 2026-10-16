@@ -14,7 +14,7 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
-## [Unreleased]
+## [2.6] — 2026-10-16 (versionCode 26)
 
 ### Added
 
