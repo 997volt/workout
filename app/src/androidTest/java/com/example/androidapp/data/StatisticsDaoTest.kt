@@ -3,14 +3,18 @@ package com.example.androidapp.data
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.androidapp.data.local.ExerciseEntity
-import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.SetEntryEntity
+import com.example.androidapp.data.local.TemplateEntity
+import com.example.androidapp.data.local.TemplateExerciseEntity
+import com.example.androidapp.data.local.TemplateSetEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.WorkoutSessionEntity
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -192,6 +196,74 @@ class StatisticsDaoTest {
         createdAt = 0L,
         updatedAt = 0L,
         deletedAt = null,
+    )
+
+    @Test
+    fun onlyTheLivePlansPrescribeATarget() = runTest {
+        // N39: a plan's target is read from the plan's own tables, and three kinds of row there are **not** a
+        // plan the lifter follows — a kept version (N134), a deleted plan, and a set taken out of the plan.
+        // Only SQLite can be asked whether the query says so.
+        val templates = database.templateDao()
+        templates.insertTemplate(template("t-live", "Push day"))
+        templates.insertTemplate(template("t-version", "Push day (kept)", versionOf = "t-live"))
+        templates.insertTemplate(template("t-deleted", "Gone", deletedAt = 5L))
+        listOf("t-live", "t-version", "t-deleted").forEachIndexed { index, templateId ->
+            templates.insertTemplateExercise(plannedExercise("e-$index", templateId))
+            templates.insertTemplateSet(plannedSet("s-$index", "e-$index", weight = 100_000L))
+        }
+        // A heavier set the lifter took out of the live plan: it is not a prescription any more.
+        templates.insertTemplateExercise(plannedExercise("e-removed", "t-live"))
+        templates.insertTemplateSet(plannedSet("s-removed", "e-removed", weight = 140_000L, deletedAt = 7L))
+
+        val targets = dao.observePlanTargets("back-squat").first()
+
+        assertEquals("one live plan, and only it", listOf("t-live"), targets.map { it.templateId })
+        assertEquals("and not the set that was taken out", 100_000L, targets.single().weightGrams)
+    }
+
+    private fun template(
+        id: String,
+        name: String,
+        versionOf: String? = null,
+        deletedAt: Long? = null,
+    ) = TemplateEntity(
+        id = id,
+        name = name,
+        versionOf = versionOf,
+        createdAt = 0L,
+        updatedAt = 0L,
+        deletedAt = deletedAt,
+    )
+
+    private fun plannedExercise(id: String, templateId: String) = TemplateExerciseEntity(
+        id = id,
+        templateId = templateId,
+        exerciseId = "back-squat",
+        position = 0,
+        createdAt = 0L,
+        updatedAt = 0L,
+        deletedAt = null,
+    )
+
+    private fun plannedSet(
+        id: String,
+        templateExerciseId: String,
+        weight: Long?,
+        deletedAt: Long? = null,
+    ) = TemplateSetEntity(
+        id = id,
+        templateExerciseId = templateExerciseId,
+        setIndex = 0,
+        role = SetType.NORMAL,
+        targetWeightGrams = weight,
+        targetAssistanceGrams = null,
+        targetRepsMin = 5,
+        targetRepsMax = 5,
+        targetRepsCurrent = 5,
+        note = null,
+        createdAt = 0L,
+        updatedAt = 0L,
+        deletedAt = deletedAt,
     )
 
     private fun exercise(id: String) = ExerciseEntity(

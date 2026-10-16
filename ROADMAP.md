@@ -51,13 +51,6 @@ non-goal is a line this app does not cross.
 | — | **Play Store listing** | You want distribution beyond `adb install`. Self-install works today, and Play App Signing would change who holds the signing key. |
 | — | **Encryption at rest / app lock** | You start carrying the phone somewhere you would not carry the data. |
 
-### N39 — the plan's target, parked by decision
-
-**The plan's target was scoped out** when the per-metric target was built, so it is parked rather than planned.
-It is a different shape of work: the training plan is not one of the statistics screen's sources, so it means
-making the plan available to a screen that knows nothing about it, plus a rule for a lift that is in two plans
-at once or in none.
-
 ## Explicit non-goals
 
 Permanent, unlike *Parked*: no trigger brings one of these back.

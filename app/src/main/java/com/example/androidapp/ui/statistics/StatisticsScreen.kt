@@ -43,6 +43,7 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.headsOthers
 import com.example.androidapp.domain.model.Exercise
+import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.WeightGoal
@@ -220,7 +221,12 @@ private fun StatisticsBody(
 
         series?.let { series ->
             val entry = MetricRegistry.entryFor(series.key)
-            SeriesChart(series = series, metric = entry, goalPeriods = state.goalPeriods)
+            SeriesChart(
+                series = series,
+                metric = entry,
+                goalPeriods = state.goalPeriods,
+                planTargets = state.planTargets,
+            )
             // Under the chart, and the literal answer to "see everything" — which is also the accessible
             // counterpart to a canvas this app blanks out for screen readers (ROADMAP N36).
             ReadingsSection(series = series, metric = entry)
@@ -492,10 +498,15 @@ private fun ReadingRow(label: String, value: String, testTag: String) {
  * seam is a real one — nothing in the body knows about the picker or the restart.
  */
 @Composable
-private fun SeriesChart(series: MetricSeries, metric: MetricEntry, goalPeriods: List<GoalPeriod>) {
+private fun SeriesChart(
+    series: MetricSeries,
+    metric: MetricEntry,
+    goalPeriods: List<GoalPeriod>,
+    planTargets: List<PlanTarget>,
+) {
     if (series.readings.count { it.value != null } < 2) return
     var period by rememberSaveable { mutableStateOf(DAYS) }
-    val overlay = chartOverlay(series, metric, goalPeriods, period)
+    val overlay = chartOverlay(series, metric, goalPeriods, planTargets, period)
 
     // The chart, the window it is averaged over and the axis in words are one card: they are one
     // reading of one series, and separating the picker from the line it changes would make the
@@ -542,6 +553,22 @@ private fun SeriesChart(series: MetricSeries, metric: MetricEntry, goalPeriods: 
                 modifier = Modifier.testTag(TestTags.Statistics.CHART_MAX),
             )
         }
+
+        // The plans whose targets the chart draws (ROADMAP N39), named: the dashed lines are a prescription
+        // rather than the lifter's own goal, and a chart that left the distinction to a dash pattern would be
+        // asking the reader to know it already.
+        if (overlay.planLevels.isNotEmpty()) {
+            val unit = stringResource(metric.unit.labelRes)
+            val named = overlay.planLevels.map { (plan, level) ->
+                stringResource(R.string.statistics_plan_target, plan, metric.unit.format(level), unit)
+            }
+            Text(
+                text = stringResource(R.string.statistics_plan_targets, named.joinToString(" · ")),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag(TestTags.Statistics.PLAN_TARGETS),
+            )
+        }
     }
 }
 
@@ -556,8 +583,10 @@ private data class ChartOverlay(
     val projected: List<ChartPoint>,
     val mean: List<ChartPoint>,
     val fittedLine: ChartLine?,
-    /** One line per goal period, each across the stretch it applied to (ROADMAP N137). */
+    /** One line per goal period, and one per plan that prescribes the lift (ROADMAP N137, N39). */
     val goals: List<ChartSegment>,
+    /** The plans drawn, named, so the line under the chart can say which is which (ROADMAP N39). */
+    val planLevels: List<Pair<String, Double>>,
     val axis: AxisBounds,
 )
 
@@ -565,6 +594,7 @@ private fun chartOverlay(
     series: MetricSeries,
     metric: MetricEntry,
     goalPeriods: List<GoalPeriod>,
+    planTargets: List<PlanTarget>,
     period: Int,
 ): ChartOverlay {
     val recorded = series.readings.mapNotNull { it.value }
@@ -588,13 +618,17 @@ private fun chartOverlay(
         xByInstant[reading.at]?.let { x -> ChartPoint(x = x, value = reading.value) }
     }
 
-    val goals = goalSegments(series, goalPeriods)
+    // The lifter's own goal and the plans' targets in one list: the chart draws reference lines, and the axis
+    // has to hold all of them for any of them to be visible.
+    val planSegments = planSegments(series, planTargets, metric.key)
+    val goals = goalSegments(series, goalPeriods) + planSegments
 
     return ChartOverlay(
         projected = projected,
         mean = mean,
         fittedLine = fittedLine,
         goals = goals,
+        planLevels = planSegments.mapNotNull { segment -> segment.planName?.let { it to segment.value } },
         axis = axisBounds(
             recorded + listOfNotNull(endAt(0.0), endAt(1.0)),
             fromZero = metric.fromZero,

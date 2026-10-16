@@ -665,6 +665,22 @@ the rule; that one argues it.
   that this feature exists to stop; a direction-only goal draws no line, since it states no weight and a level
   invented from the band would be the end weight N135 refuses to manufacture.
 
+
+- **A plan's target is drawn on a lift's chart, and the plan is named** (N39). A plan already states what it asks
+  for — a weight, an assistance, a rep range and an effort per set — and the chart for a lift now draws it beside
+  what was actually done. **Every live plan that names the lift draws its own line**, each named under the chart,
+  rather than one plan winning: a lift can sit in two plans at once and more than one program may be active, so a
+  rule that picked one would be choosing a prescription the lifter did not — the quiet error this feature exists
+  to avoid. Rejected: the active program's plan, which needs a second rule for two active programs disagreeing,
+  and the newest plan, for which "newest" is not "the one I am following". **Live** means what the Templates list
+  shows: a **kept version** is history rather than a prescription (N134), and a soft-deleted set was taken out of
+  the plan, so neither draws. **Only the level-shaped targets draw** — a weight, an estimated one-rep max from
+  that weight and its rep target, an assistance, an effort — because a rep range has no single level and a total
+  is a sum of a prescription rather than a line in it; inventing one would be the "plausible rather than true"
+  this app keeps refusing. The lifter's **own goal stays a different line**, dotted where a plan's is dashed and
+  told apart by name under the chart, because the two mean different things: what they asked themselves for, and
+  what their plan asks of them.
+
 ## Measurements
 
 - **The measurements list scrolls, and its empty sentence is an item of it** (B130). It was a `Column` with

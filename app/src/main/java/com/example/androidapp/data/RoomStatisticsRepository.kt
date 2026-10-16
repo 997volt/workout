@@ -1,13 +1,16 @@
 package com.example.androidapp.data
 
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.Flow
-import com.example.androidapp.domain.model.WorkoutSummary
-import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.local.toDomain
+import com.example.androidapp.data.local.toPlannedSetTarget
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.PlanTarget
+import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.domain.model.planTargets
 import com.example.androidapp.domain.repository.StatisticsRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,6 +26,9 @@ class RoomStatisticsRepository @Inject constructor(
 
     override fun observeWorkoutSummaries(): Flow<List<WorkoutSummary>> =
         workouts.observeHistory().map { rows -> rows.map { it.toDomain() } }
+
+    override fun observePlanTargets(exerciseId: String): Flow<List<PlanTarget>> =
+        dao.observePlanTargets(exerciseId).map { rows -> planTargets(rows.map { it.toPlannedSetTarget() }) }
 
     override suspend fun countRecordsIn(from: Instant, to: Instant): DataResult<Int> = dataResultOf {
         dao.countRecordsIn(from.toEpochMilli(), to.toEpochMilli())

@@ -1,5 +1,7 @@
 package com.example.androidapp.ui.statistics
 
+import com.example.androidapp.domain.model.PlanTarget
+import com.example.androidapp.domain.model.levelFor
 import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.ChartPoint
 import com.example.androidapp.ui.components.ChartSegment
@@ -56,6 +58,28 @@ internal fun goalSegments(series: MetricSeries, periods: List<GoalPeriod>): List
     } else {
         periods.mapIndexedNotNull { index, period ->
             segmentOf(period, periods.getOrNull(index + 1), first, last, span)
+        }
+    }
+}
+
+/**
+ * The plans' targets as stretches of the chart (ROADMAP N39).
+ *
+ * Across the **whole window**, unlike a goal's line: a prescription has no period — it is what the plan asks
+ * for now — where a goal is bounded by the periods it applied to (N137).
+ *
+ * Empty for any series a plan target does not speak to, which is [levelFor]'s question: a rep range has no
+ * level, and a total is a sum of a prescription rather than a line in it.
+ */
+internal fun planSegments(series: MetricSeries, plans: List<PlanTarget>, key: MetricKey): List<ChartSegment> {
+    val metric = (key as? MetricKey.Exercise)?.metric
+    return if (metric == null || series.readings.size < 2) {
+        emptyList()
+    } else {
+        plans.mapNotNull { plan ->
+            plan.levelFor(metric)?.let { level ->
+                ChartSegment(fromX = 0f, toX = 1f, value = level, planName = plan.templateName)
+            }
         }
     }
 }

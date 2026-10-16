@@ -18,6 +18,16 @@ unreleased.
 
 ### Added
 
+- **A plan's target is drawn on a lift's chart** (N39, the half that was parked). The plan already states a
+  target per set — a weight, an assistance, a rep range, an effort — and the chart for a lift now shows what the
+  plan asks for beside what was actually done. **Every live plan that names the lift draws its own line**, each
+  named under the chart, rather than one plan winning: a lift can be in two plans at once and more than one
+  program may be active, and picking one silently is the quiet error this exists to avoid. The lifter's own goal
+  stays dotted where a plan's target is dashed, and the text under the chart says which plan is which. Only the
+  **level-shaped** targets draw — a weight, an estimated one-rep max from that weight and its rep target, an
+  assistance, an effort — because a rep range has no level and a total is a sum of a prescription rather than a
+  line in it. A kept version is history and a deleted set was taken out of the plan, so neither draws.
+
 - **A weigh-in says whether the rate is on target** (N136). Asked for in use: the sentence already existed —
   *"about 200 kcal a day less than you are eating now"* — but it lived **under a chart in Statistics**, so a
   lifter had to go and look for it. Saving a daily weight now answers it where the weighing happens, as a

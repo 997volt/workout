@@ -1,8 +1,9 @@
 package com.example.androidapp.domain.repository
 
-import kotlinx.coroutines.flow.Flow
-import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.PlanTarget
+import com.example.androidapp.domain.model.WorkoutSummary
+import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 
 /**
@@ -21,6 +22,18 @@ interface StatisticsRepository {
      * SQL: two queries totalling the same rows would be two things to keep in step.
      */
     fun observeWorkoutSummaries(): Flow<List<WorkoutSummary>>
+
+    /**
+     * What the lifter's **plans** prescribe for [exerciseId], one entry per plan that names it (ROADMAP N39).
+     *
+     * On this port rather than `TemplateRepository` for the reason the port exists: it is a question the
+     * Statistics screen asks and no other screen does. The rows come from the plan's own tables, and what a
+     * chart draws of them is [com.example.androidapp.domain.model.levelFor]'s question.
+     *
+     * **Kept versions and deleted rows are not plans**: a version is history (N134) and a soft-deleted set was
+     * removed, so neither is a prescription the chart may draw.
+     */
+    fun observePlanTargets(exerciseId: String): Flow<List<PlanTarget>>
 
     /**
      * Records set between [from] (inclusive) and [to] (exclusive).

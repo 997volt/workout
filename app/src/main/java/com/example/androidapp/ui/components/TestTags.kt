@@ -836,6 +836,14 @@ object TestTags {
         fun goalOutcome(index: Int) = "statistics_goal_outcome_$index"
 
         /**
+         * The line under the chart naming the plans whose targets are drawn on it (ROADMAP N39).
+         *
+         * The canvas cannot be asserted and a screen reader cannot read it, so this is the chart's own account
+         * of which lines are which — the same reason the axis labels exist.
+         */
+        const val PLAN_TARGETS = "statistics_plan_targets"
+
+        /**
          * One group's heading in the picker (ROADMAP N130), by the group's own name.
          *
          * The name rather than the enum, so this file keeps its one dependency direction: tags are read by

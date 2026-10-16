@@ -10,6 +10,7 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseTrendMetric
+import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TrendPoint
@@ -26,12 +27,15 @@ import com.example.androidapp.domain.seriesSubjectIds
 import com.example.androidapp.ui.navigation.Statistics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -93,6 +97,12 @@ data class StatisticsUiState(
      * what became of it (ROADMAP N137).
      */
     val goalPeriods: List<GoalPeriod> = emptyList(),
+    /**
+     * What the lifter's **plans** prescribe for the chosen lift, one entry per plan that names it (N39).
+     *
+     * Empty for a metric that reads no lift: a plan prescribes sets, not a bodyweight.
+     */
+    val planTargets: List<PlanTarget> = emptyList(),
     /**
      * The rate the goal asks for, in the metric's own units per week, or null (ROADMAP N98, N135).
      *
@@ -266,14 +276,35 @@ class StatisticsViewModel @Inject constructor(
         (repositories.statistics.countRecordsIn(from, to) as? DataResult.Success)?.data
     }
 
+    /** The goal that is open and the periods behind it, as one source (ROADMAP N135, N137). */
+    private val goalHistory: Flow<Pair<Map<String, GoalPeriod>, List<GoalPeriod>>> = combine(
+        goals.observeCurrent(),
+        selection.flatMapLatest { chosen -> goals.observePeriods(chosen.metric.id) },
+    ) { current, periods -> current to periods }
+
+    /**
+     * What the plans prescribe for the chosen lift (ROADMAP N39).
+     *
+     * Read only where the metric reads a **lift**: a plan prescribes sets, so there is nothing for a bodyweight
+     * or a tape site to answer. `distinctUntilChanged` on the id so switching between two metrics about the same
+     * lift does not re-query the plan's tables.
+     */
+    private val planTargets: Flow<List<PlanTarget>> = selection
+        .map { it.exerciseId }
+        .distinctUntilChanged()
+        .flatMapLatest { exerciseId ->
+            if (exerciseId == null) flowOf(emptyList()) else repositories.statistics.observePlanTargets(exerciseId)
+        }
+
     val uiState: StateFlow<StatisticsUiState> =
         combine(
             sources,
             exercisePoints,
             records,
-            goals.observeCurrent(),
-            selection.flatMapLatest { chosen -> goals.observePeriods(chosen.metric.id) },
-        ) { sources, points, records, goalPeriods, periods ->
+            goalHistory,
+            planTargets,
+        ) { sources, points, records, goal, plans ->
+            val (goalPeriods, periods) = goal
             val workoutPoints = sources.workoutPoints
             // The period that is **open** for this metric (N137), and the two readings the screen makes of it:
             // the weight goal, with the kind N135 gave it, and the level a chart can draw. A direction-only
@@ -297,6 +328,7 @@ class StatisticsViewModel @Inject constructor(
                     goal = levelGoal,
                     weightGoal = weightGoal,
                     goalPeriods = periods,
+                    planTargets = plans,
                     acceptsHead = sources.acceptsHead,
                 )
             } else {
@@ -331,6 +363,7 @@ class StatisticsViewModel @Inject constructor(
                     goal = levelGoal,
                     weightGoal = weightGoal,
                     goalPeriods = periods,
+                    planTargets = plans,
                     rateTarget = weightGoal?.ratePerWeekGrams(currentWeightGrams ?: 0L),
                     acceptsHead = sources.acceptsHead,
                 )

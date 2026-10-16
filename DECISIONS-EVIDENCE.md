@@ -2112,3 +2112,35 @@ export), which is what let this half be written against rows that already existe
 including the instrumented ones that prove a version-4 store migrates and that a lifter's existing goal arrives
 with an unknown start. The cost was one review round seeing a roadmap row marked half built; the alternative was
 a schema change and a chart rewrite in one commit, where a failure in either leaves the other unreviewable.
+
+## N39
+
+The per-metric target shipped in 1.8 and **the plan's target was scoped out with it** — the roadmap said so out
+loud, and named why: the training plan is not one of the statistics screen's sources, and a lift can be in two
+plans at once or in none. What changed since is that the question got cheaper. N137 turned the chart's single goal
+value into a **list of segments**, each with its own stretch, so drawing a second, differently-sourced line — or
+five of them — needs no new drawing machinery at all; and the per-lift series were settled by N35/N97, so the
+plan's numbers have somewhere to land.
+
+**Which plan is the crux, and the answer is "whichever ones say so".** There is no fact of the matter about a
+lift that two plans both prescribe: the app could pick the active program's plan, or the newest template, and
+either choice is the app deciding what the lifter is following. So every **live** plan that names the lift draws
+its own line and is named under the chart. That is only affordable because of N137's list, and it is the same
+posture the rest of this app takes: state what is known, and let the lifter read it, rather than resolve an
+ambiguity they did not ask to have resolved. The two rejected rules are named in DECISIONS.md with their costs.
+
+**"Live" is a real filter, and it is the trap.** Three kinds of row in the plan tables are not a plan the lifter
+follows: a **kept version** (N134) is what the plan used to be, a soft-deleted set was taken out of it, and a
+soft-deleted plan is gone. A query that read the tables without those predicates would draw a target from a
+version — showing the lifter a prescription they deliberately replaced. The instrumented test asks SQLite for
+exactly that: one live plan, one version of it, one deleted plan and one removed set, and only the live plan's
+line comes back.
+
+**What a line can be, and what it cannot.** A prescription is a set of numbers, and only some are levels: the
+heaviest set's weight, the one-rep max that weight and its rep target estimate, an assistance, and an effort —
+the last converted from the plan's half-points into the points the series averages in, or the line would be drawn
+at double height. Volume and total reps are sums of a prescription rather than a line in it, and muscle feel and
+joint pain are not prescribed at all, so those series draw nothing. The **read** lives on `StatisticsRepository`
+because that port is "the questions the Statistics screen asks that no other screen does", and this is one: the
+plan's tables are joined for a prescription, and the screen's own dependency list did not have to grow by a
+repository for a single query.

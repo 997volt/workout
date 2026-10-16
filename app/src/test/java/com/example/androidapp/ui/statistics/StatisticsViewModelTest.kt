@@ -14,6 +14,7 @@ import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.Side
@@ -569,12 +570,17 @@ private class FakeSettingsRepository(
 private class FakeStatisticsRepository(
     private val sessions: List<WorkoutSummary>,
     private val records: Int?,
+    /** What the plans prescribe, when a test is about that (ROADMAP N39). */
+    private val planTargets: List<PlanTarget> = emptyList(),
 ) : StatisticsRepository {
     /** Whether the count was asked for at all — the distinction the "All" range used to lose. */
     var asked = false
         private set
 
     override fun observeWorkoutSummaries(): Flow<List<WorkoutSummary>> = flowOf(sessions)
+
+    /** The plans' targets (ROADMAP N39): the fake holds none unless a test says so. */
+    override fun observePlanTargets(exerciseId: String): Flow<List<PlanTarget>> = flowOf(planTargets)
 
     override suspend fun countRecordsIn(from: Instant, to: Instant): DataResult<Int> {
         asked = true

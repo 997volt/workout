@@ -2,6 +2,7 @@ package com.example.androidapp.data.local
 
 import androidx.room.Dao
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 
 /**
  * The Statistics screen's own queries (ROADMAP N35).
@@ -69,4 +70,32 @@ interface StatisticsDao {
         """,
     )
     suspend fun countRecordsIn(from: Long, to: Long): Int
+
+    /**
+     * What the live plans prescribe for one lift (ROADMAP N39).
+     *
+     * A flat read of the three plan tables, reduced to one row per plan in `planTargets`: the aggregation is
+     * "the heaviest set *and the reps it is prescribed for*", which is two columns of one row and therefore not
+     * something `GROUP BY` can answer without a second pass.
+     *
+     * Every liveness predicate is here on purpose. A **kept version** is not a plan (N134) — it is what the plan
+     * used to be — and a soft-deleted set was taken out of the plan, so drawing either would show a target the
+     * lifter is not following.
+     */
+    @Query(
+        """
+        SELECT t.id AS templateId, t.name AS templateName,
+               s.targetWeightGrams AS weightGrams,
+               s.targetAssistanceGrams AS assistanceGrams,
+               COALESCE(s.targetRepsCurrent, s.targetRepsMax, s.targetRepsMin) AS reps,
+               e.targetRpeHalves AS rpeHalves
+        FROM templates t
+        JOIN template_exercises e ON e.templateId = t.id
+        JOIN template_sets s ON s.templateExerciseId = e.id
+        WHERE t.deletedAt IS NULL AND t.versionOf IS NULL
+          AND e.deletedAt IS NULL AND s.deletedAt IS NULL
+          AND e.exerciseId = :exerciseId
+        """,
+    )
+    fun observePlanTargets(exerciseId: String): Flow<List<PlanTargetRow>>
 }

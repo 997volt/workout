@@ -62,6 +62,9 @@ fun TrendChart(
     // A neutral annotation rather than a tinted one: the theme's tertiary is close enough to the surface
     // that a reference line drew but could not be seen on a device.
     val referenceColor = MaterialTheme.colorScheme.onSurfaceVariant
+    // Stronger than the goal's muted grey: a plan's target is a prescription rather than a note, and the two
+    // lines must be tellable apart at a glance as well as by the dash (N39).
+    val planColor = MaterialTheme.colorScheme.onSurface
 
     Canvas(modifier = modifier.clearAndSetSemantics { }) {
         val axis = TrendAxis(minValue, maxValue)
@@ -72,6 +75,7 @@ fun TrendChart(
 
         drawReferenceLines(
             referenceColor = referenceColor,
+            planColor = planColor,
             lines = ReferenceLines(
                 average = average,
                 trend = trend,
@@ -162,7 +166,18 @@ data class ChartLine(val start: Double, val end: Double)
  * changing a goal silently re-judged the past. A segment carries where it begins and ends as fractions of the
  * width, so the chart draws what was actually asked for when it was asked for.
  */
-data class ChartSegment(val fromX: Float, val toX: Float, val value: Double)
+data class ChartSegment(
+    val fromX: Float,
+    val toX: Float,
+    val value: Double,
+    /**
+     * The plan this line is the target of, or null when it is the lifter's own goal (ROADMAP N39).
+     *
+     * A chart can carry both, and they mean different things — "what you asked yourself for" and "what your
+     * plan asks you for" — so the two are drawn differently and the plan is named under the chart.
+     */
+    val planName: String? = null,
+)
 
 /** Thinner than the data, because a fitted line is a summary rather than a measurement. */
 private const val REFERENCE_STROKE_PX = 2f
@@ -248,6 +263,7 @@ private fun DrawScope.drawBars(points: List<ChartPoint>, y: (Double) -> Float, c
  */
 private fun DrawScope.drawReferenceLines(
     referenceColor: Color,
+    planColor: Color,
     lines: ReferenceLines,
     y: (Double) -> Float,
 ) {
@@ -279,12 +295,17 @@ private fun DrawScope.drawReferenceLines(
     // summary of them would be the worst kind of quiet error. One line per period, each across its own stretch
     // (N137), so the chart never draws a target over a range it did not apply to.
     goals.forEach { segment ->
+        // A plan's target is **dashed** where the lifter's own goal is **dotted** (N39): two lines that mean
+        // different things must not be drawn the same, and the plan is named under the chart as well.
+        val fromPlan = segment.planName != null
         drawLine(
-            color = color,
+            color = if (fromPlan) planColor else color,
             start = Offset(segment.fromX * size.width, y(segment.value)),
             end = Offset(segment.toX * size.width, y(segment.value)),
             strokeWidth = REFERENCE_STROKE_PX,
-            pathEffect = PathEffect.dashPathEffect(floatArrayOf(GOAL_DOT_PX, GOAL_GAP_PX)),
+            pathEffect = PathEffect.dashPathEffect(
+                if (fromPlan) floatArrayOf(DASH_ON_PX, DASH_OFF_PX) else floatArrayOf(GOAL_DOT_PX, GOAL_GAP_PX),
+            ),
         )
     }
     movingAverage.zipWithNext { from, to ->

@@ -24,6 +24,7 @@ import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.Side
@@ -638,6 +639,44 @@ class StatisticsScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY).assertDoesNotExist()
+    }
+
+    @Test
+    fun aPlansTarget_isDrawn_andNamedUnderTheChart() {
+        // N39: what the plan prescribes beside what the lifter did — a prescription, and named so it is not
+        // read as the goal the lifter typed.
+        setScreen(
+            state = StatisticsUiState(
+                isLoading = false,
+                range = StatisticsRange(RangeKind.LAST_MONTH),
+                series = MetricSeries(
+                    key = MetricKey.Exercise(ExerciseTrendMetric.HEAVIEST_SET),
+                    readings = listOf(
+                        MetricReading(Instant.parse("2026-09-01T08:00:00Z"), 90_000.0),
+                        MetricReading(Instant.parse("2026-09-15T08:00:00Z"), 95_000.0),
+                    ),
+                ),
+                planTargets = listOf(
+                    PlanTarget(
+                        templateId = "t1",
+                        templateName = "Push day",
+                        weightGrams = 100_000L,
+                        reps = 5,
+                        assistanceGrams = null,
+                        rpeHalves = null,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Plans: Push day 100 kg").assertExists()
+    }
+
+    @Test
+    fun withNoPlanPrescribingTheLift_thereIsNoLineUnderTheChart() {
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.PLAN_TARGETS).assertDoesNotExist()
     }
 
     @Test
