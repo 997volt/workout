@@ -1,0 +1,34 @@
+#!/usr/bin/env sh
+# gh wrapper for the workspace-local GitHub CLI.
+#
+# RELEASING.md step 5 and step 7 need a GitHub CLI — dispatching the workflow and
+# checking the asset the release published — and the release machine may have no
+# root, no package manager and no writable $HOME, which is exactly the shape of
+# this checkout. gh is therefore installed into the gitignored .toolchain/gh,
+# beside the JDK and SDK, and reached through this wrapper.
+#
+# A gh already on PATH still wins: this falls back to it rather than shadowing
+# it, so the wrapper is harmless on a machine that has one.
+#
+# Put on PATH by tools/android-env.sh, which prepends tools/bin.
+
+if [ -z "${ANDROID_ENV_ROOT:-}" ]; then
+    _gh_src="${BASH_SOURCE:-$0}"
+    ANDROID_ENV_ROOT=$(CDPATH= cd -- "$(dirname -- "$_gh_src")/../.." 2>/dev/null && pwd)
+fi
+
+_gh_bin="$ANDROID_ENV_ROOT/.toolchain/gh/bin/gh"
+if [ -x "$_gh_bin" ]; then
+    exec "$_gh_bin" "$@"
+fi
+
+# No workspace copy: use one already on PATH, never this wrapper itself.
+_gh_other=$(command -v gh 2>/dev/null || true)
+case "$_gh_other" in
+    "" | "$0" | */tools/bin/gh) ;;
+    *) exec "$_gh_other" "$@" ;;
+esac
+
+echo "gh: not installed — no $_gh_bin, and none on PATH" >&2
+echo "    install gh, or place the binary at .toolchain/gh/bin/gh" >&2
+exit 127
