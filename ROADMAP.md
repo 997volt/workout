@@ -17,10 +17,49 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** This section holds only work a **reading or a use** turns up — a defect found by using the app, a
-question the log or the plan can answer and the screen cannot, a batch's own batch-reading — and it is never
-filled to keep itself full. An empty section is a state, not a gap: a row stands here while it is being done
-and leaves for [CHANGELOG.md](CHANGELOG.md) when it ships, which is how this section drains.
+Five requests from use (N138–N142), in the order they were asked for. Nothing is started: each row states what
+it changes and what is still open, so the work can be picked up without re-deriving it.
+
+- **The row that records the day moves into today** (N138). That row is the last of home's *ways in*
+  (`HomeRows.kt`, `measureTodayRow`), drawn whenever today has no entry — so "record what I did today" sits among
+  the destinations. It belongs **inside today's block, under the planned workout**: it is about the day rather
+  than a place to go, and the two rows that answer "what about today" should read together. Decisions: the
+  *Measurements* destination stays among the ways in (it is how the history is read), and the row keeps its place
+  when the block says nothing is planned — a rest day is exactly when a weigh-in is the day's entry.
+
+- **Home reads as two zones, by colour** (N139). Each row currently carries a colour of its own — Programs teal,
+  Templates sky, Measurements coral, start-empty indigo (`TileAccent`) — which says "four different things" where
+  the screen means two: **the ways in**, and **today**. Everything above today takes the green Programs carries
+  now and everything inside today takes the blue Templates carries now, so the accent says which zone a row is in
+  rather than which feature it belongs to. Decisions: the resume bar and today's own tiles follow the same rule
+  (they are today's), and the colours become two zone constants rather than a per-row choice.
+
+- **A new workout no longer opens into the readiness note** (N140). A new session opens straight into the
+  readiness dialog (`readinessPromptVisible.value = result.data.isNew`), which is the shape N4 chose when the
+  field was otherwise unfindable. It should be **available rather than prompted**: the note's row is always in
+  the header (`ReadinessSection`), and pressing it is the only way the dialog opens. Decisions: `isPrompt` goes
+  when nothing prompts, and the row may need to say more than *Add* now that it is the only way in.
+
+- **An empty workout can be an activity instead** (N141). Under *Add exercise*, while the session is empty, a
+  second row offers **Add activity** with a short list — cycling, running, swimming, rock climbing, volleyball —
+  and the session then takes **no sets**: a comment and the readiness note are all it holds. Larger than it
+  looks:
+
+  - **Where the activity lives.** A `WorkoutSession` with a kind, rather than a record type of its own: the day,
+    the history, the adherence calendar and the export all already read a session, and a second kind of record
+    would be a second path through every one of them. A new column, so **schema 6** and a migration.
+  - **It is not an empty session.** An empty workout is discarded rather than saved today, so an activity that
+    holds no sets is a session that must be **finishable** — the one rule that has to change with it.
+  - **Nothing else can be logged**: no second exercise, no sets, no template or program. What the screen offers is
+    the comment and the readiness note.
+  - **The list is short and closed** ("don't put too many options"), and stored **by name** like every enum.
+    Decisions: an enum rather than free text, and what the statistics do with a session that holds no work — it
+    counts as a trained day and contributes no volume, no reps and no records.
+
+- **An activity is a different colour in the adherence calendar** (N142, and it needs N141). A trained day is
+  drawn `primaryContainer`; an activity day should read as its own thing rather than as a workout that happened
+  to log nothing, because "I trained" and "I went climbing" answer different questions. Decisions: a third day
+  state beside done/skipped/missed rather than a tint of done, and whether the breakdown counts it as trained.
 
 ## Later — decided, and not being started
 
