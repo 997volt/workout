@@ -60,30 +60,24 @@ at once or in none.
 
 ## Explicit non-goals
 
-Permanent, unlike *Parked* above: a parked row becomes possible again the moment its trigger fires, while a
-non-goal is a line this app does not cross. They are of three kinds — a product in its own right that would
-dilute the logging core, a line the hard constraints already draw, and a shape this repository has decided
-against — and each row says which, because a refusal whose reason is lost is the one the next person
-overturns.
+Permanent, unlike *Parked*: no trigger brings one of these back.
 
-| # | Non-goal | Why it is permanent |
-| --- | --- | --- |
-| — | Nutrition / calorie tracking | A product in its own right. The app states the energy implication of a weight trend it already owns (N98) and stores no food and no intake. |
-| P3.7, P5.2 | Social feeds, friends and shared routines | Accounts, servers and moderation would have to be owned, and a feed needs a public. |
-| — | Live GPS route tracking | A different product: this one logs sets, not distance. |
-| — | A web dashboard | Statistics is where the log becomes useful; sending health data to a second place to read your own trend is worse privacy and worse UX, not a division of labour. |
-| P4.1 | Health Connect read/write | A sharing integration. This app stores data for its user, and the export file is the only path off the device. |
-| P4.2 | Foreground service | The app declares no permissions and holds no background work; a rest timer that needs a service to survive is the service's product. |
-| P4.3 | Home-screen widget | A second surface is a second product to keep true. The app is opened and used. |
-| P4.4 | Quick Settings / launcher shortcuts | One entry point is the app; a shortcut is the launcher's job rather than a second way in. |
-| P4.5 | Wear OS companion | It needs `play-services-wearable`, and the no-Google-Play-services line is permanent. |
-| P4.6 | Bluetooth heart-rate straps | That is heart-rate training rather than logging, with a sensor between the lifter and the log. |
-| P4.7 | WorkManager reminders | The app never pursues its user: no notification permission, and nothing that asks to be opened. |
-| P4.8 | Large-screen layouts | One layout, deliberately — a second is a second surface to design, test and hold to the per-screen accessibility rule. |
-| P4.9 | Offline-first sync | It needs a backend and accounts, and the no-`INTERNET` line forbids the first; the largest irreversible commitment this app could make. |
-| P5.3 | Monetization / Play Billing | Play Billing is a Play-services dependency, which the hard constraints forbid. |
-| F6 | Module split into `:core:*` / `:feature:*` | One module is the shape, and the trigger the row named — a second surface such as Wear or a widget — is ruled out above, so the named goal it was waiting to become cannot arrive. |
-| F11b | Product analytics | It buys nothing on a single-user local tool and would breach the no-`INTERNET` line. |
+- Nutrition / calorie tracking
+- Social feeds, friends and shared routines (P3.7, P5.2)
+- A web dashboard
+- Live GPS route tracking
+- Health Connect read/write (P4.1)
+- A foreground service (P4.2)
+- A home-screen widget (P4.3)
+- Quick Settings / launcher shortcuts (P4.4)
+- A Wear OS companion (P4.5)
+- Bluetooth heart-rate straps (P4.6)
+- WorkManager reminders (P4.7)
+- Large-screen layouts (P4.8)
+- Offline-first sync (P4.9)
+- Monetization / Play Billing (P5.3)
+- A module split into `:core:*` / `:feature:*` (F6)
+- Product analytics (F11b)
 
 ## Keeping this true
 
