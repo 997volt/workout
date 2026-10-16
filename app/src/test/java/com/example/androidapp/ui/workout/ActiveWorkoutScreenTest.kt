@@ -24,6 +24,7 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -849,6 +850,32 @@ class ActiveWorkoutScreenTest {
         setScreen(state = state(isFinished = false))
 
         composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ADD_ACTIVITY).assertDoesNotExist()
+    }
+
+    @Test
+    fun anActivity_canBeFinished_withoutASet() {
+        // B138: an activity holds no sets by construction, so a finish control gated on a logged set left
+        // Discard — which **deletes** the session — as its only exit, and the activity never reached the
+        // history or the adherence calendar.
+        setScreen(
+            state = ActiveWorkoutUiState(
+                isLoading = false,
+                sessionId = "s1",
+                exercises = emptyList(),
+                activity = Activity.SWIMMING,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_FINISH).assertIsEnabled()
+    }
+
+    @Test
+    fun anEmptyWorkout_stillCannotBeFinished() {
+        // The half of the rule N141 did **not** change: a workout with nothing logged is discarded, not
+        // finished, so an empty session cannot be closed as a day's training.
+        setScreen(state = ActiveWorkoutUiState(isLoading = false, sessionId = "s1", exercises = emptyList()))
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_FINISH).assertIsNotEnabled()
     }
 
     private fun state(

@@ -226,7 +226,9 @@ fun ActiveWorkoutScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             WorkoutTopBar(
-                canFinish = state.exercises.any { it.sets.isNotEmpty() },
+                // **An activity finishes with no sets** (N141), which is the one rule that changed: it holds
+                // none by construction, so requiring a set would leave it with no way out but Discard.
+                canFinish = state.activity != null || state.exercises.any { it.sets.isNotEmpty() },
                 // **Drawn whenever a session is open, empty or not** (ROADMAP N41, N87 amended): the overflow
                 // is where a lifter looks for the way out, and an empty workout is exactly the one a mistap
                 // leaves open — the state that had no way out but to add a movement first.
@@ -461,7 +463,8 @@ private fun WorkoutTopBar(
             }
         },
         actions = {
-            // Nothing to finish until at least one set is logged.
+            // Nothing to finish until at least one set is logged — or the session is an activity, which
+            // holds none and is finished as what it records (N141).
             AppTextButton(
                 onClick = { commenting = true },
                 enabled = canFinish,
