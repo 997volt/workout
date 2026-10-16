@@ -181,6 +181,12 @@ interface TemplateDao {
     /**
      * The same list with what the plan prescribes for each exercise (ROADMAP N14),
      * which is what a session started from this template seeds onto its rows.
+     *
+     * **The library's own soft delete is joined and filtered here too** (B156), as it is in every sibling
+     * above. Without it a plan naming a removed movement seeded a session row for it, and because the
+     * session's own reads *do* join `exercises` and filter `deletedAt IS NULL`, that row arrived invisible,
+     * unremovable, and counted by the history's exercise total — a movement the lifter had removed coming back
+     * as a phantom.
      */
     @Query(
         """
@@ -188,7 +194,10 @@ interface TemplateDao {
                te.supersetGroup AS supersetGroup,
                te.techniqueNote AS techniqueNote
         FROM template_exercises te
-        WHERE te.templateId = :templateId AND te.deletedAt IS NULL
+        JOIN exercises e ON e.id = te.exerciseId
+        WHERE te.templateId = :templateId
+          AND te.deletedAt IS NULL
+          AND e.deletedAt IS NULL
         ORDER BY te.position ASC
         """,
     )
@@ -298,7 +307,7 @@ interface TemplateDao {
         val owningTemplateId: String,
     )
 
-        /**
+    /**
      * Moves every set of one planned exercise down by [by], making room at the head (ROADMAP B34).
      *
      * One statement rather than a loop: a half-shifted plan is a plan whose order is wrong, and the
@@ -313,7 +322,7 @@ interface TemplateDao {
     )
     suspend fun shiftSetIndexes(templateExerciseId: String, by: Int, at: Long): Int
 
-@Query(
+    @Query(
         """
         SELECT COALESCE(MAX(setIndex), -1) FROM template_sets
         WHERE templateExerciseId = :templateExerciseId AND deletedAt IS NULL

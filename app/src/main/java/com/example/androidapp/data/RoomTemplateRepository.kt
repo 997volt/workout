@@ -1,10 +1,9 @@
 package com.example.androidapp.data
 
-import com.example.androidapp.data.local.SetEntryEntity
-import com.example.androidapp.data.local.SessionExerciseEntity
-import com.example.androidapp.data.local.TemplateDao
 import androidx.room.withTransaction
-import com.example.androidapp.domain.model.Rpe
+import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.SetEntryEntity
+import com.example.androidapp.data.local.TemplateDao
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.TemplateSetEntity
@@ -12,28 +11,29 @@ import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.InvalidInputException
+import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
-import com.example.androidapp.domain.model.TemplateExercise
-import com.example.androidapp.domain.model.WorkoutTemplate
-import com.example.androidapp.domain.Load
+import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.RungRun
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.model.runAt
 import com.example.androidapp.domain.model.rungLoad
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
-import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Room-backed [TemplateRepository] (ROADMAP N3).
@@ -357,8 +357,24 @@ class RoomTemplateRepository @Inject constructor(
         val going = if (index < 0) {
             listOf(templateSetId)
         } else {
+            // **A rung that opens its run takes the run with it** (B152). The run's value lives on its first
+            // row and every later rung stores null, so removing the opener left the survivors with no value to
+            // derive from: the plan read "no load to drop" for sets that had a load a moment earlier, and
+            // re-typing the number did not put the ladder back — the survivor was now rung 1, so it derived
+            // anchor − 1 × value and the plan was quietly re-valued rather than merely blanked. The anchor's
+            // removal already took the whole run for the same reason (`runAt` names every rung whose anchor
+            // this row is), and the run that would be left is the one shape `rungProblem` refuses to author.
+            val run = sets.runAt(index)
+            val opensItsRun = run?.rung == 1
             listOf(templateSetId) +
-                sets.indices.filter { sets.runAt(it)?.anchorIndex == index }.map { sets[it].id }
+                if (opensItsRun && run != null) {
+                    // The rows from here down that carry the same role, which is the run's own definition.
+                    sets.indices
+                        .filter { it >= index && sets[it].role == stored.role }
+                        .map { sets[it].id }
+                } else {
+                    sets.indices.filter { sets.runAt(it)?.anchorIndex == index }.map { sets[it].id }
+                }
         }
         val now = timeSource.nowEpochMillis()
         database.withTransaction {
@@ -420,7 +436,8 @@ class RoomTemplateRepository @Inject constructor(
         }
     }
 
-    override suspend fun setExercisePlan(        templateExerciseId: String,
+    override suspend fun setExercisePlan(
+        templateExerciseId: String,
         restSeconds: Int?,
         techniqueNote: String?,
         targetRpeHalves: Int?,

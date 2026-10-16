@@ -167,14 +167,22 @@ internal fun WorkoutSessionEntity.toDto() = SessionDto(
  * A restored session must not still be "in progress": a session left open in the
  * file would hijack the app on next launch and look like a workout the user never
  * started.
+ *
+ * **A missing end is closed at the start** (B150), not carried through as null. `finishedAt IS NULL` is the
+ * app's whole definition of "the workout in progress" — home offers to resume it and the active screen opens
+ * on it — so a file exported mid-workout, or one left open by a crash (which the app deliberately preserves),
+ * used to decide what this device was doing the moment it was imported. Importing during a workout then wrote
+ * a **second** open row, and because history reads only finished sessions and the active read returns the
+ * newest, the older one became unreachable. Ending it at its own start keeps the record and its day without
+ * claiming the lifter is in it: the session is history, which is the only thing a file can honestly describe.
  */
 internal fun SessionDto.toEntity() = WorkoutSessionEntity(
     id = id,
     startedAt = startedAt,
-    finishedAt = finishedAt,
+    finishedAt = finishedAt ?: startedAt,
     notes = notes,
-    // A restored session must not still be "in progress" (see above): the store's own column keeps
-    // the value, the file does not carry it (N109).
+    // And the rest countdown is not resurrected either: the store's own column keeps the value, the file
+    // does not carry it (N109).
     restEndsAt = null,
     readinessNote = readinessNote,
     zoneOffsetMinutes = zoneOffsetMinutes,

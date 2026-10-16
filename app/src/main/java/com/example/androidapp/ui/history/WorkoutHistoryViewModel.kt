@@ -6,13 +6,15 @@ import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.domain.repository.WorkoutRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import java.time.YearMonth
 import java.time.ZoneId
 import javax.inject.Inject
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 
 /** One month's worth of workouts, newest month first. */
 data class HistoryGroup(
@@ -23,9 +25,22 @@ data class HistoryGroup(
 data class WorkoutHistoryUiState(
     val isLoading: Boolean = true,
     val groups: List<HistoryGroup> = emptyList(),
+    /** The query the list is filtered by (ROADMAP N146), owned here so a rotation does not lose it. */
+    val query: String = "",
+    /** Which kinds of day are shown (ROADMAP N146). */
+    val filter: HistoryFilter = HistoryFilter.ALL,
 ) {
     /** Logged nothing yet, as opposed to "nothing matched a filter" (P1.1a's lesson). */
     val isEmpty: Boolean get() = !isLoading && groups.isEmpty()
+
+    /**
+     * The list is empty *because* of the query or the chip (ROADMAP N146).
+     *
+     * The distinction the whole screen turns on: "you have not trained yet" and "nothing here matches" are
+     * different facts, and a filter that shows the wrong sentence is worse than no filter.
+     */
+    val isFilteredEmpty: Boolean
+        get() = isEmpty && (query.isNotBlank() || filter != HistoryFilter.ALL)
 }
 
 /**
@@ -39,19 +54,39 @@ class WorkoutHistoryViewModel @Inject constructor(
     workoutRepository: WorkoutRepository,
 ) : ViewModel() {
 
-    val uiState: StateFlow<WorkoutHistoryUiState> = workoutRepository.observeHistory()
-        .map { workouts ->
+    /** The query the lifter is typing (ROADMAP N146). */
+    private val query = MutableStateFlow("")
+
+    /** The chip they picked (ROADMAP N146). */
+    private val filter = MutableStateFlow(HistoryFilter.ALL)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<WorkoutHistoryUiState> =
+        combine(workoutRepository.observeHistory(), query, filter) { workouts, typed, picked ->
+            // Each session brings its own zone; this is the fallback for the ones that cannot.
+            val zone = ZoneId.systemDefault()
             WorkoutHistoryUiState(
                 isLoading = false,
-                // Each session brings its own zone; this is the fallback for the ones that cannot.
-                groups = groupByMonth(workouts, ZoneId.systemDefault()),
+                groups = historyGroups(workouts, typed, picked, zone),
+                query = typed,
+                filter = picked,
             )
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-            initialValue = WorkoutHistoryUiState(),
-        )
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                initialValue = WorkoutHistoryUiState(),
+            )
+
+    /** Types a query; empty is every row the chip admits. */
+    fun onQueryChange(value: String) {
+        query.value = value
+    }
+
+    /** Picks a chip. */
+    fun onFilterChange(value: HistoryFilter) {
+        filter.value = value
+    }
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

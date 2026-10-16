@@ -26,7 +26,7 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.model.runAt
-import com.example.androidapp.domain.model.rungWeightAt
+import com.example.androidapp.domain.model.rungLoadAt
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.exerciseWeightUnit
@@ -255,7 +255,7 @@ private fun PlannedSetLines(exercise: TemplateExercise) {
             val number = numbers[index]?.let { "$it. " }.orEmpty()
             number + set.summary(
                 unit = unit,
-                rungWeightGrams = exercise.sets.rungWeightAt(index),
+                rungLoad = exercise.sets.rungLoadAt(index),
                 holdsTheRunValue = exercise.sets.runAt(index)?.rung == 1,
             )
         }.joinToString("\n"),

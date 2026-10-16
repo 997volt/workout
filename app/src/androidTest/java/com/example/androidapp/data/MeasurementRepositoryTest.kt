@@ -13,9 +13,7 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.at
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -24,6 +22,9 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Measurements against a real database (ROADMAP N32, two records since N113).
@@ -294,6 +295,29 @@ class MeasurementRepositoryTest {
             "only what the delete hid comes back, not what the save replaced",
             listOf(SoreMuscle(MuscleGroup.CALVES, 7)),
             frozenClock.observeAll().first().single().soreMuscles,
+        )
+    }
+
+    @Test
+    fun twoSavesOnADayThatArriveTogether_leaveOneEntry() = runTest {
+        // B151. The day's read used to happen **outside** the save's transaction, so two saves racing for the
+        // same day and kind both found nothing, both inserted, and the day held two live entries — which every
+        // read then lists and every chart then plots twice. `find` and `findOnDay` both filter
+        // `deletedAt IS NULL`, so neither is any help against it, and there is no unique index to catch it
+        // either. The read is inside the transaction now, so the pair is one critical section.
+        //
+        // The race is what is being pinned, not the interleaving: with the read outside the transaction the
+        // second save's `find` runs while the first has not committed, which is exactly what launching both
+        // without awaiting does here.
+        val first = async { repository.save(entry(at = localHour(8), weightGrams = 82_000L)) }
+        val second = async { repository.save(entry(at = localHour(8), weightGrams = 83_000L)) }
+        first.await()
+        second.await()
+
+        assertEquals(
+            "one entry of a kind per day, whichever save arrived second",
+            1,
+            repository.observeAll().first().size,
         )
     }
 

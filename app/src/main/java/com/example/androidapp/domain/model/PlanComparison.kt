@@ -96,6 +96,17 @@ data class PlanComparison(
     val performedReps: Int,
     val prescribedTopWeightGrams: Long?,
     val performedTopWeightGrams: Long?,
+    /**
+     * The help the heaviest prescribed working set was given, or null (B153, N144).
+     *
+     * A plan's load is **one** number: `-20` is 20 kg of help and no added weight, and it is stored as
+     * `weightGrams = 0` with `assistanceGrams = 20000`. Reading only the weight half therefore reported an
+     * assisted plan as "at 0 kg" — a weight the plan never prescribed — while the assistance the plan actually
+     * named appeared nowhere. Carried beside the weight so the dialog can state the load the lifter reads.
+     */
+    val prescribedTopAssistanceGrams: Long? = null,
+    /** The same for what was performed, so an assisted set's line can name its help too. */
+    val performedTopAssistanceGrams: Long? = null,
     /** Performed minus prescribed on the heaviest working set, or null if either is unknown. */
     val topSetDeltaGrams: Long?,
     /** The plan's one effort for this exercise, in half-points, or null (ROADMAP N59, N131). */
@@ -174,6 +185,17 @@ private fun comparisonOf(
     val prescribedTop = plannedWork.mapNotNull { it.weightGrams }.maxOrNull()
     val performedTop = performedWork.maxOfOrNull { it.weightGrams }
 
+    // The help that goes with each top set (B153, N144). Read from the plan's own split rather than derived:
+    // `assistanceGrams` is what the editor wrote, and a load is one number carried in two columns.
+    val prescribedTopAssistance = plannedWork
+        .filter { it.weightGrams == prescribedTop }
+        .mapNotNull { it.assistanceGrams }
+        .maxOrNull()
+    val performedTopAssistance = performedWork
+        .filter { it.weightGrams == performedTop }
+        .maxOfOrNull { it.assistanceGrams }
+        .takeIf { it != null && it > 0L }
+
     // B19: the guard belonged to the mapped list. Testing the *input* meant a plan whose working
     // sets name no reps produced an empty sum — a truthy guard and a zero on screen, against the
     // file's own promise that every nullable field is honestly nullable.
@@ -190,6 +212,8 @@ private fun comparisonOf(
         performedReps = performedWork.sumOf { it.reps },
         prescribedTopWeightGrams = prescribedTop,
         performedTopWeightGrams = performedTop,
+        prescribedTopAssistanceGrams = prescribedTopAssistance?.takeIf { it > 0L },
+        performedTopAssistanceGrams = performedTopAssistance,
         topSetDeltaGrams = if (prescribedTop == null || performedTop == null) {
             null
         } else {
@@ -226,4 +250,3 @@ private fun List<PerformedSetSpec>.averageRpeHalves(): Int? {
     if (rated.isEmpty()) return null
     return rated.average().roundToInt()
 }
-

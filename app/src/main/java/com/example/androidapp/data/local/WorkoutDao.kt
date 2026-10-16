@@ -88,7 +88,10 @@ interface WorkoutDao {
                -- Live, and a LEFT JOIN because provenance is optional: a session started by hand has
                -- no template, and one started from a template deleted since keeps its name, because
                -- the template row is a soft delete and is still there (ROADMAP N58, P1.12).
-               t.name AS templateName
+               t.name AS templateName,
+               -- What the day was, when it was not a workout (N141): the history list says *cycling*
+               -- where it would otherwise say nothing, and N146's search reads it.
+               ws.activity AS activity
         FROM workout_sessions ws
         LEFT JOIN templates t ON t.id = ws.templateId
         WHERE ws.finishedAt IS NOT NULL AND ws.deletedAt IS NULL

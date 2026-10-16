@@ -1,13 +1,9 @@
 package com.example.androidapp.data.transfer
 
-import com.example.androidapp.domain.model.MuscleGroup
-import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.Equipment
-import com.example.androidapp.domain.model.Joint
-import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.Side
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.MeasurementEntity
+import com.example.androidapp.data.local.MeasurementSoreMuscleEntity
+import com.example.androidapp.data.local.MetricGoalEntity
 import com.example.androidapp.data.local.ProgramDeloadEntity
 import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSkipEntity
@@ -17,16 +13,20 @@ import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
 import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.SetEntryEntity
+import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.TemplateSetEntity
-import com.example.androidapp.data.local.MetricGoalEntity
-import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.WorkoutSessionEntity
-import java.time.DayOfWeek
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
-import com.example.androidapp.data.local.MeasurementSoreMuscleEntity
-import com.example.androidapp.domain.model.MeasurementKind
+import java.time.DayOfWeek
 
 /**
  * Every column survives a trip through the backup codec.
@@ -229,6 +229,30 @@ class BackupCodecRoundTripTest {
         // The entity's own `restEndsAt` is runtime state the file does not carry (N109), so a restored
         // session never comes back mid-rest; every field the file does carry is asserted for equality.
         assertThat(restored).isEqualTo(entity.copy(restEndsAt = null))
+        assertThat(restored.restEndsAt).isNull()
+    }
+
+    @Test
+    fun anOpenSession_comesBackClosedAtItsOwnStart() {
+        // B150: `finishedAt IS NULL` is the app's whole definition of "the workout in progress", so a file
+        // exported mid-workout — or one left open by a crash, which the app deliberately preserves — used to
+        // decide what the importing device was doing. Ending it at its own start keeps the day and the record
+        // without claiming anybody is in it.
+        val open = WorkoutSessionEntity(
+            id = "s1",
+            startedAt = 1_600_000_000_000L,
+            finishedAt = null,
+            restEndsAt = 1_600_000_000_500L,
+            readinessNote = null,
+            notes = null,
+            deletedAt = null,
+            createdAt = 1_600_000_000_000L,
+            updatedAt = 1_600_000_000_000L,
+        )
+
+        val restored = open.toDto().toEntity()
+
+        assertThat(restored.finishedAt).isEqualTo(1_600_000_000_000L)
         assertThat(restored.restEndsAt).isNull()
     }
 

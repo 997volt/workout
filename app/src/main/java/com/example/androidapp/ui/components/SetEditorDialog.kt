@@ -58,6 +58,16 @@ fun SetEditorDialog(
     initialUnit: WeightUnit = WeightUnit.KILOGRAMS,
     /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
     initialStepGrams: Long? = null,
+    /**
+     * Which roles this position can take, answered by the caller that holds the exercise's rows (N145).
+     *
+     * The dialog used to offer every role everywhere, so Drop and Cluster were one tap away at the first set
+     * of an exercise or under a warm-up — and the write boundary refused the save *after* the dialog had
+     * closed, leaving the refusal to be read in the workout screen's header. The question is
+     * `refusalForLoggingAs`'s, and the caller is the layer that already asks it before offering a role on the
+     * log path; the default offers everything for the previews and tests that have no position to speak of.
+     */
+    offers: (SetType) -> Boolean = { true },
 ) {
     var draft by remember {
         mutableStateOf(
@@ -87,6 +97,7 @@ fun SetEditorDialog(
                 onDraftChange = { draft = it },
                 unit = initialUnit,
                 stepGrams = initialStepGrams,
+                offers = offers,
             )
         },
         confirmButton = {
@@ -121,9 +132,18 @@ private fun SetEditingFields(
     onDraftChange: (SetEntryDraft) -> Unit,
     unit: WeightUnit,
     stepGrams: Long?,
+    offers: (SetType) -> Boolean,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SetRoleSelector(role = draft.setType, onSelect = { onDraftChange(draft.copy(setType = it)) })
+        // **The same gate the log path applies** (N145). This picker offered Drop and Cluster at every
+        // position while the log path's did not, so a role the write boundary refuses was one tap away and the
+        // refusal arrived after the dialog had already closed. The armed role stays listed either way
+        // (`SetRoleSelector` guarantees that), so a set that already is a rung still reads as one.
+        SetRoleSelector(
+            role = draft.setType,
+            onSelect = { onDraftChange(draft.copy(setType = it)) },
+            offers = offers,
+        )
         SetEntryNumbers(
             draft = draft,
             onDraftChange = onDraftChange,

@@ -1,12 +1,12 @@
 package com.example.androidapp.ui.workout
 
-import com.example.androidapp.domain.model.SetEntry
-import com.example.androidapp.domain.model.rungWeightAt
-import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.rungLoadAt
 
 /**
  * The values the next set is shown with, before the lifter changes anything (ROADMAP N59).
@@ -141,11 +141,68 @@ fun suggestionForNextSet(
  * this side answers the picker, and both read `recordsEffort` as the one rule that says what an anchor
  * is. A role that is not a rung is always available: it is what the set is when it is not a member.
  */
-internal fun List<SetRow>.canLogAs(role: SetType): Boolean {
-    if (!role.isRung) return true
+internal fun List<SetRow>.canLogAs(role: SetType): Boolean = refusalForLoggingAs(role) == null
+
+/**
+ * Why this role cannot be logged here, or null when it can (N145).
+ *
+ * The rule is one sentence, but it is not one *fault*: the set above may be missing entirely, may be a warm-up,
+ * or may already be a rung of the other kind — and the boundary used to answer all three with "A drop set
+ * follows the set above it", which tells the lifter what a drop set is rather than what is wrong with the place
+ * they tapped. The three are told apart here so the boundary can say which one it is.
+ *
+ * File-level and pure, like [canLogAs], because it is a question about rows: the session's list answers it, and
+ * `RoomWorkoutRepository` asks the same one of the same rows.
+ */
+internal fun List<SetRow>.refusalForLoggingAs(role: SetType): RungRefusal? {
     var start = size
     while (start > 0 && this[start - 1].setType == role) start--
-    return getOrNull(start - 1)?.setType?.recordsEffort == true
+    val above = getOrNull(start - 1)
+    return when {
+        !role.isRung -> null
+        above == null -> RungRefusal.NothingAbove
+        above.setType.recordsEffort -> null
+        above.setType.isRung -> RungRefusal.ARungAbove
+        else -> RungRefusal.OnlyAWarmUp
+    }
+}
+
+/**
+ * Why a rung cannot go where it was asked for (N145).
+ *
+ * Three causes, three sentences: a lifter who is told *which* one it is can act on it — move the set, change the
+ * role above, or log the working set first — where being told the rule again leaves them to work it out.
+ */
+internal enum class RungRefusal {
+    /** The set is the exercise's first, so there is nothing to hang a run off. */
+    NothingAbove,
+
+    /** The set above is a warm-up, which no run reads an anchor from (B63). */
+    OnlyAWarmUp,
+
+    /** The set above is a rung of the other kind, and a run's anchor has to stand on its own. */
+    ARungAbove,
+}
+
+/**
+ * The sentence a refusal is reported with (N145).
+ *
+ * Built here rather than read from a resource because the write boundary is a repository and has no
+ * `Context` — the same reason every other message it throws is a string. The label follows the role the lifter
+ * asked for, which is the one thing the sentence has to name.
+ */
+internal fun RungRefusal.sentence(role: SetType): String {
+    val name = role.label.lowercase()
+    return when (this) {
+        RungRefusal.NothingAbove ->
+            "A $name set needs a working set above it, and this is the exercise's first set."
+
+        RungRefusal.OnlyAWarmUp ->
+            "A $name set needs a working set above it, and the set above this one is a warm-up."
+
+        RungRefusal.ARungAbove ->
+            "A $name set needs a working set above it, and the set above this one is another kind of rung."
+    }
 }
 
 /**
@@ -177,10 +234,16 @@ fun plannedTargetFor(
     // A rung carries no targets of its own (ROADMAP N79): its load is derived, and its reps are the
     // caller's business — the same set's last performance — so both are answered as absent here.
     return if (set.role.isRung) {
+        // **Both halves of the derived load** (B153): a cluster rung repeats the anchor's load assistance
+        // included, so handing on only its weight read a machine-assisted anchor as a stated 0 kg —
+        // `plannedLoadFor` reads a non-null 0 as *the plan said 0*, so the 20 kg the machine was giving never
+        // reached the field and the set was logged as bodyweight. A drop rung is unchanged: its ladder exists
+        // only on an anchor with added weight, so it still derives a weight and no assistance.
+        val derived = sets.rungLoadAt(index, anchorLoad)
         PlannedTarget(
             reps = null,
-            weightGrams = sets.rungWeightAt(index, anchorLoad),
-            assistanceGrams = null,
+            weightGrams = derived?.weightGrams,
+            assistanceGrams = derived?.assistanceGrams,
             role = set.role,
             rpeHalves = null,
         )

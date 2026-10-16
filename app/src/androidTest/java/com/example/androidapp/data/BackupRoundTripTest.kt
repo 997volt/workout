@@ -223,6 +223,100 @@ class BackupRoundTripTest {
     }
 
     @Test
+    fun importingAfterAsaveReplacedTheSoreList_doesNotBringTheOldRowsBack() = runTest {
+        // B149. A hidden child row has two possible causes and `softDeletedIds` cannot tell them apart: the
+        // entry was **deleted**, or its list was **replaced** by a save. An import that restored by id alone
+        // read the second as the first, so editing an entry's soreness and then importing gave the entry two
+        // live rows for one muscle — "quads 8" and "quads 6" both true, which is the state the editor's own
+        // rule forbids. The entry itself never moves here, which is why the delete path's test above did not
+        // catch it.
+        val measurements = RoomMeasurementRepository(database, clock)
+        measurements.save(
+            BodyMeasurement(
+                id = "",
+                measuredAt = Instant.parse("2026-09-28T08:00:00Z"),
+                kind = MeasurementKind.DAILY,
+                weightGrams = 82_000L,
+                soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 8)),
+            ),
+        )
+        val json = exportedJson()
+        val id = measurements.observeAll().first().single().id
+
+        // The correction: the same entry, same id, a different sore list. The save replaces the list.
+        measurements.save(
+            BodyMeasurement(
+                id = id,
+                measuredAt = Instant.parse("2026-09-28T08:00:00Z"),
+                kind = MeasurementKind.DAILY,
+                weightGrams = 82_000L,
+                soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 6)),
+            ),
+        )
+
+        repository.import(json)
+
+        assertEquals(
+            "the replaced list is what stands: one row per site, and the newer score",
+            listOf(SoreMuscle(MuscleGroup.QUADS, 6)),
+            measurements.observeAll().first().single().soreMuscles,
+        )
+    }
+
+    @Test
+    fun importingAfterDeletingAWorkout_bringsBackItsSoreAndJointRows() = runTest {
+        // The other side of B149's rule, pinned so the fix cannot become "never restore a child": when the
+        // **parent** is the row that was deleted, its children come back with it, because the file's copy of
+        // the parent is live too.
+        seedAWorkout()
+        val sessionId = database.backupDao().allSessions().single().id
+        val sessionExerciseId = database.backupDao().allSessionExercises().single().id
+        database.sessionSoreMuscleDao().insertAll(
+            listOf(
+                SessionSoreMuscleEntity(
+                    id = "sore-1",
+                    sessionId = sessionId,
+                    muscle = MuscleGroup.QUADS,
+                    score = 7,
+                    position = 0,
+                    createdAt = 1_000L,
+                    updatedAt = 1_000L,
+                    deletedAt = null,
+                ),
+            ),
+        )
+        database.sessionExerciseJointDao().insertAll(
+            listOf(
+                SessionExerciseJointEntity(
+                    id = "joint-1",
+                    sessionExerciseId = sessionExerciseId,
+                    joint = Joint.KNEE,
+                    side = Side.LEFT,
+                    score = 4,
+                    position = 0,
+                    createdAt = 1_000L,
+                    updatedAt = 1_000L,
+                    deletedAt = null,
+                ),
+            ),
+        )
+        val json = exportedJson()
+
+        workouts.deleteSession(sessionId)
+        assertTrue(
+            "the delete hides the children too",
+            database.sessionSoreMuscleDao().allForBackup().all { it.deletedAt != null },
+        )
+
+        repository.import(json)
+
+        val sore = database.sessionSoreMuscleDao().allForBackup().single()
+        val joint = database.sessionExerciseJointDao().allForBackup().single()
+        assertNull("the workout's soreness comes back with the workout", sore.deletedAt)
+        assertNull("and so do its joints", joint.deletedAt)
+    }
+
+    @Test
     fun importing_doesNotOverwriteARowThatIsStillLive() = runTest {
         // The other half of "bring back what is gone; never overwrite what is
         // there": a local edit may be newer than the file, and clobbering it would

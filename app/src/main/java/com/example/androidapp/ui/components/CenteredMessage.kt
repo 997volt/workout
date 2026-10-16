@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -43,6 +44,14 @@ fun CenteredMessage(
      * component that cannot do what its callers do is a component they stop using.
      */
     showSpinner: Boolean = false,
+    /**
+     * One control under the message, or nothing.
+     *
+     * Extracted at its second caller: a search that matched nothing has to offer the way back to everything
+     * (N146), and the same slot is what a future "add your first exercise" would use. A component that cannot
+     * do what its callers do is a component they stop using.
+     */
+    action: (@Composable () -> Unit)? = null,
 ) {
     Column(
         modifier = modifier.fillMaxSize().padding(24.dp),
@@ -60,6 +69,9 @@ fun CenteredMessage(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp),
             )
+        }
+        action?.let {
+            Box(modifier = Modifier.padding(top = 8.dp)) { it() }
         }
     }
 }

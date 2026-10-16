@@ -1,5 +1,7 @@
 package com.example.androidapp.ui.programs
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
@@ -7,14 +9,15 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.platform.DocumentIo
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class ProgramsUiState(
     val isLoading: Boolean = true,
@@ -33,9 +36,38 @@ data class ProgramsUiState(
 @HiltViewModel
 class ProgramsViewModel @Inject constructor(
     private val repository: ProgramRepository,
+    private val documentIo: DocumentIo,
 ) : ViewModel() {
 
     private val error = MutableStateFlow<DataError?>(null)
+
+    private val _imported = MutableStateFlow<DataResult<ProgramImportSummary>?>(null)
+
+    /**
+     * The last document merge, or null while there is nothing to report (B159).
+     *
+     * The transfer runs in [viewModelScope] rather than the composition's, so a rotation cannot cancel it
+     * between the picker creating the document and the read finishing — the failure the backup's own transfer
+     * had, and this is the same shape.
+     */
+    val imported: StateFlow<DataResult<ProgramImportSummary>?> = _imported
+
+    /** Reads the picked document and merges it, reporting through [imported]. */
+    fun readDocument(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            val text = documentIo.read(context, uri)
+            _imported.value = if (text == null) {
+                DataResult.Failure(DataError.Storage(IllegalStateException("the file could not be read")))
+            } else {
+                importDocument(text)
+            }
+        }
+    }
+
+    /** The merge has been reported, so it is not reported twice. */
+    fun onImportShown() {
+        _imported.value = null
+    }
 
     /** Emits the id of a just-created program, so the list can open its editor. */
     private val _created = MutableStateFlow<String?>(null)

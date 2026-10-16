@@ -1,5 +1,7 @@
 package com.example.androidapp.ui.programs
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,21 +14,22 @@ import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.platform.DocumentIo
 import com.example.androidapp.ui.navigation.ProgramEditor
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.DayOfWeek
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import javax.inject.Inject
 
 /**
  * What one slot's template prescribes, as the preview shows it (ROADMAP N72).
@@ -78,6 +81,7 @@ data class ProgramEditorUiState(
 class ProgramEditorViewModel @Inject constructor(
     private val repository: ProgramRepository,
     private val templateRepository: TemplateRepository,
+    private val documentIo: DocumentIo,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -164,6 +168,37 @@ class ProgramEditorViewModel @Inject constructor(
      * composable, which holds the `Uri`, and the screen words the result.
      */
     suspend fun exportDocument(): DataResult<String> = repository.exportProgramDocument(programId)
+
+    private val _exported = MutableStateFlow<DataResult<Unit>?>(null)
+
+    /**
+     * The last document write, or null while there is nothing to report (B159).
+     *
+     * In [viewModelScope], not the composition's: the picker has already created the file by the time this
+     * runs, so a cancelled scope leaves an empty document and no message — which is exactly what a rotation
+     * did before.
+     */
+    val exported: StateFlow<DataResult<Unit>?> = _exported
+
+    /** Writes this program to the picked document, reporting through [exported]. */
+    fun writeDocument(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            _exported.value = when (val produced = exportDocument()) {
+                is DataResult.Success -> if (documentIo.write(context, uri, produced.data)) {
+                    DataResult.Success(Unit)
+                } else {
+                    DataResult.Failure(DataError.Storage(IllegalStateException("the file could not be written")))
+                }
+
+                is DataResult.Failure -> produced
+            }
+        }
+    }
+
+    /** The write has been reported, so it is not reported twice. */
+    fun onExportShown() {
+        _exported.value = null
+    }
 
     /**
      * Starts or stops following this program (P3.3, amended by P3.12).

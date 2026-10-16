@@ -38,6 +38,15 @@ interface StatisticsDao {
      * bodyweight set has no weight to compare, so it is excluded by the same `weightGrams > 0` the domain
      * rule uses rather than being counted as one. `reps > 0` matches `PersonalRecords.from`, which drops a
      * set with no reps; only a restored backup file can produce one, since every write path clamps.
+     *
+     * **The roles whose effort counts come from the caller, not from a literal here** (B155). This predicate
+     * named `'WARMUP'` alone, so a DROP or CLUSTER rung — which the domain rule refuses
+     * (`SetType.recordsEffort`) and the live announce never mentions — was counted as a record the lifter was
+     * never told about, and, on the other side of the `NOT EXISTS`, blocked a later honest set from a count
+     * that would have been announced. A rung's stored weight really is positive (it is the anchor's load less
+     * the run's value), so the query genuinely matched it. Passing
+     * `SetType.entries.filter { it.recordsEffort }` keeps one rule with one home: the SQL cannot drift from
+     * the enum again.
      */
     @Query(
         """
@@ -46,7 +55,7 @@ interface StatisticsDao {
         JOIN workout_sessions ws ON ws.id = se.sessionId
         WHERE s.deletedAt IS NULL AND se.deletedAt IS NULL AND ws.deletedAt IS NULL
           AND ws.finishedAt IS NOT NULL
-          AND s.setType <> 'WARMUP' AND s.weightGrams > 0 AND s.reps > 0
+          AND s.setType IN (:recordableRoles) AND s.weightGrams > 0 AND s.reps > 0
           AND ws.startedAt >= :from AND ws.startedAt < :to
           AND NOT EXISTS (
               SELECT 1 FROM set_entries earlier
@@ -56,7 +65,7 @@ interface StatisticsDao {
                 AND earlier.reps = s.reps
                 AND earlier.deletedAt IS NULL AND ese.deletedAt IS NULL AND ews.deletedAt IS NULL
                 AND ews.finishedAt IS NOT NULL
-                AND earlier.setType <> 'WARMUP' AND earlier.weightGrams >= s.weightGrams
+                AND earlier.setType IN (:recordableRoles) AND earlier.weightGrams >= s.weightGrams
                 AND (
                     ews.startedAt < ws.startedAt
                     OR (ews.startedAt = ws.startedAt AND ese.position < se.position)
@@ -69,7 +78,7 @@ interface StatisticsDao {
           )
         """,
     )
-    suspend fun countRecordsIn(from: Long, to: Long): Int
+    suspend fun countRecordsIn(from: Long, to: Long, recordableRoles: List<String>): Int
 
     /**
      * What the live plans prescribe for the lifts in [exerciseIds] (ROADMAP N39, B143).

@@ -5,18 +5,19 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
-import java.time.Instant
-import java.time.YearMonth
-import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
+import java.time.YearMonth
+import java.time.ZoneOffset
 
 /**
  * The history list (ROADMAP N48).
@@ -35,6 +36,9 @@ class WorkoutHistoryScreenTest {
     private var opened: String? = null
     private var repeated: String? = null
 
+    private var typed: String? = null
+    private var picked: HistoryFilter? = null
+
     private fun show(state: WorkoutHistoryUiState) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -42,10 +46,59 @@ class WorkoutHistoryScreenTest {
                     state = state,
                     onOpenWorkout = { opened = it },
                     onRepeatWorkout = { repeated = it },
+                    onQueryChange = { typed = it },
+                    onFilterChange = { picked = it },
                     onBack = {},
                 )
             }
         }
+    }
+
+    @Test
+    fun theSearchField_reportsWhatWasTyped() {
+        // N146. The field is the screen's, the query is the ViewModel's — so what is asserted here is the wire
+        // between them rather than the filtering, which `HistorySearchTest` covers as a rule.
+        show(stateWith(summary("session-1", repeatable = 1)))
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_SEARCH_FIELD)
+            .assertIsDisplayed()
+            .performTextInput("push")
+
+        assertEquals("push", typed)
+    }
+
+    @Test
+    fun theChips_reportWhichFilterWasPicked() {
+        // The three chips are one value, so each is asserted to send its own: a chip that sent `ALL` for
+        // everything would look right and filter nothing.
+        show(stateWith(summary("session-1", repeatable = 1)))
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_FILTER_ACTIVITIES).performClick()
+        assertEquals(HistoryFilter.ACTIVITIES, picked)
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_FILTER_WORKOUTS).performClick()
+        assertEquals(HistoryFilter.WORKOUTS, picked)
+    }
+
+    @Test
+    fun anEmptyFilteredList_saysNothingMatched_andOffersTheWayBack() {
+        // The distinction the screen turns on (N146): "you have not trained yet" and "nothing here matches" are
+        // different facts, and the second one has to offer the way out — otherwise the filter is a trap with no
+        // visible cause.
+        show(
+            WorkoutHistoryUiState(
+                isLoading = false,
+                groups = emptyList(),
+                query = "nothing like this",
+                filter = HistoryFilter.ALL,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_NO_MATCH).assertIsDisplayed()
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_FILTER_ALL).performClick()
+        assertEquals("", typed)
+        assertEquals(HistoryFilter.ALL, picked)
     }
 
     @Test

@@ -196,6 +196,7 @@ data class TemplateSetDraft(
                 (repsMaxText.isBlank() || (max != null && max >= 1)) &&
                 !(min != null && max != null && min > max)
         }
+
     /**
      * A drop that opens its run has to name the value it takes off (ROADMAP N79): without it there is
      * no ladder to load, and the write boundary refuses the row for the same reason.
@@ -250,15 +251,21 @@ data class TemplateSetDraft(
 @Composable
 internal fun TemplateSet.summary(
     unit: WeightUnit,
-    /** What a rung loads, derived from its anchor (ROADMAP N79); null for a set of its own. */
-    rungWeightGrams: Long? = null,
+    /**
+     * What a rung loads, derived from its anchor (ROADMAP N79); null for a set of its own.
+     *
+     * The whole [Load] rather than its weight (B153): a cluster rung repeats the anchor exactly, so a family
+     * whose anchor is machine-assisted derives *assistance* and no added weight — passing only grams made that
+     * read as "0 kg" where the plan gives 20 kg of help.
+     */
+    rungLoad: Load? = null,
     /** True on the rung that holds the run's value, so the line names what the run takes off (N79). */
     holdsTheRunValue: Boolean = false,
 ): String {
     // The plan's target RPE is the exercise's one number (N59) and is drawn in the exercise block, so
     // a set's own line states only what belongs to the set.
     return listOfNotNull(
-        weightLine(unit, rungWeightGrams),
+        weightLine(unit, rungLoad),
         dropValueLine(unit, holdsTheRunValue),
         repsLine(),
         note,
@@ -451,9 +458,13 @@ private fun NoteField(
  * no reason reads as a bug rather than as something to fill in.
  */
 @Composable
-private fun TemplateSet.weightLine(unit: WeightUnit, rungWeightGrams: Long?): String? = when {
-    role.isRung -> rungWeightGrams?.let {
-        stringResource(R.string.template_set_weight_value, Weight.format(it, unit), unit.label())
+private fun TemplateSet.weightLine(unit: WeightUnit, rungLoad: Load?): String? = when {
+    role.isRung -> rungLoad?.let {
+        stringResource(
+            R.string.template_set_weight_value,
+            Weight.display(it.weightGrams, it.assistanceGrams, unit),
+            unit.label(),
+        )
     } ?: stringResource(R.string.template_set_rung_no_load)
 
     targetWeightGrams != null || targetAssistanceGrams != null -> stringResource(

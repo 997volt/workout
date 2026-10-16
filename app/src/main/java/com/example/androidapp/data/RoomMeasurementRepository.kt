@@ -5,26 +5,26 @@ import com.example.androidapp.data.local.MeasurementEntity
 import com.example.androidapp.data.local.MeasurementSoreMuscleEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
-import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
+import com.example.androidapp.domain.model.TenPointScale
 import com.example.androidapp.domain.model.localDayBounds
+import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.MeasurementRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import java.time.Instant
 import java.time.ZoneId
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import com.example.androidapp.domain.InvalidInputException
-import com.example.androidapp.domain.model.TenPointScale
 
 /**
  * Measurements in Room (ROADMAP N32, two records since N113).
@@ -84,25 +84,33 @@ class RoomMeasurementRepository @Inject constructor(
                 "A sore-muscle score must be between ${TenPointScale.MIN} and ${TenPointScale.MAX}.",
             )
         }
-        val now = nextWriteAt()
         // One entry of each kind for a day, so a tape entry edits its own row rather than the one the
         // scale wrote (N113). The day is the local one, not a fixed span (N32, B133).
         val (dayStart, dayEnd) = measurement.measuredAt.localDayBounds(ZoneId.systemDefault())
-        val existing = dao.find(measurement.id)
-            ?: dao.findOnDay(
-                from = dayStart,
-                to = dayEnd,
-                kind = measurement.kind.name,
-            )
-        val row = measurement.toEntity(
-            // An existing row keeps its identity: an edit is an edit, not a replacement.
-            id = existing?.id ?: measurement.id.ifBlank { UUID.randomUUID().toString() },
-            createdAt = existing?.createdAt ?: now,
-            now = now,
-        )
         // The entry and its sore list are one save: a failure between them would leave a daily record
         // whose soreness is a previous save's.
         database.withTransaction {
+            // The timestamp is taken here, with the row it stamps, so `createdAt` is the write's moment
+            // rather than the request's.
+            val now = nextWriteAt()
+            // **The day's read is inside the transaction too** (B151), like the guard the undo applies
+            // (`restore` reads `findLiveWrittenSince` in here for the same reason). Outside it, a save
+            // committing between this read and this write was invisible to both: the second one found no
+            // existing row, inserted under a fresh id, and the day held two live entries — which every read
+            // then lists and every chart then plots twice. `find` and `findOnDay` both filter
+            // `deletedAt IS NULL`, so neither is any help against it.
+            val existing = dao.find(measurement.id)
+                ?: dao.findOnDay(
+                    from = dayStart,
+                    to = dayEnd,
+                    kind = measurement.kind.name,
+                )
+            val row = measurement.toEntity(
+                // An existing row keeps its identity: an edit is an edit, not a replacement.
+                id = existing?.id ?: measurement.id.ifBlank { UUID.randomUUID().toString() },
+                createdAt = existing?.createdAt ?: now,
+                now = now,
+            )
             if (existing == null) {
                 dao.insert(row)
             } else if (dao.update(row) == 0) {

@@ -1,10 +1,8 @@
 package com.example.androidapp.ui.workout
 
-import com.example.androidapp.domain.model.Activity
-import com.example.androidapp.domain.model.PersonalRecordMoment
-import com.example.androidapp.domain.Weight
-import com.example.androidapp.ui.components.CenteredMessage
-import com.example.androidapp.domain.model.SetType
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,30 +24,27 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
-import android.media.AudioManager
-import android.media.ToneGenerator
-import android.view.HapticFeedbackConstants
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -60,20 +55,25 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.RestTimer
-import com.example.androidapp.ui.components.SetEdit
-import com.example.androidapp.ui.components.exerciseWeightUnit
-import com.example.androidapp.ui.components.label
-import com.example.androidapp.ui.components.SetEditorDialog
-import com.example.androidapp.ui.components.WorkoutNoteDialog
-import com.example.androidapp.ui.components.ReadinessNoteDialog
-import com.example.androidapp.ui.components.ProgressionDialog
-import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PendingProgression
+import com.example.androidapp.domain.model.PersonalRecordMoment
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SetEntry
-import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.CenteredMessage
+import com.example.androidapp.ui.components.ProgressionDialog
+import com.example.androidapp.ui.components.ReadinessNoteDialog
+import com.example.androidapp.ui.components.SetEdit
+import com.example.androidapp.ui.components.SetEditorDialog
+import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.WorkoutNoteDialog
+import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.exerciseWeightUnit
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 @Composable
@@ -233,8 +233,10 @@ fun ActiveWorkoutScreen(
                 // is where a lifter looks for the way out, and an empty workout is exactly the one a mistap
                 // leaves open — the state that had no way out but to add a movement first.
                 canDiscard = state.sessionId != null,
-                // N41's other half stands: a discard with nothing to lose does not ask.
+                // N41's other half stands: a discard with nothing to lose does not ask. An activity is the
+                // exception (N143) — empty of sets, not of record.
                 isEmpty = state.isEmpty,
+                isActivity = state.activity != null,
                 setCount = state.exercises.sumOf { it.sets.size },
                 countsAgainstProgram = countsAgainstProgram,
                 onFinish = onFinish,
@@ -276,7 +278,8 @@ fun ActiveWorkoutScreen(
     ActivityPicker(open = choosingActivity, onPick = onSetActivity, onDismiss = { choosingActivity = false })
 
     SetEditorSection(
-        set = editing,
+        editing = editing,
+        exercises = state.exercises,
         onUpdateSet = onUpdateSet,
         onDismiss = { editing = null },
     )
@@ -295,11 +298,20 @@ fun ActiveWorkoutScreen(
  */
 @Composable
 private fun SetEditorSection(
-    set: SetRow?,
+    editing: SetRow?,
+    /** The session's exercises, so the row being edited can be placed among them (N145). */
+    exercises: List<SessionExerciseRow>,
     onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    if (set == null) return
+    val set = editing ?: return
+    // The live sets **above** the one being edited, in stored order — which is what a rung's anchor question is
+    // asked of. The exercise is whichever one holds the row, since a row carries no back-reference to it.
+    val above = exercises
+        .firstOrNull { exercise -> exercise.sets.any { it.id == set.id } }
+        ?.sets
+        ?.takeWhile { it.id != set.id }
+        .orEmpty()
 
     SetEditorDialog(
         initialReps = set.reps,
@@ -313,6 +325,9 @@ private fun SetEditorSection(
         // and the assistance (ROADMAP B14).
         initialSetType = set.setType,
         initialAssistanceGrams = set.assistanceGrams,
+        // The write boundary's own question, asked before the tap: a rung needs a working set directly above
+        // it, and this dialog now says so by not offering the role rather than by refusing the save (N145).
+        offers = { role -> above.refusalForLoggingAs(role) == null },
         onDismiss = onDismiss,
         onSave = { edit ->
             onUpdateSet(
@@ -429,6 +444,14 @@ private fun WorkoutTopBar(
     canDiscard: Boolean,
     /** An open session with nothing in it, so a discard costs nothing and is not asked about (N41). */
     isEmpty: Boolean,
+    /**
+     * The session is an **activity**, so "nothing in it" does not mean "nothing to lose" (N143).
+     *
+     * An activity holds no sets by construction, so `isEmpty` is true for exactly the session a lifter
+     * deliberately recorded — and the one unconfirmed tap then deleted the day's record with no undo. The
+     * prompt-free branch is for a session that is empty *because nothing was done*, which an activity never is.
+     */
+    isActivity: Boolean,
     setCount: Int,
     countsAgainstProgram: Boolean,
     onFinish: (String?) -> Unit,
@@ -466,9 +489,10 @@ private fun WorkoutTopBar(
                 WorkoutMenu(
                     onDiscard = {
                         // **Nothing to lose, so nothing to ask** (N41, N87): the dialog exists to name what a
-                        // discard costs, and an empty session has nothing to name — which is why that case was
-                        // prompt-free in the body before this entry replaced it.
-                        if (isEmpty) onDiscard() else confirmingDiscard = true
+                        // discard costs, and an empty *workout* has nothing to name. An activity is the
+                        // exception that proves it (N143): it is empty because it holds no sets, not because
+                        // nobody did anything, so it is always asked about.
+                        if (isEmpty && !isActivity) onDiscard() else confirmingDiscard = true
                     },
                 )
             }
@@ -478,6 +502,7 @@ private fun WorkoutTopBar(
     if (confirmingDiscard) {
         DiscardWorkoutDialog(
             setCount = setCount,
+            isActivity = isActivity,
             countsAgainstProgram = countsAgainstProgram,
             onDismiss = { confirmingDiscard = false },
             onConfirm = {
@@ -555,6 +580,8 @@ private fun WorkoutMenu(onDiscard: () -> Unit) {
 @Composable
 private fun DiscardWorkoutDialog(
     setCount: Int,
+    /** An activity records the day rather than sets, so what a discard costs is said differently (N143). */
+    isActivity: Boolean,
     countsAgainstProgram: Boolean,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
@@ -565,14 +592,15 @@ private fun DiscardWorkoutDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = if (setCount > 0) {
-                        pluralStringResource(
+                    text = when {
+                        isActivity -> stringResource(R.string.active_workout_discard_text_activity)
+                        setCount > 0 -> pluralStringResource(
                             R.plurals.active_workout_discard_text,
                             setCount,
                             setCount,
                         )
-                    } else {
-                        stringResource(R.string.active_workout_discard_text_no_sets)
+
+                        else -> stringResource(R.string.active_workout_discard_text_no_sets)
                     },
                     modifier = Modifier.testTag(TestTags.ACTIVE_WORKOUT_DISCARD_TEXT),
                 )
@@ -864,7 +892,6 @@ internal fun EmptyWorkout(modifier: Modifier = Modifier) {
         )
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable

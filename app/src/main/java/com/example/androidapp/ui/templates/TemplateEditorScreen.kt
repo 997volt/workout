@@ -61,36 +61,37 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.Rpe
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
-import com.example.androidapp.domain.model.isAnchoredAt
-import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.runAt
-import com.example.androidapp.domain.model.rungWeightAt
-import com.example.androidapp.domain.model.taxonomySubtitle
-import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.ui.components.exerciseWeightUnit
-import com.example.androidapp.ui.components.label
-import com.example.androidapp.ui.components.summary
-import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.model.isAnchoredAt
+import com.example.androidapp.domain.model.runAt
+import com.example.androidapp.domain.model.rungLoadAt
+import com.example.androidapp.domain.model.taxonomySubtitle
+import com.example.androidapp.domain.repository.TemplateSetEdit
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.ExerciseActionsMenu
 import com.example.androidapp.ui.components.ExerciseMenuTags
 import com.example.androidapp.ui.components.NumberStepper
-import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.TemplateSetDialog
 import com.example.androidapp.ui.components.OpenExerciseAction
+import com.example.androidapp.ui.components.TemplateSetDialog
+import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.WarmUpAction
-import com.example.androidapp.ui.components.warmUpActionFor
+import com.example.androidapp.ui.components.exerciseWeightUnit
+import com.example.androidapp.ui.components.label
+import com.example.androidapp.ui.components.rememberRowFold
 import com.example.androidapp.ui.components.setNumbers
 import com.example.androidapp.ui.components.steppedRpeText
-import com.example.androidapp.ui.components.AppTextButton
-import com.example.androidapp.ui.components.rememberRowFold
+import com.example.androidapp.ui.components.summary
+import com.example.androidapp.ui.components.warmUpActionFor
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 /**
@@ -682,7 +683,7 @@ private fun PlannedSets(
                 unit = unit,
                 // A rung has no weight written down, so the row states what it derives from its anchor
                 // rather than leaving the reader to do the arithmetic (N79).
-                rungWeightGrams = sets.rungWeightAt(index),
+                rungLoad = sets.rungLoadAt(index),
                 holdsTheRunValue = sets.runAt(index)?.rung == 1,
                 onEdit = { onEdit(set) },
                 onDelete = { onRemove(set.id) },
@@ -710,7 +711,7 @@ private fun PlanSetRow(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
     /** What a rung loads, derived from its anchor, or null (ROADMAP N79). */
-    rungWeightGrams: Long? = null,
+    rungLoad: Load? = null,
     /** True on the rung that holds the run's value, which is the one worth naming it on (N79). */
     holdsTheRunValue: Boolean = false,
 ) {
@@ -730,7 +731,7 @@ private fun PlanSetRow(
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(
-                text = set.summary(unit, rungWeightGrams, holdsTheRunValue),
+                text = set.summary(unit, rungLoad, holdsTheRunValue),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -902,7 +903,6 @@ private fun TemplateSet.toEdit() = TemplateSetEdit(
     note = note,
 )
 
-
 @Composable
 private fun TemplateExerciseRow(
     exercise: TemplateExercise,
@@ -986,7 +986,6 @@ private fun TemplateExerciseRow(
         modifier = modifier.testTag(TestTags.templateExerciseRow(exercise.id)),
     )
 }
-
 
 /**
  * The one control a planned exercise's row offers, and the rare entries behind it (ROADMAP N71, N81).
@@ -1098,4 +1097,3 @@ private fun TemplateEditorScreenPreview() {
         )
     }
 }
-

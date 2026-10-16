@@ -12,11 +12,13 @@ import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -83,9 +85,9 @@ class PreferencesSettingsRepository @Inject constructor(
         awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
     }.conflate().distinctUntilChanged()
 
-    override suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit> {
+    override suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit> = withContext(Dispatchers.IO) {
         preferences.edit(commit = true) { putString(KEY_WEIGHT_UNIT, unit.name) }
-        return if (currentWeightUnit() == unit) {
+        if (currentWeightUnit() == unit) {
             DataResult.Success(Unit)
         } else {
             DataResult.Failure(DataError.Storage(IllegalStateException("the setting was not stored")))
@@ -121,27 +123,29 @@ class PreferencesSettingsRepository @Inject constructor(
         awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
     }.conflate().distinctUntilChanged()
 
-    override suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit> {
-        preferences.edit(commit = true) {
-            putString(KEY_RANGE_KIND, range.kind.name)
-            if (range.kind == RangeKind.CUSTOM) {
-                // Absent rather than a sentinel value: an end nobody chose is not a date, and a sentinel
-                // would be a date-shaped thing that has to be remembered not to mean anything.
-                range.from?.let { putLong(KEY_RANGE_FROM, it.toEpochDay()) } ?: remove(KEY_RANGE_FROM)
-                range.to?.let { putLong(KEY_RANGE_TO, it.toEpochDay()) } ?: remove(KEY_RANGE_TO)
+    /** Committed and read back off the main thread, for the reason [writeFlag] states (B158). */
+    override suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit> =
+        withContext(Dispatchers.IO) {
+            preferences.edit(commit = true) {
+                putString(KEY_RANGE_KIND, range.kind.name)
+                if (range.kind == RangeKind.CUSTOM) {
+                    // Absent rather than a sentinel value: an end nobody chose is not a date, and a sentinel
+                    // would be a date-shaped thing that has to be remembered not to mean anything.
+                    range.from?.let { putLong(KEY_RANGE_FROM, it.toEpochDay()) } ?: remove(KEY_RANGE_FROM)
+                    range.to?.let { putLong(KEY_RANGE_TO, it.toEpochDay()) } ?: remove(KEY_RANGE_TO)
+                } else {
+                    // Dates are kept only where they mean something: a stale From–To left on a rolling range
+                    // would be a second source of truth waiting to disagree with the kind.
+                    remove(KEY_RANGE_FROM)
+                    remove(KEY_RANGE_TO)
+                }
+            }
+            if (currentStatisticsRange() == range) {
+                DataResult.Success(Unit)
             } else {
-                // Dates are kept only where they mean something: a stale From–To left on a rolling range
-                // would be a second source of truth waiting to disagree with the kind.
-                remove(KEY_RANGE_FROM)
-                remove(KEY_RANGE_TO)
+                DataResult.Failure(DataError.Storage(IllegalStateException("the range was not stored")))
             }
         }
-        return if (currentStatisticsRange() == range) {
-            DataResult.Success(Unit)
-        } else {
-            DataResult.Failure(DataError.Storage(IllegalStateException("the range was not stored")))
-        }
-    }
 
     /**
      * The stored range, defaulted.
@@ -165,9 +169,17 @@ class PreferencesSettingsRepository @Inject constructor(
         )
     }
 
-    private fun writeFlag(key: String, value: Boolean): DataResult<Unit> {
+    /**
+     * One flag, committed and confirmed (B158).
+     *
+     * **The commit runs off the main thread.** `commit = true` is a synchronous write plus fsync, and every
+     * caller here is `viewModelScope.launch` on Main — so each toggle in Settings, and each range chip in
+     * Statistics, was a disk write on the tap path. The comment below still holds: it is committed rather than
+     * applied because the caller reports success, and success has to mean *on disk*.
+     */
+    private suspend fun writeFlag(key: String, value: Boolean): DataResult<Unit> = withContext(Dispatchers.IO) {
         preferences.edit(commit = true) { putBoolean(key, value) }
-        return if (preferences.getBoolean(key, !value) == value) {
+        if (preferences.getBoolean(key, !value) == value) {
             DataResult.Success(Unit)
         } else {
             DataResult.Failure(DataError.Storage(IllegalStateException("the setting was not stored")))
@@ -178,18 +190,18 @@ class PreferencesSettingsRepository @Inject constructor(
         if (seconds !in SettingsRepository.VALID_REST_SECONDS) {
             DataResult.Failure(DataError.Invalid("a rest must be between 5 seconds and an hour"))
         } else {
-            // Synchronous on purpose: the caller shows "saved" or an error, and a
-            // fire-and-forget write would let it claim a success that never reached disk.
-            // Committed, not applied: the caller reports success or failure, and a
-            // fire-and-forget write would let it claim a success that never reached disk.
-            // The KTX `edit` returns Unit, so the write is confirmed by reading it back.
-            preferences.edit(commit = true) { putInt(KEY_DEFAULT_REST_SECONDS, seconds) }
-            if (currentRestSeconds() == seconds) {
-                DataResult.Success(Unit)
-            } else {
-                DataResult.Failure(
-                    DataError.Storage(IllegalStateException("the setting was not stored")),
-                )
+            // Committed, not applied: the caller reports success or failure, and a fire-and-forget write
+            // would let it claim a success that never reached disk. The KTX `edit` returns Unit, so the write is
+            // confirmed by reading it back — and both happen off the main thread (B158).
+            withContext(Dispatchers.IO) {
+                preferences.edit(commit = true) { putInt(KEY_DEFAULT_REST_SECONDS, seconds) }
+                if (currentRestSeconds() == seconds) {
+                    DataResult.Success(Unit)
+                } else {
+                    DataResult.Failure(
+                        DataError.Storage(IllegalStateException("the setting was not stored")),
+                    )
+                }
             }
         }
 

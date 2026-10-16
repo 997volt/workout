@@ -97,18 +97,28 @@ fun rungLoad(anchor: Load, role: SetType, run: RungRun): Load? = when {
  * is taken off the bar in front of you, and the plan passes nothing, which reads the anchor's own
  * target. Null is the same answer as [rungLoad] gives: an anchor with no added weight, a run naming no
  * value, or a ladder that has run out.
+ *
+ * **The whole load comes back, not its weight half** (B153). A cluster rung repeats the anchor *exactly*,
+ * assistance included, so a caller handed only `weightGrams` reads a machine-assisted anchor (weight 0,
+ * assistance 20 kg) as a stated 0 kg — and the assistance, which is the entire load, is discarded on the
+ * way. A drop rung is unaffected: its ladder only exists on an anchor with added weight.
  */
-fun List<TemplateSet>.rungWeightAt(index: Int, anchorLoad: Load? = null): Long? {
-    val run = runAt(index)
-    val anchor = run?.let { getOrNull(it.anchorIndex) }
+fun List<TemplateSet>.rungLoadAt(index: Int, anchorLoad: Load? = null): Load? {
+    val run = runAt(index) ?: return null
+    val anchor = getOrNull(run.anchorIndex)
     val load = anchorLoad
         ?: anchor?.let { Load(it.targetWeightGrams ?: 0L, it.targetAssistanceGrams ?: 0L) }
-    return if (run == null || load == null) {
-        null
-    } else {
-        rungLoad(load, this[index].role, run)?.weightGrams
-    }
+    return load?.let { rungLoad(it, this[index].role, run) }
 }
+
+/**
+ * What the rung at [index] loads in added weight, or null when it is not a rung or nothing can be derived.
+ *
+ * The weight half of [rungLoadAt], for the readers whose subject is the added weight alone — the plan row's
+ * "60 kg" beside the run's value.
+ */
+fun List<TemplateSet>.rungWeightAt(index: Int, anchorLoad: Load? = null): Long? =
+    rungLoadAt(index, anchorLoad)?.weightGrams
 
 /**
  * Whether the set at [index] is followed by another rung of its own run (ROADMAP N79).

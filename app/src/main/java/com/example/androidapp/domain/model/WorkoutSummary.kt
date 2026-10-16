@@ -2,9 +2,8 @@ package com.example.androidapp.domain.model
 
 import java.time.Duration
 import java.time.Instant
-import java.time.ZoneOffset
-
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 /**
  * The zone this workout was performed in, or null when it predates the column (ROADMAP N25).
@@ -50,6 +49,14 @@ data class WorkoutSummary(
      * and a past workout goes on saying which workout it was.
      */
     val templateName: String? = null,
+    /**
+     * The activity this session was, or null for a workout (ROADMAP N141, N146).
+     *
+     * Carried onto the summary because the history row is where a day whose only work was a swim has to say
+     * so — a session with no sets and no template otherwise reads as a workout somebody forgot to log — and
+     * because N146's search over the list is a search over what the row says.
+     */
+    val activity: Activity? = null,
 ) {
     /** Null while the workout is still open; history only holds finished ones. */
     val duration: Duration? get() = finishedAt?.let { Duration.between(startedAt, it) }
@@ -63,4 +70,5 @@ data class WorkoutSummary(
      */
     val isRepeatable: Boolean get() = repeatableExerciseCount > 0
 
-    /** Warm-up-only workouts have no weight to speak of, but they did happen. */}
+    /** Warm-up-only workouts have no weight to speak of, but they did happen. */
+}

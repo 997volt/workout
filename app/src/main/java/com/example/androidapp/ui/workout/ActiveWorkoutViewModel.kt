@@ -217,14 +217,20 @@ data class ActiveWorkoutUiState(
     /**
      * The deleted set the screen may offer to bring back, or null (ROADMAP B3).
      *
-     * An undo is only offered while its subject is still in the session. The two undo
+     * An undo is only offered while its subject can still **take** it. The two undo
      * snackbars share one host, so without this a deleted set's Undo can outlive its
      * exercise: the row is gone, the button stays, and the write it fires is refused.
      * The rule lives here, named, rather than in the rendering — and the ViewModel
      * still reports if a tap races through before this turns null.
+     *
+     * **"Can still take it" is the write's own question, not mere presence** (B160). A finished exercise keeps
+     * its row in the list (the screen dims it, and the Done undo reads its name from there), but `logSet`
+     * refuses it — `countLoggableSessionExercise` requires `finishedAt IS NULL`. So tapping *Done* and then the
+     * still-visible Undo answered "That workout is no longer open" in front of a workout that plainly was, and
+     * the set stayed lost. The offer now disappears with the exercise's ability to accept it.
      */
     val undoableSet: SetEntry?
-        get() = pendingUndo?.takeIf { set -> exercises.any { it.id == set.sessionExerciseId } }
+        get() = pendingUndo?.takeIf { set -> exercises.any { it.id == set.sessionExerciseId && !it.isFinished } }
 
     /** The Done undo, offered on the same terms (ROADMAP B3). */
     val undoableFinishedExerciseId: String?
@@ -989,7 +995,10 @@ class ActiveWorkoutViewModel @Inject constructor(
         // come back onto a live exercise, and the repository's loggable guard would
         // otherwise refuse the write and leave the user with nothing on screen —
         // the reported bug was exactly this, with the Undo still visible.
-        if (!uiState.value.hasLiveExercise(set.sessionExerciseId)) {
+        // The write's own question (B160), not "is the row still listed": a finished exercise is still listed
+        // and still refuses a set, so asking presence alone let the tap through to a refused write and a
+        // sentence about a workout that is open.
+        if (uiState.value.exercises.none { it.id == set.sessionExerciseId && !it.isFinished }) {
             lastError.value = GONE_FROM_SESSION
             return
         }
@@ -1355,6 +1364,14 @@ private fun ActiveWorkoutUiState.hasLiveExercise(sessionExerciseId: String): Boo
  * many sets, or has been marked done — a member that is finished is not going to catch up, and
  * waiting for it would leave the user resting between the two exercises the grouping exists to
  * pair. An ungrouped exercise is always its own complete round, which is the old behaviour.
+ *
+ * **A member whose plan is used up has nothing left to catch up with either** (B154). The two members of a
+ * superset need not prescribe the same number of sets, and once the shorter one logs its last set it can
+ * never reach the longer one's count: the condition below stayed false for the rest of the session, so the
+ * rest timer silently stopped being armed for the heavier member's remaining sets — no countdown, no ±15 s,
+ * no end-of-rest cue — and nothing on screen said a round was holding it back. The plan is what says the
+ * member is done; a manual *Done* was the only way to reach the exception the old expression already had,
+ * which is why the unequal-totals case went unnoticed.
  */
 private fun ActiveWorkoutUiState.roundIsCompleteFor(row: SessionExerciseRow): Boolean {
     // `row` was captured before the write, and this state may not have caught up with the write
@@ -1365,8 +1382,18 @@ private fun ActiveWorkoutUiState.roundIsCompleteFor(row: SessionExerciseRow): Bo
 
     return row.supersetGroup == null || exercises
         .filter { it.supersetGroup == row.supersetGroup && it.id != row.id }
-        .all { it.isFinished || it.sets.size >= logged }
+        .all { it.isFinished || it.sets.size >= logged || it.hasNoPlanLeft() }
 }
+
+/**
+ * True when this member has already logged everything its plan writes (B154).
+ *
+ * `plannedSetCount` is null when there is no plan or the plan is nothing but warm-ups (N112), and both mean
+ * the same thing here: nothing the plan still asks for, so there is nothing to wait for. The count is of
+ * **work** sets, which is the only side of the comparison with a definition to read.
+ */
+private fun SessionExerciseRow.hasNoPlanLeft(): Boolean =
+    plannedSetCount?.let { sets.count { set -> set.setType.isWork } >= it } == true
 
 /**
  * What the plan says for one exercise: the template's entry resolved to it (ROADMAP N14, N73).
@@ -1584,9 +1611,15 @@ private fun SessionExercise.suggestionFor(
     ),
     // And a rung's reps come from what this same set did in the previous training, matched by the
     // set's place in the plan — the only identity a logged row keeps between sessions (N79).
-    sameSetLastTime = previous
-        ?.sets
-        ?.firstOrNull { it.setIndex == loggedSets.size },
+    //
+    // **Place, not the stored index** (B157). `previous.sets` arrives ordered by `setIndex` and filtered to
+    // live rows, but `setIndex` is not a position: a deleted set keeps its index (the soft delete touches
+    // `deletedAt` alone) and re-logging appends at `max + 1`, so the app's own Undo leaves a permanent hole —
+    // log three sets, delete the third, undo it, and the live indices are 0, 1, 3 while this side counts 0, 1,
+    // 2. Comparing the two spaces found no row at all, and the rung silently prefilled from the *anchor's*
+    // just-done reps instead of its own last performance, which is the one thing this parameter exists to
+    // provide. The list's own order is the position, so the position is what is read.
+    sameSetLastTime = previous?.sets?.getOrNull(loggedSets.size),
 )
 
 /**

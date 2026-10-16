@@ -151,11 +151,14 @@ class ExerciseSeederTest {
             val dao = database.exerciseDao()
             val raw = database.openHelper.writableDatabase
 
+            // The movement has to go first: 2.6 could not hold both rows under one id, because that is the
+            // primary key the collision was resolved against — the movement is the one `INSERT OR IGNORE`
+            // discarded. Only then can the category take the freed id.
+            raw.execSQL("DELETE FROM exercises WHERE id = 'back-extension' AND rowKind = 'MOVEMENT'")
             raw.execSQL(
                 "UPDATE exercises SET id = 'back-extension', parentId = 'back-extension' " +
                     "WHERE id = 'back-extension-family'",
             )
-            raw.execSQL("DELETE FROM exercises WHERE id = 'back-extension' AND rowKind = 'MOVEMENT'")
             assertNull("the broken shape is the starting point", dao.findById("back-extension-family"))
 
             seedMissingExercises(raw, SEEDED_AT + 1_000L)
@@ -184,6 +187,7 @@ class ExerciseSeederTest {
             val dao = database.exerciseDao()
             val raw = database.openHelper.writableDatabase
 
+            raw.execSQL("DELETE FROM exercises WHERE id = 'back-extension' AND rowKind = 'MOVEMENT'")
             raw.execSQL(
                 "UPDATE exercises SET id = 'back-extension', parentId = 'back-extension', " +
                     "name = 'Lower Back Machine' WHERE id = 'back-extension-family'",
@@ -194,7 +198,10 @@ class ExerciseSeederTest {
             val renamed = dao.findById("back-extension")
             assertEquals("the row stays where the lifter left it", "Lower Back Machine", renamed?.name)
             assertEquals(RowKind.CATEGORY, renamed?.rowKind)
-            assertNull("and a fresh family arrives beside it", dao.findById("back-extension-family"))
+            assertNotNull(
+                "and the corrected family arrives beside it rather than on top of it",
+                dao.findById("back-extension-family"),
+            )
         } finally {
             database.close()
         }

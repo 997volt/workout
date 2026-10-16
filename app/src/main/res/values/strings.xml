@@ -124,6 +124,9 @@
         <item quantity="other">This deletes the workout and its %1$d logged sets. There is no undo in the app — only an exported backup would bring it back.</item>
     </plurals>
     <string name="active_workout_discard_text_no_sets">This deletes the workout and the exercises you added. There is no undo in the app.</string>
+    <!-- N143: an activity holds no sets, so the sentence above would describe deleting nothing at all —
+         what goes is the day it records, and it is the only record of it. -->
+    <string name="active_workout_discard_text_activity">This deletes the activity you recorded for today, and there is no undo in the app. Only an exported backup would bring it back.</string>
     <string name="active_workout_discard_program">It was started from a program, so leaving it unfinished counts as a missed session.</string>
     <string name="active_workout_empty">No exercises yet</string>
     <string name="active_workout_empty_hint">Add your first exercise to start tracking this workout.</string>
@@ -666,6 +669,9 @@
     <string name="summary_performed">performed %1$s</string>
     <string name="summary_shape">%1$d×%2$d</string>
     <string name="summary_shape_weight">%1$s at %2$s %3$s</string>
+    <!-- N144: a prescribed load with no rep target is still a load, and its unit is what says whether it is
+         kilograms or pounds. "at" is left out because there is no shape to be at. -->
+    <string name="summary_weight_value">%1$s %2$s</string>
     <string name="summary_sets_only">Sets: %1$d</string>
     <string name="summary_not_performed">not performed</string>
     <!-- N130: the picker's headings. Two series can share a label across groups now — "Left knee" is a
@@ -744,6 +750,16 @@
     <string name="history_loading">Loading history…</string>
     <string name="history_empty">No workouts yet</string>
     <string name="history_empty_hint">Finished workouts will appear here.</string>
+    <!-- N146: a log long enough to need searching, and the two questions it gets asked. The hint names what
+         a query can reach, because it cannot reach an exercise name without loading every set. -->
+    <string name="history_search_hint">Search by plan, activity or month</string>
+    <string name="history_search_clear">Clear the search</string>
+    <string name="history_filter_all">All</string>
+    <string name="history_filter_activities">Activities</string>
+    <string name="history_filter_workouts">Workouts</string>
+    <string name="history_no_match">Nothing matches</string>
+    <string name="history_no_match_hint">Try another plan, activity or month, or clear the filters.</string>
+    <string name="history_clear_filters">Clear filters</string>
     <string name="history_volume">%1$s %2$s</string>
     <string name="history_detail_title">Workout</string>
     <!-- The one ⋮ on a past workout, and the mode it holds (ROADMAP N84). The label states the state

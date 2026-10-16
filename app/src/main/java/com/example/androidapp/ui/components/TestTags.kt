@@ -247,6 +247,12 @@ object TestTags {
     const val HISTORY_DETAIL_DATE = "history_detail_date"
 
     /** The one ⋮ on a past workout, and the two entries that write (N84). */
+    /** N146's search and its chip, named so a test addresses them rather than their English label. */
+    const val HISTORY_SEARCH_FIELD = "history_search_field"
+    const val HISTORY_FILTER_ALL = "history_filter_all"
+    const val HISTORY_FILTER_ACTIVITIES = "history_filter_activities"
+    const val HISTORY_FILTER_WORKOUTS = "history_filter_workouts"
+    const val HISTORY_NO_MATCH = "history_no_match"
     const val HISTORY_DETAIL_MENU = "history_detail_menu"
     const val HISTORY_DETAIL_EDIT = "history_detail_edit"
     const val HISTORY_DETAIL_DELETE = "history_detail_delete"

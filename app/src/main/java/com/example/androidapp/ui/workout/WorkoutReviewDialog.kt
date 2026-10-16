@@ -15,15 +15,15 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.PlanComparison
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.label
-import com.example.androidapp.domain.Weight
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.LocalWeightUnit
+import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.label
-import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.AppTextButton
 
 /**
  * The review a finished workout gets (ROADMAP N20).
@@ -158,30 +158,39 @@ private fun effortVerdictText(comparison: PlanComparison): String? {
     }
 }
 
-/** `6×2 at 92.5 kg`, or null when the exercise was not prescribed at all. */
+/**
+ * `6×2 at 92.5 kg`, or null when the exercise was not prescribed at all.
+ *
+ * **The load is stated as one number with its unit** (N144): a prescribed weight with no rep target used to be
+ * printed bare — the one number in the dialog with nothing saying whether it was kilograms or pounds — and an
+ * assisted plan used to read "at 0 kg", because the comparison carried the plan's added weight and not the help
+ * it names. `Weight.display` reads the split back as the signed number the plan was authored with, so `-20`
+ * says 20 kg of help rather than a weight nobody prescribed.
+ */
 @Composable
 private fun prescribedText(comparison: PlanComparison): String? {
     if (!comparison.wasPlanned) return null
     val reps = comparison.prescribedReps
     val weight = comparison.prescribedTopWeightGrams
+    val unit = exerciseWeightUnit(comparison.weightUnit)
+    val load = weight?.let {
+        Weight.display(it, comparison.prescribedTopAssistanceGrams ?: 0L, unit)
+    }
     val shape = if (reps != null) {
         stringResource(R.string.summary_shape, comparison.prescribedSets, reps)
     } else {
         null
     }
     val base = when {
-        shape != null && weight != null -> {
-            val unit = exerciseWeightUnit(comparison.weightUnit)
-            stringResource(
-                R.string.summary_shape_weight,
-                shape,
-                Weight.display(weight, 0, unit),
-                unit.label(),
-            )
-        }
+        shape != null && load != null -> stringResource(
+            R.string.summary_shape_weight,
+            shape,
+            load,
+            unit.label(),
+        )
 
         shape != null -> shape
-        weight != null -> Weight.display(weight, 0, exerciseWeightUnit(comparison.weightUnit))
+        load != null -> stringResource(R.string.summary_weight_value, load, unit.label())
         else -> stringResource(R.string.summary_sets_only, comparison.prescribedSets)
     }
     return base.withRpe(comparison.prescribedRpeHalves)
@@ -194,11 +203,14 @@ private fun performedText(comparison: PlanComparison): String {
     val weight = comparison.performedTopWeightGrams
     val shape = stringResource(R.string.summary_shape, comparison.performedSets, comparison.performedReps)
     val unit = exerciseWeightUnit(comparison.weightUnit)
-    val base = if (weight != null && weight > 0L) {
+    // An assisted set's own line names its help too (N144), which is why the comparison carries it: a
+    // performed `-20` is a load, not an absent one, and `weight > 0` alone would hide it.
+    val assistance = comparison.performedTopAssistanceGrams ?: 0L
+    val base = if (weight != null && (weight > 0L || assistance > 0L)) {
         stringResource(
             R.string.summary_shape_weight,
             shape,
-            Weight.display(weight, 0, unit),
+            Weight.display(weight, assistance, unit),
             unit.label(),
         )
     } else {

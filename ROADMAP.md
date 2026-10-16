@@ -17,29 +17,20 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The pre-release review's twenty findings (B148–B160, N143–N146).** A senior review read all 200 sources before
-2.6 went to a wider audience, checked every claim against the code, and reproduced the worst of them on a device.
-One is visible on a fresh install, three corrupt or lose data, and none of them is caught by `lint`, `detekt` or
-the 1320 JVM tests — which is the finding behind the findings.
+**Nothing.** The pre-release review's twenty findings (B148–B160, N143–N146) are fixed and recorded in
+[CHANGELOG.md](CHANGELOG.md): a seeded movement the database silently dropped, an import that un-hid rows a save
+had replaced, a backup that could resume as the workout in progress, a save that read its day outside its
+transaction, a rung removal that stranded its run, an assisted cluster that lost the machine's help, a superset
+that stopped resting, a record count that disagreed with the rule, a plan read without the library's own filter, a
+rung's reps matched by an index that is not a position, three transfers on the main thread, an export a rotation
+could leave empty, an undo offered past its exercise, and four interface fixes: confirming an activity's discard,
+stating a prescribed load with its unit and its assistance, telling a refused rung *why*, and searching the
+history.
 
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| B149 | **high** | An import restores soft-deleted rows **by id alone**, so it un-hides a row a *save* replaced: two live measurements for one day and kind, or one measurement with quads twice. | Un-hide only what the parent's own delete hid, correlated by the timestamp the delete wrote. |
-| B150 | medium | A backup's open session is imported with `finishedAt` null, so the file decides what the app is currently doing. Import during a workout and two open rows exist, the older unreachable. | Close a restored session at the boundary. |
-| B151 | medium | `save` reads the day's existing entry **before** its transaction, so a save committing in the window leaves two live rows for one day and kind. B135 fixed the mirror half; this half is open. | Move the read inside the transaction. |
-| B152 | medium | Removing a run's first rung strands its survivors: the run's value lives on the opening rung, so they read "no load to drop" and cannot be re-valued. | Take the whole run, as the anchor case already does. |
-| B153 | medium | A cluster rung under an assisted anchor derives only the weight half of its load, so it prefills 0 kg, discards the machine's help, and the plan row agrees. | Carry both halves of the derived load. |
-| B154 | medium | A superset whose members plan different set counts stops resting once the shorter member runs out, silently, for every remaining set. | Treat a member with nothing left to do as caught up. |
-| B155 | medium | The Records count excludes `WARMUP` only, while the rule is `recordsEffort` — so a DROP or CLUSTER rung is counted as a record the app never announced, and blocks a later honest set from it. | Make the roles data, read from the one rule. |
-| B156 | low | The plan read that seeds a workout omits the library's soft-delete filter its own twin has, so a plan naming a hidden movement seeds an invisible, unremovable row. | Join and filter like the twin. |
-| B157 | low | A rung's last-time reps match a stored `setIndex` against a live position, and Undo appends rather than restores, so the index space drifts and the rung prefills from the anchor. | Match the previous session's row by position. |
-| B158 | low | Three paths do their I/O on the main thread: document import/export, the export's crash-log read and encode, and the settings commit. | Move each to `Dispatchers.IO`. |
-| B159 | low | A cancelled export leaves a 0-byte backup and says nothing, because the transfer runs in the composition's scope. | Run it where a rotation cannot cancel it. |
-| B160 | low | The delete undo offer outlives its exercise being marked done, and the write is then refused with a sentence about a workout that is plainly open. | Ask the write's own question where the offer is made. |
-| N143 | medium | Discarding a session whose only record is an **activity** asks nothing and destroys it: an activity holds no sets, so the prompt-free branch is exactly its case. | Confirm, and name what goes. |
-| N144 | low | The review dialog prints a prescribed weight with no unit, and reports an assisted plan as "at 0 kg" because the assistance is stored and never read. | State the unit, and read the assistance. |
-| N145 | low | A refused rung is told what a rung *is* rather than what is wrong, and the edit dialog offers Drop and Cluster where the log path gates them. | One sentence per cause, and gate both paths. |
-| N146 | low | History has no search or filter; the month grouping is its only navigation. | A query and a filter over the list. |
+The review also found what the gates could not: `lint`, `detekt` and 1335 JVM tests were all green while every one
+of those defects was live, and the two that mattered most were in seed data and in an import — the two places no
+unit test was looking. Each row above shipped with a test that fails without its fix, and the instrumented suite
+grew by four cases for the ones only real SQLite can show.
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself

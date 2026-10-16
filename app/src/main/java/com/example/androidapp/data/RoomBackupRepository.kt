@@ -2,11 +2,17 @@ package com.example.androidapp.data
 
 import android.content.Context
 import androidx.room.withTransaction
+import com.example.androidapp.data.local.MeasurementSoreMuscleEntity
 import com.example.androidapp.data.local.MetricGoalEntity
+import com.example.androidapp.data.local.SessionExerciseJointEntity
+import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.seedMissingExercises
 import com.example.androidapp.data.transfer.BackupCodec
 import com.example.androidapp.data.transfer.BackupFile
+import com.example.androidapp.data.transfer.MeasurementSoreMuscleDto
+import com.example.androidapp.data.transfer.SessionExerciseJointDto
+import com.example.androidapp.data.transfer.SessionSoreMuscleDto
 import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
 import com.example.androidapp.data.transfer.withValidLibraryShape
@@ -64,54 +70,61 @@ class RoomBackupRepository @Inject constructor(
         // The goal that is open for each metric, read once: the file carries the periods *and* the two maps a
         // build that predates them reads, and both come from the same rows (N137).
         val openGoals = metricGoals.observeCurrent().first()
-        BackupCodec.encode(
-            BackupFile(
-                schemaVersion = BackupCodec.CURRENT_SCHEMA_VERSION,
-                exportedAt = timeSource.nowEpochMillis(),
-                exercises = dao.allExercises().map { it.toDto() },
-                sessions = dao.allSessions().map { it.toDto() },
-                sessionExercises = dao.allSessionExercises().map { it.toDto() },
-                sets = dao.allSets().map { it.toDto() },
-                // The muscles each session reported sore (ROADMAP N62): a fact the lifter wrote,
-                // so a restore that dropped it would lose work in silence.
-                sessionSoreMuscles = soreMuscles.allForBackup().map { it.toDto() },
-                // The joints each exercise reported painful (ROADMAP N63): the same fact about the
-                // body, and a restore that dropped it would lose what the lifter recorded.
-                sessionExerciseJoints = joints.allForBackup().map { it.toDto() },
-                // A template is a plan, and the plan is the user's work too (N3).
-                templates = dao.allTemplates().map { it.toDto() },
-                templateExercises = dao.allTemplateExercises().map { it.toDto() },
-                // A plan's sets are the plan (ROADMAP N14).
-                templateSets = dao.allTemplateSets().map { it.toDto() },
-                // Programs, their slots and their recorded skips (ROADMAP P3.3): the schedule is
-                // authored setup, and a skip is history — both are the user's data.
-                programs = programBackup.allPrograms().map { it.toDto() },
-                programSlots = programBackup.allProgramSlots().map { it.toDto() },
-                programSkips = programBackup.allProgramSkips().map { it.toDto() },
-                // The weeks a program was backed off (ROADMAP P3.10): authored setup the app cannot
-                // recompute, so dropping them would read every deload week as a miss.
-                programDeloads = programBackup.allProgramDeloads().map { it.toDto() },
-                // The workouts that stood in for a slot's own (ROADMAP P3.11): without them a
-                // restored week reads as missed even though it was trained, with something else.
-                programSubstitutions = programBackup.allProgramSubstitutions().map { it.toDto() },
-                measurements = measurements.allForExport().map { it.toDto() },
-                // The soreness a daily entry reported (ROADMAP N113): a fact the lifter wrote, so a
-                // restore that dropped it would lose work in silence.
-                measurementSoreMuscles = measurementSore.allForBackup().map { it.toDto() },
-                // The user's metric targets (ROADMAP N39) and the kind each has (N135), as the two maps a
-                // build that predates periods reads. They are filled from the period that is open, so the two
-                // halves of the file cannot disagree.
-                goals = openGoals.mapNotNull { row -> row.value?.let { row.metricId to it } }.toMap(),
-                goalKinds = openGoals.mapNotNull { row -> row.kind?.let { row.metricId to it } }.toMap(),
-                // The periods themselves (ROADMAP N137): the past, which is what the table is for. The codec
-                // drops whatever it is not told about, and a restore that lost these would lose the answer to
-                // "what was I asking for in March".
-                goalPeriods = metricGoals.allForBackup().map { it.toDto() },
-                // Diagnostics ride along so they are reachable on a release
-                // build; import ignores them, deliberately.
-                crashLogs = crashLogStore.all(),
-            ),
-        )
+        // **The encoding runs off the caller's thread** (B158). The DAO reads suspend and Room moves them to
+        // its own executors, but everything between them here does not: `crashLogStore.all()` lists and reads a
+        // file per crash, and `encode` serialises the whole database in one go. Both used to run on whatever
+        // thread asked — the composition's scope — so an export janked the UI in proportion to the history.
+        // The same reasoning `clearAllUserData` already states further down this file.
+        withContext(Dispatchers.IO) {
+            BackupCodec.encode(
+                BackupFile(
+                    schemaVersion = BackupCodec.CURRENT_SCHEMA_VERSION,
+                    exportedAt = timeSource.nowEpochMillis(),
+                    exercises = dao.allExercises().map { it.toDto() },
+                    sessions = dao.allSessions().map { it.toDto() },
+                    sessionExercises = dao.allSessionExercises().map { it.toDto() },
+                    sets = dao.allSets().map { it.toDto() },
+                    // The muscles each session reported sore (ROADMAP N62): a fact the lifter wrote,
+                    // so a restore that dropped it would lose work in silence.
+                    sessionSoreMuscles = soreMuscles.allForBackup().map { it.toDto() },
+                    // The joints each exercise reported painful (ROADMAP N63): the same fact about the
+                    // body, and a restore that dropped it would lose what the lifter recorded.
+                    sessionExerciseJoints = joints.allForBackup().map { it.toDto() },
+                    // A template is a plan, and the plan is the user's work too (N3).
+                    templates = dao.allTemplates().map { it.toDto() },
+                    templateExercises = dao.allTemplateExercises().map { it.toDto() },
+                    // A plan's sets are the plan (ROADMAP N14).
+                    templateSets = dao.allTemplateSets().map { it.toDto() },
+                    // Programs, their slots and their recorded skips (ROADMAP P3.3): the schedule is
+                    // authored setup, and a skip is history — both are the user's data.
+                    programs = programBackup.allPrograms().map { it.toDto() },
+                    programSlots = programBackup.allProgramSlots().map { it.toDto() },
+                    programSkips = programBackup.allProgramSkips().map { it.toDto() },
+                    // The weeks a program was backed off (ROADMAP P3.10): authored setup the app cannot
+                    // recompute, so dropping them would read every deload week as a miss.
+                    programDeloads = programBackup.allProgramDeloads().map { it.toDto() },
+                    // The workouts that stood in for a slot's own (ROADMAP P3.11): without them a
+                    // restored week reads as missed even though it was trained, with something else.
+                    programSubstitutions = programBackup.allProgramSubstitutions().map { it.toDto() },
+                    measurements = measurements.allForExport().map { it.toDto() },
+                    // The soreness a daily entry reported (ROADMAP N113): a fact the lifter wrote, so a
+                    // restore that dropped it would lose work in silence.
+                    measurementSoreMuscles = measurementSore.allForBackup().map { it.toDto() },
+                    // The user's metric targets (ROADMAP N39) and the kind each has (N135), as the two maps a
+                    // build that predates periods reads. They are filled from the period that is open, so the two
+                    // halves of the file cannot disagree.
+                    goals = openGoals.mapNotNull { row -> row.value?.let { row.metricId to it } }.toMap(),
+                    goalKinds = openGoals.mapNotNull { row -> row.kind?.let { row.metricId to it } }.toMap(),
+                    // The periods themselves (ROADMAP N137): the past, which is what the table is for. The codec
+                    // drops whatever it is not told about, and a restore that lost these would lose the answer to
+                    // "what was I asking for in March".
+                    goalPeriods = metricGoals.allForBackup().map { it.toDto() },
+                    // Diagnostics ride along so they are reachable on a release
+                    // build; import ignores them, deliberately.
+                    crashLogs = crashLogStore.all(),
+                ),
+            )
+        }
     }
 
     override suspend fun clearAllUserData(): DataResult<Unit> = dataResultOf {
@@ -227,12 +240,17 @@ class RoomBackupRepository @Inject constructor(
         dao.restoreTemplates(templates.map { it.toEntity() })
         dao.restoreTemplateExercises(templateExercises.map { it.toEntity() })
         dao.restoreTemplateSets(templateSets.map { it.toEntity() })
-        soreMuscles.restore(soreMuscleRows.map { it.toEntity() })
-        joints.restore(jointRows.map { it.toEntity() })
-        // The parent before the child: a sore row un-hidden onto a measurement that stayed hidden is
-        // exactly the state this ordering exists to prevent (N113).
+        // The parent before the child: a sore row un-hidden onto a parent that stayed hidden is
+        // exactly the state this ordering exists to prevent (N113) — and B149 closed the other half
+        // of the same ordering, which is a child un-hidden onto a parent that stayed live.
+        val liveSessions = sessions.mapTo(mutableSetOf()) { it.id }
+        val liveSessionExercises = sessionExercises.mapTo(mutableSetOf()) { it.id }
+        val liveMeasurements = measurementRows.mapTo(mutableSetOf()) { it.id }
+
+        soreMuscles.restore(soreMuscleRows.restorableSoreRows(liveSessions))
+        joints.restore(jointRows.restorableJointRows(liveSessionExercises))
         measurements.restore(measurementRows.map { it.toEntity() })
-        measurementSore.restore(measurementSoreRows.map { it.toEntity() })
+        measurementSore.restore(measurementSoreRows.restorableMeasurementSoreRows(liveMeasurements))
 
         return exercises.count { it.deletedAt == null } +
             sessions.count { it.deletedAt == null } +
@@ -246,6 +264,38 @@ class RoomBackupRepository @Inject constructor(
             measurementRows.count { it.deletedAt == null } +
             measurementSoreRows.count { it.deletedAt == null }
     }
+
+    /**
+     * The child rows an import may un-hide, which is only the ones whose parent comes back with them (B149).
+     *
+     * `softDeletedIds` cannot tell **why** a row is hidden, and there are two reasons a write hides one: it
+     * deleted the parent, or it *replaced* the child list — a save rewrites a measurement's sore rows and an
+     * exercise's joint rows wholesale. An import that restored by id alone therefore un-hid the rows a
+     * replacement had put aside, and the parent came back holding both the old list and the new one: the same
+     * muscle scored twice on one card, which is the state the editor's own rule forbids. Correlating the
+     * timestamps, the way the undo does, is not enough here: an import acts on a file written before either
+     * write, so it has no marker to correlate against. What it does know is whether the **parent** is coming
+     * back, which is the question a delete and a replacement answer differently — a delete hides the parent
+     * too, a replacement leaves it live.
+     *
+     * One function per child kind rather than one generic over the three DTOs: each parent column is read by
+     * the same name, and a shared rule that needs a reified target type at the call site is more machinery
+     * than three readable lines. The count the caller reports is left alone on purpose: a child whose parent
+     * stayed live is not a row the import brought back, so counting it would overstate what happened.
+     */
+    private fun List<SessionSoreMuscleDto>.restorableSoreRows(
+        liveSessions: Set<String>,
+    ): List<SessionSoreMuscleEntity> = filter { it.sessionId in liveSessions }.map { it.toEntity() }
+
+    private fun List<SessionExerciseJointDto>.restorableJointRows(
+        liveSessionExercises: Set<String>,
+    ): List<SessionExerciseJointEntity> =
+        filter { it.sessionExerciseId in liveSessionExercises }.map { it.toEntity() }
+
+    private fun List<MeasurementSoreMuscleDto>.restorableMeasurementSoreRows(
+        liveMeasurements: Set<String>,
+    ): List<MeasurementSoreMuscleEntity> =
+        filter { it.measurementId in liveMeasurements }.map { it.toEntity() }
 
     /**
      * Inserts what the file has and this device does not, counting only the genuinely new

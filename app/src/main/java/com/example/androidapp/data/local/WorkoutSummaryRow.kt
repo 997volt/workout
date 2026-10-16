@@ -1,5 +1,6 @@
 package com.example.androidapp.data.local
 
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.WorkoutSummary
 import java.time.Instant
 
@@ -22,6 +23,13 @@ data class WorkoutSummaryRow(
     val repeatableExerciseCount: Int,
     /** The template this session was started from, read live, or null (ROADMAP N58). */
     val templateName: String?,
+    /**
+     * The activity this session was, stored by name, or null for a workout (ROADMAP N141).
+     *
+     * A `String` rather than the enum for the reason every stored name is one until it is read: a name this
+     * build does not know reads as *not an activity* rather than throwing, and the list still draws.
+     */
+    val activity: String?,
 )
 
 internal fun WorkoutSummaryRow.toDomain(): WorkoutSummary = WorkoutSummary(
@@ -34,4 +42,5 @@ internal fun WorkoutSummaryRow.toDomain(): WorkoutSummary = WorkoutSummary(
     zoneOffsetMinutes = zoneOffsetMinutes,
     repeatableExerciseCount = repeatableExerciseCount,
     templateName = templateName,
+    activity = activity?.let { name -> Activity.entries.firstOrNull { it.name == name } },
 )

@@ -29,6 +29,8 @@ import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.StartedSession
 import com.example.androidapp.domain.repository.WorkoutRepository
+import com.example.androidapp.ui.workout.RungRefusal
+import com.example.androidapp.ui.workout.sentence
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -369,20 +371,37 @@ class RoomWorkoutRepository @Inject constructor(
      * [setIndex] is the index the set holds, or the one it would take: a set being logged is appended,
      * so its prospective index is the next free one, and the rows below it are exactly the ones this
      * filters out.
+     *
+     * The boolean wrapper this used to be went with the second caller (N145): a role that cannot be performed
+     * and *why* it cannot are one answer, and the two call sites want it differently shaped.
      */
-    private suspend fun canBePerformedAs(
+    /**
+     * The refusal a rung would meet at this place, or null (N145).
+     *
+     * Reads the exercise's own sets: `[setIndex]` is the index the set holds or the one it would take, and only
+     * the rows above it can be its anchor.
+     */
+    private suspend fun rungRefusal(
         sessionExerciseId: String,
         setIndex: Int,
         role: SetType,
-    ): Boolean {
-        if (!role.isRung) return true
+    ): RungRefusal? {
         val above = dao.findSessionIdForSessionExercise(sessionExerciseId)
             ?.let { dao.observeSetsForSession(it).first() }
             .orEmpty()
             .filter { it.sessionExerciseId == sessionExerciseId && it.setIndex < setIndex }
         var start = above.size
         while (start > 0 && above[start - 1].setType == role) start--
-        return above.getOrNull(start - 1)?.setType?.recordsEffort == true
+        val anchor = above.getOrNull(start - 1)
+        // The same three causes `SetSuggestion.refusalForLoggingAs` tells apart for the picker, read off the
+        // **stored** rows rather than the session's own type.
+        return when {
+            !role.isRung -> null
+            anchor == null -> RungRefusal.NothingAbove
+            anchor.setType.recordsEffort -> null
+            anchor.setType.isRung -> RungRefusal.ARungAbove
+            else -> RungRefusal.OnlyAWarmUp
+        }
     }
 
     override suspend fun logSet(
@@ -410,8 +429,8 @@ class RoomWorkoutRepository @Inject constructor(
         // can a set that follows a warm-up: there is nothing to derive a drop from and nothing to rate a
         // cluster against (ROADMAP N79, B63). The picker offers only what this allows; this is the
         // boundary, the way the RPE check above is.
-        if (!canBePerformedAs(sessionExerciseId, setIndex, setType)) {
-            throw InvalidInputException("A ${setType.label.lowercase()} set follows the set above it.")
+        rungRefusal(sessionExerciseId, setIndex, setType)?.let {
+            throw InvalidInputException(it.sentence(setType))
         }
         val now = timeSource.nowEpochMillis()
         dao.insertSet(
@@ -465,10 +484,8 @@ class RoomWorkoutRepository @Inject constructor(
             // Re-roling a logged set is a write like logging one, so it holds the same rule (B64): a
             // first set edited into a drop, or a set under a warm-up, would otherwise reach the
             // database as a rung the app reads no run for — the state the log path already refuses.
-            if (setType.isRung &&
-                !canBePerformedAs(stored.sessionExerciseId, stored.setIndex, setType)
-            ) {
-                throw InvalidInputException("A ${setType.label.lowercase()} set follows the set above it.")
+            rungRefusal(stored.sessionExerciseId, stored.setIndex, setType)?.let {
+                throw InvalidInputException(it.sentence(setType))
             }
             val updated = stored.copy(
                 reps = reps.coerceAtLeast(1),

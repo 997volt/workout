@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.workout
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -167,8 +168,12 @@ internal fun ActivityPicker(open: Boolean, onPick: (Activity) -> Unit, onDismiss
     )
 }
 
-/** What an activity is called (ROADMAP N141): one place, so the picker and the body cannot disagree. */
-internal fun activityLabel(activity: Activity): Int = when (activity) {
+/**
+ * What an activity is called (ROADMAP N141): one place, so the picker, the body and the history row cannot
+ * disagree (N146).
+ */
+@StringRes
+fun activityLabel(activity: Activity): Int = when (activity) {
     Activity.CYCLING -> R.string.activity_cycling
     Activity.RUNNING -> R.string.activity_running
     Activity.SWIMMING -> R.string.activity_swimming
