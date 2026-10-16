@@ -1,9 +1,9 @@
 # Workout — Roadmap
 
 > **v2.5** is shipped ([CHANGELOG.md](CHANGELOG.md)), *Next* is **empty**, *Later* holds one decided
-> change (N137), and **N134 — a template keeping a version — plus N135 — a weight goal setting its own rate —
-> and N136 — a weigh-in saying whether the rate is on target — are built** and recorded in the changelog's
-> unreleased section. **2.5 carried four batches and the seven defects a reading of them found**: home's
+> change (N137, **half built** — its store has shipped and its verdicts have not), and **N134 — a template keeping a
+> version — plus N135 — a weight goal setting its own rate — and N136 — a weigh-in saying whether the rate is on
+> target — are built** and recorded in the changelog's unreleased section. **2.5 carried four batches and the seven defects a reading of them found**: home's
 > plan surface (N125–N127), where the next-up rows go and a day's plan is home's only answer; measurements
 > (B130, N132, N133), where the list scrolls, a delete is a mode and a deleted entry can be put back unless
 > the day was re-entered; what cutting 2.3 and 2.4 turned up (B128, B129, N128, N129), where the release
@@ -96,7 +96,7 @@ not now — and it is not *Next*, which is what is actually being worked on. Eac
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-- **A goal's past is kept, and each period says whether it was met** (N137). Asked for in use: when a goal changes,
+- **Each period says whether it was met — and the chart draws it** (N137, **half built**). Asked for in use: when a goal changes,
   the old one should be recoverable, so a later reading can say **what the goal was in a given period and whether it
   was achieved**. Today there is one value per metric and no past at all — goals are a newline-joined
   `metricId=value` map in a preferences string (`PreferencesSettingsRepository`, `KEY_GOALS`), **rewritten on every
@@ -104,8 +104,10 @@ for the reason a parked row names its revisit trigger: a queue that cannot say w
   across a range it never applied to, and "did I hit the cut I set in March" has no answer, because March's goal is
   gone. The measurements are dated; the goal is the only half of the question missing.
 
-  **Goals become rows** — one per metric per period, with the periods running from a row to the next and the last one
-  open. A prefs string cannot hold this: the history is unbounded and every period needs a date range to answer
+  **The store half is built** (see the changelog's unreleased section): goals are rows, one per metric per period,
+  with the periods running from a row to the next and the last one open, and a lifter's existing goal moved into them
+  with an **unknown** start. What is still open is what those rows are *for*: the per-period verdict below, and the
+  chart's line drawn per period rather than across a range it never applied to. A prefs string cannot hold this: the history is unbounded and every period needs a date range to answer
   anything, and the import path already says so out loud — `restoreMissingGoals` runs "outside the database transaction
   … because goals live outside the database", which is the seam this removes. Rejected: appending to the string, which
   keeps an unqueryable, ever-growing blob and keeps that seam.
@@ -117,19 +119,19 @@ for the reason a parked row names its revisit trigger: a queue that cannot say w
     and arithmetic is not a fact. The trade is named rather than hidden: if the band rule ever changes, an old period
     re-derives under the new rule — the honest reading is "by today's rule, March was X". Storing each period's verdict
     instead was rejected as caching something fully derivable from rows the app already has.
-  - **Achievement is a reader over the same rows**: clip the weight series to the period and compare it with the goal —
+  - **Achievement is a reader over the same rows** — the half still to build: clip the weight series to the period and compare it with the goal —
     a rate goal is met when the trend sat in its band, a target weight when it was reached within tolerance, maintenance
     when the weight stayed in the corridor. So the answer needs **N135's goal kinds**, which now exist, and
     this is that trio's third part.
-  - **The chart's goal line becomes segments**, one per period. That is the visible payoff, and it is the thing that is
-    simply wrong today.
+  - **The chart's goal line becomes segments**, one per period — also still to build. That is the visible payoff, and it
+    is the thing that is simply wrong today.
   - **Only goals move into the database.** The other settings — unit, rest timer, step defaults — are preferences about
     how the app behaves, not facts about a body, so they stay where they are.
   - **The export carries the rows** (the standing preference that it carries everything), and the goals' special
     missing-only import rule goes with the prefs store, because rows merge like every other table.
 
-  **Brought forward when** a goal is changed a second time and the chart's line stops being true for the earlier range —
-  **N135 having landed**, since a goal's kinds without its past is half a feature.
+  **Brought forward when** the chart's line is next read as a claim about the past — it stops being true at the first
+  goal change, and the rows that answer it are now on disk.
 
 ## Parked — deliberately not planned
 
@@ -223,7 +225,7 @@ tag, and **N125–N127 shipped next** — today's plan as home's only answer, th
 none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds nothing and *Later* one (N137); the seven defects this reading found (B131–B137),
+***Next* holds nothing and *Later* one, half built (N137); the seven defects this reading found (B131–B137),
 home's plan surface (N125–N127), the measurements batch (B130, N132, N133) and what cutting 2.3 and 2.4
 turned up (B128, B129, N128, N129) are all recorded in [CHANGELOG.md](CHANGELOG.md).** N118
 was found by asking what the app now records and never reads back, and N119

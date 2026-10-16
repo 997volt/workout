@@ -2061,3 +2061,38 @@ is a `MutableStateFlow` the save writes and the snackbar takes, rather than a va
 derived value would be drawn again on every return to the measurements screen, which is exactly the pursuit the
 sentence must not have. Reading the series back from the repository — rather than patching the saved entry into
 the list in hand — is what makes the trend the one the app actually holds, this save included.
+
+## N137
+
+The request came from use: when a goal changes, the old one should be recoverable, so a later reading can say
+what the goal was in a given period and whether it was reached. Everything in the entry follows from taking that
+literally — the past has to be **stored**, and a store of one value per metric cannot hold it.
+
+**Why rows rather than a longer string.** The obvious cheap move is to append to the preferences string, and it
+is rejected for two reasons the entry names: an ever-growing blob cannot be queried — every period needs a date
+range to answer anything — and it keeps the seam the import path already complains about in its own comment,
+`restoreMissingGoals` running "outside the database transaction … because goals live outside the database". A
+period is a row with an id, and that single change is what lets the import merge goals like every other table
+instead of carrying a rule of its own.
+
+**The first row's start is the decision worth naming.** A migration runs SQL against a database; it cannot read
+the settings string the goals are sitting in, and it cannot know when a lifter set the goal it finds there. The
+choices were to stamp it with the upgrade's own moment, to leave the goal un-migrated until it is next changed,
+or to record the start as **unknown**. The first invents history — the exact failure the feature exists to
+correct — and the second loses the goal of anybody who never changes it again. So the row is written with a null
+start, which reads as "this was the goal before we knew when goals started", and it sorts **before** every dated
+period of that metric. The move itself runs from the database's `onOpen`, beside the library's top-up, on a raw
+connection because a Room call there would deadlock; its ids are derived from the metric, so a crash between the
+insert and the clearing of the string leaves a second run a no-op rather than a duplicate.
+
+**Clearing a goal opens a period rather than deleting a row.** Deleting is the one write that would take the
+answer away, and it is also the write that would resurrect the *previous* goal — the previous row would become
+the newest — which is a goal the lifter explicitly stopped asking for. A row with neither a kind nor a value is
+a period of no goal, and it is what the screens read as "no goal" now.
+
+**What is built and what is not.** This commit is the store: the table, the move, the reads both screens already
+made, and the export. The verdicts — clipping a period's range out of the weight series and comparing it with
+what that period asked for — and the chart's per-period line are the remaining half, and the roadmap row stays
+open for them rather than being drained. The reason for the split is the same one the batch order used: the
+store is what the rest is written against, and shipping it green is what makes the second half a change rather
+than a rewrite.

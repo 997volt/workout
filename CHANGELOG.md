@@ -65,6 +65,20 @@ unreleased.
   undo's guard has to refuse cannot arise here. The default view is unchanged: its tap still opens the
   read-only details, which stays the one place a record is read where nothing can write.
 
+- **A goal's past is kept** (N137, the **store half** — its verdicts and the chart's per-period line are still to
+  come, and the roadmap row stays open for them). Goals were a newline-joined `metricId=value` string in
+  preferences, rewritten on every change, so changing one silently re-judged the whole past: the chart's line
+  was the current target drawn across a range it never applied to, and "did I hit the cut I set in March" had
+  no answer because March's goal was gone. A goal is now a row per **period** in a new `metric_goals` table
+  (schema 5): the newest row per metric is the period that is open, and a change opens one rather than
+  overwriting one — while clearing opens a period of *no goal* rather than deleting a row. Pressing *Set* twice
+  with the same number opens nothing. **The goal already on the device moves in with an unknown start**, because
+  stamping it with the upgrade's own moment would be inventing history. Two seams close with it: the kind and
+  the value are one row, so a failure can no longer leave a value with no kind; and the goals' **missing-only**
+  import rule goes, because a period is a row with an id. The export carries the periods, and still carries
+  `goals`/`goalKinds` for a build that predates them — filled from the period that is open, so the two cannot
+  disagree.
+
 - **A weight goal sets the rate, instead of the rate being typed** (N135). Asked for in use: the lifter set a
   target *and* a rate, two answers to one question that could disagree. The weight goal now states a **kind** —
   a target weight, a direction with no target, or a weight to hold — and the **rate is derived** from that kind

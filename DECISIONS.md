@@ -640,6 +640,19 @@ the rule; that one argues it.
   flows would be drawn again on every return to the screen, which is the pursuit it must not have.
   ([evidence](DECISIONS-EVIDENCE.md#n136))
 
+- **A goal is rows with periods, not a setting** (N137). The store was a `metricId=value` string rewritten on
+  every change, which meant the past did not exist: changing a goal re-judged every earlier range, and the
+  chart drew the current target across it. A goal is now a **row per period** in `metric_goals`, the newest row
+  per metric being the one that is open — so a change opens a period, and **clearing opens a period of no goal**
+  rather than deleting a row, because the answer to "what was I asking for until today" is the thing being kept.
+  A row that asks for exactly what the open one asks for opens nothing, so the history is changes rather than
+  button presses. **The first row's start is unknown, never invented**: the migration cannot know when the goal
+  already on the device was set, and stamping it with the upgrade's own moment would be inventing history, which
+  is what periods exist to stop. Only goals move into the database — the other settings are preferences about
+  how the app behaves, not facts about a body — and with them goes the import path's old seam, since a goal is
+  now a row that merges like every other. The **derived rate is still not stored** (N135): a period re-derives
+  under today's rule, and the honest reading of an old period is "by today's rule, March was X".
+
 ## Measurements
 
 - **The measurements list scrolls, and its empty sentence is an item of it** (B130). It was a `Column` with
