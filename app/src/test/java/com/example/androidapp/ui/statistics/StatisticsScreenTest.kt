@@ -806,6 +806,9 @@ class StatisticsScreenTest {
         series = weightSeries(),
         weightGoal = goal,
         goalPeriods = periods,
+        // The history judges each period against the readings in it (B141), which in a hand-built state is
+        // the series the chart draws.
+        goalReadings = weightSeries().readings,
     )
 }
 

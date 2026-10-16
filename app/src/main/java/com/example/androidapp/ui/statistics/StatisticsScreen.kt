@@ -236,7 +236,10 @@ private fun StatisticsBody(
                 WeightGoalRow(
                     goal = state.weightGoal,
                     metric = entry,
-                    history = goalOutcomes(state.goalPeriods, series.readings),
+                    // The **unwindowed** series (B141): a period is judged on the readings inside it, not on
+                    // the ones the range chips happen to show, or a verdict about the past would change with
+                    // the chart's window.
+                    history = goalOutcomes(state.goalPeriods, state.goalReadings),
                     onSetGoal = onSetWeightGoal,
                 )
             } else {

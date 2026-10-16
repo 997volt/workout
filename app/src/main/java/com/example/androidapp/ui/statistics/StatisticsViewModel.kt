@@ -98,6 +98,15 @@ data class StatisticsUiState(
      */
     val goalPeriods: List<GoalPeriod> = emptyList(),
     /**
+     * The **whole** series the goal history is judged from, unwindowed (ROADMAP N137, B141).
+     *
+     * The chart's own [series] is clipped to the range chips, and a period's verdict must not be: a target is
+     * met when a reading **in the period** reached it, so judging from the chart's window made the verdict a
+     * function of a display setting — and on the default seven-day range a rate could never clear N98's floor
+     * at all. Empty for a metric that reads no lift; the history is only drawn for the weight goal.
+     */
+    val goalReadings: List<MetricReading> = emptyList(),
+    /**
      * What the lifter's **plans** prescribe for the chosen lift, one entry per plan that names it (N39).
      *
      * Empty for a metric that reads no lift: a plan prescribes sets, not a bodyweight.
@@ -363,6 +372,9 @@ class StatisticsViewModel @Inject constructor(
                     goal = levelGoal,
                     weightGoal = weightGoal,
                     goalPeriods = periods,
+                    // Unwindowed, beside the windowed `series`: the history judges each period against the
+                    // readings **in that period**, not against what the range chips happen to show (B141).
+                    goalReadings = allReadings,
                     planTargets = plans,
                     rateTarget = weightGoal?.ratePerWeekGrams(currentWeightGrams ?: 0L),
                     acceptsHead = sources.acceptsHead,

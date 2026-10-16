@@ -130,6 +130,25 @@ class StatisticsViewModelTest {
     }
 
     @Test
+    fun theGoalHistory_isReadFromTheWholeSeries_notTheChartWindow() = runTest(dispatcher) {
+        // B141: a period's verdict is about the readings **in that period**, so it must not move with the
+        // range chips — and on the default seven-day range a rate could never clear N98's floor at all.
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.LAST_7_DAYS),
+            body = listOf(
+                measurement(daysAgo(1), weight = 82_000L),
+                measurement(daysAgo(90), weight = 75_000L),
+            ),
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertWithMessage("the chart keeps only the window").that(state.series?.readings?.size).isEqualTo(1)
+        assertWithMessage("the history keeps every reading").that(state.goalReadings.size).isEqualTo(2)
+    }
+
+    @Test
     fun aWorkoutMetric_readsTheWorkoutsOwnPoints() = runTest(dispatcher) {
         val viewModel = viewModel(
             range = StatisticsRange(RangeKind.ALL),
