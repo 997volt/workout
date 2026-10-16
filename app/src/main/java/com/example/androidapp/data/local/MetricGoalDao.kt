@@ -35,11 +35,14 @@ interface MetricGoalDao {
      * One metric's periods, **oldest first**, so a reader can walk them and close each at the next one's start.
      *
      * An undated row leads, which is the honest reading of "this was the goal before we knew when goals
-     * started": it is the one with no beginning rather than the one with the earliest date.
+     * started": it is the one with no beginning rather than the one with the earliest date. `DESC` on the
+     * nullness, and `ASC` on the date: SQLite reads `startedAt IS NULL` as 1, so descending puts the undated
+     * row first — the opposite of what the same clause does for [observeCurrent], where a date is newer
+     * information than no date and the row with one therefore wins.
      */
     @Query(
         "SELECT * FROM metric_goals WHERE metricId = :metricId " +
-            "ORDER BY (startedAt IS NULL) ASC, startedAt ASC, createdAt ASC",
+            "ORDER BY (startedAt IS NULL) DESC, startedAt ASC, createdAt ASC",
     )
     fun observePeriods(metricId: String): Flow<List<MetricGoalEntity>>
 
@@ -47,10 +50,23 @@ interface MetricGoalDao {
     @Insert
     suspend fun insert(row: MetricGoalEntity)
 
+    /**
+     * The one period this metric has open — the same row [observeCurrent] returns for it.
+     *
+     * For the caller that needs the answer outside a flow: opening a period has to know whether the change it
+     * is about to write is a change at all (B140). Read here rather than taken as the last of a period list, so
+     * "the open one" has one definition for the screens and the write.
+     */
+    @Query(
+        "SELECT * FROM metric_goals WHERE metricId = :metricId " +
+            "ORDER BY (startedAt IS NULL) ASC, startedAt DESC, createdAt DESC LIMIT 1",
+    )
+    suspend fun findOpen(metricId: String): MetricGoalEntity?
+
     // ------------------------------------------------------------------ backup (N137)
 
-    /** Every period, oldest first, dated rows after the undated one. */
-    @Query("SELECT * FROM metric_goals ORDER BY (startedAt IS NULL) ASC, startedAt ASC, createdAt ASC")
+    /** Every period, oldest first: the undated row leads, then the dated ones oldest to newest. */
+    @Query("SELECT * FROM metric_goals ORDER BY (startedAt IS NULL) DESC, startedAt ASC, createdAt ASC")
     suspend fun allForBackup(): List<MetricGoalEntity>
 
     /**

@@ -6,8 +6,13 @@ import androidx.core.content.edit
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.data.RoomGoalRepository
 import com.example.androidapp.data.SETTINGS_FILE_NAME
 import com.example.androidapp.data.moveLegacyGoals
+import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.model.WeightGoal
+import java.time.Instant
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -96,6 +101,69 @@ class GoalMigrationTest {
         assertTrue("and the first move's timestamp is the one that stands", true)
     }
 
+    @Test
+    fun anUndatedPeriod_leads_theDatedOnes_and_theOpenOneIsTheNewest() = runTest {
+        // B140: an undated row is the goal that was already on the device, so it is the **oldest** period.
+        // Every reader walks the list and closes each period at the next one's start, and the open one — the
+        // period the screens draw — is the newest, which is the last of this list.
+        val goals = database.metricGoalDao()
+        goals.insert(legacyRow(value = 80_000.0))
+        goals.insert(datedRow(id = "new", at = 500L, value = 75_000.0))
+
+        val periods = goals.observePeriods(WEIGHT).first()
+
+        assertEquals(listOf("legacy:$WEIGHT", "new"), periods.map { it.id })
+        assertEquals(listOf(null, 500L), periods.map { it.startedAt })
+    }
+
+    @Test
+    fun pressingSet_withTheOpenGoalsOwnValue_opensNothing_evenWithALegacyRow() = runTest {
+        // The half of B140 the ordering broke: opening a period compared the new goal against the *legacy*
+        // row, so the same number opened a duplicate period and a change back to an old goal read as no
+        // change at all (Success, with nothing written).
+        val goals = database.metricGoalDao()
+        goals.insert(legacyRow(value = 80_000.0))
+        val repository = RoomGoalRepository(database, TimeSource { Instant.ofEpochMilli(500L) })
+
+        repository.setGoal(WEIGHT, WeightGoal.Target(75_000L))
+        repository.setGoal(WEIGHT, WeightGoal.Target(75_000L))
+
+        assertEquals("the same value twice is one period", 2, goals.observePeriods(WEIGHT).first().size)
+
+        repository.setGoal(WEIGHT, WeightGoal.Target(80_000L))
+
+        assertEquals(
+            "a change back to the legacy value is a change to the open goal, not a no-op",
+            3,
+            goals.observePeriods(WEIGHT).first().size,
+        )
+    }
+
+    /** The row the one-time move writes: a goal that was already on the device, with no start (N137). */
+    private fun legacyRow(value: Double) = MetricGoalEntity(
+        id = "legacy:$WEIGHT",
+        metricId = WEIGHT,
+        kind = "TARGET",
+        value = value,
+        startedAt = null,
+        createdAt = 1L,
+        updatedAt = 1L,
+    )
+
+    private fun datedRow(id: String, at: Long, value: Double) = MetricGoalEntity(
+        id = id,
+        metricId = WEIGHT,
+        kind = "TARGET",
+        value = value,
+        startedAt = at,
+        createdAt = at,
+        updatedAt = at,
+    )
+
     private fun prefs(): SharedPreferences =
         context.getSharedPreferences(SETTINGS_FILE_NAME, Context.MODE_PRIVATE)
+
+    private companion object {
+        const val WEIGHT = "BODY:WEIGHT"
+    }
 }

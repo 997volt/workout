@@ -13,7 +13,6 @@ import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.storedKind
 import com.example.androidapp.domain.repository.storedValue
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.util.UUID
@@ -53,11 +52,16 @@ class RoomGoalRepository @Inject constructor(
      * same number is one period, and a boundary in the history where the lifter asked for the same thing twice
      * would make every later reading of it a puzzle. A read and a write in one transaction, so two writers
      * cannot both decide they are the change.
+     *
+     * The open row is read with [MetricGoalDao.findOpen], the same definition [MetricGoalDao.observeCurrent]
+     * gives the screens, rather than taken as the last of the period list: the two were one inverted `ORDER BY`
+     * apart, and that is what let a change back to a goal the lifter had already had read as no change at all
+     * (B140).
      */
     private suspend fun openPeriod(metricId: String, kind: String?, value: Double?): DataResult<Unit> =
         dataResultOf {
             database.withTransaction {
-                val open = dao.observePeriods(metricId).first().lastOrNull()
+                val open = dao.findOpen(metricId)
                 if (open != null && open.kind == kind && open.value == value) return@withTransaction
                 val now = timeSource.nowEpochMillis()
                 dao.insert(
