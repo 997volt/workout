@@ -112,17 +112,6 @@ data class BackupFile(
      */
     val measurementSoreMuscles: List<MeasurementSoreMuscleDto> = emptyList(),
     /**
-     * The user's metric targets, keyed by `MetricKey.id` in each metric's own units (ROADMAP N39).
-     *
-     * They live in settings rather than the database, which is why they needed naming here: a codec
-     * that lists every field by hand drops what it is not told about — three columns were lost that
-     * way (N9, N15, N16) — and restoring a backup was losing every target in silence. The rest of
-     * settings (rest, cue, keep-screen-on, the statistics range) stays a device preference and is
-     * deliberately not in this file (N21).
-     *
-     * Defaulted so a file written before this field existed still decodes.
-     */
-    /**
      * The periods each metric's goal went through (ROADMAP N137).
      *
      * The rows are what makes a goal's **past** a fact: a file that carried only the current value would
@@ -134,6 +123,18 @@ data class BackupFile(
      * holds: [goals] and [goalKinds] are read as one undated period per metric when this is empty.
      */
     val goalPeriods: List<GoalPeriodDto> = emptyList(),
+    /**
+     * The goal values as a build that **predates periods** reads them, keyed by `MetricKey.id` in each metric's
+     * own units (ROADMAP N39, N137).
+     *
+     * They are the compatibility half of the file rather than the store: a goal is a row in `metric_goals` now,
+     * and these two maps are written **from the period that is open** so the halves cannot disagree. A metric
+     * with a value and no kind in [goalKinds] is a goal from a file written before kinds existed, and reads as a
+     * **target**. The rest of settings (rest, cue, keep-screen-on, the statistics range) stays a device
+     * preference and is deliberately not in this file (N21).
+     *
+     * Defaulted so a file written before this field existed still decodes.
+     */
     val goals: Map<String, Double> = emptyMap(),
     /**
      * The **kind** of each goal in [goals], by `WeightGoalKind`'s name, keyed the same way (ROADMAP N135).

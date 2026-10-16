@@ -288,16 +288,6 @@ fun ActiveWorkoutScreen(
 }
 
 /**
- * The one action a workout always offers: adding a movement (ROADMAP F1), at the foot of the list (N82).
- *
- * It was an extended floating button over the list's last rows, which is why that list carried 96 dp of
- * bottom padding to stay clear of it. It keeps the colour it had and takes *Log set*'s form (N59): full
- * width, in the flow, with the + it already carried. `PrimaryActionButton` is the near miss rather than
- * the answer: it is already a full-width pill that "used to be" an extended floating button (P1.16, N1)
- * and takes both colours as parameters, but at 52 dp with its own glyph spacing it is not *Log set*'s
- * shape.
- */
-/**
  * The dialog for one logged set, split out so the screen stays a scaffold.
  *
  * The *open* state stays with the screen, because the body is what opens it; this is
@@ -780,8 +770,8 @@ private fun WorkoutHeader(
  * The readiness line and the dialog behind it (ROADMAP N4).
  *
  * "A form is open" is transient UI state, so it lives here next to the row that
- * opens it. The prompt flag still comes from the session, which is why a brand-new
- * workout opens straight into the dialog while a resumed one does not.
+ * opens it, and that row is the **only** way in: the prompt a brand-new session used to open with went with
+ * N140.
  */
 @Composable
 private fun ReadinessSection(
@@ -809,9 +799,9 @@ private fun ReadinessSection(
 /**
  * The readiness note in the workout header (ROADMAP N4).
  *
- * Always present, so the field the prompt introduces stays reachable after the
- * prompt is skipped — a passive field nobody can find again is the failure that
- * made this a prompt in the first place.
+ * Always present, so the field stays findable whether or not the lifter writes it — which is the whole of the
+ * job now that this row is the only way in (N140). A field nobody can find again is the failure that made it a
+ * prompt in the first place, and the row is the cheaper answer to it.
  *
  * **The sore list is not read here any more** (N113): a live session's header is an editor, and soreness
  * is the day's own record now. A session that recorded one before the move still shows it in history.

@@ -92,8 +92,10 @@ fun NoteDialog(
 }
 
 /**
- * The session's readiness (ROADMAP N4): the prompt a new workout opens with, and the edit reached from
- * the workout header.
+ * The session's readiness (ROADMAP N4): the edit reached from the workout header.
+ *
+ * **The header row is the only way in** since N140 retired the prompt a new workout used to open with, so the
+ * dialog's own dismiss is the whole of closing it.
  *
  * **The note is all it is.** The sore-muscle list sat beside it until N113, when soreness moved to the
  * day's own record in the measurements screen: it is a fact about the body's recovery rather than about

@@ -407,7 +407,6 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val appWeightUnit: StateFlow<WeightUnit> = settingsRepository.observeWeightUnit()
         .stateIn(viewModelScope, SharingStarted.Eagerly, WeightUnit.KILOGRAMS)
 
-    /** True while a just-opened session is asking what was not recovered today (N4). */
     /** The exercise just marked done, awaiting the snackbar's undo (ROADMAP N7). */
     private val pendingFinishedExercise = MutableStateFlow<String?>(null)
 
@@ -1026,8 +1025,8 @@ class ActiveWorkoutViewModel @Inject constructor(
     }
 
     /**
-     * Writes the readiness note (ROADMAP N4), from the prompt a new session opens with or from the
-     * workout header afterwards. A null or blank note clears it.
+     * Writes the readiness note (ROADMAP N4), from the row in the workout header — the only way in since N140
+     * retired the prompt a new session used to open with. A null or blank note clears it.
      *
      * Soreness is not part of this any more (N113): it is recorded with the day, in measurements.
      */
@@ -1044,10 +1043,7 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Skips the prompt without writing anything. The header keeps offering the
-     * field, so skipping is not a dead end.
-     */
+    /** Ends the running rest without waiting for it (ROADMAP P1.4). */
     fun onSkipRest() {
         viewModelScope.launch {
             handle(workoutRepository.clearRest())

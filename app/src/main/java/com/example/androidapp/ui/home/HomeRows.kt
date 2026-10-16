@@ -378,16 +378,10 @@ private fun LazyListScope.measureTodayRow(onMeasureToday: () -> Unit) {
 }
 
 /**
- * What the ways in do, bundled (ROADMAP N114).
- *
- * Five callbacks passed one by one pushed the list builder past the parameter ceiling this project sets, and
- * they belong together anyway: every one of them is "where a row goes".
- */
-/**
  * What today's rows do (N138): the plan's own actions, and the row that records the day.
  *
- * One bundle rather than five parameters, the shape [WayInActions] already has — and the reason is not the
- * ceiling alone: these are one surface's actions, and a caller that wires three of them has wired the surface.
+ * One bundle rather than four parameters, the shape [WayInActions] has — and the reason is not the ceiling
+ * alone: these are one surface's actions, and a caller that wires three of them has wired the surface.
  */
 internal class TodayActions(
     val onMeasureToday: () -> Unit,
@@ -396,6 +390,12 @@ internal class TodayActions(
     val onOpenPlannedWorkout: (TodayPlan) -> Unit,
 )
 
+/**
+ * What the ways in do, bundled (ROADMAP N114).
+ *
+ * Four callbacks passed one by one pushed the list builder past the parameter ceiling this project sets, and
+ * they belong together anyway: every one of them is "where a row goes".
+ */
 internal class WayInActions(
     val onStartWorkout: () -> Unit,
     val onOpenPrograms: () -> Unit,

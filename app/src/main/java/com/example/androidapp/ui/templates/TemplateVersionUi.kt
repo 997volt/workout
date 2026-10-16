@@ -243,7 +243,9 @@ internal fun TemplateVersionPlanDialog(
 @Composable
 private fun PlannedSetLines(exercise: TemplateExercise) {
     if (exercise.sets.isEmpty()) {
-        Text(stringResource(R.string.template_plan_empty))
+        // The **read-only** sentence, not the editor's imperative: there is no control here that could add a
+        // set, and telling the reader to add one is an instruction this dialog cannot honour (B147).
+        Text(stringResource(R.string.template_plan_none))
         return
     }
     val unit = exerciseWeightUnit(exercise.weightUnit)

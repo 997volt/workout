@@ -83,6 +83,13 @@ internal fun ActivityBodyOrEmpty(
  * **Add activity is offered only while the session holds nothing**: an activity is not a workout with a
  * different label, and the two are never mixed. Nothing at all is drawn once the session *is* an activity —
  * that is the screen's rule that it can hold no sets.
+ *
+ * *Add exercise* is the one action a workout always offers (ROADMAP F1), at the foot of the list (N82): it was
+ * an extended floating button over the list's last rows, which is why that list carried 96 dp of bottom padding
+ * to stay clear of it. It keeps the colour it had and takes *Log set*'s form (N59) — full width, in the flow,
+ * with the + it already carried. `PrimaryActionButton` is the near miss rather than the answer: it is already a
+ * full-width pill that "used to be" an extended floating button (P1.16, N1) and takes both colours as
+ * parameters, but at 52 dp with its own glyph spacing it is not *Log set*'s shape.
  */
 @Composable
 internal fun ActivityAddRows(
