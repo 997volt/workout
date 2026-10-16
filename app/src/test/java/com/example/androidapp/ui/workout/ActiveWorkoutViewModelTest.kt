@@ -2783,16 +2783,6 @@ class ActiveWorkoutViewModelTest {
 private class FakeSettingsRepository(
     initialRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
 ) : SettingsRepository {
-    override fun observeGoals(): Flow<Map<String, Double>> = flowOf(emptyMap())
-
-    override suspend fun setGoal(metricId: String, value: Double?): DataResult<Unit> =
-        DataResult.Success(Unit)
-
-    override fun observeGoalKinds(): Flow<Map<String, String>> = flowOf(emptyMap())
-
-    override suspend fun setGoalKind(metricId: String, kind: String?): DataResult<Unit> =
-        DataResult.Success(Unit)
-
 
     private val rest = MutableStateFlow(initialRestSeconds)
 

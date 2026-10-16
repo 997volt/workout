@@ -95,32 +95,6 @@ interface SettingsRepository {
 
     suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit>
 
-    /**
-     * The targets the user has set, keyed by `MetricKey.id`, in each metric's own units (ROADMAP N39).
-     *
-     * One map rather than a read per metric: the screen draws whichever goal belongs to the metric on show,
-     * and the number of metrics is the registry's, not the user's.
-     */
-    fun observeGoals(): Flow<Map<String, Double>>
-
-    /** Sets or clears a metric's target. Null clears it, because a goal nobody wants must be removable. */
-    suspend fun setGoal(metricId: String, value: Double?): DataResult<Unit>
-
-    /**
-     * The **kind** of the goal set for each metric, keyed by `MetricKey.id` (ROADMAP N135).
-     *
-     * A sibling map to [observeGoals] rather than a richer value: the value map is one number per metric and
-     * is already exported, so the kind travels beside it instead of changing its shape. Only the weight
-     * metric states one today; the map is generic because the key is.
-     *
-     * A metric with a value and no kind is a goal written before kinds existed, which the reader takes as a
-     * **target** (N135).
-     */
-    fun observeGoalKinds(): Flow<Map<String, String>>
-
-    /** Sets or clears a metric's goal kind, by [WeightGoalKind]'s name. Null clears it (ROADMAP N135). */
-    suspend fun setGoalKind(metricId: String, kind: String?): DataResult<Unit>
-
     companion object {
         /**
          * What the setting accepts, in seconds.

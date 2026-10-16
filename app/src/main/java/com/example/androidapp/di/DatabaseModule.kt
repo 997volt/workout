@@ -7,8 +7,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.androidapp.data.local.MIGRATION_1_2
 import com.example.androidapp.data.local.MIGRATION_2_3
 import com.example.androidapp.data.local.MIGRATION_3_4
+import com.example.androidapp.data.local.MIGRATION_4_5
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.seedMissingExercises
+import com.example.androidapp.data.moveLegacyGoals
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.platform.CrashLogStore
@@ -35,8 +37,8 @@ object DatabaseModule {
             // opens, so there are three migrations: N110's, which re-files the rows a variation created
             // when the library became a category over movements; N113's, which splits the body's
             // record in two and lets a measurement weigh nothing; and N134's, one nullable column that
-            // lets a template keep a version.
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            // lets a template keep a version; and N137's, one table that gives a goal a past.
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .addCallback(
                 object : RoomDatabase.Callback() {
                     /**
@@ -56,6 +58,10 @@ object DatabaseModule {
                     override fun onOpen(db: SupportSQLiteDatabase) {
                         super.onOpen(db)
                         seedMissingExercises(db, timeSource.nowEpochMillis())
+                        // The same kind of one-time move, of the same "what is already on disk" (N137):
+                        // the goals a lifter had live in settings, and the rows that keep their past are
+                        // here. It writes an unknown start rather than inventing the upgrade's own moment.
+                        moveLegacyGoals(db, context, timeSource.nowEpochMillis())
                     }
                 },
             )

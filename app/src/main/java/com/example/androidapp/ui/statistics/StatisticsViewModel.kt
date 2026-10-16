@@ -1,29 +1,29 @@
 package com.example.androidapp.ui.statistics
 
-import com.example.androidapp.ui.navigation.Statistics
-import com.example.androidapp.domain.model.ExerciseTrendMetric
-import androidx.navigation.toRoute
 import androidx.lifecycle.SavedStateHandle
-import com.example.androidapp.domain.model.Exercise
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.Exercise
+import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TrendPoint
+import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.domain.model.ratePerWeekGrams
+import com.example.androidapp.domain.model.statedWeightGrams
 import com.example.androidapp.domain.model.window
 import com.example.androidapp.domain.nowEpochMillis
+import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.seriesSubjectIds
+import com.example.androidapp.ui.navigation.Statistics
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,11 +34,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import com.example.androidapp.domain.model.WeightGoal
-import com.example.androidapp.domain.model.kind
-import com.example.androidapp.domain.model.ratePerWeekGrams
-import com.example.androidapp.domain.model.statedWeightGrams
-import com.example.androidapp.domain.model.weightGoalOf
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import javax.inject.Inject
 
 /**
  * What the picker starts on (ROADMAP N35).
@@ -136,6 +135,7 @@ data class StatisticsUiState(
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(
     private val settings: SettingsRepository,
+    private val goals: GoalRepository,
     private val repositories: StatisticsRepositories,
     private val timeSource: TimeSource,
     savedStateHandle: SavedStateHandle,
@@ -265,25 +265,20 @@ class StatisticsViewModel @Inject constructor(
             sources,
             exercisePoints,
             records,
-            settings.observeGoals(),
-            settings.observeGoalKinds(),
-        ) { sources, points, records, goals, goalKinds ->
+            goals.observeCurrent(),
+        ) { sources, points, records, goalPeriods ->
             val workoutPoints = sources.workoutPoints
-            // The weight goal, and the level the chart draws (N135): the weight the goal *states*, which a
-            // direction-only goal deliberately does not have — the app never manufactures an end weight the
-            // lifter did not state.
-            val weightGoal = if (sources.selection.metric == MetricKey.Body(BodyMetric.WEIGHT)) {
-                weightGoalOf(
-                    kind = goalKinds[sources.selection.metric.id],
-                    valueGrams = goals[sources.selection.metric.id],
-                )
-            } else {
-                null
-            }
+            // The period that is **open** for this metric (N137), and the two readings the screen makes of it:
+            // the weight goal, with the kind N135 gave it, and the level a chart can draw. A direction-only
+            // goal deliberately states no weight, so the app never manufactures an end weight the lifter did
+            // not state.
+            val current = goalPeriods[sources.selection.metric.id]
+            val weightGoal = current?.weightGoal
+                ?.takeIf { sources.selection.metric == MetricKey.Body(BodyMetric.WEIGHT) }
             val levelGoal = if (sources.selection.metric == MetricKey.Body(BodyMetric.WEIGHT)) {
                 weightGoal?.statedWeightGrams()?.toDouble()
             } else {
-                goals[sources.selection.metric.id]
+                current?.value
             }
             if (workoutPoints is DataResult.Failure) {
                 StatisticsUiState(
@@ -344,23 +339,17 @@ class StatisticsViewModel @Inject constructor(
      * remembered, so a failure has to be visible — the rule every other write in this app follows.
      */
     fun onSetGoal(value: Double?) {
-        viewModelScope.launch { settings.setGoal(selection.value.metric.id, value) }
+        viewModelScope.launch { goals.setLevelGoal(selection.value.metric.id, value) }
     }
 
     /**
      * Sets or clears the **weight** goal, kind and all (ROADMAP N135).
      *
-     * Two writes rather than one, because a goal is a value and a kind and they live in two maps. A failure
-     * between them leaves a value with no kind, which reads as a **target** — the one kind a value alone can
-     * mean, and exactly what this metric's goals meant before kinds existed. A **direction-only** goal clears
-     * the value instead, because it deliberately states no weight.
+     * One write in one transaction now, because the kind and the value are one row (N137): the caveat N135
+     * recorded — "a failure between the two writes leaves a value with no kind" — went with the second map.
      */
     fun onSetWeightGoal(goal: WeightGoal?) {
-        val metricId = MetricKey.Body(BodyMetric.WEIGHT).id
-        viewModelScope.launch {
-            settings.setGoal(metricId, goal?.statedWeightGrams()?.toDouble())
-            settings.setGoalKind(metricId, goal?.kind()?.name)
-        }
+        viewModelScope.launch { goals.setGoal(WEIGHT_METRIC_ID, goal) }
     }
 
     fun onSelectExercise(exerciseId: String?) {

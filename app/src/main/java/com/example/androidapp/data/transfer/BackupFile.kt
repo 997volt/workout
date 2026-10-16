@@ -1,16 +1,16 @@
 package com.example.androidapp.data.transfer
 
-import java.time.DayOfWeek
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.platform.CrashLog
 import kotlinx.serialization.Serializable
+import java.time.DayOfWeek
 
 /**
  * The on-disk backup format (ROADMAP P1.12).
@@ -122,6 +122,18 @@ data class BackupFile(
      *
      * Defaulted so a file written before this field existed still decodes.
      */
+    /**
+     * The periods each metric's goal went through (ROADMAP N137).
+     *
+     * The rows are what makes a goal's **past** a fact: a file that carried only the current value would
+     * restore a lifter's goal and lose the answer to "what was I asking for in March". They travel beside
+     * [goals] rather than replacing them — those two maps are a build that predates periods, and a file still
+     * has to read in one.
+     *
+     * Defaulted like every added field, so a file written before periods existed imports as the single goal it
+     * holds: [goals] and [goalKinds] are read as one undated period per metric when this is empty.
+     */
+    val goalPeriods: List<GoalPeriodDto> = emptyList(),
     val goals: Map<String, Double> = emptyMap(),
     /**
      * The **kind** of each goal in [goals], by `WeightGoalKind`'s name, keyed the same way (ROADMAP N135).
@@ -358,6 +370,25 @@ data class SetDto(
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
+)
+
+/**
+ * One period of one metric's goal (ROADMAP N137).
+ *
+ * All three of `kind`, `value` and `startedAt` are nullable on purpose, and each null means something
+ * different: no kind is a goal written before kinds existed (a target), no value is a direction-only goal, and
+ * no start is the period the move could not date. `kind` and `value` both null is a period of **no goal** —
+ * clearing one closes a period rather than deleting a row.
+ */
+@Serializable
+data class GoalPeriodDto(
+    val id: String,
+    val metricId: String,
+    val kind: String? = null,
+    val value: Double? = null,
+    val startedAt: Long? = null,
+    val createdAt: Long,
+    val updatedAt: Long,
 )
 
 @Serializable

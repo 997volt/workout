@@ -23,6 +23,9 @@ import androidx.room.TypeConverters
  * **Schema 4 is N134**, one nullable column: a template can keep a version, and a version is a template row
  * naming the template it was kept from. See [MIGRATION_3_4].
  *
+ * **Schema 5 is N137**, one new table: a metric's goal keeps its past, so a goal is a row per **period**
+ * rather than a value in a settings string that was rewritten on every change. See [MIGRATION_4_5].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -46,8 +49,9 @@ import androidx.room.TypeConverters
         SessionSoreMuscleEntity::class,
         SessionExerciseJointEntity::class,
         MeasurementSoreMuscleEntity::class,
+        MetricGoalEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -59,6 +63,9 @@ abstract class WorkoutDatabase : RoomDatabase() {
 
     /** The muscles a day's measurement reported sore, each with its own score (ROADMAP N113). */
     abstract fun measurementSoreMuscleDao(): MeasurementSoreMuscleDao
+
+    /** The periods each metric's goal went through (ROADMAP N137). */
+    abstract fun metricGoalDao(): MetricGoalDao
 
     abstract fun statisticsDao(): StatisticsDao
 

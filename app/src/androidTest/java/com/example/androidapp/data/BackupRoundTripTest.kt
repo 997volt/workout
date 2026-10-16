@@ -1,10 +1,10 @@
 package com.example.androidapp.data
 
-import com.example.androidapp.platform.CrashLog
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.data.local.ExerciseEntity
+import com.example.androidapp.data.local.MetricGoalEntity
 import com.example.androidapp.data.local.ProgramDeloadEntity
 import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
@@ -17,20 +17,19 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneOffsetSource
+import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.RowKind
-import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.SoreMuscle
+import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.platform.CrashLog
 import com.example.androidapp.platform.CrashLogStore
-import java.nio.file.Files
-import java.time.DayOfWeek
-import java.time.Instant
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -42,6 +41,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.nio.file.Files
+import java.time.Instant
 
 /**
  * Instrumented round-trip tests for backup and restore (ROADMAP P1.12).
@@ -63,9 +64,6 @@ class BackupRoundTripTest {
     /** Kept so a clear can be asserted against the diagnostics as well as the rows. */
     private lateinit var crashLogs: CrashLogStore
 
-    /** The real settings, because goals are the one thing in the file that is not a database row. */
-    private lateinit var settings: PreferencesSettingsRepository
-
     private val clock = TimeSource { Instant.parse("2026-09-28T08:00:00Z") }
 
     @Before
@@ -74,13 +72,11 @@ class BackupRoundTripTest {
             ApplicationProvider.getApplicationContext(),
             WorkoutDatabase::class.java,
         ).build()
-        settings = PreferencesSettingsRepository(ApplicationProvider.getApplicationContext())
         context = ApplicationProvider.getApplicationContext()
         repository = RoomBackupRepository(
             context = context,
             database = database,
             timeSource = clock,
-            settings = settings,
             // Nothing is recorded here, but the export path has to be built the
             // same way the app builds it.
             crashLogStore = CrashLogStore(Files.createTempDirectory("crash-logs").toFile()).also {
@@ -245,46 +241,37 @@ class BackupRoundTripTest {
     }
 
     @Test
-    fun metricTargets_comeBackFromTheFile_butOneAlreadyHereIsLeftAlone() = runTest {
-        // Goals are settings rather than rows, so they are the one thing the database round trip
-        // cannot prove — and they were absent from every export, so a restore dropped them (N39).
-        val restoredGoal = "body.weight"
-        val keptGoal = "workout.rpe"
-        settings.setGoal(restoredGoal, 82.0)
-        settings.setGoal(keptGoal, 7.0)
+    fun goalPeriods_comeBackFromTheFile_butOneChangedLocallyIsLeftAlone() = runTest {
+        // ROADMAP N137: the periods are a goal's past, so a file carrying only the current value would restore
+        // the goal and lose the answer to "what was I asking for in March". The goals' **missing-only** import
+        // rule went with the preferences string it existed for — a period is a row with an id, so rows merge.
+        val goals = RoomGoalRepository(database, clock)
+        goals.setGoal("BODY:WEIGHT", WeightGoal.Target(80_000L))
+        goals.setGoal("BODY:WEIGHT", WeightGoal.Maintain(79_000L))
         val json = exportedJson()
+        val exported = database.metricGoalDao().allForBackup()
+        assertEquals("the export carries both periods", 2, exported.size)
 
-        // The reinstall: one target is gone locally, and another was changed after the export.
-        settings.setGoal(restoredGoal, null)
-        settings.setGoal(keptGoal, 9.5)
+        // The reinstall: the history is gone, and one period was re-entered differently after the export.
+        database.clearAllTables()
+        val changed = exported.first().copy(value = 99_000.0)
+        database.metricGoalDao().insert(changed)
 
         repository.import(json)
 
-        val goals = settings.observeGoals().first()
-        assertEquals("a target the file had and the device did not", 82.0, goals[restoredGoal]!!, 0.0001)
-        assertEquals("a target changed locally is newer than the file", 9.5, goals[keptGoal]!!, 0.0001)
-    }
-
-    @Test
-    fun aGoalsKind_comesBackWithItsTarget_butOneAlreadyHereIsLeftAlone() = runTest {
-        // ROADMAP N135: the kind is what the rate is derived from, so a restore that dropped it would turn a
-        // maintenance goal into a target — a different goal rather than an incomplete one.
-        val restored = "BODY:WEIGHT"
-        val kept = "BODY:WAIST"
-        settings.setGoal(restored, 80_000.0)
-        settings.setGoalKind(restored, "MAINTAIN")
-        settings.setGoal(kept, 800.0)
-        settings.setGoalKind(kept, "TARGET")
-        val json = exportedJson()
-
-        settings.setGoalKind(restored, null)
-        settings.setGoalKind(kept, "MAINTAIN")
-
-        repository.import(json)
-
-        val kinds = settings.observeGoalKinds().first()
-        assertEquals("a kind the file had and the device did not", "MAINTAIN", kinds[restored])
-        assertEquals("a kind changed locally is newer than the file", "MAINTAIN", kinds[kept])
+        val rows = database.metricGoalDao().allForBackup()
+        assertEquals("the period the file had and the device did not", 2, rows.size)
+        assertEquals(
+            "a period changed locally is newer than the file",
+            99_000.0,
+            rows.single { it.id == changed.id }.value!!,
+            0.0001,
+        )
+        assertEquals(
+            "and the kind travels with the value",
+            "MAINTAIN",
+            rows.single { it.value == 79_000.0 }.kind,
+        )
     }
 
     private suspend fun exportedJson(): String =
@@ -608,7 +595,7 @@ class BackupRoundTripTest {
         // *open*, so a clear that only emptied tables would leave the library empty until
         // the process restarted — a clean start that looks broken.
         seedAWorkout()
-        settings.setGoal("body.weight", 80.0)
+        RoomGoalRepository(database, clock).setGoal("BODY:WEIGHT", WeightGoal.Target(80_000L))
         crashLogs.record(
             CrashLog(
                 timestamp = 1_000L,
@@ -645,9 +632,9 @@ class BackupRoundTripTest {
         )
         assertEquals("and the crash logs are diagnostics about what just went", 0, crashLogs.all().size)
         assertEquals(
-            "a target is authored content rather than a display preference, so clearing takes it too",
-            emptyMap<String, Double>(),
-            settings.observeGoals().first(),
+            "a goal is authored content rather than a display preference, so clearing takes it too",
+            emptyList<MetricGoalEntity>(),
+            database.metricGoalDao().allForBackup(),
         )
         assertFalse("and the 1.x store goes with everything else", legacy.exists())
     }

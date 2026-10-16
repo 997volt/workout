@@ -1,24 +1,25 @@
 package com.example.androidapp.data
 
-import java.time.LocalDate
-import com.example.androidapp.domain.model.StatisticsRange
-import com.example.androidapp.domain.model.RangeKind
-import androidx.core.content.edit
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.RangeKind
+import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
+import java.time.LocalDate
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Settings in `SharedPreferences` (ROADMAP N21).
@@ -120,48 +121,6 @@ class PreferencesSettingsRepository @Inject constructor(
         awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
     }.conflate().distinctUntilChanged()
 
-    override fun observeGoals(): Flow<Map<String, Double>> = callbackFlow {
-        trySend(currentGoals())
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
-            if (changed == null || changed == KEY_GOALS) trySend(currentGoals())
-        }
-        preferences.registerOnSharedPreferenceChangeListener(listener)
-        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
-    }.conflate().distinctUntilChanged()
-
-    override suspend fun setGoal(metricId: String, value: Double?): DataResult<Unit> {
-        preferences.edit(commit = true) {
-            val goals = currentGoals().toMutableMap()
-            if (value == null) goals.remove(metricId) else goals[metricId] = value
-            putString(KEY_GOALS, encodeGoals(goals))
-        }
-        return DataResult.Success(Unit)
-    }
-
-    override fun observeGoalKinds(): Flow<Map<String, String>> = callbackFlow {
-        trySend(currentGoalKinds())
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
-            if (changed == null || changed == KEY_GOAL_KINDS) trySend(currentGoalKinds())
-        }
-        preferences.registerOnSharedPreferenceChangeListener(listener)
-        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
-    }.conflate().distinctUntilChanged()
-
-    override suspend fun setGoalKind(metricId: String, kind: String?): DataResult<Unit> {
-        preferences.edit(commit = true) {
-            val kinds = currentGoalKinds().toMutableMap()
-            if (kind == null) kinds.remove(metricId) else kinds[metricId] = kind
-            putString(KEY_GOAL_KINDS, encodeGoalKinds(kinds))
-        }
-        return DataResult.Success(Unit)
-    }
-
-    private fun currentGoals(): Map<String, Double> =
-        decodeGoals(preferences.getString(KEY_GOALS, null))
-
-    private fun currentGoalKinds(): Map<String, String> =
-        decodeGoalKinds(preferences.getString(KEY_GOAL_KINDS, null))
-
     override suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit> {
         preferences.edit(commit = true) {
             putString(KEY_RANGE_KIND, range.kind.name)
@@ -242,7 +201,7 @@ class PreferencesSettingsRepository @Inject constructor(
     )
 
     private companion object {
-        const val FILE_NAME = "settings"
+        const val FILE_NAME = SETTINGS_FILE_NAME
         const val KEY_DEFAULT_REST_SECONDS = "default_rest_seconds"
         const val KEY_REST_CUE_ENABLED = "rest_cue_enabled"
         const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
@@ -258,18 +217,17 @@ class PreferencesSettingsRepository @Inject constructor(
     }
 }
 
-/** One line per metric that has a target. */
-private const val KEY_GOALS = "metric_goals"
+/** The settings file's name, which the goals' one-time move also opens (ROADMAP N137). */
+internal const val SETTINGS_FILE_NAME = "settings"
 
 /**
- * Goals as one line each, `id=value` (ROADMAP N39).
+ * Goals as one line each, `id=value` (ROADMAP N39) — **the store N137 moved out of this file**.
  *
- * A goal is one number per metric, so this needs no schema and no dependency: a document format would be a
- * library and a migration for something a reader can check by eye. A line that cannot be read is dropped
- * rather than failing the whole map — a lost target is better than a screen that will not open.
+ * These keys are read once, by [moveLegacyGoals], and emptied by it: a goal is a row in `metric_goals` now,
+ * and nothing writes the string again. They are kept rather than deleted because the goals a lifter already
+ * had are still sitting in them on every device that upgrades.
  */
-private fun encodeGoals(goals: Map<String, Double>): String =
-    goals.entries.joinToString("\n") { "${it.key}=${it.value}" }
+private const val KEY_GOALS = "metric_goals"
 
 private fun decodeGoals(text: String?): Map<String, Double> {
     if (text.isNullOrBlank()) return emptyMap()
@@ -283,15 +241,6 @@ private fun decodeGoals(text: String?): Map<String, Double> {
 /** The kind of the goal each metric has, one line per metric that has one (ROADMAP N135). */
 private const val KEY_GOAL_KINDS = "metric_goal_kinds"
 
-/**
- * Goal kinds as `id=KIND`, the same shape [encodeGoals] uses and for the same reasons (ROADMAP N135).
- *
- * A kind is an enum **name**, never an ordinal, so a line this build cannot read is dropped by the reader
- * rather than becoming whichever kind happens to sit at that number.
- */
-private fun encodeGoalKinds(kinds: Map<String, String>): String =
-    kinds.entries.joinToString("\n") { "${it.key}=${it.value}" }
-
 private fun decodeGoalKinds(text: String?): Map<String, String> {
     if (text.isNullOrBlank()) return emptyMap()
     return text.lineSequence().mapNotNull { line ->
@@ -299,3 +248,58 @@ private fun decodeGoalKinds(text: String?): Map<String, String> {
         if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) parts[0] to parts[1] else null
     }.toMap()
 }
+
+/**
+ * Moves the goals a lifter already had into the rows that hold them now (ROADMAP N137).
+ *
+ * Runs from `RoomDatabase.Callback.onOpen`, beside the library's own top-up and for the same reason: it is a
+ * one-time move of what is already on disk, and the database being opened is the moment to make it. Raw SQL
+ * because a Room call on the connection being opened would deadlock, and it is here rather than in the database
+ * package because this is the file that knows the settings format — the prefs string is read by the same
+ * decoders that wrote it.
+ *
+ * **The start is written as null**, which is N137's decision: the moment this goal was set is recorded nowhere,
+ * and stamping it with the upgrade's own time would be inventing history — the thing periods exist to stop.
+ * The ids are derived from the metric rather than random, so a second open inserts nothing.
+ *
+ * The union of the two maps is moved, not just the values: a **direction-only** goal (N135) is a kind with no
+ * number, and dropping it here would lose exactly the goal that has no value to fall back on.
+ */
+internal fun moveLegacyGoals(db: SupportSQLiteDatabase, context: Context, movedAt: Long) {
+    val preferences = context.getSharedPreferences(SETTINGS_FILE_NAME, Context.MODE_PRIVATE)
+    val goals = decodeGoals(preferences.getString(KEY_GOALS, null))
+    val kinds = decodeGoalKinds(preferences.getString(KEY_GOAL_KINDS, null))
+    val metrics = goals.keys + kinds.keys
+    if (metrics.isEmpty()) return
+
+    db.beginTransaction()
+    try {
+        metrics.forEach { metricId ->
+            db.execSQL(
+                INSERT_LEGACY_GOAL,
+                arrayOf<Any?>(
+                    "legacy:$metricId",
+                    metricId,
+                    kinds[metricId],
+                    goals[metricId],
+                    movedAt,
+                    movedAt,
+                ),
+            )
+        }
+        db.setTransactionSuccessful()
+    } finally {
+        db.endTransaction()
+    }
+    // Emptied only after the rows are in: a crash between the two leaves the goals where they were, and the
+    // next open moves them again — which the derived ids make a no-op rather than a duplicate.
+    preferences.edit(commit = true) {
+        remove(KEY_GOALS)
+        remove(KEY_GOAL_KINDS)
+    }
+}
+
+/** The column list must match [com.example.androidapp.data.local.MetricGoalEntity]; `startedAt` is the null. */
+private const val INSERT_LEGACY_GOAL =
+    "INSERT OR IGNORE INTO metric_goals " +
+        "(id, metricId, kind, value, startedAt, createdAt, updatedAt) VALUES (?, ?, ?, ?, NULL, ?, ?)"

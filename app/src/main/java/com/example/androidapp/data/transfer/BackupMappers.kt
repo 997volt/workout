@@ -1,16 +1,16 @@
 package com.example.androidapp.data.transfer
 
+import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.MeasurementEntity
 import com.example.androidapp.data.local.MeasurementSoreMuscleEntity
-import com.example.androidapp.data.local.ExerciseEntity
-import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
+import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
-import com.example.androidapp.domain.model.RowKind
-import com.example.androidapp.domain.validLibraryShape
 import com.example.androidapp.data.local.TemplateSetEntity
 import com.example.androidapp.data.local.WorkoutSessionEntity
+import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.domain.validLibraryShape
 
 /**
  * Entity <-> backup DTO (ROADMAP P1.12).

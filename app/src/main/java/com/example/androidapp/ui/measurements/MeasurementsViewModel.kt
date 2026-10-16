@@ -6,17 +6,16 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
-import com.example.androidapp.domain.model.weightGoalOf
+import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
-import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.ui.statistics.BodyMetric
 import com.example.androidapp.ui.statistics.EnergyAdjustment
 import com.example.androidapp.ui.statistics.MetricKey
 import com.example.androidapp.ui.statistics.MetricReading
 import com.example.androidapp.ui.statistics.MetricSeries
+import com.example.androidapp.ui.statistics.WEIGHT_METRIC_ID
 import com.example.androidapp.ui.statistics.weighInVerdict
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +24,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /** What the measurements screen renders (ROADMAP N32). */
 data class MeasurementsUiState(
@@ -42,7 +42,7 @@ data class MeasurementsUiState(
 @HiltViewModel
 class MeasurementsViewModel @Inject constructor(
     private val repository: MeasurementRepository,
-    private val settings: SettingsRepository,
+    private val goals: GoalRepository,
 ) : ViewModel() {
 
     private val lastError = MutableStateFlow<DataError?>(null)
@@ -119,10 +119,8 @@ class MeasurementsViewModel @Inject constructor(
                 }
                 .sortedBy { it.at },
         )
-        val goal = weightGoalOf(
-            kind = settings.observeGoalKinds().first()[WEIGHT_METRIC_ID],
-            valueGrams = settings.observeGoals().first()[WEIGHT_METRIC_ID],
-        )
+        // The period this metric has open (N137), read as the weight goal N135 gave it.
+        val goal = goals.observeCurrent().first()[WEIGHT_METRIC_ID]?.weightGoal
         return series.weighInVerdict(goal, series.readings.lastOrNull()?.value?.toLong())
     }
 
@@ -174,8 +172,5 @@ class MeasurementsViewModel @Inject constructor(
         lastError.value = null
     }
 }
-
-/** The key the weight goal is stored under, which is the weight series' own id (ROADMAP N135). */
-private val WEIGHT_METRIC_ID = MetricKey.Body(BodyMetric.WEIGHT).id
 
 private const val STOP_TIMEOUT_MILLIS = 5_000L

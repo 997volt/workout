@@ -1,14 +1,10 @@
 package com.example.androidapp.data
 
 import android.content.Context
-import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.IOException
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
-import com.example.androidapp.data.local.seedMissingExercises
 import androidx.room.withTransaction
+import com.example.androidapp.data.local.MetricGoalEntity
 import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.local.seedMissingExercises
 import com.example.androidapp.data.transfer.BackupCodec
 import com.example.androidapp.data.transfer.BackupFile
 import com.example.androidapp.data.transfer.toDto
@@ -20,8 +16,12 @@ import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.ImportSummary
-import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.platform.CrashLogStore
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,7 +37,6 @@ class RoomBackupRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val database: WorkoutDatabase,
     private val timeSource: TimeSource,
-    private val settings: SettingsRepository,
     private val crashLogStore: CrashLogStore,
 ) : BackupRepository {
 
@@ -58,7 +57,13 @@ class RoomBackupRepository @Inject constructor(
     /** The body's record, whose own DAO carries its backup queries (ROADMAP N32, N113). */
     private val measurements = database.measurementDao()
 
+    /** The goal history, whose own DAO carries its backup queries (ROADMAP N137). */
+    private val metricGoals = database.metricGoalDao()
+
     override suspend fun export(): DataResult<String> = dataResultOf {
+        // The goal that is open for each metric, read once: the file carries the periods *and* the two maps a
+        // build that predates them reads, and both come from the same rows (N137).
+        val openGoals = metricGoals.observeCurrent().first()
         BackupCodec.encode(
             BackupFile(
                 schemaVersion = BackupCodec.CURRENT_SCHEMA_VERSION,
@@ -93,14 +98,15 @@ class RoomBackupRepository @Inject constructor(
                 // The soreness a daily entry reported (ROADMAP N113): a fact the lifter wrote, so a
                 // restore that dropped it would lose work in silence.
                 measurementSoreMuscles = measurementSore.allForBackup().map { it.toDto() },
-                // The user's metric targets (ROADMAP N39). They are settings rather than rows,
-                // which is exactly why they need naming here: the codec drops whatever it is not
-                // told about, and a restore was losing every target in silence.
-                goals = settings.observeGoals().first(),
-                // The kind of each of those goals (ROADMAP N135). The same argument as the values above,
-                // read from the other side: a goal whose kind did not travel would come back as a target,
-                // which for a maintenance goal is a different goal rather than an incomplete one.
-                goalKinds = settings.observeGoalKinds().first(),
+                // The user's metric targets (ROADMAP N39) and the kind each has (N135), as the two maps a
+                // build that predates periods reads. They are filled from the period that is open, so the two
+                // halves of the file cannot disagree.
+                goals = openGoals.mapNotNull { row -> row.value?.let { row.metricId to it } }.toMap(),
+                goalKinds = openGoals.mapNotNull { row -> row.kind?.let { row.metricId to it } }.toMap(),
+                // The periods themselves (ROADMAP N137): the past, which is what the table is for. The codec
+                // drops whatever it is not told about, and a restore that lost these would lose the answer to
+                // "what was I asking for in March".
+                goalPeriods = metricGoals.allForBackup().map { it.toDto() },
                 // Diagnostics ride along so they are reachable on a release
                 // build; import ignores them, deliberately.
                 crashLogs = crashLogStore.all(),
@@ -136,13 +142,9 @@ class RoomBackupRepository @Inject constructor(
             context.deleteDatabase(WorkoutDatabase.LEGACY_NAME)
 
             // Metric targets are the one setting the user *authored* rather than chose as a display
-            // preference — which is why they are exported — so "delete everything" has to take them
-            // too, or a clean start would still draw the old goal lines (N39, N18).
-            settings.observeGoals().first().keys.forEach { metricId ->
-                if (settings.setGoal(metricId, null) is DataResult.Failure) {
-                    throw IOException("the goal for $metricId was not cleared")
-                }
-            }
+            // preference, which is why they are exported — and they are **rows** now (N137), so
+            // `clearAllTables` above is what takes them. The loop that emptied the settings string went with
+            // the string.
         }
     }
 
@@ -178,8 +180,7 @@ class RoomBackupRepository @Inject constructor(
             )
         }
 
-        restoreMissingGoals(file.goals)
-        restoreMissingGoalKinds(file.goalKinds)
+        restoreGoalPeriods(file)
 
         summary
     }
@@ -317,43 +318,37 @@ class RoomBackupRepository @Inject constructor(
     }
 
     /**
-     * Adds the targets in [goals] that this device does not already have.
+     * Restores the goal periods in [file] (ROADMAP N137).
      *
-     * Outside the database transaction because goals live outside the database, and *missing-only*
-     * for the reason a live row is left alone: a target set after the export was taken is newer
-     * than the file, and guessing the other way would overwrite a deliberate change.
-     */
-    private suspend fun restoreMissingGoals(goals: Map<String, Double>) {
-        val alreadyHere = settings.observeGoals().first()
-        goals.forEach { (metricId, value) ->
-            if (metricId !in alreadyHere) {
-                val stored = settings.setGoal(metricId, value)
-                if (stored is DataResult.Failure) {
-                    throw IOException("the goal for $metricId was not stored")
-                }
-            }
-        }
-    }
-
-    /**
-     * Adds the goal kinds in [kinds] that this device does not already have (ROADMAP N135).
+     * The rows merge like every other table — `IGNORE` by id — and the goals' old **missing-only** rule went
+     * with the preferences string it existed for: a prefs write could not tell one row from another, while a
+     * period is a row with an id, so a file's older periods add to the local history instead of being refused.
      *
-     * *Missing-only* by the same rule [restoreMissingGoals] follows, and for the same reason: a kind set
-     * after the export was taken is newer than the file. Reading the goals first is what keeps the two
-     * halves consistent — a kind is only restored for a metric whose value is already here or was just
-     * added, so a kind can never arrive without the goal it describes.
+     * A file written before periods existed holds the two maps instead, and they are read as **one undated
+     * period per metric** — the same reading the one-time move gives the goals already on the device, and the
+     * only honest one, because that file never recorded when a goal was set. The id is derived from the metric
+     * so importing the same file twice inserts nothing.
      */
-    private suspend fun restoreMissingGoalKinds(kinds: Map<String, String>) {
-        val goalsHere = settings.observeGoals().first()
-        val kindsHere = settings.observeGoalKinds().first()
-        kinds.forEach { (metricId, kind) ->
-            if (metricId in goalsHere && metricId !in kindsHere) {
-                val stored = settings.setGoalKind(metricId, kind)
-                if (stored is DataResult.Failure) {
-                    throw IOException("the goal kind for $metricId was not stored")
-                }
-            }
+    private suspend fun restoreGoalPeriods(file: BackupFile) {
+        if (file.goalPeriods.isNotEmpty()) {
+            metricGoals.insert(file.goalPeriods.map { it.toEntity() })
+            return
         }
+        val now = timeSource.nowEpochMillis()
+        val metrics = file.goals.keys + file.goalKinds.keys
+        metricGoals.insert(
+            metrics.map { metricId ->
+                MetricGoalEntity(
+                    id = "legacy:$metricId",
+                    metricId = metricId,
+                    kind = file.goalKinds[metricId],
+                    value = file.goals[metricId],
+                    startedAt = null,
+                    createdAt = now,
+                    updatedAt = now,
+                )
+            },
+        )
     }
 
     private companion object {

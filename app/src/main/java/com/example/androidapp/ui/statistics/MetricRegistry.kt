@@ -107,6 +107,9 @@ sealed interface MetricKey {
         }
 }
 
+/** The weight series' own id, which is the key its goal is stored under (ROADMAP N135, N137). */
+internal val WEIGHT_METRIC_ID = MetricKey.Body(BodyMetric.WEIGHT).id
+
 /** The body series that are not tape sites (ROADMAP N32). */
 enum class BodyMetric { WEIGHT, BODY_FAT, MUSCLE }
 

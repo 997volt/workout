@@ -1,43 +1,48 @@
 package com.example.androidapp.ui.statistics
 
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import androidx.lifecycle.SavedStateHandle
-import com.example.androidapp.domain.repository.ExerciseRepository
-import com.example.androidapp.domain.model.MuscleGroup
-import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.RowKind
-import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.DataError
-import kotlinx.coroutines.launch
 import com.example.androidapp.domain.DataResult
-import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseTrendMetric
-import com.example.androidapp.domain.model.jointSiteKey
-import com.example.androidapp.domain.model.Side
-import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.ExerciseTrendPoint
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RangeKind
+import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.TrendMetric
 import com.example.androidapp.domain.model.TrendPoint
+import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.domain.model.WeightGoalKind
 import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.domain.model.jointSiteKey
+import com.example.androidapp.domain.model.kind
+import com.example.androidapp.domain.model.statedWeightGrams
+import com.example.androidapp.domain.repository.ExerciseRepository
+import com.example.androidapp.domain.repository.GoalPeriod
+import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.StatisticsRepository
 import com.example.androidapp.domain.repository.TrendsRepository
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -47,9 +52,9 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import com.example.androidapp.domain.model.MeasurementKind
-import com.example.androidapp.domain.model.WeightGoal
-import com.example.androidapp.domain.model.WeightGoalKind
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * What the Statistics screen reads (ROADMAP N35).
@@ -344,10 +349,18 @@ class StatisticsViewModelTest {
         // Defaults may reference earlier parameters, which is what keeps `points` from being a parameter
         // nobody reads — the bug this test found in its own fixture.
         trends: FakeTrendsRepository = FakeTrendsRepository(points = points),
-        settings: FakeSettingsRepository = FakeSettingsRepository(range, goals, goalKinds),
+        settings: FakeSettingsRepository = FakeSettingsRepository(range),
+        // The two maps a test names are one **period** per metric, undated: what a goal written before
+        // periods existed looks like on disk (N137).
+        goalRepository: FakeGoalRepository = FakeGoalRepository(
+            current = (goals.keys + goalKinds.keys).associateWith { metricId ->
+                GoalPeriod(startedAt = null, kind = goalKinds[metricId], value = goals[metricId])
+            },
+        ),
         statistics: FakeStatisticsRepository = FakeStatisticsRepository(sessions, records),
     ) = StatisticsViewModel(
         settings = settings,
+        goals = goalRepository,
         repositories = StatisticsRepositories(
             statistics = statistics,
             trends = trends,
@@ -455,31 +468,36 @@ class StatisticsViewModelTest {
     }
 
     @Test
-    fun settingADirectionGoal_clearsTheStoredWeight_andWritesTheKind() = runTest(dispatcher) {
-        val settings = FakeSettingsRepository(StatisticsRange(), mapOf("BODY:WEIGHT" to 80_000.0))
-        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
+    fun settingADirectionGoal_opensAPeriodWithTheKind_andNoWeight() = runTest(dispatcher) {
+        val goalRepository = FakeGoalRepository()
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), goalRepository = goalRepository)
         observe(viewModel)
         advanceUntilIdle()
 
         viewModel.onSetWeightGoal(WeightGoal.Direction(gain = true))
         advanceUntilIdle()
 
-        assertThat(settings.goals.value).doesNotContainKey("BODY:WEIGHT")
-        assertThat(settings.goalKinds.value).containsEntry("BODY:WEIGHT", WeightGoalKind.GAIN.name)
+        val open = goalRepository.periods.value.getValue("BODY:WEIGHT").last()
+        assertThat(open.kind).isEqualTo(WeightGoalKind.GAIN.name)
+        assertThat(open.value).isNull()
     }
 
     @Test
-    fun settingATargetGoal_writesBothTheWeight_andItsKind() = runTest(dispatcher) {
-        val settings = FakeSettingsRepository(StatisticsRange())
-        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
+    fun settingATargetGoal_opensOnePeriodWithBothTheWeight_andItsKind() = runTest(dispatcher) {
+        // One row rather than two writes (N137), so the caveat N135 recorded — a failure between the value and
+        // the kind leaves a value with no kind — cannot arise.
+        val goalRepository = FakeGoalRepository()
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), goalRepository = goalRepository)
         observe(viewModel)
         advanceUntilIdle()
 
         viewModel.onSetWeightGoal(WeightGoal.Target(75_000L))
         advanceUntilIdle()
 
-        assertThat(settings.goals.value).containsEntry("BODY:WEIGHT", 75_000.0)
-        assertThat(settings.goalKinds.value).containsEntry("BODY:WEIGHT", WeightGoalKind.TARGET.name)
+        assertThat(goalRepository.periods.value.getValue("BODY:WEIGHT")).hasSize(1)
+        val open = goalRepository.periods.value.getValue("BODY:WEIGHT").last()
+        assertThat(open.value).isEqualTo(75_000.0)
+        assertThat(open.kind).isEqualTo(WeightGoalKind.TARGET.name)
     }
 
     @Test
@@ -523,30 +541,8 @@ class StatisticsViewModelTest {
 
 private class FakeSettingsRepository(
     initial: StatisticsRange = StatisticsRange(),
-    initialGoals: Map<String, Double> = emptyMap(),
-    initialGoalKinds: Map<String, String> = emptyMap(),
 ) : SettingsRepository {
     val stored = MutableStateFlow(initial)
-    val goals = MutableStateFlow(initialGoals)
-    val goalKinds = MutableStateFlow(initialGoalKinds)
-
-    override fun observeGoals(): Flow<Map<String, Double>> = goals
-
-    override suspend fun setGoal(metricId: String, value: Double?): DataResult<Unit> {
-        goals.value = goals.value.toMutableMap().apply {
-            if (value == null) remove(metricId) else put(metricId, value)
-        }
-        return DataResult.Success(Unit)
-    }
-
-    override fun observeGoalKinds(): Flow<Map<String, String>> = goalKinds
-
-    override suspend fun setGoalKind(metricId: String, kind: String?): DataResult<Unit> {
-        goalKinds.value = goalKinds.value.toMutableMap().apply {
-            if (kind == null) remove(metricId) else put(metricId, kind)
-        }
-        return DataResult.Success(Unit)
-    }
     override fun observeDefaultRestSeconds(): Flow<Int> = flowOf(45)
     override suspend fun setDefaultRestSeconds(seconds: Int): DataResult<Unit> = DataResult.Success(Unit)
     override fun observeRestCueEnabled(): Flow<Boolean> = flowOf(true)
@@ -630,4 +626,36 @@ private class FakeExerciseRepository(private val lifts: List<Exercise>) : Exerci
         DataResult.Success(lifts)
 
     override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> = DataResult.Success(Unit)
+}
+
+/** The goal history these tests write to and read from (ROADMAP N137). */
+private class FakeGoalRepository(
+    current: Map<String, GoalPeriod> = emptyMap(),
+) : GoalRepository {
+    val periods = MutableStateFlow(current.mapValues { (_, period) -> listOf(period) })
+
+    override fun observeCurrent(): Flow<Map<String, GoalPeriod>> =
+        periods.map { all -> all.mapValues { (_, rows) -> rows.last() } }
+
+    override fun observePeriods(metricId: String): Flow<List<GoalPeriod>> =
+        periods.map { it[metricId].orEmpty() }
+
+    override suspend fun setGoal(metricId: String, goal: WeightGoal?): DataResult<Unit> {
+        open(metricId, goal?.kind()?.name, goal?.statedWeightGrams()?.toDouble())
+        return DataResult.Success(Unit)
+    }
+
+    override suspend fun setLevelGoal(metricId: String, value: Double?): DataResult<Unit> {
+        open(metricId, kind = null, value = value)
+        return DataResult.Success(Unit)
+    }
+
+    private fun open(metricId: String, kind: String?, value: Double?) {
+        periods.value = periods.value + (
+            metricId to (
+                periods.value[metricId].orEmpty() +
+                    GoalPeriod(startedAt = null, kind = kind, value = value)
+                )
+            )
+    }
 }

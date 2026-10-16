@@ -1,21 +1,21 @@
 package com.example.androidapp.data.transfer
 
-import kotlinx.serialization.json.JsonPrimitive
-import org.junit.Assert.assertNull
 import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -516,6 +516,47 @@ class BackupCodecTest {
 
         assertEquals(withKinds.goalKinds, restored.goalKinds)
         assertEquals(withKinds.goals, restored.goals)
+    }
+
+    @Test
+    fun goalPeriods_surviveTheRoundTrip_withTheirDates() {
+        // ROADMAP N137: the periods are a goal's past, so a file that carried only the current value would
+        // restore the goal and lose the answer to "what was I asking for in March".
+        val withPeriods = sample.copy(
+            goalPeriods = listOf(
+                GoalPeriodDto(
+                    id = "g1",
+                    metricId = "BODY:WEIGHT",
+                    kind = "TARGET",
+                    value = 80_000.0,
+                    startedAt = null,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                ),
+                GoalPeriodDto(
+                    id = "g2",
+                    metricId = "BODY:WEIGHT",
+                    kind = "MAINTAIN",
+                    value = 79_000.0,
+                    startedAt = 1_700_000_000_000L,
+                    createdAt = 2L,
+                    updatedAt = 2L,
+                ),
+            ),
+        )
+
+        val restored = BackupCodec.decode(BackupCodec.encode(withPeriods))
+
+        assertEquals(withPeriods.goalPeriods, restored.goalPeriods)
+    }
+
+    @Test
+    fun aFileWrittenBeforePeriodsExisted_stillDecodes_seeingNone() {
+        val json = Json { prettyPrint = false }
+        val tree = json.parseToJsonElement(BackupCodec.encode(sample)).jsonObject
+        val olderFile = JsonObject(tree - "goalPeriods")
+
+        assertEquals(emptyList<GoalPeriodDto>(), BackupCodec.decode(olderFile.toString()).goalPeriods)
     }
 
     @Test

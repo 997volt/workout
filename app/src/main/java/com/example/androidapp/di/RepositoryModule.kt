@@ -1,20 +1,22 @@
 package com.example.androidapp.di
 
-import com.example.androidapp.domain.repository.StatisticsRepository
-import com.example.androidapp.data.RoomStatisticsRepository
-import com.example.androidapp.domain.repository.MeasurementRepository
-import com.example.androidapp.data.RoomMeasurementRepository
+import com.example.androidapp.data.RoomAdherenceRepository
 import com.example.androidapp.data.RoomBackupRepository
 import com.example.androidapp.data.RoomExerciseRepository
-import com.example.androidapp.data.RoomAdherenceRepository
+import com.example.androidapp.data.RoomGoalRepository
+import com.example.androidapp.data.RoomMeasurementRepository
 import com.example.androidapp.data.RoomProgramRepository
+import com.example.androidapp.data.RoomStatisticsRepository
 import com.example.androidapp.data.RoomTemplateRepository
 import com.example.androidapp.data.RoomTrendsRepository
 import com.example.androidapp.data.RoomWorkoutRepository
+import com.example.androidapp.domain.repository.AdherenceRepository
 import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.ExerciseRepository
-import com.example.androidapp.domain.repository.AdherenceRepository
+import com.example.androidapp.domain.repository.GoalRepository
+import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.StatisticsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TrendsRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
@@ -82,4 +84,8 @@ abstract class RepositoryModule {
     @Singleton
     abstract fun bindBackupRepository(impl: RoomBackupRepository): BackupRepository
 
+    /** The goal history, which is rows rather than a setting since N137. */
+    @Binds
+    @Singleton
+    abstract fun bindGoalRepository(impl: RoomGoalRepository): GoalRepository
 }
