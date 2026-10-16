@@ -17,7 +17,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -97,8 +96,8 @@ class GoalMigrationTest {
         prefs().edit(commit = true) { putString("metric_goals", "BODY:WEIGHT=80000.0") }
         moveLegacyGoals(db, context, movedAt = 2L)
 
-        assertEquals(1, database.metricGoalDao().allForBackup().size)
-        assertTrue("and the first move's timestamp is the one that stands", true)
+        val row = database.metricGoalDao().allForBackup().single()
+        assertEquals("the row is the first move's, not the second's", 1L, row.createdAt)
     }
 
     @Test

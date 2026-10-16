@@ -19,6 +19,8 @@ import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.TemplateSetEntity
+import com.example.androidapp.data.local.MetricGoalEntity
+import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.WorkoutSessionEntity
 import java.time.DayOfWeek
 import com.google.common.truth.Truth.assertThat
@@ -217,6 +219,9 @@ class BackupCodecRoundTripTest {
             // The column P3.3 added: a session's provenance must survive a restore, or a
             // restored done day would read as missed.
             templateId = "t1",
+            // And the one N141 added: an activity is a session, so a restore that dropped this
+            // would bring every swim back as an empty workout (B145).
+            activity = "SWIMMING",
         )
 
         val restored = entity.toDto().toEntity()
@@ -369,6 +374,40 @@ class BackupCodecRoundTripTest {
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,
+        )
+
+        assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aTemplate_survivesTheCodec() {
+        // B145: this file exists to fail when a column is not wired, and `versionOf` is the one N134 added — a
+        // dropped link would turn a kept version back into a live template.
+        val entity = TemplateEntity(
+            id = "t1",
+            name = "Push day",
+            versionOf = "t-live",
+            createdAt = 1_600_000_000_000L,
+            updatedAt = 1_600_000_000_001L,
+            deletedAt = null,
+        )
+
+        assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aGoalPeriod_survivesTheCodec() {
+        // B145: the whole `metric_goals` table is new (N137), and each of its nullable columns means something
+        // different — no kind is a goal written before kinds existed, no value is a direction-only goal, no
+        // start is the period the move could not date — so all three are set here.
+        val entity = MetricGoalEntity(
+            id = "g1",
+            metricId = "BODY:WEIGHT",
+            kind = "TARGET",
+            value = 80_000.0,
+            startedAt = 1_600_000_000_000L,
+            createdAt = 1_600_000_000_000L,
+            updatedAt = 1_600_000_000_001L,
         )
 
         assertThat(entity.toDto().toEntity()).isEqualTo(entity)

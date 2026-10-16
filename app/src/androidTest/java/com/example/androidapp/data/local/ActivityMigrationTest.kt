@@ -47,11 +47,11 @@ class ActivityMigrationTest {
 
         MIGRATION_5_6.migrate(db)
 
-        db.query("SELECT activity, readinessNote FROM workout_sessions WHERE id = 's1'").use { cursor ->
+        db.query("SELECT activity, readinessNote, startedAt FROM workout_sessions WHERE id = 's1'").use { cursor ->
             cursor.moveToFirst()
-            assertEquals("the start is unknown rather than invented", 0, cursor.getColumnIndex("activity"))
             assertNull("a session written before this column is a workout", cursor.getString(0))
             assertEquals("and the row keeps its own values", "Slept badly", cursor.getString(1))
+            assertEquals("including the start it was written with", 1000L, cursor.getLong(2))
         }
     }
 
