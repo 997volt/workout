@@ -1,8 +1,8 @@
 # Workout — Roadmap
 
-> **v2.5** is shipped ([CHANGELOG.md](CHANGELOG.md)), *Next* is **empty**, *Later* holds two decided
-> changes (N136–N137), and **N134 — a template keeping a version — and N135 — a weight goal setting its own
-> rate — are built** and recorded in the changelog's
+> **v2.5** is shipped ([CHANGELOG.md](CHANGELOG.md)), *Next* is **empty**, *Later* holds one decided
+> change (N137), and **N134 — a template keeping a version — plus N135 — a weight goal setting its own rate —
+> and N136 — a weigh-in saying whether the rate is on target — are built** and recorded in the changelog's
 > unreleased section. **2.5 carried four batches and the seven defects a reading of them found**: home's
 > plan surface (N125–N127), where the next-up rows go and a day's plan is home's only answer; measurements
 > (B130, N132, N133), where the list scrolls, a delete is a mode and a deleted entry can be put back unless
@@ -39,8 +39,8 @@
 > by design, and the 1.18 APK is still the way to read it. **The four batches above shipped as 2.5**, with
 > the seven defects a reading of them found (B131–B137) fixed before the tag — including the release
 > verifier's own CI step, which the batch had broken and 2.5 repairs.
-> Checked against the changelog as well as the code: every shipped id has its entry, *Later* holds three
-> (N136–N137) and *Next* holds nothing. **A line-by-line reading of the unversioned batches — N125–N127,
+> Checked against the changelog as well as the code: every shipped id has its entry, *Later* holds one
+> (N137) and *Next* holds nothing. **A line-by-line reading of the unversioned batches — N125–N127,
 > B128/B129/N128/N129, B130/N132/N133, N130 and N131 — found seven defects (B131–B137), and all seven are
 > fixed and recorded in [CHANGELOG.md](CHANGELOG.md).** **Reading the N122–N124 batch line by line found five defects (B121–B125), and the race B125
 > recorded rather than fixed became the sixth (B126); all six are fixed and recorded in
@@ -86,7 +86,7 @@ An empty section is a state, not a gap, and it is worth saying what fills it —
 this section holds only work a **reading or a use** turns up — a defect found by using the app, a question
 the log or the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled
 to keep itself full. What is decided and simply
-not being started is in *Later* (N136–N137).
+not being started is in *Later* (N137).
 
 ## Later — decided, and not being started
 
@@ -95,34 +95,6 @@ built. It is **not** *Parked* — a parked row is a decision not to plan somethi
 not now — and it is not *Next*, which is what is actually being worked on. Each row names **what brings it forward**,
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
-
-- **A weigh-in says whether the rate is on target** (N136). The sentence is already written: [`EnergyAdjustment`](app/src/main/java/com/example/androidapp/ui/statistics/EnergyAdjustment.kt)
-  says how far current intake has to move for the trend to become the target — "about 200 kcal a day less than you are
-  eating now" — but it lives **under a chart in Statistics**, so the lifter has to go and look for it. The request is to
-  say it where the weighing happens: entering a daily weight answers whether the trend's rate is the goal's rate, and
-  when it is not, the adjustment is what it prompts with.
-
-  **The boundary that shapes it, stated rather than crossed.** This app stores **no food and no intake** — a non-goal,
-  not an omission: "the app states the energy implication of a weight trend it already owns (N98) and stores no food and
-  no intake." health-center's verdict compares the rate against **average calories from a diary**; that half cannot come
-  across, so the prompt is **relative** — how far intake must move — and never "you ate X". Importing the calorie half
-  was rejected because it needs the store this app refuses to keep.
-
-  **And it must not fire on noise.** The reference judges on 10 days; this app refuses to speak before N98's floor —
-  **8 recorded readings across 21 days** — on the ground that "a rate from three weigh-ins is noise". The floor is kept:
-  a prompt that fires on water weight is worse than no prompt, and it is the standard P2.8 is parked on. The reference's
-  shorter window is the one number to decide deliberately when this is built, not to adopt by copying.
-
-  **Never a direction the lifter did not set.** The reference's "bodyfat > 20% → you should be cutting" is rejected: the
-  goal is the lifter's and the app does arithmetic against it rather than diagnosing. A prompt telling somebody with no
-  such goal to lose weight is the one prompt this app must never grow.
-
-  **A line after the save, not a dialog.** It states; it is dismissible; it does not pursue (P4.7). And it is not P1.11
-  — that parked row is about personalising defaults for a new user, while this is a target a lifter sets about their own
-  body.
-
-  **Ready, since N135 is built** — this is that goal's other half — and brought forward when the lifter next wants to
-  know *this week* whether the rate is right and has to open Statistics to find out.
 
 - **A goal's past is kept, and each period says whether it was met** (N137). Asked for in use: when a goal changes,
   the old one should be recoverable, so a later reading can say **what the goal was in a given period and whether it
@@ -251,7 +223,7 @@ tag, and **N125–N127 shipped next** — today's plan as home's only answer, th
 none, and the day's own workout readable before it is started. B126 is not in that list because it never stood in *Next*: it is the logging order that closes the race
 B125 had recorded rather than fixed, and it landed with the batch after a release-readiness reading.
 
-***Next* holds nothing and *Later* two (N136–N137); the seven defects this reading found (B131–B137),
+***Next* holds nothing and *Later* one (N137); the seven defects this reading found (B131–B137),
 home's plan surface (N125–N127), the measurements batch (B130, N132, N133) and what cutting 2.3 and 2.4
 turned up (B128, B129, N128, N129) are all recorded in [CHANGELOG.md](CHANGELOG.md).** N118
 was found by asking what the app now records and never reads back, and N119

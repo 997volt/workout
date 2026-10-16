@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.statistics
 
+import com.example.androidapp.domain.model.WeightGoal
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.time.Duration
@@ -151,5 +152,46 @@ class EnergyAdjustmentTest {
     @Test
     fun aCorridorWithNothingWeighed_isSilent() {
         assertThat(series(0L to null).energyAdjustmentToCorridor(targetGrams = 80_000.0)).isNull()
+    }
+
+    @Test
+    fun aWeighIn_saysNothing_withoutAGoal_orBelowTheFloor() {
+        // N136: no goal is the one prompt this app must never grow — the direction is the lifter's. And the
+        // floor is kept, because a prompt that fires on water weight is worse than no prompt.
+        val long = weekly(perWeek = 0.0)
+        val short = series(0L to 82_000.0, 7L to 82_000.0, 14L to 82_000.0)
+
+        assertThat(long.weighInVerdict(goal = null, currentWeightGrams = 82_000L)).isNull()
+        assertThat(short.weighInVerdict(WeightGoal.Direction(gain = false), 82_000L)).isNull()
+    }
+
+    @Test
+    fun aFlatTrend_againstALoseGoal_isNotOnTarget_andSaysToEatLess() {
+        // The case the line exists to name: the rate the goal asks for is a share of the body a week, and a
+        // trend of nothing is short of it.
+        val adjustment = weekly(perWeek = 0.0)
+            .weighInVerdict(WeightGoal.Direction(gain = false), currentWeightGrams = 82_000L)!!
+
+        assertThat(adjustment.isOnTarget).isFalse()
+        assertThat(adjustment.eatsMore).isFalse()
+        assertThat(adjustment.magnitude.first).isGreaterThan(0)
+    }
+
+    @Test
+    fun aFlatTrend_againstAGainGoal_saysToEatMore() {
+        val adjustment = weekly(perWeek = 0.0)
+            .weighInVerdict(WeightGoal.Direction(gain = true), currentWeightGrams = 82_000L)!!
+
+        assertThat(adjustment.eatsMore).isTrue()
+    }
+
+    @Test
+    fun aMaintenanceGoal_insideItsCorridor_isOnTarget() {
+        // The corridor is the goal, so a flat 80 kg series is the answer rather than a rate of zero.
+        val flat = series(*(0L..7L).map { week -> (week * 7) to 80_000.0 }.toTypedArray())
+
+        val adjustment = flat.weighInVerdict(WeightGoal.Maintain(80_000L), currentWeightGrams = 80_000L)!!
+
+        assertThat(adjustment.isOnTarget).isTrue()
     }
 }

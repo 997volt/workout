@@ -18,6 +18,17 @@ unreleased.
 
 ### Added
 
+- **A weigh-in says whether the rate is on target** (N136). Asked for in use: the sentence already existed —
+  *"about 200 kcal a day less than you are eating now"* — but it lived **under a chart in Statistics**, so a
+  lifter had to go and look for it. Saving a daily weight now answers it where the weighing happens, as a
+  **line after the save**: it states, it is dismissible and it does not pursue (P4.7). **It keeps N98's floor**
+  — 8 recorded readings across 21 days — because an unsolicited prompt that fires on water weight is worse than
+  no prompt, and it stays **relative** (how far intake must move), never a number to eat. **Nothing is said at
+  all without a goal**: the direction is the lifter's, and a line telling somebody with no such goal to lose
+  weight is a diagnosis rather than arithmetic against what they asked for. A **maintenance** goal is judged
+  against its corridor, as the chart's section judges it (N135); a tape day and a soreness-only morning are not
+  weigh-ins and answer nothing.
+
 - **A measurement opens its own details** (no roadmap id — a request in use, which the roadmap does not
   cover). The list's supporting line is a summary: `82.4 kg · 18.3%` does not say which number is which,
   and the tape sites and the sore list read there as bare numbers and bare words. Tapping a row now opens

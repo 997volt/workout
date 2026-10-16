@@ -17,11 +17,22 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SoreMuscle
+import com.example.androidapp.domain.model.StatisticsRange
+import com.example.androidapp.domain.model.TapeSite
+import com.example.androidapp.domain.model.WeightGoalKind
+import com.example.androidapp.domain.repository.SettingsRepository
+import java.time.Duration
+import kotlinx.coroutines.flow.flowOf
 
 /** What the measurements screen's ViewModel owns: passing an entry on, and reporting what came back. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -39,7 +50,7 @@ class MeasurementsViewModelTest {
     @Test
     fun itShowsWhatTheRepositoryHolds_newestFirst() = runTest(dispatcher) {
         entries.value = listOf(entry("m2", weight = 82_000L), entry("m1", weight = 83_000L))
-        val viewModel = MeasurementsViewModel(FakeMeasurementRepository(entries))
+        val viewModel = MeasurementsViewModel(FakeMeasurementRepository(entries), FakeSettingsRepository())
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
@@ -53,7 +64,7 @@ class MeasurementsViewModelTest {
     fun saving_passesTheEntryThrough_andClearsTheError() = runTest(dispatcher) {
         val repository = FakeMeasurementRepository(entries)
         repository.failNextSave = true
-        val viewModel = MeasurementsViewModel(repository)
+        val viewModel = MeasurementsViewModel(repository, FakeSettingsRepository())
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
@@ -74,7 +85,7 @@ class MeasurementsViewModelTest {
     fun dismissingTheError_clearsIt() = runTest(dispatcher) {
         val repository = FakeMeasurementRepository(entries)
         repository.failNextSave = true
-        val viewModel = MeasurementsViewModel(repository)
+        val viewModel = MeasurementsViewModel(repository, FakeSettingsRepository())
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
@@ -92,7 +103,7 @@ class MeasurementsViewModelTest {
         // N133: what the snackbar's Undo puts back is the entry itself, read before the write — after it
         // the row is not in the list, and the message has to name what went.
         entries.value = listOf(entry("m1", weight = 82_000L))
-        val viewModel = MeasurementsViewModel(FakeMeasurementRepository(entries))
+        val viewModel = MeasurementsViewModel(FakeMeasurementRepository(entries), FakeSettingsRepository())
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
@@ -106,7 +117,7 @@ class MeasurementsViewModelTest {
     fun undo_restoresTheEntry_itOffered() = runTest(dispatcher) {
         entries.value = listOf(entry("m1", weight = 82_000L))
         val repository = FakeMeasurementRepository(entries)
-        val viewModel = MeasurementsViewModel(repository)
+        val viewModel = MeasurementsViewModel(repository, FakeSettingsRepository())
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
@@ -125,7 +136,7 @@ class MeasurementsViewModelTest {
         entries.value = listOf(entry("m1", weight = 82_000L))
         val repository = FakeMeasurementRepository(entries)
         repository.failNextRestore = true
-        val viewModel = MeasurementsViewModel(repository)
+        val viewModel = MeasurementsViewModel(repository, FakeSettingsRepository())
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
@@ -145,7 +156,7 @@ class MeasurementsViewModelTest {
     fun dismissingTheUndo_dropsTheOffer_withoutWritingAnything() = runTest(dispatcher) {
         entries.value = listOf(entry("m1", weight = 82_000L))
         val repository = FakeMeasurementRepository(entries)
-        val viewModel = MeasurementsViewModel(repository)
+        val viewModel = MeasurementsViewModel(repository, FakeSettingsRepository())
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
@@ -157,12 +168,174 @@ class MeasurementsViewModelTest {
         assertNull("taking the message is not a restore", repository.restored)
     }
 
-    private fun entry(id: String, weight: Long) = BodyMeasurement(
+    @Test
+    fun aWeighIn_answersWhetherTheTrendIsTheGoal() = runTest(dispatcher) {
+        // N136: the answer lived under a chart in Statistics, so a lifter had to go and look for it. Here it
+        // arrives with the weighing — and a flat trend against a lose goal is the case it exists to name.
+        val repository = FakeMeasurementRepository(MutableStateFlow(weighIns()))
+        val viewModel = MeasurementsViewModel(repository, settingsFor(WeightGoalKind.LOSE))
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(entry("m-new", weight = 82_000L, at = LAST_DAY))
+        advanceUntilIdle()
+
+        val verdict = viewModel.rateVerdict.value
+        assertNotNull("a weigh-in with a goal and enough history says something", verdict)
+        assertFalse("a flat trend against a lose goal is not on target", verdict!!.isOnTarget)
+        assertFalse("and the move it names is to eat less", verdict.eatsMore)
+    }
+
+    @Test
+    fun withNoGoal_aWeighIn_saysNothingAtAll() = runTest(dispatcher) {
+        // The one prompt this app must never grow: a direction is the lifter's, and this one has none.
+        val repository = FakeMeasurementRepository(MutableStateFlow(weighIns()))
+        val viewModel = MeasurementsViewModel(repository, FakeSettingsRepository())
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(entry("m-new", weight = 82_000L, at = LAST_DAY))
+        advanceUntilIdle()
+
+        assertNull("no goal, no verdict", viewModel.rateVerdict.value)
+    }
+
+    @Test
+    fun belowTheFloor_aWeighIn_saysNothing() = runTest(dispatcher) {
+        // Three readings are a number and not a trend, and a prompt that fires on water weight is worse than no
+        // prompt — so N98's floor is kept rather than the reference's shorter window (N136).
+        val repository = FakeMeasurementRepository(MutableStateFlow(weighIns(count = 3)))
+        val viewModel = MeasurementsViewModel(repository, settingsFor(WeightGoalKind.LOSE))
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(entry("m-new", weight = 82_000L, at = FIRST_DAY.plus(Duration.ofDays(6))))
+        advanceUntilIdle()
+
+        assertNull("too little to be sure, so nothing is said", viewModel.rateVerdict.value)
+    }
+
+    @Test
+    fun aTapeDay_isNotAWeighIn() = runTest(dispatcher) {
+        val repository = FakeMeasurementRepository(MutableStateFlow(weighIns()))
+        val viewModel = MeasurementsViewModel(repository, settingsFor(WeightGoalKind.LOSE))
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(tapeEntry())
+        advanceUntilIdle()
+
+        assertNull("a tape day has no weight to answer about", viewModel.rateVerdict.value)
+    }
+
+    @Test
+    fun aSorenessOnlyDay_isNotAWeighIn() = runTest(dispatcher) {
+        val repository = FakeMeasurementRepository(MutableStateFlow(weighIns()))
+        val viewModel = MeasurementsViewModel(repository, settingsFor(WeightGoalKind.LOSE))
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(
+            BodyMeasurement(
+                id = "s1",
+                measuredAt = LAST_DAY,
+                kind = MeasurementKind.DAILY,
+                soreMuscles = listOf(SoreMuscle(MuscleGroup.QUADS, 8)),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertNull("a morning with no weight on the scale answers nothing", viewModel.rateVerdict.value)
+    }
+
+    @Test
+    fun aMaintenanceGoal_isJudgedAgainstItsCorridor() = runTest(dispatcher) {
+        val repository = FakeMeasurementRepository(MutableStateFlow(weighIns(baseGrams = 80_000L)))
+        val viewModel = MeasurementsViewModel(
+            repository,
+            settingsFor(WeightGoalKind.MAINTAIN, grams = 80_000.0),
+        )
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(entry("m-new", weight = 80_200L, at = LAST_DAY))
+        advanceUntilIdle()
+
+        assertNotNull("a corridor answers too, rather than a rate of zero", viewModel.rateVerdict.value)
+        assertTrue("and a weight inside it is on target", viewModel.rateVerdict.value!!.isOnTarget)
+    }
+
+    @Test
+    fun aFailedSave_saysNothing_ratherThanAnsweringFromNothing() = runTest(dispatcher) {
+        val repository = FakeMeasurementRepository(MutableStateFlow(weighIns()))
+        repository.failNextSave = true
+        val viewModel = MeasurementsViewModel(repository, settingsFor(WeightGoalKind.LOSE))
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(entry("m-new", weight = 82_000L, at = LAST_DAY))
+        advanceUntilIdle()
+
+        assertTrue(viewModel.error.value is DataError.Storage)
+        assertNull("nothing was written, so there is nothing to say about it", viewModel.rateVerdict.value)
+    }
+
+    @Test
+    fun dismissingTheVerdict_clearsIt() = runTest(dispatcher) {
+        val repository = FakeMeasurementRepository(MutableStateFlow(weighIns()))
+        val viewModel = MeasurementsViewModel(repository, settingsFor(WeightGoalKind.LOSE))
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSave(entry("m-new", weight = 82_000L, at = LAST_DAY))
+        advanceUntilIdle()
+        viewModel.onDismissRateVerdict()
+
+        assertNull("the sentence is taken rather than left standing", viewModel.rateVerdict.value)
+    }
+
+    /** Settings holding one weight goal: [kind], at [grams] where the kind states a weight (N135). */
+    private fun settingsFor(kind: WeightGoalKind, grams: Double = 78_000.0) = FakeSettingsRepository(
+        goals = mapOf(WEIGHT_ID to grams),
+        kinds = mapOf(WEIGHT_ID to kind.name),
+    )
+
+    private fun entry(id: String, weight: Long, at: Instant = FIRST_DAY) = BodyMeasurement(
         id = id,
-        measuredAt = Instant.parse("2026-10-02T08:00:00Z"),
+        measuredAt = at,
         kind = MeasurementKind.DAILY,
         weightGrams = weight,
     )
+
+    /** A tape day: a record, but not a weigh-in (N113, N136). */
+    private fun tapeEntry() = BodyMeasurement(
+        id = "t1",
+        measuredAt = FIRST_DAY,
+        kind = MeasurementKind.TAPE,
+        tape = mapOf(TapeSite.WAIST to 860L),
+    )
+
+    /**
+     * The history N98's floor asks for: eight weigh-ins across three weeks, [perDayGrams] a day apart.
+     *
+     * Below it the prompt must stay silent, which is the floor N136 keeps rather than the reference's ten days.
+     */
+    private fun weighIns(perDayGrams: Long = 0L, baseGrams: Long = 82_000L, count: Int = 8) =
+        (0 until count).map { index ->
+            val day = index * (FLOOR_DAYS / (count - 1))
+            entry("m$index", weight = baseGrams + perDayGrams * day, at = FIRST_DAY.plus(Duration.ofDays(day)))
+        }
+
+    private companion object {
+        val FIRST_DAY: Instant = Instant.parse("2026-10-01T08:00:00Z")
+        val LAST_DAY: Instant = FIRST_DAY.plus(Duration.ofDays(FLOOR_DAYS))
+
+        /** N98's floor, in days: the span eight readings must cover before the app will speak. */
+        const val FLOOR_DAYS = 21L
+
+        /** The key the weight goal is stored under (ROADMAP N135). */
+        const val WEIGHT_ID = "BODY:WEIGHT"
+    }
 }
 
 private class FakeMeasurementRepository(
@@ -182,7 +355,10 @@ private class FakeMeasurementRepository(
 
     override suspend fun save(measurement: BodyMeasurement): DataResult<Unit> {
         if (failNextSave) return DataResult.Failure(DataError.Storage(IllegalStateException()))
-        entries.value = listOf(measurement)
+        // Placed by its id, as the real repository places it: a save both adds and corrects, which is what the
+        // weigh-in verdict reads the series back from (N136).
+        entries.value = entries.value.filterNot { it.id == measurement.id && measurement.id.isNotEmpty() } +
+            measurement
         return DataResult.Success(Unit)
     }
 
@@ -199,4 +375,44 @@ private class FakeMeasurementRepository(
         }
         return DataResult.Success(Unit)
     }
+}
+
+/**
+ * Settings, with only what a weigh-in reads: the goal and its kind (ROADMAP N135, N136).
+ *
+ * The writes are accepted and ignored, because nothing on this screen sets a goal — the statistics screen does.
+ */
+private class FakeSettingsRepository(
+    goals: Map<String, Double> = emptyMap(),
+    kinds: Map<String, String> = emptyMap(),
+) : SettingsRepository {
+    private val goalValues = MutableStateFlow(goals)
+    private val kindValues = MutableStateFlow(kinds)
+
+    override fun observeGoals(): Flow<Map<String, Double>> = goalValues
+
+    override suspend fun setGoal(metricId: String, value: Double?): DataResult<Unit> = DataResult.Success(Unit)
+
+    override fun observeGoalKinds(): Flow<Map<String, String>> = kindValues
+
+    override suspend fun setGoalKind(metricId: String, kind: String?): DataResult<Unit> =
+        DataResult.Success(Unit)
+
+    override fun observeDefaultRestSeconds(): Flow<Int> = flowOf(45)
+    override suspend fun setDefaultRestSeconds(seconds: Int): DataResult<Unit> = DataResult.Success(Unit)
+    override fun observeRestCueEnabled(): Flow<Boolean> = flowOf(true)
+    override suspend fun setRestCueEnabled(enabled: Boolean): DataResult<Unit> = DataResult.Success(Unit)
+    override fun observeKeepScreenOn(): Flow<Boolean> = flowOf(true)
+    override suspend fun setKeepScreenOn(enabled: Boolean): DataResult<Unit> = DataResult.Success(Unit)
+    override fun observeRestTimerEnabled(): Flow<Boolean> = flowOf(true)
+    override suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit> = DataResult.Success(Unit)
+    override fun observeWeightUnit(): Flow<WeightUnit> = flowOf(WeightUnit.KILOGRAMS)
+    override suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit> = DataResult.Success(Unit)
+    override fun observeProgressionPromptEnabled(): Flow<Boolean> = flowOf(true)
+    override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> =
+        DataResult.Success(Unit)
+
+    override fun observeStatisticsRange(): Flow<StatisticsRange> = flowOf(StatisticsRange())
+    override suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit> =
+        DataResult.Success(Unit)
 }

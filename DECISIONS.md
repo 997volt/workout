@@ -626,6 +626,20 @@ the rule; that one argues it.
   than offering it for editing — rejected: keeping the two side by side, which is two sources that can disagree,
   the thing being fixed.
 
+- **A weigh-in answers whether the rate is the goal's, where the weighing happens** (N136). The energy sentence
+  already existed under the statistics chart, and a lifter had to go and look for it; the same arithmetic is now
+  asked at the moment a weight is saved. **The prompt is unsolicited, so it is held to a higher bar than the
+  chart**: it checks N98's floor itself — 8 recorded readings across 21 days — rather than leaning on the
+  statement's arithmetic, because a prompt that fires on water weight is worse than no prompt, and below the
+  floor it says **nothing at all** rather than the chart's "not enough weigh-ins yet", which is an answer to a
+  question the lifter asked. **No goal means no line**, which is the one prompt this app must never grow: the
+  direction is the lifter's, and stating one they did not set is a diagnosis rather than arithmetic against what
+  they asked for. It is **a line after the save, not a dialog**: it states, it is dismissible, it does not
+  pursue (P4.7), and it is never a number to eat — the relative sentence is the only honest one without the
+  intake store (N98). It is set by the save rather than derived from the data, because a value read from the
+  flows would be drawn again on every return to the screen, which is the pursuit it must not have.
+  ([evidence](DECISIONS-EVIDENCE.md#n136))
+
 ## Measurements
 
 - **The measurements list scrolls, and its empty sentence is an item of it** (B130). It was a `Column` with

@@ -132,7 +132,7 @@ private fun energyStatement(series: MetricSeries?, weightGoal: WeightGoal?, rate
             } else {
                 R.string.statistics_energy_less
             },
-            bandText(adjustment.magnitude),
+            adjustmentBandText(adjustment.magnitude),
         )
     }
 }
@@ -141,9 +141,10 @@ private fun energyStatement(series: MetricSeries?, weightGoal: WeightGoal?, rate
  * The magnitude as the range it is.
  *
  * A fit that could measure its own scatter reports two numbers, and one that could not reports the same
- * number twice — a range of one, not a point hiding.
+ * number twice — a range of one, not a point hiding. `internal` because the weigh-in prompt (N136) says the
+ * same sentence from the measurements screen, and two renderings of one band would be two answers.
  */
-private fun bandText(magnitude: IntRange): String =
+internal fun adjustmentBandText(magnitude: IntRange): String =
     if (magnitude.first == magnitude.last) {
         magnitude.first.toString()
     } else {

@@ -2030,3 +2030,34 @@ would be a second band around a band.
 **The derived rate is a share of the body *now*, which is why it is computed from the unwindowed series.** The
 chart is windowed by the chosen range; the rate is not, because a range that excluded the latest weigh-in would
 change the rate the goal asks for — and the goal did not change.
+
+## N136
+
+The request came from use: the answer existed and was correct, but it lived in the wrong place. `EnergyAdjustment`
+already turns the gap between the fitted trend and the target rate into "about 200 kcal a day less than you are
+eating now", and it sits **under a chart in Statistics** — so a lifter who wants to know *this week* whether the
+rate is right has to go and look for a sentence the app already knows how to write.
+
+**The work is therefore placement, and the placement is what raises the bar.** The statistics statement is an
+answer to a question the lifter asked: they opened the chart, and "not enough weigh-ins yet" is the honest
+answer to it. The weigh-in line is **unsolicited** — it appears because a weight was saved — so it asks a
+stricter question before it speaks at all. It checks N98's floor itself (8 recorded readings across 21 days)
+rather than leaning on `energyAdjustment`'s own guard, and below the floor it says **nothing**: a prompt that
+fires on water weight is worse than no prompt, and there is no question for it to be the answer to. The
+reference's shorter ten-day window was the one number to decide deliberately rather than adopt by copying, and
+the decision is to keep the floor the app already had.
+
+**No goal means no line, and that is the one prompt this app must never grow.** The reference's own rule
+("bodyfat > 20% → you should be cutting") is rejected for the same reason the N136 entry gives: the goal is the
+lifter's, and the app does arithmetic against it rather than diagnosing. So a lifter with no goal gets silence
+rather than a suggestion, and the *direction* is only ever the one they stated.
+
+**A maintenance goal answers against its corridor**, because that is what its goal is (N135): the same
+`energyAdjustmentToCorridor` the chart's section uses, so the two surfaces cannot give one lifter two answers.
+
+**It is a line, and it is set by the save rather than derived from the data.** A snackbar states, is
+dismissible and does not pursue (P4.7) — the shape the delete's undo already uses on this screen. The verdict
+is a `MutableStateFlow` the save writes and the snackbar takes, rather than a value computed from the flows: a
+derived value would be drawn again on every return to the measurements screen, which is exactly the pursuit the
+sentence must not have. Reading the series back from the repository — rather than patching the saved entry into
+the list in hand — is what makes the trend the one the app actually holds, this save included.

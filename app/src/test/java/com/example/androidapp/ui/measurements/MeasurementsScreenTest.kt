@@ -24,6 +24,7 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.statistics.EnergyAdjustment
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import java.time.Instant
 import org.junit.Assert.assertEquals
@@ -64,6 +65,8 @@ class MeasurementsScreenTest {
         pendingUndo: BodyMeasurement? = null,
         onUndo: () -> Unit = {},
         onDismissUndo: () -> Unit = {},
+        rateVerdict: EnergyAdjustment? = null,
+        onDismissRateVerdict: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -78,6 +81,8 @@ class MeasurementsScreenTest {
                     pendingUndo = pendingUndo,
                     onUndo = onUndo,
                     onDismissUndo = onDismissUndo,
+                    rateVerdict = rateVerdict,
+                    onDismissRateVerdict = onDismissRateVerdict,
                 )
             }
         }
@@ -311,6 +316,28 @@ class MeasurementsScreenTest {
         ).performClick()
 
         assertTrue("the snackbar's action is the undo", undone)
+    }
+
+    @Test
+    fun anOffTargetWeighIn_namesTheMove_ratherThanOpeningADialog() {
+        // N136: the answer arrives with the weighing, as a line that states and is dismissible — never a
+        // dialog, which would pursue (P4.7), and never a number to eat (N98).
+        setScreen(rateVerdict = EnergyAdjustment(lowKcal = -300, highKcal = -200))
+
+        composeTestRule.onNodeWithText(
+            ApplicationProvider.getApplicationContext<Context>()
+                .getString(R.string.statistics_energy_less, "200–300"),
+        ).assertExists()
+    }
+
+    @Test
+    fun anOnTargetWeighIn_saysSo() {
+        setScreen(rateVerdict = EnergyAdjustment(lowKcal = -40, highKcal = 30))
+
+        composeTestRule.onNodeWithText(
+            ApplicationProvider.getApplicationContext<Context>()
+                .getString(R.string.statistics_energy_on_target),
+        ).assertExists()
     }
 
     @Test

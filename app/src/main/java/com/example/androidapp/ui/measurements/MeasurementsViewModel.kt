@@ -5,13 +5,23 @@ import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.weightGoalOf
 import com.example.androidapp.domain.repository.MeasurementRepository
+import com.example.androidapp.domain.repository.SettingsRepository
+import com.example.androidapp.ui.statistics.BodyMetric
+import com.example.androidapp.ui.statistics.EnergyAdjustment
+import com.example.androidapp.ui.statistics.MetricKey
+import com.example.androidapp.ui.statistics.MetricReading
+import com.example.androidapp.ui.statistics.MetricSeries
+import com.example.androidapp.ui.statistics.weighInVerdict
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -32,6 +42,7 @@ data class MeasurementsUiState(
 @HiltViewModel
 class MeasurementsViewModel @Inject constructor(
     private val repository: MeasurementRepository,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
 
     private val lastError = MutableStateFlow<DataError?>(null)
@@ -58,18 +69,66 @@ class MeasurementsViewModel @Inject constructor(
     val pendingUndo: StateFlow<BodyMeasurement?> = _pendingUndo.asStateFlow()
 
     /**
+     * What the weigh-in that was just saved says about the goal's rate (ROADMAP N136).
+     *
+     * Set by a save rather than derived from the flows, because it is a **line after the save**: a value read
+     * from the flows would be drawn again on every return to the screen, which is the pursuit (P4.7) this
+     * sentence must not have. Null is "nothing to say" — no goal, no weight in the entry, or too little
+     * history to be sure — and the screen then says nothing at all.
+     */
+    private val _rateVerdict = MutableStateFlow<EnergyAdjustment?>(null)
+
+    val rateVerdict: StateFlow<EnergyAdjustment?> = _rateVerdict.asStateFlow()
+
+    /**
      * Saves an entry.
      *
      * An entry with a blank id is a new one, placed by its day; one with an id edits that row. Which is
      * which is the repository's decision to make, since it is the one that can see the day.
+     *
+     * A **weigh-in** — a daily entry that states a weight — is answered with what the trend implies about the
+     * goal's rate (N136). The series is read back from the repository rather than patched together from the
+     * entry, so the trend is the one the app actually holds, this save included.
      */
     fun onSave(measurement: BodyMeasurement) {
         viewModelScope.launch {
             when (val result = repository.save(measurement)) {
-                is DataResult.Success -> lastError.value = null
+                is DataResult.Success -> {
+                    lastError.value = null
+                    _rateVerdict.value = verdictFor(measurement)
+                }
+
                 is DataResult.Failure -> lastError.value = result.error
             }
         }
+    }
+
+    /**
+     * The verdict this save implies, or null when there is nothing honest to say (ROADMAP N136).
+     *
+     * A tape day and a soreness-only morning are not weigh-ins (N113), and the floor inside [weighInVerdict]
+     * is what keeps the line from firing on water weight.
+     */
+    private suspend fun verdictFor(measurement: BodyMeasurement): EnergyAdjustment? {
+        if (measurement.kind != MeasurementKind.DAILY || measurement.weightGrams == null) return null
+        val series = MetricSeries(
+            key = MetricKey.Body(BodyMetric.WEIGHT),
+            readings = repository.observeAll().first()
+                .mapNotNull { entry ->
+                    entry.weightGrams?.let { grams -> MetricReading(entry.measuredAt, grams.toDouble()) }
+                }
+                .sortedBy { it.at },
+        )
+        val goal = weightGoalOf(
+            kind = settings.observeGoalKinds().first()[WEIGHT_METRIC_ID],
+            valueGrams = settings.observeGoals().first()[WEIGHT_METRIC_ID],
+        )
+        return series.weighInVerdict(goal, series.readings.lastOrNull()?.value?.toLong())
+    }
+
+    /** Takes the sentence away once its snackbar has been read (ROADMAP N136). */
+    fun onDismissRateVerdict() {
+        _rateVerdict.value = null
     }
 
     fun onDelete(id: String) {
@@ -115,5 +174,8 @@ class MeasurementsViewModel @Inject constructor(
         lastError.value = null
     }
 }
+
+/** The key the weight goal is stored under, which is the weight series' own id (ROADMAP N135). */
+private val WEIGHT_METRIC_ID = MetricKey.Body(BodyMetric.WEIGHT).id
 
 private const val STOP_TIMEOUT_MILLIS = 5_000L

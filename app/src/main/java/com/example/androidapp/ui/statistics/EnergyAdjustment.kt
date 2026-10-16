@@ -5,6 +5,8 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 import com.example.androidapp.domain.model.MAINTENANCE_CORRIDOR_GRAMS
+import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.domain.model.ratePerWeekGrams
 import kotlin.math.roundToInt
 
 /**
@@ -54,22 +56,55 @@ private const val DAYS_PER_WEEK = 7.0
  * Both directions are in the series' stored grams, so the sign of the target is the direction that was asked
  * for — negative to lose — and the sign of the answer follows from the same arithmetic.
  */
-fun MetricSeries.energyAdjustment(targetPerWeekGrams: Double): EnergyAdjustment? {
-    // The guard is about *recorded* readings, so an entry with no weight in it does not count towards having
-    // enough to say — and the span is between the readings that exist rather than between the first and last
-    // rows, which a tape measurement alone would stretch.
+fun MetricSeries.energyAdjustment(targetPerWeekGrams: Double): EnergyAdjustment? =
+    // Null is the answer when there is too little to say, and when the fitted line would be a lie.
+    trend()?.takeIf { hasEnoughToSpeak() }?.let { fitted -> adjustmentFor(fitted, targetPerWeekGrams) }
+
+/**
+ * Whether this series has the recorded readings and the span N98's floor asks for (ROADMAP N98, N136).
+ *
+ * **The guard is about *recorded* readings**, so an entry with no weight in it does not count towards having
+ * enough to say — and the span is between the readings that exist rather than between the first and last rows,
+ * which a tape measurement alone would stretch. It is a function rather than a line inside
+ * [energyAdjustment] because the unsolicited prompt N136 adds has to ask the same question, and two copies of
+ * "enough" would be two answers.
+ */
+internal fun MetricSeries.hasEnoughToSpeak(): Boolean {
     val recorded = readings
-        .mapNotNull { reading -> reading.value?.let { reading.at to it } }
-        .sortedBy { it.first }
+        .mapNotNull { reading -> reading.value?.let { reading.at } }
+        .sorted()
     val span = recorded
         .takeIf { it.isNotEmpty() }
-        ?.let { Duration.between(it.first().first, it.last().first) }
+        ?.let { Duration.between(it.first(), it.last()) }
         ?: Duration.ZERO
-    val enough = recorded.size >= ENERGY_ADJUSTMENT_MIN_READINGS &&
+    return recorded.size >= ENERGY_ADJUSTMENT_MIN_READINGS &&
         span >= Duration.ofDays(ENERGY_ADJUSTMENT_MIN_DAYS)
+}
 
-    // Null is the answer when there is too little to say, and when the fitted line would be a lie.
-    return trend()?.takeIf { enough }?.let { fitted -> adjustmentFor(fitted, targetPerWeekGrams) }
+/**
+ * What a weigh-in says about the goal's rate, or null when there is nothing honest to say (ROADMAP N136).
+ *
+ * The same arithmetic the statistics screen states under its chart, asked at the moment the weight is recorded
+ * — which is where a lifter finds out *this week* whether the trend is the rate they asked for.
+ *
+ * **The floor is checked here**, rather than left to the arithmetic, because this line is **unsolicited**: it
+ * appears because a weight was saved, and a prompt that fires on water weight is worse than no prompt. The
+ * same answer is null for **no goal**, which is the one prompt this app must never grow — the direction is the
+ * lifter's, and a line telling somebody with no such goal to lose weight is a diagnosis rather than arithmetic
+ * against what they asked for.
+ *
+ * A **maintenance** goal is judged against its corridor, exactly as the chart's section judges it (N135).
+ */
+fun MetricSeries.weighInVerdict(goal: WeightGoal?, currentWeightGrams: Long?): EnergyAdjustment? {
+    if (goal == null || !hasEnoughToSpeak()) return null
+    return if (goal is WeightGoal.Maintain) {
+        energyAdjustmentToCorridor(goal.weightGrams.toDouble())
+    } else {
+        currentWeightGrams
+            ?.takeIf { it > 0L }
+            ?.let { weight -> goal.ratePerWeekGrams(weight) }
+            ?.let { rate -> energyAdjustment(rate) }
+    }
 }
 
 /** The arithmetic, once the series is known to be long enough and fittable. */

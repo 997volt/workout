@@ -24,18 +24,14 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -66,6 +62,7 @@ import com.example.androidapp.ui.components.ScoredPicksEditor
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.history.HistoryFormat
+import com.example.androidapp.ui.statistics.EnergyAdjustment
 import java.time.Instant
 import java.time.ZoneId
 
@@ -81,6 +78,7 @@ fun MeasurementsRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val pendingUndo by viewModel.pendingUndo.collectAsStateWithLifecycle()
+    val rateVerdict by viewModel.rateVerdict.collectAsStateWithLifecycle()
     MeasurementsScreen(
         state = state,
         onSave = viewModel::onSave,
@@ -95,6 +93,9 @@ fun MeasurementsRoute(
         pendingUndo = pendingUndo,
         onUndo = viewModel::onUndoDelete,
         onDismissUndo = viewModel::onDismissUndo,
+        // What the weigh-in just saved says about the goal's rate (N136), the same way.
+        rateVerdict = rateVerdict,
+        onDismissRateVerdict = viewModel::onDismissRateVerdict,
     )
 }
 
@@ -120,6 +121,15 @@ fun MeasurementsScreen(
     pendingUndo: BodyMeasurement? = null,
     onUndo: () -> Unit = {},
     onDismissUndo: () -> Unit = {},
+    /**
+     * What a weigh-in just said about the goal's rate, or null (ROADMAP N136).
+     *
+     * A **line after the save**, not a dialog: it states, it is dismissible and it does not pursue (P4.7) —
+     * which is why it is a snackbar like the undo beside it, and why the ViewModel hands it over once rather
+     * than deriving it from the data on show.
+     */
+    rateVerdict: EnergyAdjustment? = null,
+    onDismissRateVerdict: () -> Unit = {},
 ) {
     // Two steps rather than one: the record is two records, so *Add* asks which before it opens a form
     // (N113). Null is "no form open"; `choosing` is the question.
@@ -135,6 +145,7 @@ fun MeasurementsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(error?.let { dataErrorMessage(it) }, snackbarHostState, onDismissError)
     ShowDeletedMeasurementUndo(pendingUndo, snackbarHostState, onUndo, onDismissUndo)
+    ShowRateVerdict(rateVerdict, snackbarHostState, onDismissRateVerdict)
 
     if (choosing) {
         AddMeasurementDialog(
@@ -398,42 +409,8 @@ private fun MeasurementRow(
     )
 }
 
-/**
- * Undo for an entry a delete just took (ROADMAP N133).
- *
- * A soft delete is what makes the way back possible, and the snackbar naming what went is the shape the
- * workout screen's deleted set already uses (N7, B3, N90) — not a modal "are you sure?" in front of a
- * reversible act, which is the interruption that shape exists to avoid. One undo at a time: the
- * ViewModel holds the single [pendingUndo], so the offer is that entry rather than a queue.
- */
-@Composable
-private fun ShowDeletedMeasurementUndo(
-    pendingUndo: BodyMeasurement?,
-    hostState: SnackbarHostState,
-    onUndo: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val message = stringResource(R.string.measurements_deleted)
-    val undoLabel = stringResource(R.string.measurements_undo)
-    val currentOnUndo by rememberUpdatedState(onUndo)
-    val currentOnDismiss by rememberUpdatedState(onDismiss)
-
-    // Held as a State so the effect's key stays the removed entry, the workout screen's rule (B3): a
-    // second delete of the same row must still offer its own undo.
-    LaunchedEffect(pendingUndo) {
-        if (pendingUndo == null) return@LaunchedEffect
-        val result = hostState.showSnackbar(
-            message = message,
-            actionLabel = undoLabel,
-            duration = SnackbarDuration.Short,
-        )
-        if (result == SnackbarResult.ActionPerformed) currentOnUndo() else currentOnDismiss()
-    }
-}
-
 /** The empty sentence is a keyed item of a list that may hold none (B130). */
 private const val EMPTY_KEY = "measurements_empty"
-
 /** Clearance for the add button, which floats over the list's last row. */
 private val LIST_FOOT_CLEARANCE = 88.dp
 
