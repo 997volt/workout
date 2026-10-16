@@ -823,6 +823,19 @@ object TestTags {
         fun weightGoalKind(kind: WeightGoalKind) = "statistics_weight_goal_kind_${kind.name.lowercase()}"
 
         /**
+         * The goal's history: the way in, the list, and one row per period (ROADMAP N137).
+         *
+         * Rows are addressed by their **place in the list**, newest first, because a period has no id of its
+         * own that a test could name — the thing a row says is its verdict, and the verdict is what a test
+         * reads back from the row's own label.
+         */
+        const val GOAL_HISTORY = "statistics_goal_history"
+        const val GOAL_HISTORY_DIALOG = "statistics_goal_history_dialog"
+        const val GOAL_HISTORY_CLOSE = "statistics_goal_history_close"
+
+        fun goalOutcome(index: Int) = "statistics_goal_outcome_$index"
+
+        /**
          * One group's heading in the picker (ROADMAP N130), by the group's own name.
          *
          * The name rather than the enum, so this file keeps its one dependency direction: tags are read by

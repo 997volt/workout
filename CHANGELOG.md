@@ -65,19 +65,31 @@ unreleased.
   undo's guard has to refuse cannot arise here. The default view is unchanged: its tap still opens the
   read-only details, which stays the one place a record is read where nothing can write.
 
-- **A goal's past is kept** (N137, the **store half** — its verdicts and the chart's per-period line are still to
-  come, and the roadmap row stays open for them). Goals were a newline-joined `metricId=value` string in
-  preferences, rewritten on every change, so changing one silently re-judged the whole past: the chart's line
-  was the current target drawn across a range it never applied to, and "did I hit the cut I set in March" had
-  no answer because March's goal was gone. A goal is now a row per **period** in a new `metric_goals` table
-  (schema 5): the newest row per metric is the period that is open, and a change opens one rather than
-  overwriting one — while clearing opens a period of *no goal* rather than deleting a row. Pressing *Set* twice
-  with the same number opens nothing. **The goal already on the device moves in with an unknown start**, because
-  stamping it with the upgrade's own moment would be inventing history. Two seams close with it: the kind and
-  the value are one row, so a failure can no longer leave a value with no kind; and the goals' **missing-only**
-  import rule goes, because a period is a row with an id. The export carries the periods, and still carries
-  `goals`/`goalKinds` for a build that predates them — filled from the period that is open, so the two cannot
-  disagree.
+- **A goal's past is kept, and each period says whether it was met** (N137). Asked for in use: when a goal
+  changes, the old one should be recoverable, so a later reading can say what the goal was in a period and
+  whether it was reached. Goals were a newline-joined `metricId=value` string in preferences, rewritten on every
+  change, so changing one silently re-judged the whole past: the chart's line was the current target drawn
+  across a range it never applied to, and "did I hit the cut I set in March" had no answer because March's goal
+  was gone. A goal is now a row per **period** in a new `metric_goals` table (schema 5), the newest row per
+  metric being the period that is open: a change opens one rather than overwriting one, clearing opens a period
+  of *no goal* rather than deleting a row, and pressing *Set* twice with the same number opens nothing. **The
+  goal already on the device moves in with an unknown start**, because stamping it with the upgrade's own moment
+  would be inventing history. Two seams close with it: the kind and the value are one row, so a failure can no
+  longer leave a value with no kind; and the goals' **missing-only** import rule goes, because a period is a row
+  with an id. The export carries the periods — and still carries `goals`/`goalKinds` for a build that predates
+  them, filled from the period that is open so the two cannot disagree.
+
+  **The verdicts** are read from the same rows: a **target** is met when something in the period reached it
+  within the corridor's tolerance — a fact about a reading, so it needs no trend; a **rate** is met when the
+  fitted trend sat in N135's band *and* on the side the lifter asked for, which needs a fit and therefore
+  N98's floor, because a verdict about the past must not be a rate from three weigh-ins either; **maintenance**
+  is met when the weight stayed in its corridor, judged on the fitted line so a day of water is absorbed rather
+  than counted. A period nobody weighed in during is **unjudged**, not a miss, and a period of no goal is
+  neither. The goal row offers the history when there is a past to read, newest first.
+
+  **The chart draws one line per period**, each across the stretch it applied to, so the chart never draws a
+  target over a range it did not apply to. A direction-only goal draws no line at all, because it states no
+  weight and inventing one from the band would be the end weight N135 refuses to manufacture.
 
 - **A weight goal sets the rate, instead of the rate being typed** (N135). Asked for in use: the lifter set a
   target *and* a rate, two answers to one question that could disagree. The weight goal now states a **kind** —

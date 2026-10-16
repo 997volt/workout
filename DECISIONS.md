@@ -653,6 +653,18 @@ the rule; that one argues it.
   now a row that merges like every other. The **derived rate is still not stored** (N135): a period re-derives
   under today's rule, and the honest reading of an old period is "by today's rule, March was X".
 
+  **Each period says whether it was met**, and what "met" means is the kind's (N137): a **target** is met when a
+  reading in the period reached it within the corridor's tolerance — a fact about a reading, so it needs no
+  trend at all; a **rate** is met when the fitted trend sat in N135's band *and* on the side the lifter asked for,
+  which needs a fit and therefore N98's floor, because a verdict about the past must not be a rate from three
+  weigh-ins either; **maintenance** is met when the weight stayed in its corridor, judged on the **fitted line**
+  so a day of water is absorbed rather than counted against the period. A period nobody weighed in during is
+  **unjudged**, which is its own answer rather than a miss — the app does not invent a verdict out of no data,
+  and a period of no goal is neither met nor missed. **The chart draws one line per period**, each across the
+  stretch it applied to, because one line across the whole width is the claim about ranges it never applied to
+  that this feature exists to stop; a direction-only goal draws no line, since it states no weight and a level
+  invented from the band would be the end weight N135 refuses to manufacture.
+
 ## Measurements
 
 - **The measurements list scrolls, and its empty sentence is an item of it** (B130). It was a `Column` with

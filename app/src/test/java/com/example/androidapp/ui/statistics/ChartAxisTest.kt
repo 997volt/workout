@@ -63,7 +63,7 @@ class ChartAxisTest {
     fun aFixedScale_widensForATargetPastItsEnds() {
         // A target of 12 is a claim the user made; the axis has to show it even where the scale says it
         // should not exist.
-        val axis = axisBounds(values = listOf(8.0, 9.0), fromZero = false, goal = 12.0, fixedRange = 1.0..10.0)
+        val axis = axisBounds(values = listOf(8.0, 9.0), fromZero = false, goals = listOf(12.0), fixedRange = 1.0..10.0)
 
         assertThat(axis.max).isGreaterThan(12.0)
     }
@@ -81,7 +81,7 @@ class ChartAxisTest {
         // A target of NaN reached the axis from a typed field, and `NaN.coerceIn(0f, 1f)` is still NaN, so
         // every coordinate on the canvas became NaN and the chart drew nothing while reporting no error.
         val withoutGoal = axisBounds(values = listOf(80_000.0, 81_000.0), fromZero = true)
-        val withNaN = axisBounds(values = listOf(80_000.0, 81_000.0), fromZero = true, goal = Double.NaN)
+        val withNaN = axisBounds(values = listOf(80_000.0, 81_000.0), fromZero = true, goals = listOf(Double.NaN))
 
         assertThat(withNaN).isEqualTo(withoutGoal)
         assertThat(withNaN.min.isFinite()).isTrue()
@@ -107,7 +107,7 @@ class ChartAxisTest {
     @Test
     fun aNegativeTargetOnAZeroAnchoredMetric_staysOnTheAxis() {
         // N39 fixed an invisible target above the data; the same clipping happened below zero.
-        val axis = axisBounds(values = listOf(100_000.0, 105_000.0), fromZero = true, goal = -1_000.0)
+        val axis = axisBounds(values = listOf(100_000.0, 105_000.0), fromZero = true, goals = listOf(-1_000.0))
 
         assertThat(axis.min).isLessThan(-1_000.0)
         assertThat(axis.max).isAtLeast(105_000.0)
@@ -116,7 +116,7 @@ class ChartAxisTest {
     @Test
     fun aNegativeTargetOnAZeroAnchoredMetric_withNoTargetBelowZero_keepsTheZero() {
         // The ordinary case must not regress: a bars metric keeps its zero when nothing sits under it.
-        val axis = axisBounds(values = listOf(100_000.0, 105_000.0), fromZero = true, goal = 90_000.0)
+        val axis = axisBounds(values = listOf(100_000.0, 105_000.0), fromZero = true, goals = listOf(90_000.0))
 
         assertThat(axis.min).isEqualTo(0.0)
     }
@@ -139,7 +139,7 @@ class ChartAxisTest {
         val axis = axisBounds(
             values = listOf(81_750.0, 84_750.0),
             fromZero = false,
-            goal = 80_000.0,
+            goals = listOf(80_000.0),
         )
 
         assertThat(axis.min).isLessThan(80_000.0)
@@ -151,7 +151,7 @@ class ChartAxisTest {
         val axis = axisBounds(
             values = listOf(81_750.0, 84_750.0),
             fromZero = false,
-            goal = 90_000.0,
+            goals = listOf(90_000.0),
         )
 
         assertThat(axis.max).isGreaterThan(90_000.0)
@@ -161,7 +161,7 @@ class ChartAxisTest {
     fun aTargetDoesNotLiftAZeroAnchoredBaseline() {
         // A bars metric keeps its zero, however far above the readings its target sits: the bar length is the
         // quantity, and the quantity starts at nothing.
-        val axis = axisBounds(values = listOf(1_500_000.0, 1_575_000.0), fromZero = true, goal = 2_000_000.0)
+        val axis = axisBounds(values = listOf(1_500_000.0, 1_575_000.0), fromZero = true, goals = listOf(2_000_000.0))
 
         assertThat(axis.min).isEqualTo(0.0)
         assertThat(axis.max).isGreaterThan(2_000_000.0)
@@ -169,7 +169,7 @@ class ChartAxisTest {
 
     @Test
     fun withReadingsAndATarget_theAxisCoversBoth() {
-        val axis = axisBounds(values = listOf(80_000.0), fromZero = false, goal = 70_000.0)
+        val axis = axisBounds(values = listOf(80_000.0), fromZero = false, goals = listOf(70_000.0))
 
         assertThat(axis.min).isLessThan(70_000.0)
         assertThat(axis.max).isGreaterThan(80_000.0)

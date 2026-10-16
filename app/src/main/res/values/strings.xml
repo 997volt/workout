@@ -296,6 +296,16 @@
     <string name="statistics_weight_goal_gaining">Gaining weight</string>
     <!-- A maintenance goal is a corridor, so its target reads as the weight and the corridor either way. -->
     <string name="statistics_weight_goal_corridor">%1$s ±%2$s</string>
+    <!-- N137: what became of each period of the weight goal. The outcome words are the verdicts the reader
+         gives, and "no goal" is a period of its own rather than a miss. -->
+    <string name="statistics_goal_history">History</string>
+    <string name="statistics_goal_history_title">Goal history</string>
+    <string name="statistics_goal_from">From %1$s</string>
+    <string name="statistics_goal_from_unknown">Start not recorded</string>
+    <string name="statistics_goal_met">Met</string>
+    <string name="statistics_goal_missed">Missed</string>
+    <string name="statistics_goal_no_goal">No goal</string>
+    <string name="statistics_goal_unjudged">Not enough weigh-ins</string>
     <!-- The energy adjustment a weight trend implies (ROADMAP N98). It is deliberately a *relative*
          change and never a number to eat: the app holds no food data, and the absolute target belongs
          where the food is logged. -->

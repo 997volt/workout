@@ -30,21 +30,8 @@ not now — and it is not *Next*, which is what is actually being worked on. Eac
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-- **Each period says whether it was met — and the chart draws it** (N137). Goals are stored as a row per period;
-  this row is what those rows are **for**.
-
-  - **Achievement is a reader over the rows that exist**: clip the weight series to a period and compare it with
-    what that period asked for — a rate goal is met when the trend sat in its band, a target weight when it was
-    reached within tolerance, maintenance when the weight stayed in its corridor. The goal kinds are N135's, so
-    this is arithmetic over data the app already holds rather than anything new to store.
-  - **The derived rate stays unstored.** A period re-derives under today's band rule, and the honest reading of an
-    old period is "by today's rule, March was X". Caching each period's verdict was rejected as storing something
-    fully derivable.
-  - **The chart's goal line becomes segments**, one per period. That is the visible payoff, and it is the thing
-    that is simply wrong today: the line is the current target drawn across a range it never applied to.
-
-  **Brought forward when** the chart's line is next read as a claim about the past — it stops being true at the
-  first goal change, and the rows that answer it are on disk.
+**Nothing.** The last row here — a goal's past, with each period saying whether it was met — shipped, and the
+section drains the same way *Next* does.
 
 ## Parked — deliberately not planned
 

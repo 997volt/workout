@@ -29,14 +29,14 @@ data class AxisBounds(val min: Double, val max: Double)
 fun axisBounds(
     values: List<Double>,
     fromZero: Boolean,
-    goal: Double? = null,
+    goals: List<Double> = emptyList(),
     fixedRange: ClosedRange<Double>? = null,
 ): AxisBounds {
     // The target is part of the axis, not something drawn outside it: a target you cannot see is not a target,
     // and pinning the line to the edge of the chart hides it exactly when it is furthest from the readings —
     // which is when it is most worth seeing. The cost is that a target far from the data compresses the
     // readings, and that is the right way round: the readings are still there, and are read against it.
-    val plotted = (values + listOfNotNull(goal)).filter { it.isFinite() }
+    val plotted = (values + goals).filter { it.isFinite() }
     val lowest = plotted.minOrNull()
     val highest = plotted.maxOrNull()
 

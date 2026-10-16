@@ -1,25 +1,5 @@
 package com.example.androidapp.ui.statistics
 
-import com.example.androidapp.ui.components.ChartLine
-import com.example.androidapp.ui.components.ChartPoint
-import java.time.ZoneId
-import com.example.androidapp.ui.history.HistoryFormat
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.material3.Icon
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EventAvailable
-import androidx.compose.material.icons.filled.Straighten
-import com.example.androidapp.domain.model.Exercise
-import com.example.androidapp.domain.headsOthers
-import java.time.ZoneOffset
-import java.time.LocalDate
-import java.time.Instant
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,18 +8,29 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EventAvailable
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -50,18 +41,29 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.headsOthers
+import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.StatisticsRange
+import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppFilterChip
-import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.CenteredMessage
-import com.example.androidapp.ui.components.TopBarTitle
-import com.example.androidapp.ui.components.dataErrorMessage
-import com.example.androidapp.ui.components.TrendChartFrame
 import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.CenteredMessage
+import com.example.androidapp.ui.components.ChartLine
+import com.example.androidapp.ui.components.ChartPoint
+import com.example.androidapp.ui.components.ChartSegment
+import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.TopBarTitle
+import com.example.androidapp.ui.components.TrendChartFrame
+import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.theme.EyebrowStyle
-import com.example.androidapp.domain.model.WeightGoal
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 /** The Statistics tab (ROADMAP N35). */
 @Composable
@@ -218,14 +220,19 @@ private fun StatisticsBody(
 
         series?.let { series ->
             val entry = MetricRegistry.entryFor(series.key)
-            SeriesChart(series = series, metric = entry, goal = state.goal)
+            SeriesChart(series = series, metric = entry, goalPeriods = state.goalPeriods)
             // Under the chart, and the literal answer to "see everything" — which is also the accessible
             // counterpart to a canvas this app blanks out for screen readers (ROADMAP N36).
             ReadingsSection(series = series, metric = entry)
             // The weight goal states a **kind** as well as a number (N135), so it has its own row where
             // the number alone had one; every other metric's target is still one number.
             if (entry.key == MetricKey.Body(BodyMetric.WEIGHT)) {
-                WeightGoalRow(goal = state.weightGoal, metric = entry, onSetGoal = onSetWeightGoal)
+                WeightGoalRow(
+                    goal = state.weightGoal,
+                    metric = entry,
+                    history = goalOutcomes(state.goalPeriods, series.readings),
+                    onSetGoal = onSetWeightGoal,
+                )
             } else {
                 GoalRow(goal = state.goal, metric = entry, onSetGoal = onSetGoal)
             }
@@ -485,10 +492,10 @@ private fun ReadingRow(label: String, value: String, testTag: String) {
  * seam is a real one — nothing in the body knows about the picker or the restart.
  */
 @Composable
-private fun SeriesChart(series: MetricSeries, metric: MetricEntry, goal: Double?) {
+private fun SeriesChart(series: MetricSeries, metric: MetricEntry, goalPeriods: List<GoalPeriod>) {
     if (series.readings.count { it.value != null } < 2) return
     var period by rememberSaveable { mutableStateOf(DAYS) }
-    val overlay = chartOverlay(series, metric, goal, period)
+    val overlay = chartOverlay(series, metric, goalPeriods, period)
 
     // The chart, the window it is averaged over and the axis in words are one card: they are one
     // reading of one series, and separating the picker from the line it changes would make the
@@ -496,7 +503,7 @@ private fun SeriesChart(series: MetricSeries, metric: MetricEntry, goal: Double?
     AppCard {
         TrendChartFrame(
             points = overlay.projected,
-            goal = goal,
+            goals = overlay.goals,
             minValue = overlay.axis.min,
             maxValue = overlay.axis.max,
             testTag = TestTags.Statistics.CHART,
@@ -549,13 +556,15 @@ private data class ChartOverlay(
     val projected: List<ChartPoint>,
     val mean: List<ChartPoint>,
     val fittedLine: ChartLine?,
+    /** One line per goal period, each across the stretch it applied to (ROADMAP N137). */
+    val goals: List<ChartSegment>,
     val axis: AxisBounds,
 )
 
 private fun chartOverlay(
     series: MetricSeries,
     metric: MetricEntry,
-    goal: Double?,
+    goalPeriods: List<GoalPeriod>,
     period: Int,
 ): ChartOverlay {
     val recorded = series.readings.mapNotNull { it.value }
@@ -579,14 +588,17 @@ private fun chartOverlay(
         xByInstant[reading.at]?.let { x -> ChartPoint(x = x, value = reading.value) }
     }
 
+    val goals = goalSegments(series, goalPeriods)
+
     return ChartOverlay(
         projected = projected,
         mean = mean,
         fittedLine = fittedLine,
+        goals = goals,
         axis = axisBounds(
             recorded + listOfNotNull(endAt(0.0), endAt(1.0)),
             fromZero = metric.fromZero,
-            goal = goal,
+            goals = goals.map { it.value },
             fixedRange = metric.fixedRange,
         ),
     )

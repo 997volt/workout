@@ -1,30 +1,36 @@
 package com.example.androidapp.ui.statistics
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseTrendMetric
-import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.StatisticsRange
+import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.domain.model.WeightGoalKind
+import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.google.common.truth.Truth.assertThat
@@ -33,8 +39,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
 import java.time.Instant
-import com.example.androidapp.domain.model.WeightGoal
-import com.example.androidapp.domain.model.WeightGoalKind
 
 /** What the Statistics screen offers (ROADMAP N35). */
 @RunWith(AndroidJUnit4::class)
@@ -637,6 +641,69 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun theGoalHistory_listsEachPeriod_withItsVerdict() {
+        // N137: keeping the past is only worth it if it can be read — what the goal was in a period and whether
+        // it was met.
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        setScreen(
+            state = stateWithGoal(
+                goal = WeightGoal.Direction(gain = false),
+                periods = listOf(
+                    GoalPeriod(startedAt = null, kind = "TARGET", value = 75_000.0),
+                    GoalPeriod(
+                        startedAt = Instant.parse("2026-09-10T08:00:00Z"),
+                        kind = "LOSE",
+                        value = null,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performScrollTo().performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY_DIALOG).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(0)).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(1)).assertExists()
+        composeTestRule.onNodeWithText(context.getString(R.string.statistics_goal_unjudged)).assertExists()
+        composeTestRule.onNodeWithText(context.getString(R.string.statistics_goal_missed)).assertExists()
+    }
+
+    @Test
+    fun theHistory_isOfferedOnlyWhenThereIsAPast() {
+        // One open period is what the row already says, so a button opening it would have nothing behind it.
+        setScreen(
+            state = stateWithGoal(
+                goal = WeightGoal.Direction(gain = false),
+                periods = listOf(GoalPeriod(startedAt = null, kind = "LOSE", value = null)),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).assertDoesNotExist()
+    }
+
+    @Test
+    fun closingTheHistory_takesItAway() {
+        setScreen(
+            state = stateWithGoal(
+                goal = WeightGoal.Direction(gain = false),
+                periods = listOf(
+                    GoalPeriod(startedAt = null, kind = "LOSE", value = null),
+                    GoalPeriod(
+                        startedAt = Instant.parse("2026-09-10T08:00:00Z"),
+                        kind = "LOSE",
+                        value = null,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY_CLOSE).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY_DIALOG).assertDoesNotExist()
+    }
+
+    @Test
     fun theWeightGoal_isChosenKindFirst_andClearedFromTheSameDialog() {
         // N135: the kind is the question and the weight only where the kind asks for one, so the two are set
         // in one place rather than as two numbers that can disagree.
@@ -691,11 +758,15 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET).assertTextEquals("80 ±1")
     }
 
-    private fun stateWithGoal(goal: WeightGoal?) = StatisticsUiState(
+    private fun stateWithGoal(
+        goal: WeightGoal?,
+        periods: List<GoalPeriod> = emptyList(),
+    ) = StatisticsUiState(
         isLoading = false,
         range = StatisticsRange(RangeKind.LAST_MONTH),
         series = weightSeries(),
         weightGoal = goal,
+        goalPeriods = periods,
     )
 }
 

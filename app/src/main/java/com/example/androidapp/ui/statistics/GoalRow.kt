@@ -1,8 +1,11 @@
 package com.example.androidapp.ui.statistics
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -16,17 +19,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import com.example.androidapp.R
-import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.AppTextButton
-import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.unit.dp
+import com.example.androidapp.R
 import com.example.androidapp.domain.model.MAINTENANCE_CORRIDOR_GRAMS
 import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.WeightGoalKind
 import com.example.androidapp.domain.model.kind
 import com.example.androidapp.domain.model.statedWeightGrams
 import com.example.androidapp.ui.components.AppFilterChip
+import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.history.HistoryFormat
+import java.time.ZoneId
 
 /**
  * The target line, and the one place a target is set (ROADMAP N39).
@@ -95,10 +99,13 @@ fun GoalRow(
 fun WeightGoalRow(
     goal: WeightGoal?,
     metric: MetricEntry,
+    /** Every period of the goal, oldest first, with what became of each (ROADMAP N137). */
+    history: List<GoalPeriodOutcome>,
     onSetGoal: (WeightGoal?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var editing by rememberSaveable { mutableStateOf(false) }
+    var showingHistory by rememberSaveable { mutableStateOf(false) }
 
     Row(
         modifier = modifier
@@ -111,11 +118,23 @@ fun WeightGoalRow(
             text = stringResource(R.string.statistics_weight_goal),
             style = MaterialTheme.typography.bodyMedium,
         )
-        AppTextButton(
-            onClick = { editing = true },
-            modifier = Modifier.testTag(TestTags.Statistics.WEIGHT_GOAL_SET),
-        ) {
-            Text(text = weightGoalText(goal, metric))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Offered only when there is a past to read: one open period is what the row already says, and a
+            // button that opened a list of the goal on screen would be a control with nothing behind it.
+            if (history.size > 1) {
+                AppTextButton(
+                    onClick = { showingHistory = true },
+                    modifier = Modifier.testTag(TestTags.Statistics.GOAL_HISTORY),
+                ) {
+                    Text(stringResource(R.string.statistics_goal_history))
+                }
+            }
+            AppTextButton(
+                onClick = { editing = true },
+                modifier = Modifier.testTag(TestTags.Statistics.WEIGHT_GOAL_SET),
+            ) {
+                Text(text = weightGoalText(goal, metric))
+            }
         }
     }
 
@@ -130,6 +149,94 @@ fun WeightGoalRow(
             onDismiss = { editing = false },
         )
     }
+
+    if (showingHistory) {
+        GoalHistoryDialog(
+            history = history,
+            metric = metric,
+            onDismiss = { showingHistory = false },
+        )
+    }
+}
+
+/**
+ * What each period of the goal asked for, and whether it was met (ROADMAP N137).
+ *
+ * Newest first, because the period a lifter is in is the one they are asking about — and each row says when it
+ * began rather than a range, since the periods are contiguous: the row above is when this one ended. A row with
+ * no recorded start says so rather than showing a date the app does not have.
+ */
+@Composable
+private fun GoalHistoryDialog(
+    history: List<GoalPeriodOutcome>,
+    metric: MetricEntry,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag(TestTags.Statistics.GOAL_HISTORY_DIALOG),
+        title = { Text(stringResource(R.string.statistics_goal_history_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                history.reversed().forEachIndexed { index, outcome ->
+                    GoalHistoryRow(
+                        outcome = outcome,
+                        metric = metric,
+                        testTag = TestTags.Statistics.goalOutcome(index),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            AppTextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag(TestTags.Statistics.GOAL_HISTORY_CLOSE),
+            ) {
+                Text(stringResource(R.string.action_close))
+            }
+        },
+    )
+}
+
+/** One period: what it asked for, whether it was met, and when it began (ROADMAP N137). */
+@Composable
+private fun GoalHistoryRow(outcome: GoalPeriodOutcome, metric: MetricEntry, testTag: String) {
+    Column(modifier = Modifier.fillMaxWidth().testTag(testTag)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = weightGoalText(outcome.period.weightGoal, metric),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                text = stringResource(goalOutcomeLabel(outcome.outcome)),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+        Text(
+            text = outcome.period.startedAt?.let {
+                stringResource(
+                    R.string.statistics_goal_from,
+                    HistoryFormat.date(it, zone = ZoneId.systemDefault()),
+                )
+            } ?: stringResource(R.string.statistics_goal_from_unknown),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** The verdict in words: met, missed, a period of no goal, or one too thin to judge (N137). */
+private fun goalOutcomeLabel(outcome: GoalOutcome): Int = when (outcome) {
+    GoalOutcome.Met -> R.string.statistics_goal_met
+    GoalOutcome.Missed -> R.string.statistics_goal_missed
+    GoalOutcome.NoGoal -> R.string.statistics_goal_no_goal
+    GoalOutcome.Unjudged -> R.string.statistics_goal_unjudged
 }
 
 /** What the goal reads as: its kind, and the weight only where it states one. */

@@ -1,8 +1,5 @@
 package com.example.androidapp.ui.components
 
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -11,7 +8,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
@@ -48,8 +48,13 @@ fun TrendChart(
     trend: ChartLine? = null,
     /** The trailing mean, drawn heavier and without dots (ROADMAP N40). */
     movingAverage: List<ChartPoint> = emptyList(),
-    /** The target for this metric, drawn dotted so it is not the average (ROADMAP N39). */
-    goal: Double? = null,
+    /**
+     * This metric's targets, drawn dotted so they are not the average (ROADMAP N39, N137).
+     *
+     * A list rather than one value: a goal that changed draws one line per period, each across the stretch it
+     * applied to, so the chart never claims a target applied to a range it did not.
+     */
+    goals: List<ChartSegment> = emptyList(),
 ) {
     val lineColor = MaterialTheme.colorScheme.primary
     val dotColor = MaterialTheme.colorScheme.primary
@@ -71,7 +76,7 @@ fun TrendChart(
                 average = average,
                 trend = trend,
                 movingAverage = movingAverage,
-                goal = goal,
+                goals = goals,
             ),
             y = ::y,
         )
@@ -128,7 +133,7 @@ fun TrendChartFrame(
     average: Double? = null,
     trend: ChartLine? = null,
     movingAverage: List<ChartPoint> = emptyList(),
-    goal: Double? = null,
+    goals: List<ChartSegment> = emptyList(),
 ) {
     TrendChart(
         points = points,
@@ -138,7 +143,7 @@ fun TrendChartFrame(
         average = average,
         trend = trend,
         movingAverage = movingAverage,
-        goal = goal,
+        goals = goals,
         modifier = modifier
             .fillMaxWidth()
             .height(CHART_HEIGHT_DP.dp)
@@ -150,6 +155,15 @@ fun TrendChartFrame(
 /** A trend line drawn across the whole width: its value at the first reading and at the last. */
 data class ChartLine(val start: Double, val end: Double)
 
+/**
+ * One **period's** target, drawn across the stretch of the chart it applied to (ROADMAP N137).
+ *
+ * The line used to be one value across the whole width, which is a claim about ranges it never applied to:
+ * changing a goal silently re-judged the past. A segment carries where it begins and ends as fractions of the
+ * width, so the chart draws what was actually asked for when it was asked for.
+ */
+data class ChartSegment(val fromX: Float, val toX: Float, val value: Double)
+
 /** Thinner than the data, because a fitted line is a summary rather than a measurement. */
 private const val REFERENCE_STROKE_PX = 2f
 
@@ -158,7 +172,7 @@ data class ReferenceLines(
     val average: Double?,
     val trend: ChartLine?,
     val movingAverage: List<ChartPoint>,
-    val goal: Double?,
+    val goals: List<ChartSegment>,
 )
 
 /** Heavier than a fitted line: the mean is what a noisy daily reading is read through. */
@@ -240,7 +254,7 @@ private fun DrawScope.drawReferenceLines(
     val average = lines.average
     val trend = lines.trend
     val movingAverage = lines.movingAverage
-    val goal = lines.goal
+    val goals = lines.goals
     val color = referenceColor
     // Dashed, because an average is a level rather than a measurement: it says where the series sits, and
     // every reading is above or below it.
@@ -262,12 +276,13 @@ private fun DrawScope.drawReferenceLines(
         )
     }
     // Dotted where the average is dashed: both are levels, and reading the user's own target as the app's
-    // summary of them would be the worst kind of quiet error.
-    goal?.let { value ->
+    // summary of them would be the worst kind of quiet error. One line per period, each across its own stretch
+    // (N137), so the chart never draws a target over a range it did not apply to.
+    goals.forEach { segment ->
         drawLine(
             color = color,
-            start = Offset(0f, y(value)),
-            end = Offset(size.width, y(value)),
+            start = Offset(segment.fromX * size.width, y(segment.value)),
+            end = Offset(segment.toX * size.width, y(segment.value)),
             strokeWidth = REFERENCE_STROKE_PX,
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(GOAL_DOT_PX, GOAL_GAP_PX)),
         )

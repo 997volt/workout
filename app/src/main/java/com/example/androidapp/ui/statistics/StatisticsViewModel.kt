@@ -19,6 +19,7 @@ import com.example.androidapp.domain.model.ratePerWeekGrams
 import com.example.androidapp.domain.model.statedWeightGrams
 import com.example.androidapp.domain.model.window
 import com.example.androidapp.domain.nowEpochMillis
+import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.seriesSubjectIds
@@ -87,6 +88,11 @@ data class StatisticsUiState(
      * [goal] alone.
      */
     val weightGoal: WeightGoal? = null,
+    /**
+     * The chosen metric's goal **periods**, oldest first, so the chart can draw each and the history can say
+     * what became of it (ROADMAP N137).
+     */
+    val goalPeriods: List<GoalPeriod> = emptyList(),
     /**
      * The rate the goal asks for, in the metric's own units per week, or null (ROADMAP N98, N135).
      *
@@ -266,7 +272,8 @@ class StatisticsViewModel @Inject constructor(
             exercisePoints,
             records,
             goals.observeCurrent(),
-        ) { sources, points, records, goalPeriods ->
+            selection.flatMapLatest { chosen -> goals.observePeriods(chosen.metric.id) },
+        ) { sources, points, records, goalPeriods, periods ->
             val workoutPoints = sources.workoutPoints
             // The period that is **open** for this metric (N137), and the two readings the screen makes of it:
             // the weight goal, with the kind N135 gave it, and the level a chart can draw. A direction-only
@@ -289,6 +296,7 @@ class StatisticsViewModel @Inject constructor(
                     lifts = sources.lifts,
                     goal = levelGoal,
                     weightGoal = weightGoal,
+                    goalPeriods = periods,
                     acceptsHead = sources.acceptsHead,
                 )
             } else {
@@ -322,6 +330,7 @@ class StatisticsViewModel @Inject constructor(
                     lifts = sources.lifts,
                     goal = levelGoal,
                     weightGoal = weightGoal,
+                    goalPeriods = periods,
                     rateTarget = weightGoal?.ratePerWeekGrams(currentWeightGrams ?: 0L),
                     acceptsHead = sources.acceptsHead,
                 )

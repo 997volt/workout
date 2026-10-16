@@ -2090,9 +2090,25 @@ answer away, and it is also the write that would resurrect the *previous* goal �
 the newest — which is a goal the lifter explicitly stopped asking for. A row with neither a kind nor a value is
 a period of no goal, and it is what the screens read as "no goal" now.
 
-**What is built and what is not.** This commit is the store: the table, the move, the reads both screens already
-made, and the export. The verdicts — clipping a period's range out of the weight series and comparing it with
-what that period asked for — and the chart's per-period line are the remaining half, and the roadmap row stays
-open for them rather than being drained. The reason for the split is the same one the batch order used: the
-store is what the rest is written against, and shipping it green is what makes the second half a change rather
-than a rewrite.
+**The verdicts are a reader, and the kind decides what it reads.** "Was it met" is three different questions
+wearing one word, which is what N135's kinds were for. A target is a fact about **a reading** — the weight was
+reached when something in the period sat within tolerance of it — so it needs no trend and no floor; a rate is a
+fact about **a slope**, so it needs a fit, N98's floor behind the fit, and the *side* the lifter asked for, since
+a magnitude-only check would call a rising weight a met cutting goal. Maintenance is a corridor, and N135 already
+decided how a corridor is judged: on the **fitted line**, so a morning of water is absorbed rather than counted
+against the period. The third answer, **unjudged**, is the one worth naming: a period nobody weighed in during
+is not a miss, and neither is a rate from three readings — inventing a verdict out of no data is the failure
+mode this whole line of work (P2.8, N98, N136) keeps refusing. A period of *no goal* is a fourth: clearing
+writes one, so the history shows a stretch of time the lifter was not asking for anything rather than a failure.
+
+**The window is the same mapping the readings use.** A period's segment is placed by `fractionOf`, the function
+the points are placed by (N37), and clipped to the window on show: a period entirely outside it draws nothing,
+rather than a line pinned to an edge claiming it applied to everything visible. The period that states no weight
+draws nothing at all — a direction-only goal has no level, and a level derived from its band would be exactly the
+end weight N135 refuses to manufacture.
+
+**Two tables rather than one was the right split.** The store shipped green on its own (schema 5, the move, the
+export), which is what let this half be written against rows that already existed and already had tests —
+including the instrumented ones that prove a version-4 store migrates and that a lifter's existing goal arrives
+with an unknown start. The cost was one review round seeing a roadmap row marked half built; the alternative was
+a schema change and a chart rewrite in one commit, where a failure in either leaves the other unreviewable.
