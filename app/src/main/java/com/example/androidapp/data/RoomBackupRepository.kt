@@ -171,18 +171,18 @@ class RoomBackupRepository @Inject constructor(
         // `program_substitutions.templateId` reference `templates`, and running the program
         // block first made every restore into a fresh database fail with
         // `FOREIGN KEY constraint failed` and roll the whole import back.
-        val summary = database.withTransaction {
+        database.withTransaction {
             val inserted = insertMissing(file)
             val programs = importPrograms(file)
+            // The goal periods merge **inside** the transaction like every other table (B144). They used to run
+            // after it, as the last trace of the seam the preferences store needed: a goal is a row now, and a
+            // failure part-way could leave it written while the import reported that nothing had changed.
+            val goals = restoreGoalPeriods(file)
             ImportSummary(
-                added = inserted + programs.added,
+                added = inserted + programs.added + goals,
                 restored = restoreSoftDeleted(file) + programs.restored,
             )
         }
-
-        restoreGoalPeriods(file)
-
-        summary
     }
 
     /**
@@ -328,15 +328,17 @@ class RoomBackupRepository @Inject constructor(
      * period per metric** — the same reading the one-time move gives the goals already on the device, and the
      * only honest one, because that file never recorded when a goal was set. The id is derived from the metric
      * so importing the same file twice inserts nothing.
+     *
+     * Returns the rows that were genuinely added (B144), because they contribute to [ImportSummary]: a restore
+     * whose only new content was a goal used to report that everything had already been here.
      */
-    private suspend fun restoreGoalPeriods(file: BackupFile) {
+    private suspend fun restoreGoalPeriods(file: BackupFile): Int {
         if (file.goalPeriods.isNotEmpty()) {
-            metricGoals.insert(file.goalPeriods.map { it.toEntity() })
-            return
+            return metricGoals.insert(file.goalPeriods.map { it.toEntity() }).count { it != SKIPPED }
         }
         val now = timeSource.nowEpochMillis()
         val metrics = file.goals.keys + file.goalKinds.keys
-        metricGoals.insert(
+        return metricGoals.insert(
             metrics.map { metricId ->
                 MetricGoalEntity(
                     id = "legacy:$metricId",
@@ -348,7 +350,7 @@ class RoomBackupRepository @Inject constructor(
                     updatedAt = now,
                 )
             },
-        )
+        ).count { it != SKIPPED }
     }
 
     private companion object {

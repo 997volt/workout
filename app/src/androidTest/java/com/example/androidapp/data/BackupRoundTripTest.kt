@@ -13,6 +13,8 @@ import com.example.androidapp.data.local.SessionSoreMuscleEntity
 import com.example.androidapp.data.local.TemplateEntity
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.transfer.BackupCodec
+import com.example.androidapp.data.transfer.GoalPeriodDto
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
@@ -272,6 +274,35 @@ class BackupRoundTripTest {
             "MAINTAIN",
             rows.single { it.value == 79_000.0 }.kind,
         )
+    }
+
+    @Test
+    fun aRestoreWhoseOnlyNewContentIsAGoal_countsIt() = runTest {
+        // B144: the periods were written after the import's transaction and never counted, so a restore whose
+        // only new content was a goal reported "everything in that file was already here" while it restored it.
+        val file = BackupCodec.decode(exportedJson()).copy(
+            goalPeriods = listOf(
+                GoalPeriodDto(
+                    id = "g1",
+                    metricId = "BODY:WEIGHT",
+                    kind = "TARGET",
+                    value = 80_000.0,
+                    startedAt = 1L,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                ),
+            ),
+        )
+        val text = BackupCodec.encode(file)
+
+        repository.import(text)
+        // Everything but the goal is on the device now, so the second import has exactly one row to bring.
+        database.openHelper.writableDatabase.execSQL("DELETE FROM metric_goals")
+
+        val second = (repository.import(text) as DataResult.Success).data
+
+        assertEquals("the goal period is what this restore brought", 1, second.added)
+        assertEquals(1, database.metricGoalDao().allForBackup().size)
     }
 
     private suspend fun exportedJson(): String =
