@@ -381,6 +381,7 @@
     <string name="adherence_nothing_scheduled">Nothing was scheduled this month.</string>
     <!-- One day cell, announced rather than only drawn. %1$s is the date. -->
     <string name="adherence_day_trained">%1$s, trained</string>
+    <string name="adherence_day_activity">%1$s, activity</string>
     <string name="adherence_day_scheduled">%1$s, scheduled</string>
     <string name="adherence_day_rest">%1$s, rest</string>
     <!-- Marking a week as a deload (ROADMAP P3.10): exempt from the ratio, not the calendar. -->

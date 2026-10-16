@@ -499,6 +499,9 @@ private fun DayCell(day: CalendarDay?, onSelect: (LocalDate) -> Unit, modifier: 
     val dateLabel = HistoryFormat.date(day.date.atStartOfDay(zone).toInstant(), zone)
     val description = stringResource(
         when {
+            // An activity is **announced** as well as coloured (N142): a screen reader cannot report a
+            // container colour, and "trained" is the one thing an activity day is not (B139).
+            day.activityOnly -> R.string.adherence_day_activity
             day.trained -> R.string.adherence_day_trained
             day.scheduled -> R.string.adherence_day_scheduled
             else -> R.string.adherence_day_rest

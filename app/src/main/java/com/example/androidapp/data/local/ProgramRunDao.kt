@@ -30,7 +30,8 @@ interface ProgramRunDao {
         SELECT id AS sessionId,
                templateId AS templateId,
                startedAt AS startedAt,
-               zoneOffsetMinutes AS zoneOffsetMinutes
+               zoneOffsetMinutes AS zoneOffsetMinutes,
+               activity AS activity
         FROM workout_sessions
         WHERE templateId IN (:templateIds)
           AND finishedAt IS NOT NULL

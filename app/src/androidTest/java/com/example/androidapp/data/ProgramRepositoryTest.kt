@@ -12,6 +12,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.getOrNull
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
@@ -439,6 +440,39 @@ class ProgramRepositoryTest {
         assertEquals(0, report.adherence.scored)
         assertEquals(null, report.adherence.ratio)
         assertEquals(setOf(LocalDate.of(2026, 10, 6)), report.adherence.trainedDays)
+    }
+
+    @Test
+    fun aFinishedActivity_reachesTheCalendar_asAnActivityOnlyDay() = runTest {
+        // B139: the calendar's activity flag comes from this read, and the column was selected by the
+        // wrong query — so activityDays was always empty and N142's colour was never drawn.
+        insertSession(id = "swim", date = "2026-10-06T09:00:00Z", finished = true, templateId = null)
+        database.workoutDao().setSessionActivity(id = "swim", activity = Activity.SWIMMING.name, at = 1L)
+        insertSession(id = "lift", date = "2026-10-08T09:00:00Z", finished = true, templateId = null)
+
+        val report = adherence.monthAdherence(
+            month = YearMonth.of(2026, 10),
+            today = today,
+            zone = utc,
+        ).getOrNull()!!
+
+        // The activity reaches the read at all, and a plain workout is not one.
+        assertEquals(setOf(LocalDate.of(2026, 10, 6)), report.adherence.activityDays)
+        assertEquals(
+            setOf(LocalDate.of(2026, 10, 6), LocalDate.of(2026, 10, 8)),
+            report.adherence.trainedDays,
+        )
+
+        // A day with a workout **and** an activity is still a workout day: the calendar asks whether the day
+        // was trained, and the activity is the smaller half of that answer (N142).
+        insertSession(id = "row", date = "2026-10-06T18:00:00Z", finished = true, templateId = null)
+        val withBoth = adherence.monthAdherence(
+            month = YearMonth.of(2026, 10),
+            today = today,
+            zone = utc,
+        ).getOrNull()!!
+
+        assertEquals(emptySet<LocalDate>(), withBoth.adherence.activityDays)
     }
 
     @Test

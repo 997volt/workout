@@ -152,6 +152,27 @@ class AdherenceScreenTest {
     }
 
     @Test
+    fun anActivityOnlyDay_isAnnounced_asAnActivity_notAsAWorkout() {
+        // B139: the colour said "not a workout" but the label still said trained, so a screen reader could
+        // not tell an activity day from a workout day.
+        setScreen(
+            state = AdherenceUiState(
+                month = october,
+                currentMonth = october,
+                isLoading = false,
+                adherence = MonthAdherence(
+                    trainedDays = setOf(LocalDate.of(2026, 10, 6)),
+                    activityDays = setOf(LocalDate.of(2026, 10, 6)),
+                    scheduledDays = setOf(LocalDate.of(2026, 10, 6)),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Adherence.dayCell("2026-10-06"))
+            .assertContentDescriptionEquals("Oct 6, 2026, activity")
+    }
+
+    @Test
     fun aRestDay_isAnnounced_asRest() {
         setScreen()
 

@@ -322,8 +322,7 @@ interface ProgramDao {
         SELECT id AS sessionId,
                templateId AS templateId,
                startedAt AS startedAt,
-               zoneOffsetMinutes AS zoneOffsetMinutes,
-               activity AS activity
+               zoneOffsetMinutes AS zoneOffsetMinutes
         FROM workout_sessions
         WHERE templateId IS NOT NULL
           AND deletedAt IS NULL
@@ -342,13 +341,17 @@ interface ProgramDao {
      * filter on `finishedAt`, because adherence asks whether the training happened — an
      * abandoned start is a miss, which is deliberately stricter than the prompt's "did you
      * start it". A null `templateId` resolves no occurrence; the caller decides that.
+     *
+     * `activity` **is** selected here (N142): this is the read the calendar colours a day from, and the
+     * column belongs on the row type of the query that feeds it, not on its sibling.
      */
     @Query(
         """
         SELECT id AS sessionId,
                templateId AS templateId,
                startedAt AS startedAt,
-               zoneOffsetMinutes AS zoneOffsetMinutes
+               zoneOffsetMinutes AS zoneOffsetMinutes,
+               activity AS activity
         FROM workout_sessions
         WHERE deletedAt IS NULL
           AND finishedAt IS NOT NULL
