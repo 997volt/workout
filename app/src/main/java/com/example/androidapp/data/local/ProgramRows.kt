@@ -59,4 +59,6 @@ data class FinishedSessionRow(
     val templateId: String?,
     val startedAt: Long,
     val zoneOffsetMinutes: Int?,
+    /** The activity this session is, by name, or null for a workout (ROADMAP N141, N142). */
+    val activity: String?,
 )

@@ -2,6 +2,7 @@ package com.example.androidapp.ui.workout
 
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
@@ -12,11 +13,11 @@ import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.repository.StartedSession
 import com.example.androidapp.domain.repository.WorkoutRepository
-import java.io.IOException
-import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import java.io.IOException
+import java.time.Instant
 
 /**
  * A hand-written [WorkoutRepository] for the screens that only read a session (ROADMAP N78).
@@ -83,6 +84,14 @@ internal class FakeWorkoutRepository : WorkoutRepository {
     override suspend fun finishSession(sessionId: String): DataResult<Unit> = unused()
     override suspend fun setReadiness(sessionId: String, note: String?): DataResult<Unit> = unused()
     override suspend fun setWorkoutNotes(sessionId: String, note: String?): DataResult<Unit> = unused()
+
+    /** What the session was made into, so a test can read the write back (ROADMAP N141). */
+    var lastActivity: Activity? = null
+
+    override suspend fun setSessionActivity(sessionId: String, activity: Activity?): DataResult<Unit> {
+        lastActivity = activity
+        return DataResult.Success(Unit)
+    }
     override suspend fun deleteSession(sessionId: String): DataResult<Unit> = unused()
     override suspend fun logSet(
         sessionExerciseId: String,
@@ -91,7 +100,7 @@ internal class FakeWorkoutRepository : WorkoutRepository {
         rpeHalves: Int?,
         note: String?,
         setType: SetType,
-    assistanceGrams: Long,
+        assistanceGrams: Long,
     ): DataResult<Unit> = unused()
     override suspend fun updateSet(
         setId: String,
@@ -100,7 +109,7 @@ internal class FakeWorkoutRepository : WorkoutRepository {
         rpeHalves: Int?,
         note: String?,
         setType: SetType,
-    assistanceGrams: Long,
+        assistanceGrams: Long,
     ): DataResult<Unit> = unused()
     override suspend fun deleteSet(setId: String): DataResult<Unit> = unused()
     override suspend fun previousPerformance(

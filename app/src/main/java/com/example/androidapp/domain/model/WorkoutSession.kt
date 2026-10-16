@@ -1,7 +1,6 @@
 package com.example.androidapp.domain.model
 
 import com.example.androidapp.domain.WeightUnit
-
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -41,6 +40,13 @@ data class WorkoutSession(
      * session opens and editable afterwards from the workout header.
      */
     val readinessNote: String? = null,
+    /**
+     * The activity this session is, or null for a workout (ROADMAP N141).
+     *
+     * An activity holds **no sets**: it answers "was the day trained" without claiming work was done, which is
+     * why it can be a session at all rather than a record type of its own.
+     */
+    val activity: Activity? = null,
     /**
      * The muscles today's readiness note reported sore, each with its own score (ROADMAP N62).
      *

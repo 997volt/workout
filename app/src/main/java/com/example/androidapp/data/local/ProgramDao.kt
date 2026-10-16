@@ -1,12 +1,11 @@
 package com.example.androidapp.data.local
 
-import java.time.DayOfWeek
-
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
+import java.time.DayOfWeek
 
 /**
  * Programs, their slots, and the weeks their occurrences were passed over (ROADMAP P3.3).
@@ -323,7 +322,8 @@ interface ProgramDao {
         SELECT id AS sessionId,
                templateId AS templateId,
                startedAt AS startedAt,
-               zoneOffsetMinutes AS zoneOffsetMinutes
+               zoneOffsetMinutes AS zoneOffsetMinutes,
+               activity AS activity
         FROM workout_sessions
         WHERE templateId IS NOT NULL
           AND deletedAt IS NULL

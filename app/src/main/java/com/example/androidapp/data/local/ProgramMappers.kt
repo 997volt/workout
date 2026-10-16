@@ -81,6 +81,7 @@ internal fun FinishedSessionRow.toAdherenceSession(fallbackZone: ZoneId): Adhere
         zone = zoneOffsetMinutes
             ?.let { minutes -> ZoneOffset.ofTotalSeconds(minutes * SECONDS_PER_MINUTE) }
             ?: fallbackZone,
+        isActivity = activity != null,
     )
 
 private const val SECONDS_PER_MINUTE = 60

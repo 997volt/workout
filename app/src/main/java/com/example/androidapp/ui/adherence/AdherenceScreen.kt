@@ -1,11 +1,8 @@
 package com.example.androidapp.ui.adherence
 
-import androidx.compose.foundation.clickable
-import androidx.compose.material3.AlertDialog
-import com.example.androidapp.domain.model.DayOccurrence
-import com.example.androidapp.domain.model.OccurrenceState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -46,13 +44,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MonthAdherence
+import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.components.shortLabel
-import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.history.HistoryFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -511,7 +511,15 @@ private fun DayCell(day: CalendarDay?, onSelect: (LocalDate) -> Unit, modifier: 
             .aspectRatio(1f)
             .clip(CircleShape)
             .background(
-                if (day.trained) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                when {
+                    // **An activity is its own colour** (N142): "I trained" and "I went climbing" answer
+                    // different questions, and a workout that happened to log nothing would read as the
+                    // first. A day with a workout *and* an activity is a workout day — the calendar's
+                    // question is whether the day was trained.
+                    day.activityOnly -> MaterialTheme.colorScheme.secondaryContainer
+                    day.trained -> MaterialTheme.colorScheme.primaryContainer
+                    else -> Color.Transparent
+                },
             )
             .then(
                 if (day.scheduled && !day.trained) {

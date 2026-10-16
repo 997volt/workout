@@ -16,6 +16,13 @@ data class CalendarDay(
     val date: LocalDate,
     val trained: Boolean,
     val scheduled: Boolean,
+    /**
+     * True when the day's only work was an **activity** (ROADMAP N142).
+     *
+     * Drawn in its own colour: "I trained" and "I went climbing" answer different questions, and an activity
+     * would otherwise read as a workout that logged nothing.
+     */
+    val activityOnly: Boolean = false,
 )
 
 /** Seven columns, Monday first — the same first day a skip row's week takes (P3.3). */
@@ -35,6 +42,7 @@ fun calendarCells(month: YearMonth, adherence: MonthAdherence): List<CalendarDay
         cells += CalendarDay(
             date = date,
             trained = date in adherence.trainedDays,
+            activityOnly = date in adherence.activityDays,
             scheduled = date in adherence.scheduledDays,
         )
     }

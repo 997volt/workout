@@ -1,15 +1,12 @@
 package com.example.androidapp.data
 
-import kotlinx.coroutines.flow.first
-import com.example.androidapp.domain.model.PersonalRecords
-import com.example.androidapp.domain.model.PerformedSetSpec
-import com.example.androidapp.data.local.ExerciseTrendRowEntity
 import androidx.room.withTransaction
-import com.example.androidapp.data.local.SetEntryEntity
+import com.example.androidapp.data.local.ExerciseTrendRowEntity
 import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SessionExerciseJointEntity
-import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.WorkoutDao
+import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.InvalidInputException
@@ -17,28 +14,32 @@ import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.ZoneOffsetSource
 import com.example.androidapp.domain.dataResultOf
-import com.example.androidapp.domain.model.PreviousPerformance
-import com.example.androidapp.domain.model.TenPointScale
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.PerformedSetSpec
+import com.example.androidapp.domain.model.PersonalRecords
+import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
-import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.TenPointScale
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.StartedSession
 import com.example.androidapp.domain.repository.WorkoutRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 
 /**
  * Room-backed [WorkoutRepository] (ROADMAP P1.2, P1.3, P1.4, P1.8).
@@ -244,6 +245,16 @@ class RoomWorkoutRepository @Inject constructor(
             val updated = dao.setWorkoutNotes(
                 id = sessionId,
                 notes = note?.trim()?.ifEmpty { null },
+                at = timeSource.nowEpochMillis(),
+            )
+            if (updated == 0) throw NotFoundException("session $sessionId")
+        }
+
+    override suspend fun setSessionActivity(sessionId: String, activity: Activity?): DataResult<Unit> =
+        dataResultOf {
+            val updated = dao.setSessionActivity(
+                id = sessionId,
+                activity = activity?.name,
                 at = timeSource.nowEpochMillis(),
             )
             if (updated == 0) throw NotFoundException("session $sessionId")

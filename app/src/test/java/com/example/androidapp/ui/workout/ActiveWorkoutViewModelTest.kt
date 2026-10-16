@@ -1,31 +1,23 @@
 package com.example.androidapp.ui.workout
 
-import com.example.androidapp.domain.model.StatisticsRange
-import com.example.androidapp.domain.model.PersonalRecords
-import com.example.androidapp.domain.model.PendingOccurrence
-import com.example.androidapp.domain.model.ProgramRun
-import com.example.androidapp.domain.model.ProgramSlot
-import com.example.androidapp.domain.model.WorkoutProgram
-import com.example.androidapp.domain.repository.ProgramImportSummary
-import com.example.androidapp.domain.repository.ProgramRepository
-import kotlinx.coroutines.flow.asStateFlow
-import com.example.androidapp.domain.repository.SettingsRepository
-import com.example.androidapp.domain.repository.TemplateSetEdit
-import com.example.androidapp.domain.repository.TemplateRepository
-import com.example.androidapp.domain.model.WorkoutTemplate
-import com.example.androidapp.domain.model.TemplateSet
-import com.example.androidapp.domain.model.TemplateExercise
+import androidx.lifecycle.SavedStateHandle
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
-import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.PendingOccurrence
+import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgramRun
+import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.ProgressionStep
@@ -33,20 +25,27 @@ import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.StatisticsRange
+import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.repository.ProgramImportSummary
+import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.StartedSession
+import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.domain.repository.TemplateSetEdit
+import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
 import com.example.androidapp.ui.components.SetEdit
-import com.example.androidapp.domain.repository.WorkoutRepository
-import androidx.lifecycle.SavedStateHandle
-import java.io.IOException
-import java.time.DayOfWeek
-import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -66,7 +65,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.IOException
+import java.time.DayOfWeek
+import java.time.Instant
 
 /**
  * Under Robolectric rather than plain JVM: the ViewModel reads its route argument
@@ -854,7 +855,8 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
-    fun addingAnExercise_showsItAsARow() = runTest(dispatcher) {        val repository = FakeWorkoutRepository()
+    fun addingAnExercise_showsItAsARow() = runTest(dispatcher) {
+        val repository = FakeWorkoutRepository()
         val viewModel = viewModelFor(repository)
         observe(viewModel)
         settle()
@@ -1546,6 +1548,14 @@ class ActiveWorkoutViewModelTest {
     private class FakeWorkoutRepository : WorkoutRepository {
         val sessions = MutableStateFlow<WorkoutSession?>(null)
 
+        /** What the session was made into, so a test can read the write back (ROADMAP N141). */
+        var lastActivity: Activity? = null
+
+        override suspend fun setSessionActivity(sessionId: String, activity: Activity?): DataResult<Unit> {
+            lastActivity = activity
+            return DataResult.Success(Unit)
+        }
+
         /** What the last finished workout held, in order (ROADMAP N29). */
         var repeatedExerciseIds: List<String> = emptyList()
         val exercises = MutableStateFlow<List<SessionExercise>>(emptyList())
@@ -1589,8 +1599,8 @@ class ActiveWorkoutViewModelTest {
         /** What the next added exercise carries, so N5's plumbing can be asserted. */
         var restSecondsForNextExercise: Int? = null
 
-    /** The library exercise's own weight step, so a row can be given one (ROADMAP N77). */
-    var stepGramsForNextExercise: Long? = null
+        /** The library exercise's own weight step, so a row can be given one (ROADMAP N77). */
+        var stepGramsForNextExercise: Long? = null
         var techniqueNoteForNextExercise: String? = null
 
         /** The rest length the ViewModel actually asked for, or null if never asked. */
@@ -1602,7 +1612,6 @@ class ActiveWorkoutViewModelTest {
 
         /** What the record read answers with; empty means no records yet. */
         var records: PersonalRecords = PersonalRecords()
-
 
         /** The readiness note the ViewModel last wrote, or null if never written. */
         var lastReadinessNote: String? = null
@@ -1772,7 +1781,7 @@ class ActiveWorkoutViewModelTest {
             rpeHalves: Int?,
             note: String?,
             setType: SetType,
-        assistanceGrams: Long,
+            assistanceGrams: Long,
         ): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             // The write is in flight: a second log's read can land before this row does (B126).
@@ -1808,7 +1817,7 @@ class ActiveWorkoutViewModelTest {
             rpeHalves: Int?,
             note: String?,
             setType: SetType,
-        assistanceGrams: Long,
+            assistanceGrams: Long,
         ): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             // The edit is in flight: a log's comparison can run before this row changes (B129).
@@ -1862,7 +1871,6 @@ class ActiveWorkoutViewModelTest {
     private class MutableClock(var now: Instant) : TimeSource {
         override fun now(): Instant = now
     }
-
 
     private companion object {
         val FIXED_INSTANT: Instant = Instant.parse("2026-09-28T08:00:00Z")
@@ -2175,6 +2183,7 @@ class ActiveWorkoutViewModelTest {
             summary.comparisons.single().performedSets,
         )
     }
+
     @Test
     fun anExerciseWithoutARest_usesTheConfiguredDefault() = runTest(dispatcher) {
         // ROADMAP N21: the default was a hardcoded 90 seconds with no way to change it, so
@@ -2228,8 +2237,6 @@ class ActiveWorkoutViewModelTest {
 
         assertEquals(30, repository.lastRestSeconds)
     }
-
-
 
     @Test
     fun anEditBesideALog_waitsItsTurn() = runTest(dispatcher) {
@@ -2359,6 +2366,7 @@ class ActiveWorkoutViewModelTest {
         assertEquals(20_000L, moment.weightGrams)
         assertEquals("it says what was beaten, not only what was done", 17_500L, moment.previousBestGrams)
     }
+
     @Test
     fun matchingTheBest_raisesNothing() = runTest(dispatcher) {
         // Celebrating a repeat devalues the word.
@@ -2374,6 +2382,7 @@ class ActiveWorkoutViewModelTest {
         settle()
         assertNull(viewModel.personalRecord.value)
     }
+
     @Test
     fun theRecordIsClearedByTheNextSet() = runTest(dispatcher) {
         // It is news for the moment between sets, not a banner to dismiss (N23).
@@ -2452,7 +2461,6 @@ class ActiveWorkoutViewModelTest {
         assertEquals("and both sets were still written", 2, repository.sets.value.size)
     }
 
-
     @Test
     fun pairing_putsBothExercisesInOneGroup() = runTest(dispatcher) {
         // "These two, together" is what the tap says, so one exercise in a group is not the
@@ -2481,6 +2489,7 @@ class ActiveWorkoutViewModelTest {
             repository.supersetGroups.single().toSet(),
         )
     }
+
     @Test
     fun unpairing_takesTheWholeGroupApart() = runTest(dispatcher) {
         val repository = FakeWorkoutRepository()
@@ -2501,6 +2510,7 @@ class ActiveWorkoutViewModelTest {
             viewModel.uiState.value.exercises.all { it.supersetGroup == null },
         )
     }
+
     @Test
     fun inASuperset_nothingRestsUntilTheRoundIsDone() = runTest(dispatcher) {
         // ROADMAP N24: resting between the pair would defeat the pairing the user asked for.
@@ -2592,7 +2602,6 @@ class ActiveWorkoutViewModelTest {
         assertNotNull(repository.lastRestSeconds)
     }
 
-
     @Test
     fun aSuperset_restsForItsLongestMember() = runTest(dispatcher) {
         // ROADMAP B15, against DECISIONS.md: the rest is the group's, not the member that
@@ -2643,7 +2652,6 @@ class ActiveWorkoutViewModelTest {
 
         assertNull("a warm-up is not a personal best", viewModel.personalRecord.value)
     }
-
 
     @Test
     fun aRecord_namesTheBarThisSessionSet_notHistories() = runTest(dispatcher) {
@@ -2806,7 +2814,6 @@ private class FakeProgramRepository : ProgramRepository {
 
     override fun observeProgramRun(programId: String): Flow<ProgramRun?> = flowOf(null)
 
-
     override suspend fun setSubstitution(
         slotId: String,
         weekStart: java.time.LocalDate,
@@ -2868,5 +2875,4 @@ private class FakeProgramRepository : ProgramRepository {
 
     override suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary> =
         error("the workout screen does not carry a program")
-
 }

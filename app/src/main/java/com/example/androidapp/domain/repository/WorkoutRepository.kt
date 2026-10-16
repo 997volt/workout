@@ -1,17 +1,18 @@
 package com.example.androidapp.domain.repository
 
-import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
-import java.time.Instant
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 /**
  * The session a workout screen is now in, and whether this call opened it.
@@ -129,6 +130,14 @@ interface WorkoutRepository {
      * going *in*: this is about how it went.
      */
     suspend fun setWorkoutNotes(sessionId: String, note: String?): DataResult<Unit>
+
+    /**
+     * Makes a session an **activity** — cycling, a swim — or a workout again (ROADMAP N141).
+     *
+     * The session keeps its identity: the day, the history and the calendar read the same row. What changes is
+     * that an activity holds **no sets**, so the screen stops offering to log any.
+     */
+    suspend fun setSessionActivity(sessionId: String, activity: Activity?): DataResult<Unit>
 
     /** Reopens a done exercise (ROADMAP N7), restoring logging and editing. */
     suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit>

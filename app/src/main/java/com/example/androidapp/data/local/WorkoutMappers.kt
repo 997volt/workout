@@ -1,5 +1,6 @@
 package com.example.androidapp.data.local
 
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.WorkoutSession
@@ -23,6 +24,7 @@ internal fun WorkoutSessionEntity.toDomain(soreMuscles: List<SessionSoreMuscleEn
         finishedAt = finishedAt?.let(Instant::ofEpochMilli),
         restEndsAt = restEndsAt?.let(Instant::ofEpochMilli),
         readinessNote = readinessNote,
+        activity = Activity.named(this.activity),
         soreMuscles = soreMuscles.map { it.toDomain() },
         zoneOffsetMinutes = zoneOffsetMinutes,
         notes = notes,

@@ -16,6 +16,23 @@ unreleased.
 
 ## [Unreleased]
 
+### Added
+
+- **A session can be an activity rather than a workout** (N141, the **storage half** — the screen that sets one
+  is still to build, and the roadmap row stays open for it). A session gains a nullable **activity** — cycling,
+  running, swimming, rock climbing, volleyball, a short closed list stored by name like every enum — in one
+  column rather than a record type of its own (**schema 6**): the day, the history, the calendar and the export
+  all already read a session, and a second kind of record would be a second path through every one of them. An
+  activity holds **no sets**, so it answers "was the day trained" without claiming work was done: it contributes
+  no volume, no reps and no records, because those read the sets it does not have. The write, the row type the
+  adherence reader takes and the backup field are in; what is missing is the row under *Add exercise* that sets
+  one, which is the next thing in the roadmap.
+
+- **An activity is its own colour in the adherence calendar** (N142). A trained day was drawn in one colour, so
+  a day whose only work was a swim read as a workout that happened to log nothing. It has its own container now,
+  and a day with **a workout and** an activity is still a workout day: the calendar's question is whether the
+  day was trained.
+
 ### Changed
 
 - **The row that records the day belongs to today** (N138). It was the last of home's *ways in* — the

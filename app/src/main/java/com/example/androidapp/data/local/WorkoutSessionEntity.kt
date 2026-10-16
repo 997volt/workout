@@ -53,6 +53,14 @@ data class WorkoutSessionEntity(
      * written before this column existed, which is the honest answer — see the migration.
      */
     val zoneOffsetMinutes: Int? = null,
+    /**
+     * The activity this session is, by name, or null for a workout (ROADMAP N141).
+     *
+     * One column rather than a record type of its own: the day, the history, the adherence calendar and the
+     * export all already read a session, and a second kind of record would be a second path through every one
+     * of them. Nullable, so every row already on disk is a workout — which is what it is.
+     */
+    val activity: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

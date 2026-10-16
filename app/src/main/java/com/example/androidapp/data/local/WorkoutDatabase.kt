@@ -26,6 +26,9 @@ import androidx.room.TypeConverters
  * **Schema 5 is N137**, one new table: a metric's goal keeps its past, so a goal is a row per **period**
  * rather than a value in a settings string that was rewritten on every change. See [MIGRATION_4_5].
  *
+ * **Schema 6 is N141**, one nullable column: a session can be an **activity** — cycling, a swim — which is
+ * a session that holds no sets. See [MIGRATION_5_6].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -51,7 +54,7 @@ import androidx.room.TypeConverters
         MeasurementSoreMuscleEntity::class,
         MetricGoalEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

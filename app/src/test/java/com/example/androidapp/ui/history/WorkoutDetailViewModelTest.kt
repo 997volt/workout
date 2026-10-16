@@ -1,32 +1,32 @@
 package com.example.androidapp.ui.history
 
-import com.example.androidapp.domain.repository.TemplateSetEdit
-import com.example.androidapp.domain.repository.TemplateRepository
-import com.example.androidapp.domain.model.WorkoutTemplate
-import com.example.androidapp.domain.model.TemplateSet
-import com.example.androidapp.domain.model.TemplateExercise
-import com.example.androidapp.domain.model.PersonalRecords
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.Side
-import com.example.androidapp.domain.repository.StartedSession
+import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.repository.StartedSession
+import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.WorkoutRepository
-import java.time.Instant
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -39,6 +39,7 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 /**
  * The history detail's own mapping (ROADMAP B5, B9).
@@ -271,6 +272,10 @@ class WorkoutDetailViewModelTest {
 
         override suspend fun setWorkoutNotes(sessionId: String, note: String?): DataResult<Unit> =
             unused()
+
+        /** An activity is a write like any other; this fake only has to accept it (N141). */
+        override suspend fun setSessionActivity(sessionId: String, activity: Activity?): DataResult<Unit> =
+            DataResult.Success(Unit)
 
         override suspend fun deleteSession(sessionId: String): DataResult<Unit> = unused()
         override suspend fun logSet(

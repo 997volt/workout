@@ -20,26 +20,19 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 Two requests from use (N141, N142), in the order they were asked for. Each row states what it changes and
 what is still open, so the work can be picked up without re-deriving it.
 
-- **An empty workout can be an activity instead** (N141). Under *Add exercise*, while the session is empty, a
-  second row offers **Add activity** with a short list — cycling, running, swimming, rock climbing, volleyball —
-  and the session then takes **no sets**: a comment and the readiness note are all it holds. Larger than it
-  looks:
+**One row, half built: the screen that makes a session an activity** (N141). Everything behind it shipped — the
+session's `activity` column and the migration (schema 6), the write, the adherence reader's row type, the backup
+field, and the calendar colour below — but the row under *Add exercise* that offers **Add activity**, and the
+screen that then hides the logging, did not. That is the whole of what is left:
 
-  - **Where the activity lives.** A `WorkoutSession` with a kind, rather than a record type of its own: the day,
-    the history, the adherence calendar and the export all already read a session, and a second kind of record
-    would be a second path through every one of them. A new column, so **schema 6** and a migration.
-  - **It is not an empty session.** An empty workout is discarded rather than saved today, so an activity that
-    holds no sets is a session that must be **finishable** — the one rule that has to change with it.
-  - **Nothing else can be logged**: no second exercise, no sets, no template or program. What the screen offers is
-    the comment and the readiness note.
-  - **The list is short and closed** ("don't put too many options"), and stored **by name** like every enum.
-    Decisions: an enum rather than free text, and what the statistics do with a session that holds no work — it
-    counts as a trained day and contributes no volume, no reps and no records.
+- **The row, under *Add exercise*, while the session is empty** — a short closed list (cycling, running,
+  swimming, rock climbing, volleyball), the tags and strings for it, and the picker.
+- **No sets once it is an activity**: the add rows and the exercise list are not drawn, and what is left is the
+  readiness note and the comment asked for at the end.
+- **A way out** of a mispick, since an activity with no sets cannot be logged into.
 
-- **An activity is a different colour in the adherence calendar** (N142, and it needs N141). A trained day is
-  drawn `primaryContainer`; an activity day should read as its own thing rather than as a workout that happened
-  to log nothing, because "I trained" and "I went climbing" answer different questions. Decisions: a third day
-  state beside done/skipped/missed rather than a tint of done, and whether the breakdown counts it as trained.
+The two requests that *are* built are in [CHANGELOG.md](CHANGELOG.md): the day's record moved into today (N138)
+and home reads as two colour zones (N139), and a new workout no longer opens into the readiness note (N140).
 
 ## Later — decided, and not being started
 

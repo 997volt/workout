@@ -21,6 +21,8 @@ data class AdherenceSession(
     val templateId: String?,
     val startedAt: Instant,
     val zone: ZoneId,
+    /** True when this session is an activity rather than a workout (ROADMAP N141, N142). */
+    val isActivity: Boolean = false,
 ) {
     val date: LocalDate get() = startedAt.atZone(zone).toLocalDate()
 }
@@ -74,6 +76,14 @@ data class MonthAdherence(
     val missed: Int = 0,
     /** A finished session's own day, in the zone it was performed in (N25, B45). */
     val trainedDays: Set<LocalDate> = emptySet(),
+    /**
+     * The days whose **only** work was an activity (ROADMAP N142).
+     *
+     * A day trained twice — a workout and a walk — is a workout day: the calendar answers "did I train", and
+     * the activity is the smaller half of that answer. This is what lets the grid colour the day differently
+     * without a second question in the grid.
+     */
+    val activityDays: Set<LocalDate> = emptySet(),
     /** A day a weekday slot of the active program falls on; a rest day is not one of these. */
     val scheduledDays: Set<LocalDate> = emptySet(),
     /**

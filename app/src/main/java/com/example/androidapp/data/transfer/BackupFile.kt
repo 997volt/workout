@@ -286,6 +286,13 @@ data class SessionDto(
      * existed still decodes, and its sessions simply have no provenance.
      */
     val templateId: String? = null,
+    /**
+     * The activity this session is, by name, or null for a workout (ROADMAP N141).
+     *
+     * Defaulted for the same reason as every added field: a file written before activities existed still
+     * decodes, and its sessions are workouts.
+     */
+    val activity: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

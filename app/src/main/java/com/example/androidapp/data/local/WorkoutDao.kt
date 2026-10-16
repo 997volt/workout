@@ -287,6 +287,21 @@ interface WorkoutDao {
     suspend fun setWorkoutNotes(id: String, notes: String?, at: Long): Int
 
     /**
+     * Makes the session an activity, or a workout again (ROADMAP N141).
+     *
+     * A name rather than the enum: the store keeps what it was told by name like every other enum here, and a
+     * session whose activity this build does not know reads as a workout rather than as a wrong one.
+     */
+    @Query(
+        """
+        UPDATE workout_sessions
+        SET activity = :activity, updatedAt = :at
+        WHERE id = :id AND deletedAt IS NULL
+        """,
+    )
+    suspend fun setSessionActivity(id: String, activity: String?, at: Long): Int
+
+    /**
      * Sets or clears a session exercise's done timestamp (ROADMAP N7). A null
      * [finishedAt] reopens it.
      *

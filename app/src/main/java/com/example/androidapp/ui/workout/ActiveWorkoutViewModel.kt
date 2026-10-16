@@ -1,66 +1,63 @@
 package com.example.androidapp.ui.workout
 
-import java.time.ZoneId
-import com.example.androidapp.domain.model.zoneIdOrNull
-import com.example.androidapp.domain.model.PersonalRecords
-import com.example.androidapp.domain.model.PersonalRecordMoment
-import com.example.androidapp.domain.repository.SettingsRepository
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
-import com.example.androidapp.domain.model.comparePlanToActual
-import com.example.androidapp.domain.model.PlannedSetSpec
-import com.example.androidapp.domain.model.PlanComparison
-import com.example.androidapp.domain.model.PerformedSetSpec
-import com.example.androidapp.domain.model.ExercisePlan
-import com.example.androidapp.domain.model.ExerciseActual
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
-import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.Activity
+import com.example.androidapp.domain.model.ExerciseActual
+import com.example.androidapp.domain.model.ExercisePlan
 import com.example.androidapp.domain.model.JointPain
-import com.example.androidapp.domain.model.SessionExercise
-import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.runContinuesAfter
-import com.example.androidapp.domain.model.TemplateExercise
-import com.example.androidapp.domain.model.SetEntry
-import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.PendingProgression
+import com.example.androidapp.domain.model.PerformedSetSpec
+import com.example.androidapp.domain.model.PersonalRecordMoment
+import com.example.androidapp.domain.model.PersonalRecords
+import com.example.androidapp.domain.model.PlanComparison
+import com.example.androidapp.domain.model.PlannedSetSpec
+import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgressionChoice
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionPrompt
-import com.example.androidapp.domain.model.PendingProgression
-import com.example.androidapp.domain.model.ProgressionChoice
+import com.example.androidapp.domain.model.SessionExercise
+import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.WorkoutSession
+import com.example.androidapp.domain.model.comparePlanToActual
 import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.domain.model.progressionPromptFor
-import com.example.androidapp.domain.repository.TemplateSetEdit
-import com.example.androidapp.domain.model.WorkoutSession
+import com.example.androidapp.domain.model.runContinuesAfter
 import com.example.androidapp.domain.model.taxonomySubtitle
+import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.domain.repository.ProgramRepository
-import com.example.androidapp.domain.repository.WorkoutRepository
+import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.domain.repository.TemplateSetEdit
+import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.setNumbers
 import com.example.androidapp.ui.navigation.ActiveWorkout
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.Duration
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -71,6 +68,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.Duration
+import java.time.ZoneId
+import javax.inject.Inject
 
 /** A logged set as the screen shows it: position, weight, reps, and N6's extras. */
 data class SetRow(
@@ -204,6 +204,13 @@ data class ActiveWorkoutUiState(
     val pendingFinishedExerciseId: String? = null,
     /** What was not recovered today, or null (ROADMAP N4). */
     val readinessNote: String? = null,
+    /**
+     * The activity this session is, or null for a workout (ROADMAP N141).
+     *
+     * An activity holds no sets, so the screen stops offering to log any and what is left is the day's own
+     * record: the readiness note and the comment asked for at the end.
+     */
+    val activity: Activity? = null,
     /** Set when a write failed, so the screen can say so instead of lying. */
     val error: DataError? = null,
 ) {
@@ -600,7 +607,6 @@ class ActiveWorkoutViewModel @Inject constructor(
                     }
             }
         }
-
     }
 
     fun onAddExercise(exerciseId: String) = write { sessionId ->
@@ -771,7 +777,6 @@ class ActiveWorkoutViewModel @Inject constructor(
             }
         }
     }
-
 
     /**
      * Logs one set, exactly as the fields that stated it say (ROADMAP N59, restoring B7).
@@ -1102,12 +1107,27 @@ class ActiveWorkoutViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Makes this session an activity, or a workout again (ROADMAP N141).
+     *
+     * Written straight through like every other session write: the lifter chose it, and a failure has to be
+     * visible rather than leaving the screen disagreeing with the store.
+     */
+    fun onSetActivity(activity: Activity?) {
+        val sessionId = uiState.value.sessionId ?: return
+        viewModelScope.launch {
+            when (val result = workoutRepository.setSessionActivity(sessionId, activity)) {
+                is DataResult.Success -> lastError.value = null
+                is DataResult.Failure -> lastError.value = result.error
+            }
+        }
+    }
+
     /** Dismisses the review, which is what actually closes the screen (ROADMAP N20). */
     fun onDismissSummary() {
         _summary.value = null
         closeSession()
     }
-
 
     /**
      * What "this workout is over" means, in one place.
@@ -1227,6 +1247,7 @@ private fun Snapshot.toUiState(
         pendingUndo = undo,
         pendingFinishedExerciseId = pendingFinishedExerciseId,
         readinessNote = session?.readinessNote,
+        activity = session?.activity,
         error = error,
     )
 }

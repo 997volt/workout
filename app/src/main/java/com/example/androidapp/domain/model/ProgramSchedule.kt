@@ -257,7 +257,11 @@ object ProgramSchedule {
 
         // A trained day is a finished session's own day, and needs no schedule: a workout
         // started by hand marks its day whether or not a program is active.
-        val trained = sessions.map { it.date }.filter { it in first..last }.toSet()
+        val inMonth = { date: LocalDate -> date in first..last }
+        val trained = sessions.map { it.date }.filter(inMonth).toSet()
+        // A day whose only work was an activity (N142): it trained the day, and it was not a workout.
+        val workouts = sessions.filterNot { it.isActivity }.map { it.date }.toSet()
+        val activityDays = sessions.filter { it.isActivity }.map { it.date }.filter(inMonth).toSet() - workouts
 
         // Only a finished session settles an occurrence here. An abandoned start is a miss
         // (P3.5): what this asks is whether the training happened, not whether to nag.
@@ -287,6 +291,7 @@ object ProgramSchedule {
             skipped = counted.skipped,
             missed = counted.missed,
             trainedDays = trained,
+            activityDays = activityDays,
             scheduledDays = counted.scheduledDays,
             bySlot = counted.bySlot,
             byExercise = exerciseAdherence(counted.bySlot, exercisesByTemplate, exerciseNames, exerciseParents),
