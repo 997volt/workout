@@ -215,10 +215,47 @@ class StatisticsDaoTest {
         templates.insertTemplateExercise(plannedExercise("e-removed", "t-live"))
         templates.insertTemplateSet(plannedSet("s-removed", "e-removed", weight = 140_000L, deletedAt = 7L))
 
-        val targets = dao.observePlanTargets("back-squat").first()
+        val targets = dao.observePlanTargets(listOf("back-squat")).first()
 
         assertEquals("one live plan, and only it", listOf("t-live"), targets.map { it.templateId })
         assertEquals("and not the set that was taken out", 100_000L, targets.single().weightGrams)
+    }
+
+    @Test
+    fun planTargets_areReadForEveryLiftInTheList() = runTest {
+        // B143: a metric that accepts a head draws its whole family, so its plan lines are read over the same
+        // ids — a set never names a category, so the chosen id alone drew no line at all.
+        val templates = database.templateDao()
+        templates.insertTemplate(template("t-live", "Push day"))
+        templates.insertTemplateExercise(plannedExercise("e-bench", "t-live", exerciseId = "bench-press"))
+        templates.insertTemplateSet(plannedSet("s-bench", "e-bench", weight = 100_000L))
+        templates.insertTemplateExercise(plannedExercise("e-squat", "t-live", exerciseId = "back-squat"))
+        templates.insertTemplateSet(plannedSet("s-squat", "e-squat", weight = 120_000L))
+
+        val targets = dao.observePlanTargets(listOf("bench-press", "back-squat")).first()
+
+        assertEquals(
+            "both lifts in the list, and nothing outside it",
+            setOf(100_000L, 120_000L),
+            targets.mapNotNull { it.weightGrams }.toSet(),
+        )
+    }
+
+    @Test
+    fun aRepRange_withoutProgression_readsItsFloor_notItsTop() = runTest {
+        // B142: the session asks for the range's floor where progression has not moved it (N74), and the
+        // chart's plan line is one reading of the same stored row — a second answer would draw an estimated
+        // 1RM the plan never asked for.
+        val templates = database.templateDao()
+        templates.insertTemplate(template("t-live", "Push day"))
+        templates.insertTemplateExercise(plannedExercise("e1", "t-live"))
+        templates.insertTemplateSet(
+            plannedSet("s1", "e1", weight = 100_000L, repsMin = 5, repsMax = 8, repsCurrent = null),
+        )
+
+        val target = dao.observePlanTargets(listOf("back-squat")).first().single()
+
+        assertEquals(5, target.reps)
     }
 
     private fun template(
@@ -235,10 +272,14 @@ class StatisticsDaoTest {
         deletedAt = deletedAt,
     )
 
-    private fun plannedExercise(id: String, templateId: String) = TemplateExerciseEntity(
+    private fun plannedExercise(
+        id: String,
+        templateId: String,
+        exerciseId: String = "back-squat",
+    ) = TemplateExerciseEntity(
         id = id,
         templateId = templateId,
-        exerciseId = "back-squat",
+        exerciseId = exerciseId,
         position = 0,
         createdAt = 0L,
         updatedAt = 0L,
@@ -250,6 +291,9 @@ class StatisticsDaoTest {
         templateExerciseId: String,
         weight: Long?,
         deletedAt: Long? = null,
+        repsMin: Int? = 5,
+        repsMax: Int? = 5,
+        repsCurrent: Int? = 5,
     ) = TemplateSetEntity(
         id = id,
         templateExerciseId = templateExerciseId,
@@ -257,9 +301,9 @@ class StatisticsDaoTest {
         role = SetType.NORMAL,
         targetWeightGrams = weight,
         targetAssistanceGrams = null,
-        targetRepsMin = 5,
-        targetRepsMax = 5,
-        targetRepsCurrent = 5,
+        targetRepsMin = repsMin,
+        targetRepsMax = repsMax,
+        targetRepsCurrent = repsCurrent,
         note = null,
         createdAt = 0L,
         updatedAt = 0L,

@@ -295,15 +295,26 @@ class StatisticsViewModel @Inject constructor(
      * What the plans prescribe for the chosen lift (ROADMAP N39).
      *
      * Read only where the metric reads a **lift**: a plan prescribes sets, so there is nothing for a bodyweight
-     * or a tape site to answer. `distinctUntilChanged` on the id so switching between two metrics about the same
-     * lift does not re-query the plan's tables.
+     * or a tape site to answer. The ids are **the same ones the series reads** ([subjectIds], N97, B143): a
+     * metric that accepts a head draws its whole family's points, so its plan lines have to be read over that
+     * family too — a set never names a category, and querying the chosen id alone drew the family's readings
+     * with no plan line at all. `distinctUntilChanged` on the list so switching between two metrics about the
+     * same lift does not re-query the plan's tables.
      */
-    private val planTargets: Flow<List<PlanTarget>> = selection
-        .map { it.exerciseId }
-        .distinctUntilChanged()
-        .flatMapLatest { exerciseId ->
-            if (exerciseId == null) flowOf(emptyList()) else repositories.statistics.observePlanTargets(exerciseId)
-        }
+    private val planTargets: Flow<List<PlanTarget>> =
+        combine(selection, library) { chosen, lib -> chosen to lib.second }
+            .map { (chosen, exercises) ->
+                val exerciseId = chosen.exerciseId
+                if (exerciseId == null || !MetricRegistry.entryFor(chosen.metric).needsExercise) {
+                    emptyList()
+                } else {
+                    subjectIds(chosen.metric, exerciseId, exercises)
+                }
+            }
+            .distinctUntilChanged()
+            .flatMapLatest { ids ->
+                if (ids.isEmpty()) flowOf(emptyList()) else repositories.statistics.observePlanTargets(ids)
+            }
 
     val uiState: StateFlow<StatisticsUiState> =
         combine(

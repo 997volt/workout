@@ -27,8 +27,8 @@ class RoomStatisticsRepository @Inject constructor(
     override fun observeWorkoutSummaries(): Flow<List<WorkoutSummary>> =
         workouts.observeHistory().map { rows -> rows.map { it.toDomain() } }
 
-    override fun observePlanTargets(exerciseId: String): Flow<List<PlanTarget>> =
-        dao.observePlanTargets(exerciseId).map { rows -> planTargets(rows.map { it.toPlannedSetTarget() }) }
+    override fun observePlanTargets(exerciseIds: List<String>): Flow<List<PlanTarget>> =
+        dao.observePlanTargets(exerciseIds).map { rows -> planTargets(rows.map { it.toPlannedSetTarget() }) }
 
     override suspend fun countRecordsIn(from: Instant, to: Instant): DataResult<Int> = dataResultOf {
         dao.countRecordsIn(from.toEpochMilli(), to.toEpochMilli())

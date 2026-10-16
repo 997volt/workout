@@ -24,16 +24,21 @@ interface StatisticsRepository {
     fun observeWorkoutSummaries(): Flow<List<WorkoutSummary>>
 
     /**
-     * What the lifter's **plans** prescribe for [exerciseId], one entry per plan that names it (ROADMAP N39).
+     * What the lifter's **plans** prescribe for the lifts in [exerciseIds], one entry per plan that names one
+     * of them (ROADMAP N39).
      *
      * On this port rather than `TemplateRepository` for the reason the port exists: it is a question the
      * Statistics screen asks and no other screen does. The rows come from the plan's own tables, and what a
      * chart draws of them is [com.example.androidapp.domain.model.levelFor]'s question.
      *
+     * A **list** because the series may read a whole family: a metric that accepts a head (N97) draws its
+     * family's points, so its plan lines have to be read over the same ids (B143) — a set never names a
+     * category, and querying the chosen id alone drew the family with no plan line at all.
+     *
      * **Kept versions and deleted rows are not plans**: a version is history (N134) and a soft-deleted set was
      * removed, so neither is a prescription the chart may draw.
      */
-    fun observePlanTargets(exerciseId: String): Flow<List<PlanTarget>>
+    fun observePlanTargets(exerciseIds: List<String>): Flow<List<PlanTarget>>
 
     /**
      * Records set between [from] (inclusive) and [to] (exclusive).

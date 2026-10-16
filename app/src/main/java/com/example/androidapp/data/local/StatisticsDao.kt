@@ -72,11 +72,19 @@ interface StatisticsDao {
     suspend fun countRecordsIn(from: Long, to: Long): Int
 
     /**
-     * What the live plans prescribe for one lift (ROADMAP N39).
+     * What the live plans prescribe for the lifts in [exerciseIds] (ROADMAP N39, B143).
      *
      * A flat read of the three plan tables, reduced to one row per plan in `planTargets`: the aggregation is
      * "the heaviest set *and the reps it is prescribed for*", which is two columns of one row and therefore not
      * something `GROUP BY` can answer without a second pass.
+     *
+     * A **list** rather than one id, because the series is read for a whole family where the metric accepts a
+     * head (N97): a set never names a category, so querying the chosen id alone drew the family's readings with
+     * no plan line at all.
+     *
+     * The reps carry the same fallback the session's own suggestion makes (N74, B142) — the rung progression
+     * reached, else the range's **floor**, else its top — so the chart's line is one answer to "what does this
+     * set ask for" rather than a second one.
      *
      * Every liveness predicate is here on purpose. A **kept version** is not a plan (N134) — it is what the plan
      * used to be — and a soft-deleted set was taken out of the plan, so drawing either would show a target the
@@ -87,15 +95,15 @@ interface StatisticsDao {
         SELECT t.id AS templateId, t.name AS templateName,
                s.targetWeightGrams AS weightGrams,
                s.targetAssistanceGrams AS assistanceGrams,
-               COALESCE(s.targetRepsCurrent, s.targetRepsMax, s.targetRepsMin) AS reps,
+               COALESCE(s.targetRepsCurrent, s.targetRepsMin, s.targetRepsMax) AS reps,
                e.targetRpeHalves AS rpeHalves
         FROM templates t
         JOIN template_exercises e ON e.templateId = t.id
         JOIN template_sets s ON s.templateExerciseId = e.id
         WHERE t.deletedAt IS NULL AND t.versionOf IS NULL
           AND e.deletedAt IS NULL AND s.deletedAt IS NULL
-          AND e.exerciseId = :exerciseId
+          AND e.exerciseId IN (:exerciseIds)
         """,
     )
-    fun observePlanTargets(exerciseId: String): Flow<List<PlanTargetRow>>
+    fun observePlanTargets(exerciseIds: List<String>): Flow<List<PlanTargetRow>>
 }

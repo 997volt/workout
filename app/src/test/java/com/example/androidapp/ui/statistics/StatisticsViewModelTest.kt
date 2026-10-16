@@ -330,6 +330,33 @@ class StatisticsViewModelTest {
             .containsExactly("barbell-bench-press")
     }
 
+    @Test
+    fun thePlanLines_areReadOverTheSameFamily_asTheSeries() = runTest(dispatcher) {
+        // B143: a metric that accepts a head draws its whole family, so its plan lines have to be read over
+        // that family — a set never names a category, and querying the chosen id alone drew the family's
+        // readings with no plan line at all.
+        val statistics = FakeStatisticsRepository(sessions = emptyList(), records = null)
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            lifts = listOf(
+                lift("cat-bench", "Bench Press", rowKind = RowKind.CATEGORY),
+                lift("barbell-bench-press", "Barbell Bench Press", parentId = "cat-bench"),
+            ),
+            statistics = statistics,
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        // RPE is the one level-shaped metric that also accepts a head, which is where the two halves meet.
+        viewModel.onSelectMetric(MetricKey.Exercise(ExerciseTrendMetric.RPE))
+        advanceUntilIdle()
+        viewModel.onSelectExercise("cat-bench")
+        advanceUntilIdle()
+
+        assertThat(statistics.planIdsAsked)
+            .containsExactly("cat-bench", "barbell-bench-press")
+    }
+
     private fun lift(
         id: String,
         name: String,
@@ -596,10 +623,17 @@ private class FakeStatisticsRepository(
     var asked = false
         private set
 
+    /** The ids the plan lines were read for (B143), so a family selection can be asserted. */
+    var planIdsAsked: List<String>? = null
+        private set
+
     override fun observeWorkoutSummaries(): Flow<List<WorkoutSummary>> = flowOf(sessions)
 
     /** The plans' targets (ROADMAP N39): the fake holds none unless a test says so. */
-    override fun observePlanTargets(exerciseId: String): Flow<List<PlanTarget>> = flowOf(planTargets)
+    override fun observePlanTargets(exerciseIds: List<String>): Flow<List<PlanTarget>> {
+        planIdsAsked = exerciseIds
+        return flowOf(planTargets)
+    }
 
     override suspend fun countRecordsIn(from: Instant, to: Instant): DataResult<Int> {
         asked = true

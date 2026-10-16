@@ -5,7 +5,8 @@ package com.example.androidapp.domain.model
  *
  * The row a plan's prescription is read as: the plan's name for the label, and the four numbers a set can state.
  * [PlannedSetTarget.reps] is the reps **this** set is prescribed for — the range's current rung (N74), or its
- * top, or its floor — because that is what the plan asks for now.
+ * floor, or its top — because that is what the plan asks for now, and it is the same reading the session's own
+ * suggestion makes ([PlannedSetTarget.targetReps]).
  */
 data class PlannedSetTarget(
     val templateId: String,
