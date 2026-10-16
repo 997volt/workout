@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.workout
 
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.PersonalRecordMoment
@@ -80,6 +81,7 @@ class ActiveWorkoutScreenTest {
         val onToggleSuperset: (String) -> Unit = {},
         val onDiscard: () -> Unit = {},
         val onAddExercise: () -> Unit = {},
+        val onSetActivity: (Activity?) -> Unit = {},
     )
 
     private fun setScreen(
@@ -106,6 +108,7 @@ class ActiveWorkoutScreenTest {
                 state = state,
                 clock = remember { mutableStateOf(WorkoutClock()) },
                 onAddExercise = actions.onAddExercise,
+                onSetActivity = actions.onSetActivity,
                 onLogSet = actions.onLogSet,
                 onToggleSuperset = onToggleSuperset,
                 personalRecord = personalRecord,
@@ -784,6 +787,68 @@ class ActiveWorkoutScreenTest {
             .getUnclippedBoundsInRoot()
 
         assertTrue("the add button is not under the empty message", add.top >= message.bottom)
+    }
+
+    @Test
+    fun anEmptyWorkout_offersAnActivity_asWellAsAMovement() {
+        // N141: an activity is not a workout with a different label, and the row is offered only while there
+        // is nothing to log — the two are never mixed.
+        var picked: Activity? = null
+        setScreen(
+            state = ActiveWorkoutUiState(isLoading = false, sessionId = "s1", exercises = emptyList()),
+            actions = Actions(onSetActivity = { picked = it }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_LIST)
+            .performScrollToNode(hasTestTag(TestTags.ACTIVE_WORKOUT_ADD_ACTIVITY))
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ADD_ACTIVITY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVITY_PICKER).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.activity(Activity.CYCLING)).performClick()
+
+        assertEquals(Activity.CYCLING, picked)
+    }
+
+    @Test
+    fun anActivity_holdsNoSets_andSaysSo() {
+        // What is left of it is the day's own record: the readiness note and the comment asked for at the end.
+        setScreen(
+            state = ActiveWorkoutUiState(
+                isLoading = false,
+                sessionId = "s1",
+                exercises = emptyList(),
+                activity = Activity.SWIMMING,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ACTIVITY).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ADD_EXERCISE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ADD_ACTIVITY).assertDoesNotExist()
+    }
+
+    @Test
+    fun anActivity_canBeMadeAWorkoutAgain() {
+        // A mispick would otherwise be a session with no sets that cannot be logged into.
+        var cleared: Activity? = Activity.SWIMMING
+        setScreen(
+            state = ActiveWorkoutUiState(
+                isLoading = false,
+                sessionId = "s1",
+                exercises = emptyList(),
+                activity = Activity.SWIMMING,
+            ),
+            actions = Actions(onSetActivity = { cleared = it }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ACTIVITY_CLEAR).performClick()
+
+        assertNull(cleared)
+    }
+
+    @Test
+    fun aWorkoutWithWorkInIt_isOfferedNoActivity() {
+        setScreen(state = state(isFinished = false))
+
+        composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_ADD_ACTIVITY).assertDoesNotExist()
     }
 
     private fun state(

@@ -20,19 +20,13 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 Two requests from use (N141, N142), in the order they were asked for. Each row states what it changes and
 what is still open, so the work can be picked up without re-deriving it.
 
-**One row, half built: the screen that makes a session an activity** (N141). Everything behind it shipped — the
-session's `activity` column and the migration (schema 6), the write, the adherence reader's row type, the backup
-field, and the calendar colour below — but the row under *Add exercise* that offers **Add activity**, and the
-screen that then hides the logging, did not. That is the whole of what is left:
-
-- **The row, under *Add exercise*, while the session is empty** — a short closed list (cycling, running,
-  swimming, rock climbing, volleyball), the tags and strings for it, and the picker.
-- **No sets once it is an activity**: the add rows and the exercise list are not drawn, and what is left is the
-  readiness note and the comment asked for at the end.
-- **A way out** of a mispick, since an activity with no sets cannot be logged into.
-
-The two requests that *are* built are in [CHANGELOG.md](CHANGELOG.md): the day's record moved into today (N138)
-and home reads as two colour zones (N139), and a new workout no longer opens into the readiness note (N140).
+**Nothing.** The five requests from use are built (N138–N142) and recorded in [CHANGELOG.md](CHANGELOG.md): the
+day's record moved into today, home reads as two colour zones, a new workout no longer opens into the readiness
+note, an empty session can be an activity, and an activity has its own colour in the adherence calendar. This
+section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
+the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself
+full. An empty section is a state, not a gap: a row stands here while it is being done and leaves for
+[CHANGELOG.md](CHANGELOG.md) when it ships, which is how this section drains.
 
 ## Later — decided, and not being started
 

@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.components
 
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.WeightGoalKind
 
@@ -90,6 +91,19 @@ object TestTags {
 
     /** Adding a movement: the FAB over the list until N82, and the list's own last item since. */
     const val ACTIVE_WORKOUT_ADD_EXERCISE = "active_workout_add_exercise"
+
+    /**
+     * The way into an activity, and the list of them (ROADMAP N141).
+     *
+     * The row is drawn only while the session is empty and is not already an activity, and one tag per
+     * activity means a test names the one it picks rather than a position.
+     */
+    const val ACTIVE_WORKOUT_ADD_ACTIVITY = "active_workout_add_activity"
+    const val ACTIVITY_PICKER = "activity_picker"
+    const val ACTIVE_WORKOUT_ACTIVITY = "active_workout_activity"
+    const val ACTIVE_WORKOUT_ACTIVITY_CLEAR = "active_workout_activity_clear"
+
+    fun activity(activity: Activity) = "activity_${activity.name.lowercase()}"
 
     /** Removing an exercise, and the confirmation it now asks for (ROADMAP B2). */
     const val EXERCISE_REMOVE = "exercise_remove"

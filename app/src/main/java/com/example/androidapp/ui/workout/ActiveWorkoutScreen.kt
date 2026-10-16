@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.workout
 
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.PersonalRecordMoment
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.ui.components.CenteredMessage
@@ -15,14 +16,11 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +33,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -109,6 +108,7 @@ fun ActiveWorkoutRoute(
         state = state,
         clock = clock,
         onAddExercise = onAddExercise,
+        onSetActivity = viewModel::onSetActivity,
         onLogSet = viewModel::onLogSet,
         onToggleSuperset = viewModel::onToggleSuperset,
         summary = summary,
@@ -154,6 +154,8 @@ fun ActiveWorkoutScreen(
     state: ActiveWorkoutUiState,
     clock: State<WorkoutClock>,
     onAddExercise: () -> Unit,
+    /** Makes the session an activity, or a workout again (ROADMAP N141). */
+    onSetActivity: (Activity?) -> Unit,
     onLogSet: (String, SetEdit) -> Unit,
     onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit,
     onRemoveExercise: (String) -> Unit,
@@ -216,6 +218,9 @@ fun ActiveWorkoutScreen(
 
     UndoOffers(state, snackbarHostState, onUndoDelete, onDismissUndo, onUndoFinishExercise, onDismissFinishUndo)
 
+    // Whether the activity picker is open: transient UI, so it lives beside the row that opens it (N141).
+    var choosingActivity by rememberSaveable { mutableStateOf(false) }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -252,6 +257,8 @@ fun ActiveWorkoutScreen(
             onReopenExercise = onReopenExercise,
             // The one action that used to float over the list is the list's own last item now (N82).
             onAddExercise = onAddExercise,
+            onSetActivity = onSetActivity,
+            onAddActivity = { choosingActivity = true },
             personalRecord = personalRecord,
             onToggleSuperset = onToggleSuperset,
             restTimerEnabled = restTimerEnabled,
@@ -263,6 +270,8 @@ fun ActiveWorkoutScreen(
             modifier = Modifier.padding(innerPadding).imePadding(),
         )
     }
+
+    ActivityPicker(open = choosingActivity, onPick = onSetActivity, onDismiss = { choosingActivity = false })
 
     SetEditorSection(
         set = editing,
@@ -286,28 +295,6 @@ fun ActiveWorkoutScreen(
  * and takes both colours as parameters, but at 52 dp with its own glyph spacing it is not *Log set*'s
  * shape.
  */
-@Composable
-private fun AddExerciseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    FilledTonalButton(
-        onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .testTag(TestTags.ACTIVE_WORKOUT_ADD_EXERCISE),
-        colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        ),
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Add,
-            contentDescription = null,
-            modifier = Modifier.padding(end = 8.dp),
-        )
-        Text(stringResource(R.string.active_workout_add_exercise))
-    }
-}
-
 /**
  * The dialog for one logged set, split out so the screen stays a scaffold.
  *
@@ -639,6 +626,8 @@ private fun WorkoutBody(
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
     onAddExercise: () -> Unit,
+    onSetActivity: (Activity?) -> Unit,
+    onAddActivity: () -> Unit,
     modifier: Modifier = Modifier,
     personalRecord: PersonalRecordMoment? = null,
     onToggleSuperset: (String) -> Unit = {},
@@ -693,16 +682,18 @@ private fun WorkoutBody(
                     onToggleSuperset = onToggleSuperset,
                     restTimerEnabled = restTimerEnabled,
                     defaultRestSeconds = defaultRestSeconds,
-                    header = {
-                        ReadinessSection(
-                            note = state.readinessNote,
-                            onSave = onSaveReadinessNote,
-                        )
-                    },
-                    empty = { EmptyWorkout() },
+                    header = { ReadinessSection(note = state.readinessNote, onSave = onSaveReadinessNote) },
+                    empty = { ActivityBodyOrEmpty(state.activity, onClearActivity = { onSetActivity(null) }) },
                     // Below the last exercise rather than over it (N82) — and drawn for an empty session
                     // too, which is drawn *instead of* the rows and had no other way to add a movement.
-                    footer = { AddExerciseButton(onClick = onAddExercise) },
+                    footer = {
+                        ActivityAddRows(
+                            activity = state.activity,
+                            isEmpty = state.isEmpty,
+                            onAddExercise = onAddExercise,
+                            onAddActivity = onAddActivity,
+                        )
+                    },
                 )
             }
         }
@@ -861,7 +852,7 @@ private fun ReadinessRow(
  * *test* anchors the order of the message and the add button on.
  */
 @Composable
-private fun EmptyWorkout(modifier: Modifier = Modifier) {
+internal fun EmptyWorkout(modifier: Modifier = Modifier) {
     Column(
         // A list item since N82, so it takes the width it is given rather than the whole screen: the
         // centring it used was against a viewport this no longer owns.
@@ -912,6 +903,7 @@ private fun ActiveWorkoutScreenPreview() {
                 mutableStateOf(WorkoutClock(elapsed = "12:05", restSecondsRemaining = 83))
             },
             onAddExercise = {},
+            onSetActivity = {},
             onLogSet = { _, _ -> },
             onUpdateSet = { _, _, _, _, _, _, _ -> },
             onRemoveExercise = {},

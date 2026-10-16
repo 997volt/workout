@@ -304,6 +304,40 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun makingTheSessionAnActivity_writesIt_andTheStateReadsItBack() = runTest(dispatcher) {
+        // N141: the write is the whole of the screen's side of it — the row that offers it is the screen's,
+        // and what the store keeps is the name, so a build that meets one it does not know says so.
+        val repository = FakeWorkoutRepository().apply {
+            sessions.value = WorkoutSession(id = "s1", startedAt = FIXED_INSTANT)
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+
+        viewModel.onSetActivity(Activity.SWIMMING)
+        settle()
+
+        assertEquals(Activity.SWIMMING, repository.lastActivity)
+    }
+
+    @Test
+    fun makingAnActivityAWorkoutAgain_clearsIt() = runTest(dispatcher) {
+        val repository = FakeWorkoutRepository().apply {
+            sessions.value = WorkoutSession(id = "s1", startedAt = FIXED_INSTANT, activity = Activity.CYCLING)
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+
+        assertEquals(Activity.CYCLING, viewModel.uiState.value.activity)
+
+        viewModel.onSetActivity(null)
+        settle()
+
+        assertNull(repository.lastActivity)
+    }
+
+    @Test
     fun savingTheReadinessNote_writesIt() = runTest(dispatcher) {
         val repository = FakeWorkoutRepository()
         val viewModel = viewModelFor(repository)

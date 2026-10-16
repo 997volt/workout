@@ -101,6 +101,17 @@
     <string name="active_workout_none">No workout in progress.</string>
     <string name="active_workout_started">Started %1$s</string>
     <string name="active_workout_add_exercise">Add exercise</string>
+    <!-- N141: a session that is an activity rather than a workout. A short closed list, and what an
+         activity holds instead of sets. -->
+    <string name="active_workout_add_activity">Add activity</string>
+    <string name="active_workout_activity_note">An activity holds no sets — the day is what it records.</string>
+    <string name="active_workout_activity_clear">Not an activity</string>
+    <string name="activity_picker_title">What did you do?</string>
+    <string name="activity_cycling">Cycling</string>
+    <string name="activity_running">Running</string>
+    <string name="activity_swimming">Swimming</string>
+    <string name="activity_rock_climbing">Rock climbing</string>
+    <string name="activity_volleyball">Volleyball</string>
     <string name="active_workout_finish">Finish</string>
     <string name="active_workout_discard">Discard workout</string>
     <!-- Leaving a workout that has something in it (ROADMAP N41). The empty workout keeps its

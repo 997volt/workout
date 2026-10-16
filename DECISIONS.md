@@ -681,6 +681,19 @@ the rule; that one argues it.
   told apart by name under the chart, because the two mean different things: what they asked themselves for, and
   what their plan asks of them.
 
+- **An activity is a session that takes no sets** (N141). Cycling, a swim, a climb: it answers "was the day
+  trained" without claiming any work was done, so it is **the session row with an `activity` name on it** rather
+  than a record type of its own — the day, the history, the adherence calendar and the export all already read a
+  session, and a second kind of record would be a second path through every one of them. That costs one nullable
+  column and a migration, and it is why an activity needs no new rule in the statistics: volume, reps and records
+  read the sets an activity does not have. **The list is short and closed** — five activities, stored by name
+  like every enum — because the request was "don't put too many options", and an open field would be a second
+  vocabulary for the same few things. **The activity is offered only while the session holds nothing**, and once
+  it is set the screen draws no exercise list and no add rows: an activity is not a workout with a different
+  label, and the two are never mixed. A day whose only work was an activity is drawn in its own colour in the
+  calendar (N142), and a day with **a workout and** an activity is still a workout day — the calendar's question
+  is whether the day was trained.
+
 ## Measurements
 
 - **The measurements list scrolls, and its empty sentence is an item of it** (B130). It was a `Column` with

@@ -2144,3 +2144,30 @@ joint pain are not prescribed at all, so those series draw nothing. The **read**
 because that port is "the questions the Statistics screen asks that no other screen does", and this is one: the
 plan's tables are joined for a prescription, and the screen's own dependency list did not have to grow by a
 repository for a single query.
+
+## N141
+
+The request was a row under *Add exercise*: an empty session should be able to become an activity — cycling,
+running, swimming, rock climbing, volleyball — and once it is one, nothing else can be logged. The design work is
+entirely in the first clause of that: what an activity **is**, in a store that already has a session.
+
+**A session with a name on it, not a record type.** The alternative is a table of activities beside
+`workout_sessions`, and it fails on every screen at once: the history lists sessions, the adherence calendar
+walks finished sessions, the statistics aggregate their sets, and the export carries them by table. A second kind
+of record means a second read, a second list row, a second calendar state and a second import path — four new
+places for the same fact. One nullable `activity` column means the day, the history, the calendar and the file
+all keep working, and the only rule that has to change is the one about emptiness: an activity is a session with
+no sets that must still be **finishable**, where before a session with nothing in it was a mistake to be
+discarded. That is why the screen's own emptiness check is `sets.isEmpty() && activity == null` rather than one
+clause.
+
+**The list is closed on purpose.** "Don't put too many options" is the request, and a closed enum enforces it in
+the type as well as on screen — stored **by name**, so a build that meets an activity it does not know reads the
+session as one it cannot name rather than as the wrong one. An open text field was rejected: it would be a second
+vocabulary for the same five things, and it would make the calendar's colour (N142) a guess about a string.
+
+**The colour is the calendar's, and the day is still the unit.** A day whose only work was an activity reads as
+its own thing, because "I trained" and "I went climbing" are different answers; a day with a workout *and* an
+activity stays a workout day, because the calendar counts trained days and the activity is the smaller half of
+that answer. That is one set difference in the reader — activity days minus workout days — rather than a second
+question in the grid.
