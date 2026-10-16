@@ -40,8 +40,6 @@ import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.domain.repository.WorkoutRepository
 import androidx.lifecycle.SavedStateHandle
-import app.cash.turbine.test
-import com.google.common.truth.Truth.assertThat
 import java.io.IOException
 import java.time.DayOfWeek
 import java.time.Instant
@@ -276,19 +274,20 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
-    fun aFreshlyOpenedSession_asksForAReadinessNote() = runTest(dispatcher) {
-        val viewModel = viewModelFor(FakeWorkoutRepository())
+    fun aFreshlyOpenedSession_asksNothing_andWritesNothing() = runTest(dispatcher) {
+        // N140: opening a workout no longer opens the readiness note. The row in the header is the only way
+        // in, and opening is not the moment to write it — the lifter has not done anything yet.
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
         observe(viewModel)
         settle()
 
-        assertTrue(
-            "a new workout should prompt (N4)",
-            viewModel.uiState.value.isReadinessPromptVisible,
-        )
+        assertNull("nothing was asked for, so nothing was written", repository.lastReadinessNote)
+        assertNull(viewModel.uiState.value.readinessNote)
     }
 
     @Test
-    fun aResumedSession_doesNot_askAgain() = runTest(dispatcher) {
+    fun aResumedSession_readsTheNoteItAlreadyHas() = runTest(dispatcher) {
         val repository = FakeWorkoutRepository().apply {
             sessions.value = WorkoutSession(
                 id = "existing",
@@ -300,13 +299,11 @@ class ActiveWorkoutViewModelTest {
         observe(viewModel)
         settle()
 
-        val state = viewModel.uiState.value
-        assertFalse("a resumed session already had its chance", state.isReadinessPromptVisible)
-        assertEquals("Slept badly", state.readinessNote)
+        assertEquals("Slept badly", viewModel.uiState.value.readinessNote)
     }
 
     @Test
-    fun savingTheReadinessNote_writesIt_andDismissesThePrompt() = runTest(dispatcher) {
+    fun savingTheReadinessNote_writesIt() = runTest(dispatcher) {
         val repository = FakeWorkoutRepository()
         val viewModel = viewModelFor(repository)
         observe(viewModel)
@@ -320,56 +317,6 @@ class ActiveWorkoutViewModelTest {
             "Shoulders still sore from Monday",
             viewModel.uiState.value.readinessNote,
         )
-        assertFalse(viewModel.uiState.value.isReadinessPromptVisible)
-    }
-
-    @Test
-    fun theReadinessNote_arrivesAsOneEmission_ratherThanTwo() = runTest(dispatcher) {
-        // The same behaviour as the test above, asserted as a *sequence* instead of two
-        // polled snapshots — which is what Turbine is for, and what `.value` cannot
-        // express. The distinction matters here: `uiState` is a `combine` of the session,
-        // the prompt flag and the error channel, and clearing the prompt while writing
-        // the note would show up as a state that carries one without the other.
-        val repository = FakeWorkoutRepository()
-        val viewModel = viewModelFor(repository)
-        observe(viewModel)
-        settle()
-
-        viewModel.uiState.test {
-            // The loaded state: nothing written yet, and the prompt still up.
-            val before = awaitItem()
-            assertThat(before.isReadinessPromptVisible).isTrue()
-            assertThat(before.readinessNote).isNull()
-
-            viewModel.onSaveReadinessNote("Shoulders still sore from Monday")
-            settle()
-
-            // `StateFlow` conflates, so this yields the settled state rather than
-            // pretending to know how many emissions happened on the way. What is being
-            // asserted is the pairing: the note is present *in the same state* that has
-            // dismissed the prompt, so no observer can see one without the other.
-            val after = expectMostRecentItem()
-            assertThat(after.readinessNote).isEqualTo("Shoulders still sore from Monday")
-            assertThat(after.isReadinessPromptVisible).isFalse()
-            assertThat(repository.lastReadinessNote).isEqualTo("Shoulders still sore from Monday")
-
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun skippingTheReadinessPrompt_writesNothing_butStillDismissesIt() = runTest(dispatcher) {
-        val repository = FakeWorkoutRepository()
-        val viewModel = viewModelFor(repository)
-        observe(viewModel)
-        settle()
-
-        viewModel.onDismissReadinessPrompt()
-        settle()
-
-        assertNull("skipping must not write an empty note", repository.lastReadinessNote)
-        assertNull(viewModel.uiState.value.readinessNote)
-        assertFalse(viewModel.uiState.value.isReadinessPromptVisible)
     }
 
     @Test

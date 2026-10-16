@@ -35,11 +35,10 @@ class ReadinessNoteDialogTest {
     private var saveCalled = false
     private var dismissed = false
 
-    private fun show(initial: String = "", isPrompt: Boolean = true) {
+    private fun show(initial: String = "") {
         composeTestRule.setContent {
             ReadinessNoteDialog(
                 initialNote = initial,
-                isPrompt = isPrompt,
                 onDismiss = { dismissed = true },
                 onSave = {
                     savedNote = it
@@ -77,18 +76,10 @@ class ReadinessNoteDialogTest {
     }
 
     @Test
-    fun thePrompt_canBeSkipped_withoutWriting() {
-        show(isPrompt = true)
-
-        composeTestRule.onNodeWithTag(TestTags.READINESS_DISMISS).performClick()
-
-        assertTrue(dismissed)
-        assertFalse("skipping must not write", saveCalled)
-    }
-
-    @Test
-    fun theEdit_canBeCancelled_withoutWriting() {
-        show(initial = "Slept badly", isPrompt = false)
+    fun theDialog_canBeDismissed_withoutWriting() {
+        // One mode now that nothing prompts it (N140): the row opens it, and dismissing leaves the note as it
+        // was rather than writing an empty one.
+        show(initial = "Slept badly")
 
         composeTestRule.onNodeWithTag(TestTags.READINESS_DISMISS).performClick()
 

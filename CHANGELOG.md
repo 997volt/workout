@@ -16,6 +16,15 @@ unreleased.
 
 ## [Unreleased]
 
+### Changed
+
+- **A new workout no longer opens into the readiness note** (N140). The prompt was the shape N4 chose when the
+  field was otherwise unfindable, and it had become the wrong bargain: opening a session is not the moment to
+  write down how the body is — the lifter has not done anything yet — and what the prompt was really doing was
+  making the field findable, which the row in the header already does. **The row is the only way in**, and
+  pressing it is the only thing that opens the dialog. The prompt's state, its "skip", its two strings and the
+  `isPrompt` flag the dialog carried all went with it.
+
 ### Added
 
 - **A plan's target is drawn on a lift's chart** (N39, the half that was parked). The plan already states a

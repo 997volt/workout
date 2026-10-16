@@ -204,8 +204,6 @@ data class ActiveWorkoutUiState(
     val pendingFinishedExerciseId: String? = null,
     /** What was not recovered today, or null (ROADMAP N4). */
     val readinessNote: String? = null,
-    /** True while a just-opened session is asking for that note. */
-    val isReadinessPromptVisible: Boolean = false,
     /** Set when a write failed, so the screen can say so instead of lying. */
     val error: DataError? = null,
 ) {
@@ -403,8 +401,6 @@ class ActiveWorkoutViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, WeightUnit.KILOGRAMS)
 
     /** True while a just-opened session is asking what was not recovered today (N4). */
-    private val readinessPromptVisible = MutableStateFlow(false)
-
     /** The exercise just marked done, awaiting the snackbar's undo (ROADMAP N7). */
     private val pendingFinishedExercise = MutableStateFlow<String?>(null)
 
@@ -513,13 +509,11 @@ class ActiveWorkoutViewModel @Inject constructor(
         snapshots,
         lastError,
         pendingUndo,
-        readinessPromptVisible,
         pendingFinishedExercise,
-    ) { snapshot, error, undo, promptVisible, finished ->
+    ) { snapshot, error, undo, finished ->
         snapshot.toUiState(
             error = error,
             undo = undo,
-            readinessPromptVisible = promptVisible,
             pendingFinishedExerciseId = finished,
         )
     }.stateIn(
@@ -560,13 +554,11 @@ class ActiveWorkoutViewModel @Inject constructor(
                     workoutRepository.startOrResumeSession(templateId)
                 }
             when (val result = opened) {
-                is DataResult.Success -> {
-                    lastError.value = null
-                    // Only a freshly opened session asks (ROADMAP N4). A resumed one
-                    // has already had its chance, and re-asking after a process death
-                    // would be nagging rather than prompting.
-                    readinessPromptVisible.value = result.data.isNew
-                }
+                // **Nothing asks for the readiness note** (N140): a new session no longer opens into the
+                // dialog, and the row in the header is the only way in. Opening is not the moment to write
+                // it — the lifter has not done anything yet — and the prompt was doing the work the row
+                // should: being findable.
+                is DataResult.Success -> lastError.value = null
 
                 is DataResult.Failure -> lastError.value = result.error
             }
@@ -1040,7 +1032,6 @@ class ActiveWorkoutViewModel @Inject constructor(
             when (val result = workoutRepository.setReadiness(sessionId, note)) {
                 is DataResult.Success -> {
                     lastError.value = null
-                    readinessPromptVisible.value = false
                 }
 
                 is DataResult.Failure -> lastError.value = result.error
@@ -1052,10 +1043,6 @@ class ActiveWorkoutViewModel @Inject constructor(
      * Skips the prompt without writing anything. The header keeps offering the
      * field, so skipping is not a dead end.
      */
-    fun onDismissReadinessPrompt() {
-        readinessPromptVisible.value = false
-    }
-
     fun onSkipRest() {
         viewModelScope.launch {
             handle(workoutRepository.clearRest())
@@ -1213,7 +1200,6 @@ private data class Snapshot(
 private fun Snapshot.toUiState(
     error: DataError?,
     undo: SetEntry?,
-    readinessPromptVisible: Boolean,
     pendingFinishedExerciseId: String?,
 ): ActiveWorkoutUiState {
     // Which plan entry each row follows is resolved once, by movement (ROADMAP N54), rather than per
@@ -1241,7 +1227,6 @@ private fun Snapshot.toUiState(
         pendingUndo = undo,
         pendingFinishedExerciseId = pendingFinishedExerciseId,
         readinessNote = session?.readinessNote,
-        isReadinessPromptVisible = readinessPromptVisible,
         error = error,
     )
 }

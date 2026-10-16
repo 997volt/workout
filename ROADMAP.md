@@ -17,8 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Five requests from use (N138–N142), in the order they were asked for. Nothing is started: each row states what
-it changes and what is still open, so the work can be picked up without re-deriving it.
+Four requests from use (N138, N139, N141, N142), in the order they were asked for. Each row states what it
+changes and what is still open, so the work can be picked up without re-deriving it.
 
 - **The row that records the day moves into today** (N138). That row is the last of home's *ways in*
   (`HomeRows.kt`, `measureTodayRow`), drawn whenever today has no entry — so "record what I did today" sits among
@@ -33,12 +33,6 @@ it changes and what is still open, so the work can be picked up without re-deriv
   now and everything inside today takes the blue Templates carries now, so the accent says which zone a row is in
   rather than which feature it belongs to. Decisions: the resume bar and today's own tiles follow the same rule
   (they are today's), and the colours become two zone constants rather than a per-row choice.
-
-- **A new workout no longer opens into the readiness note** (N140). A new session opens straight into the
-  readiness dialog (`readinessPromptVisible.value = result.data.isNew`), which is the shape N4 chose when the
-  field was otherwise unfindable. It should be **available rather than prompted**: the note's row is always in
-  the header (`ReadinessSection`), and pressing it is the only way the dialog opens. Decisions: `isPrompt` goes
-  when nothing prompts, and the row may need to say more than *Add* now that it is the only way in.
 
 - **An empty workout can be an activity instead** (N141). Under *Add exercise*, while the session is empty, a
   second row offers **Add activity** with a short list — cycling, running, swimming, rock climbing, volleyball —

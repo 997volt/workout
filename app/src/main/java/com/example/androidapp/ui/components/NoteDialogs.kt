@@ -104,19 +104,17 @@ fun NoteDialog(
 @Composable
 fun ReadinessNoteDialog(
     initialNote: String,
-    isPrompt: Boolean,
     onDismiss: () -> Unit,
     onSave: (String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NoteDialog(
-        title = stringResource(
-            if (isPrompt) R.string.readiness_prompt_title else R.string.readiness_edit_title,
-        ),
-        body = if (isPrompt) stringResource(R.string.readiness_prompt_body) else null,
+        title = stringResource(R.string.readiness_edit_title),
+        // Nothing prompts this dialog any more (N140), so it never carries the prompt's own body text.
+        body = null,
         initialNote = initialNote,
         label = stringResource(R.string.readiness_label),
-        isPrompt = isPrompt,
+        isPrompt = false,
         fieldTag = TestTags.READINESS_NOTE,
         saveTag = TestTags.READINESS_SAVE,
         dismissTag = TestTags.READINESS_DISMISS,

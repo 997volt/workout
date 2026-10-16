@@ -123,7 +123,6 @@ fun ActiveWorkoutRoute(
         onSkipRest = viewModel::onSkipRest,
         onAdjustRest = viewModel::onAdjustRest,
         onSaveReadinessNote = viewModel::onSaveReadinessNote,
-        onDismissReadinessPrompt = viewModel::onDismissReadinessPrompt,
         onFinishExercise = viewModel::onFinishExercise,
         pendingProgression = pendingProgression,
         // One question, three operations on it: picking a step, writing them all, and declining.
@@ -164,7 +163,6 @@ fun ActiveWorkoutScreen(
     onSkipRest: () -> Unit,
     onAdjustRest: (Int) -> Unit,
     onSaveReadinessNote: (String?) -> Unit,
-    onDismissReadinessPrompt: () -> Unit,
     onFinishExercise: (String) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onUndoFinishExercise: () -> Unit,
@@ -249,7 +247,6 @@ fun ActiveWorkoutScreen(
             onSkipRest = onSkipRest,
             onAdjustRest = onAdjustRest,
             onSaveReadinessNote = onSaveReadinessNote,
-            onDismissReadinessPrompt = onDismissReadinessPrompt,
             onFinishExercise = onFinishExercise,
             onRateExercise = onRateExercise,
             onReopenExercise = onReopenExercise,
@@ -638,7 +635,6 @@ private fun WorkoutBody(
     onSkipRest: () -> Unit,
     onAdjustRest: (Int) -> Unit,
     onSaveReadinessNote: (String?) -> Unit,
-    onDismissReadinessPrompt: () -> Unit,
     onFinishExercise: (String) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onReopenExercise: (String) -> Unit,
@@ -700,8 +696,6 @@ private fun WorkoutBody(
                     header = {
                         ReadinessSection(
                             note = state.readinessNote,
-                            promptVisible = state.isReadinessPromptVisible,
-                            onDismissPrompt = onDismissReadinessPrompt,
                             onSave = onSaveReadinessNote,
                         )
                     },
@@ -798,22 +792,18 @@ private fun WorkoutHeader(
 @Composable
 private fun ReadinessSection(
     note: String?,
-    promptVisible: Boolean,
-    onDismissPrompt: () -> Unit,
     onSave: (String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var editing by remember { mutableStateOf(false) }
 
     ReadinessRow(note = note, onEdit = { editing = true }, modifier = modifier)
-    if (promptVisible || editing) {
+    // **Only the row opens it** (N140). There is no prompt to dismiss, so the dialog's own dismiss is the
+    // whole of closing it.
+    if (editing) {
         ReadinessNoteDialog(
             initialNote = note.orEmpty(),
-            isPrompt = promptVisible,
-            onDismiss = {
-                editing = false
-                onDismissPrompt()
-            },
+            onDismiss = { editing = false },
             onSave = { written ->
                 editing = false
                 onSave(written)
@@ -931,7 +921,6 @@ private fun ActiveWorkoutScreenPreview() {
             onSkipRest = {},
             onAdjustRest = {},
             onSaveReadinessNote = {},
-            onDismissReadinessPrompt = {},
             onFinishExercise = { _ -> },
             onRateExercise = { _, _, _ -> },
             onUndoFinishExercise = {},

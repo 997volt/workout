@@ -122,7 +122,6 @@ class ActiveWorkoutScreenTest {
                 onSkipRest = {},
                 onAdjustRest = {},
                 onSaveReadinessNote = {},
-                onDismissReadinessPrompt = {},
                 onUndoFinishExercise = {},
                 onDismissFinishUndo = {},
                 onDiscard = actions.onDiscard,

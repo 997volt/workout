@@ -554,8 +554,6 @@
     <!-- Readiness note (ROADMAP N4). Prompted once when a workout opens, then
          reachable from the workout header. -->
     <string name="readiness_label">Readiness</string>
-    <string name="readiness_prompt_title">How are you feeling?</string>
-    <string name="readiness_prompt_body">Anything not recovered today — sore shoulders, bad sleep? You can skip this and edit it later.</string>
     <string name="readiness_edit_title">Readiness note</string>
     <string name="readiness_skip">Skip</string>
     <string name="readiness_add">Tap to add</string>
