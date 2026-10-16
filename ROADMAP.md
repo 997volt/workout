@@ -17,22 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Four requests from use (N138, N139, N141, N142), in the order they were asked for. Each row states what it
-changes and what is still open, so the work can be picked up without re-deriving it.
-
-- **The row that records the day moves into today** (N138). That row is the last of home's *ways in*
-  (`HomeRows.kt`, `measureTodayRow`), drawn whenever today has no entry — so "record what I did today" sits among
-  the destinations. It belongs **inside today's block, under the planned workout**: it is about the day rather
-  than a place to go, and the two rows that answer "what about today" should read together. Decisions: the
-  *Measurements* destination stays among the ways in (it is how the history is read), and the row keeps its place
-  when the block says nothing is planned — a rest day is exactly when a weigh-in is the day's entry.
-
-- **Home reads as two zones, by colour** (N139). Each row currently carries a colour of its own — Programs teal,
-  Templates sky, Measurements coral, start-empty indigo (`TileAccent`) — which says "four different things" where
-  the screen means two: **the ways in**, and **today**. Everything above today takes the green Programs carries
-  now and everything inside today takes the blue Templates carries now, so the accent says which zone a row is in
-  rather than which feature it belongs to. Decisions: the resume bar and today's own tiles follow the same rule
-  (they are today's), and the colours become two zone constants rather than a per-row choice.
+Two requests from use (N141, N142), in the order they were asked for. Each row states what it changes and
+what is still open, so the work can be picked up without re-deriving it.
 
 - **An empty workout can be an activity instead** (N141). Under *Add exercise*, while the session is empty, a
   second row offers **Add activity** with a short list — cycling, running, swimming, rock climbing, volleyball —

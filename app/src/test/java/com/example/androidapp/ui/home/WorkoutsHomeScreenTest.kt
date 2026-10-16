@@ -475,6 +475,9 @@ class WorkoutsHomeScreenTest {
      * The row is the shortcut the measurements screen's own FAB cannot be: it opens the daily form directly
      * rather than asking which of N113's two records was meant, and it is drawn on the evidence — what is
      * stored for today — rather than on whether the lifter was ever asked.
+     *
+     * It is **inside today** now (N138), under the day's own workout, so a test has to scroll to it: that is
+     * what the move means on a screen whose body is longer than the viewport.
      */
     @Test
     fun whileTodayHasNoEntry_theMeasureTodayRow_isOffered_andOpensTheForm() {
@@ -484,6 +487,8 @@ class WorkoutsHomeScreenTest {
             actions = Actions(onMeasureToday = { opened = true }),
         )
 
+        composeTestRule.onNodeWithTag(TestTags.HOME_LIST)
+            .performScrollToNode(hasTestTag(TestTags.HOME_MEASURE_TODAY))
         composeTestRule.onNodeWithTag(TestTags.HOME_MEASURE_TODAY).assertIsDisplayed().performClick()
 
         assertWithMessage("the row opens today's form, not the list").that(opened).isTrue()
@@ -511,6 +516,8 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
+        composeTestRule.onNodeWithTag(TestTags.HOME_LIST)
+            .performScrollToNode(hasTestTag(TestTags.HOME_MEASURE_TODAY))
         composeTestRule.onNodeWithTag(TestTags.HOME_MEASURE_TODAY).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.HOME_START).assertDoesNotExist()
     }

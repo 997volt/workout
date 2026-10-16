@@ -18,6 +18,18 @@ unreleased.
 
 ### Changed
 
+- **The row that records the day belongs to today** (N138). It was the last of home's *ways in* — the
+  destinations — so "record what I did today" sat among the places to go. It is now **inside today's block,
+  under the day's own workout** (and after the rest-day line when nothing is planned, because that is exactly
+  when a weigh-in *is* the day's entry). Only its position changed: it is still drawn whenever today has no
+  daily entry, a workout running or not (N114).
+
+- **Home reads as two colour zones** (N139). Every row carried an accent of its own — Programs teal, Templates
+  sky, Measurements coral, start-empty indigo, the day's record amber — which said "five different things" where
+  the screen means two: **the ways in**, and **today**. Everything above today now takes the green Programs had,
+  and everything inside today the blue Templates had, so the accent says which zone a row is in rather than
+  which feature it belongs to.
+
 - **A new workout no longer opens into the readiness note** (N140). The prompt was the shape N4 chose when the
   field was otherwise unfindable, and it had become the wrong bargain: opening a session is not the moment to
   write down how the body is — the lifter has not done anything yet — and what the prompt was really doing was

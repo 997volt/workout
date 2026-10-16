@@ -79,15 +79,11 @@ internal fun HomeBody(
             // Starting is offered only while nothing is running (B101): the bar's Resume pill is the same
             // action, and a second row for it would be the pill under the wrong label.
             showStart = state.activeWorkout == null,
-            // **Recording is not starting**, so B101's withholding does not reach this row: it is drawn
-            // whenever today has no daily entry, a workout running or not (N114).
-            showMeasureToday = !state.todayIsMeasured,
             actions = WayInActions(
                 onStartWorkout = onStartWorkout,
                 onOpenPrograms = onOpenPrograms,
                 onOpenTemplates = onOpenTemplates,
                 onOpenMeasurements = onOpenMeasurements,
-                onMeasureToday = onMeasureToday,
             ),
         )
         // Today's plan comes **after** the ways in (N115, N124): the destinations are what this screen is
@@ -95,9 +91,17 @@ internal fun HomeBody(
         // is already at.
         planItems(
             state = state,
-            onStartTemplate = onStartTemplate,
-            onSubstitute = onSubstitute,
-            onOpenPlannedWorkout = onOpenPlannedWorkout,
+            // **Recording is not starting**, so B101's withholding does not reach this row: it is drawn
+            // whenever today has no daily entry, a workout running or not (N114) — and it is drawn **inside
+            // today** (N138), under the day's own workout, because it is about the day rather than a place
+            // to go.
+            showMeasureToday = !state.todayIsMeasured,
+            actions = TodayActions(
+                onMeasureToday = onMeasureToday,
+                onStartTemplate = onStartTemplate,
+                onSubstitute = onSubstitute,
+                onOpenPlannedWorkout = onOpenPlannedWorkout,
+            ),
         )
     }
 }
@@ -118,9 +122,8 @@ internal fun HomeBody(
  */
 private fun LazyListScope.planItems(
     state: WorkoutsHomeUiState,
-    onStartTemplate: (TodayPlan) -> Unit,
-    onSubstitute: (TodayPlan) -> Unit,
-    onOpenPlannedWorkout: (TodayPlan) -> Unit,
+    showMeasureToday: Boolean,
+    actions: TodayActions,
 ) {
     if (state.todaysPlan.isEmpty()) {
         // No heading: an empty *Today · Monday* would be a promise the app cannot keep (N115), and the line
@@ -128,6 +131,8 @@ private fun LazyListScope.planItems(
         item(key = "no_plan") {
             NoPlanLine(restDay = state.planIsRestDay)
         }
+        // A rest day is exactly when a weigh-in *is* the day's entry, so the row keeps its place (N138).
+        if (showMeasureToday) measureTodayRow(onMeasureToday = actions.onMeasureToday)
         return
     }
     item(key = "today") {
@@ -137,12 +142,25 @@ private fun LazyListScope.planItems(
         val plan = state.todaysPlan[index]
         TodayPlanCard(
             plan = plan,
-            onOpen = { onOpenPlannedWorkout(plan) },
-            onStart = { onStartTemplate(plan) },
-            onSubstitute = { onSubstitute(plan) },
+            onOpen = { actions.onOpenPlannedWorkout(plan) },
+            onStart = { actions.onStartTemplate(plan) },
+            onSubstitute = { actions.onSubstitute(plan) },
         )
     }
+    // Under the day's own workout (N138).
+    if (showMeasureToday) measureTodayRow(onMeasureToday = actions.onMeasureToday)
 }
+
+/**
+ * The two colour zones this screen reads in (N139).
+ *
+ * Each row used to carry a colour of its own — Programs teal, Templates sky, Measurements coral, start-empty
+ * indigo — which said "four different things" where the screen means two: **the ways in**, and **today**. The
+ * accent now says which zone a row is in, so the green ones are places to go and the blue ones are the day.
+ */
+private val ZONE_WAY_IN = TileAccent.Teal
+
+private val ZONE_TODAY = TileAccent.Sky
 
 /**
  * What the plan surface says on a day with nothing on it (ROADMAP N126).
@@ -211,7 +229,7 @@ private fun TodayPlanCard(
                 .clickable(onClickLabel = openLabel, onClick = onOpen),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconTile(icon = Icons.Filled.FitnessCenter, accent = TileAccent.Indigo)
+            IconTile(icon = Icons.Filled.FitnessCenter, accent = ZONE_TODAY)
             Column(modifier = Modifier.padding(start = 12.dp)) {
                 Text(text = plan.name, style = MaterialTheme.typography.titleMedium)
                 Text(
@@ -277,7 +295,6 @@ private fun TodayPlanCard(
  */
 private fun LazyListScope.wayInItems(
     showStart: Boolean,
-    showMeasureToday: Boolean,
     actions: WayInActions,
 ) {
     item(key = "way-in-programs") {
@@ -286,7 +303,7 @@ private fun LazyListScope.wayInItems(
             supporting = stringResource(R.string.home_programs_supporting),
             onClickLabel = stringResource(R.string.home_open, stringResource(R.string.home_programs)),
             icon = Icons.Filled.EventAvailable,
-            accent = TileAccent.Teal,
+            accent = ZONE_WAY_IN,
             testTag = TestTags.HOME_PROGRAMS,
             onClick = actions.onOpenPrograms,
         )
@@ -297,7 +314,7 @@ private fun LazyListScope.wayInItems(
             supporting = stringResource(R.string.home_templates_supporting),
             onClickLabel = stringResource(R.string.home_open, stringResource(R.string.home_templates)),
             icon = Icons.Filled.FitnessCenter,
-            accent = TileAccent.Sky,
+            accent = ZONE_WAY_IN,
             testTag = TestTags.HOME_TEMPLATES,
             onClick = actions.onOpenTemplates,
         )
@@ -308,13 +325,12 @@ private fun LazyListScope.wayInItems(
             supporting = stringResource(R.string.home_measurements_supporting),
             onClickLabel = stringResource(R.string.home_open, stringResource(R.string.measurements_title)),
             icon = Icons.Filled.Straighten,
-            accent = TileAccent.Coral,
+            accent = ZONE_WAY_IN,
             testTag = TestTags.HOME_MEASUREMENTS,
             onClick = actions.onOpenMeasurements,
         )
     }
     if (showStart) startEmptyRow(onStartWorkout = actions.onStartWorkout)
-    if (showMeasureToday) measureTodayRow(onMeasureToday = actions.onMeasureToday)
 }
 
 /**
@@ -331,7 +347,7 @@ private fun LazyListScope.startEmptyRow(onStartWorkout: () -> Unit) {
             supporting = stringResource(R.string.home_start_supporting),
             onClickLabel = stringResource(R.string.home_start_empty_workout),
             icon = Icons.Filled.Add,
-            accent = TileAccent.Indigo,
+            accent = ZONE_WAY_IN,
             testTag = TestTags.HOME_START,
             onClick = onStartWorkout,
             discloses = false,
@@ -346,15 +362,15 @@ private fun LazyListScope.startEmptyRow(onStartWorkout: () -> Unit) {
  * today takes it away rather than leaving a row whose only news is that the day is already answered.
  */
 private fun LazyListScope.measureTodayRow(onMeasureToday: () -> Unit) {
-    item(key = "way-in-measure-today") {
+    item(key = "today-measure") {
         WayInRow(
             headline = stringResource(R.string.home_measure_today),
             supporting = stringResource(R.string.home_measure_today_supporting),
             onClickLabel = stringResource(R.string.home_measure_today),
-            // The measurements destination's own icon with the one accent no other row uses: the same place,
-            // today's half of it, rather than a fifth destination.
+            // The measurements destination's own icon, in today's zone: the same place, today's half of it,
+            // rather than a fifth destination.
             icon = Icons.Filled.Straighten,
-            accent = TileAccent.Amber,
+            accent = ZONE_TODAY,
             testTag = TestTags.HOME_MEASURE_TODAY,
             onClick = onMeasureToday,
         )
@@ -367,12 +383,24 @@ private fun LazyListScope.measureTodayRow(onMeasureToday: () -> Unit) {
  * Five callbacks passed one by one pushed the list builder past the parameter ceiling this project sets, and
  * they belong together anyway: every one of them is "where a row goes".
  */
+/**
+ * What today's rows do (N138): the plan's own actions, and the row that records the day.
+ *
+ * One bundle rather than five parameters, the shape [WayInActions] already has — and the reason is not the
+ * ceiling alone: these are one surface's actions, and a caller that wires three of them has wired the surface.
+ */
+internal class TodayActions(
+    val onMeasureToday: () -> Unit,
+    val onStartTemplate: (TodayPlan) -> Unit,
+    val onSubstitute: (TodayPlan) -> Unit,
+    val onOpenPlannedWorkout: (TodayPlan) -> Unit,
+)
+
 internal class WayInActions(
     val onStartWorkout: () -> Unit,
     val onOpenPrograms: () -> Unit,
     val onOpenTemplates: () -> Unit,
     val onOpenMeasurements: () -> Unit,
-    val onMeasureToday: () -> Unit,
 )
 
 /**
