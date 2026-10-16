@@ -753,6 +753,13 @@ class TemplateEditorScreenTest {
         assertEquals(Triple(null, null, 2), saved)
     }
 
+    /**
+     * The effort, the rest and the save are one line, in that order (ROADMAP N116).
+     *
+     * The three are one statement about one set, so a tag-level assertion cannot see the thing worth
+     * protecting: that they are on the same line rather than stacked. Bounds can — the idiom the workout
+     * screen uses for *Done* — and the failure to catch is the row silently wrapping.
+     */
     @Test
     fun theCue_getsALineOfItsOwn_andIsReadAboveTheNumbers() {
         // ROADMAP N80, moved by N99, re-laid-out by N111 and re-laid-out again by N116. The cue took
@@ -1091,13 +1098,6 @@ class TemplateEditorScreenTest {
             .assertTextContains("1 · Working", substring = true)
     }
 
-    /**
-     * The effort, the rest and the save are one line, in that order (ROADMAP N116).
-     *
-     * The three are one statement about one set, so a tag-level assertion cannot see the thing worth
-     * protecting: that they are on the same line rather than stacked. Bounds can — the idiom the workout
-     * screen uses for *Done* — and the failure to catch is the row silently wrapping.
-     */
     /**
      * A planned exercise's ⋮ opens the lift itself (ROADMAP N121).
      *

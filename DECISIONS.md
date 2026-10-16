@@ -363,6 +363,18 @@ the rule; that one argues it.
   began travelling in it.
   ([evidence](DECISIONS-EVIDENCE.md#b59-b72))
 
+- **A transfer file's version moves for a change of meaning, not for a defaulted addition** (N134, N137,
+  N141). The codec tolerates unknown keys only because the version is read first (B62), so what protects a
+  downlevel build is the version and the shims, not the decoder. `versionOf`, `goalKinds` and `activity` were
+  all added without moving it, and a null default reads as "not a version", "no kind" and "a workout" — what
+  those rows already meant. `goalPeriods` is read by an older build through the `goals`/`goalKinds` maps the
+  file still writes, so nothing is lost there. **`activity` is the one with no shim**: an older build has no
+  constant for the name, and `ignoreUnknownKeys` means it decodes a swim as an empty workout rather than
+  refusing the file. That is the accepted cost — refusing a whole backup to protect one defaulted field is
+  worse, and a file is restored into the same build or a newer one — but a field whose absence would
+  **mislead** rather than merely be absent moves the version instead.
+  ([evidence](DECISIONS-EVIDENCE.md#n141))
+
 - **A migration is amended only while its version has never shipped — and the cost is
   real** (B16). Room refuses a database whose stored identity hash no longer matches, so a
   device that ran the amended version must be wiped; the alternative, a 16→17 migration, is

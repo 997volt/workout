@@ -6,18 +6,6 @@ import java.time.ZoneOffset
 
 import java.time.ZoneId
 
-
-/**
- * A finished workout as the history list shows it (ROADMAP P1.6).
- *
- * The totals arrive pre-computed from SQL — see `WorkoutDao.observeHistory` — so
- * the list can render a year of training without loading a single set row.
- *
- * [volumeGrams] is gram-reps: the sum of `weight × reps` across live sets. It is
- * a rough proxy for work done, not a physical quantity, and is deliberately in
- * the same exact unit as the weights themselves rather than converted to a
- * `Double` tonne figure.
- */
 /**
  * The zone this workout was performed in, or null when it predates the column (ROADMAP N25).
  *
@@ -30,6 +18,17 @@ fun WorkoutSummary.zoneIdOrNull(): ZoneId? =
 /** Minutes to seconds, the unit [ZoneOffset] wants. */
 private const val SECONDS_PER_MINUTE = 60
 
+/**
+ * A finished workout as the history list shows it (ROADMAP P1.6).
+ *
+ * The totals arrive pre-computed from SQL — see `WorkoutDao.observeHistory` — so
+ * the list can render a year of training without loading a single set row.
+ *
+ * [volumeGrams] is gram-reps: the sum of `weight × reps` across live sets. It is
+ * a rough proxy for work done, not a physical quantity, and is deliberately in
+ * the same exact unit as the weights themselves rather than converted to a
+ * `Double` tonne figure.
+ */
 data class WorkoutSummary(
     val id: String,
     val startedAt: Instant,

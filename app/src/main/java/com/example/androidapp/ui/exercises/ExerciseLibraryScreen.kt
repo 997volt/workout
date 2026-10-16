@@ -275,12 +275,6 @@ private fun NamingDialog(
 }
 
 /**
- * The screen's one action, or nothing at all where creation is not offered (ROADMAP N2, N95).
- *
- * A movement on the picker and a **category** on the library: the picker answers "what am I doing", while the
- * library is where the library's shape is kept. Only one is ever set, so the two never share a row.
- */
-/**
  * The library's one action: a new category (ROADMAP N95).
  *
  * Making a *movement* moved to the picker (B94): the library is where the library's shape is kept, and the

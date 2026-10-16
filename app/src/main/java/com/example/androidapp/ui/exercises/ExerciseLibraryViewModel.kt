@@ -58,10 +58,6 @@ data class ExerciseLibraryUiState(
     val removedHeads: Map<String, Exercise> = emptyMap(),
 ) {
     /**
-     * A search that matched nothing — deliberately distinct from [isLoading] so
-     * the UI shows "no results" rather than a spinner that never resolves.
-     */
-    /**
      * Nothing to show — the list is empty, whether because the library is or because the search missed.
      *
      * **Which of the two it is** is [libraryIsEmpty]'s answer, and the screen picks its copy from that;

@@ -2171,3 +2171,16 @@ its own thing, because "I trained" and "I went climbing" are different answers; 
 activity stays a workout day, because the calendar counts trained days and the activity is the smaller half of
 that answer. That is one set difference in the reader — activity days minus workout days — rather than a second
 question in the grid.
+
+**The backup file's version did not move for this, and the shim is what decides that.** The codec tolerates
+unknown keys only because `schemaVersion` is read before the body (B62), so what protects a downlevel build is
+the version plus whatever second reading a field offers — not the decoder. `activity` is the first field this
+line added with **no** second reading: `versionOf` reads as "not a version of anything" and a null goal kind
+reads as a target, both of which are what those rows already meant, and `goalPeriods` is read by an older build
+through the `goals`/`goalKinds` maps the file still writes, so an old build gets the goal even though it cannot
+see the periods. An activity has none of that: its name is an enum constant a pre-N141 build does not have, so
+such a build decodes a swim as an **empty workout**. That is accepted rather than fixed, because refusing the
+whole backup to protect one defaulted field trades a lost label for lost history, and a file is restored into
+the same build or a newer one. A field whose absence would **mislead** a reader rather than merely be absent is
+the case that moves the version instead — which is what N113 did when a measurement's weight stopped being
+required.

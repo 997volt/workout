@@ -6,17 +6,6 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 
 /**
- * A training session (ROADMAP P1.2).
- *
- * `java.time.Instant` rather than an epoch `Long` in the domain: `minSdk` 26 was
- * chosen partly so `java.time` is available natively (ROADMAP F9), and the richer
- * type makes duration arithmetic obvious. Only the *entity* stores a Long.
- *
- * [finishedAt] being null is what makes a session "active" — and is the whole
- * basis of crash recovery (P1.8): the row is written the moment a workout starts,
- * so a process death leaves it open rather than losing it.
- */
-/**
  * The zone this session was performed in, or null when it predates the column (ROADMAP N25).
  *
  * Null is answered by the caller, and the only honest answer is the current zone — which is what
@@ -29,6 +18,17 @@ fun WorkoutSession.zoneIdOrNull(): ZoneId? =
 /** Minutes to seconds, the unit [ZoneOffset] wants. */
 private const val SECONDS_PER_MINUTE = 60
 
+/**
+ * A training session (ROADMAP P1.2).
+ *
+ * `java.time.Instant` rather than an epoch `Long` in the domain: `minSdk` 26 was
+ * chosen partly so `java.time` is available natively (ROADMAP F9), and the richer
+ * type makes duration arithmetic obvious. Only the *entity* stores a Long.
+ *
+ * [finishedAt] being null is what makes a session "active" — and is the whole
+ * basis of crash recovery (P1.8): the row is written the moment a workout starts,
+ * so a process death leaves it open rather than losing it.
+ */
 data class WorkoutSession(
     val id: String,
     val startedAt: Instant,

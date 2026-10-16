@@ -328,21 +328,6 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val writingASet = Mutex()
 
     /**
-     * The review of the workout that just finished, published instead of closing the
-     * screen outright (ROADMAP N20).
-     *
-     * Finish used to be a dead end: the ratings, the readiness note and the totals went
-     * nowhere, and a plan was never compared with what was actually lifted. The summary is
-     * built from state this screen already holds, so it costs no reads and needs no schema
-     * — but it also means it is a *moment*, not something to come back to.
-     */
-    /**
-     * The app-wide default rest, kept current while the screen is open (ROADMAP N21).
-     *
-     * Collected rather than read once: a change made in settings must reach a workout that
-     * is already running, which is the reason the store exposes a `Flow` at all.
-     */
-    /**
      * The app-wide default rest, kept current while the screen is open (ROADMAP N21).
      *
      * Collected rather than read once: a change made in settings must reach a workout that is
@@ -373,12 +358,6 @@ class ActiveWorkoutViewModel @Inject constructor(
             .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     /**
-     * The record just set, if the last logged set was one (ROADMAP N23).
-     *
-     * Not dismissible on purpose: it clears when the next set is logged, which is when the
-     * news is stale — a banner that needs dismissing is a banner in the way between sets.
-     */
-    /**
      * Whether a finished rest is heard as well as seen (ROADMAP N27).
      *
      * Read from settings rather than held as its own state: the flag belongs to the app, and the
@@ -391,9 +370,24 @@ class ActiveWorkoutViewModel @Inject constructor(
     val keepScreenOn: StateFlow<Boolean> = settingsRepository.observeKeepScreenOn()
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    /**
+     * The record just set, if the last logged set was one (ROADMAP N23).
+     *
+     * Not dismissible on purpose: it clears when the next set is logged, which is when the
+     * news is stale — a banner that needs dismissing is a banner in the way between sets.
+     */
     private val _personalRecord = MutableStateFlow<PersonalRecordMoment?>(null)
     val personalRecord: StateFlow<PersonalRecordMoment?> = _personalRecord.asStateFlow()
 
+    /**
+     * The review of the workout that just finished, published instead of closing the
+     * screen outright (ROADMAP N20).
+     *
+     * Finish used to be a dead end: the ratings, the readiness note and the totals went
+     * nowhere, and a plan was never compared with what was actually lifted. The summary is
+     * built from state this screen already holds, so it costs no reads and needs no schema
+     * — but it also means it is a *moment*, not something to come back to.
+     */
     private val _summary = MutableStateFlow<WorkoutReview?>(null)
     val summary: StateFlow<WorkoutReview?> = _summary.asStateFlow()
 
