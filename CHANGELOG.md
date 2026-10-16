@@ -151,6 +151,73 @@ unreleased.
   re-attaches it — and a value written before kinds existed reads as a target, which is what a level goal was.
   Rejected: keeping the two numbers side by side, which is the disagreement being fixed.
 
+### Fixed
+
+- **An activity can be finished with no sets** (B138). N141's one changed rule was not implemented where it is
+  enforced: the top bar's *Finish* was gated on a logged set, and an activity holds **no** exercises at all, so
+  it stayed disabled for the session's whole life. The only way out was *Discard workout*, which **deletes** the
+  session — so `finishedAt` was never written, and because the adherence read filters on it the activity reached
+  neither the history nor the calendar. N141 and N142 were unreachable end to end. The gate is now "an activity,
+  or any logged set", and two Robolectric tests pin both halves: an activity finishes, an empty workout still
+  cannot.
+
+- **An activity is its own colour in the adherence calendar, and says so** (B139). `activity AS activity` had
+  been added to the wrong query — the one whose row type has no such field — while the query that actually feeds
+  the calendar was left without it, and its row type had gained the property. Room fills a nullable property a
+  query does not return with `null` and only warns, so `isActivity` was always false, `activityDays` was always
+  empty, and N142's colour was dead code. The column is on the read that feeds the calendar now, and an
+  activity-only day is **announced** as an activity rather than as trained: a container colour says nothing to a
+  screen reader.
+
+- **A goal's pre-upgrade period leads, and the open one is read as open** (B140). `observePeriods` ordered
+  `(startedAt IS NULL) ASC`, and SQLite reads that as 1 for the undated row — so the goal the one-time move
+  writes, which is the **oldest** period, sorted last. Three consequences from one clause: the legacy target was
+  drawn across the whole chart, its verdict read every reading in the series, and opening a period compared a new
+  goal against the oldest row — so pressing *Set* twice with the same number opened a duplicate period, and a
+  change back to a goal the lifter had already had read as no change at all, reporting success with nothing
+  written. The ordering is fixed, and the open period is read by a `findOpen` query rather than assumed to be the
+  last of a list.
+
+- **A goal period is judged from the readings in it, not from the chart window** (B141). The history was computed
+  from the series the range chips already clip, while the periods were all-time — so a verdict about the past
+  moved with a display setting. It was not a corner: the default range is seven days, which holds at most seven
+  daily weigh-ins, while a rate needs N98's floor of eight readings across 21 days, so every direction goal read
+  "not enough weigh-ins" on the screen as it opened. The unwindowed series the ViewModel already reads now
+  travels beside the windowed one.
+
+- **A plan's target line reads the range's floor, and follows a chosen family** (B142, B143). Two ways the line
+  N39 draws disagreed with the plan it is drawn from. It took a rep range's **top** where the session takes its
+  floor — so a live 5–8 × 100 kg set with no progression was drawn at Epley(100 kg, 8) ≈ 126.5 kg instead of
+  Epley(100 kg, 5) ≈ 116.5 kg — and it was queried for the single chosen lift, so choosing a category under RPE
+  drew the family's readings with **no** plan line though live plans prescribe RPE for its movements. The
+  fallback matches the session now, and the read follows the same family the series does.
+
+- **The goal periods restore inside the import's transaction, and are counted** (B144). They still ran after it
+  as the last trace of the seam the preferences store needed, and returned `Unit`, so their rows never reached
+  the import summary. A file whose goal write failed left the sessions merged while the import reported failure —
+  and a restore whose only new content was a goal said "everything in that file was already here" while it
+  restored it.
+
+- **The field-exhaustive round-trip guard covers the fields this line added** (B145). `BackupCodecRoundTripTest`
+  exists because the hand-written codec has silently dropped a column three times, and its contract is a fixture
+  with every field set to something distinctive. The batch added a session's `activity`, a template's
+  `versionOf` and the whole `metric_goals` table, and extended none of it — the mappers were correct, but the
+  guard that catches the next one was not. Dropping `activity` from the mapper now fails the suite, which was
+  verified before the mutation was reverted.
+
+- **Two migration tests assert something** (B146). `GoalMigrationTest` ended with
+  `assertTrue("and the first move's timestamp is the one that stands", true)` — a literal, so the claim in its own
+  message was never read, and `INSERT OR REPLACE` in place of `INSERT OR IGNORE` left the count at 1 and the test
+  green. It asserts the row's `createdAt` now, which that mutation does fail. `ActivityMigrationTest` asserted a
+  column index under a message about `startedAt`; it asserts the start the row was written with instead.
+
+- **The prose the removals left behind, and a read-only imperative** (B147). The migration list said "three
+  migrations" and named five; four declarations had lost their KDoc to the one inserted above them, one of them
+  documenting `onSkipRest` as skipping a readiness prompt; and the readiness prose N140 removed the behaviour of
+  still read as if the prompt existed. One was user-visible: the **read-only** version plan drew the editor's
+  imperative "No planned sets yet. Add your first one." in a dialog whose only control is *Close*, where the other
+  read-only plan preview uses the neutral "No planned sets".
+
 ## [2.5] — 2026-10-15 (versionCode 25)
 
 ### Changed
