@@ -255,6 +255,19 @@ unreleased.
   them. Both paths ask the same question and each fault has its own sentence; the editor's picker no longer offers
   what the write boundary would refuse after it had already closed.
 
+- **The docs the batch left describing an older code** (B148–B160, N143–N146). A review of the review asked
+  whether the documentation still described what shipped, and it did not, in three ways. **Four settled rules
+  had been amended in the code and not in [DECISIONS.md](DECISIONS.md)**: N41's prompt-free discard is now the
+  empty workout's alone, N79's rung rule gained removal and the cluster's whole load, N24's round gained the
+  unequal-totals case, and B72's position rule gained the half the session taught it. **A measurement quoted in
+  four places had drifted** — `detekt-formatting` was said to report 642 findings across 155 files and reports
+  435 across 121 — so the figure was re-measured, the command that produces it written beside it, and the other
+  copies made to point at that one rather than repeat a count nobody re-checks. **Two facts were simply wrong**:
+  the APK sizes in [README.md](README.md) were ~13 MB and ~1.5 MB against ~22 MB and ~2.4 MB of the build in
+  front of the reviewer, and a 1.x entry named a file B159 deleted. The `ImportOrdering` ratio the N129 rule
+  rests on held flat at about nine files in ten, so the rule stands and only its numbers moved — which is why
+  this is a correction rather than a decision.
+
 - **A seeded movement is no longer dropped by an id it shares with a family** (B148). The seed declared *Back
   Extension* twice — once as the machine movement, once as the family over it — and a category and a movement are
   two **key spaces over one table**: the families are seeded first, and `INSERT OR IGNORE` (the rule that keeps a
@@ -420,8 +433,8 @@ unreleased.
   answers and the sites answer *where*.
 
 - **A change's layout is checked where the change is** (N129). `detekt-formatting` stays out of the
-  gate — it reports 642 findings across 155 files, and 150 of those files carry an `ImportOrdering`
-  finding, so a whole-file check would fail an edit that never went near an import. `tools/format-changed.py`
+  gate — it reports findings across a large part of the tree, about nine files in ten carrying an
+  `ImportOrdering` one, so a whole-file check would fail an edit that never went near an import. `tools/format-changed.py`
   runs the whole ruleset over the files a diff names and reports a finding only when it lands on a
   line the diff added or rewrote; `--fix` lets the rules rewrite those files, and `--all` shows what
   turning a rule on would cost. This is B123's own revisit trigger — a layout defect a review missed —
@@ -593,8 +606,9 @@ unreleased.
   its line with the `Column(` that should follow it, and nothing in the gate could see it: detekt loads the
   Compose ruleset alone, lint does not read Kotlin layout, and the line is inside the ceiling `.editorconfig`
   and detekt's `MaxLineLength` agree on. The line is rejoined, and the question behind it is settled rather
-  than left implicit — **the formatting ruleset is not wired**, because it reports ~600 findings across 155
-  files, which is a repository-wide reformat or a set of `active: false` entries. The decision, the rule-by-rule
+  than left implicit — **the formatting ruleset is not wired**, because it reports findings across a large
+  part of the tree (the count at the time, and today's, are in [DECISIONS.md](DECISIONS.md#process)), which is
+  a repository-wide reformat or a set of `active: false` entries. The decision, the rule-by-rule
   measurement and the trigger to revisit are in [DECISIONS.md](DECISIONS.md), and
   [detekt.yml](config/detekt/detekt.yml)'s header says so where the next person would wire it.
 

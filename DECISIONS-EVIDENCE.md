@@ -1753,8 +1753,9 @@ procedure says so, so a release that must carry a fourth file stages it delibera
 ## N129
 
 B123's measurement was reproduced before anything was built: **detekt-formatting reports 642
-findings across 155 files** on today's code (B123 recorded 603, and the difference is drift, not a
-different ruleset). The distribution is what decides the shape:
+findings across 155 files** on the code of the day (B123 recorded 603, and the difference is drift, not
+a different ruleset) — re-measured since, at 435 across 121, and the numbers below are that day's table
+rather than today's, which is what makes them a record). The distribution is what decides the shape:
 
 | rule | findings | files |
 | --- | --- | --- |
