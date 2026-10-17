@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The one directory a `content://` URI may point at (ROADMAP B158, B159).
+
+  The app shares nothing with other apps — the export is the only path off the device and the user picks its
+  destination — so this exists for the instrumented test of `DocumentIo`, which needs a real content URI to write
+  through and cannot invent a provider. It is scoped to one cache subdirectory and grants nothing else: the
+  cache is the app's own, wiped by the system under pressure, and excluded from backup like everything else.
+-->
+<paths>
+    <cache-path name="document-io-test" path="document-io-test/" />
+</paths>

@@ -41,6 +41,22 @@
             </intent-filter>
         </activity>
 
+        <!--
+          A content URI over one cache directory, and nothing else (ROADMAP B158, B159): the instrumented test of
+          `DocumentIo` writes and reads a real document, which needs a provider the app itself can hand out. The
+          app has no reason to share a file with another app — the export is a user-chosen destination through the
+          Storage Access Framework — so this grants no path beyond [file_paths.xml](res/xml/file_paths.xml).
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
     </application>
 
 </manifest>
