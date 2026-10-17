@@ -14,10 +14,12 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
-## [Unreleased]
+## [2.7] — 2026-10-17 (versionCode 27)
 
-What the pre-release review added and fixed after `v2.6` was tagged — a batch of defects and one feature, none of
-it in a numbered release yet. It becomes the next version's entry, dates and versionCode, when one is cut.
+The pre-release review's batch: one defect visible on every fresh install, thirteen more found by reading, four
+interface changes and one feature. **One number moves on purpose** — the Statistics *Records* tile stops counting
+drop and cluster rungs as personal bests (B155), so it may read lower than it did on 2.6. That is the fix, not
+lost data: a rung is work, but the app never announced it as a record.
 
 ### Added
 
@@ -31,6 +33,13 @@ it in a numbered release yet. It becomes the next version's entry, dates and ver
   says so and offers the way back, which is the one distinction a filter has to get right.
 
 ### Changed
+
+- **The document transfer has a device test of its own** (B158, B159). `DocumentIo` is the one piece of the
+  transfer that is *about* Android — `openOutputStream`, `openInputStream`, and the dispatch they run on — and the
+  coroutine that had to leave the composition's scope is only safe if that half behaves, so it is exercised
+  against a real `ContentResolver`: a write and read round-trip, and the two failures a picker can hand over
+  answering `false` and `null` rather than throwing. It needs a `content://` URI the test can write through, which
+  is why the manifest gained a `FileProvider` scoped to one cache directory and nothing else.
 
 - **The docs the batch left describing an older code** (B148–B160, N143–N146). A review of the review asked
   whether the documentation still described what shipped, and it did not, in three ways. **Four settled rules
@@ -156,7 +165,7 @@ it in a numbered release yet. It becomes the next version's entry, dates and ver
 
 *Corrected in place after release, and only in figures: two entries below quoted a formatting measurement
 that had drifted. Nothing was added to this release's content, and the work that landed after the tag is the
-`Unreleased` section above.*
+2.7 entry above.*
 
 ### Added
 
