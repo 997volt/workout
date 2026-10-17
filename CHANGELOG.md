@@ -14,7 +14,10 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
-## [2.6] — 2026-10-16 (versionCode 26)
+## [Unreleased]
+
+What the pre-release review added and fixed after `v2.6` was tagged — a batch of defects and one feature, none of
+it in a numbered release yet. It becomes the next version's entry, dates and versionCode, when one is cut.
 
 ### Added
 
@@ -26,6 +29,136 @@ unreleased.
   question a log gets asked, *show me the days I did something other than lift*, and the row now names its
   activity where it has one rather than reading as a workout somebody forgot to log. A query that matches nothing
   says so and offers the way back, which is the one distinction a filter has to get right.
+
+### Changed
+
+- **The docs the batch left describing an older code** (B148–B160, N143–N146). A review of the review asked
+  whether the documentation still described what shipped, and it did not, in three ways. **Four settled rules
+  had been amended in the code and not in [DECISIONS.md](DECISIONS.md)**: N41's prompt-free discard is now the
+  empty workout's alone, N79's rung rule gained removal and the cluster's whole load, N24's round gained the
+  unequal-totals case, and B72's position rule gained the half the session taught it. **A measurement quoted in
+  four places had drifted** — `detekt-formatting` was said to report 642 findings across 155 files and reports
+  435 across 121 — so the figure was re-measured, the command that produces it written beside it, and the other
+  copies made to point at that one rather than repeat a count nobody re-checks. **Two facts were simply wrong**:
+  the APK sizes in [README.md](README.md) were ~13 MB and ~1.5 MB against ~22 MB and ~2.4 MB of the build in
+  front of the reviewer, and a 1.x entry named a file B159 deleted. The `ImportOrdering` ratio the N129 rule
+  rests on held flat at about nine files in ten, so the rule stands and only its numbers moved — which is why
+  this is a correction rather than a decision.
+
+- **A seeded movement is no longer dropped by an id it shares with a family** (B148). The seed declared *Back
+  Extension* twice — once as the machine movement, once as the family over it — and a category and a movement are
+  two **key spaces over one table**: the families are seeded first, and `INSERT OR IGNORE` (the rule that keeps a
+  lifter's own rename) then discarded the movement without a word, so a lift the app ships could never be offered
+  by a picker or named by a logged set. The `parentOf` entry was the tell: it pointed at itself, which no write
+  path can produce. The family takes the `-family` suffix every other colliding name already carries, and
+  `SeedExercisesTest` now asserts the two lists never intersect rather than trusting that the naming kept up. **A
+  database already holding the collision is repaired on open**, inside the seeder's transaction and before the
+  top-up, so the id is freed and the movement can land — guarded on the row still being a category, still called
+  *Back Extension* and still its own parent, because a lifter's rename is exactly what `INSERT OR IGNORE` exists
+  to protect.
+
+### Fixed
+
+- **An import no longer brings back rows a save had replaced** (B149). The restore was keyed on the id alone, and
+  a soft-hidden child row has two possible causes the ids cannot tell apart: the parent was **deleted**, or its
+  list was **replaced** by a save — a measurement's sore rows and an exercise's joint rows are both rewritten
+  wholesale. So editing a day's soreness from quads 8 to quads 6 and then importing an older file gave the entry
+  two live rows for one muscle, "quads 8" and "quads 6" both true, which is the state the editor's own rule
+  forbids; the same measurement-level collision could leave one day and kind with two live entries, the state the
+  undo path refuses outright. Correlating timestamps, the way the undo does, is not available to an import — it
+  acts on a file written before either write — so the question asked is the one a delete and a replacement answer
+  differently: **is the parent coming back too**. A child whose parent stays live is left hidden.
+
+- **A restored session can no longer be the workout in progress** (B150). `finishedAt IS NULL` is the app's whole
+  definition of the session you are in, and the mapper copied the file's value through — so importing a backup
+  taken mid-workout (or one left open by a crash, which the app deliberately preserves) resumed a session that was
+  never this device's, and importing *during* a workout wrote a second open row whose older half could never be
+  reached: history reads only finished sessions and the active read returns the newest. A restored session is now
+  closed at its own start, which keeps its day and its record without claiming anybody is in it.
+
+- **A save reads the day it is writing to inside its own transaction** (B151). The check for the day's existing
+  entry ran before `withTransaction`, so a save committing in that window was invisible to it: both found nothing,
+  both inserted, and one day and kind held two live entries — which every read then lists twice and every chart
+  then plots twice. B135 fixed the mirror half of this, the undo's guard; this is the save's own read, moved in
+  beside the write and its timestamp.
+
+- **Removing a run's first rung takes the run with it** (B152). A run's drop value is stored on its **opening**
+  rung and every later rung inherits it, so deleting that row stranded the survivors with no value to derive from:
+  the plan read "no load to drop", and re-typing the number did not put the ladder back — the survivor was now
+  rung 1, so the plan was quietly re-valued rather than merely blanked. The anchor's removal already took the
+  whole run for exactly this reason, and the shape left behind is the one the plan's own rules refuse to author.
+
+- **A cluster rung under an assisted anchor keeps the machine's help** (B153). A cluster repeats its anchor's load
+  *exactly*, assistance included, but only the weight half was handed on — so an anchor giving 20 kg of help
+  derived a weight of 0, which the prefill reads as *the plan said 0 kg*: the help was discarded, the fields
+  showed bodyweight, and the set was logged as one. The whole derived load travels now, in the session's prefill
+  and on the plan's own row, which said "0 kg" for the same reason.
+
+- **A superset whose members plan different set counts keeps resting** (B154). The round waited for every other
+  member to reach the count just logged, and the shorter member can never reach it: from its last set onward the
+  rest timer silently stopped being armed for the longer one — no countdown, no ±15 s, no end-of-rest cue — and
+  nothing on screen said a round was holding it back. A member whose plan is used up is caught up, which is what
+  the expression's existing "or has been marked done" was reaching for.
+
+- **The Records count reads the app's own rule for what a record is** (B155). The query excluded `'WARMUP'` alone
+  while the rule is `SetType.recordsEffort`, which a drop or cluster rung also fails — so a rung was counted as a
+  record the lifter was never told about, and, on the other side of the comparison, an earlier rung's weight
+  blocked a later honest set from a count that *was* announced. The roles are passed in from the one rule now, so
+  the SQL cannot drift from the enum again.
+
+- **A plan that names a removed movement no longer seeds a phantom row** (B156). The read that starts a workout
+  from a template was the one query of its family without the library's soft-delete join, so a hidden movement
+  arrived as a session row that the session's own reads then filtered out: invisible, unremovable, and counted by
+  history's exercise total.
+
+- **A rung's last-time reps are matched by place, not by a stored index** (B157). `setIndex` is not a position: a
+  deleted set keeps its index and re-logging appends at the end, so the app's own Undo leaves a hole — log three
+  sets, delete the third, undo it, and the live indices are 0, 1, 3 while the reading side counts 0, 1, 2. The
+  comparison found no row, and the rung prefilled from the *anchor's* just-done reps instead of its own last
+  performance, which is the one thing that prefill exists to provide.
+
+- **The transfers' file IO, the export's encoding and the settings' commits run off the main thread** (B158).
+  `suspend` alone bought nothing: `openInputStream`, `readBytes`, `write` and a synchronous `commit = true` all
+  execute inline on the caller, and every caller was a UI scope — so choosing a backup on a cloud provider blocked
+  the UI thread on a network round trip, a long history janked the export, and every Settings toggle and Statistics
+  range chip was a disk write on the tap path. Each now takes `Dispatchers.IO`, in one place per kind of work.
+
+- **A file transfer survives the screen that started it** (B159). The work ran in the composition's own scope,
+  which a configuration change disposes — and the Storage Access Framework had already created the document by
+  then, so a rotation mid-export left a 0-byte `workout-backup.json` behind and reported nothing at all; the lifter
+  found out when a later import called the file unreadable. The transfer and its report live in the ViewModel now,
+  for the backup and for the program document alike.
+
+- **The delete undo is only offered while the exercise can still take the set** (B160). A finished exercise keeps
+  its row in the list, so the offer outlived the write it promised: tapping *Done* and then the still-visible
+  *Undo* answered "That workout is no longer open" in front of a workout that plainly was, and the set stayed
+  lost. The offer asks the write's own question, and disappears with the exercise's ability to accept it.
+
+- **Discarding a session whose only record is an activity asks first** (N143). An activity holds no sets by
+  construction, so "nothing in it" was true for exactly the session a lifter had deliberately recorded — and one
+  unconfirmed tap deleted the day's record with no undo, while the same action on a workout with a single logged
+  set asked and named what went. The prompt-free branch is for a session that is empty *because nothing was done*,
+  and an activity never is.
+
+- **The workout review states the unit, and reads an assisted plan's help** (N144). A prescribed weight with no
+  rep target was printed bare — the one number in the dialog with nothing saying whether it was kilograms or
+  pounds — and an assisted plan, which is stored as 0 kg of added weight plus the help it names, was reported as
+  "at 0 kg": a weight the plan never prescribed, with the assistance appearing nowhere. The comparison carries the
+  help on both sides now, so `-20` reads as 20 kg of assistance.
+
+- **A refused rung says what is wrong rather than what a rung is** (N145). One sentence covered three different
+  faults — no set above at all, a warm-up above, another kind of rung above — so a lifter was told the rule
+  instead of the fault, and the edit dialog offered Drop and Cluster at every position while the log path gated
+  them. Both paths ask the same question and each fault has its own sentence; the editor's picker no longer offers
+  what the write boundary would refuse after it had already closed.
+
+## [2.6] — 2026-10-16 (versionCode 26)
+
+*Corrected in place after release, and only in figures: two entries below quoted a formatting measurement
+that had drifted. Nothing was added to this release's content, and the work that landed after the tag is the
+`Unreleased` section above.*
+
+### Added
 
 - **An empty workout can be an activity instead** (N141). Under *Add exercise*, while the session holds
   nothing, a second row offers **Add activity** — cycling, running, swimming, rock climbing, volleyball — and the
@@ -161,124 +294,6 @@ unreleased.
   Rejected: keeping the two numbers side by side, which is the disagreement being fixed.
 
 ### Fixed
-
-- **An import no longer brings back rows a save had replaced** (B149). The restore was keyed on the id alone, and
-  a soft-hidden child row has two possible causes the ids cannot tell apart: the parent was **deleted**, or its
-  list was **replaced** by a save — a measurement's sore rows and an exercise's joint rows are both rewritten
-  wholesale. So editing a day's soreness from quads 8 to quads 6 and then importing an older file gave the entry
-  two live rows for one muscle, "quads 8" and "quads 6" both true, which is the state the editor's own rule
-  forbids; the same measurement-level collision could leave one day and kind with two live entries, the state the
-  undo path refuses outright. Correlating timestamps, the way the undo does, is not available to an import — it
-  acts on a file written before either write — so the question asked is the one a delete and a replacement answer
-  differently: **is the parent coming back too**. A child whose parent stays live is left hidden.
-
-- **A restored session can no longer be the workout in progress** (B150). `finishedAt IS NULL` is the app's whole
-  definition of the session you are in, and the mapper copied the file's value through — so importing a backup
-  taken mid-workout (or one left open by a crash, which the app deliberately preserves) resumed a session that was
-  never this device's, and importing *during* a workout wrote a second open row whose older half could never be
-  reached: history reads only finished sessions and the active read returns the newest. A restored session is now
-  closed at its own start, which keeps its day and its record without claiming anybody is in it.
-
-- **A save reads the day it is writing to inside its own transaction** (B151). The check for the day's existing
-  entry ran before `withTransaction`, so a save committing in that window was invisible to it: both found nothing,
-  both inserted, and one day and kind held two live entries — which every read then lists twice and every chart
-  then plots twice. B135 fixed the mirror half of this, the undo's guard; this is the save's own read, moved in
-  beside the write and its timestamp.
-
-- **Removing a run's first rung takes the run with it** (B152). A run's drop value is stored on its **opening**
-  rung and every later rung inherits it, so deleting that row stranded the survivors with no value to derive from:
-  the plan read "no load to drop", and re-typing the number did not put the ladder back — the survivor was now
-  rung 1, so the plan was quietly re-valued rather than merely blanked. The anchor's removal already took the
-  whole run for exactly this reason, and the shape left behind is the one the plan's own rules refuse to author.
-
-- **A cluster rung under an assisted anchor keeps the machine's help** (B153). A cluster repeats its anchor's load
-  *exactly*, assistance included, but only the weight half was handed on — so an anchor giving 20 kg of help
-  derived a weight of 0, which the prefill reads as *the plan said 0 kg*: the help was discarded, the fields
-  showed bodyweight, and the set was logged as one. The whole derived load travels now, in the session's prefill
-  and on the plan's own row, which said "0 kg" for the same reason.
-
-- **A superset whose members plan different set counts keeps resting** (B154). The round waited for every other
-  member to reach the count just logged, and the shorter member can never reach it: from its last set onward the
-  rest timer silently stopped being armed for the longer one — no countdown, no ±15 s, no end-of-rest cue — and
-  nothing on screen said a round was holding it back. A member whose plan is used up is caught up, which is what
-  the expression's existing "or has been marked done" was reaching for.
-
-- **The Records count reads the app's own rule for what a record is** (B155). The query excluded `'WARMUP'` alone
-  while the rule is `SetType.recordsEffort`, which a drop or cluster rung also fails — so a rung was counted as a
-  record the lifter was never told about, and, on the other side of the comparison, an earlier rung's weight
-  blocked a later honest set from a count that *was* announced. The roles are passed in from the one rule now, so
-  the SQL cannot drift from the enum again.
-
-- **A plan that names a removed movement no longer seeds a phantom row** (B156). The read that starts a workout
-  from a template was the one query of its family without the library's soft-delete join, so a hidden movement
-  arrived as a session row that the session's own reads then filtered out: invisible, unremovable, and counted by
-  history's exercise total.
-
-- **A rung's last-time reps are matched by place, not by a stored index** (B157). `setIndex` is not a position: a
-  deleted set keeps its index and re-logging appends at the end, so the app's own Undo leaves a hole — log three
-  sets, delete the third, undo it, and the live indices are 0, 1, 3 while the reading side counts 0, 1, 2. The
-  comparison found no row, and the rung prefilled from the *anchor's* just-done reps instead of its own last
-  performance, which is the one thing that prefill exists to provide.
-
-- **The transfers' file IO, the export's encoding and the settings' commits run off the main thread** (B158).
-  `suspend` alone bought nothing: `openInputStream`, `readBytes`, `write` and a synchronous `commit = true` all
-  execute inline on the caller, and every caller was a UI scope — so choosing a backup on a cloud provider blocked
-  the UI thread on a network round trip, a long history janked the export, and every Settings toggle and Statistics
-  range chip was a disk write on the tap path. Each now takes `Dispatchers.IO`, in one place per kind of work.
-
-- **A file transfer survives the screen that started it** (B159). The work ran in the composition's own scope,
-  which a configuration change disposes — and the Storage Access Framework had already created the document by
-  then, so a rotation mid-export left a 0-byte `workout-backup.json` behind and reported nothing at all; the lifter
-  found out when a later import called the file unreadable. The transfer and its report live in the ViewModel now,
-  for the backup and for the program document alike.
-
-- **The delete undo is only offered while the exercise can still take the set** (B160). A finished exercise keeps
-  its row in the list, so the offer outlived the write it promised: tapping *Done* and then the still-visible
-  *Undo* answered "That workout is no longer open" in front of a workout that plainly was, and the set stayed
-  lost. The offer asks the write's own question, and disappears with the exercise's ability to accept it.
-
-- **Discarding a session whose only record is an activity asks first** (N143). An activity holds no sets by
-  construction, so "nothing in it" was true for exactly the session a lifter had deliberately recorded — and one
-  unconfirmed tap deleted the day's record with no undo, while the same action on a workout with a single logged
-  set asked and named what went. The prompt-free branch is for a session that is empty *because nothing was done*,
-  and an activity never is.
-
-- **The workout review states the unit, and reads an assisted plan's help** (N144). A prescribed weight with no
-  rep target was printed bare — the one number in the dialog with nothing saying whether it was kilograms or
-  pounds — and an assisted plan, which is stored as 0 kg of added weight plus the help it names, was reported as
-  "at 0 kg": a weight the plan never prescribed, with the assistance appearing nowhere. The comparison carries the
-  help on both sides now, so `-20` reads as 20 kg of assistance.
-
-- **A refused rung says what is wrong rather than what a rung is** (N145). One sentence covered three different
-  faults — no set above at all, a warm-up above, another kind of rung above — so a lifter was told the rule
-  instead of the fault, and the edit dialog offered Drop and Cluster at every position while the log path gated
-  them. Both paths ask the same question and each fault has its own sentence; the editor's picker no longer offers
-  what the write boundary would refuse after it had already closed.
-
-- **The docs the batch left describing an older code** (B148–B160, N143–N146). A review of the review asked
-  whether the documentation still described what shipped, and it did not, in three ways. **Four settled rules
-  had been amended in the code and not in [DECISIONS.md](DECISIONS.md)**: N41's prompt-free discard is now the
-  empty workout's alone, N79's rung rule gained removal and the cluster's whole load, N24's round gained the
-  unequal-totals case, and B72's position rule gained the half the session taught it. **A measurement quoted in
-  four places had drifted** — `detekt-formatting` was said to report 642 findings across 155 files and reports
-  435 across 121 — so the figure was re-measured, the command that produces it written beside it, and the other
-  copies made to point at that one rather than repeat a count nobody re-checks. **Two facts were simply wrong**:
-  the APK sizes in [README.md](README.md) were ~13 MB and ~1.5 MB against ~22 MB and ~2.4 MB of the build in
-  front of the reviewer, and a 1.x entry named a file B159 deleted. The `ImportOrdering` ratio the N129 rule
-  rests on held flat at about nine files in ten, so the rule stands and only its numbers moved — which is why
-  this is a correction rather than a decision.
-
-- **A seeded movement is no longer dropped by an id it shares with a family** (B148). The seed declared *Back
-  Extension* twice — once as the machine movement, once as the family over it — and a category and a movement are
-  two **key spaces over one table**: the families are seeded first, and `INSERT OR IGNORE` (the rule that keeps a
-  lifter's own rename) then discarded the movement without a word, so a lift the app ships could never be offered
-  by a picker or named by a logged set. The `parentOf` entry was the tell: it pointed at itself, which no write
-  path can produce. The family takes the `-family` suffix every other colliding name already carries, and
-  `SeedExercisesTest` now asserts the two lists never intersect rather than trusting that the naming kept up. **A
-  database already holding the collision is repaired on open**, inside the seeder's transaction and before the
-  top-up, so the id is freed and the movement can land — guarded on the row still being a category, still called
-  *Back Extension* and still its own parent, because a lifter's rename is exactly what `INSERT OR IGNORE` exists
-  to protect.
 
 - **An activity can be finished with no sets** (B138). N141's one changed rule was not implemented where it is
   enforced: the top bar's *Finish* was gated on a logged set, and an activity holds **no** exercises at all, so

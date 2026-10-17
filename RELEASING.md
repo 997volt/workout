@@ -20,7 +20,10 @@ Android compares it and nothing else, so a lower one is refused by every phone.
 ### 2. Write the changelog *before* the bump
 
 Add a [CHANGELOG.md](CHANGELOG.md) entry for the new version, listing **only what is actually in
-this build**. Check which commits landed before the commit you are about to tag:
+this build**. `[Unreleased]` is where that work accumulates between releases — retitle it
+`## [x.y] — date (versionCode n)` rather than adding a second section, and delete the two sentences that say
+it is unreleased, or the new version ships with a note calling itself unreleased. Check which commits
+landed before the commit you are about to tag:
 
 ```bash
 git log --oneline <last-release-tag>..HEAD
