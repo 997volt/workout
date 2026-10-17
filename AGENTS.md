@@ -84,7 +84,8 @@ Match these — they are the existing ones. Reasons, scope and rejected alternat
 keeps that task set equal to CI's and these links resolving. The configuration cache is on
 by default, so reruns are fast.
 
-Formatting is not in that set: `detekt-formatting` reports ~600 findings across the tree, so
+Formatting is not in that set: `detekt-formatting` reports a few hundred findings across the tree — the
+current count and the command that produces it are in [DECISIONS.md](DECISIONS.md#process) — so
 turning it on wholesale is the reformat B123 rejected. Run it over **what you changed**
 instead — it reports a finding only when it lands on a line the diff added or rewrote:
 

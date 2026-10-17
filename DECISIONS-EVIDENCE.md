@@ -1771,6 +1771,18 @@ version of this check: an edit that adds one function to `AppNavHost.kt` would b
 file's import order, which the edit never touched, and the reasonable response — stop running it —
 is how a check dies. So the line is the unit, not the file.
 
+**Re-measured while reviewing 2.6 (B148–B160, N143–N146), because a number this load-bearing is a fact to
+check rather than to quote.** `./gradlew :app:detektFormattingCheck --no-configuration-cache --rerun-tasks`
+reports **435 findings across 121 files**: `ImportOrdering` 106 in 106 files, `ArgumentListWrapping` 127 in
+3, `Indentation` 106 in 10, `NoConsecutiveBlankLines` 25 in 21, and the rest under 20 each. Two things changed
+and neither changes the rule. The total fell by a third — drift over the releases since N129, not a different
+ruleset, which was checked by handing the task one deliberately misordered file and watching it report
+`ImportOrdering` (the config had to be doing what the report says). And the **`ImportOrdering` ratio stayed
+flat**, at about 88% of the files analysed both times: 106 of 121 today, 150 of 155 then. That ratio is the
+whole argument — an edit to one function in `AppNavHost.kt` would be failed for that file's import order — so
+a rule that rests on it should be re-measured whenever the number is quoted, which is why the command is
+written down beside it rather than only its output.
+
 **The lines are the diff's, computed from `git diff -U0`.** The `-U0` matters: with context, the
 hunk's line numbers include lines nobody changed. Three sources are merged, because a change can be
 committed, staged or neither, and a **fourth** was needed after the first cut failed its own test:

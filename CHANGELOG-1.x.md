@@ -1026,6 +1026,8 @@ shipped, so this is where they were caught rather than a later version's problem
 - **The Storage Access Framework's document IO is written once** (B53). The backup and the program
   document each carried their own read, write, MIME type and `DataError`-to-sentence mapping, which
   is two copies of a rule about cancellation, free to drift. They share `ui/transfer/DocumentFiles`.
+  *(2.x moved it, and this entry is kept as it shipped: B159 took the transfer out of the composition's
+  scope, so the file IO is `platform/DocumentIo.kt` and the work around it belongs to the two ViewModels.)*
 - **The new shared components lost three parameters nothing passed** (B54): `SectionHeader`'s
   trailing slot and test tag, and `IconTile`'s content description. The slot was the vestige of
   "See all workouts", which N42 removed from the heading it sat on.

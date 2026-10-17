@@ -1,8 +1,9 @@
 # detekt-formatting, loaded by `detektFormattingCheck` (ROADMAP N129).
 #
-# B123 settled that the formatting ruleset stays out of the gate, because loading it reports ~600
-# findings across 155 files — a repository-wide reformat, or a set of `active: false` entries that
-# would be the silent gate detekt.yml's header forbids. What it left open is the trigger that decision
+# B123 settled that the formatting ruleset stays out of the gate, because loading it reports
+# findings across the tree (DECISIONS.md's Process section carries the count and the command) — a
+# repository-wide reformat, or a set of `active: false` entries that would be the silent gate
+# detekt.yml's header forbids. What it left open is the trigger that decision
 # named: a layout defect that ships because a review missed it where a tool would have caught it.
 #
 # A **separate file** is what makes the middle path possible. The rules live here so they can be loaded

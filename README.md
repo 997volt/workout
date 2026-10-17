@@ -82,7 +82,7 @@ the choice is worth making deliberately.
 | Output | `app/build/outputs/apk/debug/app-debug.apk` | `app/build/outputs/apk/release/app-release.apk` |
 | Signing | auto debug key | your keystore |
 | `debuggable` | **true** | false |
-| R8 / shrinking | off (~13 MB) | on (~1.5 MB) |
+| R8 / shrinking | off (~22 MB) | on (~2.4 MB) |
 
 Prefer the signed release. A debug build is `debuggable`, so anyone with adb access to the phone
 can `run-as` the app and read the workout database — the opposite of what the backup opt-out is

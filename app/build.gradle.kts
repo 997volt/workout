@@ -238,9 +238,10 @@ dependencies {
 /**
  * The formatting ruleset, over a **file list** rather than the tree (ROADMAP N129).
  *
- * B123 settled that `detekt-formatting` stays out of the gate: loading it reports ~600 findings
- * across 155 files, and the alternatives were a repository-wide reformat or a set of
- * `active: false` entries — the silent gate `detekt.yml`'s header forbids. Its revisit trigger is a
+ * B123 settled that `detekt-formatting` stays out of the gate: loading it reports findings across a
+ * large part of the tree (DECISIONS.md's Process section carries the current count), and the
+ * alternatives were a repository-wide reformat or a set of `active: false` entries — the silent
+ * gate `detekt.yml`'s header forbids. Its revisit trigger is a
  * layout defect that ships because a review missed it, which is what the malformed `BalanceRow` line
  * was.
  *

@@ -77,7 +77,12 @@ the rule; that one argues it.
   rather than by a column — and they differ in the load: a cluster rung repeats the anchor's, a drop
   rung is the anchor's less the run's value, once per rung. The plan therefore stores the **value** once,
   on the run's first rung, so a weight per rung — rejected — cannot drift from the anchor, and a rung
-  names no reps because the group's target is the anchor's. Deleting an anchor takes its rungs with it.
+  names no reps because the group's target is the anchor's. Deleting an anchor takes its rungs with it, and
+  **the first rung does too** (B152): it is the row the run's value is stored on, so removing it alone
+  stranded the survivors with nothing to derive from and no way to put the ladder back — re-typing the value
+  made the survivor rung 1 and re-valued the plan. A cluster repeats the anchor's load **as a whole
+  `Load`** (B153): an anchor giving 20 kg of assistance derives assistance and no added weight, so carrying
+  only the weight half read it as a stated 0 kg and logged bodyweight while the machine was helping.
   ([evidence](DECISIONS-EVIDENCE.md#n79), [B59–B72](DECISIONS-EVIDENCE.md#b59-b72))
 - **A plan's numbers are stated with the same ± steppers as a logged set's, and stay typeable** (N111).
   A target and a performed set are the same two numbers (N59), so the plan is authored with the control
@@ -109,7 +114,12 @@ the rule; that one argues it.
   the same index, so a stored index *is* the plan's order rather than a durable id. Removing a planned set
   therefore renumbers the survivors, in the same transaction as the delete — the invariant `prependSets`
   already holds from the other direction — instead of leaving a gap that points the prefill and the rest
-  rule at the row after the one they mean. ([evidence](DECISIONS-EVIDENCE.md#b59-b72))
+  rule at the row after the one they mean. **A logged row is the exception, and it is why the two spaces are
+  read differently** (B157): a set's stored `setIndex` survives a soft delete and re-logging appends at
+  `max + 1`, so the app's own Undo leaves a permanent hole — log three sets, delete the third, undo it, and
+  the live indices are 0, 1, 3. Anything matching a logged row to a plan row therefore matches by **place in
+  the ordered list**, never by the stored index, which is a record of where the row was first put and not
+  where it now sits. ([evidence](DECISIONS-EVIDENCE.md#b59-b72))
 - **The plan's rest and cue win over the library's; null means "the library's"** (N14,
   extending N5) — copied onto the session exercise when it is seeded from a plan.
 - **A prescribed rest of zero is a value — "no rest" — and only a negative is refused** (N45,
@@ -331,7 +341,10 @@ the rule; that one argues it.
 - **Round semantics: the rest belongs to the round, not the set** (N24). After a set the
   app moves to the next member with no rest and starts the rest after the **last** one,
   otherwise pairing defeats itself; the rest is the group's longest member or the app
-  default, and labels are giant-set notation: A1, A2, A3.
+  default, and labels are giant-set notation: A1, A2, A3. **A member whose plan is used up is caught up**
+  (B154): two members need not prescribe the same number of sets, and once the shorter one logged its last
+  the round could never close again — so the rest silently stopped being armed for the longer member's
+  remaining sets, with nothing on screen saying a round was holding it back.
 - **A major release may start a new store instead of migrating one** (N104). 2.0 opens a **new database
   file** at schema 1 and never opens 1.x's, so there is nothing to migrate and nothing to truncate:
   `fallbackToDestructiveMigration` stays absent, because the old store is left **alone** rather than
@@ -485,7 +498,10 @@ the rule; that one argues it.
 - **A workout with something in it is discarded behind a prompt, and the prompt says what it costs**
   (N41). **The empty workout keeps its prompt-free discard** because there is nothing to lose, and it lives
   in the same overflow as every other session's: the way out is in one place whatever the workout holds (see
-  N87). A workout
+  N87). **An activity is never "the empty workout"** (N143): it holds no sets by construction, so `isEmpty` is
+  true for exactly the session a lifter deliberately recorded — and an unconfirmed tap deleted the day with no
+  undo while the same action on a workout with one set asked first. The prompt-free branch asks *did nothing
+  happen*, not *does it hold sets*, and an activity is the case that tells the two apart. A workout
   holding sets asks first and names the count, and when it was started from a program slot it says
   the second consequence: only a *finished* session settles an occurrence (P3.5), so dropping out is
   a miss rather than no workout at all. The action sits behind the top bar's overflow rather than
@@ -1055,6 +1071,35 @@ the rule; that one argues it.
   number mean two things. Because it has to agree with the grid, the history inherits P3.5's limits
   instead of inventing a second answer — including that the schedule is the program as it is now.
 
+## History and transfer
+
+- **A query searches what a row says, not what is behind it** (N146). The history list is a SQL projection of
+  totals and a template name, chosen so a year of training costs one query; reaching an exercise name would mean
+  loading every set of every session, which is the cost the projection exists to avoid. So a query matches the
+  month a row is grouped under, the plan it was started from, the activity it was, and its set count — and the
+  field's own hint names those four, because a search that silently cannot do what its placeholder suggests is
+  worse than a shorter list of things it can. Both the query and the row are compared with the whitespace and
+  underscores removed: `ROCK_CLIMBING` is what a lifter calls *rock climbing*, and the row's label is a string
+  resource the ViewModel may not read.
+- **An empty result is not an empty log** (N146, N143's lesson in a different place). A filter that shows "you
+  have not trained yet" while a query is hiding rows is a lie about the lifter's own data, so the two states are
+  separate values (`isEmpty` and `isFilteredEmpty`), and the filtered one carries the control that undoes it.
+  The same rule decides the branch order in the screen: the *filtered* case is tested before the empty one, or
+  the general condition swallows the specific.
+- **A transfer runs where a rotation cannot cancel it** (B158, B159). The Storage Access Framework has already
+  created the document by the time the picker's result arrives, so a coroutine that dies with the composition
+  leaves a 0-byte file behind and reports nothing — the lifter finds out when a later import calls it unreadable.
+  The work and its report therefore live in the ViewModel, and the file IO is a **`DocumentIo` seam** that takes
+  the caller's `Context`: a ViewModel may not hold one, and the dispatcher switch belongs in one place so neither
+  caller can forget it. The exception that keeps this honest is *any* work whose failure has no user to tell.
+- **An import may only un-hide what a delete hid** (B149). A soft-hidden child row has two causes the ids cannot
+  tell apart — the parent was deleted, or its list was replaced by a save — and correlating the timestamp the
+  undo uses is not available to an import, which acts on a file written before either write. So the question
+  asked is the one a delete and a replacement answer differently: is the parent coming back too. A restored
+  session is the same shape at the top: it comes back **closed at its own start** (B150), because
+  `finishedAt IS NULL` is the app's whole definition of the workout in progress and a file may not decide what
+  this device is doing.
+
 ## Rules that apply to every change
 
 - **A range is a window in the current zone; a session's date is where it happened**
@@ -1144,8 +1189,11 @@ the rule; that one argues it.
 - **The lint baseline is unwired on purpose.** Accepting a warning is a two-step, reviewed
   act, not a side effect of running the build.
 - **Formatting is checked on the lines a change touched, not on the tree** (B123, answered by N129).
-  The ruleset reports **642 findings across 155 files** on today's code — 151 of them `ImportOrdering`
-  alone, in **150** files — so putting it in the gate means either the repository-wide reformat B123
+  The ruleset reports **435 findings across 121 files** on today's code — 106 of them `ImportOrdering`
+  alone, in **106** files, measured with
+  `./gradlew :app:detektFormattingCheck --no-configuration-cache --rerun-tasks` (642 across 155 when N129
+  took it; the fall is drift, not a different ruleset, and the ratio is what the rule rests on) — so
+  putting it in the gate means either the repository-wide reformat B123
   rejected or a set of `active: false` entries, which is the silent gate
   [detekt.yml](config/detekt/detekt.yml) refuses by its own contract. B123 named its own revisit
   trigger: a layout defect that ships because a review missed it. **`tools/format-changed.py` answers
