@@ -8,6 +8,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.DELOAD_DEFAULT_LOAD_KEPT_PERCENT
 import com.example.androidapp.domain.model.DELOAD_LOAD_KEPT_CHOICES
 import com.example.androidapp.domain.model.DeloadSetTarget
@@ -63,15 +64,21 @@ data class DeloadCreatorUiState(
     val hasExistingPlan: Boolean = false,
     val selectedExerciseCount: Int = 0,
     val creating: Boolean = false,
+    /** The read failed, so the screen says so rather than claiming the program plans nothing (N147). */
+    val loadFailed: Boolean = false,
     /** The week that was just written, or null. The screen says so and offers *Done*. */
     val created: DeloadCreation? = null,
     val error: DataError? = null,
 ) {
     val canCreate: Boolean
-        get() = !isLoading && !creating && created == null && dayCount > 0 && selectedExerciseCount > 0
+        get() = !isLoading && !loadFailed && !creating && created == null && dayCount > 0 &&
+            selectedExerciseCount > 0
 
     /** True when the program plans nothing a deload could be made of (N147). */
-    val hasNothingToBuild: Boolean get() = !isLoading && maxDays == 0
+    val hasNothingToBuild: Boolean get() = !isLoading && !loadFailed && maxDays == 0
+
+    /** Whether the create bar belongs on screen: a loaded draft, not the success or a failure (B164). */
+    val showsCreateBar: Boolean get() = !isLoading && !loadFailed && created == null && !hasNothingToBuild
 }
 
 /**
@@ -87,7 +94,7 @@ data class DeloadCreatorUiState(
 @HiltViewModel
 class ProgramDeloadViewModel @Inject constructor(
     private val deloadRepository: DeloadRepository,
-    private val loader: DeloadSourceLoader,
+    private val loader: DeloadSourceReader,
     timeSource: TimeSource,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -120,23 +127,35 @@ class ProgramDeloadViewModel @Inject constructor(
     }
 
     private suspend fun load() {
-        val snapshot = loader.load(programId, weekStart)
-        if (snapshot == null) {
-            _state.update { it.copy(isLoading = false, error = DataError.NotFound) }
-            return
+        when (val read = dataResultOf { loader.load(programId, weekStart) }) {
+            is DataResult.Failure -> {
+                // A read that fails is not "this program plans nothing" (N147): keep the failure apart so
+                // the screen can say the plan could not be read rather than offering an empty draft.
+                _state.update { it.copy(isLoading = false, loadFailed = true, error = read.error) }
+            }
+
+            is DataResult.Success -> {
+                val snapshot = read.data
+                if (snapshot == null) {
+                    _state.update { it.copy(isLoading = false, error = DataError.NotFound) }
+                    return
+                }
+                sources = snapshot.days
+                selectedIds = snapshot.days
+                    .flatMap { day -> day.exercises.map { it.templateExerciseId } }
+                    .toSet()
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        programName = snapshot.programName,
+                        maxDays = snapshot.days.size,
+                        dayCount = snapshot.days.size,
+                        hasExistingPlan = snapshot.hasExistingPlan,
+                    )
+                }
+                rebuild()
+            }
         }
-        sources = snapshot.days
-        selectedIds = snapshot.days.flatMap { day -> day.exercises.map { it.templateExerciseId } }.toSet()
-        _state.update {
-            it.copy(
-                isLoading = false,
-                programName = snapshot.programName,
-                maxDays = snapshot.days.size,
-                dayCount = snapshot.days.size,
-                hasExistingPlan = snapshot.hasExistingPlan,
-            )
-        }
-        rebuild()
     }
 
     /** Ticks or unticks one planned exercise (N147). */

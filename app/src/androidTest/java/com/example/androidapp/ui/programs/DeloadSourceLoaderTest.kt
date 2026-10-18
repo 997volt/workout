@@ -54,7 +54,7 @@ class DeloadSourceLoaderTest {
     private lateinit var programs: RoomProgramRepository
     private lateinit var templates: RoomTemplateRepository
     private lateinit var deloads: RoomDeloadRepository
-    private lateinit var loader: DeloadSourceLoader
+    private lateinit var loader: RoomDeloadSourceLoader
 
     private val clock = TimeSource { Instant.parse("2026-10-07T12:00:00Z") }
     private val monday = LocalDate.of(2026, 10, 5)
@@ -73,7 +73,7 @@ class DeloadSourceLoaderTest {
         deloads = RoomDeloadRepository(database, clock)
         val settings = PreferencesSettingsRepository(ApplicationProvider.getApplicationContext())
         runTest { settings.setWeightUnit(WeightUnit.KILOGRAMS) }
-        loader = DeloadSourceLoader(
+        loader = RoomDeloadSourceLoader(
             programRepository = programs,
             templateRepository = templates,
             workoutRepository = RoomWorkoutRepository(database, clock, ZoneOffsetSource { 0 }),

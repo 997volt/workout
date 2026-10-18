@@ -107,7 +107,8 @@ fun ProgramDeloadScreen(
     onDismissError: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    val errorText = state.error?.let { dataErrorMessage(it) }
+    // A failed load has its own persistent message, so the generic storage wording is not shown twice (B164).
+    val errorText = state.error?.takeUnless { state.loadFailed }?.let { dataErrorMessage(it) }
     MessageSnackbar(errorText, snackbarHostState, onDismissError)
 
     Scaffold(
@@ -155,7 +156,7 @@ private fun DeloadCreateBar(
     state: DeloadCreatorUiState,
     onCreate: () -> Unit,
 ) {
-    if (state.created != null || state.isLoading || state.hasNothingToBuild) return
+    if (!state.showsCreateBar) return
     Surface(tonalElevation = 3.dp) {
         Button(
             onClick = onCreate,
@@ -184,6 +185,12 @@ private fun DeloadStates(
     when {
         state.isLoading -> CenteredMessage(
             text = stringResource(R.string.programs_loading),
+            modifier = modifier,
+        )
+
+        state.loadFailed -> CenteredMessage(
+            text = stringResource(R.string.deload_load_failed),
+            hint = stringResource(R.string.deload_load_failed_hint),
             modifier = modifier,
         )
 

@@ -893,6 +893,8 @@
     <string name="deload_existing">This week already has a deload. Building it again replaces its days; the older workouts stay in the library.</string>
     <string name="deload_no_slots">This program has no workouts to deload.</string>
     <string name="deload_no_slots_hint">Add a workout to the program first.</string>
+    <string name="deload_load_failed">Couldn’t read this program’s plan.</string>
+    <string name="deload_load_failed_hint">Go back and try again.</string>
     <string name="deload_day">Day %1$d</string>
     <string name="deload_weekday">Change the day for %1$s</string>
     <string name="deload_no_weekday">No day</string>

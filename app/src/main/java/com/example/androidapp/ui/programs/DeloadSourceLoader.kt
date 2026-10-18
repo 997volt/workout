@@ -24,22 +24,26 @@ import javax.inject.Singleton
  * constructor stays the four dependencies the screen has rather than the five repositories this read
  * happens to touch.
  */
-@Singleton
-class DeloadSourceLoader @Inject constructor(
-    private val programRepository: ProgramRepository,
-    private val templateRepository: TemplateRepository,
-    private val workoutRepository: WorkoutRepository,
-    private val deloadRepository: DeloadRepository,
-    private val settingsRepository: SettingsRepository,
-) {
-
+interface DeloadSourceReader {
     /**
      * The program's days as the creator reads them, or null when the program is gone (N147).
      *
      * A slot whose template plans no exercises is not a day: there is nothing to tick, and a day that
      * writes an empty workout would be a plan the lifter has to clean up.
      */
-    suspend fun load(programId: String, weekStart: LocalDate): DeloadSourceSnapshot? {
+    suspend fun load(programId: String, weekStart: LocalDate): DeloadSourceSnapshot?
+}
+
+@Singleton
+class RoomDeloadSourceLoader @Inject constructor(
+    private val programRepository: ProgramRepository,
+    private val templateRepository: TemplateRepository,
+    private val workoutRepository: WorkoutRepository,
+    private val deloadRepository: DeloadRepository,
+    private val settingsRepository: SettingsRepository,
+) : DeloadSourceReader {
+
+    override suspend fun load(programId: String, weekStart: LocalDate): DeloadSourceSnapshot? {
         val program = programRepository.observeProgram(programId).first() ?: return null
         val appUnit = settingsRepository.observeWeightUnit().first()
         val slots = programRepository.observeSlots(programId).first().sortedBy { it.position }

@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.DeloadSetTarget
 import com.example.androidapp.domain.repository.DeloadCreation
@@ -19,6 +20,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -238,6 +240,24 @@ class ProgramDeloadScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.Deload.DONE).performClick()
         assertThat(done).isTrue()
+    }
+
+    @Test
+    fun aFailedRead_saysSo_ratherThanClaimingTheProgramIsEmpty() {
+        // ROADMAP B164: a storage failure is not an empty program.
+        setScreen(
+            ready.copy(
+                isLoading = false,
+                loadFailed = true,
+                days = emptyList(),
+                maxDays = 0,
+                dayCount = 0,
+                error = DataError.Storage(IOException("disk")),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Couldn’t read this program’s plan.").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Deload.CREATE).assertDoesNotExist()
     }
 
     @Test

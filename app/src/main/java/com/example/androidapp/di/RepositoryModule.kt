@@ -22,6 +22,8 @@ import com.example.androidapp.domain.repository.StatisticsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TrendsRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
+import com.example.androidapp.ui.programs.DeloadSourceReader
+import com.example.androidapp.ui.programs.RoomDeloadSourceLoader
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -85,6 +87,11 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindDeloadRepository(impl: RoomDeloadRepository): DeloadRepository
+
+    /** The creator's one read, behind an interface so a failing read can be tested (B164). */
+    @Binds
+    @Singleton
+    abstract fun bindDeloadSourceReader(impl: RoomDeloadSourceLoader): DeloadSourceReader
 
     /** Backup/restore is a repository like any other (P1.12). */
     @Binds
