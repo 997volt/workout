@@ -248,7 +248,9 @@ private fun StatisticsBody(
             // Under the goal, because the rate is now *derived* from it rather than typed beside it
             // (N135): it is the same fact read at the speed the goal asks for.
             EnergyAdjustmentSection(
-                series = series,
+                // The statement is a verdict, not a drawing: it reads the whole series so the chart's range
+                // (seven days by default) cannot silence it below N98's 21-day floor (B141).
+                series = MetricSeries(key = series.key, readings = state.goalReadings),
                 metric = entry,
                 weightGoal = state.weightGoal,
                 rateTarget = state.rateTarget,

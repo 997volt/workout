@@ -63,10 +63,15 @@ unreleased.
 - **The creator's failed read says so** (B164). A storage failure escaped the screen's error channel and fell
   through to *this program has no workouts*. The read now returns through `dataResultOf`, and a distinct state
   says the plan could not be read, with no create bar.
+- **The energy statement reads the whole weight series.** It was fed the chart's range, so on the default
+  last-seven-days it could not meet N98's eight-readings-over-21-days floor and always said *Not enough weigh-ins
+  yet*, even when the weigh-in verdict — which reads the whole series — could speak. The verdict now uses the
+  unwindowed series; the chart keeps its range. (No roadmap row: found while implementing N149.)
 - **An activity is named on its history page** (B167). The list row named the activity and still appended *0 sets*;
   opening it showed *0 sets · 0 kg* and never said what the session was. The row now drops the set count for an
   activity, the detail's title is its name, and its totals are the duration and the activity rather than two
-  zeroes.
+  zeroes. History search follows the same rule: it no longer matches the set count an activity's row does not
+  show.
 
 ## [2.7] — 2026-10-18 (versionCode 27)
 

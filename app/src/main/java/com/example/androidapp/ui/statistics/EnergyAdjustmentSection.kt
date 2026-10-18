@@ -25,6 +25,11 @@ import com.example.androidapp.ui.components.TestTags
  * the trend belong to — and one that had to be expanded to be read would be hidden behind the thing it exists
  * to act on.
  *
+ * **The statement reads the whole weight series, not the chart's window.** A verdict must not change with a
+ * display setting (B141), and the default seven-day range would otherwise sit below N98's eight-readings-over-
+ * 21-days floor, so the section could never speak. The chart and the readings stay windowed; only the verdict
+ * moves.
+ *
  * **The rate is derived, and this row shows it** (N135). It used to be a second number the lifter typed beside
  * the target, which is exactly the pair that could disagree; now the goal states what is wanted and the rate
  * follows from it and the weight the lifter is now, so there is nothing here to press — the goal row above is

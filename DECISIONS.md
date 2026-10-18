@@ -627,8 +627,10 @@ the rule; that one argues it.
   will** — the nutrition non-goal is a line rather than a backlog — so what it gives is a *relative* change
   ("about 200 kcal a day less than you are eating now") and the absolute target stays where the food is logged.
   **The band is measured, never assumed**: it is the fitted line's own standard error, null below three
-  readings because a line through two points passes through both and every residual is zero. **Nothing is said
-  until there is enough to say it** — eight readings across twenty-one days — and below that the screen says so
+  readings because a line through two points passes through both and every residual is zero. **The statement
+  reads the whole weight series**: the chart's range is a display setting and its seven-day default is below the
+  floor, so a verdict that used it could never speak (B141's rule). **Nothing is said until there is enough to
+  say it** — eight readings across twenty-one days — and below that the screen says so
   rather than drawing a figure from noise, which is P2.8's bar. **Nothing is written**: the statement sets no
   setting, no plan and no target, which is the app's oldest rule reaching a second surface.
 
@@ -1100,8 +1102,9 @@ the rule; that one argues it.
 - **A query searches what a row says, not what is behind it** (N146). The history list is a SQL projection of
   totals and a template name, chosen so a year of training costs one query; reaching an exercise name would mean
   loading every set of every session, which is the cost the projection exists to avoid. So a query matches the
-  month a row is grouped under, the plan it was started from, the activity it was, and its set count — and the
-  field's own hint names those four, because a search that silently cannot do what its placeholder suggests is
+  month a row is grouped under, the plan it was started from, the activity it was, and a workout's set count —
+  an activity's row prints none (B167), so the query does not reach one either — and the field's own hint names
+  those four, because a search that silently cannot do what its placeholder suggests is
   worse than a shorter list of things it can. Both the query and the row are compared with the whitespace and
   underscores removed: `ROCK_CLIMBING` is what a lifter calls *rock climbing*, and the row's label is a string
   resource the ViewModel may not read.

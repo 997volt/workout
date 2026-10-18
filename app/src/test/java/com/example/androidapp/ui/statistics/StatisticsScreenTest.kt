@@ -39,6 +39,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
+import java.time.Duration
 import java.time.Instant
 
 /** What the Statistics screen offers (ROADMAP N35). */
@@ -609,6 +610,28 @@ class StatisticsScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET)
             .assertTextEquals("−0.262 kg per week")
+    }
+
+    @Test
+    fun theEnergyStatement_readsTheWholeSeries_ratherThanTheChartWindow() {
+        // The chart can be showing seven days while the whole series has the eight readings over 21 days N98
+        // requires. The verdict must speak, or the default range silences it by construction (B141).
+        val whole = (0L..7L).map { week ->
+            MetricReading(
+                Instant.parse("2026-09-01T08:00:00Z").plus(Duration.ofDays(week * 7)),
+                80_000.0 - 520.0 * week,
+            )
+        }
+        setScreen(
+            state = stateWithGoal(WeightGoal.Direction(gain = false)).copy(
+                goalReadings = whole,
+                rateTarget = -520.0,
+                rateBand = (-640.0)..(-400.0),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_STATEMENT)
+            .assertTextEquals("Your trend is where you asked it to be")
     }
 
     @Test

@@ -10,8 +10,9 @@ import java.util.Locale
  * **Searched on what the row says**, which is deliberate: the list is a projection of totals and a template
  * name, so a query cannot reach an exercise name without loading every set of every session — the cost the
  * projection exists to avoid. What it can reach is the month the row is grouped under, the plan it was started
- * from, what kind of day it was, and its set count — and those are what a lifter scanning a log has in front of
- * them. "cycling" and "push" both land.
+ * from, what kind of day it was, and a workout's set count — and those are what a lifter scanning a log has in
+ * front of them. "cycling" and "push" both land. An activity's row prints no set count (B167), so the query
+ * does not reach one: a search must not find a row by a word the row does not show.
  *
  * Pure and file-level, like the grouping it wraps, so the matching rules are unit-tested rather than driven
  * through a screen.
@@ -42,7 +43,7 @@ internal fun historyGroups(
         }
 }
 
-/** What a row is searched by: the month above it, what it was, and its set count. */
+/** What a row is searched by: the month above it, what it was, and a workout's set count. */
 private fun WorkoutSummary.searchWords(month: String): String = buildString {
     append(month)
     append(' ')
@@ -51,8 +52,12 @@ private fun WorkoutSummary.searchWords(month: String): String = buildString {
     append(activity?.name.orEmpty())
     append(' ')
     append(templateName.orEmpty())
-    append(' ')
-    append(setCount)
+    // A workout's set count is on its row; an activity's row prints none (B167), so searching it would find a
+    // row by a word that is not on it (N146).
+    if (activity == null) {
+        append(' ')
+        append(setCount)
+    }
 }.searchKey(Locale.getDefault())
 
 /**

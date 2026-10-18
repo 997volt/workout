@@ -152,6 +152,27 @@ class HistorySearchTest {
         assertThat(groups.flatMap { it.workouts }).hasSize(2)
     }
 
+    @Test
+    fun aSetCount_isSearchedOnlyOnTheRowThatShowsIt() {
+        // B167: an activity's row prints no set count, so a query must not find it by one.
+        val swimWithSets = summary(
+            id = "swim-with-sets",
+            at = "2026-09-22T07:00:00Z",
+            activity = Activity.SWIMMING,
+            setCount = 12,
+        )
+
+        val groups = historyGroups(
+            workouts = listOf(squatDay, swimWithSets),
+            query = "12",
+            filter = HistoryFilter.ALL,
+            zone = zone,
+            locale = locale,
+        )
+
+        assertThat(groups.flatMap { it.workouts }.map { it.id }).containsExactly("squat")
+    }
+
     private val squatDay = summary(
         id = "squat",
         at = "2026-09-28T07:00:00Z",

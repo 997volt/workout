@@ -2044,7 +2044,11 @@ would be a second band around a band.
 
 **The derived rate is a share of the body *now*, which is why it is computed from the unwindowed series.** The
 chart is windowed by the chosen range; the rate is not, because a range that excluded the latest weigh-in would
-change the rate the goal asks for — and the goal did not change.
+change the rate the goal asks for — and the goal did not change. **The energy statement uses the same unwindowed
+series**, for the same reason applied to a verdict: at the default seven days it sat below N98's
+eight-readings-over-21-days floor by construction, so it could not speak even when the weigh-in verdict could.
+The chart and the readings stay windowed; only the statement moves. (No roadmap row: found while implementing
+N149.)
 
 ## N136
 
@@ -2205,7 +2209,8 @@ appended "0 sets" and opening it went to the workout detail, whose header shows 
 was the date — a swim read as a workout somebody forgot to log. The set count is a true fact about a session and
 a meaningless one about an activity, so the row drops it; the detail takes the session's activity as its title,
 keeps the date beneath it, and replaces the set/volume totals with the activity and the duration. Both are
-covered by screen tests. (B167)
+covered by screen tests. The search follows the same rule: it no longer matches an activity's set count, because
+the row it searches no longer shows one. (B167)
 
 ## N147
 
