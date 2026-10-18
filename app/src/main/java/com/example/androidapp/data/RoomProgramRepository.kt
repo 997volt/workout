@@ -34,7 +34,6 @@ import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.RecordedSkip
 import com.example.androidapp.domain.model.RecordedSubstitution
 import com.example.androidapp.domain.model.WorkoutProgram
-import com.example.androidapp.domain.model.deloadPendingOccurrences
 import com.example.androidapp.domain.model.programRun
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.ProgramImportSummary
@@ -307,10 +306,10 @@ class RoomProgramRepository @Inject constructor(
                 )
             }
 
-        // A week the creator built prescribes its own days, so the question is asked about those
-        // rather than the slots they replaced (ROADMAP N147). A marked week with no plan is P3.10's
-        // own shape and keeps asking about the slots.
-        val deloadDays = deloadDao.findDeloadDaysForWeek(weekStart.toEpochDay()).groupBy { it.programId }
+        // A built deload week has its own days, which are not asked about (B163): the week is exempt
+        // and a day keyed to it has no slot a skip could be recorded against. A marked week with no plan
+        // is P3.10's own shape and keeps asking about the slots.
+        val builtWeeks = deloadDao.findDeloadDaysForWeek(weekStart.toEpochDay()).map { it.programId }.toSet()
 
         // The union of every active program's misses (P3.12). Each program is resolved on its
         // own slots — a session settles an occurrence by its template, so the same session list
@@ -318,18 +317,14 @@ class RoomProgramRepository @Inject constructor(
         // own order breaking a tie on the same day.
         val pending = mutableListOf<PendingOccurrence>()
         active.forEach { program ->
-            val plannedDays = deloadDays[program.id].orEmpty().map { it.toDomain() }
-            pending += if (plannedDays.isNotEmpty()) {
-                deloadPendingOccurrences(days = plannedDays, sessions = sessions, today = today)
-            } else {
-                ProgramSchedule.pendingOccurrences(
-                    slots = dao.findSlotDetails(program.id).map { it.toDomain() },
-                    sessions = sessions,
-                    skips = skips,
-                    today = today,
-                    substitutions = substitutions,
-                )
-            }
+            if (program.id in builtWeeks) return@forEach
+            pending += ProgramSchedule.pendingOccurrences(
+                slots = dao.findSlotDetails(program.id).map { it.toDomain() },
+                sessions = sessions,
+                skips = skips,
+                today = today,
+                substitutions = substitutions,
+            )
         }
         pending.sortedBy { it.date }
     }

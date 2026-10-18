@@ -157,57 +157,6 @@ class ProgramStartGateViewModelTest {
     }
 
     @Test
-    fun continuingPastADeloadDay_recordsNoSkip_becauseItHasNoSlot() = runTest(dispatcher) {
-        // ROADMAP N147: a built deload week's own day is keyed to the week, not to a slot, so the
-        // prompt can ask about it but nothing can be recorded as a skip against it.
-        val repository = FakeProgramRepository().apply {
-            pending = listOf(
-                PendingOccurrence(
-                    slotId = null,
-                    templateId = "deload-template",
-                    templateName = "Push — deload",
-                    weekday = DayOfWeek.TUESDAY,
-                    date = monday.plusDays(1),
-                ),
-            )
-        }
-        val viewModel = viewModel(repository)
-        viewModel.requestStart(StartIntent(templateId = "bench", label = "Bench"))
-        advanceUntilIdle()
-
-        viewModel.onContinue()
-        advanceUntilIdle()
-
-        assertThat(repository.skipped.flatMap { it.first }).isEmpty()
-        assertThat(viewModel.started.value).isEqualTo(StartIntent(templateId = "bench", label = "Bench"))
-    }
-
-    @Test
-    fun doingADeloadDayNow_startsIt_withNoSlot() = runTest(dispatcher) {
-        // ROADMAP N147: a deload day is keyed to the week, so the start carries no slot for the
-        // prefill history to read — the template's own plan is what it uses.
-        val repository = FakeProgramRepository().apply {
-            pending = listOf(
-                PendingOccurrence(
-                    slotId = null,
-                    templateId = "deload-template",
-                    templateName = "Push — deload",
-                    weekday = DayOfWeek.TUESDAY,
-                    date = monday.plusDays(1),
-                ),
-            )
-        }
-        val viewModel = viewModel(repository)
-        viewModel.requestStart(StartIntent(templateId = "bench", label = "Bench"))
-        advanceUntilIdle()
-
-        viewModel.onDoItNow()
-
-        assertThat(viewModel.started.value)
-            .isEqualTo(StartIntent(templateId = "deload-template", label = "Push — deload"))
-    }
-
-    @Test
     fun aFailedSkip_stillStarts_theWorkoutAndReports() = runTest(dispatcher) {
         val repository = FakeProgramRepository().apply {
             pending = twoMisses()

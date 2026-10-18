@@ -24,7 +24,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -114,27 +113,14 @@ class DeloadRepositoryTest {
     }
 
     @Test
-    fun aBuiltWeek_isWhatTheMissedDayQuestionAsksAbout() = runTest {
-        // The slots are replaced for the week: Monday's own workout is not what was scheduled, the
-        // deload day is.
-        val created = createDay("Heavy lower — deload", DayOfWeek.MONDAY)
+    fun aBuiltWeek_isNotAskedAbout_byTheStartQuestion() = runTest {
+        // B163: the week is exempt and a deload day has no slot a skip could record, so the prompt
+        // does not ask about a built week at all. The slots it replaced are not the week's schedule.
+        createDay("Heavy lower — deload", DayOfWeek.MONDAY)
 
         val pending = programs.pendingOccurrences(today, utc).getOrNull().orEmpty()
 
-        assertEquals(1, pending.size)
-        assertEquals(created.templateIds.single(), pending.single().templateId)
-        assertEquals("Heavy lower — deload", pending.single().templateName)
-        assertNull("a deload day is keyed to the week, not a slot", pending.single().slotId)
-    }
-
-    @Test
-    fun aStartedDeloadDay_silencesTheQuestion() = runTest {
-        val created = createDay("Heavy lower — deload", DayOfWeek.MONDAY)
-        insertSession("s1", "2026-10-06T09:00:00Z", created.templateIds.single(), finished = false)
-
-        val pending = programs.pendingOccurrences(today, utc).getOrNull().orEmpty()
-
-        assertTrue("a start silences the day even before it is finished", pending.isEmpty())
+        assertTrue("a built week has nothing to prompt about", pending.isEmpty())
     }
 
     @Test

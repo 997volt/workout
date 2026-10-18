@@ -157,9 +157,7 @@ class ProgramStartGateViewModel @Inject constructor(
         clearPrompt()
         viewModelScope.launch {
             val recorded = programs.skipOccurrences(
-                // A deload week's own day has no slot to skip (ROADMAP N147): the week is exempt from
-                // the ratio anyway, so only the scheduled slots are recorded.
-                slotIds = current.occurrences.mapNotNull { it.slotId },
+                slotIds = current.occurrences.map { it.slotId },
                 weekStart = current.weekStart,
             )
             if (recorded is DataResult.Failure) _error.value = recorded.error

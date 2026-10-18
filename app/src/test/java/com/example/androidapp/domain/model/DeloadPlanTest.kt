@@ -2,10 +2,6 @@ package com.example.androidapp.domain.model
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
-import java.time.DayOfWeek
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
 
 /**
  * The deload week's arithmetic (ROADMAP N147).
@@ -198,89 +194,5 @@ class DeloadPlanTest {
         )
 
         assertThat(targets.single().weightGrams).isEqualTo(60_000L)
-    }
-
-    @Test
-    fun aSessionFromADeloadDay_settlesIt() {
-        // P3.3's rule: a start silences the day, finished or not, and the session's own week counts.
-        val day = DeloadDay(
-            id = "d1",
-            programId = "p1",
-            templateId = "t1",
-            templateName = "Heavy lower — deload",
-            weekday = DayOfWeek.MONDAY,
-            position = 0,
-        )
-        val today = LocalDate.of(2026, 10, 7) // Wednesday
-        val session = ProgramSession(
-            sessionId = "s1",
-            templateId = "t1",
-            startedAt = Instant.parse("2026-10-05T18:00:00Z"),
-            zone = ZoneOffset.UTC,
-        )
-
-        val pending = deloadPendingOccurrences(listOf(day), listOf(session), today)
-
-        assertThat(pending).isEmpty()
-    }
-
-    @Test
-    fun anUnresolvedPastDay_isPending_withNoSlot() {
-        val days = listOf(
-            DeloadDay(
-                id = "d1",
-                programId = "p1",
-                templateId = "t1",
-                templateName = "Heavy lower — deload",
-                weekday = DayOfWeek.MONDAY,
-                position = 0,
-            ),
-            DeloadDay(
-                id = "d2",
-                programId = "p1",
-                templateId = "t2",
-                templateName = "Push — deload",
-                weekday = DayOfWeek.FRIDAY,
-                position = 1,
-            ),
-            DeloadDay(
-                id = "d3",
-                programId = "p1",
-                templateId = "t3",
-                templateName = "No day",
-                weekday = null,
-                position = 2,
-            ),
-        )
-
-        val pending = deloadPendingOccurrences(days, emptyList(), LocalDate.of(2026, 10, 7))
-
-        // Monday has passed; Friday has not; the order-only day can never be missed.
-        assertThat(pending).hasSize(1)
-        assertThat(pending.single().templateId).isEqualTo("t1")
-        assertThat(pending.single().slotId).isNull()
-        assertThat(pending.single().date).isEqualTo(LocalDate.of(2026, 10, 5))
-    }
-
-    @Test
-    fun aSessionFromAnotherWeek_doesNotSettleThisOne() {
-        val day = DeloadDay(
-            id = "d1",
-            programId = "p1",
-            templateId = "t1",
-            templateName = "Heavy lower — deload",
-            weekday = DayOfWeek.MONDAY,
-            position = 0,
-        )
-        val otherWeek = ProgramSession(
-            sessionId = "s1",
-            templateId = "t1",
-            startedAt = Instant.parse("2026-09-28T18:00:00Z"),
-            zone = ZoneOffset.UTC,
-        )
-
-        val pending = deloadPendingOccurrences(listOf(day), listOf(otherWeek), LocalDate.of(2026, 10, 7))
-
-        assertThat(pending).hasSize(1)
     }
 }
