@@ -1,5 +1,9 @@
 package com.example.androidapp.domain.model
 
+import java.time.LocalDate
+import kotlin.math.abs
+import kotlin.math.ceil
+
 /**
  * What a lifter wants their bodyweight to do (ROADMAP N135).
  *
@@ -157,6 +161,37 @@ fun WeightGoal.ratePerWeekGrams(currentWeightGrams: Long): Double? {
         is WeightGoal.Direction -> rateOn(currentWeightGrams, gain)
         is WeightGoal.Maintain -> null
     }
+}
+
+/** A single Target goal is within this of its weight, the tolerance the goal history already uses. */
+private const val TARGET_REACHED_TOLERANCE_GRAMS = MAINTENANCE_CORRIDOR_GRAMS
+
+private const val DAYS_PER_WEEK = 7.0
+
+/** True when a Target goal's weight is already within the goal history's tolerance (N151). */
+fun WeightGoal.isTargetReached(currentWeightGrams: Long): Boolean =
+    this is WeightGoal.Target && currentWeightGrams > 0L &&
+        abs(weightGrams - currentWeightGrams) <= TARGET_REACHED_TOLERANCE_GRAMS
+
+/**
+ * The date a Target goal reaches its weight at the rate the goal asks for, or null (N151).
+ *
+ * **The date is what the rate implies, never the input**: N135 refuses a rate derived from a deadline, so this
+ * is the same arithmetic read the other way. A target already within the goal history's tolerance has no date —
+ * it is reached — and a direction or maintenance goal has no level to reach. The current rate is used unchanged
+ * for the whole estimate; the number of weeks it implies is rounded up, because a date reached slightly late is
+ * a worse answer than one reached slightly early, and the caller words it as *around*.
+ */
+fun WeightGoal.targetDateEstimate(currentWeightGrams: Long, today: LocalDate): LocalDate? {
+    if (this !is WeightGoal.Target || currentWeightGrams <= 0L || isTargetReached(currentWeightGrams)) {
+        return null
+    }
+    return ratePerWeekGrams(currentWeightGrams)
+        ?.takeIf { it != 0.0 }
+        ?.let { rate ->
+            val weeks = abs(weightGrams - currentWeightGrams) / abs(rate)
+            today.plusDays(ceil(weeks * DAYS_PER_WEEK).toLong())
+        }
 }
 
 /** The stated target for one direction, in stored grams a week, clamped into that direction's band. */

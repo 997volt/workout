@@ -2,6 +2,7 @@ package com.example.androidapp.domain.model
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import java.time.LocalDate
 import kotlin.math.abs
 
 /**
@@ -62,6 +63,38 @@ class WeightGoalTest {
         val large = WeightGoal.Direction(gain = false).ratePerWeekGrams(100_000L)!!
 
         assertThat(abs(large)).isEqualTo(abs(small) * 2)
+    }
+
+    @Test
+    fun aTargetEstimatesTheDateItsRateImplies() {
+        // N151: the rate is the input, the date the output. 80 -> 75 kg at 520 g/week is 68 days.
+        val today = LocalDate.of(2026, 10, 18)
+
+        val losing = WeightGoal.Target(75_000L).targetDateEstimate(80_000L, today)
+        val gaining = WeightGoal.Target(85_000L).targetDateEstimate(80_000L, today)
+
+        assertThat(losing).isEqualTo(today.plusDays(68))
+        assertThat(gaining).isEqualTo(today.plusDays(125))
+    }
+
+    @Test
+    fun aTargetWithinTheGoalTolerance_isReached_ratherThanDated() {
+        // The goal history's own tolerance: 0.5 kg away is reached, not "two weeks".
+        val today = LocalDate.of(2026, 10, 18)
+        val target = WeightGoal.Target(80_500L)
+
+        assertThat(target.isTargetReached(80_000L)).isTrue()
+        assertThat(target.targetDateEstimate(80_000L, today)).isNull()
+    }
+
+    @Test
+    fun onlyATargetHasADate() {
+        val today = LocalDate.of(2026, 10, 18)
+
+        assertThat(WeightGoal.Direction(gain = false).targetDateEstimate(80_000L, today)).isNull()
+        assertThat(WeightGoal.Maintain(80_000L).targetDateEstimate(80_000L, today)).isNull()
+        assertThat(WeightGoal.Direction(gain = false).isTargetReached(80_000L)).isFalse()
+        assertThat(WeightGoal.Target(75_000L).targetDateEstimate(0L, today)).isNull()
     }
 
     @Test

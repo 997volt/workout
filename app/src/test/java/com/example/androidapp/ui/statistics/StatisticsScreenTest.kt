@@ -41,6 +41,7 @@ import org.junit.runner.RunWith
 import java.io.IOException
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
 
 /** What the Statistics screen offers (ROADMAP N35). */
 @RunWith(AndroidJUnit4::class)
@@ -610,6 +611,33 @@ class StatisticsScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET)
             .assertTextEquals("−0.262 kg per week")
+    }
+
+    @Test
+    fun aTargetWeight_saysAroundWhen() {
+        // N151: the date is the rate's implication, not a deadline the rate was derived from.
+        setScreen(
+            state = stateWithGoal(WeightGoal.Target(75_000L)).copy(
+                rateTarget = -520.0,
+                rateBand = (-640.0)..(-400.0),
+                targetDate = LocalDate.of(2026, 12, 25),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_DATE)
+            .assertTextEquals("Around Dec 25, 2026")
+    }
+
+    @Test
+    fun aReachedTarget_saysSo_ratherThanDatingIt() {
+        setScreen(
+            state = stateWithGoal(WeightGoal.Target(80_500L)).copy(
+                targetReached = true,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_DATE)
+            .assertTextEquals("Target reached")
     }
 
     @Test

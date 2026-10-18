@@ -16,6 +16,9 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.model.MAINTENANCE_CORRIDOR_GRAMS
 import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.history.HistoryFormat
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * What a weight trend implies about eating, and the rate it is measured against (ROADMAP N98, N135).
@@ -48,6 +51,10 @@ fun EnergyAdjustmentSection(
     rateTarget: Double?,
     modifier: Modifier = Modifier,
     rateBand: ClosedRange<Double>? = null,
+    /** The date a Target goal's rate implies, or null (N151). */
+    targetDate: LocalDate? = null,
+    /** True when that target is already reached, so the row says so instead of dating it (N151). */
+    targetReached: Boolean = false,
 ) {
     if (metric.key != MetricKey.Body(BodyMetric.WEIGHT)) return
 
@@ -70,6 +77,9 @@ fun EnergyAdjustmentSection(
                 modifier = Modifier.testTag(TestTags.Statistics.ENERGY_TARGET),
             )
         }
+
+        // A target's date is what its rate implies, never the input (N151). A reached target says so.
+        TargetDateLine(targetDate = targetDate, targetReached = targetReached)
 
         // The target is the number; this is the range that says whether the trend is on it (N149).
         rateBand?.let { band ->
@@ -99,6 +109,32 @@ fun EnergyAdjustmentSection(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+/** The date a target's rate implies, or the line that says the target is already reached (N151). */
+@Composable
+private fun TargetDateLine(targetDate: LocalDate?, targetReached: Boolean) {
+    when {
+        targetReached -> Text(
+            text = stringResource(R.string.statistics_target_reached),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.testTag(TestTags.Statistics.ENERGY_TARGET_DATE),
+        )
+
+        targetDate != null -> {
+            val zone = ZoneId.systemDefault()
+            Text(
+                text = stringResource(
+                    R.string.statistics_target_around,
+                    HistoryFormat.date(targetDate.atStartOfDay(zone).toInstant(), zone),
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag(TestTags.Statistics.ENERGY_TARGET_DATE),
+            )
+        }
     }
 }
 

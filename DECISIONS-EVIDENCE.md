@@ -2328,3 +2328,26 @@ verdict — a number that looks like a check while nothing enforces it.
 **Covered by** both directions' targets and bands, a target goal on each side, a loss and a gain outcome met,
 missed on the wrong side and missed as too fast, the ViewModel's rate and band for each direction, and the band's
 screen line.
+
+## N151
+
+The request was a small completion: the statistics row states a target's rate and the band it is judged against,
+but a lifter with a target weight still has to work out what that means in time. N135 already settled the rule
+that makes the answer legitimate — the rate is derived from the goal and the current weight, and a date, if
+wanted, is the *estimate* the rate implies, never its input.
+
+**The rate is the input and the date the output.** `targetDateEstimate` pins a target to a today and to the same
+`ratePerWeekGrams` the row already shows, divides the remaining weight by that weekly rate, and rounds the days
+*up*: a date that lands slightly early is a better estimate than one that lands late, and the row words it as
+*around*. **A reached target has no date**: within the same one-kilogram tolerance the goal history uses for a
+target, the row says *Target reached* instead. The tolerance is reused rather than invented, so the chart, the
+history and this line cannot disagree about whether the goal is met. A **direction-only** goal manufactures no
+end weight, so it has no date to estimate; **maintenance** is a corridor, not a level.
+
+**Rejected: storing a target date.** It would be a second answer to the goal, the pair N135 removed when it
+deleted the typed rate; the date is a consequence of the rate and the weight today, and both already change. The
+date is also **not a deadline**: nothing in the app schedules against it, and the rate is never shortened to fit
+it. ([N135](#n135))
+
+Covered by the domain test for both directions, reached and no-target cases; the ViewModel's date/reached state;
+and the screen's *Around* and *Target reached* lines.

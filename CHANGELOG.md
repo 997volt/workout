@@ -14,6 +14,16 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
+## [Unreleased]
+
+### Added
+
+- **A target weight says around when it will be reached** (N151). The statistics row stated the rate and the band
+  it is judged against, but a lifter with a target still had to divide to know what that meant in time. For a
+  `Target` goal it now says *Around <date>* — derived from the current weight and the stated rate, never the other
+  way round — and says *Target reached* once the weight is within the goal history's own tolerance. A
+  direction-only or maintenance goal shows no date, because it has no level to reach.
+
 ## [2.8] — 2026-10-18 (versionCode 28)
 
 The deload week can now be built, and the screens around it say what is actually planned or done: adherence

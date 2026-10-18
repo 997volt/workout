@@ -490,6 +490,32 @@ class StatisticsViewModelTest {
     }
 
     @Test
+    fun aTargetGoal_carriesItsDateOrItsReachedState() = runTest(dispatcher) {
+        // N151: a target at 75 kg reads a date; one within the goal tolerance of the current 80 kg reads reached.
+        val away = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            goals = mapOf("BODY:WEIGHT" to 75_000.0),
+            goalKinds = mapOf("BODY:WEIGHT" to WeightGoalKind.TARGET.name),
+            body = listOf(measurement(at = now, weight = 80_000L)),
+        )
+        observe(away)
+        advanceUntilIdle()
+        assertThat(away.uiState.value.targetDate).isNotNull()
+        assertThat(away.uiState.value.targetReached).isFalse()
+
+        val reached = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            goals = mapOf("BODY:WEIGHT" to 80_500.0),
+            goalKinds = mapOf("BODY:WEIGHT" to WeightGoalKind.TARGET.name),
+            body = listOf(measurement(at = now, weight = 80_000L)),
+        )
+        observe(reached)
+        advanceUntilIdle()
+        assertThat(reached.uiState.value.targetDate).isNull()
+        assertThat(reached.uiState.value.targetReached).isTrue()
+    }
+
+    @Test
     fun aGoalWithNoWeighInBehindIt_hasNoRateRatherThanAnInventedOne() = runTest(dispatcher) {
         val viewModel = viewModel(
             range = StatisticsRange(RangeKind.ALL),

@@ -866,6 +866,9 @@ object TestTags {
         /** The band the goal's trend is judged against (ROADMAP N149). */
         const val ENERGY_BAND = "statistics_energy_band"
 
+        /** The date a target weight's rate implies, or its reached line (ROADMAP N151). */
+        const val ENERGY_TARGET_DATE = "statistics_energy_target_date"
+
         /**
          * The weight goal's own row, its kind choices and its field (ROADMAP N135).
          *

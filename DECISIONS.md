@@ -653,7 +653,9 @@ the rule; that one argues it.
   lifter stated and never manufactures an end weight; **maintenance is a corridor**, ±1 kg around the stated
   weight, because a literal 0.0 kg/week is broken by the first glass of water and "hold within ±X" is what makes
   it a goal. A rate is **never derived from a deadline**: if a date is wanted, the band's rate gives the *estimate*
-  of the date, not the other way round. The rate is **derived, never typed**, so the statistics row shows it and
+  of the date, not the other way round — and the statistics row now shows that estimate for a target (N151),
+  saying *Target reached* once the weight is within the goal history's own tolerance. The rate is **derived,
+  never typed**, so the statistics row shows it and
   the band it is judged against rather than offering it for editing — rejected: keeping the two side by side,
   which is two sources that can disagree, the thing being fixed.
 

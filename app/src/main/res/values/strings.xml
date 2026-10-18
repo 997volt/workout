@@ -299,6 +299,8 @@
     <string name="statistics_goal_clear">Clear</string>
     <string name="statistics_per_week">%1$s %2$s per week</string>
     <string name="statistics_rate_band">On target between %1$s and %2$s %3$s per week</string>
+    <string name="statistics_target_around">Around %1$s</string>
+    <string name="statistics_target_reached">Target reached</string>
     <!-- N135: the weight goal's kind, which is what its rate is derived from. Only the weight metric
          states one, so these are beside the generic target above rather than replacing it. -->
     <string name="statistics_weight_goal">Weight goal</string>

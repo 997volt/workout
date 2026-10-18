@@ -16,9 +16,11 @@ import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TrendPoint
 import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.domain.model.isTargetReached
 import com.example.androidapp.domain.model.rateBandPerWeekGrams
 import com.example.androidapp.domain.model.ratePerWeekGrams
 import com.example.androidapp.domain.model.statedWeightGrams
+import com.example.androidapp.domain.model.targetDateEstimate
 import com.example.androidapp.domain.model.window
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.GoalPeriod
@@ -129,6 +131,14 @@ data class StatisticsUiState(
      * magnitude the screen has to re-sign.
      */
     val rateBand: ClosedRange<Double>? = null,
+    /**
+     * The date a single Target goal's rate implies, or null (N151).
+     *
+     * A reached target has no date; a direction or maintenance goal has no level to reach, so both are null.
+     */
+    val targetDate: LocalDate? = null,
+    /** True when a Target goal's weight is already within the goal history's tolerance (N151). */
+    val targetReached: Boolean = false,
     /**
      * Whether the chosen metric reads a head as a family (ROADMAP N97, B98, N110).
      *
@@ -398,6 +408,8 @@ class StatisticsViewModel @Inject constructor(
                     planTargets = plans,
                     rateTarget = weightGoal?.ratePerWeekGrams(currentWeightGrams ?: 0L),
                     rateBand = weightGoal?.rateBandPerWeekGrams(currentWeightGrams ?: 0L),
+                    targetDate = weightGoal?.targetDateEstimate(currentWeightGrams ?: 0L, today()),
+                    targetReached = weightGoal?.isTargetReached(currentWeightGrams ?: 0L) == true,
                     acceptsHead = sources.acceptsHead,
                 )
             }

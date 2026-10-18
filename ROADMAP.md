@@ -17,14 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Two follow-ons from 2.8's deload and goal work.** Both use data the app already has, need no schema change, and
-are a draft of a decision rather than new machinery: the creator can remember the last deload's choices, and a
-target weight can say roughly when.
+**A follow-on from 2.8's deload work.** It uses data the app already has, needs no schema change, and is a draft
+of a decision rather than new machinery: the creator can remember the last deload's choices.
 
 | # | Severity | What | Fix |
 | --- | --- | --- | --- |
 | N150 | low | **The creator does not remember the last deload's choices.** Every block starts from the program, so the exercises to keep, the weekdays and the load share are chosen again; the previous plan is stored in `program_deloads`/`program_deload_days`, but nothing reads it after its week. | Add a *Use last deload* action that prefills the choices from the most recent built plan before this week — the exercises it kept and the share, and its days/weekdays where the current program still offers them — then re-derives every set, rep and load from the current plan and previous session with the same pure rule. Keep the current-week rule and the one-write draft; test no prior plan, a changed program, and a reused plan. |
-| N151 | low | **A target weight has no date estimate.** The app states the target rate and the band it is judged against, but not what the rate means in time, so a lifter with a target has to do the division. N135 allows the estimate as long as it comes from the rate, never the other way round. | For a `Target` goal, show a rough *around <date>* from the current weight and the stated target, using the same `ratePerWeekGrams`; say *reached* when the target is met, and show nothing for a direction-only or maintenance goal. Keep the date out of the settings and the rate out of the date; test both directions, reached, and no goal. |
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself

@@ -255,6 +255,8 @@ private fun StatisticsBody(
                 weightGoal = state.weightGoal,
                 rateTarget = state.rateTarget,
                 rateBand = state.rateBand,
+                targetDate = state.targetDate,
+                targetReached = state.targetReached,
             )
         }
     }
