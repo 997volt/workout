@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -184,14 +185,61 @@ class DeloadRepositoryTest {
     }
 
     @Test
-    fun aFutureWeek_isRefused() = runTest {
-        val result = deloads.createDeload(
+    fun aWeekOtherThanTheCurrentOne_isRefused() = runTest {
+        // P3.10's no-forward-view rule, and the other end of it: a plan is built for the week being
+        // taken, not one that has passed. A creator left open across midnight must not write the old
+        // week (N147).
+        val future = deloads.createDeload(
             programId = program,
             weekStart = monday.plusWeeks(1),
             days = listOf(dayInput("Heavy lower — deload", DayOfWeek.MONDAY)),
         )
+        val past = deloads.createDeload(
+            programId = program,
+            weekStart = monday.minusWeeks(1),
+            days = listOf(dayInput("Heavy lower — deload", DayOfWeek.MONDAY)),
+        )
 
-        assertTrue(result is DataResult.Failure && result.error is DataError.Invalid)
+        assertTrue(future is DataResult.Failure && future.error is DataError.Invalid)
+        assertTrue(past is DataResult.Failure && past.error is DataError.Invalid)
+    }
+
+    @Test
+    fun aWeekWithTwoDays_writesBoth_inTheOrderTheyWereListed() = runTest {
+        val created = (
+            deloads.createDeload(
+                programId = program,
+                weekStart = monday,
+                days = listOf(
+                    dayInput("Heavy lower — deload", DayOfWeek.MONDAY),
+                    dayInput("Push — deload", DayOfWeek.WEDNESDAY),
+                ),
+            ) as DataResult.Success
+            ).data
+
+        assertEquals(2, created.dayCount)
+        assertNotEquals(created.templateIds[0], created.templateIds[1])
+
+        val plan = deloads.observeWeekPlans(monday).first().single { it.programId == program }
+        assertEquals(
+            listOf("Heavy lower — deload", "Push — deload"),
+            plan.days.map { it.templateName },
+        )
+        assertEquals(listOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY), plan.days.map { it.weekday })
+        assertEquals(listOf(0, 1), plan.days.map { it.position })
+    }
+
+    @Test
+    fun aWeekMarkedByHand_getsThePlanAttached_ratherThanASecondMark() = runTest {
+        // P3.10 can mark a week with no plan; the creator attaches to that mark rather than writing a
+        // second one, so the screen's toggle and the creator cannot disagree about the week (N147).
+        adherence.setDeloadWeek(program, monday, marked = true)
+
+        createDay("Heavy lower — deload", DayOfWeek.MONDAY)
+
+        assertEquals(1, database.programDeloadDao().countDeload(program, monday.toEpochDay()))
+        val plan = deloads.observeWeekPlans(monday).first().single { it.programId == program }
+        assertEquals(1, plan.days.size)
     }
 
     @Test

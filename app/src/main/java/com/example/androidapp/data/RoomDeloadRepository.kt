@@ -65,7 +65,7 @@ class RoomDeloadRepository @Inject constructor(
         val todayWeek = ProgramSchedule.weekStartOf(
             timeSource.now().atZone(ZoneId.systemDefault()).toLocalDate(),
         )
-        if (weekStart.isAfter(todayWeek)) {
+        if (weekStart != todayWeek) {
             throw InvalidInputException("A deload week starts with this week.")
         }
 
