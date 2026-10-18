@@ -1,9 +1,9 @@
 # Import helper — specification
 
-> **Status: planned as [N159](ROADMAP.md), and not built.** Nothing in this repository implements it yet.
-> When the tool ships, its durable rules (the format conventions and the import semantics it relies on) move
-> into [DECISIONS.md](DECISIONS.md) and this file shrinks to what a user needs to know. The app-side fixture
-> it will need is [N160](ROADMAP.md), waiting in *Later*.
+> **Status: implemented as [`docs/`](docs/), shipped as [N159](ROADMAP.md).** The durable rules behind it —
+> why the conversion is outside the app, why the input is rows rather than the app's format, and why the ids
+> are deterministic — are recorded in [DECISIONS.md](DECISIONS.md). The app-side fixture it still wants is
+> [N160](ROADMAP.md), waiting in *Later*.
 
 A companion to the app for one job: turning old training spreadsheets into a
 `workout-backup.json` the app accepts, with a review step that catches the errors the app cannot report.
@@ -351,7 +351,7 @@ largest dependency in the project.
 
 Acceptance, by hand:
 
-1. The example at the top of *Input* yields one session, two exercise blocks and five sets, two of them
+1. The example at the top of *Input* yields one session, two exercise blocks and five sets, three of them
    warm-ups.
 2. A date appearing twice starts two sessions on that day; a blank exercise after a date change is a row
    problem rather than a carry-over.

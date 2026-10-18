@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'">
+  <title>Workout import helper</title>
+  <meta name="description" content="Turn a flat list of training rows into a workout-backup.json for the app, with a review step. Runs entirely in the browser.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#importHelper">Skip to the tool</a>
+
+  <header class="page-header">
+    <div class="wrap">
+      <h1>Workout import helper</h1>
+      <p class="lede">
+        Turn an old training spreadsheet into a <code>workout-backup.json</code> the app can import,
+        with a review step that catches the errors the app cannot report.
+      </p>
+      <p class="privacy">
+        <strong>Runs on this page.</strong> No request, no upload, no account, and no training data
+        is stored. The only thing remembered between visits is the exercise-name mapping.
+      </p>
+    </div>
+  </header>
+
+  <noscript>
+    <p class="wrap notice">
+      This tool needs JavaScript. It runs entirely on this page; nothing is sent anywhere.
+    </p>
+  </noscript>
+
+  <main id="importHelper" class="wrap">
+    <p id="liveStatus" class="visually-hidden" role="status" aria-live="polite"></p>
+
+    <section class="panel" id="panel-source" aria-labelledby="source-heading">
+      <h2 id="source-heading">1. Source</h2>
+
+      <div class="drop-zone" id="dropZone">
+        <p class="drop-title">Drop a JSON, CSV or TSV file here</p>
+        <p class="hint">Or choose one. The file is read on this page with FileReader; it is never uploaded.</p>
+        <label class="file-button">
+          <span>Choose a file</span>
+          <input type="file" id="fileInput" accept=".json,.csv,.tsv,.txt,application/json,text/csv,text/tab-separated-values,text/plain">
+        </label>
+      </div>
+
+      <div class="field-block">
+        <label for="pasteBox">Paste JSON rows or CSV</label>
+        <textarea id="pasteBox" rows="10" spellcheck="false" autocomplete="off"
+          placeholder='{ "source": "2019-notebook.xlsx / October", "rows": [ { "date": "24-10-2025", "exercise": "Bench Press", "reps": 10, "weight": 40, "unit": "kg", "type": "W" } ] }'></textarea>
+        <div class="button-row">
+          <button type="button" id="loadPaste">Load pasted rows</button>
+          <button type="button" id="loadSample" class="secondary">Load the example</button>
+        </div>
+      </div>
+
+      <p id="sourceStatus" class="hint"></p>
+
+      <div class="field-block">
+        <label for="exportInput">Load your app export (optional, recommended)</label>
+        <input type="file" id="exportInput" accept=".json,application/json">
+        <p class="hint">
+          It supplies the exercise library, the dry-run comparison and the id-collision check.
+          Export once from the app: Settings &rarr; Export.
+        </p>
+        <p id="catalogStatus" class="hint"></p>
+      </div>
+
+      <div class="field-block">
+        <label for="revisionInput">Revision (the source name)</label>
+        <input type="text" id="revisionInput" autocomplete="off" spellcheck="false">
+        <p class="hint">
+          Session and set ids derive from it. Re-importing the same revision is a no-op. The app
+          merges and never overwrites, so correcting a session that already imported means deleting
+          it in the app, raising the revision, and importing again.
+        </p>
+      </div>
+
+      <fieldset class="field-block" id="dateOrder">
+        <legend>Date order</legend>
+        <label class="radio"><input type="radio" name="dateOrder" id="orderDmy" value="dmy" checked> DD-MM-YYYY (day first)</label>
+        <label class="radio"><input type="radio" name="dateOrder" id="orderMdy" value="mdy"> MM-DD-YYYY (month first)</label>
+        <p id="ambiguityNote" class="hint"></p>
+      </fieldset>
+
+      <h3 id="mapping-heading">Exercise mapping</h3>
+      <p class="hint">
+        The unit is a property of the exercise name. The mapping, and only the mapping, is kept in
+        this browser's local storage; a button below forgets it. A name matching only a deleted
+        library row creates a new exercise rather than bringing the deleted one back.
+      </p>
+      <div class="table-scroll">
+        <table class="mapping" aria-labelledby="mapping-heading">
+          <thead>
+            <tr>
+              <th scope="col">Exercise</th>
+              <th scope="col">Used</th>
+              <th scope="col">Target exercise</th>
+              <th scope="col">Default unit</th>
+              <th scope="col">Note</th>
+            </tr>
+          </thead>
+          <tbody id="mappingBody"></tbody>
+        </table>
+      </div>
+      <button type="button" id="forgetMapping" class="secondary">Forget saved mapping</button>
+
+      <h3 id="prompt-heading">The prompt for a model</h3>
+      <p class="hint">
+        Paste this into a model together with the spreadsheet. It asks for flat rows and refuses to
+        let the model invent ids, timestamps, grams or half-points.
+      </p>
+      <p class="notice">
+        If you use a hosted model, the spreadsheet left your machine <em>before</em> this tool saw
+        it. The tool's own no-request guarantee does not cover that step.
+      </p>
+      <pre id="promptText" class="prompt" tabindex="0" aria-labelledby="prompt-heading"></pre>
+      <button type="button" id="copyPrompt">Copy prompt</button>
+    </section>
+
+    <section class="panel" id="panel-sessions" aria-labelledby="sessions-heading">
+      <h2 id="sessions-heading">2. Sessions</h2>
+      <label class="inline-check">
+        <input type="checkbox" id="onlyProblems">
+        Show only sessions with problems
+      </label>
+      <div id="sessionsList"></div>
+    </section>
+
+    <section class="panel" id="panel-problems" aria-labelledby="problems-heading">
+      <h2 id="problems-heading">3. Problems</h2>
+      <p id="problemsCounts" class="counts"></p>
+      <ol id="problemList" class="problem-list"></ol>
+    </section>
+
+    <section class="panel" id="panel-export" aria-labelledby="export-heading">
+      <h2 id="export-heading">4. Export</h2>
+      <p id="exportStats" class="stats"></p>
+      <p id="exportRefusal" class="refusal" hidden></p>
+      <div class="button-row">
+        <button type="button" id="downloadExport" disabled>Download workout-backup.json</button>
+        <button type="button" id="copyExport" class="secondary" disabled>Copy JSON</button>
+      </div>
+      <label for="exportText">Backup JSON</label>
+      <textarea id="exportText" readonly spellcheck="false" aria-describedby="exportStats"></textarea>
+    </section>
+  </main>
+
+  <footer class="page-footer">
+    <div class="wrap">
+      <p>
+        Zero dependencies, one classic script, no network. The only file it writes is the backup you
+        download.
+      </p>
+      <p><a href="tests.html">Run the test page</a></p>
+    </div>
+  </footer>
+
+  <datalist id="exerciseNames"></datalist>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -16,6 +16,21 @@ unreleased.
 
 ## [Unreleased]
 
+### Added
+
+- **A browser helper turns old spreadsheets into an importable backup** (N159). History that predates the app
+  had no way in: the app reads only its own formats, and a hand-written backup either fails as one transaction
+  with no row named or lands checked by nothing and cannot be corrected, because the merge never overwrites.
+  The helper in [`docs/`](docs/) is a zero-dependency page — no build, no request, no stored training data, and
+  it opens from disk as well as from Pages — that reads a flat list of rows from a model's transcription or a
+  CSV, groups it by the notebook's own rules (one date per day, one row per set, blanks carrying down), converts
+  each weight to whole grams and each RPE to half-points, maps exercise names to the library with a per-exercise
+  kg/lb choice, marks warm-ups per row, and writes the four collections a backup requires at `schemaVersion: 5`.
+  Dates are read day-month with an ambiguity guard that counts the ones a month-day reading would also accept, so
+  a `05-03` sheet cannot silently swap months. Deterministic `imp_` ids make a re-import of the same file add
+  nothing, so a file whose first import failed can be fixed and loaded again; a row that already landed is
+  replaced by deleting it in the app, raising the revision and importing, because the merge never overwrites.
+
 ### Changed
 
 - **The deload creator lists every exercise once, with a day chip on each row** (N156). The pool was repeated

@@ -1,0 +1,1199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'">
+  <title>Import helper tests</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="tests-page">
+  <main id="testRoot">
+    <h1>Import helper tests</h1>
+    <p class="hint">
+      Pure-function assertions, run in this browser against <code>app.js</code>. No framework,
+      no network, no test data leaves the page.
+    </p>
+    <p id="testSummary" class="test-summary" role="status">Running…</p>
+    <p><button type="button" id="rerun">Run again</button></p>
+    <ol id="testResults" class="test-results"></ol>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+(function () {
+  'use strict';
+
+  var H = window.ImportHelper;
+  var passes = 0;
+  var failures = 0;
+  var results = [];
+
+  function record(name, ok, error) {
+    if (ok) {
+      passes += 1;
+      results.push({ name: name, ok: true, error: null });
+    } else {
+      failures += 1;
+      results.push({ name: name, ok: false, error: error || 'assertion failed' });
+    }
+  }
+
+  function check(name, body) {
+    try {
+      body();
+      record(name, true, null);
+    } catch (error) {
+      record(name, false, error && error.message ? error.message : String(error));
+    }
+  }
+
+  function ok(value, message) {
+    if (!value) { throw new Error(message || 'expected a truthy value'); }
+  }
+
+  function eq(actual, expected, message) {
+    if (actual !== expected) {
+      throw new Error((message ? message + ': ' : '') +
+        'expected ' + JSON.stringify(expected) + ', got ' + JSON.stringify(actual));
+    }
+  }
+
+  function close(actual, expected, epsilon, message) {
+    if (typeof actual !== 'number' || Math.abs(actual - expected) > epsilon) {
+      throw new Error((message ? message + ': ' : '') +
+        'expected about ' + expected + ', got ' + actual);
+    }
+  }
+
+  function findAt(list, path, pattern) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].path !== path) { continue; }
+      if (!pattern || pattern.test(list[i].message)) { return list[i]; }
+    }
+    return null;
+  }
+
+  function expectAt(list, path, pattern, label) {
+    var found = findAt(list, path, pattern);
+    if (!found) {
+      throw new Error((label || 'problem') + ' at ' + path +
+        (pattern ? ' matching ' + pattern : '') + '; got ' +
+        JSON.stringify(list.map(function (item) {
+          return item.path + ': ' + item.message;
+        })));
+    }
+    return found;
+  }
+
+  function expectNone(list, path, pattern, label) {
+    var found = findAt(list, path, pattern);
+    if (found) {
+      throw new Error((label || 'unexpected problem') + ' at ' + path + ': ' + found.message);
+    }
+  }
+
+  function baseModel(rows, extra) {
+    return H.buildModel(rows, Object.assign({
+      seed: 'test-seed',
+      sheet: 'test-sheet',
+      source: 'test-source',
+      dateOrder: 'dmy',
+      catalog: null,
+      nameUnits: {},
+      nameTargets: {}
+    }, extra || {}));
+  }
+
+  function exercise(id, name, extra) {
+    return Object.assign({
+      id: id,
+      name: name,
+      primaryMuscle: null,
+      secondaryMuscles: [],
+      equipment: null,
+      movementPattern: null,
+      createdAt: 1000,
+      updatedAt: 1000,
+      deletedAt: null
+    }, extra || {});
+  }
+
+  function catalog(exercises, extra) {
+    return Object.assign({
+      schemaVersion: 5,
+      exportedAt: 1000,
+      exercises: exercises || [],
+      sessions: [],
+      sessionExercises: [],
+      sets: []
+    }, extra || {});
+  }
+
+  function row(overrides) {
+    return Object.assign({
+      date: '24-10-2025',
+      exercise: 'Bench Press',
+      reps: 5,
+      weight: 100,
+      unit: 'kg'
+    }, overrides || {});
+  }
+
+  function blockOf(model, sessionIndex, blockIndex) {
+    return model.sessions[sessionIndex || 0].blocks[blockIndex || 0];
+  }
+
+  function setOf(model, sessionIndex, blockIndex, setIndex) {
+    return blockOf(model, sessionIndex, blockIndex).sets[setIndex || 0];
+  }
+
+  function sampleRows() {
+    return [
+      { date: '24-10-2025', exercise: 'Bench Press', reps: 10, weight: 40, unit: 'kg', type: 'W' },
+      { date: null, exercise: null, reps: 8, weight: 60, rpe: 7, type: 'W' },
+      { date: null, exercise: null, reps: 5, weight: 80, rpe: 8, type: 'N' },
+      { date: null, exercise: 'Squat', reps: 10, weight: 50, type: 'W' },
+      { date: null, exercise: null, reps: 5, weight: 100, rpe: 8 }
+    ];
+  }
+
+  function builtFile() {
+    var model = baseModel(sampleRows());
+    var exported = H.buildExport(model, { exportedAt: 1700000000000 });
+    if (!exported.ok) {
+      throw new Error('the sample did not export: ' + JSON.stringify(exported.problems));
+    }
+    return exported.file;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * FNV-1a and identifiers
+   * ------------------------------------------------------------------ */
+
+  check('fnv1a64 matches the published vectors', function () {
+    eq(H.fnv1a64Hex(''), 'cbf29ce484222325');
+    eq(H.fnv1a64Hex('a'), 'af63dc4c8601ec8c');
+    eq(H.fnv1a64Hex('foobar'), '85944171f73967e8');
+  });
+
+  check('ids have the imp_ prefix and sixteen lowercase hex characters', function () {
+    ok(/^imp_[0-9a-f]{16}$/.test(H.makeExerciseId('Cable Fly')), 'exercise id shape');
+    ok(/^imp_[0-9a-f]{16}$/.test(H.makeSessionId('s', 's', 1)), 'session id shape');
+    ok(/^imp_[0-9a-f]{16}$/.test(H.makeSetId('s', 's', 1)), 'set id shape');
+    ok(/^imp_[0-9a-f]{16}$/.test(H.makeSessionExerciseId('s', 's', 1, 1)), 'session exercise id shape');
+  });
+
+  check('exercise ids key on the normalised name only', function () {
+    eq(H.makeExerciseId('Cable Fly'), H.makeExerciseId('  cable   fly '));
+    eq(H.makeExerciseId('Cable Fly'), H.makeExerciseId('CABLE FLY'));
+    ok(H.makeExerciseId('Cable Fly') !== H.makeExerciseId('Cable Row'), 'different names differ');
+  });
+
+  check('session, set and session-exercise ids are deterministic and distinct', function () {
+    eq(H.makeSessionId('a', 'b', 3), H.makeSessionId('a', 'b', 3));
+    ok(H.makeSessionId('a', 'b', 3) !== H.makeSessionId('a', 'b', 4), 'row changes the session id');
+    ok(H.makeSessionId('a', 'b', 3) !== H.makeSessionId('c', 'b', 3), 'seed changes the session id');
+    ok(H.makeSetId('a', 'b', 3) !== H.makeSetId('a', 'b', 4), 'row changes the set id');
+    ok(H.makeSetId('a', 'b', 3) !== H.makeSessionId('a', 'b', 3), 'kinds differ');
+    ok(H.makeSessionExerciseId('a', 'b', 3, 1) !== H.makeSessionExerciseId('a', 'b', 3, 2),
+      'position changes the session exercise id');
+  });
+
+  check('the same name is one exercise across revisions, while sessions re-key', function () {
+    var rows = [
+      { date: '24-10-2025', exercise: 'Cable Fly', reps: 10, weight: 20, unit: 'kg' }
+    ];
+    var first = H.buildExport(baseModel(rows, { seed: 'revision-one' }), { exportedAt: 1 });
+    var second = H.buildExport(baseModel(rows, { seed: 'revision-two' }), { exportedAt: 1 });
+    eq(first.file.exercises[0].id, second.file.exercises[0].id);
+    ok(first.file.sessions[0].id !== second.file.sessions[0].id, 'sessions re-key with the revision');
+    ok(first.file.sets[0].id !== second.file.sets[0].id, 'sets re-key with the revision');
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Dates and times
+   * ------------------------------------------------------------------ */
+
+  check('date formats: DD-MM-YYYY, DD/MM/YYYY, DD.MM.YYYY and ISO', function () {
+    ['24-10-2025', '24/10/2025', '24.10.2025', '2025-10-24'].forEach(function (text) {
+      var parsed = H.parseDateValue(text, 'dmy');
+      ok(parsed.ok, text + ' should parse');
+      eq(parsed.iso, '2025-10-24', text);
+      eq(parsed.ambiguous, false, text + ' is unambiguous');
+    });
+  });
+
+  check('two-digit years are refused', function () {
+    var parsed = H.parseDateValue('24-10-25', 'dmy');
+    eq(parsed.ok, false);
+    ok(/two-digit/.test(parsed.error), parsed.error);
+  });
+
+  check('impossible days and months are rejected, leap years included', function () {
+    eq(H.parseDateValue('31-04-2025', 'dmy').ok, false);
+    eq(H.parseDateValue('2025-02-29', 'dmy').ok, false);
+    eq(H.parseDateValue('2024-02-29', 'dmy').ok, true);
+    eq(H.parseDateValue('2025-13-01', 'dmy').ok, false);
+    eq(H.parseDateValue('00-01-2025', 'dmy').ok, false);
+    eq(H.parseDateValue('01-00-2025', 'dmy').ok, false);
+  });
+
+  check('blank dates are empty rather than errors', function () {
+    var parsed = H.parseDateValue('   ', 'dmy');
+    eq(parsed.ok, false);
+    eq(parsed.empty, true);
+    eq(H.parseDateValue(null, 'dmy').empty, true);
+  });
+
+  check('the ambiguity guard marks only month-and-day-ambiguous dates', function () {
+    var ambiguous = H.parseDateValue('05-03-2025', 'dmy');
+    eq(ambiguous.ok, true);
+    eq(ambiguous.ambiguous, true);
+    eq(ambiguous.day, 5);
+    eq(ambiguous.month, 3);
+    eq(H.parseDateValue('24-10-2025', 'dmy').ambiguous, false);
+    eq(H.parseDateValue('2025-03-05', 'dmy').ambiguous, false);
+    eq(H.parseDateValue('13-02-2025', 'dmy').ambiguous, false);
+  });
+
+  check('the MDY reading swaps the first two components', function () {
+    var us = H.parseDateValue('05-03-2025', 'mdy');
+    eq(us.day, 3);
+    eq(us.month, 5);
+    eq(us.ambiguous, true);
+    var impossible = H.parseDateValue('24-10-2025', 'mdy');
+    eq(impossible.ok, false);
+  });
+
+  check('time parsing defaults to 12:00 and rejects nonsense', function () {
+    var parsed = H.parseTimeValue('07:30');
+    eq(parsed.ok, true);
+    eq(parsed.hh, 7);
+    eq(parsed.mm, 30);
+    eq(H.parseTimeValue(null).hh, 12);
+    eq(H.parseTimeValue(null).mm, 0);
+    eq(H.parseTimeValue('25:00').ok, false);
+    eq(H.parseTimeValue('07:61').ok, false);
+    eq(H.parseTimeValue('noon').ok, false);
+  });
+
+  check('local epoch millis match the Date constructor', function () {
+    var ms = H.localEpochMillis(2025, 10, 24, 12, 0);
+    eq(ms, new Date(2025, 9, 24, 12, 0, 0, 0).getTime());
+    var early = H.localEpochMillis(1969, 6, 15, 8, 30);
+    eq(early, new Date(1969, 5, 15, 8, 30, 0, 0).getTime());
+  });
+
+  check('the zone offset is minutes east of UTC', function () {
+    var ms = H.localEpochMillis(2025, 10, 24, 12, 0);
+    eq(H.zoneOffsetMinutesFor(ms), -new Date(ms).getTimezoneOffset());
+    eq(H.zoneOffsetFromGetTimezoneOffset(-120), 120);
+    eq(H.zoneOffsetFromGetTimezoneOffset(180), -180);
+    eq(H.zoneOffsetFromGetTimezoneOffset(0), 0);
+  });
+
+  check('future and pre-1970 dates are recognised by calendar day', function () {
+    eq(H.isFutureDate(2099, 1, 1), true);
+    eq(H.isFutureDate(1969, 12, 31), false);
+    eq(H.isFutureDate(2020, 1, 1), false);
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Units and roles
+   * ------------------------------------------------------------------ */
+
+  check('unit conversion stores whole grams', function () {
+    eq(H.unitToGrams(100, 'kg'), 100000);
+    eq(H.unitToGrams(0.5, 'kg'), 500);
+    eq(H.unitToGrams(0, 'kg'), 0);
+    eq(H.unitToGrams(225, 'lb'), 102058);
+    eq(H.unitToGrams(1, 'lb'), 454);
+    close(H.gramsToUnit(102058, 'lb'), 225, 0.001);
+    eq(H.formatWeight(102058, 'lb'), '225.0');
+    eq(H.weightUnitName('lb'), 'POUNDS');
+    eq(H.weightUnitName('kg'), 'KILOGRAMS');
+  });
+
+  check('unit names are read case-insensitively and unknown names are refused', function () {
+    eq(H.parseUnit('KG'), 'kg');
+    eq(H.parseUnit('kgs'), 'kg');
+    eq(H.parseUnit('lbs'), 'lb');
+    eq(H.parseUnit('Pounds'), 'lb');
+    eq(H.parseUnit(''), null);
+    eq(H.parseUnit(null), null);
+    eq(H.parseUnit('stone'), false);
+  });
+
+  check('role aliases map to the stored set types', function () {
+    ['W', 'U', 'warmup', 'warm-up', 'warm'].forEach(function (text) {
+      eq(H.normalizeRole(text).role, 'WARMUP', text);
+    });
+    ['N', 'work', 'working', 'normal'].forEach(function (text) {
+      eq(H.normalizeRole(text).role, 'NORMAL', text);
+    });
+    eq(H.normalizeRole(null).role, 'NORMAL');
+    eq(H.normalizeRole('').role, 'NORMAL');
+    ['top', 'top set', '1rm'].forEach(function (text) {
+      eq(H.normalizeRole(text).role, 'TOP_SET', text);
+    });
+    ['failure', 'F', 'AMRAP'].forEach(function (text) {
+      eq(H.normalizeRole(text).role, 'FAILURE', text);
+    });
+  });
+
+  check('drop and cluster are refused, and unknown types are flagged', function () {
+    eq(H.normalizeRole('drop').role, 'DROP');
+    eq(H.normalizeRole('drop').refused, true);
+    eq(H.normalizeRole('cluster').role, 'CLUSTER');
+    eq(H.normalizeRole('cluster').refused, true);
+    eq(H.normalizeRole('S').recognised, false);
+    eq(H.normalizeRole('S').role, 'NORMAL');
+  });
+
+  check('only work roles record effort', function () {
+    eq(H.roleRecordsEffort('NORMAL'), true);
+    eq(H.roleRecordsEffort('TOP_SET'), true);
+    eq(H.roleRecordsEffort('FAILURE'), true);
+    eq(H.roleRecordsEffort('WARMUP'), false);
+    eq(H.roleRecordsEffort('DROP'), false);
+    eq(H.roleRecordsEffort('CLUSTER'), false);
+    eq(H.roleIsWork('WARMUP'), false);
+    eq(H.roleIsWork('NORMAL'), true);
+    eq(H.roleIsWork('DROP'), true);
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Grouping
+   * ------------------------------------------------------------------ */
+
+  check('acceptance 1: the specification example is one session, two blocks, five sets, three warm-ups', function () {
+    var model = baseModel(sampleRows());
+    eq(model.sessions.length, 1);
+    eq(model.sessions[0].blocks.length, 2);
+    eq(blockOf(model, 0, 0).sets.length, 3);
+    eq(blockOf(model, 0, 1).sets.length, 2);
+    eq(model.sessions[0].blocks[0].name, 'Bench Press');
+    eq(model.sessions[0].blocks[1].name, 'Squat');
+    eq(model.sessions[0].blocks[0].sets[0].reps, 10);
+    eq(model.sessions[0].blocks[0].sets[2].weight, 80);
+    eq(model.sessions[0].blocks[1].sets[1].weight, 100);
+    eq(H.revalidateModel(model).problems.length, 0);
+    var warmups = 0;
+    model.sessions[0].blocks.forEach(function (block) {
+      block.sets.forEach(function (set) { if (set.role === 'WARMUP') { warmups += 1; } });
+    });
+    /* The example's JSON marks three rows W (two Bench Press, one Squat);
+     * the Testing section's prose says two. The literal type mapping is what
+     * this asserts; see the report for the contradiction. */
+    eq(warmups, 3);
+  });
+
+  check('setIndex counts from 1 including warm-ups', function () {
+    var model = baseModel(sampleRows());
+    eq(blockOf(model, 0, 0).sets[0].index, 1);
+    eq(blockOf(model, 0, 0).sets[1].index, 2);
+    eq(blockOf(model, 0, 0).sets[2].index, 3);
+    eq(blockOf(model, 0, 1).sets[0].index, 1);
+  });
+
+  check('a fully blank row is skipped and resets nothing', function () {
+    var rows = sampleRows();
+    rows.splice(2, 0, {});
+    rows.splice(4, 0, { date: null, exercise: null, reps: null, weight: null });
+    var model = baseModel(rows);
+    eq(model.skippedBlank, 2);
+    eq(model.sessions.length, 1);
+    eq(blockOf(model, 0, 0).sets.length, 3);
+    eq(model.sessions[0].blocks[1].sets.length, 2);
+  });
+
+  check('a repeated explicit date starts a second session on the same day', function () {
+    var rows = [
+      { date: '24-10-2025', exercise: 'Bench Press', reps: 5, weight: 100, unit: 'kg' },
+      { date: '24-10-2025', exercise: 'Squat', reps: 5, weight: 120, unit: 'kg' }
+    ];
+    var model = baseModel(rows);
+    eq(model.sessions.length, 2);
+    eq(model.sessions[0].blocks[0].name, 'Bench Press');
+    eq(model.sessions[1].blocks[0].name, 'Squat');
+    expectAt(H.revalidateModel(model).warnings, 'sessions[1].startedAt', /overlaps/);
+  });
+
+  check('a blank exercise after a date change is a row problem, not a carry-over', function () {
+    var rows = [
+      { date: '24-10-2025', exercise: 'Bench Press', reps: 5, weight: 100, unit: 'kg' },
+      { date: '25-10-2025', exercise: null, reps: 5, weight: 100, unit: 'kg' }
+    ];
+    var model = baseModel(rows);
+    eq(model.sessions.length, 2);
+    eq(model.sessions[1].blocks.length, 1);
+    eq(model.sessions[1].blocks[0].name, '');
+    var problems = H.revalidateModel(model).problems;
+    expectAt(problems, 'sessions[1].exercises[0].name', /No exercise yet/);
+  });
+
+  check('a blank exercise carries inside the session', function () {
+    var rows = [
+      { date: '24-10-2025', exercise: 'Bench Press', reps: 5, weight: 100, unit: 'kg' },
+      { date: null, exercise: null, reps: 5, weight: 110, unit: 'kg' }
+    ];
+    var model = baseModel(rows);
+    eq(model.sessions[0].blocks.length, 1);
+    eq(model.sessions[0].blocks[0].sets.length, 2);
+  });
+
+  check('a repeated exercise name continues one block', function () {
+    var rows = [
+      { date: '24-10-2025', exercise: 'Bench Press', reps: 5, weight: 100, unit: 'kg' },
+      { date: null, exercise: 'bench press', reps: 5, weight: 110, unit: 'kg' }
+    ];
+    var model = baseModel(rows);
+    eq(model.sessions[0].blocks.length, 1);
+    eq(model.sessions[0].blocks[0].sets.length, 2);
+  });
+
+  check('a different exercise starts a new block', function () {
+    var rows = [
+      { date: '24-10-2025', exercise: 'Bench Press', reps: 5, weight: 100, unit: 'kg' },
+      { date: null, exercise: 'Squat', reps: 5, weight: 120, unit: 'kg' }
+    ];
+    var model = baseModel(rows);
+    eq(model.sessions[0].blocks.length, 2);
+    eq(model.sessions[0].blocks[1].sets.length, 1);
+  });
+
+  check('a clean value carried from the row above wins, and a blank type is normal', function () {
+    var rows = [
+      { date: '24-10-2025', exercise: 'Bench Press', reps: 5, weight: 100, unit: 'kg' },
+      { date: null, exercise: null, reps: 5, weight: 100, unit: null, type: null }
+    ];
+    var model = baseModel(rows);
+    eq(setOf(model, 0, 0, 1).role, 'NORMAL');
+    eq(setOf(model, 0, 0, 1).unit, 'kg');
+  });
+
+  check('an explicit date at the start of the file opens a session; a missing one is a problem', function () {
+    var model = baseModel([{ date: null, exercise: 'Squat', reps: 5, weight: 100, unit: 'kg' }]);
+    eq(model.sessions.length, 1);
+    expectAt(H.revalidateModel(model).problems, 'sessions[0].startedAt', /No date yet/);
+  });
+
+  check('nested sessions flatten to the same model', function () {
+    var document = {
+      source: 'nested',
+      sessions: [
+        {
+          date: '24-10-2025',
+          exercises: [
+            { name: 'Bench Press', sets: [{ reps: 5, weight: 100, unit: 'kg' }, { reps: 5, weight: 110, unit: 'kg' }] },
+            { name: 'Squat', sets: [{ reps: 5, weight: 120, unit: 'kg' }] }
+          ]
+        }
+      ]
+    };
+    var parsed = H.parseInputText(JSON.stringify(document), { fileName: 'nested.json' });
+    eq(parsed.kind, 'rows');
+    eq(parsed.rows.length, 3);
+    var model = baseModel(parsed.rows, { source: parsed.source });
+    eq(model.sessions.length, 1);
+    eq(model.sessions[0].blocks.length, 2);
+    eq(blockOf(model, 0, 0).sets.length, 2);
+    eq(blockOf(model, 0, 1).sets.length, 1);
+    eq(model.source, 'nested');
+  });
+
+  check('nested sessions on the same day stay two sessions', function () {
+    var document = {
+      sessions: [
+        { date: '24-10-2025', exercises: [{ name: 'Bench', sets: [{ reps: 5, weight: 100, unit: 'kg' }] }] },
+        { date: '24-10-2025', exercises: [{ name: 'Squat', sets: [{ reps: 5, weight: 120, unit: 'kg' }] }] }
+      ]
+    };
+    var parsed = H.parseInputText(JSON.stringify(document), { fileName: 'two.json' });
+    var model = baseModel(parsed.rows);
+    eq(model.sessions.length, 2);
+  });
+
+  check('numeric strings are coerced', function () {
+    var model = baseModel([
+      { date: '24-10-2025', exercise: 'Squat', reps: '8', weight: '100.5', rpe: '7.5', unit: 'kg' }
+    ]);
+    eq(setOf(model).reps, 8);
+    eq(setOf(model).weight, 100.5);
+    eq(setOf(model).rpe, 7.5);
+    eq(H.revalidateModel(model).problems.length, 0);
+  });
+
+  check('time and duration flow into startedAt and finishedAt', function () {
+    var model = baseModel([
+      row({ date: '24-10-2025', time: '06:30', durationMinutes: 90 })
+    ]);
+    var expected = H.localEpochMillis(2025, 10, 24, 6, 30);
+    eq(model.sessions[0].startedAt, expected);
+    eq(model.sessions[0].finishedAt, expected + 90 * 60000);
+    eq(model.sessions[0].zoneOffsetMinutes, H.zoneOffsetMinutesFor(expected));
+    eq(model.sessions[0].hh, 6);
+    eq(model.sessions[0].mm, 30);
+  });
+
+  check('weightKg and weightLb state their own unit; zoneOffsetMinutes is accepted', function () {
+    var kilos = baseModel([row({ weight: null, weightKg: 80 })]);
+    eq(setOf(kilos).weight, 80);
+    eq(setOf(kilos).unit, 'kg');
+    var pounds = baseModel([row({ weight: null, weightLb: 225 })]);
+    eq(setOf(pounds).weight, 225);
+    eq(setOf(pounds).unit, 'lb');
+    var built = H.buildExport(pounds, { exportedAt: 1 });
+    eq(built.file.sets[0].weightGrams, 102058);
+    var offset = baseModel([row({ zoneOffsetMinutes: 120 })]);
+    var unknown = H.revalidateModel(offset).warnings.filter(function (warning) {
+      return /Unrecognised key/.test(warning.message);
+    });
+    eq(unknown.length, 0);
+  });
+
+  check('an unknown top-level key warns', function () {
+    var parsed = H.parseInputText(JSON.stringify({
+      source: 'x',
+      rows: [row({})],
+      extra: 1
+    }), {});
+    ok(parsed.warnings.some(function (warning) {
+      return warning.path === 'document.extra';
+    }), 'top-level warning');
+  });
+
+  check('unreadable numbers are reported, missing values block', function () {
+    var unreadable = baseModel([
+      { date: '24-10-2025', exercise: 'Squat', reps: 'eight', weight: 'heavy', unit: 'kg' }
+    ]);
+    expectAt(H.revalidateModel(unreadable).problems,
+      'sessions[0].exercises[0].sets[0].reps', /not a number/);
+    expectAt(H.revalidateModel(unreadable).problems,
+      'sessions[0].exercises[0].sets[0].weight', /not a number/);
+    var missing = baseModel([{ date: '24-10-2025', exercise: 'Squat' }]);
+    expectAt(H.revalidateModel(missing).problems,
+      'sessions[0].exercises[0].sets[0].reps', /no reps/);
+    expectAt(H.revalidateModel(missing).problems,
+      'sessions[0].exercises[0].sets[0].weight', /no weight/);
+  });
+
+  /* ------------------------------------------------------------------ *
+   * CSV
+   * ------------------------------------------------------------------ */
+
+  check('CSV headers, aliases, blank carry and quoted cells', function () {
+    var text = 'date,exercise,reps,weight,unit,rpe,set type,notes\n' +
+      '24-10-2025,Bench Press,10,40,kg,7,W,"slow, paused"\n' +
+      ',,8,60,kg,,,\n';
+    var parsed = H.parseInputText(text, { fileName: 'rows.csv' });
+    eq(parsed.kind, 'rows');
+    eq(parsed.rows.length, 2);
+    eq(parsed.rows[0].type, 'W');
+    eq(parsed.rows[0].notes, 'slow, paused');
+    eq(parsed.rows[1].date, null);
+    eq(parsed.rows[1].exercise, null);
+    var model = baseModel(parsed.rows);
+    eq(model.sessions.length, 1);
+    eq(model.sessions[0].blocks[0].sets.length, 2);
+  });
+
+  check('TSV is read with tab delimiters', function () {
+    var text = 'date\texercise\treps\tweight\tunit\n' +
+      '24-10-2025\tSquat\t5\t100\tkg\n' +
+      '\t\t5\t110\tkg\n';
+    var parsed = H.parseInputText(text, { fileName: 'rows.tsv' });
+    eq(parsed.rows.length, 2);
+    var model = baseModel(parsed.rows);
+    eq(model.sessions[0].blocks[0].sets.length, 2);
+  });
+
+  check('a warm-up column flags its rows', function () {
+    var text = 'date,exercise,reps,weight,unit,warmup\n' +
+      '24-10-2025,Squat,5,60,kg,x\n' +
+      ',,5,100,kg,\n';
+    var parsed = H.parseInputText(text, { fileName: 'warm.csv' });
+    var model = baseModel(parsed.rows);
+    eq(setOf(model, 0, 0, 0).role, 'WARMUP');
+    eq(setOf(model, 0, 0, 1).role, 'NORMAL');
+  });
+
+  check('a weight header with a unit implies it, even when a unit column is blank', function () {
+     var text = 'date,exercise,reps,weight (kg),unit\n24-10-2025,Squat,5,100,\n';
+     var parsed = H.parseInputText(text, { fileName: 'kg.csv' });
+     eq(parsed.rows[0].unit, 'kg');
+     eq(parsed.rows[0].weight, '100');
+     var model = baseModel(parsed.rows);
+     eq(setOf(model).unit, 'kg');
+     eq(setOf(model).weight, 100);
+ });
+
+ check('unknown CSV columns warn once', function () {
+    var text = 'date,exercise,reps,weight,RIR\n24-10-2025,Squat,5,100,9\n';
+    var parsed = H.parseInputText(text, { fileName: 'unknown.csv' });
+    ok(parsed.warnings.some(function (warning) {
+      return /Unrecognised column/.test(warning.message);
+    }), 'expected an unknown-column warning');
+  });
+
+  check('a headerless file is refused with a helpful message', function () {
+    var parsed = H.parseInputText('1,2,3\n4,5,6\n', { fileName: 'bad.csv' });
+    eq(parsed.kind, 'error');
+    ok(/column headers/.test(parsed.problems[0].message), parsed.problems[0].message);
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Blocking rules
+   * ------------------------------------------------------------------ */
+
+  check('blocking: the root must be an object', function () {
+    var parsed = H.parseInputText('[]', {});
+    eq(parsed.kind, 'error');
+    expectAt(parsed.problems, 'root', /must be a JSON object/);
+  });
+
+  check('blocking: rows or sessions must be present', function () {
+    var parsed = H.parseInputText('{}', {});
+    eq(parsed.kind, 'error');
+    expectAt(parsed.problems, 'rows', /neither a rows list nor a sessions list/);
+  });
+
+  check('an app backup is detected instead of failing', function () {
+    var parsed = H.parseInputText(JSON.stringify({
+      schemaVersion: 5,
+      exportedAt: 1,
+      exercises: [],
+      sessions: [],
+      sessionExercises: [],
+      sets: []
+    }), {});
+    eq(parsed.kind, 'backup');
+    eq(parsed.backup.schemaVersion, 5);
+    eq(parsed.problems.length, 0);
+  });
+
+  check('blocking: an unreadable date', function () {
+    var model = baseModel([{ date: '31-13-2025', exercise: 'Squat', reps: 5, weight: 100, unit: 'kg' }]);
+    expectAt(H.revalidateModel(model).problems, 'sessions[0].startedAt', /unreadable date/);
+  });
+
+  check('blocking: a two-digit year', function () {
+    var model = baseModel([{ date: '24-10-25', exercise: 'Squat', reps: 5, weight: 100, unit: 'kg' }]);
+    expectAt(H.revalidateModel(model).problems, 'sessions[0].startedAt', /two-digit year/);
+  });
+
+  check('blocking: reps below 1, and non-integer reps', function () {
+    var low = baseModel([row({ reps: 0 })]);
+    expectAt(H.revalidateModel(low).problems,
+      'sessions[0].exercises[0].sets[0].reps', /at least 1/);
+    var fraction = baseModel([row({ reps: 5.5 })]);
+    expectAt(H.revalidateModel(fraction).problems,
+      'sessions[0].exercises[0].sets[0].reps', /whole number/);
+  });
+
+  check('blocking: a negative weight', function () {
+    var model = baseModel([row({ weight: -5 })]);
+    expectAt(H.revalidateModel(model).problems,
+      'sessions[0].exercises[0].sets[0].weight', /negative/);
+  });
+
+  check('blocking: RPE outside 1 to 10', function () {
+    var low = baseModel([row({ rpe: 0 })]);
+    expectAt(H.revalidateModel(low).problems,
+      'sessions[0].exercises[0].sets[0].rpe', /between 1 and 10/);
+    var high = baseModel([row({ rpe: 11 })]);
+    expectAt(H.revalidateModel(high).problems,
+      'sessions[0].exercises[0].sets[0].rpe', /between 1 and 10/);
+  });
+
+  check('blocking: an exercise with no sets', function () {
+    var model = baseModel([row({})]);
+    model.sessions[0].blocks[0].sets = [];
+    expectAt(H.revalidateModel(model).problems,
+      'sessions[0].exercises[0].sets', /no sets/);
+  });
+
+  check('blocking: an unmatched exercise when a library is loaded', function () {
+    var library = catalog([exercise('squat', 'Squat')]);
+    var model = baseModel([row({ date: '24-10-2025', exercise: 'Bench Press' })], { catalog: library });
+    expectAt(H.revalidateModel(model).problems,
+      'sessions[0].exercises[0].name', /does not match an exercise/);
+  });
+
+  check('choosing create-new clears the unmatched problem', function () {
+    var library = catalog([exercise('squat', 'Squat')]);
+    var model = baseModel([row({ date: '24-10-2025', exercise: 'Bench Press' })], {
+      catalog: library,
+      nameTargets: { 'bench press': 'create' }
+    });
+    expectNone(H.revalidateModel(model).problems,
+      'sessions[0].exercises[0].name', /does not match/);
+    var built = H.buildExport(model, { exportedAt: 1 });
+    eq(built.ok, true);
+    eq(built.file.exercises.length, 1);
+  });
+
+  check('blocking: mixed units inside one block', function () {
+    var model = baseModel([
+      row({ date: '24-10-2025', exercise: 'Bench Press', unit: 'kg' }),
+      { date: null, exercise: null, reps: 5, weight: 200, unit: 'lb' }
+    ]);
+    expectAt(H.revalidateModel(model).problems,
+      'sessions[0].exercises[0].unit', /Mixed units/);
+  });
+
+  check('blocking: drop and cluster roles', function () {
+    var drop = baseModel([row({ type: 'drop' })]);
+    expectAt(H.revalidateModel(drop).problems,
+      'sessions[0].exercises[0].sets[0].setType', /rung/);
+    var cluster = baseModel([row({ type: 'cluster' })]);
+    expectAt(H.revalidateModel(cluster).problems,
+      'sessions[0].exercises[0].sets[0].setType', /rung/);
+  });
+
+  check('blocking: a negative duration', function () {
+    var model = baseModel([row({ durationMinutes: -5 })]);
+    expectAt(H.revalidateModel(model).problems,
+      'sessions[0].durationMinutes', /negative/);
+  });
+
+  check('blocking: duplicate ids, deletedAt, missing finishedAt and broken references', function () {
+    var file = builtFile();
+    file.exercises[1].id = file.exercises[0].id;
+    expectAt(H.validateExportFile(file).problems,
+      'exercises[1].id', /Duplicate id/);
+
+    var deleted = builtFile();
+    deleted.exercises[0].deletedAt = 123;
+    expectAt(H.validateExportFile(deleted).problems,
+      'exercises[0].deletedAt', /deletedAt must be omitted or null/);
+
+    var unfinished = builtFile();
+    delete unfinished.sessions[0].finishedAt;
+    expectAt(H.validateExportFile(unfinished).problems,
+      'sessions[0].finishedAt', /finishedAt is required/);
+
+    var brokenSet = builtFile();
+    brokenSet.sets[0].sessionExerciseId = 'imp_does_not_exist';
+    expectAt(H.validateExportFile(brokenSet).problems,
+      'sets[0].sessionExerciseId', /does not resolve/);
+
+    var brokenSession = builtFile();
+    brokenSession.sessionExercises[0].sessionId = 'imp_does_not_exist';
+    expectAt(H.validateExportFile(brokenSession).problems,
+      'sessionExercises[0].sessionId', /does not resolve/);
+
+    var brokenExercise = builtFile();
+    brokenSession = builtFile();
+    brokenSession.sessionExercises[0].exerciseId = 'imp_does_not_exist';
+    expectAt(H.validateExportFile(brokenSession).problems,
+      'sessionExercises[0].exerciseId', /does not resolve/);
+    eq(brokenExercise.sets.length > 0, true);
+  });
+
+  check('a valid assembled file passes structural validation', function () {
+    var result = H.validateExportFile(builtFile());
+    eq(result.problems.length, 0, JSON.stringify(result.problems));
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Warnings
+   * ------------------------------------------------------------------ */
+
+  check('warning: a weight between 1 and 999 grams', function () {
+    var model = baseModel([row({ weight: 0.5 })]);
+    expectAt(H.revalidateModel(model).warnings,
+      'sessions[0].exercises[0].sets[0].weight', /between 1 and 999 grams/);
+    var bodyweight = baseModel([row({ exercise: 'Push-Up', weight: 0.5 })]);
+    expectNone(H.revalidateModel(bodyweight).warnings,
+      'sessions[0].exercises[0].sets[0].weight', /between 1 and 999 grams/);
+  });
+
+  check('warning: a date in the future or before 1970', function () {
+    var future = baseModel([row({ date: '01-01-2099' })]);
+    expectAt(H.revalidateModel(future).warnings, 'sessions[0].startedAt', /future/);
+    var old = baseModel([row({ date: '01-01-1969' })]);
+    expectAt(H.revalidateModel(old).warnings, 'sessions[0].startedAt', /before 1970/);
+  });
+
+  check('warning: a duration of zero or more than six hours', function () {
+    var zero = baseModel([row({ durationMinutes: 0 })]);
+    expectAt(H.revalidateModel(zero).warnings,
+      'sessions[0].durationMinutes', /unusual/);
+    var long = baseModel([row({ durationMinutes: 361 })]);
+    expectAt(H.revalidateModel(long).warnings,
+      'sessions[0].durationMinutes', /unusual/);
+    var fine = baseModel([row({ durationMinutes: 60 })]);
+    expectNone(H.revalidateModel(fine).warnings,
+      'sessions[0].durationMinutes', /unusual/);
+  });
+
+  check('warning: more than fifty reps or more than 500 kg', function () {
+    var reps = baseModel([row({ reps: 51 })]);
+    expectAt(H.revalidateModel(reps).warnings,
+      'sessions[0].exercises[0].sets[0].reps', /more than 50/);
+    var heavy = baseModel([row({ weight: 501 })]);
+    expectAt(H.revalidateModel(heavy).warnings,
+      'sessions[0].exercises[0].sets[0].weight', /more than 500 kg/);
+  });
+
+  check('warning: overlapping sessions', function () {
+    var model = baseModel([
+      { date: '24-10-2025', exercise: 'Bench Press', reps: 5, weight: 100, unit: 'kg' },
+      { date: '24-10-2025', exercise: 'Squat', reps: 5, weight: 120, unit: 'kg' }
+    ]);
+    expectAt(H.revalidateModel(model).warnings, 'sessions[1].startedAt', /overlaps/);
+  });
+
+  check('warning: a deleted exercise is not resurrected, and a new one is created', function () {
+    var deletedId = H.makeExerciseId('Cable Fly');
+    var library = catalog([exercise(deletedId, 'Cable Fly', { deletedAt: 1234 })]);
+    var model = baseModel([
+      { date: '24-10-2025', exercise: 'Cable Fly', reps: 12, weight: 20, unit: 'kg' }
+    ], { catalog: library });
+    var result = H.revalidateModel(model);
+    expectAt(result.warnings, 'sessions[0].exercises[0].name', /deleted exercise/);
+    var built = H.buildExport(model, { exportedAt: 1 });
+    eq(built.ok, true);
+    eq(built.file.exercises.length, 1);
+    ok(built.file.exercises[0].id !== deletedId, 'the new exercise must not reuse the deleted id');
+    eq(built.file.exercises[0].deletedAt, undefined);
+  });
+
+  check('warning: a session with no work sets', function () {
+    var model = baseModel([
+      { date: '24-10-2025', exercise: 'Bench Press', reps: 10, weight: 40, unit: 'kg', type: 'W' },
+      { date: null, exercise: null, reps: 8, weight: 60, unit: 'kg', type: 'W' }
+    ]);
+    expectAt(H.revalidateModel(model).warnings,
+      'sessions[0].exercises', /no work sets/);
+  });
+
+  check('warning: more than eight warm-ups on one exercise', function () {
+    var rows = [
+      { date: '24-10-2025', exercise: 'Squat', reps: 5, weight: 40, unit: 'kg', type: 'W' }
+    ];
+    for (var i = 0; i < 8; i += 1) {
+      rows.push({ date: null, exercise: null, reps: 5, weight: 40, unit: 'kg', type: 'W' });
+    }
+    var model = baseModel(rows);
+    expectAt(H.revalidateModel(model).warnings,
+      'sessions[0].exercises[0].sets', /more than 8/);
+  });
+
+  check('warning: unknown keys in the input', function () {
+    var model = baseModel([row({ foo: 'bar' })]);
+    expectAt(H.revalidateModel(model).warnings, 'rows[0].foo', /Unrecognised key/);
+  });
+
+  check('warning: an unrecognised set type is read as working', function () {
+    var model = baseModel([row({ type: 'S' })]);
+    expectAt(H.revalidateModel(model).warnings,
+      'sessions[0].exercises[0].sets[0].setType', /not recognised/);
+  });
+
+  check('warning: an unrecognised unit', function () {
+    var model = baseModel([row({ unit: 'stone' })]);
+    expectAt(H.revalidateModel(model).warnings,
+      'sessions[0].exercises[0].sets[0].unit', /not recognised/);
+  });
+
+  check('warning: an unreadable time, duration and RPE are reported, not guessed', function () {
+    var model = baseModel([row({ time: 'noon', rpe: 'hard', durationMinutes: 'an hour' })]);
+    expectAt(H.revalidateModel(model).warnings, 'sessions[0].time', /12:00/);
+    expectAt(H.revalidateModel(model).warnings,
+      'sessions[0].durationMinutes', /60 minutes/);
+    expectAt(H.revalidateModel(model).warnings,
+      'sessions[0].exercises[0].sets[0].rpe', /not a number/);
+  });
+
+  check('warning: a pound block on a kilogram library exercise explains the display unit', function () {
+    var library = catalog([
+      exercise('bench-press', 'Bench Press', { weightUnit: 'KILOGRAMS', equipment: 'BARBELL' })
+    ]);
+    var model = baseModel([row({ unit: 'lb', weight: 225 })], { catalog: library });
+    expectAt(H.revalidateModel(model).warnings,
+      'sessions[0].exercises[0].unit', /displays KILOGRAMS/);
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Date ambiguity toggle
+   * ------------------------------------------------------------------ */
+
+  check('acceptance 3: toggling the date order reinterprets the sessions', function () {
+    var rows = [
+      { date: '05-03-2025', exercise: 'Bench Press', reps: 5, weight: 100, unit: 'kg' },
+      { date: '11-04-2025', exercise: 'Squat', reps: 5, weight: 120, unit: 'kg' }
+    ];
+    var dayFirst = baseModel(rows);
+    var monthFirst = baseModel(rows, { dateOrder: 'mdy' });
+    eq(dayFirst.sessions.length, 2);
+    eq(monthFirst.sessions.length, 2);
+    eq(dayFirst.sessions[0].date.day, 5);
+    eq(dayFirst.sessions[0].date.month, 3);
+    eq(monthFirst.sessions[0].date.day, 3);
+    eq(monthFirst.sessions[0].date.month, 5);
+    eq(dayFirst.sessions[0].startedAt !== monthFirst.sessions[0].startedAt, true);
+    eq(dayFirst.sessions[0].sourceRow, monthFirst.sessions[0].sourceRow);
+    eq(dayFirst.dateStats.ambiguous, 2);
+    eq(dayFirst.dateStats.readings.dmy.ambiguous, 2);
+    eq(dayFirst.dateStats.readings.mdy.ambiguous, 2);
+  });
+
+  check('the ambiguity count and both readings are reported', function () {
+    var model = baseModel([
+      { date: '05-03-2025', exercise: 'A', reps: 1, weight: 1, unit: 'kg' },
+      { date: '2099-12-25', exercise: 'B', reps: 1, weight: 1, unit: 'kg' },
+      { date: '1969-12-25', exercise: 'C', reps: 1, weight: 1, unit: 'kg' }
+    ]);
+    eq(model.dateStats.total, 3);
+    eq(model.dateStats.readings.dmy.ambiguous, 1);
+    eq(model.dateStats.readings.dmy.future, 1);
+    eq(model.dateStats.readings.dmy.before1970, 1);
+    eq(model.dateStats.readings.mdy.future, 1);
+    eq(model.dateStats.readings.mdy.before1970, 1);
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Export
+   * ------------------------------------------------------------------ */
+
+  check('the export is schemaVersion 5 with exactly the four collections', function () {
+    var file = builtFile();
+    eq(file.schemaVersion, 5);
+    eq(typeof file.exportedAt, 'number');
+    eq(Object.keys(file).join(','),
+      'schemaVersion,exportedAt,exercises,sessions,sessionExercises,sets');
+  });
+
+  check('acceptance 1 at the export level: one session, two exercises, five sets', function () {
+    var file = builtFile();
+    eq(file.sessions.length, 1);
+    eq(file.sessionExercises.length, 2);
+    eq(file.sets.length, 5);
+    eq(file.sessionExercises[0].position, 1);
+    eq(file.sessionExercises[1].position, 2);
+    eq(file.sets[0].setIndex, 1);
+    eq(file.sets[1].setIndex, 2);
+    eq(file.sets[2].setIndex, 3);
+    eq(file.sets[3].setIndex, 1);
+    eq(file.sets[4].setIndex, 2);
+  });
+
+  check('sessions carry startedAt, finishedAt and createdAt equal to startedAt', function () {
+    var file = builtFile();
+    var session = file.sessions[0];
+    var expectedStart = H.localEpochMillis(2025, 10, 24, 12, 0);
+    eq(session.startedAt, expectedStart);
+    eq(session.finishedAt, expectedStart + 60 * 60000);
+    eq(session.createdAt, session.startedAt);
+    eq(session.updatedAt, session.startedAt);
+    eq(session.zoneOffsetMinutes, H.zoneOffsetMinutesFor(session.startedAt));
+    eq(session.notes, null);
+    eq(session.deletedAt, undefined);
+    eq(session.templateId, undefined);
+    eq(session.activity, undefined);
+  });
+
+  check('new exercises state null taxonomy and an empty secondary list', function () {
+    var file = builtFile();
+    eq(file.exercises.length, 2);
+    file.exercises.forEach(function (exercise) {
+      eq(exercise.primaryMuscle, null);
+      eq(Array.isArray(exercise.secondaryMuscles), true);
+      eq(exercise.secondaryMuscles.length, 0);
+      eq(exercise.equipment, null);
+      eq(exercise.movementPattern, null);
+      eq(exercise.weightUnit, 'KILOGRAMS');
+      eq(typeof exercise.createdAt, 'number');
+    });
+  });
+
+  check('rpeHalves and weightGrams follow the storage conventions', function () {
+    var file = builtFile();
+    eq(file.sets[2].rpeHalves, 16);
+    eq(file.sets[1].rpeHalves, 14);
+    file.sets.forEach(function (set) {
+      eq(set.weightGrams % 1, 0);
+      eq(set.weightGrams >= 0, true);
+      ok(/^imp_[0-9a-f]{16}$/.test(set.id), 'set id');
+    });
+    var first = file.sets[0];
+    eq(first.weightGrams, 40000);
+    eq(first.setType, 'WARMUP');
+  });
+
+  check('acceptance 4: 225 lb stores 102058 grams and reads back as 225.0 lb', function () {
+    var model = baseModel([
+      { date: '24-10-2025', exercise: 'Cable Fly', reps: 10, weight: 225, unit: 'lb' }
+    ], { nameUnits: { 'cable fly': 'lb' } });
+    var built = H.buildExport(model, { exportedAt: 1 });
+    eq(built.ok, true);
+    eq(built.file.sets[0].weightGrams, 102058);
+    eq(H.formatWeight(built.file.sets[0].weightGrams, 'lb'), '225.0');
+    eq(built.file.exercises[0].weightUnit, 'POUNDS');
+  });
+
+  check('acceptance 5: a warm-up is stored WARMUP and records no effort', function () {
+    var file = builtFile();
+    eq(file.sets[0].setType, 'WARMUP');
+    eq(H.roleRecordsEffort(file.sets[0].setType), false);
+    eq(H.roleRecordsEffort('NORMAL'), true);
+  });
+
+  check('a library exercise is copied verbatim and keeps its id and unit', function () {
+    var library = catalog([
+      exercise('barbell-row', 'Barbell Row', {
+        primaryMuscle: 'BACK',
+        secondaryMuscles: ['BICEPS'],
+        equipment: 'BARBELL',
+        movementPattern: 'HORIZONTAL_PULL',
+        restSeconds: 120,
+        techniqueNote: 'Chest up',
+        weightUnit: 'KILOGRAMS'
+      })
+    ]);
+    var model = baseModel([
+      { date: '24-10-2025', exercise: 'barbell row', reps: 8, weight: 80, unit: 'kg' }
+    ], { catalog: library });
+    var built = H.buildExport(model, { exportedAt: 1 });
+    eq(built.ok, true);
+    var copied = built.file.exercises[0];
+    eq(copied.id, 'barbell-row');
+    eq(copied.name, 'Barbell Row');
+    eq(copied.restSeconds, 120);
+    eq(copied.techniqueNote, 'Chest up');
+    eq(copied.weightUnit, 'KILOGRAMS');
+    eq(copied.primaryMuscle, 'BACK');
+    eq(copied.secondaryMuscles.length, 1);
+  });
+
+  check('acceptance 6: a clean file has no unresolved references', function () {
+    var file = builtFile();
+    var sessionIds = {};
+    file.sessions.forEach(function (session) { sessionIds[session.id] = true; });
+    var exerciseIds = {};
+    file.exercises.forEach(function (exercise) { exerciseIds[exercise.id] = true; });
+    var sessionExerciseIds = {};
+    file.sessionExercises.forEach(function (row) {
+      sessionExerciseIds[row.id] = true;
+      ok(sessionIds[row.sessionId], 'session reference');
+      ok(exerciseIds[row.exerciseId], 'exercise reference');
+    });
+    file.sets.forEach(function (set) {
+      ok(sessionExerciseIds[set.sessionExerciseId], 'session exercise reference');
+    });
+    eq(H.validateExportFile(file).problems.length, 0);
+  });
+
+  check('acceptance 7: re-importing the same revision adds nothing', function () {
+    var first = builtFile();
+    var model = baseModel(sampleRows(), { catalog: first });
+    var stats = H.computeExportStats(model);
+    eq(stats.sessions, 1);
+    eq(stats.skippedSessions, 1);
+    eq(stats.addedSessions, 0);
+    eq(stats.addedSets, 0);
+    eq(stats.newExercises, 0);
+    var again = H.buildExport(model, { exportedAt: 2 });
+    eq(again.ok, true);
+  });
+
+  check('acceptance 8: the same input produces the same file apart from exportedAt', function () {
+    var first = H.buildExport(baseModel(sampleRows()), { exportedAt: 111 });
+    var second = H.buildExport(baseModel(sampleRows()), { exportedAt: 111 });
+    eq(JSON.stringify(first.file), JSON.stringify(second.file));
+    var third = H.buildExport(baseModel(sampleRows()), { exportedAt: 222 });
+    var a = JSON.parse(JSON.stringify(first.file));
+    var b = JSON.parse(JSON.stringify(third.file));
+    a.exportedAt = 0;
+    b.exportedAt = 0;
+    eq(JSON.stringify(a), JSON.stringify(b));
+  });
+
+  check('the file is pretty-printed with two spaces and round-trips', function () {
+    var built = H.buildExport(baseModel(sampleRows()), { exportedAt: 1700000000000 });
+    var json = H.serializeExport(built.file);
+    ok(json.indexOf('\n  "schemaVersion": 5') !== -1, 'two-space indentation');
+    var parsed = H.parseBackupText(json);
+    eq(parsed.ok, true);
+    eq(parsed.file.schemaVersion, 5);
+    eq(parsed.file.sessions.length, 1);
+    eq(parsed.file.sets.length, 5);
+    eq(JSON.stringify(parsed.file), JSON.stringify(built.file));
+  });
+
+  check('a pound name creates POUNDS, a kilogram name KILOGRAMS', function () {
+    var pounds = H.buildExport(baseModel([
+      { date: '24-10-2025', exercise: 'Cable Fly', reps: 10, weight: 225, unit: 'lb' }
+    ]), { exportedAt: 1 });
+    eq(pounds.file.exercises[0].weightUnit, 'POUNDS');
+    var kilos = H.buildExport(baseModel([
+      { date: '24-10-2025', exercise: 'Cable Fly', reps: 10, weight: 100, unit: 'kg' }
+    ]), { exportedAt: 1 });
+    eq(kilos.file.exercises[0].weightUnit, 'KILOGRAMS');
+  });
+
+  check('a note travels on the set and is omitted when null', function () {
+    var model = baseModel([
+      { date: '24-10-2025', exercise: 'Squat', reps: 5, weight: 100, unit: 'kg', notes: 'belt' },
+      { date: null, exercise: null, reps: 5, weight: 100, unit: 'kg' }
+    ]);
+    var built = H.buildExport(model, { exportedAt: 1 });
+    eq(built.file.sets[0].note, 'belt');
+    eq(built.file.sets[1].note, undefined);
+  });
+
+  check('stats count what will be added and what will be skipped', function () {
+    var first = builtFile();
+    var model = baseModel(sampleRows(), { catalog: first, seed: 'a-new-revision' });
+    var stats = H.computeExportStats(model);
+    eq(stats.sessions, 1);
+    eq(stats.skippedSessions, 0);
+    eq(stats.addedSessions, 1);
+    eq(stats.newExercises, 0);
+    eq(stats.existingExercises, 2);
+    eq(stats.newExerciseNames.length, 0);
+  });
+
+  /* ------------------------------------------------------------------ *
+   * Report
+   * ------------------------------------------------------------------ */
+
+  function render() {
+    var summary = document.getElementById('testSummary');
+    if (summary) {
+      summary.textContent = passes + ' passed, ' + failures + ' failed' +
+        (failures === 0 ? ' — all assertions hold.' : '.');
+      summary.className = 'test-summary ' + (failures === 0 ? 'test-pass' : 'test-fail');
+    }
+    var list = document.getElementById('testResults');
+    if (list) {
+      list.textContent = '';
+      results.forEach(function (result) {
+        var item = document.createElement('li');
+        item.className = result.ok ? 'test-ok' : 'test-failed';
+        item.textContent = (result.ok ? 'PASS  ' : 'FAIL  ') + result.name +
+          (result.ok ? '' : ' — ' + result.error);
+        list.appendChild(item);
+      });
+    }
+    var rerun = document.getElementById('rerun');
+    if (rerun) {
+      rerun.addEventListener('click', function () { window.location.reload(); });
+    }
+    document.title = failures === 0
+      ? 'PASS ' + passes + ' — import helper tests'
+      : 'FAIL ' + failures + ' — import helper tests';
+  }
+
+  if (typeof document !== 'undefined' && document.getElementById('testSummary')) {
+    render();
+  } else if (typeof window !== 'undefined') {
+    window.__testResults = { passes: passes, failures: failures, results: results };
+  }
+})();
+  </script>
+</body>
+</html>

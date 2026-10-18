@@ -17,12 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**An import path for the history that predates the app.** Old training lives in spreadsheets. The app's own
-backup format is the only thing it reads, and a hand-written one fails without naming the row that failed.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| N159 | **medium** | **A lifter's history before the app has no way in.** The app imports only its own backup and its program documents. The backup's merge runs as one transaction, reports a rejection without naming a row, and never overwrites what is already there — so a file generated from years of spreadsheets cannot be corrected once it has landed. Nothing turns a sheet into that file, and nothing may run inside the app: it declares no `INTERNET` and the export file is the only path off the device. | The browser helper specified in [IMPORT-HELPER.md](IMPORT-HELPER.md): a zero-dependency page in `docs/`, served by Pages, that reads a flat row list (a model's transcription, or CSV), groups it by the notebook's carry-forward rules, converts each weight to whole grams and RPE to half-points, maps exercise names to library slugs with a per-exercise kg/lb choice, marks warm-ups per row, and writes the four collections the format requires at `schemaVersion: 5`. Deterministic `imp_` ids keep a re-import idempotent; raising the revision is the only way to correct a row that already landed. |
+**Nothing.** The import helper (N159) shipped and is in [CHANGELOG.md](CHANGELOG.md); the app-side fixture it
+still wants (N160) waits in *Later*.
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself
