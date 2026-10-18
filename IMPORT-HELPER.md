@@ -1,10 +1,9 @@
 # Import helper — specification
 
-> **Status: a specification for work that is not built.** Nothing in this repository implements it yet,
-> and no [ROADMAP.md](ROADMAP.md) id covers it — the first commit that starts it must say so rather than
-> invent one, per [AGENTS.md](AGENTS.md). When the tool ships, its durable rules (the format conventions
-> and the import semantics it relies on) move into [DECISIONS.md](DECISIONS.md) and this file shrinks to
-> what a user needs to know.
+> **Status: planned as [N159](ROADMAP.md), and not built.** Nothing in this repository implements it yet.
+> When the tool ships, its durable rules (the format conventions and the import semantics it relies on) move
+> into [DECISIONS.md](DECISIONS.md) and this file shrinks to what a user needs to know. The app-side fixture
+> it will need is [N160](ROADMAP.md), waiting in *Later*.
 
 A companion to the app for one job: turning old training spreadsheets into a
 `workout-backup.json` the app accepts, with a review step that catches the errors the app cannot report.
@@ -365,7 +364,7 @@ Acceptance, by hand:
 
 ## What is deliberately left for later
 
-- **A fixture the app's tests decode.** One synthetic `workout-backup.json` checked in and read by a JVM
+- **A fixture the app's tests decode (N160).** One synthetic `workout-backup.json` checked in and read by a JVM
   test is what makes a `schemaVersion` bump fail loudly instead of silently breaking the tool. It is the
   one app-side change this work wants, and it is not part of the first version.
 - **Repairing an already-exported backup** as editable sessions, rather than only the row list.

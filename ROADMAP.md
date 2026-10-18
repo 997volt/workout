@@ -24,6 +24,13 @@ N152 asked for.
 | --- | --- | --- | --- |
 | N156 | low | **Every day card shows the whole program pool.** A four-day program therefore shows the same long list twice, and the same exercise row appears once per deload day; the pool is scannable only while the program is small. | A single program-wide pool with a **day-assignment control** (chips or a picker per row) and the day headers above it, so an exercise is assigned once rather than scrolled past on every card. Keep the weekday and *Deload A/B* headers; only do this if the 2-of-4 session actually feels long. |
 
+**An import path for the history that predates the app.** Old training lives in spreadsheets. The app's own
+backup format is the only thing it reads, and a hand-written one fails without naming the row that failed.
+
+| # | Severity | What | Fix |
+| --- | --- | --- | --- |
+| N159 | **medium** | **A lifter's history before the app has no way in.** The app imports only its own backup and its program documents. The backup's merge runs as one transaction, reports a rejection without naming a row, and never overwrites what is already there — so a file generated from years of spreadsheets cannot be corrected once it has landed. Nothing turns a sheet into that file, and nothing may run inside the app: it declares no `INTERNET` and the export file is the only path off the device. | The browser helper specified in [IMPORT-HELPER.md](IMPORT-HELPER.md): a zero-dependency page in `docs/`, served by Pages, that reads a flat row list (a model's transcription, or CSV), groups it by the notebook's carry-forward rules, converts each weight to whole grams and RPE to half-points, maps exercise names to library slugs with a per-exercise kg/lb choice, marks warm-ups per row, and writes the four collections the format requires at `schemaVersion: 5`. Deterministic `imp_` ids keep a re-import idempotent; raising the revision is the only way to correct a row that already landed. |
+
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself
 full. An empty section is a state, not a gap: a row stands here while it is being done and leaves for
@@ -37,7 +44,9 @@ not now — and it is not *Next*, which is what is actually being worked on. Eac
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-**Nothing.** The deload creator (N147) shipped, and the section drains the same way *Next* does.
+**An app-side fixture the tool's output must survive (N160).** Brought forward once the helper writes its
+first file: a synthetic backup checked in beside the tool and read by a JVM test, so a `schemaVersion` bump
+fails the build rather than the tool. Synthetic on purpose — a real export stays gitignored.
 
 ## Parked — deliberately not planned
 
@@ -63,7 +72,8 @@ Permanent, unlike *Parked*: no trigger brings one of these back.
 
 - Nutrition / calorie tracking
 - Social feeds, friends and shared routines (P3.7, P5.2)
-- A web dashboard
+- A web dashboard — a surface that **reads** the training record. The import helper (N159) only
+  authors a file and never sees the database, so it is not one.
 - Live GPS route tracking
 - Health Connect read/write (P4.1)
 - A foreground service (P4.2)
