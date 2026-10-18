@@ -17,8 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The two follow-ons from 2.8's deload and goal work — the creator's reuse (N150) and the target
-weight's date estimate (N151) — shipped, and each is in [CHANGELOG.md](CHANGELOG.md) under the id it closed.
+**A deload-builder review from use.** The creator's days are the program's first N days rather than a shape the
+lifter chooses; the request is a deload week composed from every exercise the program uses.
+
+| # | Severity | What | Fix |
+| --- | --- | --- | --- |
+| N152 | **medium** | **A deload day is a copy of a source day, and the day count is a prefix.** With four program days and a two-day deload, the creator always takes the first two source days; the third and fourth days' exercises are unreachable, and there is no way to say which days the two come from. The deload is the one week whose point is to change the program's shape, so the source templates should not decide it. | Give the creator a **program-wide exercise pool** and let each deload day choose from it: the lifter sets how many deload days, then assigns exercises to each day from every exercise the program uses — the source days are context, not a boundary — and chooses the day's weekday and name. Write one template per deload day from the chosen exercises; nothing is copied from a source template. The last-plan reuse (N150) then matches by library id across the pool. Keep the current-week mark and the one-write draft; test a 2-of-4 build using lifts from the 3rd and 4th days, one movement used by two source days, and a day with no weekday. |
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself
