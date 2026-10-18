@@ -17,10 +17,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The N147 review's seven findings (B161–B166, N148).** A line-by-line review of the unreleased deload batch,
-with every claim checked against the code and the gates re-run to a green baseline. None is a crash or a data
-loss on the normal path: the first three are the built week's own lifecycle, and the rest are robustness,
-release notes and reachability.
+**The N147 review's seven findings (B161–B166, N148), plus two from use (B167, N149).** The review checked
+every claim against the code and re-ran the gates to a green baseline; the last two came from using the app — an
+activity whose history page shows *0 sets*, and a gain and a loss rate that share one default. None is a crash or
+a data loss on the normal path: the first three are the built week's own lifecycle, the next four are robustness,
+release notes and reachability, and the last two are what use turned up.
 
 | # | Severity | What | Fix |
 | --- | --- | --- | --- |
@@ -31,6 +32,8 @@ release notes and reachability.
 | B165 | low | **The release notes omit schema 7 and the downlevel restore.** The backup deliberately stays at `schemaVersion 5`, so a 2.7 build reads a new file and drops `programDeloadDays`: the mark and the templates survive, the week's plan does not. | Say both in the changelog and the N147 evidence; the codec's addition policy is unchanged. |
 | B166 | low | **Two prose defects.** `RoomDeloadRepository` still says *a future week is refused* where the code refuses any week but this one; the N147 evidence calls the load share *the screen's one control* when the screen has several. | Correct both sentences. |
 | N148 | low | **The creator's result is not reachable from the screens it changed.** The success card offers only *Done*; the program editor and the adherence screen do not say a built plan exists; a rebuild replaces the week's days and leaves the previous templates in the library without saying so. | Link the built workouts from the success card, mark a built week in the program editor or the deload chip, and say what a rebuild leaves behind. |
+| B167 | **medium** | **An activity has no page of its own in history.** The list row names it and then still appends *0 sets* (N146 added the name, not the shape); opening it shows the workout detail's header — *0 sets*, *0 kg* — and never says what the session was, so a swim or a ride reads as an empty workout. | Carry the session's activity into the detail (the state already holds it), make it the title/header, and replace the set and volume totals with the activity and the duration; drop the 0-set line from the list row. Test both surfaces. |
+| N149 | low | **Gain and loss share one default rate.** `ratePerWeekGrams` derives both directions from N135's single band, so a Lose goal and a Gain goal at the same bodyweight read the same magnitude — the band's centre, 0.375% of bodyweight a week. The request is a **gain** default of about **0.25% of bodyweight a week** (the band's low edge), with the loss side no longer that same number. | Amend N135: gain at 0.25% weekly, loss at the band's centre (0.375%) unless a different loss default is chosen; derive and clamp each into its own band, state the numbers and their reasons in DECISIONS, and show the goal's own rate in its row; test both directions. |
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself
