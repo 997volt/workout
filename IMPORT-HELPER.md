@@ -3,7 +3,7 @@
 > **Status: implemented as [`docs/`](docs/), shipped as [N159](ROADMAP.md).** The durable rules behind it —
 > why the conversion is outside the app, why the input is rows rather than the app's format, and why the ids
 > are deterministic — are recorded in [DECISIONS.md](DECISIONS.md). The app-side fixture it still wants is
-> [N160](ROADMAP.md), waiting in *Later*.
+> [N160](ROADMAP.md), now in *Next*.
 
 A companion to the app for one job: turning old training spreadsheets into a
 `workout-backup.json` the app accepts, with a review step that catches the errors the app cannot report.

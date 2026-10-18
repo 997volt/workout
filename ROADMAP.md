@@ -17,8 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The import helper (N159) shipped and is in [CHANGELOG.md](CHANGELOG.md); the app-side fixture it
-still wants (N160) waits in *Later*.
+**An app-side fixture the tool's output must survive.** The helper writes a format the app decodes, and no test
+crosses that seam: a `schemaVersion` bump breaks every file it produces without failing a build.
+
+| # | Severity | What | Fix |
+| --- | --- | --- | --- |
+| N160 | low | **Nothing in the app reads a file the helper wrote.** The tool is tested against its own expectations, so a change to the backup's shape — a new `schemaVersion`, a field whose meaning moves — breaks the import with the app's generic "that does not look like a backup file", and no gate notices until a lifter's file is refused. | Check in one **synthetic** `docs/fixtures/import-helper-backup.json` produced by the tool (a real export stays gitignored), and a JVM test that decodes it through `BackupCodec` and asserts the four collections, a session with `finishedAt`, weights as whole grams, RPE in half-points, and `imp_` ids. Regenerate the fixture with the tool when the format moves. |
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself
@@ -33,9 +37,7 @@ not now — and it is not *Next*, which is what is actually being worked on. Eac
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-**An app-side fixture the tool's output must survive (N160).** Brought forward once the helper writes its
-first file: a synthetic backup checked in beside the tool and read by a JVM test, so a `schemaVersion` bump
-fails the build rather than the tool. Synthetic on purpose — a real export stays gitignored.
+**Nothing.** The app-side fixture (N160) moved to *Next*, and the section drains the same way *Next* does.
 
 ## Parked — deliberately not planned
 
