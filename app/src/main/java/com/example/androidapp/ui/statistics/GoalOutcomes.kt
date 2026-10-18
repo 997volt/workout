@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.statistics
 
 import com.example.androidapp.domain.model.MAINTENANCE_CORRIDOR_GRAMS
+import com.example.androidapp.domain.model.TARGET_REACHED_TOLERANCE_GRAMS
 import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.weightRateBandPerWeekGrams
 import com.example.androidapp.domain.repository.GoalPeriod
@@ -37,8 +38,6 @@ data class GoalPeriodOutcome(val period: GoalPeriod, val outcome: GoalOutcome)
  * weight", and it is the one maintenance holds (N135). A number invented here would be a second opinion about
  * the same question.
  */
-private const val TARGET_TOLERANCE_GRAMS = MAINTENANCE_CORRIDOR_GRAMS
-
 /**
  * What became of each of [periods], read from the weight series (ROADMAP N137).
  *
@@ -92,7 +91,7 @@ private fun outcomeOf(period: GoalPeriod, readings: List<MetricReading>): GoalOu
 }
 
 private fun reached(reading: MetricReading, targetGrams: Long): Boolean =
-    reading.value?.let { abs(it - targetGrams) <= TARGET_TOLERANCE_GRAMS } ?: false
+    reading.value?.let { abs(it - targetGrams) <= TARGET_REACHED_TOLERANCE_GRAMS } ?: false
 
 private fun stayedInCorridor(targetGrams: Long, readings: List<MetricReading>): Boolean {
     val inside = { value: Double -> abs(value - targetGrams) <= MAINTENANCE_CORRIDOR_GRAMS }

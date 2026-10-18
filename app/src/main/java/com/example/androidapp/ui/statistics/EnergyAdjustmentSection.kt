@@ -72,14 +72,19 @@ fun EnergyAdjustmentSection(
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
-                text = targetText(metric = metric, weightGoal = weightGoal, rateTarget = rateTarget),
+                text = targetText(
+                    metric = metric,
+                    weightGoal = weightGoal,
+                    rateTarget = rateTarget,
+                    targetReached = targetReached,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.testTag(TestTags.Statistics.ENERGY_TARGET),
             )
         }
 
         // A target's date is what its rate implies, never the input (N151). A reached target says so.
-        TargetDateLine(targetDate = targetDate, targetReached = targetReached)
+        TargetDateLine(targetDate = targetDate)
 
         // The target is the number; this is the range that says whether the trend is on it (N149).
         rateBand?.let { band ->
@@ -112,30 +117,20 @@ fun EnergyAdjustmentSection(
     }
 }
 
-/** The date a target's rate implies, or the line that says the target is already reached (N151). */
+/** The date a target's rate implies, or nothing when there is no date (N151). */
 @Composable
-private fun TargetDateLine(targetDate: LocalDate?, targetReached: Boolean) {
-    when {
-        targetReached -> Text(
-            text = stringResource(R.string.statistics_target_reached),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.testTag(TestTags.Statistics.ENERGY_TARGET_DATE),
-        )
-
-        targetDate != null -> {
-            val zone = ZoneId.systemDefault()
-            Text(
-                text = stringResource(
-                    R.string.statistics_target_around,
-                    HistoryFormat.date(targetDate.atStartOfDay(zone).toInstant(), zone),
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.testTag(TestTags.Statistics.ENERGY_TARGET_DATE),
-            )
-        }
-    }
+private fun TargetDateLine(targetDate: LocalDate?) {
+    if (targetDate == null) return
+    val zone = ZoneId.systemDefault()
+    Text(
+        text = stringResource(
+            R.string.statistics_target_around,
+            HistoryFormat.date(targetDate.atStartOfDay(zone).toInstant(), zone),
+        ),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.testTag(TestTags.Statistics.ENERGY_TARGET_DATE),
+    )
 }
 
 /**
@@ -146,7 +141,14 @@ private fun TargetDateLine(targetDate: LocalDate?, targetReached: Boolean) {
  * to take a share of — so it says so rather than showing a number the app made up.
  */
 @Composable
-private fun targetText(metric: MetricEntry, weightGoal: WeightGoal?, rateTarget: Double?): String = when {
+private fun targetText(
+    metric: MetricEntry,
+    weightGoal: WeightGoal?,
+    rateTarget: Double?,
+    targetReached: Boolean,
+): String = when {
+    // A reached target has no rate to print: the rate is the goal's zero, and the row's answer is that it is met.
+    targetReached -> stringResource(R.string.statistics_target_reached)
     weightGoal == null -> stringResource(R.string.statistics_energy_target_none)
     weightGoal is WeightGoal.Maintain -> stringResource(
         R.string.statistics_weight_goal_corridor,

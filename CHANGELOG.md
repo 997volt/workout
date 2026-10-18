@@ -44,6 +44,11 @@ unreleased.
 
 ### Fixed
 
+- **A reached target says so once** (B172). The energy row printed *0 kg per week* under a goal whose rate is
+  zero because the target is met, beside *Target reached*. The target text now says *Target reached* and the
+  date line is reserved for an actual date. The tolerance behind that line and the goal history now has one
+  definition (B171), so the two cannot disagree.
+
 - **Use last deload no longer reads another program's week** (B168). The last-plan read found its mark for one
   program but then read every program's days for that week, so with two active programs that each built a deload
   in the same week the reuse could preselect the other program's exercises and day count. The read is now

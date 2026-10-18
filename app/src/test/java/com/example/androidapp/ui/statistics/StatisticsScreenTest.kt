@@ -636,8 +636,9 @@ class StatisticsScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_DATE)
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET)
             .assertTextEquals("Target reached")
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET_DATE).assertDoesNotExist()
     }
 
     @Test

@@ -163,8 +163,8 @@ fun WeightGoal.ratePerWeekGrams(currentWeightGrams: Long): Double? {
     }
 }
 
-/** A single Target goal is within this of its weight, the tolerance the goal history already uses. */
-private const val TARGET_REACHED_TOLERANCE_GRAMS = MAINTENANCE_CORRIDOR_GRAMS
+/** A target is reached within this of its weight: the one tolerance the goal history and the row share. */
+const val TARGET_REACHED_TOLERANCE_GRAMS = MAINTENANCE_CORRIDOR_GRAMS
 
 private const val DAYS_PER_WEEK = 7.0
 
