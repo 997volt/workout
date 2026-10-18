@@ -41,6 +41,7 @@ class ProgramDeloadScreenTest {
 
     private fun exercise(
         templateExerciseId: String = "te1",
+        exerciseId: String = "back-squat",
         name: String = "Back squat",
         selected: Boolean = true,
         sets: List<DeloadSetTarget> = List(2) {
@@ -48,7 +49,7 @@ class ProgramDeloadScreenTest {
         },
     ) = DeloadExerciseUi(
         templateExerciseId = templateExerciseId,
-        exerciseId = "back-squat",
+        exerciseId = exerciseId,
         name = name,
         selected = selected,
         sets = sets,
@@ -63,6 +64,7 @@ class ProgramDeloadScreenTest {
             exercise(),
             exercise(
                 templateExerciseId = "te2",
+                exerciseId = "romanian-deadlift",
                 name = "Romanian deadlift",
                 sets = List(3) { DeloadSetTarget(weightGrams = 80_000L, assistanceGrams = null, reps = 8) },
             ),
@@ -92,7 +94,7 @@ class ProgramDeloadScreenTest {
     private fun setScreen(
         state: DeloadCreatorUiState = ready,
         onBack: () -> Unit = {},
-        onToggleExercise: (String) -> Unit = {},
+        onToggleExercise: (Int, String) -> Unit = { _, _ -> },
         onDayCount: (Int) -> Unit = {},
         onLoadPercentChange: (Int) -> Unit = {},
         onWeekday: (String, DayOfWeek?) -> Unit = { _, _ -> },
@@ -137,19 +139,19 @@ class ProgramDeloadScreenTest {
         scrollTo(TestTags.Deload.day("s1"))
         composeTestRule.onNodeWithText("Heavy lower").assertIsDisplayed()
         composeTestRule.onNodeWithText("Day 1").assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "te1")).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "back-squat")).assertIsDisplayed()
         composeTestRule.onNodeWithText("2 × 5 · 60 kg").assertIsDisplayed()
     }
 
     @Test
-    fun anExerciseChip_ticksThatExercise() {
-        var toggled: String? = null
-        setScreen(onToggleExercise = { toggled = it })
+    fun anExerciseChip_ticksThatExerciseOnItsDay() {
+        var toggled: Pair<Int, String>? = null
+        setScreen(onToggleExercise = { day, exerciseId -> toggled = day to exerciseId })
 
-        scrollTo(TestTags.Deload.exercise("s1", "te2"))
-        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "te2")).performClick()
+        scrollTo(TestTags.Deload.exercise("s1", "romanian-deadlift"))
+        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "romanian-deadlift")).performClick()
 
-        assertThat(toggled).isEqualTo("te2")
+        assertThat(toggled).isEqualTo(0 to "romanian-deadlift")
     }
 
     @Test

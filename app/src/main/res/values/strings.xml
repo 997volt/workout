@@ -922,6 +922,7 @@
     <string name="deload_done">Done</string>
     <string name="deload_view_workouts">View workouts</string>
     <string name="deload_use_last">Use last deload</string>
+    <string name="deload_from">From %1$s</string>
     <string name="deload_use_last_hint">Reuses the exercises and day count from the week of %1$s. The load share stays where it is.</string>
     <string name="home_programs">Programs</string>
 </resources>

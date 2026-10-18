@@ -2370,3 +2370,34 @@ from the old block, which is exactly the staleness a deload is supposed to answe
 **The window is the current week, as it always was.** The reuse is a draft action on a draft; it writes nothing
 until the lifter presses the create button, and the current-week rule is untouched. The action is offered only
 when a previous plan exists, and its note says the share is not part of what it reuses.
+
+## N152
+
+The issue came from use: with four program days and a two-day deload, the creator took the first two source
+days, so the third and fourth days' exercises were unreachable. The request was not a better day picker but a
+different unit: a deload day should be composed from **all the exercises the program uses**, because the point
+of the week is to change the program's shape.
+
+**The pool is a movement, not a template.** `poolOf` walks every source day and keeps the first instance of
+each library exercise; a movement scheduled on two days is one row, the first instance supplies the set/rep/load
+plan the rule reads, and both day names travel as context (*From Heavy lower, Push*). Cloning the source
+templates — or keeping one row per template exercise — was rejected: the first still ties the day to a template,
+and the second puts the same movement on a day twice. The dedupe is by library id, the same key the last-plan
+reuse already uses.
+
+**The day is the deload's, not a prefix.** `selectedByDay` is one set per deload day; the day count grows or
+shrinks that list; each day card renders the whole pool with its own ticks. The first N days still seed
+themselves from the source days at their positions, so an untouched draft writes what it used to, but nothing
+stops a day picking up the third day's lift. The written template is built from the chosen pool entries, not
+copied from a source template, and a movement kept on two deload days is written on both — that is the lifter's
+statement about the week, not a duplicate to clean up.
+
+**What did not move: the day's name and weekday.** They still start from the source day at the same position,
+and the template editor is where a day that now mixes upper and lower work gets a truthful name. The requested
+fix was the exercise choice; an editable day name inside the creator would be a second editor, which N147
+already rejected for sets. The reuse (N150) now applies the last plan **per day**, because the days are the
+shape it remembers.
+
+**Covered by** the pure builder tests: the whole pool on every card, a shift from the third/fourth source days
+in a two-day deload, one pool row for a movement on two source days, per-day only-ticked writing, the empty-day
+omission, and the moved weekday.

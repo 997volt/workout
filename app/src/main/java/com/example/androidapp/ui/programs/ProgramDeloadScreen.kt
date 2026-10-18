@@ -101,7 +101,7 @@ fun ProgramDeloadRoute(
 fun ProgramDeloadScreen(
     state: DeloadCreatorUiState,
     onBack: () -> Unit,
-    onToggleExercise: (String) -> Unit,
+    onToggleExercise: (Int, String) -> Unit,
     onDayCount: (Int) -> Unit,
     onLoadPercentChange: (Int) -> Unit,
     onWeekday: (String, DayOfWeek?) -> Unit,
@@ -183,7 +183,7 @@ private fun DeloadCreateBar(
 private fun DeloadStates(
     state: DeloadCreatorUiState,
     onBack: () -> Unit,
-    onToggleExercise: (String) -> Unit,
+    onToggleExercise: (Int, String) -> Unit,
     onDayCount: (Int) -> Unit,
     onLoadPercentChange: (Int) -> Unit,
     onWeekday: (String, DayOfWeek?) -> Unit,
@@ -232,7 +232,7 @@ private fun DeloadStates(
 @Composable
 private fun DeloadBody(
     state: DeloadCreatorUiState,
-    onToggleExercise: (String) -> Unit,
+    onToggleExercise: (Int, String) -> Unit,
     onDayCount: (Int) -> Unit,
     onLoadPercentChange: (Int) -> Unit,
     onWeekday: (String, DayOfWeek?) -> Unit,
@@ -285,7 +285,7 @@ private fun DeloadBody(
             DeloadDayCard(
                 day = day,
                 number = index + 1,
-                onToggleExercise = onToggleExercise,
+                onToggleExercise = { exerciseId -> onToggleExercise(index, exerciseId) },
                 onWeekday = onWeekday,
             )
         }
@@ -482,10 +482,10 @@ private fun ExerciseChoice(
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
         FilterChip(
             selected = exercise.selected,
-            onClick = { onToggle(exercise.templateExerciseId) },
+            onClick = { onToggle(exercise.exerciseId) },
             label = { Text(exercise.name) },
             modifier = Modifier.testTag(
-                TestTags.Deload.exercise(slotId, exercise.templateExerciseId),
+                TestTags.Deload.exercise(slotId, exercise.exerciseId),
             ),
         )
         Text(
@@ -494,6 +494,15 @@ private fun ExerciseChoice(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 12.dp),
         )
+        // The pool is program-wide, so a row says which program day it came from (N152).
+        if (exercise.sourceName.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.deload_from, exercise.sourceName),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 12.dp),
+            )
+        }
     }
 }
 

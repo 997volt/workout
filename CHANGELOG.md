@@ -18,6 +18,15 @@ unreleased.
 
 ### Added
 
+- **A deload day draws from the whole program** (N152). The creator's day count was a prefix of the program's
+  days, so a two-day deload could only use the first two source days: an exercise the program scheduled on the
+  third or fourth day was unreachable, which is the opposite of what a deload week is for. Every deload day card
+  now offers the **program-wide pool** — one row per movement, with the source days it appears on as context —
+  and the lifter ticks what each deload day keeps. A movement scheduled on two source days is one pool row (the
+  first source day supplies the plan), and a two-day deload can keep a lift the program only schedules on the
+  third day. Each day's template is written from the chosen exercises; its name and weekday still start from the
+  source day at that position, and the template editor renames it.
+
 - **The creator remembers the last deload's choices** (N150). Building a deload started from scratch every
   block, so the exercises to keep and the number of days were chosen again even though the previous plan was
   already stored. *Use last deload* now preselects the exercises the last plan kept — matched by library id, so

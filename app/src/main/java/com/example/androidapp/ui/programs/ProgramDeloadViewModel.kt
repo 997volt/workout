@@ -36,6 +36,8 @@ data class DeloadExerciseUi(
     val templateExerciseId: String,
     val exerciseId: String,
     val name: String,
+    /** The program days this movement appears on, for the pool's context (N152). */
+    val sourceName: String = "",
     val selected: Boolean,
     val sets: List<DeloadSetTarget>,
     /** The unit the load is shown in: the exercise's own, or the app's (N64). */
@@ -56,7 +58,12 @@ data class DeloadCreatorUiState(
     val programName: String? = null,
     /** The Monday of the week being built; the creator only ever writes the current one (P3.10). */
     val weekStart: LocalDate? = null,
-    /** The days on screen, which is the first [dayCount] of the program's slots (N147). */
+    /**
+     * The deload days on screen, each with the whole program's exercise pool to choose from (N152).
+     *
+     * The day count is how many deload days, not which source days: a day's exercises may come from any
+     * source day, which is the point of a deload.
+     */
     val days: List<DeloadDayUi> = emptyList(),
     val dayCount: Int = 0,
     val maxDays: Int = 0,
@@ -114,8 +121,13 @@ class ProgramDeloadViewModel @Inject constructor(
     /** The program's days as they were read, before the day count and the selection narrow them. */
     private var sources: List<DeloadSourceDay> = emptyList()
 
-    /** The planned exercises the lifter keeps, by the source template exercise's id. */
-    private var selectedIds: Set<String> = emptySet()
+    /**
+     * The exercises each deload day keeps, by library exercise id (N152).
+     *
+     * One set per deload day, not one for the week: the same movement may be kept on two deload days, while
+     * a day itself holds a movement once.
+     */
+    private var selectedByDay: MutableList<MutableSet<String>> = mutableListOf()
 
     /** The most recent plan before this week, for *Use last deload*, or null (N150). */
     private var lastPlan: DeloadWeek? = null
@@ -148,9 +160,11 @@ class ProgramDeloadViewModel @Inject constructor(
                 }
                 sources = snapshot.days
                 lastPlan = snapshot.lastPlan
-                selectedIds = snapshot.days
-                    .flatMap { day -> day.exercises.map { it.templateExerciseId } }
-                    .toSet()
+                // The first N deload days default to the source days at their positions, so an untouched
+                // draft writes what it used to; every pool exercise is still available on every card (N152).
+                selectedByDay = snapshot.days
+                    .map { day -> day.exercises.map { it.exerciseId }.toMutableSet() }
+                    .toMutableList()
                 _state.update {
                     it.copy(
                         isLoading = false,
@@ -166,13 +180,15 @@ class ProgramDeloadViewModel @Inject constructor(
         }
     }
 
-    /** Ticks or unticks one planned exercise (N147). */
-    fun onToggleExercise(templateExerciseId: String) {
-        selectedIds = if (templateExerciseId in selectedIds) {
-            selectedIds - templateExerciseId
-        } else {
-            selectedIds + templateExerciseId
-        }
+    /**
+     * Ticks or unticks one pool exercise on one deload day (N147, N152).
+     *
+     * The day index is the card's position; the pool is program-wide, so an exercise from a source day the
+     * deload dropped is still selectable here. The day holds a movement once, which the pool's dedupe gives.
+     */
+    fun onToggleExercise(dayIndex: Int, exerciseId: String) {
+        val selected = selectedByDay.getOrNull(dayIndex) ?: return
+        if (exerciseId in selected) selected.remove(exerciseId) else selected.add(exerciseId)
         rebuild()
     }
 
@@ -186,20 +202,37 @@ class ProgramDeloadViewModel @Inject constructor(
      */
     fun onUseLastDeload() {
         val plan = lastPlan ?: return
-        val kept = plan.days.flatMap { it.exerciseIds }.toSet()
-        val selected = sources
-            .flatMap { day -> day.exercises.filter { it.exerciseId in kept }.map { it.templateExerciseId } }
-            .toSet()
-        if (selected.isEmpty()) return
-        selectedIds = selected
-        _state.update { it.copy(dayCount = plan.days.size.coerceIn(1, it.maxDays)) }
+        val available = sources.flatMap { day -> day.exercises.map { it.exerciseId } }.toSet()
+        val wanted = plan.days.size.coerceIn(1, sources.size)
+        val next = plan.days
+            .take(wanted)
+            .map { day -> day.exerciseIds.filter { it in available }.toMutableSet() }
+            .toMutableList()
+        if (next.isEmpty() || next.all { it.isEmpty() }) return
+        selectedByDay = next
+        _state.update { it.copy(dayCount = wanted) }
         rebuild()
     }
 
-    /** Keeps the first [count] days of the program, within what it has (N147). */
+    /**
+     * Sets how many deload days the week has, within what the program has (N147, N152).
+     *
+     * The days are the deload's own, not a prefix of the program: adding one seeds it from the source day at
+     * that position (the old default), and every card still draws from the whole pool.
+     */
     fun onDayCountChange(count: Int) {
         if (sources.isEmpty()) return
-        _state.update { it.copy(dayCount = count.coerceIn(1, sources.size)) }
+        val wanted = count.coerceIn(1, sources.size)
+        while (selectedByDay.size < wanted) {
+            selectedByDay.add(
+                sources.getOrNull(selectedByDay.size)?.exercises
+                    ?.map { it.exerciseId }
+                    ?.toMutableSet()
+                    ?: mutableSetOf(),
+            )
+        }
+        while (selectedByDay.size > wanted) selectedByDay.removeAt(selectedByDay.lastIndex)
+        _state.update { it.copy(dayCount = wanted) }
         rebuild()
     }
 
@@ -225,7 +258,7 @@ class ProgramDeloadViewModel @Inject constructor(
         val inputs = buildDeloadInputs(
             sources = sources,
             dayCount = current.dayCount,
-            selected = selectedIds,
+            selectedByDay = selectedByDay,
             loadKeptPercent = current.loadKeptPercent,
             weekdayOf = ::weekdayOf,
         )
@@ -272,7 +305,7 @@ class ProgramDeloadViewModel @Inject constructor(
         val days = buildDeloadDays(
             sources = sources,
             dayCount = current.dayCount,
-            selected = selectedIds,
+            selectedByDay = selectedByDay,
             loadKeptPercent = current.loadKeptPercent,
             weekdayOf = ::weekdayOf,
         )
@@ -286,72 +319,114 @@ class ProgramDeloadViewModel @Inject constructor(
 }
 
 /**
- * The days on screen, from the snapshot and the controls (ROADMAP N147).
+ * The program's exercise pool, once per movement (N152).
+ *
+ * A movement on two source days is one row: the first source day supplies the plan the rule reads, and both
+ * day names travel as context. That is what lets a two-day deload keep a lift the program only schedules on
+ * day three while still showing where it came from.
+ */
+private data class PoolExercise(val exercise: DeloadSourceExercise, val sourceNames: String)
+
+private fun poolOf(sources: List<DeloadSourceDay>): List<PoolExercise> {
+    val byExercise = LinkedHashMap<String, PoolExercise>()
+    sources.forEach { day ->
+        day.exercises.forEach { exercise ->
+            val existing = byExercise[exercise.exerciseId]
+            byExercise[exercise.exerciseId] = if (existing == null) {
+                PoolExercise(exercise, day.name)
+            } else {
+                existing.copy(
+                    sourceNames = (existing.sourceNames.split(", ") + day.name)
+                        .distinct()
+                        .joinToString(", "),
+                )
+            }
+        }
+    }
+    return byExercise.values.toList()
+}
+
+/**
+ * The days on screen, from the snapshot and the controls (ROADMAP N147, N152).
  *
  * Pure so the screen's state can be asserted without a ViewModel or a database, and so the preview and
  * the write read the same rule: [buildDeloadInputs] is this function's selected half in the write's own
- * shape.
+ * shape. Every day carries the **whole program pool**, selected per day; the day's name and weekday start
+ * from the source day at its position.
  */
 internal fun buildDeloadDays(
     sources: List<DeloadSourceDay>,
     dayCount: Int,
-    selected: Set<String>,
+    selectedByDay: List<Set<String>>,
     loadKeptPercent: Int,
     weekdayOf: (DeloadSourceDay) -> DayOfWeek?,
-): List<DeloadDayUi> = sources.take(dayCount).map { day ->
-    DeloadDayUi(
-        sourceSlotId = day.sourceSlotId,
-        sourceName = day.name,
-        weekday = day.weekdayAfter(weekdayOf),
-        exercises = day.exercises.map { exercise ->
-            DeloadExerciseUi(
-                templateExerciseId = exercise.templateExerciseId,
-                exerciseId = exercise.exerciseId,
-                name = exercise.name,
-                selected = exercise.templateExerciseId in selected,
-                sets = deloadSetTargets(
-                    plannedSets = exercise.sets,
-                    previous = exercise.previous,
-                    loadKeptPercent = loadKeptPercent,
-                    stepGrams = exercise.stepGrams,
-                ),
-                weightUnit = exercise.weightUnit,
-            )
-        },
-    )
+): List<DeloadDayUi> {
+    val pool = poolOf(sources)
+    return (0 until dayCount).mapNotNull { index ->
+        val day = sources.getOrNull(index) ?: return@mapNotNull null
+        val selected = selectedByDay.getOrElse(index) { emptySet() }
+        DeloadDayUi(
+            sourceSlotId = day.sourceSlotId,
+            sourceName = day.name,
+            weekday = day.weekdayAfter(weekdayOf),
+            exercises = pool.map { pooled ->
+                val exercise = pooled.exercise
+                DeloadExerciseUi(
+                    templateExerciseId = exercise.templateExerciseId,
+                    exerciseId = exercise.exerciseId,
+                    name = exercise.name,
+                    sourceName = pooled.sourceNames,
+                    selected = exercise.exerciseId in selected,
+                    sets = deloadSetTargets(
+                        plannedSets = exercise.sets,
+                        previous = exercise.previous,
+                        loadKeptPercent = loadKeptPercent,
+                        stepGrams = exercise.stepGrams,
+                    ),
+                    weightUnit = exercise.weightUnit,
+                )
+            },
+        )
+    }
 }
 
 /**
- * What the creator writes, from the same snapshot and controls (ROADMAP N147).
+ * What the creator writes, from the same snapshot and controls (ROADMAP N147, N152).
  *
- * A day whose exercises are all unticks is left out — the day count is not a promise to write an empty
- * workout — and the name is the source workout's, so a template is findable in the library afterwards.
+ * A day whose selected pool is empty is left out — the day count is not a promise to write an empty workout —
+ * and the name still starts from the source day at that position, so a template is findable in the library;
+ * the template editor renames it afterwards.
  */
 internal fun buildDeloadInputs(
     sources: List<DeloadSourceDay>,
     dayCount: Int,
-    selected: Set<String>,
+    selectedByDay: List<Set<String>>,
     loadKeptPercent: Int,
     weekdayOf: (DeloadSourceDay) -> DayOfWeek?,
-): List<DeloadDayInput> = sources.take(dayCount).mapNotNull { day ->
-    val kept = day.exercises.filter { it.templateExerciseId in selected }
-    if (kept.isEmpty()) return@mapNotNull null
-    DeloadDayInput(
-        name = "${day.name} — deload",
-        weekday = day.weekdayAfter(weekdayOf),
-        exercises = kept.map { exercise ->
-            DeloadExerciseInput(
-                exerciseId = exercise.exerciseId,
-                restSeconds = exercise.restSeconds,
-                techniqueNote = exercise.techniqueNote,
-                supersetGroup = exercise.supersetGroup,
-                sets = deloadSetTargets(
-                    plannedSets = exercise.sets,
-                    previous = exercise.previous,
-                    loadKeptPercent = loadKeptPercent,
-                    stepGrams = exercise.stepGrams,
-                ),
-            )
-        },
-    )
+): List<DeloadDayInput> {
+    val pool = poolOf(sources)
+    return (0 until dayCount).mapNotNull { index ->
+        val day = sources.getOrNull(index) ?: return@mapNotNull null
+        val selected = selectedByDay.getOrElse(index) { emptySet() }
+        val kept = pool.map { it.exercise }.filter { it.exerciseId in selected }
+        if (kept.isEmpty()) return@mapNotNull null
+        DeloadDayInput(
+            name = "${day.name} — deload",
+            weekday = day.weekdayAfter(weekdayOf),
+            exercises = kept.map { exercise ->
+                DeloadExerciseInput(
+                    exerciseId = exercise.exerciseId,
+                    restSeconds = exercise.restSeconds,
+                    techniqueNote = exercise.techniqueNote,
+                    supersetGroup = exercise.supersetGroup,
+                    sets = deloadSetTargets(
+                        plannedSets = exercise.sets,
+                        previous = exercise.previous,
+                        loadKeptPercent = loadKeptPercent,
+                        stepGrams = exercise.stepGrams,
+                    ),
+                )
+            },
+        )
+    }
 }
