@@ -2394,7 +2394,8 @@ heaviest source — was rejected now because it made the second plan unreachable
 library id to the first current instance, since the stored plan keeps library ids, not source rows.
 
 **The day is the deload's, not a prefix.** `selectedByDay` is one set per deload day; the day count grows or
-shrinks that list; each day card renders the whole pool with its own ticks. The first N days still seed
+shrinks that list; the days are headings and one pool is rendered below them, each row carrying a tick per day
+(N156). The first N days still seed
 themselves from the source days at their positions, so an untouched draft writes what it used to, but nothing
 stops a day picking up the third day's lift. The written template is built from the chosen pool entries, not
 copied from a source template, and a movement kept on two deload days is written on both — that is the lifter's
@@ -2428,9 +2429,9 @@ superseded: it was a workaround for the dedupe, and the lifter can now choose th
 
 **The reuse cannot restore the duplication exactly.** A plan stores library ids per day, so a movement kept
 twice in the old plan maps to the first current instance on *Use last deload*; the lifter can add the second
-again. That is the same living-template limit N155 records, not a new one. The layout is the next question: the
-pool now has one row per source instance on every day card, so N156 records the single-pool/day-assignment pass
-for when the 2-of-4 session actually feels long.
+again. That is the same living-template limit N155 records, not a new one. **N156 answered the layout question**:
+the pool now has one row per source instance, listed **once**, with a chip for every deload day it is kept on,
+rather than repeated inside every day card.
 
 ## N158
 

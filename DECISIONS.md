@@ -880,8 +880,9 @@ the rule; that one argues it.
   day count and weekdays are taken by index (N154), and its exercises are read from the plan's current templates
   (N16, N155); a library id maps to the first current instance on reuse, because the stored plan keeps library ids.
   **The days are
-  composed from the program's exercises, not copied from its templates** (N152): every day card offers the
-  program-wide pool — one row per **source instance**, with that day's plan and name — and the day count is the
+  composed from the program's exercises, not copied from its templates** (N152): the days are headings and the
+  program-wide pool is one list below them — one row per **source instance**, with that day's plan and name, and
+  a chip per deload day on each row (N156) — and the day count is the
   deload's, not a prefix of the program; a movement on two source days is two rows, so the same exercise can be
   kept more than once (N157). The workout is named **Deload A, Deload B, …** in day order, so the built week reads as a week
   rather than as copies of the templates; the weekday still starts from the source day at that position, and the
