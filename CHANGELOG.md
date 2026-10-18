@@ -14,7 +14,7 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
-## [2.7] — 2026-10-17 (versionCode 27)
+## [2.7] — 2026-10-18 (versionCode 27)
 
 The pre-release review's batch: one defect visible on every fresh install, thirteen more found by reading, four
 interface changes and one feature. **One number moves on purpose** — the Statistics *Records* tile stops counting
