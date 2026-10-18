@@ -31,6 +31,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -334,6 +337,7 @@ private fun AdherenceBody(
             programs = state.programs,
             weeks = state.markableWeeks,
             deloadWeeks = state.deloadWeeks,
+            plans = state.deloadPlans,
             onToggle = onToggleDeload,
         )
     }
@@ -352,12 +356,14 @@ private fun DeloadWeeks(
     programs: List<WorkoutProgram>,
     weeks: List<LocalDate>,
     deloadWeeks: Map<String, Set<LocalDate>>,
+    plans: Map<String, Set<LocalDate>>,
     onToggle: (String, LocalDate, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (programs.isEmpty() || weeks.isEmpty()) return
+    // A plan is one tap from unreachable, so unmarking asks first; a mark with no plan is harmless (B162).
+    var unmarking by remember { mutableStateOf<Pair<WorkoutProgram, LocalDate>?>(null) }
 
-    val zone = ZoneId.systemDefault()
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = stringResource(R.string.adherence_deload_title),
@@ -371,38 +377,110 @@ private fun DeloadWeeks(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         weeks.forEach { week ->
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = stringResource(
-                        R.string.adherence_deload_week,
-                        HistoryFormat.date(week.atStartOfDay(zone).toInstant(), zone),
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
+            DeloadWeekRow(
+                programs = programs,
+                week = week,
+                deloadWeeks = deloadWeeks,
+                plans = plans,
+                onToggle = onToggle,
+                onUnmark = { program -> unmarking = program to week },
+            )
+        }
+    }
+
+    unmarking?.let { (program, week) ->
+        UnmarkDeloadDialog(
+            onDismiss = { unmarking = null },
+            onConfirm = {
+                unmarking = null
+                onToggle(program.id, week, false)
+            },
+        )
+    }
+}
+
+/** The question behind unmarking a built week, kept out of the chip so both stay one job each (B162). */
+@Composable
+private fun UnmarkDeloadDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag(TestTags.Adherence.DELOAD_UNMARK_DIALOG),
+        title = { Text(stringResource(R.string.adherence_deload_unmark_title)) },
+        text = { Text(stringResource(R.string.adherence_deload_unmark_text)) },
+        confirmButton = {
+            AppTextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.adherence_deload_unmark_confirm))
+            }
+        },
+        dismissButton = {
+            AppTextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        },
+    )
+}
+
+/** One week's heading and chips: the row `DeloadWeeks` draws for every started week (P3.10). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DeloadWeekRow(
+    programs: List<WorkoutProgram>,
+    week: LocalDate,
+    deloadWeeks: Map<String, Set<LocalDate>>,
+    plans: Map<String, Set<LocalDate>>,
+    onToggle: (String, LocalDate, Boolean) -> Unit,
+    onUnmark: (WorkoutProgram) -> Unit,
+) {
+    val zone = ZoneId.systemDefault()
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = stringResource(
+                R.string.adherence_deload_week,
+                HistoryFormat.date(week.atStartOfDay(zone).toInstant(), zone),
+            ),
+            style = MaterialTheme.typography.labelMedium,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            programs.forEach { program ->
+                val marked = week in deloadWeeks[program.id].orEmpty()
+                val built = week in plans[program.id].orEmpty()
+                DeloadChip(
+                    label = if (programs.size == 1) {
+                        stringResource(R.string.adherence_deload_mark)
+                    } else {
+                        program.name
+                    },
+                    marked = marked,
+                    built = built,
+                    onClick = {
+                        if (marked && built) onUnmark(program) else onToggle(program.id, week, !marked)
+                    },
+                    testTag = TestTags.Adherence.deloadWeek(week.toString(), program.id),
                 )
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    programs.forEach { program ->
-                        val marked = week in deloadWeeks[program.id].orEmpty()
-                        FilterChip(
-                            selected = marked,
-                            onClick = { onToggle(program.id, week, !marked) },
-                            label = {
-                                Text(
-                                    if (programs.size == 1) {
-                                        stringResource(R.string.adherence_deload_mark)
-                                    } else {
-                                        program.name
-                                    },
-                                )
-                            },
-                            modifier = Modifier.testTag(
-                                TestTags.Adherence.deloadWeek(week.toString(), program.id),
-                            ),
-                        )
-                    }
-                }
             }
         }
     }
+}
+
+/** One week's chip: marked, and whether the week has a built plan (B162, N148). */
+@Composable
+private fun DeloadChip(
+    label: String,
+    marked: Boolean,
+    built: Boolean,
+    onClick: () -> Unit,
+    testTag: String,
+) {
+    FilterChip(
+        selected = marked,
+        onClick = onClick,
+        label = {
+            // A built week says so: the chip is the one place the plan is visible from adherence (N148),
+            // and the unmark dialog is behind it (B162).
+            Text(if (built) stringResource(R.string.adherence_deload_built, label) else label)
+        },
+        modifier = Modifier.testTag(testTag),
+    )
 }
 
 /** The weekday headings and the month, kept together because neither means anything alone. */

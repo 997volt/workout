@@ -237,6 +237,13 @@ object ProgramSchedule {
         skips: List<RecordedSkip>,
         /** The deloaded weeks, or none — the common case, and the reason this one defaults (P3.10). */
         deloads: List<RecordedDeload> = emptyList(),
+        /**
+         * The built plans in the window, or none (B161).
+         *
+         * A week with days is a plan: its own days are what the calendar draws and the day dialog
+         * lists, instead of the slots it replaced. A week with only a mark keeps the slots, exempt.
+         */
+        deloadWeeks: List<DeloadWeek> = emptyList(),
         /** The occurrences trained with another workout, or none (P3.11). */
         substitutions: List<RecordedSubstitution> = emptyList(),
         /**
@@ -287,6 +294,7 @@ object ProgramSchedule {
         val counted = countOccurrences(
             slots = slots,
             recorded = Recorded(resolved = resolved, skipped = skipped, deloaded = deloaded),
+            deloadWeeks = deloadWeeks,
             month = month,
             today = today,
         )
@@ -314,6 +322,7 @@ object ProgramSchedule {
     private fun countOccurrences(
         slots: List<ProgramSlot>,
         recorded: Recorded,
+        deloadWeeks: List<DeloadWeek>,
         month: YearMonth,
         today: LocalDate,
     ): Counted {
@@ -329,10 +338,18 @@ object ProgramSchedule {
         val missedBySlot = mutableMapOf<String, Int>()
 
         for (week in weeksOf(month)) {
+            // A built plan's own days are the week's schedule (B161). They are exempt like every deload
+            // day, so this is the calendar's question only — nothing below counts them.
+            val plan = planWeek(deloadWeeks, week, first, last)
+            scheduledDays += plan.days
+
             slots.forEach { slot ->
                 val weekday = slot.weekday ?: return@forEach
                 val date = occurrenceDate(week, weekday)
                 if (date !in first..last) return@forEach
+                // The plan replaces this program's slots for the week: its own days are the schedule,
+                // and a slot the plan did not keep is not a scheduled day (B161).
+                if (slot.programId in plan.programs) return@forEach
                 scheduledDays += date
 
                 // Exempt from judgement, not from the calendar: the day is drawn as scheduled and a
@@ -358,34 +375,62 @@ object ProgramSchedule {
             }
         }
 
-        // In the order the slots arrived — the caller's authored union order (P3.12) — so the rows
-        // read the way the program is written.
-        val bySlot = slots.mapNotNull { slot ->
-            val slotDone = doneBySlot[slot.id] ?: 0
-            val slotSkipped = skippedBySlot[slot.id] ?: 0
-            val slotMissed = missedBySlot[slot.id] ?: 0
-            if (slotDone + slotSkipped + slotMissed == 0) {
-                null
-            } else {
-                SlotAdherence(
-                    slotId = slot.id,
-                    templateId = slot.templateId,
-                    templateName = slot.templateName,
-                    done = slotDone,
-                    skipped = slotSkipped,
-                    missed = slotMissed,
-                )
-            }
-        }
-
         return Counted(
             done = done,
             skipped = skipCount,
             missed = missed,
             scheduledDays = scheduledDays,
-            bySlot = bySlot,
+            bySlot = slotAdherence(slots, doneBySlot, skippedBySlot, missedBySlot),
         )
     }
+
+    /**
+     * The scored rows, in the order the slots arrived — the caller's authored union order (P3.12).
+     *
+     * A slot with nothing scored is left out: a row of zeros answers nothing, and a slot with no weekday
+     * was never scheduled.
+     */
+    private fun slotAdherence(
+        slots: List<ProgramSlot>,
+        done: Map<String, Int>,
+        skipped: Map<String, Int>,
+        missed: Map<String, Int>,
+    ): List<SlotAdherence> = slots.mapNotNull { slot ->
+        val slotDone = done[slot.id] ?: 0
+        val slotSkipped = skipped[slot.id] ?: 0
+        val slotMissed = missed[slot.id] ?: 0
+        if (slotDone + slotSkipped + slotMissed == 0) {
+            null
+        } else {
+            SlotAdherence(
+                slotId = slot.id,
+                templateId = slot.templateId,
+                templateName = slot.templateName,
+                done = slotDone,
+                skipped = slotSkipped,
+                missed = slotMissed,
+            )
+        }
+    }
+
+    /** The scheduled dates and the program ids a built plan covers in one week (B161). */
+    private fun planWeek(
+        deloadWeeks: List<DeloadWeek>,
+        week: LocalDate,
+        first: LocalDate,
+        last: LocalDate,
+    ): PlanWeek {
+        val planned = deloadWeeks.filter { it.weekStart == week }
+        val days = planned
+            .flatMap { it.days }
+            .mapNotNull { day -> day.weekday?.let { occurrenceDate(week, it) } }
+            .filter { it in first..last }
+            .toSet()
+        return PlanWeek(days = days, programs = planned.map { it.programId }.toSet())
+    }
+
+    /** What one week's built plan covers: the dates it schedules and the programs whose slots it replaces. */
+    private data class PlanWeek(val days: Set<LocalDate>, val programs: Set<String>)
 
     /**
      * The month's recorded events, in one value: what settles an occurrence and what exempts it.
@@ -629,6 +674,7 @@ object ProgramSchedule {
         date: LocalDate,
         today: LocalDate,
         deloads: List<RecordedDeload> = emptyList(),
+        deloadWeeks: List<DeloadWeek> = emptyList(),
         substitutions: List<RecordedSubstitution> = emptyList(),
     ): List<DayOccurrence> {
         val weekStart = weekStartOf(date)
@@ -646,26 +692,52 @@ object ProgramSchedule {
         val skipped = skips.toSet()
         val deloaded = deloads.toSet()
 
-        return slots.filter { it.weekday == date.dayOfWeek }.map { slot ->
-            val state = when {
-                RecordedDeload(slot.programId, weekStart) in deloaded -> OccurrenceState.DELOAD
-                SlotOccurrence(slot.id, weekStart, date) in resolved -> OccurrenceState.DONE
-                RecordedSkip(slot.id, weekStart) in skipped -> OccurrenceState.SKIPPED
-                date.isBefore(today) -> OccurrenceState.MISSED
-                else -> OccurrenceState.PENDING
+        // A built plan's days are the week's schedule: they appear instead of the slots the plan replaced
+        // (B161). The mark without days keeps the slots, exempt, which is P3.10's older shape.
+        val planned = deloadWeeks.filter { it.weekStart == weekStart }
+        val plannedPrograms = planned.map { it.programId }.toSet()
+
+        val slotOccurrences = slots
+            .filter { it.weekday == date.dayOfWeek && it.programId !in plannedPrograms }
+            .map { slot ->
+                val state = when {
+                    RecordedDeload(slot.programId, weekStart) in deloaded -> OccurrenceState.DELOAD
+                    SlotOccurrence(slot.id, weekStart, date) in resolved -> OccurrenceState.DONE
+                    RecordedSkip(slot.id, weekStart) in skipped -> OccurrenceState.SKIPPED
+                    date.isBefore(today) -> OccurrenceState.MISSED
+                    else -> OccurrenceState.PENDING
+                }
+                DayOccurrence(
+                    slotId = slot.id,
+                    templateId = slot.templateId,
+                    templateName = slot.templateName,
+                    date = date,
+                    weekStart = weekStart,
+                    state = state,
+                    canCorrect = !date.isAfter(today) &&
+                        state != OccurrenceState.DONE &&
+                        state != OccurrenceState.DELOAD,
+                )
             }
-            DayOccurrence(
-                slotId = slot.id,
-                templateId = slot.templateId,
-                templateName = slot.templateName,
-                date = date,
-                weekStart = weekStart,
-                state = state,
-                canCorrect = !date.isAfter(today) &&
-                    state != OccurrenceState.DONE &&
-                    state != OccurrenceState.DELOAD,
-            )
-        }
+
+        val planOccurrences = planned
+            .flatMap { it.days }
+            .filter { it.weekday == date.dayOfWeek }
+            .map { day ->
+                DayOccurrence(
+                    // The plan day's own id: a skip is never offered for it (canCorrect is false), so
+                    // this is an identity the dialog can show rather than a slot to correct (B161).
+                    slotId = day.id,
+                    templateId = day.templateId,
+                    templateName = day.templateName,
+                    date = date,
+                    weekStart = weekStart,
+                    state = OccurrenceState.DELOAD,
+                    canCorrect = false,
+                )
+            }
+
+        return slotOccurrences + planOccurrences
     }
 
     /**

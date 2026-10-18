@@ -393,6 +393,10 @@
     <string name="adherence_deload_hint">A deload week is not scored — its days count as neither done, skipped nor missed — but they stay on the calendar.</string>
     <string name="adherence_deload_week">Week of %1$s</string>
     <string name="adherence_deload_mark">Deload</string>
+    <string name="adherence_deload_built">%1$s · built</string>
+    <string name="adherence_deload_unmark_title">Unmark this deload week?</string>
+    <string name="adherence_deload_unmark_text">The workouts it built stay in the library, but this week’s plan will no longer be used. You can build it again from the program.</string>
+    <string name="adherence_deload_unmark_confirm">Unmark</string>
     <!-- Correcting one day's occurrences (ROADMAP P3.13). -->
     <string name="adherence_day_nothing">Nothing was scheduled on this day.</string>
     <string name="adherence_state_done">Done</string>

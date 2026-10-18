@@ -109,6 +109,39 @@ interface ProgramDeloadDao {
     )
     suspend fun findDeloadDaysForWeek(weekStart: Long): List<DeloadDayRow>
 
+    /**
+     * The days of every marked week in [from, to], for the calendar and the day dialog (B161).
+     *
+     * The same projection as the one-week read, so a built week's days reach both surfaces with their
+     * templates and weekdays; a week with only a mark contributes no rows.
+     */
+    @Query(
+        """
+        SELECT d.id AS id,
+               dl.programId AS programId,
+               dl.weekStart AS weekStart,
+               d.deloadId AS deloadId,
+               d.templateId AS templateId,
+               t.name AS templateName,
+               (
+                   SELECT COUNT(*) FROM template_exercises te
+                   WHERE te.templateId = t.id AND te.deletedAt IS NULL
+               ) AS exerciseCount,
+               d.position AS position,
+               d.weekday AS weekday
+        FROM program_deload_days d
+        JOIN program_deloads dl ON dl.id = d.deloadId
+        JOIN templates t ON t.id = d.templateId
+        WHERE dl.weekStart >= :from
+          AND dl.weekStart <= :to
+          AND dl.deletedAt IS NULL
+          AND d.deletedAt IS NULL
+          AND t.deletedAt IS NULL
+        ORDER BY dl.weekStart ASC, dl.programId ASC, d.position ASC
+        """,
+    )
+    suspend fun findDeloadDaysBetween(from: Long, to: Long): List<DeloadDayRow>
+
     @Insert
     suspend fun insertDeloadDay(row: ProgramDeloadDayEntity)
 

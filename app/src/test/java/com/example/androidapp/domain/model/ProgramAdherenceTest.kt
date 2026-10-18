@@ -2,12 +2,12 @@ package com.example.androidapp.domain.model
 
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Test
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.ZoneOffset
-import org.junit.Test
 
 /**
  * The month's ratio and the days it is drawn over (ROADMAP P3.5).
@@ -86,6 +86,66 @@ class ProgramAdherenceTest {
         assertThat(adherence.missed).isEqualTo(1)
         assertThat(adherence.done).isEqualTo(0)
         assertThat(adherence.ratio).isEqualTo(0.0)
+    }
+
+    @Test
+    fun aBuiltPlan_replacesTheSlotsForItsWeek_onTheCalendarAndInTheDayDialog() {
+        // B161: the plan's own day is what was scheduled. The slot it replaced is not, on either surface.
+        val wednesday = monday.plusDays(2)
+        val plan = DeloadWeek(
+            programId = "p1",
+            weekStart = monday,
+            days = listOf(
+                DeloadDay(
+                    id = "d1",
+                    programId = "p1",
+                    templateId = "deload",
+                    templateName = "Heavy lower — deload",
+                    weekday = DayOfWeek.WEDNESDAY,
+                ),
+            ),
+        )
+        val slots = listOf(slot("mon", DayOfWeek.MONDAY))
+        val deload = RecordedDeload("p1", monday)
+
+        val adherence = ProgramSchedule.monthAdherence(
+            slots = slots,
+            sessions = emptyList(),
+            skips = emptyList(),
+            deloads = listOf(deload),
+            deloadWeeks = listOf(plan),
+            month = october,
+            today = today,
+        )
+
+        assertThat(adherence.scheduledDays).contains(wednesday)
+        assertThat(adherence.scheduledDays).doesNotContain(monday)
+        assertThat(adherence.scored).isEqualTo(0)
+        assertThat(adherence.bySlot).isEmpty()
+
+        val onWednesday = ProgramSchedule.occurrencesOn(
+            slots = slots,
+            sessions = emptyList(),
+            skips = emptyList(),
+            date = wednesday,
+            today = today,
+            deloads = listOf(deload),
+            deloadWeeks = listOf(plan),
+        )
+        assertThat(onWednesday.map { it.templateName }).containsExactly("Heavy lower — deload")
+        assertThat(onWednesday.single().state).isEqualTo(OccurrenceState.DELOAD)
+        assertThat(onWednesday.single().canCorrect).isFalse()
+
+        val onMonday = ProgramSchedule.occurrencesOn(
+            slots = slots,
+            sessions = emptyList(),
+            skips = emptyList(),
+            date = monday,
+            today = today,
+            deloads = listOf(deload),
+            deloadWeeks = listOf(plan),
+        )
+        assertThat(onMonday).isEmpty()
     }
 
     @Test

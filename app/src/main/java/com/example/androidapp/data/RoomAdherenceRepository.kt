@@ -15,9 +15,10 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
-import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.model.AdherenceReport
 import com.example.androidapp.domain.model.DayOccurrence
+import com.example.androidapp.domain.model.DeloadDay
+import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.MonthlyRatio
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramSlot
@@ -25,6 +26,7 @@ import com.example.androidapp.domain.model.RecordedDeload
 import com.example.androidapp.domain.model.RecordedSkip
 import com.example.androidapp.domain.model.RecordedSubstitution
 import com.example.androidapp.domain.model.Streak
+import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.AdherenceRepository
 import java.time.Instant
 import java.time.LocalDate
@@ -105,6 +107,9 @@ class RoomAdherenceRepository @Inject constructor(
         // done, whatever it was done with (P3.11).
         val substitutions = substitutionsBetween(firstWeek, lastWeek)
         val activeIds = active.map { it.id }.toSet()
+        // The built plans, not just the marks (B161): a plan's own days replace the slots that week, so
+        // both the calendar and the day dialog have to read them.
+        val planWeeks = deloadWeeksBetween(firstWeek, lastWeek).filter { it.programId in activeIds }
 
         // The per-lift breakdown's join (P3.14): what each slot's template prescribes, and what
         // those exercises are called. Read once per distinct template, not once per slot.
@@ -132,6 +137,7 @@ class RoomAdherenceRepository @Inject constructor(
                 sessions = sessions,
                 skips = skips,
                 deloads = deloads,
+                deloadWeeks = planWeeks,
                 substitutions = substitutions,
                 exercisesByTemplate = exercisesByTemplate,
                 exerciseNames = exerciseNames,
@@ -141,10 +147,8 @@ class RoomAdherenceRepository @Inject constructor(
             ),
             programs = active.map { it.toDomain() },
             // Only the active programs' weeks: a program no longer followed has nothing to toggle.
-            deloadWeeks = deloads
-                .filter { it.programId in activeIds }
-                .groupBy({ it.programId }, { it.weekStart })
-                .mapValues { (_, weeks) -> weeks.toSet() },
+            deloadWeeks = deloadWeeksByProgram(deloads, activeIds),
+            deloadPlans = deloadPlansByProgram(planWeeks),
         )
     }
 
@@ -173,6 +177,9 @@ class RoomAdherenceRepository @Inject constructor(
             date = date,
             today = today,
             deloads = deloadsBetween(weekStart, weekStart),
+            // The plan's own days are what the dialog lists for a built week (B161).
+            deloadWeeks = deloadWeeksBetween(weekStart, weekStart)
+                .filter { it.programId in active.map { program -> program.id } },
             substitutions = substitutionsBetween(weekStart, weekStart),
         )
     }
@@ -302,6 +309,43 @@ class RoomAdherenceRepository @Inject constructor(
         }
         return slots
     }
+
+    /** Which weeks each active program marked, by program id (P3.10, B161). */
+    private fun deloadWeeksByProgram(
+        deloads: List<RecordedDeload>,
+        activeIds: Set<String>,
+    ): Map<String, Set<LocalDate>> = deloads
+        .filter { it.programId in activeIds }
+        .groupBy({ it.programId }, { it.weekStart })
+        .mapValues { (_, weeks) -> weeks.toSet() }
+
+    /** Which of those weeks have a built plan, by program id (B161, B162, N148). */
+    private fun deloadPlansByProgram(plans: List<DeloadWeek>): Map<String, Set<LocalDate>> = plans
+        .filter { it.days.isNotEmpty() }
+        .groupBy({ it.programId }, { it.weekStart })
+        .mapValues { (_, weeks) -> weeks.toSet() }
+
+    /** The built plans in the window, with their days, for the calendar and the day dialog (B161). */
+    private suspend fun deloadWeeksBetween(from: LocalDate, to: LocalDate): List<DeloadWeek> =
+        deloadDao.findDeloadDaysBetween(from.toEpochDay(), to.toEpochDay())
+            .groupBy { it.programId to it.weekStart }
+            .map { (key, rows) ->
+                DeloadWeek(
+                    programId = key.first,
+                    weekStart = LocalDate.ofEpochDay(key.second),
+                    days = rows.map {
+                        DeloadDay(
+                            id = it.id,
+                            programId = it.programId,
+                            templateId = it.templateId,
+                            templateName = it.templateName,
+                            exerciseCount = it.exerciseCount,
+                            position = it.position,
+                            weekday = it.weekday,
+                        )
+                    },
+                )
+            }
 
     private suspend fun deloadsBetween(from: LocalDate, to: LocalDate): List<RecordedDeload> =
         deloadDao.findDeloadsBetween(from.toEpochDay(), to.toEpochDay()).map {

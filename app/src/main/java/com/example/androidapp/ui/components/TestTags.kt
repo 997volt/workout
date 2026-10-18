@@ -954,6 +954,9 @@ object TestTags {
 
         fun deloadWeek(date: String, programId: String) = "adherence_deload_${date}_$programId"
 
+        /** The confirmation behind unmarking a week that has a built plan (ROADMAP B162). */
+        const val DELOAD_UNMARK_DIALOG = "adherence_deload_unmark_dialog"
+
         /** Correcting one day's occurrences (ROADMAP P3.13). */
         const val DAY_DIALOG = "adherence_day_dialog"
         const val DAY_EMPTY = "adherence_day_empty"

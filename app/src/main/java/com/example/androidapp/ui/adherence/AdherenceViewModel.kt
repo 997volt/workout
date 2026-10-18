@@ -7,16 +7,12 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MonthAdherence
-import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.MonthlyRatio
+import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.Streak
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.repository.AdherenceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +26,10 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
+import javax.inject.Inject
 
 /**
  * What the Adherence screen shows (ROADMAP P3.5, P3.10).
@@ -53,6 +53,8 @@ data class AdherenceUiState(
     val programs: List<WorkoutProgram> = emptyList(),
     /** Which weeks each program marked as a deload, by program id (P3.10). */
     val deloadWeeks: Map<String, Set<LocalDate>> = emptyMap(),
+    /** Which of those weeks have a built plan, by program id (B161, B162, N148). */
+    val deloadPlans: Map<String, Set<LocalDate>> = emptyMap(),
     /** The started weeks of [month], in order, that can be marked (P3.10). */
     val markableWeeks: List<LocalDate> = emptyList(),
     /** The day whose correction dialog is open, or null (ROADMAP P3.13). */
@@ -246,6 +248,7 @@ class AdherenceViewModel @Inject constructor(
                 adherence = result.data.adherence,
                 programs = result.data.programs,
                 deloadWeeks = result.data.deloadWeeks,
+                deloadPlans = result.data.deloadPlans,
                 markableWeeks = markableWeeksOf(month, today),
                 streak = streakOrNull(today, zone),
                 history = historyOrEmpty(today, zone),

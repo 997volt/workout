@@ -196,4 +196,12 @@ data class AdherenceReport(
      * Only weeks the window touches, so a toggle can be drawn as on or off without a second read.
      */
     val deloadWeeks: Map<String, Set<LocalDate>> = emptyMap(),
+    /**
+     * Which of those weeks have a built plan, keyed by program id (B161, B162, N148).
+     *
+     * Separate from [deloadWeeks] because a mark with no plan is still a deload, exempt and scheduled by
+     * its slots, while a plan's own days replace them. The screen needs the distinction: it labels the chip,
+     * and unmarking a week that has a plan destroys something the lifter cannot get back (B162).
+     */
+    val deloadPlans: Map<String, Set<LocalDate>> = emptyMap(),
 )

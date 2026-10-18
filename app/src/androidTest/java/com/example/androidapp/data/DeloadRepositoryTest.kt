@@ -13,6 +13,7 @@ import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.deloadSetTargets
@@ -31,6 +32,7 @@ import org.junit.runner.RunWith
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneOffset
 import java.util.TimeZone
 
@@ -155,6 +157,30 @@ class DeloadRepositoryTest {
         assertTrue(
             "the template survives the unmark",
             templates.observeTemplates().first().any { it.id == created.templateIds.single() },
+        )
+    }
+
+    @Test
+    fun aBuiltWeek_isWhatTheCalendarAndDayDialogShow() = runTest {
+        // B161: the plan's own day is what the calendar draws and the day dialog lists, and the slot
+        // it replaced is not — on either weekday.
+        val created = createDay("Heavy lower — deload", DayOfWeek.WEDNESDAY)
+        val wednesday = LocalDate.of(2026, 10, 7)
+
+        val report = adherence.monthAdherence(YearMonth.of(2026, 10), today, utc).getOrNull()!!
+        assertTrue(wednesday in report.adherence.scheduledDays)
+        assertTrue("the slot's Monday is replaced by the plan", monday !in report.adherence.scheduledDays)
+        assertEquals(setOf(monday), report.deloadPlans[program])
+
+        val onWednesday = adherence.occurrencesOn(wednesday, today, utc).getOrNull().orEmpty()
+        assertEquals(1, onWednesday.size)
+        assertEquals(created.templateIds.single(), onWednesday.single().templateId)
+        assertEquals(OccurrenceState.DELOAD, onWednesday.single().state)
+        assertTrue("a deload day is not correctable", !onWednesday.single().canCorrect)
+
+        assertTrue(
+            "the slot's own Monday is not the week's schedule",
+            adherence.occurrencesOn(monday, today, utc).getOrNull().orEmpty().isEmpty(),
         )
     }
 

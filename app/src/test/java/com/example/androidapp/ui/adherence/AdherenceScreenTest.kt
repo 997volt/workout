@@ -3,6 +3,7 @@ package com.example.androidapp.ui.adherence
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -12,22 +13,22 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.DayOccurrence
+import com.example.androidapp.domain.model.ExerciseAdherence
 import com.example.androidapp.domain.model.MonthAdherence
 import com.example.androidapp.domain.model.MonthlyRatio
+import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.SlotAdherence
 import com.example.androidapp.domain.model.Streak
-import com.example.androidapp.domain.model.ExerciseAdherence
-import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.google.common.truth.Truth.assertThat
-import java.io.IOException
-import java.time.LocalDate
-import java.time.YearMonth
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
+import java.time.LocalDate
+import java.time.YearMonth
 
 /** What the Adherence screen offers (ROADMAP P3.5). */
 @RunWith(AndroidJUnit4::class)
@@ -292,6 +293,36 @@ class AdherenceScreenTest {
             .performScrollTo()
             .performClick()
 
+        assertThat(marked).isFalse()
+    }
+
+    @Test
+    fun aMarkedWeekWithAPlan_asksBeforeUnmarking_andSaysWhatStays() {
+        // B162: the plan is one tap from unreachable, where unmarking used to be harmless.
+        val week = LocalDate.of(2026, 10, 5)
+        var marked: Boolean? = null
+        setScreen(
+            state = AdherenceUiState(
+                month = october,
+                currentMonth = october,
+                isLoading = false,
+                programs = listOf(WorkoutProgram(id = "p1", name = "Upper/Lower", isActive = true)),
+                deloadWeeks = mapOf("p1" to setOf(week)),
+                deloadPlans = mapOf("p1" to setOf(week)),
+                markableWeeks = listOf(week),
+            ),
+            onToggleDeload = { _, _, isMarked -> marked = isMarked },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Adherence.deloadWeek("2026-10-05", "p1"))
+            .performScrollTo()
+            .assertTextContains("Deload · built")
+            .performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Adherence.DELOAD_UNMARK_DIALOG).assertExists()
+        assertThat(marked).isNull()
+
+        composeTestRule.onNodeWithText("Unmark").performClick()
         assertThat(marked).isFalse()
     }
 
