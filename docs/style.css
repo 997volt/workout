@@ -885,3 +885,51 @@ tbody tr:last-child td {
     animation: none !important;
   }
 }
+
+/* The loaded lists, their revisions and the same-date combine (N161) */
+.source-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.source-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.source-name {
+  flex: 1 1 10rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.source-count {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.source-row .field {
+  flex: 1 1 12rem;
+}
+
+.source-remove {
+  align-self: center;
+}
+
+.combine-line {
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.combine-line button {
+  margin-right: 0.5rem;
+}

@@ -241,9 +241,24 @@
     return 'imp_' + fnv1a64Hex(parts.join('|'));
   }
 
-  /* id = "imp_" + fnv64(seed | kind | sheet | row) */
-  function makeId(seed, kind, sheet, row) {
-    return hashParts([String(seed), String(kind), String(sheet), String(row)]);
+  /* id = "imp_" + fnv64(seed | kind | sheet | row | date)
+   *
+   * The date is part of a session's identity, not only its row. Two sheets loaded
+   * under the same revision both start at row 1, and without the date the app's
+   * merge would treat the second sheet's session as already present and skip it
+   * (B173). A re-import of the same row still produces the same id, which is what
+   * keeps a second import a no-op.
+   */
+  function makeId(seed, kind, sheet, row, dateKey) {
+    return hashParts([
+      String(seed), String(kind), String(sheet), String(row), String(dateKey || '')
+    ]);
+  }
+
+  /* The date an id is keyed on: the session's own ISO date, or "none" for a row
+   * with no date (which the validator refuses before an export is written). */
+  function dateKeyOf(date) {
+    return date && date.iso ? date.iso : 'none';
   }
 
   /* An exercise keys on its normalised name only, so the same name is one
@@ -255,17 +270,20 @@
     return 'imp_' + fnv1a64Hex(payload);
   }
 
-  function makeSessionId(seed, sheet, row) {
-    return makeId(seed, 'sess', sheet, row);
+  function makeSessionId(seed, sheet, row, dateKey) {
+    return makeId(seed, 'sess', sheet, row, dateKey);
   }
 
-  function makeSetId(seed, sheet, row) {
-    return makeId(seed, 'set', sheet, row);
+  function makeSetId(seed, sheet, row, dateKey) {
+    return makeId(seed, 'set', sheet, row, dateKey);
   }
 
   /* A session exercise derives from its session and its 1-based position. */
-  function makeSessionExerciseId(seed, sheet, sessionRow, position) {
-    return hashParts([String(seed), 'sess', String(sheet), String(sessionRow), 'se', String(position)]);
+  function makeSessionExerciseId(seed, sheet, sessionRow, dateKey, position) {
+    return hashParts([
+      String(seed), 'sess', String(sheet), String(sessionRow), String(dateKey || ''),
+      'se', String(position)
+    ]);
   }
 
   /* ------------------------------------------------------------------ *
@@ -304,11 +322,26 @@
     };
   }
 
-  /* order is "dmy" (default) or "mdy". ISO dates are order-independent. */
+  /* order is "dmy" (default) or "mdy". ISO dates are order-independent. A number
+   * is epoch milliseconds, the escape hatch for a model that emits timestamps. */
   function parseDateValue(value, order) {
     var mode = order === 'mdy' ? 'mdy' : 'dmy';
     if (value === null || value === undefined) {
       return { ok: false, empty: true, error: null };
+    }
+    if (typeof value === 'number') {
+      // A plausible millisecond timestamp is 1973..2286; anything else (a packed
+      // 20240304, say) is a number we cannot read rather than a date in 1970.
+      if (!isFinite(value) || value < 1e11 || value > 1e13) {
+        return { ok: false, empty: false, error: 'a numeric date must be epoch milliseconds' };
+      }
+      var epochDate = new Date(value);
+      if (isNaN(epochDate.getTime())) {
+        return { ok: false, empty: false, error: 'that timestamp is not a date' };
+      }
+      return dateResult(
+        epochDate.getFullYear(), epochDate.getMonth() + 1, epochDate.getDate(), false
+      );
     }
     if (typeof value !== 'string') {
       return { ok: false, empty: false, error: 'a date must be written as text' };
@@ -1025,6 +1058,11 @@
       time: { hh: DEFAULT_HOUR, mm: DEFAULT_MINUTE },
       timeIssue: null,
       exercise: null,
+      /* Whether the row said anything that makes it a set (N162). */
+      setFields: false,
+      /* A stated zone offset, or null to derive it from the browser's zone (N163). */
+      zoneOffset: null,
+      zoneOffsetIssue: null,
       reps: null,
       repsIssue: null,
       weight: null,
@@ -1050,7 +1088,7 @@
         var dateText = String(raw.date).trim();
         if (dateText !== '') {
           row.dateRaw = dateText;
-          var parsedDate = parseDateValue(dateText, order);
+          var parsedDate = parseDateValue(raw.date, order);
           if (parsedDate.ok) {
             row.date = parsedDate;
           } else {
@@ -1093,6 +1131,29 @@
     if (isPresent(raw.exercise)) {
       var exerciseText = asText(raw.exercise);
       row.exercise = exerciseText === null ? String(raw.exercise).trim() : exerciseText;
+    }
+
+    /* Whether the sheet said anything that makes this row a set. A row with a
+     * date or an exercise but neither reps nor weight is context — a day header
+     * or an exercise heading — and must not become an incomplete set (N162). */
+    row.setFields = isPresent(raw.reps) || isPresent(raw.weight) ||
+      isPresent(raw.weightKg) || isPresent(raw.weightLb);
+
+    /* A stated zone offset wins over the browser's zone (N163). */
+    if (isPresent(raw.zoneOffsetMinutes)) {
+      var parsedOffset = coerceNumber(raw.zoneOffsetMinutes);
+      if (parsedOffset.ok && parsedOffset.value !== null &&
+          Math.abs(parsedOffset.value) <= 840) {
+        row.zoneOffset = Math.round(parsedOffset.value);
+      } else {
+        row.zoneOffsetIssue = {
+          field: 'zoneOffsetMinutes',
+          kind: 'unreadable',
+          raw: String(raw.zoneOffsetMinutes),
+          detail: 'the offset must be whole minutes from UTC, within ±840'
+        };
+        row.issues.push(row.zoneOffsetIssue);
+      }
     }
 
     /* Unit first, then the weight, because weightKg / weightLb state a unit. */
@@ -1311,6 +1372,29 @@
     return { kind: 'unmatched', name: displayName, missingTarget: false };
   }
 
+  /* One loaded list: a seed and a sheet name of its own, so a session's id names
+   * the file it came from and two lists cannot collide (N161, B173). A single
+   * list keeps the older seed/sheet pair. */
+  function normalizeSources(options, seed, sheet) {
+    var given = Array.isArray(options.sources) ? options.sources : null;
+    if (!given || given.length === 0) {
+      return [{
+        seed: seed,
+        sheet: sheet,
+        name: isPresent(options.source) ? String(options.source) : seed
+      }];
+    }
+    return given.map(function (source, index) {
+      var item = isObject(source) ? source : {};
+      var sourceSeed = isPresent(item.seed) ? String(item.seed) : seed + '#' + (index + 1);
+      return {
+        seed: sourceSeed,
+        sheet: isPresent(item.sheet) ? String(item.sheet) : sourceSeed,
+        name: isPresent(item.name) ? String(item.name) : sourceSeed
+      };
+    });
+  }
+
   function buildModel(rawRows, options) {
     options = options || {};
     var seed = isPresent(options.seed) ? String(options.seed) : 'rows';
@@ -1319,6 +1403,9 @@
     var catalog = normalizeCatalog(options.catalog);
     var nameUnits = options.nameUnits && isObject(options.nameUnits) ? options.nameUnits : {};
     var nameTargets = options.nameTargets && isObject(options.nameTargets) ? options.nameTargets : {};
+    var sources = normalizeSources(options, seed, sheet);
+    var localCounters = sources.map(function () { return 0; });
+    var combineDates = Array.isArray(options.combineDates) ? options.combineDates.slice() : [];
     var inputWarnings = [];
     var rows = [];
     var skippedBlank = 0;
@@ -1334,6 +1421,8 @@
         continue;
       }
       Object.keys(raw).forEach(function (key) {
+        // `__source` / `__row` are the tool's own annotations on a merged row, not input.
+        if (key.charAt(0) === '_') { return; }
         if (ROW_FIELDS.indexOf(key) === -1) {
           inputWarnings.push({
             path: 'rows[' + i + '].' + key,
@@ -1354,6 +1443,13 @@
         });
       }
       var row = normalizeRow(raw, i + 1, order);
+      // Which loaded list this row came from, and its own row number in it, so ids
+      // name a file rather than a position in the concatenation (N161, B173).
+      var sourceIndex = typeof raw.__source === 'number' ? raw.__source : 0;
+      if (sourceIndex < 0 || sourceIndex >= sources.length) { sourceIndex = 0; }
+      row.sourceIndex = sourceIndex;
+      localCounters[sourceIndex] += 1;
+      row.localRow = localCounters[sourceIndex];
       if (row.isBlank) {
         skippedBlank += 1;
         continue;
@@ -1427,9 +1523,15 @@
     }
 
     function makeSession(row) {
+      var source = sources[row.sourceIndex] || sources[0];
       var session = {
         index: sessions.length,
         sourceRow: row.sourceRow,
+        sourceIndex: sources.indexOf(source),
+        sourceSeed: source.seed,
+        sourceSheet: source.sheet,
+        localRow: row.localRow,
+        dateKey: dateKeyOf(row.date),
         dateRaw: row.dateRaw,
         date: row.date,
         timeRaw: row.timeRaw,
@@ -1440,6 +1542,8 @@
         durationSet: false,
         finishedAt: null,
         zoneOffsetMinutes: null,
+        /* A stated offset is the lifter's and is not recomputed (N163). */
+        manualOffset: false,
         notes: null,
         issues: [],
         blocks: []
@@ -1456,6 +1560,7 @@
       }
       if (row.timeIssue) { session.issues.push(row.timeIssue); }
       if (row.durationIssue) { session.issues.push(row.durationIssue); }
+      if (row.zoneOffsetIssue) { session.issues.push(row.zoneOffsetIssue); }
       if (row.durationMinutes !== null) {
         session.durationMinutes = row.durationMinutes;
         session.durationSet = true;
@@ -1464,7 +1569,12 @@
         session.startedAt = localEpochMillis(
           row.date.y, row.date.month, row.date.day, row.time.hh, row.time.mm
         );
-        session.zoneOffsetMinutes = zoneOffsetMinutesFor(session.startedAt);
+        if (row.zoneOffset !== null && row.zoneOffset !== undefined) {
+          session.zoneOffsetMinutes = row.zoneOffset;
+          session.manualOffset = true;
+        } else {
+          session.zoneOffsetMinutes = zoneOffsetMinutesFor(session.startedAt);
+        }
       }
       refreshSessionTiming(session);
       return session;
@@ -1491,9 +1601,14 @@
     }
 
     function addSet(block, row) {
+      var source = sources[row.sourceIndex] || sources[0];
       var set = {
         index: block.sets.length + 1,
         sourceRow: row.sourceRow,
+        sourceIndex: row.sourceIndex,
+        sourceSeed: source.seed,
+        sourceSheet: source.sheet,
+        localRow: row.localRow,
         reps: row.reps,
         weight: row.weight,
         unit: row.unit || block.unit || 'kg',
@@ -1514,23 +1629,59 @@
       block.sets.push(set);
     }
 
+    /* A context row's note belongs to its session, not to an incomplete set (N162). */
+    function appendSessionNote(session, note) {
+      if (note === null || note === undefined) { return; }
+      var text = String(note).trim();
+      if (text === '') { return; }
+      session.notes = session.notes ? session.notes + '\n' + text : text;
+    }
+
+    /* A list boundary is a new session unless the two lists are combined on this
+     * date, which is how two sheets of one day become one workout (N161). */
+    function combinesWith(row, session) {
+      if (session === null || !session.date) { return false; }
+      if (combineDates.indexOf(session.date.iso) === -1) { return false; }
+      if (row.date && row.date.iso !== session.date.iso) { return false; }
+      return true;
+    }
+
+    var currentSource = null;
     rows.forEach(function (row) {
+      var sourceChanged = currentSource === null || row.sourceIndex !== currentSource;
+      var combined = sourceChanged && combinesWith(row, currentSession);
+
       if (row.dateRaw !== null) {
         /* Every explicit date is a boundary. A repeated one starts a second
          * session on the same day, and a new session never inherits an
-         * exercise from the one above it. */
-        currentSession = makeSession(row);
-        sessions.push(currentSession);
-        currentBlock = null;
+         * exercise from the one above it. A combined boundary keeps the session
+         * it is already in. */
+        if (!combined) {
+          currentSession = makeSession(row);
+          sessions.push(currentSession);
+          currentBlock = null;
+        }
+        currentSource = row.sourceIndex;
       } else if (currentSession === null) {
         currentSession = makeSession(row);
         sessions.push(currentSession);
         currentBlock = null;
+        currentSource = row.sourceIndex;
+      } else if (sourceChanged && !combined) {
+        /* A list that starts without a date is its own session: the missing date
+         * is flagged rather than inherited from the file above it. */
+        currentSession = makeSession(row);
+        sessions.push(currentSession);
+        currentBlock = null;
+        currentSource = row.sourceIndex;
       } else if (!currentSession.durationSet && row.durationMinutes !== null) {
         currentSession.durationMinutes = row.durationMinutes;
         currentSession.durationSet = true;
         refreshSessionTiming(currentSession);
       }
+      if (currentSource === null) { currentSource = row.sourceIndex; }
+
+      var hasSet = row.setFields || row.reps !== null || row.weight !== null;
 
       if (row.exercise !== null) {
         var normalized = normalizeName(row.exercise);
@@ -1540,6 +1691,10 @@
           currentBlock.index = currentSession.blocks.length;
           currentSession.blocks.push(currentBlock);
         }
+      } else if (!hasSet) {
+        /* A date-only row opens the session and carries its note; it is not a set. */
+        appendSessionNote(currentSession, row.notes);
+        return;
       } else if (currentBlock === null) {
         currentBlock = makeBlock('', row);
         currentBlock.index = currentSession.blocks.length;
@@ -1551,7 +1706,12 @@
         currentSession.blocks.push(currentBlock);
       }
 
-      addSet(currentBlock, row);
+      if (hasSet) {
+        addSet(currentBlock, row);
+      } else {
+        /* An exercise heading with no set: it names the block, and its note is the session's. */
+        appendSessionNote(currentSession, row.notes);
+      }
     });
 
     sessions.forEach(function (session, index) { session.index = index; });
@@ -1560,6 +1720,8 @@
       sessions: sessions,
       seed: seed,
       sheet: sheet,
+      sources: sources,
+      combineDates: combineDates,
       order: order,
       source: isPresent(options.source) ? String(options.source) : seed,
       catalog: catalog,
@@ -1671,6 +1833,13 @@
           session.sourceRow + ').');
       }
 
+      var offsetIssue = firstIssue(session.issues, 'zoneOffsetMinutes');
+      if (offsetIssue) {
+        add(problems, sessionPath + '.zoneOffsetMinutes',
+          'The zone offset on source row ' + session.sourceRow +
+          ' must be whole minutes from UTC, within ±840.');
+      }
+
       /* An undated session has no startedAt to finish; the date problem above is
        * the actionable one. A dated session still needs its finishedAt. */
       if (session.startedAt !== null &&
@@ -1681,7 +1850,10 @@
 
       var workSets = 0;
       if (!session.blocks || session.blocks.length === 0) {
-        add(problems, sessionPath + '.exercises', 'This session has no exercises.');
+        // A date-only session is a note, not a workout: the export leaves it out
+        // and says so, rather than refusing the file (N162).
+        add(warnings, sessionPath + '.exercises',
+          'This session has no exercises and will be left out.');
       } else {
         session.blocks.forEach(function (block, blockIndex) {
           var blockPath = sessionPath + '.exercises[' + blockIndex + ']';
@@ -1942,12 +2114,17 @@
     var generatedSessions = [];
     var generatedSets = [];
     model.sessions.forEach(function (session) {
+      if (session.blocks.length === 0) { return; }
       sessionTotal += 1;
-      generatedSessions.push(makeSessionId(model.seed, model.sheet, session.sourceRow));
+      generatedSessions.push(makeSessionId(
+        session.sourceSeed, session.sourceSheet, session.localRow, session.dateKey
+      ));
       session.blocks.forEach(function (block) {
         block.sets.forEach(function (set) {
           setTotal += 1;
-          generatedSets.push(makeSetId(model.seed, model.sheet, set.sourceRow));
+          generatedSets.push(makeSetId(
+            set.sourceSeed, set.sourceSheet, set.localRow, session.dateKey
+          ));
         });
       });
     });
@@ -2050,18 +2227,34 @@
     var sessions = [];
     var sessionExercises = [];
     var sets = [];
+    var emptySessions = [];
 
-    model.sessions.forEach(function (session) {
+    /* Chronological, ties by source order then row (B174): the app sorts on
+     * read, but the file should say what it means. */
+    var orderedSessions = model.sessions.slice().sort(function (a, b) {
+      if (a.startedAt === null && b.startedAt === null) { return a.sourceRow - b.sourceRow; }
+      if (a.startedAt === null) { return 1; }
+      if (b.startedAt === null) { return -1; }
+      if (a.startedAt !== b.startedAt) { return a.startedAt - b.startedAt; }
+      return a.sourceRow - b.sourceRow;
+    });
+
+    orderedSessions.forEach(function (session) {
       if (session.startedAt === null || typeof session.durationMinutes !== 'number') { return; }
+      // A date-only session is a note, not a workout: the app would show an empty
+      // one, so it is left out and said (N162).
+      if (session.blocks.length === 0) { emptySessions.push(session); return; }
       var startedAt = session.startedAt;
       var finishedAt = startedAt + session.durationMinutes * 60000;
-      var sessionId = makeSessionId(model.seed, model.sheet, session.sourceRow);
+      var sessionId = makeSessionId(
+        session.sourceSeed, session.sourceSheet, session.localRow, session.dateKey
+      );
       sessions.push({
         id: sessionId,
         startedAt: startedAt,
         finishedAt: finishedAt,
         zoneOffsetMinutes: session.zoneOffsetMinutes,
-        notes: null,
+        notes: session.notes,
         createdAt: startedAt,
         updatedAt: startedAt
       });
@@ -2071,7 +2264,7 @@
         var resolution = has(plan.byName, normalized) ? plan.byName[normalized] : null;
         if (!resolution || resolution.kind === 'unmatched') { return; }
         var sessionExerciseId = makeSessionExerciseId(
-          model.seed, model.sheet, session.sourceRow, blockIndex + 1
+          session.sourceSeed, session.sourceSheet, session.localRow, session.dateKey, blockIndex + 1
         );
         sessionExercises.push({
           id: sessionExerciseId,
@@ -2083,7 +2276,7 @@
         });
         block.sets.forEach(function (set, setIndex) {
           var item = {
-            id: makeSetId(model.seed, model.sheet, set.sourceRow),
+            id: makeSetId(set.sourceSeed, set.sourceSheet, set.localRow, session.dateKey),
             sessionExerciseId: sessionExerciseId,
             setIndex: setIndex + 1,
             reps: set.reps,
@@ -2114,13 +2307,20 @@
     };
 
     var structural = validateExportFile(file);
+    var emptyWarnings = emptySessions.map(function (session) {
+      return {
+        path: 'sessions',
+        message: 'The session on ' + (session.date ? session.date.iso : 'an unknown date') +
+          ' has no sets and was left out.'
+      };
+    });
     if (structural.problems.length > 0) {
       return {
         ok: false,
         file: null,
         json: '',
         problems: structural.problems,
-        warnings: validation.warnings.concat(structural.warnings),
+        warnings: validation.warnings.concat(structural.warnings, emptyWarnings),
         stats: stats
       };
     }
@@ -2130,7 +2330,7 @@
       file: file,
       json: serializeExport(file),
       problems: [],
-      warnings: validation.warnings.concat(structural.warnings),
+      warnings: validation.warnings.concat(structural.warnings, emptyWarnings),
       stats: stats
     };
   }
@@ -2449,6 +2649,10 @@
 
     var state = {
       rows: [],
+      /* The loaded lists, each with its own seed and sheet (N161). */
+      sources: [],
+      /* ISO dates whose sessions from different lists are joined into one. */
+      combineDates: [],
       inputProblems: [],
       inputWarnings: [],
       source: '',
@@ -2479,7 +2683,8 @@
       loadPaste: byId('loadPaste'),
       loadSample: byId('loadSample'),
       exportInput: byId('exportInput'),
-      revisionInput: byId('revisionInput'),
+      sourceList: byId('sourceList'),
+      combineStatus: byId('combineStatus'),
       orderDmy: byId('orderDmy'),
       orderMdy: byId('orderMdy'),
       ambiguityNote: byId('ambiguityNote'),
@@ -2514,9 +2719,7 @@
       loadText(elements.pasteBox.value, '');
     });
     elements.fileInput.addEventListener('change', function () {
-      if (elements.fileInput.files && elements.fileInput.files.length > 0) {
-        readFile(elements.fileInput.files[0], 'rows');
-      }
+      readFiles(elements.fileInput.files);
       elements.fileInput.value = '';
     });
     elements.exportInput.addEventListener('change', function () {
@@ -2525,8 +2728,6 @@
       }
       elements.exportInput.value = '';
     });
-    elements.revisionInput.addEventListener('change', applyRevision);
-    elements.revisionInput.addEventListener('blur', applyRevision);
     elements.orderDmy.addEventListener('change', onOrderChange);
     elements.orderMdy.addEventListener('change', onOrderChange);
     elements.onlyProblems.addEventListener('change', function () {
@@ -2570,7 +2771,7 @@
     elements.dropZone.addEventListener('drop', function (event) {
       var transfer = event.dataTransfer;
       if (transfer && transfer.files && transfer.files.length > 0) {
-        readFile(transfer.files[0], 'rows');
+        readFiles(transfer.files);
         return;
       }
       var text = transfer ? transfer.getData('text/plain') : '';
@@ -2595,6 +2796,31 @@
     };
     reader.onerror = function () { announce('That file could not be read.'); };
     reader.readAsText(file, 'UTF-8');
+  }
+
+  /* Reads several files in order, so the sources list keeps the order they were
+   * chosen in and every append is visible (N161). */
+  function readFiles(files) {
+    if (!files || files.length === 0) { return; }
+    var list = Array.prototype.slice.call(files);
+    var index = 0;
+    function next() {
+      if (index >= list.length) { return; }
+      var file = list[index];
+      index += 1;
+      var reader = new FileReader();
+      reader.onload = function () {
+        var text = typeof reader.result === 'string' ? reader.result : '';
+        loadText(text, file.name);
+        next();
+      };
+      reader.onerror = function () {
+        announce('Could not read ' + file.name + '.');
+        next();
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+    next();
   }
 
   function catalogStatusText(file, label) {
@@ -2655,39 +2881,108 @@
       return;
     }
 
-    state.fileName = fileName || '';
-    state.rows = parsed.rows || [];
-    state.inputProblems = parsed.problems || [];
-    state.inputWarnings = parsed.warnings || [];
-    state.source = parsed.source || fileName || 'pasted-rows';
-    state.seed = state.source;
-    state.sheet = state.source;
-    state.dateOrder = 'dmy';
-    state.exportedAt = Date.now();
-    ui.elements.orderDmy.checked = true;
-    ui.elements.orderMdy.checked = false;
-    ui.elements.revisionInput.value = state.seed;
-
     if (parsed.kind === 'error') {
-      state.rows = [];
-      state.model = null;
       ui.elements.sourceStatus.textContent = parsed.problems && parsed.problems.length
         ? parsed.problems[0].message
         : 'That input could not be read.';
-      renderAll();
       announce(parsed.problems && parsed.problems.length
         ? parsed.problems[0].message
         : 'That input could not be read.');
       return;
     }
 
-    ui.elements.sourceStatus.textContent =
-      'Read ' + state.rows.length + ' row' + (state.rows.length === 1 ? '' : 's') +
-      ' from ' + state.source + '. Revise the values below; nothing leaves this page until you download.';
+    var rows = parsed.rows || [];
+    if (rows.length === 0) {
+      ui.elements.sourceStatus.textContent = 'That input has no rows.';
+      announce('That input has no rows.');
+      return;
+    }
+
+    /* A list is loaded once: the same rows twice would double every session, and
+     * the ids would not even collide to hide it (N161). */
+    var signature = JSON.stringify(rows);
+    for (var i = 0; i < state.sources.length; i++) {
+      if (JSON.stringify(state.sources[i].rows) === signature) {
+        ui.elements.sourceStatus.textContent =
+          'That list is already loaded. Remove it first to replace it.';
+        announce('That list is already loaded.');
+        return;
+      }
+    }
+
+    var name = parsed.source || fileName || ('Pasted rows ' + (state.sources.length + 1));
+    state.sources.push({
+      name: name,
+      seed: name,
+      sheet: name,
+      rows: rows,
+      problems: parsed.problems || [],
+      warnings: parsed.warnings || []
+    });
+    state.exportedAt = Date.now();
+    reconcileSources();
     rebuildModel();
     renderAll();
-    announce('Loaded ' + state.rows.length + ' row' + (state.rows.length === 1 ? '' : 's') +
-      ' from ' + state.source + '.');
+    ui.elements.sourceStatus.textContent =
+      'Read ' + rows.length + ' row' + (rows.length === 1 ? '' : 's') + ' from ' + name +
+      '. Each list starts its own first session; combine a date below when two lists share one.';
+    announce('Loaded ' + rows.length + ' row' + (rows.length === 1 ? '' : 's') + ' from ' + name + '.');
+  }
+
+  /* Rebuilds the flat row list from the loaded lists, annotating each row with
+   * the list it came from so a session's id names its file (N161, B173). */
+  function reconcileSources() {
+    var state = ui.state;
+    var rows = [];
+    var problems = [];
+    var warnings = [];
+    state.sources.forEach(function (source, index) {
+      source.rows.forEach(function (row, rowIndex) {
+        if (isObject(row)) {
+          row.__source = index;
+          row.__row = rowIndex + 1;
+        }
+        rows.push(row);
+      });
+      problems = problems.concat(source.problems || []);
+      warnings = warnings.concat(source.warnings || []);
+    });
+    state.rows = rows;
+    state.inputProblems = problems;
+    state.inputWarnings = warnings;
+    var first = state.sources[0];
+    state.seed = first ? first.seed : 'rows';
+    state.sheet = first ? first.sheet : state.seed;
+    state.source = first ? first.name : 'pasted-rows';
+    state.fileName = first ? first.name : '';
+
+    /* A combine is only meaningful while the date is still in two lists. */
+    var countByDate = {};
+    state.sources.forEach(function (source) {
+      var seen = {};
+      source.rows.forEach(function (row) {
+        if (!isObject(row) || !isPresent(row.date)) { return; }
+        var parsed = parseDateValue(row.date, state.dateOrder);
+        if (parsed.ok) { seen[parsed.iso] = true; }
+      });
+      Object.keys(seen).forEach(function (iso) {
+        countByDate[iso] = (countByDate[iso] || 0) + 1;
+      });
+    });
+    state.combineDates = state.combineDates.filter(function (iso) {
+      return (countByDate[iso] || 0) > 1;
+    });
+  }
+
+  function removeSource(index) {
+    var state = ui.state;
+    var source = state.sources[index];
+    if (!source) { return; }
+    state.sources.splice(index, 1);
+    reconcileSources();
+    rebuildModel();
+    renderAll();
+    announce('Removed ' + source.name + '.');
   }
 
   function rebuildModel() {
@@ -2700,6 +2995,10 @@
       seed: state.seed,
       sheet: state.sheet,
       source: state.source,
+      sources: state.sources.map(function (item) {
+        return { seed: item.seed, sheet: item.sheet, name: item.name };
+      }),
+      combineDates: state.combineDates,
       dateOrder: state.dateOrder,
       catalog: state.catalogFile,
       nameUnits: state.mapping.units,
@@ -2708,11 +3007,109 @@
   }
 
   function renderAll() {
+    renderSources();
     renderDatalist();
     renderSessions();
     renderMapping();
+    renderCombine();
     refresh();
     refreshOrderNote();
+  }
+
+  /* The loaded lists: one row each, with its own revision and a way to remove it
+   * (N161). The revision keys that list's ids, so changing it re-keys only them. */
+  function renderSources() {
+    var state = ui.state;
+    var host = ui.elements.sourceList;
+    if (!host) { return; }
+    host.textContent = '';
+    if (state.sources.length === 0) {
+      host.appendChild(h('p', 'hint', 'No lists loaded yet.'));
+      return;
+    }
+    state.sources.forEach(function (source, index) {
+      var row = h('div', 'source-row');
+
+      var name = h('span', 'source-name', source.name);
+      row.appendChild(name);
+      row.appendChild(h('span', 'source-count',
+        source.rows.length + (source.rows.length === 1 ? ' row' : ' rows')));
+
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'source-seed';
+      input.value = source.seed;
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+      input.setAttribute('aria-label', 'Revision for ' + source.name);
+      input.addEventListener('change', function () {
+        var value = input.value.trim();
+        if (value === '') {
+          input.value = source.seed;
+          return;
+        }
+        source.seed = value;
+        rebuildModel();
+        renderAll();
+        announce('The revision for ' + source.name + ' is now ' + value + '.');
+      });
+      row.appendChild(labeledField('Revision', input));
+
+      var remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'secondary source-remove';
+      remove.textContent = 'Remove';
+      remove.setAttribute('aria-label', 'Remove ' + source.name);
+      remove.addEventListener('click', function () { removeSource(index); });
+      row.appendChild(remove);
+
+      host.appendChild(row);
+    });
+  }
+
+  /* Dates two lists both trained, with a way to join them into one workout (N161). */
+  function renderCombine() {
+    var state = ui.state;
+    var host = ui.elements.combineStatus;
+    if (!host) { return; }
+    host.textContent = '';
+    if (state.sources.length < 2) { return; }
+
+    var countByDate = {};
+    state.sources.forEach(function (source) {
+      var seen = {};
+      source.rows.forEach(function (row) {
+        if (!isObject(row) || !isPresent(row.date)) { return; }
+        var parsed = parseDateValue(row.date, state.dateOrder);
+        if (parsed.ok) { seen[parsed.iso] = true; }
+      });
+      Object.keys(seen).forEach(function (iso) {
+        countByDate[iso] = (countByDate[iso] || 0) + 1;
+      });
+    });
+
+    Object.keys(countByDate).sort().forEach(function (iso) {
+      if (countByDate[iso] < 2) { return; }
+      var combined = state.combineDates.indexOf(iso) !== -1;
+      var line = h('p', 'combine-line');
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'secondary';
+      button.textContent = (combined ? 'Uncombine ' : 'Combine ') + iso;
+      button.addEventListener('click', function () {
+        state.combineDates = combined
+          ? state.combineDates.filter(function (date) { return date !== iso; })
+          : state.combineDates.concat([iso]);
+        rebuildModel();
+        renderAll();
+        announce((combined ? 'Uncombined ' : 'Combined ') + iso + '.');
+      });
+      line.appendChild(button);
+      line.appendChild(document.createTextNode(
+        '  ' + countByDate[iso] + ' lists trained on this date; joined, they become one workout.'
+      ));
+      host.appendChild(line);
+    });
   }
 
   function renderDatalist() {
@@ -3004,6 +3401,23 @@
       });
       header.appendChild(labeledField('Duration (min)', durationInput));
 
+      // The offset is the lifter's when the sheet states one, and the browser's
+      // zone otherwise; either can be corrected here (N163).
+      var offsetInput = document.createElement('input');
+      offsetInput.type = 'number';
+      offsetInput.step = '15';
+      offsetInput.min = '-840';
+      offsetInput.max = '840';
+      offsetInput.className = 'session-offset-input';
+      offsetInput.value = session.zoneOffsetMinutes === null ? '' : String(session.zoneOffsetMinutes);
+      offsetInput.setAttribute('aria-label',
+        'UTC offset in minutes for the session at source row ' + session.sourceRow +
+        ' (empty to derive it from this browser)');
+      offsetInput.addEventListener('change', function () {
+        updateSessionOffset(sessionIndex, offsetInput.value);
+      });
+      header.appendChild(labeledField('UTC offset (min)', offsetInput));
+
       var offsetText = h('p', 'session-offset', '');
       header.appendChild(offsetText);
       body.appendChild(header);
@@ -3274,6 +3688,7 @@
         dateInput: dateInput,
         timeInput: timeInput,
         durationInput: durationInput,
+        offsetInput: offsetInput,
         offsetText: offsetText,
         dateSpan: dateSpan,
         metaSpan: metaSpan,
@@ -3359,7 +3774,12 @@
       setText(domSession.offsetText, session.zoneOffsetMinutes === null
         ? 'No zone offset: this session has no date yet.'
         : formatOffset(session.zoneOffsetMinutes) + ' (' + session.zoneOffsetMinutes +
-          ' minutes east of UTC, computed from this browser)');
+          ' minutes east of UTC, ' +
+          (session.manualOffset ? 'as stated by the source' : 'computed from this browser') + ')');
+      if (domSession.offsetInput && document.activeElement !== domSession.offsetInput) {
+        domSession.offsetInput.value = session.zoneOffsetMinutes === null
+          ? '' : String(session.zoneOffsetMinutes);
+      }
       domSession.details.hidden = state.onlyProblems && blocking.length + warnings.length === 0;
 
       domSession.blocks.forEach(function (domBlock, blockIndex) {
@@ -3707,10 +4127,14 @@
       session.startedAt = localEpochMillis(
         session.date.y, session.date.month, session.date.day, session.hh, session.mm
       );
-      session.zoneOffsetMinutes = zoneOffsetMinutesFor(session.startedAt);
+      session.dateKey = dateKeyOf(session.date);
+      if (!session.manualOffset) {
+        session.zoneOffsetMinutes = zoneOffsetMinutesFor(session.startedAt);
+      }
     } else {
       session.startedAt = null;
-      session.zoneOffsetMinutes = null;
+      session.dateKey = 'none';
+      if (!session.manualOffset) { session.zoneOffsetMinutes = null; }
     }
     recomputeFinished(session);
     var row = state.rows[session.sourceRow - 1];
@@ -3741,7 +4165,9 @@
       session.startedAt = localEpochMillis(
         session.date.y, session.date.month, session.date.day, session.hh, session.mm
       );
-      session.zoneOffsetMinutes = zoneOffsetMinutesFor(session.startedAt);
+      if (!session.manualOffset) {
+        session.zoneOffsetMinutes = zoneOffsetMinutesFor(session.startedAt);
+      }
     }
     recomputeFinished(session);
     var row = state.rows[session.sourceRow - 1];
@@ -3765,6 +4191,34 @@
     var row = state.rows[session.sourceRow - 1];
     if (row) { row.durationMinutes = session.durationMinutes; }
     refresh();
+  }
+
+  /* The stated offset lives on the source row, so it survives a rebuild (N163). */
+  function updateSessionOffset(sessionIndex, raw) {
+    var state = ui.state;
+    var session = state.model && state.model.sessions[sessionIndex];
+    if (!session) { return; }
+    var row = state.rows[session.sourceRow - 1];
+    if (!isObject(row)) { return; }
+    var text = String(raw === null || raw === undefined ? '' : raw).trim();
+    if (text === '') {
+      if (has(row, 'zoneOffsetMinutes')) { delete row.zoneOffsetMinutes; }
+      session.manualOffset = false;
+      session.zoneOffsetMinutes = session.startedAt === null
+        ? null : zoneOffsetMinutesFor(session.startedAt);
+    } else {
+      var value = Number(text);
+      if (!isFinite(value) || Math.round(value) !== value || Math.abs(value) > 840) {
+        announce('The offset must be whole minutes from UTC, within ±840.');
+        refresh();
+        return;
+      }
+      row.zoneOffsetMinutes = Math.round(value);
+      session.manualOffset = true;
+      session.zoneOffsetMinutes = Math.round(value);
+    }
+    refresh();
+    announce('The session\'s UTC offset is ' + formatOffset(session.zoneOffsetMinutes) + '.');
   }
 
   function recomputeFinished(session) {
@@ -3895,23 +4349,6 @@
     announce('Marked ' + count + ' selected set' + (count === 1 ? '' : 's') + ' as ' +
       roleLabel(role).toLowerCase() + '.');
     refresh();
-  }
-
-  function applyRevision() {
-    var state = ui.state;
-    var value = ui.elements.revisionInput.value.trim();
-    if (value === '') {
-      ui.elements.revisionInput.value = state.seed;
-      announce('The revision needs a name.');
-      return;
-    }
-    if (value === state.seed) { return; }
-    state.seed = value;
-    if (state.model) {
-      rebuildModel();
-      refresh();
-    }
-    announce('Revision set to ' + state.seed + '. Session and set ids now derive from it.');
   }
 
   function onOrderChange(event) {

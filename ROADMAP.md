@@ -17,25 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The N157–N160 review's findings (B173–B175, N161–N164).** A reading of the unreleased batch and the new import
-helper. Two are substantive: the merge the specification calls v1 is not built, and a paste with no source name
-can silently share session ids with an earlier one. The rest are one refused sheet shape and four small
-deviations from the spec.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| N161 | **medium** | **The tool cannot merge several sheets, which the spec calls v1.** Dropping more than one file reads only the first and silently ignores the rest; a second paste or drop replaces the rows; there is no sources list and no same-date combine. The workaround is one import per sheet, which does work because a file's name is the seed. | Add a sources list: each load appends, with its file name and row count, and the seed becomes per source. Show same-date sessions with a **Combine** action that unions their exercises and renumbers positions. Refuse a duplicate file rather than double it. |
-| B173 | **medium** | **Session ids collide across separately loaded lists.** The id keys on the seed, the sheet and the source row, and a paste with no `source` field defaults both seed and sheet to `pasted-rows`; two sheets pasted separately, each with a session at row 1, produce the **same id**, so the app's merge silently skips the second sheet's sessions. | Include the session's date in the id, so two sessions at different dates cannot collide while a re-import of the same row still does not duplicate. |
-| N162 | **medium** | **A row with a date or an exercise but no set is refused.** A notes-only day header or an exercise heading — ordinary notebook furniture — becomes an incomplete set and blocks the export with three messages. The spec's rule that every row is a set is what the tool implements, so the rule needs a definition rather than a patch. | A row with no reps and no weight carries the date, the exercise and the note and adds **no set**; warn when it carries nothing usable. Say so in the spec, and cover a notes-only row and an exercise heading. |
-| N163 | low | **The session's zone offset is derived and cannot be corrected.** A `zoneOffsetMinutes` in the input is ignored and the offset comes from the browser's zone at that date, so a sheet trained abroad can put an evening session on the wrong day. | Either an offset control per session, which the spec already promises, or an explicit statement that the browser's zone is assumed. |
-| B174 | low | **The export is not ordered by date.** Sessions are written in row order, so a sheet whose dates run out of order produces a file in that order; the spec says output is ordered by `startedAt`. The app sorts on read, so nothing breaks today. | Sort sessions by `startedAt`, ties broken by source order then row, before writing. |
-| B175 | low | **Epoch-millis dates are refused.** The spec accepts a timestamp as an escape hatch for a model that emits one; the parser requires text, so such a row blocks with "a date must be written as text". | Accept a number as epoch millis, or drop the promise from the spec. |
-| N164 | low | **The single-file build the spec describes does not exist.** The spec says the three files concatenated must behave identically; there is no concatenation. | Add the one-command inline build, or drop the claim from the spec. |
-
-This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
-the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself
-full. An empty section is a state, not a gap: a row stands here while it is being done and leaves for
-[CHANGELOG.md](CHANGELOG.md) when it ships, which is how this section drains.
+**Nothing.** The N157–N160 review's findings (B173–B175, N161–N164) shipped and are in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## Later — decided, and not being started
 

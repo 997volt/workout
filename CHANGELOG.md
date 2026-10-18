@@ -40,6 +40,34 @@ unreleased.
   positions and set indices, resolving references, and `imp_` ids that do not repeat. Regenerating the fixture
   is now a deliberate format change rather than a silent one.
 
+### Fixed
+
+- **The import helper loads several sheets and merges them, and its ids no longer collide** (N161, B173). A
+  drop of several files read only the first and a second load replaced the rows, so a year of monthly sheets
+  had no way in. Each load now appends a list with its own revision, a list boundary is a session boundary, a
+  date two lists trained can be combined into one workout, and the same rows twice are refused rather than
+  doubled. Ids now name the date as well as the row: two lists loaded under one revision both start at row 1,
+  and without it the app's merge silently skipped the second list's sessions.
+
+- **A date-only row or an exercise heading no longer blocks the export** (N162). The rule that every row is a
+  set turned ordinary notebook furniture into an incomplete set with three errors. A row with neither reps
+  nor weight now carries its date, exercise and note and adds no set; a session left with no sets is warned
+  about and left out of the file rather than refusing it.
+
+- **The helper's UTC offset can be stated or corrected** (N163). It was derived from the browser and could
+  not be changed, so a sheet trained abroad could put an evening session on the wrong day. A stated
+  `zoneOffsetMinutes` is honoured, the session header carries a control for it, and clearing the control goes
+  back to the browser's zone.
+
+- **The helper writes sessions in date order and reads an epoch-millisecond date** (B174, B175). Sessions
+  were written in row order, so a sheet whose dates ran out of order produced a file in that order; the
+  export now sorts by start, ties by source. A numeric date inside the plausible millisecond range is read as
+  that day rather than refused.
+
+- **The helper can be built as one file** (N164). `node docs/build-single-file.js` writes
+  `dist/workout-import.html` with the stylesheet and script inlined, and refuses to write a page that still
+  names either.
+
 ### Changed
 
 - **The deload creator lists every exercise once, with a day chip on each row** (N156). The pool was repeated

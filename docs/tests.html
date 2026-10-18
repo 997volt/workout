@@ -564,7 +564,7 @@
     }), 'top-level warning');
   });
 
-  check('unreadable numbers are reported, missing values block', function () {
+  check('unreadable numbers are reported, and a heading with no sets blocks', function () {
     var unreadable = baseModel([
       { date: '24-10-2025', exercise: 'Squat', reps: 'eight', weight: 'heavy', unit: 'kg' }
     ]);
@@ -572,11 +572,11 @@
       'sessions[0].exercises[0].sets[0].reps', /not a number/);
     expectAt(H.revalidateModel(unreadable).problems,
       'sessions[0].exercises[0].sets[0].weight', /not a number/);
-    var missing = baseModel([{ date: '24-10-2025', exercise: 'Squat' }]);
-    expectAt(H.revalidateModel(missing).problems,
-      'sessions[0].exercises[0].sets[0].reps', /no reps/);
-    expectAt(H.revalidateModel(missing).problems,
-      'sessions[0].exercises[0].sets[0].weight', /no weight/);
+    // A row with an exercise but no reps and no weight is a heading, not a set
+    // (N162), so the block itself is what has nothing in it.
+    var heading = baseModel([{ date: '24-10-2025', exercise: 'Squat' }]);
+    expectAt(H.revalidateModel(heading).problems,
+      'sessions[0].exercises[0].sets', /no sets/);
   });
 
   /* ------------------------------------------------------------------ *
@@ -1155,6 +1155,87 @@
     eq(stats.newExercises, 0);
     eq(stats.existingExercises, 2);
     eq(stats.newExerciseNames.length, 0);
+  });
+
+  /* ------------------------------------------------------------------ *
+   * The review's fixes (B173–B175, N161–N163)
+   * ------------------------------------------------------------------ */
+
+  check('ids separate two lists on the same row but different dates (B173)', function () {
+    var jan = H.buildExport(baseModel([
+      { date: '2024-01-01', exercise: 'Squat', reps: 5, weight: 100, unit: 'kg' }
+    ]), { exportedAt: 0 }).file;
+    var feb = H.buildExport(baseModel([
+      { date: '2024-02-02', exercise: 'Squat', reps: 5, weight: 100, unit: 'kg' }
+    ]), { exportedAt: 0 }).file;
+    ok(jan.sessions[0].id !== feb.sessions[0].id,
+      'the same seed, sheet and row must not share an id across dates');
+    eq(H.makeSessionId('s', 'x', 1, '2024-01-01'), H.makeSessionId('s', 'x', 1, '2024-01-01'));
+  });
+
+  check('two lists stay separate, and a combine joins one date (N161)', function () {
+    var rows = [
+      { __source: 0, date: '2024-03-04', exercise: 'Bench', reps: 5, weight: 100, unit: 'kg' },
+      { __source: 1, date: '2024-03-04', exercise: 'Squat', reps: 5, weight: 120, unit: 'kg' },
+      { __source: 1, date: '2024-03-06', exercise: 'Bench', reps: 5, weight: 100, unit: 'kg' }
+    ];
+    var sources = [{ seed: 'a', sheet: 'a' }, { seed: 'b', sheet: 'b' }];
+    var separate = H.buildModel(rows, { sources: sources });
+    eq(separate.sessions.length, 3);
+    var combined = H.buildModel(rows, { sources: sources, combineDates: ['2024-03-04'] });
+    eq(combined.sessions.length, 2);
+    eq(combined.sessions[0].blocks.length, 2);
+    var file = H.buildExport(combined, { exportedAt: 0 }).file;
+    eq(file.sessions.length, 2);
+    // Bench + Squat on the combined day, Bench on the second: three blocks.
+    eq(file.sessionExercises.length, 3);
+  });
+
+  check('a date-only row and an exercise heading add no set (N162)', function () {
+    var model = baseModel([
+      { date: '2024-05-01', notes: 'felt tired' },
+      { exercise: 'Squat', notes: 'belt on' },
+      { exercise: 'Squat', reps: 5, weight: 100, unit: 'kg' }
+    ]);
+    eq(model.sessions.length, 1);
+    eq(model.sessions[0].blocks.length, 1);
+    eq(model.sessions[0].blocks[0].sets.length, 1);
+    eq(model.sessions[0].notes, 'felt tired\nbelt on');
+    var result = H.buildExport(model, { exportedAt: 0 });
+    eq(result.ok, true);
+    eq(result.file.sessions[0].notes, 'felt tired\nbelt on');
+  });
+
+  check('a stated zone offset is kept and validated (N163)', function () {
+    var stated = baseModel([
+      { date: '2024-06-01', exercise: 'Squat', reps: 5, weight: 100, unit: 'kg', zoneOffsetMinutes: 120 }
+    ]);
+    eq(stated.sessions[0].zoneOffsetMinutes, 120);
+    eq(stated.sessions[0].manualOffset, true);
+    eq(H.buildExport(stated, { exportedAt: 0 }).file.sessions[0].zoneOffsetMinutes, 120);
+    var bad = baseModel([
+      { date: '2024-06-01', exercise: 'Squat', reps: 5, weight: 100, unit: 'kg', zoneOffsetMinutes: 9999 }
+    ]);
+    expectAt(H.revalidateModel(bad).problems, 'sessions[0].zoneOffsetMinutes', /offset/);
+  });
+
+  check('an epoch-millisecond date is read (B175)', function () {
+    var parsed = H.parseDateValue(Date.UTC(2024, 2, 4, 12), 'dmy');
+    eq(parsed.ok, true);
+    eq(parsed.iso, '2024-03-04');
+    var model = baseModel([
+      { date: Date.UTC(2024, 2, 4, 12), exercise: 'Squat', reps: 5, weight: 100, unit: 'kg' }
+    ]);
+    eq(model.sessions[0].date.iso, '2024-03-04');
+  });
+
+  check('sessions are written in date order (B174)', function () {
+    var model = baseModel([
+      { date: '2024-06-02', exercise: 'Squat', reps: 5, weight: 100, unit: 'kg' },
+      { date: '2024-05-01', exercise: 'Squat', reps: 5, weight: 100, unit: 'kg' }
+    ]);
+    var file = H.buildExport(model, { exportedAt: 0 }).file;
+    ok(file.sessions[0].startedAt < file.sessions[1].startedAt);
   });
 
   /* ------------------------------------------------------------------ *

@@ -73,17 +73,20 @@ besides the repository root. Three files and a marker, and no prose in that fold
 
 ```
 docs/
-  index.html     markup and the CSP meta
-  app.js         all logic
-  style.css      presentation
-  .nojekyll      stop Jekyll rewriting JavaScript that contains {{ }}
-IMPORT-HELPER.md  this file, at the root, never served
+  index.html            markup and the CSP meta
+  app.js                all logic
+  style.css             presentation
+  .nojekyll             stop Jekyll rewriting JavaScript that contains {{ }}
+  build-single-file.js  writes one self-contained page to dist/ (N164)
+  fixtures/             the synthetic backup the app's test decodes, and its generator
+IMPORT-HELPER.md        this file, at the root, never served
 ```
 
 Enabling Pages (branch `main`, folder `docs`) publishes the tool at
-`https://997volt.github.io/workout/`. The three files also open from disk, which is the copy for anyone who
-would rather not load it from a website. A single-file build is the same three files concatenated; it must
-behave identically.
+`https://997volt.github.io/workout/`. The three source files also open from disk, which is the copy for anyone
+who would rather not load it from a website; `node docs/build-single-file.js` writes
+`dist/workout-import.html` — the same page with its stylesheet and script inlined — for a copy that needs no
+neighbours at all.
 
 ## Input: rows, not sessions
 
@@ -151,9 +154,13 @@ Walk the rows in order, keeping the current date and the current exercise:
 3. **A non-blank exercise starts an exercise block** in the current session.
 4. **A blank date means the current session; a blank exercise means the current block.** A non-blank value
    always wins.
-5. **Each row is appended as one set**, with `setIndex` counting from 1 **including warm-ups**, because that
-   is how the app stores them; it numbers the work sets separately when it displays them.
-6. **A blank type is `NORMAL`.** That is the only default, and a sheet with no warm-up marking therefore
+5. **A row with reps or weight is a set**, with `setIndex` counting from 1 **including warm-ups**, because
+   that is how the app stores them; it numbers the work sets separately when it displays them.
+6. **A row with neither is context, not a set.** A date-only row opens the session and an exercise heading
+   opens the block; the row's note joins the session's, and no set is written (N162). A row with a date and
+   nothing else therefore neither blocks the file nor becomes an empty workout — it is left out with a
+   warning if nothing follows it.
+7. **A blank type is `NORMAL`.** That is the only default, and a sheet with no warm-up marking therefore
    produces an inflated preview — which is why every session header shows its warm-up count.
 
 Clearing the exercise on a date change is the rule that matters: without it, the last lift of Monday
@@ -161,6 +168,17 @@ inherits every set of Tuesday.
 
 Row-level diagnostics, each naming the row rather than the file: *no date yet*, *no exercise yet*, *reps
 missing*, *weight missing*, *unreadable date*, *unreadable number*, *type not recognised*.
+
+### Several lists
+
+A year is more than one sheet, so the tool loads **any number of lists** and keeps each one's identity:
+
+- every load appends; the sources panel shows each list with its row count and its own **revision**, and the
+  same rows twice are refused rather than doubled;
+- a list boundary is a session boundary — no date, exercise or set carries from one file into the next;
+- an id names the list a row came from, so two lists that both start at row 1 cannot collide (B173);
+- a date that two lists both trained is offered as **Combine**, which joins them into one workout, because a
+  notebook often splits one day across two sheets.
 
 ### Units
 
@@ -254,15 +272,19 @@ what it knows.
 ## Identifiers and revisions
 
 ```
-id = "imp_" + fnv64_hex(seed | kind | sheet | row)
+id = "imp_" + fnv64_hex(seed | kind | sheet | row | date)
 ```
 
 `kind` is `sess`, `ex` or `set`; the hash is two 32-bit lanes rendered as sixteen hex characters. Exercise
 ids key on the **normalised name only**, so two files that both say *Cable Fly* produce one exercise.
-Session ids key on the seed and their own source coordinates, and children derive from their parent and
-index.
+Session ids key on the seed, the list, their own row and their date, and children derive from their parent
+and index.
 
-`seed` is the source name by default and is **editable in the UI as the revision**.
+**The date is part of the identity** because two lists loaded under one revision both start at row 1: without
+it, the second list's session would have the first's id and the app's merge would skip it as already present
+(B173). A row whose date has not changed keeps its id, so re-importing is still a no-op.
+
+`seed` is the list's name by default and is **editable per list in the UI as its revision**.
 
 That gives three behaviours worth stating:
 
@@ -280,7 +302,7 @@ corrected, which is the opposite of what the merge needs.
 
 **Blocks the export.** A root that is not an object; neither `rows` nor `sessions`; a session with no date; an unreadable
 date; a set with no `reps` or no `weight`; `reps` below 1; a negative weight; `rpe` outside 1–10; an
-exercise with no sets; an unmatched exercise name with no mapping and no *create new* choice; a duplicate
+offset that is not whole minutes within ±840; an exercise with no sets; an unmatched exercise name with no mapping and no *create new* choice; a duplicate
 id; a non-null `deletedAt`; a missing `finishedAt`; a reference that does not resolve; a mixed unit inside
 one group; a `drop` or `cluster` role.
 
@@ -291,7 +313,8 @@ overlapping in time; an exercise name that matches only a row the export holds a
 creates a new exercise under that name instead of resurrecting the deleted one, because a document never
 brings back what the user deleted (the rule
 [`ProgramRepository`](app/src/main/java/com/example/androidapp/domain/repository/ProgramRepository.kt)
-states for a program document); a session with no work sets; more than eight warm-ups on one exercise;
+states for a program document); a session with no work sets; more than eight warm-ups on one exercise; a
+session with no sets at all, which is left out of the file rather than refused (N162);
 unknown keys in the input.
 
 A problem is `{path, message}`, where `path` addresses the model rather than the page, so the test page can
@@ -301,14 +324,17 @@ assert it.
 
 One page, four panels:
 
-1. **Source** — a drop zone, a paste box, an optional *load your app export*, a CSV mode, and the prompt
-   for the model with a copy button. Loading an export is optional but recommended: it supplies the exercise
-   library, the dry-run comparison and the id-collision check.
+1. **Source** — a drop zone for any number of files, a paste box, an optional *load your app export*, a CSV
+   mode, and the prompt for the model with a copy button. Loading an export is optional but recommended: it
+   supplies the exercise library, the dry-run comparison and the id-collision check. Below it, the **loaded
+   lists**: one row each, with its row count, its own revision, a Remove, and a Combine line for a date two
+   lists share.
 2. **Sessions** — one collapsible row per session: date, exercise count, set count, work tonnage, warm-up
-   count, a problem badge. Expanded, each exercise block is a table of sets with editable reps, weight and
-   unit, RPE and role. The exercise name is a text input backed by a `<datalist>` built from the library, so
-   matching needs no widget library. Inputs are created once and only the problem badges re-render, which is
-   what keeps focus in the cell being typed.
+   count, a problem badge. Expanded, the header carries date, time, duration and the **UTC offset in
+   minutes** — empty derives it from the browser, a number is the lifter's own — and each exercise block is a
+   table of sets with editable reps, weight and unit, RPE and role. The exercise name is a text input backed
+   by a `<datalist>` built from the library, so matching needs no widget library. Inputs are created once and
+   only the problem badges re-render, which is what keeps focus in the cell being typed.
 3. **Problems** — counts and a list; selecting one scrolls to and focuses its row. A *show only problems*
    filter.
 4. **Export** — *will add N sessions, M sets; K sessions already exist and will be skipped; J new
@@ -330,7 +356,7 @@ paste the rows, fix the problems, download, then Settings → Import.
 attempt is the first one that takes.
 
 **A value already imported.** The merge never overwrites; see *Identifiers and revisions* for the sequence
-that does work, which the UI states next to the revision field.
+that does work, which the UI states beside the list's revision.
 
 ## Privacy
 
@@ -347,8 +373,8 @@ that does work, which the UI states next to the revision field.
 
 A `tests.html` page runs assertions in the browser and prints pass or fail: unit and date conversion, the
 offset sign, id determinism, every blocking and warning rule, the grouping algorithm against the example
-above, and a round trip through encode and decode. No framework, because a test harness would be the
-largest dependency in the project.
+above, the several-lists boundary and its combine, and a round trip through encode and decode. No framework,
+because a test harness would be the largest dependency in the project.
 
 Acceptance, by hand:
 
@@ -362,18 +388,23 @@ Acceptance, by hand:
 6. A clean file imports into an empty install and History shows the expected dates, exercises and weights.
 7. Importing the same file twice adds nothing the second time.
 8. The same inputs in the same order produce the same rows, apart from `exportedAt`.
+9. Two lists loaded together keep separate sessions, and two lists whose first session is at row 1 do not
+   share an id; a date both trained is offered as Combine and joins into one workout.
+10. A date-only row and an exercise heading add no set; their notes join the session's.
+11. A stated UTC offset survives a date or time edit; clearing it goes back to the browser's zone.
+12. An epoch-millisecond date is read as that day.
 
 ## What is deliberately left for later
 
 - **Repairing an already-exported backup** as editable sessions, rather than only the row list.
 - **A program and template editor**, which would be a second mode over the same shell.
 
-## Assumptions to confirm before building
+## Assumptions the tool makes
 
-Stated so a wrong one is caught here rather than in a generated file:
+Stated so a wrong one is visible rather than silent:
 
 1. The exercise name is written once per block and blank below, or repeated on every row. The grouping
-   rules above handle both, but the second lets the tool warn when one exercise's rows interleave.
+   rules handle both, but the second lets the tool warn when one exercise's rows interleave.
 2. Warm-ups are marked per row, by a column rather than a separate block.
 3. No sheet carries a time column; if one does, it is used and `12:00` is only the fallback.
 4. A blank type means a work set. If a sheet's warm-ups are unmarked, the editor shows the count as zero

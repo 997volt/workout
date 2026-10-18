@@ -3,6 +3,10 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
+# ---- The import helper's single-file build (N164) ----
+# Produced by docs/build-single-file.js; the three files in docs/ are the source.
+dist/
+
 # ---- Local Android toolchain (JDK + SDK + Gradle caches) ----
 # Installed per-machine by tools/android-env.sh; never committed.
 .toolchain/

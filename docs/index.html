@@ -38,11 +38,11 @@
       <h2 id="source-heading">1. Source</h2>
 
       <div class="drop-zone" id="dropZone">
-        <p class="drop-title">Drop a JSON, CSV or TSV file here</p>
-        <p class="hint">Or choose one. The file is read on this page with FileReader; it is never uploaded.</p>
+        <p class="drop-title">Drop JSON, CSV or TSV files here</p>
+        <p class="hint">One or several. Each is read on this page with FileReader and never uploaded; each becomes a list below.</p>
         <label class="file-button">
-          <span>Choose a file</span>
-          <input type="file" id="fileInput" accept=".json,.csv,.tsv,.txt,application/json,text/csv,text/tab-separated-values,text/plain">
+          <span>Choose files</span>
+          <input type="file" id="fileInput" multiple accept=".json,.csv,.tsv,.txt,application/json,text/csv,text/tab-separated-values,text/plain">
         </label>
       </div>
 
@@ -58,6 +58,18 @@
 
       <p id="sourceStatus" class="hint"></p>
 
+      <div class="field-block" id="sourcesBlock">
+        <h3 id="sources-heading">Loaded lists</h3>
+        <p class="hint">
+          Each file is one list, with its own revision: session and set ids derive from it.
+          Re-importing the same revision is a no-op. The app merges and never overwrites, so
+          correcting a session that already imported means deleting it in the app, raising that
+          list's revision, and importing again.
+        </p>
+        <div id="sourceList" class="source-list" aria-labelledby="sources-heading"></div>
+        <div id="combineStatus"></div>
+      </div>
+
       <div class="field-block">
         <label for="exportInput">Load your app export (optional, recommended)</label>
         <input type="file" id="exportInput" accept=".json,application/json">
@@ -66,16 +78,6 @@
           Export once from the app: Settings &rarr; Export.
         </p>
         <p id="catalogStatus" class="hint"></p>
-      </div>
-
-      <div class="field-block">
-        <label for="revisionInput">Revision (the source name)</label>
-        <input type="text" id="revisionInput" autocomplete="off" spellcheck="false">
-        <p class="hint">
-          Session and set ids derive from it. Re-importing the same revision is a no-op. The app
-          merges and never overwrites, so correcting a session that already imported means deleting
-          it in the app, raising the revision, and importing again.
-        </p>
       </div>
 
       <fieldset class="field-block" id="dateOrder">
