@@ -14,7 +14,14 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
-## [Unreleased]
+## [2.9] — 2026-10-18 (versionCode 29)
+
+The deload builder gets its program-wide pool and a reuse of the last plan's choices, and a target weight gets a
+date estimate. A built week now reads as *Deload A, Deload B, …*; a movement scheduled on two source days comes
+from the heaviest source, and *Use last deload* restores the exercises, day count and weekdays. The review of the
+previous batch's fixes is in this build too — the last-plan read is program-scoped, a reached target says so once,
+and the tolerance behind it has one definition. **No schema or backup change**: 2.9 is additive on 2.8's store, and
+the backup carries no new fields.
 
 ### Added
 
