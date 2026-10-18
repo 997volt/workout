@@ -17,12 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**An app-side fixture the tool's output must survive.** The helper writes a format the app decodes, and no test
-crosses that seam: a `schemaVersion` bump breaks every file it produces without failing a build.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| N160 | low | **Nothing in the app reads a file the helper wrote.** The tool is tested against its own expectations, so a change to the backup's shape — a new `schemaVersion`, a field whose meaning moves — breaks the import with the app's generic "that does not look like a backup file", and no gate notices until a lifter's file is refused. | Check in one **synthetic** `docs/fixtures/import-helper-backup.json` produced by the tool (a real export stays gitignored), and a JVM test that decodes it through `BackupCodec` and asserts the four collections, a session with `finishedAt`, weights as whole grams, RPE in half-points, and `imp_` ids. Regenerate the fixture with the tool when the format moves. |
+**Nothing.** The import helper's fixture (N160) shipped and is in [CHANGELOG.md](CHANGELOG.md), so the tool and
+the app now have a test across the format they share.
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself

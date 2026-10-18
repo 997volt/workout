@@ -31,6 +31,15 @@ unreleased.
   nothing, so a file whose first import failed can be fixed and loaded again; a row that already landed is
   replaced by deleting it in the app, raising the revision and importing, because the merge never overwrites.
 
+- **The helper's output is decoded by the app's own reader** (N160). The tool and the app speak one format and
+  nothing crossed the seam: the helper asserted against its own expectations, so a `schemaVersion` bump or a
+  field whose meaning moved would break the import with the app's generic "that does not look like a backup
+  file" and no build would fail. A synthetic backup produced by the tool itself now sits beside it
+  (`node docs/fixtures/generate.js`) and a JVM test decodes it through `BackupCodec`, asserting the four
+  collections and nothing else, finished sessions with their zone, whole grams and half-points, contiguous
+  positions and set indices, resolving references, and `imp_` ids that do not repeat. Regenerating the fixture
+  is now a deliberate format change rather than a silent one.
+
 ### Changed
 
 - **The deload creator lists every exercise once, with a day chip on each row** (N156). The pool was repeated

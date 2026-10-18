@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 5,
+  "exportedAt": 1709683200000,
+  "exercises": [
+    {
+      "id": "imp_924911810f219bd1",
+      "name": "Back Squat",
+      "primaryMuscle": null,
+      "secondaryMuscles": [],
+      "equipment": null,
+      "movementPattern": null,
+      "createdAt": 1709553600000,
+      "updatedAt": 1709553600000,
+      "weightUnit": "KILOGRAMS"
+    },
+    {
+      "id": "imp_00623697df73f59a",
+      "name": "Standing Calf Raise",
+      "primaryMuscle": null,
+      "secondaryMuscles": [],
+      "equipment": null,
+      "movementPattern": null,
+      "createdAt": 1709553600000,
+      "updatedAt": 1709553600000,
+      "weightUnit": "POUNDS"
+    },
+    {
+      "id": "imp_1f0475405f6d6c75",
+      "name": "Bench Press",
+      "primaryMuscle": null,
+      "secondaryMuscles": [],
+      "equipment": null,
+      "movementPattern": null,
+      "createdAt": 1709553600000,
+      "updatedAt": 1709553600000,
+      "weightUnit": "KILOGRAMS"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "imp_eba16c4bc80e2b19",
+      "startedAt": 1709553600000,
+      "finishedAt": 1709557200000,
+      "zoneOffsetMinutes": 0,
+      "notes": null,
+      "createdAt": 1709553600000,
+      "updatedAt": 1709553600000
+    },
+    {
+      "id": "imp_eba1704bc80e31e5",
+      "startedAt": 1709726400000,
+      "finishedAt": 1709730000000,
+      "zoneOffsetMinutes": 0,
+      "notes": null,
+      "createdAt": 1709726400000,
+      "updatedAt": 1709726400000
+    }
+  ],
+  "sessionExercises": [
+    {
+      "id": "imp_4346bbc9a6a6fd84",
+      "sessionId": "imp_eba16c4bc80e2b19",
+      "exerciseId": "imp_924911810f219bd1",
+      "position": 1,
+      "createdAt": 1709553600000,
+      "updatedAt": 1709553600000
+    },
+    {
+      "id": "imp_4346bec9a6a7029d",
+      "sessionId": "imp_eba16c4bc80e2b19",
+      "exerciseId": "imp_00623697df73f59a",
+      "position": 2,
+      "createdAt": 1709553600000,
+      "updatedAt": 1709553600000
+    },
+    {
+      "id": "imp_768c2d1a75c5bf70",
+      "sessionId": "imp_eba1704bc80e31e5",
+      "exerciseId": "imp_1f0475405f6d6c75",
+      "position": 1,
+      "createdAt": 1709726400000,
+      "updatedAt": 1709726400000
+    }
+  ],
+  "sets": [
+    {
+      "id": "imp_5f8ea5b6331cee59",
+      "sessionExerciseId": "imp_4346bbc9a6a6fd84",
+      "setIndex": 1,
+      "reps": 10,
+      "weightGrams": 40000,
+      "setType": "WARMUP",
+      "createdAt": 1709553600000,
+      "updatedAt": 1709553600000
+    },
+    {
+      "id": "imp_5f8ea2b6331ce940",
+      "sessionExerciseId": "imp_4346bbc9a6a6fd84",
+      "setIndex": 2,
+      "reps": 5,
+      "weightGrams": 100000,
+      "setType": "NORMAL",
+      "createdAt": 1709553600000,
+      "updatedAt": 1709553600000,
+      "rpeHalves": 16
+    },
+    {
+      "id": "imp_5f8ea3b6331ceaf3",
+      "sessionExerciseId": "imp_4346bbc9a6a6fd84",
+      "setIndex": 3,
+      "reps": 5,
+      "weightGrams": 100000,
+      "setType": "NORMAL",
+      "createdAt": 1709553600000,
+      "updatedAt": 1709553600000,
+      "rpeHalves": 17
+    },
+    {
+      "id": "imp_5f8ea8b6331cf372",
+      "sessionExerciseId": "imp_4346bec9a6a7029d",
+      "setIndex": 1,
+      "reps": 12,
+      "weightGrams": 68039,
+      "setType": "NORMAL",
+      "createdAt": 1709553600000,
+      "updatedAt": 1709553600000,
+      "rpeHalves": 18
+    },
+    {
+      "id": "imp_5f8ea9b6331cf525",
+      "sessionExerciseId": "imp_768c2d1a75c5bf70",
+      "setIndex": 1,
+      "reps": 5,
+      "weightGrams": 80000,
+      "setType": "NORMAL",
+      "createdAt": 1709726400000,
+      "updatedAt": 1709726400000,
+      "rpeHalves": 18
+    },
+    {
+      "id": "imp_5f8ea6b6331cf00c",
+      "sessionExerciseId": "imp_768c2d1a75c5bf70",
+      "setIndex": 2,
+      "reps": 5,
+      "weightGrams": 80000,
+      "setType": "NORMAL",
+      "createdAt": 1709726400000,
+      "updatedAt": 1709726400000
+    }
+  ]
+}

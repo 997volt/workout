@@ -12,7 +12,7 @@ file**.
   are stable and go in commits. Forward-looking, not binding.
 - **What the import helper is** — [IMPORT-HELPER.md](IMPORT-HELPER.md); the zero-dependency page in
   [`docs/`](docs/) that turns old spreadsheets into a backup file. Its settled rules are in
-  [DECISIONS.md](DECISIONS.md); the app-side fixture it still wants is N160.
+  [DECISIONS.md](DECISIONS.md); its output is decoded by the app's own JVM test (N160).
 - **What is settled** — [DECISIONS.md](DECISIONS.md); the rules that bind every change,
   argued in [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
 - **What shipped** — [CHANGELOG.md](CHANGELOG.md); shipped work leaves the roadmap for here.

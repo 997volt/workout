@@ -2,8 +2,9 @@
 
 > **Status: implemented as [`docs/`](docs/), shipped as [N159](ROADMAP.md).** The durable rules behind it —
 > why the conversion is outside the app, why the input is rows rather than the app's format, and why the ids
-> are deterministic — are recorded in [DECISIONS.md](DECISIONS.md). The app-side fixture it still wants is
-> [N160](ROADMAP.md), now in *Next*.
+> are deterministic — are recorded in [DECISIONS.md](DECISIONS.md). Its output is decoded by the app's own
+> reader: [`import-helper-backup.json`](docs/fixtures/import-helper-backup.json), regenerated with
+> `node docs/fixtures/generate.js` ([N160](ROADMAP.md)).
 
 A companion to the app for one job: turning old training spreadsheets into a
 `workout-backup.json` the app accepts, with a review step that catches the errors the app cannot report.
@@ -364,9 +365,6 @@ Acceptance, by hand:
 
 ## What is deliberately left for later
 
-- **A fixture the app's tests decode (N160).** One synthetic `workout-backup.json` checked in and read by a JVM
-  test is what makes a `schemaVersion` bump fail loudly instead of silently breaking the tool. It is the
-  one app-side change this work wants, and it is not part of the first version.
 - **Repairing an already-exported backup** as editable sessions, rather than only the row list.
 - **A program and template editor**, which would be a second mode over the same shell.
 
