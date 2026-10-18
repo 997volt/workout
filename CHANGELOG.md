@@ -14,7 +14,15 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
-## [Unreleased]
+## [2.10] — 2026-10-18 (versionCode 30)
+
+History that predates the app can be brought in: a zero-dependency page in [`docs/`](docs/), published at
+[997volt.github.io/workout](https://997volt.github.io/workout/), turns old spreadsheets into a backup the app
+imports — and the app's own decoder is now tested against the file it writes. The deload creator lists each
+exercise once with a day chip, plans the coming week rather than the one that is ending, and a deload day can
+keep the same exercise twice. The helper merges several sheets, no longer collides its ids, accepts a date-only
+row, a stated UTC offset and an epoch-millisecond date, and can be built as one file. **No schema or backup
+change**: 2.10 is additive on 2.9's store, and the backup stays at `schemaVersion` 5.
 
 ### Added
 
