@@ -165,6 +165,9 @@ class DocsConsistencyTest {
             // line. Gated like the file it left, or the archive's own links would rot unwatched.
             "CHANGELOG-1.x.md",
             "RELEASING.md",
+            // A specification for work that is not built, so nothing else would notice it going stale —
+            // and it cites code that will move, which is exactly the drift this gate exists to catch.
+            "IMPORT-HELPER.md",
             // Loaded on demand, so its links and anchors rot with nothing to notice. Nested,
             // which is what resolveRelative exists for.
             ".dsh/skills/android-device-loop/SKILL.md",

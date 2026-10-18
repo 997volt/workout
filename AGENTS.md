@@ -10,6 +10,9 @@ file**.
 
 - **What is planned** — [ROADMAP.md](ROADMAP.md); feature ids (`F#`, `B#`, `N#`, `P#.#`)
   are stable and go in commits. Forward-looking, not binding.
+- **What the import helper is meant to do** — [IMPORT-HELPER.md](IMPORT-HELPER.md); a spec for
+  unbuilt work — the browser tool that turns old spreadsheets into a backup file — folded into
+  [DECISIONS.md](DECISIONS.md) when the tool ships.
 - **What is settled** — [DECISIONS.md](DECISIONS.md); the rules that bind every change,
   argued in [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).
 - **What shipped** — [CHANGELOG.md](CHANGELOG.md); shipped work leaves the roadmap for here.
