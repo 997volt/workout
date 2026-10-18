@@ -891,7 +891,7 @@
     <string name="deload_week">Week of %1$s</string>
     <string name="deload_intro">Same exercises, less work: the plan’s sets up to three, its highest reps (at least five), and a share of its load you choose below. Each day becomes an ordinary template you can edit afterwards.</string>
     <string name="deload_days">Days</string>
-    <string name="deload_days_hint">The program’s first days, trimmed to what you keep.</string>
+    <string name="deload_days_hint">How many days the week has. Every exercise below can be kept on any of them.</string>
     <string name="deload_days_count">%1$d of %2$d</string>
     <string name="deload_days_decrease">One fewer day</string>
     <string name="deload_days_increase">One more day</string>
@@ -903,6 +903,11 @@
     <string name="deload_load_failed">Couldn’t read this program’s plan.</string>
     <string name="deload_load_failed_hint">Go back and try again.</string>
     <string name="deload_day">Day %1$d</string>
+    <string name="deload_pool">Exercises</string>
+    <string name="deload_pool_hint">Each exercise is listed once. Choose the days to keep it on.</string>
+    <string name="deload_keep_on">Keep on</string>
+    <string name="deload_keep_on_day">Keep %1$s on day %2$d</string>
+    <string name="deload_not_kept">Not kept on any day</string>
     <string name="deload_weekday">Change the day for %1$s</string>
     <string name="deload_no_weekday">No day</string>
     <!-- The draft's prescription, e.g. "3 × 5 · 60 kg". The sets line alone is used when the plan wrote

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -20,7 +21,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,7 +49,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.DELOAD_LOAD_KEPT_CHOICES
+import com.example.androidapp.domain.model.DeloadSetTarget
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
@@ -239,6 +241,10 @@ private fun DeloadBody(
     onUseLastDeload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // One row per exercise, with the days it is kept on (N156): the pool used to repeat inside every
+    // day card, so a four-day program scrolled the same long list four times.
+    val pool = remember(state.days) { buildDeloadPool(state.days) }
+
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag(TestTags.Deload.LIST),
         contentPadding = PaddingValues(16.dp),
@@ -282,12 +288,17 @@ private fun DeloadBody(
             }
         }
         itemsIndexed(items = state.days, key = { _, day -> day.sourceSlotId }) { index, day ->
-            DeloadDayCard(
-                day = day,
-                number = index + 1,
-                onToggleExercise = { exerciseId -> onToggleExercise(index, exerciseId) },
-                onWeekday = onWeekday,
-            )
+            DeloadDayHeader(day = day, number = index + 1, onWeekday = onWeekday)
+        }
+        if (pool.isNotEmpty()) {
+            item(key = "pool-header") { DeloadPoolHeader() }
+            items(items = pool, key = { it.templateExerciseId }) { row ->
+                DeloadPoolRow(
+                    row = row,
+                    dayCount = state.dayCount,
+                    onToggleExercise = onToggleExercise,
+                )
+            }
         }
     }
 }
@@ -400,11 +411,16 @@ private fun DeloadLoadChoices(
     }
 }
 
+/**
+ * One day's heading: its number, its Deload name and the weekday it is offered on (N147, N156).
+ *
+ * The day no longer repeats the pool under it — the exercises are listed once below, and a chip on each
+ * row says which days keep it (N156).
+ */
 @Composable
-private fun DeloadDayCard(
+private fun DeloadDayHeader(
     day: DeloadDayUi,
     number: Int,
-    onToggleExercise: (String) -> Unit,
     onWeekday: (String, DayOfWeek?) -> Unit,
 ) {
     AppCard(modifier = Modifier.testTag(TestTags.Deload.day(day.sourceSlotId))) {
@@ -419,12 +435,77 @@ private fun DeloadDayCard(
             }
             WeekdayPicker(day = day, onWeekday = onWeekday)
         }
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        day.exercises.forEach { exercise ->
-            ExerciseChoice(
-                slotId = day.sourceSlotId,
-                exercise = exercise,
-                onToggle = onToggleExercise,
+    }
+}
+
+/** The pool's heading, above the rows so the list below reads as one program-wide choice (N156). */
+@Composable
+private fun DeloadPoolHeader() {
+    Column {
+        Text(
+            text = stringResource(R.string.deload_pool),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+            text = stringResource(R.string.deload_pool_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * One exercise, listed once, with a chip per deload day (ROADMAP N156).
+ *
+ * The chips are the control; the row itself is not clickable, because "keep this somewhere" would be a
+ * second and ambiguous way to say what a day chip says exactly.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DeloadPoolRow(
+    row: DeloadPoolRowUi,
+    dayCount: Int,
+    onToggleExercise: (Int, String) -> Unit,
+) {
+    AppCard(modifier = Modifier.testTag(TestTags.Deload.poolExercise(row.templateExerciseId))) {
+        Text(text = row.name, style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = prescriptionOf(sets = row.sets, weightUnit = row.weightUnit),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        // The pool is program-wide, so a row says which program day it came from (N152).
+        if (row.sourceName.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.deload_from, row.sourceName),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = stringResource(R.string.deload_keep_on),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            for (index in 0 until dayCount) {
+                val keepLabel = stringResource(R.string.deload_keep_on_day, row.name, index + 1)
+                FilterChip(
+                    selected = index in row.assignedDays,
+                    onClick = { onToggleExercise(index, row.templateExerciseId) },
+                    label = { Text((index + 1).toString()) },
+                    modifier = Modifier
+                        .testTag(TestTags.Deload.poolDay(row.templateExerciseId, index))
+                        .semantics { contentDescription = keepLabel },
+                )
+            }
+        }
+        if (row.assignedDays.isEmpty()) {
+            Text(
+                text = stringResource(R.string.deload_not_kept),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -473,39 +554,6 @@ private fun WeekdayPicker(
     }
 }
 
-@Composable
-private fun ExerciseChoice(
-    slotId: String,
-    exercise: DeloadExerciseUi,
-    onToggle: (String) -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
-        FilterChip(
-            selected = exercise.selected,
-            onClick = { onToggle(exercise.templateExerciseId) },
-            label = { Text(exercise.name) },
-            modifier = Modifier.testTag(
-                TestTags.Deload.exercise(slotId, exercise.templateExerciseId),
-            ),
-        )
-        Text(
-            text = prescriptionOf(exercise),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 12.dp),
-        )
-        // The pool is program-wide, so a row says which program day it came from (N152).
-        if (exercise.sourceName.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.deload_from, exercise.sourceName),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 12.dp),
-            )
-        }
-    }
-}
-
 /**
  * One exercise's draft, as the screen states it: `3 × 5 · 60 kg`.
  *
@@ -515,9 +563,9 @@ private fun ExerciseChoice(
  * as the sets and reps alone.
  */
 @Composable
-private fun prescriptionOf(exercise: DeloadExerciseUi): String {
-    val first = exercise.sets.firstOrNull() ?: return ""
-    val setCount = exercise.sets.size
+private fun prescriptionOf(sets: List<DeloadSetTarget>, weightUnit: WeightUnit): String {
+    val first = sets.firstOrNull() ?: return ""
+    val setCount = sets.size
     val base = first.reps?.let { reps ->
         stringResource(R.string.deload_sets_reps, setCount, reps)
     } ?: pluralStringResource(R.plurals.deload_sets, setCount, setCount)
@@ -525,8 +573,8 @@ private fun prescriptionOf(exercise: DeloadExerciseUi): String {
     val assistance = first.assistanceGrams?.takeIf { it > 0L }
     val added = first.weightGrams?.takeIf { it > 0L }
     val load = when {
-        assistance != null -> "${Weight.display(0L, assistance, exercise.weightUnit)} ${exercise.weightUnit.label()}"
-        added != null -> "${Weight.format(added, exercise.weightUnit)} ${exercise.weightUnit.label()}"
+        assistance != null -> "${Weight.display(0L, assistance, weightUnit)} ${weightUnit.label()}"
+        added != null -> "${Weight.format(added, weightUnit)} ${weightUnit.label()}"
         else -> null
     }
     return load?.let { stringResource(R.string.deload_with_load, base, it) } ?: base

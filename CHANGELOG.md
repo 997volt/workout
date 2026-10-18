@@ -18,6 +18,13 @@ unreleased.
 
 ### Changed
 
+- **The deload creator lists every exercise once, with a day chip on each row** (N156). The pool was repeated
+  inside every day card, so a four-day program drew the same long list four times and an exercise had to be
+  scrolled past once per card. The days are headings now — *Deload A/B* and the weekday — and the whole program's
+  pool is one list below them, each row carrying a chip for every deload day it can be kept on. The chips write
+  the same per-day selection the cards did, so the plan a week is built from is unchanged; a row no day keeps
+  says so rather than looking selected.
+
 - **The creator plans the next deload week, never the one that is ending** (N158). On Sunday, building a deload
   marked the week that had already passed: its days were in the past, home had nothing for the coming week, and
   the next Monday began a fresh full week. The creator now always targets the coming Monday, so every deload day

@@ -1,11 +1,13 @@
 package com.example.androidapp.ui.programs
 
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -131,8 +133,24 @@ class ProgramDeloadScreenTest {
     }
 
     @Test
-    fun anExerciseFromTheSecondDayCard_isSelectableOnTheFirstCard() {
-        // B170: both day cards show the whole pool, and the day index travels with the tick.
+    fun thePool_listsAnExerciseOnce_withADayChipForEachDay() {
+        // N156: the pool used to repeat inside every day card, so a two-day week listed every exercise twice.
+        setScreen(
+            state = ready.copy(
+                days = listOf(day(), day(slotId = "s2", name = "Deload B")),
+                dayCount = 2,
+                maxDays = 2,
+            ),
+        )
+
+        scrollTo(TestTags.Deload.poolExercise("te1"))
+        composeTestRule.onAllNodesWithTag(TestTags.Deload.poolExercise("te1")).assertCountEquals(1)
+        scrollTo(TestTags.Deload.poolDay("te1", 1))
+        composeTestRule.onNodeWithTag(TestTags.Deload.poolDay("te1", 1)).assertIsDisplayed()
+    }
+
+    @Test
+    fun aDayChip_keepsThatExerciseOnThatDay() {
         var toggled: Pair<Int, String>? = null
         setScreen(
             state = ready.copy(
@@ -143,14 +161,14 @@ class ProgramDeloadScreenTest {
             onToggleExercise = { day, exerciseId -> toggled = day to exerciseId },
         )
 
-        scrollTo(TestTags.Deload.exercise("s1", "te2"))
-        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "te2")).performClick()
+        scrollTo(TestTags.Deload.poolDay("te2", 1))
+        composeTestRule.onNodeWithTag(TestTags.Deload.poolDay("te2", 1)).performClick()
 
-        assertThat(toggled).isEqualTo(0 to "te2")
+        assertThat(toggled).isEqualTo(1 to "te2")
     }
 
     @Test
-    fun aDay_showsTheExercisesItKeeps_andWhatTheRuleDerived() {
+    fun aDayHeader_showsItsNameAndNumber_andThePool_rowShowsTheDerivedPrescription() {
         setScreen()
 
         composeTestRule.onNodeWithTag(TestTags.Deload.SCREEN).assertIsDisplayed()
@@ -158,19 +176,9 @@ class ProgramDeloadScreenTest {
         scrollTo(TestTags.Deload.day("s1"))
         composeTestRule.onNodeWithText("Deload A").assertIsDisplayed()
         composeTestRule.onNodeWithText("Day 1").assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "te1")).assertIsDisplayed()
+
+        scrollTo(TestTags.Deload.poolExercise("te1"))
         composeTestRule.onNodeWithText("2 × 5 · 60 kg").assertIsDisplayed()
-    }
-
-    @Test
-    fun anExerciseChip_ticksThatExerciseOnItsDay() {
-        var toggled: Pair<Int, String>? = null
-        setScreen(onToggleExercise = { day, exerciseId -> toggled = day to exerciseId })
-
-        scrollTo(TestTags.Deload.exercise("s1", "te2"))
-        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "te2")).performClick()
-
-        assertThat(toggled).isEqualTo(0 to "te2")
     }
 
     @Test

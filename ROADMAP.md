@@ -17,13 +17,6 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**A creator layout follow-up, only if the 2-of-4 session feels long.** Not a defect — the cost of the pooling
-N152 asked for.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| N156 | low | **Every day card shows the whole program pool.** A four-day program therefore shows the same long list twice, and the same exercise row appears once per deload day; the pool is scannable only while the program is small. | A single program-wide pool with a **day-assignment control** (chips or a picker per row) and the day headers above it, so an exercise is assigned once rather than scrolled past on every card. Keep the weekday and *Deload A/B* headers; only do this if the 2-of-4 session actually feels long. |
-
 **An import path for the history that predates the app.** Old training lives in spreadsheets. The app's own
 backup format is the only thing it reads, and a hand-written one fails without naming the row that failed.
 

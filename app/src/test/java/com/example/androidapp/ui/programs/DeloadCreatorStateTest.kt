@@ -13,7 +13,8 @@ import java.time.DayOfWeek
  *
  * [buildDeloadDays] is what the screen shows and [buildDeloadInputs] is what the write is — the same source,
  * the same rule and the same per-day selection, so the preview and the saved plan cannot disagree. The pool is
- * program-wide: a day may keep a lift the program only schedules on a day the deload dropped.
+ * program-wide: a day may keep a lift the program only schedules on a day the deload dropped. [buildDeloadPool]
+ * is the screen's one-row-per-exercise projection of the same days (N156).
  */
 class DeloadCreatorStateTest {
 
@@ -118,6 +119,27 @@ class DeloadCreatorStateTest {
         assertThat(squat.selected).isTrue()
         assertThat(byExercise.getValue("rdl").selected).isFalse()
         assertThat(byExercise.getValue("row").sourceName).isEqualTo("Pull")
+    }
+
+    @Test
+    fun thePool_listsEachRowOnce_withTheDaysThatKeepIt() {
+        // N156: the screen draws one row per exercise, so the days each row is kept on are its chips.
+        val days = buildDeloadDays(
+            sources = sources,
+            dayCount = 3,
+            selectedByDay = listOf(setOf("te1"), setOf("te1", "te3"), emptySet()),
+            loadKeptPercent = 60,
+            weekdayOf = weekdayOf,
+        )
+
+        val pool = buildDeloadPool(days)
+
+        assertThat(pool).hasSize(5)
+        assertThat(pool.single { it.templateExerciseId == "te1" }.assignedDays)
+            .containsExactly(0, 1)
+        assertThat(pool.single { it.templateExerciseId == "te3" }.assignedDays)
+            .containsExactly(1)
+        assertThat(pool.single { it.templateExerciseId == "te2" }.assignedDays).isEmpty()
     }
 
     @Test

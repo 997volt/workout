@@ -44,7 +44,30 @@ data class DeloadExerciseUi(
     val weightUnit: WeightUnit,
 )
 
-/** One day of the week being built, already reduced to what it keeps (ROADMAP N147, N152). */
+/**
+ * One row of the program-wide pool, listed once with the days it is kept on (ROADMAP N156).
+ *
+ * The pool used to be repeated inside every day card, so a four-day program showed the same long list
+ * four times. [assignedDays] is what the creator's chips read; the write still reads
+ * [buildDeloadInputs], so this is a projection of the one selection rather than a second state.
+ */
+data class DeloadPoolRowUi(
+    /** The source instance, so the same movement scheduled twice stays two rows (N152, N157). */
+    val templateExerciseId: String,
+    val exerciseId: String,
+    val name: String,
+    /** The program day this instance came from, for the row's context (N152). */
+    val sourceName: String,
+    val sets: List<DeloadSetTarget>,
+    val weightUnit: WeightUnit,
+    /** The deload days that keep this row, as 0-based positions in the day list. */
+    val assignedDays: Set<Int>,
+)
+
+/**
+ * One day of the week being built: its name and weekday (ROADMAP N147, N152). Its exercises are the
+ * pool's, listed once by [DeloadPoolRowUi] (N156).
+ */
 data class DeloadDayUi(
     /** The slot the day was seeded from; it supplies the weekday and addresses the day in a test (N147). */
     val sourceSlotId: String,
@@ -398,6 +421,32 @@ internal fun buildDeloadDays(
                     weightUnit = exercise.weightUnit,
                 )
             },
+        )
+    }
+}
+
+/**
+ * The visible days as one pool, each row naming the days that keep it (ROADMAP N156).
+ *
+ * Every day already carries the same pool in the same order, so the first day's rows are the pool; what a
+ * day adds is whether its own copy of that row is ticked. Pure, like [buildDeloadDays], so the screen's
+ * one-row-per-exercise layout is asserted without a ViewModel.
+ */
+internal fun buildDeloadPool(days: List<DeloadDayUi>): List<DeloadPoolRowUi> {
+    val rows = days.firstOrNull()?.exercises ?: return emptyList()
+    return rows.map { row ->
+        DeloadPoolRowUi(
+            templateExerciseId = row.templateExerciseId,
+            exerciseId = row.exerciseId,
+            name = row.name,
+            sourceName = row.sourceName,
+            sets = row.sets,
+            weightUnit = row.weightUnit,
+            assignedDays = days.indices.filter { index ->
+                days[index].exercises.any {
+                    it.templateExerciseId == row.templateExerciseId && it.selected
+                }
+            }.toSet(),
         )
     }
 }

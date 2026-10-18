@@ -768,8 +768,12 @@ object TestTags {
 
         fun day(slotId: String) = "deload_day_$slotId"
 
-        fun exercise(slotId: String, templateExerciseId: String) =
-            "deload_exercise_${slotId}_$templateExerciseId"
+        /** One row of the program-wide pool, listed once (ROADMAP N156). */
+        fun poolExercise(templateExerciseId: String) = "deload_pool_exercise_$templateExerciseId"
+
+        /** A pool row's chip for one deload day, by 0-based day index (ROADMAP N156). */
+        fun poolDay(templateExerciseId: String, dayIndex: Int) =
+            "deload_pool_day_${templateExerciseId}_$dayIndex"
     }
 
     /** The measurements screen's own tags (ROADMAP N32), grouped so this object stays under its ceiling. */
