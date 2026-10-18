@@ -91,7 +91,7 @@ class DeloadCreatorStateTest {
         val days = buildDeloadDays(
             sources = sources,
             dayCount = 1,
-            selectedByDay = listOf(setOf("back-squat", "rdl", "bench", "row", "front-squat")),
+            selectedByDay = listOf(setOf("te1", "te2", "te3", "te4", "te5")),
             loadKeptPercent = 60,
             weekdayOf = weekdayOf,
         )
@@ -105,7 +105,7 @@ class DeloadCreatorStateTest {
         val days = buildDeloadDays(
             sources = sources,
             dayCount = 1,
-            selectedByDay = listOf(setOf("back-squat")),
+            selectedByDay = listOf(setOf("te1")),
             loadKeptPercent = 60,
             weekdayOf = weekdayOf,
         )
@@ -125,7 +125,7 @@ class DeloadCreatorStateTest {
         val days = buildDeloadDays(
             sources = sources,
             dayCount = 1,
-            selectedByDay = listOf(setOf("back-squat")),
+            selectedByDay = listOf(setOf("te1")),
             loadKeptPercent = 70,
             weekdayOf = weekdayOf,
         )
@@ -139,7 +139,7 @@ class DeloadCreatorStateTest {
         val inputs = buildDeloadInputs(
             sources = sources,
             dayCount = 1,
-            selectedByDay = listOf(setOf("back-squat")),
+            selectedByDay = listOf(setOf("te1")),
             loadKeptPercent = 60,
             weekdayOf = weekdayOf,
         )
@@ -162,7 +162,7 @@ class DeloadCreatorStateTest {
         val inputs = buildDeloadInputs(
             sources = sources,
             dayCount = 2,
-            selectedByDay = listOf(setOf("row"), setOf("front-squat")),
+            selectedByDay = listOf(setOf("te4"), setOf("te5")),
             loadKeptPercent = 60,
             weekdayOf = weekdayOf,
         )
@@ -177,7 +177,7 @@ class DeloadCreatorStateTest {
         val inputs = buildDeloadInputs(
             sources = sources,
             dayCount = 2,
-            selectedByDay = listOf(emptySet(), setOf("bench")),
+            selectedByDay = listOf(emptySet(), setOf("te3")),
             loadKeptPercent = 60,
             weekdayOf = weekdayOf,
         )
@@ -190,14 +190,14 @@ class DeloadCreatorStateTest {
         val moved = buildDeloadInputs(
             sources = sources,
             dayCount = 1,
-            selectedByDay = listOf(setOf("back-squat")),
+            selectedByDay = listOf(setOf("te1")),
             loadKeptPercent = 60,
             weekdayOf = { DayOfWeek.FRIDAY },
         )
         val removed = buildDeloadInputs(
             sources = sources,
             dayCount = 1,
-            selectedByDay = listOf(setOf("back-squat")),
+            selectedByDay = listOf(setOf("te1")),
             loadKeptPercent = 60,
             weekdayOf = { null },
         )
@@ -211,7 +211,7 @@ class DeloadCreatorStateTest {
         val days = buildDeloadDays(
             sources = sources,
             dayCount = 2,
-            selectedByDay = listOf(setOf("back-squat"), setOf("bench")),
+            selectedByDay = listOf(setOf("te1"), setOf("te3")),
             loadKeptPercent = 60,
             weekdayOf = weekdayOf,
         )
@@ -220,8 +220,8 @@ class DeloadCreatorStateTest {
     }
 
     @Test
-    fun aMovementOnTwoSourceDays_takesTheHeaviestSourcePlan() {
-        // N153: the heaviest stated working load supplies the plan, not simply the first source day.
+    fun aMovementOnTwoSourceDays_isTwoPoolRows_eachWithItsOwnPlan() {
+        // N157: the source instances are separate rows, not one heaviest-source row.
         val duplicate = listOf(
             DeloadSourceDay(
                 sourceSlotId = "a",
@@ -240,20 +240,19 @@ class DeloadCreatorStateTest {
         val days = buildDeloadDays(
             sources = duplicate,
             dayCount = 1,
-            selectedByDay = listOf(setOf("bench")),
+            selectedByDay = listOf(setOf("t1", "t2")),
             loadKeptPercent = 60,
             weekdayOf = weekdayOf,
         )
 
-        val bench = days.single().exercises.single()
-        assertThat(bench.sourceName).isEqualTo("A, B")
-        // Four planned sets, capped at the rule's three; the load is derived from B's 80 kg, not A's 60.
-        assertThat(bench.sets).hasSize(3)
-        assertThat(bench.sets.first().weightGrams).isEqualTo(47_500L)
+        val benches = days.single().exercises.filter { it.exerciseId == "bench" }
+        assertThat(benches).hasSize(2)
+        assertThat(benches.map { it.sourceName }).containsExactly("A", "B")
+        assertThat(benches.map { it.selected }).containsExactly(true, true).inOrder()
     }
 
     @Test
-    fun aMovementOnTwoSourceDays_isOnePoolRow_withBothSources() {
+    fun theSameMovement_canBeKeptMoreThanOnceOnADay() {
         val duplicate = listOf(
             DeloadSourceDay(
                 sourceSlotId = "a",
@@ -265,21 +264,21 @@ class DeloadCreatorStateTest {
                 sourceSlotId = "b",
                 name = "B",
                 weekday = DayOfWeek.WEDNESDAY,
-                exercises = listOf(exercise("t2", "bench", "Bench press", List(4) { set(it, 55_000L, 10) })),
+                exercises = listOf(exercise("t2", "bench", "Bench press", List(4) { set(it, 80_000L, 6) })),
             ),
         )
 
-        val days = buildDeloadDays(
+        val inputs = buildDeloadInputs(
             sources = duplicate,
             dayCount = 1,
-            selectedByDay = listOf(setOf("bench")),
+            selectedByDay = listOf(setOf("t1", "t2")),
             loadKeptPercent = 60,
             weekdayOf = weekdayOf,
         )
 
-        val bench = days.single().exercises.single()
-        assertThat(bench.exerciseId).isEqualTo("bench")
-        assertThat(bench.sourceName).isEqualTo("A, B")
-        assertThat(bench.sets).hasSize(3)
+        val day = inputs.single()
+        assertThat(day.exercises.map { it.exerciseId }).containsExactly("bench", "bench")
+        assertThat(day.exercises.map { it.sets.first().weightGrams })
+            .containsExactly(35_000L, 47_500L)
     }
 }

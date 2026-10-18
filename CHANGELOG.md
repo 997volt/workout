@@ -14,6 +14,16 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
+## [Unreleased]
+
+### Changed
+
+- **The same exercise can be kept more than once in a deload** (N157). The pool kept one row per movement (and,
+  after 2.9, the heaviest source's plan), so a program that scheduled a lift on two days could only keep it once.
+  The pool now keeps one row per **source instance**, each with its own day's plan and source label; a deload day
+  can keep the same library exercise more than once, and the template is written with both rows. The last-plan
+  reuse maps a library id to the first current instance, so a duplicated old choice collapses to one on reuse.
+
 ## [2.9] — 2026-10-18 (versionCode 29)
 
 The deload builder gets its program-wide pool and a reuse of the last plan's choices, and a target weight gets a

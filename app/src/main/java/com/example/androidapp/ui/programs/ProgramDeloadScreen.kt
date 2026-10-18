@@ -482,10 +482,10 @@ private fun ExerciseChoice(
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
         FilterChip(
             selected = exercise.selected,
-            onClick = { onToggle(exercise.exerciseId) },
+            onClick = { onToggle(exercise.templateExerciseId) },
             label = { Text(exercise.name) },
             modifier = Modifier.testTag(
-                TestTags.Deload.exercise(slotId, exercise.exerciseId),
+                TestTags.Deload.exercise(slotId, exercise.templateExerciseId),
             ),
         )
         Text(

@@ -101,7 +101,7 @@ class ProgramDeloadViewModelTest {
         viewModel.onWeekdayChange("s1", null)
         assertThat(viewModel.uiState.value.days.single().weekday).isNull()
 
-        viewModel.onToggleExercise(0, "back-squat")
+        viewModel.onToggleExercise(0, "te1")
         assertThat(viewModel.uiState.value.selectedExerciseCount).isEqualTo(0)
         assertThat(viewModel.uiState.value.canCreate).isFalse()
     }
@@ -155,7 +155,7 @@ class ProgramDeloadViewModelTest {
         assertThat(viewModel.uiState.value.days[0].exercises.single { it.exerciseId == "bench" }.selected)
             .isFalse()
 
-        viewModel.onToggleExercise(0, "bench")
+        viewModel.onToggleExercise(0, "te2")
 
         assertThat(viewModel.uiState.value.days[0].exercises.single { it.exerciseId == "bench" }.selected)
             .isTrue()

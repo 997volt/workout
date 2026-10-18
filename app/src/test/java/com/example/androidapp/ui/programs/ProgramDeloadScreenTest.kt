@@ -143,10 +143,10 @@ class ProgramDeloadScreenTest {
             onToggleExercise = { day, exerciseId -> toggled = day to exerciseId },
         )
 
-        scrollTo(TestTags.Deload.exercise("s1", "romanian-deadlift"))
-        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "romanian-deadlift")).performClick()
+        scrollTo(TestTags.Deload.exercise("s1", "te2"))
+        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "te2")).performClick()
 
-        assertThat(toggled).isEqualTo(0 to "romanian-deadlift")
+        assertThat(toggled).isEqualTo(0 to "te2")
     }
 
     @Test
@@ -158,7 +158,7 @@ class ProgramDeloadScreenTest {
         scrollTo(TestTags.Deload.day("s1"))
         composeTestRule.onNodeWithText("Deload A").assertIsDisplayed()
         composeTestRule.onNodeWithText("Day 1").assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "back-squat")).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "te1")).assertIsDisplayed()
         composeTestRule.onNodeWithText("2 × 5 · 60 kg").assertIsDisplayed()
     }
 
@@ -167,10 +167,10 @@ class ProgramDeloadScreenTest {
         var toggled: Pair<Int, String>? = null
         setScreen(onToggleExercise = { day, exerciseId -> toggled = day to exerciseId })
 
-        scrollTo(TestTags.Deload.exercise("s1", "romanian-deadlift"))
-        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "romanian-deadlift")).performClick()
+        scrollTo(TestTags.Deload.exercise("s1", "te2"))
+        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "te2")).performClick()
 
-        assertThat(toggled).isEqualTo(0 to "romanian-deadlift")
+        assertThat(toggled).isEqualTo(0 to "te2")
     }
 
     @Test

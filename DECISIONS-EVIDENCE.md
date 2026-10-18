@@ -2385,13 +2385,12 @@ days, so the third and fourth days' exercises were unreachable. The request was 
 different unit: a deload day should be composed from **all the exercises the program uses**, because the point
 of the week is to change the program's shape.
 
-**The pool is a movement, not a template.** `poolOf` walks every source day and keeps one instance of each
-library exercise; a movement scheduled on two days is one row, the **source day with the heaviest stated working
-load** supplies the set/rep/load plan the rule reads (a tie keeps the program's order), and both day names travel
-as context (*From Heavy lower, Push*). Cloning the source
-templates — or keeping one row per template exercise — was rejected: the first still ties the day to a template,
-and the second puts the same movement on a day twice. The dedupe is by library id, the same key the last-plan
-reuse already uses.
+**The pool is one row per source instance.** `poolOf` walks every source day and keeps each template exercise
+as its own row, with that day's plan and source name; a movement scheduled on two days is two rows, so the same
+library exercise can be kept more than once on a deload day or across days (N157). Cloning the source templates
+was rejected, because the day is composed rather than copied; deduping by library id — the 2.9 rule that kept the
+heaviest source — was rejected now because it made the second plan unreachable. The last-plan reuse maps a
+library id to the first current instance, since the stored plan keeps library ids, not source rows.
 
 **The day is the deload's, not a prefix.** `selectedByDay` is one set per deload day; the day count grows or
 shrinks that list; each day card renders the whole pool with its own ticks. The first N days still seed
@@ -2412,3 +2411,22 @@ are the shape it remembers.
 **Covered by** the pure builder tests: the whole pool on every card, a shift from the third/fourth source days
 in a two-day deload, one pool row for a movement on two source days, per-day only-ticked writing, the empty-day
 omission, and the moved weekday.
+
+## N157
+
+The request came from use after 2.9: "make it so that the same exercise may be performed more than once". The
+2.9 pool had one row per movement, with the heaviest source's plan, so a program that scheduled a lift on two
+days could only keep it once; a duplicated old choice collapsed on reuse.
+
+**The unit of the pool is the source instance, not the movement.** Each `templateExercise` row from each source
+day is a row, carrying its own sets, previous performance, unit, step and source day. That lets the lifter keep
+the same library exercise twice on one deload day — two rows in the written template, each with its own
+source's prescription — or once on two days. The schema and the template writer already allow a template to name
+the same exercise twice; the instrumented test writes and reads it back. The old heaviest-source rule is
+superseded: it was a workaround for the dedupe, and the lifter can now choose the instances.
+
+**The reuse cannot restore the duplication exactly.** A plan stores library ids per day, so a movement kept
+twice in the old plan maps to the first current instance on *Use last deload*; the lifter can add the second
+again. That is the same living-template limit N155 records, not a new one. The layout is the next question: the
+pool now has one row per source instance on every day card, so N156 records the single-pool/day-assignment pass
+for when the 2-of-4 session actually feels long.

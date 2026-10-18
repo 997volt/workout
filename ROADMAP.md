@@ -17,9 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The N150/N151/N152 review's eight findings (B168–B172, N153–N155) are fixed: the two wrong-output or
-redundant cases are in [CHANGELOG.md](CHANGELOG.md) under their ids, the test-only and boundary findings are closed
-in the tests and the code's documentation.
+**A creator layout follow-up, only if the 2-of-4 session feels long.** Not a defect — the cost of the pooling
+N152 asked for.
+
+| # | Severity | What | Fix |
+| --- | --- | --- | --- |
+| N156 | low | **Every day card shows the whole program pool.** A four-day program therefore shows the same long list twice, and the same exercise row appears once per deload day; the pool is scannable only while the program is small. | A single program-wide pool with a **day-assignment control** (chips or a picker per row) and the day headers above it, so an exercise is assigned once rather than scrolled past on every card. Keep the weekday and *Deload A/B* headers; only do this if the 2-of-4 session actually feels long. |
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself

@@ -875,11 +875,12 @@ the rule; that one argues it.
   library id, and take its day count, then re-derives every load from the current plan; the **load share is not
   stored with a plan**, so reuse leaves it at the creator's current choice rather than guessing it; the last plan's
   day count and weekdays are taken by index (N154), and its exercises are read from the plan's current templates
-  (N16, N155). **The days are
+  (N16, N155); a library id maps to the first current instance on reuse, because the stored plan keeps library ids.
+  **The days are
   composed from the program's exercises, not copied from its templates** (N152): every day card offers the
-  program-wide pool — one row per movement, with the source days as context — and the day count is the deload's,
-  not a prefix of the program; where a movement appears on two source days, the source day with the heaviest
-  stated working load supplies the plan and both are named (N153). The workout is named **Deload A, Deload B, …** in day order, so the built week reads as a week
+  program-wide pool — one row per **source instance**, with that day's plan and name — and the day count is the
+  deload's, not a prefix of the program; a movement on two source days is two rows, so the same exercise can be
+  kept more than once (N157). The workout is named **Deload A, Deload B, …** in day order, so the built week reads as a week
   rather than as copies of the templates; the weekday still starts from the source day at that position, and the
   template editor renames a workout that now mixes upper and lower work. The store is
   **schema 7**; the **backup's `schemaVersion` stays at 5**, so an older build reading a newer file keeps the mark

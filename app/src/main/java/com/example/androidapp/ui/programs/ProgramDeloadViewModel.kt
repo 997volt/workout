@@ -123,10 +123,10 @@ class ProgramDeloadViewModel @Inject constructor(
     private var sources: List<DeloadSourceDay> = emptyList()
 
     /**
-     * The exercises each deload day keeps, by library exercise id (N152).
+     * The pool rows each deload day keeps, by source template exercise id (N152, N157).
      *
-     * One set per deload day, not one for the week: the same movement may be kept on two deload days, while
-     * a day itself holds a movement once.
+     * One set per deload day, and a movement may be kept more than once: its source instances are separate
+     * rows, so a day can hold the same library exercise twice with each source's own plan.
      */
     private var selectedByDay: MutableList<MutableSet<String>> = mutableListOf()
 
@@ -164,7 +164,7 @@ class ProgramDeloadViewModel @Inject constructor(
                 // The first N deload days default to the source days at their positions, so an untouched
                 // draft writes what it used to; every pool exercise is still available on every card (N152).
                 selectedByDay = snapshot.days
-                    .map { day -> day.exercises.map { it.exerciseId }.toMutableSet() }
+                    .map { day -> day.exercises.map { it.templateExerciseId }.toMutableSet() }
                     .toMutableList()
                 _state.update {
                     it.copy(
@@ -182,14 +182,18 @@ class ProgramDeloadViewModel @Inject constructor(
     }
 
     /**
-     * Ticks or unticks one pool exercise on one deload day (N147, N152).
+     * Ticks or unticks one pool row on one deload day (N147, N152, N157).
      *
-     * The day index is the card's position; the pool is program-wide, so an exercise from a source day the
-     * deload dropped is still selectable here. The day holds a movement once, which the pool's dedupe gives.
+     * The day index is the card's position; the row is a source template exercise, so the same movement may be
+     * kept more than once on a day when the program schedules it in more than one place.
      */
-    fun onToggleExercise(dayIndex: Int, exerciseId: String) {
+    fun onToggleExercise(dayIndex: Int, templateExerciseId: String) {
         val selected = selectedByDay.getOrNull(dayIndex) ?: return
-        if (exerciseId in selected) selected.remove(exerciseId) else selected.add(exerciseId)
+        if (templateExerciseId in selected) {
+            selected.remove(templateExerciseId)
+        } else {
+            selected.add(templateExerciseId)
+        }
         rebuild()
     }
 
@@ -203,11 +207,17 @@ class ProgramDeloadViewModel @Inject constructor(
      */
     fun onUseLastDeload() {
         val plan = lastPlan ?: return
-        val available = sources.flatMap { day -> day.exercises.map { it.exerciseId } }.toSet()
+        // The plan stores library ids, so a source instance is matched to the first current row for it; a
+        // movement kept twice in the old plan collapses to one row here, which the lifter can duplicate again.
+        val currentByExercise = poolOf(sources).groupBy { it.exercise.exerciseId }
         val wanted = plan.days.size.coerceIn(1, sources.size)
         val next = plan.days
             .take(wanted)
-            .map { day -> day.exerciseIds.filter { it in available }.toMutableSet() }
+            .map { day ->
+                day.exerciseIds.mapNotNull { exerciseId ->
+                    currentByExercise[exerciseId]?.firstOrNull()?.exercise?.templateExerciseId
+                }.toMutableSet()
+            }
             .toMutableList()
         if (next.isEmpty() || next.all { it.isEmpty() }) return
         selectedByDay = next
@@ -231,7 +241,7 @@ class ProgramDeloadViewModel @Inject constructor(
         while (selectedByDay.size < wanted) {
             selectedByDay.add(
                 sources.getOrNull(selectedByDay.size)?.exercises
-                    ?.map { it.exerciseId }
+                    ?.map { it.templateExerciseId }
                     ?.toMutableSet()
                     ?: mutableSetOf(),
             )
@@ -324,13 +334,13 @@ class ProgramDeloadViewModel @Inject constructor(
 }
 
 /**
- * The program's exercise pool, once per movement (N152).
+ * The program's exercise pool, once per **source instance** (N152, N157).
  *
- * A movement on two source days is one row: the source day with the heaviest stated working load supplies the
- * plan the rule reads (N153), and both day names travel as context. That is what lets a two-day deload keep a
- * lift the program only schedules on day three while still showing where it came from.
+ * A movement on two source days is two rows, each carrying its own day's plan and source name; that is what
+ * lets the same exercise be kept more than once, or a movement the program only schedules on day three be kept
+ * on a two-day deload. There is no heaviest-source merge any more: the lifter chooses the instances.
  */
-private data class PoolExercise(val exercise: DeloadSourceExercise, val sourceNames: String)
+private data class PoolExercise(val exercise: DeloadSourceExercise, val sourceName: String)
 
 /** The written workout's name: Deload A, Deload B, … in day order (N152). */
 private fun deloadDayName(index: Int): String =
@@ -343,39 +353,8 @@ private fun deloadDayName(index: Int): String =
 /** Past the alphabet a week is numbered rather than lettered; the cap is the alphabet, not a day limit. */
 private const val DELOAD_DAY_LETTERS = 26
 
-private fun poolOf(sources: List<DeloadSourceDay>): List<PoolExercise> {
-    val byExercise = LinkedHashMap<String, PoolExercise>()
-    sources.forEach { day ->
-        day.exercises.forEach { exercise ->
-            byExercise[exercise.exerciseId] = mergePool(
-                existing = byExercise[exercise.exerciseId],
-                exercise = exercise,
-                dayName = day.name,
-            )
-        }
-    }
-    return byExercise.values.toList()
-}
-
-/** One pool row, keeping the source day with the heaviest stated working load (N153); a tie keeps the first. */
-private fun mergePool(
-    existing: PoolExercise?,
-    exercise: DeloadSourceExercise,
-    dayName: String,
-): PoolExercise {
-    if (existing == null) return PoolExercise(exercise, dayName)
-    val sourceNames = (existing.sourceNames.split(", ") + dayName).distinct().joinToString(", ")
-    val chosen = if (exercise.heaviestWorkingGrams() > existing.exercise.heaviestWorkingGrams()) {
-        PoolExercise(exercise, dayName)
-    } else {
-        existing
-    }
-    return chosen.copy(sourceNames = sourceNames)
-}
-
-/** The heaviest stated working load, the same basis the deload rule reads a plan's load from. */
-private fun DeloadSourceExercise.heaviestWorkingGrams(): Long =
-    sets.filter { it.role.recordsEffort }.mapNotNull { it.targetWeightGrams }.maxOrNull() ?: 0L
+private fun poolOf(sources: List<DeloadSourceDay>): List<PoolExercise> =
+    sources.flatMap { day -> day.exercises.map { exercise -> PoolExercise(exercise, day.name) } }
 
 /**
  * The days on screen, from the snapshot and the controls (ROADMAP N147, N152).
@@ -406,8 +385,8 @@ internal fun buildDeloadDays(
                     templateExerciseId = exercise.templateExerciseId,
                     exerciseId = exercise.exerciseId,
                     name = exercise.name,
-                    sourceName = pooled.sourceNames,
-                    selected = exercise.exerciseId in selected,
+                    sourceName = pooled.sourceName,
+                    selected = exercise.templateExerciseId in selected,
                     sets = deloadSetTargets(
                         plannedSets = exercise.sets,
                         previous = exercise.previous,
@@ -439,7 +418,7 @@ internal fun buildDeloadInputs(
     return (0 until dayCount).mapNotNull { index ->
         val day = sources.getOrNull(index) ?: return@mapNotNull null
         val selected = selectedByDay.getOrElse(index) { emptySet() }
-        val kept = pool.map { it.exercise }.filter { it.exerciseId in selected }
+        val kept = pool.map { it.exercise }.filter { it.templateExerciseId in selected }
         if (kept.isEmpty()) return@mapNotNull null
         DeloadDayInput(
             name = deloadDayName(index),

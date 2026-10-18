@@ -168,14 +168,16 @@ class DeloadRepositoryTest {
         val other = (programs.createProgram("Other") as DataResult.Success).data
         programs.addSlot(other, template, DayOfWeek.MONDAY)
         programs.activateProgram(other)
-        (deloads.createDeload(
-            programId = other,
-            weekStart = monday,
-            days = listOf(
-                dayInput("Other A", DayOfWeek.MONDAY),
-                dayInput("Other B", DayOfWeek.WEDNESDAY),
-            ),
-        ) as DataResult.Success)
+        (
+            deloads.createDeload(
+                programId = other,
+                weekStart = monday,
+                days = listOf(
+                    dayInput("Other A", DayOfWeek.MONDAY),
+                    dayInput("Other B", DayOfWeek.WEDNESDAY),
+                ),
+            ) as DataResult.Success
+            )
 
         val last = deloads.findLastPlan(program, monday.plusWeeks(1))!!
 
@@ -219,6 +221,36 @@ class DeloadRepositoryTest {
         assertEquals(monday, last?.weekStart)
         assertEquals(listOf("back-squat"), last?.days?.single()?.exerciseIds)
         assertEquals(1, last?.days?.size)
+    }
+
+    @Test
+    fun aDayMayKeepTheSameExerciseTwice() = runTest {
+        // N157: the template writer and the schema accept the same movement twice on a day.
+        val source = templates.observeExercises(template).first().single()
+        val input = DeloadExerciseInput(
+            exerciseId = source.exerciseId,
+            restSeconds = source.restSeconds,
+            techniqueNote = source.techniqueNote,
+            supersetGroup = source.supersetGroup,
+            sets = deloadSetTargets(source.sets, previous = null, stepGrams = 2_500L),
+        )
+        val created = (
+            deloads.createDeload(
+                programId = program,
+                weekStart = monday,
+                days = listOf(
+                    DeloadDayInput(
+                        name = "Deload A",
+                        weekday = DayOfWeek.MONDAY,
+                        exercises = listOf(input, input),
+                    ),
+                ),
+            ) as DataResult.Success
+            ).data
+
+        val written = templates.observeExercises(created.templateIds.single()).first()
+
+        assertEquals(listOf("back-squat", "back-squat"), written.map { it.exerciseId })
     }
 
     @Test
