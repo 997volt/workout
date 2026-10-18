@@ -162,6 +162,28 @@ class DeloadRepositoryTest {
     }
 
     @Test
+    fun aPreviousPlan_isReadForItsProgramOnly() = runTest {
+        // B168: two programs can build a plan in one week; the reuse must not see the other's days.
+        createDay("Heavy lower — deload", DayOfWeek.MONDAY)
+        val other = (programs.createProgram("Other") as DataResult.Success).data
+        programs.addSlot(other, template, DayOfWeek.MONDAY)
+        programs.activateProgram(other)
+        (deloads.createDeload(
+            programId = other,
+            weekStart = monday,
+            days = listOf(
+                dayInput("Other A", DayOfWeek.MONDAY),
+                dayInput("Other B", DayOfWeek.WEDNESDAY),
+            ),
+        ) as DataResult.Success)
+
+        val last = deloads.findLastPlan(program, monday.plusWeeks(1))!!
+
+        assertEquals(1, last.days.size)
+        assertEquals("Heavy lower — deload", last.days.single().templateName)
+    }
+
+    @Test
     fun aBuiltWeek_isWhatTheCalendarAndDayDialogShow() = runTest {
         // B161: the plan's own day is what the calendar draws and the day dialog lists, and the slot
         // it replaced is not — on either weekday.

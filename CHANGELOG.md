@@ -42,6 +42,13 @@ unreleased.
   way round — and says *Target reached* once the weight is within the goal history's own tolerance. A
   direction-only or maintenance goal shows no date, because it has no level to reach.
 
+### Fixed
+
+- **Use last deload no longer reads another program's week** (B168). The last-plan read found its mark for one
+  program but then read every program's days for that week, so with two active programs that each built a deload
+  in the same week the reuse could preselect the other program's exercises and day count. The read is now
+  program-scoped, with a two-program test.
+
 ## [2.8] — 2026-10-18 (versionCode 28)
 
 The deload week can now be built, and the screens around it say what is actually planned or done: adherence

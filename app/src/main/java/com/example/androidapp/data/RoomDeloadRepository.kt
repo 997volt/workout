@@ -54,6 +54,8 @@ class RoomDeloadRepository @Inject constructor(
     override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? {
         val mark = deloadDao.findLatestDeloadBefore(programId, beforeWeek.toEpochDay()) ?: return null
         return deloadDao.findDeloadDaysForWeek(mark.weekStart)
+            // The one-week read returns every program's days for the week; the last plan is this program's.
+            .filter { it.programId == programId }
             .takeIf { it.isNotEmpty() }
             ?.let { rows ->
                 DeloadWeek(

@@ -17,13 +17,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The N150/N151/N152 review's eight findings (B168–B172, N153–N155).** A reading of the unreleased batch; none is a
-crash or data loss: one is a wrong-output reuse when two programs have a plan in the same week, and the rest are a
-boundary, a test gap, a duplicated tolerance, a small redundancy and three product limits.
+**The N150/N151/N152 review's remaining findings (B169–B172, N153–N155).** The wrong-output reuse (B168) is fixed;
+the rest are a boundary, a test gap, a duplicated tolerance, a small redundancy and three product limits.
 
 | # | Severity | What | Fix |
 | --- | --- | --- | --- |
-| B168 | **medium** | **The last-plan read mixes programs.** `findLastPlan` finds the mark for one program, then reads `findDeloadDaysForWeek`, which returns every program's days for that week. With two active programs that each built a deload in the same week, *Use last deload* can preselect the other program's exercises and day count; the test covers one program. | Filter the day rows by `programId` (or add a program-scoped DAO query) and test two programs with plans in one week. |
 | B169 | low | **`findLastPlan` is outside the errors-as-values boundary.** It returns a bare `DeloadWeek?` and can throw; the loader's `dataResultOf` catches it today, so nothing reaches the screen, but a future caller can miss the boundary. | Return `DataResult<DeloadWeek?>` or document the read as loader-internal. |
 | B170 | low | **The 2-of-4 pool path has no VM or screen test.** The pure builder proves a two-day deload can keep lifts from the third/fourth source days, but the `onToggleExercise(dayIndex, exerciseId)` wiring and the per-day state are untested for that case. | Add a VM test storing a third-day lift on the first deload day, and a screen test for both day cards. |
 | B171 | low | **The target tolerance is defined twice.** `TARGET_REACHED_TOLERANCE_GRAMS` and `GoalOutcomes`' private `TARGET_TOLERANCE_GRAMS` both alias the same constant; if one moves, the *Target reached* line and the goal history disagree. | One shared target-tolerance constant or helper. |
