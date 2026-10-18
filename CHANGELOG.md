@@ -66,7 +66,9 @@ unreleased.
 
 - **The helper can be built as one file** (N164). `node docs/build-single-file.js` writes
   `dist/workout-import.html` with the stylesheet and script inlined, and refuses to write a page that still
-  names either.
+  names either. The page's CSP now names `file:` in its script and style sources, so `docs/index.html` opened
+  from disk is not refused by a browser that treats a `file://` document's origin as opaque; over HTTPS that
+  source matches nothing.
 
 ### Changed
 

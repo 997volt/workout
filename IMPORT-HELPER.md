@@ -360,8 +360,10 @@ that does work, which the UI states beside the list's revision.
 
 ## Privacy
 
-- No request of any kind. The CSP is `default-src 'none'; script-src 'self' 'unsafe-inline';
-  style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'none'`.
+- No request of any kind. The CSP is `default-src 'none'; script-src 'self' 'unsafe-inline' file:;
+  style-src 'self' 'unsafe-inline' file:; img-src data:; connect-src 'none'`. The bare `file:` in the two
+  source lists is what lets the page load its own script and stylesheet when opened from disk, where a
+  browser may treat the document's origin as opaque and refuse `'self'`; over HTTPS it matches nothing.
 - A source scan asserts that `http://`, `https://`, `fetch(`, `XMLHttpRequest`, `WebSocket` and
   `sendBeacon` appear nowhere outside comments.
 - Health data never persists. The exercise mapping may, in `localStorage`, because a name matched to a
