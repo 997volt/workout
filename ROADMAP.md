@@ -17,20 +17,20 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The pre-release review's twenty findings (B148–B160, N143–N146) are fixed and recorded in
-[CHANGELOG.md](CHANGELOG.md): a seeded movement the database silently dropped, an import that un-hid rows a save
-had replaced, a backup that could resume as the workout in progress, a save that read its day outside its
-transaction, a rung removal that stranded its run, an assisted cluster that lost the machine's help, a superset
-that stopped resting, a record count that disagreed with the rule, a plan read without the library's own filter, a
-rung's reps matched by an index that is not a position, three transfers on the main thread, an export a rotation
-could leave empty, an undo offered past its exercise, and four interface fixes: confirming an activity's discard,
-stating a prescribed load with its unit and its assistance, telling a refused rung *why*, and searching the
-history.
+**The N147 review's seven findings (B161–B166, N148).** A line-by-line review of the unreleased deload batch,
+with every claim checked against the code and the gates re-run to a green baseline. None is a crash or a data
+loss on the normal path: the first three are the built week's own lifecycle, and the rest are robustness,
+release notes and reachability.
 
-The review also found what the gates could not: `lint`, `detekt` and 1335 JVM tests were all green while every one
-of those defects was live, and the two that mattered most were in seed data and in an import — the two places no
-unit test was looking. Each row above shipped with a test that fails without its fix, and the instrumented suite
-grew by four cases for the ones only real SQLite can show.
+| # | Severity | What | Fix |
+| --- | --- | --- | --- |
+| B161 | **medium** | **Adherence still reads the program's slots.** The month calendar and the day dialog never read `program_deload_days`, so a built week's day names the slot's full template — or, if the day was moved, says nothing was scheduled — while home and the start prompt offer the deload workout. The ratio is unaffected (the week is exempt), but the screen that answers *what was scheduled* disagrees with the two that answer *what is planned*. | Read the week's plan in `RoomAdherenceRepository` for the calendar and the day dialog (a day with no slot, not correctable), or state the limit in DECISIONS; a moved-day test pins it. |
+| B162 | **medium** | **Unmarking a built week silently loses the plan.** `setDeloadWeek(false)` soft-deletes the mark, and re-marking inserts a new one, leaving the old days attached to the deleted row: the week's workouts never come back. The templates survive, but the mapping is unreachable and a rebuild leaves duplicates; the adherence chip is one tap with no warning, where it used to be harmless. | Confirm unmarking a week that has live days — the app's pattern for a destructive action — and say what stays. |
+| B163 | **medium** | **The start prompt cannot settle a deload day.** `onContinue` drops null slot ids, so a missed deload day stays pending and asks again on every start that week, and the dialog's *marks every missed day as skipped* is then false. | Stop asking about a built week's days (not scored, no skip — the smallest consistent rule, P3.10 amended), or give them a skip event. |
+| B164 | low | **The creator's one-shot read has no `DataResult` boundary.** `DeloadSourceLoader` calls `first()` on Room flows, so a storage failure escapes the coroutine instead of the screen's error channel, and a failed read falls through to *this program has no workouts*. | Wrap the load in `dataResultOf`, give the state a distinct failure view, and test a failing read. |
+| B165 | low | **The release notes omit schema 7 and the downlevel restore.** The backup deliberately stays at `schemaVersion 5`, so a 2.7 build reads a new file and drops `programDeloadDays`: the mark and the templates survive, the week's plan does not. | Say both in the changelog and the N147 evidence; the codec's addition policy is unchanged. |
+| B166 | low | **Two prose defects.** `RoomDeloadRepository` still says *a future week is refused* where the code refuses any week but this one; the N147 evidence calls the load share *the screen's one control* when the screen has several. | Correct both sentences. |
+| N148 | low | **The creator's result is not reachable from the screens it changed.** The success card offers only *Done*; the program editor and the adherence screen do not say a built plan exists; a rebuild replaces the week's days and leaves the previous templates in the library without saying so. | Link the built workouts from the success card, mark a built week in the program editor or the deload chip, and say what a rebuild leaves behind. |
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself
