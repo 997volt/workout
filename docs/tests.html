@@ -734,6 +734,47 @@
     eq(built.file.exercises.length, 1);
   });
 
+  check('a category head does not stand in for a movement of the same name', function () {
+    // Five seed names are both a family head and a movement (Deadlift, Hip Thrust, Lat
+    // Pulldown, Lateral Raise, Overhead Press) and an export is ordered by name, so a
+    // lookup by name could pick the head: the mapping said "Library: Lat Pulldown" and
+    // the file attached the sets to lat-pulldown-family. A logged set may only name a
+    // movement (RowKind.isLoggable), and the head must not be offered at all.
+    var head = exercise('lat-pulldown-family', 'Lat Pulldown', { rowKind: 'CATEGORY' });
+    var lift = exercise('lat-pulldown', 'Lat Pulldown', {
+      rowKind: 'MOVEMENT', parentId: 'lat-pulldown-family'
+    });
+    [[head, lift], [lift, head]].forEach(function (order) {
+      var model = baseModel([row({ date: '24-10-2025', exercise: 'Lat Pulldown' })], {
+        catalog: catalog(order)
+      });
+      expectNone(H.revalidateModel(model).problems,
+        'sessions[0].exercises[0].name', /does not match/);
+      var built = H.buildExport(model, { exportedAt: 1 });
+      eq(built.ok, true);
+      eq(built.file.exercises.map(function (e) { return e.id; }).join(','), 'lat-pulldown');
+    });
+  });
+
+  check('a category on its own is not a linkable exercise', function () {
+    var model = baseModel([row({ date: '24-10-2025', exercise: 'Lat Pulldown' })], {
+      catalog: catalog([exercise('lat-pulldown-family', 'Lat Pulldown', { rowKind: 'CATEGORY' })])
+    });
+    expectAt(H.revalidateModel(model).problems,
+      'sessions[0].exercises[0].name', /does not match an exercise/);
+  });
+
+  check('an export written before rowKind still links every row', function () {
+    // Schema 1-4 exports carry no rowKind and every row in one is a movement, so the
+    // guard must not turn an older library into "nothing matches".
+    var model = baseModel([row({ date: '24-10-2025', exercise: 'Squat' })], {
+      catalog: catalog([exercise('squat', 'Squat')])
+    });
+    expectNone(H.revalidateModel(model).problems,
+      'sessions[0].exercises[0].name', /does not match/);
+    eq(H.buildExport(model, { exportedAt: 1 }).ok, true);
+  });
+
   check('blocking: mixed units inside one block', function () {
     var model = baseModel([
       row({ date: '24-10-2025', exercise: 'Bench Press', unit: 'kg' }),

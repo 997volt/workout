@@ -229,6 +229,21 @@
     return hex8(hi) + hex8(lo);
   }
 
+  /* Whether a loaded row may be named by a logged set.
+   *
+   * The app states it (RowKind.isLoggable, N95): a logged set names a MOVEMENT, and a
+   * CATEGORY is a head that groups movements. Five seed names are both — Deadlift, Hip
+   * Thrust, Lat Pulldown, Lateral Raise, Overhead Press — and the export is ordered by
+   * name, so a lookup by name was free to pick the head: "Lat Pulldown" mapped to
+   * lat-pulldown-family and the file would have attached the sets to a family.
+   *
+   * An export written before N95 carries no rowKind at all, and every row in it is a
+   * movement, so only an explicit CATEGORY is excluded.
+   */
+  function isLoggableRow(exercise) {
+    return isObject(exercise) && exercise.rowKind !== 'CATEGORY';
+  }
+
   function normalizeName(name) {
     var text = name === null || name === undefined ? '' : String(name);
     if (typeof text.normalize === 'function') {
@@ -1280,6 +1295,7 @@
     catalog.schemaVersion = typeof file.schemaVersion === 'number' ? file.schemaVersion : null;
     file.exercises.forEach(function (exercise) {
       if (!isObject(exercise) || typeof exercise.id !== 'string' || exercise.id === '') { return; }
+      if (!isLoggableRow(exercise)) { return; }
       catalog.byId[exercise.id] = exercise;
       var name = normalizeName(exercise.name);
       if (!name) { return; }
@@ -3240,6 +3256,7 @@
       group.label = 'Library';
       catalog.exercises.forEach(function (exercise) {
         if (!isObject(exercise) || typeof exercise.id !== 'string') { return; }
+        if (!isLoggableRow(exercise)) { return; }
         if (exercise.deletedAt !== null && exercise.deletedAt !== undefined) { return; }
         var option = document.createElement('option');
         option.value = exercise.id;
@@ -3284,6 +3301,9 @@
       note = 'New exercise (' + resolution.weightUnit + ')';
       if (resolution.deletedOnly) {
         note += '; the matching library row is deleted';
+      } else if (!state.model.catalog || !state.model.catalog.loaded) {
+        // Every name reads "new" without an export; say why, in the row it affects.
+        note += ' — no app export loaded, so nothing can be linked. Load one above.';
       }
     } else {
       note = 'Unmapped: choose a library exercise or create a new one.';

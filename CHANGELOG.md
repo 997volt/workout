@@ -14,6 +14,21 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
+## [Unreleased]
+
+### Fixed
+
+- **The import helper never links a family head as an exercise** (N159). A schema-5 export carries
+  `RowKind.CATEGORY` heads beside the movements and is ordered by name, so five names exist twice —
+  *Deadlift*, *Hip Thrust*, *Lat Pulldown*, *Lateral Raise*, *Overhead Press*. The mapping looked a name
+  up among every row, so "Lat Pulldown" could resolve to `lat-pulldown-family`: the note read
+  "Library: Lat Pulldown" and the generated file attached the sets to a head that the app's own
+  `RowKind.isLoggable` says a logged set may not name — silently, and differently depending on the
+  export's row order. The head is now excluded from the library, from the mapping's list and from a
+  deleted-name match; a name that matches only a head is unmatched, like a name the library lacks. An
+  export written before that field carries no `rowKind` and still links every row. The mapping also says
+  in the row itself when no export is loaded, which is the only state that makes every name read "new".
+
 ## [2.10] — 2026-10-18 (versionCode 30)
 
 History that predates the app can be brought in: a zero-dependency page in [`docs/`](docs/), published at

@@ -198,6 +198,16 @@ kilogram-display exercise stores 102,058 g and shows as about 102.1 kg. The data
 follows the exercise. The tool says so once per affected name and leaves the exercise's unit alone by
 default.
 
+### Only a movement is linkable
+
+A schema-5 export carries the family heads beside the movements — `RowKind.CATEGORY` beside
+`RowKind.MOVEMENT` — and it is ordered by name, so five names exist twice: *Deadlift*, *Hip Thrust*,
+*Lat Pulldown*, *Lateral Raise*, *Overhead Press*. A logged set may only name a movement (the app says so
+on `RowKind.isLoggable`), so a head is never matched, never offered in the mapping and never counted as a
+deleted name that blocks a match: a name that matches only a head is **unmatched**, exactly like a name
+the library does not have. An export written before that field carries no `rowKind` at all, and every row
+in one is a movement, so the older files keep linking.
+
 ### Roles
 
 A row's `type` normalises to the roles the app stores, matched case-insensitively:
