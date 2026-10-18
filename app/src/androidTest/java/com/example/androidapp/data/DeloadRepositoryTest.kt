@@ -186,6 +186,45 @@ class DeloadRepositoryTest {
     }
 
     @Test
+    fun aNextWeekPlan_isAccepted_butTheFollowingWeekIsRefused() = runTest {
+        // N158: the creator plans the next week, so the window is current-or-next and no further.
+        val next = monday.plusWeeks(1)
+        val created = deloads.createDeload(
+            programId = program,
+            weekStart = next,
+            days = listOf(dayInput("Next — deload", DayOfWeek.MONDAY)),
+        ) as DataResult.Success
+        assertEquals(next, created.data.weekStart)
+
+        val beyond = deloads.createDeload(
+            programId = program,
+            weekStart = monday.plusWeeks(2),
+            days = listOf(dayInput("Beyond — deload", DayOfWeek.MONDAY)),
+        ) as DataResult.Failure
+        assertEquals(
+            DataError.Invalid("A deload week starts this week or next."),
+            beyond.error,
+        )
+    }
+
+    @Test
+    fun aNextWeekPlan_isWhatTheCalendarShows() = runTest {
+        val next = monday.plusWeeks(1)
+        (
+            deloads.createDeload(
+                programId = program,
+                weekStart = next,
+                days = listOf(dayInput("Next — deload", DayOfWeek.MONDAY)),
+            ) as DataResult.Success
+            )
+
+        val report = adherence.monthAdherence(YearMonth.of(2026, 10), today, utc).getOrNull()!!
+
+        assertTrue(next in report.adherence.scheduledDays)
+        assertEquals(setOf(next), report.deloadWeeks[program])
+    }
+
+    @Test
     fun aBuiltWeek_isWhatTheCalendarAndDayDialogShow() = runTest {
         // B161: the plan's own day is what the calendar draws and the day dialog lists, and the slot
         // it replaced is not — on either weekday.
@@ -266,13 +305,12 @@ class DeloadRepositoryTest {
     }
 
     @Test
-    fun aWeekOtherThanTheCurrentOne_isRefused() = runTest {
-        // P3.10's no-forward-view rule, and the other end of it: a plan is built for the week being
-        // taken, not one that has passed. A creator left open across midnight must not write the old
-        // week (N147).
-        val future = deloads.createDeload(
+    fun aWeekBeyondTheNextOrInThePast_isRefused() = runTest {
+        // N158 narrows the window to current-or-next: the creator plans the next week, a past week must
+        // never be written, and anything past next is refused.
+        val beyond = deloads.createDeload(
             programId = program,
-            weekStart = monday.plusWeeks(1),
+            weekStart = monday.plusWeeks(2),
             days = listOf(dayInput("Heavy lower — deload", DayOfWeek.MONDAY)),
         )
         val past = deloads.createDeload(
@@ -281,7 +319,7 @@ class DeloadRepositoryTest {
             days = listOf(dayInput("Heavy lower — deload", DayOfWeek.MONDAY)),
         )
 
-        assertTrue(future is DataResult.Failure && future.error is DataError.Invalid)
+        assertTrue(beyond is DataResult.Failure && beyond.error is DataError.Invalid)
         assertTrue(past is DataResult.Failure && past.error is DataError.Invalid)
     }
 

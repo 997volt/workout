@@ -2272,9 +2272,10 @@ same share. A second editor inside the creator was rejected: the templates the w
 rows, and editing one is the editor the app already has. The creator's controls are the things that decide
 *which* plan exists — how many days, which exercises, which day, which share — not how a set is typed.
 
-**It applies to the week it was built for, and home reads it.** The creator marks the current week, because
-a deload is decided by how the block is going and a week that has not started cannot be marked (P3.10); the
-mark and the plan are one transaction, so neither can exist without the other. For that week, home's today
+**It applies to the week it was built for, and home reads it.** The creator originally marked the current
+week, because a deload is decided by how the block is going and a week that has not started could not be marked
+(P3.10); N158 narrows that to a one-week forward window, so the creator now plans the next week and the mark and
+the plan are one transaction, so neither can exist without the other. For that week, home's today
 plan takes the plan's days instead of the slots — a two-day week offers two days, and the reduced week is real
 rather than a set of full workouts the lifter has to ignore. Adherence's calendar and day dialog read the same
 days (B161), and the start question leaves a built week out entirely (B163): its days are not scored and a
@@ -2367,7 +2368,7 @@ selected, one it dropped is not, and every remaining set, rep and load is re-der
 the current plan and history. **Copying the last plan's templates** was rejected outright: the loads would be
 from the old block, which is exactly the staleness a deload is supposed to answer.
 
-**The window is the current week, as it always was.** The reuse is a draft action on a draft; it writes nothing
+**The window is the target week, now the next one.** The reuse is a draft action on a draft; it writes nothing
 until the lifter presses the create button, and the current-week rule is untouched. The action is offered only
 when a previous plan exists, and its note says the share is not part of what it reuses.
 
@@ -2430,3 +2431,27 @@ twice in the old plan maps to the first current instance on *Use last deload*; t
 again. That is the same living-template limit N155 records, not a new one. The layout is the next question: the
 pool now has one row per source instance on every day card, so N156 records the single-pool/day-assignment pass
 for when the 2-of-4 session actually feels long.
+
+## N158
+
+The request came from use: "make it so that when I create deload it is always in the future, I don't want to plan
+for days that are in the past." On a Sunday the creator marked the week that was already ending (the app's weeks
+are Monday–Sunday), so every deload day but possibly Sunday was past; home had nothing for the coming week, and
+the next Monday started a fresh full week.
+
+**The creator targets the next Monday.** `weekStart` is the Monday of the current date plus one week, so every
+day card is in the next week and no selected day is past; the header says which week. The repository accepts the
+**current or next** week — the current for older plans and the adherence's own mark, the next for the creator —
+and refuses anything beyond, so the window is one week ahead, not an open forward view. P3.10's "a week that has
+not started cannot be marked" is narrowed to that one week: the reason for the old rule is still true of the
+current week, and the next week is the one a lifter plans at the end of the current one.
+
+**What happens to the plan.** The mark and days are for the next week; the current week keeps its full slots,
+its ratio and its start question. When the next Monday arrives, home's today plan and the adherence calendar read
+the plan exactly as a current-week plan; the start question leaves the built week out (B163). The adherence chip
+for the future week is not shown until the week starts (the chip is for started weeks), so a plan created by
+mistake is rebuilt (the existing-plan note) or unmarked from the chip once the week begins; a cancel-now action is
+a follow-up.
+
+**Covered by** the creator's next-Monday test, the repository's next-week acceptance and beyond-next refusal, and
+the adherence calendar showing the future plan's days.

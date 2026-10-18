@@ -25,7 +25,8 @@ interface DeloadRepository {
     fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>>
 
     /**
-     * Writes [days] as this week's deload, marking the week if it is not already (N147).
+     * Writes [days] as the deload for [weekStart] — the next week, or the current one for older plans
+     * (N147, N158) — marking the week if it is not already.
      *
      * One transaction over the mark, the templates and the plan, so a half-built week is not a state any
      * screen can read. Re-running for a week that already has a plan replaces its days and leaves the

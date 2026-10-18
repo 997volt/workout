@@ -855,8 +855,10 @@ the rule; that one argues it.
   a deload day has no slot a skip could record, so the week is left out of that question; a marked week with no
   plan keeps its slots and still asks. **Nothing is scaled for you by the app** — a week marked
   with no plan prescribes what the slot's template prescribes (N73), and N147's creator writes a draft only
-  when the lifter asks for it — and a week that has not started cannot be marked, because the app has no
-  forward view and a deload is decided by how the block is going.
+  when the lifter asks for it — and **the creator plans the next week** (N158): the mark is still the lifter's,
+  but the one-week forward window replaces the old no-forward-view rule, because on a Sunday the old rule built a
+  week that had already passed. The repository accepts the current or next week and refuses anything further; a
+  built plan's days are all future, and the calendar and home read it when the week arrives.
 - **A deload week can prescribe its own workouts, and the app drafts them only when asked** (N147,
   narrowing P3.10). The mark is still the lifter's; what the creator adds is a **plan for that week**: one
   ordinary template per day and a `program_deload_days` row keyed to the mark, so a two-day deload can be
@@ -865,8 +867,9 @@ the rule; that one argues it.
   offered) or the last finished session's where the plan states none, rounded to the exercise's step; no
   warm-up, no rung, no effort target — and the screen's preview and the write read the same pure function.
   **Nothing scales by itself**: the creator writes only when called and the saved plan never recalculates;
-  anything finer is a template edit. It applies to the **current week** only, inheriting P3.10's
-  no-forward-view rule, and it marks the week in the same transaction. Home's today plan and adherence's
+  anything finer is a template edit. It applies to the **next week** (N158), so no deload day is in the past;
+  the current week is still accepted for older plans, and the mark is written in the same transaction. Home's
+  today plan and adherence's
   calendar and day dialog read the week's days instead of the slots; the missed-day question leaves a built week
   out (B163). A deload session names no slot, so the run pauses (P3.9), the week stays exempt from the ratio, and
   unmarking a built week asks first, leaving the templates in the library but not the week's plan (B162). The

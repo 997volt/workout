@@ -82,6 +82,15 @@ class ProgramDeloadViewModelTest {
     }
 
     @Test
+    fun theCreator_plansTheNextWeek_soNoDeloadDayIsPast() = runTest(dispatcher) {
+        // N158: 2026-10-07 is a Wednesday; the creator targets Monday the 12th, not the 5th.
+        val viewModel = viewModel(reader = FakeReader(result = snapshot()))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.weekStart).isEqualTo(LocalDate.of(2026, 10, 12))
+    }
+
+    @Test
     fun aSnapshot_becomesTheDraft_andTheControlsReDeriveIt() = runTest(dispatcher) {
         val viewModel = viewModel(reader = FakeReader(result = snapshot()))
         advanceUntilIdle()
@@ -182,6 +191,7 @@ class ProgramDeloadViewModelTest {
         assertThat(repository.writes).hasSize(1)
         assertThat(repository.writes.single().single().name).isEqualTo("Deload A")
         assertThat(viewModel.uiState.value.created).isNotNull()
+        assertThat(viewModel.uiState.value.created?.weekStart).isEqualTo(LocalDate.of(2026, 10, 12))
     }
 
     @Test

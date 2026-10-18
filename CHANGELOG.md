@@ -18,6 +18,15 @@ unreleased.
 
 ### Changed
 
+- **The creator plans the next deload week, never the one that is ending** (N158). On Sunday, building a deload
+  marked the week that had already passed: its days were in the past, home had nothing for the coming week, and
+  the next Monday began a fresh full week. The creator now always targets the coming Monday, so every deload day
+  is in the future. The repository accepts the current or next week — the current for older plans and the
+  adherence's own mark — and refuses anything further, which narrows P3.10's no-forward-view rule to one week.
+  The current week keeps its full workouts and ratio; home and the adherence calendar read the plan when the
+  week starts. The future week's mark is not on the adherence chip until that week begins, so a plan created by
+  mistake is rebuilt (the existing-plan note) or unmarked from the chip once the week starts.
+
 - **The same exercise can be kept more than once in a deload** (N157). The pool kept one row per movement (and,
   after 2.9, the heaviest source's plan), so a program that scheduled a lift on two days could only keep it once.
   The pool now keeps one row per **source instance**, each with its own day's plan and source label; a deload day

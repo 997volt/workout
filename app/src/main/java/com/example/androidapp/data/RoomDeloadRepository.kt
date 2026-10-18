@@ -88,14 +88,14 @@ class RoomDeloadRepository @Inject constructor(
         }
         requireUsable(days)
 
-        // Only a started week can be marked (P3.10), and the creator is the act of marking it. Any week
-        // but this one — past or future — is refused here, not only by the screen, so the rule holds for
-        // every caller.
+        // The creator plans the next week (N158), so every deload day is in the future; the current week is
+        // still accepted for older plans and the adherence's own mark. Anything further ahead is refused
+        // here, not only by the screen, so the one-week window holds for every caller.
         val todayWeek = ProgramSchedule.weekStartOf(
             timeSource.now().atZone(ZoneId.systemDefault()).toLocalDate(),
         )
-        if (weekStart != todayWeek) {
-            throw InvalidInputException("A deload week starts with this week.")
+        if (weekStart != todayWeek && weekStart != todayWeek.plusWeeks(1)) {
+            throw InvalidInputException("A deload week starts this week or next.")
         }
 
         val now = timeSource.nowEpochMillis()

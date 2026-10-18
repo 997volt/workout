@@ -57,7 +57,7 @@ data class DeloadDayUi(
 data class DeloadCreatorUiState(
     val isLoading: Boolean = true,
     val programName: String? = null,
-    /** The Monday of the week being built; the creator only ever writes the current one (P3.10). */
+    /** The Monday of the week being built: the next one, so no day is already past (P3.10 amended, N158). */
     val weekStart: LocalDate? = null,
     /**
      * The deload days on screen, each with the whole program's exercise pool to choose from (N152).
@@ -69,7 +69,7 @@ data class DeloadCreatorUiState(
     val dayCount: Int = 0,
     val maxDays: Int = 0,
     val loadKeptPercent: Int = DELOAD_DEFAULT_LOAD_KEPT_PERCENT,
-    /** True when this week already has a plan, so the screen can say a rebuild replaces its days. */
+    /** True when the target week already has a plan, so the screen can say a rebuild replaces its days. */
     val hasExistingPlan: Boolean = false,
     val selectedExerciseCount: Int = 0,
     val creating: Boolean = false,
@@ -112,9 +112,11 @@ class ProgramDeloadViewModel @Inject constructor(
 
     private val programId: String = savedStateHandle.toRoute<ProgramDeload>().programId
 
+    // The creator plans the week that has not started: the next Monday, so every deload day is in the
+    // future and a Sunday session does not build the week that is already ending (N158).
     private val weekStart: LocalDate = ProgramSchedule.weekStartOf(
         timeSource.now().atZone(ZoneId.systemDefault()).toLocalDate(),
-    )
+    ).plusWeeks(1)
 
     private val _state = MutableStateFlow(DeloadCreatorUiState(weekStart = weekStart))
     val uiState: StateFlow<DeloadCreatorUiState> = _state.asStateFlow()
@@ -130,7 +132,7 @@ class ProgramDeloadViewModel @Inject constructor(
      */
     private var selectedByDay: MutableList<MutableSet<String>> = mutableListOf()
 
-    /** The most recent plan before this week, for *Use last deload*, or null (N150). */
+    /** The most recent plan before the target week, for *Use last deload*, or null (N150). */
     private var lastPlan: DeloadWeek? = null
 
     /**
