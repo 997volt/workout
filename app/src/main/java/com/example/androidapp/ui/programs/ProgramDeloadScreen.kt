@@ -76,6 +76,7 @@ import java.util.Locale
 @Composable
 fun ProgramDeloadRoute(
     onBack: () -> Unit,
+    onOpenWorkouts: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProgramDeloadViewModel = hiltViewModel(),
 ) {
@@ -88,6 +89,7 @@ fun ProgramDeloadRoute(
         onLoadPercentChange = viewModel::onLoadPercentChange,
         onWeekday = viewModel::onWeekdayChange,
         onCreate = viewModel::onCreate,
+        onOpenWorkouts = onOpenWorkouts,
         onDismissError = viewModel::onErrorShown,
         modifier = modifier,
     )
@@ -104,6 +106,7 @@ fun ProgramDeloadScreen(
     onWeekday: (String, DayOfWeek?) -> Unit,
     onCreate: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenWorkouts: () -> Unit = {},
     onDismissError: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -124,6 +127,7 @@ fun ProgramDeloadScreen(
             onDayCount = onDayCount,
             onLoadPercentChange = onLoadPercentChange,
             onWeekday = onWeekday,
+            onOpenWorkouts = onOpenWorkouts,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -180,6 +184,7 @@ private fun DeloadStates(
     onDayCount: (Int) -> Unit,
     onLoadPercentChange: (Int) -> Unit,
     onWeekday: (String, DayOfWeek?) -> Unit,
+    onOpenWorkouts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when {
@@ -203,6 +208,7 @@ private fun DeloadStates(
         state.created != null -> DeloadDone(
             state = state,
             onClose = onBack,
+            onOpenWorkouts = onOpenWorkouts,
             modifier = modifier,
         )
 
@@ -495,6 +501,7 @@ private fun prescriptionOf(exercise: DeloadExerciseUi): String {
 private fun DeloadDone(
     state: DeloadCreatorUiState,
     onClose: () -> Unit,
+    onOpenWorkouts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val week = state.weekStart
@@ -526,6 +533,14 @@ private fun DeloadDone(
             modifier = Modifier.padding(top = 8.dp).testTag(TestTags.Deload.DONE),
         ) {
             Text(stringResource(R.string.deload_done))
+        }
+        // The result is a set of ordinary workouts in the library; the card is one tap short of them
+        // otherwise, which is N148's gap (it offered only Done).
+        AppTextButton(
+            onClick = onOpenWorkouts,
+            modifier = Modifier.padding(top = 4.dp).testTag(TestTags.Deload.VIEW_WORKOUTS),
+        ) {
+            Text(stringResource(R.string.deload_view_workouts))
         }
     }
 }

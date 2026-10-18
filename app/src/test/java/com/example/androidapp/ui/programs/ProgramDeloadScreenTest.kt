@@ -97,6 +97,7 @@ class ProgramDeloadScreenTest {
         onLoadPercentChange: (Int) -> Unit = {},
         onWeekday: (String, DayOfWeek?) -> Unit = { _, _ -> },
         onCreate: () -> Unit = {},
+        onOpenWorkouts: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             ProgramDeloadScreen(
@@ -107,6 +108,7 @@ class ProgramDeloadScreenTest {
                 onLoadPercentChange = onLoadPercentChange,
                 onWeekday = onWeekday,
                 onCreate = onCreate,
+                onOpenWorkouts = onOpenWorkouts,
             )
         }
     }
@@ -222,8 +224,9 @@ class ProgramDeloadScreenTest {
     }
 
     @Test
-    fun aBuiltWeek_saysWhatItWrote_andOffersDone() {
+    fun aBuiltWeek_saysWhatItWrote_andOffersDone_andTheWorkouts() {
         var done = false
+        var opened = false
         setScreen(
             ready.copy(
                 created = DeloadCreation(
@@ -232,11 +235,15 @@ class ProgramDeloadScreenTest {
                 ),
             ),
             onBack = { done = true },
+            onOpenWorkouts = { opened = true },
         )
 
         composeTestRule.onNodeWithTag(TestTags.Deload.CREATED).assertIsDisplayed()
         composeTestRule.onNodeWithText("2 workouts", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.Deload.CREATE).assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag(TestTags.Deload.VIEW_WORKOUTS).performClick()
+        assertThat(opened).isTrue()
 
         composeTestRule.onNodeWithTag(TestTags.Deload.DONE).performClick()
         assertThat(done).isTrue()

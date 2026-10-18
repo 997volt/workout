@@ -231,7 +231,10 @@ private fun NavGraphBuilder.programDestinations(navController: NavHostController
     }
 
     composable<ProgramDeload> {
-        ProgramDeloadRoute(onBack = { navController.popBackStack() })
+        ProgramDeloadRoute(
+            onBack = { navController.popBackStack() },
+            onOpenWorkouts = { navController.navigate(WorkoutTemplates) },
+        )
     }
 
     composable<ProgramEditor> { entry ->
