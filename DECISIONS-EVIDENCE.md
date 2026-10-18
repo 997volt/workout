@@ -2456,3 +2456,37 @@ a follow-up.
 
 **Covered by** the creator's next-Monday test, the repository's next-week acceptance and beyond-next refusal, and
 the adherence calendar showing the future plan's days.
+
+## N159
+
+The gap was not a reader but a *place to fix the file*. A hand-written backup either fails the decoder
+("That does not look like a backup file") or fails a constraint mid-transaction, which the screen reports as a
+storage failure; neither names a row. The merge then refuses to overwrite, so a value that lands wrong is
+permanent. A review step had to sit between the sheet and the import.
+
+**The page is outside the app because the app is local-only.** No `INTERNET`, no server, the export file the
+only path off the device — so the tool is a file generator, not a service, and it keeps that promise by making
+no request at all: the CSP carries `connect-src 'none'`, and the source holds no `fetch`, `XMLHttpRequest`,
+`WebSocket` or beacon. It also runs from disk, so using it never requires loading it from GitHub.
+
+**Why rows, not the backup format.** Asking a model for epoch millis, grams, half-points, enum names and unique
+ids at once is asking it to be wrong in five independent ways, and the dangerous ones are silent: `100` for
+100 kg stores 0.1 kg, and `8` for RPE 8 stores RPE 4. A flat row list keeps the model to transcription; every
+conversion is code the test page covers.
+
+**Why the date order is read once and then questioned.** The sheets are `DD-MM-YYYY`, and `05-03-2025` is valid
+either way. A silent month swap corrupts every chronological reading, so the page parses day-month, counts the
+dates where both parts are at most twelve, and offers one toggle that reinterprets all of them and reports how
+many would land in the future under each reading.
+
+**Why the unit is per exercise.** Most rows are kilograms and some lifts are pounds; the sheet chooses per
+lift, so the mapping table does. Storing is always grams, and a new exercise carries the `weightUnit` name the
+app reads (`KILOGRAMS`/`POUNDS`).
+
+**Why the ids are coordinates, not a content hash.** The merge adds a row whose id is missing and leaves a
+present one alone, so re-importing must be a no-op; a content hash would re-key every row whenever a weight was
+corrected, which is the opposite. The seed is the source name and is exposed as the revision, which is the one
+deliberate way to force a new row set after deleting the old one in the app.
+
+**Covered by** the tool's own test page — conversion, grouping, every blocking and warning rule, id determinism
+and the round trip — and by the app's docs gate for the specification's citations.

@@ -1035,6 +1035,21 @@ the rule; that one argues it.
   and overwrites nothing**, and the program arrives **inactive and last**. Rejected: restoring a row
   this device has deleted, as the backup does, because this is an additive share (B51).
   ([evidence](DECISIONS-EVIDENCE.md#n47))
+- **History that predates the app is converted outside it, by a page the app never talks to** (N159). The app
+  reads only its own formats, and it must: the backup's import is one transaction that names no row when it
+  refuses, and its merge never overwrites, so a generated file either fails opaquely or lands unchecked and
+  cannot be corrected. The conversion therefore lives in [`docs/`](docs/) — a zero-dependency page with no
+  build, no request and no stored training data, which runs from Pages and from disk — and writes the four
+  collections a backup requires at the backup's own `schemaVersion`. **The input is a flat row list, not the
+  app's format**: a model transcribes the sheet and the page does every conversion (whole grams, half-points,
+  epoch millis, enum names, ids), so the error-prone half is code with tests. **Ids are deterministic**, keyed
+  on the source coordinate rather than the values, so the same file twice adds nothing and a file whose first
+  import failed can be fixed and loaded again; correcting a row that already landed means deleting it in the
+  app and raising the revision, because the merge never overwrites. **The file carries nothing but history** —
+  goals, measurements and programs are omitted rather than defaulted, because a generated block would be data
+  the tool has no business writing. Rejected: a CSV import inside the app, which would be a second parser with
+  no review step, and `.xlsx` reading, which needs a dependency and is one *Save as CSV* away.
+  ([evidence](DECISIONS-EVIDENCE.md#n159))
 
 ## Adherence
 
