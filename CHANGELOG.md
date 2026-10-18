@@ -14,6 +14,22 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
+## [Unreleased]
+
+### Added
+
+- **A program can build its deload week, and the numbers come filled in** (N147). A deload week used to be a mark
+  and nothing else: its slots still prescribed the full workouts, so a lifter either retyped every set to back off
+  or trained the plan and called it a deload. The program editor's *Deload week* now opens a creator: choose how
+  many days, tick the exercises each keeps, and set one share of the load. The rule is stated on screen and applied
+  once — the plan's stand-alone working sets up to three, its highest rep target floored at five, its heaviest
+  stated load kept at 60% (or the last session's where the plan states none), rounded to the exercise's step. What
+  it writes is an ordinary template per day and a plan for the current week, so the week's days are what home
+  offers and what the missed-day question asks about; a deload session names no slot, so the run pauses and the
+  week stays exempt from the ratio. Unmarking the week leaves the workouts in the library, and the plan rides in
+  the backup. **This is the narrow amendment to P3.10**: the app still never scales a week on its own, and the
+  numbers are a draft the lifter can edit afterwards.
+
 ## [2.7] — 2026-10-18 (versionCode 27)
 
 The pre-release review's batch: one defect visible on every fresh install, thirteen more found by reading, four

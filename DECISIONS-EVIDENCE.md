@@ -2197,3 +2197,82 @@ whole backup to protect one defaulted field trades a lost label for lost history
 the same build or a newer one. A field whose absence would **mislead** a reader rather than merely be absent is
 the case that moves the version instead — which is what N113 did when a measurement's weight stopped being
 required.
+
+## N147
+
+The ask was a deload creator for a program: choose the number of days, mark the exercises each day keeps,
+and have the planned sets, reps and weights filled in. It is a direct challenge to P3.10, which says a
+deload is a week the lifter marks and **nothing is scaled for you** — so the first piece of design work is
+not the screen but the sentence that has to survive.
+
+**The mark stays the lifter's; only the authoring is new.** Nothing here infers a deload, suggests one, or
+recalculates a week after it is saved: the creator runs when the lifter opens it, writes once, and what it
+writes is an ordinary template per day plus a plan for that week. The rule's numbers are a **draft shown
+before anything is stored**, and every one of them is editable in the template editor afterwards. That is
+the amendment P3.10 needed, and it is narrower than "the app computes a deload": the app still never
+decides that a week should be one. The distinction matters because N22's rule — a rotation whose reason the
+lifter cannot see is a coach — is about *decisions the app makes on its own*, not about arithmetic the
+lifter asks it to perform.
+
+**The plan hangs off the mark, in one table.** The alternatives were each rejected for a concrete cost. A
+separate deload *program* means two schedules and two histories for one block, and the run would move to
+it. Writing the week as substitutions and inferring a plan from them means a reduced day count still
+offers the replaced slots' full workouts on home, and the read would have to guess that four substitution
+rows *are* a plan. Scaling the slot's template in place rewrites every week that references it (N16) and
+takes P3.10's slot prescription with it. The chosen shape is one row per day keyed to the `program_deloads`
+row the mark already keeps, with its own `weekday` and its own template — which is what makes "fewer days
+than the program has slots" expressible at all, and what lets an order-only source day stay order-only.
+
+**The set count follows the plan, capped at three.** The first draft of this rule was a flat two sets, and
+it was wrong for the reason a magic number is always wrong: a 2-set accessory kept both, a 5×5 lost three,
+and nothing explained any of it. The plan's own count is the only evidence of how much work the lift does,
+and a "compound" flag would be the app inferring a training intent the lifter already wrote down — the
+squat's five sets *are* the statement that it is a compound. Warm-ups are preparation and a rung belongs to
+the set above it, so neither counts and neither is written; a drop anchor counts once. The cap exists
+because past three the set count is the volume the week exists to remove. **Halving the sets was
+rejected** for the normal 2–3 set plan: with the load already cut by 40% it over-cuts the week, and a
+short session is not a better deload. The cap handles the high-set plan.
+
+**Reps are one number: the highest target the plan names, floored at five.** A 5/3/1 plan does 5s rather
+than a 5, a 3 and a 1; a top-single plan does 5s rather than one. The floor is the one invented number in
+the rule, and it is there because a single at 60% trains nothing. Where the plan names no reps, the last
+finished session's highest working reps fill in; where neither does, the draft states none rather than
+inventing one, which is N14's rule about a claim.
+
+**The load is the plan's heaviest stated working set, kept at 60%.** That is 60% of the working weight, not
+60% of a one-rep max the app estimates: a plan states a load and the rule reduces it, which is the least
+invention available. For a working set near 80% of a 1RM the deload lands near 48%, the band a deload is
+usually described in, and a 3×5 plan therefore reads 3×5 at about 48% — roughly 60% of the volume load it
+replaced. The share is the screen's one control (50/60/70 kept) because it is the one number a lifter has a
+reason to disagree with; the set and rep rules are fixed so the draft reads as one rule rather than a
+settings panel. The last finished session fills in only where the plan states no load, the precedence the
+workout's own prefill already uses (N14, N59). An assisted movement keeps its help: assistance is a
+magnitude, and halving it would make the deload harder (N15). No effort target travels, because a deload at
+the plan's RPE is not a deload. **Deriving the numbers from readiness or logged fatigue was rejected**
+outright: nothing the app records measures recovery, and a deload whose reason is invisible is the coach
+N22 refused.
+
+**The preview and the write are the same function.** `deloadSetTargets` is pure and JVM-tested, and both
+`buildDeloadDays` (the screen) and `buildDeloadInputs` (the write) call it with the same snapshot and the
+same share. A second editor inside the creator was rejected: the templates the write produces are ordinary
+rows, and editing one is the editor the app already has. The creator's controls are the things that decide
+*which* plan exists — how many days, which exercises, which day, which share — not how a set is typed.
+
+**It applies to the week it was built for, and home reads it.** The creator marks the current week, because
+a deload is decided by how the block is going and a week that has not started cannot be marked (P3.10); the
+mark and the plan are one transaction, so neither can exist without the other. For that week, home's today
+plan and the missed-day question take the plan's days instead of the slots — a two-day week offers two
+days, and the reduced week is real rather than a set of full workouts the lifter has to ignore. A deload
+session names no slot, so `programRun` does not read it: the run pauses rather than advancing through a
+week that is not the program (P3.9). The week stays exempt from the ratio, and unmarking it takes the days
+out of every read and leaves the templates in the library, because a rebuild or an unmark is not a reason
+to delete the lifter's workouts. A week marked with no plan behaves exactly as P3.10 left it, which is what
+keeps this additive.
+
+**The file carries it, the program document does not.** The plan is authored setup the app cannot
+recompute, exactly P3.10's reason for carrying the mark, so the backup gains one defaulted collection and
+a migration test of its own. N47's program document still carries neither the plan nor its workouts: a
+week-keyed plan belongs to the device that trained it, and the deload templates are not named by a slot, so
+the document's existing "the templates the slots name" rule leaves them behind without a new clause. The
+schema addition is one table and its two indices, and a database upgraded from before it has a mark with no
+days — the P3.10 shape — rather than a migration that has to invent a plan.

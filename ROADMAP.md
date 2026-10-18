@@ -45,65 +45,7 @@ not now — and it is not *Next*, which is what is actually being worked on. Eac
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-- **A program can build its deload week, and the numbers come filled in** (N147). Asked for in use: a deload week
-  is marked (P3.10) and nothing about the week changes — its slots still prescribe the full workouts, so the lifter
-  either retypes every set to back off or trains the full plan and calls it a deload. The creator makes the mark and
-  its prescriptions one act: choose how many days, tick the exercises each day keeps, and the app writes the
-  workouts with sets, reps and loads taken from the program's own plan.
-
-  **What it writes.** One ordinary template per day — *"Push — deload"* — and a plan for the week that names them.
-  Nothing about a template is special: it is edited, versioned (N134), exported and backed up like any other. They
-  are **copies, not references**, so a later edit to the program does not rewrite a deload already built — the
-  draft is taken once, when the lifter asks for it. The week's days hang off the existing `program_deloads` row in a
-  new `program_deload_days` table (`deloadId`, `templateId`, `position`, `weekday`), so a two-day deload is two days
-  and the program's other slots do not appear that week. A day defaults to a program slot in order, takes that
-  slot's weekday (an order-only slot's day stays order-only), the day count trims the last days, and the weekday is
-  editable before anything is written. The backup gains one defaulted collection, for P3.10's reason: which workouts
-  a marked week prescribed is authored setup the app cannot recompute, so a restore would otherwise keep the
-  exemption and lose the work it excused. N47's program document still carries neither the plan nor its templates,
-  because a week-keyed plan is history rather than a program's definition.
-
-  **The draft's rule, stated so it is arithmetic rather than a coach.** The set count follows the plan, because the
-  plan's count is the app's only evidence of how much work that lift normally does — a "compound" flag would be the
-  app inferring a training intent the lifter already wrote down. **The plan's stand-alone working sets are kept,
-  capped at three and floored at one**; a warm-up is preparation and a rung belongs to the set above it, so neither
-  is a set of its own, and only the working sets are written — the session can still log its own ramp. A 3×5 squat
-  keeps three lighter sets rather than losing one to a flat rule; a 5×5 keeps three rather than carrying the fifth,
-  because past three the set count is the volume the week exists to remove; a 2-set accessory stays two. Reps are
-  **one number, the highest target those sets name, floored at five**, so a 5/3/1 plan does 5s and a top-single plan
-  does 5s rather than one; where the plan names none, the last finished session's highest working reps, and where
-  neither does, none. Load is **the plan's heaviest stated working load — or the last finished session's heaviest
-  working set, where the plan states none — kept at 60% by default** (50% and 70% offered), rounded to the
-  exercise's own step (N77), and **no load at all** where neither states one, because zero is a claim (N14). One
-  load per exercise: a 3×5 at a working 80% therefore reads 3×5 at about 48%, roughly 60% of the volume load it
-  replaced. An assisted movement keeps its help, because assistance is a magnitude and reducing it would make the
-  deload harder (N15). The plan's rest, technique cue and superset pairing travel; its effort target and its rungs
-  do not. **One control**, the load kept at 60% by default (50% and 70% beside it), moves every added load
-  together; anything finer is a template edit afterwards, and a second editor inside the creator was rejected.
-
-  **Why this does not make the app a coach.** The week is still the lifter's mark, and the draft is written only
-  when they ask: nothing scales a marked week by itself, no read infers a deload, and no number moves after the plan
-  is saved. That is the narrow amendment to P3.10 — *nothing is scaled for you* becomes *nothing is scaled unless
-  you ask, and what is written is an ordinary plan you can edit* — and [DECISIONS.md](DECISIONS.md) takes it when
-  this ships.
-
-  **It applies to the week it was built for.** The creator marks the current week, because a deload is decided by
-  how the block is going and a week that has not started cannot be marked (P3.10). For that week, home's today plan
-  and the missed-day question read the plan's days instead of the slots, so a reduced week offers the reduced days
-  and no full workout on the others; a day already trained keeps its session. A deload session names no slot, so
-  the run pauses rather than advancing (P3.9), and the week stays exempt from the ratio (P3.10): a deload is a break
-  in the block, not a step through it. Unmarking the week leaves the templates in the library and puts the slots
-  back; a week marked with no plan behaves exactly as P3.10 left it, which is what makes this additive.
-
-  **Rejected:** a separate deload program to activate (two schedules and two histories for one block, and the run
-  would move to it); writing the week as substitutions and inferring the plan from them (a reduced day count leaves
-  the replaced slots' full workouts on home, and the read would have to guess that four substitutions mean a plan);
-  scaling a slot's template in place (it rewrites every week that references it — N16 — and P3.10's slot
-  prescription with it); and deriving the numbers from readiness or logged fatigue (N22's coach, and nothing the app
-  records measures recovery).
-
-  **Brought forward when** a deload week is next marked and its workouts then have to be retyped by hand — the
-  friction that says the mark and its prescriptions are one decision.
+**Nothing.** The deload creator (N147) shipped, and the section drains the same way *Next* does.
 
 ## Parked — deliberately not planned
 

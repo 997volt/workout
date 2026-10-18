@@ -844,9 +844,24 @@ the rule; that one argues it.
   rather than being a dated plan (N16) or a derived week. **Exempt from the ratio, not from the
   calendar**: a deload week's scheduled occurrences are neither done, skipped nor missed, so a
   deliberate back-off cannot read as a failure, while its sessions still mark their days and the
-  missed-day question still asks in that week. **Nothing is scaled for you** — what a deload week
-  prescribes is what the slot's template prescribes (N73) — and a week that has not started cannot be marked,
-  because the app has no forward view and a deload is decided by how the block is going.
+  missed-day question still asks in that week. **Nothing is scaled for you by the app** — a week marked
+  with no plan prescribes what the slot's template prescribes (N73), and N147's creator writes a draft only
+  when the lifter asks for it — and a week that has not started cannot be marked, because the app has no
+  forward view and a deload is decided by how the block is going.
+- **A deload week can prescribe its own workouts, and the app drafts them only when asked** (N147,
+  narrowing P3.10). The mark is still the lifter's; what the creator adds is a **plan for that week**: one
+  ordinary template per day and a `program_deload_days` row keyed to the mark, so a two-day deload can be
+  two days while the program has four. The draft is one visible rule — the plan's stand-alone working sets
+  kept up to three, its highest rep target floored at five, its heaviest stated load kept at 60% (50/70
+  offered) or the last finished session's where the plan states none, rounded to the exercise's step; no
+  warm-up, no rung, no effort target — and the screen's preview and the write read the same pure function.
+  **Nothing scales by itself**: the creator writes only when called and the saved plan never recalculates;
+  anything finer is a template edit. It applies to the **current week** only, inheriting P3.10's
+  no-forward-view rule, and it marks the week in the same transaction. Home's today plan and the missed-day
+  question read the week's days instead of the slots; a deload session names no slot, so the run pauses
+  (P3.9), the week stays exempt from the ratio, and unmarking the week leaves the templates in the library.
+  The plan travels in the backup as authored setup; N47's program document still carries neither it nor its
+  workouts, because a week-keyed plan is history. ([evidence](DECISIONS-EVIDENCE.md#n147))
 - **A substitute is an event keyed by slot and week, and it stands in for matching** (P3.11). The
   pick is made at the point of starting, like the missed-day question, and recorded for that slot
   and week before the session opens; editing the program instead would change every week that
