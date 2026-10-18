@@ -252,6 +252,7 @@ private fun StatisticsBody(
                 metric = entry,
                 weightGoal = state.weightGoal,
                 rateTarget = state.rateTarget,
+                rateBand = state.rateBand,
             )
         }
     }

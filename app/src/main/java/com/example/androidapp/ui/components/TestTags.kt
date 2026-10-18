@@ -860,6 +860,9 @@ object TestTags {
          */
         const val ENERGY_TARGET = "statistics_energy_target_value"
 
+        /** The band the goal's trend is judged against (ROADMAP N149). */
+        const val ENERGY_BAND = "statistics_energy_band"
+
         /**
          * The weight goal's own row, its kind choices and its field (ROADMAP N135).
          *

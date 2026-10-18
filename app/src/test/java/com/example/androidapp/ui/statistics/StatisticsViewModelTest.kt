@@ -454,8 +454,8 @@ class StatisticsViewModelTest {
 
     @Test
     fun theDerivedRate_followsTheGoal_andTheWeightTheLifterIsNow() = runTest(dispatcher) {
-        // A lose goal on an 80 kg lifter: the band's centre is 0.375% of the body a week, and losing is
-        // negative — the sign the energy adjustment reads its direction from.
+        // A lose goal on an 80 kg lifter: 0.65% of the body a week is 520 g, and losing is negative —
+        // the sign the energy adjustment reads its direction from.
         val viewModel = viewModel(
             range = StatisticsRange(RangeKind.ALL),
             goals = mapOf("BODY:WEIGHT" to 80_000.0),
@@ -466,7 +466,27 @@ class StatisticsViewModelTest {
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.weightGoal).isEqualTo(WeightGoal.Direction(gain = false))
-        assertThat(viewModel.uiState.value.rateTarget).isWithin(0.001).of(-300.0)
+        assertThat(viewModel.uiState.value.rateTarget).isWithin(0.001).of(-520.0)
+        assertThat(viewModel.uiState.value.rateBand).isNotNull()
+        assertThat(viewModel.uiState.value.rateBand!!.start).isWithin(0.001).of(-640.0)
+        assertThat(viewModel.uiState.value.rateBand!!.endInclusive).isWithin(0.001).of(-400.0)
+    }
+
+    @Test
+    fun aGainGoal_derivesItsOwnFasterThanLossRate() = runTest(dispatcher) {
+        // N149: 0.35% of 80 kg is 280 g a week, inside the 0.25–0.5% gain band.
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            goals = mapOf("BODY:WEIGHT" to 80_000.0),
+            goalKinds = mapOf("BODY:WEIGHT" to WeightGoalKind.GAIN.name),
+            body = listOf(measurement(at = now, weight = 80_000L)),
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.rateTarget).isWithin(0.001).of(280.0)
+        assertThat(viewModel.uiState.value.rateBand!!.start).isWithin(0.001).of(200.0)
+        assertThat(viewModel.uiState.value.rateBand!!.endInclusive).isWithin(0.001).of(400.0)
     }
 
     @Test

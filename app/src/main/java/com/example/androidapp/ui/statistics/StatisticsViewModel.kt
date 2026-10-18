@@ -16,6 +16,7 @@ import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TrendPoint
 import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.WorkoutSummary
+import com.example.androidapp.domain.model.rateBandPerWeekGrams
 import com.example.androidapp.domain.model.ratePerWeekGrams
 import com.example.androidapp.domain.model.statedWeightGrams
 import com.example.androidapp.domain.model.window
@@ -120,6 +121,14 @@ data class StatisticsUiState(
      * being fixed.
      */
     val rateTarget: Double? = null,
+    /**
+     * The band the goal's fitted trend is judged against, signed for its direction, or null (N149).
+     *
+     * The target is the number the energy adjustment works from; this is the range that says whether the trend
+     * is *on* it. A loss goal's band is negative at both ends, so it reads as one interval rather than a
+     * magnitude the screen has to re-sign.
+     */
+    val rateBand: ClosedRange<Double>? = null,
     /**
      * Whether the chosen metric reads a head as a family (ROADMAP N97, B98, N110).
      *
@@ -388,6 +397,7 @@ class StatisticsViewModel @Inject constructor(
                     goalReadings = allReadings,
                     planTargets = plans,
                     rateTarget = weightGoal?.ratePerWeekGrams(currentWeightGrams ?: 0L),
+                    rateBand = weightGoal?.rateBandPerWeekGrams(currentWeightGrams ?: 0L),
                     acceptsHead = sources.acceptsHead,
                 )
             }

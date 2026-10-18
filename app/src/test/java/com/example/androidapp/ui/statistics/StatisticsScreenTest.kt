@@ -612,6 +612,23 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun theDerivedRate_isShown_withTheBandItIsJudgedAgainst() {
+        // N149: the target is the number the adjustment works from; the band is what says whether the trend
+        // is on it, and a loss reads as one negative interval rather than a magnitude to re-sign.
+        setScreen(
+            state = stateWithGoal(WeightGoal.Direction(gain = false)).copy(
+                rateTarget = -520.0,
+                rateBand = (-640.0)..(-400.0),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET)
+            .assertTextEquals("−0.52 kg per week")
+        composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_BAND)
+            .assertTextEquals("On target between −0.64 and −0.4 kg per week")
+    }
+
+    @Test
     fun withAGoal_andTooFewWeighIns_itSaysSoRatherThanGuessing() {
         // The floor N98 sets: two weigh-ins are a number and not a trend, so there is no kcal figure to draw —
         // and the section says that rather than leaving a gap where a number would be.

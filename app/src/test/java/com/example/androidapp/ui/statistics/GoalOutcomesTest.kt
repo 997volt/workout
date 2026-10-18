@@ -54,25 +54,48 @@ class GoalOutcomesTest {
 
     @Test
     fun aLoseGoal_isMet_whenTheTrendSatInItsBand() {
-        // 82 kg falling 307 g a week is the band's centre (0.375% of the body), so the rate is met.
-        val outcomes = goalOutcomes(listOf(period(null, "LOSE", null)), weekly(perWeek = -307.0))
+        // 82 kg falling 533 g a week is the loss band's centre (0.65% of the body), so the rate is met.
+        val outcomes = goalOutcomes(listOf(period(null, "LOSE", null)), weekly(perWeek = -533.0))
+
+        assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Met)
+    }
+
+    @Test
+    fun aGainGoal_isMet_whenTheTrendSatInItsOwnBand() {
+        // 82 kg rising 287 g a week is the gain target (0.35% of the body), inside 0.25–0.5%.
+        val outcomes = goalOutcomes(listOf(period(null, "GAIN", null)), weekly(perWeek = +287.0))
 
         assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Met)
     }
 
     @Test
     fun aLoseGoal_isMissed_whenTheTrendWentTheOtherWay() {
-        // Inside the band as a magnitude and the opposite of what was asked — the half a magnitude-only check
-        // would call met.
-        val outcomes = goalOutcomes(listOf(period(null, "LOSE", null)), weekly(perWeek = +307.0))
+        // Inside the loss band as a magnitude and the opposite of what was asked — the half a magnitude-only
+        // check would call met.
+        val outcomes = goalOutcomes(listOf(period(null, "LOSE", null)), weekly(perWeek = +533.0))
+
+        assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Missed)
+    }
+
+    @Test
+    fun aGainGoal_isMissed_whenTheTrendWentTheOtherWay() {
+        val outcomes = goalOutcomes(listOf(period(null, "GAIN", null)), weekly(perWeek = -287.0))
 
         assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Missed)
     }
 
     @Test
     fun aLoseGoal_isMissed_whenTheRateWasTooFast() {
-        // Above the band's top: 0.5% of 82 kg is 410 g a week.
+        // Above the loss band's top: 0.8% of 82 kg is 656 g a week.
         val outcomes = goalOutcomes(listOf(period(null, "LOSE", null)), weekly(perWeek = -900.0))
+
+        assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Missed)
+    }
+
+    @Test
+    fun aGainGoal_isMissed_whenTheRateWasTooFast() {
+        // Above the gain band's top: 0.5% of 82 kg is 410 g a week.
+        val outcomes = goalOutcomes(listOf(period(null, "GAIN", null)), weekly(perWeek = +500.0))
 
         assertThat(outcomes.single().outcome).isEqualTo(GoalOutcome.Missed)
     }

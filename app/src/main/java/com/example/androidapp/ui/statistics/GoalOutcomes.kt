@@ -110,7 +110,7 @@ private fun stayedInCorridor(targetGrams: Long, readings: List<MetricReading>): 
 }
 
 /**
- * Whether the period's trend sat in the band the goal asked for (N135, N137).
+ * Whether the period's trend sat in the band the goal asked for (N135, N137, N149).
  *
  * Both halves matter: inside the band and **on the side the lifter asked for**. A trend of +0.3 kg a week is a
  * perfectly ordinary magnitude and the opposite of a lose goal, and a check that only looked at the magnitude
@@ -121,7 +121,9 @@ private fun rateOutcome(goal: WeightGoal.Direction, readings: List<MetricReading
     // N98's floor, for N98's reason: a rate from three weigh-ins is noise, and a verdict about the past must
     // not be either. A series with no weight in it has no band to judge against, which is the same answer.
     val fitted = series.trend()?.takeIf { series.hasEnoughToSpeak() }
-    val band = readings.last { it.value != null }.value?.let { weightRateBandPerWeekGrams(it.toLong()) }
+    val band = readings.last { it.value != null }.value?.let {
+        weightRateBandPerWeekGrams(it.toLong(), gain = goal.gain)
+    }
     return if (fitted == null || band == null) {
         GoalOutcome.Unjudged
     } else {

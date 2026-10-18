@@ -42,6 +42,7 @@ fun EnergyAdjustmentSection(
     weightGoal: WeightGoal?,
     rateTarget: Double?,
     modifier: Modifier = Modifier,
+    rateBand: ClosedRange<Double>? = null,
 ) {
     if (metric.key != MetricKey.Body(BodyMetric.WEIGHT)) return
 
@@ -62,6 +63,21 @@ fun EnergyAdjustmentSection(
                 text = targetText(metric = metric, weightGoal = weightGoal, rateTarget = rateTarget),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.testTag(TestTags.Statistics.ENERGY_TARGET),
+            )
+        }
+
+        // The target is the number; this is the range that says whether the trend is on it (N149).
+        rateBand?.let { band ->
+            Text(
+                text = stringResource(
+                    R.string.statistics_rate_band,
+                    slopeText(band.start) { metric.unit.formatRate(it) },
+                    slopeText(band.endInclusive) { metric.unit.formatRate(it) },
+                    stringResource(metric.unit.labelRes),
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag(TestTags.Statistics.ENERGY_BAND),
             )
         }
 

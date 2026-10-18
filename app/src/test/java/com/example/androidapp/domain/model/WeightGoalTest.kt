@@ -19,18 +19,40 @@ class WeightGoalTest {
 
         assertThat(losing).isLessThan(0.0)
         assertThat(gaining).isGreaterThan(0.0)
-        assertThat(abs(gaining!!)).isEqualTo(abs(losing!!))
+        // N149: gaining is the slower direction, so the two magnitudes are deliberately not equal.
+        assertThat(abs(gaining!!)).isLessThan(abs(losing!!))
     }
 
     @Test
-    fun theRate_isAShareOfBodyweight_insideTheBandTheAppWillNotCallWrong() {
-        // 80 kg: the band is 0.25–0.5% of the body a week, and the derived rate is its centre.
+    fun theRate_isAShareOfBodyweight_insideItsOwnDirectionBand() {
+        // 80 kg: losing is held to 0.5–0.8% of the body a week and asks for 0.65%, its band's centre.
         val rate = WeightGoal.Direction(gain = false).ratePerWeekGrams(currentWeightGrams = 80_000L)!!
 
-        val band = weightRateBandPerWeekGrams(80_000L)
+        val band = weightRateBandPerWeekGrams(80_000L, gain = false)
         assertThat(-rate).isWithin(0.001).of((band.start + band.endInclusive) / 2)
+        assertThat(-rate).isWithin(0.001).of(520.0)
         assertThat(-rate).isAtLeast(band.start)
         assertThat(-rate).isAtMost(band.endInclusive)
+    }
+
+    @Test
+    fun aGainGoal_hasItsOwnBandAndTarget() {
+        // 80 kg: gaining is held to 0.25–0.5% a week and asks for 0.35%.
+        val rate = WeightGoal.Direction(gain = true).ratePerWeekGrams(currentWeightGrams = 80_000L)!!
+
+        val band = weightRateBandPerWeekGrams(80_000L, gain = true)
+        assertThat(rate).isWithin(0.001).of(280.0)
+        assertThat(rate).isAtLeast(band.start)
+        assertThat(rate).isAtMost(band.endInclusive)
+    }
+
+    @Test
+    fun aTarget_usesTheRateForTheSideItIsOn() {
+        val below = WeightGoal.Target(75_000L).ratePerWeekGrams(80_000L)!!
+        val above = WeightGoal.Target(85_000L).ratePerWeekGrams(80_000L)!!
+
+        assertThat(below).isWithin(0.001).of(-520.0)
+        assertThat(above).isWithin(0.001).of(280.0)
     }
 
     @Test

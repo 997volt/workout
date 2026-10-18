@@ -78,45 +78,91 @@ fun weightGoalOf(kind: String?, valueGrams: Double?): WeightGoal? {
 const val MAINTENANCE_CORRIDOR_GRAMS = 1_000L
 
 /**
- * The share of bodyweight a week the app will call **neither too fast nor too slow** (ROADMAP N135).
+ * The shares of bodyweight a week each goal is held to (ROADMAP N135, amended by N149).
  *
- * The reference judges a fitted slope against 0.025–0.05 kg/day, "around 0.25% weekly", and what transfers
- * is the shape rather than the numbers: a band stated as a **share** of the body it belongs to, so the same
- * rule reads correctly for a 50 kg lifter and a 120 kg one.
+ * The gain band is the reference's shape — a share of the body rather than a fixed number of kilograms — and
+ * the loss band is the faster rule the lifter asked for: gaining is deliberately the slower direction. Each
+ * band is the range the app will not call too fast or too slow, and each stated target sits inside its own
+ * band (N149 amends N135's single band).
  */
-private const val BAND_LOW_SHARE = 0.0025
-private const val BAND_HIGH_SHARE = 0.005
+private const val GAIN_LOW_SHARE = 0.0025
+private const val GAIN_HIGH_SHARE = 0.005
+private const val GAIN_TARGET_SHARE = 0.0035
+private const val LOSS_LOW_SHARE = 0.005
+private const val LOSS_HIGH_SHARE = 0.008
+private const val LOSS_TARGET_SHARE = 0.0065
 
-/** That band, for a body of [weightGrams], in stored grams per week. */
-fun weightRateBandPerWeekGrams(weightGrams: Long): ClosedRange<Double> =
-    (weightGrams * BAND_LOW_SHARE)..(weightGrams * BAND_HIGH_SHARE)
+/** The band for a direction, for a body of [weightGrams], in stored grams per week. */
+fun weightRateBandPerWeekGrams(weightGrams: Long, gain: Boolean): ClosedRange<Double> =
+    if (gain) {
+        (weightGrams * GAIN_LOW_SHARE)..(weightGrams * GAIN_HIGH_SHARE)
+    } else {
+        (weightGrams * LOSS_LOW_SHARE)..(weightGrams * LOSS_HIGH_SHARE)
+    }
 
 /**
- * The rate this goal asks for, in stored grams per week, or null when it asks for no rate (ROADMAP N135).
+ * The direction this goal is heading, or null when it is not a rate goal at all (N149).
  *
- * **The band decides the rate**, at its centre: the band is the range the app will not call too fast or too
- * slow, so its middle is the one rate that is neither edge — and the value is clamped into the band, so no
- * future change to how the rate is derived can leave it. Rejected: the band's top, "the fastest allowed" —
- * that aims a goal at the edge of too fast, which is a strange thing to ask a lifter to hold.
+ * A target takes its direction from where the lifter is now; a maintenance goal has a corridor instead, and
+ * a target already met has no direction to be on target for.
+ */
+private fun WeightGoal.directionFrom(currentWeightGrams: Long): Boolean? = when (this) {
+    is WeightGoal.Direction -> gain
+    is WeightGoal.Target -> when {
+        weightGrams > currentWeightGrams -> true
+        weightGrams < currentWeightGrams -> false
+        else -> null
+    }
+
+    is WeightGoal.Maintain -> null
+}
+
+/**
+ * The band this goal's trend is judged against, signed for the direction, or null (N149).
  *
- * A **target** takes its direction from where the lifter is now, and asks for nothing when the target is
- * already met; a **direction** takes the direction the lifter stated and invents no weight for it; a
- * **maintenance** goal asks for no rate at all, because its answer is a corridor (see [WeightGoal.Maintain]).
+ * A loss band is negative at both ends — it is read as "between −0.64 and −0.4 kg a week" — while a gain band
+ * keeps the positive sign. The magnitude is always [weightRateBandPerWeekGrams]'s.
+ */
+fun WeightGoal.rateBandPerWeekGrams(currentWeightGrams: Long): ClosedRange<Double>? {
+    val gain = if (currentWeightGrams > 0L) directionFrom(currentWeightGrams) else null
+    return gain?.let {
+        val band = weightRateBandPerWeekGrams(currentWeightGrams, it)
+        if (it) band else -(band.endInclusive)..-(band.start)
+    }
+}
+
+/**
+ * The rate this goal asks for, in stored grams per week, or null when it asks for no rate (ROADMAP N135, N149).
+ *
+ * **Each direction has its own band and its own stated target.** A **gain** is held to 0.25–0.5% of the body a
+ * week and asks for **0.35%**; a **loss** is held to 0.5–0.8% and asks for **0.65%**. The target is clamped into
+ * its band, so a future change to how it is derived cannot leave the range that says neither too fast nor too
+ * slow. Loss is deliberately the faster rule: gaining lean mass is the slower direction.
+ *
+ * A **target** takes its direction from where the lifter is now, and asks for nothing when the target is already
+ * met; a **direction** takes the direction the lifter stated and invents no weight for it; a **maintenance** goal
+ * asks for no rate at all, because its answer is a corridor (see [WeightGoal.Maintain]).
  *
  * Null when there is no current weight to scale by: a share of nothing is not a rate.
  */
 fun WeightGoal.ratePerWeekGrams(currentWeightGrams: Long): Double? {
     if (currentWeightGrams <= 0L) return null
-    val band = weightRateBandPerWeekGrams(currentWeightGrams)
-    val centre = ((band.start + band.endInclusive) / 2).coerceIn(band.start, band.endInclusive)
     return when (this) {
-        is WeightGoal.Direction -> if (gain) centre else -centre
         is WeightGoal.Target -> when {
-            weightGrams > currentWeightGrams -> centre
-            weightGrams < currentWeightGrams -> -centre
+            weightGrams > currentWeightGrams -> rateOn(currentWeightGrams, gain = true)
+            weightGrams < currentWeightGrams -> rateOn(currentWeightGrams, gain = false)
             else -> 0.0
         }
 
+        is WeightGoal.Direction -> rateOn(currentWeightGrams, gain)
         is WeightGoal.Maintain -> null
     }
+}
+
+/** The stated target for one direction, in stored grams a week, clamped into that direction's band. */
+private fun rateOn(currentWeightGrams: Long, gain: Boolean): Double {
+    val band = weightRateBandPerWeekGrams(currentWeightGrams, gain)
+    val share = if (gain) GAIN_TARGET_SHARE else LOSS_TARGET_SHARE
+    val magnitude = (currentWeightGrams * share).coerceIn(band.start, band.endInclusive)
+    return if (gain) magnitude else -magnitude
 }
