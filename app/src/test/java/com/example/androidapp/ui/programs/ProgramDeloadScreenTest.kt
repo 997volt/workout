@@ -58,7 +58,7 @@ class ProgramDeloadScreenTest {
 
     private fun day(
         slotId: String = "s1",
-        name: String = "Heavy lower",
+        name: String = "Deload A",
         weekday: DayOfWeek? = DayOfWeek.MONDAY,
         exercises: List<DeloadExerciseUi> = listOf(
             exercise(),
@@ -137,7 +137,7 @@ class ProgramDeloadScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Deload.SCREEN).assertIsDisplayed()
         composeTestRule.onNodeWithText("Upper/Lower").assertIsDisplayed()
         scrollTo(TestTags.Deload.day("s1"))
-        composeTestRule.onNodeWithText("Heavy lower").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Deload A").assertIsDisplayed()
         composeTestRule.onNodeWithText("Day 1").assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "back-squat")).assertIsDisplayed()
         composeTestRule.onNodeWithText("2 × 5 · 60 kg").assertIsDisplayed()
@@ -196,7 +196,7 @@ class ProgramDeloadScreenTest {
 
         scrollTo(TestTags.Deload.day("s1"))
         composeTestRule.onNodeWithTag(TestTags.Deload.weekday("s1"))
-            .assertContentDescriptionEquals("Change the day for Heavy lower")
+            .assertContentDescriptionEquals("Change the day for Deload A")
     }
 
     @Test

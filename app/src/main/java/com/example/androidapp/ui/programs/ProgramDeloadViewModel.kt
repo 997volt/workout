@@ -44,10 +44,11 @@ data class DeloadExerciseUi(
     val weightUnit: WeightUnit,
 )
 
-/** One day of the week being built, already reduced to what it keeps (ROADMAP N147). */
+/** One day of the week being built, already reduced to what it keeps (ROADMAP N147, N152). */
 data class DeloadDayUi(
-    /** The slot the day was seeded from; it addresses the day in a test (N147). */
+    /** The slot the day was seeded from; it supplies the weekday and addresses the day in a test (N147). */
     val sourceSlotId: String,
+    /** The day's own workout name: Deload A, Deload B, … (N152). */
     val sourceName: String,
     val weekday: DayOfWeek?,
     val exercises: List<DeloadExerciseUi>,
@@ -327,6 +328,17 @@ class ProgramDeloadViewModel @Inject constructor(
  */
 private data class PoolExercise(val exercise: DeloadSourceExercise, val sourceNames: String)
 
+/** The written workout's name: Deload A, Deload B, … in day order (N152). */
+private fun deloadDayName(index: Int): String =
+    if (index < DELOAD_DAY_LETTERS) {
+        "Deload ${('A'.code + index).toChar()}"
+    } else {
+        "Deload ${index + 1}"
+    }
+
+/** Past the alphabet a week is numbered rather than lettered; the cap is the alphabet, not a day limit. */
+private const val DELOAD_DAY_LETTERS = 26
+
 private fun poolOf(sources: List<DeloadSourceDay>): List<PoolExercise> {
     val byExercise = LinkedHashMap<String, PoolExercise>()
     sources.forEach { day ->
@@ -367,7 +379,7 @@ internal fun buildDeloadDays(
         val selected = selectedByDay.getOrElse(index) { emptySet() }
         DeloadDayUi(
             sourceSlotId = day.sourceSlotId,
-            sourceName = day.name,
+            sourceName = deloadDayName(index),
             weekday = day.weekdayAfter(weekdayOf),
             exercises = pool.map { pooled ->
                 val exercise = pooled.exercise
@@ -394,8 +406,8 @@ internal fun buildDeloadDays(
  * What the creator writes, from the same snapshot and controls (ROADMAP N147, N152).
  *
  * A day whose selected pool is empty is left out — the day count is not a promise to write an empty workout —
- * and the name still starts from the source day at that position, so a template is findable in the library;
- * the template editor renames it afterwards.
+ * and the workout is named **Deload A, Deload B, …** in day order, so the built week reads as a week rather
+ * than as copies of the program's templates. The template editor renames one afterwards.
  */
 internal fun buildDeloadInputs(
     sources: List<DeloadSourceDay>,
@@ -411,7 +423,7 @@ internal fun buildDeloadInputs(
         val kept = pool.map { it.exercise }.filter { it.exerciseId in selected }
         if (kept.isEmpty()) return@mapNotNull null
         DeloadDayInput(
-            name = "${day.name} — deload",
+            name = deloadDayName(index),
             weekday = day.weekdayAfter(weekdayOf),
             exercises = kept.map { exercise ->
                 DeloadExerciseInput(

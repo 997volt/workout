@@ -24,8 +24,10 @@ unreleased.
   now offers the **program-wide pool** — one row per movement, with the source days it appears on as context —
   and the lifter ticks what each deload day keeps. A movement scheduled on two source days is one pool row (the
   first source day supplies the plan), and a two-day deload can keep a lift the program only schedules on the
-  third day. Each day's template is written from the chosen exercises; its name and weekday still start from the
-  source day at that position, and the template editor renames it.
+  third day. Each day's template is written from the chosen exercises and named **Deload A, Deload B, …** in day
+  order, so the built week reads as a week rather than as copies of the program's templates; the source day is
+  the pool row's context. The weekday still starts from the source day at that position, and the template editor
+  renames the workout.
 
 - **The creator remembers the last deload's choices** (N150). Building a deload started from scratch every
   block, so the exercises to keep and the number of days were chosen again even though the previous plan was

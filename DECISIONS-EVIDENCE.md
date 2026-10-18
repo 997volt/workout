@@ -2392,11 +2392,13 @@ stops a day picking up the third day's lift. The written template is built from 
 copied from a source template, and a movement kept on two deload days is written on both — that is the lifter's
 statement about the week, not a duplicate to clean up.
 
-**What did not move: the day's name and weekday.** They still start from the source day at the same position,
-and the template editor is where a day that now mixes upper and lower work gets a truthful name. The requested
-fix was the exercise choice; an editable day name inside the creator would be a second editor, which N147
-already rejected for sets. The reuse (N150) now applies the last plan **per day**, because the days are the
-shape it remembers.
+**The workout's name is the deload's, the day's weekday is the source day's.** The built templates are
+**Deload A, Deload B, …** in day order, so a week whose first day mixes upper and lower work is not called after
+either source day; the source day is the pool row's context (*From Heavy lower*), which is where it belongs. The
+weekday still starts from the source day at the same position. The template editor is where a day that now mixes
+upper and lower work gets a truthful name; an editable name field inside the creator would be a second editor,
+which N147 already rejected for sets. The reuse (N150) now applies the last plan **per day**, because the days
+are the shape it remembers.
 
 **Covered by** the pure builder tests: the whole pool on every card, a shift from the third/fourth source days
 in a two-day deload, one pool row for a movement on two source days, per-day only-ticked writing, the empty-day

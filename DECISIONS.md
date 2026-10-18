@@ -877,8 +877,9 @@ the rule; that one argues it.
   composed from the program's exercises, not copied from its templates** (N152): every day card offers the
   program-wide pool — one row per movement, with the source days as context — and the day count is the deload's,
   not a prefix of the program; where a movement appears on two source days, the first supplies the plan and both
-  are named. The day's name and weekday still start from the source day at that position, and the template
-  editor renames it. The store is
+  are named. The workout is named **Deload A, Deload B, …** in day order, so the built week reads as a week
+  rather than as copies of the templates; the weekday still starts from the source day at that position, and the
+  template editor renames a workout that now mixes upper and lower work. The store is
   **schema 7**; the **backup's `schemaVersion` stays at 5**, so an older build reading a newer file keeps the mark
   and the workouts but not the plan (B165). The plan travels in the backup as authored setup; N47's program
   document still carries neither it nor its workouts, because a week-keyed plan is history.

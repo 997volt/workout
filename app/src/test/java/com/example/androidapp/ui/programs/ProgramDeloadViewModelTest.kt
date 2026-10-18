@@ -147,7 +147,7 @@ class ProgramDeloadViewModelTest {
         advanceUntilIdle()
 
         assertThat(repository.writes).hasSize(1)
-        assertThat(repository.writes.single().single().name).isEqualTo("Heavy lower — deload")
+        assertThat(repository.writes.single().single().name).isEqualTo("Deload A")
         assertThat(viewModel.uiState.value.created).isNotNull()
     }
 

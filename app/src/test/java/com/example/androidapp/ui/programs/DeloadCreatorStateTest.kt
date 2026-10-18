@@ -146,7 +146,7 @@ class DeloadCreatorStateTest {
 
         assertThat(inputs).hasSize(1)
         val day = inputs.single()
-        assertThat(day.name).isEqualTo("Heavy lower — deload")
+        assertThat(day.name).isEqualTo("Deload A")
         assertThat(day.weekday).isEqualTo(DayOfWeek.MONDAY)
         assertThat(day.exercises.map { it.exerciseId }).containsExactly("back-squat")
         val written = day.exercises.single()
@@ -167,7 +167,7 @@ class DeloadCreatorStateTest {
             weekdayOf = weekdayOf,
         )
 
-        assertThat(inputs.map { it.name }).containsExactly("Heavy lower — deload", "Push — deload").inOrder()
+        assertThat(inputs.map { it.name }).containsExactly("Deload A", "Deload B").inOrder()
         assertThat(inputs[0].exercises.map { it.exerciseId }).containsExactly("row")
         assertThat(inputs[1].exercises.map { it.exerciseId }).containsExactly("front-squat")
     }
@@ -182,7 +182,7 @@ class DeloadCreatorStateTest {
             weekdayOf = weekdayOf,
         )
 
-        assertThat(inputs.map { it.name }).containsExactly("Push — deload")
+        assertThat(inputs.map { it.name }).containsExactly("Deload B")
     }
 
     @Test
