@@ -211,6 +211,10 @@ class ProgramDeloadViewModel @Inject constructor(
             .toMutableList()
         if (next.isEmpty() || next.all { it.isEmpty() }) return
         selectedByDay = next
+        sources.take(wanted).forEachIndexed { index, sourceDay ->
+            weekdayOverrides = weekdayOverrides +
+                (sourceDay.sourceSlotId to plan.days.getOrNull(index)?.weekday)
+        }
         _state.update { it.copy(dayCount = wanted) }
         rebuild()
     }
@@ -322,9 +326,9 @@ class ProgramDeloadViewModel @Inject constructor(
 /**
  * The program's exercise pool, once per movement (N152).
  *
- * A movement on two source days is one row: the first source day supplies the plan the rule reads, and both
- * day names travel as context. That is what lets a two-day deload keep a lift the program only schedules on
- * day three while still showing where it came from.
+ * A movement on two source days is one row: the source day with the heaviest stated working load supplies the
+ * plan the rule reads (N153), and both day names travel as context. That is what lets a two-day deload keep a
+ * lift the program only schedules on day three while still showing where it came from.
  */
 private data class PoolExercise(val exercise: DeloadSourceExercise, val sourceNames: String)
 
@@ -343,20 +347,35 @@ private fun poolOf(sources: List<DeloadSourceDay>): List<PoolExercise> {
     val byExercise = LinkedHashMap<String, PoolExercise>()
     sources.forEach { day ->
         day.exercises.forEach { exercise ->
-            val existing = byExercise[exercise.exerciseId]
-            byExercise[exercise.exerciseId] = if (existing == null) {
-                PoolExercise(exercise, day.name)
-            } else {
-                existing.copy(
-                    sourceNames = (existing.sourceNames.split(", ") + day.name)
-                        .distinct()
-                        .joinToString(", "),
-                )
-            }
+            byExercise[exercise.exerciseId] = mergePool(
+                existing = byExercise[exercise.exerciseId],
+                exercise = exercise,
+                dayName = day.name,
+            )
         }
     }
     return byExercise.values.toList()
 }
+
+/** One pool row, keeping the source day with the heaviest stated working load (N153); a tie keeps the first. */
+private fun mergePool(
+    existing: PoolExercise?,
+    exercise: DeloadSourceExercise,
+    dayName: String,
+): PoolExercise {
+    if (existing == null) return PoolExercise(exercise, dayName)
+    val sourceNames = (existing.sourceNames.split(", ") + dayName).distinct().joinToString(", ")
+    val chosen = if (exercise.heaviestWorkingGrams() > existing.exercise.heaviestWorkingGrams()) {
+        PoolExercise(exercise, dayName)
+    } else {
+        existing
+    }
+    return chosen.copy(sourceNames = sourceNames)
+}
+
+/** The heaviest stated working load, the same basis the deload rule reads a plan's load from. */
+private fun DeloadSourceExercise.heaviestWorkingGrams(): Long =
+    sets.filter { it.role.recordsEffort }.mapNotNull { it.targetWeightGrams }.maxOrNull() ?: 0L
 
 /**
  * The days on screen, from the snapshot and the controls (ROADMAP N147, N152).

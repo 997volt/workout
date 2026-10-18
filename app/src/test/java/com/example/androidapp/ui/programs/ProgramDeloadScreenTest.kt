@@ -131,6 +131,25 @@ class ProgramDeloadScreenTest {
     }
 
     @Test
+    fun anExerciseFromTheSecondDayCard_isSelectableOnTheFirstCard() {
+        // B170: both day cards show the whole pool, and the day index travels with the tick.
+        var toggled: Pair<Int, String>? = null
+        setScreen(
+            state = ready.copy(
+                days = listOf(day(), day(slotId = "s2", name = "Deload B")),
+                dayCount = 2,
+                maxDays = 2,
+            ),
+            onToggleExercise = { day, exerciseId -> toggled = day to exerciseId },
+        )
+
+        scrollTo(TestTags.Deload.exercise("s1", "romanian-deadlift"))
+        composeTestRule.onNodeWithTag(TestTags.Deload.exercise("s1", "romanian-deadlift")).performClick()
+
+        assertThat(toggled).isEqualTo(0 to "romanian-deadlift")
+    }
+
+    @Test
     fun aDay_showsTheExercisesItKeeps_andWhatTheRuleDerived() {
         setScreen()
 

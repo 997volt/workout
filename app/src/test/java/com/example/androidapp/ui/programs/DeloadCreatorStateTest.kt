@@ -220,6 +220,39 @@ class DeloadCreatorStateTest {
     }
 
     @Test
+    fun aMovementOnTwoSourceDays_takesTheHeaviestSourcePlan() {
+        // N153: the heaviest stated working load supplies the plan, not simply the first source day.
+        val duplicate = listOf(
+            DeloadSourceDay(
+                sourceSlotId = "a",
+                name = "A",
+                weekday = DayOfWeek.MONDAY,
+                exercises = listOf(exercise("t1", "bench", "Bench press", List(3) { set(it, 60_000L, 8) })),
+            ),
+            DeloadSourceDay(
+                sourceSlotId = "b",
+                name = "B",
+                weekday = DayOfWeek.WEDNESDAY,
+                exercises = listOf(exercise("t2", "bench", "Bench press", List(4) { set(it, 80_000L, 6) })),
+            ),
+        )
+
+        val days = buildDeloadDays(
+            sources = duplicate,
+            dayCount = 1,
+            selectedByDay = listOf(setOf("bench")),
+            loadKeptPercent = 60,
+            weekdayOf = weekdayOf,
+        )
+
+        val bench = days.single().exercises.single()
+        assertThat(bench.sourceName).isEqualTo("A, B")
+        // Four planned sets, capped at the rule's three; the load is derived from B's 80 kg, not A's 60.
+        assertThat(bench.sets).hasSize(3)
+        assertThat(bench.sets.first().weightGrams).isEqualTo(47_500L)
+    }
+
+    @Test
     fun aMovementOnTwoSourceDays_isOnePoolRow_withBothSources() {
         val duplicate = listOf(
             DeloadSourceDay(

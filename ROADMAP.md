@@ -17,17 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The N150/N151/N152 review's remaining findings (B169, B170, N153–N155).** The wrong-output reuse (B168), the
-duplicated tolerance (B171) and the reached-target redundancy (B172) are fixed; the rest are a boundary, a test gap
-and three product limits.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| B169 | low | **`findLastPlan` is outside the errors-as-values boundary.** It returns a bare `DeloadWeek?` and can throw; the loader's `dataResultOf` catches it today, so nothing reaches the screen, but a future caller can miss the boundary. | Return `DataResult<DeloadWeek?>` or document the read as loader-internal. |
-| B170 | low | **The 2-of-4 pool path has no VM or screen test.** The pure builder proves a two-day deload can keep lifts from the third/fourth source days, but the `onToggleExercise(dayIndex, exerciseId)` wiring and the per-day state are untested for that case. | Add a VM test storing a third-day lift on the first deload day, and a screen test for both day cards. |
-| N153 | low | **A movement on two source days takes the first source's plan.** The pool keeps the first instance, so the deload's sets, reps and load come from whichever source day the program lists first; the lifter cannot choose the heavier day's plan. The evidence records the choice; the UI does not. | Decide deliberately: the heaviest source, a source choice, or surface the first-source rule in the pool row. |
-| N154 | low | **The reuse restores exercises and day count but not weekdays.** The last plan's day weekdays are not applied; the hint says exercises and day count, and the original N150 ask mentioned days/weekdays. | Apply the last plan's weekdays by day index, or leave it as the stated limit. |
-| N155 | low | **The last plan's choices are read from the current deload templates.** Editing a deload template changes what a later *Use last deload* believes the last choices were; the plan stores the templates, not the choices. | Store the chosen exercise ids with the plan, or document the living-template behaviour (N16). |
+**Nothing.** The N150/N151/N152 review's eight findings (B168–B172, N153–N155) are fixed: the two wrong-output or
+redundant cases are in [CHANGELOG.md](CHANGELOG.md) under their ids, the test-only and boundary findings are closed
+in the tests and the code's documentation.
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself

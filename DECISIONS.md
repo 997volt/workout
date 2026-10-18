@@ -873,11 +873,13 @@ the rule; that one argues it.
   success card links to the workouts it wrote, and the adherence chip says a week is built (N148). **Reuse is the
   choices, not the numbers** (N150): a later plan can preselect the exercises the last one kept, matched by
   library id, and take its day count, then re-derives every load from the current plan; the **load share is not
-  stored with a plan**, so reuse leaves it at the creator's current choice rather than guessing it. **The days are
+  stored with a plan**, so reuse leaves it at the creator's current choice rather than guessing it; the last plan's
+  day count and weekdays are taken by index (N154), and its exercises are read from the plan's current templates
+  (N16, N155). **The days are
   composed from the program's exercises, not copied from its templates** (N152): every day card offers the
   program-wide pool — one row per movement, with the source days as context — and the day count is the deload's,
-  not a prefix of the program; where a movement appears on two source days, the first supplies the plan and both
-  are named. The workout is named **Deload A, Deload B, …** in day order, so the built week reads as a week
+  not a prefix of the program; where a movement appears on two source days, the source day with the heaviest
+  stated working load supplies the plan and both are named (N153). The workout is named **Deload A, Deload B, …** in day order, so the built week reads as a week
   rather than as copies of the templates; the weekday still starts from the source day at that position, and the
   template editor renames a workout that now mixes upper and lower work. The store is
   **schema 7**; the **backup's `schemaVersion` stays at 5**, so an older build reading a newer file keeps the mark

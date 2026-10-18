@@ -119,7 +119,7 @@ class ProgramDeloadViewModelTest {
                     programId = "p1",
                     templateId = "old-template",
                     templateName = "Heavy lower — deload",
-                    weekday = DayOfWeek.MONDAY,
+                    weekday = DayOfWeek.WEDNESDAY,
                     exerciseIds = listOf("back-squat"),
                 ),
             ),
@@ -135,6 +135,39 @@ class ProgramDeloadViewModelTest {
         assertThat(viewModel.uiState.value.dayCount).isEqualTo(1)
         assertThat(viewModel.uiState.value.days.single().exercises.single().sets.first().weightGrams)
             .isEqualTo(60_000L)
+        // N154: the last plan's weekday comes back, not the current source day's Monday.
+        assertThat(viewModel.uiState.value.days.single().weekday).isEqualTo(DayOfWeek.WEDNESDAY)
+    }
+
+    @Test
+    fun anExerciseFromASecondSourceDay_canGoOnTheFirstDeloadDay() = runTest(dispatcher) {
+        // B170: the user's 2-of-4 path, through the ViewModel rather than only the pure builder.
+        val repository = FakeDeloadRepository()
+        val viewModel = viewModel(
+            reader = FakeReader(result = snapshotWithTwoDays()),
+            repository = repository,
+        )
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.days).hasSize(2)
+        assertThat(viewModel.uiState.value.days[0].exercises.map { it.exerciseId })
+            .contains("bench")
+        assertThat(viewModel.uiState.value.days[0].exercises.single { it.exerciseId == "bench" }.selected)
+            .isFalse()
+
+        viewModel.onToggleExercise(0, "bench")
+
+        assertThat(viewModel.uiState.value.days[0].exercises.single { it.exerciseId == "bench" }.selected)
+            .isTrue()
+        assertThat(viewModel.uiState.value.days[1].exercises.single { it.exerciseId == "bench" }.selected)
+            .isTrue()
+
+        viewModel.onCreate()
+        advanceUntilIdle()
+
+        assertThat(repository.writes.single()[0].name).isEqualTo("Deload A")
+        assertThat(repository.writes.single()[0].exercises.map { it.exerciseId })
+            .containsExactly("back-squat", "bench")
     }
 
     @Test
@@ -166,6 +199,41 @@ class ProgramDeloadViewModelTest {
             .isEqualTo(DataError.Invalid("Keep at least one exercise."))
         assertThat(viewModel.uiState.value.created).isNull()
     }
+
+    private fun snapshotWithTwoDays() = snapshot().copy(
+        days = snapshot().days + DeloadSourceDay(
+            sourceSlotId = "s2",
+            name = "Push",
+            weekday = DayOfWeek.WEDNESDAY,
+            exercises = listOf(
+                DeloadSourceExercise(
+                    templateExerciseId = "te2",
+                    exerciseId = "bench",
+                    name = "Bench press",
+                    restSeconds = null,
+                    techniqueNote = null,
+                    supersetGroup = null,
+                    sets = listOf(
+                        TemplateSet(
+                            id = "ts3",
+                            templateExerciseId = "te2",
+                            setIndex = 0,
+                            role = SetType.NORMAL,
+                            targetWeightGrams = 60_000L,
+                            targetAssistanceGrams = null,
+                            targetRepsMin = 8,
+                            targetRepsMax = 8,
+                            targetRepsCurrent = null,
+                            note = null,
+                        ),
+                    ),
+                    weightUnit = WeightUnit.KILOGRAMS,
+                    stepGrams = 2_500L,
+                    previous = PreviousPerformance(emptyList()),
+                ),
+            ),
+        ),
+    )
 
     private fun snapshot() = DeloadSourceSnapshot(
         programName = "Upper/Lower",

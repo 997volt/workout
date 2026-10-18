@@ -44,7 +44,12 @@ interface DeloadRepository {
      *
      * A one-shot read for the creator's *Use last deload*: the plan's days carry the library exercises they
      * kept, so the draft can preselect those and re-derive every number from the current plan. The load share
-     * is not part of the plan, so it is not reused; the day count is.
+     * is not part of the plan, so it is not reused; the day count and the weekdays are.
+     *
+     * **Loader-internal, and a raw read** (B169): it can throw, and the creator's loader wraps the whole load
+     * in `dataResultOf`; a caller outside that boundary must add its own. The exercises are read from the
+     * plan's **current templates** (N16), not a choice snapshot — a deload template is an ordinary living
+     * template, so editing one changes what a later reuse sees as the last choices (N155).
      */
     suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek?
 }

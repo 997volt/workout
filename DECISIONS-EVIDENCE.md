@@ -2371,6 +2371,13 @@ from the old block, which is exactly the staleness a deload is supposed to answe
 until the lifter presses the create button, and the current-week rule is untouched. The action is offered only
 when a previous plan exists, and its note says the share is not part of what it reuses.
 
+**The weekdays come back, and the templates are living.** The last plan's day count and weekdays are applied by
+index (N154); the exercises are read from the plan's **current** templates (N16, N155), because the plan stores
+the templates it wrote rather than a snapshot of the choices. Editing a deload template therefore changes what a
+later reuse sees, the same living-template rule every other read of a template follows. The repository read is
+raw and can throw; the creator's loader is its `dataResultOf` boundary (B169), so a storage failure reaches the
+screen's failure view instead of escaping from a smaller caller.
+
 ## N152
 
 The issue came from use: with four program days and a two-day deload, the creator took the first two source
@@ -2378,9 +2385,10 @@ days, so the third and fourth days' exercises were unreachable. The request was 
 different unit: a deload day should be composed from **all the exercises the program uses**, because the point
 of the week is to change the program's shape.
 
-**The pool is a movement, not a template.** `poolOf` walks every source day and keeps the first instance of
-each library exercise; a movement scheduled on two days is one row, the first instance supplies the set/rep/load
-plan the rule reads, and both day names travel as context (*From Heavy lower, Push*). Cloning the source
+**The pool is a movement, not a template.** `poolOf` walks every source day and keeps one instance of each
+library exercise; a movement scheduled on two days is one row, the **source day with the heaviest stated working
+load** supplies the set/rep/load plan the rule reads (a tie keeps the program's order), and both day names travel
+as context (*From Heavy lower, Push*). Cloning the source
 templates — or keeping one row per template exercise — was rejected: the first still ties the day to a template,
 and the second puts the same movement on a day twice. The dedupe is by library id, the same key the last-plan
 reuse already uses.
@@ -2392,10 +2400,11 @@ stops a day picking up the third day's lift. The written template is built from 
 copied from a source template, and a movement kept on two deload days is written on both — that is the lifter's
 statement about the week, not a duplicate to clean up.
 
-**The workout's name is the deload's, the day's weekday is the source day's.** The built templates are
+**The workout's name is the deload's, the day's weekday starts from the source day's.** The built templates are
 **Deload A, Deload B, …** in day order, so a week whose first day mixes upper and lower work is not called after
 either source day; the source day is the pool row's context (*From Heavy lower*), which is where it belongs. The
-weekday still starts from the source day at the same position. The template editor is where a day that now mixes
+weekday starts from the source day at the same position for a new draft; *Use last deload* restores the last
+plan's weekdays by index (N154). The template editor is where a day that now mixes
 upper and lower work gets a truthful name; an editable name field inside the creator would be a second editor,
 which N147 already rejected for sets. The reuse (N150) now applies the last plan **per day**, because the days
 are the shape it remembers.

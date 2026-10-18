@@ -23,8 +23,8 @@ unreleased.
   third or fourth day was unreachable, which is the opposite of what a deload week is for. Every deload day card
   now offers the **program-wide pool** — one row per movement, with the source days it appears on as context —
   and the lifter ticks what each deload day keeps. A movement scheduled on two source days is one pool row (the
-  first source day supplies the plan), and a two-day deload can keep a lift the program only schedules on the
-  third day. Each day's template is written from the chosen exercises and named **Deload A, Deload B, …** in day
+  source day with the heaviest stated working load supplies the plan; a tie keeps the program's order), and a
+  two-day deload can keep a lift the program only schedules on the third day. Each day's template is written from the chosen exercises and named **Deload A, Deload B, …** in day
   order, so the built week reads as a week rather than as copies of the program's templates; the source day is
   the pool row's context. The weekday still starts from the source day at that position, and the template editor
   renames the workout.
@@ -32,9 +32,10 @@ unreleased.
 - **The creator remembers the last deload's choices** (N150). Building a deload started from scratch every
   block, so the exercises to keep and the number of days were chosen again even though the previous plan was
   already stored. *Use last deload* now preselects the exercises the last plan kept — matched by library id, so
-  a movement the program still has is selected and one it dropped is not — and takes its day count; every set,
-  rep and load is then re-derived from the current plan and history, not copied from the old templates. The load
-  share is not stored with a plan, so reuse leaves it at the creator's current choice rather than guessing it.
+  a movement the program still has is selected and one it dropped is not — and takes its day count and weekdays;
+  every set, rep and load is then re-derived from the current plan and history, not copied from the old templates.
+  The load share is not stored with a plan, so reuse leaves it at the creator's current choice rather than guessing
+  it. Because the plan stores its templates, the exercises are read from their current contents (N16).
 
 - **A target weight says around when it will be reached** (N151). The statistics row stated the rate and the band
   it is judged against, but a lifter with a target still had to divide to know what that meant in time. For a
