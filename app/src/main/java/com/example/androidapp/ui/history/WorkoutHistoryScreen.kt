@@ -371,12 +371,14 @@ private fun WorkoutRow(
         // The activity's own name comes first where there is one (N146): a session with no sets and no
         // template would otherwise read as a workout somebody forgot to log, which is exactly what N141 built
         // the activity case to stop saying.
-        supporting = listOf(
+        supporting = listOfNotNull(
             workout.activity?.let { stringResource(activityLabel(it)) },
             workout.templateName,
-            setCount,
+            // An activity has no sets; printing "0 sets" beside its name was the row reading as a workout
+            // somebody forgot to log (B167).
+            setCount.takeUnless { workout.activity != null },
         )
-            .filter { !it.isNullOrEmpty() }
+            .filter { it.isNotEmpty() }
             .joinToString(" · "),
         leading = { IconTile(icon = Icons.Filled.History, accent = TileAccent.Sky) },
         trailing = {

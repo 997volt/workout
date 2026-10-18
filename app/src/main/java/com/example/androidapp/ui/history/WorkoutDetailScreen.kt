@@ -1,9 +1,5 @@
 package com.example.androidapp.ui.history
 
-import androidx.compose.material3.OutlinedTextField
-import com.example.androidapp.domain.model.zoneIdOrNull
-import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.SoreMuscle
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +23,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -51,25 +48,29 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
-import com.example.androidapp.ui.components.LocalWeightUnit
-import com.example.androidapp.ui.components.exerciseWeightUnit
-import com.example.androidapp.ui.components.label
-import com.example.androidapp.domain.model.WorkoutSession
-import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.SoreMuscle
+import com.example.androidapp.domain.model.WorkoutSession
+import com.example.androidapp.domain.model.zoneIdOrNull
+import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.ExerciseRatingSection
+import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.SetEditorDialog
 import com.example.androidapp.ui.components.SetNumber
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.exerciseWeightUnit
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.rpeMarker
 import com.example.androidapp.ui.components.setNumbers
 import com.example.androidapp.ui.components.setRoleMarker
-import com.example.androidapp.ui.components.dataErrorMessage
-import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.workout.WorkoutFormat
-import java.time.ZoneId
+import com.example.androidapp.ui.workout.activityLabel
 import java.time.Instant
+import java.time.ZoneId
 
 @Composable
 fun WorkoutDetailRoute(
@@ -266,6 +267,7 @@ private fun DetailTopBar(
     val date = session?.let {
         HistoryFormat.date(it.startedAt, zone = it.zoneIdOrNull() ?: ZoneId.systemDefault())
     }
+    val activity = session?.activity
 
     TopAppBar(
         title = {
@@ -275,11 +277,16 @@ private fun DetailTopBar(
             // no plan behind it has no name, so its date stays the title, as it always was.
             Column {
                 Text(
-                    text = templateName ?: date ?: stringResource(R.string.history_detail_title),
+                    // An activity is named first: it is what the session was, and its template is null
+                    // (B167). The date still says when.
+                    text = activity?.let { stringResource(activityLabel(it)) }
+                        ?: templateName
+                        ?: date
+                        ?: stringResource(R.string.history_detail_title),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.testTag(TestTags.HISTORY_DETAIL_TITLE),
                 )
-                if (templateName != null && date != null) {
+                if ((activity != null || templateName != null) && date != null) {
                     Text(
                         text = date,
                         style = MaterialTheme.typography.bodySmall,
@@ -444,16 +451,16 @@ private fun DetailContent(
                 }
             }
             items(items = state.exercises, key = { it.id }) { exercise ->
-                    ExerciseBlock(
-                        onOpenTrends = onOpenExerciseTrends,
-                        exercise = exercise,
-                        editing = editing,
-                        onEditSet = onEditSet,
-                        onDeleteSet = { onDeleteSet(it.id) },
-                        onRate = onRate,
-                    )
-                    HorizontalDivider()
-                }
+                ExerciseBlock(
+                    onOpenTrends = onOpenExerciseTrends,
+                    exercise = exercise,
+                    editing = editing,
+                    onEditSet = onEditSet,
+                    onDeleteSet = { onDeleteSet(it.id) },
+                    onRate = onRate,
+                )
+                HorizontalDivider()
+            }
         }
     }
 }
@@ -528,8 +535,8 @@ private fun ReadinessBlock(
 
 @Composable
 private fun Totals(state: WorkoutDetailUiState, modifier: Modifier = Modifier) {
-    val sets = pluralStringResource(R.plurals.history_sets, state.setCount, state.setCount)
     val duration = state.duration?.let { WorkoutFormat.elapsed(it) }.orEmpty()
+    val activity = state.session?.activity
 
     Row(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -537,17 +544,27 @@ private fun Totals(state: WorkoutDetailUiState, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text = duration, style = MaterialTheme.typography.titleMedium)
-        Text(text = sets, style = MaterialTheme.typography.bodyMedium)
-        val unit = LocalWeightUnit.current
-        Text(
-            // The workout's total, so it follows the app setting rather than any one exercise (N64).
-            text = stringResource(
-                R.string.history_volume,
-                Weight.format(state.volumeGrams, unit),
-                unit.label(),
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-        )
+        if (activity != null) {
+            // An activity has no sets and no volume; the totals are its name and its duration, not two
+            // zeroes that read as a forgotten workout (B167).
+            Text(
+                text = stringResource(activityLabel(activity)),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        } else {
+            val sets = pluralStringResource(R.plurals.history_sets, state.setCount, state.setCount)
+            Text(text = sets, style = MaterialTheme.typography.bodyMedium)
+            val unit = LocalWeightUnit.current
+            Text(
+                // The workout's total, so it follows the app setting rather than any one exercise (N64).
+                text = stringResource(
+                    R.string.history_volume,
+                    Weight.format(state.volumeGrams, unit),
+                    unit.label(),
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
     }
 }
 
@@ -603,7 +620,6 @@ private fun ExerciseBlock(
     }
 }
 
-
 /** One logged set on the detail screen: its numbers, its N6 extras, and its delete. */
 @Composable
 private fun HistorySetRow(
@@ -617,36 +633,36 @@ private fun HistorySetRow(
     onDeleteSet: (HistorySet) -> Unit,
 ) {
     Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            HistorySetNumbers(
-                set = set,
-                number = number,
-                modifier = Modifier
-                    .weight(1f)
-                    .testTag(TestTags.SET_ROW)
-                    // Without a label a screen reader announces the row and gives no hint that tapping it
-                    // edits the set, so the label and the action both go when the workout is only being
-                    // read — the rule a done exercise's sets already follow (N7, N84).
-                    .let { column ->
-                        if (editable) {
-                            column.clickable(onClickLabel = editLabel) { onEditSet(set) }
-                        } else {
-                            column
-                        }
-                    },
-            )
-            if (editable) {
-                IconButton(onClick = { onDeleteSet(set) }) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = stringResource(R.string.set_delete),
-                    )
-                }
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        HistorySetNumbers(
+            set = set,
+            number = number,
+            modifier = Modifier
+                .weight(1f)
+                .testTag(TestTags.SET_ROW)
+                // Without a label a screen reader announces the row and gives no hint that tapping it
+                // edits the set, so the label and the action both go when the workout is only being
+                // read — the rule a done exercise's sets already follow (N7, N84).
+                .let { column ->
+                    if (editable) {
+                        column.clickable(onClickLabel = editLabel) { onEditSet(set) }
+                    } else {
+                        column
+                    }
+                },
+        )
+        if (editable) {
+            IconButton(onClick = { onDeleteSet(set) }) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.set_delete),
+                )
             }
         }
+    }
 }
 
 /**

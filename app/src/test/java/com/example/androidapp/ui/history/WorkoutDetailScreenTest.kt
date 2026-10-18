@@ -1,40 +1,41 @@
 package com.example.androidapp.ui.history
 
 import android.content.Context
-import androidx.test.core.app.ApplicationProvider
-import com.example.androidapp.R
-import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertTextContains
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.Joint
-import com.example.androidapp.domain.model.JointPain
-import com.example.androidapp.domain.model.MuscleGroup
-import com.example.androidapp.domain.model.Side
-import com.example.androidapp.domain.model.SoreMuscle
-import androidx.compose.ui.test.assertHasClickAction
-import androidx.compose.ui.test.assertHasNoClickAction
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.androidapp.domain.model.WorkoutSession
-import java.time.Instant
-import org.junit.Rule
-import org.junit.Test
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.R
+import com.example.androidapp.domain.model.Activity
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.SoreMuscle
+import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.ui.components.TestTags
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 /**
  * Instrumented UI tests for the history detail screen (ROADMAP P1.6, P1.7).
@@ -67,6 +68,21 @@ class WorkoutDetailScreenTest {
     )
 
     @Test
+    fun anActivity_isNamed_andHasNoSetOrVolumeTotals() {
+        // B167: an activity opened from history was an empty workout with "0 sets"; the title and the
+        // totals now say what it was.
+        setScreen(
+            state.copy(
+                session = state.session?.copy(activity = Activity.SWIMMING),
+                exercises = emptyList(),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_DETAIL_TITLE).assertTextContains("Swimming")
+        composeTestRule.onNodeWithText("0 sets").assertDoesNotExist()
+    }
+
+    @Test
     fun aSetRowSaysWhatTappingItDoes() {
         // P1.17: the row is editable, and a screen-reader user should be told that
         // rather than left to guess. The tag is what makes this assertable without
@@ -75,7 +91,7 @@ class WorkoutDetailScreenTest {
         setScreen()
         editWorkout()
 
-                // useUnmergedTree: a tag on a child of a merging parent is not visible in
+        // useUnmergedTree: a tag on a child of a merging parent is not visible in
         // the merged tree — the same trap the FAB hit earlier in this file.
         composeTestRule.onNodeWithTag(TestTags.SET_ROW, useUnmergedTree = true)
             .assert(hasClickLabel())
@@ -235,7 +251,7 @@ class WorkoutDetailScreenTest {
     private fun setScreen(
         uiState: WorkoutDetailUiState = state,
         onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit =
-        { _, _, _, _, _, _, _ -> },
+            { _, _, _, _, _, _, _ -> },
         onDeleteSet: (String) -> Unit = {},
         onRateExercise: (String, Int?, List<JointPain>) -> Unit = { _, _, _ -> },
         onDeleteWorkout: () -> Unit = {},
@@ -449,6 +465,7 @@ class WorkoutDetailScreenTest {
         composeTestRule.onNodeWithText("Delete this workout?").assertIsDisplayed()
         assert(!deleted) { "the workout was deleted before it was confirmed" }
     }
+
     @Test
     fun tappingALift_opensTrendsForTheLibraryExercise_notTheSessionsRow() {
         // The bug device verification found (N17): the row id is one workout's, while a
@@ -474,11 +491,9 @@ class WorkoutDetailScreenTest {
 
         assertEquals(listOf("back-squat"), opened)
     }
-
 }
 
 /** True when the node's click action carries an accessibility label. */
 private fun hasClickLabel(): SemanticsMatcher = SemanticsMatcher("has a click label") { node ->
     node.config.getOrNull(SemanticsActions.OnClick)?.label != null
-
 }

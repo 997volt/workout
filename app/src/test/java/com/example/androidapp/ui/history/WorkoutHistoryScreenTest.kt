@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -52,6 +53,16 @@ class WorkoutHistoryScreenTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun anActivityRow_namesTheActivity_andDoesNotPrintZeroSets() {
+        // B167: N146 named the activity but the row still appended "0 sets", which read as a workout
+        // somebody forgot to log rather than as a swim.
+        show(stateWith(summary("session-1", repeatable = 0, activity = Activity.SWIMMING, setCount = 0)))
+
+        composeTestRule.onNodeWithText("Swimming").assertIsDisplayed()
+        composeTestRule.onNodeWithText("0 sets").assertDoesNotExist()
     }
 
     @Test
@@ -155,13 +166,19 @@ class WorkoutHistoryScreenTest {
         groups = listOf(HistoryGroup(month = YearMonth.of(2026, 9), workouts = listOf(workout))),
     )
 
-    private fun summary(id: String, repeatable: Int) = WorkoutSummary(
+    private fun summary(
+        id: String,
+        repeatable: Int,
+        activity: Activity? = null,
+        setCount: Int = 12,
+    ) = WorkoutSummary(
         id = id,
         startedAt = Instant.parse("2026-09-29T08:00:00Z"),
         finishedAt = Instant.parse("2026-09-29T09:00:00Z"),
-        exerciseCount = 3,
-        setCount = 12,
-        volumeGrams = 1_000_000L,
+        exerciseCount = if (activity == null) 3 else 0,
+        setCount = setCount,
+        volumeGrams = if (activity == null) 1_000_000L else 0L,
         repeatableExerciseCount = repeatable,
+        activity = activity,
     )
 }
