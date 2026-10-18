@@ -14,7 +14,15 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
-## [Unreleased]
+## [2.8] — 2026-10-18 (versionCode 28)
+
+The deload week can now be built, and the screens around it say what is actually planned or done: adherence
+reads a built week's own days, the start question leaves it alone, and the plan's workouts are one tap from the
+success card. History names an activity on both its row and its page, and search follows what a row shows.
+**One behavior moves on purpose**: a weight goal's rate now depends on its direction — loss asks 0.65% of
+bodyweight a week, gain 0.35% — so an existing goal reads a different target after the update. The store is
+schema 7; the backup stays at 5, so a 2.7 build reading a 2.8 file keeps the deload mark and workouts but not
+the plan.
 
 ### Added
 
