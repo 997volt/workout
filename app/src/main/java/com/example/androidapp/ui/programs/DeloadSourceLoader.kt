@@ -3,6 +3,7 @@ package com.example.androidapp.ui.programs
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.getOrNull
+import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.repository.DeloadRepository
@@ -51,6 +52,9 @@ class RoomDeloadSourceLoader @Inject constructor(
             .firstOrNull { it.programId == programId }
             ?.days
             ?.isNotEmpty() == true
+        // The most recent plan before this week, for the reuse action (N150). One extra read, only when the
+        // creator opens; it is not a live flow because the draft is not a plan until the lifter writes it.
+        val lastPlan = deloadRepository.findLastPlan(programId, weekStart)
 
         val days = slots.mapNotNull { slot ->
             val exercises = templateRepository.observeExercises(slot.templateId).first()
@@ -85,6 +89,7 @@ class RoomDeloadSourceLoader @Inject constructor(
             programName = program.name,
             days = days,
             hasExistingPlan = hasPlan,
+            lastPlan = lastPlan,
         )
     }
 
@@ -104,6 +109,8 @@ data class DeloadSourceSnapshot(
     val programName: String,
     val days: List<DeloadSourceDay>,
     val hasExistingPlan: Boolean,
+    /** The most recent plan before this week, for *Use last deload*, or null (N150). */
+    val lastPlan: DeloadWeek? = null,
 )
 
 /**

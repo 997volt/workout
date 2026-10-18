@@ -757,6 +757,9 @@ object TestTags {
         /** The success card's way into the workouts it wrote (ROADMAP N148). */
         const val VIEW_WORKOUTS = "deload_view_workouts"
 
+        /** Prefill from the most recent built plan (ROADMAP N150). */
+        const val USE_LAST = "deload_use_last"
+
         fun load(percent: Int) = "deload_load_$percent"
 
         fun weekday(slotId: String) = "deload_weekday_$slotId"

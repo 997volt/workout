@@ -97,6 +97,7 @@ class ProgramDeloadScreenTest {
         onLoadPercentChange: (Int) -> Unit = {},
         onWeekday: (String, DayOfWeek?) -> Unit = { _, _ -> },
         onCreate: () -> Unit = {},
+        onUseLastDeload: () -> Unit = {},
         onOpenWorkouts: () -> Unit = {},
     ) {
         composeTestRule.setContent {
@@ -108,9 +109,23 @@ class ProgramDeloadScreenTest {
                 onLoadPercentChange = onLoadPercentChange,
                 onWeekday = onWeekday,
                 onCreate = onCreate,
+                onUseLastDeload = onUseLastDeload,
                 onOpenWorkouts = onOpenWorkouts,
             )
         }
+    }
+
+    @Test
+    fun aLastDeload_isOffered_asAnAction() {
+        // N150: the choices are one tap away when a previous plan exists; the share hint is explicit.
+        var reused = false
+        setScreen(
+            state = ready.copy(lastDeloadWeek = week.minusWeeks(2)),
+            onUseLastDeload = { reused = true },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Deload.USE_LAST).performClick()
+        assertThat(reused).isTrue()
     }
 
     @Test

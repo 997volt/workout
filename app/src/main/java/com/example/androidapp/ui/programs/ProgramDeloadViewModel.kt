@@ -12,6 +12,7 @@ import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.DELOAD_DEFAULT_LOAD_KEPT_PERCENT
 import com.example.androidapp.domain.model.DELOAD_LOAD_KEPT_CHOICES
 import com.example.androidapp.domain.model.DeloadSetTarget
+import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.deloadSetTargets
 import com.example.androidapp.domain.repository.DeloadCreation
@@ -66,6 +67,8 @@ data class DeloadCreatorUiState(
     val creating: Boolean = false,
     /** The read failed, so the screen says so rather than claiming the program plans nothing (N147). */
     val loadFailed: Boolean = false,
+    /** The week of the most recent built plan, or null when there is nothing to reuse (N150). */
+    val lastDeloadWeek: LocalDate? = null,
     /** The week that was just written, or null. The screen says so and offers *Done*. */
     val created: DeloadCreation? = null,
     val error: DataError? = null,
@@ -114,6 +117,9 @@ class ProgramDeloadViewModel @Inject constructor(
     /** The planned exercises the lifter keeps, by the source template exercise's id. */
     private var selectedIds: Set<String> = emptySet()
 
+    /** The most recent plan before this week, for *Use last deload*, or null (N150). */
+    private var lastPlan: DeloadWeek? = null
+
     /**
      * A weekday the lifter moved, by source slot id (N147).
      *
@@ -141,6 +147,7 @@ class ProgramDeloadViewModel @Inject constructor(
                     return
                 }
                 sources = snapshot.days
+                lastPlan = snapshot.lastPlan
                 selectedIds = snapshot.days
                     .flatMap { day -> day.exercises.map { it.templateExerciseId } }
                     .toSet()
@@ -151,6 +158,7 @@ class ProgramDeloadViewModel @Inject constructor(
                         maxDays = snapshot.days.size,
                         dayCount = snapshot.days.size,
                         hasExistingPlan = snapshot.hasExistingPlan,
+                        lastDeloadWeek = snapshot.lastPlan?.weekStart,
                     )
                 }
                 rebuild()
@@ -165,6 +173,26 @@ class ProgramDeloadViewModel @Inject constructor(
         } else {
             selectedIds + templateExerciseId
         }
+        rebuild()
+    }
+
+    /**
+     * Prefills the draft with the last deload's choices (N150).
+     *
+     * The exercises are matched by library id, so a movement the current plan still has is selected and one it
+     * lost is not; the day count is the last plan's. Every number is then re-derived by [rebuild] from the
+     * current plan and history — nothing from the old plan's templates is copied. The load share is not stored
+     * with a plan, so it stays the creator's current choice rather than being guessed.
+     */
+    fun onUseLastDeload() {
+        val plan = lastPlan ?: return
+        val kept = plan.days.flatMap { it.exerciseIds }.toSet()
+        val selected = sources
+            .flatMap { day -> day.exercises.filter { it.exerciseId in kept }.map { it.templateExerciseId } }
+            .toSet()
+        if (selected.isEmpty()) return
+        selectedIds = selected
+        _state.update { it.copy(dayCount = plan.days.size.coerceIn(1, it.maxDays)) }
         rebuild()
     }
 

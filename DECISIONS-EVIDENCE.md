@@ -2351,3 +2351,22 @@ it. ([N135](#n135))
 
 Covered by the domain test for both directions, reached and no-target cases; the ViewModel's date/reached state;
 and the screen's *Around* and *Target reached* lines.
+
+## N150
+
+The request was the same shape as N151: 2.8 left a small completion. Every deload block started from the
+program, so the exercises to keep and the number of days were chosen again, even though the previous plan was
+stored on the device.
+
+**What a plan actually stores is choices, not the numbers.** `program_deload_days` keeps the day, its weekday and
+the template it wrote; the template's exercises are the exercises it kept, by library id. The load share was a
+draft parameter and is **not** stored — the templates hold its result, not the choice — so a reuse can take the
+exercises and the day count and must leave the share at the creator's current value. Matching by library id
+rather than by template id is what makes a changed program do the right thing: a movement it still has is
+selected, one it dropped is not, and every remaining set, rep and load is re-derived by the same pure rule from
+the current plan and history. **Copying the last plan's templates** was rejected outright: the loads would be
+from the old block, which is exactly the staleness a deload is supposed to answer.
+
+**The window is the current week, as it always was.** The reuse is a draft action on a draft; it writes nothing
+until the lifter presses the create button, and the current-week rule is untouched. The action is offered only
+when a previous plan exists, and its note says the share is not part of what it reuses.

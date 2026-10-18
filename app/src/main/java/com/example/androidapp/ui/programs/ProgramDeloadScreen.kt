@@ -89,6 +89,7 @@ fun ProgramDeloadRoute(
         onLoadPercentChange = viewModel::onLoadPercentChange,
         onWeekday = viewModel::onWeekdayChange,
         onCreate = viewModel::onCreate,
+        onUseLastDeload = viewModel::onUseLastDeload,
         onOpenWorkouts = onOpenWorkouts,
         onDismissError = viewModel::onErrorShown,
         modifier = modifier,
@@ -106,6 +107,7 @@ fun ProgramDeloadScreen(
     onWeekday: (String, DayOfWeek?) -> Unit,
     onCreate: () -> Unit,
     modifier: Modifier = Modifier,
+    onUseLastDeload: () -> Unit = {},
     onOpenWorkouts: () -> Unit = {},
     onDismissError: () -> Unit = {},
 ) {
@@ -127,6 +129,7 @@ fun ProgramDeloadScreen(
             onDayCount = onDayCount,
             onLoadPercentChange = onLoadPercentChange,
             onWeekday = onWeekday,
+            onUseLastDeload = onUseLastDeload,
             onOpenWorkouts = onOpenWorkouts,
             modifier = Modifier.padding(innerPadding),
         )
@@ -184,6 +187,7 @@ private fun DeloadStates(
     onDayCount: (Int) -> Unit,
     onLoadPercentChange: (Int) -> Unit,
     onWeekday: (String, DayOfWeek?) -> Unit,
+    onUseLastDeload: () -> Unit,
     onOpenWorkouts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -218,6 +222,7 @@ private fun DeloadStates(
             onDayCount = onDayCount,
             onLoadPercentChange = onLoadPercentChange,
             onWeekday = onWeekday,
+            onUseLastDeload = onUseLastDeload,
             modifier = modifier,
         )
     }
@@ -231,6 +236,7 @@ private fun DeloadBody(
     onDayCount: (Int) -> Unit,
     onLoadPercentChange: (Int) -> Unit,
     onWeekday: (String, DayOfWeek?) -> Unit,
+    onUseLastDeload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -239,6 +245,26 @@ private fun DeloadBody(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item(key = "header") { DeloadHeader(state) }
+        if (state.lastDeloadWeek != null) {
+            item(key = "last") {
+                Column {
+                    AppTextButton(
+                        onClick = onUseLastDeload,
+                        modifier = Modifier.testTag(TestTags.Deload.USE_LAST),
+                    ) {
+                        Text(stringResource(R.string.deload_use_last))
+                    }
+                    Text(
+                        text = stringResource(
+                            R.string.deload_use_last_hint,
+                            state.lastDeloadWeek?.let { dateLabel(it) }.orEmpty(),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
         item(key = "days") { DeloadDaysStepper(state, onDayCount) }
         item(key = "load") {
             DeloadLoadChoices(

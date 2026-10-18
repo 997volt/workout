@@ -13,6 +13,7 @@ import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.DeloadDay
 import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.SetType
@@ -49,6 +50,31 @@ class RoomDeloadRepository @Inject constructor(
 
     override fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>> =
         deloadDao.observeDeloadDaysForWeek(weekStart.toEpochDay()).map { rows -> rows.toDeloadWeeks() }
+
+    override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? {
+        val mark = deloadDao.findLatestDeloadBefore(programId, beforeWeek.toEpochDay()) ?: return null
+        return deloadDao.findDeloadDaysForWeek(mark.weekStart)
+            .takeIf { it.isNotEmpty() }
+            ?.let { rows ->
+                DeloadWeek(
+                    programId = programId,
+                    weekStart = LocalDate.ofEpochDay(mark.weekStart),
+                    days = rows.map { row ->
+                        DeloadDay(
+                            id = row.id,
+                            programId = row.programId,
+                            templateId = row.templateId,
+                            templateName = row.templateName,
+                            exerciseCount = row.exerciseCount,
+                            position = row.position,
+                            weekday = row.weekday,
+                            exerciseIds = templateDao.findPlannedExercises(row.templateId)
+                                .map { it.exerciseId },
+                        )
+                    },
+                )
+            }
+    }
 
     override suspend fun createDeload(
         programId: String,

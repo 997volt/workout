@@ -18,6 +18,13 @@ unreleased.
 
 ### Added
 
+- **The creator remembers the last deload's choices** (N150). Building a deload started from scratch every
+  block, so the exercises to keep and the number of days were chosen again even though the previous plan was
+  already stored. *Use last deload* now preselects the exercises the last plan kept — matched by library id, so
+  a movement the program still has is selected and one it dropped is not — and takes its day count; every set,
+  rep and load is then re-derived from the current plan and history, not copied from the old templates. The load
+  share is not stored with a plan, so reuse leaves it at the creator's current choice rather than guessing it.
+
 - **A target weight says around when it will be reached** (N151). The statistics row stated the rate and the band
   it is judged against, but a lifter with a target still had to divide to know what that meant in time. For a
   `Target` goal it now says *Around <date>* — derived from the current weight and the stated rate, never the other

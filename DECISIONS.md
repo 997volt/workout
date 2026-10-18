@@ -870,7 +870,10 @@ the rule; that one argues it.
   calendar and day dialog read the week's days instead of the slots; the missed-day question leaves a built week
   out (B163). A deload session names no slot, so the run pauses (P3.9), the week stays exempt from the ratio, and
   unmarking a built week asks first, leaving the templates in the library but not the week's plan (B162). The
-  success card links to the workouts it wrote, and the adherence chip says a week is built (N148). The store is
+  success card links to the workouts it wrote, and the adherence chip says a week is built (N148). **Reuse is the
+  choices, not the numbers** (N150): a later plan can preselect the exercises the last one kept, matched by
+  library id, and take its day count, then re-derives every load from the current plan; the **load share is not
+  stored with a plan**, so reuse leaves it at the creator's current choice rather than guessing it. The store is
   **schema 7**; the **backup's `schemaVersion` stays at 5**, so an older build reading a newer file keeps the mark
   and the workouts but not the plan (B165). The plan travels in the backup as authored setup; N47's program
   document still carries neither it nor its workouts, because a week-keyed plan is history.

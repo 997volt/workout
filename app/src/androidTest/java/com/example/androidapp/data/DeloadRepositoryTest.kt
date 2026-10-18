@@ -25,6 +25,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -182,6 +183,20 @@ class DeloadRepositoryTest {
             "the slot's own Monday is not the week's schedule",
             adherence.occurrencesOn(monday, today, utc).getOrNull().orEmpty().isEmpty(),
         )
+    }
+
+    @Test
+    fun aPreviousPlan_isWhatUseLastDeloadReads() = runTest {
+        // N150: the last plan before the week, with the exercises each day kept; the share is not stored.
+        createDay("Heavy lower — deload", DayOfWeek.MONDAY)
+
+        assertNull("nothing before this week's plan", deloads.findLastPlan(program, monday))
+
+        val last = deloads.findLastPlan(program, monday.plusWeeks(1))
+
+        assertEquals(monday, last?.weekStart)
+        assertEquals(listOf("back-squat"), last?.days?.single()?.exerciseIds)
+        assertEquals(1, last?.days?.size)
     }
 
     @Test

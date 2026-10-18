@@ -17,12 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**A follow-on from 2.8's deload work.** It uses data the app already has, needs no schema change, and is a draft
-of a decision rather than new machinery: the creator can remember the last deload's choices.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| N150 | low | **The creator does not remember the last deload's choices.** Every block starts from the program, so the exercises to keep, the weekdays and the load share are chosen again; the previous plan is stored in `program_deloads`/`program_deload_days`, but nothing reads it after its week. | Add a *Use last deload* action that prefills the choices from the most recent built plan before this week — the exercises it kept and the share, and its days/weekdays where the current program still offers them — then re-derives every set, rep and load from the current plan and previous session with the same pure rule. Keep the current-week rule and the one-write draft; test no prior plan, a changed program, and a reused plan. |
+**Nothing.** The two follow-ons from 2.8's deload and goal work — the creator's reuse (N150) and the target
+weight's date estimate (N151) — shipped, and each is in [CHANGELOG.md](CHANGELOG.md) under the id it closed.
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself

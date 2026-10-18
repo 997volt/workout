@@ -6,6 +6,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.DeloadDay
 import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.SetType
@@ -106,6 +107,37 @@ class ProgramDeloadViewModelTest {
     }
 
     @Test
+    fun aLastPlan_isOffered_andItsExercisesAndDayCountPrefillTheDraft() = runTest(dispatcher) {
+        // N150: the last plan's exercise ids are matched to the current program, and its number of days is
+        // the draft's; the numbers are re-derived by the same rule, not copied from the old templates.
+        val last = DeloadWeek(
+            programId = "p1",
+            weekStart = now.atZone(java.time.ZoneId.of("UTC")).toLocalDate().minusWeeks(2),
+            days = listOf(
+                DeloadDay(
+                    id = "old-day",
+                    programId = "p1",
+                    templateId = "old-template",
+                    templateName = "Heavy lower — deload",
+                    weekday = DayOfWeek.MONDAY,
+                    exerciseIds = listOf("back-squat"),
+                ),
+            ),
+        )
+        val viewModel = viewModel(reader = FakeReader(result = snapshot().copy(lastPlan = last)))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.lastDeloadWeek).isEqualTo(last.weekStart)
+
+        viewModel.onUseLastDeload()
+
+        assertThat(viewModel.uiState.value.selectedExerciseCount).isEqualTo(1)
+        assertThat(viewModel.uiState.value.dayCount).isEqualTo(1)
+        assertThat(viewModel.uiState.value.days.single().exercises.single().sets.first().weightGrams)
+            .isEqualTo(60_000L)
+    }
+
+    @Test
     fun create_writesTheDraft_andThenSaysDone() = runTest(dispatcher) {
         val repository = FakeDeloadRepository()
         val viewModel = viewModel(reader = FakeReader(result = snapshot()), repository = repository)
@@ -199,6 +231,8 @@ class ProgramDeloadViewModelTest {
         val writes = mutableListOf<List<DeloadDayInput>>()
 
         override fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>> = flowOf(emptyList())
+
+        override suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek? = null
 
         override suspend fun createDeload(
             programId: String,

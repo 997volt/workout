@@ -46,6 +46,22 @@ interface ProgramDeloadDao {
     )
     suspend fun findLiveDeload(programId: String, weekStart: Long): ProgramDeloadEntity?
 
+    /**
+     * The most recent mark before [before], for the creator's reuse (N150).
+     *
+     * One row rather than a range: the creator wants the last choices, and a plan is recalled only when the
+     * lifter asks for it.
+     */
+    @Query(
+        """
+        SELECT * FROM program_deloads
+        WHERE programId = :programId AND weekStart < :before AND deletedAt IS NULL
+        ORDER BY weekStart DESC
+        LIMIT 1
+        """,
+    )
+    suspend fun findLatestDeloadBefore(programId: String, before: Long): ProgramDeloadEntity?
+
     /** Moves the mark's own timestamp when its plan is rewritten (N147). */
     @Query("UPDATE program_deloads SET updatedAt = :at WHERE id = :id AND deletedAt IS NULL")
     suspend fun touchDeload(id: String, at: Long): Int

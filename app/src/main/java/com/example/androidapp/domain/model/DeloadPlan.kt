@@ -22,6 +22,13 @@ data class DeloadDay(
     val position: Int = 0,
     /** The weekday it is offered on, or null for an order-only source slot. */
     val weekday: DayOfWeek? = null,
+    /**
+     * The library exercises this day kept, for the creator's reuse (N150).
+     *
+     * Filled only by the last-plan read: the week's own reads never need the list, and an empty one is the
+     * truthful answer there rather than a second query per day.
+     */
+    val exerciseIds: List<String> = emptyList(),
 )
 
 /**

@@ -38,6 +38,15 @@ interface DeloadRepository {
         weekStart: LocalDate,
         days: List<DeloadDayInput>,
     ): DataResult<DeloadCreation>
+
+    /**
+     * The most recent built plan before [beforeWeek], or null (N150).
+     *
+     * A one-shot read for the creator's *Use last deload*: the plan's days carry the library exercises they
+     * kept, so the draft can preselect those and re-derive every number from the current plan. The load share
+     * is not part of the plan, so it is not reused; the day count is.
+     */
+    suspend fun findLastPlan(programId: String, beforeWeek: LocalDate): DeloadWeek?
 }
 
 /**
