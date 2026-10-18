@@ -2022,14 +2022,16 @@ Two of the four settled decisions follow from that: a direction-only goal must n
 maintenance must not be a rate of zero, because a literal zero is broken by the first glass of water and "hold
 within ±X" is what makes it a goal at all.
 
-**The band is the reference's shape, not its numbers.** health-center fits weight over ten days, prunes readings
-more than a kilogram off the fit, and judges the slope against 0.025–0.05 kg/day — "around 0.25% weekly". Its
-inputs are not all here (it reads a food diary), so what transfers is the **share**: the band is 0.25–0.5% of
-bodyweight a week, which reads the same for a 50 kg lifter and a 120 kg one, and the derived rate is its
-**centre** — the band is the range the app will not call too fast or too slow, and the middle is the one point
-that is neither edge. Rejected: the band's top, "the fastest allowed", which aims a goal at the edge of too
-fast; and a fixed kg/week, which is the same number for two very different bodies. The clamp into the band is
-what keeps any future change to the derivation inside it.
+**The bands are shares, and N149 gives each direction its own.** health-center fits weight over ten days, prunes
+readings more than a kilogram off the fit, and judges the slope against 0.025–0.05 kg/day — "around 0.25%
+weekly". Its inputs are not all here (it reads a food diary), so what transfers is the **share**: the bands read
+the same for a 50 kg lifter and a 120 kg one. N135 originally used one 0.25–0.5% band and its centre for both
+directions; N149 splits them — **gain 0.25–0.5%**, target **0.35%**; **loss 0.5–0.8%**, target **0.65%** — because
+gaining lean mass is the slower direction and a single centre made the two goals ask for the same magnitude. The
+target is a stated point, not the edge and no longer the centre: the band says what the app will not call too
+fast or too slow, and the clamp keeps the target inside it. Rejected: keeping the single band and its centre,
+which is what the lifter could not tell apart; and a fixed kg/week, which is the same number for two very
+different bodies. The full reasoning is in [N149](#n149).
 
 **The typed rate went, and the row that held it became a value.** The statistics row shows the derived rate and
 has nothing to press: the goal row above is where the number that sets it is chosen. A goal with no weigh-in
@@ -2198,6 +2200,13 @@ the same build or a newer one. A field whose absence would **mislead** a reader 
 the case that moves the version instead — which is what N113 did when a measurement's weight stopped being
 required.
 
+**History names an activity on both surfaces.** N146 added the activity to the history *row*, but the row still
+appended "0 sets" and opening it went to the workout detail, whose header shows "0 sets · 0 kg" and whose title
+was the date — a swim read as a workout somebody forgot to log. The set count is a true fact about a session and
+a meaningless one about an activity, so the row drops it; the detail takes the session's activity as its title,
+keeps the date beneath it, and replaces the set/volume totals with the activity and the duration. Both are
+covered by screen tests. (B167)
+
 ## N147
 
 The ask was a deload creator for a program: choose the number of days, mark the exercises each day keeps,
@@ -2243,9 +2252,9 @@ inventing one, which is N14's rule about a claim.
 60% of a one-rep max the app estimates: a plan states a load and the rule reduces it, which is the least
 invention available. For a working set near 80% of a 1RM the deload lands near 48%, the band a deload is
 usually described in, and a 3×5 plan therefore reads 3×5 at about 48% — roughly 60% of the volume load it
-replaced. The share is the screen's one control (50/60/70 kept) because it is the one number a lifter has a
-reason to disagree with; the set and rep rules are fixed so the draft reads as one rule rather than a
-settings panel. The last finished session fills in only where the plan states no load, the precedence the
+replaced. The share is the **one load control** (50/60/70 kept) because it is the one number a lifter has a
+reason to disagree with; the day count, the exercises and the weekdays are the screen's other controls, and
+the set and rep rules are fixed so the draft reads as one rule rather than a settings panel. The last finished session fills in only where the plan states no load, the precedence the
 workout's own prefill already uses (N14, N59). An assisted movement keeps its help: assistance is a
 magnitude, and halving it would make the deload harder (N15). No effort target travels, because a deload at
 the plan's RPE is not a deload. **Deriving the numbers from readiness or logged fatigue was rejected**
@@ -2261,13 +2270,15 @@ rows, and editing one is the editor the app already has. The creator's controls 
 **It applies to the week it was built for, and home reads it.** The creator marks the current week, because
 a deload is decided by how the block is going and a week that has not started cannot be marked (P3.10); the
 mark and the plan are one transaction, so neither can exist without the other. For that week, home's today
-plan and the missed-day question take the plan's days instead of the slots — a two-day week offers two
-days, and the reduced week is real rather than a set of full workouts the lifter has to ignore. A deload
-session names no slot, so `programRun` does not read it: the run pauses rather than advancing through a
-week that is not the program (P3.9). The week stays exempt from the ratio, and unmarking it takes the days
-out of every read and leaves the templates in the library, because a rebuild or an unmark is not a reason
-to delete the lifter's workouts. A week marked with no plan behaves exactly as P3.10 left it, which is what
-keeps this additive.
+plan takes the plan's days instead of the slots — a two-day week offers two days, and the reduced week is real
+rather than a set of full workouts the lifter has to ignore. Adherence's calendar and day dialog read the same
+days (B161), and the start question leaves a built week out entirely (B163): its days are not scored and a
+deload day has no slot a skip could record, so asking could never settle one. A deload session names no slot, so
+`programRun` does not read it: the run pauses rather than advancing through a week that is not the program
+(P3.9). The week stays exempt from the ratio, and unmarking a built week asks first, takes the days out of every
+read and leaves the templates in the library, because a rebuild or an unmark is not a reason to delete the
+lifter's workouts (B162). A week marked with no plan behaves exactly as P3.10 left it, which is what keeps this
+additive.
 
 **The file carries it, the program document does not.** The plan is authored setup the app cannot
 recompute, exactly P3.10's reason for carrying the mark, so the backup gains one defaulted collection and
@@ -2276,3 +2287,39 @@ week-keyed plan belongs to the device that trained it, and the deload templates 
 the document's existing "the templates the slots name" rule leaves them behind without a new clause. The
 schema addition is one table and its two indices, and a database upgraded from before it has a mark with no
 days — the P3.10 shape — rather than a migration that has to invent a plan.
+
+**The store is schema 7, the backup stays at 5.** The table is a defaulted collection, so the backup codec's
+addition policy is unchanged: a build older than this one that reads a newer file keeps the mark and the
+templates but not the week's plan (B165). The plan's absence is a loss of a mapping, not of the lifter's
+workouts, which is why the version does not move for it. The success card links the workouts it wrote and the
+adherence chip labels a built week (N148), and the creator's one-shot read returns through `dataResultOf` with a
+distinct failure view (B164) — the two ways the batch after the review made the feature's result reachable and
+its failure honest.
+
+## N149
+
+The request came from use, in two steps: gain and loss were reading the same default rate, and they should not;
+then the numbers were named — gain around 0.25% of bodyweight a week, loss faster, and finally the two bands
+0.25–0.5% (gain, target 0.35%) and 0.5–0.8% (loss, target 0.65%).
+
+**Why loss is the faster direction.** N135's one band was the reference's shape, but it used its centre for both
+directions, so a Lose goal and a Gain goal at the same weight asked for exactly the same magnitude. That is not
+what the two goals mean: a loss can be faster than a gain without either leaving the range the app will call
+neither too fast nor too slow, and gaining lean mass is the slower, more recoverable direction. The two bands
+are therefore direction-specific, and each has its own stated target rather than a shared centre. The target is
+still derived, never typed, and clamped into its own band; a **target** goal takes the point for the side it is
+on, so a target below today's weight uses the loss band and above uses the gain band.
+
+**The band is shown, not only used.** The energy section already showed the derived rate; it now shows the
+band beside it, signed for a loss so it reads as one interval ("between −0.64 and −0.4 kg a week") rather than a
+magnitude the screen has to re-sign. `GoalOutcomes` judges a period's fitted trend against the band for the
+goal's direction, which is the rule N137 already stated; only the band's values changed.
+
+**Rejected: keeping the one band and stating a different target inside it.** It would leave the on-target
+verdict shared — a gain and a loss could both be "met" at the same slope — and the request was for the two
+directions to differ, not only for their labels to. Also rejected: showing the band without using it in the
+verdict — a number that looks like a check while nothing enforces it.
+
+**Covered by** both directions' targets and bands, a target goal on each side, a loss and a gain outcome met,
+missed on the wrong side and missed as too fast, the ViewModel's rate and band for each direction, and the band's
+screen line.

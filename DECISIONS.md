@@ -642,17 +642,18 @@ the rule; that one argues it.
   know is no goal rather than a guess (the enum-by-name rule). A maintenance goal asks for **no rate at all**,
   because its answer is a corridor. ([evidence](DECISIONS-EVIDENCE.md#n135))
 
-- **The band decides the rate, and a direction-only goal invents no target** (N135). The band is the reference's
-  **shape** rather than its numbers: **0.25–0.5% of bodyweight a week**, so the same rule reads correctly for a
-  50 kg lifter and a 120 kg one — and the derived rate is its **centre**, clamped into the band, because the band
-  is the range the app will not call too fast or too slow and the middle is the one rate that is neither edge. A
-  **target** takes its direction from where the lifter is now; a **direction** takes the direction the lifter
-  stated and never manufactures an end weight; **maintenance is a corridor**, ±1 kg around the stated weight,
-  because a literal 0.0 kg/week is broken by the first glass of water and "hold within ±X" is what makes it a
-  goal. A rate is **never derived from a deadline**: if a date is wanted, the band's rate gives the *estimate* of
-  the date, not the other way round. The rate is **derived, never typed**, so the statistics row shows it rather
-  than offering it for editing — rejected: keeping the two side by side, which is two sources that can disagree,
-  the thing being fixed.
+- **Each direction has its own band and target, and a direction-only goal invents no target** (N135, amended by
+  N149). The bands are **shares** rather than numbers, so the same rule reads correctly for a 50 kg lifter and a
+  120 kg one: a **gain** is held to **0.25–0.5% of bodyweight a week** and asks **0.35%**; a **loss** to
+  **0.5–0.8%** and asks **0.65%**, because gaining lean mass is the slower direction. The target is **clamped into
+  its own band**, so no future change to how it is derived can leave the range that says neither too fast nor too
+  slow. A **target** takes its direction from where the lifter is now; a **direction** takes the direction the
+  lifter stated and never manufactures an end weight; **maintenance is a corridor**, ±1 kg around the stated
+  weight, because a literal 0.0 kg/week is broken by the first glass of water and "hold within ±X" is what makes
+  it a goal. A rate is **never derived from a deadline**: if a date is wanted, the band's rate gives the *estimate*
+  of the date, not the other way round. The rate is **derived, never typed**, so the statistics row shows it and
+  the band it is judged against rather than offering it for editing — rejected: keeping the two side by side,
+  which is two sources that can disagree, the thing being fixed.
 
 - **A weigh-in answers whether the rate is the goal's, where the weighing happens** (N136). The energy sentence
   already existed under the statistics chart, and a lifter had to go and look for it; the same arithmetic is now
@@ -720,7 +721,9 @@ the rule; that one argues it.
   it is set the screen draws no exercise list and no add rows: an activity is not a workout with a different
   label, and the two are never mixed. A day whose only work was an activity is drawn in its own colour in the
   calendar (N142), and a day with **a workout and** an activity is still a workout day — the calendar's question
-  is whether the day was trained.
+  is whether the day was trained. **History names it on both surfaces** (B167): the list row takes the activity
+  as its label and drops the meaningless set count, and the detail's title is the activity with its duration,
+  not *0 sets · 0 kg*.
 
 ## Measurements
 
@@ -843,8 +846,10 @@ the rule; that one argues it.
   by program and week, the shape of a skip, so it records a decision about how the block is going
   rather than being a dated plan (N16) or a derived week. **Exempt from the ratio, not from the
   calendar**: a deload week's scheduled occurrences are neither done, skipped nor missed, so a
-  deliberate back-off cannot read as a failure, while its sessions still mark their days and the
-  missed-day question still asks in that week. **Nothing is scaled for you by the app** — a week marked
+  deliberate back-off cannot read as a failure, while its sessions still mark their days. A built plan's own
+  days are the calendar's schedule (B161), and the missed-day question does not ask about a built week (B163):
+  a deload day has no slot a skip could record, so the week is left out of that question; a marked week with no
+  plan keeps its slots and still asks. **Nothing is scaled for you by the app** — a week marked
   with no plan prescribes what the slot's template prescribes (N73), and N147's creator writes a draft only
   when the lifter asks for it — and a week that has not started cannot be marked, because the app has no
   forward view and a deload is decided by how the block is going.
@@ -857,11 +862,15 @@ the rule; that one argues it.
   warm-up, no rung, no effort target — and the screen's preview and the write read the same pure function.
   **Nothing scales by itself**: the creator writes only when called and the saved plan never recalculates;
   anything finer is a template edit. It applies to the **current week** only, inheriting P3.10's
-  no-forward-view rule, and it marks the week in the same transaction. Home's today plan and the missed-day
-  question read the week's days instead of the slots; a deload session names no slot, so the run pauses
-  (P3.9), the week stays exempt from the ratio, and unmarking the week leaves the templates in the library.
-  The plan travels in the backup as authored setup; N47's program document still carries neither it nor its
-  workouts, because a week-keyed plan is history. ([evidence](DECISIONS-EVIDENCE.md#n147))
+  no-forward-view rule, and it marks the week in the same transaction. Home's today plan and adherence's
+  calendar and day dialog read the week's days instead of the slots; the missed-day question leaves a built week
+  out (B163). A deload session names no slot, so the run pauses (P3.9), the week stays exempt from the ratio, and
+  unmarking a built week asks first, leaving the templates in the library but not the week's plan (B162). The
+  success card links to the workouts it wrote, and the adherence chip says a week is built (N148). The store is
+  **schema 7**; the **backup's `schemaVersion` stays at 5**, so an older build reading a newer file keeps the mark
+  and the workouts but not the plan (B165). The plan travels in the backup as authored setup; N47's program
+  document still carries neither it nor its workouts, because a week-keyed plan is history.
+  ([evidence](DECISIONS-EVIDENCE.md#n147))
 - **A substitute is an event keyed by slot and week, and it stands in for matching** (P3.11). The
   pick is made at the point of starting, like the missed-day question, and recorded for that slot
   and week before the session opens; editing the program instead would change every week that

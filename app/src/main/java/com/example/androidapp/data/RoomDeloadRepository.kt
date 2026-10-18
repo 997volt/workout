@@ -60,8 +60,9 @@ class RoomDeloadRepository @Inject constructor(
         }
         requireUsable(days)
 
-        // Only a started week can be marked (P3.10), and the creator is the act of marking it. A future
-        // week is refused here rather than by the screen alone, so the rule holds for every caller.
+        // Only a started week can be marked (P3.10), and the creator is the act of marking it. Any week
+        // but this one — past or future — is refused here, not only by the screen, so the rule holds for
+        // every caller.
         val todayWeek = ProgramSchedule.weekStartOf(
             timeSource.now().atZone(ZoneId.systemDefault()).toLocalDate(),
         )

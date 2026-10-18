@@ -25,10 +25,48 @@ unreleased.
   once — the plan's stand-alone working sets up to three, its highest rep target floored at five, its heaviest
   stated load kept at 60% (or the last session's where the plan states none), rounded to the exercise's step. What
   it writes is an ordinary template per day and a plan for the current week, so the week's days are what home
-  offers and what the missed-day question asks about; a deload session names no slot, so the run pauses and the
-  week stays exempt from the ratio. Unmarking the week leaves the workouts in the library, and the plan rides in
-  the backup. **This is the narrow amendment to P3.10**: the app still never scales a week on its own, and the
-  numbers are a draft the lifter can edit afterwards.
+  and adherence's calendar offer; the missed-day question does not ask about a built week (B163). A deload
+  session names no slot, so the run pauses and the week stays exempt from the ratio. Unmarking a built week asks
+  first (B162): the workouts stay in the library and the plan does not come back, and the plan rides in the
+  backup. The store gains **schema 7** (`program_deload_days`), while the **backup's `schemaVersion` stays at
+  5** — the collection is a defaulted addition, so a build older than this one reading a newer file keeps the
+  mark and the workouts but not the week's plan (B165). **This is the narrow amendment to P3.10**: the app still
+  never scales a week on its own, and the numbers are a draft the lifter can edit afterwards.
+
+- **A built week is reachable from its success card, and says it is built** (N148). The card used to offer only
+  *Done*, so the workouts the creator wrote were one navigation away with nothing pointing at them. It now offers
+  *View workouts* beside *Done*, and the adherence deload chip labels a week that has a plan *built*, so the plan
+  is visible where the week is read. A rebuild's note already says the older workouts stay in the library.
+
+### Changed
+
+- **Loss and gain have separate rate bands and stated targets** (N149). N135 gave both directions one 0.25–0.5%
+  band and took its centre, so a Lose goal and a Gain goal at the same bodyweight asked for the same magnitude.
+  Gaining is now held to **0.25–0.5%** of bodyweight a week and asks **0.35%**; losing to **0.5–0.8%** and asks
+  **0.65%**, because gaining lean mass is the slower direction. The target is still derived from the goal and the
+  weight the lifter is now, clamped into that direction's band, and the band is shown under the rate so the
+  number has the range it is judged against. A target goal takes the rate for the side it is on.
+
+### Fixed
+
+- **A built deload week is read from its own days** (B161). The adherence calendar and the day dialog read the
+  program's slots, so a week the creator built showed the slot's full template — or nothing, if the day was
+  moved — while home and the start prompt offered the deload workout. They now read the plan's days: a plan's own
+  days are the week's schedule, its slots are not scheduled that week, and the day dialog lists its days with the
+  deload template. A marked week with no plan keeps the slots, exempt, as before.
+- **Unmarking a built week asks first** (B162). The chip was one tap from making the week's plan unreachable. A
+  marked week with a plan now labels itself *built* and asks, saying the workouts stay in the library but the plan
+  will not be used; a mark with no plan still toggles off immediately.
+- **The start question no longer asks about a built deload week** (B163). A deload day has no slot a skip could
+  be recorded against, so *Continue* could not settle it and the prompt repeated every start that week. A program
+  with a built plan is now left out of the question; a marked week with no plan keeps P3.10's shape.
+- **The creator's failed read says so** (B164). A storage failure escaped the screen's error channel and fell
+  through to *this program has no workouts*. The read now returns through `dataResultOf`, and a distinct state
+  says the plan could not be read, with no create bar.
+- **An activity is named on its history page** (B167). The list row named the activity and still appended *0 sets*;
+  opening it showed *0 sets · 0 kg* and never said what the session was. The row now drops the set count for an
+  activity, the detail's title is its name, and its totals are the duration and the activity rather than two
+  zeroes.
 
 ## [2.7] — 2026-10-18 (versionCode 27)
 
