@@ -35,7 +35,6 @@ data class ExerciseDetail(val exerciseId: String)
 @Serializable
 data class Statistics(val exerciseId: String? = null)
 
-
 /**
  * The app's settings (ROADMAP N21).
  *
@@ -122,7 +121,6 @@ data class ActiveWorkout(
 @Serializable
 data class ExercisePicker(val templateId: String? = null)
 
-
 /** The template list (ROADMAP N3). */
 @Serializable
 data object WorkoutTemplates
@@ -143,6 +141,15 @@ data object Programs
 /** One program: its name, its ordered slots, and whether it is the active one (P3.3). */
 @Serializable
 data class ProgramEditor(val programId: String)
+
+/**
+ * Building one program's deload week (ROADMAP N147).
+ *
+ * Pushed from the program editor's overflow, because what it builds is a plan over that program's own
+ * workouts — the editor is where the schedule is read, and this is the one week it rewrites.
+ */
+@Serializable
+data class ProgramDeload(val programId: String)
 
 /** The history list (ROADMAP P1.6). */
 @Serializable

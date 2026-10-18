@@ -1,44 +1,46 @@
 package com.example.androidapp.ui.home
 
-import java.time.ZoneId
-import java.time.DayOfWeek
-import java.time.LocalDate
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataResult
-import com.example.androidapp.domain.repository.ProgramRepository
-import com.example.androidapp.domain.repository.MeasurementRepository
-import com.example.androidapp.domain.model.isDailyOn
-import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
-import com.example.androidapp.domain.model.WorkoutTemplate
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.WorkoutSession
+import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.model.isDailyOn
+import com.example.androidapp.domain.repository.DeloadRepository
+import com.example.androidapp.domain.repository.MeasurementRepository
+import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.workout.WorkoutClock
 import com.example.androidapp.ui.workout.WorkoutFormat
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.Duration
-import java.time.Instant
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import javax.inject.Inject
 
 /**
  * A workout already in progress.
@@ -75,6 +77,14 @@ data class TodayPlan(
      * and two cards may name the same workout, so the program is what tells them apart.
      */
     val programName: String? = null,
+    /**
+     * True while the card is one of a built deload week's own days (ROADMAP N147).
+     *
+     * The row is still a workout to start — that is the point of the plan — but it is not the slot's
+     * full session, and the surface says so. It is also why [slotId] is null: a deload day is keyed to
+     * the week rather than to a slot, so it offers no substitution.
+     */
+    val isDeload: Boolean = false,
 )
 
 /**
@@ -142,6 +152,7 @@ class WorkoutsHomeViewModel @Inject constructor(
     private val workoutRepository: WorkoutRepository,
     private val templateRepository: TemplateRepository,
     private val programRepository: ProgramRepository,
+    private val deloadRepository: DeloadRepository,
     private val measurementRepository: MeasurementRepository,
     private val timeSource: TimeSource,
 ) : ViewModel() {
@@ -223,6 +234,14 @@ class WorkoutsHomeViewModel @Inject constructor(
     private val today: DayOfWeek = todayDate.dayOfWeek
 
     /**
+     * The Monday of [todayDate]'s week, which is the key a deload plan is stored under (ROADMAP N147).
+     *
+     * Captured with the day for the same reason [todayDate] is: a screen left open across midnight shows
+     * the day it was opened on, and the week that day belongs to has to agree with it.
+     */
+    private val weekStart: LocalDate = ProgramSchedule.weekStartOf(todayDate)
+
+    /**
      * The zone [todayDate] was read in, captured with it (ROADMAP N114).
      *
      * The row that offers to record today's measurement asks the same question the repository answers when it
@@ -257,15 +276,31 @@ class WorkoutsHomeViewModel @Inject constructor(
             }
         }
 
+    /**
+     * The deload plans built for this week (ROADMAP N147).
+     *
+     * Read only while a program is followed, like the slots: a plan for a program that is not active is
+     * not part of today. A program with no plan is absent from the list, which leaves its slots to
+     * prescribe what they always did.
+     */
+    private val deloadWeeks: Flow<List<DeloadWeek>> = activePrograms.flatMapLatest { programs ->
+        if (programs.isEmpty()) {
+            flowOf(emptyList())
+        } else {
+            deloadRepository.observeWeekPlans(weekStart)
+        }
+    }
+
     /** The program-shaped sources the plan surface reads, kept together so the combine below stays flat. */
     private data class ProgramsPart(
         val programs: List<WorkoutProgram>,
         val slots: List<ProgramSlot>,
+        val deloadWeeks: List<DeloadWeek>,
     )
 
     private val programsPart: Flow<ProgramsPart> =
-        combine(activePrograms, activeProgramSlots) { programs, slots ->
-            ProgramsPart(programs, slots)
+        combine(activePrograms, activeProgramSlots, deloadWeeks) { programs, slots, deloads ->
+            ProgramsPart(programs, slots, deloads)
         }
 
     val uiState: StateFlow<WorkoutsHomeUiState> = combine(
@@ -283,6 +318,7 @@ class WorkoutsHomeViewModel @Inject constructor(
             todaysPlan = todaysPlanFor(
                 programs = programs.programs,
                 slots = programs.slots,
+                deloadWeeks = programs.deloadWeeks,
                 day = today,
             ),
             // N126: what makes an empty day a rest day rather than a day with nothing to say.
@@ -357,42 +393,47 @@ internal fun todaysPlanFor(
     programs: List<WorkoutProgram>,
     slots: List<ProgramSlot>,
     day: DayOfWeek,
+    deloadWeeks: List<DeloadWeek> = emptyList(),
 ): List<TodayPlan> =
     // No active program, no dated plan (ROADMAP N56). An orphaned slot — a program that was
     // deactivated after its slots were written — is not a schedule either: the slots belong to the
     // program that follows them.
-    if (programs.isEmpty()) emptyList() else slots.scheduledFor(day, programs)
-
-/**
- * The active programs' slots that fall on [day], in the union's order (ROADMAP P3.12).
- *
- * Ordered by the **program's authored position first, the slot's position second**: two
- * programs each number their slots from zero, so ordering by the slot alone would interleave
- * them. The row's identity is the slot's, not the template's: a program may schedule the same
- * workout twice, and two rows keyed by one template would collide.
- */
-private fun List<ProgramSlot>.scheduledFor(
-    day: DayOfWeek,
-    programs: List<WorkoutProgram>,
-): List<TodayPlan> {
-    val programOrder = programs.withIndex().associate { (index, program) -> program.id to index }
-    return filter { it.weekday == day }
-        .sortedWith(
-            compareBy(
-                { programOrder[it.programId] ?: Int.MAX_VALUE },
-                { it.position },
-            ),
-        )
-        .map { slot ->
-            TodayPlan(
-                id = slot.id,
-                templateId = slot.templateId,
-                name = slot.templateName,
-                exerciseCount = slot.exerciseCount,
-                slotId = slot.id,
-                // Named for the preview's subtitle (N127): a day can carry slots from more than one
-                // program (P3.12), and two cards may name the same workout.
-                programName = programs.firstOrNull { it.id == slot.programId }?.name,
-            )
+    if (programs.isEmpty()) {
+        emptyList()
+    } else {
+        val plans = deloadWeeks.associateBy { it.programId }
+        programs.flatMap { program ->
+            // A built plan replaces the whole week it was made for (ROADMAP N147): the days it kept
+            // are the week's days, and the slots it did not keep offer nothing that day. A week marked
+            // with no plan has no entry, which is P3.10's shape and keeps the slots.
+            val plan = plans[program.id]?.takeIf { it.days.isNotEmpty() }
+            if (plan != null) {
+                plan.days.filter { it.weekday == day }.sortedBy { it.position }.map { day ->
+                    TodayPlan(
+                        id = day.id,
+                        templateId = day.templateId,
+                        name = day.templateName,
+                        exerciseCount = day.exerciseCount,
+                        slotId = null,
+                        programName = program.name,
+                        isDeload = true,
+                    )
+                }
+            } else {
+                slots.filter { it.programId == program.id && it.weekday == day }
+                    .sortedBy { it.position }
+                    .map { slot ->
+                        TodayPlan(
+                            id = slot.id,
+                            templateId = slot.templateId,
+                            name = slot.templateName,
+                            exerciseCount = slot.exerciseCount,
+                            slotId = slot.id,
+                            // Named for the preview's subtitle (N127): a day can carry slots from more
+                            // than one program (P3.12), and two cards may name the same workout.
+                            programName = program.name,
+                        )
+                    }
+            }
         }
-}
+    }

@@ -1,27 +1,27 @@
 package com.example.androidapp.ui.home
 
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.hasTestTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.workout.WorkoutClock
-import java.time.DayOfWeek
-import java.time.Instant
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.DayOfWeek
+import java.time.Instant
 
 /**
  * The home screen (ROADMAP N1).
@@ -336,6 +336,31 @@ class WorkoutsHomeScreenTest {
         setScreen(state = WorkoutsHomeUiState(isLoading = false))
 
         composeTestRule.onNodeWithTag(TestTags.HOME_RESUME).assertDoesNotExist()
+    }
+
+    @Test
+    fun aDeloadDay_saysSo_onItsCard() {
+        // ROADMAP N147: the card is still a workout to start, but it is the week's reduced session
+        // rather than the slot's full one, and the subtitle is where that is said.
+        setScreen(
+            WorkoutsHomeUiState(
+                isLoading = false,
+                todaysPlan = listOf(
+                    TodayPlan(
+                        id = "d1",
+                        templateId = "dt1",
+                        name = "Heavy lower — deload",
+                        exerciseCount = 3,
+                        programName = "Upper/Lower",
+                        isDeload = true,
+                    ),
+                ),
+                hasActiveProgram = true,
+            ),
+        )
+
+        scrollToToday("d1")
+        composeTestRule.onNodeWithText("Deload · 3 exercises · Upper/Lower").assertIsDisplayed()
     }
 
     @Test

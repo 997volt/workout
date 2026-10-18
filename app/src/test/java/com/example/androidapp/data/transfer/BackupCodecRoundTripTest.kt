@@ -4,6 +4,7 @@ import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.MeasurementEntity
 import com.example.androidapp.data.local.MeasurementSoreMuscleEntity
 import com.example.androidapp.data.local.MetricGoalEntity
+import com.example.androidapp.data.local.ProgramDeloadDayEntity
 import com.example.androidapp.data.local.ProgramDeloadEntity
 import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSkipEntity
@@ -352,6 +353,24 @@ class BackupCodecRoundTripTest {
             id = "deload1",
             programId = "p1",
             weekStart = 20_345L,
+            createdAt = 1_600_000_000_000L,
+            updatedAt = 1_600_000_000_001L,
+            deletedAt = null,
+        )
+
+        assertThat(entity.toDto().toEntity()).isEqualTo(entity)
+    }
+
+    @Test
+    fun aProgramDeloadDay_survivesTheCodec() {
+        // The row N147 added: the week's own workouts are authored setup the app cannot recompute, so
+        // a codec that forgot them would restore the exemption and lose what it excused.
+        val entity = ProgramDeloadDayEntity(
+            id = "day1",
+            deloadId = "deload1",
+            templateId = "t2",
+            position = 2,
+            weekday = DayOfWeek.MONDAY,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,

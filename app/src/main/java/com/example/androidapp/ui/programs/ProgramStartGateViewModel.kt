@@ -9,14 +9,14 @@ import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.repository.ProgramRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.ZoneId
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.ZoneId
+import javax.inject.Inject
 
 /**
  * What the user asked to start, before the program's missed days are settled (ROADMAP P3.3).
@@ -157,7 +157,9 @@ class ProgramStartGateViewModel @Inject constructor(
         clearPrompt()
         viewModelScope.launch {
             val recorded = programs.skipOccurrences(
-                slotIds = current.occurrences.map { it.slotId },
+                // A deload week's own day has no slot to skip (ROADMAP N147): the week is exempt from
+                // the ratio anyway, so only the scheduled slots are recorded.
+                slotIds = current.occurrences.mapNotNull { it.slotId },
                 weekStart = current.weekStart,
             )
             if (recorded is DataResult.Failure) _error.value = recorded.error

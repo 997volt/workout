@@ -1,10 +1,13 @@
 package com.example.androidapp.ui.home
 
+import com.example.androidapp.domain.model.DeloadDay
+import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.google.common.truth.Truth.assertThat
-import java.time.DayOfWeek
 import org.junit.Test
+import java.time.DayOfWeek
+import java.time.LocalDate
 
 /**
  * What home shows for today (ROADMAP P3.3, unioned by P3.12, falling back to N16's pins).
@@ -124,6 +127,92 @@ class WorkoutsHomePlanTest {
         val plan = todaysPlanFor(listOf(program), slots, DayOfWeek.FRIDAY)
 
         assertThat(plan).isEmpty()
+    }
+
+    @Test
+    fun aBuiltDeloadWeek_replacesTheSlotsOnTheDaysItKept() {
+        // ROADMAP N147: a week with a plan schedules its own days, and the slots it did not keep
+        // offer nothing — so a two-day deload week is a rest day on the other three.
+        val slots = listOf(
+            slot("s1", DayOfWeek.MONDAY, position = 0, templateId = "t1"),
+            slot("s2", DayOfWeek.WEDNESDAY, position = 1, templateId = "t2"),
+            slot("s3", DayOfWeek.FRIDAY, position = 2, templateId = "t3"),
+        )
+        val plan = DeloadWeek(
+            programId = "p1",
+            weekStart = LocalDate.of(2026, 10, 5),
+            days = listOf(
+                DeloadDay(
+                    id = "d1",
+                    programId = "p1",
+                    templateId = "dt1",
+                    templateName = "Heavy lower — deload",
+                    exerciseCount = 3,
+                    position = 0,
+                    weekday = DayOfWeek.MONDAY,
+                ),
+                DeloadDay(
+                    id = "d2",
+                    programId = "p1",
+                    templateId = "dt2",
+                    templateName = "Push — deload",
+                    exerciseCount = 4,
+                    position = 1,
+                    weekday = DayOfWeek.WEDNESDAY,
+                ),
+            ),
+        )
+
+        val monday = todaysPlanFor(listOf(program), slots, DayOfWeek.MONDAY, listOf(plan))
+        val friday = todaysPlanFor(listOf(program), slots, DayOfWeek.FRIDAY, listOf(plan))
+
+        assertThat(monday.map { it.id }).containsExactly("d1")
+        assertThat(monday.single().templateId).isEqualTo("dt1")
+        assertThat(monday.single().name).isEqualTo("Heavy lower — deload")
+        assertThat(monday.single().programName).isEqualTo("Upper/Lower")
+        assertThat(monday.single().slotId).isNull()
+        assertThat(monday.single().isDeload).isTrue()
+        assertThat(friday).isEmpty()
+    }
+
+    @Test
+    fun aMarkedWeekWithNoDays_leavesTheSlotsAlone() {
+        // P3.10's shape: the mark exempts the week and the slots still prescribe their workouts. The
+        // creator is additive, not a change to what a mark means.
+        val slots = listOf(slot("s1", DayOfWeek.MONDAY, position = 0, templateId = "t1"))
+        val emptyPlan = DeloadWeek(programId = "p1", weekStart = LocalDate.of(2026, 10, 5))
+
+        val plan = todaysPlanFor(listOf(program), slots, DayOfWeek.MONDAY, listOf(emptyPlan))
+
+        assertThat(plan.map { it.id }).containsExactly("s1")
+        assertThat(plan.single().isDeload).isFalse()
+    }
+
+    @Test
+    fun oneProgramsDeload_doesNotTakeTheOtherProgramsDay() {
+        val slots = listOf(
+            slot("s1", DayOfWeek.MONDAY, position = 0, templateId = "t1"),
+            slot("s2", DayOfWeek.MONDAY, position = 0, templateId = "t2", programId = "p2"),
+        )
+        val plan = DeloadWeek(
+            programId = "p1",
+            weekStart = LocalDate.of(2026, 10, 5),
+            days = listOf(
+                DeloadDay(
+                    id = "d1",
+                    programId = "p1",
+                    templateId = "dt1",
+                    templateName = "Heavy lower — deload",
+                    position = 0,
+                    weekday = DayOfWeek.MONDAY,
+                ),
+            ),
+        )
+
+        val today = todaysPlanFor(listOf(program, second), slots, DayOfWeek.MONDAY, listOf(plan))
+
+        assertThat(today.map { it.id }).containsExactly("d1", "s2").inOrder()
+        assertThat(today.map { it.isDeload }).containsExactly(true, false).inOrder()
     }
 
     @Test

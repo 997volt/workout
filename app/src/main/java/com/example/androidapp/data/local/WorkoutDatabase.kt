@@ -29,6 +29,9 @@ import androidx.room.TypeConverters
  * **Schema 6 is N141**, one nullable column: a session can be an **activity** — cycling, a swim — which is
  * a session that holds no sets. See [MIGRATION_5_6].
  *
+ * **Schema 7 is N147**, one new table: a marked deload week can name the workouts it prescribes, so the
+ * week's own days are rows hanging off the `program_deloads` mark P3.10 already keeps. See [MIGRATION_6_7].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -48,13 +51,14 @@ import androidx.room.TypeConverters
         ProgramSlotEntity::class,
         ProgramSkipEntity::class,
         ProgramDeloadEntity::class,
+        ProgramDeloadDayEntity::class,
         ProgramSubstitutionEntity::class,
         SessionSoreMuscleEntity::class,
         SessionExerciseJointEntity::class,
         MeasurementSoreMuscleEntity::class,
         MetricGoalEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

@@ -1,10 +1,13 @@
 package com.example.androidapp.data.local
 
 import com.example.androidapp.domain.model.AdherenceSession
+import com.example.androidapp.domain.model.DeloadDay
+import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramSession
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
 
@@ -31,6 +34,32 @@ internal fun ProgramSlotDetail.toDomain(): ProgramSlot = ProgramSlot(
     templateName = templateName,
     exerciseCount = exerciseCount,
 )
+
+/** One of a deload week's own days (ROADMAP N147). */
+internal fun DeloadDayRow.toDomain(): DeloadDay = DeloadDay(
+    id = id,
+    programId = programId,
+    templateId = templateId,
+    templateName = templateName,
+    exerciseCount = exerciseCount,
+    position = position,
+    weekday = weekday,
+)
+
+/**
+ * The rows of one week, grouped into the plan each program built (ROADMAP N147).
+ *
+ * A program with no rows is absent rather than an empty week: "no plan" and "a plan with no days" read
+ * the same, and that is deliberate — both leave the slots prescribing what they always did (P3.10).
+ */
+internal fun List<DeloadDayRow>.toDeloadWeeks(): List<DeloadWeek> =
+    groupBy { it.programId }.map { (programId, rows) ->
+        DeloadWeek(
+            programId = programId,
+            weekStart = LocalDate.ofEpochDay(rows.first().weekStart),
+            days = rows.sortedBy { it.position }.map { it.toDomain() },
+        )
+    }
 
 /**
  * A finished session as the run reads it, or null when it carries no template (ROADMAP P3.9).

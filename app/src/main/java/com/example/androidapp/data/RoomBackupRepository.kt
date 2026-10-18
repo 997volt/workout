@@ -103,6 +103,9 @@ class RoomBackupRepository @Inject constructor(
                     // The weeks a program was backed off (ROADMAP P3.10): authored setup the app cannot
                     // recompute, so dropping them would read every deload week as a miss.
                     programDeloads = programBackup.allProgramDeloads().map { it.toDto() },
+                    // The days a marked deload week prescribed (ROADMAP N147): the templates travel with
+                    // the plan, so a restore keeps the week exactly as it was built rather than losing it.
+                    programDeloadDays = programBackup.allProgramDeloadDays().map { it.toDto() },
                     // The workouts that stood in for a slot's own (ROADMAP P3.11): without them a
                     // restored week reads as missed even though it was trained, with something else.
                     programSubstitutions = programBackup.allProgramSubstitutions().map { it.toDto() },
@@ -325,7 +328,7 @@ class RoomBackupRepository @Inject constructor(
      * Restores and adds the program tables (ROADMAP P3.3), returning what each step did.
      *
      * The same hidden-then-insert shape as everything else in [import], extracted because the
-     * enclosing function had reached the length this project enforces — and because the three
+     * enclosing function had reached the length this project enforces — and because the program
      * tables are a self-contained group that has to move together.
      */
     private suspend fun importPrograms(file: BackupFile): Imported {
@@ -333,24 +336,28 @@ class RoomBackupRepository @Inject constructor(
         val hiddenSlots = programBackup.softDeletedProgramSlotIds().toSet()
         val hiddenSkips = programBackup.softDeletedProgramSkipIds().toSet()
         val hiddenDeloads = programBackup.softDeletedProgramDeloadIds().toSet()
+        val hiddenDeloadDays = programBackup.softDeletedProgramDeloadDayIds().toSet()
         val hiddenSubstitutions = programBackup.softDeletedProgramSubstitutionIds().toSet()
 
         val programsToRestore = file.programs.filter { it.id in hiddenPrograms }
         val slotsToRestore = file.programSlots.filter { it.id in hiddenSlots }
         val skipsToRestore = file.programSkips.filter { it.id in hiddenSkips }
         val deloadsToRestore = file.programDeloads.filter { it.id in hiddenDeloads }
+        val deloadDaysToRestore = file.programDeloadDays.filter { it.id in hiddenDeloadDays }
         val substitutionsToRestore = file.programSubstitutions.filter { it.id in hiddenSubstitutions }
 
         programBackup.restorePrograms(programsToRestore.map { it.toEntity() })
         programBackup.restoreProgramSlots(slotsToRestore.map { it.toEntity() })
         programBackup.restoreProgramSkips(skipsToRestore.map { it.toEntity() })
         programBackup.restoreProgramDeloads(deloadsToRestore.map { it.toEntity() })
+        programBackup.restoreProgramDeloadDays(deloadDaysToRestore.map { it.toEntity() })
         programBackup.restoreProgramSubstitutions(substitutionsToRestore.map { it.toEntity() })
 
         val restored = programsToRestore.count { it.deletedAt == null } +
             slotsToRestore.count { it.deletedAt == null } +
             skipsToRestore.count { it.deletedAt == null } +
             deloadsToRestore.count { it.deletedAt == null } +
+            deloadDaysToRestore.count { it.deletedAt == null } +
             substitutionsToRestore.count { it.deletedAt == null }
 
         val added = programBackup.insertPrograms(file.programs.map { it.toEntity() })
@@ -360,6 +367,8 @@ class RoomBackupRepository @Inject constructor(
             programBackup.insertProgramSkips(file.programSkips.map { it.toEntity() })
                 .count { it != SKIPPED } +
             programBackup.insertProgramDeloads(file.programDeloads.map { it.toEntity() })
+                .count { it != SKIPPED } +
+            programBackup.insertProgramDeloadDays(file.programDeloadDays.map { it.toEntity() })
                 .count { it != SKIPPED } +
             programBackup.insertProgramSubstitutions(file.programSubstitutions.map { it.toEntity() })
                 .count { it != SKIPPED }

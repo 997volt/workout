@@ -2,6 +2,7 @@ package com.example.androidapp.di
 
 import com.example.androidapp.data.RoomAdherenceRepository
 import com.example.androidapp.data.RoomBackupRepository
+import com.example.androidapp.data.RoomDeloadRepository
 import com.example.androidapp.data.RoomExerciseRepository
 import com.example.androidapp.data.RoomGoalRepository
 import com.example.androidapp.data.RoomMeasurementRepository
@@ -12,6 +13,7 @@ import com.example.androidapp.data.RoomTrendsRepository
 import com.example.androidapp.data.RoomWorkoutRepository
 import com.example.androidapp.domain.repository.AdherenceRepository
 import com.example.androidapp.domain.repository.BackupRepository
+import com.example.androidapp.domain.repository.DeloadRepository
 import com.example.androidapp.domain.repository.ExerciseRepository
 import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
@@ -78,6 +80,11 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindTrendsRepository(impl: RoomTrendsRepository): TrendsRepository
+
+    /** A program's built deload week, and the workouts it wrote (N147). */
+    @Binds
+    @Singleton
+    abstract fun bindDeloadRepository(impl: RoomDeloadRepository): DeloadRepository
 
     /** Backup/restore is a repository like any other (P1.12). */
     @Binds

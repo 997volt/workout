@@ -9,6 +9,7 @@ import com.example.androidapp.data.local.MIGRATION_2_3
 import com.example.androidapp.data.local.MIGRATION_3_4
 import com.example.androidapp.data.local.MIGRATION_4_5
 import com.example.androidapp.data.local.MIGRATION_5_6
+import com.example.androidapp.data.local.MIGRATION_6_7
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.seedMissingExercises
 import com.example.androidapp.data.moveLegacyGoals
@@ -35,12 +36,20 @@ object DatabaseModule {
     ): WorkoutDatabase =
         Room.databaseBuilder(context, WorkoutDatabase::class.java, WorkoutDatabase.NAME)
             // 2.0's store was created at schema 1 and 1.x's file is a different one this build never
-            // opens, so there are five migrations: N110's, which re-files the rows a variation created
+            // opens, so there are six migrations: N110's, which re-files the rows a variation created
             // when the library became a category over movements; N113's, which splits the body's
             // record in two and lets a measurement weigh nothing; N134's, one nullable column that
-            // lets a template keep a version; N137's, one table that gives a goal a past; and N141's, one
-            // column that lets a session be an activity.
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+            // lets a template keep a version; N137's, one table that gives a goal a past; N141's, one
+            // column that lets a session be an activity; and N147's, one table that lets a marked
+            // deload week prescribe its own days.
+            .addMigrations(
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
+            )
             .addCallback(
                 object : RoomDatabase.Callback() {
                     /**

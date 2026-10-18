@@ -418,6 +418,9 @@
     <!-- A card's own name opens what is planned rather than starting it (ROADMAP N55, N127); the
          accessibility label names the action, because the card's text names the workout. -->
     <string name="home_plan_open">See what is planned in %1$s</string>
+    <!-- A deload week's own day (ROADMAP N147): it starts like a workout, but it is not the slot's full
+         session, and the card says so. %1$s is the ordinary exercise count and program line. -->
+    <string name="home_plan_deload_summary">Deload · %1$s</string>
     <string name="home_planned_empty">This workout has no exercises planned yet.</string>
     <!-- What the plan surface says when the day has nothing on it (ROADMAP N126). Two lines and not one,
          because "nothing is followed" and "followed, and today is rest" are different facts — and a
@@ -797,6 +800,7 @@
     <!-- A program's planned work per muscle (ROADMAP N119). Counts and shares, never a verdict: a range a
          lifter should hit is a claim this app has no evidence for. -->
     <string name="program_balance">Muscle balance</string>
+    <string name="program_deload">Deload week</string>
     <!-- The bar's ⋮, named so a screen reader says whose actions these are. -->
     <string name="program_menu">%1$s actions</string>
     <string name="program_balance_empty">This program plans no working sets yet.</string>
@@ -873,5 +877,39 @@
     <string name="program_skip_continue">Continue</string>
     <string name="program_skip_continue_with">Continue with %1$s</string>
     <string name="program_skip_note">Continuing marks every missed day this week as skipped.</string>
+
+    <!-- Building a deload week (ROADMAP N147). The screen is the creator: it chooses the days, ticks
+         the exercises each keeps, and derives the numbers from the program's own plan. -->
+    <string name="deload_title">Deload week</string>
+    <string name="deload_week">Week of %1$s</string>
+    <string name="deload_intro">Same exercises, less work: the plan’s sets up to three, its highest reps (at least five), and a share of its load you choose below. Each day becomes an ordinary template you can edit afterwards.</string>
+    <string name="deload_days">Days</string>
+    <string name="deload_days_hint">The program’s first days, trimmed to what you keep.</string>
+    <string name="deload_days_count">%1$d of %2$d</string>
+    <string name="deload_days_decrease">One fewer day</string>
+    <string name="deload_days_increase">One more day</string>
+    <string name="deload_load">Load kept</string>
+    <string name="deload_load_option">%1$d%% of the plan</string>
+    <string name="deload_existing">This week already has a deload. Building it again replaces its days; the older workouts stay in the library.</string>
+    <string name="deload_no_slots">This program has no workouts to deload.</string>
+    <string name="deload_no_slots_hint">Add a workout to the program first.</string>
+    <string name="deload_day">Day %1$d</string>
+    <string name="deload_weekday">Change the day for %1$s</string>
+    <string name="deload_no_weekday">No day</string>
+    <!-- The draft's prescription, e.g. "3 × 5 · 60 kg". The sets line alone is used when the plan wrote
+         no reps, and the load joins it only when one was derived. -->
+    <string name="deload_sets_reps">%1$d × %2$d</string>
+    <plurals name="deload_sets">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <string name="deload_with_load">%1$s · %2$s</string>
+    <string name="deload_create">Build deload week</string>
+    <string name="deload_created_title">Deload week built</string>
+    <plurals name="deload_created">
+        <item quantity="one">%1$d workout for the week of %2$s</item>
+        <item quantity="other">%1$d workouts for the week of %2$s</item>
+    </plurals>
+    <string name="deload_done">Done</string>
     <string name="home_programs">Programs</string>
 </resources>

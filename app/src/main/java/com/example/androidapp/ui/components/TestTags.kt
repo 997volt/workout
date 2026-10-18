@@ -694,6 +694,9 @@ object TestTags {
         /** The bar's ⋮ entry that opens the balance view (ROADMAP N119). */
         const val BALANCE = "program_balance_open"
 
+        /** The bar's ⋮ entry that opens the deload creator (ROADMAP N147). */
+        const val DELOAD = "program_deload_open"
+
         /** The read-only view of what a slot's template prescribes (ROADMAP N72). */
         const val PREVIEW = "program_preview"
         const val PREVIEW_EMPTY = "program_preview_empty"
@@ -731,6 +734,36 @@ object TestTags {
         fun removeSlot(id: String) = "program_slot_remove_$id"
 
         fun pickTemplate(id: String) = "program_pick_template_$id"
+    }
+
+    /**
+     * Building a deload week (ROADMAP N147), grouped so this object stays under its ceiling.
+     *
+     * The days and exercises are addressed by the source slot and the planned exercise they came from,
+     * so a test names the row it means rather than a position in a list the day count changes.
+     */
+    object Deload {
+        const val SCREEN = "deload_screen"
+
+        /** The scrolling body, so a test can reach a day below the fold (N147). */
+        const val LIST = "deload_list"
+        const val DAYS_DECREASE = "deload_days_decrease"
+        const val DAYS_INCREASE = "deload_days_increase"
+        const val DAYS_VALUE = "deload_days_value"
+        const val CREATE = "deload_create"
+        const val DONE = "deload_done"
+        const val CREATED = "deload_created"
+
+        fun load(percent: Int) = "deload_load_$percent"
+
+        fun weekday(slotId: String) = "deload_weekday_$slotId"
+
+        fun weekdayOption(slotId: String, day: String) = "deload_weekday_${slotId}_$day"
+
+        fun day(slotId: String) = "deload_day_$slotId"
+
+        fun exercise(slotId: String, templateExerciseId: String) =
+            "deload_exercise_${slotId}_$templateExerciseId"
     }
 
     /** The measurements screen's own tags (ROADMAP N32), grouped so this object stays under its ceiling. */

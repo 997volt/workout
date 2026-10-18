@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.MetricGoalEntity
+import com.example.androidapp.data.local.ProgramDeloadDayEntity
 import com.example.androidapp.data.local.ProgramDeloadEntity
 import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
@@ -44,6 +45,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.nio.file.Files
+import java.time.DayOfWeek
 import java.time.Instant
 
 /**
@@ -608,6 +610,20 @@ class BackupRoundTripTest {
                 deletedAt = null,
             ),
         )
+        // The week's own day (ROADMAP N147): the workouts it prescribed are part of the authored setup,
+        // and a restore that kept the exemption but lost them would silently rewrite the week.
+        database.programDeloadDao().insertDeloadDay(
+            ProgramDeloadDayEntity(
+                id = "day1",
+                deloadId = "deload1",
+                templateId = "t1",
+                position = 2,
+                weekday = DayOfWeek.MONDAY,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = null,
+            ),
+        )
         val json = exportedJson()
         database.clearAllTables()
         // The import must *succeed*, not roll back: a slot names a template through a foreign key,
@@ -620,6 +636,11 @@ class BackupRoundTripTest {
         val deload = database.programBackupDao().allProgramDeloads().single()
         assertEquals("the deloaded week survives", 20_305L, deload.weekStart)
         assertEquals("p1", deload.programId)
+
+        val day = database.programBackupDao().allProgramDeloadDays().single()
+        assertEquals("the day's workout survives", "t1", day.templateId)
+        assertEquals("and the weekday it was offered on", DayOfWeek.MONDAY, day.weekday)
+        assertEquals(2, day.position)
     }
 
     @Test

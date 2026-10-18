@@ -33,11 +33,11 @@ import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppRow
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.IconTile
 import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.longLabel
-import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.TileAccent
 
 /**
@@ -233,7 +233,7 @@ private fun TodayPlanCard(
             Column(modifier = Modifier.padding(start = 12.dp)) {
                 Text(text = plan.name, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = plan.programName?.let { "$exercises · $it" } ?: exercises,
+                    text = planSubtitle(plan, exercises),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -273,6 +273,22 @@ private fun TodayPlanCard(
                 Text(stringResource(R.string.home_plan_start))
             }
         }
+    }
+}
+
+/**
+ * A card's supporting line: what it plans and which program it belongs to (N127, N147).
+ *
+ * A deload day says so, because it is not the slot's full session even though it starts like one. The
+ * rule is here rather than in the card because the card is at the length this project allows.
+ */
+@Composable
+private fun planSubtitle(plan: TodayPlan, exercises: String): String {
+    val summary = plan.programName?.let { "$exercises · $it" } ?: exercises
+    return if (plan.isDeload) {
+        stringResource(R.string.home_plan_deload_summary, summary)
+    } else {
+        summary
     }
 }
 

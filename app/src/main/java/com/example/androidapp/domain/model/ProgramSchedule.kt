@@ -61,9 +61,14 @@ data class RecordedDeload(val programId: String, val weekStart: LocalDate)
  */
 data class RecordedSubstitution(val slotId: String, val weekStart: LocalDate, val templateId: String)
 
-/** A missed occurrence the app asks about, carrying everything the prompt shows. */
+/**
+ * A missed occurrence the app asks about, carrying everything the prompt shows.
+ *
+ * [slotId] is null for one of a deload week's own days (ROADMAP N147): those belong to the week rather
+ * than to a slot, so nothing can be recorded as a skip against them — only a start settles them.
+ */
 data class PendingOccurrence(
-    val slotId: String,
+    val slotId: String?,
     val templateId: String,
     val templateName: String,
     val weekday: DayOfWeek,

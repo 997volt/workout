@@ -2,6 +2,7 @@ package com.example.androidapp.ui.programs
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -9,17 +10,23 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
@@ -58,21 +65,14 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import com.example.androidapp.ui.components.exerciseWeightUnit
-import com.example.androidapp.ui.components.summary
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.exerciseWeightUnit
 import com.example.androidapp.ui.components.shortLabel
-import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.summary
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import java.time.DayOfWeek
 
@@ -96,6 +96,8 @@ fun ProgramEditorRoute(
     onOpenTemplate: (String) -> Unit,
     /** Opens this program's balance view (ROADMAP N119), which the bar's ⋮ carries. */
     onOpenBalance: () -> Unit,
+    /** Opens the deload creator for this program (ROADMAP N147), beside balance in the bar's ⋮. */
+    onOpenDeload: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProgramEditorViewModel = hiltViewModel(),
 ) {
@@ -122,6 +124,7 @@ fun ProgramEditorRoute(
         onRemoveSlot = viewModel::onRemoveSlot,
         onOpenTemplate = onOpenTemplate,
         onOpenBalance = onOpenBalance,
+        onOpenDeload = onOpenDeload,
         onPreviewSlot = viewModel::onPreviewSlot,
         onClosePreview = viewModel::onClosePreview,
         onDeleteProgram = viewModel::onDeleteProgram,
@@ -146,6 +149,7 @@ fun ProgramEditorScreen(
     onRemoveSlot: (String) -> Unit,
     onOpenTemplate: (String) -> Unit,
     onOpenBalance: () -> Unit,
+    onOpenDeload: () -> Unit,
     onPreviewSlot: (String, String) -> Unit,
     onClosePreview: () -> Unit,
     onDeleteProgram: () -> Unit,
@@ -173,6 +177,7 @@ fun ProgramEditorScreen(
                 name = state.program?.name,
                 onBack = onBack,
                 onOpenBalance = onOpenBalance,
+                onOpenDeload = onOpenDeload,
                 onDelete = { confirmingDelete = true },
                 onExport = onExportProgram,
             )
@@ -281,6 +286,7 @@ private fun ProgramEditorTopBar(
     name: String?,
     onBack: () -> Unit,
     onOpenBalance: () -> Unit,
+    onOpenDeload: () -> Unit,
     onDelete: () -> Unit,
     onExport: () -> Unit,
 ) {
@@ -310,40 +316,73 @@ private fun ProgramEditorTopBar(
                         contentDescription = stringResource(R.string.program_menu, name.orEmpty()),
                     )
                 }
-                DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.program_balance)) },
-                        onClick = {
-                            open = false
-                            onOpenBalance()
-                        },
-                        modifier = Modifier.testTag(TestTags.Programs.BALANCE),
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.program_export)) },
-                        onClick = {
-                            open = false
-                            onExport()
-                        },
-                        modifier = Modifier.testTag(TestTags.Programs.EXPORT),
-                    )
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = stringResource(R.string.program_delete),
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        },
-                        onClick = {
-                            open = false
-                            onDelete()
-                        },
-                        modifier = Modifier.testTag(TestTags.Programs.DELETE),
-                    )
-                }
+                ProgramEditorMenu(
+                    expanded = open,
+                    onDismiss = { open = false },
+                    onOpenBalance = onOpenBalance,
+                    onOpenDeload = onOpenDeload,
+                    onExport = onExport,
+                    onDelete = onDelete,
+                )
             }
         },
     )
+}
+
+/**
+ * The editor's one overflow menu: deload, balance, export, delete (ROADMAP N119, N147).
+ *
+ * Split out because the bar was at the length this project allows, and because the four entries are one
+ * kind of thing — the actions this editor's bar carries — with the destructive one last and coloured.
+ */
+@Composable
+private fun ProgramEditorMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onOpenBalance: () -> Unit,
+    onOpenDeload: () -> Unit,
+    onExport: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.program_deload)) },
+            onClick = {
+                onDismiss()
+                onOpenDeload()
+            },
+            modifier = Modifier.testTag(TestTags.Programs.DELOAD),
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.program_balance)) },
+            onClick = {
+                onDismiss()
+                onOpenBalance()
+            },
+            modifier = Modifier.testTag(TestTags.Programs.BALANCE),
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.program_export)) },
+            onClick = {
+                onDismiss()
+                onExport()
+            },
+            modifier = Modifier.testTag(TestTags.Programs.EXPORT),
+        )
+        DropdownMenuItem(
+            text = {
+                Text(
+                    text = stringResource(R.string.program_delete),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            },
+            onClick = {
+                onDismiss()
+                onDelete()
+            },
+            modifier = Modifier.testTag(TestTags.Programs.DELETE),
+        )
+    }
 }
 
 @Composable
@@ -920,6 +959,7 @@ private fun ProgramEditorScreenPreview() {
             onRemoveSlot = {},
             onOpenTemplate = {},
             onOpenBalance = {},
+            onOpenDeload = {},
             onPreviewSlot = { _, _ -> },
             onClosePreview = {},
             onDeleteProgram = {},

@@ -1,20 +1,15 @@
 package com.example.androidapp.ui.navigation
 
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.material3.Scaffold
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.WindowInsets
-import com.example.androidapp.ui.measurements.MeasurementsRoute
-import com.example.androidapp.ui.adherence.AdherenceRoute
-import com.example.androidapp.ui.settings.SettingsRoute
-import com.example.androidapp.ui.settings.WeightUnitViewModel
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,23 +17,28 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import com.example.androidapp.ui.adherence.AdherenceRoute
 import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.exercises.ExerciseDetailRoute
 import com.example.androidapp.ui.exercises.ExerciseLibraryRoute
 import com.example.androidapp.ui.history.WorkoutDetailRoute
 import com.example.androidapp.ui.history.WorkoutHistoryRoute
 import com.example.androidapp.ui.home.WorkoutsHomeRoute
+import com.example.androidapp.ui.measurements.MeasurementsRoute
 import com.example.androidapp.ui.programs.ProgramBalanceRoute
+import com.example.androidapp.ui.programs.ProgramDeloadRoute
 import com.example.androidapp.ui.programs.ProgramEditorRoute
 import com.example.androidapp.ui.programs.ProgramsRoute
-import com.example.androidapp.ui.templates.TemplateEditorRoute
+import com.example.androidapp.ui.settings.SettingsRoute
+import com.example.androidapp.ui.settings.WeightUnitViewModel
 import com.example.androidapp.ui.statistics.StatisticsRoute
+import com.example.androidapp.ui.templates.TemplateEditorRoute
 import com.example.androidapp.ui.templates.TemplatesRoute
 import com.example.androidapp.ui.workout.ActiveWorkoutRoute
 import com.example.androidapp.ui.workout.ExercisePickerRoute
-import androidx.navigation.toRoute
-
 
 /**
  * The app's single navigation graph (ROADMAP F2, P1.2).
@@ -163,7 +163,6 @@ private fun NavGraphBuilder.homeDestinations(navController: NavHostController) {
             onOpenTrends = { exerciseId -> navController.navigate(Statistics(exerciseId)) },
         )
     }
-
 }
 
 /** The in-progress workout and the picker it opens. */
@@ -231,12 +230,18 @@ private fun NavGraphBuilder.programDestinations(navController: NavHostController
         ProgramBalanceRoute(onBack = { navController.popBackStack() })
     }
 
+    composable<ProgramDeload> {
+        ProgramDeloadRoute(onBack = { navController.popBackStack() })
+    }
+
     composable<ProgramEditor> { entry ->
         val programId = entry.toRoute<ProgramEditor>().programId
         ProgramEditorRoute(
             onBack = { navController.popBackStack() },
             // The program that is open, read as a week (N119).
             onOpenBalance = { navController.navigate(ProgramBalance(programId)) },
+            // The same program's deload week, built from its own workouts (N147).
+            onOpenDeload = { navController.navigate(ProgramDeload(programId)) },
             // The way across a program's own schedule: a slot names a workout, and this reaches the workout
             // itself (N120). Templates is where that editor otherwise lives.
             onOpenTemplate = { templateId -> navController.navigate(TemplateEditor(templateId)) },
@@ -245,7 +250,8 @@ private fun NavGraphBuilder.programDestinations(navController: NavHostController
 }
 
 /** Finished workouts and one workout's detail. */
-private fun NavGraphBuilder.historyDestinations(navController: NavHostController) {    composable<WorkoutHistory> {
+private fun NavGraphBuilder.historyDestinations(navController: NavHostController) {
+    composable<WorkoutHistory> {
         WorkoutHistoryRoute(
             onOpenWorkout = { sessionId -> navController.navigate(WorkoutDetail(sessionId)) },
             // The entry point the home-screen repeat button gave up (ROADMAP N48): the workout the

@@ -4,28 +4,28 @@ import androidx.room.withTransaction
 import com.example.androidapp.data.local.ExerciseDao
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.ProgramDao
+import com.example.androidapp.data.local.ProgramDeloadDao
+import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramRunDao
 import com.example.androidapp.data.local.ProgramSkipDao
 import com.example.androidapp.data.local.ProgramSkipEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
 import com.example.androidapp.data.local.ProgramSubstitutionDao
 import com.example.androidapp.data.local.ProgramSubstitutionEntity
-import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.local.toDomain
+import com.example.androidapp.data.local.toProgramSession
+import com.example.androidapp.data.local.toRunSession
 import com.example.androidapp.data.transfer.ProgramDocument
 import com.example.androidapp.data.transfer.ProgramDocumentCodec
 import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
 import com.example.androidapp.data.transfer.withValidLibraryShape
-import com.example.androidapp.data.local.toDomain
-import com.example.androidapp.data.local.toProgramSession
-import com.example.androidapp.data.local.toRunSession
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.InvalidInputException
 import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
-import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgramRun
@@ -34,15 +34,11 @@ import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.RecordedSkip
 import com.example.androidapp.domain.model.RecordedSubstitution
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.domain.model.deloadPendingOccurrences
 import com.example.androidapp.domain.model.programRun
+import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.ZoneId
-import java.util.UUID
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -50,6 +46,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Room-backed [ProgramRepository] (ROADMAP P3.3).
@@ -72,6 +74,8 @@ class RoomProgramRepository @Inject constructor(
     private val skipDao: ProgramSkipDao = database.programSkipDao()
 
     private val substitutionDao: ProgramSubstitutionDao = database.programSubstitutionDao()
+
+    private val deloadDao: ProgramDeloadDao = database.programDeloadDao()
 
     override fun observePrograms(): Flow<List<WorkoutProgram>> =
         dao.observePrograms().map { rows -> rows.map { it.toDomain() } }
@@ -303,19 +307,29 @@ class RoomProgramRepository @Inject constructor(
                 )
             }
 
+        // A week the creator built prescribes its own days, so the question is asked about those
+        // rather than the slots they replaced (ROADMAP N147). A marked week with no plan is P3.10's
+        // own shape and keeps asking about the slots.
+        val deloadDays = deloadDao.findDeloadDaysForWeek(weekStart.toEpochDay()).groupBy { it.programId }
+
         // The union of every active program's misses (P3.12). Each program is resolved on its
         // own slots — a session settles an occurrence by its template, so the same session list
         // answers for all of them — and the misses are merged earliest first, with the programs'
         // own order breaking a tie on the same day.
         val pending = mutableListOf<PendingOccurrence>()
         active.forEach { program ->
-            pending += ProgramSchedule.pendingOccurrences(
-                slots = dao.findSlotDetails(program.id).map { it.toDomain() },
-                sessions = sessions,
-                skips = skips,
-                today = today,
-                substitutions = substitutions,
-            )
+            val plannedDays = deloadDays[program.id].orEmpty().map { it.toDomain() }
+            pending += if (plannedDays.isNotEmpty()) {
+                deloadPendingOccurrences(days = plannedDays, sessions = sessions, today = today)
+            } else {
+                ProgramSchedule.pendingOccurrences(
+                    slots = dao.findSlotDetails(program.id).map { it.toDomain() },
+                    sessions = sessions,
+                    skips = skips,
+                    today = today,
+                    substitutions = substitutions,
+                )
+            }
         }
         pending.sortedBy { it.date }
     }

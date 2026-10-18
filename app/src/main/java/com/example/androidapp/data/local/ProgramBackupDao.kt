@@ -7,11 +7,12 @@ import androidx.room.Query
 import androidx.room.Update
 
 /**
- * Programs, their slots and their recorded skips, for backup and restore (ROADMAP P3.3).
+ * Programs, their slots, their recorded skips, their deload weeks and their plans, for backup and
+ * restore (ROADMAP P3.3, N147).
  *
- * A DAO of its own rather than three more tables on [BackupDao]: that interface is one
+ * A DAO of its own rather than many more tables on [BackupDao]: that interface is one
  * read, one insert and one update per table, so its size is the schema's and it had reached
- * the ceiling this project enforces. Splitting the newest three tables out keeps the gate
+ * the ceiling this project enforces. Splitting the program tables out keeps the gate
  * meaningful instead of raising it, and the shape here is exactly [BackupDao]'s — unfiltered
  * reads (soft-deleted rows are data an export must carry) and additive inserts.
  */
@@ -30,6 +31,9 @@ interface ProgramBackupDao {
     @Query("SELECT * FROM program_deloads")
     suspend fun allProgramDeloads(): List<ProgramDeloadEntity>
 
+    @Query("SELECT * FROM program_deload_days")
+    suspend fun allProgramDeloadDays(): List<ProgramDeloadDayEntity>
+
     @Query("SELECT * FROM program_substitutions")
     suspend fun allProgramSubstitutions(): List<ProgramSubstitutionEntity>
 
@@ -44,6 +48,9 @@ interface ProgramBackupDao {
 
     @Query("SELECT id FROM program_deloads WHERE deletedAt IS NOT NULL")
     suspend fun softDeletedProgramDeloadIds(): List<String>
+
+    @Query("SELECT id FROM program_deload_days WHERE deletedAt IS NOT NULL")
+    suspend fun softDeletedProgramDeloadDayIds(): List<String>
 
     @Query("SELECT id FROM program_substitutions WHERE deletedAt IS NOT NULL")
     suspend fun softDeletedProgramSubstitutionIds(): List<String>
@@ -61,6 +68,9 @@ interface ProgramBackupDao {
     suspend fun restoreProgramDeloads(rows: List<ProgramDeloadEntity>): Int
 
     @Update
+    suspend fun restoreProgramDeloadDays(rows: List<ProgramDeloadDayEntity>): Int
+
+    @Update
     suspend fun restoreProgramSubstitutions(rows: List<ProgramSubstitutionEntity>): Int
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -74,6 +84,9 @@ interface ProgramBackupDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertProgramDeloads(rows: List<ProgramDeloadEntity>): List<Long>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertProgramDeloadDays(rows: List<ProgramDeloadDayEntity>): List<Long>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertProgramSubstitutions(rows: List<ProgramSubstitutionEntity>): List<Long>

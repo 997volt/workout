@@ -1,5 +1,6 @@
 package com.example.androidapp.data.transfer
 
+import com.example.androidapp.data.local.ProgramDeloadDayEntity
 import com.example.androidapp.data.local.ProgramDeloadEntity
 import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramSkipEntity
@@ -10,8 +11,8 @@ import com.example.androidapp.data.local.ProgramSubstitutionEntity
  * Entity <-> backup DTO for programs (ROADMAP P3.3).
  *
  * Beside [BackupMappers] rather than inside it: that file is a hand-written field-per-field
- * map and had reached the file ceiling this project enforces, so the newest three tables
- * moved here rather than the gate being raised. The rule is unchanged — field for field, in
+ * map and had reached the file ceiling this project enforces, so the program tables moved
+ * here rather than the gate being raised. The rule is unchanged — field for field, in
  * both directions, so an export followed by an import is a no-op.
  */
 
@@ -88,6 +89,28 @@ internal fun ProgramDeloadDto.toEntity() = ProgramDeloadEntity(
     id = id,
     programId = programId,
     weekStart = weekStart,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt,
+)
+
+internal fun ProgramDeloadDayEntity.toDto() = ProgramDeloadDayDto(
+    id = id,
+    deloadId = deloadId,
+    templateId = templateId,
+    position = position,
+    weekday = weekday,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+    deletedAt = deletedAt,
+)
+
+internal fun ProgramDeloadDayDto.toEntity() = ProgramDeloadDayEntity(
+    id = id,
+    deloadId = deloadId,
+    templateId = templateId,
+    position = position,
+    weekday = weekday,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,

@@ -90,6 +90,14 @@ data class BackupFile(
      */
     val programDeloads: List<ProgramDeloadDto> = emptyList(),
     /**
+     * The days a marked deload week prescribed (ROADMAP N147).
+     *
+     * Defaulted like every added collection, and it must be here in the same change as the table: a
+     * restore that kept the week's exemption but lost the workouts it excused would be a week the app
+     * silently rewrites. The templates those days name travel in [templates] like any other workout.
+     */
+    val programDeloadDays: List<ProgramDeloadDayDto> = emptyList(),
+    /**
      * The workouts that stood in for a slot's own, one week at a time (ROADMAP P3.11).
      *
      * Authored choices the app cannot recompute: without them a restored week would be read as
@@ -517,6 +525,19 @@ data class ProgramDeloadDto(
     val programId: String,
     /** Monday of the deloaded week, as `LocalDate.toEpochDay()`. */
     val weekStart: Long,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null,
+)
+
+/** One day of a marked deload week (ROADMAP N147). */
+@Serializable
+data class ProgramDeloadDayDto(
+    val id: String,
+    val deloadId: String,
+    val templateId: String,
+    val position: Int,
+    val weekday: DayOfWeek? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

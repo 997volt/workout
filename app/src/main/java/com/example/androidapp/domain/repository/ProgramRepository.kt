@@ -6,10 +6,10 @@ import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
+import kotlinx.coroutines.flow.Flow
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
-import kotlinx.coroutines.flow.Flow
 
 /**
  * Programs, their slots and their missed days (ROADMAP P3.3).
@@ -147,8 +147,8 @@ interface ProgramRepository {
      * The program's **definition**: its slots, the templates they name, their planned work, and the
      * definition of every exercise those templates reference — a slot prescribes nothing of its own
      * (N73). History
-     * — skips, deload weeks, substitutions — stays behind, because it belongs to the device that
-     * trained it.
+     * — skips, deload weeks and the plans built for them, substitutions — stays behind, because it
+     * belongs to the device that trained it.
      */
     suspend fun exportProgramDocument(programId: String): DataResult<String>
 

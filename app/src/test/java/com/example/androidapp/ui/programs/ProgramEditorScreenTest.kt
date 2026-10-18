@@ -10,17 +10,17 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
-import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.TestTags
 import com.google.common.truth.Truth.assertThat
-import java.time.DayOfWeek
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.DayOfWeek
 
 /**
  * One program's editor (ROADMAP P3.3).
@@ -44,6 +44,7 @@ class ProgramEditorScreenTest {
         onRemoveSlot: (String) -> Unit = {},
         onOpenTemplate: (String) -> Unit = {},
         onOpenBalance: () -> Unit = {},
+        onOpenDeload: () -> Unit = {},
         onPreviewSlot: (String, String) -> Unit = { _, _ -> },
         onClosePreview: () -> Unit = {},
         onDeleteProgram: () -> Unit = {},
@@ -60,6 +61,7 @@ class ProgramEditorScreenTest {
                 onRemoveSlot = onRemoveSlot,
                 onOpenTemplate = onOpenTemplate,
                 onOpenBalance = onOpenBalance,
+                onOpenDeload = onOpenDeload,
                 onPreviewSlot = onPreviewSlot,
                 onClosePreview = onClosePreview,
                 onDeleteProgram = onDeleteProgram,
@@ -88,6 +90,20 @@ class ProgramEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Programs.BALANCE).performClick()
 
         assertThat(balanced).isTrue()
+    }
+
+    @Test
+    fun theBarsMenu_carriesTheDeloadCreator() {
+        // ROADMAP N147: the creator builds a week from this program's own workouts, so its way in is
+        // the program that owns them.
+        var opened = false
+        setScreen(onOpenDeload = { opened = true })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.DELOAD).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Programs.DELOAD).performClick()
+
+        assertThat(opened).isTrue()
     }
 
     @Test

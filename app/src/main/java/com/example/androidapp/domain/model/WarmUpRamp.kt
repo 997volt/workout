@@ -95,9 +95,3 @@ private const val FIVE_REPS = 5
 private const val THREE_REPS = 3
 private const val TWO_REPS = 2
 private const val ONE_REP = 1
-
-/** The nearest loadable weight, never below one step: a zero would be an empty bar with a claim. */
-private fun roundToStep(grams: Double, stepGrams: Long): Long {
-    val steps = Math.round(grams / stepGrams)
-    return (steps * stepGrams).coerceAtLeast(stepGrams)
-}

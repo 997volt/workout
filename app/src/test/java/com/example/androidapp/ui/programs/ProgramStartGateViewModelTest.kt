@@ -11,12 +11,6 @@ import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.google.common.truth.Truth.assertThat
-import java.io.IOException
-import java.time.DayOfWeek
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.util.TimeZone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +24,12 @@ import org.junit.After
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
+import java.time.DayOfWeek
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.TimeZone
 
 /**
  * The point-of-start rule (ROADMAP P3.3).
@@ -157,6 +157,32 @@ class ProgramStartGateViewModelTest {
     }
 
     @Test
+    fun continuingPastADeloadDay_recordsNoSkip_becauseItHasNoSlot() = runTest(dispatcher) {
+        // ROADMAP N147: a built deload week's own day is keyed to the week, not to a slot, so the
+        // prompt can ask about it but nothing can be recorded as a skip against it.
+        val repository = FakeProgramRepository().apply {
+            pending = listOf(
+                PendingOccurrence(
+                    slotId = null,
+                    templateId = "deload-template",
+                    templateName = "Push — deload",
+                    weekday = DayOfWeek.TUESDAY,
+                    date = monday.plusDays(1),
+                ),
+            )
+        }
+        val viewModel = viewModel(repository)
+        viewModel.requestStart(StartIntent(templateId = "bench", label = "Bench"))
+        advanceUntilIdle()
+
+        viewModel.onContinue()
+        advanceUntilIdle()
+
+        assertThat(repository.skipped.flatMap { it.first }).isEmpty()
+        assertThat(viewModel.started.value).isEqualTo(StartIntent(templateId = "bench", label = "Bench"))
+    }
+
+    @Test
     fun aFailedSkip_stillStarts_theWorkoutAndReports() = runTest(dispatcher) {
         val repository = FakeProgramRepository().apply {
             pending = twoMisses()
@@ -209,12 +235,11 @@ class ProgramStartGateViewModelTest {
 
         override fun observeProgramRun(programId: String): Flow<ProgramRun?> = flowOf(null)
 
-
-    override suspend fun setSubstitution(
-        slotId: String,
-        weekStart: java.time.LocalDate,
-        templateId: String?,
-    ): DataResult<Unit> = error("these tests do not substitute an occurrence")
+        override suspend fun setSubstitution(
+            slotId: String,
+            weekStart: java.time.LocalDate,
+            templateId: String?,
+        ): DataResult<Unit> = error("these tests do not substitute an occurrence")
 
         override suspend fun slotPreviousPerformance(
             slotId: String,
@@ -282,6 +307,5 @@ class ProgramStartGateViewModelTest {
 
         override suspend fun removeSlot(slotId: String): DataResult<Unit> =
             error("these tests do not remove a slot")
-
     }
 }
