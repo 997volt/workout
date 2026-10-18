@@ -63,16 +63,23 @@ for the reason a parked row names its revisit trigger: a queue that cannot say w
   exemption and lose the work it excused. N47's program document still carries neither the plan nor its templates,
   because a week-keyed plan is history rather than a program's definition.
 
-  **The draft's rule, stated so it is arithmetic rather than a coach.** Two working sets, or the source's own count
-  when it wrote fewer; no planned warm-ups and no drop/cluster rungs, because a rung's load derives from an anchor
-  that is itself halved. The source set's authored rep range, with *current* left unset so the plan asks for the
-  floor; no range in the source, no reps. Load is half the source's heaviest stated working weight — or the last
-  finished session's, where the plan states none — rounded to the exercise's own step (N77), and **no load at all**
-  where neither states one, because zero is a claim (N14). An assisted movement keeps its help and loses sets:
-  assistance is a magnitude, and halving it would make the deload harder (N15). Rest, technique cue and superset
-  pairing travel; the source's effort target and its rungs do not. **One control**, a back-off of 40/50/60%
-  defaulting to 50%, moves every added load together; anything finer is a template edit afterwards, and a second
-  editor inside the creator was rejected.
+  **The draft's rule, stated so it is arithmetic rather than a coach.** The set count follows the plan, because the
+  plan's count is the app's only evidence of how much work that lift normally does — a "compound" flag would be the
+  app inferring a training intent the lifter already wrote down. **The plan's stand-alone working sets are kept,
+  capped at three and floored at one**; a warm-up is preparation and a rung belongs to the set above it, so neither
+  is a set of its own, and only the working sets are written — the session can still log its own ramp. A 3×5 squat
+  keeps three lighter sets rather than losing one to a flat rule; a 5×5 keeps three rather than carrying the fifth,
+  because past three the set count is the volume the week exists to remove; a 2-set accessory stays two. Reps are
+  **one number, the highest target those sets name, floored at five**, so a 5/3/1 plan does 5s and a top-single plan
+  does 5s rather than one; where the plan names none, the last finished session's highest working reps, and where
+  neither does, none. Load is **the plan's heaviest stated working load — or the last finished session's heaviest
+  working set, where the plan states none — kept at 60% by default** (50% and 70% offered), rounded to the
+  exercise's own step (N77), and **no load at all** where neither states one, because zero is a claim (N14). One
+  load per exercise: a 3×5 at a working 80% therefore reads 3×5 at about 48%, roughly 60% of the volume load it
+  replaced. An assisted movement keeps its help, because assistance is a magnitude and reducing it would make the
+  deload harder (N15). The plan's rest, technique cue and superset pairing travel; its effort target and its rungs
+  do not. **One control**, the load kept at 60% by default (50% and 70% beside it), moves every added load
+  together; anything finer is a template edit afterwards, and a second editor inside the creator was rejected.
 
   **Why this does not make the app a coach.** The week is still the lifter's mark, and the draft is written only
   when they ask: nothing scales a marked week by itself, no read infers a deload, and no number moves after the plan
