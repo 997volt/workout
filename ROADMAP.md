@@ -17,8 +17,20 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The 2.8 follow-ons (N150, N151) and the deload builder's program-wide pool (N152) shipped, and each
-is in [CHANGELOG.md](CHANGELOG.md) under the id it closed.
+**The N150/N151/N152 review's eight findings (B168–B172, N153–N155).** A reading of the unreleased batch; none is a
+crash or data loss: one is a wrong-output reuse when two programs have a plan in the same week, and the rest are a
+boundary, a test gap, a duplicated tolerance, a small redundancy and three product limits.
+
+| # | Severity | What | Fix |
+| --- | --- | --- | --- |
+| B168 | **medium** | **The last-plan read mixes programs.** `findLastPlan` finds the mark for one program, then reads `findDeloadDaysForWeek`, which returns every program's days for that week. With two active programs that each built a deload in the same week, *Use last deload* can preselect the other program's exercises and day count; the test covers one program. | Filter the day rows by `programId` (or add a program-scoped DAO query) and test two programs with plans in one week. |
+| B169 | low | **`findLastPlan` is outside the errors-as-values boundary.** It returns a bare `DeloadWeek?` and can throw; the loader's `dataResultOf` catches it today, so nothing reaches the screen, but a future caller can miss the boundary. | Return `DataResult<DeloadWeek?>` or document the read as loader-internal. |
+| B170 | low | **The 2-of-4 pool path has no VM or screen test.** The pure builder proves a two-day deload can keep lifts from the third/fourth source days, but the `onToggleExercise(dayIndex, exerciseId)` wiring and the per-day state are untested for that case. | Add a VM test storing a third-day lift on the first deload day, and a screen test for both day cards. |
+| B171 | low | **The target tolerance is defined twice.** `TARGET_REACHED_TOLERANCE_GRAMS` and `GoalOutcomes`' private `TARGET_TOLERANCE_GRAMS` both alias the same constant; if one moves, the *Target reached* line and the goal history disagree. | One shared target-tolerance constant or helper. |
+| B172 | low | **A reached target prints 0 kg per week beside *Target reached*.** The rate is the goal's zero once the target is met, so the line is redundant rather than wrong. | Say *Target reached* in the target text, or hide the rate when reached. |
+| N153 | low | **A movement on two source days takes the first source's plan.** The pool keeps the first instance, so the deload's sets, reps and load come from whichever source day the program lists first; the lifter cannot choose the heavier day's plan. The evidence records the choice; the UI does not. | Decide deliberately: the heaviest source, a source choice, or surface the first-source rule in the pool row. |
+| N154 | low | **The reuse restores exercises and day count but not weekdays.** The last plan's day weekdays are not applied; the hint says exercises and day count, and the original N150 ask mentioned days/weekdays. | Apply the last plan's weekdays by day index, or leave it as the stated limit. |
+| N155 | low | **The last plan's choices are read from the current deload templates.** Editing a deload template changes what a later *Use last deload* believes the last choices were; the plan stores the templates, not the choices. | Store the chosen exercise ids with the plan, or document the living-template behaviour (N16). |
 
 This section holds only work a **reading or a use** turns up — a defect found by using the app, a question the log or
 the plan can answer and the screen cannot, a batch's own batch-reading — and it is never filled to keep itself
