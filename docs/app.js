@@ -1278,6 +1278,22 @@
     return row;
   }
 
+  /* The app's shipped library, so a name maps to a slug before any export is loaded (B176).
+   * Generated from SeedExercises.kt into seed-catalog.js and kept equal by SeedCatalogTest. */
+  function seededCatalog() {
+    var rows = typeof window !== 'undefined' ? window.SEEDED_EXERCISES : null;
+    if (!Array.isArray(rows) || rows.length === 0) { return null; }
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      exportedAt: 0,
+      seeded: true,
+      exercises: rows,
+      sessions: [],
+      sessionExercises: [],
+      sets: []
+    };
+  }
+
   function normalizeCatalog(file) {
     var catalog = {
       loaded: false,
@@ -2724,7 +2740,21 @@
     ui.elements = elements;
 
     elements.promptText.textContent = MODEL_PROMPT;
-    elements.catalogStatus.textContent = 'No app export loaded. The exercise library is optional; without it every name becomes a new exercise.';
+    var seeded = seededCatalog();
+    if (seeded) {
+      state.catalogFile = seeded;
+      var seededCount = seeded.exercises.filter(function (row) {
+        return isObject(row) && isLoggableRow(row) &&
+          (row.deletedAt === null || row.deletedAt === undefined);
+      }).length;
+      elements.catalogStatus.textContent =
+        'The app\'s seeded library is loaded (' + seededCount +
+        ' movements), so a name links to its permanent slug. Load your export to add your own ' +
+        'exercises, the dry-run comparison and the id check.';
+    } else {
+      elements.catalogStatus.textContent =
+        'No exercise library loaded: seed-catalog.js is missing, so every name becomes a new exercise.';
+    }
     elements.sourceStatus.textContent = 'Drop a file, choose one, or paste rows, then press "Load pasted rows". The example is the one from the specification.';
 
     elements.loadPaste.addEventListener('click', function () {
@@ -3135,6 +3165,8 @@
     if (!state.catalogFile || !Array.isArray(state.catalogFile.exercises)) { return; }
     state.catalogFile.exercises.forEach(function (exercise) {
       if (!isObject(exercise) || exercise.deletedAt !== null && exercise.deletedAt !== undefined) { return; }
+      // A category is a library row, never a loggable target (N95).
+      if (!isLoggableRow(exercise)) { return; }
       if (typeof exercise.name !== 'string' || exercise.name.trim() === '') { return; }
       var option = document.createElement('option');
       option.value = exercise.name;
@@ -3302,8 +3334,8 @@
       if (resolution.deletedOnly) {
         note += '; the matching library row is deleted';
       } else if (!state.model.catalog || !state.model.catalog.loaded) {
-        // Every name reads "new" without an export; say why, in the row it affects.
-        note += ' — no app export loaded, so nothing can be linked. Load one above.';
+        // Every name reads "new" only when no library loaded at all; say why, in the row it affects.
+        note += ' — no exercise library loaded, so nothing can be linked. Load an app export above.';
       }
     } else {
       note = 'Unmapped: choose a library exercise or create a new one.';

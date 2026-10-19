@@ -18,6 +18,13 @@ unreleased.
 
 ### Fixed
 
+- **The import helper knows the app's seeded library without an export** (N159). A name could only be linked
+  to a permanent slug once an app export was loaded; without one every name became a new exercise, so an
+  import of the app's own movements split their history from the seeded rows the app matches them to. The page
+  now ships `seed-catalog.js`, generated from `SeedExercises.kt` and kept equal by a JVM test, so *Barbell Bench
+  Press* resolves to `barbell-bench-press` before any export is loaded. An export still adds the lifter's own
+  exercises and the dry-run comparison, and a family head is still never linked.
+
 - **The import helper never links a family head as an exercise** (N159). A schema-5 export carries
   `RowKind.CATEGORY` heads beside the movements and is ordered by name, so five names exist twice —
   *Deadlift*, *Hip Thrust*, *Lat Pulldown*, *Lateral Raise*, *Overhead Press*. The mapping looked a name

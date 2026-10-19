@@ -78,6 +78,7 @@ docs/
   style.css             presentation
   .nojekyll             stop Jekyll rewriting JavaScript that contains {{ }}
   build-single-file.js  writes one self-contained page to dist/ (N164)
+  seed-catalog.js       the app's seeded library, generated and kept equal by a JVM test
   fixtures/             the synthetic backup the app's test decodes, and its generator
 IMPORT-HELPER.md        this file, at the root, never served
 ```
@@ -208,6 +209,17 @@ deleted name that blocks a match: a name that matches only a head is **unmatched
 the library does not have. An export written before that field carries no `rowKind` at all, and every row
 in one is a movement, so the older files keep linking.
 
+### The seeded library loads first
+
+An export used to be the only way the tool could know the library, so without one every name became a new
+exercise — and importing the app's own movements split their history from the seeded rows the app matches them
+to. The seed is app content rather than the lifter's data, so the page ships a **generated copy** of it:
+`seed-catalog.js` holds every category and movement with its id, name, stated taxonomy and parent, produced
+from `SeedExercises.kt` and covered by `SeedCatalogTest`. A seed change fails that test, which writes the
+expected file to `build/` so regenerating is a copy rather than hand-editing 126 rows. Loading an export still
+adds the lifter's own exercises and the dry-run comparison; it no longer decides whether a name can be linked
+at all.
+
 ### Roles
 
 A row's `type` normalises to the roles the app stores, matched case-insensitively:
@@ -335,9 +347,9 @@ assert it.
 One page, four panels:
 
 1. **Source** — a drop zone for any number of files, a paste box, an optional *load your app export*, a CSV
-   mode, and the prompt for the model with a copy button. Loading an export is optional but recommended: it
-   supplies the exercise library, the dry-run comparison and the id-collision check. Below it, the **loaded
-   lists**: one row each, with its row count, its own revision, a Remove, and a Combine line for a date two
+   mode, and the prompt for the model with a copy button. The seeded library is already loaded from
+   `seed-catalog.js`; an export adds the lifter's own exercises, the dry-run comparison and the id check.
+   Below it, the **loaded lists**: one row each, with its row count, its own revision, a Remove, and a Combine line for a date two
    lists share.
 2. **Sessions** — one collapsible row per session: date, exercise count, set count, work tonnage, warm-up
    count, a problem badge. Expanded, the header carries date, time, duration and the **UTC offset in

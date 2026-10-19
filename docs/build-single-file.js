@@ -17,10 +17,15 @@ var path = require('path');
 var root = __dirname;
 var html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 var css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+var seed = fs.readFileSync(path.join(root, 'seed-catalog.js'), 'utf8');
 var js = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 
 if (html.indexOf('<link rel="stylesheet" href="style.css">') === -1) {
   console.error('build failed: index.html no longer links style.css the way this script expects');
+  process.exit(1);
+}
+if (html.indexOf('<script src="seed-catalog.js"></script>') === -1) {
+  console.error('build failed: index.html no longer loads seed-catalog.js the way this script expects');
   process.exit(1);
 }
 if (html.indexOf('<script src="app.js"></script>') === -1) {
@@ -30,6 +35,7 @@ if (html.indexOf('<script src="app.js"></script>') === -1) {
 
 var out = html
   .replace('<link rel="stylesheet" href="style.css">', '<style>\n' + css + '\n</style>')
+  .replace('<script src="seed-catalog.js"></script>', '<script>\n' + seed + '\n</script>')
   .replace('<script src="app.js"></script>', '<script>\n' + js + '\n</script>');
 
 if (/<link[^>]+href="(?!data:)/.test(out) || /<script[^>]+src=/.test(out)) {

@@ -74,8 +74,9 @@
         <label for="exportInput">Load your app export (optional, recommended)</label>
         <input type="file" id="exportInput" accept=".json,application/json">
         <p class="hint">
-          It supplies the exercise library, the dry-run comparison and the id-collision check.
-          Export once from the app: Settings &rarr; Export.
+          The app's seeded library is already loaded, so a name links to its permanent slug. An
+          export adds your own exercises and the dry-run comparison against what is already
+          imported. Export once from the app: Settings &rarr; Export.
         </p>
         <p id="catalogStatus" class="hint"></p>
       </div>
@@ -161,6 +162,7 @@
   </footer>
 
   <datalist id="exerciseNames"></datalist>
+  <script src="seed-catalog.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
