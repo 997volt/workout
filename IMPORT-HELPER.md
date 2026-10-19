@@ -355,8 +355,12 @@ One page, four panels:
    count, a problem badge. Expanded, the header carries date, time, duration and the **UTC offset in
    minutes** — empty derives it from the browser, a number is the lifter's own — and each exercise block is a
    table of sets with editable reps, weight and unit, RPE and role. The exercise name is a text input backed
-   by a `<datalist>` built from the library, so matching needs no widget library. Inputs are created once and
+   by a `<datalist>` of the library's names, **sorted alphabetically**, so matching needs no widget library
+   and typing filters. Inputs are created once and
    only the problem badges re-render, which is what keeps focus in the cell being typed.
+   The **exercise mapping** above them is the same idea: its *Linked to* cell is a searchable field over the
+   sorted library rather than a select, *Create new exercise* keeps the sheet's own name, and a typed name the
+   library does not have is refused and the previous choice restored, so a typo cannot become a duplicate row.
 3. **Problems** — counts and a list; selecting one scrolls to and focuses its row. A *show only problems*
    filter.
 4. **Export** — *will add N sessions, M sets; K sessions already exist and will be skipped; J new

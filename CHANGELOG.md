@@ -18,6 +18,12 @@ unreleased.
 
 ### Fixed
 
+- **The exercise chooser is alphabetical and searchable** (N159). The mapping's *Linked to* was a select of
+  every library row in seed order, so finding *Barbell Bench Press* meant scrolling past a hundred families and
+  there was no way to type. It is a searchable field over the sorted library now: typing filters, *Create new
+  exercise* keeps the sheet's own name, a name the library does not have is refused rather than invented, and
+  the source-name suggestions are sorted the same way. The chooser still never offers a family head.
+
 - **The import helper knows the app's seeded library without an export** (N159). A name could only be linked
   to a permanent slug once an app export was loaded; without one every name became a new exercise, so an
   import of the app's own movements split their history from the seeded rows the app matches them to. The page

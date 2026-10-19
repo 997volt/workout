@@ -244,6 +244,13 @@
     return isObject(exercise) && exercise.rowKind !== 'CATEGORY';
   }
 
+  var CREATE_LABEL = 'Create new exercise';
+
+  /* Alphabetical for the person choosing: case- and accent-insensitive, so "É" sorts by its letter. */
+  function compareExerciseNames(a, b) {
+    return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
+  }
+
   function normalizeName(name) {
     var text = name === null || name === undefined ? '' : String(name);
     if (typeof text.normalize === 'function') {
@@ -2735,6 +2742,7 @@
       copyExport: byId('copyExport'),
       exportText: byId('exportText'),
       exerciseNames: byId('exerciseNames'),
+      targetChoices: byId('targetChoices'),
       sourceStatus: byId('sourceStatus')
     };
     ui.elements = elements;
@@ -3158,19 +3166,50 @@
     });
   }
 
-  function renderDatalist() {
-    var list = ui.elements.exerciseNames;
-    list.textContent = '';
-    var state = ui.state;
-    if (!state.catalogFile || !Array.isArray(state.catalogFile.exercises)) { return; }
-    state.catalogFile.exercises.forEach(function (exercise) {
+  /* The library's loggable names, deduped and sorted, for every chooser on the page. */
+  function libraryNames(catalogFile) {
+    var names = [];
+    var seen = {};
+    if (!catalogFile || !Array.isArray(catalogFile.exercises)) { return names; }
+    catalogFile.exercises.forEach(function (exercise) {
       if (!isObject(exercise) || exercise.deletedAt !== null && exercise.deletedAt !== undefined) { return; }
       // A category is a library row, never a loggable target (N95).
       if (!isLoggableRow(exercise)) { return; }
       if (typeof exercise.name !== 'string' || exercise.name.trim() === '') { return; }
+      var key = normalizeName(exercise.name);
+      if (has(seen, key)) { return; }
+      seen[key] = true;
+      names.push(exercise.name.trim());
+    });
+    names.sort(compareExerciseNames);
+    return names;
+  }
+
+  function renderDatalist() {
+    var state = ui.state;
+    var names = libraryNames(state.catalogFile);
+
+    // The source-name input suggests the library's own spellings.
+    var list = ui.elements.exerciseNames;
+    list.textContent = '';
+    names.forEach(function (name) {
       var option = document.createElement('option');
-      option.value = exercise.name;
+      option.value = name;
       list.appendChild(option);
+    });
+
+    // The mapping's target field is a searchable chooser: typing filters this list,
+    // and "Create new exercise" is the explicit way to keep the source name.
+    var choices = ui.elements.targetChoices;
+    if (!choices) { return; }
+    choices.textContent = '';
+    var create = document.createElement('option');
+    create.value = CREATE_LABEL;
+    choices.appendChild(create);
+    names.forEach(function (name) {
+      var option = document.createElement('option');
+      option.value = name;
+      choices.appendChild(option);
     });
   }
 
@@ -3221,10 +3260,15 @@
         entry.sets + ' set' + (entry.sets === 1 ? '' : 's')));
 
       var targetCell = document.createElement('td');
-      var targetSelect = document.createElement('select');
-      targetSelect.setAttribute('aria-label', 'Exercise for ' + entry.displayName);
-      fillTargetSelect(targetSelect, entry);
-      targetCell.appendChild(targetSelect);
+      var targetInput = document.createElement('input');
+      targetInput.type = 'text';
+      targetInput.className = 'mapping-target';
+      targetInput.setAttribute('list', 'targetChoices');
+      targetInput.setAttribute('autocomplete', 'off');
+      targetInput.setAttribute('spellcheck', 'false');
+      targetInput.setAttribute('aria-label', 'Search the library for ' + entry.displayName);
+      fillTargetInput(targetInput, entry);
+      targetCell.appendChild(targetInput);
       row.appendChild(targetCell);
 
       var unitCell = document.createElement('td');
@@ -3245,8 +3289,25 @@
       var note = h('td', 'mapping-note', resolutionNoteForName(entry.normalized, entry.displayName));
       row.appendChild(note);
 
-      targetSelect.addEventListener('change', function () {
-        state.mapping.targets[entry.normalized] = targetSelect.value;
+      targetInput.addEventListener('change', function () {
+        var text = targetInput.value.trim();
+        var catalog = state.model ? state.model.catalog : null;
+        var next;
+        if (text === '') {
+          next = '';
+        } else if (normalizeName(text) === normalizeName(CREATE_LABEL)) {
+          next = 'create';
+        } else if (catalog && has(catalog.byName, normalizeName(text))) {
+          next = catalog.byName[normalizeName(text)].id;
+        } else {
+          // A typed name the library does not have is not silently turned into one:
+          // put the previous choice back and say what the two ways out are.
+          targetInput.value = fillTargetInput(targetInput, entry);
+          announce('"' + text + '" is not in the library. Pick one from the list, or "' +
+            CREATE_LABEL + '".');
+          return;
+        }
+        state.mapping.targets[entry.normalized] = next;
         saveMapping();
         setText(note, resolutionNoteForName(entry.normalized, entry.displayName));
         refresh();
@@ -3258,7 +3319,7 @@
 
       ui.mappingRows[entry.normalized] = {
         displayName: entry.displayName,
-        targetSelect: targetSelect,
+        targetInput: targetInput,
         unitSelect: unitSelect,
         note: note
       };
@@ -3266,54 +3327,25 @@
     });
   }
 
-  function fillTargetSelect(select, entry) {
+  /* Shows the current choice as a library name, and returns what it displayed. */
+  function fillTargetInput(input, entry) {
     var state = ui.state;
-    var catalog = state.catalogFile;
-    select.textContent = '';
-
-    if (catalog) {
-      var choose = document.createElement('option');
-      choose.value = '';
-      choose.textContent = '— Choose an exercise —';
-      select.appendChild(choose);
+    var catalog = state.model ? state.model.catalog : null;
+    var target = has(state.mapping.targets, entry.normalized)
+      ? state.mapping.targets[entry.normalized]
+      : null;
+    var desired = '';
+    if (target === 'create') {
+      desired = CREATE_LABEL;
+    } else if (target && catalog && has(catalog.byId, target)) {
+      desired = String(catalog.byId[target].name);
+    } else if (catalog && has(catalog.byName, entry.normalized)) {
+      desired = String(catalog.byName[entry.normalized].name);
+    } else if (catalog && has(catalog.deletedByName, entry.normalized)) {
+      desired = CREATE_LABEL;
     }
-
-    var create = document.createElement('option');
-    create.value = 'create';
-    create.textContent = 'Create new exercise';
-    select.appendChild(create);
-
-    if (catalog && Array.isArray(catalog.exercises)) {
-      var group = document.createElement('optgroup');
-      group.label = 'Library';
-      catalog.exercises.forEach(function (exercise) {
-        if (!isObject(exercise) || typeof exercise.id !== 'string') { return; }
-        if (!isLoggableRow(exercise)) { return; }
-        if (exercise.deletedAt !== null && exercise.deletedAt !== undefined) { return; }
-        var option = document.createElement('option');
-        option.value = exercise.id;
-        option.textContent = String(exercise.name);
-        group.appendChild(option);
-      });
-      select.appendChild(group);
-    }
-
-    var desired;
-    if (!catalog) {
-      desired = 'create';
-    } else if (has(state.mapping.targets, entry.normalized)) {
-      desired = state.mapping.targets[entry.normalized];
-    } else if (catalog && has(state.model.catalog.byName, entry.normalized)) {
-      desired = state.model.catalog.byName[entry.normalized].id;
-    } else if (catalog && has(state.model.catalog.deletedByName, entry.normalized)) {
-      desired = 'create';
-    } else if (!catalog) {
-      desired = 'create';
-    } else {
-      desired = '';
-    }
-    select.value = desired;
-    if (select.value !== desired) { select.value = ''; }
+    input.value = desired;
+    return desired;
   }
 
   function resolutionNoteForName(normalized, displayName) {

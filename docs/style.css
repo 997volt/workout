@@ -933,3 +933,9 @@ tbody tr:last-child td {
 .combine-line button {
   margin-right: 0.5rem;
 }
+
+/* The mapping's searchable target field (N159) */
+.mapping-target {
+  width: 100%;
+  min-width: 12rem;
+}

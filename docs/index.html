@@ -90,9 +90,11 @@
 
       <h3 id="mapping-heading">Exercise mapping</h3>
       <p class="hint">
-        The unit is a property of the exercise name. The mapping, and only the mapping, is kept in
-        this browser's local storage; a button below forgets it. A name matching only a deleted
-        library row creates a new exercise rather than bringing the deleted one back.
+        Type in <em>Linked to</em> to search the library by name; the list is alphabetical, and
+        <em>Create new exercise</em> keeps the sheet's own name. The unit is a property of the
+        exercise name. The mapping, and only the mapping, is kept in this browser's local storage;
+        a button below forgets it. A name matching only a deleted library row creates a new exercise
+        rather than bringing the deleted one back.
       </p>
       <div class="table-scroll">
         <table class="mapping" aria-labelledby="mapping-heading">
@@ -162,6 +164,7 @@
   </footer>
 
   <datalist id="exerciseNames"></datalist>
+  <datalist id="targetChoices"></datalist>
   <script src="seed-catalog.js"></script>
   <script src="app.js"></script>
 </body>
