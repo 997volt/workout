@@ -2527,3 +2527,44 @@ keep out.
 
 **Covered by** the tool's two new assertions (the estimate's corners and the fixture parity) and the app's
 `ProgressSeriesFixtureTest`.
+
+## N166
+
+Waistline's backup is a JSON of its IndexedDB stores; a day's body numbers sit in `diary[].stats`, keyed by
+the names its screen shows ("weight", "body fat", "muscle"), with the unit in the file's own `settings`
+([db-handler.js](https://github.com/davidhealey/waistline/blob/master/www/assets/js/db-handler.js),
+[statistics.js](https://github.com/davidhealey/waistline/blob/master/www/activities/statistics/js/statistics.js)).
+The app's `MeasurementDto` already expresses exactly that — a DAILY record with a nullable weight in grams and
+body fat and muscle in tenths of a percent — and `RoomBackupRepository` restores measurements from a backup.
+So the work was a conversion, not a feature on either side.
+
+**Why not a separate tool.** The helper already parses files, shows a preview, refuses what it cannot write,
+manufactures deterministic ids and emits a backup. A second page would duplicate all five and give the user
+another place to learn. One source, one output, one dry run.
+
+**Why DAILY only.** The app can store tape sites, but its seven are fixed and Waistline's names are free —
+mapping them would be a second taxonomy for a record Waistline still owns. Weight, body fat and muscle are
+what a lifter actually moves day to day, and they are the fields that answer the request.
+
+**Why local noon.** A day is a calendar date in Waistline; the app stores an instant and displays it in the
+device's zone. Noon is twelve hours from either boundary, so importing on a phone in another zone cannot move
+a weigh-in to the day before. Midnight would.
+
+**Why the unit is read from the file, with an override.** Waistline stores the number as entered and names the
+unit in `settings`; guessing would be a silent 2.2× error. The panel shows what it detected and lets the lifter
+correct it, and the preview re-converts immediately, so a wrong guess is visible before export.
+
+**Why an unknown stat does not block.** Waistline always holds tape sites and often custom stats, so refusing
+the file unless every key mapped would refuse every file. The panel lists exactly what is left behind and the
+dry run counts only the rows that will be written — not silence, and not a wall.
+
+**Why the app needed no change.** The format has had `measurements` since N113 and the importer restores it;
+`WaistlineImportFixtureTest` decodes the helper's output with the app's codec and pins the numbers, which is
+the same gate the file must pass in the field.
+
+**Rejected:** Waistline's CSV export (its header is localized, so "Weight (kg)" would have to be understood in
+every language), tape-site transfer, a Waistline importer inside the app (the same parse and preview, in Kotlin,
+with no dry run), and storing the export to make the body panel survive a reload — it dies with the tab like
+everything else here.
+
+**Covered by** the tool's Waistline assertion and the app's `WaistlineImportFixtureTest`.

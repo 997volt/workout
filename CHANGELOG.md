@@ -18,6 +18,14 @@ unreleased.
 
 ### Added
 
+- **Waistline body data can be imported** (N166). Drop a Waistline backup (`waistline_backup_*.json`) into
+  the page and it becomes daily measurements — weight, body fat and muscle — in the same backup file, with
+  or without history. The unit is read from the file (kg or lb) and can be corrected, a day becomes local
+  noon so a timezone cannot move it, and the id is the day and kind, so re-importing adds nothing and
+  restores a row the app hid. Tape sites and custom stats have no place in a daily row: the panel lists
+  exactly what it left behind rather than dropping it silently. The app needed no change — its importer
+  already restores measurements — and a fixture proves its codec accepts the output.
+
 - **The import helper draws one lift's progress** (N165). Loading an export now shows a fifth panel: pick a
   movement and see the heaviest working set as dots and Epley's estimate from it as a line, in kilograms,
   over all sessions or the last year or 90 days. Movements only — a family head would need the app's roll-up

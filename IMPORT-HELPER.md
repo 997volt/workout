@@ -407,6 +407,26 @@ rounds, one past the ceiling, and a single — and writes the whole input and ex
 `fixtures/progress-series.js`. The tool's test page runs its series over the same rows and asserts the same
 points.
 
+## Body data (Waistline)
+
+Dropping a Waistline backup (`waistline_backup_*.json`) beside the rows adds **DAILY** measurements to the
+same output file (N166). Waistline keeps a day's numbers in `diary[].stats`; this reads `weight`, `body fat`
+and `muscle`, and writes weight in grams and the percentages in tenths of a percent.
+
+- **The unit is the file's.** Waistline stores each number in whichever unit the lifter chose and its
+  `settings` names it; the panel shows the detected unit and lets it be corrected.
+- **A day becomes local noon**, so a timezone change cannot move a weigh-in to the day before.
+- **The id is the day and the kind** — the app's identity for a measurement — so a second import of the
+  same file adds nothing and restores a row the app hid.
+- **Tape sites and custom stats are not written.** The app's daily record holds weight, body fat and
+  muscle; the panel names everything else it left behind, so nothing disappears silently.
+- Nothing is stored, and the output is the same backup the tool always writes — with history, or with
+  body data alone.
+
+The app needed no change for this: `measurements` is already part of its backup format and its importer
+restores it. `WaistlineImportFixtureTest` decodes the tool's output with the app's own codec and pins the
+numbers.
+
 ## Workflows
 
 **First import.** Export from the app once — it carries the whole library, even with no history — load it,

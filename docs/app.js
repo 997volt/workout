@@ -1049,6 +1049,18 @@
       };
     }
 
+    if (Array.isArray(doc.diary)) {
+      return {
+        kind: 'waistline',
+        format: 'json',
+        rows: [],
+        source: documentSource(doc, options),
+        warnings: warnings,
+        problems: problems,
+        waistline: parseWaistlineDoc(doc)
+      };
+    }
+
     Object.keys(doc).forEach(function (key) {
       if (DOC_FIELDS.indexOf(key) === -1) {
         warnings.push({
@@ -2198,7 +2210,8 @@
     return { byName: byName, order: order };
   }
 
-  function computeExportStats(model) {
+  function computeExportStats(model, measurements) {
+    measurements = Array.isArray(measurements) ? measurements : [];
     var catalog = model.catalog || normalizeCatalog(null);
     var plan = resolutionPlan(model);
     var exerciseIds = [];
@@ -2272,6 +2285,20 @@
       }
     });
 
+    var existingMeasurementIds = {};
+    if (catalog.file) {
+      (Array.isArray(catalog.file.measurements) ? catalog.file.measurements : [])
+        .forEach(function (measurement) {
+          if (measurement && typeof measurement.id === 'string') {
+            existingMeasurementIds[measurement.id] = true;
+          }
+        });
+    }
+    var skippedMeasurements = 0;
+    measurements.forEach(function (measurement) {
+      if (has(existingMeasurementIds, measurement.id)) { skippedMeasurements += 1; }
+    });
+
     return {
       sessions: sessionTotal,
       sets: setTotal,
@@ -2283,14 +2310,18 @@
       addedSessions: sessionTotal - skippedSessions,
       addedSets: setTotal - skippedSets,
       newExerciseNames: newNames,
-      unmatchedNames: unmatchedNames
+      unmatchedNames: unmatchedNames,
+      measurements: measurements.length,
+      addedMeasurements: measurements.length - skippedMeasurements,
+      skippedMeasurements: skippedMeasurements
     };
   }
 
   function buildExport(model, options) {
     options = options || {};
     var validation = revalidateModel(model);
-    var stats = computeExportStats(model);
+    var measurements = Array.isArray(options.measurements) ? options.measurements : [];
+    var stats = computeExportStats(model, measurements);
     if (validation.problems.length > 0) {
       return {
         ok: false,
@@ -2400,7 +2431,8 @@
       });
     });
 
-    /* Key order is fixed: schemaVersion, exportedAt, then the four collections. */
+    /* Key order is fixed: schemaVersion, exportedAt, then the collections. Measurements come last,
+     * and only when the body data exists, so a history-only export is byte-for-byte what it was. */
     var file = {
       schemaVersion: SCHEMA_VERSION,
       exportedAt: exportedAt,
@@ -2409,6 +2441,9 @@
       sessionExercises: sessionExercises,
       sets: sets
     };
+    if (measurements.length > 0) {
+      file.measurements = measurements;
+    }
 
     var structural = validateExportFile(file);
     var emptyWarnings = emptySessions.map(function (session) {
@@ -2473,12 +2508,42 @@
         add(problems, key, 'The ' + key + ' collection must be a list.');
       }
     });
+    if (has(file, 'measurements') && !Array.isArray(file.measurements)) {
+      add(problems, 'measurements', 'The measurements collection must be a list.');
+    }
 
     var globalIds = {};
     var exercises = Array.isArray(file.exercises) ? file.exercises : [];
     var sessions = Array.isArray(file.sessions) ? file.sessions : [];
     var sessionExercises = Array.isArray(file.sessionExercises) ? file.sessionExercises : [];
     var sets = Array.isArray(file.sets) ? file.sets : [];
+
+    if (Array.isArray(file.measurements)) {
+      file.measurements.forEach(function (measurement, index) {
+        var path = 'measurements[' + index + ']';
+        if (!isObject(measurement)) {
+          add(problems, path, 'A measurement must be an object.');
+          return;
+        }
+        checkId(measurement, path);
+        if (measurement.kind !== 'DAILY' && measurement.kind !== 'TAPE') {
+          add(problems, path + '.kind', 'kind must be DAILY or TAPE.');
+        }
+        if (typeof measurement.measuredAt !== 'number' || !isFinite(measurement.measuredAt)) {
+          add(problems, path + '.measuredAt', 'measuredAt must be epoch millis.');
+        }
+        ['weightGrams', 'bodyFatTenths', 'muscleTenths'].forEach(function (key) {
+          var value = measurement[key];
+          if (value !== null && value !== undefined &&
+              (typeof value !== 'number' || !isFinite(value))) {
+            add(problems, path + '.' + key, key + ' must be a number or null.');
+          }
+        });
+        if (typeof measurement.weightGrams === 'number' && measurement.weightGrams <= 0) {
+          add(problems, path + '.weightGrams', 'A weight must be positive.');
+        }
+      });
+    }
 
     var exerciseIds = {};
     exercises.forEach(function (exercise, index) {
@@ -2775,6 +2840,9 @@
       /* The progress panel's chosen movement, and the list the picker offers (N165). */
       progressExerciseId: null,
       progressMovements: [],
+      /* Waistline daily body data and the unit its numbers were entered in (N166). */
+      waistline: null,
+      waistlineUnit: 'kg',
       exportedAt: Date.now(),
       exportResult: null,
       lastCounts: ''
@@ -2815,6 +2883,11 @@
       progressSummary: byId('progressSummary'),
       progressChart: byId('progressChart'),
       progressList: byId('progressList'),
+      bodyPanel: byId('panel-body'),
+      bodySummary: byId('bodySummary'),
+      bodyPreview: byId('bodyPreview'),
+      waistlineUnit: byId('waistlineUnit'),
+      clearBody: byId('clearBody'),
       exportHistory: byId('exportHistory'),
       exportHistorySummary: byId('exportHistorySummary'),
       exerciseNames: byId('exerciseNames'),
@@ -2857,6 +2930,17 @@
         readFile(elements.exportInput.files[0], 'export');
       }
       elements.exportInput.value = '';
+    });
+    elements.waistlineUnit.addEventListener('change', function () {
+      state.waistlineUnit = elements.waistlineUnit.value === 'lb' ? 'lb' : 'kg';
+      renderBodyPanel();
+      refresh();
+    });
+    elements.clearBody.addEventListener('click', function () {
+      state.waistline = null;
+      renderBodyPanel();
+      refresh();
+      announce('Body data removed.');
     });
     elements.progressFilter.addEventListener('input', function () {
       renderProgressList(state.progressMovements || []);
@@ -3009,6 +3093,16 @@
     var state = ui.state;
     var parsed = parseInputText(text, { fileName: fileName || '' });
 
+    if (parsed.kind === 'waistline') {
+      setWaistline(parsed.waistline, fileName);
+      ui.elements.sourceStatus.textContent = 'That is a Waistline backup: ' +
+        parsed.waistline.days.length + ' day' +
+        (parsed.waistline.days.length === 1 ? '' : 's') +
+        ' of daily body data. It is not a row list, so it was kept as body data.';
+      announce('That is a Waistline backup. It was kept as body data, not rows.');
+      return;
+    }
+
     if (parsed.kind === 'backup') {
       applyCatalog(parsed.backup);
       ui.elements.catalogStatus.textContent = catalogStatusText(
@@ -3148,6 +3242,7 @@
 
   function renderAll() {
     renderSources();
+    renderBodyPanel();
     renderDatalist();
     renderSessions();
     renderMapping();
@@ -4392,6 +4487,138 @@
     return snapshot;
   }
 
+  /* ------------------------------------------------------------------ *
+   * Waistline body data (N166)
+   * ------------------------------------------------------------------ */
+
+  /* Waistline keeps a day's stats in `diary[].stats`, keyed by the names it shows ("weight",
+   * "body fat"), and the file's own `settings` says which unit the weights were entered in.
+   * Anything else (tape sites, custom stats) has no home in a DAILY row and is reported. */
+
+  function waistlineExportedUnit(doc) {
+    var settings = isObject(doc.settings) ? doc.settings : null;
+    if (!settings) { return 'kg'; }
+    var candidates = [settings.bodyStatsUnits, settings.units];
+    for (var index = 0; index < candidates.length; index += 1) {
+      var units = candidates[index];
+      if (!isObject(units)) { continue; }
+      var weight = units.weight;
+      if (typeof weight !== 'string') { continue; }
+      var name = normalizeName(weight);
+      if (name === 'lb' || name === 'lbs' || name === 'pound' || name === 'pounds') { return 'lb'; }
+      if (name === 'kg' || name === 'kgs' || name === 'kilogram' || name === 'kilograms') { return 'kg'; }
+    }
+    return 'kg';
+  }
+
+  /* A calendar day as local noon: noon is far enough from either midnight that a zone
+   * change cannot move the weigh-in onto another day (N166). */
+  function noonOfDate(dateText) {
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateText || '').trim());
+    if (!match) { return null; }
+    var year = Number(match[1]);
+    var month = Number(match[2]) - 1;
+    var day = Number(match[3]);
+    var date = new Date(year, month, day, 12, 0, 0, 0);
+    if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
+      return null;
+    }
+    return date.getTime();
+  }
+
+  function parseWaistlineDoc(doc) {
+    var result = { days: [], ignored: [], problems: [], unit: 'kg', skippedDays: 0 };
+    if (!isObject(doc) || !Array.isArray(doc.diary)) { return result; }
+    result.unit = waistlineExportedUnit(doc);
+    var ignored = {};
+    doc.diary.forEach(function (entry, index) {
+      if (!isObject(entry)) { return; }
+      var dateText = typeof entry.date === 'string' ? entry.date.trim() : '';
+      if (noonOfDate(dateText) === null) {
+        result.problems.push({
+          path: 'diary[' + index + '].date',
+          message: 'The date "' + dateText + '" is not a real YYYY-MM-DD day.'
+        });
+        return;
+      }
+      if (!isObject(entry.stats)) { return; }
+      var day = { date: dateText, weight: null, bodyFat: null, muscle: null };
+      Object.keys(entry.stats).forEach(function (key) {
+        var value = entry.stats[key];
+        if (value === null || value === undefined || value === '') { return; }
+        var name = normalizeName(key);
+        var field = name === 'weight' || name === 'body weight' || name === 'bodyweight' ? 'weight'
+          : name === 'body fat' || name === 'bodyfat' ? 'bodyFat'
+            : name === 'muscle' || name === 'muscle mass' ? 'muscle'
+              : null;
+        if (field === null) {
+          ignored[key] = true;
+          return;
+        }
+        if (typeof value !== 'number' || !isFinite(value)) {
+          result.problems.push({
+            path: 'diary[' + index + '].stats.' + key,
+            message: 'The value of "' + key + '" is not a number.'
+          });
+          return;
+        }
+        day[field] = value;
+      });
+      if (day.weight !== null || day.bodyFat !== null || day.muscle !== null) {
+        result.days.push(day);
+      } else if (Object.keys(entry.stats).length > 0) {
+        // A day Waistline recorded only in stats this collection cannot hold, e.g. a tape day.
+        result.skippedDays += 1;
+      }
+    });
+    result.days.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    result.ignored = Object.keys(ignored);
+    return result;
+  }
+
+  function waistlineRows(waistline, unit) {
+    var days = waistline && Array.isArray(waistline.days) ? waistline.days : [];
+    return days.map(function (day) {
+      return {
+        date: day.date,
+        weightGrams: day.weight === null ? null
+          : Math.round(day.weight * (unit === 'lb' ? 453.59237 : 1000)),
+        bodyFatTenths: day.bodyFat === null ? null : Math.round(day.bodyFat * 10),
+        muscleTenths: day.muscle === null ? null : Math.round(day.muscle * 10)
+      };
+    });
+  }
+
+  /* The id is the day and the kind, the app's own identity for a measurement (N113), so a
+   * second import of the same file adds nothing and restores a row the app hid. */
+  function makeMeasurementId(dateText, kind) {
+    return 'mes_' + fnv1a64Hex('waistline|' + dateText + '|' + kind);
+  }
+
+  function waistlineMeasurements(waistline, unit, exportedAt) {
+    var time = typeof exportedAt === 'number' && isFinite(exportedAt) ? exportedAt : Date.now();
+    return waistlineRows(waistline, unit).map(function (row) {
+      return {
+        id: makeMeasurementId(row.date, 'DAILY'),
+        measuredAt: noonOfDate(row.date),
+        kind: 'DAILY',
+        weightGrams: row.weightGrams,
+        bodyFatTenths: row.bodyFatTenths,
+        muscleTenths: row.muscleTenths,
+        neckMm: null,
+        chestMm: null,
+        waistMm: null,
+        hipsMm: null,
+        upperArmMm: null,
+        thighMm: null,
+        calfMm: null,
+        createdAt: time,
+        updatedAt: time,
+        deletedAt: null
+      };
+    });
+  }
+
   /* The lifts that have history, as a list beside the chart. A list rather than a dropdown: the
    * chart is the point, and a visible list makes changing lift one click instead of a search. */
   function renderProgressList(movements) {
@@ -4758,6 +4985,90 @@
     host.appendChild(legend);
   }
 
+  /* The body-data panel: what Waistline contributed, before it is written (N166). */
+  function setWaistline(waistline, fileName) {
+    var state = ui.state;
+    state.waistline = waistline;
+    state.waistlineUnit = waistline && waistline.unit === 'lb' ? 'lb' : 'kg';
+    state.waistlineFile = fileName || 'Waistline backup';
+    if (ui.elements.waistlineUnit) {
+      ui.elements.waistlineUnit.value = state.waistlineUnit;
+    }
+    renderBodyPanel();
+    refresh();
+  }
+
+  function formatTenths(tenths) {
+    return (tenths / 10).toFixed(1);
+  }
+
+  function renderBodyPanel() {
+    var state = ui.state;
+    var panel = ui.elements.bodyPanel;
+    if (!panel) { return; }
+    var waistline = state.waistline;
+    var rows = waistlineRows(waistline, state.waistlineUnit);
+    panel.hidden = rows.length === 0;
+    if (rows.length === 0) { return; }
+
+    var first = noonOfDate(rows[0].date);
+    var last = noonOfDate(rows[rows.length - 1].date);
+    var text = formatInt(rows.length) + ' day' + (rows.length === 1 ? '' : 's') +
+      ' from ' + formatChartDateLong(first) + ' to ' + formatChartDateLong(last) +
+      ' · weights in ' + state.waistlineUnit + '.';
+    if (waistline.ignored.length > 0) {
+      text += ' Waistline also holds ' + waistline.ignored.map(function (name) {
+        return '"' + name + '"';
+      }).join(', ') + '; the app stores only weight, body fat and muscle in a daily record, ' +
+      'so those are left behind.';
+    }
+    if (waistline.skippedDays > 0) {
+      text += ' ' + formatInt(waistline.skippedDays) + ' day' +
+        (waistline.skippedDays === 1 ? '' : 's') +
+        ' had only stats the app cannot store and were skipped.';
+    }
+    setText(ui.elements.bodySummary, text);
+
+    var host = ui.elements.bodyPreview;
+    host.textContent = '';
+
+    var table = document.createElement('table');
+    table.className = 'body-table';
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    ['Day', 'Weight', 'Body fat', 'Muscle'].forEach(function (label) {
+      var th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = label;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    rows.forEach(function (row) {
+      var tr = document.createElement('tr');
+      tr.appendChild(h('td', 'body-date', formatChartDateLong(noonOfDate(row.date))));
+      tr.appendChild(h('td', '', row.weightGrams === null
+        ? '—' : formatKg(row.weightGrams) + ' kg'));
+      tr.appendChild(h('td', '', row.bodyFatTenths === null
+        ? '—' : formatTenths(row.bodyFatTenths) + ' %'));
+      tr.appendChild(h('td', '', row.muscleTenths === null
+        ? '—' : formatTenths(row.muscleTenths) + ' %'));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    host.appendChild(table);
+
+    if (waistline.problems.length > 0) {
+      var list = document.createElement('ul');
+      list.className = 'body-problems';
+      waistline.problems.slice(0, 8).forEach(function (problem) {
+        list.appendChild(h('li', '', problem.message));
+      });
+      host.appendChild(list);
+    }
+  }
+
   function renderExport() {
     var state = ui.state;
     var refusal = ui.elements.exportRefusal;
@@ -4765,8 +5076,12 @@
     var copy = ui.elements.copyExport;
     var preview = ui.elements.exportText;
 
-    if (!state.model) {
-      setText(ui.elements.exportStats, 'Load rows to begin.');
+    var measurements = state.waistline
+      ? waistlineMeasurements(state.waistline, state.waistlineUnit, state.exportedAt)
+      : [];
+
+    if (!state.model && measurements.length === 0) {
+      setText(ui.elements.exportStats, 'Load rows or a Waistline backup to begin.');
       refusal.hidden = true;
       setText(refusal, '');
       download.disabled = true;
@@ -4776,13 +5091,31 @@
       return;
     }
 
-    var stats = computeExportStats(state.model);
+    // Body data alone still exports: an empty model is the same file with no sessions.
+    var model = state.model || buildModel([], {
+      seed: state.seed,
+      sheet: state.sheet,
+      source: state.source,
+      sources: [],
+      combineDates: state.combineDates,
+      dateOrder: state.dateOrder,
+      catalog: state.catalogFile,
+      nameUnits: state.mapping.units,
+      nameTargets: state.mapping.targets
+    });
+
+    var stats = computeExportStats(model, measurements);
     var statsText = 'Will add ' + stats.addedSessions + ' session' +
       (stats.addedSessions === 1 ? '' : 's') + ' and ' + stats.addedSets + ' set' +
       (stats.addedSets === 1 ? '' : 's') + '; ' + stats.skippedSessions + ' session' +
       (stats.skippedSessions === 1 ? '' : 's') +
       ' already exist and will be skipped; ' + stats.newExercises + ' new exercise' +
       (stats.newExercises === 1 ? '' : 's') + '.';
+    if (stats.measurements > 0) {
+      statsText += ' Body data: ' + stats.addedMeasurements + ' measurement' +
+        (stats.addedMeasurements === 1 ? '' : 's') + ' will be added; ' +
+        stats.skippedMeasurements + ' already exist and will be skipped.';
+    }
     setText(ui.elements.exportStats, statsText);
 
     var problems = state.validation.problems;
@@ -4800,7 +5133,10 @@
       return;
     }
 
-    var result = buildExport(state.model, { exportedAt: state.exportedAt });
+    var result = buildExport(model, {
+      exportedAt: state.exportedAt,
+      measurements: measurements
+    });
     state.exportResult = result;
     if (!result.ok) {
       refusal.hidden = false;
@@ -5183,6 +5519,10 @@
     estimatedOneRepMax: estimatedOneRepMax,
     liftTrendPoints: liftTrendPoints,
     exportSnapshot: exportSnapshot,
+    parseWaistlineDoc: parseWaistlineDoc,
+    waistlineRows: waistlineRows,
+    waistlineMeasurements: waistlineMeasurements,
+    noonOfDate: noonOfDate,
     roleLabel: roleLabel,
     parseDelimitedCells: parseDelimitedCells,
     parseCsvText: parseCsvText,

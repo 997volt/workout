@@ -1322,6 +1322,37 @@
     eq(snapshot.last, 2000);
   });
 
+  check('a Waistline backup becomes daily measurements (N166)', function () {
+    var doc = {
+      settings: { bodyStatsUnits: { weight: 'lb' } },
+      diary: [
+        { date: '2026-01-02', stats: { weight: 180.5, 'body fat': 18.2, waist: 90 } },
+        { date: '2026-01-01', stats: { weight: 182, muscle: 41.3 } },
+        { date: '2026-01-03', stats: { waist: 89 } }
+      ]
+    };
+    var parsed = H.parseWaistlineDoc(doc);
+    eq(parsed.unit, 'lb');
+    eq(parsed.days.length, 2);
+    eq(parsed.days[0].date, '2026-01-01');
+    eq(parsed.ignored.length, 1);
+    eq(parsed.ignored[0], 'waist');
+    eq(parsed.skippedDays, 1);
+
+    var measurements = H.waistlineMeasurements(parsed, parsed.unit, 1700000000000);
+    eq(measurements.length, 2);
+    eq(measurements[0].kind, 'DAILY');
+    eq(measurements[0].weightGrams, 82554);
+    eq(measurements[0].muscleTenths, 413);
+    eq(measurements[0].bodyFatTenths, null);
+    eq(measurements[0].measuredAt, H.noonOfDate('2026-01-01'));
+    eq(measurements[1].weightGrams, 81873);
+    eq(measurements[1].bodyFatTenths, 182);
+    eq(measurements[1].waistMm, null);
+    eq(measurements[0].id, H.waistlineMeasurements(parsed, parsed.unit, 1)[0].id);
+    ok(measurements[0].id.indexOf('mes_') === 0, 'the id should be namespaced');
+  });
+
   check("the tool's series equals the app's for the progress fixture (N165)", function () {
     var fixture = window.PROGRESS_FIXTURE;
     ok(fixture && Array.isArray(fixture.expected), 'the progress fixture did not load');

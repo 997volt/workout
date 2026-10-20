@@ -1060,6 +1060,16 @@ the rule; that one argues it.
   `toExerciseTrendPoints()` and the tool's series over the same rows. A family head is not offered, because
   aggregating one is the app's roll-up rule re-implemented.
   ([evidence](DECISIONS-EVIDENCE.md#n165))
+- **Body data may be written from a Waistline backup, DAILY records only** (N166). The helper may append
+  `measurements` to the backup it writes: one DAILY row per day — weight in grams, body fat and muscle in
+  tenths of a percent — and no tape sites. Waistline's numbers are in the unit its own `settings` names, and
+  the panel shows that unit and lets it be corrected; a day becomes local noon, so a zone change cannot move
+  it; the id is the day and the kind, the app's own identity for a measurement, so a re-import adds nothing
+  and restores a row the app hid. A stat the app cannot store is named in the panel, never silently dropped —
+  refusing the whole file would refuse every Waistline backup, which always holds tape sites. The app is
+  unchanged: its format already carries measurements and its importer restores them, and a fixture proves its
+  codec decodes the output.
+  ([evidence](DECISIONS-EVIDENCE.md#n166))
 
 ## Adherence
 

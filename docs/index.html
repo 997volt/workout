@@ -38,7 +38,7 @@
       <h2 id="source-heading">1. Source</h2>
 
       <div class="drop-zone" id="dropZone">
-        <p class="drop-title">Drop JSON, CSV or TSV files here</p>
+        <p class="drop-title">Drop JSON, CSV or TSV files here — or a Waistline backup</p>
         <p class="hint">One or several. Each is read on this page with FileReader and never uploaded; each becomes a list below.</p>
         <label class="file-button">
           <span>Choose files</span>
@@ -123,6 +123,27 @@
       </p>
       <pre id="promptText" class="prompt" tabindex="0" aria-labelledby="prompt-heading"></pre>
       <button type="button" id="copyPrompt">Copy prompt</button>
+    </section>
+
+    <section class="panel" id="panel-body" aria-labelledby="body-heading" hidden>
+      <h2 id="body-heading">Body data (from Waistline)</h2>
+      <p class="hint">
+        One <strong>daily</strong> measurement per day from a Waistline backup: weight, body fat and
+        muscle, in the unit the file used. Tape sites stay in Waistline — the app's daily record does
+        not hold them, and they are listed below rather than dropped. Nothing here is stored.
+      </p>
+      <div class="body-controls">
+        <label class="field">
+          <span class="field-label">Weight unit in that file</span>
+          <select id="waistlineUnit">
+            <option value="kg">kg</option>
+            <option value="lb">lb</option>
+          </select>
+        </label>
+        <button type="button" id="clearBody" class="secondary">Remove body data</button>
+      </div>
+      <p id="bodySummary" class="hint"></p>
+      <div id="bodyPreview" class="body-preview"></div>
     </section>
 
     <section class="panel" id="panel-sessions" aria-labelledby="sessions-heading">

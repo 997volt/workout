@@ -17,12 +17,7 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Bodyweight from Waistline.** A lifter's weigh-ins live in Waistline; the app stores daily measurements and can
-already restore them from a backup, but nothing turns Waistline's file into one.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| N166 | low | **The app holds daily body data but cannot receive it from Waistline.** Waistline's backup is a JSON of its stores, and `diary[].stats` carries weight, body fat and muscle; the app's `measurements` collection is already in the backup format and `RoomBackupRepository` restores it, so only the conversion is missing. Doing it by hand means retyping a year of weigh-ins. | A second source in the import helper: accept `waistline_backup_*.json`, read `diary[].stats`, and write **DAILY** rows only — weight in grams, body fat and muscle in tenths of a percent. **No tape sites**; they stay in Waistline. The unit comes from the backup's `settings`, with an override; a date becomes local noon; the id is `date\|kind` so a re-import adds nothing and restores deleted rows. Preview each day and refuse an unknown stat rather than dropping it, and prove the output with a fixture the app's importer decodes. |
+**Nothing.** Waistline body data (N166) shipped and is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Later — decided, and not being started
 
