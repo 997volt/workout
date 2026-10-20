@@ -78,9 +78,10 @@ unreleased.
 - **A program table becomes a program document** (N167). Drop a spreadsheet of `Program, Day, Weekday,
   Exercise, Sets, Reps, Load, Rest` into the page and it writes `program.json` for the app's Programs → Load:
   days become templates, weekdays become slots, a rep range stays a range, a seeded name keeps its slug, an
-  unknown name is created as a movement, and a duplicate program name is warned about. It creates and never
-  edits — the app inserts by id and never overwrites, so a changed sheet re-imported does nothing; the app is
-  where a program is changed. `ProgramDocumentFixtureTest` decodes the output with the app's own codec and
+  unknown name is created as a movement, and a same-named program is reported for what it is — nothing to add,
+  one to restore, or a second one. It creates and never edits (B180): a sheet-derived program's id is its
+  name, a live program under that id ends the merge, and a changed sheet re-imported changes nothing. The app
+  is where a program is changed. `ProgramDocumentFixtureTest` decodes the output with the app's own codec and
   checks the references the import would otherwise drop.
 
 - **Waistline body data can be imported** (N166). Drop a Waistline backup (`waistline_backup_*.json`) into

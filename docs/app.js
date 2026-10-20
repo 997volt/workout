@@ -5538,15 +5538,9 @@
 
     var problems = built.problems.map(function (problem) { return problem.message; });
     var notes = [];
-    if (built.ok && state.catalogFile && Array.isArray(state.catalogFile.programs)) {
-      var clashes = state.catalogFile.programs.filter(function (program) {
-        return isObject(program) && normalizeName(program.name) === normalizeName(sheet.name) &&
-          (program.deletedAt === null || program.deletedAt === undefined);
-      });
-      if (clashes.length > 0) {
-        notes.push('The loaded export already holds a program named "' + sheet.name +
-          '"; the import will add a second one, because it never renames or overwrites.');
-      }
+    if (built.ok) {
+      var clash = programClashNote(built.document, state.catalogFile);
+      if (clash) { notes.push(clash); }
     }
     setText(ui.elements.programProblems, problems.length > 0
       ? 'Cannot write this sheet: ' + problems.join(' ')
@@ -5568,6 +5562,45 @@
     link.remove();
     window.setTimeout(function () { URL.revokeObjectURL(url); }, 0);
     announce('Downloaded program.json.');
+  }
+
+  /* What the loaded export already holds under this document's program id, or null (B180).
+   *
+   * The id is the identity, not the name: the page derives it from the program's name, so loading a sheet
+   * twice is a no-op and the app never merges a changed day into a program it already has. A *different*
+   * program that happens to share the name is the one case that adds a second program. Saying which case
+   * applies is the point — the note used to say "a second one" for all of them, and for a re-load that was
+   * the opposite of what the merge does. */
+  function programClashNote(document, catalogFile) {
+    if (!isObject(document) || !isObject(document.program) || !isObject(catalogFile) ||
+        !Array.isArray(catalogFile.programs)) {
+      return null;
+    }
+    var id = document.program.id;
+    var held = catalogFile.programs.filter(function (program) {
+      return isObject(program) && program.id === id;
+    });
+    var hidden = held.some(function (program) {
+      return program.deletedAt !== null && program.deletedAt !== undefined;
+    });
+    if (hidden) {
+      return 'The loaded export holds this program as deleted; loading the file brings it back, without ' +
+        're-following it.';
+    }
+    if (held.length > 0) {
+      return 'The loaded export already holds this program; loading the file again adds nothing, and a ' +
+        'changed sheet is changed in the app.';
+    }
+    var named = catalogFile.programs.filter(function (program) {
+      return isObject(program) && program.id !== id &&
+        (program.deletedAt === null || program.deletedAt === undefined) &&
+        normalizeName(program.name) === normalizeName(document.program.name);
+    });
+    if (named.length > 0) {
+      return 'The loaded export holds a different program named "' + document.program.name +
+        '"; the import will add a second one, because it never renames or overwrites.';
+    }
+    return null;
   }
 
   /* The body-data panel: what Waistline contributed, before it is written (N166). */
@@ -6108,6 +6141,7 @@
     parseWaistlineDoc: parseWaistlineDoc,
     parseProgramSheet: parseProgramSheet,
     buildProgramDocument: buildProgramDocument,
+    programClashNote: programClashNote,
     looksLikeProgramTable: looksLikeProgramTable,
     waistlineRows: waistlineRows,
     waistlineMeasurements: waistlineMeasurements,

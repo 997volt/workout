@@ -507,6 +507,12 @@ private suspend fun withAncestors(ids: List<String>, dao: ExerciseDao): List<Exe
  * visibility alone, never the name, position or follow state — and the workouts it points at were
  * never deleted with it. A deleted *exercise* is still not resurrected: it is shared library content,
  * not the program the document is about.
+ *
+ * **A live program under the document's id ends the merge there** (B180). A sheet-derived document's
+ * id is a slug of its name, so a changed sheet keeps the id; merging it row by row would attach the
+ * new day's template and slot to the program the lifter already has — an edit, which "creates and
+ * never edits" refuses, and precisely what P3.18's "a changed sheet re-imported does nothing" says
+ * cannot happen. The program is the unit of a document, not each row.
  */
 private suspend fun mergeProgramDocument(
     database: WorkoutDatabase,
@@ -516,6 +522,12 @@ private suspend fun mergeProgramDocument(
 ): ProgramImportSummary {
     val backupDao = database.backupDao()
     val programBackup = database.programBackupDao()
+
+    // Live means this exact program is already here; nothing in the document is new (B180). The read
+    // filters `deletedAt`, so a deleted one falls through to the restore below rather than stopping here.
+    if (programDao.findProgram(document.program.id) != null) {
+        return ProgramImportSummary(programs = 0, templates = 0, exercises = 0, droppedMovements = 0)
+    }
 
     // One statement, before the inserts: a hidden program comes back, a live or absent one is
     // untouched (only rows with `deletedAt` set are updated), and the count says which happened.

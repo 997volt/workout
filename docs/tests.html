@@ -1347,6 +1347,25 @@
     ok(parsed.problems.length > 0, 'a non-numeric set count should be refused');
   });
 
+  check('a same-name program is a no-op or a second one, and the note says which (B180)', function () {
+    // The document's identity is its program id, which the page derives from the name. The app ends the
+    // merge on a live id, restores a deleted one, and adds a program only when the id is new — so the
+    // old note's "it will add a second one" was wrong for the two cases that matter.
+    var document = { program: { id: 'pgm_x', name: 'Autumn block' } };
+    function note(programs) {
+      return H.programClashNote(document, { programs: programs }) || '';
+    }
+
+    ok(note([{ id: 'pgm_x', name: 'Autumn block', deletedAt: null }]).indexOf('adds nothing') !== -1,
+      'a live id adds nothing');
+    ok(note([{ id: 'pgm_x', name: 'Autumn block', deletedAt: 5 }]).indexOf('brings it back') !== -1,
+      'a hidden id is restored');
+    ok(note([{ id: 'pgm_y', name: 'Autumn block', deletedAt: null }]).indexOf('second one') !== -1,
+      'a different id with the same name is a second program');
+    eq(note([{ id: 'pgm_y', name: 'Other', deletedAt: null }]), '');
+    eq(H.programClashNote(document, { seeded: true, exercises: [] }), null);
+  });
+
   check('the export snapshot is read-only and newest first (N165)', function () {
     var backup = {
       exercises: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }],

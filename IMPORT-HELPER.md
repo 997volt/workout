@@ -432,10 +432,14 @@ is the intended input.
 - **Names resolve against the lifter's library, then the seeded library.** A name in neither is created as a
   movement, carried in the document with no taxonomy and listed in the preview.
 - **Loads are kilograms**, converted to whole grams.
-- **Create, not edit.** The app inserts by id and never overwrites; re-importing the same sheet adds nothing,
-  and a sheet changed and re-imported does not update the program. The app is where a program is edited.
-- **A duplicate name warns**: when the loaded export already holds a program with that name, the preview
-  says the import will add a second one rather than silently making a twin.
+- **Create, not edit.** A sheet-derived program's id is a slug of its name, and the app ends the merge when a
+  live program already holds that id — so re-importing the sheet adds nothing, and a sheet changed after it
+  was imported (a new day, a different load) changes nothing either. The app is where a program is edited
+  (B180). A program the lifter deleted comes back when its sheet is loaded again, un-hidden but not
+  re-followed.
+- **A same name is not always the same program.** With an export loaded, the preview says which case applies:
+  this program is already there (nothing to add), it is there as deleted (the load restores it), or a
+  *different* program carries the name (the load adds a second one, because it never renames or overwrites).
 
 The fixture `fixtures/program-document.json` is what the sheet writes for a two-day example, and
 `ProgramDocumentFixtureTest` decodes it with the app's own codec and checks every cross-reference the import

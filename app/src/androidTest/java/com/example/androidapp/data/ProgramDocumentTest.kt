@@ -139,6 +139,42 @@ class ProgramDocumentTest {
     }
 
     @Test
+    fun aChangedDocument_doesNotEditTheProgramItNames() = runTest {
+        // B180: a document's program id is a slug of its name, so a changed sheet keeps it. Merging the
+        // document row by row attached its new day to the program the lifter already had — an edit, which
+        // "creates and never edits" refuses and "a changed sheet re-imported does nothing" promises cannot
+        // happen. The whole document is the unit, so a live id ends the merge there.
+        val file = exportOf(seedProgram())
+        wipe()
+        importOf(file)
+        val document = ProgramDocumentCodec.decode(file)
+        val changed = ProgramDocumentCodec.encode(
+            document.copy(
+                templates = document.templates + document.templates.single().copy(
+                    id = "tpl-second",
+                    name = "Second day",
+                ),
+                slots = document.slots + document.slots.single().copy(
+                    id = "slot-second",
+                    templateId = "tpl-second",
+                ),
+            ),
+        )
+
+        val summary = importOf(changed)
+
+        assertEquals("nothing was merged into the program", 0, summary.programs)
+        assertEquals(0, summary.templates)
+        val program = programs.observePrograms().first().single()
+        assertEquals(
+            "the program still has the one day it had",
+            1,
+            programs.observeSlots(program.id).first().size,
+        )
+        assertEquals("and no second template was written", 1, templates.observeTemplates().first().size)
+    }
+
+    @Test
     fun aMovementWhoseExerciseIsMissing_isDropped_whileTheProgramArrives() = runTest {
         val file = exportOf(seedProgram())
         // A hand-edited or truncated document: it names an exercise it does not carry.

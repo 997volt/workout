@@ -1076,9 +1076,10 @@ the rule; that one argues it.
   writes a `ProgramDocument` (format version 4) from a sheet: one row per planned exercise, days become
   templates, weekdays become slots, names resolve against the lifter's library and then the seed, a name in
   neither is created as a movement, and loads are kilograms. It creates and never edits — the app inserts by
-  id and never overwrites, so a re-imported edit is ignored and a duplicate name is warned about rather than
-  silently twinned — and the page says so. The document is the same format the seeded examples use (P3.19),
-  so one codec and one fixture cover both.
+  id and never overwrites, and a live program under the document's id ends the merge rather than letting the
+  document's new day attach to it (B180), so a re-imported edit is a no-op — and the page says which case a
+  same-named program is: unchanged, restored, or a second one. The document is the same format the seeded
+  examples use (P3.19), so one codec and one fixture cover both.
   ([evidence](DECISIONS-EVIDENCE.md#n167))
 - **The app offers three example programs, and they are documents** (P3.19). A new install's Programs screen
   offers *Start from an example* beside *Load a program file* and *Start empty*: full body × 3, upper/lower
