@@ -29,7 +29,7 @@ remains is authoring inside the program, without leaving it.
 
 | # | Severity | What | Fix |
 | --- | --- | --- | --- |
-| P3.18 | medium | **Authoring still asks for too much, one set at a time.** The copy and its schedule, and a new workout born inside the program, are in now. What remains is the contents: adding an exercise to a template picks no targets, so the plan prescribes nothing until every set is typed, and each set is authored on its own row. | **Prefill from the last session** when an exercise is added, accept-or-edit, as N33 requires at the workout. **Fast set entry** — "3 × 5 @ 100" with per-set editing for a top set and its back-offs. No schema change. Not planned: merging template and program (P3.12 and N47 depend on the split), and the web sheet stays a second on-ramp (N167). |
+| P3.18 | low | **A plan's sets are still authored one row at a time.** The copy, its schedule, inline creation and the prefill are in; what remains is the typing: a five-set plan is five rows opened and filled, even when the shape is "3 × 5 @ 100". | **Fast set entry** — "3 × 5 @ 100" in one row, with per-set editing kept for a top set and its back-offs. No schema change. Not planned: merging template and program (P3.12 and N47 depend on the split), and the web sheet stays a second on-ramp (N167). |
 
 ## Later — decided, and not being started
 

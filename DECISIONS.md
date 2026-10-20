@@ -1095,6 +1095,12 @@ the rule; that one argues it.
   The two writes stay separate repository calls, and the slot is added only after the template exists, so a
   slot never points at nothing. It is the same rule the schedule offer follows: the screen the lifter is on
   is where the missing row is made.
+- **A plan exercise is prefilled from the last session, and the warm-ups stay out** (P3.18). Adding an
+  exercise to a template reads the last time it was trained and writes one target per working set: the reps
+  performed become the range's both ends, the load becomes the target, the assistance carries only when it
+  was used. A warm-up is the lifter's ramp rather than the plan's work, so it is not copied. The numbers are
+  ordinary targets — accept by leaving them, disagree by editing — and a lift with no history, or a failed
+  history read, adds an empty plan rather than failing the append that already happened.
   ([evidence](DECISIONS-EVIDENCE.md#p318))
 
 ## Adherence

@@ -18,6 +18,12 @@ unreleased.
 
 ### Added
 
+- **Adding an exercise to a plan prefills it from the last session** (P3.18, part). The last time the lift
+  was trained becomes the plan's first targets — one set per working set, its reps as the range and the
+  weight it was actually loaded with — while a warm-up is left out, because a plan prescribes the work. The
+  values are ordinary editable targets: accepting them is doing nothing, and disagreeing is editing a field.
+  A lift with no history, or a plan opened while the history read fails, still adds with no targets.
+
 - **A workout can be created inside the program that needs it** (P3.18, part). *Add workout* now offers
   *New workout* before the plans that already exist: the template is created, its slot appended, and the new
   workout opened for the exercises it should hold. The two writes stay separate repository calls — a

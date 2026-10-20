@@ -7,14 +7,15 @@ import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.getOrNull
-import com.example.androidapp.domain.repository.ExerciseRepository
-import com.example.androidapp.domain.repository.TemplateRepository
-import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Exercise
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.repository.ExerciseRepository
+import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.domain.repository.TemplateSetEdit
+import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.navigation.ExercisePicker
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * What the picker's list shows (ROADMAP N95, N110).
@@ -156,8 +158,8 @@ class ExercisePickerViewModel @Inject constructor(
     }
 
     private suspend fun add(exerciseId: String) {
-        val target = templateId?.let { id -> templateRepository.addExercise(id, exerciseId) }
-            ?: addToSession(exerciseId)
+        val id = templateId
+        val target = if (id != null) addToTemplate(id, exerciseId) else addToSession(exerciseId)
         when (target) {
             is DataResult.Success -> {
                 _error.value = null
@@ -166,6 +168,46 @@ class ExercisePickerViewModel @Inject constructor(
 
             is DataResult.Failure -> _error.value = target.error
         }
+    }
+
+    /**
+     * Appends the exercise to a plan and fills its sets from the last time it was trained (P3.18).
+     *
+     * Only the work is carried: a plan's sets are what the session asks for, and a warm-up is the lifter's
+     * ramp rather than a target. The append is the action that matters — once it has happened, a failure to
+     * read history or write a set leaves a valid plan with no targets, not a missing exercise, so it is not
+     * reported as a failed add.
+     */
+    private suspend fun addToTemplate(templateId: String, exerciseId: String): DataResult<Unit> {
+        val appended = templateRepository.addExercise(templateId, exerciseId)
+        if (appended is DataResult.Failure) { return appended }
+
+        // P3.18: the last time the lift was trained becomes the plan's first targets. The append has
+        // already happened, so a failed read or write here leaves a valid plan with no targets rather
+        // than a missing exercise — which is why it is not reported as a failed add.
+        val history = workoutRepository.previousPerformance(exerciseId, "")
+        val working = if (history is DataResult.Success) {
+            history.data.sets.filter { it.setType != SetType.WARMUP }
+        } else {
+            emptyList()
+        }
+        val planned = templateRepository.observeExercises(templateId).first()
+            .lastOrNull { it.exerciseId == exerciseId }
+        if (planned != null) {
+            working.forEach { set ->
+                templateRepository.addSet(
+                    planned.id,
+                    TemplateSetEdit(
+                        role = SetType.NORMAL,
+                        targetWeightGrams = set.weightGrams,
+                        targetAssistanceGrams = set.assistanceGrams.takeIf { it > 0L },
+                        targetRepsMin = set.reps,
+                        targetRepsMax = set.reps,
+                    ),
+                )
+            }
+        }
+        return DataResult.Success(Unit)
     }
 
     private suspend fun addToSession(exerciseId: String): DataResult<Unit> {

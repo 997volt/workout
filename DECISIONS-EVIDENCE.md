@@ -2670,3 +2670,13 @@ lift becomes a plan: an empty template is the one thing a schedule should not pr
 
 **Covered by** the screen test that opens the picker and taps *New workout*, asserting the default name the
 route is asked to create.
+
+The prefill closes the other end of authoring: a plan whose targets are all blank prescribes nothing, and the
+app already has the one number it can honestly offer — what the lift was last loaded with. The copy is the
+*work*, not the session: warm-ups are excluded (N17's rule), the performed reps become both ends of the range
+so progression has a floor to climb from (N74), and the assistance carries only where the machine gave any
+(N15). Nothing is written before the append succeeds, and nothing after it can undo the append: a failed
+history read leaves an empty plan, which is valid, rather than a plan missing the exercise the lifter chose.
+
+**Covered by** the picker's test that appends to a template and asserts the two working sets and the values
+carried, with the warm-up absent.

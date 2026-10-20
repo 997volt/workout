@@ -1,28 +1,30 @@
 package com.example.androidapp.ui.workout
 
-import com.example.androidapp.domain.repository.TemplateSetEdit
-import com.example.androidapp.domain.model.TemplateSet
 import androidx.lifecycle.SavedStateHandle
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.RowKind
-import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.repository.ExerciseRepository
 import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.repository.WorkoutRepository
-import java.io.IOException
-import java.util.UUID
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -39,7 +41,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.IOException
+import java.util.UUID
 /**
  * Under Robolectric rather than plain JVM: the ViewModel reads its route argument
  * out of a `SavedStateHandle`, and that path touches a real `android.os.Bundle`
@@ -320,6 +323,69 @@ class ExercisePickerViewModelTest {
     }
 
     @Test
+    fun addingToATemplate_prefillsItsSetsFromTheLastSession() = runTest(dispatcher) {
+        // P3.18: the last time the lift was trained becomes the plan's first targets. The warm-up is not
+        // carried — a plan prescribes the work — and the numbers are the performed ones, editable.
+        val workouts = FakeWorkoutRepository().apply {
+            previous = PreviousPerformance(
+                listOf(
+                    SetEntry(
+                        id = "s1",
+                        sessionExerciseId = "se1",
+                        setIndex = 0,
+                        reps = 10,
+                        weightGrams = 60_000L,
+                        setType = SetType.WARMUP,
+                    ),
+                    SetEntry(
+                        id = "s2",
+                        sessionExerciseId = "se1",
+                        setIndex = 1,
+                        reps = 5,
+                        weightGrams = 100_000L,
+                    ),
+                    SetEntry(
+                        id = "s3",
+                        sessionExerciseId = "se1",
+                        setIndex = 2,
+                        reps = 8,
+                        weightGrams = 95_000L,
+                    ),
+                ),
+            )
+        }
+        val templates = FakeTemplateRepository().apply {
+            planned = TemplateExercise(
+                id = "te1",
+                templateId = "t1",
+                exerciseId = "back-squat",
+                position = 0,
+                exerciseName = "Back Squat",
+                primaryMuscle = null,
+                equipment = null,
+            )
+        }
+        val viewModel = viewModelFor(
+            FakeExerciseRepository(listOf(seeded)),
+            workouts,
+            templates,
+            templateId = "t1",
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onExerciseSelected("back-squat")
+        advanceUntilIdle()
+
+        assertEquals(2, templates.prefilled.size)
+        assertEquals("te1", templates.prefilled[0].first)
+        assertEquals(100_000L, templates.prefilled[0].second.targetWeightGrams)
+        assertEquals(5, templates.prefilled[0].second.targetRepsMin)
+        assertEquals(95_000L, templates.prefilled[1].second.targetWeightGrams)
+        assertEquals(8, templates.prefilled[1].second.targetRepsMax)
+    }
+
+    @Test
     fun aNewExercise_canBeCreatedStraightIntoATemplate() = runTest(dispatcher) {
         val exercises = FakeExerciseRepository()
         val templates = FakeTemplateRepository()
@@ -414,8 +480,15 @@ class ExercisePickerViewModelTest {
         override fun observeTemplateName(templateId: String): Flow<String?> = flowOf(null)
         override fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
         override suspend fun keepVersion(templateId: String): DataResult<Unit> = DataResult.Success(Unit)
+
+        /** The row the append created, as the picker reads it back to fill its sets (P3.18). */
+        var planned: TemplateExercise? = null
+
+        /** Every prefilled set, as the plan row and the edit. */
+        val prefilled = mutableListOf<Pair<String, TemplateSetEdit>>()
+
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> =
-            flowOf(emptyList())
+            flowOf(listOfNotNull(planned))
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
         override suspend fun prependSets(
             templateExerciseId: String,
@@ -426,7 +499,8 @@ class ExercisePickerViewModelTest {
             templateExerciseId: String,
             edit: TemplateSetEdit,
         ): DataResult<Unit> {
-            error("these tests do not write a plan")
+            prefilled += templateExerciseId to edit
+            return DataResult.Success(Unit)
         }
 
         override suspend fun updateSet(
@@ -483,5 +557,4 @@ class ExercisePickerViewModelTest {
             movementPattern = MovementPattern.SQUAT,
         )
     }
-
 }

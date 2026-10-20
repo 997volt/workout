@@ -51,6 +51,9 @@ internal class FakeWorkoutRepository : WorkoutRepository {
         templateId: String?,
     ): DataResult<StartedSession> = unused()
 
+    /** What [previousPerformance] answers; empty is "this lift has no history". */
+    var previous: PreviousPerformance = PreviousPerformance(emptyList())
+
     /** The one fake that models repeating: it records the call, since its tests ask what it did. */
     override suspend fun repeatSession(sessionId: String): DataResult<StartedSession> = unused()
     override suspend fun removeExercise(sessionExerciseId: String): DataResult<Unit> = unused()
@@ -115,7 +118,7 @@ internal class FakeWorkoutRepository : WorkoutRepository {
     override suspend fun previousPerformance(
         exerciseId: String,
         currentSessionId: String,
-    ): DataResult<PreviousPerformance> = unused()
+    ): DataResult<PreviousPerformance> = DataResult.Success(previous)
     override suspend fun startRest(seconds: Int): DataResult<Instant> = unused()
     override suspend fun adjustRest(deltaSeconds: Int): DataResult<Instant> = unused()
     override suspend fun clearRest(): DataResult<Unit> = unused()
