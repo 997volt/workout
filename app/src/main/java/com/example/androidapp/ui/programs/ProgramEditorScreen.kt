@@ -103,7 +103,18 @@ fun ProgramEditorRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
+    val templateToEdit by viewModel.templateToEdit.collectAsStateWithLifecycle()
     val currentOnBack by rememberUpdatedState(onBack)
+    val currentOnOpenTemplate by rememberUpdatedState(onOpenTemplate)
+
+    // The workout created inline has no exercises yet, so the editor it opens is where it becomes a plan
+    // (P3.18). Opened once, then cleared, so a recomposition cannot re-open it over the lifter's work.
+    LaunchedEffect(templateToEdit) {
+        templateToEdit?.let { templateId ->
+            viewModel.onTemplateEditHandled()
+            currentOnOpenTemplate(templateId)
+        }
+    }
 
     // Exporting reports through the editor's own host (ROADMAP N47). The file write is the
     // composable's, because it holds the `Uri`.
@@ -119,6 +130,7 @@ fun ProgramEditorRoute(
         onRename = viewModel::onRename,
         onSetActive = viewModel::onSetActive,
         onAddSlot = viewModel::onAddSlot,
+        onAddNewSlot = viewModel::onAddNewSlot,
         onSetSlotWeekday = viewModel::onSetSlotWeekday,
         onMoveSlot = viewModel::onMoveSlot,
         onRemoveSlot = viewModel::onRemoveSlot,
@@ -157,6 +169,8 @@ fun ProgramEditorScreen(
     /** Required rather than defaulted, so a route that forgets it fails the build (B49, B52). */
     onExportProgram: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Creates a workout and adds it as a slot, then opens it (P3.18). */
+    onAddNewSlot: (String) -> Unit = {},
     onDismissMessage: () -> Unit = {},
     transferMessage: String? = null,
     onDismissTransferMessage: () -> Unit = {},
@@ -208,10 +222,11 @@ fun ProgramEditorScreen(
         state = state,
         pickingTemplate = pickingTemplate,
         confirmingDelete = confirmingDelete,
-        onPick = { templateId ->
+        onPick = {
             pickingTemplate = false
-            onAddSlot(templateId)
+            onAddSlot(it)
         },
+        onAddNewSlot = onAddNewSlot,
         onDismissPicker = { pickingTemplate = false },
         onDismissDelete = { confirmingDelete = false },
         onConfirmDelete = {
@@ -256,15 +271,18 @@ private fun ProgramEditorDialogs(
     pickingTemplate: Boolean,
     confirmingDelete: Boolean,
     onPick: (String) -> Unit,
+    onAddNewSlot: (String) -> Unit,
     onDismissPicker: () -> Unit,
     onDismissDelete: () -> Unit,
     onConfirmDelete: () -> Unit,
     onClosePreview: () -> Unit,
 ) {
+    val newWorkoutName = stringResource(R.string.program_new_workout)
     if (pickingTemplate) {
         TemplatePickerDialog(
             templates = state.templates,
             onPick = onPick,
+            onPickNew = { onAddNewSlot(newWorkoutName) },
             onDismiss = onDismissPicker,
         )
     }
@@ -857,6 +875,7 @@ private fun SlotWeekdayPicker(
 private fun TemplatePickerDialog(
     templates: List<WorkoutTemplate>,
     onPick: (String) -> Unit,
+    onPickNew: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -865,14 +884,32 @@ private fun TemplatePickerDialog(
         modifier = modifier.testTag(TestTags.Programs.PICKER),
         title = { Text(stringResource(R.string.program_pick_title)) },
         text = {
-            if (templates.isEmpty()) {
-                CenteredMessage(
-                    text = stringResource(R.string.program_pick_empty),
-                    hint = stringResource(R.string.program_pick_empty_hint),
-                    modifier = Modifier.testTag(TestTags.Programs.PICKER_EMPTY),
-                )
-            } else {
-                LazyColumn {
+            LazyColumn {
+                // The one entry that does not need a plan to exist first (P3.18): the program is the
+                // screen the lifter is on, so a new workout can be born here and opened for its contents.
+                item {
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.program_new_workout)) },
+                        supportingContent = {
+                            Text(stringResource(R.string.program_new_workout_hint))
+                        },
+                        leadingContent = {
+                            Icon(imageVector = Icons.Filled.Add, contentDescription = null)
+                        },
+                        modifier = Modifier
+                            .testTag(TestTags.Programs.PICKER_NEW)
+                            .clickable { onPickNew() },
+                    )
+                }
+                if (templates.isEmpty()) {
+                    item {
+                        CenteredMessage(
+                            text = stringResource(R.string.program_pick_empty),
+                            hint = stringResource(R.string.program_pick_empty_hint),
+                            modifier = Modifier.testTag(TestTags.Programs.PICKER_EMPTY),
+                        )
+                    }
+                } else {
                     itemsIndexed(items = templates, key = { _, template -> template.id }) { _, template ->
                         ListItem(
                             headlineContent = { Text(template.name) },

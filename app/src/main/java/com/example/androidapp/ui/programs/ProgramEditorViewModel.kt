@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -211,6 +212,45 @@ class ProgramEditorViewModel @Inject constructor(
     }
 
     fun onAddSlot(templateId: String) = write { repository.addSlot(programId, templateId) }
+
+    private val _templateToEdit = MutableStateFlow<String?>(null)
+
+    /**
+     * The workout just created inline, for the screen to open (P3.18).
+     *
+     * A new workout has no exercises, so the slot exists and the plan is empty: the editor it opens is
+     * where it becomes a plan.
+     */
+    val templateToEdit: StateFlow<String?> = _templateToEdit.asStateFlow()
+
+    /**
+     * Creates a workout and appends it to this program in one step (P3.18).
+     *
+     * The two writes stay separate repository calls by design — a template is not a program's row — and a
+     * failure of either surfaces. The slot is added only after the template exists, so a slot never points
+     * at nothing.
+     */
+    fun onAddNewSlot(name: String) {
+        viewModelScope.launch {
+            when (val created = templateRepository.createTemplate(name)) {
+                is DataResult.Success -> when (val slot = repository.addSlot(programId, created.data)) {
+                    is DataResult.Success -> {
+                        error.value = null
+                        _templateToEdit.value = created.data
+                    }
+
+                    is DataResult.Failure -> error.value = slot.error
+                }
+
+                is DataResult.Failure -> error.value = created.error
+            }
+        }
+    }
+
+    /** Called once the screen has opened the new workout, so it is opened once. */
+    fun onTemplateEditHandled() {
+        _templateToEdit.value = null
+    }
 
     fun onSetSlotWeekday(slotId: String, weekday: DayOfWeek?) = write {
         repository.setSlotWeekday(slotId, weekday)

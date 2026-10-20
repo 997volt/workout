@@ -881,6 +881,8 @@
     <string name="program_delete">Delete program</string>
     <string name="program_delete_confirm_title">Delete this program?</string>
     <string name="program_delete_confirm_text">The schedule goes away. The workouts it points at, and everything you logged, stay.</string>
+    <string name="program_new_workout">New workout</string>
+    <string name="program_new_workout_hint">An empty plan, opened for you to fill in.</string>
     <string name="program_pick_title">Add a workout</string>
     <string name="program_pick_empty">No templates to add yet</string>
     <string name="program_pick_empty_hint">A slot is a template, so create one first.</string>

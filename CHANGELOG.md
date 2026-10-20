@@ -18,6 +18,12 @@ unreleased.
 
 ### Added
 
+- **A workout can be created inside the program that needs it** (P3.18, part). *Add workout* now offers
+  *New workout* before the plans that already exist: the template is created, its slot appended, and the new
+  workout opened for the exercises it should hold. The two writes stay separate repository calls — a
+  template is not a program's row — and the slot is added only after the template exists, so a slot never
+  points at nothing.
+
 - **A saved plan can be scheduled as it is saved** (P3.18, part). *Save as plan*'s confirmation now offers
   *Schedule it* beside *Open the plan*: choose a program and a weekday — or none, for an order-only slot —
   and the slot is written before the offer moves on to that program's editor, where the rest of the week is

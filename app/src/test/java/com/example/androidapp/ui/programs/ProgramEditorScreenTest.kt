@@ -39,6 +39,7 @@ class ProgramEditorScreenTest {
         onRename: (String) -> Unit = {},
         onSetActive: (Boolean) -> Unit = {},
         onAddSlot: (String) -> Unit = {},
+        onAddNewSlot: (String) -> Unit = {},
         onSetSlotWeekday: (String, DayOfWeek?) -> Unit = { _, _ -> },
         onMoveSlot: (String, Int) -> Unit = { _, _ -> },
         onRemoveSlot: (String) -> Unit = {},
@@ -56,6 +57,7 @@ class ProgramEditorScreenTest {
                 onRename = onRename,
                 onSetActive = onSetActive,
                 onAddSlot = onAddSlot,
+                onAddNewSlot = onAddNewSlot,
                 onSetSlotWeekday = onSetSlotWeekday,
                 onMoveSlot = onMoveSlot,
                 onRemoveSlot = onRemoveSlot,
@@ -69,6 +71,19 @@ class ProgramEditorScreenTest {
                 onBack = {},
             )
         }
+    }
+
+    @Test
+    fun thePicker_createsANewWorkoutInline() {
+        // P3.18: a program is the screen the lifter is on, so a workout it needs should be creatable here
+        // rather than in Templates and then found again.
+        var name: String? = null
+        setScreen(onAddNewSlot = { name = it })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.ADD_SLOT).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.PICKER_NEW).performClick()
+
+        assertThat(name).isNotNull()
     }
 
     @Test

@@ -2660,3 +2660,13 @@ entry in the menu (two entries for one decision).
 
 **Covered by** the screen test that drives the dialog to a program and a Wednesday, and the ViewModel test
 that asserts the slot write and the program the offer reports.
+
+The other half of the same complaint was the picker: *Add workout* listed the templates that existed, and a
+lifter with none had to leave for Templates and come back. *New workout* now sits above that list, because
+the program is the screen they are on and creating the plan should not be a different journey. It is a
+template write followed by a slot write — deliberately two repository calls, since a template is not a
+program's row — and the slot follows only once the template exists. Opening the new workout is where the
+lift becomes a plan: an empty template is the one thing a schedule should not pretend to be.
+
+**Covered by** the screen test that opens the picker and taps *New workout*, asserting the default name the
+route is asked to create.

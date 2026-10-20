@@ -675,6 +675,9 @@ object TestTags {
         const val PICKER = "program_template_picker"
         const val PICKER_EMPTY = "program_template_picker_empty"
 
+        /** The picker's *New workout* entry, which creates and opens one inline (P3.18). */
+        const val PICKER_NEW = "program_template_picker_new"
+
         /** Carrying a program as a file (ROADMAP N47): the load action and the export action. */
         const val LOAD = "program_load"
         const val EXPORT = "program_export"

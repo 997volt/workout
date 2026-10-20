@@ -1090,6 +1090,11 @@ the rule; that one argues it.
   order-only slot), the slot is written, and the offer moves to that program's editor, where the week is
   finished. The copy stays the repository's transaction (N31); this adds only the second question — when —
   at the moment the lifter has decided to keep the workout, and it never chooses the program or the day.
+- **A workout can be born in the program that needs it** (P3.18). *Add workout* offers *New workout* before
+  the plans that exist: the template is created, its slot appended, and the plan opened for its exercises.
+  The two writes stay separate repository calls, and the slot is added only after the template exists, so a
+  slot never points at nothing. It is the same rule the schedule offer follows: the screen the lifter is on
+  is where the missing row is made.
   ([evidence](DECISIONS-EVIDENCE.md#p318))
 
 ## Adherence
