@@ -45,6 +45,7 @@ class ProgressionDialogTest {
 
     private var toggled: Pair<String, ProgressionDirection>? = null
     private var selectedAll: ProgressionDirection? = null
+    private var selectedEvery = false
     private var confirmed = false
     private var notNow = false
 
@@ -54,6 +55,7 @@ class ProgressionDialogTest {
                 progression = question,
                 onToggle = { setId, direction -> toggled = setId to direction },
                 onSelectAll = { selectedAll = it },
+                onSelectEveryOffer = { selectedEvery = true },
                 onConfirm = { confirmed = true },
                 onNotNow = { notNow = true },
             )
@@ -161,6 +163,25 @@ class ProgressionDialogTest {
 
         composeTestRule.onNodeWithTag(TestTags.Progression.REPS_ALL).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.Progression.LOAD_ALL).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Progression.EVERY).assertDoesNotExist()
+    }
+
+    @Test
+    fun aMixedQuestion_offersOneControlForEachRowsOwnStep() {
+        // P3.17: the sets earned different directions, so neither direction's bulk control fits; the every
+        // control takes each row's own, which is the one-tap answer this plan did not have.
+        val loadOffer = ProgressionOffer(
+            set = planSet("ts-1"),
+            load = ProgressionStep(100_000L, 102_500L),
+        )
+        show(question(row("ts-0"), row("ts-1", offer = loadOffer)))
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.REPS_ALL).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Progression.LOAD_ALL).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Progression.EVERY).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Progression.EVERY).performClick()
+
+        assertTrue(selectedEvery)
     }
 
     @Test

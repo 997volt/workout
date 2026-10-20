@@ -18,6 +18,11 @@ unreleased.
 
 ### Added
 
+- **A mixed plan takes every earned step in one tap** (P3.17, part). The progression question now offers
+  *Take all N steps as offered* when the sets earned different directions — the rep below a ceiling, the
+  load at it — so the one-tap answer is each row's own step rather than one direction chosen for the whole
+  plan. It is still a pick, not a write: nothing reaches the plan until *Done*.
+
 - **A plan's quick entry writes a whole block** (P3.18). Count, reps and load in one row — *4 × 6 @ 100* —
   appended as that many planned sets, starting from the last planned set. The per-set dialog stays for a top
   set and its back-offs, and the button is disabled rather than writing a half-parsed target; a blank load is

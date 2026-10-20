@@ -48,6 +48,7 @@ fun ProgressionDialog(
     progression: PendingProgression,
     onToggle: (String, ProgressionDirection) -> Unit,
     onSelectAll: (ProgressionDirection) -> Unit,
+    onSelectEveryOffer: () -> Unit,
     onConfirm: () -> Unit,
     onNotNow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -59,7 +60,12 @@ fun ProgressionDialog(
         onDismissRequest = onNotNow,
         title = { Text(stringResource(R.string.progression_title, progression.exerciseName)) },
         text = {
-            ProgressionBody(progression = progression, onToggle = onToggle, onSelectAll = onSelectAll)
+            ProgressionBody(
+                progression = progression,
+                onToggle = onToggle,
+                onSelectAll = onSelectAll,
+                onSelectEveryOffer = onSelectEveryOffer,
+            )
         },
         confirmButton = {
             AppTextButton(
@@ -91,12 +97,17 @@ private fun ProgressionBody(
     progression: PendingProgression,
     onToggle: (String, ProgressionDirection) -> Unit,
     onSelectAll: (ProgressionDirection) -> Unit,
+    onSelectEveryOffer: () -> Unit,
 ) {
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        BulkChoices(progression = progression, onSelectAll = onSelectAll)
+        BulkChoices(
+            progression = progression,
+            onSelectAll = onSelectAll,
+            onSelectEveryOffer = onSelectEveryOffer,
+        )
         progression.sets.forEachIndexed { index, set ->
             SetRow(
                 number = index + 1,
@@ -120,12 +131,25 @@ private fun ProgressionBody(
 private fun BulkChoices(
     progression: PendingProgression,
     onSelectAll: (ProgressionDirection) -> Unit,
+    onSelectEveryOffer: () -> Unit,
 ) {
     val loads = progression.offering(ProgressionDirection.LOAD)
     val reps = progression.offering(ProgressionDirection.REPS)
-    if (loads < 2 && reps < 2) return
+    val every = progression.offeringEvery()
+    // The mixed plan is what the *every* control exists for: a plan whose sets share one direction is
+    // already answered by that direction's own control (P3.17).
+    val mixed = loads > 0 && reps > 0 && every >= 2
+    if (loads < 2 && reps < 2 && !mixed) return
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (mixed) {
+            AppTextButton(
+                onClick = onSelectEveryOffer,
+                modifier = Modifier.testTag(TestTags.Progression.EVERY),
+            ) {
+                Text(pluralStringResource(R.plurals.progression_all_every, every, every))
+            }
+        }
         if (loads >= 2) {
             AppTextButton(
                 onClick = { onSelectAll(ProgressionDirection.LOAD) },

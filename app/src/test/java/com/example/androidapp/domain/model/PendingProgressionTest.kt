@@ -56,6 +56,29 @@ class PendingProgressionTest {
     }
 
     @Test
+    fun chooseEveryOffer_takesEachRowsOwnStep() {
+        // P3.17: a mixed plan is one tap — the rep where a set is below its ceiling, the load where it is
+        // at the ceiling — and the both-directions row takes the smaller step, the rep.
+        val question = pending(repRow("ts-0"), loadRow("ts-1"), bothRow("ts-2")).chooseEveryOffer()
+
+        assertThat(question.sets.map { it.direction }).containsExactly(
+            ProgressionDirection.REPS,
+            ProgressionDirection.LOAD,
+            ProgressionDirection.REPS,
+        ).inOrder()
+        assertThat(question.chosen).hasSize(3)
+    }
+
+    @Test
+    fun chooseEveryOffer_keepsAPick_andSkipsAWrittenRow() {
+        val applied = pending(repRow("ts-0")).applied("ts-0", planSet("ts-0").copy(targetRepsCurrent = 6))
+        val question = applied.chooseEveryOffer()
+
+        assertThat(question.sets.single().direction).isNull()
+        assertThat(question.chosen).isEmpty()
+    }
+
+    @Test
     fun chooseAll_picksOnlyTheRowsThatOfferThatDirection() {
         val question = pending(repRow("ts-0"), repRow("ts-1"), loadRow("ts-2"))
             .chooseAll(ProgressionDirection.REPS)

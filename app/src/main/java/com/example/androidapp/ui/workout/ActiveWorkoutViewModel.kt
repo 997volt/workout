@@ -674,9 +674,16 @@ class ActiveWorkoutViewModel @Inject constructor(
      * write: nothing reaches the plan until [onConfirmProgression], which is what lets a lifter read
      * the whole answer before taking it.
      */
-    fun onSelectProgression(setId: String?, direction: ProgressionDirection) {
+    fun onSelectProgression(setId: String?, direction: ProgressionDirection?) {
         _pendingProgression.update { pending ->
-            pending?.let { if (setId == null) it.chooseAll(direction) else it.toggle(setId, direction) }
+            pending?.let {
+                when {
+                    // A null direction is the mixed-plan answer: each set's own step (P3.17).
+                    direction == null -> it.chooseEveryOffer()
+                    setId == null -> it.chooseAll(direction)
+                    else -> it.toggle(setId, direction)
+                }
+            }
         }
     }
 

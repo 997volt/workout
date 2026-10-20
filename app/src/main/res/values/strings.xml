@@ -555,6 +555,10 @@
         <item quantity="one">Raise the reps on %1$d set</item>
         <item quantity="other">Raise the reps on all %1$d sets</item>
     </plurals>
+    <plurals name="progression_all_every">
+        <item quantity="one">Take %1$d step as offered</item>
+        <item quantity="other">Take all %1$d steps as offered</item>
+    </plurals>
     <string name="progression_confirm">Done</string>
     <string name="progression_not_now">Not now</string>
     <string name="progression_applied">Written to the plan</string>

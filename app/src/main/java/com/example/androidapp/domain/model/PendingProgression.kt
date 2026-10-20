@@ -86,6 +86,40 @@ data class PendingProgression(
         )
 
     /**
+     * Picks each row's own step — the direction that row earned (P3.17).
+     *
+     * The bulk answer for a plan whose sets do not share one: a set below its ceiling earned the rep and a
+     * set at the ceiling earned the weight, so "take them all" is not one direction for the plan but each
+     * row's own. A row already decided keeps its pick, and a row with nothing to take is untouched.
+     *
+     * Where a range names no ceiling a row offers both, and the **rep** is taken: it is the smaller step
+     * at the same load, and the weight step is the one that restarts a range.
+     */
+    fun chooseEveryOffer(): PendingProgression = copy(
+        sets = sets.map { set ->
+            val direction = set.direction ?: set.ownDirection()
+            if (direction == null) set else set.copy(direction = direction)
+        },
+    )
+
+    /** The direction this row's offer is for, or null when it has none left to take (P3.17). */
+    private fun PendingSet.ownDirection(): ProgressionDirection? {
+        val offer = prompt.offer
+        return if (applied || offer == null) {
+            null
+        } else {
+            when {
+                offer.reps != null -> ProgressionDirection.REPS
+                offer.load != null -> ProgressionDirection.LOAD
+                else -> null
+            }
+        }
+    }
+
+    /** How many rows still have a step to take — what the *every* control is offered against (P3.17). */
+    fun offeringEvery(): Int = sets.count { !it.applied && it.prompt.offer != null }
+
+    /**
      * Records that one picked step has been written (N74).
      *
      * The row keeps its place with the accepted targets, so the lifter reads what the plan now says

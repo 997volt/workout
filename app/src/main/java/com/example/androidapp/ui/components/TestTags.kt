@@ -154,6 +154,9 @@ object TestTags {
         const val LOAD_ALL = "progression_load_all"
         const val REPS_ALL = "progression_reps_all"
 
+        /** Takes each row's own step, whatever direction it earned (P3.17). */
+        const val EVERY = "progression_every"
+
         /** One set's row and the parts inside it. */
         fun set(setId: String) = "progression_set_$setId"
         fun plan(setId: String) = "progression_plan_$setId"

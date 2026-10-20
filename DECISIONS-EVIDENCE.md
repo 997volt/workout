@@ -2692,3 +2692,25 @@ the text is unparseable, so a typo cannot become a set.
 
 **Covered by** the editor's screen test: it opens a block, types `4 × 6 @ 100` and asserts the count and the
 targets the write is asked for.
+
+## P3.17
+
+The offer and its per-set picks have existed since N50/N74; what the question lacked was one answer for a
+plan whose sets did not earn the same thing. Two direction controls could not express "take what each set
+earned": a set below its ceiling offers the rep, a set at it offers the weight, and a plan with both had to
+be answered twice — or tapped set by set.
+
+**Why each row's own, and not one direction for the plan.** The direction is a property of the set's place in
+its range, which the offer already computed; asking the lifter to re-choose it per row would be asking them
+to repeat the app's arithmetic. The control states the count it will take, so the answer is read before it is
+given.
+
+**Why the rep wins where both are offered.** A range with no ceiling offers both steps; the rep is the
+smaller change at the same load, and the weight step is the one that restarts a range. Taking the smaller
+step is the conservative default, and the per-set chip still offers the other.
+
+**Still a pick, not a write.** The control selects; *Done* writes. That is N74's rule and the reason a
+mis-tap costs nothing.
+
+**Covered by** the domain test for `chooseEveryOffer` (mixed rows, a written row skipped) and the dialog test
+that a mixed question shows the control and reports the tap.

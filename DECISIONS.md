@@ -1107,6 +1107,12 @@ the rule; that one argues it.
   nothing. The rows it writes are ordinary targets: the quick entry is a way to type a plan, not a second
   kind of plan, so nothing downstream knows which entry made a set.
   ([evidence](DECISIONS-EVIDENCE.md#p318))
+- **A bulk answer takes each set's own step, and the rep wins when a row offers both** (P3.17). The question
+  offers one control per direction where two sets share it, and — when the directions are mixed — one that
+  takes each row's own: the rep below a ceiling, the load at it. A plan with no ceiling offers both on the
+  same row, and the rep is taken there because it is the smaller step at the same load. Picking is still not
+  writing: only *Done* reaches the plan.
+  ([evidence](DECISIONS-EVIDENCE.md#p317))
 
 ## Adherence
 

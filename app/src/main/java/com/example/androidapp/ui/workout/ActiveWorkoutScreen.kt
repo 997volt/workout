@@ -65,7 +65,6 @@ import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
-import com.example.androidapp.ui.components.ProgressionDialog
 import com.example.androidapp.ui.components.ReadinessNoteDialog
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.SetEditorDialog
@@ -128,6 +127,7 @@ fun ActiveWorkoutRoute(
         // One question, three operations on it: picking a step, writing them all, and declining.
         onToggleProgression = { setId, direction -> viewModel.onSelectProgression(setId, direction) },
         onSelectAllProgression = { direction -> viewModel.onSelectProgression(null, direction) },
+        onSelectEveryProgression = { viewModel.onSelectProgression(null, null) },
         onConfirmProgression = viewModel::onConfirmProgression,
         onDismissProgression = { pendingProgression?.let { viewModel.onFinishExercise(it.sessionExerciseId) } },
         onRateExercise = viewModel::onRateExercise,
@@ -204,6 +204,8 @@ fun ActiveWorkoutScreen(
     onToggleProgression: (String, ProgressionDirection) -> Unit = { _, _ -> },
     /** Picks one direction on every set of the question that offers it (ROADMAP N74). */
     onSelectAllProgression: (ProgressionDirection) -> Unit = {},
+    /** Picks each set's own step, whatever direction it earned (P3.17). */
+    onSelectEveryProgression: () -> Unit = {},
     /** Writes every pick and closes the exercise (ROADMAP N74). */
     onConfirmProgression: () -> Unit = {},
     /** Declines the whole question and closes the exercise (ROADMAP N74). */
@@ -225,19 +227,8 @@ fun ActiveWorkoutScreen(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            WorkoutTopBar(
-                // **An activity finishes with no sets** (N141), which is the one rule that changed: it holds
-                // none by construction, so requiring a set would leave it with no way out but Discard.
-                canFinish = state.activity != null || state.exercises.any { it.sets.isNotEmpty() },
-                // **Drawn whenever a session is open, empty or not** (ROADMAP N41, N87 amended): the overflow
-                // is where a lifter looks for the way out, and an empty workout is exactly the one a mistap
-                // leaves open — the state that had no way out but to add a movement first.
-                canDiscard = state.sessionId != null,
-                // N41's other half stands: a discard with nothing to lose does not ask. An activity is the
-                // exception (N143) — empty of sets, not of record.
-                isEmpty = state.isEmpty,
-                isActivity = state.activity != null,
-                setCount = state.exercises.sumOf { it.sets.size },
+            WorkoutTopBarSection(
+                state = state,
                 countsAgainstProgram = countsAgainstProgram,
                 onFinish = onFinish,
                 onDiscard = onDiscard,
@@ -277,16 +268,17 @@ fun ActiveWorkoutScreen(
 
     ActivityPicker(open = choosingActivity, onPick = onSetActivity, onDismiss = { choosingActivity = false })
 
-    SetEditorSection(
-        editing = editing,
-        exercises = state.exercises,
-        onUpdateSet = onUpdateSet,
-        onDismiss = { editing = null },
-    )
+    SetEditorHost(editing, state.exercises, onUpdateSet) { editing = null }
 
-    // One host, from the frozen state, so a rotation mid-answer reopens it on the picks (N74).
     pendingProgression?.let {
-        ProgressionDialog(it, onToggleProgression, onSelectAllProgression, onConfirmProgression, onDismissProgression)
+        ProgressionSection(
+            it,
+            onToggleProgression,
+            onSelectAllProgression,
+            onSelectEveryProgression,
+            onConfirmProgression,
+            onDismissProgression,
+        )
     }
 }
 
@@ -297,7 +289,7 @@ fun ActiveWorkoutScreen(
  * only the rendering, which is where the lines were.
  */
 @Composable
-private fun SetEditorSection(
+internal fun SetEditorSection(
     editing: SetRow?,
     /** The session's exercises, so the row being edited can be placed among them (N145). */
     exercises: List<SessionExerciseRow>,
@@ -439,7 +431,7 @@ private fun ShowFinishSnackbar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WorkoutTopBar(
+internal fun WorkoutTopBar(
     canFinish: Boolean,
     canDiscard: Boolean,
     /** An open session with nothing in it, so a discard costs nothing and is not asked about (N41). */
