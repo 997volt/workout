@@ -1085,6 +1085,12 @@ the rule; that one argues it.
   has a gate — and arrive inactive, so the lifter renames and activates one rather than the app choosing.
   Nothing is installed at startup: an example appears only when its card is tapped.
   ([evidence](DECISIONS-EVIDENCE.md#p319))
+- **A saved plan offers the schedule, and lands in the program it was added to** (P3.18). *Save as plan*'s
+  confirmation offers *Schedule it* beside *Open the plan*: pick a program and a weekday (or none, for an
+  order-only slot), the slot is written, and the offer moves to that program's editor, where the week is
+  finished. The copy stays the repository's transaction (N31); this adds only the second question — when —
+  at the moment the lifter has decided to keep the workout, and it never chooses the program or the day.
+  ([evidence](DECISIONS-EVIDENCE.md#p318))
 
 ## Adherence
 

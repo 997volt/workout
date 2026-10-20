@@ -242,6 +242,13 @@ object TestTags {
 
     const val DETAIL_SAVE_AS_PLAN = "detail_save_as_plan"
 
+    /** The schedule offer on the saved plan (P3.18), and its dialog. */
+    const val DETAIL_SCHEDULE = "detail_schedule"
+    const val DETAIL_SCHEDULE_CONFIRM = "detail_schedule_confirm"
+
+    /** One weekday chip in the schedule dialog, by `DayOfWeek` name. */
+    fun detailScheduleDay(day: String) = "detail_schedule_day_$day"
+
     /** The past workout's title — its plan's name, or its date — and the date under it (N84). */
     const val HISTORY_DETAIL_TITLE = "history_detail_title"
     const val HISTORY_DETAIL_DATE = "history_detail_date"

@@ -249,6 +249,10 @@
     <string name="template_open_version">See what this version planned in %1$s</string>
     <string name="home_templates">Templates</string>
     <string name="detail_save_as_plan">Save as plan</string>
+    <string name="detail_schedule">Schedule it</string>
+    <string name="detail_schedule_title">Add to a program</string>
+    <string name="detail_schedule_day">Day (optional)</string>
+    <string name="detail_schedule_confirm">Add</string>
     <string name="detail_plan_name">Plan name</string>
     <string name="detail_saved_as_plan">Saved as a plan</string>
     <string name="detail_open_plan">Open plan</string>

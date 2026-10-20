@@ -2636,3 +2636,27 @@ separate screen for examples (the empty state is the only place the choice is ne
 **Covered by** `StarterProgramsTest`, which decodes all three documents with the app's codec and checks every
 reference, seeded id, the absent loads and the RPE, and by the screen test that taps a card and asserts the
 asset it inserts.
+
+## P3.18
+
+The copy itself has existed since N31: a finished workout's exercises and performed sets become a template,
+and the confirmation offers to open it. What it did not ask is the question the lifter already answered in
+their head — *when do I train this?* — so the plan arrived with no slot and the schedule was another trip
+through the program editor.
+
+**Why offer the schedule at save time.** The decision to keep the workout is made in the same breath as the
+decision to repeat it; asking later means finding the plan and the program separately. The dialog is one
+step and reuses the slot write the editor already has.
+
+**Why the weekday is optional.** P3.3 allows an order-only slot, and not every plan belongs on a fixed day.
+A day chosen here is a shortcut, not a rule; the editor remains where the week is read and changed.
+
+**Why it lands in the program's editor.** The offer's job is to finish the scheduling, and that screen is
+where the rest of the days are. It is also why the dialog does not offer to make the program active: that is
+a separate decision the editor states.
+
+**Rejected:** auto-adding the plan to the active program (the app would choose), and a separate *Schedule*
+entry in the menu (two entries for one decision).
+
+**Covered by** the screen test that drives the dialog to a program and a Wednesday, and the ViewModel test
+that asserts the slot write and the program the offer reports.

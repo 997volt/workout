@@ -28,13 +28,16 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.SoreMuscle
+import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.ui.components.TestTags
+import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.DayOfWeek
 import java.time.Instant
 
 /**
@@ -248,6 +251,33 @@ class WorkoutDetailScreenTest {
         assertEquals("t1", opened)
     }
 
+    @Test
+    fun aSavedPlan_canBeScheduledIntoAProgram_onAChosenDay() {
+        // P3.18: the copy's next question is when it is trained. The day is optional, and the slot it
+        // writes is the program's, which is why this lands in that program's editor afterwards.
+        var scheduled: Pair<String, DayOfWeek?>? = null
+        setScreen(
+            savedTemplate = "t1",
+            programs = listOf(WorkoutProgram(id = "p1", name = "Upper/lower")),
+            onScheduleTemplate = { programId, weekday -> scheduled = programId to weekday },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.DETAIL_SCHEDULE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.detailScheduleDay("WEDNESDAY")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.DETAIL_SCHEDULE_CONFIRM).performClick()
+
+        assertThat(scheduled).isEqualTo("p1" to DayOfWeek.WEDNESDAY)
+    }
+
+    @Test
+    fun withNoPrograms_theSavedPlan_offersOnlyItsEditor() {
+        // Nothing to schedule into yet, so the offer does not stand there doing nothing.
+        setScreen(savedTemplate = "t1")
+
+        composeTestRule.onNodeWithTag(TestTags.DETAIL_SCHEDULE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.DETAIL_OPEN_NEW_PLAN).assertIsDisplayed()
+    }
+
     private fun setScreen(
         uiState: WorkoutDetailUiState = state,
         onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit =
@@ -259,6 +289,8 @@ class WorkoutDetailScreenTest {
         savedTemplate: String? = null,
         onSaveAsTemplate: (String) -> Unit = {},
         onOpenTemplate: (String) -> Unit = {},
+        programs: List<WorkoutProgram> = emptyList(),
+        onScheduleTemplate: (String, DayOfWeek?) -> Unit = { _, _ -> },
     ) {
         composeTestRule.setContent {
             WorkoutDetailScreen(
@@ -271,6 +303,8 @@ class WorkoutDetailScreenTest {
                 savedTemplate = savedTemplate,
                 onSaveAsTemplate = onSaveAsTemplate,
                 onOpenTemplate = onOpenTemplate,
+                programs = programs,
+                onScheduleTemplate = onScheduleTemplate,
                 onBack = {},
             )
         }

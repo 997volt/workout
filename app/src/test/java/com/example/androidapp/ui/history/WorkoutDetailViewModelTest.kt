@@ -8,16 +8,22 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgramRun
+import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
+import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.repository.ProgramImportSummary
+import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.StartedSession
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
@@ -39,7 +45,10 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * The history detail's own mapping (ROADMAP B5, B9).
@@ -95,12 +104,37 @@ class WorkoutDetailViewModelTest {
         assertNull("the offer is dismissed once taken", viewModel.savedTemplate.value)
     }
 
-    private fun viewModelFor(templates: FakeTemplateRepository = FakeTemplateRepository()) =
-        WorkoutDetailViewModel(
-            workoutRepository = repository,
-            templateRepository = templates,
-            savedStateHandle = SavedStateHandle(mapOf("sessionId" to SESSION_ID)),
-        )
+    private fun viewModelFor(
+        templates: FakeTemplateRepository = FakeTemplateRepository(),
+        programs: FakeProgramRepository = FakeProgramRepository(),
+    ) = WorkoutDetailViewModel(
+        workoutRepository = repository,
+        templateRepository = templates,
+        programRepository = programs,
+        savedStateHandle = SavedStateHandle(mapOf("sessionId" to SESSION_ID)),
+    )
+
+    @Test
+    fun schedulingTheSavedPlan_addsASlot_andOffersTheProgram() = runTest(dispatcher) {
+        // P3.18: the schedule offer writes the program's slot with the day chosen in the dialog, and
+        // reports the program so the screen can open it.
+        val templates = FakeTemplateRepository(savedId = "plan-1")
+        val programs = FakeProgramRepository()
+        val viewModel = viewModelFor(templates, programs)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onSaveAsTemplate("Push day")
+        advanceUntilIdle()
+        viewModel.onScheduleTemplate("p1", DayOfWeek.WEDNESDAY)
+        advanceUntilIdle()
+
+        assertEquals(listOf(Triple("p1", "plan-1", DayOfWeek.WEDNESDAY)), programs.added)
+        assertEquals("p1", viewModel.scheduledProgram.value)
+
+        viewModel.onScheduledHandled()
+        assertNull("the offer is taken once", viewModel.scheduledProgram.value)
+    }
 
     @Test
     fun everyColumnOfASet_reachesTheScreen() = runTest(dispatcher) {
@@ -382,4 +416,85 @@ private class FakeTemplateRepository(
     override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
 
     private fun unused(): Nothing = error("this fake does not write")
+}
+
+/** A program repository that records the one write this screen makes (P3.18). */
+private class FakeProgramRepository : ProgramRepository {
+    val added = mutableListOf<Triple<String, String, DayOfWeek?>>()
+
+    override fun observePrograms(): Flow<List<WorkoutProgram>> =
+        flowOf(listOf(WorkoutProgram(id = "p1", name = "Upper/lower")))
+
+    override fun observeProgram(programId: String): Flow<WorkoutProgram?> = flowOf(null)
+
+    override fun observeActivePrograms(): Flow<List<WorkoutProgram>> = flowOf(emptyList())
+
+    override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = flowOf(emptyList())
+
+    override fun observeProgramRun(programId: String): Flow<ProgramRun?> = flowOf(null)
+
+    override suspend fun addSlot(
+        programId: String,
+        templateId: String,
+        weekday: DayOfWeek?,
+    ): DataResult<Unit> {
+        added += Triple(programId, templateId, weekday)
+        return DataResult.Success(Unit)
+    }
+
+    override suspend fun setSubstitution(
+        slotId: String,
+        weekStart: LocalDate,
+        templateId: String?,
+    ): DataResult<Unit> = error("this screen does not substitute an occurrence")
+
+    override suspend fun slotPreviousPerformance(
+        slotId: String,
+        exerciseId: String,
+        currentSessionId: String,
+        zone: ZoneId,
+    ): DataResult<PreviousPerformance> = error("this screen does not read slot history")
+
+    override suspend fun pendingOccurrences(
+        today: LocalDate,
+        zone: ZoneId,
+    ): DataResult<List<PendingOccurrence>> = error("this screen does not read the schedule")
+
+    override suspend fun skipOccurrences(
+        slotIds: List<String>,
+        weekStart: LocalDate,
+    ): DataResult<Unit> = error("this screen does not skip an occurrence")
+
+    override suspend fun exportProgramDocument(programId: String): DataResult<String> =
+        error("this screen does not export a program")
+
+    override suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary> =
+        error("this screen does not import a program")
+
+    override suspend fun createProgram(name: String): DataResult<String> =
+        error("this screen does not create a program")
+
+    override suspend fun renameProgram(programId: String, name: String): DataResult<Unit> =
+        error("this screen does not rename a program")
+
+    override suspend fun deleteProgram(programId: String): DataResult<Unit> =
+        error("this screen does not delete a program")
+
+    override suspend fun activateProgram(programId: String): DataResult<Unit> =
+        error("this screen does not activate a program")
+
+    override suspend fun deactivateProgram(programId: String): DataResult<Unit> =
+        error("this screen does not deactivate a program")
+
+    override suspend fun moveProgram(programId: String, delta: Int): DataResult<Unit> =
+        error("this screen does not move a program")
+
+    override suspend fun setSlotWeekday(slotId: String, weekday: DayOfWeek?): DataResult<Unit> =
+        error("this screen does not reschedule a slot")
+
+    override suspend fun moveSlot(slotId: String, delta: Int): DataResult<Unit> =
+        error("this screen does not move a slot")
+
+    override suspend fun removeSlot(slotId: String): DataResult<Unit> =
+        error("this screen does not remove a slot")
 }

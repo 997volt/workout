@@ -276,6 +276,8 @@ private fun NavGraphBuilder.historyDestinations(navController: NavHostController
             // Saving a workout as a plan offers to go straight to it (ROADMAP N31) — to the editor,
             // not the list, because the point of the offer is the plan that was just made.
             onOpenTemplate = { templateId -> navController.navigate(TemplateEditor(templateId)) },
+            // Scheduling the copy lands in the program it was added to, where its days are set (P3.18).
+            onOpenProgram = { programId -> navController.navigate(ProgramEditor(programId)) },
         )
     }
 }

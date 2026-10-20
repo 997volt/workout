@@ -23,7 +23,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -47,10 +46,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.SoreMuscle
+import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.zoneIdOrNull
 import com.example.androidapp.ui.components.AppTextButton
@@ -69,6 +70,7 @@ import com.example.androidapp.ui.components.setRoleMarker
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.workout.WorkoutFormat
 import com.example.androidapp.ui.workout.activityLabel
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
 
@@ -79,10 +81,23 @@ fun WorkoutDetailRoute(
     viewModel: WorkoutDetailViewModel = hiltViewModel(),
     onOpenExerciseTrends: (String) -> Unit = {},
     onOpenTemplate: (String) -> Unit = {},
+    /** P3.18: where the schedule offer lands, the program the plan was just added to. */
+    onOpenProgram: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     val savedTemplate by viewModel.savedTemplate.collectAsStateWithLifecycle()
+    val programs by viewModel.programs.collectAsStateWithLifecycle()
+    val scheduledProgram by viewModel.scheduledProgram.collectAsStateWithLifecycle()
+    val currentOnOpenProgram by rememberUpdatedState(onOpenProgram)
+
+    LaunchedEffect(scheduledProgram) {
+        scheduledProgram?.let { programId ->
+            viewModel.onDismissSavedTemplate()
+            viewModel.onScheduledHandled()
+            currentOnOpenProgram(programId)
+        }
+    }
 
     // Deleting the workout leaves nothing to look at, so the screen closes itself
     // rather than sitting on "no longer stored".
@@ -104,66 +119,18 @@ fun WorkoutDetailRoute(
         onSaveAsTemplate = viewModel::onSaveAsTemplate,
         onDismissSavedTemplate = viewModel::onDismissSavedTemplate,
         onOpenTemplate = onOpenTemplate,
+        programs = programs,
+        onScheduleTemplate = viewModel::onScheduleTemplate,
     )
 }
 
-/** Asks for the plan's name, since a copy called "Untitled" is a copy nobody finds again (N31). */
+/** Shows the screen's one write failure, if there is one (F7). */
 @Composable
-private fun SaveAsPlanDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
-) {
-    var name by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.detail_save_as_plan)) },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                singleLine = true,
-                label = { Text(stringResource(R.string.detail_plan_name)) },
-                modifier = Modifier.testTag(TestTags.DETAIL_PLAN_NAME),
-            )
-        },
-        confirmButton = {
-            AppTextButton(
-                onClick = { onConfirm(name) },
-                // A blank name is refused by the repository too; disabling the button says so before
-                // the tap rather than after it.
-                enabled = name.isNotBlank(),
-                modifier = Modifier.testTag(TestTags.DETAIL_PLAN_CONFIRM),
-            ) {
-                Text(stringResource(R.string.action_save))
-            }
-        },
-        dismissButton = {
-            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-        },
-    )
-}
-
-/** Confirms the copy and offers to go to it (ROADMAP N31). */
-@Composable
-private fun SavedAsPlanDialog(
-    onDismiss: () -> Unit,
-    onOpen: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.detail_saved_as_plan)) },
-        confirmButton = {
-            AppTextButton(
-                onClick = onOpen,
-                modifier = Modifier.testTag(TestTags.DETAIL_OPEN_NEW_PLAN),
-            ) {
-                Text(stringResource(R.string.detail_open_plan))
-            }
-        },
-        dismissButton = {
-            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
-        },
-    )
+private fun DetailErrorEffect(error: DataError?, host: SnackbarHostState) {
+    error?.let {
+        val message = dataErrorMessage(it)
+        LaunchedEffect(message) { host.showSnackbar(message) }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -182,12 +149,12 @@ fun WorkoutDetailScreen(
     onSaveAsTemplate: (String) -> Unit = {},
     onDismissSavedTemplate: () -> Unit = {},
     onOpenTemplate: (String) -> Unit = {},
+    /** P3.18: the programs the saved plan can be scheduled into. */
+    programs: List<WorkoutProgram> = emptyList(),
+    onScheduleTemplate: (String, DayOfWeek?) -> Unit = { _, _ -> },
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    state.error?.let { error ->
-        val message = dataErrorMessage(error)
-        LaunchedEffect(message) { snackbarHostState.showSnackbar(message) }
-    }
+    DetailErrorEffect(error = state.error, host = snackbarHostState)
 
     var editing by remember { mutableStateOf<HistorySet?>(null) }
     var confirmingDelete by remember { mutableStateOf(false) }
@@ -197,16 +164,18 @@ fun WorkoutDetailScreen(
     // rotation would otherwise put the workout back into reading and switch every edit off under them.
     var editingWorkout by rememberSaveable { mutableStateOf(false) }
 
-    PlanDialogs(
+    PlanDialogsHost(
         savingAsPlan = savingAsPlan,
         savedTemplate = savedTemplate,
-        onConfirmName = { name ->
+        programs = programs,
+        onSaveAsTemplate = { name ->
             savingAsPlan = false
             onSaveAsTemplate(name)
         },
         onDismissName = { savingAsPlan = false },
-        onDismissOffer = onDismissSavedTemplate,
+        onDismissSavedTemplate = onDismissSavedTemplate,
         onOpenTemplate = onOpenTemplate,
+        onScheduleTemplate = onScheduleTemplate,
     )
 
     Scaffold(
@@ -798,28 +767,4 @@ private fun EditSetDialog(
             onDismiss()
         },
     )
-}
-
-/** The two dialogs this screen can show around saving a plan, together (ROADMAP N31). */
-@Composable
-private fun PlanDialogs(
-    savingAsPlan: Boolean,
-    savedTemplate: String?,
-    onConfirmName: (String) -> Unit,
-    onDismissName: () -> Unit,
-    onDismissOffer: () -> Unit,
-    onOpenTemplate: (String) -> Unit,
-) {
-    if (savingAsPlan) {
-        SaveAsPlanDialog(onDismiss = onDismissName, onConfirm = onConfirmName)
-    }
-    savedTemplate?.let { templateId ->
-        SavedAsPlanDialog(
-            onDismiss = onDismissOffer,
-            onOpen = {
-                onDismissOffer()
-                onOpenTemplate(templateId)
-            },
-        )
-    }
 }

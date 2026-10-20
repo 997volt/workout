@@ -18,6 +18,12 @@ unreleased.
 
 ### Added
 
+- **A saved plan can be scheduled as it is saved** (P3.18, part). *Save as plan*'s confirmation now offers
+  *Schedule it* beside *Open the plan*: choose a program and a weekday — or none, for an order-only slot —
+  and the slot is written before the offer moves on to that program's editor, where the rest of the week is
+  set. It is the second question the lifter already has an answer to at that moment: not only *keep this
+  workout* but *train it on Wednesdays*.
+
 - **Three examples on day zero** (P3.19). An empty Programs screen now offers *Start from an example* —
   full body, upper/lower, or push/pull/legs — beside the file picker and *New program*. Each is a real
   program document in the APK, inserted through the same codec and merge a picked file uses, so importing

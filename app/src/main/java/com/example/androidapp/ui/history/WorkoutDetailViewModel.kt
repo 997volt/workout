@@ -1,27 +1,27 @@
 package com.example.androidapp.ui.history
 
-import kotlinx.coroutines.flow.asStateFlow
-import com.example.androidapp.domain.repository.TemplateRepository
-import com.example.androidapp.domain.model.JointPain
-import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.domain.model.SetType
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
+import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
 import com.example.androidapp.ui.navigation.WorkoutDetail
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.Duration
-import javax.inject.Inject
-import androidx.navigation.toRoute
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -29,6 +29,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import java.time.Duration
+import javax.inject.Inject
 
 /** A set as the history detail shows it. */
 data class HistorySet(
@@ -128,6 +131,8 @@ class WorkoutDetailViewModel @Inject constructor(
     private val workoutRepository: WorkoutRepository,
     /** Saving a finished workout as a plan is a template write (ROADMAP N31). */
     private val templateRepository: TemplateRepository,
+    /** Scheduling the new plan into a program is a slot write (P3.18). */
+    private val programRepository: ProgramRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -167,6 +172,44 @@ class WorkoutDetailViewModel @Inject constructor(
     /** Called once the offer to open the new plan has been taken or dismissed. */
     fun onDismissSavedTemplate() {
         _savedTemplate.value = null
+    }
+
+    /** The programs the saved plan can be scheduled into (P3.18). */
+    val programs: StateFlow<List<WorkoutProgram>> = programRepository.observePrograms()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = emptyList(),
+        )
+
+    private val _scheduledProgram = MutableStateFlow<String?>(null)
+
+    /**
+     * The program the saved plan was just added to, for the screen to open (P3.18).
+     *
+     * The slot is order-only when [weekday] is null; the program's editor is where more days are set,
+     * which is why the offer lands there rather than in the templates list.
+     */
+    val scheduledProgram: StateFlow<String?> = _scheduledProgram.asStateFlow()
+
+    /** Adds the plan just saved to [programId], on [weekday] or order-only (P3.18). */
+    fun onScheduleTemplate(programId: String, weekday: DayOfWeek?) {
+        val templateId = _savedTemplate.value ?: return
+        viewModelScope.launch {
+            when (val result = programRepository.addSlot(programId, templateId, weekday)) {
+                is DataResult.Success -> {
+                    lastError.value = null
+                    _scheduledProgram.value = programId
+                }
+
+                is DataResult.Failure -> lastError.value = result.error
+            }
+        }
+    }
+
+    /** Called once the schedule offer has been taken, so it does not open twice. */
+    fun onScheduledHandled() {
+        _scheduledProgram.value = null
     }
 
     /** True once the workout is gone, so the screen can leave rather than sit on a blank page. */
