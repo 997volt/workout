@@ -1131,7 +1131,8 @@ the rule; that one argues it.
   already decides the direction from where the set sits in its range. A nullable field on the *plan's*
   exercise would be a second place for one number, and a device setting would put an authored training
   decision outside the file that is the app's only escape hatch. So the plan gains the sentence it lacked —
-  the step, the gate, and which one is missing — and adds no storage.
+  the rep below the ceiling, the weight at it, the gate, and which one is missing (B181 corrected the first
+  wording, which named the weight step as the only one) — and adds no storage.
   ([evidence](DECISIONS-EVIDENCE.md#p317))
 
 ## Adherence

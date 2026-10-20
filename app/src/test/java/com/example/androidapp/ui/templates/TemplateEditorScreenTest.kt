@@ -727,6 +727,31 @@ class TemplateEditorScreenTest {
     }
 
     @Test
+    fun aRangePlan_statesTheRepStepFirst() {
+        // B181: Done raises a set's reps below its ceiling and the weight only at it, so a 5–8 plan
+        // progresses by one rep long before it adds 2.5 kg. The block used to print only the weight.
+        val planned = twoExercises.exercises.first().copy(
+            targetRpeHalves = 16,
+            sets = listOf(
+                TemplateSet(
+                    id = "s1",
+                    templateExerciseId = "te1",
+                    setIndex = 1,
+                    targetWeightGrams = 100_000L,
+                    targetRepsMin = 5,
+                    targetRepsMax = 8,
+                ),
+            ),
+        )
+        setScreen(state = twoExercises.copy(exercises = listOf(planned)))
+        openBlock("te1")
+
+        composeTestRule
+            .onNodeWithText("Progresses by +1 rep below the rep ceiling, then by +2.5 kg", substring = true)
+            .assertExists()
+    }
+
+    @Test
     fun theQuickEntry_writesTheCountAndTheShape() {
         // P3.18: a block that is one shape repeated is one row — four sets of six at 100 kg — and the
         // button is the only write; the per-set dialog stays for the sets that differ.
