@@ -71,8 +71,9 @@ unreleased.
   one twice adds nothing. They are structure only: seeded movements, **no loads**, a target RPE of 8 so
   progression has a gate, and a weekday per day. They arrive inactive, so the lifter renames and activates
   one rather than the app choosing; nothing is installed at startup, and a deleted example returns only by
-  tapping its card again. `StarterProgramsTest` decodes all three and checks every reference, seeded id, the
-  absent loads, and the RPE.
+  tapping its card again — the document's own program row is un-hidden (B177), while a deleted *exercise* it
+  names is still dropped rather than resurrected (B51). `StarterProgramsTest` decodes all three and checks
+  every reference, seeded id, the absent loads, and the RPE.
 
 - **A program table becomes a program document** (N167). Drop a spreadsheet of `Program, Day, Weekday,
   Exercise, Sets, Reps, Load, Rest` into the page and it writes `program.json` for the app's Programs → Load:

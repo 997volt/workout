@@ -404,7 +404,9 @@ class RoomProgramRepository @Inject constructor(
             // Throws InvalidInputException for a file we cannot use, before touching anything: a
             // rejected document must leave the database exactly as it was.
             val document = ProgramDocumentCodec.decode(text)
-            database.withTransaction { mergeProgramDocument(database, dao, document) }
+            // One timestamp inside the transaction, so a restore and the rows it counts agree (B177).
+            val now = timeSource.nowEpochMillis()
+            database.withTransaction { mergeProgramDocument(database, dao, document, now) }
         }
 
     private companion object {
@@ -498,14 +500,26 @@ private suspend fun withAncestors(ids: List<String>, dao: ExerciseDao): List<Exe
  * restoring it: un-deleting a lift is a write to the user's library, which is what "overwrites
  * nothing" refuses, and the load's sentence says "not in your library" so that it is true whether
  * the row is absent or merely hidden.
+ *
+ * **The program itself is the exception** (B177). A deleted program keeps its id, so loading its
+ * document again would ignore every row of it and the card would answer "already here" to a program
+ * that is not there. The document is a request for *that program*, so its own row is un-hidden —
+ * visibility alone, never the name, position or follow state — and the workouts it points at were
+ * never deleted with it. A deleted *exercise* is still not resurrected: it is shared library content,
+ * not the program the document is about.
  */
 private suspend fun mergeProgramDocument(
     database: WorkoutDatabase,
     programDao: ProgramDao,
     document: ProgramDocument,
+    now: Long,
 ): ProgramImportSummary {
     val backupDao = database.backupDao()
     val programBackup = database.programBackupDao()
+
+    // One statement, before the inserts: a hidden program comes back, a live or absent one is
+    // untouched (only rows with `deletedAt` set are updated), and the count says which happened.
+    val programsRestored = programBackup.restoreProgramVisibility(document.program.id, now)
 
     // The library's shape is enforced on the way in (B92): a document can carry a parent link the app would
     // never write, and a movement filed under a head the document does not carry keeps the link (the head may
@@ -544,7 +558,7 @@ private suspend fun mergeProgramDocument(
     programBackup.insertProgramSlots(slots.map { it.toEntity() })
 
     return ProgramImportSummary(
-        programs = programsAdded,
+        programs = programsAdded + programsRestored,
         templates = templatesAdded,
         exercises = exercisesAdded,
         droppedMovements = document.templateExercises.size - planned.size,

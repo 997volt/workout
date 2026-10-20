@@ -55,6 +55,23 @@ interface ProgramBackupDao {
     @Query("SELECT id FROM program_substitutions WHERE deletedAt IS NOT NULL")
     suspend fun softDeletedProgramSubstitutionIds(): List<String>
 
+    /**
+     * Un-hides one program, and only its visibility (B177).
+     *
+     * The document merge brings back a program the lifter deleted, and this is the whole write: the
+     * name, the position and the follow state stay the device's. Deleting cleared `isActive`, and a
+     * restore that wrote the document's row back could re-follow a program that was set down on
+     * purpose — the reasons the backup's row-by-row restore is not reused here.
+     */
+    @Query(
+        """
+        UPDATE programs
+        SET deletedAt = NULL, updatedAt = :at
+        WHERE id = :id AND deletedAt IS NOT NULL
+        """,
+    )
+    suspend fun restoreProgramVisibility(id: String, at: Long): Int
+
     @Update
     suspend fun restorePrograms(rows: List<ProgramEntity>): Int
 

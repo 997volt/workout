@@ -2627,15 +2627,22 @@ exercise library; three uninvited programs in the list are clutter, and the empt
 offer is welcome. It also gives *Start empty* and *Load a program file* their place on one screen.
 
 **One-shot means not installed, not undeletable.** A deleted example is not re-inserted at startup, because
-nothing is inserted at startup. Tapping its card again is a deliberate restore, and the merge's
-restore-soft-deleted rule makes that work; the card is the consent.
+nothing is inserted at startup. Tapping its card again is a deliberate restore, and B177 made that work for
+real: the merge had no restore rule, so the insert ignored every row of the program it was asked for and the
+card answered "already here" to a program that was not there. What the document now un-hides is its **own
+program row**, visibility alone — the follow state the delete cleared stays cleared, and the workouts it
+points at were never deleted with it. A deleted *exercise* is still dropped rather than resurrected (B51):
+the library is shared content that every plan reads, not the program the document is about.
 
-**Rejected:** seeding at first open (clutter and re-adding), examples with loads (a prescription), and a
-separate screen for examples (the empty state is the only place the choice is needed).
+**Rejected:** seeding at first open (clutter and re-adding), examples with loads (a prescription), a
+separate screen for examples (the empty state is the only place the choice is needed), and restoring the
+document's whole row set (it can re-follow a program that was set down on purpose, and un-deleting a
+template un-hides a plan the lifter removed separately).
 
 **Covered by** `StarterProgramsTest`, which decodes all three documents with the app's codec and checks every
-reference, seeded id, the absent loads and the RPE, and by the screen test that taps a card and asserts the
-asset it inserts.
+reference, seeded id, the absent loads and the RPE, the screen test that taps a card and asserts the
+asset it inserts, and the instrumented `ProgramDocumentTest` case that deletes a loaded program and loads
+the document again.
 
 ## P3.18
 

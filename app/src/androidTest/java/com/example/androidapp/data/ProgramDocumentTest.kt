@@ -97,6 +97,34 @@ class ProgramDocumentTest {
     }
 
     @Test
+    fun aDeletedProgram_comesBackWhenItsDocumentIsLoadedAgain() = runTest {
+        // B177: deleting a program soft-deletes it, and an insert-only merge would ignore every row of
+        // a document that names it — the example card answered "already here" to a program that was
+        // not there. Loading the document again is the request, so its own row is un-hidden, and only
+        // its visibility: the follow state the delete cleared stays cleared.
+        val file = exportOf(seedProgram())
+        wipe()
+        importOf(file)
+        val programId = programs.observePrograms().first().single().id
+        (programs.activateProgram(programId) as DataResult.Success)
+        (programs.deleteProgram(programId) as DataResult.Success)
+        assertTrue("the program is gone from the list", programs.observePrograms().first().isEmpty())
+
+        val summary = importOf(file)
+
+        assertEquals("the program is back", 1, summary.programs)
+        assertEquals("and nothing else was written", 0, summary.templates)
+        assertEquals(0, summary.exercises)
+        val restored = programs.observePrograms().first().single()
+        assertEquals("it is the same program", programId, restored.id)
+        assertFalse("a restore does not re-follow what was set down", restored.isActive)
+        assertEquals(
+            listOf(DayOfWeek.MONDAY),
+            programs.observeSlots(programId).first().map { it.weekday },
+        )
+    }
+
+    @Test
     fun loadingTheSameDocumentTwice_isANoOp() = runTest {
         val file = exportOf(seedProgram())
         wipe()

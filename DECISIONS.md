@@ -1085,7 +1085,8 @@ the rule; that one argues it.
   × 4, push/pull/legs × 3, shipped as program documents in assets and inserted through the same codec and
   merge a picked file uses. They are structure only — seeded movements, no loads, a target RPE of 8 so N50
   has a gate — and arrive inactive, so the lifter renames and activates one rather than the app choosing.
-  Nothing is installed at startup: an example appears only when its card is tapped.
+  Nothing is installed at startup: an example appears only when its card is tapped, and a deleted one comes
+  back the same way — the document un-hides its own program row and nothing else (B177).
   ([evidence](DECISIONS-EVIDENCE.md#p319))
 - **A saved plan offers the schedule, and lands in the program it was added to** (P3.18). *Save as plan*'s
   confirmation offers *Schedule it* beside *Open the plan*: pick a program and a weekday (or none, for an
