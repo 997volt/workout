@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,7 +43,7 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.ui.components.label
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppRow
@@ -54,6 +55,7 @@ import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.theme.TileAccent
 import com.example.androidapp.ui.transfer.ClearOutcome
 import com.example.androidapp.ui.transfer.DataTransferViewModel
@@ -96,7 +98,7 @@ fun SettingsRoute(
         onSetRestCue = viewModel::onSetRestCue,
         onSetKeepScreenOn = viewModel::onSetKeepScreenOn,
         onSetRestTimer = viewModel::onSetRestTimer,
-        onSetProgressionPrompt = viewModel::onSetProgressionPrompt,
+        onSetProgressionMode = viewModel::onSetProgressionMode,
         onSetWeightUnit = viewModel::onSetWeightUnit,
         onExportData = transferActions.export,
         onImportData = transferActions.import,
@@ -125,7 +127,7 @@ fun SettingsScreen(
     onSetRestCue: (Boolean) -> Unit = {},
     onSetKeepScreenOn: (Boolean) -> Unit = {},
     onSetRestTimer: (Boolean) -> Unit = {},
-    onSetProgressionPrompt: (Boolean) -> Unit = {},
+    onSetProgressionMode: (ProgressionMode) -> Unit = {},
     onSetWeightUnit: (WeightUnit) -> Unit = {},
     onExportData: () -> Unit = {},
     onImportData: () -> Unit = {},
@@ -170,7 +172,7 @@ fun SettingsScreen(
             onSetRestCue = onSetRestCue,
             onSetKeepScreenOn = onSetKeepScreenOn,
             onSetRestTimer = onSetRestTimer,
-            onSetProgressionPrompt = onSetProgressionPrompt,
+            onSetProgressionMode = onSetProgressionMode,
             onSetWeightUnit = onSetWeightUnit,
             onExportData = onExportData,
             onImportData = onImportData,
@@ -193,7 +195,7 @@ private fun SettingsBody(
     onSetRestCue: (Boolean) -> Unit,
     onSetKeepScreenOn: (Boolean) -> Unit,
     onSetRestTimer: (Boolean) -> Unit,
-    onSetProgressionPrompt: (Boolean) -> Unit,
+    onSetProgressionMode: (ProgressionMode) -> Unit,
     onSetWeightUnit: (WeightUnit) -> Unit,
     onExportData: () -> Unit,
     onImportData: () -> Unit,
@@ -221,7 +223,7 @@ private fun SettingsBody(
             onSetRestCue = onSetRestCue,
             onSetKeepScreenOn = onSetKeepScreenOn,
             onSetRestTimer = onSetRestTimer,
-            onSetProgressionPrompt = onSetProgressionPrompt,
+            onSetProgressionMode = onSetProgressionMode,
         )
         DataSection(
             onExport = onExportData,
@@ -330,6 +332,46 @@ private fun RestChoiceRow(
 }
 
 /** A labelled switch, with the sentence that says what turning it on does. */
+/**
+ * The three answers to "what does *Done* do with the step a plan earned" (P3.17).
+ *
+ * A switch could say ask or not ask; it could not say *answer it for me*, which is the middle a lifter
+ * wants. The chips are a choice rather than a toggle, and each is addressed by its mode name.
+ */
+@Composable
+private fun SettingProgressionMode(
+    label: String,
+    hint: String,
+    mode: ProgressionMode,
+    onSetMode: (ProgressionMode) -> Unit,
+) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(text = label, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = hint,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ProgressionMode.entries.forEach { option ->
+                FilterChip(
+                    selected = option == mode,
+                    onClick = { onSetMode(option) },
+                    label = { Text(stringResource(progressionModeLabel(option))) },
+                    modifier = Modifier.testTag(TestTags.settingsProgressionMode(option.name)),
+                )
+            }
+        }
+    }
+}
+
+private fun progressionModeLabel(mode: ProgressionMode): Int = when (mode) {
+    ProgressionMode.SUGGEST -> R.string.settings_progression_suggest
+    ProgressionMode.APPLY_AT_DONE -> R.string.settings_progression_apply
+    ProgressionMode.OFF -> R.string.settings_progression_off
+}
+
 @Composable
 private fun SettingSwitch(
     label: String,
@@ -367,7 +409,7 @@ private fun WorkoutSwitches(
     onSetRestCue: (Boolean) -> Unit,
     onSetKeepScreenOn: (Boolean) -> Unit,
     onSetRestTimer: (Boolean) -> Unit,
-    onSetProgressionPrompt: (Boolean) -> Unit,
+    onSetProgressionMode: (ProgressionMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AppCard(modifier = modifier) {
@@ -379,12 +421,11 @@ private fun WorkoutSwitches(
             testTag = TestTags.SETTINGS_REST_TIMER,
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        SettingSwitch(
+        SettingProgressionMode(
             label = stringResource(R.string.settings_progression),
             hint = stringResource(R.string.settings_progression_hint),
-            checked = state.progressionPromptEnabled,
-            onCheckedChange = onSetProgressionPrompt,
-            testTag = TestTags.SETTINGS_PROGRESSION,
+            mode = state.progressionMode,
+            onSetMode = onSetProgressionMode,
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         SettingSwitch(

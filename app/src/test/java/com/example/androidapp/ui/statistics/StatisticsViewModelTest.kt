@@ -15,6 +15,7 @@ import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PlanTarget
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.Side
@@ -649,8 +650,8 @@ private class FakeSettingsRepository(
     override fun observeWeightUnit(): Flow<WeightUnit> = flowOf(WeightUnit.KILOGRAMS)
 
     override suspend fun setWeightUnit(unit: WeightUnit): DataResult<Unit> = DataResult.Success(Unit)
-    override fun observeProgressionPromptEnabled(): Flow<Boolean> = flowOf(true)
-    override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> =
+    override fun observeProgressionMode(): Flow<ProgressionMode> = flowOf(ProgressionMode.SUGGEST)
+    override suspend fun setProgressionMode(mode: ProgressionMode): DataResult<Unit> =
         DataResult.Success(Unit)
     override fun observeStatisticsRange(): Flow<StatisticsRange> = stored
     override suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit> {

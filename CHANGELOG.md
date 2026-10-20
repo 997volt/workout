@@ -18,6 +18,12 @@ unreleased.
 
 ### Added
 
+- **The progression prompt is a choice, not a switch** (P3.17, part). Settings offers **Ask**, **Apply at
+  Done** and **Off**. Apply opens the question with every earned step already picked — the lifter reads what
+  the plan would become and one *Done* writes it — while Ask leaves it unpicked and Off finishes without
+  asking. A device that never opens the new control keeps the old switch's answer: on reads as Ask, off as
+  Off, and the old key is never written again.
+
 - **The next set says where its numbers came from** (P3.17, part). Under the pending set's fields, a line
   names the two sources the prefill read: *Last time 5 × 100 kg, RPE 8.5 · Plan 5 reps, RPE 8*. It is a
   sentence, not a prescription — the remembered number and the planned one are labelled, and a set with

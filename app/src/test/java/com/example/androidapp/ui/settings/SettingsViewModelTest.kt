@@ -1,17 +1,18 @@
 package com.example.androidapp.ui.settings
 
-import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
-import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.ProgressionMode
+import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.repository.SettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -102,13 +103,13 @@ class SettingsViewModelTest {
         val viewModel = SettingsViewModel(repository)
         advanceUntilIdle()
 
-        assertEquals("on by default", true, viewModel.uiState.value.progressionPromptEnabled)
+        assertEquals("ask by default", ProgressionMode.SUGGEST, viewModel.uiState.value.progressionMode)
 
-        viewModel.onSetProgressionPrompt(false)
+        viewModel.onSetProgressionMode(ProgressionMode.OFF)
         advanceUntilIdle()
 
-        assertEquals(false, viewModel.uiState.value.progressionPromptEnabled)
-        assertEquals(listOf(false), repository.progressionWrites)
+        assertEquals(ProgressionMode.OFF, viewModel.uiState.value.progressionMode)
+        assertEquals(listOf(ProgressionMode.OFF), repository.progressionWrites)
     }
 }
 
@@ -159,17 +160,17 @@ private class FakeSettingsRepository(
     }
 
     /** N66: the same read-back shape as N44's, so a refused write cannot look applied. */
-    private val progression = MutableStateFlow(true)
-    val progressionWrites = mutableListOf<Boolean>()
+    private val progression = MutableStateFlow(ProgressionMode.SUGGEST)
+    val progressionWrites = mutableListOf<ProgressionMode>()
 
-    override fun observeProgressionPromptEnabled(): Flow<Boolean> = progression.asStateFlow()
+    override fun observeProgressionMode(): Flow<ProgressionMode> = progression.asStateFlow()
 
-    override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> {
-        progressionWrites += enabled
+    override suspend fun setProgressionMode(mode: ProgressionMode): DataResult<Unit> {
+        progressionWrites += mode
         return if (refuseWrites) {
             DataResult.Failure(DataError.Invalid("refused"))
         } else {
-            progression.value = enabled
+            progression.value = mode
             DataResult.Success(Unit)
         }
     }

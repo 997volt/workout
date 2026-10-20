@@ -6,14 +6,15 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * The settings screen's state (ROADMAP N21).
@@ -51,8 +52,8 @@ class SettingsViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            settingsRepository.observeProgressionPromptEnabled().collect { enabled ->
-                _uiState.update { it.copy(progressionPromptEnabled = enabled) }
+            settingsRepository.observeProgressionMode().collect { mode ->
+                _uiState.update { it.copy(progressionMode = mode) }
             }
         }
         viewModelScope.launch {
@@ -74,8 +75,8 @@ class SettingsViewModel @Inject constructor(
         write { settingsRepository.setRestTimerEnabled(enabled) }
     }
 
-    fun onSetProgressionPrompt(enabled: Boolean) {
-        write { settingsRepository.setProgressionPromptEnabled(enabled) }
+    fun onSetProgressionMode(mode: ProgressionMode) {
+        write { settingsRepository.setProgressionMode(mode) }
     }
 
     fun onSetWeightUnit(unit: WeightUnit) {
@@ -116,12 +117,8 @@ data class SettingsUiState(
      * nothing is counted, nothing is adjusted and nothing chimes.
      */
     val restTimerEnabled: Boolean = true,
-    /**
-     * Whether *Done* asks about the next step a plan earned (ROADMAP N50, N66).
-     *
-     * On, so an upgrade changes nothing for someone who never opens settings.
-     */
-    val progressionPromptEnabled: Boolean = true,
+    /** What *Done* does with the step a plan earned (P3.17); ask by default. */
+    val progressionMode: ProgressionMode = ProgressionMode.SUGGEST,
     /** The unit every weight is read in unless an exercise names its own (ROADMAP N64). */
     val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
     val error: DataError? = null,

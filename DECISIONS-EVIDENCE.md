@@ -2725,3 +2725,14 @@ noise, and inventing a source is the one thing this must not do.
 
 **Covered by** the pure test of `suggestionReason` (both halves, and null when neither speaks) and the
 workout screen test that renders *Last time 5 × 100 kg, RPE 8.5* from a reason.
+
+N66's switch answered "ask or not ask", and the pair of states left out the case the app is actually good at:
+the lifter who trusts the plan's steps and does not want to tap each one. Making it a mode adds the middle
+without a new screen: *Apply at Done* opens the very same question, already answered, so the summary the
+dialog draws is the preview and *Done* is still the only write. That is deliberately **not** a silent apply
+with an undo — an undo would mean writing first and explaining later, while the question costs one press and
+keeps N33's rule intact. The old boolean is read as the fallback (on → Ask, off → Off) so an upgrade does not
+re-ask a lifter who had turned the prompt off.
+
+**Covered by** the workout test that *Apply at Done* opens with every offered row picked and writes nothing
+before *Done*, the settings test that a chip writes the mode, and the existing off test, retargeted.

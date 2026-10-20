@@ -24,6 +24,7 @@ import com.example.androidapp.domain.model.PlannedSetSpec
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgressionChoice
 import com.example.androidapp.domain.model.ProgressionDirection
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionPerformance
 import com.example.androidapp.domain.model.ProgressionPlanSet
 import com.example.androidapp.domain.model.ProgressionPrompt
@@ -353,15 +354,15 @@ class ActiveWorkoutViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     /**
-     * Whether *Done* asks about the next step a plan earned (ROADMAP N66).
+     * What *Done* does with the next step a plan earned (ROADMAP N66, P3.17).
      *
      * Read from settings rather than held as its own state: the answer is the app's, and this reads it
-     * at the moment Done is tapped (N74 moved that decision here from the screen). On by default, so
+     * at the moment Done is tapped (N74 moved that decision here from the screen). *Ask* by default, so
      * an upgrade changes nothing.
      */
-    private val progressionPromptEnabled: StateFlow<Boolean> =
-        settingsRepository.observeProgressionPromptEnabled()
-            .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+    private val progressionMode: StateFlow<ProgressionMode> =
+        settingsRepository.observeProgressionMode()
+            .stateIn(viewModelScope, SharingStarted.Eagerly, ProgressionMode.SUGGEST)
 
     /**
      * Whether a finished rest is heard as well as seen (ROADMAP N27).
@@ -648,19 +649,28 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onFinishExercise(sessionExerciseId: String) {
         val questionOpen = _pendingProgression.value?.sessionExerciseId == sessionExerciseId
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId }
+        val mode = progressionMode.value
         when {
             questionOpen -> {
                 _pendingProgression.value = null
                 viewModelScope.launch { finishExercise(sessionExerciseId) }
             }
 
-            progressionPromptEnabled.value && row?.progression?.hasPlan == true ->
-                _pendingProgression.value = pendingProgressionFor(
+            mode != ProgressionMode.OFF && row?.progression?.hasPlan == true -> {
+                val question = pendingProgressionFor(
                     sessionExerciseId = sessionExerciseId,
                     exerciseName = row.name,
                     unit = row.weightUnit,
                     prompt = row.progression,
                 )
+                // *Apply at Done* starts with every earned step picked, so one press writes them all; the
+                // lifter still reads the answer, and nothing is written until it (N33, P3.17).
+                _pendingProgression.value = if (mode == ProgressionMode.APPLY_AT_DONE) {
+                    question.chooseEveryOffer()
+                } else {
+                    question
+                }
+            }
 
             else -> viewModelScope.launch { finishExercise(sessionExerciseId) }
         }

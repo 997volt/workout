@@ -1,8 +1,9 @@
 package com.example.androidapp.domain.repository
 
-import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.ProgressionMode
+import com.example.androidapp.domain.model.StatisticsRange
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -60,15 +61,15 @@ interface SettingsRepository {
     suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit>
 
     /**
-     * Whether *Done* offers the next step a plan earned (ROADMAP N50, N66).
+     * What *Done* does with the step a plan earned (ROADMAP N50, N66, P3.17).
      *
-     * On by default, because it is what the app has done since N50 and turning it off is the
-     * change a user asks for. Off means the exercise simply finishes: the prompt is a question
-     * about the *plan*, and a lifter who does not want the app editing the plan is not asked it.
+     * Three states rather than a switch: ask (the app's behaviour since N50), answer with every earned step
+     * already picked so one *Done* writes them, or do not ask at all. A mode, because "on" and "off" could
+     * not express the middle — the lifter who wants the steps taken without tapping each one.
      */
-    fun observeProgressionPromptEnabled(): Flow<Boolean>
+    fun observeProgressionMode(): Flow<ProgressionMode>
 
-    suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit>
+    suspend fun setProgressionMode(mode: ProgressionMode): DataResult<Unit>
 
     /**
      * The unit weights are shown and typed in, app-wide (ROADMAP N64).

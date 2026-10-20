@@ -8,6 +8,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.repository.SettingsRepository
@@ -70,11 +71,42 @@ class PreferencesSettingsRepository @Inject constructor(
     override suspend fun setRestTimerEnabled(enabled: Boolean): DataResult<Unit> =
         writeFlag(KEY_REST_TIMER_ENABLED, enabled)
 
-    override fun observeProgressionPromptEnabled(): Flow<Boolean> =
-        observeFlag(KEY_PROGRESSION_PROMPT_ENABLED, true)
+    override fun observeProgressionMode(): Flow<ProgressionMode> = callbackFlow {
+        trySend(currentProgressionMode())
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
+            if (changed == KEY_PROGRESSION_MODE || changed == KEY_PROGRESSION_PROMPT_ENABLED) {
+                trySend(currentProgressionMode())
+            }
+        }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate().distinctUntilChanged()
 
-    override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> =
-        writeFlag(KEY_PROGRESSION_PROMPT_ENABLED, enabled)
+    override suspend fun setProgressionMode(mode: ProgressionMode): DataResult<Unit> =
+        withContext(Dispatchers.IO) {
+            preferences.edit(commit = true) { putString(KEY_PROGRESSION_MODE, mode.name) }
+            if (currentProgressionMode() == mode) {
+                DataResult.Success(Unit)
+            } else {
+                DataResult.Failure(DataError.Storage(IllegalStateException("the setting was not stored")))
+            }
+        }
+
+    /**
+     * The stored mode, or the switch it replaced (N66).
+     *
+     * A device that never opened the new control still has the old boolean: on meant *ask*, off meant finish
+     * without asking, so the fallback is SUGGEST or OFF and never APPLY_AT_DONE. The old key is read, never
+     * written again.
+     */
+    private fun currentProgressionMode(): ProgressionMode {
+        ProgressionMode.fromName(preferences.getString(KEY_PROGRESSION_MODE, null))?.let { return it }
+        return if (preferences.getBoolean(KEY_PROGRESSION_PROMPT_ENABLED, true)) {
+            ProgressionMode.SUGGEST
+        } else {
+            ProgressionMode.OFF
+        }
+    }
 
     override fun observeWeightUnit(): Flow<WeightUnit> = callbackFlow {
         trySend(currentWeightUnit())
@@ -218,6 +250,9 @@ class PreferencesSettingsRepository @Inject constructor(
         const val KEY_REST_CUE_ENABLED = "rest_cue_enabled"
         const val KEY_KEEP_SCREEN_ON = "keep_screen_on"
         const val KEY_REST_TIMER_ENABLED = "rest_timer_enabled"
+        const val KEY_PROGRESSION_MODE = "progression_mode"
+
+        /** The switch P3.17 replaced; read only, so an upgrade keeps the answer it held. */
         const val KEY_PROGRESSION_PROMPT_ENABLED = "progression_prompt_enabled"
         const val KEY_WEIGHT_UNIT = "weight_unit"
         const val KEY_RANGE_KIND = "statistics_range_kind"

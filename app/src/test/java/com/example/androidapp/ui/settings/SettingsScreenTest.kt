@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -36,7 +37,7 @@ class SettingsScreenTest {
     private var imported = 0
     private var cleared = 0
     private val restTimerWrites = mutableListOf<Boolean>()
-    private val progressionWrites = mutableListOf<Boolean>()
+    private val progressionWrites = mutableListOf<ProgressionMode>()
     private val unitWrites = mutableListOf<WeightUnit>()
 
     private fun show(state: SettingsUiState, message: String? = null) {
@@ -47,7 +48,7 @@ class SettingsScreenTest {
                 onBack = { backs++ },
                 onSetRestTimer = { restTimerWrites += it },
                 onSetWeightUnit = { unitWrites += it },
-                onSetProgressionPrompt = { progressionWrites += it },
+                onSetProgressionMode = { progressionWrites += it },
                 onExportData = { exported++ },
                 onImportData = { imported++ },
                 onClearData = { cleared++ },
@@ -115,15 +116,15 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun theProgressionSwitch_sendsItsChoice() {
-        // ROADMAP N66: on by default, so a tap withdraws the question Done asks.
+    fun theProgressionMode_sendsItsChoice() {
+        // P3.17: three answers rather than a switch, and the one tapped is the one written.
         show(SettingsUiState())
 
-        composeTestRule.onNodeWithTag(TestTags.SETTINGS_PROGRESSION)
+        composeTestRule.onNodeWithTag(TestTags.settingsProgressionMode(ProgressionMode.OFF.name))
             .performScrollTo()
             .performClick()
 
-        assertEquals(listOf(false), progressionWrites)
+        assertEquals(listOf(ProgressionMode.OFF), progressionWrites)
     }
 
     @Test

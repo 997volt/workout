@@ -20,6 +20,7 @@ import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMiss
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionStep
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
@@ -599,7 +600,7 @@ class ActiveWorkoutViewModelTest {
         // held it was deleted with nothing replacing it, so the promise was unguarded end to end.
         val repository = FakeWorkoutRepository()
         val templates = answeredPlan()
-        val settings = FakeSettingsRepository().apply { progressionPrompt.value = false }
+        val settings = FakeSettingsRepository().apply { progressionMode.value = ProgressionMode.OFF }
         val viewModel = viewModelFor(
             repository,
             templateId = "t1",
@@ -622,6 +623,41 @@ class ActiveWorkoutViewModelTest {
             viewModel.uiState.value.exercises.single().isFinished,
         )
         assertEquals("with nothing written to the plan", emptyList<Pair<String, TemplateSetEdit>>(), templates.updates)
+    }
+
+    @Test
+    fun withApplyAtDone_theQuestionOpensWithEveryEarnedStepPicked() = runTest(dispatcher) {
+        // P3.17: the middle answer a switch could not express — the question still opens, so the lifter
+        // reads what the plan would become, but every earned step is already picked and one Done writes it.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val settings = FakeSettingsRepository().apply {
+            progressionMode.value = ProgressionMode.APPLY_AT_DONE
+        }
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            settings = settings,
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        val pending = viewModel.pendingProgression.value
+        assertNotNull("the question opens, already answered", pending)
+        assertTrue("every offered row starts picked", pending!!.chosen.isNotEmpty())
+        assertTrue(
+            "and no offered row is left unpicked",
+            pending.sets.filter { it.prompt.offer != null }.all { it.direction != null },
+        )
+        assertTrue("nothing is written before Done", templates.updates.isEmpty())
     }
 
     @Test
@@ -2806,12 +2842,12 @@ private class FakeSettingsRepository(
     }
 
     /** N66: settable before the ViewModel is built, so a test can start with the prompt off. */
-    val progressionPrompt = MutableStateFlow(true)
+    val progressionMode = MutableStateFlow(ProgressionMode.SUGGEST)
 
-    override fun observeProgressionPromptEnabled(): Flow<Boolean> = progressionPrompt.asStateFlow()
+    override fun observeProgressionMode(): Flow<ProgressionMode> = progressionMode.asStateFlow()
 
-    override suspend fun setProgressionPromptEnabled(enabled: Boolean): DataResult<Unit> {
-        progressionPrompt.value = enabled
+    override suspend fun setProgressionMode(mode: ProgressionMode): DataResult<Unit> {
+        progressionMode.value = mode
         return DataResult.Success(Unit)
     }
 

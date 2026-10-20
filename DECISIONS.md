@@ -1117,6 +1117,12 @@ the rule; that one argues it.
   neither source shows nothing. The last set is the one the prefill actually read, not the session's best,
   so the line explains the number on screen. It is not the app's opinion of what to do next (N33): it is
   where the numbers already on screen came from.
+- **The progression prompt is a three-way choice, and the old switch still answers** (P3.17). Settings carries
+  *Ask*, *Apply at Done* and *Off* instead of on/off: the middle is the lifter who wants the steps taken
+  without tapping each one, and a boolean could not express it. Apply opens the same question with every
+  earned step already picked, so the plan is still read before it is written and one *Done* is the consent
+  (N33). A device that never opens the control reads its old switch — on means Ask, off means Off — and the
+  old key is never written again.
   ([evidence](DECISIONS-EVIDENCE.md#p317))
 
 ## Adherence
