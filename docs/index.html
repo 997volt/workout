@@ -151,6 +151,32 @@
       <label for="exportText">Backup JSON</label>
       <textarea id="exportText" readonly spellcheck="false" aria-describedby="exportStats"></textarea>
     </section>
+    <section class="panel" id="panel-progress" aria-labelledby="progress-heading" hidden>
+      <h2 id="progress-heading">5. Progress</h2>
+      <p class="hint">
+        One lift, two numbers, from the export loaded above: the heaviest working set and Epley's
+        estimate from it, in kilograms. Warm-ups are excluded, a single rep is its own max, and a set
+        above 12 reps has no estimate. Nothing here is stored — close the page and it is gone.
+      </p>
+      <div class="progress-controls">
+        <label class="field">
+          <span class="field-label">Lift</span>
+          <input type="text" id="progressLift" list="progressLifts" autocomplete="off"
+            spellcheck="false" placeholder="Search a movement">
+        </label>
+        <label class="field">
+          <span class="field-label">Range</span>
+          <select id="progressRange">
+            <option value="all">All</option>
+            <option value="365">Last year</option>
+            <option value="90">Last 90 days</option>
+          </select>
+        </label>
+      </div>
+      <p id="progressSummary" class="hint"></p>
+      <div id="progressChart" class="progress-chart"></div>
+      <datalist id="progressLifts"></datalist>
+    </section>
   </main>
 
   <footer class="page-footer">

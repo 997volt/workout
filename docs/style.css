@@ -939,3 +939,73 @@ tbody tr:last-child td {
   width: 100%;
   min-width: 12rem;
 }
+
+/* One lift's progress (N165) */
+.progress-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0.75rem 0;
+}
+
+.progress-chart {
+  margin-top: 0.5rem;
+}
+
+.progress-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.progress-svg .grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.progress-svg .axis {
+  fill: var(--muted);
+  font-family: var(--sans);
+  font-size: 13px;
+}
+
+.progress-svg .estimate-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.progress-svg .estimate {
+  fill: var(--accent);
+}
+
+.progress-svg .heaviest {
+  fill: var(--text);
+}
+
+.progress-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.progress-legend span::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.legend-estimate::before {
+  background: var(--accent);
+}
+
+.legend-heaviest::before {
+  background: var(--text);
+}

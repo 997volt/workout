@@ -573,6 +573,71 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * One lift's progress (N165)
+   * ------------------------------------------------------------------ */
+
+  var MAX_ESTIMATED_REPS = 12;
+  var ESTIMATE_STEP_GRAMS = 500;
+
+  /* Epley's estimate, exactly as the app states it (ExerciseTrendPoint.kt): a single
+   * rep is the weight itself, the answer is rounded to half a kilo, and a set past
+   * twelve reps has no estimate rather than a confident guess. */
+  function estimatedOneRepMax(weightGrams, reps) {
+    if (typeof weightGrams !== 'number' || !(weightGrams > 0)) { return null; }
+    if (!Number.isInteger(reps) || reps < 1) { return null; }
+    if (reps === 1) { return weightGrams; }
+    if (reps > MAX_ESTIMATED_REPS) { return null; }
+    return Math.round(weightGrams * (1 + reps / 30) / ESTIMATE_STEP_GRAMS) * ESTIMATE_STEP_GRAMS;
+  }
+
+  /* One point per session that logged the movement: the heaviest working set and its
+   * estimate, in the order they were trained. Warm-ups are excluded, as they are
+   * everywhere the app reads a load; a rung still counts, because this filter is the
+   * app's own `setType != WARMUP` (N17). */
+  function liftTrendPoints(backup, exerciseId) {
+    if (!isObject(backup) || !Array.isArray(backup.sessions)) { return []; }
+    var sessionsById = {};
+    backup.sessions.forEach(function (session) {
+      if (isObject(session) && typeof session.id === 'string') { sessionsById[session.id] = session; }
+    });
+    var linkSession = {};
+    var bySession = {};
+    (Array.isArray(backup.sessionExercises) ? backup.sessionExercises : []).forEach(function (link) {
+      if (!isObject(link) || link.exerciseId !== exerciseId) { return; }
+      if (typeof link.id !== 'string' || typeof link.sessionId !== 'string') { return; }
+      var session = sessionsById[link.sessionId];
+      if (!session || typeof session.startedAt !== 'number') { return; }
+      linkSession[link.id] = link.sessionId;
+      if (!has(bySession, link.sessionId)) {
+        bySession[link.sessionId] = { startedAt: session.startedAt, sets: [] };
+      }
+    });
+    (Array.isArray(backup.sets) ? backup.sets : []).forEach(function (set) {
+      if (!isObject(set) || !has(linkSession, set.sessionExerciseId)) { return; }
+      var sessionId = linkSession[set.sessionExerciseId];
+      if (!has(bySession, sessionId)) { return; }
+      bySession[sessionId].sets.push(set);
+    });
+
+    return Object.keys(bySession).map(function (sessionId) {
+      var bucket = bySession[sessionId];
+      var heaviest = null;
+      bucket.sets.forEach(function (set) {
+        if (typeof set.weightGrams !== 'number' || !(set.weightGrams > 0)) { return; }
+        if (!roleIsWork(set.setType || 'NORMAL')) { return; }
+        if (heaviest === null || set.weightGrams > heaviest.weightGrams) { heaviest = set; }
+      });
+      return {
+        startedAt: bucket.startedAt,
+        heaviestSetGrams: heaviest ? heaviest.weightGrams : null,
+        estimatedOneRepMaxGrams: heaviest
+          ? estimatedOneRepMax(heaviest.weightGrams, heaviest.reps)
+          : null
+      };
+    }).sort(function (a, b) { return a.startedAt - b.startedAt; });
+  }
+
+  /* ------------------------------------------------------------------ *
    * CSV / TSV
    * ------------------------------------------------------------------ */
 
@@ -2707,6 +2772,8 @@
       warningIndex: { bySession: {}, global: [] },
       dom: null,
       onlyProblems: false,
+      /* The progress panel's chosen movement, and nothing else about it (N165). */
+      progressExerciseId: null,
       exportedAt: Date.now(),
       exportResult: null,
       lastCounts: ''
@@ -2741,6 +2808,12 @@
       downloadExport: byId('downloadExport'),
       copyExport: byId('copyExport'),
       exportText: byId('exportText'),
+      progressPanel: byId('panel-progress'),
+      progressLift: byId('progressLift'),
+      progressRange: byId('progressRange'),
+      progressSummary: byId('progressSummary'),
+      progressChart: byId('progressChart'),
+      progressLifts: byId('progressLifts'),
       exerciseNames: byId('exerciseNames'),
       targetChoices: byId('targetChoices'),
       sourceStatus: byId('sourceStatus')
@@ -2782,6 +2855,16 @@
       }
       elements.exportInput.value = '';
     });
+    elements.progressLift.addEventListener('change', function () {
+      var typed = elements.progressLift.value.trim();
+      state.progressExerciseId = null;
+      renderProgress();
+      if (typed !== '' &&
+          normalizeName(elements.progressLift.value) !== normalizeName(typed)) {
+        announce('"' + typed + '" has no logged sets in this export.');
+      }
+    });
+    elements.progressRange.addEventListener('change', renderProgress);
     elements.orderDmy.addEventListener('change', onOrderChange);
     elements.orderMdy.addEventListener('change', onOrderChange);
     elements.onlyProblems.addEventListener('change', function () {
@@ -2905,6 +2988,8 @@
     renderDatalist();
     renderMapping();
     refresh();
+    // The progress panel is built from this file, so loading one must show it at once.
+    renderProgress();
   }
 
   function loadExportText(text, fileName) {
@@ -3066,6 +3151,7 @@
     renderSessions();
     renderMapping();
     renderCombine();
+    renderProgress();
     refresh();
     refreshOrderNote();
   }
@@ -4121,6 +4207,311 @@
     setText(note, text);
   }
 
+  /* ------------------------------------------------------------------ *
+   * The progress panel (N165)
+   * ------------------------------------------------------------------ */
+
+  function svgElement(tag) {
+    if (typeof document.createElementNS === 'function') {
+      return document.createElementNS('http://www.w3.org/2000/svg', tag);
+    }
+    return document.createElement(tag);
+  }
+
+  function svgAttr(element, name, value) {
+    element.setAttribute(name, String(value));
+    return element;
+  }
+
+  function formatChartDate(millis) {
+    var date = new Date(millis);
+    var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return date.getDate() + ' ' + months[date.getMonth()] + ' ' +
+      String(date.getFullYear()).slice(2);
+  }
+
+  /* A round tick step: 1, 2 or 5 times a power of ten. */
+  function niceStep(raw) {
+    if (!(raw > 0)) { return 1; }
+    var power = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var normalised = raw / power;
+    var step = normalised <= 1 ? 1 : normalised <= 2 ? 2 : normalised <= 5 ? 5 : 10;
+    return step * power;
+  }
+
+  function formatKg(grams) {
+    var value = grams / 1000;
+    return value.toFixed(1).replace(/\.0$/, '');
+  }
+
+  /* The movements this export actually has history for, sorted, so the picker is not
+   * a list of ninety lifts that would draw an empty chart. */
+  function movementsWithHistory(backup) {
+    var byId = {};
+    (Array.isArray(backup.exercises) ? backup.exercises : []).forEach(function (exercise) {
+      if (!isObject(exercise) || typeof exercise.id !== 'string') { return; }
+      if (!isLoggableRow(exercise)) { return; }
+      if (exercise.deletedAt !== null && exercise.deletedAt !== undefined) { return; }
+      if (typeof exercise.name !== 'string' || exercise.name.trim() === '') { return; }
+      byId[exercise.id] = exercise;
+    });
+    var exerciseOfLink = {};
+    (Array.isArray(backup.sessionExercises) ? backup.sessionExercises : []).forEach(function (link) {
+      if (isObject(link) && typeof link.id === 'string') { exerciseOfLink[link.id] = link.exerciseId; }
+    });
+    var setCount = {};
+    (Array.isArray(backup.sets) ? backup.sets : []).forEach(function (set) {
+      var id = exerciseOfLink[set && set.sessionExerciseId];
+      if (id) { setCount[id] = (setCount[id] || 0) + 1; }
+    });
+    var list = Object.keys(byId)
+      .map(function (id) { return { id: id, name: byId[id].name, sets: setCount[id] || 0 }; })
+      .filter(function (row) { return row.sets > 0; });
+    list.sort(function (a, b) { return compareExerciseNames(a.name, b.name); });
+    return list;
+  }
+
+  function renderProgress() {
+    var state = ui.state;
+    var panel = ui.elements.progressPanel;
+    if (!panel) { return; }
+    var backup = state.catalogFile;
+    var hasHistory = backup && !backup.seeded &&
+      Array.isArray(backup.sessions) && backup.sessions.length > 0 &&
+      Array.isArray(backup.exercises) && backup.exercises.length > 0;
+    panel.hidden = !hasHistory;
+    if (!hasHistory) { return; }
+
+    var movements = movementsWithHistory(backup);
+    var list = ui.elements.progressLifts;
+    list.textContent = '';
+    movements.forEach(function (movement) {
+      var option = document.createElement('option');
+      option.value = movement.name;
+      list.appendChild(option);
+    });
+
+    var selected = null;
+    var typed = ui.elements.progressLift.value.trim();
+    if (typed !== '') {
+      movements.forEach(function (movement) {
+        if (normalizeName(movement.name) === normalizeName(typed)) { selected = movement; }
+      });
+    }
+    if (!selected && state.progressExerciseId) {
+      movements.forEach(function (movement) {
+        if (movement.id === state.progressExerciseId) { selected = movement; }
+      });
+    }
+    if (!selected && movements.length > 0) {
+      // The most-trained movement is the useful default, not the alphabet's first.
+      selected = movements.slice().sort(function (a, b) { return b.sets - a.sets; })[0];
+    }
+
+    var chart = ui.elements.progressChart;
+    var summary = ui.elements.progressSummary;
+    if (!selected) {
+      state.progressExerciseId = null;
+      ui.elements.progressLift.value = '';
+      setText(summary, 'This export has no logged movements to chart.');
+      chart.textContent = '';
+      return;
+    }
+    state.progressExerciseId = selected.id;
+    if (ui.elements.progressLift.value !== selected.name) {
+      ui.elements.progressLift.value = selected.name;
+    }
+
+    var points = liftTrendPoints(backup, selected.id);
+    var range = ui.elements.progressRange.value;
+    var days = range === '365' ? 365 : range === '90' ? 90 : null;
+    if (days !== null && points.length > 0) {
+      var newest = points[points.length - 1].startedAt;
+      points = points.filter(function (point) {
+        return point.startedAt >= newest - days * 86400000;
+      });
+    }
+    drawProgressChart(chart, points, selected);
+    setText(summary, progressSummary(points, selected));
+  }
+
+  function progressSummary(points, movement) {
+    if (points.length === 0) {
+      return movement.name + ': no sessions in this range.';
+    }
+    var bestEstimate = null;
+    var heaviest = null;
+    points.forEach(function (point) {
+      if (point.estimatedOneRepMaxGrams !== null &&
+          (bestEstimate === null || point.estimatedOneRepMaxGrams > bestEstimate.grams)) {
+        bestEstimate = { grams: point.estimatedOneRepMaxGrams, at: point.startedAt };
+      }
+      if (point.heaviestSetGrams !== null &&
+          (heaviest === null || point.heaviestSetGrams > heaviest.grams)) {
+        heaviest = { grams: point.heaviestSetGrams, at: point.startedAt };
+      }
+    });
+    var parts = [movement.name, formatInt(points.length) + ' session' +
+      (points.length === 1 ? '' : 's')];
+    if (bestEstimate) {
+      parts.push('best estimate ' + formatKg(bestEstimate.grams) + ' kg on ' +
+        formatChartDate(bestEstimate.at));
+    }
+    if (heaviest) {
+      parts.push('heaviest ' + formatKg(heaviest.grams) + ' kg on ' +
+        formatChartDate(heaviest.at));
+    }
+    if (!bestEstimate) {
+      parts.push('no set at 12 reps or fewer, so no estimate');
+    }
+    return parts.join(' · ');
+  }
+
+  function drawProgressChart(host, points, movement) {
+    host.textContent = '';
+    var usable = points.filter(function (point) {
+      return point.heaviestSetGrams !== null || point.estimatedOneRepMaxGrams !== null;
+    });
+    if (usable.length === 0) {
+      host.appendChild(h('p', 'empty', 'No working sets in this range.'));
+      return;
+    }
+
+    var width = 900;
+    var height = 340;
+    var left = 64;
+    var right = 18;
+    var top = 16;
+    var bottom = 42;
+    var plotW = width - left - right;
+    var plotH = height - top - bottom;
+
+    var values = [];
+    usable.forEach(function (point) {
+      if (point.estimatedOneRepMaxGrams !== null) { values.push(point.estimatedOneRepMaxGrams / 1000); }
+      if (point.heaviestSetGrams !== null) { values.push(point.heaviestSetGrams / 1000); }
+    });
+    var minKg = Math.min.apply(null, values);
+    var maxKg = Math.max.apply(null, values);
+    var span = Math.max(maxKg - minKg, 5);
+    minKg = Math.max(0, minKg - span * 0.15);
+    maxKg = maxKg + span * 0.15;
+    var step = niceStep((maxKg - minKg) / 4);
+    minKg = Math.floor(minKg / step) * step;
+    maxKg = Math.ceil(maxKg / step) * step;
+
+    var first = usable[0].startedAt;
+    var last = usable[usable.length - 1].startedAt;
+    var timeSpan = last - first;
+    var xOf = function (millis) {
+      if (timeSpan <= 0) { return left + plotW / 2; }
+      return left + ((millis - first) / timeSpan) * plotW;
+    };
+    var yOf = function (kg) {
+      return top + plotH - ((kg - minKg) / (maxKg - minKg)) * plotH;
+    };
+
+    var svg = svgElement('svg');
+    svgAttr(svg, 'viewBox', '0 0 ' + width + ' ' + height);
+    svgAttr(svg, 'preserveAspectRatio', 'xMidYMid meet');
+    svgAttr(svg, 'role', 'img');
+    svgAttr(svg, 'class', 'progress-svg');
+    svg.setAttribute('aria-label', movement.name + ' progress: estimated one-rep max and heaviest set');
+
+    // Horizontal grid and the kilogram labels.
+    for (var kg = minKg; kg <= maxKg + 0.001; kg += step) {
+      var y = yOf(kg);
+      var line = svgElement('line');
+      svgAttr(line, 'x1', left);
+      svgAttr(line, 'x2', left + plotW);
+      svgAttr(line, 'y1', y);
+      svgAttr(line, 'y2', y);
+      svgAttr(line, 'class', 'grid');
+      svg.appendChild(line);
+      var label = svgElement('text');
+      svgAttr(label, 'x', left - 10);
+      svgAttr(label, 'y', y + 4);
+      svgAttr(label, 'text-anchor', 'end');
+      svgAttr(label, 'class', 'axis');
+      label.textContent = formatKg(kg * 1000) + ' kg';
+      svg.appendChild(label);
+    }
+
+    // The date axis: first and last, and the middle when there is room.
+    [first, last].forEach(function (millis, index) {
+      var text = svgElement('text');
+      svgAttr(text, 'x', xOf(millis));
+      svgAttr(text, 'y', top + plotH + 24);
+      svgAttr(text, 'text-anchor', index === 0 ? 'start' : 'end');
+      svgAttr(text, 'class', 'axis');
+      text.textContent = formatChartDate(millis);
+      svg.appendChild(text);
+    });
+    if (timeSpan > 0) {
+      var middle = svgElement('text');
+      svgAttr(middle, 'x', left + plotW / 2);
+      svgAttr(middle, 'y', top + plotH + 24);
+      svgAttr(middle, 'text-anchor', 'middle');
+      svgAttr(middle, 'class', 'axis');
+      middle.textContent = formatChartDate(first + timeSpan / 2);
+      svg.appendChild(middle);
+    }
+
+    // The estimated 1RM line, broken where a session has no estimate.
+    var segments = [];
+    var current = [];
+    usable.forEach(function (point) {
+      if (point.estimatedOneRepMaxGrams === null) {
+        if (current.length > 0) { segments.push(current); current = []; }
+        return;
+      }
+      current.push(point);
+      var dot = svgElement('circle');
+      svgAttr(dot, 'cx', xOf(point.startedAt));
+      svgAttr(dot, 'cy', yOf(point.estimatedOneRepMaxGrams / 1000));
+      svgAttr(dot, 'r', 2.5);
+      svgAttr(dot, 'class', 'estimate');
+      var title = svgElement('title');
+      title.textContent = formatChartDate(point.startedAt) + ': estimate ' +
+        formatKg(point.estimatedOneRepMaxGrams) + ' kg';
+      dot.appendChild(title);
+      svg.appendChild(dot);
+    });
+    if (current.length > 0) { segments.push(current); }
+    segments.forEach(function (segment) {
+      if (segment.length < 2) { return; }
+      var linePath = svgElement('polyline');
+      svgAttr(linePath, 'points', segment.map(function (point) {
+        return xOf(point.startedAt) + ',' + yOf(point.estimatedOneRepMaxGrams / 1000);
+      }).join(' '));
+      svgAttr(linePath, 'class', 'estimate-line');
+      svg.appendChild(linePath);
+    });
+
+    // The heaviest working set: the literal number, so a change of rep range is visible.
+    usable.forEach(function (point) {
+      if (point.heaviestSetGrams === null) { return; }
+      var dot = svgElement('circle');
+      svgAttr(dot, 'cx', xOf(point.startedAt));
+      svgAttr(dot, 'cy', yOf(point.heaviestSetGrams / 1000));
+      svgAttr(dot, 'r', 3.5);
+      svgAttr(dot, 'class', 'heaviest');
+      var title = svgElement('title');
+      title.textContent = formatChartDate(point.startedAt) + ': heaviest ' +
+        formatKg(point.heaviestSetGrams) + ' kg';
+      dot.appendChild(title);
+      svg.appendChild(dot);
+    });
+
+    host.appendChild(svg);
+
+    var legend = h('p', 'progress-legend');
+    legend.appendChild(h('span', 'legend-estimate', 'Estimated 1RM (Epley)'));
+    legend.appendChild(h('span', 'legend-heaviest', 'Heaviest working set'));
+    host.appendChild(legend);
+  }
+
   function renderExport() {
     var state = ui.state;
     var refusal = ui.elements.exportRefusal;
@@ -4542,6 +4933,9 @@
     normalizeRole: normalizeRole,
     roleRecordsEffort: roleRecordsEffort,
     roleIsWork: roleIsWork,
+    MAX_ESTIMATED_REPS: MAX_ESTIMATED_REPS,
+    estimatedOneRepMax: estimatedOneRepMax,
+    liftTrendPoints: liftTrendPoints,
     roleLabel: roleLabel,
     parseDelimitedCells: parseDelimitedCells,
     parseCsvText: parseCsvText,

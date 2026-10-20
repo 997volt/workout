@@ -36,8 +36,8 @@ the only moment a bad value can be caught.
 
 ## Scope
 
-In scope: history only — sessions, their exercises, their sets, and the definitions of the exercises they
-reference.
+In scope: **importing history** — sessions, their exercises, their sets, and the definitions of the exercises
+they reference — and **one movement's progress** drawn from the export the lifter loaded (N165).
 
 Out of scope, each deliberately:
 
@@ -47,6 +47,8 @@ Out of scope, each deliberately:
   Exporting the sheet as CSV is one menu item in every spreadsheet program.
 - **A server, accounts, sync, telemetry, a service worker, or a build step.**
 - **Editing the app's other collections.** The tool writes history and nothing else.
+- **A statistics dashboard.** One movement's progress is a view of a file, not a surface that holds or syncs
+  the record; family heads, multi-lift comparisons and every other trend stay in the app.
 
 ### This is not the "web dashboard" non-goal
 
@@ -79,7 +81,8 @@ docs/
   .nojekyll             stop Jekyll rewriting JavaScript that contains {{ }}
   build-single-file.js  writes one self-contained page to dist/ (N164)
   seed-catalog.js       the app's seeded library, generated and kept equal by a JVM test
-  fixtures/             the synthetic backup the app's test decodes, and its generator
+  fixtures/             the synthetic backup the app's test decodes, its generator, and the
+                        progress fixture the app's trend generates for the tool's test page
 IMPORT-HELPER.md        this file, at the root, never served
 ```
 
@@ -372,6 +375,29 @@ through a status region, no colour-only signalling, full keyboard operation, and
 
 The preview tonnage counts work sets and excludes warm-ups, matching `recordsEffort`, and warm-up volume is
 reported beside it rather than folded in.
+
+## Lift progress
+
+One movement at a time, from the export already loaded, answering *how is my bench press going* on a screen
+that is not phone-sized (N165). Two series, both the app's own definitions rather than a second opinion:
+
+- **the heaviest working set** in each session, in kilograms — warm-ups excluded, and a set with no added
+  weight is not a load;
+- **Epley's estimate** from that set, `weight × (1 + reps/30)`, rounded to 0.5 kg because it is an estimate,
+  returning the weight itself for a single rep and **nothing above 12 reps**, where the formula would be
+  extrapolation dressed as arithmetic.
+
+**Movements only.** A family head aggregates its children, which is the app's roll-up rule; offering one here
+would re-implement it. **Kilograms only**, because the app stores grams and this is a progression view rather
+than a unit converter. A range narrows to the last year or 90 days measured back from the newest session, so
+an export from years ago still reads. **Nothing is stored**: the chart is built from the file in the tab and
+dies with it.
+
+The numbers are pinned to the app's rather than trusted to agree: `ProgressSeriesFixtureTest` runs the app's
+own `toExerciseTrendPoints()` over a synthetic four-session fixture — a warm-up that must not win, a set that
+rounds, one past the ceiling, and a single — and writes the whole input and expected series to
+`fixtures/progress-series.js`. The tool's test page runs its series over the same rows and asserts the same
+points.
 
 ## Workflows
 

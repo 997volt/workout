@@ -1050,6 +1050,16 @@ the rule; that one argues it.
   the tool has no business writing. Rejected: a CSV import inside the app, which would be a second parser with
   no review step, and `.xlsx` reading, which needs a dependency and is one *Save as CSV* away.
   ([evidence](DECISIONS-EVIDENCE.md#n159))
+- **A lift's progress may be drawn from a loaded file, and the numbers stay the app's** (N165). The web helper
+  charts one movement from the export the lifter loaded: the heaviest working set and Epley's estimate from
+  it, movements only, kilograms only, nothing stored. That is not the *web dashboard* the roadmap refuses —
+  that line is about a surface that holds, syncs or accounts for the record, and this one holds a file it can
+  close. The fence is explicit: no persistence, no fetching, no account, and **no second definition of a
+  metric**. The estimate keeps the app's rules (0.5 kg rounding, a single rep is the max, nothing above 12
+  reps), the warm-up exclusion is the app's own, and a generated fixture runs the app's
+  `toExerciseTrendPoints()` and the tool's series over the same rows. A family head is not offered, because
+  aggregating one is the app's roll-up rule re-implemented.
+  ([evidence](DECISIONS-EVIDENCE.md#n165))
 
 ## Adherence
 

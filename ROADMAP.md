@@ -17,12 +17,7 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**One lift's progress on the big screen.** The import helper answers *how is my bench going* only inside the
-app; a chart built from the export it already loads would answer it at a desk.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| N165 | low | **The helper can import history but cannot show what it did.** A lifter with an export loaded can review a year of sessions set by set, and the app's own trend — the heaviest working set and Epley's estimate — is a phone-sized chart. Nothing shows one movement's trajectory on a large screen, and the export already in the tab is everything needed. | A fifth panel, **Progress**: pick a movement (movements only; a family head would re-implement the app's roll-up), kilograms only, all sessions or the last year or 90 days. Two series — the heaviest working set as dots and Epley's estimate from it as a line — with the app's own rules (0.5 kg rounding, a single rep is the max, nothing above 12 reps, warm-ups excluded) pinned by a generated fixture that runs `toExerciseTrendPoints()` and the tool's series over the same rows. No storage, no fetch; the web-dashboard non-goal is amended to say a view of a loaded file is not one. |
+**Nothing.** The lift progress view (N165) shipped and is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Later — decided, and not being started
 

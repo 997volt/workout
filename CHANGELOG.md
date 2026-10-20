@@ -16,6 +16,16 @@ unreleased.
 
 ## [Unreleased]
 
+### Added
+
+- **The import helper draws one lift's progress** (N165). Loading an export now shows a fifth panel: pick a
+  movement and see the heaviest working set as dots and Epley's estimate from it as a line, in kilograms,
+  over all sessions or the last year or 90 days. Movements only — a family head would need the app's roll-up
+  rule — no unit toggle, and nothing stored: the chart is built from the file in the tab and dies with it.
+  The numbers are the app's own: the estimate rounds to 0.5 kg, a single rep is the weight itself, and a set
+  above 12 reps has no estimate. A generated fixture runs the app's `toExerciseTrendPoints()` and the tool's
+  series over the same rows, so the two cannot disagree quietly.
+
 ### Fixed
 
 - **The exercise chooser is alphabetical and searchable** (N159). The mapping's *Linked to* was a select of

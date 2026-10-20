@@ -19,6 +19,7 @@
     <ol id="testResults" class="test-results"></ol>
   </main>
 
+  <script src="fixtures/progress-series.js"></script>
   <script src="app.js"></script>
   <script>
 (function () {
@@ -1277,6 +1278,32 @@
     ]);
     var file = H.buildExport(model, { exportedAt: 0 }).file;
     ok(file.sessions[0].startedAt < file.sessions[1].startedAt);
+  });
+
+  /* ------------------------------------------------------------------ *
+   * One lift's progress (N165)
+   * ------------------------------------------------------------------ */
+
+  check("the estimate is the app's, with its rounding and its ceiling (N165)", function () {
+    eq(H.estimatedOneRepMax(100000, 5), 116500);
+    eq(H.estimatedOneRepMax(100000, 1), 100000);
+    eq(H.estimatedOneRepMax(100000, 12), 140000);
+    eq(H.estimatedOneRepMax(100000, 13), null);
+    eq(H.estimatedOneRepMax(0, 5), null);
+    eq(H.estimatedOneRepMax(100000, 0), null);
+  });
+
+  check("the tool's series equals the app's for the progress fixture (N165)", function () {
+    var fixture = window.PROGRESS_FIXTURE;
+    ok(fixture && Array.isArray(fixture.expected), 'the progress fixture did not load');
+    var points = H.liftTrendPoints(fixture, fixture.exerciseId);
+    eq(points.length, fixture.expected.length);
+    points.forEach(function (point, index) {
+      var expected = fixture.expected[index];
+      eq(point.startedAt, expected.startedAt);
+      eq(point.heaviestSetGrams, expected.heaviestSetGrams);
+      eq(point.estimatedOneRepMaxGrams, expected.estimatedOneRepMaxGrams);
+    });
   });
 
   /* ------------------------------------------------------------------ *

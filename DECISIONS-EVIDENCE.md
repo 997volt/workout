@@ -2490,3 +2490,40 @@ deliberate way to force a new row set after deleting the old one in the app.
 
 **Covered by** the tool's own test page — conversion, grouping, every blocking and warning rule, id determinism
 and the round trip — and by the app's docs gate for the specification's citations.
+
+## N165
+
+The request was narrow on purpose: *how is my progress with bench press or squats*, not a statistics tab. The
+app already answers it — `ExerciseTrendPoint` is one workout's worth of one lift, and `estimatedOneRepMax` is
+Epley with a rounding rule and a ceiling — so the web version had to be the same numbers on a bigger screen
+rather than a second opinion.
+
+**Why this is not the dashboard the roadmap refuses.** The line is about a surface that holds, syncs or
+accounts for the training record; a chart built from a file the lifter loaded and can close is a view of that
+file, like the import review beside it. The fence is what keeps it there: no persistence, no fetch, no
+account, and nothing that reads the app's database.
+
+**Why heaviest set *and* the estimate.** One number would hide the thing a lifter needs to see: Epley is
+computed from the heaviest set, so a session at ten reps and a session at three can estimate similarly while
+the weight moved a lot. The dots are the measurement; the line is the formula. Showing only the line would
+dress an estimate as the record, which is the objection `PersonalRecords` already raises by keeping one number
+per rep count.
+
+**Why the fixture rather than a promise to match.** Two implementations of one formula disagree the first time
+either is tuned, and the disagreement would be invisible. `ProgressSeriesFixtureTest` runs the app's own
+`toExerciseTrendPoints()` over four synthetic sessions chosen to pin the corners — a warm-up that must not win,
+an estimate that rounds, a set past the ceiling with no estimate, and a single that is its own max — and
+writes input and expected to `fixtures/progress-series.js`. The tool's test page runs its series over the same
+rows. Changing either rule now fails one of the two.
+
+**Why movements only, and kilograms only.** A family head aggregates its children, which is N97/N110's
+roll-up rule; re-implementing it here would be a second answer to a question the app already answers. Pounds
+are a display preference, and the app stores grams: a unit toggle on a progression chart buys nothing and adds
+a place for a conversion error.
+
+**Rejected:** the full statistics screen, family-head aggregation, a pound toggle, and caching the export so
+the chart survives a reload — the last would turn a view of a file into the dashboard this note exists to
+keep out.
+
+**Covered by** the tool's two new assertions (the estimate's corners and the fixture parity) and the app's
+`ProgressSeriesFixtureTest`.
