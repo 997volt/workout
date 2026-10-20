@@ -40,7 +40,48 @@ data class SetSuggestion(
      * recorded is still what the set was. A plan that names none leaves the field on 9.0.
      */
     val targetRpeHalves: Int? = null,
+    /** Why these numbers, for the screen to state (P3.17). */
+    val reason: SuggestionReason? = null,
 )
+
+/**
+ * Why the next set is shown the numbers it is (P3.17).
+ *
+ * The raw halves, not a sentence: the prefill's sources are "what this lift did last time" and "what the plan
+ * asks for", and the screen words them in the lifter's unit. Null when neither source says anything.
+ */
+data class SuggestionReason(
+    val lastReps: Int? = null,
+    val lastWeightGrams: Long? = null,
+    val lastRpeHalves: Int? = null,
+    val planReps: Int? = null,
+    val planWeightGrams: Long? = null,
+    val planRpeHalves: Int? = null,
+)
+
+/**
+ * The two sources behind a prefill, or null when neither says anything (P3.17).
+ *
+ * The last set is the one the prefill actually read — [suggestionForNextSet]'s `lastTime` — not the best set
+ * of the session, so the line explains the number on screen rather than a more impressive one.
+ */
+fun suggestionReason(
+    previous: PreviousPerformance?,
+    planned: PlannedTarget?,
+): SuggestionReason? {
+    val last = previous?.sets?.lastOrNull()
+    val planSaysSomething = planned != null &&
+        (planned.reps != null || planned.weightGrams != null || planned.rpeHalves != null)
+    if (last == null && !planSaysSomething) return null
+    return SuggestionReason(
+        lastReps = last?.reps,
+        lastWeightGrams = last?.weightGrams,
+        lastRpeHalves = last?.rpeHalves,
+        planReps = planned?.reps,
+        planWeightGrams = planned?.weightGrams,
+        planRpeHalves = planned?.rpeHalves,
+    )
+}
 
 /**
  * What a plan prescribes for one set, or nulls where it prescribes nothing

@@ -479,6 +479,9 @@ object TestTags {
     fun templateQuickReps(id: String) = "template_quick_reps_$id"
     fun templateQuickLoad(id: String) = "template_quick_load_$id"
     fun templateQuickAdd(id: String) = "template_quick_add_$id"
+
+    /** The why-line under the next set's fields (P3.17). */
+    fun exerciseSuggestionReason(id: String) = "exercise_suggestion_reason_$id"
     const val TEMPLATE_SET_ROLE = "template_set_role"
     const val TEMPLATE_SET_WEIGHT = "template_set_weight"
 

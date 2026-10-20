@@ -2714,3 +2714,14 @@ mis-tap costs nothing.
 
 **Covered by** the domain test for `chooseEveryOffer` (mixed rows, a written row skipped) and the dialog test
 that a mixed question shows the control and reports the tap.
+
+The why-line is the other half of the same question. The fields were prefilled from *plan or last time* and
+said neither, so a remembered number and a prescribed one looked identical — and the app's own rule (N33: the
+values are what you did or what the plan says, never what the app thinks you should do) is only visible if
+the screen says which is which. The line reads the **same set the prefill read** (the last set of the previous
+session, warm-up or not) so it explains the number on screen rather than a better one; the plan half is the
+target for the set about to be done. A set with neither source shows no line — an empty sentence would be
+noise, and inventing a source is the one thing this must not do.
+
+**Covered by** the pure test of `suggestionReason` (both halves, and null when neither speaks) and the
+workout screen test that renders *Last time 5 × 100 kg, RPE 8.5* from a reason.

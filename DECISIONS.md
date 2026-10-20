@@ -1112,6 +1112,11 @@ the rule; that one argues it.
   takes each row's own: the rep below a ceiling, the load at it. A plan with no ceiling offers both on the
   same row, and the rep is taken there because it is the smaller step at the same load. Picking is still not
   writing: only *Done* reaches the plan.
+- **The prefill states its two sources, and neither is labelled a recommendation** (P3.17). Under the next
+  set's fields a line names what the lift did last time and what the plan asks, each labelled; a set with
+  neither source shows nothing. The last set is the one the prefill actually read, not the session's best,
+  so the line explains the number on screen. It is not the app's opinion of what to do next (N33): it is
+  where the numbers already on screen came from.
   ([evidence](DECISIONS-EVIDENCE.md#p317))
 
 ## Adherence

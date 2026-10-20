@@ -34,9 +34,11 @@ import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.DEFAULT_RPE_HALVES
 import com.example.androidapp.ui.components.ExerciseActionsMenu
 import com.example.androidapp.ui.components.ExerciseMenuTags
@@ -48,15 +50,12 @@ import com.example.androidapp.ui.components.SetNumber
 import com.example.androidapp.ui.components.SetRoleSelector
 import com.example.androidapp.ui.components.SetRpeField
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.restLabel
 import com.example.androidapp.ui.components.rpeMarker
 import com.example.androidapp.ui.components.setRoleMarker
-import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.toEdit
 import com.example.androidapp.ui.components.values
-import com.example.androidapp.ui.components.AppTextButton
-
-
 
 /**
  * One exercise's block inside the active workout, and the list that stacks them.
@@ -417,6 +416,82 @@ internal fun SetEntryDraft.withRole(role: SetType, planRpeHalves: Int?): SetEntr
 }
 
 /**
+ * The fields' resting values (N59, N67).
+ *
+ * Shown as one signed number, in this exercise's unit: -20 is 20 kg of assistance (N15). The plan's own
+ * target, or 9.0 where it names none, because the stepper always shows a number and a logged set always
+ * carries one; a planned warm-up opens it empty instead, since a warm-up carries no effort to show.
+ * Extracted from [NextSetEditor] at the length this project allows.
+ */
+private fun SetSuggestion.initialDraft(unit: WeightUnit): SetEntryDraft = SetEntryDraft(
+    repsText = reps.toString(),
+    weightText = Weight.display(weightGrams, assistanceGrams, unit),
+    rpeText = if (setType.recordsEffort) {
+        Rpe.format(targetRpeHalves ?: DEFAULT_RPE_HALVES)
+    } else {
+        ""
+    },
+    setType = setType,
+)
+
+/**
+ * Why the next set is shown these numbers (P3.17): what the lift did last time, and what the plan asks.
+ *
+ * A sentence, not a prescription: both halves are sources the prefill already read, and the line exists so
+ * the lifter can tell a number remembered from a number planned. It is omitted when neither source speaks.
+ */
+@Composable
+private fun SuggestionReasonLine(
+    reason: SuggestionReason,
+    unit: WeightUnit,
+    modifier: Modifier = Modifier,
+) {
+    val unitLabel = stringResource(
+        if (unit == WeightUnit.KILOGRAMS) R.string.suggestion_unit_kg else R.string.suggestion_unit_lb,
+    )
+    val parts = mutableListOf<String>()
+    if (reason.lastReps != null) {
+        var last = stringResource(
+            R.string.suggestion_set_shape,
+            reason.lastReps,
+            weightWithUnit(reason.lastWeightGrams, unit, unitLabel),
+        )
+        reason.lastRpeHalves?.let { last += stringResource(R.string.suggestion_rpe, Rpe.format(it)) }
+        parts += stringResource(R.string.suggestion_last_time, last)
+    }
+    if (reason.planReps != null || reason.planWeightGrams != null) {
+        val weight = weightWithUnit(reason.planWeightGrams, unit, unitLabel)
+        var plan = when {
+            reason.planReps != null && reason.planWeightGrams != null -> pluralStringResource(
+                R.plurals.suggestion_reps_at,
+                reason.planReps,
+                reason.planReps,
+                weight,
+            )
+
+            reason.planReps != null -> pluralStringResource(
+                R.plurals.suggestion_reps,
+                reason.planReps,
+                reason.planReps,
+            )
+            else -> weight
+        }
+        reason.planRpeHalves?.let { plan += stringResource(R.string.suggestion_rpe, Rpe.format(it)) }
+        parts += stringResource(R.string.suggestion_plan, plan)
+    }
+    Text(
+        text = parts.joinToString(stringResource(R.string.suggestion_separator)),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.padding(top = 4.dp),
+    )
+}
+
+/** A weight and its unit, or an empty string when the source named none. */
+private fun weightWithUnit(grams: Long?, unit: WeightUnit, label: String): String =
+    grams?.let { Weight.format(it, unit) + " " + label }.orEmpty()
+
+/**
  * The next set, stated on the screen and committed by the *Log set* beside it (ROADMAP N59).
  *
  * This replaces N51's shape — *Log set* opened the editor, and logging *was* the dialog — with the
@@ -448,32 +523,19 @@ private fun NextSetEditor(
     // wrong weight the moment *Log set* was pressed without touching it.
     val unit = row.weightUnit
     var draft by remember(row.id, row.sets.size) {
-        mutableStateOf(
-            SetEntryDraft(
-                repsText = suggestion.reps.toString(),
-                // Shown as one signed number, in this exercise's unit: -20 is 20 kg of assistance
-                // (N15), or the pound equivalent where the exercise reads in pounds (N64).
-                weightText = Weight.display(
-                    suggestion.weightGrams,
-                    suggestion.assistanceGrams,
-                    unit,
-                ),
-                // The plan's own target, or 9.0 where it names none: the stepper always shows a
-                // number, so a logged set always carries one (N59). A planned warm-up opens it
-                // empty instead, because a warm-up carries no effort to show (N67).
-                rpeText = if (suggestion.setType.recordsEffort) {
-                    Rpe.format(suggestion.targetRpeHalves ?: DEFAULT_RPE_HALVES)
-                } else {
-                    ""
-                },
-                setType = suggestion.setType,
-            ),
-        )
+        mutableStateOf(suggestion.initialDraft(unit))
     }
     val values = draft.values(unit)
 
     Column(modifier = modifier) {
         PlanProgressNotice(row = row)
+        row.suggestion.reason?.let { reason ->
+            SuggestionReasonLine(
+                reason = reason,
+                unit = unit,
+                modifier = Modifier.testTag(TestTags.exerciseSuggestionReason(row.id)),
+            )
+        }
         Column(
             modifier = Modifier.padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -492,7 +554,10 @@ private fun NextSetEditor(
                 offers = { role -> row.sets.canLogAs(role) },
             )
             SetEntryNumbers(
-                draft = draft, onDraftChange = { draft = it }, unit = unit, stepGrams = row.stepGrams,
+                draft = draft,
+                onDraftChange = { draft = it },
+                unit = unit,
+                stepGrams = row.stepGrams,
             )
             // A warm-up has no effort to state, so the field is not offered at all rather than
             // shown disabled: a control that cannot write is worse than no control (N67). The
@@ -717,4 +782,3 @@ private fun SetExtrasMarker(set: SetRow, modifier: Modifier = Modifier) {
         )
     }
 }
-

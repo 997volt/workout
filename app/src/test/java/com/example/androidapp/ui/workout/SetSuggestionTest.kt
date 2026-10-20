@@ -1,14 +1,14 @@
 package com.example.androidapp.ui.workout
 
-import com.example.androidapp.domain.model.SetEntry
+import com.example.androidapp.domain.Load
+import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
-import com.example.androidapp.domain.Load
-import com.example.androidapp.domain.Weight
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -24,6 +24,38 @@ import org.junit.Test
  * exercise, which is where a ramp lives.
  */
 class SetSuggestionTest {
+
+    @Test
+    fun theReason_namesTheLastSet_andThePlan() {
+        // P3.17: the numbers on screen say where they came from — the same set the prefill read, and the
+        // plan's target for the set about to be done.
+        val reason = suggestionReason(
+            previous = PreviousPerformance(
+                listOf(
+                    SetEntry(
+                        id = "s1",
+                        sessionExerciseId = "se1",
+                        setIndex = 0,
+                        reps = 5,
+                        weightGrams = 100_000L,
+                        rpeHalves = 17,
+                    ),
+                ),
+            ),
+            planned = PlannedTarget(reps = 5, weightGrams = null, rpeHalves = 16),
+        )
+
+        assertEquals(5, reason?.lastReps)
+        assertEquals(100_000L, reason?.lastWeightGrams)
+        assertEquals(17, reason?.lastRpeHalves)
+        assertEquals(5, reason?.planReps)
+        assertEquals(16, reason?.planRpeHalves)
+    }
+
+    @Test
+    fun theReason_isNull_whenNeitherSourceSpeaks() {
+        assertNull(suggestionReason(previous = null, planned = null))
+    }
 
     @Test
     fun thePlansRole_isCarriedIntoTheArmedSet() {
@@ -49,7 +81,7 @@ class SetSuggestionTest {
 
     @Test
     fun withNothingToGoOn_itFallsBackToTheDefault() {
-        val suggestion = suggestionForNextSet(loggedSets = emptyList(), previous = null, )
+        val suggestion = suggestionForNextSet(loggedSets = emptyList(), previous = null,)
 
         assertEquals(DEFAULT_REPS, suggestion.reps)
         assertEquals(Weight.DEFAULT_GRAMS, suggestion.weightGrams)
@@ -97,7 +129,7 @@ class SetSuggestionTest {
         val suggestion = suggestionForNextSet(
             loggedSets = emptyList(),
             previous = null,
-                        planned = PlannedTarget(reps = null, weightGrams = 120_000),
+            planned = PlannedTarget(reps = null, weightGrams = 120_000),
         )
 
         assertEquals(DEFAULT_REPS, suggestion.reps)
@@ -110,7 +142,7 @@ class SetSuggestionTest {
         val suggestion = suggestionForNextSet(
             loggedSets = emptyList(),
             previous = null,
-                        planned = null,
+            planned = null,
         )
 
         assertEquals(DEFAULT_REPS, suggestion.reps)
@@ -124,7 +156,7 @@ class SetSuggestionTest {
         val suggestion = suggestionForNextSet(
             loggedSets = emptyList(),
             previous = null,
-                        planned = PlannedTarget(reps = 8, weightGrams = null, assistanceGrams = 20_000L),
+            planned = PlannedTarget(reps = 8, weightGrams = null, assistanceGrams = 20_000L),
         )
 
         assertEquals(8, suggestion.reps)

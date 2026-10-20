@@ -1,25 +1,8 @@
 package com.example.androidapp.ui.workout
 
-import com.example.androidapp.domain.model.Activity
-import com.example.androidapp.domain.model.JointPain
-import com.example.androidapp.domain.model.Joint
-import com.example.androidapp.domain.model.PersonalRecordMoment
-import com.example.androidapp.domain.model.PendingProgression
-import com.example.androidapp.domain.model.ProgressionDirection
-import com.example.androidapp.domain.model.ProgressionMiss
-import com.example.androidapp.domain.model.ProgressionOffer
-import com.example.androidapp.domain.model.ProgressionPerformance
-import com.example.androidapp.domain.model.ProgressionPlanSet
-import com.example.androidapp.domain.model.ProgressionPrompt
-import com.example.androidapp.domain.model.ProgressionSetPrompt
-import com.example.androidapp.domain.model.ProgressionStep
-import com.example.androidapp.domain.model.pendingProgressionFor
-import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.Side
-import com.example.androidapp.domain.model.jointSiteKey
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -28,18 +11,35 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.Activity
+import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.PendingProgression
+import com.example.androidapp.domain.model.PersonalRecordMoment
+import com.example.androidapp.domain.model.ProgressionDirection
+import com.example.androidapp.domain.model.ProgressionMiss
+import com.example.androidapp.domain.model.ProgressionOffer
+import com.example.androidapp.domain.model.ProgressionPerformance
+import com.example.androidapp.domain.model.ProgressionPlanSet
+import com.example.androidapp.domain.model.ProgressionPrompt
+import com.example.androidapp.domain.model.ProgressionSetPrompt
+import com.example.androidapp.domain.model.ProgressionStep
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.jointSiteKey
+import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
@@ -460,6 +460,35 @@ class ActiveWorkoutScreenTest {
     )
 
     @Test
+    fun theNextSet_statesWhyItHasThoseNumbers() {
+        // P3.17: "last time" and "plan" are the two sources the prefill reads, and the line says which is
+        // which rather than presenting a remembered number as a prescription.
+        setScreen(
+            state = state(
+                isFinished = false,
+                suggestion = SetSuggestion(
+                    reps = 5,
+                    weightGrams = 100_000L,
+                    reason = SuggestionReason(
+                        lastReps = 5,
+                        lastWeightGrams = 100_000L,
+                        lastRpeHalves = 17,
+                        planReps = 5,
+                        planRpeHalves = 16,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule
+            .onNodeWithTag(TestTags.exerciseSuggestionReason("se1"))
+            .assertExists()
+        composeTestRule
+            .onNodeWithText("Last time 5 × 100 kg, RPE 8.5", substring = true)
+            .assertExists()
+    }
+
+    @Test
     fun tappingReopen_reportsThatExercise() {
         var reopened: String? = null
         setScreen(state(isFinished = true), actions = Actions(onReopenExercise = { reopened = it }))
@@ -487,7 +516,13 @@ class ActiveWorkoutScreenTest {
         // A prompt, not a gate: the user asked to finish.
         var finished: String? = null
         var called = false
-        setScreen(state(isFinished = false), actions = Actions(onFinish = { note -> finished = note; called = true }))
+        setScreen(
+            state(isFinished = false),
+            actions = Actions(onFinish = { note ->
+                finished = note
+                called = true
+            })
+        )
 
         composeTestRule.onNodeWithTag(TestTags.ACTIVE_WORKOUT_FINISH).performClick()
         composeTestRule.onNodeWithTag(TestTags.WORKOUT_NOTE_SKIP).performClick()

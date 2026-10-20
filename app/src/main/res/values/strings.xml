@@ -184,6 +184,23 @@
     <string name="template_plan_none">No planned sets</string>
     <string name="template_plan_empty">No planned sets yet. Add your first one.</string>
     <string name="template_add_warmups">Add warm-ups</string>
+    <!-- The prefill's why-line (P3.17) -->
+    <string name="suggestion_last_time">Last time %1$s</string>
+    <string name="suggestion_plan">Plan %1$s</string>
+    <string name="suggestion_set_shape">%1$d × %2$s</string>
+    <plurals name="suggestion_reps_at">
+        <item quantity="one">%1$d rep @ %2$s</item>
+        <item quantity="other">%1$d reps @ %2$s</item>
+    </plurals>
+    <plurals name="suggestion_reps">
+        <item quantity="one">%1$d rep</item>
+        <item quantity="other">%1$d reps</item>
+    </plurals>
+    <string name="suggestion_rpe">, RPE %1$s</string>
+    <string name="suggestion_separator"> · </string>
+    <string name="suggestion_unit_kg">kg</string>
+    <string name="suggestion_unit_lb">lb</string>
+
     <string name="template_quick_sets">Sets</string>
     <string name="template_quick_reps">Reps</string>
     <string name="template_quick_load">Load</string>

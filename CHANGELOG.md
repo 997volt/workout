@@ -18,6 +18,11 @@ unreleased.
 
 ### Added
 
+- **The next set says where its numbers came from** (P3.17, part). Under the pending set's fields, a line
+  names the two sources the prefill read: *Last time 5 × 100 kg, RPE 8.5 · Plan 5 reps, RPE 8*. It is a
+  sentence, not a prescription — the remembered number and the planned one are labelled, and a set with
+  neither source shows no line at all. The weight is read in the exercise's own unit.
+
 - **A mixed plan takes every earned step in one tap** (P3.17, part). The progression question now offers
   *Take all N steps as offered* when the sets earned different directions — the rep below a ceiling, the
   load at it — so the one-tap answer is each row's own step rather than one direction chosen for the whole

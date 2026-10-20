@@ -1606,28 +1606,22 @@ private fun SessionExercise.suggestionFor(
     loggedSets: List<SetRow>,
     previous: PreviousPerformance?,
     plan: PlanContext,
-): SetSuggestion = suggestionForNextSet(
-    loggedSets = loggedSets,
-    previous = previous,
-    // The template is the plan, whole (ROADMAP N73).
-    planned = plannedTargetFor(
+): SetSuggestion {
+    val planned = plannedTargetFor(
         planned = plan.plannedEntry,
         nextIndex = loggedSets.size,
-        // A rung's load comes off the bar the anchor actually loaded (ROADMAP N79).
         anchorLoad = loggedSets.anchorLoadForTheNextRung(),
-    ),
-    // And a rung's reps come from what this same set did in the previous training, matched by the
-    // set's place in the plan — the only identity a logged row keeps between sessions (N79).
-    //
-    // **Place, not the stored index** (B157). `previous.sets` arrives ordered by `setIndex` and filtered to
-    // live rows, but `setIndex` is not a position: a deleted set keeps its index (the soft delete touches
-    // `deletedAt` alone) and re-logging appends at `max + 1`, so the app's own Undo leaves a permanent hole —
-    // log three sets, delete the third, undo it, and the live indices are 0, 1, 3 while this side counts 0, 1,
-    // 2. Comparing the two spaces found no row at all, and the rung silently prefilled from the *anchor's*
-    // just-done reps instead of its own last performance, which is the one thing this parameter exists to
-    // provide. The list's own order is the position, so the position is what is read.
-    sameSetLastTime = previous?.sets?.getOrNull(loggedSets.size),
-)
+    )
+    return suggestionForNextSet(
+        loggedSets = loggedSets,
+        previous = previous,
+        planned = planned,
+        // A rung's reps come from what this same set did last time, matched by **place** rather than by the
+        // stored index (B157): a soft delete leaves a hole in the indices, while the list's own order is the
+        // position the plan counts.
+        sameSetLastTime = previous?.sets?.getOrNull(loggedSets.size),
+    ).copy(reason = suggestionReason(previous, planned))
+}
 
 /**
  * What the set the next rung hangs off actually loaded, or null (ROADMAP N79).
