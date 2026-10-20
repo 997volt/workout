@@ -17,8 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The N157–N160 review's findings (B173–B175, N161–N164) shipped and are in
-[CHANGELOG.md](CHANGELOG.md).
+**One lift's progress on the big screen.** The import helper answers *how is my bench going* only inside the
+app; a chart built from the export it already loads would answer it at a desk.
+
+| # | Severity | What | Fix |
+| --- | --- | --- | --- |
+| N165 | low | **The helper can import history but cannot show what it did.** A lifter with an export loaded can review a year of sessions set by set, and the app's own trend — the heaviest working set and Epley's estimate — is a phone-sized chart. Nothing shows one movement's trajectory on a large screen, and the export already in the tab is everything needed. | A fifth panel, **Progress**: pick a movement (movements only; a family head would re-implement the app's roll-up), kilograms only, all sessions or the last year or 90 days. Two series — the heaviest working set as dots and Epley's estimate from it as a line — with the app's own rules (0.5 kg rounding, a single rep is the max, nothing above 12 reps, warm-ups excluded) pinned by a generated fixture that runs `toExerciseTrendPoints()` and the tool's series over the same rows. No storage, no fetch; the web-dashboard non-goal is amended to say a view of a loaded file is not one. |
 
 ## Later — decided, and not being started
 
@@ -54,8 +58,8 @@ Permanent, unlike *Parked*: no trigger brings one of these back.
 
 - Nutrition / calorie tracking
 - Social feeds, friends and shared routines (P3.7, P5.2)
-- A web dashboard — a surface that **reads** the training record. The import helper (N159) only
-  authors a file and never sees the database, so it is not one.
+- A web dashboard that **holds, syncs or accounts for** the training record — an account, a stored copy, a
+  place your history lives. A computed view of a file you loaded and can close is not one (N159, N165).
 - Live GPS route tracking
 - Health Connect read/write (P4.1)
 - A foreground service (P4.2)
