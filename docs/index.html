@@ -125,6 +125,19 @@
       <button type="button" id="copyPrompt">Copy prompt</button>
     </section>
 
+    <section class="panel" id="panel-program" aria-labelledby="program-heading" hidden>
+      <h2 id="program-heading">Program sheet</h2>
+      <p class="hint">
+        A table — from a spreadsheet, a coach, or an LLM — becomes a <strong>program document</strong> the
+        app imports: one row per exercise, with the day it belongs to (Day, Weekday, Exercise, Sets, Reps,
+        Load, Rest, RPE). Loads are kilograms. This creates a new program; change it later in the app.
+      </p>
+      <p id="programSummary" class="hint"></p>
+      <div id="programPreview" class="program-preview"></div>
+      <p id="programProblems" class="hint"></p>
+      <p><button type="button" id="downloadProgram" disabled>Download program.json</button></p>
+    </section>
+
     <section class="panel" id="panel-body" aria-labelledby="body-heading" hidden>
       <h2 id="body-heading">Body data (from Waistline)</h2>
       <p class="hint">

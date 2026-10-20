@@ -20,6 +20,7 @@
   </main>
 
   <script src="fixtures/progress-series.js"></script>
+  <script src="seed-catalog.js"></script>
   <script src="app.js"></script>
   <script>
 (function () {
@@ -1291,6 +1292,59 @@
     eq(H.estimatedOneRepMax(100000, 13), null);
     eq(H.estimatedOneRepMax(0, 5), null);
     eq(H.estimatedOneRepMax(100000, 0), null);
+  });
+
+  check('a program sheet becomes a document the app imports (N167)', function () {
+    var text = [
+      ['Program', 'Day', 'Weekday', 'Exercise', 'Sets', 'Reps', 'Load', 'Rest', 'RPE', 'Note'].join('\t'),
+      ['Autumn block', 'Upper A', 'Mon', 'Competition Bench Press', '5', '3', '82.5', '180', '8', 'pause 1s'].join('\t'),
+      ['Autumn block', 'Upper A', 'Mon', 'Barbell Row', '4', '6-8', '70', '120', '8', ''].join('\t'),
+      ['Autumn block', 'Upper A', 'Wed', 'Competition Bench Press', '5', '3', '82.5', '180', '8', ''].join('\t'),
+      ['Autumn block', 'Lower A', 'Fri', 'Back Squat', '5', '5', '100', '240', '8', 'belts on'].join('\t'),
+      ['Autumn block', 'Lower A', 'Fri', 'Machine Curl Call', '3', '10', '30', '90', '8', ''].join('\t')
+    ].join('\n');
+    var parsed = H.parseProgramSheet(text);
+    eq(parsed.problems.length, 0);
+    eq(parsed.name, 'Autumn block');
+    eq(parsed.days.length, 2);
+    eq(parsed.days[0].weekdays.join(','), 'MONDAY,WEDNESDAY');
+
+    var built = H.buildProgramDocument(parsed, {
+      exportedAt: 1790000000000,
+      exercises: window.SEEDED_EXERCISES || []
+    });
+    ok(built.ok, 'the sheet should write');
+    eq(built.stats.sets, 22);
+    eq(built.stats.newExercises.length, 1);
+    eq(built.stats.newExercises[0], 'Machine Curl Call');
+    eq(built.document.formatVersion, 4);
+    eq(built.document.program.name, 'Autumn block');
+    eq(built.document.program.isActive, false);
+    eq(built.document.slots.length, 3);
+    eq(built.document.templates.length, 2);
+    eq(built.document.templateExercises.length, 5);
+    eq(built.document.templateSets.length, 22);
+    eq(built.document.templateSets[0].targetWeightGrams, 82500);
+    eq(built.document.templateSets[0].targetRepsMin, 3);
+    eq(built.document.templateSets[0].targetRepsMax, 3);
+    eq(built.document.templateSets[5].targetRepsMin, 6);
+    eq(built.document.templateSets[5].targetRepsMax, 8);
+    eq(built.document.templateExercises[0].targetRpeHalves, 16);
+    eq(built.document.templateExercises[0].restSeconds, 180);
+    ok(built.document.exercises.some(function (row) { return row.id === 'competition-bench-press'; }),
+      'a seeded name keeps its slug');
+
+    var again = H.buildProgramDocument(H.parseProgramSheet(text), {
+      exportedAt: 1790000000000,
+      exercises: window.SEEDED_EXERCISES || []
+    });
+    eq(built.document.program.id, again.document.program.id);
+    eq(built.document.templateSets[0].id, again.document.templateSets[0].id);
+  });
+
+  check('a program sheet refuses a bad row (N167)', function () {
+    var parsed = H.parseProgramSheet(['Day\tExercise\tSets\tReps', 'Upper\tBench Press\tx\t5'].join('\n'));
+    ok(parsed.problems.length > 0, 'a non-numeric set count should be refused');
   });
 
   check('the export snapshot is read-only and newest first (N165)', function () {

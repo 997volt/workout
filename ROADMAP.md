@@ -38,13 +38,6 @@ is a log, not a coach, so it cannot announce a programme — it can offer one as
 | --- | --- | --- | --- |
 | P3.19 | medium | **Day zero has no starting point.** *New program* gives a name and nothing else, every target is blank, and the first session must be authored from scratch before it can be started. The person with no plan and the person with a written plan are both left retyping on a phone. | **Three example programs**, offered rather than installed: full body × 3, upper/lower × 4, push/pull/legs × 3 — structure only, **blank loads**, a target RPE of 8 on working sets so N50's gate exists, inactive on arrival, renamed and activated by the lifter. The empty Programs state becomes the switchboard: *Start from an example*, *Load a program file* (N167), *Start empty*. An example **is a program document**, inserted through `ProgramDocumentCodec` — the same format the web sheet writes — so one codec and one fixture cover both, and `SeedProgramsTest` asserts every referenced exercise id exists and every template has sets. One-shot: an example the lifter renamed or deleted never returns. No schema change. |
 
-**A program sheet beside the record.** Someone with a coach's plan, a spreadsheet or an LLM's output should
-not retype it set by set on a phone.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| N167 | low | **A written program must be retyped on the phone.** The helper authors history and body data but cannot make a program document, which is the one thing a table and a keyboard are clearly better at. | A **program sheet** in the helper: one program, N days, exercises resolved against the seeded catalog (or created as movements), sets with rep ranges, loads and rest; previewed as the app will show it; downloaded as a `ProgramDocument` (format version 4) with import instructions. **Create, not edit**: the app inserts and never overwrites, so a re-imported edit is ignored — the sheet says *change it later in the app*, and a duplicate name warns rather than making a twin. Shares the document format with the examples (P3.19), so one codec and one fixture cover both. Not planned: a full editor — substitutions, deload weeks, versions and skips stay in the app — and suggesting starting loads from the lifter's export, which the sheet can already read for the progress chart; that would be an opt-in suggestion under N33's rule and a later decision. |
-
 ## Later — decided, and not being started
 
 Agreed work that is not next: the design is settled so it does not have to be re-argued, and nothing here is being

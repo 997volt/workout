@@ -37,16 +37,20 @@ the only moment a bad value can be caught.
 ## Scope
 
 In scope: **importing history** — sessions, their exercises, their sets, and the definitions of the exercises
-they reference — and **one movement's progress** drawn from the export the lifter loaded (N165).
+they reference — **one movement's progress** drawn from the export the lifter loaded (N165), **daily body
+data** from a Waistline backup (N166), and **a program document** from a table (N167).
 
 Out of scope, each deliberately:
 
-- **Programs and templates.** A separate tool may follow and share this shell; the app already has its own
-  format for those ([`ProgramDocument`](app/src/main/java/com/example/androidapp/data/transfer/ProgramDocument.kt)).
+- **Editing a program.** The sheet creates one; the app inserts by id and never overwrites, so the app is
+  where a program is changed. A full editor — substitutions, deload weeks, versions, skips — is not planned
+  here. The document format itself is the app's
+  ([`ProgramDocument`](app/src/main/java/com/example/androidapp/data/transfer/ProgramDocument.kt)).
 - **`.xlsx` parsing.** Reading a zip container needs a dependency, which the constraints below forbid.
   Exporting the sheet as CSV is one menu item in every spreadsheet program.
 - **A server, accounts, sync, telemetry, a service worker, or a build step.**
-- **Editing the app's other collections.** The tool writes history and nothing else.
+- **Editing the app's other collections.** The tool writes history, daily body data and a program
+  document, and nothing else.
 - **A statistics dashboard.** One movement's progress is a view of a file, not a surface that holds or syncs
   the record; family heads, multi-lift comparisons and every other trend stay in the app.
 
@@ -81,8 +85,9 @@ docs/
   .nojekyll             stop Jekyll rewriting JavaScript that contains {{ }}
   build-single-file.js  writes one self-contained page to dist/ (N164)
   seed-catalog.js       the app's seeded library, generated and kept equal by a JVM test
-  fixtures/             the synthetic backup the app's test decodes, its generator, and the
-                        progress fixture the app's trend generates for the tool's test page
+  fixtures/             the synthetic backup the app's test decodes, its generator, the progress
+                        fixture the app's trend generates for the tool's test page, the body-data
+                        fixture, and the program document the app's codec decodes
 IMPORT-HELPER.md        this file, at the root, never served
 ```
 
@@ -406,6 +411,29 @@ own `toExerciseTrendPoints()` over a synthetic four-session fixture — a warm-u
 rounds, one past the ceiling, and a single — and writes the whole input and expected series to
 `fixtures/progress-series.js`. The tool's test page runs its series over the same rows and asserts the same
 points.
+
+## Program sheet
+
+A table dropped into the page becomes a **program document** (`formatVersion` 4) the app imports from
+Programs → Load program (N167). Columns: `Program` (optional), `Day`, `Weekday` (optional), `Exercise`,
+`Sets`, `Reps`, `Load`, `Rest`, `RPE` (optional), `Note` (optional). A tab-separated paste from a spreadsheet
+is the intended input.
+
+- **One row is one planned exercise**: `Sets` of the same rep target, at one load, with an optional rest and
+  RPE. `Reps` is `5` or a range like `6-8`.
+- **Days become templates, weekdays become slots.** A day named on two rows with different weekdays is
+  scheduled on both; a day with no weekday is a workout the lifter starts by hand.
+- **Names resolve against the lifter's library, then the seeded library.** A name in neither is created as a
+  movement, carried in the document with no taxonomy and listed in the preview.
+- **Loads are kilograms**, converted to whole grams.
+- **Create, not edit.** The app inserts by id and never overwrites; re-importing the same sheet adds nothing,
+  and a sheet changed and re-imported does not update the program. The app is where a program is edited.
+- **A duplicate name warns**: when the loaded export already holds a program with that name, the preview
+  says the import will add a second one rather than silently making a twin.
+
+The fixture `fixtures/program-document.json` is what the sheet writes for a two-day example, and
+`ProgramDocumentFixtureTest` decodes it with the app's own codec and checks every cross-reference the import
+would otherwise drop.
 
 ## Body data (Waistline)
 

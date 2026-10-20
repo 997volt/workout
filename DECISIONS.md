@@ -1070,6 +1070,14 @@ the rule; that one argues it.
   unchanged: its format already carries measurements and its importer restores them, and a fixture proves its
   codec decodes the output.
   ([evidence](DECISIONS-EVIDENCE.md#n166))
+- **A program may be written from a table, as a document, and the app stays the editor** (N167). The helper
+  writes a `ProgramDocument` (format version 4) from a sheet: one row per planned exercise, days become
+  templates, weekdays become slots, names resolve against the lifter's library and then the seed, a name in
+  neither is created as a movement, and loads are kilograms. It creates and never edits — the app inserts by
+  id and never overwrites, so a re-imported edit is ignored and a duplicate name is warned about rather than
+  silently twinned — and the page says so. The document is the same format the seeded examples use (P3.19),
+  so one codec and one fixture cover both.
+  ([evidence](DECISIONS-EVIDENCE.md#n167))
 
 ## Adherence
 

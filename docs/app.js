@@ -1004,6 +1004,18 @@
 
     var looksJson = trimmed.charAt(0) === '{' || trimmed.charAt(0) === '[';
     if (!looksJson) {
+      // A program table is a different shape from a history one; catch it before the row parser.
+      if (looksLikeProgramTable(parseDelimitedCells(raw, detectDelimiter(raw)))) {
+        return {
+          kind: 'program',
+          format: 'csv',
+          rows: [],
+          source: options.fileName || 'program-sheet',
+          warnings: [],
+          problems: [],
+          program: parseProgramSheet(raw, options)
+        };
+      }
       return parseCsvText(raw, options);
     }
 
@@ -2843,6 +2855,9 @@
       /* Waistline daily body data and the unit its numbers were entered in (N166). */
       waistline: null,
       waistlineUnit: 'kg',
+      /* A program table being authored, and the document built from it (N167). */
+      programSheet: null,
+      programResult: null,
       exportedAt: Date.now(),
       exportResult: null,
       lastCounts: ''
@@ -2883,6 +2898,11 @@
       progressSummary: byId('progressSummary'),
       progressChart: byId('progressChart'),
       progressList: byId('progressList'),
+      programPanel: byId('panel-program'),
+      programSummary: byId('programSummary'),
+      programPreview: byId('programPreview'),
+      programProblems: byId('programProblems'),
+      downloadProgram: byId('downloadProgram'),
       bodyPanel: byId('panel-body'),
       bodySummary: byId('bodySummary'),
       bodyPreview: byId('bodyPreview'),
@@ -2931,6 +2951,7 @@
       }
       elements.exportInput.value = '';
     });
+    elements.downloadProgram.addEventListener('click', downloadProgram);
     elements.waistlineUnit.addEventListener('change', function () {
       state.waistlineUnit = elements.waistlineUnit.value === 'lb' ? 'lb' : 'kg';
       renderBodyPanel();
@@ -3093,6 +3114,18 @@
     var state = ui.state;
     var parsed = parseInputText(text, { fileName: fileName || '' });
 
+    if (parsed.kind === 'program') {
+      state.programSheet = parsed.program;
+      ui.elements.sourceStatus.textContent = 'That is a program sheet: ' +
+        parsed.program.days.length + ' day' + (parsed.program.days.length === 1 ? '' : 's') +
+        ' and ' + parsed.program.rows + ' exercise row' +
+        (parsed.program.rows === 1 ? '' : 's') + '. It is a program document, not a history list.';
+      announce('That is a program sheet. It will be written as a program document.');
+      renderProgramPanel();
+      refresh();
+      return;
+    }
+
     if (parsed.kind === 'waistline') {
       setWaistline(parsed.waistline, fileName);
       ui.elements.sourceStatus.textContent = 'That is a Waistline backup: ' +
@@ -3242,6 +3275,7 @@
 
   function renderAll() {
     renderSources();
+    renderProgramPanel();
     renderBodyPanel();
     renderDatalist();
     renderSessions();
@@ -4619,6 +4653,401 @@
     });
   }
 
+  /* ------------------------------------------------------------------ *
+   * Program sheets (N167)
+   * ------------------------------------------------------------------ */
+
+  var PROGRAM_FORMAT_VERSION = 4;
+  var PROGRAM_WEEKDAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+  var PROGRAM_COLUMNS = {
+    program: ['program'],
+    day: ['day'],
+    weekday: ['weekday', 'day of week', 'dow'],
+    exercise: ['exercise', 'lift', 'movement'],
+    sets: ['sets', 'set'],
+    reps: ['reps', 'rep', 'reps range', 'rep range'],
+    load: ['load', 'weight', 'target'],
+    rest: ['rest', 'rest seconds', 'rest (s)'],
+    rpe: ['rpe', 'effort'],
+    note: ['note', 'notes', 'cue'],
+    unit: ['unit', 'units']
+  };
+
+  function programFieldOf(header) {
+    var name = normalizeName(header);
+    var fields = Object.keys(PROGRAM_COLUMNS);
+    for (var index = 0; index < fields.length; index += 1) {
+      if (PROGRAM_COLUMNS[fields[index]].indexOf(name) !== -1) { return fields[index]; }
+    }
+    return null;
+  }
+
+  /* A program table, not a history one: it names days and set counts, and no date. */
+  function looksLikeProgramTable(cells) {
+    if (!Array.isArray(cells) || cells.length < 2 || !Array.isArray(cells[0])) { return false; }
+    var fields = {};
+    var dated = false;
+    cells[0].forEach(function (header) {
+      var name = normalizeName(header);
+      if (name === 'date') { dated = true; }
+      var field = programFieldOf(header);
+      if (field) { fields[field] = true; }
+    });
+    return !dated && has(fields, 'day') && has(fields, 'exercise') && has(fields, 'sets');
+  }
+
+  function parseProgramWeekday(text) {
+    var name = normalizeName(text).replace(/[^a-z0-9]/g, '');
+    if (name === '') { return { ok: true, value: null }; }
+    if (/^[1-7]$/.test(name)) { return { ok: true, value: PROGRAM_WEEKDAYS[Number(name) - 1] }; }
+    if (name.length < 3) { return { ok: false }; }
+    for (var index = 0; index < PROGRAM_WEEKDAYS.length; index += 1) {
+      var full = PROGRAM_WEEKDAYS[index].toLowerCase();
+      if (full.indexOf(name) === 0) { return { ok: true, value: PROGRAM_WEEKDAYS[index] }; }
+    }
+    return { ok: false };
+  }
+
+  function parseRepRange(text) {
+    var value = String(text === null || text === undefined ? '' : text).trim().replace(/[\u2013\u2014]/g, '-');
+    var match = /^(\d{1,3})\s*(?:-\s*(\d{1,3}))?$/.exec(value);
+    if (!match) { return null; }
+    var min = Number(match[1]);
+    var max = match[2] === undefined ? min : Number(match[2]);
+    if (min < 1 || max < min || max > 100) { return null; }
+    return { min: min, max: max };
+  }
+
+  function parseProgramSheet(text, options) {
+    options = options || {};
+    var cells = parseDelimitedCells(text, detectDelimiter(text));
+    while (cells.length > 0 && cells[cells.length - 1].every(function (cell) {
+      return String(cell).trim() === '';
+    })) {
+      cells.pop();
+    }
+    var sheet = {
+      name: 'My program',
+      unit: 'kg',
+      days: [],
+      problems: [],
+      warnings: [],
+      rows: 0
+    };
+    if (cells.length < 2) {
+      sheet.problems.push({ message: 'The table needs a header row and at least one exercise row.' });
+      return sheet;
+    }
+
+    var headerFields = [];
+    cells[0].forEach(function (header) {
+      headerFields.push(programFieldOf(header));
+    });
+    ['day', 'exercise', 'sets'].forEach(function (field) {
+      if (headerFields.indexOf(field) === -1) {
+        sheet.problems.push({
+          message: 'The table has no "' + (field === 'sets' ? 'Sets' : field === 'day' ? 'Day' : 'Exercise') +
+            '" column. A program sheet needs Program (optional), Day, Weekday (optional), Exercise, Sets, ' +
+            'Reps, Load, Rest, RPE and Note.'
+        });
+      }
+    });
+    if (sheet.problems.length > 0) { return sheet; }
+
+    function valueOf(row, field) {
+      var index = headerFields.indexOf(field);
+      if (index === -1) { return ''; }
+      return String(index < row.length ? row[index] : '').trim();
+    }
+
+    var byDay = {};
+    var dayOrder = [];
+    for (var rowIndex = 1; rowIndex < cells.length; rowIndex += 1) {
+      var row = cells[rowIndex];
+      if (row.every(function (cell) { return String(cell).trim() === ''; })) { continue; }
+      sheet.rows += 1;
+
+      var program = valueOf(row, 'program');
+      if (program !== '' && sheet.name === 'My program') { sheet.name = program; }
+      var unit = normalizeName(valueOf(row, 'unit'));
+      if (unit === 'lb' || unit === 'lbs') { sheet.unit = 'lb'; }
+
+      var dayName = valueOf(row, 'day');
+      if (dayName === '') {
+        sheet.problems.push({ message: 'Row ' + (rowIndex + 1) + ' has no Day.' });
+        continue;
+      }
+      if (!has(byDay, dayName)) {
+        byDay[dayName] = { name: dayName, weekdays: [], exercises: [] };
+        dayOrder.push(dayName);
+      }
+      var day = byDay[dayName];
+
+      var weekday = valueOf(row, 'weekday');
+      if (weekday !== '') {
+        var parsedWeekday = parseProgramWeekday(weekday);
+        if (!parsedWeekday.ok) {
+          sheet.problems.push({ message: 'Row ' + (rowIndex + 1) + ': "' + weekday + '" is not a weekday.' });
+        } else if (parsedWeekday.value !== null && day.weekdays.indexOf(parsedWeekday.value) === -1) {
+          day.weekdays.push(parsedWeekday.value);
+        }
+      }
+
+      var exerciseName = valueOf(row, 'exercise');
+      if (exerciseName === '') {
+        sheet.problems.push({ message: 'Row ' + (rowIndex + 1) + ' has no Exercise.' });
+        continue;
+      }
+
+      var setsText = valueOf(row, 'sets');
+      var sets = Number(setsText);
+      if (!/^\d+$/.test(setsText) || sets < 1 || sets > 20) {
+        sheet.problems.push({
+          message: 'Row ' + (rowIndex + 1) + ': Sets must be a whole number from 1 to 20.'
+        });
+        continue;
+      }
+
+      var reps = parseRepRange(valueOf(row, 'reps'));
+      if (reps === null) {
+        sheet.problems.push({
+          message: 'Row ' + (rowIndex + 1) + ': Reps must be "5" or a range like "6-8".'
+        });
+        continue;
+      }
+
+      var loadText = valueOf(row, 'load');
+      var load = null;
+      if (loadText !== '') {
+        load = Number(loadText.replace(',', '.'));
+        if (!isFinite(load) || load <= 0) {
+          sheet.problems.push({ message: 'Row ' + (rowIndex + 1) + ': Load must be a positive number.' });
+          continue;
+        }
+      }
+      var rowUnit = normalizeName(valueOf(row, 'unit'));
+      var unitForRow = rowUnit === 'lb' || rowUnit === 'lbs' ? 'lb' : (rowUnit === 'kg' ? 'kg' : sheet.unit);
+
+      var restText = valueOf(row, 'rest');
+      var rest = null;
+      if (restText !== '') {
+        rest = Number(restText);
+        if (!/^\d+$/.test(restText) || rest < 0 || rest > 3600) {
+          sheet.problems.push({ message: 'Row ' + (rowIndex + 1) + ': Rest must be seconds, 0 to 3600.' });
+          continue;
+        }
+      }
+
+      var rpeText = valueOf(row, 'rpe');
+      var rpeHalves = null;
+      if (rpeText !== '') {
+        var rpe = Number(rpeText.replace(',', '.'));
+        if (!isFinite(rpe) || rpe < 1 || rpe > 10) {
+          sheet.problems.push({ message: 'Row ' + (rowIndex + 1) + ': RPE must be from 1 to 10.' });
+          continue;
+        }
+        rpeHalves = Math.round(rpe * 2);
+      }
+
+      day.exercises.push({
+        name: exerciseName,
+        row: rowIndex + 1,
+        sets: sets,
+        repsMin: reps.min,
+        repsMax: reps.max,
+        weightGrams: load === null ? null : Math.round(load * (unitForRow === 'lb' ? 453.59237 : 1000)),
+        restSeconds: rest,
+        rpeHalves: rpeHalves,
+        note: valueOf(row, 'note') === '' ? null : valueOf(row, 'note')
+      });
+    }
+
+    dayOrder.forEach(function (name) { sheet.days.push(byDay[name]); });
+    if (sheet.rows === 0) {
+      sheet.problems.push({ message: 'The table has headers but no exercise rows.' });
+    }
+    return sheet;
+  }
+
+  function programExerciseIndex(rows) {
+    var byName = {};
+    (Array.isArray(rows) ? rows : []).forEach(function (row) {
+      if (!isObject(row) || typeof row.id !== 'string' || typeof row.name !== 'string') { return; }
+      if (!isLoggableRow(row)) { return; }
+      if (row.deletedAt !== null && row.deletedAt !== undefined) { return; }
+      var key = normalizeName(row.name);
+      if (key !== '' && !has(byName, key)) { byName[key] = row; }
+    });
+    return byName;
+  }
+
+  function programExerciseDto(row, time) {
+    return {
+      id: row.id,
+      name: String(row.name),
+      primaryMuscle: row.primaryMuscle || null,
+      secondaryMuscles: Array.isArray(row.secondaryMuscles) ? row.secondaryMuscles : [],
+      equipment: row.equipment || null,
+      movementPattern: row.movementPattern || null,
+      createdAt: typeof row.createdAt === 'number' ? row.createdAt : time,
+      updatedAt: typeof row.updatedAt === 'number' ? row.updatedAt : time,
+      deletedAt: null,
+      rowKind: row.rowKind || 'MOVEMENT',
+      parentId: row.parentId || null
+    };
+  }
+
+  function buildProgramDocument(sheet, options) {
+    options = options || {};
+    var time = typeof options.exportedAt === 'number' && isFinite(options.exportedAt)
+      ? options.exportedAt : Date.now();
+    var index = programExerciseIndex(options.exercises);
+    var problems = (sheet.problems || []).slice();
+
+    var programName = String(sheet.name || 'My program').trim() || 'My program';
+    var programId = 'pgm_' + fnv1a64Hex('program|' + programName);
+    var templates = [];
+    var slots = [];
+    var templateExercises = [];
+    var templateSets = [];
+    var exercisesById = {};
+    var newExercises = [];
+    var templateByDay = {};
+    var setCount = 0;
+    var exerciseCount = 0;
+
+    (sheet.days || []).forEach(function (day) {
+      var templateId = 'tpl_' + fnv1a64Hex('template|' + programName + '|' + day.name);
+      templateByDay[day.name] = templateId;
+      templates.push({
+        id: templateId,
+        name: day.name,
+        versionOf: null,
+        createdAt: time,
+        updatedAt: time,
+        deletedAt: null
+      });
+      var weekdays = (day.weekdays || []).slice();
+      if (weekdays.length === 0) { weekdays.push(null); }
+      weekdays.forEach(function (weekday) {
+        slots.push({
+          id: 'slot_' + fnv1a64Hex('slot|' + programName + '|' + day.name + '|' + (weekday || 'none')),
+          programId: programId,
+          templateId: templateId,
+          position: slots.length,
+          weekday: weekday,
+          createdAt: time,
+          updatedAt: time,
+          deletedAt: null
+        });
+      });
+
+      day.exercises.forEach(function (exercise) {
+        var normalized = normalizeName(exercise.name);
+        var found = has(index, normalized) ? index[normalized] : null;
+        var exerciseId;
+        if (found) {
+          exerciseId = found.id;
+          exercisesById[exerciseId] = programExerciseDto(found, time);
+        } else {
+          exerciseId = 'ex_' + fnv1a64Hex('program-exercise|' + normalized);
+          if (!has(exercisesById, exerciseId)) {
+            exercisesById[exerciseId] = {
+              id: exerciseId,
+              name: String(exercise.name).trim(),
+              primaryMuscle: null,
+              secondaryMuscles: [],
+              equipment: null,
+              movementPattern: null,
+              createdAt: time,
+              updatedAt: time,
+              deletedAt: null,
+              rowKind: 'MOVEMENT',
+              parentId: null
+            };
+            newExercises.push(String(exercise.name).trim());
+          }
+        }
+        exerciseCount += 1;
+        var templateExerciseId = 'tex_' + fnv1a64Hex(
+          'template-exercise|' + programName + '|' + day.name + '|' + exercise.row
+        );
+        templateExercises.push({
+          id: templateExerciseId,
+          templateId: templateId,
+          exerciseId: exerciseId,
+          position: templateExercises.filter(function (row) {
+            return row.templateId === templateId;
+          }).length,
+          restSeconds: exercise.restSeconds,
+          techniqueNote: exercise.note,
+          targetRpeHalves: exercise.rpeHalves,
+          supersetGroup: null,
+          createdAt: time,
+          updatedAt: time,
+          deletedAt: null
+        });
+        for (var setIndex = 1; setIndex <= exercise.sets; setIndex += 1) {
+          setCount += 1;
+          templateSets.push({
+            id: 'tset_' + fnv1a64Hex(
+              'template-set|' + programName + '|' + day.name + '|' + exercise.row + '|' + setIndex
+            ),
+            templateExerciseId: templateExerciseId,
+            setIndex: setIndex,
+            role: 'NORMAL',
+            targetWeightGrams: exercise.weightGrams,
+            targetAssistanceGrams: null,
+            targetRepsMin: exercise.repsMin,
+            targetRepsMax: exercise.repsMax,
+            targetRepsCurrent: null,
+            dropValueGrams: null,
+            note: null,
+            createdAt: time,
+            updatedAt: time,
+            deletedAt: null
+          });
+        }
+      });
+    });
+
+    if (templates.length === 0 && problems.length === 0) {
+      problems.push({ message: 'The sheet has no days to write.' });
+    }
+
+    var document = {
+      formatVersion: PROGRAM_FORMAT_VERSION,
+      exportedAt: time,
+      program: {
+        id: programId,
+        name: programName,
+        isActive: false,
+        position: 0,
+        createdAt: time,
+        updatedAt: time,
+        deletedAt: null
+      },
+      slots: slots,
+      templates: templates,
+      templateExercises: templateExercises,
+      templateSets: templateSets,
+      exercises: Object.keys(exercisesById).map(function (id) { return exercisesById[id]; })
+    };
+
+    return {
+      ok: problems.length === 0,
+      document: problems.length === 0 ? document : null,
+      problems: problems,
+      warnings: sheet.warnings || [],
+      stats: {
+        days: templates.length,
+        exercises: exerciseCount,
+        sets: setCount,
+        newExercises: newExercises
+      }
+    };
+  }
+
   /* The lifts that have history, as a list beside the chart. A list rather than a dropdown: the
    * chart is the point, and a visible list makes changing lift one click instead of a search. */
   function renderProgressList(movements) {
@@ -4983,6 +5412,123 @@
     legend.appendChild(h('span', 'legend-estimate', 'Estimated 1RM (Epley)'));
     legend.appendChild(h('span', 'legend-heaviest', 'Heaviest working set'));
     host.appendChild(legend);
+  }
+
+  function programWeekdayLabel(weekday) {
+    if (!weekday) { return 'any day'; }
+    var lower = weekday.toLowerCase();
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  }
+
+  /* The program sheet's preview: the document as the phone will read it (N167). */
+  function renderProgramPanel() {
+    var state = ui.state;
+    var panel = ui.elements.programPanel;
+    if (!panel) { return; }
+    var sheet = state.programSheet;
+    panel.hidden = !sheet;
+    if (!sheet) { return; }
+
+    // The lifter's own library first, then the shipped one: a movement they renamed or created wins,
+    // and a seeded slug is still found when their export was pruned.
+    var exercises = [];
+    if (state.catalogFile && Array.isArray(state.catalogFile.exercises)) {
+      exercises = exercises.concat(state.catalogFile.exercises);
+    }
+    exercises = exercises.concat(window.SEEDED_EXERCISES || []);
+    var built = buildProgramDocument(sheet, {
+      exportedAt: state.exportedAt,
+      exercises: exercises
+    });
+    state.programResult = built;
+    var stats = built.stats;
+
+    var summary = 'Program "' + (sheet.name || 'My program') + '" · ' + formatInt(stats.days) +
+      ' day' + (stats.days === 1 ? '' : 's') + ' · ' + formatInt(stats.exercises) +
+      ' exercise row' + (stats.exercises === 1 ? '' : 's') + ' · ' + formatInt(stats.sets) +
+      ' set' + (stats.sets === 1 ? '' : 's') + ' · loads in ' + sheet.unit + '.';
+    if (stats.newExercises.length > 0) {
+      summary += ' Created as new movements: ' + stats.newExercises.join(', ') + '.';
+    }
+    setText(ui.elements.programSummary, summary);
+
+    var host = ui.elements.programPreview;
+    host.textContent = '';
+    (sheet.days || []).forEach(function (day) {
+      var block = h('section', 'program-day');
+      var heading = h('h3', 'program-day-name', day.name);
+      if (day.weekdays.length > 0) {
+        heading.appendChild(h('span', 'hint', ' · ' + day.weekdays.map(programWeekdayLabel).join(', ')));
+      } else {
+        heading.appendChild(h('span', 'hint', ' · any day'));
+      }
+      block.appendChild(heading);
+
+      var table = document.createElement('table');
+      table.className = 'program-table';
+      var thead = document.createElement('thead');
+      var headRow = document.createElement('tr');
+      ['Exercise', 'Sets', 'Reps', 'Load', 'Rest', 'RPE'].forEach(function (label) {
+        var th = document.createElement('th');
+        th.scope = 'col';
+        th.textContent = label;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      day.exercises.forEach(function (exercise) {
+        var tr = document.createElement('tr');
+        tr.appendChild(h('td', '', exercise.name));
+        tr.appendChild(h('td', '', String(exercise.sets)));
+        tr.appendChild(h('td', '', exercise.repsMin === exercise.repsMax
+          ? String(exercise.repsMin)
+          : exercise.repsMin + '–' + exercise.repsMax));
+        tr.appendChild(h('td', '', exercise.weightGrams === null
+          ? '—' : formatKg(exercise.weightGrams) + ' kg'));
+        tr.appendChild(h('td', '', exercise.restSeconds === null
+          ? '—' : exercise.restSeconds + ' s'));
+        tr.appendChild(h('td', '', exercise.rpeHalves === null
+          ? '—' : String(exercise.rpeHalves / 2)));
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      block.appendChild(table);
+      host.appendChild(block);
+    });
+
+    var problems = built.problems.map(function (problem) { return problem.message; });
+    var notes = [];
+    if (built.ok && state.catalogFile && Array.isArray(state.catalogFile.programs)) {
+      var clashes = state.catalogFile.programs.filter(function (program) {
+        return isObject(program) && normalizeName(program.name) === normalizeName(sheet.name) &&
+          (program.deletedAt === null || program.deletedAt === undefined);
+      });
+      if (clashes.length > 0) {
+        notes.push('The loaded export already holds a program named "' + sheet.name +
+          '"; the import will add a second one, because it never renames or overwrites.');
+      }
+    }
+    setText(ui.elements.programProblems, problems.length > 0
+      ? 'Cannot write this sheet: ' + problems.join(' ')
+      : notes.join(' '));
+    ui.elements.downloadProgram.disabled = !built.ok;
+  }
+
+  function downloadProgram() {
+    var state = ui.state;
+    if (!state.programResult || !state.programResult.ok) { return; }
+    var text = JSON.stringify(state.programResult.document, null, 2) + '\n';
+    var blob = new Blob([text], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = 'program.json';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+    announce('Downloaded program.json.');
   }
 
   /* The body-data panel: what Waistline contributed, before it is written (N166). */
@@ -5520,6 +6066,9 @@
     liftTrendPoints: liftTrendPoints,
     exportSnapshot: exportSnapshot,
     parseWaistlineDoc: parseWaistlineDoc,
+    parseProgramSheet: parseProgramSheet,
+    buildProgramDocument: buildProgramDocument,
+    looksLikeProgramTable: looksLikeProgramTable,
     waistlineRows: waistlineRows,
     waistlineMeasurements: waistlineMeasurements,
     noonOfDate: noonOfDate,

@@ -2568,3 +2568,37 @@ with no dry run), and storing the export to make the body panel survive a reload
 everything else here.
 
 **Covered by** the tool's Waistline assertion and the app's `WaistlineImportFixtureTest`.
+
+## N167
+
+The app has had a program document since N47: a self-contained file with its own `formatVersion`, carrying
+the program, its slots, the templates those slots name, their planned exercises and sets, *and the
+definitions of the exercises they reference*. The app imports it from the Programs screen, inserts by id,
+never overwrites, and leaves the new program inactive and last. So a table on a big screen only has to
+produce that document — no backup, no history, no schema work.
+
+**Why a document, not a backup.** A backup would carry four session collections and every other table; a
+program is not one of those with fields missing. The document exists exactly for this, and it version-gates
+on its own.
+
+**Why create, not edit.** The import is insert-only. A sheet that could edit would promise a round trip the
+app cannot honour: the same ids are skipped, and changing them makes a second program. The page says
+"change it later in the app" and warns on a duplicate name instead of pretending.
+
+**Why a table, not an editor.** A full editor would duplicate the app's model — versions, substitutions,
+deload plans, skips, per-set roles — in a second implementation that drifts. The table covers the plan
+people actually write down: days, exercises, sets, rep ranges, loads, rest, an RPE. Everything else stays in
+the app.
+
+**Why the document carries exercises.** A seeded id means the same thing everywhere, but a movement the
+lifter created carries a generated id that means nothing on another device — so the document brings its
+definition, as N47 designed. A name in neither library becomes a movement with no taxonomy, listed in the
+preview, rather than being silently matched to something else.
+
+**Why kilograms.** The app stores grams and the tool's other inputs are grams; one unit removes a
+conversion that could be wrong in a way nobody notices until a session.
+
+**Rejected:** a JSON program input (a spreadsheet is where the plan lives), round-trip editing, and
+suggesting starting loads from the export — a later, opt-in idea under N33's rule.
+
+**Covered by** the tool's program-sheet assertions and the app's `ProgramDocumentFixtureTest`.

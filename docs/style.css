@@ -1174,3 +1174,34 @@ tbody tr:last-child td {
   color: var(--danger-border);
   font-size: 0.85rem;
 }
+
+/* A program sheet (N167) */
+.program-day {
+  margin-top: 1rem;
+}
+
+.program-day-name {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.program-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.program-table th {
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.program-table td {
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.program-table td:first-child {
+  width: 16rem;
+}
