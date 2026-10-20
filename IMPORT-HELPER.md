@@ -394,6 +394,12 @@ own definitions rather than a second opinion:
   returning the weight itself for a single rep and **nothing above 12 reps**, where the formula would be
   extrapolation dressed as arithmetic.
 
+**The rows are the app's.** A soft-deleted session, exercise or set, and a session that was never finished, are
+carried by an export but absent from the app's trend query; the page filters them the same way
+(`deletedAt` on each, `finishedAt` on the session), so a deleted typo cannot become the chart's best session
+and a lift whose sets were all deleted is not offered (B179). The picker's counts and *In your export* use the
+same rule, which is why a removed exercise no longer shows its sets under a live session.
+
 **Movements only.** A family head aggregates its children, which is the app's roll-up rule; offering one here
 would re-implement it. **Kilograms only**, because the app stores grams and this is a progression view rather
 than a unit converter. A range narrows to the last year or 90 days measured back from the newest session, so

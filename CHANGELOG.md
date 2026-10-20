@@ -113,6 +113,14 @@ unreleased.
 
 ### Fixed
 
+- **The progress chart reads only the rows the app reads** (B179). A soft-deleted set, exercise or session,
+  and a session still in progress, ride in an export but are absent from the app's trend query; the page
+  counted them, so a deleted 999 kg typo could become the chart's best session and a lift whose only sets
+  were deleted still appeared in the picker. The series, the picker and *In your export* now apply the app's
+  own filters — `deletedAt` on the session, the exercise and the set, and a finished session — so a removed
+  exercise no longer shows its sets under a live session. The fixture cannot catch this (the app's own
+  function never sees a deleted row), so the rule is pinned by a case on the test page.
+
 - **A year's import no longer freezes the tab** (B176). The Sessions panel built every set's controls when the
   rows loaded: a real 3,750-row file became about 127,000 DOM nodes in one synchronous render, and the tab
   stopped responding while it laid them out — which reads as a crash. A session's body is now built the first

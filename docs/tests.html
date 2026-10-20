@@ -1420,6 +1420,52 @@
     });
   });
 
+  check('the series and the picker read the same live rows the app does (B179)', function () {
+    // A soft-deleted row keeps its id and rides in the export, but the app's trend query filters
+    // `deletedAt IS NULL` on the session, the exercise and the set, and requires `finishedAt`.
+    // A deleted 999 kg typo therefore must not become the chart's best session here.
+    var backup = {
+      exercises: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }],
+      sessions: [
+        { id: 's1', startedAt: 1000, finishedAt: 2000 },
+        { id: 's2', startedAt: 3000, finishedAt: 4000 },
+        { id: 's3', startedAt: 5000, finishedAt: 6000, deletedAt: 9 },
+        { id: 's4', startedAt: 7000 }
+      ],
+      sessionExercises: [
+        { id: 'e1', sessionId: 's1', exerciseId: 'a' },
+        { id: 'e2', sessionId: 's2', exerciseId: 'a' },
+        { id: 'e3', sessionId: 's3', exerciseId: 'a' },
+        { id: 'e4', sessionId: 's4', exerciseId: 'a' },
+        { id: 'e5', sessionId: 's1', exerciseId: 'b', deletedAt: 3 }
+      ],
+      sets: [
+        { sessionExerciseId: 'e1', weightGrams: 100000, reps: 5, setType: 'NORMAL' },
+        { sessionExerciseId: 'e2', weightGrams: 90000, reps: 5, setType: 'NORMAL' },
+        { sessionExerciseId: 'e3', weightGrams: 200000, reps: 5, setType: 'NORMAL' },
+        { sessionExerciseId: 'e4', weightGrams: 300000, reps: 5, setType: 'NORMAL' },
+        { sessionExerciseId: 'e2', weightGrams: 999000, reps: 5, setType: 'NORMAL', deletedAt: 7 },
+        { sessionExerciseId: 'e5', weightGrams: 80000, reps: 5, setType: 'NORMAL' }
+      ]
+    };
+
+    var points = H.liftTrendPoints(backup, 'a');
+    eq(points.length, 2);
+    eq(points[0].heaviestSetGrams, 100000);
+    eq(points[1].heaviestSetGrams, 90000);
+
+    var movements = H.movementsWithHistory(backup);
+    eq(movements.length, 1);
+    eq(movements[0].id, 'a');
+    eq(movements[0].sets, 2);
+
+    var snapshot = H.exportSnapshot(backup);
+    eq(snapshot.live, 3);
+    eq(snapshot.deleted, 1);
+    var s1 = snapshot.sessions.filter(function (session) { return session.id === 's1'; })[0];
+    eq(s1.blocks.length, 1, 'a deleted exercise must not show under a live session');
+  });
+
   /* ------------------------------------------------------------------ *
    * Report
    * ------------------------------------------------------------------ */

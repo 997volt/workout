@@ -117,6 +117,16 @@
     return Object.prototype.hasOwnProperty.call(object, key);
   }
 
+  /* True unless the row carries a soft delete (B179).
+   *
+   * The app keeps a deleted row under its id — an export carries it, and an import can restore it —
+   * so every read that answers "what is in this file" has to ask this first, exactly as the app's
+   * own queries filter `deletedAt IS NULL`. */
+  function isLive(row) {
+    if (!isObject(row)) { return false; }
+    return row.deletedAt === null || row.deletedAt === undefined;
+  }
+
   function pad2(value) {
     var s = String(value);
     return s.length < 2 ? '0' + s : s;
@@ -593,20 +603,29 @@
   /* One point per session that logged the movement: the heaviest working set and its
    * estimate, in the order they were trained. Warm-ups are excluded, as they are
    * everywhere the app reads a load; a rung still counts, because this filter is the
-   * app's own `setType != WARMUP` (N17). */
+   * app's own `setType != WARMUP` (N17).
+   *
+   * **The same rows the app's trend query reads** (B179): a session the lifter deleted or
+   * never finished, an exercise the session holds as deleted, and a deleted set are all
+   * absent from `TrendsDao`, so counting them here would draw a point the phone never
+   * shows — a deleted 300 kg typo would become the movement's best session. */
   function liftTrendPoints(backup, exerciseId) {
     if (!isObject(backup) || !Array.isArray(backup.sessions)) { return []; }
     var sessionsById = {};
     backup.sessions.forEach(function (session) {
-      if (isObject(session) && typeof session.id === 'string') { sessionsById[session.id] = session; }
+      if (!isObject(session) || typeof session.id !== 'string') { return; }
+      if (!isLive(session)) { return; }
+      if (typeof session.startedAt !== 'number' || typeof session.finishedAt !== 'number') { return; }
+      sessionsById[session.id] = session;
     });
     var linkSession = {};
     var bySession = {};
     (Array.isArray(backup.sessionExercises) ? backup.sessionExercises : []).forEach(function (link) {
       if (!isObject(link) || link.exerciseId !== exerciseId) { return; }
       if (typeof link.id !== 'string' || typeof link.sessionId !== 'string') { return; }
+      if (!isLive(link)) { return; }
       var session = sessionsById[link.sessionId];
-      if (!session || typeof session.startedAt !== 'number') { return; }
+      if (!session) { return; }
       linkSession[link.id] = link.sessionId;
       if (!has(bySession, link.sessionId)) {
         bySession[link.sessionId] = { startedAt: session.startedAt, sets: [] };
@@ -614,6 +633,7 @@
     });
     (Array.isArray(backup.sets) ? backup.sets : []).forEach(function (set) {
       if (!isObject(set) || !has(linkSession, set.sessionExerciseId)) { return; }
+      if (!isLive(set)) { return; }
       var sessionId = linkSession[set.sessionExerciseId];
       if (!has(bySession, sessionId)) { return; }
       bySession[sessionId].sets.push(set);
@@ -4419,23 +4439,38 @@
   }
 
   /* The movements this export actually has history for, sorted, so the picker is not
-   * a list of ninety lifts that would draw an empty chart. */
+   * a list of ninety lifts that would draw an empty chart.
+   *
+   * The rows are counted the way `liftTrendPoints` reads them (B179): a movement whose only
+   * sets were deleted, or which only appears in a deleted or unfinished session, has no
+   * history to chart, and offering it would answer with an empty plot. */
   function movementsWithHistory(backup) {
     var byId = {};
     (Array.isArray(backup.exercises) ? backup.exercises : []).forEach(function (exercise) {
       if (!isObject(exercise) || typeof exercise.id !== 'string') { return; }
       if (!isLoggableRow(exercise)) { return; }
-      if (exercise.deletedAt !== null && exercise.deletedAt !== undefined) { return; }
+      if (!isLive(exercise)) { return; }
       if (typeof exercise.name !== 'string' || exercise.name.trim() === '') { return; }
       byId[exercise.id] = exercise;
     });
+    var finishedSessions = {};
+    (Array.isArray(backup.sessions) ? backup.sessions : []).forEach(function (session) {
+      if (!isObject(session) || typeof session.id !== 'string') { return; }
+      if (!isLive(session)) { return; }
+      if (typeof session.finishedAt !== 'number') { return; }
+      finishedSessions[session.id] = true;
+    });
     var exerciseOfLink = {};
     (Array.isArray(backup.sessionExercises) ? backup.sessionExercises : []).forEach(function (link) {
-      if (isObject(link) && typeof link.id === 'string') { exerciseOfLink[link.id] = link.exerciseId; }
+      if (!isObject(link) || typeof link.id !== 'string') { return; }
+      if (!isLive(link)) { return; }
+      if (!has(finishedSessions, link.sessionId)) { return; }
+      exerciseOfLink[link.id] = link.exerciseId;
     });
     var setCount = {};
     (Array.isArray(backup.sets) ? backup.sets : []).forEach(function (set) {
-      var id = exerciseOfLink[set && set.sessionExerciseId];
+      if (!isObject(set) || !isLive(set)) { return; }
+      var id = exerciseOfLink[set.sessionExerciseId];
       if (id) { setCount[id] = (setCount[id] || 0) + 1; }
     });
     var list = Object.keys(byId)
@@ -4460,7 +4495,11 @@
     });
     var links = {};
     (Array.isArray(backup.sessionExercises) ? backup.sessionExercises : []).forEach(function (link) {
-      if (isObject(link) && typeof link.id === 'string') { links[link.id] = link; }
+      if (!isObject(link) || typeof link.id !== 'string') { return; }
+      // A removed exercise's row is hidden like the sets that hung off it; showing its sets
+      // under a live session would read as work that is still there (B179).
+      if (!isLive(link)) { return; }
+      links[link.id] = link;
     });
     var setsByLink = {};
     (Array.isArray(backup.sets) ? backup.sets : []).forEach(function (set) {
@@ -6064,6 +6103,7 @@
     MAX_ESTIMATED_REPS: MAX_ESTIMATED_REPS,
     estimatedOneRepMax: estimatedOneRepMax,
     liftTrendPoints: liftTrendPoints,
+    movementsWithHistory: movementsWithHistory,
     exportSnapshot: exportSnapshot,
     parseWaistlineDoc: parseWaistlineDoc,
     parseProgramSheet: parseProgramSheet,

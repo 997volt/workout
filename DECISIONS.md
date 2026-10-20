@@ -1056,7 +1056,9 @@ the rule; that one argues it.
   that line is about a surface that holds, syncs or accounts for the record, and this one holds a file it can
   close. The fence is explicit: no persistence, no fetching, no account, and **no second definition of a
   metric**. The estimate keeps the app's rules (0.5 kg rounding, a single rep is the max, nothing above 12
-  reps), the warm-up exclusion is the app's own, and a generated fixture runs the app's
+  reps), the warm-up exclusion is the app's own, and so is the row filter: a deleted session, exercise or set
+  and an unfinished session are excluded exactly as `TrendsDao` excludes them, because a chart that counted
+  them would show a session the phone does not (B179). A generated fixture runs the app's
   `toExerciseTrendPoints()` and the tool's series over the same rows. A family head is not offered, because
   aggregating one is the app's roll-up rule re-implemented.
   ([evidence](DECISIONS-EVIDENCE.md#n165))
