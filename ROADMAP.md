@@ -17,11 +17,21 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** P3.17 shipped and is in [CHANGELOG.md](CHANGELOG.md).
+**The review of what shipped after 2.10.** Reading the work that landed since the 2.10 release found five
+behaviours the shipped claims do not keep, plus two clean-up passes. Nothing here is fixed yet, and each row
+names where the claim and the code disagree.
+
+| # | Severity | What | Fix |
+| --- | --- | --- | --- |
+| B177 | high | **A deleted example program cannot come back.** An example is loaded through the program-document merge, which ignores an id that already exists, and deleting a program only soft-deletes it. The empty Programs screen therefore offers the card again, and tapping it answers "That program is already here." while the list stays empty — contradicting the changelog draft, which promises the card restores it. The same dead end applies to *Load* of any document whose program was deleted on the device. Exercises already have the opposite, deliberate rule (B51: a deleted row is not resurrected), so this is an assumption rather than a decision. | Decide which rule programs follow: restore a document's soft-deleted rows on import, or keep insert-only and stop promising the card restores — naming the templates that survive and the way back. Then make the changelog sentence true either way. |
+| B178 | high | **A Waistline import can leave two live DAILY entries on one day.** The helper's id is a hash of the day and kind, and the document merge inserts measurements by id alone, while the app's own rule is one entry of each kind per day, enforced at write time by `findOnDay`. A day the lifter already recorded by hand carries a UUID id, so the import adds a second live row for it; every read lists both and every chart plots both — the state B151 was written to prevent. The claim that the helper's id is "the app's own identity for a measurement" is false. | Make an existing day win: dedupe by (local day, kind), in the helper against the loaded export and at the app's import boundary. Correct DECISIONS.md and IMPORT-HELPER.md. |
+| B179 | medium | **The helper's progress series counts rows the app excludes.** `liftTrendPoints` filters on weight and role only; the app's trend query also requires the session to be finished and every set, session exercise and session to be live. A soft-deleted set or session, or an unfinished one, therefore draws a point the phone never shows — contradicting "the two cannot disagree quietly" — and `movementsWithHistory` counts deleted sets too. The pinned fixture holds no such row, so it cannot catch this. | Apply the app's filters (deletedAt on all three relations, finishedAt on the session) and add a fixture row that fails if they are dropped. |
+| B180 | medium | **A program document is identified by its display name, so a same-named sheet edits an existing program.** The document's program id is a hash of the name. A sheet whose day was added or renamed keeps that id, so the program row is ignored while the new day's template and slot are inserted into whatever program already holds it — an edit, which "creates and never edits" refuses. The preview's duplicate warning says the import "will add a second one", which is the reverse: a same-named program created *in the app* does become a second one, while a sheet's does not. | Give a document an identity that is not its display name (or ask on a clash), and make the warning state what will happen: a new program, merged days, or a refusal. |
+| B181 | medium | **The plan's progression line states a rule *Done* does not follow.** `ProgressionStepNotice` prints only the weight step, but below a rep ceiling the offer is +1 rep; its no-weight branch claims no progression while rep steps remain; and it treats an assisted set (`targetWeightGrams = 0`) as having a load where the domain's `addedWeightGrams` says it does not. The changelog and DECISIONS.md repeat the same premise. | Word the rule the prompt actually applies — reps below the ceiling, the movement's own step at it, and which half is missing — compute "has a load" the way `addedWeightGrams` does, and correct the two docs. |
+| N168 | low | **The review's shape cleanups.** `SettingSwitch`'s KDoc now sits above the new mode composable and the new one has two (`SettingsScreen.kt`); `PlanDialogs.kt`'s file comment became a second doc on `SaveAsPlanDialog`; `TestTags.SETTINGS_PROGRESSION` has no caller; `MAX_QUICK_SETS` is 20 in two files; `ProgressionSection` and `SetEditorHost` are pass-throughs with one caller each; `addToTemplate` drops its `addSet` and history failures without a word; and the why-line can credit a rung's reps to the last set overall, which is not what prefilled them. | One pass over those files: the doc comments, the dead constant, one home for the limit, the wrappers gone or carrying a line of logic, the failures reported the way `onAddSets` reports them, and the reason line naming `sameSetLastTime` when that is what it read. |
+| N169 | low | **The review's copy and fixture nits.** `SeedCatalogTest` says 120 rows where the file holds 126; `ProgramsViewModel`'s `Dispatchers` import is out of order; the three settings chips sit in a plain Row and cannot wrap at a large font; `progressSummary` says "no set at 12 reps or fewer" for a lift with no added weight at all; `fixtures/program-document.json` is hand-made where the seed and progress fixtures are generated and compared; and one test's name promises a "keeps a pick" case it does not exercise. | Correct the counts and the sentence, use the wrapping row the weekday chips already use, generate the program fixture from the sheet, and either split the test or rename it. |
 
 ## Later — decided, and not being started
-
-
 
 Agreed work that is not next: the design is settled so it does not have to be re-argued, and nothing here is being
 built. It is **not** *Parked* — a parked row is a decision not to plan something, while these are planned and simply
@@ -29,7 +39,7 @@ not now — and it is not *Next*, which is what is actually being worked on. Eac
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-**Nothing.** The app-side fixture (N160) moved to *Next*, and the section drains the same way *Next* does.
+**Nothing.**
 
 ## Parked — deliberately not planned
 
