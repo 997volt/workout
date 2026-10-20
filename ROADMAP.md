@@ -24,14 +24,9 @@ lifter accepts each by hand and cannot say what a step is.
 | --- | --- | --- | --- |
 | P3.17 | low | **The progression is a suggestion per set, and the rule is invisible.** N50/N74 raise a set's reps below its ceiling and its load at the ceiling, but the step is a fixed 2.5 kg, the direction is the app's own rule, and the lifter must accept each set one at a time. Nothing in the plan says what progression means for *this* lift, so a squat and a lateral raise are governed the same, and the why-line is missing at prefill, where the number is first seen. | A **progression policy on the plan exercise**: which direction(s), the step in grams (2.5 kg default), and the gate (the plan's target RPE, as today), authored once and visible. **Apply at Done** accepts every offer for the session in one action, with a summary and an undo. A **why-line** beside the prefill ("last time 5×100 @8.5; plan 5 @8 → 102.5 kg"). The setting becomes three states — suggest, apply at Done, off — per template. Still never silent: the click is the consent (N33 stands). A policy on the plan is authored training data, so where it lives is the first decision: a nullable field on the plan's exercise means a schema 6 bump carried in the backup, while a device setting keeps it local and leaves the backup unchanged. Not planned here: choosing the programme itself — exercises, volume, deloads — which is coaching, not arithmetic. |
 
-**A program you can create from what you already did.** The save-as-plan flow (N31) now schedules; what
-remains is authoring inside the program, without leaving it.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| P3.18 | low | **A plan's sets are still authored one row at a time.** The copy, its schedule, inline creation and the prefill are in; what remains is the typing: a five-set plan is five rows opened and filled, even when the shape is "3 × 5 @ 100". | **Fast set entry** — "3 × 5 @ 100" in one row, with per-set editing kept for a top set and its back-offs. No schema change. Not planned: merging template and program (P3.12 and N47 depend on the split), and the web sheet stays a second on-ramp (N167). |
-
 ## Later — decided, and not being started
+
+
 
 Agreed work that is not next: the design is settled so it does not have to be re-argued, and nothing here is being
 built. It is **not** *Parked* — a parked row is a decision not to plan something, while these are planned and simply

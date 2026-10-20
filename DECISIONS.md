@@ -1101,6 +1101,11 @@ the rule; that one argues it.
   was used. A warm-up is the lifter's ramp rather than the plan's work, so it is not copied. The numbers are
   ordinary targets — accept by leaving them, disagree by editing — and a lift with no history, or a failed
   history read, adds an empty plan rather than failing the append that already happened.
+- **A plan's quick entry writes a block, and the per-set dialog stays for what differs** (P3.18). A count,
+  reps and a load in one row append that many planned sets with the same targets, starting from the last
+  planned set; the single-set dialog remains for a top set and its back-offs, and a half-parsed row writes
+  nothing. The rows it writes are ordinary targets: the quick entry is a way to type a plan, not a second
+  kind of plan, so nothing downstream knows which entry made a set.
   ([evidence](DECISIONS-EVIDENCE.md#p318))
 
 ## Adherence

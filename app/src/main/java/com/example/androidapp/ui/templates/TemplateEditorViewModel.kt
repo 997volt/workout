@@ -5,17 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
-import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.warmUpRampFor
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.model.warmUpRampFor
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.ui.navigation.TemplateEditor
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +24,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class TemplateEditorUiState(
     val isLoading: Boolean = true,
@@ -141,6 +141,23 @@ class TemplateEditorViewModel @Inject constructor(
     /** Appends a planned set to an exercise (ROADMAP N14). */
     fun onAddSet(templateExerciseId: String, edit: TemplateSetEdit) = write {
         repository.addSet(templateExerciseId, edit)
+    }
+
+    /**
+     * Appends [count] planned sets that share one set of targets (P3.18).
+     *
+     * The plan's quick entry. Each set is its own row, so this is the single add repeated; a failure
+     * part-way leaves the rows it managed and reports the error, the same shape a lifter sees if they add
+     * three by hand and the third fails.
+     */
+    fun onAddSets(templateExerciseId: String, count: Int, edit: TemplateSetEdit) = write {
+        var result: DataResult<Unit> = DataResult.Success(Unit)
+        repeat(count.coerceIn(1, MAX_QUICK_SETS)) {
+            if (result is DataResult.Success) {
+                result = repository.addSet(templateExerciseId, edit)
+            }
+        }
+        result
     }
 
     /**
@@ -339,5 +356,6 @@ class TemplateEditorViewModel @Inject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val MAX_QUICK_SETS = 20
     }
 }

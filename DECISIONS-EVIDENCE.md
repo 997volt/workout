@@ -2680,3 +2680,15 @@ history read leaves an empty plan, which is valid, rather than a plan missing th
 
 **Covered by** the picker's test that appends to a template and asserts the two working sets and the values
 carried, with the warm-up absent.
+
+The last piece was the typing itself. A block is nearly always one shape repeated, and the screen forced the
+lifter to open a dialog per set even when all five were "5 at 100". The quick entry puts the count, the reps
+and the load in one row and writes that many sets in one action — the same repository write the single add
+uses, repeated, so a failure part-way leaves the rows it managed rather than pretending a block was written.
+It starts from the last planned set, because *three more like that one* is the common intent, and the
+per-set dialog is untouched for the top set and the back-offs that actually differ. A blank load is allowed:
+a plan may prescribe reps with no weight, and a zero would be a claim (N14). The button is disabled while
+the text is unparseable, so a typo cannot become a set.
+
+**Covered by** the editor's screen test: it opens a block, types `4 × 6 @ 100` and asserts the count and the
+targets the write is asked for.

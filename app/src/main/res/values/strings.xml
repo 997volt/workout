@@ -184,6 +184,10 @@
     <string name="template_plan_none">No planned sets</string>
     <string name="template_plan_empty">No planned sets yet. Add your first one.</string>
     <string name="template_add_warmups">Add warm-ups</string>
+    <string name="template_quick_sets">Sets</string>
+    <string name="template_quick_reps">Reps</string>
+    <string name="template_quick_load">Load</string>
+    <string name="template_quick_add">Add</string>
     <string name="template_plan_add">Add set</string>
     <string name="template_plan_set">%1$d · %2$s</string>
     <!-- A warm-up takes no number (ROADMAP N112), so its line reads its role alone. -->

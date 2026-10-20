@@ -1,36 +1,38 @@
 package com.example.androidapp.ui.templates
 
-import com.google.common.truth.Truth.assertThat
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
-import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.ui.components.TestTags
+import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -63,6 +65,7 @@ class TemplateEditorScreenTest {
         val onDeleteTemplate: () -> Unit = {},
         val onAddExercise: () -> Unit = {},
         val onAddWarmUpSets: (String, Long) -> Unit = { _, _ -> },
+        val onAddSets: (String, Int, TemplateSetEdit) -> Unit = { _, _, _ -> },
         val onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
         val onRemoveSet: (String) -> Unit = {},
         val onUndoRemoveSet: () -> Unit = {},
@@ -111,6 +114,7 @@ class TemplateEditorScreenTest {
                 onDeleteTemplate = actions.onDeleteTemplate,
                 onAddExercise = actions.onAddExercise,
                 onAddWarmUpSets = actions.onAddWarmUpSets,
+                onAddSets = actions.onAddSets,
                 onSaveExercisePlan = actions.onSaveExercisePlan,
                 onRemoveSet = actions.onRemoveSet,
                 onUndoRemoveSet = actions.onUndoRemoveSet,
@@ -686,6 +690,24 @@ class TemplateEditorScreenTest {
     }
 
     @Test
+    fun theQuickEntry_writesTheCountAndTheShape() {
+        // P3.18: a block that is one shape repeated is one row — four sets of six at 100 kg — and the
+        // button is the only write; the per-set dialog stays for the sets that differ.
+        var added: Pair<Int, TemplateSetEdit>? = null
+        setScreen(actions = Actions(onAddSets = { _, count, edit -> added = count to edit }))
+        openBlock("te1")
+
+        composeTestRule.onNodeWithTag(TestTags.templateQuickSets("te1")).performTextReplacement("4")
+        composeTestRule.onNodeWithTag(TestTags.templateQuickReps("te1")).performTextReplacement("6")
+        composeTestRule.onNodeWithTag(TestTags.templateQuickLoad("te1")).performTextReplacement("100")
+        composeTestRule.onNodeWithTag(TestTags.templateQuickAdd("te1")).performClick()
+
+        assertEquals(4, added?.first)
+        assertEquals(6, added?.second?.targetRepsMin)
+        assertEquals(100_000L, added?.second?.targetWeightGrams)
+    }
+
+    @Test
     fun oneRpeTargetPerExercise_isEdited_inTheBlocksFoot() {
         // ROADMAP N59, amended by N80 and laid out by N111: the effort is one number for the exercise,
         // in the block's foot rather than a field on each planned set. 9.5 is 19 half-points (N6). It
@@ -822,6 +844,7 @@ class TemplateEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_WEIGHT).assertTextContains("100")
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MAX).assertTextContains("3")
     }
+
     @Test
     fun addingADropSet_asksForTheValueItTakesOff_theAnchor() {
         // ROADMAP N79: a drop rung has no weight of its own to type — its load is the anchor less the

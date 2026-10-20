@@ -470,6 +470,12 @@ object TestTags {
      */
     fun templatePlanEmpty(id: String) = "template_plan_empty_$id"
     fun templatePlanAdd(id: String) = "template_plan_add_$id"
+
+    /** The plan's quick entry: count, reps, load and the write (P3.18). */
+    fun templateQuickSets(id: String) = "template_quick_sets_$id"
+    fun templateQuickReps(id: String) = "template_quick_reps_$id"
+    fun templateQuickLoad(id: String) = "template_quick_load_$id"
+    fun templateQuickAdd(id: String) = "template_quick_add_$id"
     const val TEMPLATE_SET_ROLE = "template_set_role"
     const val TEMPLATE_SET_WEIGHT = "template_set_weight"
 

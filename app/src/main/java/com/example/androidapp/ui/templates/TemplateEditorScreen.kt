@@ -174,6 +174,8 @@ fun TemplateEditorScreen(
     modifier: Modifier = Modifier,
     onDismissMessage: () -> Unit = {},
     onAddSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
+    /** Writes several planned sets with one shape (P3.18). */
+    onAddSets: (String, Int, TemplateSetEdit) -> Unit = { _, _, _ -> },
     onUpdateSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
     onRemoveSet: (String) -> Unit = {},
     /** Puts a just-removed planned set back where it was (ROADMAP N90). */
@@ -221,6 +223,7 @@ fun TemplateEditorScreen(
             onToggleSuperset = onToggleSuperset,
             onMoveExercise = onMoveExercise,
             onAddSet = onAddSet,
+            onAddSets = onAddSets,
             onUpdateSet = onUpdateSet,
             onRemoveSet = onRemoveSet,
             onAddWarmUpSets = onAddWarmUpSets,
@@ -362,6 +365,7 @@ private fun TemplateEditorBody(
     onOpenExercise: (String) -> Unit,
     onMoveExercise: (String, Int) -> Unit,
     onAddSet: (String, TemplateSetEdit) -> Unit,
+    onAddSets: (String, Int, TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
     onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit,
@@ -417,6 +421,7 @@ private fun TemplateEditorBody(
                         onToggleSuperset = if (index == 0) null else { { onToggleSuperset(exercise.id) } },
                         supersetLabels = state.supersetLabels,
                         onAddSet = { edit -> onAddSet(exercise.id, edit) },
+                        onAddSets = { count, edit -> onAddSets(exercise.id, count, edit) },
                         onUpdateSet = onUpdateSet,
                         onRemoveSet = onRemoveSet,
                         onAddWarmUpSets = { step -> onAddWarmUpSets(exercise.id, step) },
@@ -503,6 +508,7 @@ private fun TemplateExerciseBlock(
     onRemoveSet: (String) -> Unit,
     onSavePlan: (Int?, String?, Int?) -> Unit,
     modifier: Modifier = Modifier,
+    onAddSets: (Int, TemplateSetEdit) -> Unit = { _, _ -> },
     onToggleSuperset: (() -> Unit)? = null,
     /** Adds a ramp rounded to the unit's step (ROADMAP N64), or null when there is none. */
     onAddWarmUpSets: ((Long) -> Unit)? = null,
@@ -541,8 +547,14 @@ private fun TemplateExerciseBlock(
                 onEdit = { editing = it.id },
                 onRemove = onRemoveSet,
             )
-            // *Add set* sits with the sets it extends rather than past three fields (N99), so a block reads
-            // in the order it is filled in: name, sets, add set, cue, rest, RPE.
+            // The plan's quick entry sits with the sets it extends (P3.18): a block that is one shape
+            // repeated is one row here, and the per-set dialog below stays for the top set and its back-offs.
+            QuickAddSets(
+                exerciseId = exercise.id,
+                lastSet = exercise.sets.lastOrNull(),
+                unit = unit,
+                onAdd = onAddSets,
+            )
             AddSetButton(exerciseId = exercise.id, onClick = { adding = true })
             ExercisePlanFields(exercise = exercise, onSave = onSavePlan)
         }
