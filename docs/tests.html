@@ -1366,6 +1366,31 @@
     eq(H.programClashNote(document, { seeded: true, exercises: [] }), null);
   });
 
+  check('a day the app already records is not added twice (B178)', function () {
+    // The app keeps one entry of each kind per day, so its own row wins over one this page writes for
+    // the same day even when the ids differ. The preview says so instead of promising both.
+    var catalog = {
+      exercises: [],
+      sessions: [],
+      sessionExercises: [],
+      sets: [],
+      measurements: [{
+        id: 'mes_hand',
+        measuredAt: H.noonOfDate('2026-01-01'),
+        kind: 'DAILY',
+        deletedAt: null
+      }]
+    };
+    var model = baseModel([], { catalog: catalog });
+    var stats = H.computeExportStats(model, [
+      { id: 'mes_a', measuredAt: H.noonOfDate('2026-01-01'), kind: 'DAILY' },
+      { id: 'mes_b', measuredAt: H.noonOfDate('2026-01-02'), kind: 'DAILY' }
+    ]);
+
+    eq(stats.skippedMeasurements, 0, 'neither id is in the export');
+    eq(stats.dayOverlaps, 1, 'the first day is already recorded');
+  });
+
   check('the export snapshot is read-only and newest first (N165)', function () {
     var backup = {
       exercises: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }],

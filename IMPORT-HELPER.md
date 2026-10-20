@@ -454,15 +454,19 @@ and `muscle`, and writes weight in grams and the percentages in tenths of a perc
 - **The unit is the file's.** Waistline stores each number in whichever unit the lifter chose and its
   `settings` names it; the panel shows the detected unit and lets it be corrected.
 - **A day becomes local noon**, so a timezone change cannot move a weigh-in to the day before.
-- **The id is the day and the kind** — the app's identity for a measurement — so a second import of the
-  same file adds nothing and restores a row the app hid.
+- **The id is a hash of the day and the kind**, so a second import of the same file adds nothing and restores
+  a row the app hid.
+- **A day the app already holds wins** (B178). The app keeps one entry of each kind per day, so its own row
+  is not joined by a second one for a day entered by hand; the preview counts those days separately, and
+  deleting the device's entry and importing again is how the file's numbers are taken.
 - **Tape sites and custom stats are not written.** The app's daily record holds weight, body fat and
   muscle; the panel names everything else it left behind, so nothing disappears silently.
 - Nothing is stored, and the output is the same backup the tool always writes — with history, or with
   body data alone.
 
-The app needed no change for this: `measurements` is already part of its backup format and its importer
-restores it. `WaistlineImportFixtureTest` decodes the tool's output with the app's own codec and pins the
+The app needs no new format for this: `measurements` is already part of its backup format and its importer
+restores it — with the day rule above applied at that boundary, where the device's own timezone is the one
+that answers it. `WaistlineImportFixtureTest` decodes the tool's output with the app's own codec and pins the
 numbers.
 
 ## Workflows

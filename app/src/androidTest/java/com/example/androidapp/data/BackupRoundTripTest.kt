@@ -225,6 +225,38 @@ class BackupRoundTripTest {
     }
 
     @Test
+    fun importingADayTheDeviceAlreadyHas_keepsItsOwnEntry_andAddsNoSecond() = runTest {
+        // B178. The app keeps one entry of each kind per day (N113) and `save` enforces it with
+        // `findOnDay`, but an import inserts by id — and a Waistline row's id is a hash of its day while
+        // a hand-entered row's is a UUID. The same day therefore gained two live entries, which every
+        // read listed and every chart plotted twice. The day the device already has wins.
+        val measurements = RoomMeasurementRepository(database, clock)
+        val day = Instant.parse("2026-01-01T12:00:00Z")
+        measurements.save(
+            BodyMeasurement(id = "", measuredAt = day, kind = MeasurementKind.DAILY, bodyFatTenths = 220),
+        )
+        val json = exportedJson()
+
+        // The reinstall: that day was entered by hand instead, under the app's own id.
+        database.clearAllTables()
+        measurements.save(
+            BodyMeasurement(
+                id = "hand-entered",
+                measuredAt = day,
+                kind = MeasurementKind.DAILY,
+                bodyFatTenths = 180,
+            ),
+        )
+
+        (repository.import(json) as DataResult.Success)
+
+        val dayRows = measurements.observeAll().first()
+        assertEquals("one entry of the kind for the day, not two", 1, dayRows.size)
+        assertEquals("and it is the device's own", "hand-entered", dayRows.single().id)
+        assertEquals("with the device's numbers", 180, dayRows.single().bodyFatTenths)
+    }
+
+    @Test
     fun importingAfterAsaveReplacedTheSoreList_doesNotBringTheOldRowsBack() = runTest {
         // B149. A hidden child row has two possible causes and `softDeletedIds` cannot tell them apart: the
         // entry was **deleted**, or its list was **replaced** by a save. An import that restored by id alone

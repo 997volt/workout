@@ -2318,17 +2318,30 @@
     });
 
     var existingMeasurementIds = {};
+    var existingMeasurementDays = {};
     if (catalog.file) {
       (Array.isArray(catalog.file.measurements) ? catalog.file.measurements : [])
         .forEach(function (measurement) {
-          if (measurement && typeof measurement.id === 'string') {
-            existingMeasurementIds[measurement.id] = true;
-          }
+          if (!isObject(measurement)) { return; }
+          if (typeof measurement.id === 'string') { existingMeasurementIds[measurement.id] = true; }
+          if (typeof measurement.measuredAt !== 'number') { return; }
+          if (!isLive(measurement)) { return; }
+          existingMeasurementDays[localDayKey(measurement.measuredAt) + '|' + measurement.kind] = true;
         });
     }
     var skippedMeasurements = 0;
+    var dayOverlaps = 0;
     measurements.forEach(function (measurement) {
-      if (has(existingMeasurementIds, measurement.id)) { skippedMeasurements += 1; }
+      if (has(existingMeasurementIds, measurement.id)) {
+        skippedMeasurements += 1;
+        return;
+      }
+      // The app keeps one entry of each kind per day, so its own row wins over this one even when the
+      // ids differ (B178) — the import adds no second live row for that day.
+      if (typeof measurement.measuredAt === 'number' &&
+          has(existingMeasurementDays, localDayKey(measurement.measuredAt) + '|' + measurement.kind)) {
+        dayOverlaps += 1;
+      }
     });
 
     return {
@@ -2344,8 +2357,9 @@
       newExerciseNames: newNames,
       unmatchedNames: unmatchedNames,
       measurements: measurements.length,
-      addedMeasurements: measurements.length - skippedMeasurements,
-      skippedMeasurements: skippedMeasurements
+      addedMeasurements: measurements.length - skippedMeasurements - dayOverlaps,
+      skippedMeasurements: skippedMeasurements,
+      dayOverlaps: dayOverlaps
     };
   }
 
@@ -4599,6 +4613,17 @@
     return date.getTime();
   }
 
+  /* A calendar day in the reader's own zone, as a comparison key (B178).
+   *
+   * The app's identity for a daily record is its local day and kind, not its id: two rows on one day are
+   * the same day even when one was entered by hand and the other written by this page. The preview uses
+   * the reader's zone, which is the phone's in the ordinary case of both being in one place; the app
+   * itself always decides, and its own row wins. */
+  function localDayKey(millis) {
+    var date = new Date(millis);
+    return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate());
+  }
+
   function parseWaistlineDoc(doc) {
     var result = { days: [], ignored: [], problems: [], unit: 'kg', skippedDays: 0 };
     if (!isObject(doc) || !Array.isArray(doc.diary)) { return result; }
@@ -5733,6 +5758,10 @@
       statsText += ' Body data: ' + stats.addedMeasurements + ' measurement' +
         (stats.addedMeasurements === 1 ? '' : 's') + ' will be added; ' +
         stats.skippedMeasurements + ' already exist and will be skipped.';
+      if (stats.dayOverlaps > 0) {
+        statsText += ' ' + stats.dayOverlaps + ' more fall on a day the app already records; the app keeps ' +
+          'its own entry for that day.';
+      }
     }
     setText(ui.elements.exportStats, statsText);
 

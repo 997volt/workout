@@ -10,6 +10,7 @@ import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.seedMissingExercises
 import com.example.androidapp.data.transfer.BackupCodec
 import com.example.androidapp.data.transfer.BackupFile
+import com.example.androidapp.data.transfer.MeasurementDto
 import com.example.androidapp.data.transfer.MeasurementSoreMuscleDto
 import com.example.androidapp.data.transfer.SessionExerciseJointDto
 import com.example.androidapp.data.transfer.SessionSoreMuscleDto
@@ -19,6 +20,7 @@ import com.example.androidapp.data.transfer.withValidLibraryShape
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
+import com.example.androidapp.domain.model.localDayBounds
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.ImportSummary
@@ -28,6 +30,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.time.Instant
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -234,6 +238,7 @@ class RoomBackupRepository @Inject constructor(
         val soreMuscleRows = file.sessionSoreMuscles.filter { it.id in hiddenSoreMuscles }
         val jointRows = file.sessionExerciseJoints.filter { it.id in hiddenJoints }
         val measurementRows = file.measurements.filter { it.id in hiddenMeasurements }
+            .withoutAnExistingDay()
         val measurementSoreRows = file.measurementSoreMuscles.filter { it.id in hiddenMeasurementSore }
 
         dao.restoreExercises(exercises.map { it.toEntity() })
@@ -301,6 +306,34 @@ class RoomBackupRepository @Inject constructor(
         filter { it.measurementId in liveMeasurements }.map { it.toEntity() }
 
     /**
+     * The measurements in this list whose local day is not already recorded here, one per day (B178).
+     *
+     * The app keeps **one entry of each kind per day** (N113), and `save` enforces that with `findOnDay` —
+     * but an import inserts by id, and a Waistline row's id is a hash of its day while a hand-entered one
+     * is a UUID. Importing body data over days the lifter had recorded by hand therefore left two live
+     * daily entries on one day, which every read lists and every chart plots twice. **The day the device
+     * already has wins**: the import adds and never overwrites (P1.12), and a file is a second opinion
+     * about a day this device has already answered.
+     *
+     * One read of the live rows rather than a query per row. The set is filled as the list is walked, so a
+     * file carrying the same day twice also yields one row — and the day a row was just inserted under is
+     * reserved for the restore step that runs after this one.
+     */
+    private suspend fun List<MeasurementDto>.withoutAnExistingDay(): List<MeasurementDto> {
+        val zone = ZoneId.systemDefault()
+        val taken = measurements.allForExport()
+            .filter { it.deletedAt == null }
+            .mapTo(mutableSetOf()) {
+                Instant.ofEpochMilli(it.measuredAt).localDayBounds(zone).first to it.kind
+            }
+        return filter { row ->
+            val day = Instant.ofEpochMilli(row.measuredAt).localDayBounds(zone).first to row.kind
+            // `add` answers "was this day new": a false is the row that would have been the second entry.
+            taken.add(day)
+        }
+    }
+
+    /**
      * Inserts what the file has and this device does not, counting only the genuinely new
      * rows: `IGNORE` skips live rows and the ones just restored, and Room returns -1 for a
      * skipped row.
@@ -319,7 +352,9 @@ class RoomBackupRepository @Inject constructor(
             dao.insertTemplates(file.templates.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertTemplateExercises(file.templateExercises.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertTemplateSets(file.templateSets.map { it.toEntity() }).count { it != SKIPPED } +
-            measurements.insertAll(file.measurements.map { it.toEntity() }).count { it != SKIPPED } +
+            // One entry of each kind per day, so a file's row yields to the day this device already has (B178).
+            measurements.insertAll(file.measurements.withoutAnExistingDay().map { it.toEntity() })
+                .count { it != SKIPPED } +
             // The sore rows hang off a daily measurement, so they go in after the entries above (N113).
             measurementSore.insert(file.measurementSoreMuscles.map { it.toEntity() })
                 .count { it != SKIPPED }

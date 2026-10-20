@@ -1066,11 +1066,13 @@ the rule; that one argues it.
   `measurements` to the backup it writes: one DAILY row per day — weight in grams, body fat and muscle in
   tenths of a percent — and no tape sites. Waistline's numbers are in the unit its own `settings` names, and
   the panel shows that unit and lets it be corrected; a day becomes local noon, so a zone change cannot move
-  it; the id is the day and the kind, the app's own identity for a measurement, so a re-import adds nothing
-  and restores a row the app hid. A stat the app cannot store is named in the panel, never silently dropped —
-  refusing the whole file would refuse every Waistline backup, which always holds tape sites. The app is
-  unchanged: its format already carries measurements and its importer restores them, and a fixture proves its
-  codec decodes the output.
+  it; the row's id is a hash of its day and kind, so a re-import adds nothing and restores a row the app hid.
+  **A day the device already holds wins over the file** (B178): the app keeps one entry of each kind per day
+  (N113) and an import adds rather than overwrites, so a file row for a day already recorded is skipped
+  instead of becoming a second live entry — which is the state the app's own `findOnDay` exists to prevent.
+  A stat the app cannot store is named in the panel, never silently dropped — refusing the whole file would
+  refuse every Waistline backup, which always holds tape sites. The app needs no new format: it already
+  carries measurements and restores them, and a fixture proves its codec decodes the output.
   ([evidence](DECISIONS-EVIDENCE.md#n166))
 - **A program may be written from a table, as a document, and the app stays the editor** (N167). The helper
   writes a `ProgramDocument` (format version 4) from a sheet: one row per planned exercise, days become
