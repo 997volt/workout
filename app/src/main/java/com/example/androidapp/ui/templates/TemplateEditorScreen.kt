@@ -794,9 +794,7 @@ private fun ExercisePlanFields(
     onSave: (Int?, String?, Int?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var rest by rememberSaveable(exercise.id) {
-        mutableStateOf(exercise.restSeconds?.toString().orEmpty())
-    }
+    var rest by rememberSaveable(exercise.id) { mutableStateOf(exercise.restSeconds?.toString().orEmpty()) }
     var cue by rememberSaveable(exercise.id) { mutableStateOf(exercise.techniqueNote.orEmpty()) }
     var rpe by rememberSaveable(exercise.id) {
         mutableStateOf(exercise.targetRpeHalves?.let(Rpe::format).orEmpty())
@@ -813,6 +811,7 @@ private fun ExercisePlanFields(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        ProgressionStepNotice(exercise = exercise)
         PlanCueField(cue = cue, onCueChange = { cue = it })
         Row(
             modifier = Modifier.fillMaxWidth(),

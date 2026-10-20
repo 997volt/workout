@@ -690,6 +690,43 @@ class TemplateEditorScreenTest {
     }
 
     @Test
+    fun thePlanStatesItsProgressionRule() {
+        // P3.17: the step is the movement's own (N77, N111) and the gate is the plan's target RPE (N50) —
+        // both real rules the block never stated, so *Done* asking or not was a surprise either way.
+        val planned = twoExercises.exercises.first().copy(
+            targetRpeHalves = 16,
+            sets = listOf(
+                TemplateSet(
+                    id = "s1",
+                    templateExerciseId = "te1",
+                    setIndex = 1,
+                    targetWeightGrams = 100_000L,
+                    targetRepsMin = 5,
+                    targetRepsMax = 5,
+                ),
+            ),
+        )
+        setScreen(state = twoExercises.copy(exercises = listOf(planned)))
+        openBlock("te1")
+
+        composeTestRule
+            .onNodeWithText("Progresses by +2.5 kg", substring = true)
+            .assertExists()
+    }
+
+    @Test
+    fun aPlanWithNoTargetRpe_saysWhyItCannotProgress() {
+        // No RPE names the effort the question is gated on, so nothing would be offered; the block says so
+        // rather than leaving the lifter to wonder why Done never asks.
+        setScreen()
+        openBlock("te1")
+
+        composeTestRule
+            .onNodeWithText("No progression: the plan names no target RPE.", substring = true)
+            .assertExists()
+    }
+
+    @Test
     fun theQuickEntry_writesTheCountAndTheShape() {
         // P3.18: a block that is one shape repeated is one row — four sets of six at 100 kg — and the
         // button is the only write; the per-set dialog stays for the sets that differ.

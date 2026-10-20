@@ -2736,3 +2736,18 @@ re-ask a lifter who had turned the prompt off.
 
 **Covered by** the workout test that *Apply at Done* opens with every offered row picked and writes nothing
 before *Done*, the settings test that a chip writes the mode, and the existing off test, retargeted.
+
+The last premise to check was the row's own: "the step is a fixed 2.5 kg for every lift, and the direction is
+the app's rule". Neither was true. `progressionPromptFor` was already given `Weight.stepGramsFor(exercise
+step, unit)` — the movement's step, authored in the exercise editor since N77/N111 and carried in the backup
+— and N74 derives the direction from the set's place in its range. What was missing was that the plan never
+**said** either, so a lifter could not tell why *Done* did or did not ask.
+
+Adding a plan-level override was rejected for the reason the architecture keeps giving: one number, one
+place. A nullable field on the plan's exercise is a schema change to store what the movement already stores;
+a device setting would take an authored training decision out of the backup, which is the app's only path
+off the device. The block's foot now states the rule — the step, the RPE gate, and the missing half when
+there is one — and the row closes with the premise corrected rather than a redundant control shipped.
+
+**Covered by** the template editor's tests: a plan with an RPE and a load states "+2.5 kg", one without an
+RPE says why it cannot progress, and the existing block tests keep the line inside the expanded block.

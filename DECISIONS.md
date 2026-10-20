@@ -1123,6 +1123,13 @@ the rule; that one argues it.
   earned step already picked, so the plan is still read before it is written and one *Done* is the consent
   (N33). A device that never opens the control reads its old switch — on means Ask, off means Off — and the
   old key is never written again.
+- **The progression step is the movement's own, and the plan states the rule instead of offering a second
+  place to set it** (P3.17, correcting the row's premise). N77 and N111 already give every movement a weight
+  step, authored in its editor and carried in the backup, and the progression offer uses exactly it; N74
+  already decides the direction from where the set sits in its range. A nullable field on the *plan's*
+  exercise would be a second place for one number, and a device setting would put an authored training
+  decision outside the file that is the app's only escape hatch. So the plan gains the sentence it lacked —
+  the step, the gate, and which one is missing — and adds no storage.
   ([evidence](DECISIONS-EVIDENCE.md#p317))
 
 ## Adherence

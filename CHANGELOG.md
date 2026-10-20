@@ -18,6 +18,12 @@ unreleased.
 
 ### Added
 
+- **The plan states its progression rule** (P3.17). The block's foot now says what *Done* will do with the
+  work: the movement's **own step** (+2.5 kg by default, or whatever the exercise carries), gated on the
+  plan's target RPE — *Progresses by +2.5 kg when a set meets the plan's RPE*. A plan that names no RPE, or
+  no weight, says which half is missing rather than leaving *Done* silently never asking. It records what the
+  app already did; it does not add a second place to set a step.
+
 - **The progression prompt is a choice, not a switch** (P3.17, part). Settings offers **Ask**, **Apply at
   Done** and **Off**. Apply opens the question with every earned step already picked — the lifter reads what
   the plan would become and one *Done* writes it — while Ask leaves it unpicked and Off finishes without

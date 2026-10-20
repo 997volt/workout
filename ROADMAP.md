@@ -17,12 +17,7 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**A progression policy the plan can hold.** The app already computes one step per set at Done, but the
-lifter accepts each by hand and cannot say what a step is.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| P3.17 | low | **The step is still the app's 2.5 kg for every lift.** The mixed plan answers in one tap, the prefill says where its numbers came from, and the prompt is now a three-way choice; what remains is the rule itself: a step that suits the lift rather than the same one for a squat and a lateral raise. | A **progression policy on the plan exercise**: which direction(s) and the step in grams (2.5 kg default), authored once and visible. Where it lives is the remaining decision — a nullable field on the plan's exercise means a schema 6 bump carried in the backup, while a device setting keeps it local and leaves the backup unchanged. Still never silent: the click is the consent (N33 stands). Not planned here: choosing the programme itself — exercises, volume, deloads — which is coaching, not arithmetic. |
+**Nothing.** P3.17 shipped and is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Later — decided, and not being started
 
