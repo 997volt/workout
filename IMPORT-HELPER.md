@@ -379,7 +379,9 @@ reported beside it rather than folded in.
 ## Lift progress
 
 One movement at a time, from the export already loaded, answering *how is my bench press going* on a screen
-that is not phone-sized (N165). Two series, both the app's own definitions rather than a second opinion:
+that is not phone-sized (N165). The movements that have history sit in a **list beside the chart**, with a
+filter above it, so changing lift is one click rather than a search in a dropdown. Two series, both the app's
+own definitions rather than a second opinion:
 
 - **the heaviest working set** in each session, in kilograms — warm-ups excluded, and a set with no added
   weight is not a load;

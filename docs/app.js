@@ -2772,8 +2772,9 @@
       warningIndex: { bySession: {}, global: [] },
       dom: null,
       onlyProblems: false,
-      /* The progress panel's chosen movement, and nothing else about it (N165). */
+      /* The progress panel's chosen movement, and the list the picker offers (N165). */
       progressExerciseId: null,
+      progressMovements: [],
       exportedAt: Date.now(),
       exportResult: null,
       lastCounts: ''
@@ -2809,11 +2810,11 @@
       copyExport: byId('copyExport'),
       exportText: byId('exportText'),
       progressPanel: byId('panel-progress'),
-      progressLift: byId('progressLift'),
+      progressFilter: byId('progressFilter'),
       progressRange: byId('progressRange'),
       progressSummary: byId('progressSummary'),
       progressChart: byId('progressChart'),
-      progressLifts: byId('progressLifts'),
+      progressList: byId('progressList'),
       exerciseNames: byId('exerciseNames'),
       targetChoices: byId('targetChoices'),
       sourceStatus: byId('sourceStatus')
@@ -2855,14 +2856,8 @@
       }
       elements.exportInput.value = '';
     });
-    elements.progressLift.addEventListener('change', function () {
-      var typed = elements.progressLift.value.trim();
-      state.progressExerciseId = null;
-      renderProgress();
-      if (typed !== '' &&
-          normalizeName(elements.progressLift.value) !== normalizeName(typed)) {
-        announce('"' + typed + '" has no logged sets in this export.');
-      }
+    elements.progressFilter.addEventListener('input', function () {
+      renderProgressList(state.progressMovements || []);
     });
     elements.progressRange.addEventListener('change', renderProgress);
     elements.orderDmy.addEventListener('change', onOrderChange);
@@ -3358,6 +3353,9 @@
       targetInput.setAttribute('spellcheck', 'false');
       targetInput.setAttribute('aria-label', 'Search the library for ' + entry.displayName);
       fillTargetInput(targetInput, entry);
+      // Clicking a filled field selects its text, so the first keystroke replaces it rather
+      // than appending to a name that is no longer wanted.
+      targetInput.addEventListener('focus', function () { targetInput.select(); });
       targetCell.appendChild(targetInput);
       row.appendChild(targetCell);
 
@@ -4316,6 +4314,35 @@
     return list;
   }
 
+  /* The lifts that have history, as a list beside the chart. A list rather than a dropdown: the
+   * chart is the point, and a visible list makes changing lift one click instead of a search. */
+  function renderProgressList(movements) {
+    var state = ui.state;
+    var host = ui.elements.progressList;
+    if (!host) { return; }
+    host.textContent = '';
+    var filter = normalizeName(ui.elements.progressFilter.value || '');
+    var shown = 0;
+    movements.forEach(function (movement) {
+      if (filter !== '' && normalizeName(movement.name).indexOf(filter) === -1) { return; }
+      shown += 1;
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'progress-lift';
+      button.setAttribute('aria-pressed', movement.id === state.progressExerciseId ? 'true' : 'false');
+      button.appendChild(h('span', 'progress-lift-name', movement.name));
+      button.appendChild(h('span', 'progress-lift-count', movement.sets + ' sets'));
+      button.addEventListener('click', function () {
+        state.progressExerciseId = movement.id;
+        renderProgress();
+      });
+      host.appendChild(button);
+    });
+    if (shown === 0) {
+      host.appendChild(h('p', 'empty', 'No lift matches that filter.'));
+    }
+  }
+
   function renderProgress() {
     var state = ui.state;
     var panel = ui.elements.progressPanel;
@@ -4328,22 +4355,10 @@
     if (!hasHistory) { return; }
 
     var movements = movementsWithHistory(backup);
-    var list = ui.elements.progressLifts;
-    list.textContent = '';
-    movements.forEach(function (movement) {
-      var option = document.createElement('option');
-      option.value = movement.name;
-      list.appendChild(option);
-    });
+    state.progressMovements = movements;
 
     var selected = null;
-    var typed = ui.elements.progressLift.value.trim();
-    if (typed !== '') {
-      movements.forEach(function (movement) {
-        if (normalizeName(movement.name) === normalizeName(typed)) { selected = movement; }
-      });
-    }
-    if (!selected && state.progressExerciseId) {
+    if (state.progressExerciseId) {
       movements.forEach(function (movement) {
         if (movement.id === state.progressExerciseId) { selected = movement; }
       });
@@ -4357,15 +4372,13 @@
     var summary = ui.elements.progressSummary;
     if (!selected) {
       state.progressExerciseId = null;
-      ui.elements.progressLift.value = '';
+      renderProgressList(movements);
       setText(summary, 'This export has no logged movements to chart.');
       chart.textContent = '';
       return;
     }
     state.progressExerciseId = selected.id;
-    if (ui.elements.progressLift.value !== selected.name) {
-      ui.elements.progressLift.value = selected.name;
-    }
+    renderProgressList(movements);
 
     var points = liftTrendPoints(backup, selected.id);
     var range = ui.elements.progressRange.value;

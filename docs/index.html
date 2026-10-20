@@ -160,9 +160,9 @@
       </p>
       <div class="progress-controls">
         <label class="field">
-          <span class="field-label">Lift</span>
-          <input type="text" id="progressLift" list="progressLifts" autocomplete="off"
-            spellcheck="false" placeholder="Search a movement">
+          <span class="field-label">Filter lifts</span>
+          <input type="search" id="progressFilter" autocomplete="off" spellcheck="false"
+            placeholder="Type to narrow the list">
         </label>
         <label class="field">
           <span class="field-label">Range</span>
@@ -173,9 +173,14 @@
           </select>
         </label>
       </div>
-      <p id="progressSummary" class="hint"></p>
-      <div id="progressChart" class="progress-chart"></div>
-      <datalist id="progressLifts"></datalist>
+      <div class="progress-body">
+        <div id="progressList" class="progress-list" role="group"
+          aria-label="Lifts with history in this export"></div>
+        <div class="progress-plot">
+          <p id="progressSummary" class="hint"></p>
+          <div id="progressChart" class="progress-chart"></div>
+        </div>
+      </div>
     </section>
   </main>
 

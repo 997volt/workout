@@ -26,6 +26,14 @@ unreleased.
   above 12 reps has no estimate. A generated fixture runs the app's `toExerciseTrendPoints()` and the tool's
   series over the same rows, so the two cannot disagree quietly.
 
+### Changed
+
+- **The progress view lists its lifts instead of hiding them in a dropdown** (N165). The picker was a
+  prefilled text field with a datalist, which showed only the name already in it and made changing lift a
+  delete-then-type. Every movement with history now sits in a list beside the chart, with a filter above it:
+  the current lift is highlighted, changing it is one click, and the filter narrows the list without touching
+  the chart. It wraps above the chart on a narrow screen.
+
 ### Fixed
 
 - **A year's import no longer freezes the tab** (B176). The Sessions panel built every set's controls when the
