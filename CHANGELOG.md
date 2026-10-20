@@ -18,6 +18,15 @@ unreleased.
 
 ### Added
 
+- **Three examples on day zero** (P3.19). An empty Programs screen now offers *Start from an example* —
+  full body, upper/lower, or push/pull/legs — beside the file picker and *New program*. Each is a real
+  program document in the APK, inserted through the same codec and merge a picked file uses, so importing
+  one twice adds nothing. They are structure only: seeded movements, **no loads**, a target RPE of 8 so
+  progression has a gate, and a weekday per day. They arrive inactive, so the lifter renames and activates
+  one rather than the app choosing; nothing is installed at startup, and a deleted example returns only by
+  tapping its card again. `StarterProgramsTest` decodes all three and checks every reference, seeded id, the
+  absent loads, and the RPE.
+
 - **A program table becomes a program document** (N167). Drop a spreadsheet of `Program, Day, Weekday,
   Exercise, Sets, Reps, Load, Rest` into the page and it writes `program.json` for the app's Programs → Load:
   days become templates, weekdays become slots, a rep range stays a range, a seeded name keeps its slug, an

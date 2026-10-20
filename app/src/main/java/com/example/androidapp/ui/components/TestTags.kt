@@ -647,6 +647,9 @@ object TestTags {
     object Programs {
         const val NEW = "programs_new"
         const val EMPTY = "programs_empty"
+
+        /** One of the shipped examples, addressed by the asset it inserts (P3.19). */
+        fun example(asset: String) = "program_example_$asset"
         const val NAME_FIELD = "program_name_field"
         const val NAME_SAVE = "program_name_save"
         const val ACTIVE = "program_active"

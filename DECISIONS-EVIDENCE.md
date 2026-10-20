@@ -2602,3 +2602,37 @@ conversion that could be wrong in a way nobody notices until a session.
 suggesting starting loads from the export — a later, opt-in idea under N33's rule.
 
 **Covered by** the tool's program-sheet assertions and the app's `ProgramDocumentFixtureTest`.
+
+## P3.19
+
+The gap was day zero: *New program* makes a name and nothing else, and a lifter with no plan has to author
+a template before their first session. The app cannot answer that by prescribing — N33's line, and the
+progression note's — but it can offer a *structure* and let the lifter own it.
+
+**Why examples, not a recommendation.** Three archetypes (full body, upper/lower, push/pull/legs) cover
+frequency and split without claiming one is right. The names say *Example:* and the screen says *start from
+one, rename it*; the app never activates it for the lifter.
+
+**Why no loads.** A seeded 100 kg squat is a prescription with no basis in this lifter's strength. A blank
+target is honest, and the app already falls back to last time once there is a last time. The RPE of 8 is the
+one number an example needs: without a target RPE, N50's gate never opens and progression never offers
+anything on a fresh plan.
+
+**Why documents.** The examples are the same `ProgramDocument` the web sheet writes (N167) and the app
+already imports from a file: one codec, one merge, one fixture pattern, and importing an example twice adds
+nothing. Shipping them as Kotlin builders would have been a second way to make the same rows.
+
+**Why the empty state, and not install-time seeding.** A plan is a choice, not reference data like the
+exercise library; three uninvited programs in the list are clutter, and the empty state is the moment the
+offer is welcome. It also gives *Start empty* and *Load a program file* their place on one screen.
+
+**One-shot means not installed, not undeletable.** A deleted example is not re-inserted at startup, because
+nothing is inserted at startup. Tapping its card again is a deliberate restore, and the merge's
+restore-soft-deleted rule makes that work; the card is the consent.
+
+**Rejected:** seeding at first open (clutter and re-adding), examples with loads (a prescription), and a
+separate screen for examples (the empty state is the only place the choice is needed).
+
+**Covered by** `StarterProgramsTest`, which decodes all three documents with the app's codec and checks every
+reference, seeded id, the absent loads and the RPE, and by the screen test that taps a card and asserts the
+asset it inserts.

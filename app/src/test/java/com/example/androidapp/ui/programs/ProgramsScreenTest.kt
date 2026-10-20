@@ -37,6 +37,7 @@ class ProgramsScreenTest {
         onMoveProgram: (String, Int) -> Unit = { _, _ -> },
         onLoadProgram: () -> Unit = {},
         onOpenTemplates: () -> Unit = {},
+        onUseExample: (String) -> Unit = {},
     ) {
         composeTestRule.setContent {
             ProgramsScreen(
@@ -48,6 +49,7 @@ class ProgramsScreenTest {
                 onMoveProgram = onMoveProgram,
                 onLoadProgram = onLoadProgram,
                 onOpenTemplates = onOpenTemplates,
+                onUseExample = onUseExample,
             )
         }
     }
@@ -92,6 +94,23 @@ class ProgramsScreenTest {
         setScreen(ProgramsUiState(isLoading = false, programs = emptyList()))
 
         composeTestRule.onNodeWithTag(TestTags.Programs.EMPTY).assertIsDisplayed()
+    }
+
+    @Test
+    fun anEmptyList_offersTheExamples_andOneTapInsertsIt() {
+        // P3.19: day zero has something to start from, and the card carries the asset it inserts so the
+        // route is the only thing that has to know where the documents live.
+        var used: String? = null
+        setScreen(
+            state = ProgramsUiState(isLoading = false, programs = emptyList()),
+            onUseExample = { used = it },
+        )
+
+        composeTestRule
+            .onNodeWithTag(TestTags.Programs.example("starter-programs/full-body-3-days.json"))
+            .performClick()
+
+        assertThat(used).isEqualTo("starter-programs/full-body-3-days.json")
     }
 
     @Test

@@ -1078,6 +1078,13 @@ the rule; that one argues it.
   silently twinned — and the page says so. The document is the same format the seeded examples use (P3.19),
   so one codec and one fixture cover both.
   ([evidence](DECISIONS-EVIDENCE.md#n167))
+- **The app offers three example programs, and they are documents** (P3.19). A new install's Programs screen
+  offers *Start from an example* beside *Load a program file* and *Start empty*: full body × 3, upper/lower
+  × 4, push/pull/legs × 3, shipped as program documents in assets and inserted through the same codec and
+  merge a picked file uses. They are structure only — seeded movements, no loads, a target RPE of 8 so N50
+  has a gate — and arrive inactive, so the lifter renames and activates one rather than the app choosing.
+  Nothing is installed at startup: an example appears only when its card is tapped.
+  ([evidence](DECISIONS-EVIDENCE.md#p319))
 
 ## Adherence
 

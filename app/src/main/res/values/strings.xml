@@ -798,6 +798,15 @@
     <string name="programs_loading">Loading programs…</string>
     <string name="programs_empty">No programs yet</string>
     <string name="programs_empty_hint">A program is your workouts in the order you train them, with a day for each.</string>
+    <string name="programs_examples_title">Start from an example</string>
+    <string name="programs_examples_hint">Structure only: rename it, change the days and set your own weights.</string>
+    <string name="program_example_full_body">Full body, 3 days</string>
+    <string name="program_example_full_body_detail">Three full-body days, alternating pressing, pulling and squatting.</string>
+    <string name="program_example_upper_lower">Upper/lower, 4 days</string>
+    <string name="program_example_upper_lower_detail">Two upper and two lower days, four days a week.</string>
+    <string name="program_example_ppl">Push, pull, legs, 3 days</string>
+    <string name="program_example_ppl_detail">The common three-way split, three days a week.</string>
+    <string name="program_example_use">Use</string>
     <string name="program_new">New program</string>
     <string name="program_default_name">New program</string>
     <!-- Carrying one program to another device (ROADMAP N47): a document holding the program, its

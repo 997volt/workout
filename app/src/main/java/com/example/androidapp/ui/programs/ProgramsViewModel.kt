@@ -15,8 +15,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 data class ProgramsUiState(
@@ -67,6 +69,30 @@ class ProgramsViewModel @Inject constructor(
     /** The merge has been reported, so it is not reported twice. */
     fun onImportShown() {
         _imported.value = null
+    }
+
+    /**
+     * Inserts one of the shipped examples (P3.19).
+     *
+     * An example is a program document in assets, so it travels the same road as a picked file: the
+     * app's codec, the insert-only merge, and the *already there* summary all apply, and importing the
+     * same one twice adds nothing.
+     */
+    fun insertExample(context: Context, assetName: String) {
+        viewModelScope.launch {
+            val text = withContext(Dispatchers.IO) {
+                runCatching {
+                    context.assets.open(assetName).bufferedReader().use { reader -> reader.readText() }
+                }.getOrNull()
+            }
+            _imported.value = if (text == null) {
+                DataResult.Failure(
+                    DataError.Storage(IllegalStateException("the example could not be read")),
+                )
+            } else {
+                importDocument(text)
+            }
+        }
     }
 
     /** Emits the id of a just-created program, so the list can open its editor. */

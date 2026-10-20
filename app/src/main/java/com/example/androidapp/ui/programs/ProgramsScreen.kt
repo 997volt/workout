@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.programs
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -34,6 +36,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -69,6 +72,7 @@ fun ProgramsRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val created by viewModel.createdProgramId.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     val currentOnOpenProgram by rememberUpdatedState(onOpenProgram)
 
     // Loading a program document reports through the screen's own host (ROADMAP N47). The file
@@ -92,6 +96,7 @@ fun ProgramsRoute(
         onSetActive = viewModel::onSetActive,
         onMoveProgram = viewModel::onMoveProgram,
         onLoadProgram = loadProgram,
+        onUseExample = { viewModel.insertExample(context, it) },
         onOpenTemplates = onOpenTemplates,
         transferMessage = transferMessage,
         onDismissTransferMessage = { transferMessage = null },
@@ -111,6 +116,8 @@ fun ProgramsScreen(
     /** Required rather than defaulted, so a route that forgets it fails the build (B49, B52). */
     onLoadProgram: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Inserts one of the shipped examples, by asset name (P3.19). */
+    onUseExample: (String) -> Unit = {},
     /** The way across to Templates (ROADMAP N93), in this screen's own bar. */
     onOpenTemplates: () -> Unit = {},
     onSetActive: (String) -> Unit = {},
@@ -168,6 +175,7 @@ fun ProgramsScreen(
             onOpenProgram = onOpenProgram,
             onSetActive = onSetActive,
             onMoveProgram = onMoveProgram,
+            onUseExample = onUseExample,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -263,6 +271,116 @@ private fun ActiveProgramCard(
     }
 }
 
+/**
+ * One of the shipped examples (P3.19).
+ *
+ * The document it inserts is an asset — a real program document, so it travels the import's own codec
+ * and merge — and the card only needs where it lives and how to describe it.
+ */
+private data class ExampleProgram(
+    val asset: String,
+    @StringRes val title: Int,
+    @StringRes val detail: Int,
+)
+
+private val EXAMPLE_PROGRAMS = listOf(
+    ExampleProgram(
+        asset = "starter-programs/full-body-3-days.json",
+        title = R.string.program_example_full_body,
+        detail = R.string.program_example_full_body_detail,
+    ),
+    ExampleProgram(
+        asset = "starter-programs/upper-lower-4-days.json",
+        title = R.string.program_example_upper_lower,
+        detail = R.string.program_example_upper_lower_detail,
+    ),
+    ExampleProgram(
+        asset = "starter-programs/push-pull-legs-3-days.json",
+        title = R.string.program_example_ppl,
+        detail = R.string.program_example_ppl_detail,
+    ),
+)
+
+/**
+ * Day zero (P3.19): what a program is, and three examples to start from.
+ *
+ * Extracted from [ProgramsContent] so the list screen stays the length this project allows; the examples
+ * are cards rather than a section of the list because there is no list yet.
+ */
+@Composable
+private fun ProgramsEmptyContent(
+    onUseExample: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = FLOATING_BUTTON_CLEARANCE),
+    ) {
+        item {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = stringResource(R.string.programs_empty),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = stringResource(R.string.programs_empty_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        item {
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Text(
+                    text = stringResource(R.string.programs_examples_title),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = stringResource(R.string.programs_examples_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        items(EXAMPLE_PROGRAMS, key = { example -> example.asset }) { example ->
+            ExampleProgramCard(example = example, onUse = { onUseExample(example.asset) })
+        }
+    }
+}
+
+@Composable
+private fun ExampleProgramCard(
+    example: ExampleProgram,
+    onUse: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AppCard(
+        modifier = modifier
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .testTag(TestTags.Programs.example(example.asset))
+            .clickable(onClickLabel = stringResource(example.title), onClick = onUse),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(example.title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = stringResource(example.detail),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                text = stringResource(R.string.program_example_use),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+    }
+}
+
 @Composable
 private fun ProgramsContent(
     state: ProgramsUiState,
@@ -270,6 +388,7 @@ private fun ProgramsContent(
     onSetActive: (String) -> Unit,
     onMoveProgram: (String, Int) -> Unit,
     modifier: Modifier = Modifier,
+    onUseExample: (String) -> Unit = {},
 ) {
     when {
         state.isLoading -> CenteredMessage(
@@ -277,9 +396,8 @@ private fun ProgramsContent(
             modifier = modifier,
         )
 
-        state.programs.isEmpty() -> CenteredMessage(
-            text = stringResource(R.string.programs_empty),
-            hint = stringResource(R.string.programs_empty_hint),
+        state.programs.isEmpty() -> ProgramsEmptyContent(
+            onUseExample = onUseExample,
             modifier = modifier.testTag(TestTags.Programs.EMPTY),
         )
 
