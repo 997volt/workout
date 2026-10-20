@@ -17,7 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** Waistline body data (N166) shipped and is in [CHANGELOG.md](CHANGELOG.md).
+**A progression policy the plan can hold.** The app already computes one step per set at Done, but the
+lifter accepts each by hand and cannot say what a step is.
+
+| # | Severity | What | Fix |
+| --- | --- | --- | --- |
+| P3.17 | low | **The progression is a suggestion per set, and the rule is invisible.** N50/N74 raise a set's reps below its ceiling and its load at the ceiling, but the step is a fixed 2.5 kg, the direction is the app's own rule, and the lifter must accept each set one at a time. Nothing in the plan says what progression means for *this* lift, so a squat and a lateral raise are governed the same, and the why-line is missing at prefill, where the number is first seen. | A **progression policy on the plan exercise**: which direction(s), the step in grams (2.5 kg default), and the gate (the plan's target RPE, as today), authored once and visible. **Apply at Done** accepts every offer for the session in one action, with a summary and an undo. A **why-line** beside the prefill ("last time 5×100 @8.5; plan 5 @8 → 102.5 kg"). The setting becomes three states — suggest, apply at Done, off — per template. Still never silent: the click is the consent (N33 stands). A policy on the plan is authored training data, so where it lives is the first decision: a nullable field on the plan's exercise means a schema 6 bump carried in the backup, while a device setting keeps it local and leaves the backup unchanged. Not planned here: choosing the programme itself — exercises, volume, deloads — which is coaching, not arithmetic. |
 
 ## Later — decided, and not being started
 
