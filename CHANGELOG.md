@@ -28,6 +28,14 @@ unreleased.
 
 ### Fixed
 
+- **A year's import no longer freezes the tab** (B176). The Sessions panel built every set's controls when the
+  rows loaded: a real 3,750-row file became about 127,000 DOM nodes in one synchronous render, and the tab
+  stopped responding while it laid them out — which reads as a crash. A session's body is now built the first
+  time it is opened and kept; the summary line stays, because it carries the badge and the problem filter, and
+  focusing a problem builds its session first. The same load is **1,984 nodes**, and opening a session adds
+  only that session's controls. The library status also says when an export carries sessions for the Progress
+  chart, so a loaded export that leaves the Sessions panel empty says why instead of looking broken.
+
 - **The exercise chooser is alphabetical and searchable** (N159). The mapping's *Linked to* was a select of
   every library row in seed order, so finding *Barbell Bench Press* meant scrolling past a hundred families and
   there was no way to type. It is a searchable field over the sorted library now: typing filters, *Create new

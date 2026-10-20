@@ -2975,6 +2975,10 @@
     } else {
       text += '.';
     }
+    var sessions = Array.isArray(file.sessions) ? file.sessions.length : 0;
+    if (sessions > 0) {
+      text += ' It also carries ' + sessions + ' sessions for the Progress chart below.';
+    }
     return text;
   }
 
@@ -3507,8 +3511,15 @@
     state.dom = { sessions: [] };
 
     if (!state.model) {
-      container.appendChild(h('p', 'empty',
-        'No rows loaded yet. Load JSON, CSV or TSV above, or press "Load the example".'));
+      var backup = state.catalogFile;
+      var fromExport = backup && !backup.seeded &&
+        Array.isArray(backup.sessions) && backup.sessions.length > 0;
+      container.appendChild(h('p', 'empty', fromExport
+        ? 'The app export is loaded: its ' + backup.sessions.length + ' sessions and ' +
+          (Array.isArray(backup.exercises) ? backup.exercises.length : 0) +
+          ' exercises feed the Progress chart below. This panel reviews the rows you want to import, ' +
+          'so load them above to see them here.'
+        : 'No rows loaded yet. Load JSON, CSV or TSV above, or press "Load the example".'));
       return;
     }
 
@@ -3529,6 +3540,43 @@
       details.appendChild(summary);
 
       var body = h('div', 'session-body');
+      details.appendChild(body);
+
+      var entry = {
+        details: details,
+        body: body,
+        built: false,
+        dateSpan: dateSpan,
+        metaSpan: metaSpan,
+        badge: badge,
+        blocks: []
+      };
+      state.dom.sessions.push(entry);
+
+      var build = function () {
+        if (entry.built) { return; }
+        buildSessionBody(entry, session, sessionIndex, dateFormat);
+        entry.built = true;
+      };
+      entry.build = build;
+      details.addEventListener('toggle', function () {
+        if (details.open) {
+          build();
+          refreshSessions();
+        }
+      });
+      if (details.open) { build(); }
+      container.appendChild(details);
+    });
+  }
+
+  /* Builds one session's controls the first time it is opened.
+   *
+   * The panel used to build every set's inputs at load: a 3,750-row import made about 127,000 DOM nodes
+   * and froze the tab. A closed <details> needs nothing inside it, so the body is built on first open and
+   * kept; the summary line always exists, because that is what the badge, the filter and the count read. */
+  function buildSessionBody(entry, session, sessionIndex, dateFormat) {
+    var body = entry.body;
       var header = h('div', 'session-header');
 
       var dateInput = document.createElement('input');
@@ -3851,22 +3899,14 @@
         });
       });
 
-      details.appendChild(body);
-      container.appendChild(details);
-      state.dom.sessions.push({
-        details: details,
-        dateInput: dateInput,
-        timeInput: timeInput,
-        durationInput: durationInput,
-        offsetInput: offsetInput,
-        offsetText: offsetText,
-        dateSpan: dateSpan,
-        metaSpan: metaSpan,
-        badge: badge,
-        blocks: blockEntries
-      });
-    });
-  }
+      entry.dateInput = dateInput;
+      entry.timeInput = timeInput;
+      entry.durationInput = durationInput;
+      entry.offsetInput = offsetInput;
+      entry.offsetText = offsetText;
+      entry.blocks = blockEntries;
+    }
+
 
   function warmupCount(block) {
     var count = 0;
@@ -4143,6 +4183,10 @@
 
     var session = state.dom.sessions[parts[0].index];
     session.details.open = true;
+    if (!session.built && session.build) {
+      session.build();
+      refreshSessions();
+    }
     var target = session.dateInput;
 
     if (parts.length > 1 && parts[1].key === 'exercises') {
