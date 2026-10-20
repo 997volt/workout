@@ -17,7 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The lift progress view (N165) shipped and is in [CHANGELOG.md](CHANGELOG.md).
+**A year's import freezes the tab.** The Sessions panel materialises every set's controls when the rows load,
+and a real file — 3,750 rows, 106 sessions — produced about 127,000 DOM nodes before the first paint.
+
+| # | Severity | What | Fix |
+| --- | --- | --- | --- |
+| B176 | **high** | **The Sessions panel builds every set at load.** Each set row is six controls plus labels, so a 3,750-row year became roughly 127,000 DOM nodes in one synchronous render; the tab stops responding while it lays them out, which reads as a crash, and the Progress chart is redrawn on the same tick. Measured in the DOM harness that loads the reporter's own files (the backup and the 3,750-row intermediate). | Build a session's body on first open and keep it: a closed `<details>` needs nothing inside, the summary already carries the badge and the filter, and focusing a problem builds its session first. The 106 summaries stay; a year of sets exists only once opened. Say in the empty Sessions panel that a loaded export feeds the chart rather than this list. |
 
 ## Later — decided, and not being started
 
