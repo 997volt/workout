@@ -26,6 +26,13 @@ unreleased.
   above 12 reps has no estimate. A generated fixture runs the app's `toExerciseTrendPoints()` and the tool's
   series over the same rows, so the two cannot disagree quietly.
 
+- **The loaded export can be read back in the page** (N165). Below the progress chart, *In your export* lists
+  every live session newest first — date, exercises, set count, working tonnage — and opens to its sets in
+  kilograms, warm-ups marked and RPE beside the set. Deleted rows are counted rather than shown. It is
+  **read-only on purpose**: the editable Sessions panel is the import draft, and a backup carries readiness,
+  template, superset, assistance and ratings that a flat row list cannot, so a round trip would silently drop
+  them; the app's merge would refuse to overwrite the rows anyway.
+
 ### Changed
 
 - **The progress view lists its lifts instead of hiding them in a dropdown** (N165). The picker was a

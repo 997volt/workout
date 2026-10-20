@@ -1070,3 +1070,70 @@ tbody tr:last-child td {
   font-size: 0.8em;
   opacity: 0.75;
 }
+
+/* What the export holds, read-only (N165) */
+.export-history {
+  display: grid;
+  gap: 4px;
+  margin-top: 0.5rem;
+}
+
+.export-session {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.export-session > summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+.export-date {
+  font-weight: 700;
+}
+
+.export-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.export-session-body {
+  padding: 0 0.75rem 0.75rem;
+}
+
+.export-sets {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.export-sets th {
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.export-sets td {
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  font-size: 0.9rem;
+  vertical-align: top;
+}
+
+.export-sets td:first-child {
+  width: 13rem;
+}
+
+.export-notes {
+  margin: 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.set-sep {
+  color: var(--muted);
+}

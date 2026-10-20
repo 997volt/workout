@@ -395,6 +395,12 @@ than a unit converter. A range narrows to the last year or 90 days measured back
 an export from years ago still reads. **Nothing is stored**: the chart is built from the file in the tab and
 dies with it.
 
+Below the chart, **In your export** reads the loaded file back: every live session, newest first, with its
+exercises and sets in kilograms, and the rows the app holds as deleted counted rather than shown. It is
+**read-only**, and deliberately not the Sessions panel: that one is the import draft, built on a flat row list
+which cannot carry readiness, template, superset, assistance or the ratings a backup does — a round trip through
+it would silently drop them, and the app's merge would then refuse to overwrite the rows anyway.
+
 The numbers are pinned to the app's rather than trusted to agree: `ProgressSeriesFixtureTest` runs the app's
 own `toExerciseTrendPoints()` over a synthetic four-session fixture — a warm-up that must not win, a set that
 rounds, one past the ceiling, and a single — and writes the whole input and expected series to

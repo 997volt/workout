@@ -2815,6 +2815,8 @@
       progressSummary: byId('progressSummary'),
       progressChart: byId('progressChart'),
       progressList: byId('progressList'),
+      exportHistory: byId('exportHistory'),
+      exportHistorySummary: byId('exportHistorySummary'),
       exerciseNames: byId('exerciseNames'),
       targetChoices: byId('targetChoices'),
       sourceStatus: byId('sourceStatus')
@@ -4314,6 +4316,82 @@
     return list;
   }
 
+  /* A read-only reading of the loaded export: what is in it, newest first (N165).
+   *
+   * This is deliberately not the Sessions panel: that one is the editable row model, which drops the fields
+   * a backup carries (readiness, template, superset, assistance, ratings). Nothing here is writable. */
+  function exportSnapshot(backup) {
+    var snapshot = {
+      sessions: [], live: 0, deleted: 0, exercises: 0, sets: 0, first: null, last: null
+    };
+    if (!isObject(backup) || !Array.isArray(backup.sessions)) { return snapshot; }
+    var exercisesById = {};
+    (Array.isArray(backup.exercises) ? backup.exercises : []).forEach(function (exercise) {
+      if (isObject(exercise) && typeof exercise.id === 'string') { exercisesById[exercise.id] = exercise; }
+    });
+    var links = {};
+    (Array.isArray(backup.sessionExercises) ? backup.sessionExercises : []).forEach(function (link) {
+      if (isObject(link) && typeof link.id === 'string') { links[link.id] = link; }
+    });
+    var setsByLink = {};
+    (Array.isArray(backup.sets) ? backup.sets : []).forEach(function (set) {
+      if (!isObject(set) || !has(links, set.sessionExerciseId)) { return; }
+      if (set.deletedAt !== null && set.deletedAt !== undefined) { return; }
+      if (!has(setsByLink, set.sessionExerciseId)) { setsByLink[set.sessionExerciseId] = []; }
+      setsByLink[set.sessionExerciseId].push(set);
+    });
+    var blocksBySession = {};
+    Object.keys(links).forEach(function (id) {
+      var link = links[id];
+      var sets = setsByLink[id];
+      if (!sets || sets.length === 0) { return; }
+      if (!has(blocksBySession, link.sessionId)) { blocksBySession[link.sessionId] = []; }
+      var exercise = exercisesById[link.exerciseId];
+      blocksBySession[link.sessionId].push({
+        name: exercise ? String(exercise.name) : String(link.exerciseId),
+        position: typeof link.position === 'number' ? link.position : 0,
+        sets: sets
+      });
+    });
+    var live = [];
+    backup.sessions.forEach(function (session) {
+      if (!isObject(session) || typeof session.startedAt !== 'number') { return; }
+      if (session.deletedAt !== null && session.deletedAt !== undefined) {
+        snapshot.deleted += 1;
+        return;
+      }
+      snapshot.live += 1;
+      var blocks = (blocksBySession[session.id] || []).slice()
+        .sort(function (a, b) { return a.position - b.position; });
+      var tonnage = 0;
+      blocks.forEach(function (block) {
+        block.sets.forEach(function (set) {
+          if (!roleIsWork(set.setType || 'NORMAL')) { return; }
+          if (typeof set.weightGrams === 'number' && typeof set.reps === 'number') {
+            tonnage += set.weightGrams * set.reps;
+          }
+        });
+      });
+      live.push({
+        id: session.id,
+        startedAt: session.startedAt,
+        activity: session.activity || null,
+        notes: session.notes || null,
+        blocks: blocks,
+        tonnage: tonnage
+      });
+    });
+    live.sort(function (a, b) { return b.startedAt - a.startedAt; });
+    snapshot.sessions = live;
+    snapshot.exercises = Object.keys(exercisesById).length;
+    snapshot.sets = (Array.isArray(backup.sets) ? backup.sets : []).length;
+    if (live.length > 0) {
+      snapshot.first = live[live.length - 1].startedAt;
+      snapshot.last = live[0].startedAt;
+    }
+    return snapshot;
+  }
+
   /* The lifts that have history, as a list beside the chart. A list rather than a dropdown: the
    * chart is the point, and a visible list makes changing lift one click instead of a search. */
   function renderProgressList(movements) {
@@ -4356,6 +4434,7 @@
 
     var movements = movementsWithHistory(backup);
     state.progressMovements = movements;
+    renderExportHistory(exportSnapshot(backup));
 
     var selected = null;
     if (state.progressExerciseId) {
@@ -4423,6 +4502,116 @@
       parts.push('no set at 12 reps or fewer, so no estimate');
     }
     return parts.join(' · ');
+  }
+
+  function formatChartDateLong(millis) {
+    var date = new Date(millis);
+    var months = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+    return date.getDate() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear();
+  }
+
+  /* What the export holds, newest first, with nothing to edit (N165). */
+  function renderExportHistory(snapshot) {
+    var host = ui.elements.exportHistory;
+    var summary = ui.elements.exportHistorySummary;
+    if (!host || !summary) { return; }
+    host.textContent = '';
+    if (snapshot.live === 0) {
+      setText(summary, 'No sessions in this export.');
+      return;
+    }
+    var text = formatInt(snapshot.live) + ' session' + (snapshot.live === 1 ? '' : 's') +
+      ' from ' + formatChartDateLong(snapshot.first) + ' to ' +
+      formatChartDateLong(snapshot.last) + ' · ' + formatInt(snapshot.exercises) +
+      ' exercises · ' + formatInt(snapshot.sets) + ' set rows';
+    if (snapshot.deleted > 0) {
+      text += ' · ' + formatInt(snapshot.deleted) + ' deleted, hidden';
+    }
+    setText(summary, text + '. Read-only: this is what the app stores, not a draft.');
+
+    snapshot.sessions.forEach(function (session) {
+      var details = document.createElement('details');
+      details.className = 'export-session';
+      var head = document.createElement('summary');
+      head.appendChild(h('span', 'export-date', formatChartDateLong(session.startedAt)));
+      var meta = session.activity
+        ? 'Activity: ' + String(session.activity).toLowerCase().replace(/_/g, ' ')
+        : session.blocks.length + ' exercise' + (session.blocks.length === 1 ? '' : 's') +
+          ' · ' + session.blocks.reduce(function (n, block) { return n + block.sets.length; }, 0) +
+          ' sets · ' + formatKg(session.tonnage) + ' kg';
+      head.appendChild(h('span', 'export-meta', meta));
+      details.appendChild(head);
+      var body = h('div', 'export-session-body');
+      details.appendChild(body);
+      details.addEventListener('toggle', function () {
+        if (!details.open || body.childNodes.length > 0) { return; }
+        buildExportSessionBody(body, session);
+      });
+      host.appendChild(details);
+    });
+  }
+
+  function buildExportSessionBody(host, session) {
+    if (session.notes) {
+      host.appendChild(h('p', 'export-notes', session.notes));
+    }
+    if (session.blocks.length === 0) {
+      host.appendChild(h('p', 'hint', session.activity
+        ? 'An activity, not a workout: it has no sets.'
+        : 'No sets.'));
+      return;
+    }
+    var table = document.createElement('table');
+    table.className = 'export-sets';
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    ['Exercise', 'Sets'].forEach(function (label) {
+      var th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = label;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    session.blocks.forEach(function (block) {
+      var tr = document.createElement('tr');
+      var name = document.createElement('td');
+      name.textContent = block.name;
+      tr.appendChild(name);
+      var sets = document.createElement('td');
+      block.sets.forEach(function (set, index) {
+        if (index > 0) { sets.appendChild(h('span', 'set-sep', ' · ')); }
+        sets.appendChild(h('span', 'export-set', exportSetText(set)));
+      });
+      tr.appendChild(sets);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    host.appendChild(table);
+  }
+
+  function exportSetText(set) {
+    var role = set.setType || 'NORMAL';
+    var prefix = role === 'WARMUP' ? 'W '
+      : role === 'TOP_SET' ? 'T '
+        : role === 'FAILURE' ? 'F '
+          : role === 'DROP' ? 'D '
+            : role === 'CLUSTER' ? 'C ' : '';
+    var reps = typeof set.reps === 'number' ? set.reps : '?';
+    var weight;
+    if (typeof set.weightGrams === 'number' && set.weightGrams === 0 &&
+        typeof set.assistanceGrams === 'number' && set.assistanceGrams > 0) {
+      weight = 'assisted ' + formatKg(set.assistanceGrams) + ' kg';
+    } else if (typeof set.weightGrams === 'number') {
+      weight = formatKg(set.weightGrams) + ' kg';
+    } else {
+      weight = '—';
+    }
+    var text = prefix + reps + ' × ' + weight;
+    if (typeof set.rpeHalves === 'number') { text += ' @' + (set.rpeHalves / 2); }
+    return text;
   }
 
   function drawProgressChart(host, points, movement) {
@@ -4993,6 +5182,7 @@
     MAX_ESTIMATED_REPS: MAX_ESTIMATED_REPS,
     estimatedOneRepMax: estimatedOneRepMax,
     liftTrendPoints: liftTrendPoints,
+    exportSnapshot: exportSnapshot,
     roleLabel: roleLabel,
     parseDelimitedCells: parseDelimitedCells,
     parseCsvText: parseCsvText,
