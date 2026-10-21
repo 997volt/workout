@@ -17,20 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The program editor, and one core that decides what an edit means.** The helper can turn a table into a
-program document and the app can edit a program on the phone, but a program cannot be taken off the phone,
-edited elsewhere and put back. That is the next work, and its shape is agreed: one pure Kotlin core compiled
-into both the app and the page, so what the app will do is computed once and the page can show it before
-anything is written. Nothing is built yet, and the rows are in build order.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| P3.20 | medium | **A program can be opened, edited and written back.** The page can make a new program from a table and the app can edit one on the phone, but an existing program cannot be opened, changed in every part and put back: the page's model is the table, so it silently drops what a table cannot say — roles, rungs, supersets, assistance, per-set notes — and the app's import is insert-only by design. | A **program editor** in the helper: open a program from its exported document or from a backup, edit it losslessly — days and weekdays, exercises, sets with warm-up, drop and cluster roles, supersets, rep ranges and the rung the plan is at, loads and assistance, drop values, rest, target RPE and notes — preview exactly what the app will change, and download an edit the app applies. The sheet stays as the paste path and both produce the same document. The page may create a movement but never rename or retype one, and history stays the app's. Not planned: a hosted service, storage in the page, or a second program model. |
-| N173 | low | **The core is only shared if both hosts run the same answers.** The page's tests and a JS build are not in CI today, and the existing document vectors only run on the JVM. | One fixture set — a snapshot and an edit in, the changes or the problems out — run by `commonTest` on the JVM and JS targets and by the page's test page; an edit-document fixture decoded by `ProgramDocumentFixtureTest`; instrumented tests for the apply (a stale base, a shared template, a removal, a reorder, a refusal); a node job in CI for `jsNodeTest`, the page tests and `build-single-file.js`; and the docs gate after the helper's new section. No format-version bump. |
-
-None of this is a rule until it is built: the edit's decisions — the envelope, the stale base, the
-program-scoped replacement, template sharing and the library's immutability — are recorded in
-[DECISIONS.md](DECISIONS.md) with the row that implements them.
+**Nothing.** The program editor, the app's edit mode and the shared core that makes their answers one are
+in [CHANGELOG.md](CHANGELOG.md) (P3.20, N170–N173).
 
 ## Later — decided, and not being started
 

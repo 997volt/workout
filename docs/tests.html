@@ -21,8 +21,15 @@
 
   <script src="fixtures/progress-series.js"></script>
   <script src="fixtures/program-document.js"></script>
+  <script src="fixtures/program-edit.js"></script>
   <script src="seed-catalog.js"></script>
+  <script src="shared/kotlin-kotlin-stdlib.js"></script>
+  <script src="shared/kotlin_org_jetbrains_kotlin_kotlin_dom_api_compat.js"></script>
+  <script src="shared/kotlinx-serialization-kotlinx-serialization-core.js"></script>
+  <script src="shared/kotlinx-serialization-kotlinx-serialization-json.js"></script>
+  <script src="shared/workout-shared.js"></script>
   <script src="app.js"></script>
+  <script src="editor-tests.js"></script>
   <script>
 (function () {
   'use strict';
@@ -1523,6 +1530,21 @@
     var s1 = snapshot.sessions.filter(function (session) { return session.id === 's1'; })[0];
     eq(s1.blocks.length, 1, 'a deleted exercise must not show under a live session');
   });
+
+  /* The program editor's cases (ROADMAP N172, N173). The same file runs under node in CI. */
+  (function () {
+    var core = window['workout:shared'];
+    var shared = core && core.com && core.com.example && core.com.example.androidapp
+      ? core.com.example.androidapp.shared
+      : null;
+    if (!window.EditorTests || !shared) {
+      check('the program editor tests load', function () {
+        throw new Error('the shared core or editor-tests.js did not load');
+      });
+      return;
+    }
+    window.EditorTests.run(H, shared, { check: check, ok: ok, eq: eq }, window.PROGRAM_EDIT_CASES);
+  })();
 
   /* ------------------------------------------------------------------ *
    * Report

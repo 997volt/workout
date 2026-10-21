@@ -79,12 +79,22 @@ jobs:
         run: >
           ./gradlew
           testDebugUnitTest
+          :shared:jvmTest
+          :shared:jsNodeTest
           lint
           detekt
           assembleDebug
           assembleRelease
           --configuration-cache
           --console=plain
+
+      # N173. The page's copy of the core is generated, not hand-kept: the sync task rewrites
+      # docs/shared from the Kotlin source, and a diff means the committed copy is stale. The
+      # JS/node toolchain is the machine's (gradle.properties turns the download off).
+      - name: The page's copy of the shared core is current
+        run: |
+          ./gradlew :shared:syncSharedJs --console=plain
+          git diff --exit-code -- docs/shared
 
       # N128. The mechanical half of the release checklist, run on every change rather than by hand at
       # the tag: the built APK's versionCode/versionName against version.properties, and the hash the
@@ -125,6 +135,33 @@ jobs:
           name: r8-mapping
           path: app/build/outputs/mapping/release/mapping.txt
           if-no-files-found: ignore
+
+  # N173. The helper's own checks, in the toolchain the page actually runs in: no JDK, no Android
+  # SDK, no emulator. The generated fixtures are regenerated and compared, the editor's model
+  # assertions run under node against the committed docs/shared build, and the portable single file
+  # is built so a page that cannot be inlined fails here rather than in a browser.
+  docs:
+    name: Helper tests and single-file build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Node is the runner's own
+        run: node --version
+
+      - name: The generated fixtures are current
+        run: |
+          node docs/fixtures/generate.js
+          git diff --exit-code -- docs/fixtures
+
+      - name: The program editor's tests
+        run: node docs/tests-node.js
+
+      - name: The single-file build
+        run: node docs/build-single-file.js
 
   instrumented:
     name: Instrumented tests (emulator)

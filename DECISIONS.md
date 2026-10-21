@@ -1422,6 +1422,12 @@ the rule; that one argues it.
   procedure is in [RELEASING.md](RELEASING.md); why it stays manual is in
   [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md#releases).
 
+- **The helper's generated core and fixtures are committed and checked** (N170, N173).
+  `:shared:syncSharedJs` writes `docs/shared` from the Kotlin source, and `docs/fixtures/generate.js`
+  writes the program fixtures; CI regenerates both and fails on a diff, runs the editor's cases under
+  node against the committed build, and builds the portable single file. A page whose core had drifted
+  from the app is caught before a browser sees it, and the page's tests are not a browser-only ritual.
+
 ## Verified on device
 
 Not rules — facts checked on hardware, recorded because they are the kind that quietly

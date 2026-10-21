@@ -2651,7 +2651,7 @@ renders its own words).
 
 **Covered by** `commonTest`'s codec, validation and plan cases on the JVM and node targets; the app's
 `ProgramDocumentCodecTest` and `ProgramDocumentFixtureTest`, which now pass through the shared codec;
-and the page's own test page once N173 adds it to CI.
+and the page's own test page, which N173 runs under node in CI.
 
 ## N171
 
@@ -2729,6 +2729,30 @@ changed; the sheet is how a *new* one is created.
 **Covered by** the page's own assertions for the pure model operations (backup extraction, load parsing,
 adding and removing rows), the shared core's `commonTest` for the plan, and `ProgramEditDialogTest` +
 `ProgramDocumentTest` for the app's side of the same edit.
+
+## N173
+
+**Why a page test runs under node.** The editor's rules are the shared core's, and its model operations
+are JavaScript; both can be asserted without a DOM. The browser page (`tests.html`) and `tests-node.js`
+run the *same* file, and CI runs the node one — so the gate is not a page someone has to remember to
+open. The cases that matter are the ones a browser would not catch anyway: a backup becomes a document,
+an added row keeps the app's zero-based set indices, a removed day keeps a workout another day uses, and
+the plan agrees on a rename, a stale base, a removal and a dangling reference.
+
+**Why one fixture set rather than two sets of expectations.** The planner's answers are compared to a
+generated fixture: `docs/fixtures/program-edit.js` is written by `generate.js` from the same program
+document the sheet fixture uses, the page's test runs `planJson` over it, and `ProgramEditFixtureTest`
+decodes the same objects and runs the Kotlin `plan`. One file holds both hosts to one answer.
+
+**Why the generated files are checked rather than trusted.** `docs/shared` is a build artefact of
+`:shared`, and a stale copy is a page whose preview disagrees with the app while both look tested. The
+`build` job regenerates it and fails on a diff; the `docs` job regenerates the fixtures and does the
+same. The single-file build is run too, because the portable copy is the one that has no neighbours to
+fall back on.
+
+**What is still not automated.** The DOM itself: this host has no browser, and the page's layouts and
+event wiring are exercised by opening `docs/index.html`. The model and the plan — the parts that decide
+what the app writes — are the parts under the gate.
 
 ## P3.19
 

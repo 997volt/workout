@@ -44,6 +44,12 @@ unreleased.
   than merged. The table path still creates programs; this is how one is changed. A draft is a file, because
   the page still stores nothing and makes no request.
 
+- **The helper's tests, fixtures and portable build are gated** (N173). The program editor's cases run in
+  the browser and under node; CI runs the node copy against the committed `docs/shared` build, regenerates
+  the program fixtures and the shared core and fails on a diff, and builds `dist/workout-import.html`. One
+  fixture set (`docs/fixtures/program-edit.js`) holds the page's `planJson` and the app's Kotlin `plan` to
+  the same answers, so a page whose preview drifted from the app is caught before a browser sees it.
+
 ## [2.11] — 2026-10-21 (versionCode 31)
 
 ### Added

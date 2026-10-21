@@ -144,7 +144,7 @@ Nothing is uploaded: the page is classic scripts with no `fetch`, no socket and 
 and the rows live in the tab. The one thing it keeps is the exercise-name mapping, in this browser's
 `localStorage`, so the next session does not redo it; a button below the mapping forgets it.
 
-It does four jobs, all from that page:
+It does five jobs, all from that page:
 
 - **history** — spreadsheet, CSV or JSON rows become `workout-backup.json` for **Settings → Import**,
   with a review step that catches what the app cannot report: mixed units in one block, a date that is
@@ -153,18 +153,24 @@ It does four jobs, all from that page:
   load (the numbers are the app's own, pinned by a JVM fixture);
 - **Waistline body data** — a Waistline backup becomes daily measurements in the same output file;
 - **a program table** — a sheet of `Program, Day, Weekday, Exercise, Sets, Reps, Load, Rest` becomes a
-  `program.json` for **Programs → Load program**.
+  `program.json` for **Programs → Load program**;
+- **a program editor** — open a program the app exported (or one taken from a backup, or a saved draft),
+  change its days, workouts, exercises and sets, preview the app's own plan of the edit, and download it
+  for **Programs → Load**, where the app shows the diff and applies it. The preview and the write are the
+  same shared core (N170), a program that changed on the phone since the export is refused rather than
+  merged, and a draft is a file because the page still stores nothing.
 
 Its specification is [IMPORT-HELPER.md](IMPORT-HELPER.md), and the rules it holds — why the conversion
-sits outside the app, why its ids are deterministic, why it never edits — are in
+sits outside the app, why its ids are deterministic, and what an edit may and may not change — are in
 [DECISIONS.md](DECISIONS.md). It is the way old data comes *in*; the export (`Settings → Export`) is
 the only way data goes *out*, which is why the helper never sees your database.
 
 ## Continuous integration
 
-[`.github/workflows/android.yml`](.github/workflows/android.yml) has two jobs — `build`
-(`testDebugUnitTest`, `lint`, `detekt`, `assembleDebug`, `assembleRelease`) and `instrumented`
-(`connectedDebugAndroidTest` on a KVM-accelerated runner emulator). It deliberately does **not**
+[`.github/workflows/android.yml`](.github/workflows/android.yml) has three jobs — `build`
+(`testDebugUnitTest`, `:shared:jvmTest`, `:shared:jsNodeTest`, `lint`, `detekt`, `assembleDebug`,
+`assembleRelease`), `docs` (the helper's node tests, the generated fixtures and the single-file build),
+and `instrumented` (`connectedDebugAndroidTest` on a KVM-accelerated runner emulator). It deliberately does **not**
 use `.toolchain/`: that is a per-machine, gitignored install, and `tools/android-env.sh` is a no-op
 without it, so CI uses the runner's own JDK and Android SDK.
 

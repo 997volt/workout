@@ -82,12 +82,18 @@ Match these — they are the existing ones. Reasons, scope and rejected alternat
 `lint` fails on warnings and detekt carries the Compose ruleset. Run what CI runs:
 
 ```sh
-./gradlew testDebugUnitTest lint detekt assembleDebug assembleRelease --console=plain
+./gradlew testDebugUnitTest :shared:jvmTest :shared:jsNodeTest lint detekt assembleDebug assembleRelease --console=plain
 ```
 
 [`DocsConsistencyTest`](app/src/test/java/com/example/androidapp/DocsConsistencyTest.kt)
 keeps that task set equal to CI's and these links resolving. The configuration cache is on
 by default, so reruns are fast.
+
+The import helper has its own gate, under node rather than Gradle (CI's `docs` job, N173):
+`node docs/tests-node.js` runs the page's editor assertions against the committed `docs/shared`
+build, `node docs/build-single-file.js` proves the portable copy still builds, and
+`node docs/fixtures/generate.js` followed by `git diff --exit-code -- docs/fixtures docs/shared`
+proves the generated files are current. Run them when touching `docs/`.
 
 Formatting is not in that set: `detekt-formatting` reports a few hundred findings across the tree — the
 current count and the command that produces it are in [DECISIONS.md](DECISIONS.md#process) — so
