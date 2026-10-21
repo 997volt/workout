@@ -1349,3 +1349,8 @@ tbody tr:last-child td {
 .tool-panel > section.panel[hidden] ~ .tab-empty {
   display: block;
 }
+
+/* The tabs switch under a sticky bar; a selected tool starts below it, not underneath it. */
+.tool-panel {
+  scroll-margin-top: 80px;
+}

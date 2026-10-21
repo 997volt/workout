@@ -52,8 +52,9 @@ unreleased.
 
 - **The helper's tools are tabs.** Import, Programs, Progress and Body are four tabs rather than one long
   stack, so the program editor and the progress chart are one click away; each tab keeps its panels, Progress
-  and Body say what to load before they have data, the selected tab is in the URL (`#programs`), and loading
-  a program table switches to Programs. No roadmap id: a usability change, not a planned feature.
+  and Body say what to load before they have data, the selected tab is in the URL (`#programs`), a chosen
+  tab starts at its top rather than at the old scroll position, and loading a program table switches to
+  Programs. No roadmap id: a usability change, not a planned feature.
 
 ## [2.11] — 2026-10-21 (versionCode 31)
 

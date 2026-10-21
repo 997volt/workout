@@ -2876,14 +2876,21 @@
       'panel-progress': 'progress', 'panel-body': 'body'
     };
 
-    function select(tool, focus) {
+    function select(tool, focus, scroll) {
       var target = byTool[tool] ? tool : 'import';
       tabs.forEach(function (tab) {
         var on = tab.getAttribute('data-tool') === target;
         tab.setAttribute('aria-selected', on ? 'true' : 'false');
         tab.tabIndex = on ? 0 : -1;
         var panel = byId(tab.getAttribute('aria-controls'));
-        if (panel) { panel.hidden = !on; }
+        if (panel) {
+          panel.hidden = !on;
+          // Switching from a long tab leaves the reader scrolled past the new one, which reads
+          // as a dead button. Show the top of the chosen tool instead.
+          if (on && scroll && panel.scrollIntoView) {
+            panel.scrollIntoView({ block: 'start' });
+          }
+        }
       });
       if (focus && byTool[target]) { byTool[target].focus(); }
       if (typeof history !== 'undefined' && history.replaceState) {
@@ -2903,21 +2910,21 @@
     }
 
     tabs.forEach(function (tab) {
-      tab.addEventListener('click', function () { select(tab.getAttribute('data-tool')); });
+      tab.addEventListener('click', function () { select(tab.getAttribute('data-tool'), false, true); });
       tab.addEventListener('keydown', function (event) {
         var delta = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
         if (delta === 0) { return; }
         event.preventDefault();
         var index = tabs.indexOf(tab);
         var next = tabs[(index + delta + tabs.length) % tabs.length];
-        select(next.getAttribute('data-tool'), true);
+        select(next.getAttribute('data-tool'), true, true);
       });
     });
     if (typeof window !== 'undefined') {
       window.addEventListener('hashchange', function () { select(fromHash()); });
     }
     ui.selectTool = select;
-    select(fromHash());
+    select(fromHash(), false, false);
   }
 
   function init() {
