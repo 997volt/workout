@@ -47,11 +47,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.ui.components.AppCard
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
-import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
 /**
@@ -72,6 +72,7 @@ fun ProgramsRoute(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val created by viewModel.createdProgramId.collectAsStateWithLifecycle()
+    val pendingEdit by viewModel.pendingEdit.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val currentOnOpenProgram by rememberUpdatedState(onOpenProgram)
 
@@ -104,6 +105,16 @@ fun ProgramsRoute(
         onBack = onBack,
         modifier = modifier,
     )
+
+    // An edit stops here, before anything is written (N171): the dialog states the planner's diff and
+    // only its confirmation runs the import.
+    pendingEdit?.let { pending ->
+        ProgramEditDialog(
+            edit = pending.preview,
+            onConfirm = viewModel::confirmEdit,
+            onDismiss = viewModel::dismissEdit,
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

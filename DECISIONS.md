@@ -1273,6 +1273,20 @@ the rule; that one argues it.
   Rejected: a WebView hosting the page inside the app (a bridge, a second UI model and a screen
   Compose cannot test), and two implementations of the rules pinned only by fixtures — the drift
   B178 and B180 already arrived by. ([evidence](DECISIONS-EVIDENCE.md#n170))
+- **An edit names the export it was made from, and the app writes only the planner's changes** (N171).
+  A document with an `edit` marker is a proposal to change the program it names: the app reads the
+  program as it stands, asks the shared planner what the edit would do, and states that diff before
+  anything is written. **The base is the export's `exportedAt`**, compared with the newest `updatedAt`
+  among the program's own rows; a program that moved after the export is refused, not merged — a merge
+  would have to guess which change wins, and there is no clock that makes guessing safe. **The write is
+  program-scoped and exact**: slots are the edit's set (an absent one is soft-deleted), templates are
+  upserted but never removed from the library (the app's own removal rule), and the planned exercises
+  and sets of a template the edit carries are upserted or soft-deleted by id. `isActive` and `position`
+  stay the device's, as B177 decided for a restore; the library's existing rows are never rewritten
+  (an edit may create a movement, never rename one); sessions, skips, deload weeks and substitutions
+  are untouched. The marker is an optional field at **format 4**, so an older build ignores it and
+  no-ops as it already does, and no schema changes: staleness is answered from timestamps already on
+  the rows. ([evidence](DECISIONS-EVIDENCE.md#n171))
 
 ## Rules that apply to every change
 

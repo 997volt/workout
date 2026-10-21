@@ -6,6 +6,8 @@ import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.shared.Change
+import com.example.androidapp.shared.PlanWarning
 import kotlinx.coroutines.flow.Flow
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -159,8 +161,42 @@ interface ProgramRepository {
      * rather than a second copy, and a document can never cost the user a program they wrote. An
      * exercise the device does not have is created from the definition the document carries; a
      * planned exercise whose exercise is nowhere is dropped, and the rest of the program arrives.
+     *
+     * **A document carrying an `edit` marker is applied as an edit instead** (N171): the shared
+     * planner decides what changes, this device refuses a stale base, and the write is one
+     * transaction over the program's own rows.
      */
     suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary>
+
+    /**
+     * What [importProgramDocument] would do, without writing anything (ROADMAP N171).
+     *
+     * A document without an edit marker is [ProgramDocumentPreview.Add] — the insert-only load needs
+     * no confirmation beyond the user having picked the file. An edit is previewed here so the screen
+     * can state the diff first: the shared planner's changes and warnings, plus the programs that also
+     * use a workout this edit names, which is the one consequence a program-scoped document cannot see.
+     */
+    suspend fun previewProgramDocument(text: String): DataResult<ProgramDocumentPreview>
+}
+
+/**
+ * What a picked program document would do (ROADMAP N171).
+ *
+ * [Add] is a document to merge, unchanged from N47. [Edit] is a proposal to change a program the
+ * device already holds, already planned by the shared core, so the confirmation and the write read
+ * the same decision.
+ */
+sealed interface ProgramDocumentPreview {
+    data object Add : ProgramDocumentPreview
+
+    data class Edit(
+        val programName: String,
+        /** The rows the edit would add, update or remove, as the shared planner named them. */
+        val changes: List<Change>,
+        val warnings: List<PlanWarning>,
+        /** Other programs that use a workout this edit touches, by name (N73). */
+        val sharedProgramNames: List<String>,
+    ) : ProgramDocumentPreview
 }
 
 /**

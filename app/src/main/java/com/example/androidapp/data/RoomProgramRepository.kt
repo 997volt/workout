@@ -1,10 +1,12 @@
 package com.example.androidapp.data
 
 import androidx.room.withTransaction
+import com.example.androidapp.data.local.BackupDao
 import com.example.androidapp.data.local.ExerciseDao
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.ProgramDao
 import com.example.androidapp.data.local.ProgramDeloadDao
+import com.example.androidapp.data.local.ProgramEditDao
 import com.example.androidapp.data.local.ProgramEntity
 import com.example.androidapp.data.local.ProgramRunDao
 import com.example.androidapp.data.local.ProgramSkipDao
@@ -20,6 +22,7 @@ import com.example.androidapp.data.transfer.ProgramDocument
 import com.example.androidapp.data.transfer.ProgramDocumentCodec
 import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
+import com.example.androidapp.data.transfer.toShared
 import com.example.androidapp.data.transfer.withValidLibraryShape
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.InvalidInputException
@@ -36,8 +39,15 @@ import com.example.androidapp.domain.model.RecordedSubstitution
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.programRun
 import com.example.androidapp.domain.nowEpochMillis
+import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
+import com.example.androidapp.shared.Change
+import com.example.androidapp.shared.ChangeKind
+import com.example.androidapp.shared.PlanResult
+import com.example.androidapp.shared.ProblemCode
+import com.example.androidapp.shared.ProgramProblem
+import com.example.androidapp.shared.plan
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -406,7 +416,32 @@ class RoomProgramRepository @Inject constructor(
             val document = ProgramDocumentCodec.decode(text)
             // One timestamp inside the transaction, so a restore and the rows it counts agree (B177).
             val now = timeSource.nowEpochMillis()
-            database.withTransaction { mergeProgramDocument(database, dao, document, now) }
+            database.withTransaction {
+                // An edit is a different promise from a load, and the document says which it is (N171).
+                if (document.edit != null) {
+                    applyProgramEdit(database, timeSource, document, now)
+                } else {
+                    mergeProgramDocument(database, dao, document, now)
+                }
+            }
+        }
+
+    override suspend fun previewProgramDocument(text: String): DataResult<ProgramDocumentPreview> =
+        dataResultOf {
+            val document = ProgramDocumentCodec.decode(text)
+            if (document.edit == null) {
+                return@dataResultOf ProgramDocumentPreview.Add
+            }
+            val snapshot = buildProgramDocument(database, timeSource, document.program.id)
+            when (val planned = plan(snapshot.toShared(), document.toShared())) {
+                is PlanResult.Refused -> throw InvalidInputException(editRefusal(planned.problems))
+                is PlanResult.Ready -> ProgramDocumentPreview.Edit(
+                    programName = document.program.name,
+                    changes = planned.changes,
+                    warnings = planned.warnings,
+                    sharedProgramNames = otherProgramsUsing(database, document),
+                )
+            }
         }
 
     private companion object {
@@ -575,6 +610,208 @@ private suspend fun mergeProgramDocument(
         exercises = exercisesAdded,
         droppedMovements = document.templateExercises.size - planned.size,
     )
+}
+
+/**
+ * Applies one program edit, planned by the shared core (ROADMAP N171).
+ *
+ * The snapshot is read **inside** the transaction and planned against the edit again, so a change
+ * made on the phone between the preview and the confirmation is refused rather than overwritten —
+ * the preview and the write ask the same function the same question, and the second answer is the one
+ * that writes.
+ *
+ * Rows are applied in dependency order: new movements, then workouts, then their exercises, their
+ * sets, and the slots that name a workout last. A removal is always a soft delete; the library keeps a
+ * workout a day stopped using, and history keeps every session a removed plan pointed at.
+ */
+private suspend fun applyProgramEdit(
+    database: WorkoutDatabase,
+    timeSource: TimeSource,
+    document: ProgramDocument,
+    now: Long,
+): ProgramImportSummary {
+    val snapshot = buildProgramDocument(database, timeSource, document.program.id)
+    val planned = plan(snapshot.toShared(), document.toShared())
+    val ready = when (planned) {
+        is PlanResult.Refused -> throw InvalidInputException(editRefusal(planned.problems))
+        is PlanResult.Ready -> planned
+    }
+
+    val writer = ProgramEditWriter(
+        document = document,
+        changes = ready.changes,
+        now = now,
+        backupDao = database.backupDao(),
+        editDao = database.programEditDao(),
+        programDao = database.programDao(),
+    )
+    if (writer.renamed) writer.rename()
+    val exercises = writer.writeExercises()
+    val templates = writer.writeTemplates()
+    writer.writeTemplateExercises()
+    writer.writeSets()
+    writer.writeSlots()
+
+    return ProgramImportSummary(
+        programs = 1,
+        templates = templates,
+        exercises = exercises,
+        droppedMovements = 0,
+    )
+}
+
+/**
+ * The writes one accepted edit needs, in dependency order (ROADMAP N171).
+ *
+ * Split from the planner so each method stays small and says one thing: movements before the plans
+ * that name them, plans before their sets, and the slots that schedule a plan last. The insert-only
+ * [BackupDao] adds; [ProgramEditDao] is the half that updates and soft-deletes.
+ */
+private class ProgramEditWriter(
+    private val document: ProgramDocument,
+    changes: List<Change>,
+    private val now: Long,
+    private val backupDao: BackupDao,
+    private val editDao: ProgramEditDao,
+    private val programDao: ProgramDao,
+) {
+    private val byKind = changes.groupBy { it.kind }
+
+    val renamed: Boolean get() = byKind.containsKey(ChangeKind.PROGRAM_RENAMED)
+
+    suspend fun rename() {
+        programDao.renameProgram(document.program.id, document.program.name, now)
+    }
+
+    /** New movements first: every planned exercise below names one. */
+    suspend fun writeExercises(): Int {
+        val added = ids(ChangeKind.EXERCISE_ADDED)
+        if (added.isEmpty()) return 0
+        backupDao.insertExercises(
+            document.exercises
+                .filter { it.id in added }
+                .withValidLibraryShape()
+                .map { it.toEntity() },
+        )
+        return added.size
+    }
+
+    suspend fun writeTemplates(): Int {
+        val added = document.templates.filter { it.id in ids(ChangeKind.TEMPLATE_ADDED) }
+        if (added.isNotEmpty()) {
+            backupDao.insertTemplates(
+                added.map {
+                    it.toEntity().copy(createdAt = now, updatedAt = now, deletedAt = null)
+                },
+            )
+        }
+        val updated = document.templates.filter { it.id in ids(ChangeKind.TEMPLATE_UPDATED) }
+        if (updated.isNotEmpty()) {
+            editDao.updateTemplates(
+                updated.map { it.toEntity().copy(updatedAt = now, deletedAt = null) },
+            )
+        }
+        return added.size + updated.size
+    }
+
+    suspend fun writeTemplateExercises() {
+        val added = document.templateExercises
+            .filter { it.id in ids(ChangeKind.TEMPLATE_EXERCISE_ADDED) }
+        if (added.isNotEmpty()) {
+            backupDao.insertTemplateExercises(
+                added.map {
+                    it.toEntity().copy(createdAt = now, updatedAt = now, deletedAt = null)
+                },
+            )
+        }
+        val updated = document.templateExercises
+            .filter { it.id in ids(ChangeKind.TEMPLATE_EXERCISE_UPDATED) }
+        if (updated.isNotEmpty()) {
+            editDao.updateTemplateExercises(
+                updated.map { it.toEntity().copy(updatedAt = now, deletedAt = null) },
+            )
+        }
+        val removed = ids(ChangeKind.TEMPLATE_EXERCISE_REMOVED).toList()
+        if (removed.isNotEmpty()) {
+            editDao.softDeleteTemplateExercises(removed, now)
+            editDao.softDeleteSetsOfTemplateExercises(removed, now)
+        }
+    }
+
+    suspend fun writeSets() {
+        val added = document.templateSets.filter { it.id in ids(ChangeKind.SET_ADDED) }
+        if (added.isNotEmpty()) {
+            backupDao.insertTemplateSets(
+                added.map {
+                    it.toEntity().copy(createdAt = now, updatedAt = now, deletedAt = null)
+                },
+            )
+        }
+        val updated = document.templateSets.filter { it.id in ids(ChangeKind.SET_UPDATED) }
+        if (updated.isNotEmpty()) {
+            editDao.updateTemplateSets(
+                updated.map { it.toEntity().copy(updatedAt = now, deletedAt = null) },
+            )
+        }
+        val removed = ids(ChangeKind.SET_REMOVED).toList()
+        if (removed.isNotEmpty()) {
+            editDao.softDeleteTemplateSets(removed, now)
+        }
+    }
+
+    suspend fun writeSlots() {
+        document.slots
+            .filter { it.id in ids(ChangeKind.SLOT_ADDED) }
+            .forEach { slot ->
+                programDao.insertSlot(
+                    slot.toEntity().copy(createdAt = now, updatedAt = now, deletedAt = null),
+                )
+            }
+        val updated = document.slots.filter { it.id in ids(ChangeKind.SLOT_UPDATED) }
+        if (updated.isNotEmpty()) {
+            editDao.updateProgramSlots(
+                updated.map { it.toEntity().copy(updatedAt = now, deletedAt = null) },
+            )
+        }
+        val removed = ids(ChangeKind.SLOT_REMOVED).toList()
+        if (removed.isNotEmpty()) {
+            editDao.softDeleteProgramSlots(removed, now)
+        }
+    }
+
+    private fun ids(kind: ChangeKind): Set<String> = byKind[kind].orEmpty().map { it.id }.toSet()
+}
+
+/** Other live programs that schedule a workout this edit names, empty when none does (N73, N171). */
+private suspend fun otherProgramsUsing(
+    database: WorkoutDatabase,
+    document: ProgramDocument,
+): List<String> {
+    val templateIds = document.templates.map { it.id }
+    if (templateIds.isEmpty()) return emptyList()
+    return database.programDao().otherProgramNamesUsingTemplates(templateIds, document.program.id)
+}
+
+/**
+ * A refusal in the lifter's words.
+ *
+ * The shared core answers with codes because the page renders its own sentences; this is where the
+ * app's are chosen. Stale and missing are the two the lifter can act on, so they get their own.
+ */
+private fun editRefusal(problems: List<ProgramProblem>): String {
+    val first = problems.firstOrNull() ?: return "That program edit cannot be applied."
+    return when (first.code) {
+        ProblemCode.STALE_BASE ->
+            "This program changed on the phone since you exported it. " +
+                "Export it again and redo the edit."
+
+        ProblemCode.PROGRAM_MISSING -> "That program is not on this device."
+        ProblemCode.PROGRAM_MISMATCH -> "That edit belongs to a different program."
+        ProblemCode.NO_EDIT_MARKER -> "That edit does not name the export it was made from."
+        else ->
+            "That program edit does not fit the app's rules " +
+                "(${first.code.name.lowercase().replace('_', ' ')})."
+    }
 }
 
 /** A program with no name is a list row nobody can tell apart from the next (ROADMAP P3.3). */

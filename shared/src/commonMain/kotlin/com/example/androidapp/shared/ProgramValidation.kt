@@ -98,7 +98,7 @@ fun validate(document: ProgramDocument): List<ProgramProblem> {
         if (set.templateExerciseId !in templateExerciseIds) {
             refuse(ProblemCode.DANGLING_SET, "$path.templateExerciseId", set.templateExerciseId)
         }
-        if (set.setIndex < 1) refuse(ProblemCode.INVALID_SET_INDEX, "$path.setIndex")
+        if (set.setIndex < 0) refuse(ProblemCode.INVALID_SET_INDEX, "$path.setIndex")
         if ((set.targetWeightGrams ?: 0L) < 0L) refuse(ProblemCode.INVALID_LOAD, "$path.targetWeightGrams")
         if ((set.targetAssistanceGrams ?: 0L) < 0L) {
             refuse(ProblemCode.INVALID_LOAD, "$path.targetAssistanceGrams")
@@ -117,7 +117,9 @@ fun validate(document: ProgramDocument): List<ProgramProblem> {
     }
 
     // A set's index is unique within its exercise, and **not** contiguous: a deleted set keeps its
-    // index and re-logging appends at the end (B157), so a live plan legitimately reads 1, 3.
+    // index and re-logging appends at the end (B157), so a live plan legitimately reads 0, 2. The
+    // app's indices are **0-based** — `addSet` appends `max + 1` and a ramp takes 0..n-1 (B34) — so
+    // the floor is zero, not one.
     document.templateSets.groupBy { it.templateExerciseId }.forEach { (plannedId, rows) ->
         duplicates(rows.map { it.setIndex }).forEach {
             refuse(ProblemCode.INVALID_SET_INDEX, "templateSets", "$plannedId/$it")

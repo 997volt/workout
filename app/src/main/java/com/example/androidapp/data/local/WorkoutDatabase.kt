@@ -110,6 +110,9 @@ abstract class WorkoutDatabase : RoomDatabase() {
     /** The newest tables' half of that (ROADMAP P3.3), split to keep both under the ceiling. */
     abstract fun programBackupDao(): ProgramBackupDao
 
+    /** Updates and soft deletes a program edit needs (ROADMAP N171), apart from the insert-only path. */
+    abstract fun programEditDao(): ProgramEditDao
+
     /** Read-only per-workout aggregates for the trends screen (ROADMAP N13). */
     abstract fun trendsDao(): TrendsDao
 

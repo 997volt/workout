@@ -886,6 +886,18 @@
     </plurals>
     <string name="program_exported">Program file written.</string>
     <string name="program_export_failed">Couldn’t write the program file.</string>
+    <!-- The confirmation an edit document stops at (ROADMAP N171). It states the diff the shared
+         planner produced, not a promise: the app applies exactly those changes. -->
+    <string name="program_updated">Program updated.</string>
+    <string name="program_edit_dialog_title">Update “%1$s”?</string>
+    <string name="program_edit_intro">This changes the program on this device. Your logged history is not touched.</string>
+    <string name="program_edit_renamed">The program will be renamed.</string>
+    <string name="program_edit_rows">Days: %1$d · Workouts: %2$d · Exercises: %3$d · Sets: %4$d</string>
+    <string name="program_edit_new_movements">New movements: %1$s</string>
+    <string name="program_edit_kept_workouts">These workouts stay in your library: %1$s</string>
+    <string name="program_edit_shared">Also used by %1$s — the edit changes them too.</string>
+    <string name="program_edit_confirm">Update program</string>
+    <string name="program_edit_cancel">Cancel</string>
     <string name="program_use">Use</string>
     <string name="program_in_use">In use</string>
     <string name="program_edit_title">Program</string>

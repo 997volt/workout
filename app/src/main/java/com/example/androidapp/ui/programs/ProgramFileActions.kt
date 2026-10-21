@@ -79,6 +79,7 @@ fun rememberProgramImport(
     val readFailed = stringResource(R.string.transfer_read_failed)
     val storageError = stringResource(R.string.transfer_storage_error)
     val loaded = stringResource(R.string.program_loaded)
+    val updated = stringResource(R.string.program_updated)
     val alreadyLoaded = stringResource(R.string.program_already_loaded)
 
     val openDocument = rememberLauncherForActivityResult(
@@ -89,13 +90,19 @@ fun rememberProgramImport(
     }
 
     val outcome by viewModel.imported.collectAsStateWithLifecycle()
+    val edited by viewModel.edited.collectAsStateWithLifecycle()
     val currentOnMessage by rememberUpdatedState(onMessage)
-    LaunchedEffect(outcome) {
+    LaunchedEffect(outcome, edited) {
         when (val reported = outcome) {
             null -> Unit
             is DataResult.Success -> currentOnMessage(
-                importSentence(reported.data, loaded, alreadyLoaded) { count ->
-                    resources.getQuantityString(R.plurals.program_load_dropped, count, count)
+                // An edit already had its diff confirmed, so its report is the outcome, not a count.
+                if (edited) {
+                    updated
+                } else {
+                    importSentence(reported.data, loaded, alreadyLoaded) { count ->
+                        resources.getQuantityString(R.plurals.program_load_dropped, count, count)
+                    }
                 },
             )
 

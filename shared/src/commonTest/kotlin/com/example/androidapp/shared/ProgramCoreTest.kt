@@ -57,8 +57,8 @@ class ProgramCoreTest {
         // plan legitimately reads 1, 3. Refusing the gap would make every such plan uneditable.
         val document = baseDocument(
             templateSets = listOf(
-                setRow("set_a", "te_a", 1),
-                setRow("set_b", "te_a", 3),
+                setRow("set_a", "te_a", 0),
+                setRow("set_b", "te_a", 2),
             ),
         )
 
@@ -81,8 +81,8 @@ class ProgramCoreTest {
     fun validation_refuses_a_rung_under_a_warm_up() {
         val document = baseDocument(
             templateSets = listOf(
-                setRow("set_warm", "te_a", 1, role = ProgramSetRole.WARMUP),
-                setRow("set_drop", "te_a", 2, role = ProgramSetRole.DROP, dropValueGrams = 10_000),
+                setRow("set_warm", "te_a", 0, role = ProgramSetRole.WARMUP),
+                setRow("set_drop", "te_a", 1, role = ProgramSetRole.DROP, dropValueGrams = 10_000),
             ),
         )
 
@@ -93,9 +93,9 @@ class ProgramCoreTest {
     fun validation_accepts_a_drop_run_that_names_its_value_once() {
         val document = baseDocument(
             templateSets = listOf(
-                setRow("set_a", "te_a", 1),
-                setRow("set_drop", "te_a", 2, role = ProgramSetRole.DROP, dropValueGrams = 10_000),
-                setRow("set_drop2", "te_a", 3, role = ProgramSetRole.DROP),
+                setRow("set_a", "te_a", 0),
+                setRow("set_drop", "te_a", 1, role = ProgramSetRole.DROP, dropValueGrams = 10_000),
+                setRow("set_drop2", "te_a", 2, role = ProgramSetRole.DROP),
             ),
         )
 
@@ -117,7 +117,7 @@ class ProgramCoreTest {
                 plannedExerciseRow("te_b", "tpl_b", "ex_a"),
             ),
             templateSets = listOf(
-                setRow("set_a", "te_a", 1),
+                setRow("set_a", "te_a", 0),
                 setRow("set_b", "te_b", 1),
             ),
             edit = EditMarker(baseExportedAt = T),
@@ -186,7 +186,7 @@ class ProgramCoreTest {
         val snapshot = baseDocument()
         val edit = baseDocument(
             templateExercises = listOf(plannedExerciseRow("te_a", "tpl_a", "ex_new")),
-            templateSets = listOf(setRow("set_a", "te_a", 1)),
+            templateSets = listOf(setRow("set_a", "te_a", 0)),
             exercises = listOf(exerciseRow("ex_a", "Bench Press"), exerciseRow("ex_new", "Machine Curl")),
             edit = EditMarker(baseExportedAt = T),
         )
@@ -307,7 +307,7 @@ internal fun baseDocument(
     slots: List<ProgramSlotDto> = listOf(slotRow("slot_a", "tpl_a")),
     templates: List<TemplateDto> = listOf(templateRow("tpl_a", "Upper A")),
     templateExercises: List<TemplateExerciseDto> = listOf(plannedExerciseRow("te_a", "tpl_a", "ex_a")),
-    templateSets: List<TemplateSetDto> = listOf(setRow("set_a", "te_a", 1)),
+    templateSets: List<TemplateSetDto> = listOf(setRow("set_a", "te_a", 0)),
     exercises: List<ExerciseDto> = listOf(exerciseRow("ex_a", "Bench Press")),
     edit: EditMarker? = null,
 ) = ProgramDocument(

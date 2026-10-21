@@ -46,7 +46,6 @@ interface BackupDao {
     @Query("SELECT * FROM template_sets")
     suspend fun allTemplateSets(): List<TemplateSetEntity>
 
-
     /**
      * Ids of rows the user deleted, which are still present with `deletedAt` set.
      *

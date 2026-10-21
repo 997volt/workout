@@ -8,6 +8,7 @@ import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.google.common.truth.Truth.assertThat
@@ -247,6 +248,9 @@ class ProgramStartGateViewModelTest {
             error("the start gate does not carry a program")
 
         override suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary> =
+            error("the start gate does not carry a program")
+
+        override suspend fun previewProgramDocument(text: String): DataResult<ProgramDocumentPreview> =
             error("the start gate does not carry a program")
 
         override suspend fun createProgram(name: String): DataResult<String> =

@@ -196,6 +196,26 @@ interface ProgramDao {
     @Query("SELECT * FROM program_slots WHERE id = :id AND deletedAt IS NULL")
     suspend fun findSlot(id: String): ProgramSlotEntity?
 
+    /**
+     * Names of the **other** live programs that schedule one of [templateIds] (ROADMAP N171).
+     *
+     * A program is a schedule over templates (N73), so editing a workout through one program's
+     * document changes it for every program that uses it. This is the fact a program-scoped document
+     * cannot carry, and the one the edit confirmation has to state.
+     */
+    @Query(
+        """
+        SELECT DISTINCT p.name FROM programs p
+        JOIN program_slots ps ON ps.programId = p.id
+        WHERE ps.templateId IN (:templateIds)
+          AND ps.deletedAt IS NULL
+          AND p.deletedAt IS NULL
+          AND p.id <> :programId
+        ORDER BY p.name ASC
+        """,
+    )
+    suspend fun otherProgramNamesUsingTemplates(templateIds: List<String>, programId: String): List<String>
+
     @Insert
     suspend fun insertProgram(row: ProgramEntity)
 

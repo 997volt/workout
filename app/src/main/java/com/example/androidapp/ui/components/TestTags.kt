@@ -694,6 +694,11 @@ object TestTags {
         const val LOAD = "program_load"
         const val EXPORT = "program_export"
 
+        /** The confirmation an edit document stops at, and its two answers (ROADMAP N171). */
+        const val EDIT_DIALOG = "program_edit_dialog"
+        const val EDIT_CONFIRM = "program_edit_confirm"
+        const val EDIT_CANCEL = "program_edit_cancel"
+
         /**
          * The way across to Templates, in this screen's own bar (ROADMAP N93).
          *

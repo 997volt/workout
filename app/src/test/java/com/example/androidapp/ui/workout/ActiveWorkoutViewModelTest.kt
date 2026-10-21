@@ -33,6 +33,7 @@ import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.SettingsRepository
@@ -2944,5 +2945,8 @@ private class FakeProgramRepository : ProgramRepository {
         error("the workout screen does not carry a program")
 
     override suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary> =
+        error("the workout screen does not carry a program")
+
+    override suspend fun previewProgramDocument(text: String): DataResult<ProgramDocumentPreview> =
         error("the workout screen does not carry a program")
 }

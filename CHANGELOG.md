@@ -26,6 +26,15 @@ unreleased.
   `Weekday` enum serialized by name — the JSON does not change — and the app maps it at its transfer
   edge. Nothing user-visible changes yet: the edit path arrives with N171.
 
+- **A program document can change the program it names, and the app says what it will do first** (N171).
+  A document carrying an `edit` marker is no longer a proposal to add: the app plans it with the shared
+  core, shows the diff — days, workouts, exercises, sets, the movements it would create, the workout a
+  removed day leaves in the library, and any other program the edit also changes — and writes only on
+  confirmation. A document exported before the program moved on the phone is refused and named for what
+  it is, rather than merged into a state it was not made from. The format stays at version 4 (an older
+  build ignores the marker and no-ops, exactly as it already does), there is no schema change, and a
+  removal is still a soft delete: history and the library keep what the schedule stops using.
+
 ## [2.11] — 2026-10-21 (versionCode 31)
 
 ### Added

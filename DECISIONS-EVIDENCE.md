@@ -2653,6 +2653,47 @@ renders its own words).
 `ProgramDocumentCodecTest` and `ProgramDocumentFixtureTest`, which now pass through the shared codec;
 and the page's own test page once N173 adds it to CI.
 
+## N171
+
+**Why an envelope rather than "a known id means update".** A document and an edit are different
+intents, and the same id cannot say which. N47's insert-only rule is right for a shared document — a
+file from someone else must never rewrite yours — and B180 made the app skip a live program precisely
+so a changed sheet could not edit one. An edit is the opposite request, and it has to say so: the
+optional `edit` marker names the export it was made from, and only a document carrying it takes the
+update path.
+
+**Why the base is a timestamp, not a revision column.** The rows already carry `updatedAt`, and the
+export records when it was taken. Comparing the program's newest write with the export's time answers
+"did this change since?" without a schema change, a migration, or a counter every writer must remember
+to bump. A mismatch is **refused**, not merged: a merge would have to choose between the file's change
+and the phone's, and the only honest answer is that the lifter knows which one they meant.
+
+**Why the program is the unit and the library is not.** Slots are the schedule, so the edit's set is
+the schedule's set. Templates are shared by design (N73), so a day that leaves the schedule leaves its
+workout in the library and an edit that a second program also uses changes it for both — the
+confirmation says so. Existing library rows are never rewritten: a movement's name and taxonomy are
+read by every plan and every session, and a program document is not the place to change them.
+`isActive` and `position` are the program's place among programs, not its plan, and stay the device's
+(B177's line).
+
+**Why the app re-plans inside the transaction.** The preview is a promise; the plan inside the write is
+the decision. Reading the snapshot and planning again between the confirmation and the write is what
+makes a change made in the meantime a refusal rather than a silently lost edit.
+
+**Why the confirmation reads the planner's own changes.** It could have been a paragraph written
+beside the code ("this will update two days"). It is the plan's change list instead, so the dialog
+cannot describe a write the transaction would not perform — the failure B180 found in the page's
+clash note, moved to the app.
+
+**What is deliberately absent.** History: sessions, skips, deloads and substitutions are the lifter's
+record and never travel in a program document, so an edit cannot touch them. Deletion of a program:
+an edit changes one, and removing it is the app's own action.
+
+**Covered by** the shared core's `commonTest` (the plan's add, update and remove cases, the stale
+refusal, the library-immutable case), the instrumented `ProgramDocumentTest` (an edit changes the
+program it names, a stale base is refused, a removed day keeps its workout, the preview writes
+nothing), and `ProgramEditDialogTest` for the confirmation's own words.
+
 ## P3.19
 
 The gap was day zero: *New program* makes a name and nothing else, and a lifter with no plan has to author

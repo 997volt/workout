@@ -6,17 +6,19 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.data.local.ExerciseEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.transfer.ProgramDocumentCodec
+import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
-import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.TemplateSetEdit
-import java.time.DayOfWeek
-import java.time.Instant
+import com.example.androidapp.shared.ChangeKind
+import com.example.androidapp.shared.EditMarker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -28,6 +30,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.DayOfWeek
+import java.time.Instant
 
 /**
  * Carrying one program to another device, end to end through the schema (ROADMAP N47).
@@ -230,8 +234,11 @@ class ProgramDocumentTest {
     private suspend fun exportOf(programId: String): String =
         (programs.exportProgramDocument(programId) as DataResult.Success).data
 
-    private suspend fun importOf(file: String): ProgramImportSummary =
-        (programs.importProgramDocument(file) as DataResult.Success).data
+    private suspend fun importOf(file: String): ProgramImportSummary {
+        val result = programs.importProgramDocument(file)
+        if (result is DataResult.Failure) error("import refused: ${result.error}")
+        return (result as DataResult.Success).data
+    }
 
     /** Back to a bare database, which is what "another device" means for this feature. */
     private suspend fun wipe() = withContext(Dispatchers.IO) { database.clearAllTables() }
@@ -290,5 +297,98 @@ class ProgramDocumentTest {
         assertEquals(MuscleGroup.QUADS, restored.getValue("paused-bench").primaryMuscle)
         assertEquals(Equipment.BARBELL, restored.getValue("paused-bench").equipment)
         assertEquals(MovementPattern.SQUAT, restored.getValue("paused-bench").movementPattern)
+    }
+
+    @Test
+    fun anEditDocument_changesTheProgramItNames() = runTest {
+        val programId = seedProgram()
+        val original = ProgramDocumentCodec.decode(exportOf(programId))
+        val template = original.templates.single()
+        val planned = original.templateSets.single()
+        val edit = original.copy(
+            program = original.program.copy(name = "Heavy lower B"),
+            templates = listOf(template.copy(name = "Squat day B")),
+            templateSets = original.templateSets + planned.copy(
+                id = "ts-second",
+                setIndex = 2,
+                role = SetType.NORMAL,
+                targetWeightGrams = 80_000L,
+                targetRepsMax = 5,
+            ),
+            edit = EditMarker(baseExportedAt = original.exportedAt),
+        )
+
+        val summary = importOf(ProgramDocumentCodec.encode(edit))
+
+        assertEquals(1, summary.programs)
+        assertEquals("the name was written", "Heavy lower B", programs.observePrograms().first().single().name)
+        val stored = templates.observeTemplates().first().single()
+        assertEquals("the workout was renamed", "Squat day B", stored.name)
+        assertEquals(
+            "the second set was added",
+            2,
+            templates.observeExercises(stored.id).first().single().sets.size,
+        )
+    }
+
+    @Test
+    fun anEditOfAProgramThatMovedSinceTheExport_isRefused() = runTest {
+        val programId = seedProgram()
+        val original = ProgramDocumentCodec.decode(exportOf(programId))
+        val edit = original.copy(
+            program = original.program.copy(name = "Changed"),
+            edit = EditMarker(baseExportedAt = original.exportedAt - 1),
+        )
+
+        val failure = programs.importProgramDocument(ProgramDocumentCodec.encode(edit)) as DataResult.Failure
+
+        val invalid = failure.error as DataError.Invalid
+        assertTrue(invalid.message.contains("changed on the phone"))
+        assertEquals(
+            "nothing was written",
+            "Heavy lower",
+            programs.observePrograms().first().single().name,
+        )
+    }
+
+    @Test
+    fun anEditThatRemovesADay_keepsItsWorkout() = runTest {
+        val programId = seedProgram()
+        val original = ProgramDocumentCodec.decode(exportOf(programId))
+        val edit = original.copy(
+            slots = emptyList(),
+            edit = EditMarker(baseExportedAt = original.exportedAt),
+        )
+
+        importOf(ProgramDocumentCodec.encode(edit))
+
+        assertTrue("the day left the schedule", programs.observeSlots(programId).first().isEmpty())
+        assertEquals(
+            "the workout stayed in the library",
+            1,
+            templates.observeTemplates().first().size,
+        )
+    }
+
+    @Test
+    fun anEditIsPreviewedWithoutWritingAnything() = runTest {
+        val programId = seedProgram()
+        val original = ProgramDocumentCodec.decode(exportOf(programId))
+        val edit = original.copy(
+            program = original.program.copy(name = "Changed"),
+            edit = EditMarker(baseExportedAt = original.exportedAt),
+        )
+
+        val previewResult = programs.previewProgramDocument(ProgramDocumentCodec.encode(edit))
+        if (previewResult is DataResult.Failure) error("preview refused: ${previewResult.error}")
+        val preview = (previewResult as DataResult.Success).data
+        val editPreview = preview as ProgramDocumentPreview.Edit
+
+        assertTrue(editPreview.changes.any { it.kind == ChangeKind.PROGRAM_RENAMED })
+        assertEquals(
+            "the preview wrote nothing",
+            "Heavy lower",
+            programs.observePrograms().first().single().name,
+        )
     }
 }

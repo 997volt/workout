@@ -7,12 +7,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.domain.repository.ProgramImportSummary
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.platform.DocumentIo
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -27,6 +28,9 @@ data class ProgramsUiState(
     /** Set when a write failed, so the screen can say so instead of lying. */
     val error: DataError? = null,
 )
+
+/** An edit waiting for its confirmation, with the file it came from (ROADMAP N171). */
+data class PendingProgramEdit(val text: String, val preview: ProgramDocumentPreview.Edit)
 
 /**
  * The program list (ROADMAP P3.3).
@@ -58,17 +62,70 @@ class ProgramsViewModel @Inject constructor(
     fun readDocument(context: Context, uri: Uri) {
         viewModelScope.launch {
             val text = documentIo.read(context, uri)
-            _imported.value = if (text == null) {
-                DataResult.Failure(DataError.Storage(IllegalStateException("the file could not be read")))
-            } else {
-                importDocument(text)
+            if (text == null) {
+                _edited.value = false
+                _imported.value = DataResult.Failure(
+                    DataError.Storage(IllegalStateException("the file could not be read")),
+                )
+                return@launch
+            }
+            // An edit is a proposal to change a program this device holds, so it stops here for a
+            // confirmation (N171). A document to add still goes straight through, as it always has.
+            when (val preview = repository.previewProgramDocument(text)) {
+                is DataResult.Failure -> {
+                    _edited.value = false
+                    _imported.value = preview
+                }
+
+                is DataResult.Success -> when (val value = preview.data) {
+                    ProgramDocumentPreview.Add -> {
+                        _edited.value = false
+                        _imported.value = importDocument(text)
+                    }
+
+                    is ProgramDocumentPreview.Edit -> {
+                        _edited.value = false
+                        _pendingEdit.value = PendingProgramEdit(text, value)
+                    }
+                }
             }
         }
+    }
+
+    private val _pendingEdit = MutableStateFlow<PendingProgramEdit?>(null)
+
+    /** The edit awaiting confirmation, or null. */
+    val pendingEdit: StateFlow<PendingProgramEdit?> = _pendingEdit
+
+    /** True while the load being reported was an edit, so the screen says "updated", not "loaded". */
+    private val _edited = MutableStateFlow(false)
+    val edited: StateFlow<Boolean> = _edited
+
+    /**
+     * Applies the pending edit the lifter confirmed (ROADMAP N171).
+     *
+     * The text is kept rather than the decoded document: the repository decodes and plans again
+     * inside its transaction, so a change made on the phone between the preview and this tap is a
+     * refusal rather than a silently lost edit.
+     */
+    fun confirmEdit() {
+        val pending = _pendingEdit.value ?: return
+        _pendingEdit.value = null
+        viewModelScope.launch {
+            _edited.value = true
+            _imported.value = importDocument(pending.text)
+        }
+    }
+
+    /** Leaves the program as it is; the preview wrote nothing. */
+    fun dismissEdit() {
+        _pendingEdit.value = null
     }
 
     /** The merge has been reported, so it is not reported twice. */
     fun onImportShown() {
         _imported.value = null
+        _edited.value = false
     }
 
     /**
@@ -85,6 +142,7 @@ class ProgramsViewModel @Inject constructor(
                     context.assets.open(assetName).bufferedReader().use { reader -> reader.readText() }
                 }.getOrNull()
             }
+            _edited.value = false
             _imported.value = if (text == null) {
                 DataResult.Failure(
                     DataError.Storage(IllegalStateException("the example could not be read")),

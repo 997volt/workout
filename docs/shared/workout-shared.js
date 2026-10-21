@@ -4054,7 +4054,7 @@
       if (!templateExerciseIds.contains_aljjnj_k$(item_13.templateExerciseId_1)) {
         validate$refuse(problems, ProblemCode_DANGLING_SET_getInstance(), path_0 + '.templateExerciseId', item_13.templateExerciseId_1);
       }
-      if (item_13.setIndex_1 < 1) {
+      if (item_13.setIndex_1 < 0) {
         validate$refuse(problems, ProblemCode_INVALID_SET_INDEX_getInstance(), path_0 + '.setIndex');
       }
       var tmp0_elvis_lhs = item_13.targetWeightGrams_1;
