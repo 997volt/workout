@@ -382,14 +382,15 @@ switches to Programs. A tab whose panel has no data yet says what to load instea
    exercises*; Download `workout-backup.json`, and a copy-to-clipboard fallback. Refused while a blocking
    problem exists, with the first three named.
 
-**Programs** (N172) holds the program editor — open a program the app exported, a program from a backup, or
-a draft; change its days, workouts, exercises and sets; preview the app's own plan of the edit; download the
-edit or a draft — and, when a table is loaded, the program sheet. It shows the document's whole shape,
-including roles, rungs, supersets, assistance and notes, so a round trip cannot drop a field the table never
-knew.
+**Programs** (N172) holds its own drop zone — a program export, a draft, a backup or a program table — the
+program editor, and the program sheet when a table is loaded. Open a program, change its days, workouts,
+exercises and sets, preview the app's own plan of the edit, download the edit or a draft. It shows the
+document's whole shape, including roles, rungs, supersets, assistance and notes, so a round trip cannot drop
+a field the table never knew.
 
-**Progress** is one lift's chart (below), and **Body** is the Waistline data (below). Each says what it needs
-until it is loaded.
+**Body** has its own drop zone: a Waistline backup read there becomes daily body data and imports nothing
+else. **Progress** is one lift's chart (below); it still takes its export from Import, and each tab says what
+it needs until it is loaded.
 
 Accessibility is part of the screen rather than a later pass: every input labelled, problems announced
 through a status region, no colour-only signalling, full keyboard operation, and targets of at least 44 px.
@@ -457,8 +458,8 @@ what the page does not change it still carries: a field this UI never learned ca
 
 ## Program sheet
 
-A table dropped into the page becomes a **program document** (`formatVersion` 4) the app imports from
-Programs → Load program (N167). Columns: `Program` (optional), `Day`, `Weekday` (optional), `Exercise`,
+A table dropped into **Programs** (or into the Import source) becomes a **program document**
+(`formatVersion` 4) the app imports from Programs → Load program (N167). Columns: `Program` (optional), `Day`, `Weekday` (optional), `Exercise`,
 `Sets`, `Reps`, `Load`, `Rest`, `RPE` (optional), `Note` (optional). A tab-separated paste from a spreadsheet
 is the intended input.
 

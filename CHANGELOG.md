@@ -56,6 +56,11 @@ unreleased.
   tab starts at its top rather than at the old scroll position, and loading a program table switches to
   Programs. No roadmap id: a usability change, not a planned feature.
 
+- **Programs and Body take their own files.** Each tab now has the same drop zone as Import: **Programs**
+  opens a program export, a draft, a backup or a program table, and **Body** reads a Waistline backup and
+  shows its daily rows. Neither imports anything else, and neither uploads. No roadmap id: the same
+  usability change as the tabs.
+
 ## [2.11] — 2026-10-21 (versionCode 31)
 
 ### Added

@@ -3013,9 +3013,11 @@
       editorStatus: byId('editorStatus'),
       editorPreview: byId('editorPreview'),
       editorUnavailable: byId('editorUnavailable'),
-      openProgramFile: byId('openProgramFile'),
-      openProgramDraft: byId('openProgramDraft'),
-      editorFile: byId('editorFile'),
+      programDropZone: byId('programDropZone'),
+      programFileInput: byId('programFileInput'),
+      bodyDropZone: byId('bodyDropZone'),
+      bodyFileInput: byId('bodyFileInput'),
+      bodyStatus: byId('bodyStatus'),
       previewProgramEdit: byId('previewProgramEdit'),
       downloadProgramEdit: byId('downloadProgramEdit'),
       saveProgramDraft: byId('saveProgramDraft'),
@@ -3138,6 +3140,10 @@
       }
     });
 
+    wireFileDrop(elements.bodyDropZone, elements.bodyFileInput, function (files) {
+      readFile(files[0], 'body');
+    });
+
     renderAll();
   }
 
@@ -3147,12 +3153,56 @@
       var text = typeof reader.result === 'string' ? reader.result : '';
       if (purpose === 'export') {
         loadExportText(text, file.name);
+      } else if (purpose === 'program') {
+        // A program table is not JSON and opens the sheet; everything else is a document to open.
+        var trimmed = text.trim();
+        if (trimmed.charAt(0) === '{' || trimmed.charAt(0) === '[') {
+          editorOpenText(text, file.name);
+        } else {
+          loadText(text, file.name);
+        }
+      } else if (purpose === 'body') {
+        loadBodyText(text, file.name);
       } else {
         loadText(text, file.name);
       }
     };
     reader.onerror = function () { announce('That file could not be read.'); };
     reader.readAsText(file, 'UTF-8');
+  }
+
+  /**
+   * Wires a tab's own drop zone and file input (Programs and Body, the tabs beside N172's editor).
+   *
+   * The Import source keeps its own multi-file reader: these two take one file each, because an edit
+   * is one program and a Waistline backup is one body record.
+   */
+  function wireFileDrop(zone, input, onFiles) {
+    if (!zone || !input) { return; }
+    ['dragenter', 'dragover'].forEach(function (type) {
+      zone.addEventListener(type, function (event) {
+        event.preventDefault();
+        zone.classList.add('is-over');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (type) {
+      zone.addEventListener(type, function (event) {
+        event.preventDefault();
+        zone.classList.remove('is-over');
+      });
+    });
+    zone.addEventListener('drop', function (event) {
+      var transfer = event.dataTransfer;
+      if (transfer && transfer.files && transfer.files.length > 0) {
+        onFiles(transfer.files);
+      }
+    });
+    input.addEventListener('change', function () {
+      if (input.files && input.files.length > 0) {
+        onFiles(input.files);
+      }
+      input.value = '';
+    });
   }
 
   /* Reads several files in order, so the sources list keeps the order they were
@@ -3241,7 +3291,7 @@
       announce('That is a program sheet. It will be written as a program document.');
       renderProgramPanel();
       // A program sheet is written in Programs; show the tab rather than leaving it behind Import.
-      if (ui.selectTool) { ui.selectTool('programs'); }
+      if (ui.selectTool) { ui.selectTool('programs', false, true); }
       refresh();
       return;
     }
@@ -5719,6 +5769,26 @@
   }
 
   /* The body-data panel: what Waistline contributed, before it is written (N166). */
+  /**
+   * A Waistline backup dropped on the Body tab.
+   *
+   * It goes through the same parser and `setWaistline` as the Import drop, but it does not touch the
+   * history rows: a body file on the Body tab is body data, and anything else is refused rather than
+   * imported by a control that promised one thing.
+   */
+  function loadBodyText(text, fileName) {
+    var parsed = parseInputText(text, { fileName: fileName || '' });
+    if (parsed.kind !== 'waistline') {
+      setText(ui.elements.bodyStatus, 'That is not a Waistline backup.');
+      announce('That is not a Waistline backup.');
+      return;
+    }
+    setWaistline(parsed.waistline, fileName);
+    var label = fileName || 'the backup';
+    setText(ui.elements.bodyStatus, 'Loaded the daily body data from ' + label + '.');
+    announce('Loaded the daily body data from ' + label + '.');
+  }
+
   function setWaistline(waistline, fileName) {
     var state = ui.state;
     state.waistline = waistline;
@@ -6237,7 +6307,6 @@
   var EDITOR_ROLES = ['NORMAL', 'WARMUP', 'TOP_SET', 'DROP', 'CLUSTER'];
   var EDITOR_DRAFT_KIND = 'workout-program-draft';
   var editorIdCounter = 0;
-  var editorPickMode = 'program';
 
   /** The browser's globals, or the test harness's (this file's pure half runs under node too). */
   function editorGlobal() {
@@ -6892,7 +6961,7 @@
     return change.name ? label + ': ' + change.name : label;
   }
 
-  function editorOpenText(text, fileName, mode) {
+  function editorOpenText(text, fileName) {
     var parsed;
     try {
       parsed = JSON.parse(text);
@@ -6902,10 +6971,6 @@
     }
     if (isObject(parsed) && parsed.kind === EDITOR_DRAFT_KIND) {
       editorLoadDraft(parsed, fileName);
-      return;
-    }
-    if (mode === 'draft') {
-      editorMessage('That is not a draft this page wrote.');
       return;
     }
     if (isObject(parsed) && typeof parsed.formatVersion === 'number' && isObject(parsed.program)) {
@@ -7073,29 +7138,11 @@
     var core = programCore();
     if (!core) {
       if (elements.editorUnavailable) { elements.editorUnavailable.hidden = false; }
-      elements.openProgramFile.disabled = true;
-      elements.openProgramDraft.disabled = true;
+      if (elements.programFileInput) { elements.programFileInput.disabled = true; }
       return;
     }
-    elements.openProgramFile.addEventListener('click', function () {
-      editorPickMode = 'program';
-      elements.editorFile.click();
-    });
-    elements.openProgramDraft.addEventListener('click', function () {
-      editorPickMode = 'draft';
-      elements.editorFile.click();
-    });
-    elements.editorFile.addEventListener('change', function () {
-      var file = elements.editorFile.files && elements.editorFile.files[0];
-      if (file) {
-        var reader = new FileReader();
-        reader.onload = function () {
-          editorOpenText(String(reader.result || ''), file.name, editorPickMode);
-        };
-        reader.onerror = function () { editorMessage('That file could not be read.'); };
-        reader.readAsText(file);
-      }
-      elements.editorFile.value = '';
+    wireFileDrop(elements.programDropZone, elements.programFileInput, function (files) {
+      readFile(files[0], 'program');
     });
     elements.previewProgramEdit.addEventListener('click', editorPreview);
     elements.downloadProgramEdit.addEventListener('click', editorDownload);
