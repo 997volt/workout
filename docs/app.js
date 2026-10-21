@@ -2891,6 +2891,8 @@
       waistlineUnit: 'kg',
       /* A program table being authored, and the document built from it (N167). */
       programSheet: null,
+      /* The program editor's opened snapshot and working copy, or null (N172). */
+      programEditor: null,
       programResult: null,
       exportedAt: Date.now(),
       exportResult: null,
@@ -2937,6 +2939,16 @@
       programPreview: byId('programPreview'),
       programProblems: byId('programProblems'),
       downloadProgram: byId('downloadProgram'),
+      programEditorHost: byId('programEditor'),
+      editorStatus: byId('editorStatus'),
+      editorPreview: byId('editorPreview'),
+      editorUnavailable: byId('editorUnavailable'),
+      openProgramFile: byId('openProgramFile'),
+      openProgramDraft: byId('openProgramDraft'),
+      editorFile: byId('editorFile'),
+      previewProgramEdit: byId('previewProgramEdit'),
+      downloadProgramEdit: byId('downloadProgramEdit'),
+      saveProgramDraft: byId('saveProgramDraft'),
       bodyPanel: byId('panel-body'),
       bodySummary: byId('bodySummary'),
       bodyPreview: byId('bodyPreview'),
@@ -2986,6 +2998,7 @@
       elements.exportInput.value = '';
     });
     elements.downloadProgram.addEventListener('click', downloadProgram);
+    editorInit(elements);
     elements.waistlineUnit.addEventListener('change', function () {
       state.waistlineUnit = elements.waistlineUnit.value === 'lb' ? 'lb' : 'kg';
       renderBodyPanel();
@@ -6134,6 +6147,888 @@
     announce('Downloaded ' + BACKUP_FILE_NAME + '.');
   }
 
+  /* ---------------------------------------------------------------------------------------------
+   * The program editor (ROADMAP N172)
+   *
+   * Open a program the app exported, change it, and download an edit the app applies. The rules are
+   * not re-implemented here: the edit is planned by the shared core (`docs/shared/`, N170), and the
+   * preview is that plan's own change list — so the page cannot promise what the app would not do.
+   *
+   * The working copy is the document, not a table: every field the app can hold travels, including
+   * the ones this UI does not show, because a round trip that drops one is a silent edit. New rows
+   * mint their own ids and timestamps; existing rows keep theirs, which is what the app's staleness
+   * check reads.
+   * ------------------------------------------------------------------------------------------- */
+
+  var EDITOR_WEEKDAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+  var EDITOR_ROLES = ['NORMAL', 'WARMUP', 'TOP_SET', 'DROP', 'CLUSTER'];
+  var EDITOR_DRAFT_KIND = 'workout-program-draft';
+  var editorIdCounter = 0;
+  var editorPickMode = 'program';
+
+  /** The browser's globals, or the test harness's (this file's pure half runs under node too). */
+  function editorGlobal() {
+    if (typeof window !== 'undefined') { return window; }
+    if (typeof globalThis !== 'undefined') { return globalThis; }
+    return {};
+  }
+
+  /** The shared core's JS door, or null when docs/shared was not built (N170, N172). */
+  function programCore() {
+    var mod = editorGlobal()['workout:shared'];
+    var ns = mod && mod.com && mod.com.example && mod.com.example.androidapp;
+    return ns && ns.shared ? ns.shared : null;
+  }
+
+  function editorNewId(prefix) {
+    editorIdCounter += 1;
+    return prefix + '_' + Date.now().toString(36) + '_' + editorIdCounter.toString(36) + '_' +
+      Math.random().toString(36).slice(2, 8);
+  }
+
+  function editorDeepCopy(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function editorRung(role) {
+    return role === 'DROP' || role === 'CLUSTER';
+  }
+
+  function editorNextPosition(rows) {
+    var max = -1;
+    (rows || []).forEach(function (row) {
+      if (row && typeof row.position === 'number' && row.position > max) { max = row.position; }
+    });
+    return max + 1;
+  }
+
+  function editorNextSetIndex(rows) {
+    var max = -1;
+    (rows || []).forEach(function (row) {
+      if (row && typeof row.setIndex === 'number' && row.setIndex > max) { max = row.setIndex; }
+    });
+    return max + 1;
+  }
+
+  function editorFind(rows, id) {
+    var found = null;
+    (rows || []).forEach(function (row) { if (row && row.id === id) { found = row; } });
+    return found;
+  }
+
+  function editorKg(grams) {
+    var kg = Math.round(grams) / 1000;
+    return String(kg);
+  }
+
+  /** The app's plan writes assistance as `-20` in the load field; this is that field's text. */
+  function editorLoadText(weightGrams, assistanceGrams) {
+    if (typeof assistanceGrams === 'number' && assistanceGrams > 0) {
+      return '-' + editorKg(assistanceGrams);
+    }
+    if (typeof weightGrams !== 'number') { return ''; }
+    return editorKg(weightGrams);
+  }
+
+  /** `-20` is assistance, `20` is weight, blank is no load; anything else is null. */
+  function editorParseLoad(text) {
+    var trimmed = String(text === null || text === undefined ? '' : text).trim();
+    if (trimmed === '') { return { weightGrams: null, assistanceGrams: null }; }
+    var assisted = trimmed.charAt(0) === '-';
+    var number = Number((assisted ? trimmed.slice(1) : trimmed).replace(',', '.'));
+    if (!isFinite(number) || number < 0) { return null; }
+    var grams = Math.round(number * 1000);
+    return assisted
+      ? { weightGrams: 0, assistanceGrams: grams }
+      : { weightGrams: grams, assistanceGrams: null };
+  }
+
+  function editorParseInt(text) {
+    var trimmed = String(text === null || text === undefined ? '' : text).trim();
+    if (trimmed === '') { return null; }
+    if (!/^\d+$/.test(trimmed)) { return null; }
+    return Number(trimmed);
+  }
+
+  function editorParseHalves(text) {
+    var trimmed = String(text === null || text === undefined ? '' : text).trim();
+    if (trimmed === '') { return null; }
+    var rpe = Number(trimmed.replace(',', '.'));
+    if (!isFinite(rpe) || rpe < 1 || rpe > 10) { return null; }
+    return Math.round(rpe * 2);
+  }
+
+  /**
+   * One program's document out of a backup (N172).
+   *
+   * The app's own export is the supported path, but a lifter who has an export and no program file
+   * should not have to make one on the phone first: the backup already carries every row. The
+   * returned document is the same shape `ProgramDocumentCodec` writes, with the exercises the plan
+   * names and their ancestors, and no history.
+   */
+  function programDocumentFromBackup(backup, programId) {
+    if (!isObject(backup) || !Array.isArray(backup.programs)) { return null; }
+    var program = editorFind(backup.programs, programId);
+    if (!program || program.deletedAt) { return null; }
+
+    var slots = (backup.programSlots || []).filter(function (slot) {
+      return slot && slot.programId === programId && !slot.deletedAt;
+    });
+    var templateIds = {};
+    slots.forEach(function (slot) { templateIds[slot.templateId] = true; });
+
+    var templates = (backup.templates || []).filter(function (template) {
+      return template && templateIds[template.id] && !template.deletedAt;
+    });
+    var exerciseRowIds = {};
+    var templateExercises = (backup.templateExercises || []).filter(function (planned) {
+      if (!planned || planned.deletedAt || !templateIds[planned.templateId]) { return false; }
+      exerciseRowIds[planned.id] = true;
+      return true;
+    });
+    var templateSets = (backup.templateSets || []).filter(function (set) {
+      return set && !set.deletedAt && exerciseRowIds[set.templateExerciseId];
+    });
+
+    var byId = {};
+    (backup.exercises || []).forEach(function (row) { if (row && row.id) { byId[row.id] = row; } });
+    var carried = {};
+    templateExercises.forEach(function (planned) {
+      var row = byId[planned.exerciseId];
+      if (!row) { return; }
+      carried[row.id] = row;
+      var guard = 0;
+      var parent = byId[row.parentId];
+      while (parent && guard < 32) {
+        carried[parent.id] = parent;
+        parent = byId[parent.parentId];
+        guard += 1;
+      }
+    });
+
+    return {
+      formatVersion: PROGRAM_FORMAT_VERSION_FOR_EDITOR,
+      exportedAt: typeof backup.exportedAt === 'number' ? backup.exportedAt : Date.now(),
+      program: editorDeepCopy(program),
+      slots: editorDeepCopy(slots),
+      templates: editorDeepCopy(templates),
+      templateExercises: editorDeepCopy(templateExercises),
+      templateSets: editorDeepCopy(templateSets),
+      exercises: Object.keys(carried).map(function (id) { return editorDeepCopy(carried[id]); })
+    };
+  }
+
+  var PROGRAM_FORMAT_VERSION_FOR_EDITOR = 4;
+
+  /** Resolves a typed name to an id, creating or carrying a movement when it is new (N47). */
+  function editorResolveExercise(working, name) {
+    var trimmed = String(name === null || name === undefined ? '' : name).trim();
+    var normalized = normalizeName(trimmed);
+    if (normalized === '') { return null; }
+    var known = (working.exercises || []).filter(function (row) {
+      return row && isLoggableRow(row) && normalizeName(row.name) === normalized;
+    })[0];
+    if (known) { return known.id; }
+
+    var seeded = (editorGlobal().SEEDED_EXERCISES || []).filter(function (row) {
+      return isLoggableRow(row) && normalizeName(row.name) === normalized;
+    })[0];
+    if (seeded) {
+      working.exercises.push(programExerciseDto(seeded, Date.now()));
+      return seeded.id;
+    }
+
+    var now = Date.now();
+    var id = editorNewId('ex');
+    working.exercises.push({
+      id: id,
+      name: trimmed,
+      primaryMuscle: null,
+      secondaryMuscles: [],
+      equipment: null,
+      movementPattern: null,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+      restSeconds: null,
+      techniqueNote: null,
+      weightUnit: null,
+      stepGrams: null,
+      parentId: null,
+      rowKind: 'MOVEMENT'
+    });
+    return id;
+  }
+
+  function editorAddDay(working) {
+    var now = Date.now();
+    var template = {
+      id: editorNewId('tpl'),
+      name: 'New day',
+      versionOf: null,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null
+    };
+    working.templates.push(template);
+    working.slots.push({
+      id: editorNewId('slot'),
+      programId: working.program.id,
+      templateId: template.id,
+      position: editorNextPosition(working.slots),
+      weekday: null,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null
+    });
+  }
+
+  function editorAddExercise(working, templateId, exerciseId) {
+    var now = Date.now();
+    var inTemplate = (working.templateExercises || []).filter(function (row) {
+      return row && row.templateId === templateId;
+    });
+    working.templateExercises.push({
+      id: editorNewId('tex'),
+      templateId: templateId,
+      exerciseId: exerciseId,
+      position: editorNextPosition(inTemplate),
+      restSeconds: null,
+      techniqueNote: null,
+      targetRpeHalves: null,
+      supersetGroup: null,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null
+    });
+  }
+
+  function editorAddSet(working, templateExerciseId) {
+    var rows = (working.templateSets || []).filter(function (row) {
+      return row && row.templateExerciseId === templateExerciseId;
+    }).sort(function (a, b) { return a.setIndex - b.setIndex; });
+    var last = rows.length > 0 ? rows[rows.length - 1] : null;
+    var carriesTargets = last && !editorRung(last.role);
+    var now = Date.now();
+    working.templateSets.push({
+      id: editorNewId('tset'),
+      templateExerciseId: templateExerciseId,
+      setIndex: editorNextSetIndex(rows),
+      role: 'NORMAL',
+      targetWeightGrams: carriesTargets ? last.targetWeightGrams : null,
+      targetAssistanceGrams: carriesTargets ? last.targetAssistanceGrams : null,
+      targetRepsMin: carriesTargets ? last.targetRepsMin : null,
+      targetRepsMax: carriesTargets ? last.targetRepsMax : null,
+      targetRepsCurrent: null,
+      dropValueGrams: null,
+      note: null,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null
+    });
+  }
+
+  function editorRemoveDay(working, slot) {
+    working.slots = working.slots.filter(function (row) { return row !== slot; });
+    var stillUsed = working.slots.some(function (row) { return row.templateId === slot.templateId; });
+    if (stillUsed) { return; }
+    // A workout no other day uses leaves the document with its plan; the app keeps the row in its
+    // library, which is the app's own removal rule and the plan's WORKOUT_KEPT warning.
+    var exercises = (working.templateExercises || []).filter(function (row) {
+      return row && row.templateId === slot.templateId;
+    });
+    var exerciseIds = {};
+    exercises.forEach(function (row) { exerciseIds[row.id] = true; });
+    working.templateExercises = working.templateExercises.filter(function (row) {
+      return !exerciseIds[row.id];
+    });
+    working.templateSets = working.templateSets.filter(function (row) {
+      return !exerciseIds[row.templateExerciseId];
+    });
+    working.templates = working.templates.filter(function (row) { return row.id !== slot.templateId; });
+  }
+
+  function editorRemoveExercise(working, planned) {
+    working.templateSets = working.templateSets.filter(function (row) {
+      return row.templateExerciseId !== planned.id;
+    });
+    working.templateExercises = working.templateExercises.filter(function (row) {
+      return row !== planned;
+    });
+  }
+
+  function editorMove(rows, row, delta) {
+    var ordered = rows.slice().sort(function (a, b) { return a.position - b.position; });
+    var index = ordered.indexOf(row);
+    var swap = ordered[index + delta];
+    if (!swap) { return; }
+    var at = row.position;
+    row.position = swap.position;
+    swap.position = at;
+  }
+
+  function editorSharedProgramNames(working, catalogFile) {
+    if (!isObject(catalogFile) || !Array.isArray(catalogFile.programSlots) || !Array.isArray(catalogFile.programs)) {
+      return [];
+    }
+    var templateIds = {};
+    (working.templates || []).forEach(function (row) { templateIds[row.id] = true; });
+    var names = {};
+    catalogFile.programSlots.forEach(function (slot) {
+      if (!slot || slot.deletedAt || slot.programId === working.program.id || !templateIds[slot.templateId]) {
+        return;
+      }
+      var program = editorFind(catalogFile.programs, slot.programId);
+      if (program && !program.deletedAt) { names[program.name] = true; }
+    });
+    return Object.keys(names).sort();
+  }
+
+  /* --- the DOM ------------------------------------------------------------------------------- */
+
+  function editorMessage(text) {
+    setText(ui.elements.editorStatus, text);
+  }
+
+  function editorButton(label, onClick) {
+    var button = h('button', 'secondary', label);
+    button.type = 'button';
+    button.addEventListener('click', onClick);
+    return button;
+  }
+
+  function editorTextField(label, value, onInput, options) {
+    options = options || {};
+    var wrap = h('label', 'editor-field');
+    wrap.appendChild(h('span', 'editor-field-label', label));
+    var input = document.createElement('input');
+    input.type = options.type || 'text';
+    if (options.step) { input.step = options.step; }
+    if (options.list) { input.setAttribute('list', options.list); }
+    if (options.placeholder) { input.placeholder = options.placeholder; }
+    input.value = value === null || value === undefined ? '' : String(value);
+    input.addEventListener(options.event || 'input', function () { onInput(input.value); });
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  function editorSelect(label, values, value, onChange) {
+    var wrap = h('label', 'editor-field');
+    wrap.appendChild(h('span', 'editor-field-label', label));
+    var select = document.createElement('select');
+    values.forEach(function (option) {
+      var node = document.createElement('option');
+      node.value = option.value;
+      node.textContent = option.label;
+      select.appendChild(node);
+    });
+    select.value = value === null || value === undefined ? '' : String(value);
+    select.addEventListener('change', function () { onChange(select.value); });
+    wrap.appendChild(select);
+    return wrap;
+  }
+
+  function editorRenderExerciseNames(host, working) {
+    var list = document.createElement('datalist');
+    list.id = 'editorExerciseNames';
+    var seen = {};
+    (working.exercises || []).forEach(function (row) {
+      if (!row || !isLoggableRow(row) || seen[normalizeName(row.name)]) { return; }
+      seen[normalizeName(row.name)] = true;
+      var option = document.createElement('option');
+      option.value = row.name;
+      list.appendChild(option);
+    });
+    (editorGlobal().SEEDED_EXERCISES || []).forEach(function (row) {
+      if (!isLoggableRow(row) || seen[normalizeName(row.name)]) { return; }
+      seen[normalizeName(row.name)] = true;
+      var option = document.createElement('option');
+      option.value = row.name;
+      list.appendChild(option);
+    });
+    host.appendChild(list);
+  }
+
+  function editorRender() {
+    var ed = ui.state.programEditor;
+    var host = ui.elements.programEditorHost;
+    if (!host) { return; }
+    host.textContent = '';
+    var has = ed && ed.working;
+    ui.elements.previewProgramEdit.disabled = !has;
+    ui.elements.downloadProgramEdit.disabled = true;
+    ui.elements.saveProgramDraft.disabled = !has;
+    if (!has) {
+      editorMessage('Open a program the app exported, or a draft.');
+      return;
+    }
+    var working = ed.working;
+    setText(
+      ui.elements.editorStatus,
+      'Editing "' + (working.program.name || 'a program') + '" from ' + (ed.fileName || 'a file') +
+        '. Nothing is written until the app applies the edit.'
+    );
+
+    host.appendChild(
+      editorTextField('Program name', working.program.name, function (value) {
+        working.program.name = value;
+      })
+    );
+    editorRenderExerciseNames(host, working);
+
+    var days = (working.slots || []).slice().sort(function (a, b) { return a.position - b.position; });
+    days.forEach(function (slot) { host.appendChild(editorDayNode(working, slot)); });
+
+    var addDay = h('div', 'editor-add');
+    addDay.appendChild(editorButton('Add a day', function () {
+      editorAddDay(working);
+      editorRender();
+    }));
+    host.appendChild(addDay);
+  }
+
+  function editorDayNode(working, slot) {
+    var template = editorFind(working.templates, slot.templateId);
+    var section = h('section', 'editor-day');
+    var head = h('div', 'editor-day-head');
+    head.appendChild(h('h3', '', template ? template.name : 'A workout this file does not carry'));
+
+    var weekdayOptions = [{ value: '', label: 'Any day' }].concat(
+      EDITOR_WEEKDAYS.map(function (day) { return { value: day, label: programWeekdayLabel(day) }; })
+    );
+    head.appendChild(editorSelect('Day', weekdayOptions, slot.weekday || '', function (value) {
+      slot.weekday = value === '' ? null : value;
+    }));
+
+    var orderedSlots = working.slots.slice().sort(function (a, b) { return a.position - b.position; });
+    head.appendChild(editorButton('\u2191', function () {
+      editorMove(orderedSlots, slot, -1);
+      editorRender();
+    }));
+    head.appendChild(editorButton('\u2193', function () {
+      editorMove(orderedSlots, slot, 1);
+      editorRender();
+    }));
+    head.appendChild(editorButton('Remove day', function () {
+      editorRemoveDay(working, slot);
+      editorRender();
+    }));
+    section.appendChild(head);
+
+    if (template) {
+      section.appendChild(
+        editorTextField('Workout name', template.name, function (value) {
+          template.name = value;
+        })
+      );
+      var planned = (working.templateExercises || []).filter(function (row) {
+        return row && row.templateId === template.id;
+      }).sort(function (a, b) { return a.position - b.position; });
+      planned.forEach(function (row) {
+        section.appendChild(editorExerciseNode(working, template, row));
+      });
+      var add = h('div', 'editor-add');
+      var nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.setAttribute('list', 'editorExerciseNames');
+      nameInput.placeholder = 'Add an exercise';
+      add.appendChild(nameInput);
+      add.appendChild(editorButton('Add exercise', function () {
+        var exerciseId = editorResolveExercise(working, nameInput.value);
+        if (!exerciseId) { editorMessage('Type a movement to add.'); return; }
+        editorAddExercise(working, template.id, exerciseId);
+        editorRender();
+      }));
+      section.appendChild(add);
+    }
+
+    return section;
+  }
+
+  function editorExerciseNode(working, template, planned) {
+    var exercise = editorFind(working.exercises, planned.exerciseId);
+    var node = h('div', 'editor-exercise');
+    var head = h('div', 'editor-exercise-head');
+    var nameField = editorTextField(
+      'Exercise',
+      exercise ? exercise.name : planned.exerciseId,
+      function (value) {
+        var exerciseId = editorResolveExercise(working, value);
+        if (exerciseId) { planned.exerciseId = exerciseId; }
+      },
+      // On change, not on every keystroke: a half-typed name is not a new movement.
+      { list: 'editorExerciseNames', event: 'change' }
+    );
+    head.appendChild(nameField);
+    head.appendChild(editorTextField('Rest (s)', planned.restSeconds, function (value) {
+      planned.restSeconds = editorParseInt(value);
+    }, { type: 'number', step: '1' }));
+    head.appendChild(editorTextField('RPE', typeof planned.targetRpeHalves === 'number' ? planned.targetRpeHalves / 2 : '', function (value) {
+      planned.targetRpeHalves = editorParseHalves(value);
+    }, { type: 'number', step: '0.5' }));
+    head.appendChild(editorTextField('Superset', planned.supersetGroup, function (value) {
+      planned.supersetGroup = editorParseInt(value);
+    }, { type: 'number', step: '1' }));
+    head.appendChild(editorButton('\u2191', function () {
+      editorMove(
+        working.templateExercises.filter(function (row) { return row.templateId === template.id; }),
+        planned,
+        -1
+      );
+      editorRender();
+    }));
+    head.appendChild(editorButton('\u2193', function () {
+      editorMove(
+        working.templateExercises.filter(function (row) { return row.templateId === template.id; }),
+        planned,
+        1
+      );
+      editorRender();
+    }));
+    head.appendChild(editorButton('Remove', function () {
+      editorRemoveExercise(working, planned);
+      editorRender();
+    }));
+    node.appendChild(head);
+
+    var note = editorTextField('Cue', planned.techniqueNote || '', function (value) {
+      planned.techniqueNote = value.trim() === '' ? null : value;
+    });
+    note.className = 'editor-field-wide';
+    node.appendChild(note);
+
+    var sets = (working.templateSets || []).filter(function (row) {
+      return row && row.templateExerciseId === planned.id;
+    }).sort(function (a, b) { return a.setIndex - b.setIndex; });
+    sets.forEach(function (set) { node.appendChild(editorSetNode(working, set)); });
+
+    var add = h('div', 'editor-add');
+    add.appendChild(editorButton('Add set', function () {
+      editorAddSet(working, planned.id);
+      editorRender();
+    }));
+    node.appendChild(add);
+    return node;
+  }
+
+  function editorSetNode(working, set) {
+    var row = h('div', 'editor-set');
+    row.appendChild(editorSelect('Role', EDITOR_ROLES.map(function (role) {
+      return { value: role, label: roleLabel(role) };
+    }), set.role, function (value) {
+      set.role = value;
+      if (editorRung(value)) {
+        // A rung's load and reps are derived from its anchor (N79); writing them back would put a
+        // number on the row that nothing reads, which the shared validation also refuses.
+        set.targetWeightGrams = null;
+        set.targetAssistanceGrams = null;
+        set.targetRepsMin = null;
+        set.targetRepsMax = null;
+        set.targetRepsCurrent = null;
+      }
+      editorRender();
+    }));
+
+    row.appendChild(editorTextField('Set', set.setIndex, function (value) {
+      var parsed = editorParseInt(value);
+      if (parsed !== null) { set.setIndex = parsed; }
+    }, { type: 'number', step: '1' }));
+
+    if (!editorRung(set.role)) {
+      row.appendChild(editorTextField('Reps from', set.targetRepsMin, function (value) {
+        set.targetRepsMin = editorParseInt(value);
+      }, { type: 'number', step: '1' }));
+      row.appendChild(editorTextField('Reps to', set.targetRepsMax, function (value) {
+        set.targetRepsMax = editorParseInt(value);
+      }, { type: 'number', step: '1' }));
+      row.appendChild(editorTextField('At', set.targetRepsCurrent, function (value) {
+        set.targetRepsCurrent = editorParseInt(value);
+      }, { type: 'number', step: '1' }));
+      row.appendChild(editorTextField('Load (kg, -assist)', editorLoadText(set.targetWeightGrams, set.targetAssistanceGrams), function (value) {
+        var load = editorParseLoad(value);
+        if (load) {
+          set.targetWeightGrams = load.weightGrams;
+          set.targetAssistanceGrams = load.assistanceGrams;
+        }
+      }));
+    } else {
+      row.appendChild(h('span', 'hint', 'Load and reps come from the set above.'));
+    }
+
+    if (set.role === 'DROP') {
+      row.appendChild(editorTextField('Drop (kg)', typeof set.dropValueGrams === 'number' ? editorKg(set.dropValueGrams) : '', function (value) {
+        var load = editorParseLoad(value);
+        set.dropValueGrams = load && load.weightGrams !== null ? load.weightGrams : null;
+      }));
+    }
+
+    row.appendChild(editorTextField('Note', set.note || '', function (value) {
+      set.note = value.trim() === '' ? null : value;
+    }));
+    row.appendChild(editorButton('Remove', function () {
+      working.templateSets = working.templateSets.filter(function (candidate) { return candidate !== set; });
+      editorRender();
+    }));
+    return row;
+  }
+
+  function editorProblemText(problem) {
+    var messages = {
+      STALE_BASE: 'This program changed on the phone since this export. Export it again and redo the edit.',
+      PROGRAM_MISSING: 'The app does not have this program.',
+      PROGRAM_MISMATCH: 'This edit names a different program from the one it was made from.',
+      NO_EDIT_MARKER: 'This file does not say which export it came from.',
+      INVALID_SET_INDEX: 'Two sets in one exercise share an index.',
+      INVALID_RUNG: 'A drop or cluster set needs a set above it that stands on its own.',
+      INVALID_REPS: 'A rep target is not usable.',
+      INVALID_LOAD: 'A load is not usable.',
+      INVALID_RPE: 'An effort target must be between 1 and 10.',
+      INVALID_POSITION: 'A row has no place in its order.',
+      DANGLING_SLOT_TEMPLATE: 'A day names a workout this file does not carry.',
+      DANGLING_TEMPLATE_EXERCISE: 'An exercise names a workout this file does not carry.',
+      DANGLING_SET: 'A set names an exercise this file does not carry.',
+      DANGLING_EXERCISE: 'A plan names a movement this file does not carry.',
+      DUPLICATE_ID: 'Two rows share an id.',
+      EMPTY_NAME: 'A name is empty.',
+      MALFORMED: 'The file is not shaped like a program.',
+      NEWER_VERSION: 'The file is newer than this page.',
+      OLDER_VERSION: 'The file is older than this page.',
+      MISSING_VERSION: 'The file names no version.'
+    };
+    var message = messages[problem.code] || ('The app refused the edit (' + problem.code + ').');
+    return problem.path ? message + ' (' + problem.path + ')' : message;
+  }
+
+  function editorChangeText(change) {
+    var labels = {
+      PROGRAM_RENAMED: 'Rename the program',
+      SLOT_ADDED: 'Add a day',
+      SLOT_UPDATED: 'Change a day',
+      SLOT_REMOVED: 'Remove a day',
+      TEMPLATE_ADDED: 'Add a workout',
+      TEMPLATE_UPDATED: 'Change a workout',
+      TEMPLATE_EXERCISE_ADDED: 'Add an exercise',
+      TEMPLATE_EXERCISE_UPDATED: 'Change an exercise',
+      TEMPLATE_EXERCISE_REMOVED: 'Remove an exercise',
+      SET_ADDED: 'Add a set',
+      SET_UPDATED: 'Change a set',
+      SET_REMOVED: 'Remove a set',
+      EXERCISE_ADDED: 'Add a movement'
+    };
+    var label = labels[change.kind] || change.kind;
+    return change.name ? label + ': ' + change.name : label;
+  }
+
+  function editorOpenText(text, fileName, mode) {
+    var parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (ignored) {
+      editorMessage('That does not look like JSON.');
+      return;
+    }
+    if (isObject(parsed) && parsed.kind === EDITOR_DRAFT_KIND) {
+      editorLoadDraft(parsed, fileName);
+      return;
+    }
+    if (mode === 'draft') {
+      editorMessage('That is not a draft this page wrote.');
+      return;
+    }
+    if (isObject(parsed) && typeof parsed.formatVersion === 'number' && isObject(parsed.program)) {
+      if (isObject(parsed.edit)) {
+        editorMessage('That is an edit, not a program. Open the program\'s export, or a draft.');
+        return;
+      }
+      editorLoadDocument(parsed, fileName);
+      return;
+    }
+    if (isObject(parsed) && Array.isArray(parsed.programs)) {
+      editorOfferBackup(parsed, fileName);
+      return;
+    }
+    editorMessage('That does not look like a program document or a backup.');
+  }
+
+  function editorLoadDocument(document, fileName) {
+    var original = editorDeepCopy(document);
+    var working = editorDeepCopy(document);
+    working.edit = { baseExportedAt: original.exportedAt };
+    ui.state.programEditor = {
+      original: original,
+      working: working,
+      fileName: fileName || '',
+      preview: null
+    };
+    ui.elements.editorPreview.textContent = '';
+    editorRender();
+  }
+
+  function editorLoadDraft(draft, fileName) {
+    if (!isObject(draft.original) || !isObject(draft.working)) {
+      editorMessage('That draft is missing its program.');
+      return;
+    }
+    var working = editorDeepCopy(draft.working);
+    working.edit = { baseExportedAt: draft.original.exportedAt };
+    ui.state.programEditor = {
+      original: editorDeepCopy(draft.original),
+      working: working,
+      fileName: fileName || '',
+      preview: null
+    };
+    ui.elements.editorPreview.textContent = '';
+    editorRender();
+  }
+
+  function editorOfferBackup(backup, fileName) {
+    var programs = (backup.programs || []).filter(function (row) { return row && !row.deletedAt; });
+    if (programs.length === 0) {
+      editorMessage('That backup holds no programs.');
+      return;
+    }
+    var host = ui.elements.programEditorHost;
+    host.textContent = '';
+    host.appendChild(h('p', 'hint', 'That is a backup. Choose the program to edit:'));
+    var select = document.createElement('select');
+    programs.forEach(function (program) {
+      var option = document.createElement('option');
+      option.value = program.id;
+      option.textContent = program.name;
+      select.appendChild(option);
+    });
+    host.appendChild(select);
+    host.appendChild(editorButton('Edit this program', function () {
+      var document = programDocumentFromBackup(backup, select.value);
+      if (!document) {
+        editorMessage('That program cannot be read from this backup.');
+        return;
+      }
+      editorLoadDocument(document, fileName);
+    }));
+    editorMessage('A program taken from a backup carries the time the backup was made; the app refuses the edit if the program changed after that.');
+  }
+
+  function editorPreview() {
+    var core = programCore();
+    var ed = ui.state.programEditor;
+    if (!core || !ed || !ed.working) { return; }
+    var planned;
+    try {
+      planned = JSON.parse(core.planJson(JSON.stringify(ed.original), JSON.stringify(ed.working)));
+    } catch (problem) {
+      editorMessage('The shared core could not plan this edit: ' + problem);
+      return;
+    }
+    ed.preview = planned;
+    ui.elements.downloadProgramEdit.disabled = !planned.ok;
+    var host = ui.elements.editorPreview;
+    host.textContent = '';
+    if (!planned.ok) {
+      host.appendChild(h('p', 'refusal', 'The app would refuse this edit:'));
+      var problems = document.createElement('ul');
+      (planned.problems || []).forEach(function (problem) {
+        problems.appendChild(h('li', '', editorProblemText(problem)));
+      });
+      host.appendChild(problems);
+      editorMessage('The edit is not ready; fix the problems above.');
+      return;
+    }
+
+    var counts = {};
+    (planned.changes || []).forEach(function (change) {
+      counts[change.kind] = (counts[change.kind] || 0) + 1;
+    });
+    var summary = Object.keys(counts).map(function (kind) {
+      return counts[kind] + ' \u00d7 ' + (editorChangeText({ kind: kind }).toLowerCase());
+    });
+    host.appendChild(h('p', '', summary.length > 0 ? 'The app would: ' + summary.join(' \u00b7 ') + '.' : 'The app would change nothing.'));
+
+    var list = document.createElement('ul');
+    (planned.changes || []).forEach(function (change) {
+      list.appendChild(h('li', '', editorChangeText(change)));
+    });
+    if ((planned.changes || []).length > 0) { host.appendChild(list); }
+
+    (planned.warnings || []).forEach(function (warning) {
+      if (warning.code === 'NEW_MOVEMENT') {
+        host.appendChild(h('p', 'hint', 'The app will create the movement "' + (warning.name || warning.id) + '".'));
+      } else if (warning.code === 'WORKOUT_KEPT') {
+        host.appendChild(h('p', 'hint', 'The workout "' + (warning.name || warning.id) + '" stays in the app\'s library.'));
+      }
+    });
+    var shared = editorSharedProgramNames(ed.working, ui.state.catalogFile);
+    if (shared.length > 0) {
+      host.appendChild(h('p', 'hint', 'Also used by ' + shared.join(', ') + '; this edit changes them too.'));
+    }
+    editorMessage('Ready: download the edit and load it in Programs \u2192 Load.');
+  }
+
+  function editorDownload() {
+    var ed = ui.state.programEditor;
+    if (!ed || !ed.working || !ed.preview || !ed.preview.ok) { return; }
+    downloadText(JSON.stringify(ed.working, null, 2) + '\n', 'program-edit.json');
+    announce('Downloaded program-edit.json. Load it in Programs, then Load.');
+  }
+
+  function editorSaveDraft() {
+    var ed = ui.state.programEditor;
+    if (!ed || !ed.working) { return; }
+    var draft = {
+      kind: EDITOR_DRAFT_KIND,
+      version: 1,
+      original: ed.original,
+      working: ed.working
+    };
+    downloadText(JSON.stringify(draft, null, 2) + '\n', 'program-draft.json');
+    announce('Downloaded program-draft.json. Nothing is stored in the page.');
+  }
+
+  function downloadText(text, name) {
+    var blob = new Blob([text], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+  }
+
+  function editorInit(elements) {
+    var core = programCore();
+    if (!core) {
+      if (elements.editorUnavailable) { elements.editorUnavailable.hidden = false; }
+      elements.openProgramFile.disabled = true;
+      elements.openProgramDraft.disabled = true;
+      return;
+    }
+    elements.openProgramFile.addEventListener('click', function () {
+      editorPickMode = 'program';
+      elements.editorFile.click();
+    });
+    elements.openProgramDraft.addEventListener('click', function () {
+      editorPickMode = 'draft';
+      elements.editorFile.click();
+    });
+    elements.editorFile.addEventListener('change', function () {
+      var file = elements.editorFile.files && elements.editorFile.files[0];
+      if (file) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          editorOpenText(String(reader.result || ''), file.name, editorPickMode);
+        };
+        reader.onerror = function () { editorMessage('That file could not be read.'); };
+        reader.readAsText(file);
+      }
+      elements.editorFile.value = '';
+    });
+    elements.previewProgramEdit.addEventListener('click', editorPreview);
+    elements.downloadProgramEdit.addEventListener('click', editorDownload);
+    elements.saveProgramDraft.addEventListener('click', editorSaveDraft);
+  }
+
   return {
     SCHEMA_VERSION: SCHEMA_VERSION,
     DEFAULT_DURATION_MINUTES: DEFAULT_DURATION_MINUTES,
@@ -6173,6 +7068,18 @@
     exportSnapshot: exportSnapshot,
     parseWaistlineDoc: parseWaistlineDoc,
     parseProgramSheet: parseProgramSheet,
+    programDocumentFromBackup: programDocumentFromBackup,
+    editorLoadText: editorLoadText,
+    editorParseLoad: editorParseLoad,
+    editorResolveExercise: editorResolveExercise,
+    editorAddDay: editorAddDay,
+    editorAddExercise: editorAddExercise,
+    editorAddSet: editorAddSet,
+    editorRemoveDay: editorRemoveDay,
+    editorRemoveExercise: editorRemoveExercise,
+    editorMove: editorMove,
+    editorParseInt: editorParseInt,
+    editorParseHalves: editorParseHalves,
     buildProgramDocument: buildProgramDocument,
     programClashNote: programClashNote,
     looksLikeProgramTable: looksLikeProgramTable,

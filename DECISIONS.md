@@ -1287,6 +1287,19 @@ the rule; that one argues it.
   are untouched. The marker is an optional field at **format 4**, so an older build ignores it and
   no-ops as it already does, and no schema changes: staleness is answered from timestamps already on
   the rows. ([evidence](DECISIONS-EVIDENCE.md#n171))
+- **The page edits the document, and its preview is the app's plan** (N172). A program the app exported,
+  a program taken from a backup, or a draft opens as a document, and every part of it — the name, the
+  days and weekdays, each workout's exercises with rest, RPE, superset and cue, and each planned set's
+  role, range, current rung, load or assistance, drop value and note — is editable. **The model is the
+  document**, so a field the UI does not know is still carried, and new rows mint their own ids and
+  timestamps while existing rows keep theirs (which is what the app's staleness check reads). *Preview
+  changes* runs the shared core's `plan`, not a paragraph written beside it, so the page cannot promise
+  a change the app would refuse; the app plans again inside its transaction (N171). **A draft is a
+  file**: the snapshot and the working copy are downloaded together and opened again, because the page
+  stores nothing. **The library is read-only here** — a name can become a movement, an existing row is
+  never renamed or retyped — and **history is not the page's**: sessions, skips, deloads and
+  substitutions are not in a program document. The table path still creates; changing a program is this
+  panel's or the app's job.
 
 ## Rules that apply to every change
 

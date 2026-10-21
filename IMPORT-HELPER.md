@@ -38,14 +38,16 @@ the only moment a bad value can be caught.
 
 In scope: **importing history** — sessions, their exercises, their sets, and the definitions of the exercises
 they reference — **one movement's progress** drawn from the export the lifter loaded (N165), **daily body
-data** from a Waistline backup (N166), and **a program document** from a table (N167).
+data** from a Waistline backup (N166), **a program document** from a table (N167), and **editing a program's
+document** (N172), previewed by the app's own core.
 
 Out of scope, each deliberately:
 
-- **Editing a program.** The sheet creates one; the app inserts by id and never overwrites, so the app is
-  where a program is changed. A full editor — substitutions, deload weeks, versions, skips — is not planned
-  here. The document format itself is the app's
-  ([`ProgramDocument`](app/src/main/java/com/example/androidapp/data/transfer/ProgramDocument.kt)).
+- **Editing history.** Sessions, recorded skips, deload weeks and substitutions are the lifter's record and
+  are not part of a program document; they stay the app's. The editor changes the program's *definition* —
+  its days, workouts, planned exercises and sets — and the edit it writes is applied by the app.
+- **Storage of any kind.** A draft is a file the page downloads and opens again; nothing is kept in the
+  browser, and the page still makes no request.
 - **`.xlsx` parsing.** Reading a zip container needs a dependency, which the constraints below forbid.
   Exporting the sheet as CSV is one menu item in every spreadsheet program.
 - **A server, accounts, sync, telemetry, a service worker, or a build step.**
@@ -352,14 +354,18 @@ assert it.
 
 ## The editor
 
-One page, four panels:
+One page, five panels:
 
 1. **Source** — a drop zone for any number of files, a paste box, an optional *load your app export*, a CSV
    mode, and the prompt for the model with a copy button. The seeded library is already loaded from
    `seed-catalog.js`; an export adds the lifter's own exercises, the dry-run comparison and the id check.
    Below it, the **loaded lists**: one row each, with its row count, its own revision, a Remove, and a Combine line for a date two
    lists share.
-2. **Sessions** — one collapsible row per session: date, exercise count, set count, work tonnage, warm-up
+2. **Program editor** (N172) — open a program the app exported, a program from a backup, or a draft; change
+   its days, workouts, exercises and sets; preview the app's own plan of the edit; download the edit or a
+   draft. It shows the document's whole shape, including roles, rungs, supersets, assistance and notes, so a
+   round trip cannot drop a field the table never knew.
+3. **Sessions** — one collapsible row per session: date, exercise count, set count, work tonnage, warm-up
    count, a problem badge. Expanded, the header carries date, time, duration and the **UTC offset in
    minutes** — empty derives it from the browser, a number is the lifter's own — and each exercise block is a
    table of sets with editable reps, weight and unit, RPE and role. The exercise name is a text input backed
@@ -369,9 +375,9 @@ One page, four panels:
    The **exercise mapping** above them is the same idea: its *Linked to* cell is a searchable field over the
    sorted library rather than a select, *Create new exercise* keeps the sheet's own name, and a typed name the
    library does not have is refused and the previous choice restored, so a typo cannot become a duplicate row.
-3. **Problems** — counts and a list; selecting one scrolls to and focuses its row. A *show only problems*
+4. **Problems** — counts and a list; selecting one scrolls to and focuses its row. A *show only problems*
    filter.
-4. **Export** — *will add N sessions, M sets; K sessions already exist and will be skipped; J new
+5. **Export** — *will add N sessions, M sets; K sessions already exist and will be skipped; J new
    exercises*; Download `workout-backup.json`, and a copy-to-clipboard fallback. Refused while a blocking
    problem exists, with the first three named.
 
@@ -418,6 +424,27 @@ rounds, one past the ceiling, and a single — and writes the whole input and ex
 `fixtures/progress-series.js`. The tool's test page runs its series over the same rows and asserts the same
 points.
 
+## Program editor
+
+A program the app **exported** (Programs → a program → ⋮ → Export), a program taken from a backup, or a
+draft opens as a document. Every part of it is editable — the program's name, its days and weekdays, each
+workout's name, its exercises with rest, target RPE, superset group and cue, and each planned set's role,
+rep range and current rung, load or assistance, drop value and note. The model is the document itself, so
+what the page does not change it still carries: a field this UI never learned cannot be lost by a round trip.
+
+- **The preview is the app's plan, not the page's opinion.** *Preview changes* sends the opened document and
+  the edited one to the shared core (N170), and shows the same change list and refusals the app will produce.
+  The page has no second implementation of the rules.
+- **The edit names its base.** A downloaded edit carries `edit.baseExportedAt`, the export's own timestamp; the
+  app refuses it if the program changed since (N171). A program taken from a backup carries the backup's time,
+  so an old backup is refused rather than merged.
+- **The library is read-only.** A new name can be created as a movement; an existing one is never renamed or
+  retyped here, because every plan and every session reads it.
+- **A draft is a file.** *Save draft* downloads the opened snapshot and the working copy together; *Open draft*
+  restores both. Nothing is written to the browser, and the page still makes no request.
+- **Create, not edit, remains the sheet's rule.** The table path still writes a new program; changing one is
+  this panel's job, and the app is where the change is applied.
+
 ## Program sheet
 
 A table dropped into the page becomes a **program document** (`formatVersion` 4) the app imports from
@@ -434,9 +461,9 @@ is the intended input.
 - **Loads are kilograms**, converted to whole grams.
 - **Create, not edit.** A sheet-derived program's id is a slug of its name, and the app ends the merge when a
   live program already holds that id — so re-importing the sheet adds nothing, and a sheet changed after it
-  was imported (a new day, a different load) changes nothing either. The app is where a program is edited
-  (B180). A program the lifter deleted comes back when its sheet is loaded again, un-hidden but not
-  re-followed.
+  was imported (a new day, a different load) changes nothing either. A program that exists is changed with the
+  **program editor** above (N172) or in the app (B180). A program the lifter deleted comes back when its sheet
+  is loaded again, un-hidden but not re-followed.
 - **A same name is not always the same program.** With an export loaded, the preview says which case applies:
   this program is already there (nothing to add), it is there as deleted (the load restores it), or a
   *different* program carries the name (the load adds a second one, because it never renames or overwrites).

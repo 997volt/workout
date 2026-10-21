@@ -1205,3 +1205,87 @@ tbody tr:last-child td {
 .program-table td:first-child {
   width: 16rem;
 }
+
+/* ---------------------------------------------------------------------------------------------
+ * The program editor (ROADMAP N172)
+ *
+ * Rows rather than a table: a day, its exercises and their sets are three nested shapes, and a
+ * table would force the set fields into columns that change width per role.
+ * ------------------------------------------------------------------------------------------- */
+
+.program-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.editor-day {
+  border: 1px solid var(--rule, #d9d4c7);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.editor-day-head,
+.editor-exercise-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.editor-day-head h3 {
+  margin: 0 8px 4px 0;
+}
+
+.editor-exercise {
+  border-top: 1px dashed var(--rule, #d9d4c7);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editor-set {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 6px 0 6px 12px;
+  border-left: 2px solid var(--rule, #d9d4c7);
+}
+
+.editor-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 96px;
+}
+
+.editor-field-wide {
+  max-width: 520px;
+}
+
+.editor-field-label {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.editor-field input,
+.editor-field select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.editor-add {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.editor-add input {
+  min-width: 220px;
+}

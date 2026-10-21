@@ -12,8 +12,8 @@ file**.
   are stable and go in commits. Forward-looking, not binding.
 - **What the import helper is** — [IMPORT-HELPER.md](IMPORT-HELPER.md); the zero-dependency page in
   [`docs/`](docs/) that turns old spreadsheets into a backup file, charts one lift's progress from a
-  loaded export, converts Waistline body data (N166), and turns a program table into a program document
-  (N167). Its settled rules are in [DECISIONS.md](DECISIONS.md); its output is decoded by the app's own
+  loaded export, converts Waistline body data (N166), turns a program table into a program document
+  (N167), and edits a program's document with the same core the app applies (N172). Its settled rules are in [DECISIONS.md](DECISIONS.md); its output is decoded by the app's own
   JVM test (N160), and its progress series is pinned to the app's trend (N165).
 - **What is settled** — [DECISIONS.md](DECISIONS.md); the rules that bind every change,
   argued in [DECISIONS-EVIDENCE.md](DECISIONS-EVIDENCE.md).

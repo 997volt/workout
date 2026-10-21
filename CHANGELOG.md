@@ -35,6 +35,15 @@ unreleased.
   build ignores the marker and no-ops, exactly as it already does), there is no schema change, and a
   removal is still a soft delete: history and the library keep what the schedule stops using.
 
+- **The helper edits a program, not just describes one** (N172). *Program editor* opens a program the app
+  exported — or one taken from a backup, or a saved draft — and edits every part of it: days and weekdays,
+  exercise order, rest, target RPE, supersets and cues, and each set's role, rep range, current rung, load or
+  assistance, drop value and note. *Preview changes* is the app's own plan, so the page states exactly what
+  the app will do and refuses what it would refuse; *Download edit* writes the document the app's **Load**
+  applies after its confirmation, and a program that changed on the phone since the export is refused rather
+  than merged. The table path still creates programs; this is how one is changed. A draft is a file, because
+  the page still stores nothing and makes no request.
+
 ## [2.11] — 2026-10-21 (versionCode 31)
 
 ### Added

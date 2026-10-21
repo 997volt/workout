@@ -138,6 +138,33 @@
       <p><button type="button" id="downloadProgram" disabled>Download program.json</button></p>
     </section>
 
+
+    <section class="panel" id="panel-editor" aria-labelledby="editor-heading">
+      <h2 id="editor-heading">Program editor</h2>
+      <p class="hint">
+        Open a program the app exported (<em>Programs → a program → ⋮ → Export</em>), change it, and
+        download an edit the app applies from <em>Programs → Load</em>. The page plans the edit with
+        the app's own core, so the preview is exactly what the app will do. Nothing is uploaded or
+        stored: a draft is a file you save and open.
+      </p>
+      <p class="hint" id="editorUnavailable" hidden>
+        This panel needs the shared core. Run <code>./gradlew :shared:syncSharedJs</code> and reload.
+      </p>
+      <p>
+        <button type="button" id="openProgramFile">Open a program…</button>
+        <button type="button" id="openProgramDraft">Open a draft…</button>
+        <input type="file" id="editorFile" accept=".json,application/json" hidden>
+      </p>
+      <p id="editorStatus" class="hint"></p>
+      <div id="programEditor" class="program-editor"></div>
+      <div id="editorPreview" class="program-preview"></div>
+      <p>
+        <button type="button" id="previewProgramEdit" disabled>Preview changes</button>
+        <button type="button" id="downloadProgramEdit" disabled>Download edit</button>
+        <button type="button" id="saveProgramDraft" disabled>Save draft</button>
+      </p>
+    </section>
+
     <section class="panel" id="panel-body" aria-labelledby="body-heading" hidden>
       <h2 id="body-heading">Body data (from Waistline)</h2>
       <p class="hint">
@@ -234,6 +261,11 @@
   <datalist id="exerciseNames"></datalist>
   <datalist id="targetChoices"></datalist>
   <script src="seed-catalog.js"></script>
+  <script src="shared/kotlin-kotlin-stdlib.js"></script>
+  <script src="shared/kotlin_org_jetbrains_kotlin_kotlin_dom_api_compat.js"></script>
+  <script src="shared/kotlinx-serialization-kotlinx-serialization-core.js"></script>
+  <script src="shared/kotlinx-serialization-kotlinx-serialization-json.js"></script>
+  <script src="shared/workout-shared.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
