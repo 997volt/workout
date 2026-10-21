@@ -120,6 +120,13 @@ unreleased.
 
 ### Fixed
 
+- **The program fixture is generated, and two sentences tell the truth** (N169). The program document the
+  page writes is now produced by `docs/fixtures/generate.js` beside the sheet it came from, and the page's
+  own test parses that sheet and rebuilds the document, so the committed fixture cannot quietly become
+  something the writer no longer produces (`ProgramDocumentFixtureTest` still decodes the same file with the
+  app's codec). The progress summary stops blaming "more than twelve reps" for a lift with no added weight,
+  and the settings chips wrap instead of clipping *Apply at Done* at a large font.
+
 - **A plan add that could not fill its targets says so** (N168). Adding a movement to a plan appends it and
   then copies the last session's working sets as its targets. The append is the action that matters, so a
   storage failure while copying used to be dropped: the movement arrived with no targets and nothing said

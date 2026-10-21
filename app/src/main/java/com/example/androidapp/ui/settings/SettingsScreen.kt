@@ -2,6 +2,8 @@ package com.example.androidapp.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -337,6 +339,7 @@ private fun RestChoiceRow(
  * A switch could say ask or not ask; it could not say *answer it for me*, which is the middle a lifter
  * wants. The chips are a choice rather than a toggle, and each is addressed by its mode name.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SettingProgressionMode(
     label: String,
@@ -352,7 +355,9 @@ private fun SettingProgressionMode(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Wrapping rather than a Row: "Apply at Done" is a long label, and a Row clips it at a large font
+        // instead of moving it to a second line (N169).
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             ProgressionMode.entries.forEach { option ->
                 FilterChip(
                     selected = option == mode,

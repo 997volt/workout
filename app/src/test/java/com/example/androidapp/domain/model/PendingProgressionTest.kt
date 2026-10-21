@@ -70,12 +70,27 @@ class PendingProgressionTest {
     }
 
     @Test
-    fun chooseEveryOffer_keepsAPick_andSkipsAWrittenRow() {
+    fun chooseEveryOffer_skipsAWrittenRow() {
         val applied = pending(repRow("ts-0")).applied("ts-0", planSet("ts-0").copy(targetRepsCurrent = 6))
         val question = applied.chooseEveryOffer()
 
         assertThat(question.sets.single().direction).isNull()
         assertThat(question.chosen).isEmpty()
+    }
+
+    @Test
+    fun chooseEveryOffer_keepsAPickThatIsAlreadyThere() {
+        // "Take every offer" must not overrule an answer the lifter already gave: the both-directions row
+        // keeps the load they picked, and only the unpicked rows take their own (N169's test split).
+        val question = pending(bothRow("ts-0"), loadRow("ts-1"), repRow("ts-2"))
+            .toggle("ts-0", ProgressionDirection.LOAD)
+            .chooseEveryOffer()
+
+        assertThat(question.sets.map { it.direction }).containsExactly(
+            ProgressionDirection.LOAD,
+            ProgressionDirection.LOAD,
+            ProgressionDirection.REPS,
+        ).inOrder()
     }
 
     @Test

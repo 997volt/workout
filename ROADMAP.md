@@ -17,13 +17,7 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The review of what shipped after 2.10.** Reading the work that landed since the 2.10 release found
-behaviours the shipped claims do not keep, plus the clean-up work that came with them. Each row below names
-where the claim and the code disagree, and a row whose fix shipped has left for [CHANGELOG.md](CHANGELOG.md).
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| N169 | low | **The review's copy and fixture nits.** `SeedCatalogTest` says 120 rows where the file holds 126; `ProgramsViewModel`'s `Dispatchers` import is out of order; the three settings chips sit in a plain Row and cannot wrap at a large font; `progressSummary` says "no set at 12 reps or fewer" for a lift with no added weight at all; `fixtures/program-document.json` is hand-made where the seed and progress fixtures are generated and compared; and one test's name promises a "keeps a pick" case it does not exercise. | Correct the counts and the sentence, use the wrapping row the weekday chips already use, generate the program fixture from the sheet, and either split the test or rename it. |
+**Nothing.** The review of what shipped after the 2.10 release is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Later — decided, and not being started
 

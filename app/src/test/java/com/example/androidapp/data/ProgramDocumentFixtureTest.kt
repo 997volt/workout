@@ -15,14 +15,28 @@ import java.time.DayOfWeek
  * planned exercises, twenty-two sets, one of them a range, one exercise created because the sheet named
  * something the library does not hold. [ProgramDocumentCodec] is the gate the file must pass, and the
  * references are what the import's filters drop silently if they are wrong — so both are pinned here.
+ * `docs/fixtures/generate.js` writes the fixture and the page's test rebuilds it from the sheet, so this
+ * side pins the app's reading rather than the tool's writing.
  */
 class ProgramDocumentFixtureTest {
 
+    /**
+     * The committed fixture, out of the one-line script assignment it is wrapped in.
+     *
+     * The file is JavaScript rather than JSON because the page's own test loads it (`window.PROGRAM_SHEET_TEXT`
+     * beside `window.PROGRAM_DOCUMENT_FIXTURE`) and rebuilds the document from the sheet — one generated
+     * artefact, two readers, so neither side can drift alone (N169). The JSON contains no semicolon, which is
+     * what makes the extraction unambiguous.
+     */
+    private fun fixtureJson(): String =
+        File(repoRoot, "docs/fixtures/program-document.js").readText()
+            .substringAfter("window.PROGRAM_DOCUMENT_FIXTURE = ")
+            .substringBefore(";")
+            .trim()
+
     @Test
     fun theHelpersProgramSheetIsADocumentTheAppAccepts() {
-        val document = ProgramDocumentCodec.decode(
-            File(repoRoot, "docs/fixtures/program-document.json").readText(),
-        )
+        val document = ProgramDocumentCodec.decode(fixtureJson())
 
         assertThat(document.formatVersion).isEqualTo(4)
         assertThat(document.program.name).isEqualTo("Autumn block")

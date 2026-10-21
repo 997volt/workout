@@ -19,7 +19,7 @@ import java.io.File
  *
  * It **writes the expected file to `build/` and then compares**, rather than only comparing: a seed change
  * has to be followed by a regeneration, and a failure that prints no diff would leave the next person
- * editing 120 rows by hand. The fix is a copy:
+ * editing 126 rows by hand. The fix is a copy:
  *
  *     cp app/build/seed-catalog-expected.js docs/seed-catalog.js
  */

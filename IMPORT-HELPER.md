@@ -85,9 +85,9 @@ docs/
   .nojekyll             stop Jekyll rewriting JavaScript that contains {{ }}
   build-single-file.js  writes one self-contained page to dist/ (N164)
   seed-catalog.js       the app's seeded library, generated and kept equal by a JVM test
-  fixtures/             the synthetic backup the app's test decodes, its generator, the progress
-                        fixture the app's trend generates for the tool's test page, the body-data
-                        fixture, and the program document the app's codec decodes
+  fixtures/             the synthetic backup the app's test decodes, the generator that writes it and
+                        the program fixture, the progress fixture the app's trend generates for the
+                        tool's test page, and the body-data fixture
 IMPORT-HELPER.md        this file, at the root, never served
 ```
 
@@ -441,9 +441,10 @@ is the intended input.
   this program is already there (nothing to add), it is there as deleted (the load restores it), or a
   *different* program carries the name (the load adds a second one, because it never renames or overwrites).
 
-The fixture `fixtures/program-document.json` is what the sheet writes for a two-day example, and
-`ProgramDocumentFixtureTest` decodes it with the app's own codec and checks every cross-reference the import
-would otherwise drop.
+The fixture `fixtures/program-document.js` is **generated** by `fixtures/generate.js` from the sheet it
+carries, so it cannot be a hand-kept copy of what the page used to write: the test page parses the sheet,
+rebuilds the document and compares it, and `ProgramDocumentFixtureTest` decodes the same object with the
+app's own codec and checks every cross-reference the import would otherwise drop.
 
 ## Body data (Waistline)
 

@@ -5219,7 +5219,11 @@
         formatChartDate(heaviest.at));
     }
     if (!bestEstimate) {
-      parts.push('no set at 12 reps or fewer, so no estimate');
+      // Two reasons the estimate can be missing, and naming the wrong one is a lie about the lift: a
+      // bodyweight movement has no added weight to estimate from, which is not a set above twelve reps (N169).
+      parts.push(heaviest
+        ? 'no set at 12 reps or fewer, so no estimate'
+        : 'no added weight, so no estimate');
     }
     return parts.join(' · ');
   }
