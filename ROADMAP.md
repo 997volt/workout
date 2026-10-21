@@ -17,12 +17,7 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The day's row is not where the day is.** Reported as "when I don't have an active plan I don't get row for daily
-measurements"; reproduced, and it is a layout and a rule rather than a plan.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| B182 | high | **The day's record is below the fold on a compact screen, and disappears once the day is written.** Home draws four full-width way-in cards before the today block, so on a 1080x1600 screen the first paint ends at *Start empty workout* — "No workout planned today" and *Record today's measurements* are only reachable by scrolling, and nothing on the screen says the list continues. A tall screen shows both, which is why it looked intermittent. The row is also hidden outright once today's daily entry exists (N114), so a recorded day reads as the same missing row. | Put the day's block **first when there is no plan** — with no scheduled workout the destinations are not the day's content — and keep the record row once the day is written, opening **that entry** for editing rather than a blank form whose save would overwrite the day through `findOnDay`. Cover the compact screen and the recorded day in the home tests. |
+**Nothing.** The day's-row fix (B182) is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Later — decided, and not being started
 

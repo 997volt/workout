@@ -75,6 +75,19 @@ internal fun HomeBody(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        val actions = TodayActions(
+            onMeasureToday = onMeasureToday,
+            onStartTemplate = onStartTemplate,
+            onSubstitute = onSubstitute,
+            onOpenPlannedWorkout = onOpenPlannedWorkout,
+        )
+        // **The day leads when it holds no workout** (B182). The foot-of-list placement (N115, N124) is
+        // about the day's *work*, which belongs under the thumb; with nothing scheduled there is no such
+        // work, and on a compact screen the four ways in filled the viewport — the "no plan" line and the
+        // day's record row were only reachable by scrolling, and nothing said the list continued. With a
+        // workout, the destinations stay first and the day keeps its place at the foot.
+        val dayHasWork = state.todaysPlan.isNotEmpty()
+        if (!dayHasWork) planItems(state, actions)
         wayInItems(
             // Starting is offered only while nothing is running (B101): the bar's Resume pill is the same
             // action, and a second row for it would be the pill under the wrong label.
@@ -86,23 +99,7 @@ internal fun HomeBody(
                 onOpenMeasurements = onOpenMeasurements,
             ),
         )
-        // Today's plan comes **after** the ways in (N115, N124): the destinations are what this screen is
-        // for on a day with nothing scheduled, and the day's own work belongs at the bottom edge the thumb
-        // is already at.
-        planItems(
-            state = state,
-            // **Recording is not starting**, so B101's withholding does not reach this row: it is drawn
-            // whenever today has no daily entry, a workout running or not (N114) — and it is drawn **inside
-            // today** (N138), under the day's own workout, because it is about the day rather than a place
-            // to go.
-            showMeasureToday = !state.todayIsMeasured,
-            actions = TodayActions(
-                onMeasureToday = onMeasureToday,
-                onStartTemplate = onStartTemplate,
-                onSubstitute = onSubstitute,
-                onOpenPlannedWorkout = onOpenPlannedWorkout,
-            ),
-        )
+        if (dayHasWork) planItems(state, actions)
     }
 }
 
@@ -116,13 +113,16 @@ internal fun HomeBody(
  * with no weekday, and every rest day of one that has them, is reached through the Programs screen now
  * (P3.9's home surface is superseded).
  *
- * It sits at the **foot** of the list, where N115 put it. An empty day used to draw nothing at all, which
- * read as a screen that simply ended; it says which kind of empty it is now, because "nothing is followed"
- * and "followed, and today is rest" are different facts ([WorkoutsHomeUiState.planIsRestDay]).
+ * It sits at the **foot** of the list when there is work (N115), and **leads** when there is none (B182):
+ * the foot is where the day's workout belongs under the thumb, while a day with nothing scheduled has no
+ * workout to put there — and the record row was what a compact screen pushed out of sight.
+ *
+ * An empty day used to draw nothing at all, which read as a screen that simply ended; it says which kind of
+ * empty it is now, because "nothing is followed" and "followed, and today is rest" are different facts
+ * ([WorkoutsHomeUiState.planIsRestDay]).
  */
 private fun LazyListScope.planItems(
     state: WorkoutsHomeUiState,
-    showMeasureToday: Boolean,
     actions: TodayActions,
 ) {
     if (state.todaysPlan.isEmpty()) {
@@ -131,8 +131,9 @@ private fun LazyListScope.planItems(
         item(key = "no_plan") {
             NoPlanLine(restDay = state.planIsRestDay)
         }
-        // A rest day is exactly when a weigh-in *is* the day's entry, so the row keeps its place (N138).
-        if (showMeasureToday) measureTodayRow(onMeasureToday = actions.onMeasureToday)
+        // The day's way in, and it never leaves: the prompt while today has nothing, the way back into the
+        // entry once it does (B182). A rest day is exactly when a weigh-in *is* the day's entry (N138).
+        measureTodayRow(recorded = state.todayIsMeasured, onMeasureToday = actions.onMeasureToday)
         return
     }
     item(key = "today") {
@@ -147,8 +148,8 @@ private fun LazyListScope.planItems(
             onSubstitute = { actions.onSubstitute(plan) },
         )
     }
-    // Under the day's own workout (N138).
-    if (showMeasureToday) measureTodayRow(onMeasureToday = actions.onMeasureToday)
+    // Under the day's own workout (N138), and still there once the day is written (B182).
+    measureTodayRow(recorded = state.todayIsMeasured, onMeasureToday = actions.onMeasureToday)
 }
 
 /**
@@ -372,17 +373,27 @@ private fun LazyListScope.startEmptyRow(onStartWorkout: () -> Unit) {
 }
 
 /**
- * Writing today down, while today has no entry (ROADMAP N114).
+ * The day's measurements, as a row that is always there (ROADMAP N114, B182).
  *
- * Last of the ways in, and the only one that is not always drawn: the row is the prompt, so an entry for
- * today takes it away rather than leaving a row whose only news is that the day is already answered.
+ * It reads as a prompt while today has no entry and as the way back into the entry once it does — the row
+ * used to disappear at that point, so a day already written down looked exactly like a screen that had lost
+ * the way in. [recorded] chooses the words, and the destination is the same one either way.
  */
-private fun LazyListScope.measureTodayRow(onMeasureToday: () -> Unit) {
+private fun LazyListScope.measureTodayRow(recorded: Boolean, onMeasureToday: () -> Unit) {
     item(key = "today-measure") {
+        val headline = stringResource(
+            if (recorded) R.string.home_measure_today_recorded else R.string.home_measure_today,
+        )
         WayInRow(
-            headline = stringResource(R.string.home_measure_today),
-            supporting = stringResource(R.string.home_measure_today_supporting),
-            onClickLabel = stringResource(R.string.home_measure_today),
+            headline = headline,
+            supporting = stringResource(
+                if (recorded) {
+                    R.string.home_measure_today_recorded_supporting
+                } else {
+                    R.string.home_measure_today_supporting
+                },
+            ),
+            onClickLabel = headline,
             // The measurements destination's own icon, in today's zone: the same place, today's half of it,
             // rather than a fifth destination.
             icon = Icons.Filled.Straighten,

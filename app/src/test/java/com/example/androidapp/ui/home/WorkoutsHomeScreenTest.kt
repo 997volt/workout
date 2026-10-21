@@ -76,6 +76,11 @@ class WorkoutsHomeScreenTest {
             .performScrollToNode(hasTestTag(TestTags.HOME_NO_PLAN))
     }
 
+    /** Scrolls the body to one row, which the lazy list has not composed until asked (B182). */
+    private fun scrollTo(tag: String) {
+        composeTestRule.onNodeWithTag(TestTags.HOME_LIST).performScrollToNode(hasTestTag(tag))
+    }
+
     private fun setScreen(
         state: WorkoutsHomeUiState,
         actions: Actions = Actions(),
@@ -107,9 +112,15 @@ class WorkoutsHomeScreenTest {
         var started = false
         setScreen(WorkoutsHomeUiState(isLoading = false), Actions(onStartWorkout = { started = true }))
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.HOME_MEASUREMENTS).assertIsDisplayed()
+        listOf(
+            TestTags.HOME_PROGRAMS,
+            TestTags.HOME_TEMPLATES,
+            TestTags.HOME_MEASUREMENTS,
+            TestTags.HOME_START,
+        ).forEach { tag ->
+            scrollTo(tag)
+            composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
+        }
         composeTestRule.onNodeWithTag(TestTags.HOME_START).performClick()
 
         assertThat(started).isTrue()
@@ -149,7 +160,9 @@ class WorkoutsHomeScreenTest {
             Actions(onOpenTemplates = { templates = true }),
         )
 
+        scrollTo(TestTags.HOME_START)
         composeTestRule.onNodeWithTag(TestTags.HOME_START).assertIsDisplayed()
+        scrollTo(TestTags.HOME_TEMPLATES)
         composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).performClick()
 
         assertThat(templates).isTrue()
@@ -501,8 +514,8 @@ class WorkoutsHomeScreenTest {
      * rather than asking which of N113's two records was meant, and it is drawn on the evidence — what is
      * stored for today — rather than on whether the lifter was ever asked.
      *
-     * It is **inside today** now (N138), under the day's own workout, so a test has to scroll to it: that is
-     * what the move means on a screen whose body is longer than the viewport.
+     * It is the day's block (B182): under the day's own workout when there is one (N138), and leading the
+     * list when there is not — the scroll below is a no-op in the second case.
      */
     @Test
     fun whileTodayHasNoEntry_theMeasureTodayRow_isOffered_andOpensTheForm() {
@@ -520,12 +533,38 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun withTodaysMeasurementsRecorded_theRowIsGone() {
-        // N113's rule is what makes this true for a soreness-only morning too: an entry states what it has,
-        // and the day is answered.
-        setScreen(WorkoutsHomeUiState(isLoading = false, todayIsMeasured = true))
+    fun withTodaysMeasurementsRecorded_theRow_stays_andNamesTheDay() {
+        // B182: the row used to disappear once the day was written, which read as the same missing row a
+        // compact screen showed. It stays, and its words change — the same destination is an edit now.
+        var opened = false
+        setScreen(
+            state = WorkoutsHomeUiState(isLoading = false, todayIsMeasured = true),
+            actions = Actions(onMeasureToday = { opened = true }),
+        )
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_MEASURE_TODAY).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.HOME_LIST)
+            .performScrollToNode(hasTestTag(TestTags.HOME_MEASURE_TODAY))
+        composeTestRule.onNodeWithTag(TestTags.HOME_MEASURE_TODAY).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Today’s measurements").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.HOME_MEASURE_TODAY).performClick()
+
+        assertWithMessage("the row opens the day's entry, not a blank form").that(opened).isTrue()
+    }
+
+    @Test
+    fun withNoPlan_theDayBlock_leadsTheWaysIn() {
+        // B182: on a compact screen the four ways-in cards filled the viewport, so the day's own block —
+        // the no-plan line and the record row — was only reachable by scrolling and nothing said the list
+        // continued. With nothing scheduled the day leads; with a workout it keeps its place at the foot
+        // (todaysPlan_sitsBelowTheWaysIn).
+        setScreen(WorkoutsHomeUiState(isLoading = false, todayIsMeasured = false))
+
+        val row = composeTestRule.onNodeWithTag(TestTags.HOME_MEASURE_TODAY).getUnclippedBoundsInRoot()
+        val programs = composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).getUnclippedBoundsInRoot()
+
+        assertWithMessage("the day's row must come before the ways in when there is no workout")
+            .that(row.bottom <= programs.top)
+            .isTrue()
     }
 
     @Test
@@ -592,9 +631,10 @@ class WorkoutsHomeScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.HOME_TEMPLATES).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.HOME_MEASUREMENTS).assertIsDisplayed()
+        listOf(TestTags.HOME_PROGRAMS, TestTags.HOME_TEMPLATES, TestTags.HOME_MEASUREMENTS).forEach { tag ->
+            scrollTo(tag)
+            composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
+        }
         composeTestRule.onNodeWithTag(TestTags.HOME_START).assertDoesNotExist()
     }
 

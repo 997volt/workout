@@ -612,6 +612,14 @@ the rule; that one argues it.
   start**. Starting empty moved into the body rather than being duplicated there, because the same action
   twice on one screen is what N42 removed the last time it happened.
 
+- **The day's block leads when it holds no workout, and the day's record row is never absent** (B182). The
+  ways-in sit above a *scheduled* day because that day's work belongs under the thumb (N115, N124) — but with
+  nothing scheduled there is no work to put there, and four full-width cards pushed the day's line and its
+  record row off a compact screen, which read as the row going missing. So the block leads when the plan is
+  empty and stays at the foot when it is not. The record row itself no longer disappears once the day is
+  written: it opens **that entry** for editing, because the blank daily form's save replaces the day through
+  `findOnDay` — hiding the row was the safer rule while a blank form was the only thing it could open.
+
 ## The app's data
 
 - **An action on the whole database lives in Settings** (N43). Export, import and

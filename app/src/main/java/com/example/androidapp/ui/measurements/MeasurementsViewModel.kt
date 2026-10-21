@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.isDailyOn
 import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.ui.statistics.BodyMetric
@@ -24,6 +26,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneId
 import javax.inject.Inject
 
 /** What the measurements screen renders (ROADMAP N32). */
@@ -31,6 +35,14 @@ data class MeasurementsUiState(
     val isLoading: Boolean = true,
     /** Entries, newest first — the order the list and the chart both read in. */
     val entries: List<BodyMeasurement> = emptyList(),
+    /**
+     * Today's daily entry, or null while the day has none (B182).
+     *
+     * The home row opens the screen wanting **this** day: with an entry it is an edit, and without one it is
+     * the blank form. A blank form on a day that already has numbers would overwrite them through
+     * `findOnDay`, so the shortcut has to know which it is asking for.
+     */
+    val todayEntry: BodyMeasurement? = null,
 )
 
 /**
@@ -43,12 +55,28 @@ data class MeasurementsUiState(
 class MeasurementsViewModel @Inject constructor(
     private val repository: MeasurementRepository,
     private val goals: GoalRepository,
+    timeSource: TimeSource,
 ) : ViewModel() {
+
+    /**
+     * The day this screen calls today, captured with its zone (B182).
+     *
+     * Captured for the reason home captures its own (N114): the row and the write have to agree about which
+     * day "today" is, and a screen left open across midnight keeps the day it opened on.
+     */
+    private val todayDate: LocalDate = timeSource.now().atZone(ZoneId.systemDefault()).toLocalDate()
+    private val zone: ZoneId = ZoneId.systemDefault()
 
     private val lastError = MutableStateFlow<DataError?>(null)
 
     val uiState: StateFlow<MeasurementsUiState> = repository.observeAll()
-        .map { entries -> MeasurementsUiState(isLoading = false, entries = entries) }
+        .map { entries ->
+            MeasurementsUiState(
+                isLoading = false,
+                entries = entries,
+                todayEntry = entries.firstOrNull { it.isDailyOn(todayDate, zone) },
+            )
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),

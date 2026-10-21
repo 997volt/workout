@@ -60,6 +60,7 @@ import com.example.androidapp.ui.components.ScoredPick
 import com.example.androidapp.ui.components.ScoredPickStrings
 import com.example.androidapp.ui.components.ScoredPicksEditor
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.statistics.EnergyAdjustment
@@ -71,7 +72,10 @@ import java.time.ZoneId
 fun MeasurementsRoute(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    /** True to arrive with the daily form already open (ROADMAP N114), from home's own row. */
+    /**
+     * True to arrive on **today's** daily entry (ROADMAP N114, B182), from home's own row: the entry itself
+     * when the day has one, and the blank daily form when it does not.
+     */
     openDaily: Boolean = false,
     viewModel: MeasurementsViewModel = hiltViewModel(),
 ) {
@@ -79,6 +83,13 @@ fun MeasurementsRoute(
     val error by viewModel.error.collectAsStateWithLifecycle()
     val pendingUndo by viewModel.pendingUndo.collectAsStateWithLifecycle()
     val rateVerdict by viewModel.rateVerdict.collectAsStateWithLifecycle()
+    // The shortcut opens **today's record** (B182), and only the loaded list can say whether that is an
+    // entry to edit or a day with nothing on it — so it waits for the answer rather than opening a blank
+    // form first, which would replace the day's numbers on save.
+    if (openDaily && state.isLoading) {
+        CenteredMessage(text = stringResource(R.string.history_loading), modifier = modifier)
+        return
+    }
     MeasurementsScreen(
         state = state,
         onSave = viewModel::onSave,
@@ -88,7 +99,8 @@ fun MeasurementsRoute(
         // A failed write is a snackbar, the surface every other screen uses (B102).
         error = error,
         onDismissError = viewModel::onDismissError,
-        initialAdd = if (openDaily) MeasurementKind.DAILY else null,
+        initialAdd = if (openDaily && state.todayEntry == null) MeasurementKind.DAILY else null,
+        initialEdit = if (openDaily) state.todayEntry else null,
         // The way back out of a delete (N133), held by the ViewModel until the message is taken.
         pendingUndo = pendingUndo,
         onUndo = viewModel::onUndoDelete,
@@ -111,12 +123,20 @@ fun MeasurementsScreen(
     error: DataError? = null,
     onDismissError: () -> Unit = {},
     /**
-     * A form to open on arrival, or null (ROADMAP N114).
+     * The blank form to open on arrival, or null (ROADMAP N114).
      *
      * Read once, as `rememberSaveable`'s initial value: dismissing the form sets it back to null, and a
-     * rotation keeps that dismissal rather than reopening what the lifter just closed.
+     * rotation keeps that dismissal rather than reopening what the lifter just closed. The home shortcut
+     * passes it only on a day with no entry — an entry is [initialEdit] (B182).
      */
     initialAdd: MeasurementKind? = null,
+    /**
+     * The record to open for editing on arrival, or null (B182).
+     *
+     * Resolved by the route, which can wait for the list: today's entry when the day has one, so the
+     * shortcut edits the day instead of opening a blank form whose save would replace it.
+     */
+    initialEdit: BodyMeasurement? = null,
     /** The entry a delete just took, awaiting the snackbar's undo, or null (ROADMAP N133). */
     pendingUndo: BodyMeasurement? = null,
     onUndo: () -> Unit = {},
@@ -141,7 +161,8 @@ fun MeasurementsScreen(
     // The record being read, and the record the edit mode is correcting: each a look at one row rather
     // than a mode, so neither is restored after a rotation (requests in use; no roadmap id covers them).
     var openEntry by remember { mutableStateOf<BodyMeasurement?>(null) }
-    var editingEntry by remember { mutableStateOf<BodyMeasurement?>(null) }
+    var editingEntry by remember { mutableStateOf(initialEdit) }
+
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(error?.let { dataErrorMessage(it) }, snackbarHostState, onDismissError)
     ShowDeletedMeasurementUndo(pendingUndo, snackbarHostState, onUndo, onDismissUndo)
@@ -200,6 +221,8 @@ fun MeasurementsScreen(
         )
     }
 }
+
+
 
 /**
  * The bar over the list: back, the title, and the one control that changes the mode (ROADMAP N132).

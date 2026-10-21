@@ -62,6 +62,7 @@ class MeasurementsScreenTest {
         error: DataError? = null,
         onDismissError: () -> Unit = {},
         initialAdd: MeasurementKind? = null,
+        initialEdit: BodyMeasurement? = null,
         pendingUndo: BodyMeasurement? = null,
         onUndo: () -> Unit = {},
         onDismissUndo: () -> Unit = {},
@@ -78,6 +79,7 @@ class MeasurementsScreenTest {
                     error = error,
                     onDismissError = onDismissError,
                     initialAdd = initialAdd,
+                    initialEdit = initialEdit,
                     pendingUndo = pendingUndo,
                     onUndo = onUndo,
                     onDismissUndo = onDismissUndo,
@@ -98,6 +100,25 @@ class MeasurementsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.Measurements.ADD_DAILY).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsNotEnabled()
+    }
+
+    @Test
+    fun arrivingOnADayAlreadyWritten_editsTheDay_ratherThanOpeningABlankForm() {
+        // B182: the shortcut's blank form would replace the day's numbers on save, because the repository
+        // keys a daily entry by its day rather than by id — so an entry that exists is opened as the edit
+        // it is, holding what the day already says.
+        setScreen(
+            state = MeasurementsUiState(
+                isLoading = false,
+                entries = listOf(today),
+                todayEntry = today,
+            ),
+            initialEdit = today,
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.WEIGHT).assertTextContains("82.4")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.BODY_FAT).assertTextContains("18.3")
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsEnabled()
     }
 
     /** The two taps every add takes now: the button, then which of the two records (N113). */

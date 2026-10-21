@@ -120,6 +120,15 @@ unreleased.
 
 ### Fixed
 
+- **The day's measurements row is always on the main screen** (B182). The row sat at the foot of home behind
+  four full-width way-in cards, so on a compact screen the first paint ended at *Start empty workout* and the
+  day's line and *Record today's measurements* were only reachable by scrolling — reported as the row going
+  missing when no program is followed. With nothing scheduled the day's block now leads the list; with a
+  workout it keeps its place at the foot, under the card. The row also stops disappearing once today's entry
+  exists: it reads *Today's measurements* and opens **that entry** for editing, because a blank daily form's
+  save replaces the day through `findOnDay` — so the old rule (hide the prompt) was the safe one while a blank
+  form was all it could open.
+
 - **The program fixture is generated, and two sentences tell the truth** (N169). The program document the
   page writes is now produced by `docs/fixtures/generate.js` beside the sheet it came from, and the page's
   own test parses that sheet and rebuilds the document, so the committed fixture cannot quietly become
