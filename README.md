@@ -9,7 +9,8 @@ background rest alert was the only one it ever had, and removing it in 1.7 left 
 empty — which says more about where your training data lives than any wording could.
 
 Docs: [ROADMAP](ROADMAP.md) · [DECISIONS](DECISIONS.md) · [CHANGELOG](CHANGELOG.md) ·
-[RELEASING](RELEASING.md) · [AGENTS](AGENTS.md) — the map of what each file is for.
+[RELEASING](RELEASING.md) · [AGENTS](AGENTS.md) · [IMPORT-HELPER](IMPORT-HELPER.md) — the map of what
+each file is for.
 
 ## Toolchain
 
@@ -124,6 +125,39 @@ apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk   #
 
 Bump `versionCode` in [`version.properties`](version.properties) for each build you keep, so
 installs are tellable apart.
+
+## Importing old training data
+
+The app imports a backup file; it does not read a spreadsheet. Turning old rows into one is a
+separate, zero-dependency page in [`docs/`](docs/) — the **import helper** — which you open locally:
+
+```bash
+# open the page straight from the checkout…
+xdg-open docs/index.html          # macOS: open docs/index.html
+
+# …or build the single self-contained file, for a copy that needs no directory
+node docs/build-single-file.js    # writes dist/workout-import.html
+```
+
+Nothing is uploaded: the page is classic scripts with no `fetch`, no socket and no service worker,
+and the rows live in the tab. The one thing it keeps is the exercise-name mapping, in this browser's
+`localStorage`, so the next session does not redo it; a button below the mapping forgets it.
+
+It does four jobs, all from that page:
+
+- **history** — spreadsheet, CSV or JSON rows become `workout-backup.json` for **Settings → Import**,
+  with a review step that catches what the app cannot report: mixed units in one block, a date that is
+  not a day, a name no exercise matches;
+- **one lift's progress** — the heaviest working set and Epley's estimate, charted from an export you
+  load (the numbers are the app's own, pinned by a JVM fixture);
+- **Waistline body data** — a Waistline backup becomes daily measurements in the same output file;
+- **a program table** — a sheet of `Program, Day, Weekday, Exercise, Sets, Reps, Load, Rest` becomes a
+  `program.json` for **Programs → Load program**.
+
+Its specification is [IMPORT-HELPER.md](IMPORT-HELPER.md), and the rules it holds — why the conversion
+sits outside the app, why its ids are deterministic, why it never edits — are in
+[DECISIONS.md](DECISIONS.md). It is the way old data comes *in*; the export (`Settings → Export`) is
+the only way data goes *out*, which is why the helper never sees your database.
 
 ## Continuous integration
 
