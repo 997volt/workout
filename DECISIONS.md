@@ -1303,7 +1303,10 @@ the rule; that one argues it.
   stores nothing. **The library is read-only here** — a name can become a movement, an existing row is
   never renamed or retyped — and **history is not the page's**: sessions, skips, deloads and
   substitutions are not in a program document. The table path still creates; changing a program is this
-  panel's or the app's job.
+  panel's or the app's job. **Start a new program** makes a blank document: there is no base to plan
+  against, so *Check* runs the shared `validate` and the download carries no `edit` marker — the app's
+  insert-only merge adds it, exactly as the sheet's document is added. The page mints the id, so a
+  re-import of the same file is a no-op rather than a twin.
 
 ## Rules that apply to every change
 

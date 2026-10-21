@@ -440,11 +440,12 @@ points.
 
 ## Program editor
 
-A program the app **exported** (Programs → a program → ⋮ → Export), a program taken from a backup, or a
-draft opens as a document. Every part of it is editable — the program's name, its days and weekdays, each
-workout's name, its exercises with rest, target RPE, superset group and cue, and each planned set's role,
-rep range and current rung, load or assistance, drop value and note. The model is the document itself, so
-what the page does not change it still carries: a field this UI never learned cannot be lost by a round trip.
+A program the app **exported** (Programs → a program → ⋮ → Export), a program taken from a backup, a draft,
+or **Start a new program** opens as a document. Every part of it is editable — the program's name, its days and
+weekdays, each workout's name, its exercises with rest, target RPE, superset group and cue, and each planned
+set's role, rep range and current rung, load or assistance, drop value and note. The model is the document
+itself, so what the page does not change it still carries: a field this UI never learned cannot be lost by a
+round trip.
 
 - **The preview is the app's plan, not the page's opinion.** *Preview changes* sends the opened document and
   the edited one to the shared core (N170), and shows the same change list and refusals the app will produce.
@@ -456,8 +457,14 @@ what the page does not change it still carries: a field this UI never learned ca
   retyped here, because every plan and every session reads it.
 - **A draft is a file.** *Save draft* downloads the opened snapshot and the working copy together; *Open draft*
   restores both. Nothing is written to the browser, and the page still makes no request.
-- **Create, not edit, remains the sheet's rule.** The table path still writes a new program; changing one is
-  this panel's job, and the app is where the change is applied.
+- **A new program is checked, not planned.** *Start a new program* makes a blank document. There is no export
+  to plan an edit against, so *Check the program* runs the shared core's `validate` and *Download program*
+  writes a document with **no `edit` marker** — the app's insert-only merge adds it as a new, inactive
+  program. The page mints the id, so re-importing the same file is a no-op; changing it afterwards is the
+  app's job, or another new program.
+- **Create and edit are both here.** The editor creates a blank program or edits an opened one; the sheet
+  still creates from a table. An opened export's edit carries its base and is planned; a new program has no
+  base and is validated. The app remains where an existing program is changed day to day.
 
 ## Program sheet
 

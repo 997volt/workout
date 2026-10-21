@@ -3015,6 +3015,7 @@
       editorStatus: byId('editorStatus'),
       editorPreview: byId('editorPreview'),
       editorUnavailable: byId('editorUnavailable'),
+      newProgram: byId('newProgram'),
       programDropZone: byId('programDropZone'),
       programFileInput: byId('programFileInput'),
       bodyDropZone: byId('bodyDropZone'),
@@ -6401,6 +6402,35 @@
     return ns && ns.shared ? ns.shared : null;
   }
 
+  /**
+   * A blank program, as the document the app adds (the same shape the sheet writes, N172).
+   *
+   * It has no `edit` marker: a new program is a proposal to add, and the app's insert-only merge is
+   * what puts it in the list. The id is minted here and carried by every download and draft, so
+   * re-importing one file is a no-op rather than a second program.
+   */
+  function newProgramDocument(name, id, time) {
+    var now = typeof time === 'number' ? time : Date.now();
+    return {
+      formatVersion: PROGRAM_FORMAT_VERSION_FOR_EDITOR,
+      exportedAt: now,
+      program: {
+        id: typeof id === 'string' && id !== '' ? id : editorNewId('pgm'),
+        name: typeof name === 'string' && name.trim() !== '' ? name : 'My program',
+        isActive: false,
+        position: 0,
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null
+      },
+      slots: [],
+      templates: [],
+      templateExercises: [],
+      templateSets: [],
+      exercises: []
+    };
+  }
+
   function editorNewId(prefix) {
     editorIdCounter += 1;
     return prefix + '_' + Date.now().toString(36) + '_' + editorIdCounter.toString(36) + '_' +
@@ -6776,18 +6806,24 @@
     if (!host) { return; }
     host.textContent = '';
     var has = ed && ed.working;
+    var isNew = has && ed.mode === 'new';
     ui.elements.previewProgramEdit.disabled = !has;
     ui.elements.downloadProgramEdit.disabled = true;
     ui.elements.saveProgramDraft.disabled = !has;
+    setText(ui.elements.previewProgramEdit, isNew ? 'Check the program' : 'Preview changes');
+    setText(ui.elements.downloadProgramEdit, isNew ? 'Download program' : 'Download edit');
     if (!has) {
-      editorMessage('Open a program the app exported, or a draft.');
+      editorMessage('Open a program the app exported, start a new one, or open a draft.');
       return;
     }
     var working = ed.working;
     setText(
       ui.elements.editorStatus,
-      'Editing "' + (working.program.name || 'a program') + '" from ' + (ed.fileName || 'a file') +
-        '. Nothing is written until the app applies the edit.'
+      isNew
+        ? 'Building "' + (working.program.name || 'a program') + '" from scratch. The app adds it when ' +
+          'you load the document.'
+        : 'Editing "' + (working.program.name || 'a program') + '" from ' + (ed.fileName || 'a file') +
+          '. Nothing is written until the app applies the edit.'
     );
 
     host.appendChild(
@@ -7075,6 +7111,20 @@
       original: original,
       working: working,
       fileName: fileName || '',
+      mode: 'edit',
+      preview: null
+    };
+    ui.elements.editorPreview.textContent = '';
+    editorRender();
+  }
+
+  /** A blank program in the editor: no snapshot, no edit marker, validated and downloaded (N172). */
+  function editorStartNew() {
+    ui.state.programEditor = {
+      original: null,
+      working: newProgramDocument('My program'),
+      fileName: 'a new program',
+      mode: 'new',
       preview: null
     };
     ui.elements.editorPreview.textContent = '';
@@ -7082,16 +7132,26 @@
   }
 
   function editorLoadDraft(draft, fileName) {
-    if (!isObject(draft.original) || !isObject(draft.working)) {
+    if (!isObject(draft.working)) {
       editorMessage('That draft is missing its program.');
       return;
     }
+    var mode = draft.mode === 'new' ? 'new' : 'edit';
+    if (mode === 'edit' && !isObject(draft.original)) {
+      editorMessage('That draft is missing the export it was made from.');
+      return;
+    }
     var working = editorDeepCopy(draft.working);
-    working.edit = { baseExportedAt: draft.original.exportedAt };
+    if (mode === 'edit') {
+      working.edit = { baseExportedAt: draft.original.exportedAt };
+    } else {
+      delete working.edit;
+    }
     ui.state.programEditor = {
-      original: editorDeepCopy(draft.original),
+      original: mode === 'edit' ? editorDeepCopy(draft.original) : null,
       working: working,
       fileName: fileName || '',
+      mode: mode,
       preview: null
     };
     ui.elements.editorPreview.textContent = '';
@@ -7126,10 +7186,54 @@
     editorMessage('A program taken from a backup carries the time the backup was made; the app refuses the edit if the program changed after that.');
   }
 
+  /**
+   * The new-program half of the check button (N172): validate, not plan.
+   *
+   * There is no export to plan an edit against, so the shared core's `validate` is the whole
+   * question. The app's insert-only merge adds the document; the page only promises what it holds.
+   */
+  function editorCheckNew(core, ed) {
+    var checked;
+    try {
+      checked = JSON.parse(core.validateJson(JSON.stringify(ed.working)));
+    } catch (problem) {
+      editorMessage('The shared core could not check this program: ' + problem);
+      return;
+    }
+    var problems = checked.problems || [];
+    ed.preview = { ok: problems.length === 0, problems: problems, changes: [], warnings: [] };
+    var host = ui.elements.editorPreview;
+    host.textContent = '';
+    ui.elements.downloadProgramEdit.disabled = problems.length > 0;
+    if (problems.length > 0) {
+      host.appendChild(h('p', 'refusal', 'The app would refuse this program:'));
+      var list = document.createElement('ul');
+      problems.forEach(function (problem) {
+        list.appendChild(h('li', '', editorProblemText(problem)));
+      });
+      host.appendChild(list);
+      editorMessage('The program is not ready; fix the problems above.');
+      return;
+    }
+    var days = (ed.working.slots || []).length;
+    var workouts = (ed.working.templates || []).length;
+    var exercises = (ed.working.templateExercises || []).length;
+    var sets = (ed.working.templateSets || []).length;
+    host.appendChild(h('p', '', 'The program is ready: ' + days + ' day' + (days === 1 ? '' : 's') +
+      ', ' + workouts + ' workout' + (workouts === 1 ? '' : 's') + ', ' + exercises + ' exercise' +
+      (exercises === 1 ? '' : 's') + ', ' + sets + ' set' + (sets === 1 ? '' : 's') + '.'));
+    host.appendChild(h('p', 'hint', 'Programs → Load adds it as a new program; it is not an edit of anything.'));
+    editorMessage('Ready: download the program and load it in Programs → Load.');
+  }
+
   function editorPreview() {
     var core = programCore();
     var ed = ui.state.programEditor;
     if (!core || !ed || !ed.working) { return; }
+    if (ed.mode === 'new') {
+      editorCheckNew(core, ed);
+      return;
+    }
     var planned;
     try {
       planned = JSON.parse(core.planJson(JSON.stringify(ed.original), JSON.stringify(ed.working)));
@@ -7184,6 +7288,14 @@
   function editorDownload() {
     var ed = ui.state.programEditor;
     if (!ed || !ed.working || !ed.preview || !ed.preview.ok) { return; }
+    if (ed.mode === 'new') {
+      // The fields may have changed since the last check; the download is the promise.
+      editorCheckNew(programCore(), ed);
+      if (!ed.preview || !ed.preview.ok) { return; }
+      downloadText(JSON.stringify(ed.working, null, 2) + '\n', 'program.json');
+      announce('Downloaded program.json. Load it in Programs, then Load, to add it.');
+      return;
+    }
     downloadText(JSON.stringify(ed.working, null, 2) + '\n', 'program-edit.json');
     announce('Downloaded program-edit.json. Load it in Programs, then Load.');
   }
@@ -7194,6 +7306,7 @@
     var draft = {
       kind: EDITOR_DRAFT_KIND,
       version: 1,
+      mode: ed.mode,
       original: ed.original,
       working: ed.working
     };
@@ -7218,8 +7331,10 @@
     if (!core) {
       if (elements.editorUnavailable) { elements.editorUnavailable.hidden = false; }
       if (elements.programFileInput) { elements.programFileInput.disabled = true; }
+      if (elements.newProgram) { elements.newProgram.disabled = true; }
       return;
     }
+    elements.newProgram.addEventListener('click', editorStartNew);
     wireFileDrop(elements.programDropZone, elements.programFileInput, function (files) {
       readFile(files[0], 'program');
     });
@@ -7268,6 +7383,7 @@
     parseWaistlineDoc: parseWaistlineDoc,
     parseProgramSheet: parseProgramSheet,
     programDocumentFromBackup: programDocumentFromBackup,
+    newProgramDocument: newProgramDocument,
     editorLoadText: editorLoadText,
     editorParseLoad: editorParseLoad,
     editorResolveExercise: editorResolveExercise,

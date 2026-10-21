@@ -178,13 +178,17 @@
       <section class="panel" id="panel-editor" aria-labelledby="editor-heading">
         <h2 id="editor-heading">Program editor</h2>
         <p class="hint">
-          Open a program the app exported (<em>Programs → a program → ⋮ → Export</em>), change it, and
-          download an edit the app applies from <em>Programs → Load</em>. The page plans the edit with
-          the app's own core, so the preview is exactly what the app will do. Nothing is uploaded or
-          stored: a draft is a file you save and open.
+          Open a program the app exported (<em>Programs → a program → ⋮ → Export</em>), start a new one
+          from scratch, or open a draft. An edit is planned by the app's own core and applied from
+          <em>Programs → Load</em> with its diff; a new program is checked by that core and downloaded for
+          the app to add. Nothing is uploaded or stored: a draft is a file you save and open.
         </p>
         <p class="hint" id="editorUnavailable" hidden>
           This panel needs the shared core. Run <code>./gradlew :shared:syncSharedJs</code> and reload.
+        </p>
+        <p>
+          <button type="button" id="newProgram">Start a new program</button>
+          <span class="hint">A blank document; the app adds it from <em>Programs → Load</em>.</span>
         </p>
         <div class="drop-zone" id="programDropZone">
           <p class="drop-title">Drop a program export, a draft, a backup — or a program table</p>

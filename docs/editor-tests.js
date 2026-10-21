@@ -166,6 +166,24 @@
       t.eq(document.templateSets.length, 0);
     });
 
+    t.check('a new program is a valid document with no edit marker', function () {
+      var document = H.newProgramDocument('New block', 'pgm_test', 1000);
+      t.eq(document.formatVersion, 4);
+      t.eq(document.program.name, 'New block');
+      t.eq(document.program.id, 'pgm_test');
+      t.eq(document.slots.length, 0);
+      t.ok(!('edit' in document), 'a new program is a proposal to add');
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+
+      H.editorAddDay(document);
+      var template = document.templates[document.templates.length - 1];
+      var exerciseId = H.editorResolveExercise(document, 'Bench Press');
+      H.editorAddExercise(document, template.id, exerciseId);
+      var planned = document.templateExercises[document.templateExercises.length - 1];
+      H.editorAddSet(document, planned.id);
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+    });
+
     (cases || []).forEach(function (testCase) {
       t.check('fixture: ' + testCase.name, function () {
         var result = JSON.parse(shared.planJson(

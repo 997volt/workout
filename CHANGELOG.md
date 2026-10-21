@@ -67,6 +67,12 @@ unreleased.
   without the import's mapping gate, and names its source; the export still refuses an unmapped name. No
   roadmap id: a fix to the helper.
 
+- **A program can start from scratch in the helper.** Programs → *Start a new program* makes a blank document
+  in the editor: add days, workouts, exercises and sets, check it with the app's own core, and download
+  `program.json` for Programs → Load, which adds it as a new, inactive program. A new program has no edit
+  marker; an opened export still downloads an edit with its base. No roadmap id: a gap in the helper's
+  authoring flow.
+
 ## [2.11] — 2026-10-21 (versionCode 31)
 
 ### Added

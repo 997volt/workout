@@ -2730,9 +2730,15 @@ plan and session; the program document is not where they change. Sessions, skips
 substitutions are the lifter's record and are not part of a program document, so the editor cannot reach
 them even by accident.
 
+**Why a new program is validated, not planned.** `plan` answers what an edit would change against an
+export; a program the device does not have has no such question. The shared `validate` is the whole gate,
+and the document is the same create document the sheet writes — one merge path in the app, no special
+case. The id is the page's, so the create document is idempotent; changing it afterwards is the app's job,
+which is the line this note drew.
+
 **Why the sheet stays.** Pasting a table is still the fastest way to turn a coach's plan or a model's
-output into a program, and it shares the same document format. The editor is how an *existing* program is
-changed; the sheet is how a *new* one is created.
+output into a program, and it shares the same document format. The editor now creates a blank program as
+well as editing an opened one; the sheet is the table path to the same document.
 
 **Covered by** the page's own assertions for the pure model operations (backup extraction, load parsing,
 adding and removing rows), the shared core's `commonTest` for the plan, and `ProgramEditDialogTest` +
