@@ -2858,77 +2858,66 @@
   }
 
   /**
-   * The sticky section bar (no roadmap id: a usability change to the helper).
+   * The tool tabs (no roadmap id: the page's tools are independent, so one is on screen at a time).
    *
-   * The page is a stack of tools, and the program editor and progress chart sit well below the fold.
-   * The bar lists each tool, hides a link whose panel is not showing yet (progress needs an export,
-   * body data needs a Waistline file, the table needs a sheet), and marks the section the reader is
-   * in. Clicking smooth-scrolls; without JS the anchors still jump.
+   * Import, Programs, Progress and Body each hold their own panels; a tool whose panel has no data
+   * yet says so inside its tab rather than being hidden, so a reader can find it before loading
+   * anything. The selection is mirrored in the URL hash (`#programs`), keyboard arrows move between
+   * tabs, and an old section anchor (`#panel-editor`) still lands on the tab that owns it.
    */
-  function initHelperNav() {
-    var nav = document.querySelector('.helper-nav');
-    if (!nav) { return; }
-    var links = Array.prototype.slice.call(nav.querySelectorAll('[data-nav-target]'));
-    if (links.length === 0) { return; }
-    var panels = links.map(function (link) {
-      return byId(link.getAttribute('data-nav-target'));
-    });
+  function initToolTabs() {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.tool-tab'));
+    if (tabs.length === 0) { return; }
+    var byTool = {};
+    tabs.forEach(function (tab) { byTool[tab.getAttribute('data-tool')] = tab; });
+    var aliases = {
+      'panel-source': 'import', 'panel-sessions': 'import', 'panel-problems': 'import',
+      'panel-export': 'import', 'panel-editor': 'programs', 'panel-program': 'programs',
+      'panel-progress': 'progress', 'panel-body': 'body'
+    };
 
-    function syncAvailability() {
-      links.forEach(function (link) {
-        var panel = byId(link.getAttribute('data-nav-target'));
-        if (panel) { link.hidden = panel.hidden; }
+    function select(tool, focus) {
+      var target = byTool[tool] ? tool : 'import';
+      tabs.forEach(function (tab) {
+        var on = tab.getAttribute('data-tool') === target;
+        tab.setAttribute('aria-selected', on ? 'true' : 'false');
+        tab.tabIndex = on ? 0 : -1;
+        var panel = byId(tab.getAttribute('aria-controls'));
+        if (panel) { panel.hidden = !on; }
       });
-    }
-
-    function currentSection() {
-      var offset = nav.getBoundingClientRect().height + 8;
-      var current = null;
-      var best = -Infinity;
-      panels.forEach(function (panel) {
-        if (!panel || panel.hidden) { return; }
-        var top = panel.getBoundingClientRect().top;
-        if (top <= offset && top > best) {
-          best = top;
-          current = panel.id;
-        }
-      });
-      if (current === null) {
-        // Above the first section (or between panels): mark the first tool that is showing.
-        for (var index = 0; index < panels.length; index += 1) {
-          if (panels[index] && !panels[index].hidden) { current = panels[index].id; break; }
+      if (focus && byTool[target]) { byTool[target].focus(); }
+      if (typeof history !== 'undefined' && history.replaceState) {
+        // Some browsers refuse replaceState on a file:// origin; the tab still works.
+        try {
+          history.replaceState(null, '', '#' + target);
+        } catch (ignored) {
+          // no hash mirror, no harm
         }
       }
-      links.forEach(function (link) {
-        link.setAttribute(
-          'aria-current',
-          link.getAttribute('data-nav-target') === current ? 'true' : 'false'
-        );
-      });
     }
 
-    links.forEach(function (link) {
-      link.addEventListener('click', function (event) {
-        var panel = byId(link.getAttribute('data-nav-target'));
-        if (!panel || panel.hidden) { return; }
+    function fromHash() {
+      var hash = String((typeof location !== 'undefined' && location.hash) || '').replace(/^#/, '');
+      if (aliases[hash]) { return aliases[hash]; }
+      return byTool[hash] ? hash : 'import';
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () { select(tab.getAttribute('data-tool')); });
+      tab.addEventListener('keydown', function (event) {
+        var delta = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+        if (delta === 0) { return; }
         event.preventDefault();
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var index = tabs.indexOf(tab);
+        var next = tabs[(index + delta + tabs.length) % tabs.length];
+        select(next.getAttribute('data-tool'), true);
       });
     });
-
-    if (typeof MutationObserver !== 'undefined') {
-      var observer = new MutationObserver(syncAvailability);
-      panels.forEach(function (panel) {
-        if (panel) {
-          observer.observe(panel, { attributes: true, attributeFilter: ['hidden'] });
-        }
-      });
-    }
     if (typeof window !== 'undefined') {
-      window.addEventListener('scroll', currentSection, { passive: true });
+      window.addEventListener('hashchange', function () { select(fromHash()); });
     }
-    syncAvailability();
-    currentSection();
+    ui.selectTool = select;
+    select(fromHash());
   }
 
   function init() {
@@ -3073,7 +3062,7 @@
     });
     elements.downloadProgram.addEventListener('click', downloadProgram);
     editorInit(elements);
-    initHelperNav();
+    initToolTabs();
     elements.waistlineUnit.addEventListener('change', function () {
       state.waistlineUnit = elements.waistlineUnit.value === 'lb' ? 'lb' : 'kg';
       renderBodyPanel();
@@ -3244,6 +3233,8 @@
         (parsed.program.rows === 1 ? '' : 's') + '. It is a program document, not a history list.';
       announce('That is a program sheet. It will be written as a program document.');
       renderProgramPanel();
+      // A program sheet is written in Programs; show the tab rather than leaving it behind Import.
+      if (ui.selectTool) { ui.selectTool('programs'); }
       refresh();
       return;
     }

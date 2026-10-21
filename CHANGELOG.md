@@ -50,10 +50,10 @@ unreleased.
   fixture set (`docs/fixtures/program-edit.js`) holds the page's `planJson` and the app's Kotlin `plan` to
   the same answers, so a page whose preview drifted from the app is caught before a browser sees it.
 
-- **The helper's tools are one click apart.** The page is still one stack of panels, but a sticky section
-  bar lists them — Import, Program editor, Program table, Progress, Body data, Export — marks the section
-  in view, and hides a link whose panel is not showing yet (progress needs an export, body data a Waistline
-  file, the table a sheet). No roadmap id: a usability change to the helper, not a planned feature.
+- **The helper's tools are tabs.** Import, Programs, Progress and Body are four tabs rather than one long
+  stack, so the program editor and the progress chart are one click away; each tab keeps its panels, Progress
+  and Body say what to load before they have data, the selected tab is in the URL (`#programs`), and loading
+  a program table switches to Programs. No roadmap id: a usability change, not a planned feature.
 
 ## [2.11] — 2026-10-21 (versionCode 31)
 

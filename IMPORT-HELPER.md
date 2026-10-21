@@ -354,22 +354,19 @@ assert it.
 
 ## The editor
 
-One page, a stack of panels, with a **sticky section bar** at the top: Import, Program editor, Program
-table, Progress, Body data and Export. A tool whose panel is not showing yet has no link (progress needs
-an export, body data a Waistline file, the table a sheet), and the bar marks the section the reader is in —
-the program editor and the progress chart sit below the fold otherwise.
+Four tabs, one tool on screen at a time — **Import**, **Programs**, **Progress** and **Body** — so a
+tool is one click away rather than lower down a stack. The selected tab is in the URL (`#programs`,
+`#progress`), an old section anchor still lands on the tab that owns it, and loading a program table
+switches to Programs. A tab whose panel has no data yet says what to load instead of disappearing.
 
+**Import** holds the history workflow:
 
 1. **Source** — a drop zone for any number of files, a paste box, an optional *load your app export*, a CSV
    mode, and the prompt for the model with a copy button. The seeded library is already loaded from
    `seed-catalog.js`; an export adds the lifter's own exercises, the dry-run comparison and the id check.
    Below it, the **loaded lists**: one row each, with its row count, its own revision, a Remove, and a Combine line for a date two
    lists share.
-2. **Program editor** (N172) — open a program the app exported, a program from a backup, or a draft; change
-   its days, workouts, exercises and sets; preview the app's own plan of the edit; download the edit or a
-   draft. It shows the document's whole shape, including roles, rungs, supersets, assistance and notes, so a
-   round trip cannot drop a field the table never knew.
-3. **Sessions** — one collapsible row per session: date, exercise count, set count, work tonnage, warm-up
+2. **Sessions** — one collapsible row per session: date, exercise count, set count, work tonnage, warm-up
    count, a problem badge. Expanded, the header carries date, time, duration and the **UTC offset in
    minutes** — empty derives it from the browser, a number is the lifter's own — and each exercise block is a
    table of sets with editable reps, weight and unit, RPE and role. The exercise name is a text input backed
@@ -379,11 +376,20 @@ the program editor and the progress chart sit below the fold otherwise.
    The **exercise mapping** above them is the same idea: its *Linked to* cell is a searchable field over the
    sorted library rather than a select, *Create new exercise* keeps the sheet's own name, and a typed name the
    library does not have is refused and the previous choice restored, so a typo cannot become a duplicate row.
-4. **Problems** — counts and a list; selecting one scrolls to and focuses its row. A *show only problems*
+3. **Problems** — counts and a list; selecting one scrolls to and focuses its row. A *show only problems*
    filter.
-5. **Export** — *will add N sessions, M sets; K sessions already exist and will be skipped; J new
+4. **Export** — *will add N sessions, M sets; K sessions already exist and will be skipped; J new
    exercises*; Download `workout-backup.json`, and a copy-to-clipboard fallback. Refused while a blocking
    problem exists, with the first three named.
+
+**Programs** (N172) holds the program editor — open a program the app exported, a program from a backup, or
+a draft; change its days, workouts, exercises and sets; preview the app's own plan of the edit; download the
+edit or a draft — and, when a table is loaded, the program sheet. It shows the document's whole shape,
+including roles, rungs, supersets, assistance and notes, so a round trip cannot drop a field the table never
+knew.
+
+**Progress** is one lift's chart (below), and **Body** is the Waistline data (below). Each says what it needs
+until it is loaded.
 
 Accessibility is part of the screen rather than a later pass: every input labelled, problems announced
 through a status region, no colour-only signalling, full keyboard operation, and targets of at least 44 px.

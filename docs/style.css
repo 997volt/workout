@@ -1291,11 +1291,11 @@ tbody tr:last-child td {
 }
 
 /* ---------------------------------------------------------------------------------------------
- * The section bar (the tools are stacked, and some of them — the program editor, progress — live
- * well below the fold). A sticky bar puts every tool one click away without hiding the workflow.
+ * Tool tabs (no roadmap id): the page's tools are independent, so one is on screen at a time.
+ * The bar is sticky; a tab with no data yet says so inside its panel instead of being hidden.
  * ------------------------------------------------------------------------------------------- */
 
-.helper-nav {
+.tool-tabs {
   position: sticky;
   top: 0;
   z-index: 20;
@@ -1310,27 +1310,42 @@ tbody tr:last-child td {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.helper-nav a {
-  display: inline-flex;
-  align-items: center;
+.tool-tab {
   min-height: var(--target);
-  padding: 0 12px;
+  padding: 0 16px;
+  border: 1px solid transparent;
   border-radius: 8px;
+  background: transparent;
   color: var(--accent);
+  font: inherit;
   font-weight: 600;
-  text-decoration: none;
+  cursor: pointer;
 }
 
-.helper-nav a:hover {
+.tool-tab:hover {
   background: var(--panel-2);
 }
 
-.helper-nav a[aria-current="true"] {
+.tool-tab[aria-selected="true"] {
   background: var(--accent);
   color: var(--accent-text);
 }
 
-/* The bar is sticky, so an anchored section would otherwise start underneath it. */
-.panel {
-  scroll-margin-top: 80px;
+.tool-tab:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tool-panel[hidden] {
+  display: none;
+}
+
+/* A data-driven panel keeps its own `hidden`; when it is empty, its tab shows this instead. */
+.tab-empty {
+  display: none;
+  color: var(--muted);
+}
+
+.tool-panel > section.panel[hidden] ~ .tab-empty {
+  display: block;
 }

@@ -34,227 +34,242 @@
   <main id="importHelper" class="wrap">
     <p id="liveStatus" class="visually-hidden" role="status" aria-live="polite"></p>
 
-    <nav class="helper-nav" aria-label="Jump to a tool">
-      <a href="#panel-source" data-nav-target="panel-source">Import</a>
-      <a href="#panel-editor" data-nav-target="panel-editor">Program editor</a>
-      <a href="#panel-program" data-nav-target="panel-program">Program table</a>
-      <a href="#panel-progress" data-nav-target="panel-progress">Progress</a>
-      <a href="#panel-body" data-nav-target="panel-body">Body data</a>
-      <a href="#panel-export" data-nav-target="panel-export">Export</a>
-    </nav>
+    <div class="tool-tabs" role="tablist" aria-label="Tools">
+      <button type="button" class="tool-tab" id="tab-import" role="tab" data-tool="import"
+        aria-controls="tool-import" aria-selected="true">Import</button>
+      <button type="button" class="tool-tab" id="tab-programs" role="tab" data-tool="programs"
+        aria-controls="tool-programs" aria-selected="false" tabindex="-1">Programs</button>
+      <button type="button" class="tool-tab" id="tab-progress" role="tab" data-tool="progress"
+        aria-controls="tool-progress" aria-selected="false" tabindex="-1">Progress</button>
+      <button type="button" class="tool-tab" id="tab-body" role="tab" data-tool="body"
+        aria-controls="tool-body" aria-selected="false" tabindex="-1">Body</button>
+    </div>
 
-    <section class="panel" id="panel-source" aria-labelledby="source-heading">
-      <h2 id="source-heading">1. Source</h2>
+    <div class="tool-panel" id="tool-import" role="tabpanel" aria-labelledby="tab-import">
+      <section class="panel" id="panel-source" aria-labelledby="source-heading">
+        <h2 id="source-heading">Source</h2>
 
-      <div class="drop-zone" id="dropZone">
-        <p class="drop-title">Drop JSON, CSV or TSV files here — or a Waistline backup</p>
-        <p class="hint">One or several. Each is read on this page with FileReader and never uploaded; each becomes a list below.</p>
-        <label class="file-button">
-          <span>Choose files</span>
-          <input type="file" id="fileInput" multiple accept=".json,.csv,.tsv,.txt,application/json,text/csv,text/tab-separated-values,text/plain">
+        <div class="drop-zone" id="dropZone">
+          <p class="drop-title">Drop JSON, CSV or TSV files here — or a Waistline backup</p>
+          <p class="hint">One or several. Each is read on this page with FileReader and never uploaded; each becomes a list below.</p>
+          <label class="file-button">
+            <span>Choose files</span>
+            <input type="file" id="fileInput" multiple accept=".json,.csv,.tsv,.txt,application/json,text/csv,text/tab-separated-values,text/plain">
+          </label>
+        </div>
+
+        <div class="field-block">
+          <label for="pasteBox">Paste JSON rows or CSV</label>
+          <textarea id="pasteBox" rows="10" spellcheck="false" autocomplete="off"
+            placeholder='{ "source": "2019-notebook.xlsx / October", "rows": [ { "date": "24-10-2025", "exercise": "Bench Press", "reps": 10, "weight": 40, "unit": "kg", "type": "W" } ] }'></textarea>
+          <div class="button-row">
+            <button type="button" id="loadPaste">Load pasted rows</button>
+            <button type="button" id="loadSample" class="secondary">Load the example</button>
+          </div>
+        </div>
+
+        <p id="sourceStatus" class="hint"></p>
+
+        <div class="field-block" id="sourcesBlock">
+          <h3 id="sources-heading">Loaded lists</h3>
+          <p class="hint">
+            Each file is one list, with its own revision: session and set ids derive from it.
+            Re-importing the same revision is a no-op. The app merges and never overwrites, so
+            correcting a session that already imported means deleting it in the app, raising that
+            list's revision, and importing again.
+          </p>
+          <div id="sourceList" class="source-list" aria-labelledby="sources-heading"></div>
+          <div id="combineStatus"></div>
+        </div>
+
+        <div class="field-block">
+          <label for="exportInput">Load your app export (optional, recommended)</label>
+          <input type="file" id="exportInput" accept=".json,application/json">
+          <p class="hint">
+            The app's seeded library is already loaded, so a name links to its permanent slug. An
+            export adds your own exercises and the dry-run comparison against what is already
+            imported. Export once from the app: Settings &rarr; Export.
+          </p>
+          <p id="catalogStatus" class="hint"></p>
+        </div>
+
+        <fieldset class="field-block" id="dateOrder">
+          <legend>Date order</legend>
+          <label class="radio"><input type="radio" name="dateOrder" id="orderDmy" value="dmy" checked> DD-MM-YYYY (day first)</label>
+          <label class="radio"><input type="radio" name="dateOrder" id="orderMdy" value="mdy"> MM-DD-YYYY (month first)</label>
+          <p id="ambiguityNote" class="hint"></p>
+        </fieldset>
+
+        <h3 id="mapping-heading">Exercise mapping</h3>
+        <p class="hint">
+          Type in <em>Linked to</em> to search the library by name; the list is alphabetical, and
+          <em>Create new exercise</em> keeps the sheet's own name. The unit is a property of the
+          exercise name. The mapping, and only the mapping, is kept in this browser's local storage;
+          a button below forgets it. A name matching only a deleted library row creates a new exercise
+          rather than bringing the deleted one back.
+        </p>
+        <div class="table-scroll">
+          <table class="mapping" aria-labelledby="mapping-heading">
+            <thead>
+              <tr>
+                <th scope="col">Exercise</th>
+                <th scope="col">Used</th>
+                <th scope="col">Target exercise</th>
+                <th scope="col">Default unit</th>
+                <th scope="col">Note</th>
+              </tr>
+            </thead>
+            <tbody id="mappingBody"></tbody>
+          </table>
+        </div>
+        <button type="button" id="forgetMapping" class="secondary">Forget saved mapping</button>
+
+        <h3 id="prompt-heading">The prompt for a model</h3>
+        <p class="hint">
+          Paste this into a model together with the spreadsheet. It asks for flat rows and refuses to
+          let the model invent ids, timestamps, grams or half-points.
+        </p>
+        <p class="notice">
+          If you use a hosted model, the spreadsheet left your machine <em>before</em> this tool saw
+          it. The tool's own no-request guarantee does not cover that step.
+        </p>
+        <pre id="promptText" class="prompt" tabindex="0" aria-labelledby="prompt-heading"></pre>
+        <button type="button" id="copyPrompt">Copy prompt</button>
+      </section>
+      <section class="panel" id="panel-sessions" aria-labelledby="sessions-heading">
+        <h2 id="sessions-heading">Sessions</h2>
+        <label class="inline-check">
+          <input type="checkbox" id="onlyProblems">
+          Show only sessions with problems
         </label>
-      </div>
-
-      <div class="field-block">
-        <label for="pasteBox">Paste JSON rows or CSV</label>
-        <textarea id="pasteBox" rows="10" spellcheck="false" autocomplete="off"
-          placeholder='{ "source": "2019-notebook.xlsx / October", "rows": [ { "date": "24-10-2025", "exercise": "Bench Press", "reps": 10, "weight": 40, "unit": "kg", "type": "W" } ] }'></textarea>
+        <div id="sessionsList"></div>
+      </section>
+      <section class="panel" id="panel-problems" aria-labelledby="problems-heading">
+        <h2 id="problems-heading">Problems</h2>
+        <p id="problemsCounts" class="counts"></p>
+        <ol id="problemList" class="problem-list"></ol>
+      </section>
+      <section class="panel" id="panel-export" aria-labelledby="export-heading">
+        <h2 id="export-heading">Export</h2>
+        <p id="exportStats" class="stats"></p>
+        <p id="exportRefusal" class="refusal" hidden></p>
         <div class="button-row">
-          <button type="button" id="loadPaste">Load pasted rows</button>
-          <button type="button" id="loadSample" class="secondary">Load the example</button>
+          <button type="button" id="downloadExport" disabled>Download workout-backup.json</button>
+          <button type="button" id="copyExport" class="secondary" disabled>Copy JSON</button>
         </div>
-      </div>
+        <label for="exportText">Backup JSON</label>
+        <textarea id="exportText" readonly spellcheck="false" aria-describedby="exportStats"></textarea>
+      </section>
+    </div>
 
-      <p id="sourceStatus" class="hint"></p>
-
-      <div class="field-block" id="sourcesBlock">
-        <h3 id="sources-heading">Loaded lists</h3>
+    <div class="tool-panel" id="tool-programs" role="tabpanel" aria-labelledby="tab-programs" hidden>
+      <section class="panel" id="panel-program" aria-labelledby="program-heading" hidden>
+        <h2 id="program-heading">Program sheet</h2>
         <p class="hint">
-          Each file is one list, with its own revision: session and set ids derive from it.
-          Re-importing the same revision is a no-op. The app merges and never overwrites, so
-          correcting a session that already imported means deleting it in the app, raising that
-          list's revision, and importing again.
+          A table — from a spreadsheet, a coach, or an LLM — becomes a <strong>program document</strong> the
+          app imports: one row per exercise, with the day it belongs to (Day, Weekday, Exercise, Sets, Reps,
+          Load, Rest, RPE). Loads are kilograms. This creates a new program; change it later in the app.
         </p>
-        <div id="sourceList" class="source-list" aria-labelledby="sources-heading"></div>
-        <div id="combineStatus"></div>
-      </div>
-
-      <div class="field-block">
-        <label for="exportInput">Load your app export (optional, recommended)</label>
-        <input type="file" id="exportInput" accept=".json,application/json">
+        <p id="programSummary" class="hint"></p>
+        <div id="programPreview" class="program-preview"></div>
+        <p id="programProblems" class="hint"></p>
+        <p><button type="button" id="downloadProgram" disabled>Download program.json</button></p>
+      </section>
+      <section class="panel" id="panel-editor" aria-labelledby="editor-heading">
+        <h2 id="editor-heading">Program editor</h2>
         <p class="hint">
-          The app's seeded library is already loaded, so a name links to its permanent slug. An
-          export adds your own exercises and the dry-run comparison against what is already
-          imported. Export once from the app: Settings &rarr; Export.
+          Open a program the app exported (<em>Programs → a program → ⋮ → Export</em>), change it, and
+          download an edit the app applies from <em>Programs → Load</em>. The page plans the edit with
+          the app's own core, so the preview is exactly what the app will do. Nothing is uploaded or
+          stored: a draft is a file you save and open.
         </p>
-        <p id="catalogStatus" class="hint"></p>
-      </div>
+        <p class="hint" id="editorUnavailable" hidden>
+          This panel needs the shared core. Run <code>./gradlew :shared:syncSharedJs</code> and reload.
+        </p>
+        <p>
+          <button type="button" id="openProgramFile">Open a program…</button>
+          <button type="button" id="openProgramDraft">Open a draft…</button>
+          <input type="file" id="editorFile" accept=".json,application/json" hidden>
+        </p>
+        <p id="editorStatus" class="hint"></p>
+        <div id="programEditor" class="program-editor"></div>
+        <div id="editorPreview" class="program-preview"></div>
+        <p>
+          <button type="button" id="previewProgramEdit" disabled>Preview changes</button>
+          <button type="button" id="downloadProgramEdit" disabled>Download edit</button>
+          <button type="button" id="saveProgramDraft" disabled>Save draft</button>
+        </p>
+      </section>
+    </div>
 
-      <fieldset class="field-block" id="dateOrder">
-        <legend>Date order</legend>
-        <label class="radio"><input type="radio" name="dateOrder" id="orderDmy" value="dmy" checked> DD-MM-YYYY (day first)</label>
-        <label class="radio"><input type="radio" name="dateOrder" id="orderMdy" value="mdy"> MM-DD-YYYY (month first)</label>
-        <p id="ambiguityNote" class="hint"></p>
-      </fieldset>
-
-      <h3 id="mapping-heading">Exercise mapping</h3>
-      <p class="hint">
-        Type in <em>Linked to</em> to search the library by name; the list is alphabetical, and
-        <em>Create new exercise</em> keeps the sheet's own name. The unit is a property of the
-        exercise name. The mapping, and only the mapping, is kept in this browser's local storage;
-        a button below forgets it. A name matching only a deleted library row creates a new exercise
-        rather than bringing the deleted one back.
-      </p>
-      <div class="table-scroll">
-        <table class="mapping" aria-labelledby="mapping-heading">
-          <thead>
-            <tr>
-              <th scope="col">Exercise</th>
-              <th scope="col">Used</th>
-              <th scope="col">Target exercise</th>
-              <th scope="col">Default unit</th>
-              <th scope="col">Note</th>
-            </tr>
-          </thead>
-          <tbody id="mappingBody"></tbody>
-        </table>
-      </div>
-      <button type="button" id="forgetMapping" class="secondary">Forget saved mapping</button>
-
-      <h3 id="prompt-heading">The prompt for a model</h3>
-      <p class="hint">
-        Paste this into a model together with the spreadsheet. It asks for flat rows and refuses to
-        let the model invent ids, timestamps, grams or half-points.
-      </p>
-      <p class="notice">
-        If you use a hosted model, the spreadsheet left your machine <em>before</em> this tool saw
-        it. The tool's own no-request guarantee does not cover that step.
-      </p>
-      <pre id="promptText" class="prompt" tabindex="0" aria-labelledby="prompt-heading"></pre>
-      <button type="button" id="copyPrompt">Copy prompt</button>
-    </section>
-
-    <section class="panel" id="panel-program" aria-labelledby="program-heading" hidden>
-      <h2 id="program-heading">Program sheet</h2>
-      <p class="hint">
-        A table — from a spreadsheet, a coach, or an LLM — becomes a <strong>program document</strong> the
-        app imports: one row per exercise, with the day it belongs to (Day, Weekday, Exercise, Sets, Reps,
-        Load, Rest, RPE). Loads are kilograms. This creates a new program; change it later in the app.
-      </p>
-      <p id="programSummary" class="hint"></p>
-      <div id="programPreview" class="program-preview"></div>
-      <p id="programProblems" class="hint"></p>
-      <p><button type="button" id="downloadProgram" disabled>Download program.json</button></p>
-    </section>
-
-
-    <section class="panel" id="panel-editor" aria-labelledby="editor-heading">
-      <h2 id="editor-heading">Program editor</h2>
-      <p class="hint">
-        Open a program the app exported (<em>Programs → a program → ⋮ → Export</em>), change it, and
-        download an edit the app applies from <em>Programs → Load</em>. The page plans the edit with
-        the app's own core, so the preview is exactly what the app will do. Nothing is uploaded or
-        stored: a draft is a file you save and open.
-      </p>
-      <p class="hint" id="editorUnavailable" hidden>
-        This panel needs the shared core. Run <code>./gradlew :shared:syncSharedJs</code> and reload.
-      </p>
-      <p>
-        <button type="button" id="openProgramFile">Open a program…</button>
-        <button type="button" id="openProgramDraft">Open a draft…</button>
-        <input type="file" id="editorFile" accept=".json,application/json" hidden>
-      </p>
-      <p id="editorStatus" class="hint"></p>
-      <div id="programEditor" class="program-editor"></div>
-      <div id="editorPreview" class="program-preview"></div>
-      <p>
-        <button type="button" id="previewProgramEdit" disabled>Preview changes</button>
-        <button type="button" id="downloadProgramEdit" disabled>Download edit</button>
-        <button type="button" id="saveProgramDraft" disabled>Save draft</button>
-      </p>
-    </section>
-
-    <section class="panel" id="panel-body" aria-labelledby="body-heading" hidden>
-      <h2 id="body-heading">Body data (from Waistline)</h2>
-      <p class="hint">
-        One <strong>daily</strong> measurement per day from a Waistline backup: weight, body fat and
-        muscle, in the unit the file used. Tape sites stay in Waistline — the app's daily record does
-        not hold them, and they are listed below rather than dropped. Nothing here is stored.
-      </p>
-      <div class="body-controls">
-        <label class="field">
-          <span class="field-label">Weight unit in that file</span>
-          <select id="waistlineUnit">
-            <option value="kg">kg</option>
-            <option value="lb">lb</option>
-          </select>
-        </label>
-        <button type="button" id="clearBody" class="secondary">Remove body data</button>
-      </div>
-      <p id="bodySummary" class="hint"></p>
-      <div id="bodyPreview" class="body-preview"></div>
-    </section>
-
-    <section class="panel" id="panel-sessions" aria-labelledby="sessions-heading">
-      <h2 id="sessions-heading">2. Sessions</h2>
-      <label class="inline-check">
-        <input type="checkbox" id="onlyProblems">
-        Show only sessions with problems
-      </label>
-      <div id="sessionsList"></div>
-    </section>
-
-    <section class="panel" id="panel-problems" aria-labelledby="problems-heading">
-      <h2 id="problems-heading">3. Problems</h2>
-      <p id="problemsCounts" class="counts"></p>
-      <ol id="problemList" class="problem-list"></ol>
-    </section>
-
-    <section class="panel" id="panel-export" aria-labelledby="export-heading">
-      <h2 id="export-heading">4. Export</h2>
-      <p id="exportStats" class="stats"></p>
-      <p id="exportRefusal" class="refusal" hidden></p>
-      <div class="button-row">
-        <button type="button" id="downloadExport" disabled>Download workout-backup.json</button>
-        <button type="button" id="copyExport" class="secondary" disabled>Copy JSON</button>
-      </div>
-      <label for="exportText">Backup JSON</label>
-      <textarea id="exportText" readonly spellcheck="false" aria-describedby="exportStats"></textarea>
-    </section>
-    <section class="panel" id="panel-progress" aria-labelledby="progress-heading" hidden>
-      <h2 id="progress-heading">5. Progress</h2>
-      <p class="hint">
-        One lift, two numbers, from the export loaded above: the heaviest working set and Epley's
-        estimate from it, in kilograms. Warm-ups are excluded, a single rep is its own max, and a set
-        above 12 reps has no estimate. Nothing here is stored — close the page and it is gone.
-      </p>
-      <div class="progress-controls">
-        <label class="field">
-          <span class="field-label">Filter lifts</span>
-          <input type="search" id="progressFilter" autocomplete="off" spellcheck="false"
-            placeholder="Type to narrow the list">
-        </label>
-        <label class="field">
-          <span class="field-label">Range</span>
-          <select id="progressRange">
-            <option value="all">All</option>
-            <option value="365">Last year</option>
-            <option value="90">Last 90 days</option>
-          </select>
-        </label>
-      </div>
-      <div class="progress-body">
-        <div id="progressList" class="progress-list" role="group"
-          aria-label="Lifts with history in this export"></div>
-        <div class="progress-plot">
-          <p id="progressSummary" class="hint"></p>
-          <div id="progressChart" class="progress-chart"></div>
+    <div class="tool-panel" id="tool-progress" role="tabpanel" aria-labelledby="tab-progress" hidden>
+      <section class="panel" id="panel-progress" aria-labelledby="progress-heading" hidden>
+        <h2 id="progress-heading">Progress</h2>
+        <p class="hint">
+          One lift, two numbers, from the export loaded above: the heaviest working set and Epley's
+          estimate from it, in kilograms. Warm-ups are excluded, a single rep is its own max, and a set
+          above 12 reps has no estimate. Nothing here is stored — close the page and it is gone.
+        </p>
+        <div class="progress-controls">
+          <label class="field">
+            <span class="field-label">Filter lifts</span>
+            <input type="search" id="progressFilter" autocomplete="off" spellcheck="false"
+              placeholder="Type to narrow the list">
+          </label>
+          <label class="field">
+            <span class="field-label">Range</span>
+            <select id="progressRange">
+              <option value="all">All</option>
+              <option value="365">Last year</option>
+              <option value="90">Last 90 days</option>
+            </select>
+          </label>
         </div>
-      </div>
-      <h3 id="export-history-heading">In your export</h3>
-      <p id="exportHistorySummary" class="hint"></p>
-      <div id="exportHistory" class="export-history" aria-labelledby="export-history-heading"></div>
-    </section>
+        <div class="progress-body">
+          <div id="progressList" class="progress-list" role="group"
+            aria-label="Lifts with history in this export"></div>
+          <div class="progress-plot">
+            <p id="progressSummary" class="hint"></p>
+            <div id="progressChart" class="progress-chart"></div>
+          </div>
+        </div>
+        <h3 id="export-history-heading">In your export</h3>
+        <p id="exportHistorySummary" class="hint"></p>
+        <div id="exportHistory" class="export-history" aria-labelledby="export-history-heading"></div>
+      </section>
+      <p class="tab-empty">
+        Load an export in <strong>Import</strong> to see a lift's progress. The chart reads the same
+        rows the app does, and nothing here is stored.
+      </p>
+    </div>
+
+    <div class="tool-panel" id="tool-body" role="tabpanel" aria-labelledby="tab-body" hidden>
+      <section class="panel" id="panel-body" aria-labelledby="body-heading" hidden>
+        <h2 id="body-heading">Body data (from Waistline)</h2>
+        <p class="hint">
+          One <strong>daily</strong> measurement per day from a Waistline backup: weight, body fat and
+          muscle, in the unit the file used. Tape sites stay in Waistline — the app's daily record does
+          not hold them, and they are listed below rather than dropped. Nothing here is stored.
+        </p>
+        <div class="body-controls">
+          <label class="field">
+            <span class="field-label">Weight unit in that file</span>
+            <select id="waistlineUnit">
+              <option value="kg">kg</option>
+              <option value="lb">lb</option>
+            </select>
+          </label>
+          <button type="button" id="clearBody" class="secondary">Remove body data</button>
+        </div>
+        <p id="bodySummary" class="hint"></p>
+        <div id="bodyPreview" class="body-preview"></div>
+      </section>
+      <p class="tab-empty">
+        Load a Waistline backup in <strong>Import</strong> to add daily weight, body fat and muscle to
+        the export.
+      </p>
+    </div>
+
   </main>
 
   <footer class="page-footer">
