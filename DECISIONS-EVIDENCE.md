@@ -2521,6 +2521,14 @@ roll-up rule; re-implementing it here would be a second answer to a question the
 are a display preference, and the app stores grams: a unit toggle on a progression chart buys nothing and adds
 a place for a conversion error.
 
+**Why a pasted history is charted too.** The chart read only the app export, so a lifter who pasted 3,750
+rows saw 106 sessions in Import and an empty chart: the export was correctly blocked because the seeded
+library did not contain names like *Machine Row*, and the rows were not the export. The chart is a view of the
+record, not a write, so it now falls back to the rows, built with **no catalog** — every name is the movement
+it already is, which is exactly what the chart needs and exactly what the import may not assume. The export
+still refuses an unmatched name until the lifter maps it; the panel says which source it is drawing and names
+a blocked export.
+
 **Rejected:** the full statistics screen, family-head aggregation, a pound toggle, and caching the export so
 the chart survives a reload — the last would turn a view of a file into the dashboard this note exists to
 keep out.

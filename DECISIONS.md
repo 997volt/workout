@@ -1068,7 +1068,11 @@ the rule; that one argues it.
   and an unfinished session are excluded exactly as `TrendsDao` excludes them, because a chart that counted
   them would show a session the phone does not (B179). A generated fixture runs the app's
   `toExerciseTrendPoints()` and the tool's series over the same rows. A family head is not offered, because
-  aggregating one is the app's roll-up rule re-implemented.
+  aggregating one is the app's roll-up rule re-implemented. **When no export is loaded, the chart reads the
+  rows being imported** (N165 amended): they are built without the catalog, so an exercise name that is not
+  mapped is charted as itself rather than leaving the panel empty, while the export still refuses that name
+  until it is mapped — a chart is a view of the record, not a write. The panel names its source, and the list
+  below is labelled *In your export* or *In these rows* accordingly.
   ([evidence](DECISIONS-EVIDENCE.md#n165))
 - **Body data may be written from a Waistline backup, DAILY records only** (N166). The helper may append
   `measurements` to the backup it writes: one DAILY row per day — weight in grams, body fat and muscle in

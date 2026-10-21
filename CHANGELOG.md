@@ -61,6 +61,12 @@ unreleased.
   shows its daily rows. Neither imports anything else, and neither uploads. No roadmap id: the same
   usability change as the tabs.
 
+- **A pasted history shows its progress before it is importable.** The chart read only the app export, so a
+  rows file whose exercise names were not mapped — and which was therefore blocked from export — left Progress
+  empty even though Import listed every session. The chart now falls back to the rows being imported, built
+  without the import's mapping gate, and names its source; the export still refuses an unmapped name. No
+  roadmap id: a fix to the helper.
+
 ## [2.11] — 2026-10-21 (versionCode 31)
 
 ### Added

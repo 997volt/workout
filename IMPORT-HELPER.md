@@ -400,8 +400,10 @@ reported beside it rather than folded in.
 
 ## Lift progress
 
-One movement at a time, from the export already loaded, answering *how is my bench press going* on a screen
-that is not phone-sized (N165). The movements that have history sit in a **list beside the chart**, with a
+One movement at a time, answering *how is my bench press going* on a screen that is not phone-sized (N165).
+It draws from the app export you load — or, until one is loaded, from the rows you are importing: a pasted
+history is charted without the import's mapping gate, so its progress is visible before its exercise names
+are mapped. The panel says which source it is using. The movements that have history sit in a **list beside the chart**, with a
 filter above it, so changing lift is one click rather than a search in a dropdown. Two series, both the app's
 own definitions rather than a second opinion:
 
@@ -423,11 +425,12 @@ than a unit converter. A range narrows to the last year or 90 days measured back
 an export from years ago still reads. **Nothing is stored**: the chart is built from the file in the tab and
 dies with it.
 
-Below the chart, **In your export** reads the loaded file back: every live session, newest first, with its
-exercises and sets in kilograms, and the rows the app holds as deleted counted rather than shown. It is
-**read-only**, and deliberately not the Sessions panel: that one is the import draft, built on a flat row list
-which cannot carry readiness, template, superset, assistance or the ratings a backup does — a round trip through
-it would silently drop them, and the app's merge would then refuse to overwrite the rows anyway.
+Below the chart, **In your export** — or **In these rows** when no export is loaded — reads the chart's source
+back: every live session, newest first, with its exercises and sets in kilograms, and the rows the app holds as
+deleted counted rather than shown. An export's list is **read-only**, and deliberately not the Sessions panel:
+that one is the import draft, built on a flat row list which cannot carry readiness, template, superset,
+assistance or the ratings a backup does — a round trip through it would silently drop them, and the app's merge
+would then refuse to overwrite the rows anyway. The rows' list is that same draft, summarized for the chart.
 
 The numbers are pinned to the app's rather than trusted to agree: `ProgressSeriesFixtureTest` runs the app's
 own `toExerciseTrendPoints()` over a synthetic four-session fixture — a warm-up that must not win, a set that

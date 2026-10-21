@@ -2956,6 +2956,8 @@
       /* The progress panel's chosen movement, and the list the picker offers (N165). */
       progressExerciseId: null,
       progressMovements: [],
+      /* The rows' own charting file, rebuilt when the rows change (N173's progress fallback). */
+      progressRowsFile: null,
       /* Waistline daily body data and the unit its numbers were entered in (N166). */
       waistline: null,
       waistlineUnit: 'kg',
@@ -3424,6 +3426,7 @@
 
   function rebuildModel() {
     var state = ui.state;
+    state.progressRowsFile = null;
     if (!state.rows || state.rows.length === 0) {
       state.model = null;
       return;
@@ -3451,8 +3454,8 @@
     renderSessions();
     renderMapping();
     renderCombine();
-    renderProgress();
     refresh();
+    renderProgress();
     refreshOrderNote();
   }
 
@@ -5277,20 +5280,92 @@
     }
   }
 
+  /**
+   * What the progress chart reads (N165, extended).
+   *
+   * The chart was built for an app export, and read only that: a lifter who pasted a history file
+   * saw every session in Import and an empty chart, because the rows were not the export. When no
+   * export with history is loaded, the rows being imported are the same `BackupFile` shape — the
+   * export the page is about to write — so they are charted instead, and the panel says which it is.
+   */
+  function progressSource() {
+    var state = ui.state;
+    var catalog = state.catalogFile;
+    if (catalog && !catalog.seeded &&
+        Array.isArray(catalog.sessions) && catalog.sessions.length > 0 &&
+        Array.isArray(catalog.exercises) && catalog.exercises.length > 0) {
+      return { backup: catalog, kind: 'export', blocked: false };
+    }
+    var built = state.exportResult;
+    if (built && built.ok && built.file &&
+        Array.isArray(built.file.sessions) && built.file.sessions.length > 0) {
+      return { backup: built.file, kind: 'rows', blocked: false };
+    }
+    var rowsFile = progressRowsFile();
+    if (rowsFile) {
+      var blocked = !!(state.validation && state.validation.problems.length > 0) ||
+        !!(built && !built.ok);
+      return { backup: rowsFile, kind: 'rows', blocked: blocked };
+    }
+    return { backup: null, kind: null, blocked: false };
+  }
+
+  /**
+   * The rows as a charting file, independent of the import's mapping gate.
+   *
+   * The export refuses an exercise name the loaded library does not have until the lifter maps it,
+   * which is right for an import and wrong for a chart: the rows are already the record, and the
+   * chart is a view of them. Building with no catalog turns every name into the exercise it already
+   * is, so the panel has something to draw while the mapping is still being answered in Import.
+   */
+  function progressRowsFile() {
+    var state = ui.state;
+    if (!state.rows || state.rows.length === 0) { return null; }
+    if (state.progressRowsFile) { return state.progressRowsFile; }
+    var model = buildModel(state.rows, {
+      seed: state.seed,
+      sheet: state.sheet,
+      source: state.source,
+      sources: state.sources.map(function (item) {
+        return { seed: item.seed, sheet: item.sheet, name: item.name };
+      }),
+      combineDates: state.combineDates,
+      dateOrder: state.dateOrder,
+      catalog: null,
+      nameUnits: state.mapping.units,
+      nameTargets: state.mapping.targets
+    });
+    var result = buildExport(model, { exportedAt: state.exportedAt });
+    state.progressRowsFile = result.ok ? result.file : null;
+    return state.progressRowsFile;
+  }
+
   function renderProgress() {
     var state = ui.state;
     var panel = ui.elements.progressPanel;
     if (!panel) { return; }
-    var backup = state.catalogFile;
-    var hasHistory = backup && !backup.seeded &&
+    var source = progressSource();
+    var backup = source.backup;
+    var hasHistory = !!backup &&
       Array.isArray(backup.sessions) && backup.sessions.length > 0 &&
       Array.isArray(backup.exercises) && backup.exercises.length > 0;
     panel.hidden = !hasHistory;
     if (!hasHistory) { return; }
 
+    setText(byId('progressSource'), source.kind === 'export'
+      ? 'Charting the app export you loaded.'
+      : source.blocked
+        ? 'Charting the rows you are importing. The export is still blocked by the problems in Import; ' +
+          'this chart does not need them mapped.'
+        : 'Charting the rows you are importing.');
+
     var movements = movementsWithHistory(backup);
     state.progressMovements = movements;
-    renderExportHistory(exportSnapshot(backup));
+    var heading = byId('export-history-heading');
+    if (heading) {
+      setText(heading, source.kind === 'export' ? 'In your export' : 'In these rows');
+    }
+    renderExportHistory(exportSnapshot(backup), source.kind);
 
     var selected = null;
     if (state.progressExerciseId) {
@@ -5308,7 +5383,9 @@
     if (!selected) {
       state.progressExerciseId = null;
       renderProgressList(movements);
-      setText(summary, 'This export has no logged movements to chart.');
+      setText(summary, source.kind === 'export'
+        ? 'This export has no logged movements to chart.'
+        : 'These rows have no logged movements to chart.');
       chart.textContent = '';
       return;
     }
@@ -5372,13 +5449,13 @@
   }
 
   /* What the export holds, newest first, with nothing to edit (N165). */
-  function renderExportHistory(snapshot) {
+  function renderExportHistory(snapshot, kind) {
     var host = ui.elements.exportHistory;
     var summary = ui.elements.exportHistorySummary;
     if (!host || !summary) { return; }
     host.textContent = '';
     if (snapshot.live === 0) {
-      setText(summary, 'No sessions in this export.');
+      setText(summary, kind === 'rows' ? 'No sessions in these rows.' : 'No sessions in this export.');
       return;
     }
     var text = formatInt(snapshot.live) + ' session' + (snapshot.live === 1 ? '' : 's') +
@@ -5388,7 +5465,9 @@
     if (snapshot.deleted > 0) {
       text += ' · ' + formatInt(snapshot.deleted) + ' deleted, hidden';
     }
-    setText(summary, text + '. Read-only: this is what the app stores, not a draft.');
+    setText(summary, text + (kind === 'rows'
+      ? '. These are the rows you are importing, not the app\'s record.'
+      : '. Read-only: this is what the app stores, not a draft.'));
 
     snapshot.sessions.forEach(function (session) {
       var details = document.createElement('details');

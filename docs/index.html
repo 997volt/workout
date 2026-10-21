@@ -213,10 +213,12 @@
       <section class="panel" id="panel-progress" aria-labelledby="progress-heading" hidden>
         <h2 id="progress-heading">Progress</h2>
         <p class="hint">
-          One lift, two numbers, from the export loaded above: the heaviest working set and Epley's
-          estimate from it, in kilograms. Warm-ups are excluded, a single rep is its own max, and a set
-          above 12 reps has no estimate. Nothing here is stored — close the page and it is gone.
+          One lift, two numbers: the heaviest working set and Epley's estimate from it, in kilograms —
+          from the app export you load, or from the rows you are importing until an export is loaded.
+          Warm-ups are excluded, a single rep is its own max, and a set above 12 reps has no estimate.
+          Nothing here is stored — close the page and it is gone.
         </p>
+        <p id="progressSource" class="hint"></p>
         <div class="progress-controls">
           <label class="field">
             <span class="field-label">Filter lifts</span>
@@ -234,7 +236,7 @@
         </div>
         <div class="progress-body">
           <div id="progressList" class="progress-list" role="group"
-            aria-label="Lifts with history in this export"></div>
+            aria-label="Lifts with history in this data"></div>
           <div class="progress-plot">
             <p id="progressSummary" class="hint"></p>
             <div id="progressChart" class="progress-chart"></div>
@@ -245,8 +247,8 @@
         <div id="exportHistory" class="export-history" aria-labelledby="export-history-heading"></div>
       </section>
       <p class="tab-empty">
-        Load an export in <strong>Import</strong> to see a lift's progress. The chart reads the same
-        rows the app does, and nothing here is stored.
+        Load an export, or paste rows, in <strong>Import</strong> to see a lift's progress. The chart
+        reads the same rows the app does, and nothing here is stored.
       </p>
     </div>
 
