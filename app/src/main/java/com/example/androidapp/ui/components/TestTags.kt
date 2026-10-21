@@ -554,9 +554,6 @@ object TestTags {
     const val SETTINGS_REST_TIMER = "settings_rest_timer"
     const val EXERCISE_REST_PRESCRIPTION = "exercise_rest_prescription"
 
-    /** The switch that decides whether *Done* asks about the next step a plan earned (ROADMAP N66). */
-    const val SETTINGS_PROGRESSION = "settings_progression"
-
     /** One chip of the progression mode, by enum name (P3.17). */
     fun settingsProgressionMode(mode: String) = "settings_progression_$mode"
 

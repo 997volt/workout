@@ -1622,15 +1622,18 @@ private fun SessionExercise.suggestionFor(
         nextIndex = loggedSets.size,
         anchorLoad = loggedSets.anchorLoadForTheNextRung(),
     )
-    return suggestionForNextSet(
+    // A rung's reps come from what this same set did last time, matched by **place** rather than by the
+    // stored index (B157): a soft delete leaves a hole in the indices, while the list's own order is the
+    // position the plan counts.
+    val sameSetLastTime = previous?.sets?.getOrNull(loggedSets.size)
+    val suggestion = suggestionForNextSet(
         loggedSets = loggedSets,
         previous = previous,
         planned = planned,
-        // A rung's reps come from what this same set did last time, matched by **place** rather than by the
-        // stored index (B157): a soft delete leaves a hole in the indices, while the list's own order is the
-        // position the plan counts.
-        sameSetLastTime = previous?.sets?.getOrNull(loggedSets.size),
-    ).copy(reason = suggestionReason(previous, planned))
+        sameSetLastTime = sameSetLastTime,
+    )
+    // The line names the set the prefill read, which for a rung is its own place last time (N168).
+    return suggestion.copy(reason = suggestionReason(previous, planned, sameSetLastTime))
 }
 
 /**

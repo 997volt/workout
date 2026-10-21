@@ -120,6 +120,15 @@ unreleased.
 
 ### Fixed
 
+- **A plan add that could not fill its targets says so** (N168). Adding a movement to a plan appends it and
+  then copies the last session's working sets as its targets. The append is the action that matters, so a
+  storage failure while copying used to be dropped: the movement arrived with no targets and nothing said
+  why. It is reported now, the picker does not claim a clean add, and a second tap is answered as the add
+  that already happened instead of adding the movement twice. Under the pending set, the why-line also names
+  a rung's **own** previous set — where its reps came from — rather than the session's last set, which for a
+  drop is a different row. The rest of the review's cleanups are internal: two misplaced doc comments, a
+  dead test tag, one home for the quick-entry limit, and two pass-through composables removed.
+
 - **The progress chart reads only the rows the app reads** (B179). A soft-deleted set, exercise or session,
   and a session still in progress, ride in an export but are absent from the app's trend query; the page
   counted them, so a deleted 999 kg typo could become the chart's best session and a lift whose only sets

@@ -26,7 +26,7 @@ import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.ui.components.TestTags
 
 /** The most sets one quick entry writes, and the most reps it will prescribe. */
-private const val MAX_QUICK_SETS = 20
+internal const val MAX_QUICK_SETS = 20
 private const val MAX_QUICK_REPS = 100
 
 /** The load field is a little wider than the two numbers beside it. */

@@ -65,6 +65,7 @@ import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
+import com.example.androidapp.ui.components.ProgressionDialog
 import com.example.androidapp.ui.components.ReadinessNoteDialog
 import com.example.androidapp.ui.components.SetEdit
 import com.example.androidapp.ui.components.SetEditorDialog
@@ -268,10 +269,11 @@ fun ActiveWorkoutScreen(
 
     ActivityPicker(open = choosingActivity, onPick = onSetActivity, onDismiss = { choosingActivity = false })
 
-    SetEditorHost(editing, state.exercises, onUpdateSet) { editing = null }
+    SetEditorSection(editing, state.exercises, onUpdateSet) { editing = null }
 
+    // One host, from the frozen state, so a rotation mid-answer reopens it on the picks (N74).
     pendingProgression?.let {
-        ProgressionSection(
+        ProgressionDialog(
             it,
             onToggleProgression,
             onSelectAllProgression,

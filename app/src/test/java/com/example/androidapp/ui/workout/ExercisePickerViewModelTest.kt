@@ -386,6 +386,58 @@ class ExercisePickerViewModelTest {
     }
 
     @Test
+    fun aTargetThatCannotBeWritten_isReported_andTheExerciseIsNotAddedTwice() = runTest(dispatcher) {
+        // N168: the append is the action that matters, so it stands; but a storage failure while filling
+        // its targets used to vanish. It is reported now, the picker does not claim a clean add, and a
+        // second tap is answered as the add that already happened rather than a duplicate plan row.
+        val workouts = FakeWorkoutRepository().apply {
+            previous = PreviousPerformance(
+                listOf(
+                    SetEntry(
+                        id = "s1",
+                        sessionExerciseId = "se1",
+                        setIndex = 0,
+                        reps = 5,
+                        weightGrams = 100_000L,
+                    ),
+                ),
+            )
+        }
+        val templates = FakeTemplateRepository().apply {
+            planned = TemplateExercise(
+                id = "te1",
+                templateId = "t1",
+                exerciseId = "back-squat",
+                position = 0,
+                exerciseName = "Back Squat",
+                primaryMuscle = null,
+                equipment = null,
+            )
+            failSets = true
+        }
+        val viewModel = viewModelFor(
+            FakeExerciseRepository(listOf(seeded)),
+            workouts,
+            templates,
+            templateId = "t1",
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onExerciseSelected("back-squat")
+        advanceUntilIdle()
+
+        assertNotNull("the failed prefill is reported", viewModel.error.value)
+        assertFalse("and the add is not claimed as complete", viewModel.added.value)
+        assertEquals("the exercise itself still landed", 1, templates.added.size)
+
+        viewModel.onExerciseSelected("back-squat")
+        advanceUntilIdle()
+
+        assertEquals("a second tap does not duplicate the plan row", 1, templates.added.size)
+    }
+
+    @Test
     fun aNewExercise_canBeCreatedStraightIntoATemplate() = runTest(dispatcher) {
         val exercises = FakeExerciseRepository()
         val templates = FakeTemplateRepository()
@@ -487,6 +539,9 @@ class ExercisePickerViewModelTest {
         /** Every prefilled set, as the plan row and the edit. */
         val prefilled = mutableListOf<Pair<String, TemplateSetEdit>>()
 
+        /** Whether writing a prefilled target fails, for the reported-failure case (N168). */
+        var failSets = false
+
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> =
             flowOf(listOfNotNull(planned))
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
@@ -499,6 +554,7 @@ class ExercisePickerViewModelTest {
             templateExerciseId: String,
             edit: TemplateSetEdit,
         ): DataResult<Unit> {
+            if (failSets) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             prefilled += templateExerciseId to edit
             return DataResult.Success(Unit)
         }

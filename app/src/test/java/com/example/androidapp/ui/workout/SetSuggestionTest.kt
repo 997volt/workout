@@ -58,6 +58,28 @@ class SetSuggestionTest {
     }
 
     @Test
+    fun theReason_namesARungsOwnPlace_notTheLastSetOverall() {
+        // N79, N168: a rung's reps come from what this same place did last time, so its line must name
+        // that set. The session's last set is a different row — for a drop, the wrong one entirely.
+        val lastSession = PreviousPerformance(
+            listOf(
+                SetEntry("s1", "se1", 0, reps = 5, weightGrams = 100_000L),
+                SetEntry("s2", "se1", 1, reps = 8, weightGrams = 90_000L),
+                SetEntry("s3", "se1", 2, reps = 10, weightGrams = 60_000L, setType = SetType.DROP),
+            ),
+        )
+
+        val reason = suggestionReason(
+            previous = lastSession,
+            planned = PlannedTarget(reps = null, weightGrams = null, role = SetType.DROP),
+            sameSetLastTime = lastSession.sets[1],
+        )
+
+        assertEquals(8, reason?.lastReps)
+        assertEquals(90_000L, reason?.lastWeightGrams)
+    }
+
+    @Test
     fun thePlansRole_isCarriedIntoTheArmedSet() {
         // ROADMAP B48: a plan that opens with a ramp arms warm-up, so the logged set is a warm-up
         // rather than a working set that inflates volume and can claim a record.

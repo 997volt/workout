@@ -9,6 +9,7 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Exercise
+import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.repository.ExerciseRepository
 import com.example.androidapp.domain.repository.TemplateRepository
@@ -157,16 +158,50 @@ class ExercisePickerViewModel @Inject constructor(
         _error.value = null
     }
 
+    /**
+     * What one add did, as the three outcomes the picker has (N168).
+     *
+     * A plan add is two writes — the exercise, then the targets it is prefilled with — and the exercise
+     * is the action the lifter took. A failure in the second half must leave the append standing, so it
+     * is its own outcome rather than a failed add; it is still *reported*, because a storage error that
+     * vanishes leaves a plan the lifter has to top up without knowing why.
+     */
+    private sealed interface AddOutcome {
+        /** The exercise landed, targets and all. */
+        data object Added : AddOutcome
+
+        /** The exercise landed; filling its targets failed. */
+        data class AddedWithoutTargets(val error: DataError) : AddOutcome
+
+        /** The exercise did not land, so a retry is safe. */
+        data class NotAdded(val error: DataError) : AddOutcome
+    }
+
+    /** The exercise a failed prefill already appended, so a second tap cannot add it twice (N168). */
+    private var appendedExerciseId: String? = null
+
     private suspend fun add(exerciseId: String) {
+        // The append already happened when its targets failed; a second tap is not a retry of a failed
+        // write, so it is answered as the add it already is rather than duplicating the plan row.
+        if (appendedExerciseId == exerciseId) {
+            _error.value = null
+            _added.value = true
+            return
+        }
         val id = templateId
-        val target = if (id != null) addToTemplate(id, exerciseId) else addToSession(exerciseId)
-        when (target) {
-            is DataResult.Success -> {
+        val outcome = if (id != null) addToTemplate(id, exerciseId) else addToSession(exerciseId)
+        when (outcome) {
+            AddOutcome.Added -> {
                 _error.value = null
                 _added.value = true
             }
 
-            is DataResult.Failure -> _error.value = target.error
+            is AddOutcome.AddedWithoutTargets -> {
+                appendedExerciseId = exerciseId
+                _error.value = outcome.error
+            }
+
+            is AddOutcome.NotAdded -> _error.value = outcome.error
         }
     }
 
@@ -174,29 +209,42 @@ class ExercisePickerViewModel @Inject constructor(
      * Appends the exercise to a plan and fills its sets from the last time it was trained (P3.18).
      *
      * Only the work is carried: a plan's sets are what the session asks for, and a warm-up is the lifter's
-     * ramp rather than a target. The append is the action that matters — once it has happened, a failure to
-     * read history or write a set leaves a valid plan with no targets, not a missing exercise, so it is not
-     * reported as a failed add.
+     * ramp rather than a target. The append is the action that matters — once it has happened, a failure
+     * to read history or write a set leaves a valid plan with no targets, not a missing exercise — but it
+     * is reported as [AddOutcome.AddedWithoutTargets] rather than dropped (N168).
      */
-    private suspend fun addToTemplate(templateId: String, exerciseId: String): DataResult<Unit> {
-        val appended = templateRepository.addExercise(templateId, exerciseId)
-        if (appended is DataResult.Failure) { return appended }
-
-        // P3.18: the last time the lift was trained becomes the plan's first targets. The append has
-        // already happened, so a failed read or write here leaves a valid plan with no targets rather
-        // than a missing exercise — which is why it is not reported as a failed add.
-        val history = workoutRepository.previousPerformance(exerciseId, "")
-        val working = if (history is DataResult.Success) {
-            history.data.sets.filter { it.setType != SetType.WARMUP }
-        } else {
-            emptyList()
+    private suspend fun addToTemplate(templateId: String, exerciseId: String): AddOutcome =
+        when (val appended = templateRepository.addExercise(templateId, exerciseId)) {
+            is DataResult.Failure -> AddOutcome.NotAdded(appended.error)
+            is DataResult.Success -> fillTargets(templateId, exerciseId)
         }
+
+    /**
+     * The append has happened; this writes the targets it is prefilled with (P3.18).
+     *
+     * A failure to read the history or to find the row it just made leaves the plan valid with no targets —
+     * a missing exercise is the one outcome the append must not have — and the read failure is reported.
+     */
+    private suspend fun fillTargets(templateId: String, exerciseId: String): AddOutcome {
+        val history = workoutRepository.previousPerformance(exerciseId, "")
+        // The append has just happened, so this is the row it made. A read that finds nothing leaves the
+        // plan valid with no targets; there is no failure to report.
         val planned = templateRepository.observeExercises(templateId).first()
             .lastOrNull { it.exerciseId == exerciseId }
-        if (planned != null) {
-            working.forEach { set ->
+        return when (history) {
+            is DataResult.Failure -> AddOutcome.AddedWithoutTargets(history.error)
+            is DataResult.Success ->
+                if (planned == null) AddOutcome.Added else writeTargets(planned.id, history.data.sets)
+        }
+    }
+
+    /** Writes one target per working set, reporting the first failure rather than the last (N168). */
+    private suspend fun writeTargets(plannedId: String, sets: List<SetEntry>): AddOutcome {
+        val failures = sets
+            .filter { it.setType != SetType.WARMUP }
+            .map { set ->
                 templateRepository.addSet(
-                    planned.id,
+                    plannedId,
                     TemplateSetEdit(
                         role = SetType.NORMAL,
                         targetWeightGrams = set.weightGrams,
@@ -206,16 +254,20 @@ class ExercisePickerViewModel @Inject constructor(
                     ),
                 )
             }
-        }
-        return DataResult.Success(Unit)
+            .filterIsInstance<DataResult.Failure>()
+        return failures.firstOrNull()?.let { AddOutcome.AddedWithoutTargets(it.error) }
+            ?: AddOutcome.Added
     }
 
-    private suspend fun addToSession(exerciseId: String): DataResult<Unit> {
+    private suspend fun addToSession(exerciseId: String): AddOutcome {
         // No active session means the picker was reached without one; reporting it
         // is better than writing a session exercise that belongs to nothing.
         val sessionId = workoutRepository.observeActiveSession().first()?.id
-            ?: return DataResult.Failure(DataError.NotFound)
-        return workoutRepository.addExercise(sessionId, exerciseId)
+            ?: return AddOutcome.NotAdded(DataError.NotFound)
+        return when (val appended = workoutRepository.addExercise(sessionId, exerciseId)) {
+            is DataResult.Success -> AddOutcome.Added
+            is DataResult.Failure -> AddOutcome.NotAdded(appended.error)
+        }
     }
 
     private companion object {

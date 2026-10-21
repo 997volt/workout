@@ -18,12 +18,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 ## Next
 
 **The review of what shipped after 2.10.** Reading the work that landed since the 2.10 release found
-behaviours the shipped claims do not keep, plus two clean-up passes. Nothing here is fixed yet, and each row
-names where the claim and the code disagree.
+behaviours the shipped claims do not keep, plus the clean-up work that came with them. Each row below names
+where the claim and the code disagree, and a row whose fix shipped has left for [CHANGELOG.md](CHANGELOG.md).
 
 | # | Severity | What | Fix |
 | --- | --- | --- | --- |
-| N168 | low | **The review's shape cleanups.** `SettingSwitch`'s KDoc now sits above the new mode composable and the new one has two (`SettingsScreen.kt`); `PlanDialogs.kt`'s file comment became a second doc on `SaveAsPlanDialog`; `TestTags.SETTINGS_PROGRESSION` has no caller; `MAX_QUICK_SETS` is 20 in two files; `ProgressionSection` and `SetEditorHost` are pass-throughs with one caller each; `addToTemplate` drops its `addSet` and history failures without a word; and the why-line can credit a rung's reps to the last set overall, which is not what prefilled them. | One pass over those files: the doc comments, the dead constant, one home for the limit, the wrappers gone or carrying a line of logic, the failures reported the way `onAddSets` reports them, and the reason line naming `sameSetLastTime` when that is what it read. |
 | N169 | low | **The review's copy and fixture nits.** `SeedCatalogTest` says 120 rows where the file holds 126; `ProgramsViewModel`'s `Dispatchers` import is out of order; the three settings chips sit in a plain Row and cannot wrap at a large font; `progressSummary` says "no set at 12 reps or fewer" for a lift with no added weight at all; `fixtures/program-document.json` is hand-made where the seed and progress fixtures are generated and compared; and one test's name promises a "keeps a pick" case it does not exercise. | Correct the counts and the sentence, use the wrapping row the weekday chips already use, generate the program fixture from the sheet, and either split the test or rename it. |
 
 ## Later — decided, and not being started

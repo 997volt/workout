@@ -331,7 +331,6 @@ private fun RestChoiceRow(
     }
 }
 
-/** A labelled switch, with the sentence that says what turning it on does. */
 /**
  * The three answers to "what does *Done* do with the step a plan earned" (P3.17).
  *
@@ -372,6 +371,7 @@ private fun progressionModeLabel(mode: ProgressionMode): Int = when (mode) {
     ProgressionMode.OFF -> R.string.settings_progression_off
 }
 
+/** A labelled switch, with the sentence that says what turning it on does. */
 @Composable
 private fun SettingSwitch(
     label: String,

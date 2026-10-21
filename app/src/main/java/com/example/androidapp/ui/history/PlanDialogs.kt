@@ -36,7 +36,10 @@ import com.example.androidapp.ui.components.TestTags
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 
-/** The dialogs around saving a plan (ROADMAP N31) and scheduling it (P3.18). */
+// The dialogs around saving a plan (ROADMAP N31) and scheduling it (P3.18): the name, the offer to open or
+// schedule the copy, and the program/weekday question. They share the host below so the screen holds one
+// flag instead of three.
+
 /** Asks for the plan's name, since a copy called "Untitled" is a copy nobody finds again (N31). */
 @Composable
 private fun SaveAsPlanDialog(

@@ -356,6 +356,5 @@ class TemplateEditorViewModel @Inject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
-        const val MAX_QUICK_SETS = 20
     }
 }

@@ -1106,7 +1106,10 @@ the rule; that one argues it.
   performed become the range's both ends, the load becomes the target, the assistance carries only when it
   was used. A warm-up is the lifter's ramp rather than the plan's work, so it is not copied. The numbers are
   ordinary targets — accept by leaving them, disagree by editing — and a lift with no history, or a failed
-  history read, adds an empty plan rather than failing the append that already happened.
+  history read, adds an empty plan rather than failing the append that already happened. **A failure while
+  filling them is reported, though** (N168): the append stands and the picker says the targets could not be
+  written, because a storage error that vanishes leaves a plan the lifter tops up without knowing why. The
+  picker remembers the exercise that landed, so a second tap answers as that add rather than duplicating it.
 - **A plan's quick entry writes a block, and the per-set dialog stays for what differs** (P3.18). A count,
   reps and a load in one row append that many planned sets with the same targets, starting from the last
   planned set; the single-set dialog remains for a top set and its back-offs, and a half-parsed row writes
@@ -1120,9 +1123,10 @@ the rule; that one argues it.
   writing: only *Done* reaches the plan.
 - **The prefill states its two sources, and neither is labelled a recommendation** (P3.17). Under the next
   set's fields a line names what the lift did last time and what the plan asks, each labelled; a set with
-  neither source shows nothing. The last set is the one the prefill actually read, not the session's best,
-  so the line explains the number on screen. It is not the app's opinion of what to do next (N33): it is
-  where the numbers already on screen came from.
+  neither source shows nothing. The set named is the one the prefill read — the last set for an ordinary set,
+  and a **rung's own place last time** for a rung, which is where its reps come from (N168) — not the
+  session's best, so the line explains the number on screen. It is not the app's opinion of what to do next
+  (N33): it is where the numbers already on screen came from.
 - **The progression prompt is a three-way choice, and the old switch still answers** (P3.17). Settings carries
   *Ask*, *Apply at Done* and *Off* instead of on/off: the middle is the lifter who wants the steps taken
   without tapping each one, and a boolean could not express it. Apply opens the same question with every

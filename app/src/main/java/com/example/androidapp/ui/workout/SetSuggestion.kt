@@ -62,14 +62,22 @@ data class SuggestionReason(
 /**
  * The two sources behind a prefill, or null when neither says anything (P3.17).
  *
- * The last set is the one the prefill actually read — [suggestionForNextSet]'s `lastTime` — not the best set
- * of the session, so the line explains the number on screen rather than a more impressive one.
+ * The set named is the one the prefill read: for an ordinary set that is [PreviousPerformance]'s last set —
+ * [suggestionForNextSet]'s `lastTime` — and for a **rung** it is the same place last time, which is where
+ * that row's reps came from (N79, N168). Not the best set of the session, so the line explains the number
+ * on screen rather than a more impressive one.
  */
 fun suggestionReason(
     previous: PreviousPerformance?,
     planned: PlannedTarget?,
+    /** This same set's last performance, which only a rung reads (N79). */
+    sameSetLastTime: SetEntry? = null,
 ): SuggestionReason? {
-    val last = previous?.sets?.lastOrNull()
+    val last = if (planned?.role?.isRung == true) {
+        sameSetLastTime ?: previous?.sets?.lastOrNull()
+    } else {
+        previous?.sets?.lastOrNull()
+    }
     val planSaysSomething = planned != null &&
         (planned.reps != null || planned.weightGrams != null || planned.rpeHalves != null)
     if (last == null && !planSaysSomething) return null
