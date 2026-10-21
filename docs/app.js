@@ -2857,6 +2857,80 @@
     try { window.localStorage.removeItem(STORAGE_KEY); } catch (error) { /* ignore */ }
   }
 
+  /**
+   * The sticky section bar (no roadmap id: a usability change to the helper).
+   *
+   * The page is a stack of tools, and the program editor and progress chart sit well below the fold.
+   * The bar lists each tool, hides a link whose panel is not showing yet (progress needs an export,
+   * body data needs a Waistline file, the table needs a sheet), and marks the section the reader is
+   * in. Clicking smooth-scrolls; without JS the anchors still jump.
+   */
+  function initHelperNav() {
+    var nav = document.querySelector('.helper-nav');
+    if (!nav) { return; }
+    var links = Array.prototype.slice.call(nav.querySelectorAll('[data-nav-target]'));
+    if (links.length === 0) { return; }
+    var panels = links.map(function (link) {
+      return byId(link.getAttribute('data-nav-target'));
+    });
+
+    function syncAvailability() {
+      links.forEach(function (link) {
+        var panel = byId(link.getAttribute('data-nav-target'));
+        if (panel) { link.hidden = panel.hidden; }
+      });
+    }
+
+    function currentSection() {
+      var offset = nav.getBoundingClientRect().height + 8;
+      var current = null;
+      var best = -Infinity;
+      panels.forEach(function (panel) {
+        if (!panel || panel.hidden) { return; }
+        var top = panel.getBoundingClientRect().top;
+        if (top <= offset && top > best) {
+          best = top;
+          current = panel.id;
+        }
+      });
+      if (current === null) {
+        // Above the first section (or between panels): mark the first tool that is showing.
+        for (var index = 0; index < panels.length; index += 1) {
+          if (panels[index] && !panels[index].hidden) { current = panels[index].id; break; }
+        }
+      }
+      links.forEach(function (link) {
+        link.setAttribute(
+          'aria-current',
+          link.getAttribute('data-nav-target') === current ? 'true' : 'false'
+        );
+      });
+    }
+
+    links.forEach(function (link) {
+      link.addEventListener('click', function (event) {
+        var panel = byId(link.getAttribute('data-nav-target'));
+        if (!panel || panel.hidden) { return; }
+        event.preventDefault();
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    if (typeof MutationObserver !== 'undefined') {
+      var observer = new MutationObserver(syncAvailability);
+      panels.forEach(function (panel) {
+        if (panel) {
+          observer.observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+        }
+      });
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', currentSection, { passive: true });
+    }
+    syncAvailability();
+    currentSection();
+  }
+
   function init() {
     if (typeof document === 'undefined') { return; }
     if (!document.getElementById('importHelper')) { return; }
@@ -2999,6 +3073,7 @@
     });
     elements.downloadProgram.addEventListener('click', downloadProgram);
     editorInit(elements);
+    initHelperNav();
     elements.waistlineUnit.addEventListener('change', function () {
       state.waistlineUnit = elements.waistlineUnit.value === 'lb' ? 'lb' : 'kg';
       renderBodyPanel();

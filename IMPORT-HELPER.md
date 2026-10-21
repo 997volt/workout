@@ -354,7 +354,11 @@ assert it.
 
 ## The editor
 
-One page, five panels:
+One page, a stack of panels, with a **sticky section bar** at the top: Import, Program editor, Program
+table, Progress, Body data and Export. A tool whose panel is not showing yet has no link (progress needs
+an export, body data a Waistline file, the table a sheet), and the bar marks the section the reader is in —
+the program editor and the progress chart sit below the fold otherwise.
+
 
 1. **Source** — a drop zone for any number of files, a paste box, an optional *load your app export*, a CSV
    mode, and the prompt for the model with a copy button. The seeded library is already loaded from

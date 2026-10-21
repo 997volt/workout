@@ -1289,3 +1289,48 @@ tbody tr:last-child td {
 .editor-add input {
   min-width: 220px;
 }
+
+/* ---------------------------------------------------------------------------------------------
+ * The section bar (the tools are stacked, and some of them — the program editor, progress — live
+ * well below the fold). A sticky bar puts every tool one click away without hiding the workflow.
+ * ------------------------------------------------------------------------------------------- */
+
+.helper-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.helper-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.helper-nav a:hover {
+  background: var(--panel-2);
+}
+
+.helper-nav a[aria-current="true"] {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+/* The bar is sticky, so an anchored section would otherwise start underneath it. */
+.panel {
+  scroll-margin-top: 80px;
+}
