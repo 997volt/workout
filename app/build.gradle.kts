@@ -189,6 +189,10 @@ dependencies {
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.kotlinx.serialization.json)
 
+    // The program-edit core (ROADMAP N170): the document model, its codec and the edit planner,
+    // compiled once here and once for the import helper's page.
+    implementation(project(":shared"))
+
     // Dependency injection (F4).
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

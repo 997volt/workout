@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "workout"
 include(":app")
+include(":shared")

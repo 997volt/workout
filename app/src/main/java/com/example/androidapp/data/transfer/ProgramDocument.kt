@@ -1,5 +1,6 @@
 package com.example.androidapp.data.transfer
 
+import com.example.androidapp.shared.EditMarker
 import kotlinx.serialization.Serializable
 
 /**
@@ -45,4 +46,11 @@ data class ProgramDocument(
      * the document used. Seeded rows are carried too and simply find themselves already present.
      */
     val exercises: List<ExerciseDto> = emptyList(),
+    /**
+     * Present only on an edit (ROADMAP N171), as the shared core defines it.
+     *
+     * The field lives in the shared model so both hosts read it; the app keeps it here because the
+     * import has to tell a proposal to add from a proposal to change before it touches anything.
+     */
+    val edit: EditMarker? = null,
 )

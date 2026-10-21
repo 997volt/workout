@@ -1,69 +1,62 @@
 package com.example.androidapp.data.transfer
 
 import com.example.androidapp.domain.InvalidInputException
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromJsonElement
+import com.example.androidapp.shared.ProblemCode
+import com.example.androidapp.shared.ProgramFormatException
+import com.example.androidapp.shared.ProgramDocumentCodec as SharedProgramDocumentCodec
 
 /**
- * Reads and writes a program document (ROADMAP N47).
+ * Reads and writes a program document (ROADMAP N47, N170).
  *
- * Pure, like [BackupCodec]: strings in, strings out, so the format is covered by fast JVM tests and
- * the file IO stays in the UI layer where the Storage Access Framework lives.
+ * The format itself lives in `:shared` now: the page writes it, the app reads it, and this object is
+ * the app's door to that one implementation rather than a second one kept equal by hand. It still
+ * takes and returns strings, so the format is covered by fast JVM tests and the file IO stays in the
+ * UI layer where the Storage Access Framework lives.
+ *
+ * The version is checked **before** the body, for the reason the shared gate does it: a newer document
+ * may carry an enum name this build lacks, and a decoder that ran first would answer "corrupt" to a
+ * file whose only fault is being new.
  */
 object ProgramDocumentCodec {
 
-    /**
-     * The version this build writes, and the newest it will read.
-     *
-     * N75 and N79 moved it to 2: a program document carries the exercise DTOs and the planned sets, so
-     * the split muscle names (`LATS`, `UPPER_BACK`, `LOWER_BACK`, `ADDUCTORS`) and `SetType.CLUSTER`
-     * travel in it, and a build without those constants cannot represent them. The backup's version
-     * moved for the same reason and on the same rule.
-     *
-     * **N95 moved it to 3**, again with the backup: the exercise DTOs now carry `rowKind` and `parentId`,
-     * and a movement's place in the library is data a build without those fields drops rather than reads
-     * (B90).
-     *
-     * **2.0 moved it to 4 and set the floor there** (ROADMAP N103, N104), with the backup and for its
-     * reasons: the exercise DTOs' taxonomy is nullable and the retired pattern names are gone, so a 1.x
-     * document is refused before the decoder.
-     */
-    const val CURRENT_FORMAT_VERSION = 4
+    /** The version this build writes, and the newest it reads. */
+    const val CURRENT_FORMAT_VERSION: Int = SharedProgramDocumentCodec.CURRENT_FORMAT_VERSION
 
     /** The oldest document this build reads: 2.0's own, and nothing earlier (ROADMAP N104). */
-    const val MINIMUM_FORMAT_VERSION = 4
+    const val MINIMUM_FORMAT_VERSION: Int = SharedProgramDocumentCodec.MINIMUM_FORMAT_VERSION
 
-    private val json = Json {
-        prettyPrint = true
-        // Same rule as the backup: a newer document may carry fields this build has not heard of,
-        // which is only safe because the version is checked first.
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
-
-    fun encode(document: ProgramDocument): String = json.encodeToString(document)
+    fun encode(document: ProgramDocument): String =
+        SharedProgramDocumentCodec.encode(document.toShared())
 
     /**
      * Parses [text], or throws [InvalidInputException] with a message worth showing.
      *
-     * The gateway is explicit rather than best-effort and, like the backup's, reads the version before
-     * the body: a document whose only fault is being newer must be answered as newer, and an enum name
-     * this build lacks makes the decoder throw before a gate behind it could run ([gatedDocument]).
+     * The shared gate answers with codes, not English, because the page renders its own sentences.
+     * Turning a code into the app's wording is this object's one job.
      */
-    fun decode(text: String): ProgramDocument {
-        val element = gatedDocument(
-            text = text,
-            field = "formatVersion",
-            currentVersion = CURRENT_FORMAT_VERSION,
-            noun = "program",
-            minimumVersion = MINIMUM_FORMAT_VERSION,
-        )
-        return try {
-            json.decodeFromJsonElement<ProgramDocument>(element)
-        } catch (malformed: SerializationException) {
-            // A known version whose body this build cannot read is the corrupt case, and says so.
-            throw InvalidInputException("That does not look like a program file.", malformed)
+    fun decode(text: String): ProgramDocument =
+        try {
+            SharedProgramDocumentCodec.decode(text).toApp()
+        } catch (refused: ProgramFormatException) {
+            throw refused.toInvalidInput()
+        } catch (unknownName: IllegalArgumentException) {
+            // A known version whose body names an enum value this build lacks: the shared model keeps
+            // taxonomy as strings, so the refusal happens on the way into the app's types.
+            throw InvalidInputException("That does not look like a program file.", unknownName)
         }
-    }
+}
+
+private fun ProgramFormatException.toInvalidInput(): InvalidInputException = when (problem.code) {
+    ProblemCode.NEWER_VERSION -> InvalidInputException(
+        "That program was written by a newer version of the app " +
+            "(file v${problem.detail ?: "?"}, this build reads v${ProgramDocumentCodec.CURRENT_FORMAT_VERSION}).",
+    )
+
+    ProblemCode.OLDER_VERSION -> InvalidInputException(
+        "That program was written by an older version of the app " +
+            "(file v${problem.detail ?: "?"}, this build reads " +
+            "v${ProgramDocumentCodec.MINIMUM_FORMAT_VERSION} and later).",
+    )
+
+    else -> InvalidInputException("That does not look like a program file.")
 }

@@ -1260,6 +1260,20 @@ the rule; that one argues it.
   `finishedAt IS NULL` is the app's whole definition of the workout in progress and a file may not decide what
   this device is doing.
 
+- **One program-edit core is compiled into both hosts, and neither calls the other** (N170). The
+  document's model, codec, version gate, validation and edit planner live in a Kotlin Multiplatform
+  `:shared` module: its `jvm` target is what `:app` links against, and its `js` target is what the
+  import helper loads as five plain scripts. The page calls `planJson` and `validateJson`; the app
+  calls `plan` and `validate` directly. There is **no localhost service**: a socket needs `INTERNET`
+  — loopback included — and a foreground service to stay alive, and the page runs on another
+  machine, so the two hosts exchange the document file and nothing else. The shared model carries a
+  `Weekday` enum and string taxonomy, because `java.time` and the domain enums cannot compile to JS;
+  the JSON keeps the names it always had, and the app maps at its transfer edge. The bridge is
+  mechanical and total: every field travels both ways, including the ones the page does not edit.
+  Rejected: a WebView hosting the page inside the app (a bridge, a second UI model and a screen
+  Compose cannot test), and two implementations of the rules pinned only by fixtures — the drift
+  B178 and B180 already arrived by. ([evidence](DECISIONS-EVIDENCE.md#n170))
+
 ## Rules that apply to every change
 
 - **A range is a window in the current zone; a session's date is where it happened**

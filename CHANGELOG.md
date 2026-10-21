@@ -14,6 +14,18 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
+## [Unreleased]
+
+### Added
+
+- **One program-edit core for the app and the page** (N170). The program document's model, its codec
+  and version gate, and the rules an edit obeys now live in a Kotlin Multiplatform `:shared` module,
+  compiled for the JVM the app links against and for the JavaScript the import helper loads. The app's
+  codec delegates to it, so there is one reader and one writer for the document rather than two kept
+  equal by hand, and `commonTest` runs the same cases on both targets. The document carries a shared
+  `Weekday` enum serialized by name — the JSON does not change — and the app maps it at its transfer
+  edge. Nothing user-visible changes yet: the edit path arrives with N171.
+
 ## [2.11] — 2026-10-21 (versionCode 31)
 
 ### Added

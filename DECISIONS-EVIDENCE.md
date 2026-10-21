@@ -2603,6 +2603,56 @@ suggesting starting loads from the export — a later, opt-in idea under N33's r
 
 **Covered by** the tool's program-sheet assertions and the app's `ProgramDocumentFixtureTest`.
 
+## N170
+
+The question was whether the page and the app could call one API without a server. The answer split
+in two: a **runtime** API is excluded, a **compiled** one is not.
+
+**Why no localhost service.** Every Android socket needs `INTERNET`, loopback included, and the app
+declares no permissions at all (N26). A service would also need a foreground service to outlive the
+screen (P4.2 is a non-goal), a port and a discovery story, and the helper runs in a desktop browser
+that cannot reach the phone's loopback without exposing it on the network — the one thing the app
+refuses. The export file is already the only path off the device, and it is the API boundary.
+
+**Why Kotlin Multiplatform rather than a JS port.** The rules an edit obeys are needed by the page to
+preview and by the app to apply. Two implementations of them are how B178 (the page counted a day the
+app deduplicated) and B180 (the page's clash note said the opposite of the merge) arrived. KMP with
+`jvm` and `js` targets is the one route that keeps a single implementation on both runtimes without a
+server, a WebView or a WASM runtime Android does not ship. `commonTest` runs the same cases on both
+targets, so a rule that only holds on one side fails there.
+
+**Why the model is mirrored and bridged rather than the app's DTOs moved.** `ProgramSlotDto` and its
+siblings are the backup's DTOs too, and the backup path is JVM-side. Moving them into `commonMain`
+would drag `java.time.DayOfWeek` and the domain enums across a boundary they cannot cross. So the
+shared model is the **format's** model, the app keeps its DTOs for the backup and its mappers, and
+`data/transfer/SharedProgramDocument.kt` translates every field both ways. The translation is total
+by construction: the codec is the only reader and writer, and the round-trip test covers it.
+
+**Why strings for taxonomy.** The shared model keeps muscle, equipment, pattern and row kind as the
+names the JSON already holds, and maps to the app's enums at its edge. That keeps the shared module
+free of `java.time` and of six domain enums whose labels (and future values) belong to the app. An
+unknown name throws on the app side and is answered as "does not look like a program file", which is
+the same refusal the old decoder gave.
+
+**Why the page's door is string-in, string-out.** `planJson` and `validateJson` take and return JSON.
+Mapping Kotlin data classes into JS objects across the boundary would be interop for little gain; the
+page builds its JSON, hands it over, and reads an envelope. The functions are exported from the same
+library the app compiles, so there is no second decision.
+
+**Why no browser target.** The browser environment adds karma for its test runner, and npm refuses
+the plugin's git-hosted `karma@github:Kotlin/karma` package (`EALLOWGIT`). The page needs the
+library's plain scripts, not a browser test runner, so the target is `nodejs()` with
+`binaries.library()`; `:shared:syncSharedJs` copies the five UMD scripts into `docs/shared/`, and
+they load from `file://` in order without a module loader. The node target still runs `commonTest`.
+
+**What is deliberately not shared.** Room and the transaction (the app is the only host that can
+write), the UI (Compose against the DOM), and the sentences (the core answers with codes, each host
+renders its own words).
+
+**Covered by** `commonTest`'s codec, validation and plan cases on the JVM and node targets; the app's
+`ProgramDocumentCodecTest` and `ProgramDocumentFixtureTest`, which now pass through the shared codec;
+and the page's own test page once N173 adds it to CI.
+
 ## P3.19
 
 The gap was day zero: *New program* makes a name and nothing else, and a lifter with no plan has to author
