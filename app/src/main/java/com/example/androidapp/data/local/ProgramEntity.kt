@@ -1,5 +1,6 @@
 package com.example.androidapp.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.androidapp.domain.model.ProgramKind
@@ -30,7 +31,15 @@ data class ProgramEntity(
     val isActive: Boolean = false,
     /** The program's place in the list and in the union, low first (P3.12). */
     val position: Int = 0,
-    /** A week that repeats, or an order that ends (N174). Written as a name, never an ordinal. */
+    /**
+     * A week that repeats, or an order that ends (N174). Written as a name, never an ordinal.
+     *
+     * The SQL default is declared here as well as in the migration on purpose (B193): a Kotlin default
+     * reaches Room's inserts but not the table, so without this a migrated database had a default the
+     * exported schema did not, and a raw insert that omitted the column worked on one path and failed
+     * on the other. Room does not compare defaults, which is why only a test that inserts could see it.
+     */
+    @ColumnInfo(defaultValue = "'WEEKLY'")
     val kind: ProgramKind = ProgramKind.WEEKLY,
     /**
      * The day the block begins, as `LocalDate.toEpochDay()`, or null for "the day it was created"

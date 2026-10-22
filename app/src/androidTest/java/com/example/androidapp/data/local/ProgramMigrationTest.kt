@@ -70,6 +70,22 @@ class ProgramMigrationTest {
         assertEquals(20305L, program?.startDate)
     }
 
+    @Test
+    fun aProgramWrittenAfterTheMigration_namesNoKindAndGetsOne() = runTest {
+        // B193: the migrated column had a SQL default the exported schema did not, so this insert
+        // worked on a migrated store and failed on a fresh one. A writer that does not know the column
+        // is the shape that found it: DeloadMigrationTest's own parent insert.
+        val db = v7Store()
+
+        MIGRATION_7_8.migrate(db)
+        db.execSQL(
+            "INSERT INTO programs (id, name, isActive, position, createdAt, updatedAt, deletedAt) " +
+                "VALUES ('p3', 'Weekly', 0, 2, 1, 1, NULL)",
+        )
+
+        assertEquals(ProgramKind.WEEKLY, database.programDao().findProgram("p3")?.kind)
+    }
+
     /**
      * The v7 shape: the two columns the migration adds, dropped.
      *

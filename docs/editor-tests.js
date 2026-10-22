@@ -79,7 +79,16 @@
       throw new Error('the edit fixture is empty: no case would be checked');
     }
 
-    t.check('a backup becomes one program document with only its own rows', function () {
+    // The number of checks that ran, rather than the number of cases handed in (B199): seven checks
+    // once sat after an early return, and a runner comparing the fixture's own length called the run
+    // complete while they never executed.
+    var ran = 0;
+    function check(name, body) {
+      ran += 1;
+      t.check(name, body);
+    }
+
+    check('a backup becomes one program document with only its own rows', function () {
       var backup = {
         exportedAt: 500,
         programs: [
@@ -117,7 +126,7 @@
       t.eq(document.exportedAt, 500, 'the backup time is the base');
     });
 
-    t.check('a table can say the program is a block, and when it starts', function () {
+    check('a table can say the program is a block, and when it starts', function () {
       var text = [
         'Day\tWeekday\tExercise\tSets\tReps\tLoad\tRest\tRPE\tKind\tStart',
         '1\tMonday\tBench Press\t3\t3\t97.5\t240\t8\tblock\t2026-10-05',
@@ -139,7 +148,7 @@
       t.eq(weekly.program.kind, 'WEEKLY');
     });
 
-    t.check('a table that names two program kinds is refused', function () {
+    check('a table that names two program kinds is refused', function () {
       var text = [
         'Day\tExercise\tSets\tReps\tKind',
         '1\tBench Press\t3\t3\tblock',
@@ -150,7 +159,7 @@
       t.ok(sheet.problems.length > 0, 'two kinds cannot both be true');
     });
 
-    t.check('a load is weight or assistance, and reads back the same way', function () {
+    check('a load is weight or assistance, and reads back the same way', function () {
       t.eq(H.editorLoadText(82500, null), '82.5');
       t.eq(H.editorLoadText(0, 20000), '-20');
       t.eq(H.editorLoadText(null, null), '');
@@ -160,7 +169,7 @@
       t.eq(H.editorParseLoad('nonsense'), null);
     });
 
-    t.check('adding a day writes a workout and its slot', function () {
+    check('adding a day writes a workout and its slot', function () {
       var document = baseDocument();
       H.editorAddDay(document);
       t.eq(document.slots.length, 2);
@@ -168,7 +177,7 @@
       t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
     });
 
-    t.check('an exercise and its sets extend a workout and stay valid', function () {
+    check('an exercise and its sets extend a workout and stay valid', function () {
       var document = baseDocument();
       H.editorAddDay(document);
       var template = document.templates[document.templates.length - 1];
@@ -185,7 +194,7 @@
       t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
     });
 
-    t.check('removing a day keeps a workout another day still uses', function () {
+    check('removing a day keeps a workout another day still uses', function () {
       var document = baseDocument();
       document.slots.push(row({
         id: 'slot_b',
@@ -209,7 +218,7 @@
       t.eq(document.templateSets.length, 0);
     });
 
-    t.check('a new program is a valid document with no edit marker', function () {
+    check('a new program is a valid document with no edit marker', function () {
       var document = H.newProgramDocument('New block', 'pgm_test', 1000);
       t.eq(document.formatVersion, shared.programFormatVersion(), 'the core writes the version');
       t.eq(document.program.name, 'New block');
@@ -227,7 +236,7 @@
       t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
     });
 
-    t.check('an opened document plans and downloads with its base and its rows', function () {
+    check('an opened document plans and downloads with its base and its rows', function () {
       // The page's own half of the edit path: open a program, ask the core what it would do, and
       // write the file — through the functions the buttons call rather than through the core alone
       // (N181). A wrong base, a missing marker or a dropped field used to leave this green.
@@ -291,7 +300,7 @@
     }
 
     cases.forEach(function (testCase) {
-      t.check('fixture: ' + testCase.name, function () {
+      check('fixture: ' + testCase.name, function () {
         var result = JSON.parse(shared.planJson(
           JSON.stringify(testCase.snapshot),
           JSON.stringify(testCase.edit)
@@ -311,16 +320,15 @@
       });
     });
 
-    return cases.length;
 
-    t.check('a day naming a workout the file does not carry is refused', function () {
+    check('a day naming a workout the file does not carry is refused', function () {
       var broken = baseDocument();
       broken.templates = [];
       var problems = JSON.parse(shared.validateJson(JSON.stringify(broken))).problems;
       t.ok(problems.some(function (problem) { return problem.code === 'DANGLING_SLOT_TEMPLATE'; }));
     });
 
-    t.check('a typed name resolves to the movement the library already holds (B187)', function () {
+    check('a typed name resolves to the movement the library already holds (B187)', function () {
       var program = H.newProgramDocument('Block', 'pgm_1', 1000);
       var library = [row({
         id: 'ex_custom',
@@ -339,7 +347,7 @@
       t.eq(program.exercises[0].id, 'ex_custom');
     });
 
-    t.check('a typo corrected before the download leaves no movement behind (B187)', function () {
+    check('a typo corrected before the download leaves no movement behind (B187)', function () {
       var program = H.newProgramDocument('Block', 'pgm_1', 1000);
       H.editorAddDay(program);
       var template = program.templates[0];
@@ -356,7 +364,7 @@
         'the minted typo is gone');
     });
 
-    t.check('a program taken from a backup names the other program that shares its workouts (B191)', function () {
+    check('a program taken from a backup names the other program that shares its workouts (B191)', function () {
       var backup = {
         programs: [row({ id: 'pgm_1', name: 'Autumn block' }), row({ id: 'pgm_2', name: 'Conditioning' })],
         programSlots: [
@@ -373,7 +381,7 @@
       t.eq(H.editorSharedProgramNames(working, null).length, 0, 'no source, nothing to say');
     });
 
-    t.check('a role change clears what it cannot carry and keeps what it can (B190)', function () {
+    check('a role change clears what it cannot carry and keeps what it can (B190)', function () {
       var set = row({
         id: 'set_a',
         role: 'NORMAL',
@@ -405,7 +413,7 @@
       t.eq(set.dropValueGrams, null);
     });
 
-    t.check('a rung refusal names its own cause, not one sentence for five (B186)', function () {
+    check('a rung refusal names its own cause, not one sentence for five (B186)', function () {
       var broken = baseDocument();
       broken.templateSets.push(row({
         id: 'set_drop',
@@ -429,13 +437,15 @@
         'the cause is the code, not an English detail');
     });
 
-    t.check('a rest the app cannot store is its own refusal (B186)', function () {
+    check('a rest the app cannot store is its own refusal (B186)', function () {
       var broken = baseDocument();
       broken.templateExercises[0].restSeconds = 4000;
       var problems = JSON.parse(shared.validateJson(JSON.stringify(broken))).problems;
       t.ok(problems.some(function (problem) { return problem.code === 'INVALID_REST'; }),
         'a 4000-second rest is a rest problem, not a malformed file');
     });
+
+    return ran;
   }
 
   return { run: run };

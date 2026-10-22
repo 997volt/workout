@@ -35,6 +35,13 @@ var editorTests = require('./editor-tests.js');
  * adding a case is a deliberate edit here as well as in the fixture.
  */
 var EXPECTED_FIXTURE_CASES = 6;
+
+/*
+ * The checks that must run, named ones and the fixture loop together (N181, B199): the count is of
+ * checks executed, not of cases handed in, so a block of `check` calls behind an early return is a
+ * failure here rather than a number that quietly fell.
+ */
+var EXPECTED_CHECKS = 22;
 if (!Array.isArray(globalThis.PROGRAM_EDIT_CASES)) {
   console.error('the edit fixture did not load: PROGRAM_EDIT_CASES is not an array');
   process.exit(1);
@@ -71,11 +78,12 @@ var t = {
 };
 
 var checked = editorTests.run(H, shared, t, globalThis.PROGRAM_EDIT_CASES);
-if (checked !== EXPECTED_FIXTURE_CASES) {
-  console.error('the runner checked ' + checked + ' fixture cases; it declares ' +
-    EXPECTED_FIXTURE_CASES);
+if (checked !== EXPECTED_CHECKS) {
+  console.error('the runner executed ' + checked + ' checks; it declares ' + EXPECTED_CHECKS +
+    ' (' + EXPECTED_FIXTURE_CASES + ' fixture cases and the named ones)');
   process.exit(1);
 }
 
-console.log(passes + ' passed, ' + failures + ' failed (' + checked + ' fixture cases)');
+console.log(passes + ' passed, ' + failures + ' failed (' + checked + ' checks, ' +
+  EXPECTED_FIXTURE_CASES + ' of them fixture cases)');
 process.exit(failures === 0 ? 0 : 1);

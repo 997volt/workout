@@ -35,18 +35,23 @@ def declared_tests() -> dict[str, int]:
     return declared
 
 
-def executed_tests() -> tuple[int, set[str], float]:
-    """The XML's total, the classes that reported, and the newest report mtime."""
+def executed_tests() -> tuple[int, set[str], float, int]:
+    """The XML's total, the classes that reported, the newest report mtime, and its failures."""
     total = 0
+    failures = 0
     reported: set[str] = set()
     newest = 0.0
     for path in RESULTS.rglob("TEST-*.xml"):
         text = path.read_text()
         newest = max(newest, path.stat().st_mtime)
-        for match in re.finditer(r'<testsuite name="([^"]+)"[^>]*tests="(\d+)"', text):
+        for match in re.finditer(
+            r'<testsuite name="([^"]+)"[^>]*tests="(\d+)"[^>]*failures="(\d+)"[^>]*errors="(\d+)"',
+            text,
+        ):
             reported.add(match.group(1).split(".")[-1])
             total += int(match.group(2))
-    return total, reported, newest
+            failures += int(match.group(3)) + int(match.group(4))
+    return total, reported, newest, failures
 
 
 def main() -> int:
@@ -56,7 +61,7 @@ def main() -> int:
         print("no instrumented tests declared — the source layout moved?", file=sys.stderr)
         return 1
 
-    total, reported, newest = executed_tests()
+    total, reported, newest, failures = executed_tests()
     if total == 0:
         print(
             "no instrumented results found: the run produced no JUnit XML at all",
@@ -91,7 +96,18 @@ def main() -> int:
         )
         return 1
 
-    print("\nOK: every declared instrumented test executed")
+    # B193: a run that executed everything and failed is not a green suite, and "OK" beside a red
+    # Gradle task is exactly the sentence that hid the two failures this check now names. The task
+    # still fails the job; this is the log a reader trusts.
+    if failures > 0:
+        print(
+            f"\nFAIL: {failures} instrumented test(s) failed. Every declared test executed, "
+            "and the suite is not green.",
+            file=sys.stderr,
+        )
+        return 1
+
+    print("\nOK: every declared instrumented test executed and passed")
     return 0
 
 
