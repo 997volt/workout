@@ -7300,7 +7300,15 @@
       editorOfferBackup(parsed, fileName);
       return;
     }
-    editorClear('That does not look like a program document or a backup.');
+    // A rows list is not a program document, and the answer is where it belongs rather than what it
+    // is not (B192). Anything else keeps a Programs-side message, now pointing at the right tab.
+    if (Array.isArray(parsed) || (isObject(parsed) && Array.isArray(parsed.rows))) {
+      editorClear('');
+      loadText(text, fileName);
+      if (ui.selectTool) { ui.selectTool('import', false, true); }
+      return;
+    }
+    editorClear('That is not a program document or a backup. A history or rows file belongs on Import.');
   }
 
   function editorLoadDocument(document, fileName, source) {

@@ -439,7 +439,9 @@ class RoomProgramRepository @Inject constructor(
             when (val planned = plan(snapshot.toShared(), document.toShared(), newest)) {
                 is PlanResult.Refused -> throw InvalidInputException(editRefusal(planned.problems))
                 is PlanResult.Ready -> ProgramDocumentPreview.Edit(
-                    programName = document.program.name,
+                    // The name the list shows, not the one the edit would give it: the lifter picks a
+                    // program they know, and the rename is stated separately (B192).
+                    programName = snapshot.program.name,
                     changes = planned.changes,
                     warnings = planned.warnings,
                     sharedProgramNames = otherProgramsUsing(database, document),

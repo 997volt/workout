@@ -190,6 +190,7 @@ sealed interface ProgramDocumentPreview {
     data object Add : ProgramDocumentPreview
 
     data class Edit(
+        /** The program as this device names it — what the list and the lifter call it, not the edit's name. */
         val programName: String,
         /** The rows the edit would add, update or remove, as the shared planner named them. */
         val changes: List<Change>,

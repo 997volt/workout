@@ -66,7 +66,11 @@ private fun EditSummary(edit: ProgramDocumentPreview.Edit) {
     val workouts = edit.changes.count { it.kind in WORKOUT_CHANGES }
     val exercises = edit.changes.count { it.kind in EXERCISE_CHANGES }
     val sets = edit.changes.count { it.kind in SET_CHANGES }
-    val renamed = edit.changes.any { it.kind == ChangeKind.PROGRAM_RENAMED }
+    // The new name is in the change itself, so the line says what it becomes rather than that it will
+    // change (B192) — the title already carries the name the list shows.
+    val renamedTo = edit.changes
+        .firstOrNull { it.kind == ChangeKind.PROGRAM_RENAMED }
+        ?.name
     val newMovements = edit.warnings
         .filter { it.code == WarningCode.NEW_MOVEMENT }
         .mapNotNull { it.name ?: it.id }
@@ -76,7 +80,7 @@ private fun EditSummary(edit: ProgramDocumentPreview.Edit) {
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.program_edit_intro))
-        if (renamed) Text(stringResource(R.string.program_edit_renamed))
+        if (renamedTo != null) Text(stringResource(R.string.program_edit_renamed, renamedTo))
         if (days + workouts + exercises + sets > 0) {
             Text(stringResource(R.string.program_edit_rows, days, workouts, exercises, sets))
         }

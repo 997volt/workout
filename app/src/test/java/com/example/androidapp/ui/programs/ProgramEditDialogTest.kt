@@ -85,7 +85,7 @@ class ProgramEditDialogTest {
             ),
         )
 
-        composeTestRule.onNodeWithText("The program will be renamed.", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Renamed to “Autumn block”.", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("Days: 0", substring = true).assertDoesNotExist()
     }
 
