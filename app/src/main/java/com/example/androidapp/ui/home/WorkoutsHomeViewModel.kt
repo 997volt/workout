@@ -133,22 +133,24 @@ data class NextSession(
 )
 
 /**
- * The next scheduled workout in a **weekly** program's week (ROADMAP N177).
+ * The next scheduled workout in a **weekly** program's week (ROADMAP N177, B200).
  *
  * Strictly after today: the line is only drawn on a day whose plan is empty, so today has no session
- * to name. The first weekday with a slot wins, and the slot's own workout names the sentence.
+ * to name. Each candidate day's plan is asked for — not the raw slots — because a built deload week
+ * replaces the week's days: naming a slot the plan dropped would promise a session that is not
+ * coming, and miss the deload day that is.
  */
 internal fun nextWeeklySession(
     programs: List<WorkoutProgram>,
     slots: List<ProgramSlot>,
     today: LocalDate,
+    deloadWeeks: List<DeloadWeek> = emptyList(),
 ): NextSession? {
-    val followed = programs.filter { it.kind == ProgramKind.WEEKLY }.map { it.id }.toSet()
-    val ordered = slots.filter { it.programId in followed }.sortedBy { it.position }
     for (offset in 1..DAYS_IN_WEEK) {
         val date = today.plusDays(offset.toLong())
-        val slot = ordered.firstOrNull { it.weekday == date.dayOfWeek } ?: continue
-        return NextSession(date = date, weekday = date.dayOfWeek, name = slot.templateName)
+        val plan = todaysPlanFor(programs, slots, date.dayOfWeek, deloadWeeks).firstOrNull()
+            ?: continue
+        return NextSession(date = date, weekday = date.dayOfWeek, name = plan.name)
     }
     return null
 }
@@ -447,7 +449,7 @@ class WorkoutsHomeViewModel @Inject constructor(
                 day = today,
             ) + programs.sequencePlans,
             nextSession = earlierOf(
-                nextWeeklySession(programs.programs, programs.slots, todayDate),
+                nextWeeklySession(programs.programs, programs.slots, todayDate, programs.deloadWeeks),
                 nextSequenceSession(programs.programs, programs.schedules),
             ),
             // N126: what makes an empty day a rest day rather than a day with nothing to say.

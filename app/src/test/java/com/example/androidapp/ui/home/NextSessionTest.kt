@@ -1,5 +1,7 @@
 package com.example.androidapp.ui.home
 
+import com.example.androidapp.domain.model.DeloadDay
+import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.SequenceSchedule
@@ -24,6 +26,21 @@ class NextSessionTest {
     private fun program(id: String, kind: ProgramKind = ProgramKind.WEEKLY) =
         WorkoutProgram(id = id, name = id, kind = kind, isActive = true)
 
+    private fun deloadDay(
+        id: String,
+        templateId: String,
+        weekday: DayOfWeek,
+        name: String,
+    ) = DeloadDay(
+        id = id,
+        programId = "weekly",
+        templateId = templateId,
+        templateName = name,
+        exerciseCount = 3,
+        position = 0,
+        weekday = weekday,
+    )
+
     private fun slot(id: String, day: DayOfWeek?, programId: String = "weekly", name: String = id) =
         ProgramSlot(
             id = id,
@@ -33,6 +50,30 @@ class NextSessionTest {
             weekday = day,
             templateName = name,
         )
+
+    @Test
+    fun aDeloadWeek_namesItsOwnDay_notTheSlotItDropped() {
+        // B200: a built deload week replaces the whole week, so the slot the plan dropped is not a
+        // session that is coming — the plan's own day is.
+        val sessions = listOf(
+            slot("a0", DayOfWeek.MONDAY, name = "Push"),
+            slot("a1", DayOfWeek.WEDNESDAY, name = "Pull"),
+            slot("a2", DayOfWeek.THURSDAY, name = "Legs"),
+        )
+        val deload = DeloadWeek(
+            programId = "weekly",
+            weekStart = today.minusDays(1),
+            days = listOf(
+                deloadDay("dd1", templateId = "tpl_a1", weekday = DayOfWeek.WEDNESDAY, name = "Pull (deload)"),
+                deloadDay("dd2", templateId = "tpl_a2", weekday = DayOfWeek.THURSDAY, name = "Legs (deload)"),
+            ),
+        )
+
+        val next = nextWeeklySession(listOf(program("weekly")), sessions, today, listOf(deload))!!
+
+        assertThat(next.weekday).isEqualTo(DayOfWeek.WEDNESDAY)
+        assertThat(next.name).isEqualTo("Pull (deload)")
+    }
 
     @Test
     fun aWeeklyProgram_namesTheNextWeekdayWithASlot() {
