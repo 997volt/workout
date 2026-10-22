@@ -17,9 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The release review's rows, all of them planned work.** A review of the unreleased work since 2.11 found
-defects — all of them fixed — and these are the gates and the test halves that class lived in, plus one
-contradiction the block under this one still carries. Three of the defects were the page's and were fixed
+**The release review's rows, all of them planned work.** A review of the program-editor work found defects —
+all of them fixed — and these are the gates and the test halves that class lived in, plus one contradiction
+the block under this one still carries. Three of the defects were the page's and were fixed
 without a case, because the page has no DOM harness: that is N181, and it is why the test rows come first.
 Nothing here is built.
 
