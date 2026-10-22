@@ -1311,6 +1311,17 @@ the rule; that one argues it.
   against, so *Check* runs the shared `validate` and the download carries no `edit` marker — the app's
   insert-only merge adds it, exactly as the sheet's document is added. The page mints the id, so a
   re-import of the same file is a no-op rather than a twin.
+- **A document's format version moves when its meaning does, and the floor does not** (N185). The
+  backup's `schemaVersion` moves for a program kind because an older build reading a sequence as a
+  weekly program would repeat it forever — a wrong meaning, not a dropped extra — and the **program
+  document** is the same argument made stronger, because a document is the path a block actually
+  arrives by. So the document's `formatVersion` moves to **5** with the field, while
+  `MINIMUM_FORMAT_VERSION` stays **4**, and the backup splits the same way: `CURRENT` 6, `MINIMUM` 5.
+  The **ceiling** is what stops an older build reading a sequence; the **floor** only asks whether an
+  old document still means what it says, and a v4 document is a weekly program — nothing in it became
+  wrong. Moving the floor with the ceiling would refuse every saved export and the three bundled
+  starter programs for no safety at all. Rejected: a per-document version that stamps 5 only for a
+  sequence, because a format with two current versions is the drift N183 names.
 
 ## Rules that apply to every change
 
