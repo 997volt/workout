@@ -482,6 +482,7 @@
     <string name="home_block_skip">Skip</string>
     <string name="home_block_skip_label">Skip day %1$d of %2$d</string>
     <string name="home_block_skipped">Session skipped.</string>
+    <string name="home_block_finished">Block complete: %1$s.</string>
     <string name="home_substitute_title">Train something else?</string>
     <string name="home_substitute_clear">Restore the scheduled workout</string>
     <plurals name="home_plan_exercises">
@@ -926,6 +927,7 @@
     <string name="program_starts_created">the day it was created</string>
     <string name="program_starts_change">Change</string>
     <string name="program_starts_confirm">Set</string>
+    <string name="program_block_complete">Block complete — every session is done.</string>
     <string name="program_active">Active program</string>
     <string name="program_next_up">Next up</string>
     <string name="program_active_hint">Home follows this program’s days. More than one can be active at once; with none active, nothing is scheduled.</string>

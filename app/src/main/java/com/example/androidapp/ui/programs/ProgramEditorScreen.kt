@@ -444,6 +444,7 @@ private fun ProgramEditorBody(
             ActiveSwitch(program = program, onSetActive = onSetActive)
             ProgramKindSection(
                 program = program,
+                isComplete = state.blockComplete,
                 onSetKind = onSetKind,
                 onSetStartDate = onSetStartDate,
             )

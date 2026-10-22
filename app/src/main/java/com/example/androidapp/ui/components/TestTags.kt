@@ -684,6 +684,9 @@ object TestTags {
         const val START_DATE = "program_start_date"
         const val START_DATE_CHANGE = "program_start_date_change"
 
+        /** A finished block says so, rather than marking its last day as next (B197). */
+        const val BLOCK_COMPLETE = "program_block_complete"
+
         /**
          * The active program at the foot of the list (ROADMAP N92).
          *

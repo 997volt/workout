@@ -59,6 +59,13 @@ data class ProgramEditorUiState(
      */
     val runSlotId: String? = null,
     /**
+     * True when a block has no session left (B197).
+     *
+     * The run carries it, and the editor is where "Day 9 of 9" used to read as upcoming: a finished
+     * block says it is done rather than marking its last day as the place to be.
+     */
+    val blockComplete: Boolean = false,
+    /**
      * The template one slot points at, being read rather than edited, or null (ROADMAP N72).
      *
      * A preview and not an editor: the template is edited in the template editor, and a program is a
@@ -132,11 +139,19 @@ class ProgramEditorViewModel @Inject constructor(
     private data class EditorExtras(
         val preview: SlotPreview?,
         val runSlotId: String?,
+        val blockComplete: Boolean,
     )
 
     private val extras: Flow<EditorExtras> =
         combine(preview, repository.observeProgramRun(programId)) { open, run ->
-            EditorExtras(preview = open, runSlotId = run?.slot?.id)
+            val complete = run?.isComplete == true
+            EditorExtras(
+                preview = open,
+                // A finished block has no next day: the repository answers with its last slot so the
+                // screen has something to name, and naming it as the place would be the bug (B197).
+                runSlotId = run?.slot?.id?.takeUnless { complete },
+                blockComplete = complete,
+            )
         }
 
     /** The program, its slots, the templates to add, and where the run is (ROADMAP P3.3, P3.9). */
@@ -153,6 +168,7 @@ class ProgramEditorViewModel @Inject constructor(
             slots = slots,
             templates = templates,
             runSlotId = open.runSlotId,
+            blockComplete = open.blockComplete,
             preview = open.preview,
             error = currentError,
         )

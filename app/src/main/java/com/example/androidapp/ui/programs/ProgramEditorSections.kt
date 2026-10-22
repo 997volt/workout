@@ -121,6 +121,7 @@ internal fun ProgramSlotList(
 @Composable
 internal fun ProgramKindSection(
     program: WorkoutProgram,
+    isComplete: Boolean,
     onSetKind: (ProgramKind) -> Unit,
     onSetStartDate: (LocalDate?) -> Unit,
     modifier: Modifier = Modifier,
@@ -157,6 +158,14 @@ internal fun ProgramKindSection(
             Text(
                 text = stringResource(R.string.program_kind_sequence_hint),
                 style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        if (isComplete) {
+            // B197: every session settled, so the block is done rather than waiting at its last day.
+            Text(
+                text = stringResource(R.string.program_block_complete),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.testTag(TestTags.Programs.BLOCK_COMPLETE),
             )
         }
         if (program.kind == ProgramKind.SEQUENCE) {

@@ -186,6 +186,13 @@ data class WorkoutsHomeUiState(
     /** Whether any program is followed, which is what makes an empty day a rest day (ROADMAP N126). */
     val hasActiveProgram: Boolean = false,
     /**
+     * The followed blocks that have no session left, by name (ROADMAP B197).
+     *
+     * A finished block is not a rest day in the ordinary sense: there is nothing coming, and the
+     * screen has to say that rather than "your program schedules nothing today".
+     */
+    val finishedBlocks: List<String> = emptyList(),
+    /**
      * The next session either kind of program has, for the rest line (ROADMAP N177).
      *
      * Informational only: N125 removed the startable next-up row from home on purpose, and naming the
@@ -445,6 +452,7 @@ class WorkoutsHomeViewModel @Inject constructor(
             ),
             // N126: what makes an empty day a rest day rather than a day with nothing to say.
             hasActiveProgram = programs.programs.isNotEmpty(),
+            finishedBlocks = finishedBlockNames(programs.programs, programs.schedules),
             templates = templates,
         )
     }.stateIn(
@@ -509,6 +517,17 @@ class WorkoutsHomeViewModel @Inject constructor(
         const val TICK_MILLIS = 1_000L
     }
 }
+
+/**
+ * The followed blocks that are over, by name (ROADMAP B197).
+ *
+ * Pure and file-level so the sentence has something a test can hold: a block whose schedule has no
+ * next session is finished, and the screen says so instead of calling the day a rest.
+ */
+internal fun finishedBlockNames(
+    programs: List<WorkoutProgram>,
+    schedules: Map<String, SequenceSchedule>,
+): List<String> = programs.filter { schedules[it.id]?.isComplete == true }.map { it.name }
 
 /**
  * A sequence's cards for today: its next session when it is due or overdue (ROADMAP N176).

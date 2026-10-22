@@ -220,6 +220,38 @@ class ProgramEditorScreenTest {
     }
 
     @Test
+    fun aFinishedBlock_saysItIsDone_ratherThanMarkingItsLastDay() {
+        // B197: the run answers a finished block with its last slot and isComplete, and the editor
+        // used to label that slot "Day N of N" as if it were the place to be.
+        setScreen(
+            state = ProgramEditorUiState(
+                isLoading = false,
+                program = WorkoutProgram(
+                    id = "p1",
+                    name = "Peak",
+                    slotCount = 1,
+                    kind = ProgramKind.SEQUENCE,
+                    startDate = LocalDate.of(2026, 10, 5),
+                ),
+                slots = listOf(
+                    ProgramSlot(
+                        id = "s1",
+                        programId = "p1",
+                        templateId = "t1",
+                        position = 0,
+                        weekday = DayOfWeek.MONDAY,
+                        templateName = "Peak day",
+                        exerciseCount = 3,
+                    ),
+                ),
+                blockComplete = true,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.BLOCK_COMPLETE).assertIsDisplayed()
+    }
+
+    @Test
     fun theWeeklyChip_asksForAWeekThatRepeats() {
         var kind: ProgramKind? = null
         setScreen(

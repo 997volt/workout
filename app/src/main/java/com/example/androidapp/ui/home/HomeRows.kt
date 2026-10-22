@@ -135,7 +135,11 @@ private fun LazyListScope.planItems(
         // No heading: an empty *Today · Monday* would be a promise the app cannot keep (N115), and the line
         // names the day itself.
         item(key = "no_plan") {
-            NoPlanLine(restDay = state.planIsRestDay, nextSession = state.nextSession)
+            NoPlanLine(
+                restDay = state.planIsRestDay,
+                nextSession = state.nextSession,
+                finishedBlocks = state.finishedBlocks,
+            )
         }
         // The day's way in, and it never leaves: the prompt while today has nothing, the way back into the
         // entry once it does (B182). A rest day is exactly when a weigh-in *is* the day's entry (N138).
@@ -177,7 +181,12 @@ private val ZONE_TODAY = TileAccent.Sky
  * the absence of a plan rather than a fourth destination.
  */
 @Composable
-private fun NoPlanLine(restDay: Boolean, nextSession: NextSession?, modifier: Modifier = Modifier) {
+private fun NoPlanLine(
+    restDay: Boolean,
+    nextSession: NextSession?,
+    finishedBlocks: List<String>,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -194,6 +203,15 @@ private fun NoPlanLine(restDay: Boolean, nextSession: NextSession?, modifier: Mo
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (finishedBlocks.isNotEmpty()) {
+            // A block with nothing left is not a rest day: nothing is coming, and that is the fact the
+            // line exists for (B197).
+            Text(
+                text = stringResource(R.string.home_block_finished, finishedBlocks.joinToString(", ")),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

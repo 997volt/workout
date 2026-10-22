@@ -4,6 +4,7 @@ import com.example.androidapp.domain.model.DeloadDay
 import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -117,6 +118,26 @@ class WorkoutsHomePlanTest {
         val plan = todaysPlanFor(listOf(program, second), slots, DayOfWeek.FRIDAY)
 
         assertThat(plan.map { it.id }).containsExactly("a0", "a1", "b1").inOrder()
+    }
+
+    @Test
+    fun aFinishedBlock_isNamed_ratherThanCalledRest() {
+        // B197: nothing is coming from a block with no session left, and the day it leaves is not a
+        // rest day in the ordinary sense.
+        val block = program.copy(id = "p3", name = "Peak", kind = ProgramKind.SEQUENCE)
+        val schedules = mapOf(
+            "p3" to SequenceSchedule(
+                next = null,
+                due = null,
+                isDue = false,
+                length = 9,
+                settled = 9,
+                isComplete = true,
+            ),
+        )
+
+        assertThat(finishedBlockNames(listOf(block), schedules)).containsExactly("Peak")
+        assertThat(finishedBlockNames(listOf(program), emptyMap())).isEmpty()
     }
 
     @Test

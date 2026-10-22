@@ -26,7 +26,8 @@ unreleased.
   start date in the future is not overdue. Home offers the next session as a card when it is due —
   *Day 4 of 9 · due Friday* — and starts it with the slot it was scheduled as, so the plan's own history
   still prefills it; a session that cannot be trained is skipped from its card, and a block's skip counts
-  on the day it was taken; a rest day names what is coming, for a weekly program as well. A block ends instead
+  on the day it was taken; a rest day names what is coming, for a weekly program as well; and a block that is
+  over says so, in the editor and on home, instead of marking its last session as next. A block ends instead
   of wrapping, and the editor authors the kind and the start date, labels a sequence slot's weekday
   *Due*, and marks the run's place as *Day 4 of 9*. The document format moves to 5 and the backup's
   schema to 6, both with their floors left where they are: an older build refuses a block rather than
