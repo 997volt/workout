@@ -18,10 +18,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 ## Next
 
 **What the release review left is planned work, not a defect.** The ten defects a review of the work since 2.11
-found — B183–B192 — have all landed and left this file, each with the case that would have caught it: a deleted
-row the write could not see, a page that shipped the wrong program's edit, one refusal code carrying five English
-causes. What is below is the rest of that review: the gates and the test halves that whole class of defect
-lived in, and one contradiction the block under this one still carries. Nothing here is built.
+found — B183–B192 — have all landed and left this file: a deleted row the write could not see, a page that
+shipped the wrong program's edit, one refusal code carrying five English causes. Seven were fixed with a case;
+the other three are the page's, which has no DOM harness yet, so their fix is code and reading only. What is
+below is the rest of that review — the gates and the test halves that class lived in, plus one contradiction the
+block under this one still carries. Nothing here is built.
 
 | # | Severity | What | Fix |
 | --- | --- | --- | --- |
