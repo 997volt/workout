@@ -40,6 +40,16 @@ jobs:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # N182. This job runs :shared:jsNodeTest and :shared:syncSharedJs, so it depends on a Node
+      # toolchain — the one toolchain here that was neither pinned by an action nor declared by the
+      # build. The version is a **floor**: setup-node takes the newest 22.x, which is what Kotlin/JS
+      # and the helper's node tests are written against, so an image that moves its Node fails as a
+      # Node problem rather than as a Kotlin task that cannot say why.
+      - name: Set up Node 22
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '22'
+
       - name: Set up JDK 21
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
