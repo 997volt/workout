@@ -120,6 +120,56 @@ data class PlannedWorkout(
     val isLoading: Boolean = true,
 )
 
+/**
+ * The next workout either kind of program has, and the day it lands on (ROADMAP N177).
+ *
+ * A weekly program's next slot is the next weekday in the week that has one; a block's is its next
+ * session's due date. Both are read for one sentence, so the earlier of the two wins.
+ */
+data class NextSession(
+    val date: LocalDate,
+    val weekday: DayOfWeek,
+    val name: String,
+)
+
+/**
+ * The next scheduled workout in a **weekly** program's week (ROADMAP N177).
+ *
+ * Strictly after today: the line is only drawn on a day whose plan is empty, so today has no session
+ * to name. The first weekday with a slot wins, and the slot's own workout names the sentence.
+ */
+internal fun nextWeeklySession(
+    programs: List<WorkoutProgram>,
+    slots: List<ProgramSlot>,
+    today: LocalDate,
+): NextSession? {
+    val followed = programs.filter { it.kind == ProgramKind.WEEKLY }.map { it.id }.toSet()
+    val ordered = slots.filter { it.programId in followed }.sortedBy { it.position }
+    for (offset in 1..DAYS_IN_WEEK) {
+        val date = today.plusDays(offset.toLong())
+        val slot = ordered.firstOrNull { it.weekday == date.dayOfWeek } ?: continue
+        return NextSession(date = date, weekday = date.dayOfWeek, name = slot.templateName)
+    }
+    return null
+}
+
+/** The next session a followed block has, and the day it is due (ROADMAP N177). */
+internal fun nextSequenceSession(
+    programs: List<WorkoutProgram>,
+    schedules: Map<String, SequenceSchedule>,
+): NextSession? = programs.mapNotNull { program ->
+    val schedule = schedules[program.id] ?: return@mapNotNull null
+    val next = schedule.next ?: return@mapNotNull null
+    val date = schedule.due ?: return@mapNotNull null
+    NextSession(date = date, weekday = date.dayOfWeek, name = next.templateName)
+}.minByOrNull { it.date }
+
+/** Whichever of the two comes first, or null when neither does (ROADMAP N177). */
+internal fun earlierOf(weekly: NextSession?, sequence: NextSession?): NextSession? =
+    listOfNotNull(weekly, sequence).minByOrNull { it.date }
+
+private const val DAYS_IN_WEEK = 7L
+
 data class WorkoutsHomeUiState(
     val isLoading: Boolean = true,
     val activeWorkout: ActiveWorkoutInfo? = null,
@@ -135,6 +185,13 @@ data class WorkoutsHomeUiState(
     val todaysPlan: List<TodayPlan> = emptyList(),
     /** Whether any program is followed, which is what makes an empty day a rest day (ROADMAP N126). */
     val hasActiveProgram: Boolean = false,
+    /**
+     * The next session either kind of program has, for the rest line (ROADMAP N177).
+     *
+     * Informational only: N125 removed the startable next-up row from home on purpose, and naming the
+     * workout is not the same as offering it.
+     */
+    val nextSession: NextSession? = null,
     /** The templates a substitution can choose from (ROADMAP P3.11). */
     val templates: List<WorkoutTemplate> = emptyList(),
     /**
@@ -339,6 +396,7 @@ class WorkoutsHomeViewModel @Inject constructor(
         val slots: List<ProgramSlot>,
         val deloadWeeks: List<DeloadWeek>,
         val sequencePlans: List<TodayPlan>,
+        val schedules: Map<String, SequenceSchedule>,
     )
 
     private val programsPart: Flow<ProgramsPart> =
@@ -347,10 +405,16 @@ class WorkoutsHomeViewModel @Inject constructor(
             activeProgramSlots,
             deloadWeeks,
             combine(activePrograms, sequenceSchedules) { programs, schedules ->
-                sequenceTodayPlans(programs, schedules, todayDate)
+                sequenceTodayPlans(programs, schedules, todayDate) to schedules
             },
-        ) { programs, slots, deloads, sequencePlans ->
-            ProgramsPart(programs, slots, deloads, sequencePlans)
+        ) { programs, slots, deloads, sequences ->
+            ProgramsPart(
+                programs = programs,
+                slots = slots,
+                deloadWeeks = deloads,
+                sequencePlans = sequences.first,
+                schedules = sequences.second,
+            )
         }
 
     val uiState: StateFlow<WorkoutsHomeUiState> = combine(
@@ -371,6 +435,10 @@ class WorkoutsHomeViewModel @Inject constructor(
                 deloadWeeks = programs.deloadWeeks,
                 day = today,
             ) + programs.sequencePlans,
+            nextSession = earlierOf(
+                nextWeeklySession(programs.programs, programs.slots, todayDate),
+                nextSequenceSession(programs.programs, programs.schedules),
+            ),
             // N126: what makes an empty day a rest day rather than a day with nothing to say.
             hasActiveProgram = programs.programs.isNotEmpty(),
             templates = templates,

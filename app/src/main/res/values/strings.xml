@@ -475,6 +475,7 @@
     <string name="home_plan_sequence_was_due">%1$s · was due %2$s</string>
     <string name="home_rest_day">Rest day</string>
     <string name="home_rest_day_hint">Your program schedules nothing today.</string>
+    <string name="home_rest_day_next">Next: %1$s · %2$s</string>
     <!-- Substituting one occurrence, this week only (ROADMAP P3.11). -->
     <string name="home_substitute">Substitute</string>
     <string name="home_substitute_title">Train something else?</string>

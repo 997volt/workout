@@ -131,7 +131,7 @@ private fun LazyListScope.planItems(
         // No heading: an empty *Today · Monday* would be a promise the app cannot keep (N115), and the line
         // names the day itself.
         item(key = "no_plan") {
-            NoPlanLine(restDay = state.planIsRestDay)
+            NoPlanLine(restDay = state.planIsRestDay, nextSession = state.nextSession)
         }
         // The day's way in, and it never leaves: the prompt while today has nothing, the way back into the
         // entry once it does (B182). A rest day is exactly when a weigh-in *is* the day's entry (N138).
@@ -172,7 +172,7 @@ private val ZONE_TODAY = TileAccent.Sky
  * the absence of a plan rather than a fourth destination.
  */
 @Composable
-private fun NoPlanLine(restDay: Boolean, modifier: Modifier = Modifier) {
+private fun NoPlanLine(restDay: Boolean, nextSession: NextSession?, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -185,13 +185,29 @@ private fun NoPlanLine(restDay: Boolean, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodyLarge,
         )
         Text(
-            text = stringResource(
-                if (restDay) R.string.home_rest_day_hint else R.string.home_no_plan_hint,
-            ),
+            text = restHint(restDay, nextSession),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * The line under the rest heading: what is coming, when a program knows (ROADMAP N177).
+ *
+ * A rest day that names the next session is the sentence a lifter opens the app for on an off day;
+ * "your program schedules nothing today" is true and answers nothing. A day with no program followed
+ * keeps the line that says how to start one.
+ */
+@Composable
+private fun restHint(restDay: Boolean, nextSession: NextSession?): String = when {
+    !restDay -> stringResource(R.string.home_no_plan_hint)
+    nextSession == null -> stringResource(R.string.home_rest_day_hint)
+    else -> stringResource(
+        R.string.home_rest_day_next,
+        nextSession.weekday.getDisplayName(TextStyle.FULL, Locale.getDefault()),
+        nextSession.name,
+    )
 }
 
 /**
