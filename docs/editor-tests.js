@@ -413,6 +413,18 @@
       t.eq(set.dropValueGrams, null);
     });
 
+    check('the summary words a block change as a block (B202)', function () {
+      var summary = H.editorSummary([
+        { kind: 'PROGRAM_KIND', id: 'pgm_1', detail: 'SEQUENCE' },
+        { kind: 'PROGRAM_START', id: 'pgm_1', detail: '20731' }
+      ]);
+
+      t.eq(summary.length, 2);
+      t.ok(summary[0].indexOf('block') !== -1, summary[0]);
+      t.ok(summary[0].indexOf('weekly') === -1, 'the sentence does not say the opposite: ' + summary[0]);
+      t.ok(summary[1].indexOf('created') === -1, 'a named day is not the creation date: ' + summary[1]);
+    });
+
     check('a block authored from a v4 document is written at the current version (B198)', function () {
       var old = baseDocument();
       old.formatVersion = 4;

@@ -7520,6 +7520,26 @@
   }
 
   /** The file a download writes: the working copy as it stands, and the name it gets (B185). */
+  /**
+   * A plan's changes as one line: one count and one sentence per kind (B202).
+   *
+   * The sentence comes from a representative change rather than from its kind alone, because the
+   * kind and start sentences read the change's `detail`: passing only the kind made an edit that
+   * turns a program into a block say "make the program weekly" above the itemized list that said the
+   * opposite.
+   */
+  function editorSummary(changes) {
+    var counts = {};
+    var representative = {};
+    (changes || []).forEach(function (change) {
+      counts[change.kind] = (counts[change.kind] || 0) + 1;
+      if (!representative[change.kind]) { representative[change.kind] = change; }
+    });
+    return Object.keys(counts).map(function (kind) {
+      return counts[kind] + ' \u00d7 ' + editorChangeText(representative[kind]).toLowerCase();
+    });
+  }
+
   function editorDownloadPayload(ed) {
     return {
       text: JSON.stringify(ed.working, null, 2) + '\n',
@@ -7676,13 +7696,7 @@
       return;
     }
 
-    var counts = {};
-    (planned.changes || []).forEach(function (change) {
-      counts[change.kind] = (counts[change.kind] || 0) + 1;
-    });
-    var summary = Object.keys(counts).map(function (kind) {
-      return counts[kind] + ' \u00d7 ' + (editorChangeText({ kind: kind }).toLowerCase());
-    });
+    var summary = editorSummary(planned.changes);
     host.appendChild(h('p', '', summary.length > 0 ? 'The app would: ' + summary.join(' \u00b7 ') + '.' : 'The app would change nothing.'));
 
     var list = document.createElement('ul');
@@ -7809,6 +7823,8 @@
     editorRemoveExercise: editorRemoveExercise,
     editorPruneExercises: editorPruneExercises,
     editorApplyRole: editorApplyRole,
+    editorChangeText: editorChangeText,
+    editorSummary: editorSummary,
     editorSharedProgramNames: editorSharedProgramNames,
     editorMove: editorMove,
     editorParseInt: editorParseInt,
