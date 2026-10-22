@@ -40,9 +40,6 @@ import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 
 /**
  * The program editor's blocks that are not the program's own rows (ROADMAP N178).
@@ -198,7 +195,7 @@ private fun StartDateRow(startDate: LocalDate?, onChange: () -> Unit) {
         Text(
             text = stringResource(
                 R.string.program_starts_on,
-                startDate?.let(::formatStartDate)
+                startDate?.let(::formatProgramDay)
                     ?: stringResource(R.string.program_starts_created),
             ),
             modifier = Modifier.testTag(TestTags.Programs.START_DATE),
@@ -211,10 +208,6 @@ private fun StartDateRow(startDate: LocalDate?, onChange: () -> Unit) {
         }
     }
 }
-
-/** A block's start, in the reader's own locale — an authored day, not a stored number. */
-private fun formatStartDate(date: LocalDate): String =
-    date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()))
 
 /** The date picker a block's start is chosen in, split out to keep the section short. */
 @OptIn(ExperimentalMaterial3Api::class)

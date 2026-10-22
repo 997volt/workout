@@ -26,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
@@ -41,8 +40,8 @@ import com.example.androidapp.ui.components.IconTile
 import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.longLabel
+import com.example.androidapp.ui.components.shortLabel
 import com.example.androidapp.ui.theme.TileAccent
-import java.time.format.TextStyle
 
 /**
  * The home list and the rows it is made of.
@@ -228,7 +227,7 @@ private fun restHint(restDay: Boolean, nextSession: NextSession?): String = when
     nextSession == null -> stringResource(R.string.home_rest_day_hint)
     else -> stringResource(
         R.string.home_rest_day_next,
-        nextSession.weekday.getDisplayName(TextStyle.FULL, LocalConfiguration.current.locales[0]),
+        nextSession.weekday.longLabel(),
         nextSession.name,
     )
 }
@@ -397,7 +396,7 @@ private fun sequenceSubtitle(plan: TodayPlan, summary: String): String {
     )
     val placed = stringResource(R.string.home_plan_sequence_summary, day, summary)
     val due = plan.dueDate ?: return placed
-    val weekday = due.dayOfWeek.getDisplayName(TextStyle.SHORT, LocalConfiguration.current.locales[0])
+    val weekday = due.dayOfWeek.shortLabel()
     return stringResource(
         if (plan.isOverdue) {
             R.string.home_plan_sequence_was_due

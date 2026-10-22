@@ -15,9 +15,6 @@ import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.shared.ChangeKind
 import com.example.androidapp.shared.WarningCode
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
 
@@ -149,14 +146,10 @@ private fun ProgramStartLine(detail: String?) {
         if (day == null) {
             stringResource(R.string.program_edit_start_created)
         } else {
-            stringResource(R.string.program_edit_start_day, formatDay(day))
+            stringResource(R.string.program_edit_start_day, formatProgramDay(day))
         },
     )
 }
-
-/** The day a block starts, in the reader's own locale — the wording N186 asks the dialog for. */
-private fun formatDay(date: LocalDate): String =
-    date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()))
 
 private val DAY_CHANGES = setOf(
     ChangeKind.SLOT_ADDED,

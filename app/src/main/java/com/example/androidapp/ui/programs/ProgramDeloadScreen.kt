@@ -62,10 +62,6 @@ import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.longLabel
 import com.example.androidapp.ui.components.shortLabel
 import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 
 /**
  * Building a program's deload week (ROADMAP N147).
@@ -263,7 +259,7 @@ private fun DeloadBody(
                     Text(
                         text = stringResource(
                             R.string.deload_use_last_hint,
-                            state.lastDeloadWeek?.let { dateLabel(it) }.orEmpty(),
+                            state.lastDeloadWeek?.let { formatProgramDay(it) }.orEmpty(),
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -311,7 +307,7 @@ private fun DeloadHeader(state: DeloadCreatorUiState) {
         }
         state.weekStart?.let { week ->
             Text(
-                text = stringResource(R.string.deload_week, dateLabel(week)),
+                text = stringResource(R.string.deload_week, formatProgramDay(week)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -604,7 +600,7 @@ private fun DeloadDone(
                     R.plurals.deload_created,
                     created.dayCount,
                     created.dayCount,
-                    week?.let { dateLabel(it) }.orEmpty(),
+                    week?.let { formatProgramDay(it) }.orEmpty(),
                 ),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
@@ -631,8 +627,3 @@ private fun DeloadDone(
 /** A stable tag for the weekday picker's "no day" entry. */
 private const val NO_WEEKDAY = "NONE"
 
-/** The week's date as the device's locale writes it. */
-private fun dateLabel(date: LocalDate): String = DateTimeFormatter
-    .ofLocalizedDate(FormatStyle.MEDIUM)
-    .withLocale(Locale.getDefault())
-    .format(date)

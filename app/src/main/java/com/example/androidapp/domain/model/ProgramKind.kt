@@ -14,10 +14,4 @@ package com.example.androidapp.domain.model
 enum class ProgramKind {
     WEEKLY,
     SEQUENCE,
-    ;
-
-    companion object {
-        /** The kind a stored name means, or null for one this build does not know. */
-        fun fromName(name: String?): ProgramKind? = entries.firstOrNull { it.name == name }
-    }
 }
