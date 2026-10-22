@@ -17,19 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**A review of everything since 2.12 found these, and the gates hid almost all of them.** The range is the
-finite-program block (P3.21, N174–N178), the six rows that preceded it (N179–N185), and the helper's authoring
-of one (N186). One of the rows is already red in the instrumented suite (B193); the rest pass every gate, which
-is the finding: each is a gap between what the changelog and [DECISIONS.md](DECISIONS.md) say and what the code
-does, so nothing fails when it regresses. Defects first, then the tests and references that let them through.
-Nothing here is fixed.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-
-B194–B196 are one mistake on three surfaces: a block is still read as a week by the day's plan, by the
-missed-day question, and by the schedule's own match. B193 and B199 are the suite around it — a red run and
-seven checks that stopped running, both of which a green report hid.
+**Nothing.** What has left this queue is in [CHANGELOG.md](CHANGELOG.md): the finite-program block and
+the helper's authoring of one (P3.21, N174–N186), and the review that followed it (B193–B205,
+N187–N190).
 
 ## Later — decided, and not being started
 
