@@ -6572,18 +6572,45 @@
   var PROGRAM_FORMAT_VERSION_FOR_EDITOR = 4;
 
   /** Resolves a typed name to an id, creating or carrying a movement when it is new (N47). */
-  function editorResolveExercise(working, name) {
+  /**
+   * The lifter's own movements, when the page holds them: the export that was loaded (B187).
+   *
+   * A program document carries only the movements its plan names, so on its own it cannot answer
+   * "do I already have this movement?" — the loaded export can.
+   */
+  function editorLibraryExercises() {
+    var file = ui.state && ui.state.catalogFile;
+    return file && Array.isArray(file.exercises) ? file.exercises : [];
+  }
+
+  /**
+   * A name resolves to a movement the page can see, or mints one (B187).
+   *
+   * The document comes first, then the lifter's library, then the app's seed library: any of the
+   * three is that movement rather than a second row with the same name. [libraryRows] is only for
+   * callers that hold the library themselves — the page's own tests — and defaults to the loaded
+   * export.
+   */
+  function editorResolveExercise(working, name, libraryRows) {
     var trimmed = String(name === null || name === undefined ? '' : name).trim();
     var normalized = normalizeName(trimmed);
     if (normalized === '') { return null; }
-    var known = (working.exercises || []).filter(function (row) {
-      return row && isLoggableRow(row) && normalizeName(row.name) === normalized;
-    })[0];
+    function match(rows) {
+      return (rows || []).filter(function (row) {
+        return row && isLoggableRow(row) && !row.deletedAt && normalizeName(row.name) === normalized;
+      })[0];
+    }
+    var known = match(working.exercises);
     if (known) { return known.id; }
 
-    var seeded = (editorGlobal().SEEDED_EXERCISES || []).filter(function (row) {
-      return isLoggableRow(row) && normalizeName(row.name) === normalized;
-    })[0];
+    var library = typeof libraryRows === 'undefined' ? editorLibraryExercises() : libraryRows;
+    var owned = match(library);
+    if (owned) {
+      working.exercises.push(editorDeepCopy(owned));
+      return owned.id;
+    }
+
+    var seeded = match(editorGlobal().SEEDED_EXERCISES);
     if (seeded) {
       working.exercises.push(programExerciseDto(seeded, Date.now()));
       return seeded.id;
@@ -6609,6 +6636,36 @@
       rowKind: 'MOVEMENT'
     });
     return id;
+  }
+
+  /**
+   * Keeps the movements the document still needs: the ones its plan names, and their ancestors (B187).
+   *
+   * A name typed into a field mints a movement when nothing matches it, so a typo corrected afterwards
+   * would leave the minted row in the document — carried into the edit and created in the app's
+   * library, where the page has no way to remove it. Ancestors stay because a movement's family is
+   * part of its definition and is not itself named by a plan (N103).
+   */
+  function editorPruneExercises(working) {
+    var needed = {};
+    (working.templateExercises || []).forEach(function (planned) {
+      if (planned && planned.exerciseId) { needed[planned.exerciseId] = true; }
+    });
+    var byId = {};
+    (working.exercises || []).forEach(function (row) {
+      if (row && row.id) { byId[row.id] = row; }
+    });
+    var pending = Object.keys(needed);
+    while (pending.length > 0) {
+      var row = byId[pending.pop()];
+      if (row && row.parentId && !needed[row.parentId]) {
+        needed[row.parentId] = true;
+        pending.push(row.parentId);
+      }
+    }
+    working.exercises = (working.exercises || []).filter(function (row) {
+      return row && row.id && needed[row.id];
+    });
   }
 
   function editorAddDay(working) {
@@ -6790,13 +6847,17 @@
       option.value = row.name;
       list.appendChild(option);
     });
-    (editorGlobal().SEEDED_EXERCISES || []).forEach(function (row) {
-      if (!isLoggableRow(row) || seen[normalizeName(row.name)]) { return; }
-      seen[normalizeName(row.name)] = true;
-      var option = document.createElement('option');
-      option.value = row.name;
-      list.appendChild(option);
-    });
+    function offer(rows) {
+      (rows || []).forEach(function (row) {
+        if (!row || !isLoggableRow(row) || row.deletedAt || seen[normalizeName(row.name)]) { return; }
+        seen[normalizeName(row.name)] = true;
+        var option = document.createElement('option');
+        option.value = row.name;
+        list.appendChild(option);
+      });
+    }
+    offer(editorLibraryExercises());
+    offer(editorGlobal().SEEDED_EXERCISES);
     host.appendChild(list);
   }
 
@@ -7253,6 +7314,8 @@
     var core = programCore();
     var ed = ui.state.programEditor;
     if (!core || !ed || !ed.working) { return; }
+    // What is planned is what is written, so a movement nothing names leaves before the plan (B187).
+    editorPruneExercises(ed.working);
     if (ed.mode === 'new') {
       editorCheckNew(core, ed);
       return;
@@ -7330,6 +7393,7 @@
   function editorSaveDraft() {
     var ed = ui.state.programEditor;
     if (!ed || !ed.working) { return; }
+    editorPruneExercises(ed.working);
     var draft = {
       kind: EDITOR_DRAFT_KIND,
       version: 1,
@@ -7419,6 +7483,7 @@
     editorAddSet: editorAddSet,
     editorRemoveDay: editorRemoveDay,
     editorRemoveExercise: editorRemoveExercise,
+    editorPruneExercises: editorPruneExercises,
     editorMove: editorMove,
     editorParseInt: editorParseInt,
     editorParseHalves: editorParseHalves,

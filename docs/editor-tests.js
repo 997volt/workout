@@ -216,6 +216,42 @@
       t.ok(problems.some(function (problem) { return problem.code === 'DANGLING_SLOT_TEMPLATE'; }));
     });
 
+    t.check('a typed name resolves to the movement the library already holds (B187)', function () {
+      var program = H.newProgramDocument('Block', 'pgm_1', 1000);
+      var library = [row({
+        id: 'ex_custom',
+        name: 'Cable Fly',
+        primaryMuscle: 'CHEST',
+        secondaryMuscles: [],
+        equipment: 'CABLE',
+        movementPattern: 'FLY',
+        rowKind: 'MOVEMENT'
+      })];
+
+      var id = H.editorResolveExercise(program, 'cable fly', library);
+
+      t.eq(id, 'ex_custom', 'the library movement is the movement, not a second row');
+      t.eq(program.exercises.length, 1, 'it is carried into the document');
+      t.eq(program.exercises[0].id, 'ex_custom');
+    });
+
+    t.check('a typo corrected before the download leaves no movement behind (B187)', function () {
+      var program = H.newProgramDocument('Block', 'pgm_1', 1000);
+      H.editorAddDay(program);
+      var template = program.templates[0];
+      var typo = H.editorResolveExercise(program, 'Cabel Fly', []);
+      H.editorAddExercise(program, template.id, typo);
+      var planned = program.templateExercises[0];
+
+      planned.exerciseId = H.editorResolveExercise(program, 'Bench Press', []);
+      H.editorPruneExercises(program);
+
+      t.eq(program.exercises.length, 1, 'only what the plan names is carried');
+      t.eq(program.exercises[0].name, 'Bench Press');
+      t.ok(!program.exercises.some(function (row) { return row.name === 'Cabel Fly'; }),
+        'the minted typo is gone');
+    });
+
     t.check('a rung refusal names its own cause, not one sentence for five (B186)', function () {
       var broken = baseDocument();
       broken.templateSets.push(row({
