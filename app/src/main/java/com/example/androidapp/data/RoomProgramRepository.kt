@@ -432,7 +432,7 @@ class RoomProgramRepository @Inject constructor(
             if (document.edit == null) {
                 return@dataResultOf ProgramDocumentPreview.Add
             }
-            val snapshot = buildProgramDocument(database, timeSource, document.program.id)
+            val snapshot = editSnapshot(database, timeSource, document.program.id)
             // The device's own newest write, soft-deleted rows included: a deletion after the export
             // is not in the snapshot at all, so only this read can see it (B183).
             val newest = database.programEditDao().newestWriteForProgram(document.program.id)
@@ -453,6 +453,29 @@ class RoomProgramRepository @Inject constructor(
 
         const val DAYS_IN_WEEK = 7L
     }
+}
+
+/**
+ * One program's definition as an edit reads it, or the refusal the lifter can act on (B189).
+ *
+ * [buildProgramDocument] answers a program this device does not hold with `NotFoundException`, which the
+ * screens render as a storage failure — "Couldn't read the file" — true of the read and useless to the
+ * lifter. An edit names the program it is for, so a missing (or deleted) one is the planner's own
+ * `PROGRAM_MISSING` refusal, and the branch that words it stops being dead code.
+ */
+private suspend fun editSnapshot(
+    database: WorkoutDatabase,
+    timeSource: TimeSource,
+    programId: String,
+): ProgramDocument {
+    if (database.programDao().findProgram(programId) == null) {
+        throw InvalidInputException(
+            editRefusal(
+                listOf(ProgramProblem(ProblemCode.PROGRAM_MISSING, "program.id", programId)),
+            ),
+        )
+    }
+    return buildProgramDocument(database, timeSource, programId)
 }
 
 /** Room reports an ignored insert — a row whose id was already present — as this rowid. */
@@ -635,7 +658,7 @@ private suspend fun applyProgramEdit(
     now: Long,
 ): ProgramImportSummary {
     val editDao = database.programEditDao()
-    val snapshot = buildProgramDocument(database, timeSource, document.program.id)
+    val snapshot = editSnapshot(database, timeSource, document.program.id)
     val planned = plan(
         snapshot.toShared(),
         document.toShared(),

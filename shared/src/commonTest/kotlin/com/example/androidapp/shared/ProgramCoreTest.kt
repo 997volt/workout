@@ -193,6 +193,18 @@ class ProgramCoreTest {
     }
 
     @Test
+    fun an_edit_of_a_program_the_snapshot_calls_deleted_is_refused_as_missing() {
+        // B189: the app answers this before the plan runs, so the code had no case of its own; the
+        // sentence the lifter reads depends on it, and a document from the page can reach it.
+        val snapshot = baseDocument(program = programRow().copy(deletedAt = T))
+        val edit = baseDocument(edit = EditMarker(baseExportedAt = T))
+
+        val refused = plan(snapshot, edit) as PlanResult.Refused
+
+        assertEquals(ProblemCode.PROGRAM_MISSING, refused.problems.single().code)
+    }
+
+    @Test
     fun a_document_without_an_edit_marker_is_refused_as_an_edit() {
         val refused = plan(baseDocument(), baseDocument()) as PlanResult.Refused
 

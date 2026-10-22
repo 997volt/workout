@@ -409,6 +409,23 @@ class ProgramDocumentTest {
     }
 
     @Test
+    fun anEditOfAProgramThisDeviceDoesNotHold_isRefusedAsMissing() = runTest {
+        // B189: the snapshot threw NotFoundException first, so the app answered "Couldn't read the
+        // file" and the planner's PROGRAM_MISSING branch was unreachable.
+        val programId = seedProgram()
+        val original = ProgramDocumentCodec.decode(exportOf(programId))
+        val edit = original.copy(
+            program = original.program.copy(name = "Changed"),
+            edit = EditMarker(baseExportedAt = original.exportedAt),
+        )
+        (programs.deleteProgram(programId) as DataResult.Success)
+
+        val failure = programs.importProgramDocument(ProgramDocumentCodec.encode(edit)) as DataResult.Failure
+
+        assertTrue((failure.error as DataError.Invalid).message.contains("not on this device"))
+    }
+
+    @Test
     fun anEditThatRemovesADay_keepsItsWorkout() = runTest {
         val programId = seedProgram()
         val original = ProgramDocumentCodec.decode(exportOf(programId))
