@@ -413,6 +413,21 @@
       t.eq(set.dropValueGrams, null);
     });
 
+    check('a block authored from a v4 document is written at the current version (B198)', function () {
+      var old = baseDocument();
+      old.formatVersion = 4;
+      delete old.edit;
+
+      var opened = H.editorOpenSnapshot(old, null);
+      opened.working.program.kind = 'SEQUENCE';
+      opened.working.program.startDate = 20731;
+
+      var written = JSON.parse(H.editorDownloadPayload(opened).text);
+      t.eq(written.formatVersion, 5, 'the file carries the version this build reads');
+      t.eq(written.program.kind, 'SEQUENCE');
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(written))).problems.length, 0);
+    });
+
     check('a rung refusal names its own cause, not one sentence for five (B186)', function () {
       var broken = baseDocument();
       broken.templateSets.push(row({

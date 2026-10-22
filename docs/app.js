@@ -7476,6 +7476,10 @@
     var original = editorDeepCopy(document);
     var working = editorDeepCopy(document);
     working.edit = { baseExportedAt: original.exportedAt };
+    // The working copy is written at the format this build reads (B198): opening a v4 export and
+    // turning it into a block would otherwise download a v4 document carrying a kind, which an old
+    // build accepts (its floor is 4) and reads as a weekly program — the hazard N185 closed.
+    working.formatVersion = programFormatVersion();
     return {
       original: original,
       working: working,
@@ -7548,6 +7552,9 @@
       return;
     }
     var working = editorDeepCopy(draft.working);
+    // A draft saved by an older build is upgraded on the way in, for the same reason an opened
+    // document is (B198).
+    working.formatVersion = programFormatVersion();
     if (mode === 'edit') {
       working.edit = { baseExportedAt: draft.original.exportedAt };
     } else {
