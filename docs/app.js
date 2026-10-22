@@ -7109,21 +7109,56 @@
     return node;
   }
 
+  /**
+   * A set's fields follow its role (B190).
+   *
+   * A rung takes its load and reps from the anchor above, so a number on the row is a value nothing
+   * reads — N79's rule, and the shared validation refuses it. A drop is the only role that names a
+   * value to take off, so a cluster and a working set carry none. The change clears what the new role
+   * cannot carry and remembers what it cleared, because switching to a rung and changing your mind
+   * must not cost the load and reps the row already had.
+   */
+  function editorApplyRole(set) {
+    if (editorRung(set.role)) {
+      if (!set.editorCarried) {
+        // Non-enumerable: it is the form's memory, not part of the document the app receives.
+        Object.defineProperty(set, 'editorCarried', {
+          value: {
+            targetWeightGrams: set.targetWeightGrams,
+            targetAssistanceGrams: set.targetAssistanceGrams,
+            targetRepsMin: set.targetRepsMin,
+            targetRepsMax: set.targetRepsMax,
+            targetRepsCurrent: set.targetRepsCurrent
+          },
+          writable: true,
+          configurable: true,
+          enumerable: false
+        });
+      }
+      set.targetWeightGrams = null;
+      set.targetAssistanceGrams = null;
+      set.targetRepsMin = null;
+      set.targetRepsMax = null;
+      set.targetRepsCurrent = null;
+    } else if (set.editorCarried) {
+      var carried = set.editorCarried;
+      set.targetWeightGrams = carried.targetWeightGrams;
+      set.targetAssistanceGrams = carried.targetAssistanceGrams;
+      set.targetRepsMin = carried.targetRepsMin;
+      set.targetRepsMax = carried.targetRepsMax;
+      set.targetRepsCurrent = carried.targetRepsCurrent;
+      delete set.editorCarried;
+    }
+    if (set.role !== 'DROP') { set.dropValueGrams = null; }
+  }
+
   function editorSetNode(working, set) {
     var row = h('div', 'editor-set');
     row.appendChild(editorSelect('Role', EDITOR_ROLES.map(function (role) {
       return { value: role, label: roleLabel(role) };
     }), set.role, function (value) {
       set.role = value;
-      if (editorRung(value)) {
-        // A rung's load and reps are derived from its anchor (N79); writing them back would put a
-        // number on the row that nothing reads, which the shared validation also refuses.
-        set.targetWeightGrams = null;
-        set.targetAssistanceGrams = null;
-        set.targetRepsMin = null;
-        set.targetRepsMax = null;
-        set.targetRepsCurrent = null;
-      }
+      editorApplyRole(set);
       editorRender();
     }, 'role:' + set.id));
 
@@ -7163,10 +7198,15 @@
     row.appendChild(editorTextField('Note', set.note || '', function (value) {
       set.note = value.trim() === '' ? null : value;
     }));
-    row.appendChild(editorButton('Remove', function () {
-      working.templateSets = working.templateSets.filter(function (candidate) { return candidate !== set; });
-      editorRender();
-    }));
+    row.appendChild(editorButton(
+      'Remove',
+      function () {
+        working.templateSets = working.templateSets.filter(function (candidate) { return candidate !== set; });
+        editorRender();
+      },
+      'remove-set:' + set.id,
+      'Remove set ' + (typeof set.setIndex === 'number' ? set.setIndex + 1 : '')
+    ));
     return row;
   }
 
@@ -7564,6 +7604,7 @@
     editorRemoveDay: editorRemoveDay,
     editorRemoveExercise: editorRemoveExercise,
     editorPruneExercises: editorPruneExercises,
+    editorApplyRole: editorApplyRole,
     editorMove: editorMove,
     editorParseInt: editorParseInt,
     editorParseHalves: editorParseHalves,

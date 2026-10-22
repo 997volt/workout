@@ -252,6 +252,38 @@
         'the minted typo is gone');
     });
 
+    t.check('a role change clears what it cannot carry and keeps what it can (B190)', function () {
+      var set = row({
+        id: 'set_a',
+        role: 'NORMAL',
+        targetWeightGrams: 80000,
+        targetAssistanceGrams: null,
+        targetRepsMin: 5,
+        targetRepsMax: 5,
+        targetRepsCurrent: null,
+        dropValueGrams: null
+      });
+
+      set.role = 'DROP';
+      H.editorApplyRole(set);
+      t.eq(set.targetWeightGrams, null, 'a rung carries no load');
+      t.eq(set.targetRepsMin, null, 'a rung carries no reps');
+      t.eq(set.dropValueGrams, null, 'a drop names no value until one is typed');
+      t.ok(!('editorCarried' in JSON.parse(JSON.stringify(set))),
+        'the memory of what was cleared is not in the document the app receives');
+
+      set.dropValueGrams = 60000;
+      set.role = 'CLUSTER';
+      H.editorApplyRole(set);
+      t.eq(set.dropValueGrams, null, 'a cluster is not a drop and carries no value');
+
+      set.role = 'NORMAL';
+      H.editorApplyRole(set);
+      t.eq(set.targetWeightGrams, 80000, 'the load the row had comes back');
+      t.eq(set.targetRepsMin, 5, 'and so do its reps');
+      t.eq(set.dropValueGrams, null);
+    });
+
     t.check('a rung refusal names its own cause, not one sentence for five (B186)', function () {
       var broken = baseDocument();
       broken.templateSets.push(row({
