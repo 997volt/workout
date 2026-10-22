@@ -275,6 +275,11 @@ class ProgramEditorScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.Programs.START_DATE_CHANGE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.START_DATE_CANCEL).performClick()
+        // Backing out writes nothing.
+        assertThat(chosen).isNull()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.START_DATE_CHANGE).performClick()
         composeTestRule.onNodeWithTag(TestTags.Programs.START_DATE_SET).performClick()
 
         // The picker opens on the authored day (or today when none is authored), so its confirm
