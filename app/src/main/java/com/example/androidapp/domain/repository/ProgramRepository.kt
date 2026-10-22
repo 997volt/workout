@@ -166,6 +166,15 @@ interface ProgramRepository {
     suspend fun skipOccurrences(slotIds: List<String>, weekStart: LocalDate): DataResult<Unit>
 
     /**
+     * Records that one block session was consciously skipped on [day] (ROADMAP N195).
+     *
+     * A weekly program's skip is keyed to its week, because the occurrence is the week's. A block's
+     * session happens once, so the day it was let go is the fact its schedule reads, and the column
+     * that holds a week's start holds that day instead.
+     */
+    suspend fun skipBlockSession(slotId: String, day: LocalDate): DataResult<Unit>
+
+    /**
      * One program as a shareable document, or a failure when it is gone (ROADMAP N47).
      *
      * The program's **definition**: its slots, the templates they name, their planned work, and the

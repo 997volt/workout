@@ -48,6 +48,7 @@ class WorkoutsHomeScreenTest {
         val onOpenTemplates: () -> Unit = {},
         val onStartTemplate: (TodayPlan) -> Unit = {},
         val onSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
+        val onSkipBlock: (TodayPlan) -> Unit = {},
         val onOpenPrograms: () -> Unit = {},
         val onOpenMeasurements: () -> Unit = {},
         val onMeasureToday: () -> Unit = {},
@@ -96,6 +97,7 @@ class WorkoutsHomeScreenTest {
                     onStartTemplate = actions.onStartTemplate,
                     onOpenPlannedWorkout = actions.onOpenPlannedWorkout,
                     onSubstituteTemplate = actions.onSubstituteTemplate,
+                    onSkipBlock = actions.onSkipBlock,
                     onOpenPrograms = actions.onOpenPrograms,
                     onOpenMeasurements = actions.onOpenMeasurements,
                     onMeasureToday = actions.onMeasureToday,
@@ -636,6 +638,35 @@ class WorkoutsHomeScreenTest {
             composeTestRule.onNodeWithTag(tag).assertIsDisplayed()
         }
         composeTestRule.onNodeWithTag(TestTags.HOME_START).assertDoesNotExist()
+    }
+
+    @Test
+    fun aBlocksCard_offersSkip_andAWeeklyCardDoesNot() {
+        // B195: a block's session happens once, so its card carries its own Skip — the weekly card
+        // has no such event to let go, and its Substitute is the only per-card action it offers.
+        var skipped: TodayPlan? = null
+        val block = TodayPlan(
+            id = "slot-9",
+            templateId = "t9",
+            name = "Peak day 4",
+            exerciseCount = 3,
+            slotId = "slot-9",
+            programName = "Peak",
+            isSequence = true,
+            sequencePosition = 4,
+            sequenceLength = 9,
+        )
+        setScreen(
+            state = WorkoutsHomeUiState(isLoading = false, today = DayOfWeek.FRIDAY, todaysPlan = listOf(block)),
+            actions = Actions(onSkipBlock = { skipped = it }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HOME_LIST)
+            .performScrollToNode(hasTestTag(TestTags.homeSkipBlock("slot-9")))
+        composeTestRule.onNodeWithTag(TestTags.homeSkipBlock("slot-9")).performClick()
+
+        assertThat(skipped?.slotId).isEqualTo("slot-9")
+        composeTestRule.onNodeWithTag(TestTags.homeSkipBlock("slot-1")).assertDoesNotExist()
     }
 
     @Test

@@ -33,6 +33,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
@@ -117,6 +118,7 @@ fun WorkoutsHomeRoute(
         onError = { message = it },
     )
 
+
     PlannedWorkoutDialog(
         planned = plannedWorkout,
         onDismiss = viewModel::onDismissPlannedWorkout,
@@ -146,6 +148,8 @@ fun WorkoutsHomeRoute(
             requestStart = requestStart,
             onFailure = { failure = it },
         ),
+        // A block's own skip, which is a write and reports both ways (B195).
+        onSkipBlock = rememberSkipBlock(viewModel, scope, { message = it }, { failure = it }),
         onOpenPrograms = onOpenPrograms,
         onOpenMeasurements = onOpenMeasurements,
         onMeasureToday = onMeasureToday,
@@ -165,6 +169,24 @@ fun WorkoutsHomeRoute(
 private data class SubstituteRequest(val plan: TodayPlan)
 
 @OptIn(ExperimentalMaterial3Api::class)
+/**
+ * A block's skip action, with the sentence it reports (ROADMAP B195).
+ *
+ * Its own composable because the route is at the length this project allows, and because the action
+ * and the words it leaves behind are one thing: letting a session go is a write, and a failure has
+ * to be said rather than swallowed.
+ */
+@Composable
+private fun rememberSkipBlock(
+    viewModel: WorkoutsHomeViewModel,
+    scope: CoroutineScope,
+    onMessage: (String) -> Unit,
+    onFailure: (DataError) -> Unit,
+): (TodayPlan) -> Unit {
+    val skipped = stringResource(R.string.home_block_skipped)
+    return skipBlockSession(scope, viewModel, onDone = { onMessage(skipped) }, onFailure = onFailure)
+}
+
 @Composable
 fun WorkoutsHomeScreen(
     state: WorkoutsHomeUiState,
@@ -200,6 +222,8 @@ fun WorkoutsHomeScreen(
      * the one that was scheduled (B93).
      */
     onSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
+    /** Lets a block's next session go, which is the only way past one that cannot be trained (B195). */
+    onSkipBlock: (TodayPlan) -> Unit = {},
 ) {
     // The card whose substitute picker is open, or null (P3.11). `substituting?.plan` is what the dialog draws.
     var substituting by remember { mutableStateOf<SubstituteRequest?>(null) }
@@ -244,6 +268,7 @@ fun WorkoutsHomeScreen(
             onMeasureToday = onMeasureToday,
             onStartTemplate = onStartTemplate,
             onSubstitute = { plan -> substituting = SubstituteRequest(plan) },
+            onSkipBlock = onSkipBlock,
             onOpenPlannedWorkout = onOpenPlannedWorkout,
             modifier = Modifier.padding(innerPadding),
         )
@@ -356,6 +381,7 @@ private fun HomeContent(
     onMeasureToday: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
+    onSkipBlock: (TodayPlan) -> Unit,
     onOpenPlannedWorkout: (TodayPlan) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -374,6 +400,7 @@ private fun HomeContent(
             onMeasureToday = onMeasureToday,
             onStartTemplate = onStartTemplate,
             onSubstitute = onSubstitute,
+            onSkipBlock = onSkipBlock,
             onOpenPlannedWorkout = onOpenPlannedWorkout,
             modifier = modifier,
         )

@@ -160,6 +160,9 @@ class ProgramsViewModelTest {
         override suspend fun previewProgramDocument(text: String): DataResult<ProgramDocumentPreview> =
             preview
 
+        override suspend fun skipBlockSession(slotId: String, day: LocalDate): DataResult<Unit> =
+            error("this test does not skip a block")
+
         override suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary> {
             importedTexts += text
             return DataResult.Success(summary)

@@ -47,6 +47,29 @@ internal suspend fun discardActiveSession(
  * (N125): every substitute offered now belongs to a card, and a card *is* today's occurrence, so all of
  * them are recorded.
  */
+/**
+ * Records that a block's next session was skipped, and says so (ROADMAP B195).
+ *
+ * Its own action rather than the weekly *Continue*: a block's session happens once, so the skip is
+ * dated the day it was taken and the card behind it is the next session.
+ */
+internal fun skipBlockSession(
+    scope: CoroutineScope,
+    viewModel: WorkoutsHomeViewModel,
+    onDone: () -> Unit,
+    onFailure: (DataError) -> Unit,
+): (TodayPlan) -> Unit = { plan ->
+    val slotId = plan.slotId
+    if (slotId != null) {
+        scope.launch {
+            when (val result = viewModel.skipBlockSession(slotId)) {
+                is DataResult.Success -> onDone()
+                is DataResult.Failure -> onFailure(result.error)
+            }
+        }
+    }
+}
+
 internal fun substituteOccurrence(
     scope: CoroutineScope,
     viewModel: WorkoutsHomeViewModel,

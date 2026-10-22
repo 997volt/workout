@@ -27,6 +27,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -67,6 +69,7 @@ internal fun HomeBody(
     onMeasureToday: () -> Unit,
     onStartTemplate: (TodayPlan) -> Unit,
     onSubstitute: (TodayPlan) -> Unit,
+    onSkipBlock: (TodayPlan) -> Unit,
     onOpenPlannedWorkout: (TodayPlan) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -81,6 +84,7 @@ internal fun HomeBody(
             onMeasureToday = onMeasureToday,
             onStartTemplate = onStartTemplate,
             onSubstitute = onSubstitute,
+            onSkipBlock = onSkipBlock,
             onOpenPlannedWorkout = onOpenPlannedWorkout,
         )
         // **The day leads when it holds no workout** (B182). The foot-of-list placement (N115, N124) is
@@ -148,6 +152,7 @@ private fun LazyListScope.planItems(
             onOpen = { actions.onOpenPlannedWorkout(plan) },
             onStart = { actions.onStartTemplate(plan) },
             onSubstitute = { actions.onSubstitute(plan) },
+            onSkipBlock = { actions.onSkipBlock(plan) },
         )
     }
     // Under the day's own workout (N138), and still there once the day is written (B182).
@@ -229,6 +234,7 @@ private fun TodayPlanCard(
     onOpen: () -> Unit,
     onStart: () -> Unit,
     onSubstitute: () -> Unit,
+    onSkipBlock: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val exercises = pluralStringResource(
@@ -258,6 +264,39 @@ private fun TodayPlanCard(
                 )
             }
         }
+        PlanCardActions(
+            plan = plan,
+            onStart = onStart,
+            onSubstitute = onSubstitute,
+            onSkipBlock = onSkipBlock,
+        )
+    }
+}
+
+/**
+ * A plan card's actions (B195): substitute when the event is keyed to a slot and a week, skip when
+ * it is a block's session that happens once, and start always.
+ *
+ * Extracted from the card because the block's Skip took it past the method ceiling, and because the
+ * three are one row: which of them a card offers is the difference between a weekly occurrence and a
+ * session in a block.
+ */
+@Composable
+private fun PlanCardActions(
+    plan: TodayPlan,
+    onStart: () -> Unit,
+    onSubstitute: () -> Unit,
+    onSkipBlock: () -> Unit,
+) {
+    val skipLabel = if (plan.isSequence) {
+        stringResource(
+            R.string.home_block_skip_label,
+            plan.sequencePosition ?: 1,
+            plan.sequenceLength ?: 1,
+        )
+    } else {
+        ""
+    }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -274,6 +313,18 @@ private fun TodayPlanCard(
                     modifier = Modifier.testTag(TestTags.homeSubstitute(plan.id)),
                 ) {
                     Text(stringResource(R.string.home_substitute))
+                }
+            }
+            // A block's session happens once, so the weekly *Continue* is not its skip: this is
+            // the one way past a session that cannot be trained (B195).
+            if (plan.isSequence && plan.slotId != null) {
+                AppTextButton(
+                    onClick = onSkipBlock,
+                    modifier = Modifier
+                        .testTag(TestTags.homeSkipBlock(plan.id))
+                        .semantics { contentDescription = skipLabel },
+                ) {
+                    Text(stringResource(R.string.home_block_skip))
                 }
             }
             Button(
@@ -293,8 +344,8 @@ private fun TodayPlanCard(
                 Text(stringResource(R.string.home_plan_start))
             }
         }
-    }
 }
+
 
 /**
  * A card's supporting line: what it plans and which program it belongs to (N127, N147).
@@ -461,6 +512,7 @@ internal class TodayActions(
     val onMeasureToday: () -> Unit,
     val onStartTemplate: (TodayPlan) -> Unit,
     val onSubstitute: (TodayPlan) -> Unit,
+    val onSkipBlock: (TodayPlan) -> Unit,
     val onOpenPlannedWorkout: (TodayPlan) -> Unit,
 )
 

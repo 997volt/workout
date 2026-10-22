@@ -479,6 +479,9 @@ private class FakeProgramRepository : ProgramRepository {
     override suspend fun previewProgramDocument(text: String): DataResult<ProgramDocumentPreview> =
         error("this screen does not import a program")
 
+    override suspend fun skipBlockSession(slotId: String, day: LocalDate): DataResult<Unit> =
+        error("this screen does not skip a block")
+
     override suspend fun createProgram(name: String): DataResult<String> =
         error("this screen does not create a program")
 

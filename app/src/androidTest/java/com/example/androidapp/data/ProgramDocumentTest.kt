@@ -33,6 +33,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Carrying one program to another device, end to end through the schema (ROADMAP N47).
@@ -455,6 +457,43 @@ class ProgramDocumentTest {
         val failure = programs.importProgramDocument(ProgramDocumentCodec.encode(edit)) as DataResult.Failure
 
         assertTrue((failure.error as DataError.Invalid).message.contains("not on this device"))
+    }
+
+    @Test
+    fun aBlockIsNotAskedAboutAsAMissedWeek() = runTest {
+        // B195: the clock is Wednesday and the seeded slot is Monday, so the weekly program has a
+        // miss to ask about. A block's weekday places one session, so it has no weekly occurrence.
+        val programId = seedProgram()
+        (programs.activateProgram(programId) as DataResult.Success)
+        val today = LocalDate.of(2026, 10, 7)
+        val zone = ZoneId.of("UTC")
+        assertFalse(
+            "the weekly program is asked",
+            (programs.pendingOccurrences(today, zone) as DataResult.Success).data.isEmpty(),
+        )
+
+        (programs.setProgramKind(programId, ProgramKind.SEQUENCE) as DataResult.Success)
+
+        assertTrue(
+            "a block is not a missed week",
+            (programs.pendingOccurrences(today, zone) as DataResult.Success).data.isEmpty(),
+        )
+    }
+
+    @Test
+    fun aBlockSkip_settlesItsSessionOnTheDayItWasSkipped() = runTest {
+        // B195: a block has no week, so the skip is dated the day it was taken and the schedule
+        // reads that day as the session's event.
+        val programId = seedProgram()
+        (programs.setProgramKind(programId, ProgramKind.SEQUENCE) as DataResult.Success)
+        val slot = programs.observeSlots(programId).first().single()
+        assertEquals(0, programs.observeSequenceSchedule(programId).first()?.settled ?: 0)
+
+        (programs.skipBlockSession(slot.id, LocalDate.of(2026, 10, 9)) as DataResult.Success)
+
+        val schedule = programs.observeSequenceSchedule(programId).first()
+        assertEquals("the skip settled the session", 1, schedule?.settled)
+        assertTrue("and the block has nothing left", schedule?.isComplete == true)
     }
 
     @Test

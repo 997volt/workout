@@ -478,6 +478,10 @@
     <string name="home_rest_day_next">Next: %1$s · %2$s</string>
     <!-- Substituting one occurrence, this week only (ROADMAP P3.11). -->
     <string name="home_substitute">Substitute</string>
+    <!-- A block's session happens once, so the weekly *Continue* is not its skip (B195). -->
+    <string name="home_block_skip">Skip</string>
+    <string name="home_block_skip_label">Skip day %1$d of %2$d</string>
+    <string name="home_block_skipped">Session skipped.</string>
     <string name="home_substitute_title">Train something else?</string>
     <string name="home_substitute_clear">Restore the scheduled workout</string>
     <plurals name="home_plan_exercises">

@@ -2964,4 +2964,7 @@ private class FakeProgramRepository : ProgramRepository {
 
     override suspend fun previewProgramDocument(text: String): DataResult<ProgramDocumentPreview> =
         error("the workout screen does not carry a program")
+
+    override suspend fun skipBlockSession(slotId: String, day: LocalDate): DataResult<Unit> =
+        error("the workout screen does not skip a block")
 }

@@ -420,6 +420,10 @@ class RoomProgramRepository @Inject constructor(
         // own order breaking a tie on the same day.
         val pending = mutableListOf<PendingOccurrence>()
         active.forEach { program ->
+            // A block's weekday places one session rather than scheduling a recurring one (N174), so
+            // there is no weekly occurrence to miss — and asking on its behalf recorded a week-keyed
+            // skip that settled a session weeks before it was due (B195).
+            if (program.kind == ProgramKind.SEQUENCE) return@forEach
             if (program.id in builtWeeks) return@forEach
             pending += ProgramSchedule.pendingOccurrences(
                 slots = dao.findSlotDetails(program.id).map { it.toDomain() },
@@ -431,6 +435,28 @@ class RoomProgramRepository @Inject constructor(
         }
         pending.sortedBy { it.date }
     }
+
+    override suspend fun skipBlockSession(slotId: String, day: LocalDate): DataResult<Unit> =
+        dataResultOf {
+            val epochDay = day.toEpochDay()
+            val now = timeSource.nowEpochMillis()
+            database.withTransaction {
+                // Idempotent for the day, like the weekly skip is for its week: two taps must not
+                // settle two sessions.
+                if (skipDao.countSkips(slotId, epochDay) == 0) {
+                    skipDao.insertSkip(
+                        ProgramSkipEntity(
+                            id = UUID.randomUUID().toString(),
+                            slotId = slotId,
+                            weekStart = epochDay,
+                            createdAt = now,
+                            updatedAt = now,
+                            deletedAt = null,
+                        ),
+                    )
+                }
+            }
+        }
 
     override suspend fun skipOccurrences(
         slotIds: List<String>,

@@ -614,6 +614,9 @@ object TestTags {
 
     fun homeSubstitute(planId: String) = "home_substitute_$planId"
 
+    /** A block's *Skip*, the only way past a session that cannot be trained (ROADMAP B195). */
+    fun homeSkipBlock(planId: String) = "home_skip_block_$planId"
+
     fun homeSubstituteTemplate(id: String) = "home_substitute_template_$id"
 
     /** One exercise's own trends (ROADMAP N17). */

@@ -257,6 +257,9 @@ class ProgramStartGateViewModelTest {
         override suspend fun previewProgramDocument(text: String): DataResult<ProgramDocumentPreview> =
             error("the start gate does not carry a program")
 
+        override suspend fun skipBlockSession(slotId: String, day: LocalDate): DataResult<Unit> =
+            error("the start gate does not skip a block")
+
         override suspend fun createProgram(name: String): DataResult<String> =
             error("these tests do not create a program")
 

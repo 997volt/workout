@@ -481,6 +481,15 @@ class WorkoutsHomeViewModel @Inject constructor(
      * write is keyed to the occurrence on screen rather than to whatever day the clock has reached
      * since. [templateId] null restores the slot's own workout.
      */
+    /**
+     * Records that the block's next session was skipped, dated the day it was skipped (B195).
+     *
+     * A block's session happens once, so this is the only way past one that cannot be trained — the
+     * week-keyed *Continue* is the weekly program's answer and means nothing to a sequence.
+     */
+    suspend fun skipBlockSession(slotId: String): DataResult<Unit> =
+        programRepository.skipBlockSession(slotId, todayDate)
+
     suspend fun setSubstitution(slotId: String, templateId: String?): DataResult<Unit> =
         programRepository.setSubstitution(
             slotId = slotId,
