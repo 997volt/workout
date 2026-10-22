@@ -17,6 +17,7 @@ import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgramRun
+import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMiss
@@ -2884,6 +2885,8 @@ private class FakeProgramRepository : ProgramRepository {
     override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = flowOf(emptyList())
 
     override fun observeProgramRun(programId: String): Flow<ProgramRun?> = flowOf(null)
+
+    override fun observeSequenceSchedule(programId: String): Flow<SequenceSchedule?> = flowOf(null)
 
     override suspend fun setSubstitution(
         slotId: String,

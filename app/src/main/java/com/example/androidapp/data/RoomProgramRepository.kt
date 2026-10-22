@@ -40,6 +40,7 @@ import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.RecordedSkip
 import com.example.androidapp.domain.model.RecordedSubstitution
+import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.programRun
 import com.example.androidapp.domain.nowEpochMillis
@@ -319,15 +320,7 @@ class RoomProgramRepository @Inject constructor(
         skips: List<RecordedSkip>,
         zone: ZoneId,
     ): ProgramRun? {
-        val start = program.startDate?.let(LocalDate::ofEpochDay)
-            ?: Instant.ofEpochMilli(program.createdAt).atZone(zone).toLocalDate()
-        val schedule = sequenceSchedule(
-            slots = slots,
-            sessions = sessions,
-            skips = skips,
-            start = start,
-            today = LocalDate.now(zone),
-        ) ?: return null
+        val schedule = scheduleOf(program, slots, sessions, skips, zone) ?: return null
         val next = schedule.next
         return if (next != null) {
             ProgramRun(slot = next, isAtStart = schedule.settled == 0)
@@ -339,6 +332,34 @@ class RoomProgramRepository @Inject constructor(
             )
         }
     }
+
+    override fun observeSequenceSchedule(programId: String): Flow<SequenceSchedule?> =
+        combine(
+            dao.observeProgram(programId),
+            dao.observeSlotDetails(programId),
+        ) { program, rows -> program to rows }
+            .flatMapLatest { (program, rows) ->
+                val slots = rows.map { it.toDomain() }
+                if (program == null || slots.isEmpty() || program.kind != ProgramKind.SEQUENCE) {
+                    flowOf(null)
+                } else {
+                    combine(
+                        runDao.observeFinishedSessions(slots.map { it.templateId }),
+                        runDao.observeSkipsForSlots(slots.map { it.id }),
+                    ) { sessions, skips ->
+                        val zone = ZoneId.systemDefault()
+                        scheduleOf(
+                            program = program,
+                            slots = slots,
+                            sessions = sessions.mapNotNull { it.toRunSession(zone) },
+                            skips = skips.map {
+                                RecordedSkip(slotId = it.slotId, weekStart = LocalDate.ofEpochDay(it.weekStart))
+                            },
+                            zone = zone,
+                        )
+                    }
+                }
+            }
 
     override suspend fun pendingOccurrences(
         today: LocalDate,
@@ -507,6 +528,30 @@ class RoomProgramRepository @Inject constructor(
 
         const val DAYS_IN_WEEK = 7L
     }
+}
+
+/**
+ * A sequence's schedule, from the row and the evidence (ROADMAP N175).
+ *
+ * The start is the authored one, or the day the program was created: the fallback N174 gives a null
+ * start, and the only place it is read.
+ */
+private fun scheduleOf(
+    program: ProgramSummaryRow,
+    slots: List<ProgramSlot>,
+    sessions: List<ProgramSession>,
+    skips: List<RecordedSkip>,
+    zone: ZoneId,
+): SequenceSchedule? {
+    val start = program.startDate?.let(LocalDate::ofEpochDay)
+        ?: Instant.ofEpochMilli(program.createdAt).atZone(zone).toLocalDate()
+    return sequenceSchedule(
+        slots = slots,
+        sessions = sessions,
+        skips = skips,
+        start = start,
+        today = LocalDate.now(zone),
+    )
 }
 
 /**

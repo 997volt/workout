@@ -62,6 +62,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -189,6 +190,7 @@ fun ProgramEditorScreen(
         topBar = {
             ProgramEditorTopBar(
                 name = state.program?.name,
+                isSequence = state.program?.kind == ProgramKind.SEQUENCE,
                 onBack = onBack,
                 onOpenBalance = onOpenBalance,
                 onOpenDeload = onOpenDeload,
@@ -302,6 +304,7 @@ private fun ProgramEditorDialogs(
 @Composable
 private fun ProgramEditorTopBar(
     name: String?,
+    isSequence: Boolean,
     onBack: () -> Unit,
     onOpenBalance: () -> Unit,
     onOpenDeload: () -> Unit,
@@ -336,6 +339,7 @@ private fun ProgramEditorTopBar(
                 }
                 ProgramEditorMenu(
                     expanded = open,
+                    isSequence = isSequence,
                     onDismiss = { open = false },
                     onOpenBalance = onOpenBalance,
                     onOpenDeload = onOpenDeload,
@@ -356,6 +360,7 @@ private fun ProgramEditorTopBar(
 @Composable
 private fun ProgramEditorMenu(
     expanded: Boolean,
+    isSequence: Boolean,
     onDismiss: () -> Unit,
     onOpenBalance: () -> Unit,
     onOpenDeload: () -> Unit,
@@ -363,14 +368,18 @@ private fun ProgramEditorMenu(
     onDelete: () -> Unit,
 ) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.program_deload)) },
-            onClick = {
-                onDismiss()
-                onOpenDeload()
-            },
-            modifier = Modifier.testTag(TestTags.Programs.DELOAD),
-        )
+        // A deload is a week the lifter marks (P3.10), and a sequence has no weeks (N176): the
+        // creator is not offered for one rather than offered and refused.
+        if (!isSequence) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.program_deload)) },
+                onClick = {
+                    onDismiss()
+                    onOpenDeload()
+                },
+                modifier = Modifier.testTag(TestTags.Programs.DELOAD),
+            )
+        }
         DropdownMenuItem(
             text = { Text(stringResource(R.string.program_balance)) },
             onClick = {

@@ -469,6 +469,10 @@
          weekday-less program is the second one on every day, never scheduled and never missed. -->
     <string name="home_no_plan">No workout planned today</string>
     <string name="home_no_plan_hint">Follow a program to schedule your week.</string>
+    <string name="home_plan_sequence_day">Day %1$d of %2$d</string>
+    <string name="home_plan_sequence_summary">%1$s · %2$s</string>
+    <string name="home_plan_sequence_due">%1$s · due %2$s</string>
+    <string name="home_plan_sequence_was_due">%1$s · was due %2$s</string>
     <string name="home_rest_day">Rest day</string>
     <string name="home_rest_day_hint">Your program schedules nothing today.</string>
     <!-- Substituting one occurrence, this week only (ROADMAP P3.11). -->

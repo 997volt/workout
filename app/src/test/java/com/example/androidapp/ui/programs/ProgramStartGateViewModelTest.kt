@@ -6,6 +6,7 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgramRun
+import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.repository.ProgramDocumentPreview
@@ -209,6 +210,8 @@ class ProgramStartGateViewModelTest {
         override fun observeSlots(programId: String): Flow<List<ProgramSlot>> = flowOf(emptyList())
 
         override fun observeProgramRun(programId: String): Flow<ProgramRun?> = flowOf(null)
+
+        override fun observeSequenceSchedule(programId: String): Flow<SequenceSchedule?> = flowOf(null)
 
         override suspend fun setSubstitution(
             slotId: String,

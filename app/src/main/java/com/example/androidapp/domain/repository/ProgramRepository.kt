@@ -4,6 +4,7 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgramRun
+import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.shared.Change
@@ -122,6 +123,15 @@ interface ProgramRepository {
      * re-emits as either source changes.
      */
     fun observeProgramRun(programId: String): Flow<ProgramRun?>
+
+    /**
+     * A sequence's next session, its due date and whether the block is done (ROADMAP N175).
+     *
+     * Null for a weekly program and for a sequence with no slots: neither has a place on a block's
+     * calendar. The run reads this for a sequence, and home reads it to decide whether a session is
+     * due — the same function, so the card and the editor cannot disagree (N176).
+     */
+    fun observeSequenceSchedule(programId: String): Flow<SequenceSchedule?>
 
     /**
      * The occurrences of every active program's current week that were missed (P3.3, unioned

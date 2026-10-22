@@ -39,6 +39,8 @@ import com.example.androidapp.ui.components.SectionHeader
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.longLabel
 import com.example.androidapp.ui.theme.TileAccent
+import java.time.format.TextStyle
+import java.util.Locale
 
 /**
  * The home list and the rows it is made of.
@@ -248,8 +250,9 @@ private fun TodayPlanCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Only a program slot can be substituted: the event is keyed by slot and week
-            // (P3.11), and a pinned plan has no slot to key it by.
-            if (plan.slotId != null) {
+            // (P3.11), and a pinned plan has no slot to key it by. A block's session offers none
+            // either (N176): its slot happens once, so a week-keyed record would never matter.
+            if (plan.slotId != null && !plan.isSequence) {
                 AppTextButton(
                     onClick = onSubstitute,
                     modifier = Modifier.testTag(TestTags.homeSubstitute(plan.id)),
@@ -286,11 +289,39 @@ private fun TodayPlanCard(
 @Composable
 private fun planSubtitle(plan: TodayPlan, exercises: String): String {
     val summary = plan.programName?.let { "$exercises · $it" } ?: exercises
+    if (plan.isSequence) return sequenceSubtitle(plan, summary)
     return if (plan.isDeload) {
         stringResource(R.string.home_plan_deload_summary, summary)
     } else {
         summary
     }
+}
+
+/**
+ * A block's supporting line: its place in the block, what it plans, and the day it was due (N176).
+ *
+ * "Day 4 of 9 · 3 exercises · Peak · due Friday" is the sentence a block's card needs, and a weekly
+ * card has neither a place nor a due date to say.
+ */
+@Composable
+private fun sequenceSubtitle(plan: TodayPlan, summary: String): String {
+    val day = stringResource(
+        R.string.home_plan_sequence_day,
+        plan.sequencePosition ?: 1,
+        plan.sequenceLength ?: 1,
+    )
+    val placed = stringResource(R.string.home_plan_sequence_summary, day, summary)
+    val due = plan.dueDate ?: return placed
+    val weekday = due.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+    return stringResource(
+        if (plan.isOverdue) {
+            R.string.home_plan_sequence_was_due
+        } else {
+            R.string.home_plan_sequence_due
+        },
+        placed,
+        weekday,
+    )
 }
 
 /**

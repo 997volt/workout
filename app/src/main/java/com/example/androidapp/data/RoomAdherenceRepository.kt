@@ -10,6 +10,7 @@ import com.example.androidapp.data.local.ProgramSubstitutionDao
 import com.example.androidapp.data.local.TemplateDao
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toAdherenceSession
+import com.example.androidapp.data.local.ProgramSummaryRow
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.NotFoundException
@@ -21,6 +22,7 @@ import com.example.androidapp.domain.model.DeloadDay
 import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.MonthlyRatio
 import com.example.androidapp.domain.model.ProgramSchedule
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.RecordedDeload
 import com.example.androidapp.domain.model.RecordedSkip
@@ -99,7 +101,7 @@ class RoomAdherenceRepository @Inject constructor(
         }
 
         // The union of every active program's slots (P3.12), in the authored order.
-        val slots = activeSlots(active.map { it.id })
+        val slots = activeSlots(active)
         val skips = skipDao.findSkipsBetween(firstWeek.toEpochDay(), lastWeek.toEpochDay()).map {
             RecordedSkip(slotId = it.slotId, weekStart = LocalDate.ofEpochDay(it.weekStart))
         }
@@ -171,7 +173,7 @@ class RoomAdherenceRepository @Inject constructor(
         }
 
         ProgramSchedule.occurrencesOn(
-            slots = activeSlots(active.map { it.id }),
+            slots = activeSlots(active),
             sessions = sessions,
             skips = skips,
             date = date,
@@ -199,7 +201,7 @@ class RoomAdherenceRepository @Inject constructor(
         val to = today.plusDays(DAYS_IN_WEEK + SLACK_DAYS).atStartOfDay(zone).toInstant().toEpochMilli()
 
         ProgramSchedule.streak(
-            slots = activeSlots(active.map { it.id }),
+            slots = activeSlots(active),
             sessions = programDao.finishedSessionsBetween(from, to).map { it.toAdherenceSession(zone) },
             skips = skipDao.findSkipsBetween(since.toEpochDay(), lastWeek.toEpochDay()).map {
                 RecordedSkip(slotId = it.slotId, weekStart = LocalDate.ofEpochDay(it.weekStart))
@@ -232,7 +234,7 @@ class RoomAdherenceRepository @Inject constructor(
         val active = programDao.findActivePrograms()
         ProgramSchedule.monthlyRatios(
             // No active program means no ratio at all, so every point is a gap, for P3.5's reason.
-            slots = if (active.isEmpty()) emptyList() else activeSlots(active.map { it.id }),
+            slots = if (active.isEmpty()) emptyList() else activeSlots(active),
             sessions = sessions,
             skips = skipDao.findSkipsBetween(firstWeek.toEpochDay(), lastWeek.toEpochDay()).map {
                 RecordedSkip(slotId = it.slotId, weekStart = LocalDate.ofEpochDay(it.weekStart))
@@ -302,10 +304,18 @@ class RoomAdherenceRepository @Inject constructor(
     }
 
     /** The union of the active programs' slots, in the authored order (P3.12). */
-    private suspend fun activeSlots(programIds: List<String>): List<ProgramSlot> {
+    /**
+     * Every followed program's slots, **except a sequence's** (ROADMAP N176).
+     *
+     * The ratio, the grid, the breakdown and the streak all count a slot's weekday as a weekly
+     * occurrence, and a block's weekday places one session rather than scheduling a recurring one —
+     * scored here, every Monday of a nine-session block would count as a scheduled day forever. A
+     * sequence is a different question with its own answer, which is its progress through the block.
+     */
+    private suspend fun activeSlots(programs: List<ProgramSummaryRow>): List<ProgramSlot> {
         val slots = mutableListOf<ProgramSlot>()
-        programIds.forEach { id ->
-            slots += programDao.findSlotDetails(id).map { it.toDomain() }
+        programs.filter { it.kind != ProgramKind.SEQUENCE }.forEach { program ->
+            slots += programDao.findSlotDetails(program.id).map { it.toDomain() }
         }
         return slots
     }

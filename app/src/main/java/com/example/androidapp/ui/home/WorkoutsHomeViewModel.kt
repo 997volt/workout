@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.DeloadWeek
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutTemplate
@@ -85,6 +87,22 @@ data class TodayPlan(
      * the week rather than to a slot, so it offers no substitution.
      */
     val isDeload: Boolean = false,
+    /**
+     * True while the card is a finite program's next session (ROADMAP N176).
+     *
+     * It starts like any other card — the slot id travels for the prefill — but it is not a weekly
+     * occurrence: it offers no substitution, because that write is keyed to a slot *and a week*
+     * ({@link isDeload} is not a slot for the same reason, P3.11).
+     */
+    val isSequence: Boolean = false,
+    /** The session's one-based place in the block, for "Day 4 of 9" (N176). */
+    val sequencePosition: Int? = null,
+    /** How many sessions the block has. */
+    val sequenceLength: Int? = null,
+    /** The day the session was due, so the card can say when (N176). */
+    val dueDate: LocalDate? = null,
+    /** True when [dueDate] is behind today, which is the wording the card uses. */
+    val isOverdue: Boolean = false,
 )
 
 /**
@@ -291,16 +309,48 @@ class WorkoutsHomeViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Each followed sequence's place (ROADMAP N176).
+     *
+     * Read only while a sequence is followed, so a shelf of weekly programs costs home nothing. The
+     * map is by program id, because the card names the program it belongs to and two blocks can run
+     * at once (P3.12).
+     */
+    private val sequenceSchedules: Flow<Map<String, SequenceSchedule>> =
+        activePrograms.flatMapLatest { programs ->
+            val sequences = programs.filter { it.kind == ProgramKind.SEQUENCE }
+            if (sequences.isEmpty()) {
+                flowOf(emptyMap())
+            } else {
+                combine(
+                    sequences.map { program ->
+                        programRepository.observeSequenceSchedule(program.id)
+                            .map { schedule -> program.id to schedule }
+                    },
+                ) { perProgram ->
+                    perProgram.mapNotNull { (id, schedule) -> schedule?.let { id to it } }.toMap()
+                }
+            }
+        }
+
     /** The program-shaped sources the plan surface reads, kept together so the combine below stays flat. */
     private data class ProgramsPart(
         val programs: List<WorkoutProgram>,
         val slots: List<ProgramSlot>,
         val deloadWeeks: List<DeloadWeek>,
+        val sequencePlans: List<TodayPlan>,
     )
 
     private val programsPart: Flow<ProgramsPart> =
-        combine(activePrograms, activeProgramSlots, deloadWeeks) { programs, slots, deloads ->
-            ProgramsPart(programs, slots, deloads)
+        combine(
+            activePrograms,
+            activeProgramSlots,
+            deloadWeeks,
+            combine(activePrograms, sequenceSchedules) { programs, schedules ->
+                sequenceTodayPlans(programs, schedules, todayDate)
+            },
+        ) { programs, slots, deloads, sequencePlans ->
+            ProgramsPart(programs, slots, deloads, sequencePlans)
         }
 
     val uiState: StateFlow<WorkoutsHomeUiState> = combine(
@@ -320,7 +370,7 @@ class WorkoutsHomeViewModel @Inject constructor(
                 slots = programs.slots,
                 deloadWeeks = programs.deloadWeeks,
                 day = today,
-            ),
+            ) + programs.sequencePlans,
             // N126: what makes an empty day a rest day rather than a day with nothing to say.
             hasActiveProgram = programs.programs.isNotEmpty(),
             templates = templates,
@@ -377,6 +427,36 @@ class WorkoutsHomeViewModel @Inject constructor(
         const val STOP_TIMEOUT_MILLIS = 5_000L
         const val TICK_MILLIS = 1_000L
     }
+}
+
+/**
+ * A sequence's cards for today: its next session when it is due or overdue (ROADMAP N176).
+ *
+ * One card per followed block, and nothing before the start date or on a day the next session is not
+ * due yet — home says rest and names the day it is due (N177). Pure and file-level like
+ * [todaysPlanFor], so the rule is testable without a database.
+ */
+internal fun sequenceTodayPlans(
+    programs: List<WorkoutProgram>,
+    schedules: Map<String, SequenceSchedule>,
+    today: LocalDate,
+): List<TodayPlan> = programs.mapNotNull { program ->
+    val schedule = schedules[program.id] ?: return@mapNotNull null
+    val next = schedule.next ?: return@mapNotNull null
+    if (!schedule.isDue) return@mapNotNull null
+    TodayPlan(
+        id = next.id,
+        templateId = next.templateId,
+        name = next.templateName,
+        exerciseCount = next.exerciseCount,
+        slotId = next.id,
+        programName = program.name,
+        isSequence = true,
+        sequencePosition = schedule.position,
+        sequenceLength = schedule.length,
+        dueDate = schedule.due,
+        isOverdue = schedule.due?.isBefore(today) == true,
+    )
 }
 
 /**
