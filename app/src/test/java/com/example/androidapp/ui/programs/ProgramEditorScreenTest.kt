@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
@@ -20,7 +21,9 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import java.time.DayOfWeek
+import java.time.LocalDate
 
 /**
  * One program's editor (ROADMAP P3.3).
@@ -29,6 +32,10 @@ import java.time.DayOfWeek
  * changes them rather than by reading the state back.
  */
 @RunWith(AndroidJUnit4::class)
+// A phone-sized screen: the editor's header is the name, the follow switch and the program's kind,
+// and Robolectric's default 470dp test window put the first day's own controls below the fold. The
+// tests are about what the controls do, so they run where a lifter would actually see them.
+@Config(qualifiers = "w411dp-h891dp")
 class ProgramEditorScreenTest {
 
     @get:Rule
@@ -38,6 +45,8 @@ class ProgramEditorScreenTest {
         state: ProgramEditorUiState = twoSlots,
         onRename: (String) -> Unit = {},
         onSetActive: (Boolean) -> Unit = {},
+        onSetKind: (ProgramKind) -> Unit = {},
+        onSetStartDate: (LocalDate?) -> Unit = {},
         onAddSlot: (String) -> Unit = {},
         onAddNewSlot: (String) -> Unit = {},
         onSetSlotWeekday: (String, DayOfWeek?) -> Unit = { _, _ -> },
@@ -56,6 +65,8 @@ class ProgramEditorScreenTest {
                 state = state,
                 onRename = onRename,
                 onSetActive = onSetActive,
+                onSetKind = onSetKind,
+                onSetStartDate = onSetStartDate,
                 onAddSlot = onAddSlot,
                 onAddNewSlot = onAddNewSlot,
                 onSetSlotWeekday = onSetSlotWeekday,
@@ -196,6 +207,68 @@ class ProgramEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Programs.ACTIVE).performClick()
 
         assertThat(active).isFalse()
+    }
+
+    @Test
+    fun theKindChips_askForAnOrderThatEnds() {
+        var kind: ProgramKind? = null
+        setScreen(onSetKind = { kind = it })
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.KIND_SEQUENCE).performClick()
+
+        assertThat(kind).isEqualTo(ProgramKind.SEQUENCE)
+    }
+
+    @Test
+    fun theWeeklyChip_asksForAWeekThatRepeats() {
+        var kind: ProgramKind? = null
+        setScreen(
+            state = twoSlots.copy(program = twoSlots.program?.copy(kind = ProgramKind.SEQUENCE)),
+            onSetKind = { kind = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.KIND_WEEKLY).performClick()
+
+        assertThat(kind).isEqualTo(ProgramKind.WEEKLY)
+    }
+
+    @Test
+    fun changingABlocksStart_opensTheDatePicker() {
+        setScreen(
+            state = twoSlots.copy(program = twoSlots.program?.copy(kind = ProgramKind.SEQUENCE)),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.START_DATE_CHANGE).performClick()
+
+        // The picker's own confirm is the thing on screen; the chosen date is the repository's to
+        // write, which the ViewModel test and the instrumented suite cover.
+        composeTestRule.onNodeWithText("Set").assertIsDisplayed()
+    }
+
+    @Test
+    fun aBlock_showsTheDayItStarts_andItsPlace() {
+        setScreen(
+            state = twoSlots.copy(
+                program = twoSlots.program?.copy(kind = ProgramKind.SEQUENCE),
+                runSlotId = "s1",
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.START_DATE).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Starts on the day it was created").assertIsDisplayed()
+        // The run marker is the block's place rather than "Next up" (N178). The unmerged tree for
+        // the same reason the existing run-marker test uses it: it lives inside a merged list item.
+        composeTestRule
+            .onNodeWithTag(TestTags.Programs.runSlot("s1"), useUnmergedTree = true)
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("Day 1 of 2", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun aWeeklyProgram_doesNotOfferAStartDate() {
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.START_DATE).assertDoesNotExist()
     }
 
     @Test

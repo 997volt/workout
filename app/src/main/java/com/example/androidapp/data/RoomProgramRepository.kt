@@ -12,9 +12,9 @@ import com.example.androidapp.data.local.ProgramRunDao
 import com.example.androidapp.data.local.ProgramSkipDao
 import com.example.androidapp.data.local.ProgramSkipEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
-import com.example.androidapp.data.local.ProgramSummaryRow
 import com.example.androidapp.data.local.ProgramSubstitutionDao
 import com.example.androidapp.data.local.ProgramSubstitutionEntity
+import com.example.androidapp.data.local.ProgramSummaryRow
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.data.local.toProgramSession
@@ -32,17 +32,17 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PreviousPerformance
-import com.example.androidapp.domain.model.ProgramRun
-import com.example.androidapp.domain.model.ProgramSession
 import com.example.androidapp.domain.model.ProgramKind
-import com.example.androidapp.domain.model.sequenceSchedule
+import com.example.androidapp.domain.model.ProgramRun
 import com.example.androidapp.domain.model.ProgramSchedule
+import com.example.androidapp.domain.model.ProgramSession
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.RecordedSkip
 import com.example.androidapp.domain.model.RecordedSubstitution
 import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.programRun
+import com.example.androidapp.domain.model.sequenceSchedule
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.domain.repository.ProgramImportSummary
@@ -125,6 +125,26 @@ class RoomProgramRepository @Inject constructor(
         )
         id
     }
+
+    override suspend fun setProgramKind(programId: String, kind: ProgramKind): DataResult<Unit> =
+        dataResultOf {
+            val updated = dao.setProgramKind(
+                id = programId,
+                kind = kind,
+                at = timeSource.nowEpochMillis(),
+            )
+            if (updated == 0) throw NotFoundException("program $programId")
+        }
+
+    override suspend fun setProgramStartDate(programId: String, startDate: LocalDate?): DataResult<Unit> =
+        dataResultOf {
+            val updated = dao.setProgramStartDate(
+                id = programId,
+                startDate = startDate?.toEpochDay(),
+                at = timeSource.nowEpochMillis(),
+            )
+            if (updated == 0) throw NotFoundException("program $programId")
+        }
 
     override suspend fun renameProgram(programId: String, name: String): DataResult<Unit> =
         dataResultOf {

@@ -3,9 +3,10 @@ package com.example.androidapp.domain.repository
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramRun
-import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.shared.Change
 import com.example.androidapp.shared.PlanWarning
@@ -49,6 +50,17 @@ interface ProgramRepository {
     suspend fun createProgram(name: String): DataResult<String>
 
     suspend fun renameProgram(programId: String, name: String): DataResult<Unit>
+
+    /**
+     * Makes this program a week that repeats, or an order that ends (ROADMAP N174, N178).
+     *
+     * The app's editor authors both halves of a program's schedule; a document's values are honored
+     * when the program is created and ignored by an edit, like isActive and position.
+     */
+    suspend fun setProgramKind(programId: String, kind: ProgramKind): DataResult<Unit>
+
+    /** Sets the day a block begins, or null for the day it was created (ROADMAP N174, N178). */
+    suspend fun setProgramStartDate(programId: String, startDate: LocalDate?): DataResult<Unit>
 
     /** Soft-deletes the program; its rows stay for an export to carry. */
     suspend fun deleteProgram(programId: String): DataResult<Unit>

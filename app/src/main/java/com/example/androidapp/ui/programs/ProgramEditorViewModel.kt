@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.WorkoutProgram
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
+import java.time.LocalDate
 import javax.inject.Inject
 
 /**
@@ -161,6 +163,13 @@ class ProgramEditorViewModel @Inject constructor(
     )
 
     fun onRename(name: String) = write { repository.renameProgram(programId, name) }
+
+    /** A week that repeats, or an order that ends (ROADMAP N174, N178). */
+    fun onSetKind(kind: ProgramKind) = write { repository.setProgramKind(programId, kind) }
+
+    /** The day a block begins, or null for the day it was created (ROADMAP N178). */
+    fun onSetStartDate(startDate: LocalDate?) =
+        write { repository.setProgramStartDate(programId, startDate) }
 
     /**
      * This program as a document, for the file picker to write (ROADMAP N47).

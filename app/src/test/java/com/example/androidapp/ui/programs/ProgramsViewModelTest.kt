@@ -4,9 +4,10 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramRun
-import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.domain.repository.ProgramImportSummary
@@ -204,6 +205,16 @@ class ProgramsViewModelTest {
 
         override suspend fun createProgram(name: String): DataResult<String> =
             error("these tests do not create a program")
+
+        override suspend fun setProgramKind(
+            programId: String,
+            kind: ProgramKind,
+        ): DataResult<Unit> = error("these tests do not change a program's kind")
+
+        override suspend fun setProgramStartDate(
+            programId: String,
+            startDate: LocalDate?,
+        ): DataResult<Unit> = error("these tests do not change a program's start")
 
         override suspend fun renameProgram(programId: String, name: String): DataResult<Unit> =
             error("these tests do not rename a program")

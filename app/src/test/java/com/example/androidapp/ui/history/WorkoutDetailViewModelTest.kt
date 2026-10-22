@@ -11,9 +11,10 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramRun
-import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.Side
@@ -480,6 +481,16 @@ private class FakeProgramRepository : ProgramRepository {
 
     override suspend fun createProgram(name: String): DataResult<String> =
         error("this screen does not create a program")
+
+    override suspend fun setProgramKind(
+        programId: String,
+        kind: ProgramKind,
+    ): DataResult<Unit> = error("these tests do not change a program's kind")
+
+    override suspend fun setProgramStartDate(
+        programId: String,
+        startDate: LocalDate?,
+    ): DataResult<Unit> = error("these tests do not change a program's start")
 
     override suspend fun renameProgram(programId: String, name: String): DataResult<Unit> =
         error("this screen does not rename a program")

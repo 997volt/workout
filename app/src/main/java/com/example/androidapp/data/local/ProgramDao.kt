@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Transaction
+import com.example.androidapp.domain.model.ProgramKind
 import kotlinx.coroutines.flow.Flow
 import java.time.DayOfWeek
 
@@ -240,6 +241,20 @@ interface ProgramDao {
     /** Rows updated: 0 means the program is gone or was already deleted. */
     @Query("UPDATE programs SET name = :name, updatedAt = :at WHERE id = :id AND deletedAt IS NULL")
     suspend fun renameProgram(id: String, name: String, at: Long): Int
+
+    /**
+     * A program's kind: a week that repeats, or an order that ends (ROADMAP N174).
+     *
+     * Its own statement rather than part of an update of the whole row: the two halves of a program —
+     * its schedule and its name — are authored in different places, and rewriting one must not
+     * rewrite the other.
+     */
+    @Query("UPDATE programs SET kind = :kind, updatedAt = :at WHERE id = :id AND deletedAt IS NULL")
+    suspend fun setProgramKind(id: String, kind: ProgramKind, at: Long): Int
+
+    /** The day a block begins, or null for the day it was created (ROADMAP N174). */
+    @Query("UPDATE programs SET startDate = :startDate, updatedAt = :at WHERE id = :id AND deletedAt IS NULL")
+    suspend fun setProgramStartDate(id: String, startDate: Long?, at: Long): Int
 
     /**
      * Soft-deletes a program and takes it out of use in the same statement (P3.3).

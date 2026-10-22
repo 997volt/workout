@@ -16,13 +16,14 @@ import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramRun
-import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionStep
+import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
@@ -71,6 +72,7 @@ import org.junit.runner.RunWith
 import java.io.IOException
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 
 /**
  * Under Robolectric rather than plain JVM: the ViewModel reads its route argument
@@ -2903,6 +2905,16 @@ private class FakeProgramRepository : ProgramRepository {
 
     override suspend fun createProgram(name: String): DataResult<String> =
         error("the workout screen does not create a program")
+
+    override suspend fun setProgramKind(
+        programId: String,
+        kind: ProgramKind,
+    ): DataResult<Unit> = error("these tests do not change a program's kind")
+
+    override suspend fun setProgramStartDate(
+        programId: String,
+        startDate: LocalDate?,
+    ): DataResult<Unit> = error("these tests do not change a program's start")
 
     override suspend fun renameProgram(programId: String, name: String): DataResult<Unit> =
         error("the workout screen does not rename a program")

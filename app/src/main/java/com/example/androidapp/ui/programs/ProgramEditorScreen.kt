@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +27,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -76,6 +74,7 @@ import com.example.androidapp.ui.components.shortLabel
 import com.example.androidapp.ui.components.summary
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import java.time.DayOfWeek
+import java.time.LocalDate
 
 /**
  * One program: its name, whether it is the active one, and its ordered slots (ROADMAP P3.3).
@@ -130,6 +129,8 @@ fun ProgramEditorRoute(
         state = state,
         onRename = viewModel::onRename,
         onSetActive = viewModel::onSetActive,
+        onSetKind = viewModel::onSetKind,
+        onSetStartDate = viewModel::onSetStartDate,
         onAddSlot = viewModel::onAddSlot,
         onAddNewSlot = viewModel::onAddNewSlot,
         onSetSlotWeekday = viewModel::onSetSlotWeekday,
@@ -156,6 +157,8 @@ fun ProgramEditorScreen(
     state: ProgramEditorUiState,
     onRename: (String) -> Unit,
     onSetActive: (Boolean) -> Unit,
+    onSetKind: (ProgramKind) -> Unit,
+    onSetStartDate: (LocalDate?) -> Unit,
     onAddSlot: (String) -> Unit,
     onSetSlotWeekday: (String, DayOfWeek?) -> Unit,
     onMoveSlot: (String, Int) -> Unit,
@@ -199,18 +202,15 @@ fun ProgramEditorScreen(
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { pickingTemplate = true },
-                text = { Text(stringResource(R.string.program_add_slot)) },
-                icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
-                modifier = Modifier.testTag(TestTags.Programs.ADD_SLOT),
-            )
+            AddSlotFab(onClick = { pickingTemplate = true })
         },
     ) { innerPadding ->
         ProgramEditorBody(
             state = state,
             onRename = onRename,
             onSetActive = onSetActive,
+            onSetKind = onSetKind,
+            onSetStartDate = onSetStartDate,
             onSetSlotWeekday = onSetSlotWeekday,
             onMoveSlot = onMoveSlot,
             onRemoveSlot = onRemoveSlot,
@@ -417,6 +417,8 @@ private fun ProgramEditorBody(
     state: ProgramEditorUiState,
     onRename: (String) -> Unit,
     onSetActive: (Boolean) -> Unit,
+    onSetKind: (ProgramKind) -> Unit,
+    onSetStartDate: (LocalDate?) -> Unit,
     onSetSlotWeekday: (String, DayOfWeek?) -> Unit,
     onMoveSlot: (String, Int) -> Unit,
     onRemoveSlot: (String) -> Unit,
@@ -440,6 +442,11 @@ private fun ProgramEditorBody(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
             ActiveSwitch(program = program, onSetActive = onSetActive)
+            ProgramKindSection(
+                program = program,
+                onSetKind = onSetKind,
+                onSetStartDate = onSetStartDate,
+            )
         }
         HorizontalDivider()
 
@@ -450,27 +457,14 @@ private fun ProgramEditorBody(
                 modifier = Modifier.testTag(TestTags.Programs.NO_SLOTS),
             )
         } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 96.dp),
-            ) {
-                itemsIndexed(items = state.slots, key = { _, slot -> slot.id }) { index, slot ->
-                    ProgramSlotBlock(
-                        slot = slot,
-                        isFirst = index == 0,
-                        isLast = index == state.slots.lastIndex,
-                        // The place the run is at, marked where the order is authored (P3.9).
-                        isRunPlace = slot.id == state.runSlotId,
-                        onMoveUp = { onMoveSlot(slot.id, -1) },
-                        onMoveDown = { onMoveSlot(slot.id, 1) },
-                        onRemove = { onRemoveSlot(slot.id) },
-                        onOpenTemplate = { onOpenTemplate(slot.templateId) },
-                        onSetWeekday = { weekday -> onSetSlotWeekday(slot.id, weekday) },
-                        onOpenPreview = { onPreviewSlot(slot.templateId, slot.templateName) },
-                    )
-                    HorizontalDivider()
-                }
-            }
+            ProgramSlotList(
+                state = state,
+                onSetSlotWeekday = onSetSlotWeekday,
+                onMoveSlot = onMoveSlot,
+                onRemoveSlot = onRemoveSlot,
+                onOpenTemplate = onOpenTemplate,
+                onPreviewSlot = onPreviewSlot,
+            )
         }
     }
 }
@@ -552,11 +546,13 @@ private fun ActiveSwitch(
 
 /** One slot: its template, the order it sits in, and the day it falls on. */
 @Composable
-private fun ProgramSlotBlock(
+internal fun ProgramSlotBlock(
     slot: ProgramSlot,
     isFirst: Boolean,
     isLast: Boolean,
     isRunPlace: Boolean,
+    runLabel: String?,
+    isSequence: Boolean,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
@@ -596,7 +592,7 @@ private fun ProgramSlotBlock(
                     )
                     if (isRunPlace) {
                         Text(
-                            text = stringResource(R.string.program_next_up),
+                            text = runLabel ?: stringResource(R.string.program_next_up),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.testTag(TestTags.Programs.runSlot(slot.id)),
@@ -617,7 +613,7 @@ private fun ProgramSlotBlock(
             },
             modifier = Modifier.testTag(TestTags.Programs.slot(slot.id)),
         )
-        SlotWeekdayPicker(slot = slot, onSelect = onSetWeekday)
+        SlotWeekdayPicker(slot = slot, isSequence = isSequence, onSelect = onSetWeekday)
     }
 }
 
@@ -849,11 +845,15 @@ private fun TemplatePreviewDialog(
  * Seven chips with **no** separate "none": a slot with no day is order-only, and that is
  * what tapping the selected chip leaves behind. Adding a "none" chip beside the seven would
  * make "no day" a value someone could mistake for a day.
+ *
+ * In a **sequence** the same seven chips are the day the session is due (ROADMAP N178): a weekday
+ * places one session there rather than scheduling a recurring one, so the label says so.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SlotWeekdayPicker(
     slot: ProgramSlot,
+    isSequence: Boolean,
     onSelect: (DayOfWeek?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -862,7 +862,7 @@ private fun SlotWeekdayPicker(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            text = stringResource(R.string.template_weekday),
+            text = stringResource(if (isSequence) R.string.program_due else R.string.template_weekday),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -999,6 +999,8 @@ private fun ProgramEditorScreenPreview() {
             ),
             onRename = {},
             onSetActive = {},
+            onSetKind = {},
+            onSetStartDate = {},
             onAddSlot = {},
             onSetSlotWeekday = { _, _ -> },
             onMoveSlot = { _, _ -> },

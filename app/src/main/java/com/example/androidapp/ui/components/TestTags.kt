@@ -673,6 +673,14 @@ object TestTags {
         const val NAME_SAVE = "program_name_save"
         const val ACTIVE = "program_active"
 
+        /** The two answers to "a week that repeats, or an order that ends" (ROADMAP N178). */
+        const val KIND_WEEKLY = "program_kind_weekly"
+        const val KIND_SEQUENCE = "program_kind_sequence"
+
+        /** The authored day a block begins, and the button that opens its picker (ROADMAP N178). */
+        const val START_DATE = "program_start_date"
+        const val START_DATE_CHANGE = "program_start_date_change"
+
         /**
          * The active program at the foot of the list (ROADMAP N92).
          *
