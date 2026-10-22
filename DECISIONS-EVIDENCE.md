@@ -2713,8 +2713,9 @@ asked for.
 
 **Why the preview is the app's plan.** The failure B180 found was a page sentence saying one thing while
 the app's merge did another. The preview here is `planJson`'s own change list and refusals, so the two
-answers are the same code. The app still re-plans inside its transaction: the page's preview is a promise
-about a snapshot, and the write is the decision.
+answers are the same code. The page's download asks the same question again, so a field edited after the
+preview becomes the refusal rather than a file the app rejects (B185). The app still re-plans inside its
+transaction: the page's preview is a promise about a snapshot, and the write is the decision.
 
 **Why an exported program is the supported input, and a backup is a convenience.** The export is the
 document the app wrote, so its timestamps and ids are exactly the ones the edit will be compared with. A
@@ -2722,12 +2723,17 @@ backup carries the same rows and is a useful way in when there is no program fil
 when the *backup* was made: an old one is refused as stale rather than merged, which is the honest answer.
 
 **Why drafts are files.** The page stores nothing (N159's rule), and a program being authored across a
-browser refresh is the one case where losing work is likely. A draft is the pair the preview needs — the
-opened snapshot and the working copy — downloaded and re-opened by hand. It is a page format, not an app
+browser refresh is the one case where losing work is likely. A draft is what the preview needs — the
+opened snapshot, the working copy, and the source document when the program came from a backup, since that
+is the only thing that says which other program shares its workouts (B191) — downloaded and re-opened by
+hand. It is a page format, not an app
 one, and the app never sees it.
 
 **Why the library is read-only and history is absent.** A movement's name and taxonomy are read by every
-plan and session; the program document is not where they change. Sessions, skips, deload weeks and
+plan and session; the program document is not where they change. A name is matched against the loaded
+library and the seeds before one is minted, and a movement nothing names again leaves the document before
+it is written (B187) — otherwise a typo, or the lifter's own movement typed by name, would add a library row
+the page cannot then remove. Sessions, skips, deload weeks and
 substitutions are the lifter's record and are not part of a program document, so the editor cannot reach
 them even by accident.
 

@@ -383,7 +383,8 @@ switches to Programs. A tab whose panel has no data yet says what to load instea
    problem exists, with the first three named.
 
 **Programs** (N172) holds its own drop zone — a program export, a draft, a backup or a program table — the
-program editor, and the program sheet when a table is loaded. Open a program, change its days, workouts,
+program editor, and the program sheet when a table is loaded. A rows list dropped there is not a program: it is
+sent to Import, where rows are read. Open a program, change its days, workouts,
 exercises and sets, preview the app's own plan of the edit, download the edit or a draft. It shows the
 document's whole shape, including roles, rungs, supersets, assistance and notes, so a round trip cannot drop
 a field the table never knew.
@@ -449,19 +450,26 @@ round trip.
 
 - **The preview is the app's plan, not the page's opinion.** *Preview changes* sends the opened document and
   the edited one to the shared core (N170), and shows the same change list and refusals the app will produce.
-  The page has no second implementation of the rules.
+  *Download edit* asks the same question again as the button is pressed, so the file that ships is the form as
+  it stands then — a field that stopped being valid turns into the refusal, not a rejected download. The page
+  has no second implementation of the rules.
 - **The edit names its base.** A downloaded edit carries `edit.baseExportedAt`, the export's own timestamp; the
-  app refuses it if the program changed since (N171). A program taken from a backup carries the backup's time,
-  so an old backup is refused rather than merged.
-- **The library is read-only.** A new name can be created as a movement; an existing one is never renamed or
+  app refuses it if the program changed since (N171). A row the lifter deleted on the phone counts: the app
+  compares against its own rows with the deleted ones included, because a document cannot carry a deletion.
+  A program taken from a backup carries the backup's time, so an old backup is refused rather than merged.
+- **The library is read-only, and a name resolves before it is created.** A name that matches the opened
+  document, the loaded export's movements or the seeded library *is* that movement; only a name none of them
+  has is created, carried in the document so the app can add it. A movement nothing ends up naming leaves the
+  document before it is written, so a corrected typo creates nothing. An existing row is never renamed or
   retyped here, because every plan and every session reads it.
-- **A draft is a file.** *Save draft* downloads the opened snapshot and the working copy together; *Open draft*
-  restores both. Nothing is written to the browser, and the page still makes no request.
+- **A draft is a file.** *Save draft* downloads the opened snapshot, the working copy and — when the program
+  came from a backup — that backup, which is what lets the "also used by" line survive the round trip.
+  *Open draft* restores them. Nothing is written to the browser, and the page still makes no request.
 - **A new program is checked, not planned.** *Start a new program* makes a blank document. There is no export
   to plan an edit against, so *Check the program* runs the shared core's `validate` and *Download program*
   writes a document with **no `edit` marker** — the app's insert-only merge adds it as a new, inactive
-  program. The page mints the id, so re-importing the same file is a no-op; changing it afterwards is the
-  app's job, or another new program.
+  program. The page mints the id, so re-importing the same file is a no-op; after that it is changed in the
+  app, or from its export here, like any other program.
 - **Create and edit are both here.** The editor creates a blank program or edits an opened one; the sheet
   still creates from a table. An opened export's edit carries its base and is planned; a new program has no
   base and is validated. The app remains where an existing program is changed day to day.

@@ -1300,9 +1300,11 @@ the rule; that one argues it.
   document**, so a field the UI does not know is still carried, and new rows mint their own ids and
   timestamps while existing rows keep theirs (which is what the app's staleness check reads). *Preview
   changes* runs the shared core's `plan`, not a paragraph written beside it, so the page cannot promise
-  a change the app would refuse; the app plans again inside its transaction (N171). **A draft is a
-  file**: the snapshot and the working copy are downloaded together and opened again, because the page
-  stores nothing. **The library is read-only here** — a name can become a movement, an existing row is
+  a change the app would refuse; the download plans the document again, so what ships is what the form
+  holds, and the app plans again inside its transaction (N171). **A draft is a file**: the snapshot, the
+  working copy and, when there is one, the source document are downloaded together and opened again,
+  because the page stores nothing. **The library is read-only here** — a name resolves against the
+  document, the loaded library and the seeds before it becomes a movement, and an existing row is
   never renamed or retyped — and **history is not the page's**: sessions, skips, deloads and
   substitutions are not in a program document. The table path still creates; changing a program is this
   panel's or the app's job. **Start a new program** makes a blank document: there is no base to plan
