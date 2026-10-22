@@ -1,7 +1,9 @@
 package com.example.androidapp.ui.programs
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -262,6 +264,31 @@ class ProgramEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Programs.KIND_WEEKLY).performClick()
 
         assertThat(kind).isEqualTo(ProgramKind.WEEKLY)
+    }
+
+    @Test
+    fun theBlockChip_asksForAnOrderThatEnds() {
+        var kind: ProgramKind? = null
+        setScreen(
+            state = twoSlots.copy(program = twoSlots.program?.copy(kind = ProgramKind.WEEKLY)),
+            onSetKind = { kind = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.KIND_SEQUENCE).performClick()
+
+        assertThat(kind).isEqualTo(ProgramKind.SEQUENCE)
+    }
+
+    @Test
+    fun aBlocksWeekday_isLabelledDue() {
+        // The changelog advertises the label: in a block the weekday places one session, so the
+        // control says Due rather than Weekday.
+        setScreen(
+            state = twoSlots.copy(program = twoSlots.program?.copy(kind = ProgramKind.SEQUENCE)),
+        )
+
+        // Two slots, so two placements to name.
+        composeTestRule.onAllNodesWithText("Due").assertCountEquals(2)
     }
 
     @Test

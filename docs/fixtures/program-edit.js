@@ -2200,6 +2200,10 @@ window.PROGRAM_EDIT_CASES = [
       "kinds": [
         "PROGRAM_KIND",
         "PROGRAM_START"
+      ],
+      "details": [
+        "SEQUENCE",
+        "20305"
       ]
     }
   },

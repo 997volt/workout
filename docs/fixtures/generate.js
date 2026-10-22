@@ -162,7 +162,13 @@ var editCases = [
       edit.program.kind = 'SEQUENCE';
       edit.program.startDate = 20305;
     }),
-    expected: { ok: true, kinds: ['PROGRAM_KIND', 'PROGRAM_START'] }
+    // The kinds by name and the two details by value: the page's sentences read `detail`, so a
+    // planner that named the right kind with the wrong value would be invisible to the names alone.
+    expected: {
+      ok: true,
+      kinds: ['PROGRAM_KIND', 'PROGRAM_START'],
+      details: ['SEQUENCE', '20305']
+    }
   },
   {
     name: 'a base older than the program',

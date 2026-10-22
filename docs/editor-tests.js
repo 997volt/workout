@@ -313,6 +313,10 @@
           var warnings = result.warnings.map(function (warning) { return warning.code; });
           t.eq(listed(kinds), listed(testCase.expected.kinds || []), 'the changes, exactly');
           t.eq(listed(warnings), listed(testCase.expected.warnings || []), 'the warnings, exactly');
+          if (testCase.expected.details) {
+            var details = result.changes.map(function (change) { return String(change.detail); });
+            t.eq(listed(details), listed(testCase.expected.details), 'the details, exactly');
+          }
         } else {
           var codes = result.problems.map(function (problem) { return problem.code; });
           t.eq(listed(codes), listed(testCase.expected.codes || []), 'the refusals, exactly');
@@ -411,6 +415,21 @@
       t.eq(set.targetWeightGrams, 80000, 'the load the row had comes back');
       t.eq(set.targetRepsMin, 5, 'and so do its reps');
       t.eq(set.dropValueGrams, null);
+    });
+
+    check('a new program can be authored as a block (B196, N186)', function () {
+      var program = H.newProgramDocument('Peak', 'pgm_block', 1000);
+      H.editorSetKind(program, 'SEQUENCE');
+      program.program.startDate = 20731;
+      H.editorAddDay(program);
+      var template = program.templates[0];
+      var exerciseId = H.editorResolveExercise(program, 'Bench Press');
+      H.editorAddExercise(program, template.id, exerciseId);
+      H.editorAddSet(program, program.templateExercises[0].id);
+
+      t.eq(program.formatVersion, 5);
+      t.ok(!('edit' in program), 'a new program is a proposal to add');
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(program))).problems.length, 0);
     });
 
     check('a Start without a block is refused, and leaving a block clears it (B205)', function () {

@@ -50,6 +50,14 @@ class ProgramEditFixtureTest {
                         .containsExactlyElementsIn(names(expected, "kinds"))
                     assertWithMessage("$name: warnings").that(result.warnings.map { it.code.name })
                         .containsExactlyElementsIn(names(expected, "warnings"))
+                    // The value each change carries, when the fixture pins it: the page words its
+                    // sentences from `detail`, so the name alone is half the answer.
+                    expected["details"]?.let { expectedDetails ->
+                        assertWithMessage("$name: details").that(result.changes.map { it.detail })
+                            .containsExactlyElementsIn(
+                                expectedDetails.jsonArray.map { it.jsonPrimitive.content },
+                            )
+                    }
                 }
 
                 is PlanResult.Refused -> {
