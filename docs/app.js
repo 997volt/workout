@@ -5804,19 +5804,29 @@
     ui.elements.downloadProgram.disabled = !built.ok;
   }
 
-  function downloadProgram() {
-    var state = ui.state;
-    if (!state.programResult || !state.programResult.ok) { return; }
-    var text = JSON.stringify(state.programResult.document, null, 2) + '\n';
+  /**
+   * Offers [text] as a download named [name] — the page's one blob-and-anchor (N184).
+   *
+   * Three of these were hand-rolled, one per file the page writes, and a fix to one of them was a fix
+   * to a third of the page. The object URL is revoked on the next turn of the clock rather than
+   * immediately: a browser reads it while the click is still being handled.
+   */
+  function downloadText(text, name) {
     var blob = new Blob([text], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var link = document.createElement('a');
     link.href = url;
-    link.download = 'program.json';
+    link.download = name;
     document.body.appendChild(link);
     link.click();
     link.remove();
     window.setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+  }
+
+  function downloadProgram() {
+    var state = ui.state;
+    if (!state.programResult || !state.programResult.ok) { return; }
+    downloadText(JSON.stringify(state.programResult.document, null, 2) + '\n', 'program.json');
     announce('Downloaded program.json.');
   }
 
@@ -6369,15 +6379,7 @@
   function downloadExport() {
     var state = ui.state;
     if (!state.exportResult || !state.exportResult.ok) { return; }
-    var blob = new Blob([state.exportResult.json], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
-    link.href = url;
-    link.download = BACKUP_FILE_NAME;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+    downloadText(state.exportResult.json, BACKUP_FILE_NAME);
     announce('Downloaded ' + BACKUP_FILE_NAME + '.');
   }
 
@@ -7601,18 +7603,6 @@
     };
     downloadText(JSON.stringify(draft, null, 2) + '\n', 'program-draft.json');
     announce('Downloaded program-draft.json. Nothing is stored in the page.');
-  }
-
-  function downloadText(text, name) {
-    var blob = new Blob([text], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
-    link.href = url;
-    link.download = name;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(function () { URL.revokeObjectURL(url); }, 0);
   }
 
   function editorInit(elements) {
