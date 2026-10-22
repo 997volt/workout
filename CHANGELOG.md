@@ -14,7 +14,7 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
-## [Unreleased]
+## [2.13] — 2026-10-22 (versionCode 33)
 
 ### Added
 
@@ -55,6 +55,18 @@ unreleased.
   program's kind or start names those changes in the preview, and the app writes them, because what a program
   is and when it starts are its definition rather than its placement (`isActive` and `position` stay the
   device's). A block authored in the helper now arrives as a block — no trip to the app's editor first.
+
+### Fixed
+
+- **The helper's block authoring writes what the app reads.** A program opened at an older format version
+  and turned into a block is now written at the version this build reads (B198), so an app that does not
+  know a sequence refuses it instead of repeating it as a week; a date is refused unless it survives the
+  calendar round trip — February has no 31st — and a start the page cannot render is a message rather than
+  a half-built editor (B204); a `Start` without `Kind` is refused and leaving a block clears its date
+  (B205); and the preview says *one block, starting …* and words its summary from the change rather than
+  from its kind, so it no longer calls a block weekly (B202, B203). The page's editor checks all run
+  again: seven had been unreachable behind an early return, and the node runner had counted the fixture
+  it was handed rather than the checks it ran (B199).
 
 ### Changed
 
