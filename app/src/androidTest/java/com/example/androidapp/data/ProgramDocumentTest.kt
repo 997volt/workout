@@ -460,6 +460,25 @@ class ProgramDocumentTest {
     }
 
     @Test
+    fun turningAProgramIntoABlock_authorsTodaysStart() = runTest {
+        // B196: the toggle is where a block's beginning is chosen. Without it the start falls back to
+        // the program's creation, and a program trained for months would arrive already under way.
+        val programId = seedProgram()
+        assertEquals(
+            "a weekly program has no authored start",
+            null,
+            programs.observePrograms().first().single().startDate,
+        )
+
+        (programs.setProgramKind(programId, ProgramKind.SEQUENCE) as DataResult.Success)
+
+        val expected = Instant.parse("2026-10-07T12:00:00Z")
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+        assertEquals(expected, programs.observePrograms().first().single().startDate)
+    }
+
+    @Test
     fun aBlockIsNotAskedAboutAsAMissedWeek() = runTest {
         // B195: the clock is Wednesday and the seeded slot is Monday, so the weekly program has a
         // miss to ask about. A block's weekday places one session, so it has no weekly occurrence.

@@ -1166,7 +1166,10 @@ the rule; that one argues it.
   same column means two things by kind, and that is the whole difference the kind makes to a reader. The
   due date is the first matching weekday **strictly after** the last thing done, or at the start when
   nothing has been, so a session done on Saturday is not instantly overdue; a slot with no weekday is
-  due the next day. Because a sequence's weekday is not a recurrence, the four week-keyed readers leave
+  due the next day. **Only what happened at or after the start counts** (B196): a session is matched by
+  template and templates are shared by every program that names them (N73), so a block would otherwise
+  arrive part-done on history it never did, and a workout trained in another program would advance it.
+  Because a sequence's weekday is not a recurrence, the four week-keyed readers leave
   it out — the ratio and its grid, breakdown and streak, the missed-day question, the deload creator,
   and the substitute pick — or every Monday of a nine-session block would count as a scheduled day
   forever. A sequence's progress is its place in the block instead. **A block's skip is its own
@@ -1179,7 +1182,9 @@ the rule; that one argues it.
   field the page can show but change only in the app is a round trip for every program it authors.
   The distinction the split rests on is *placement* versus *plan*: which program home follows and where
   it sits in the list are the device's (`isActive`, `position`), while what kind it is and when it
-  starts are part of what the document describes. So an edit compares both, names `PROGRAM_KIND` and
+  starts are part of what the document describes. **The editor's kind toggle authors today as the
+  start when none is set** (B196): a block needs a beginning, and falling back to the creation date
+  would make a program that has been trained for months arrive already under way. So an edit compares both, names `PROGRAM_KIND` and
   `PROGRAM_START` with the new value as the change's `detail`, and the app writes them from the
   document's own values rather than re-parsing the detail — which exists to word each host's preview.
   They are still honored when a program is created, so a table or a new program can arrive as a block.

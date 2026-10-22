@@ -128,12 +128,18 @@ class RoomProgramRepository @Inject constructor(
 
     override suspend fun setProgramKind(programId: String, kind: ProgramKind): DataResult<Unit> =
         dataResultOf {
-            val updated = dao.setProgramKind(
-                id = programId,
-                kind = kind,
-                at = timeSource.nowEpochMillis(),
-            )
-            if (updated == 0) throw NotFoundException("program $programId")
+            val now = timeSource.nowEpochMillis()
+            val today = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()).toLocalDate()
+            database.withTransaction {
+                val updated = dao.setProgramKind(id = programId, kind = kind, at = now)
+                if (updated == 0) throw NotFoundException("program $programId")
+                // A block needs a beginning, and the toggle is where one is chosen (B196): without a
+                // date the start falls back to the program's creation, which for a program that has
+                // been trained for months would make the block arrive already under way.
+                if (kind == ProgramKind.SEQUENCE && dao.findProgram(programId)?.startDate == null) {
+                    dao.setProgramStartDate(programId, today.toEpochDay(), now)
+                }
+            }
         }
 
     override suspend fun setProgramStartDate(programId: String, startDate: LocalDate?): DataResult<Unit> =

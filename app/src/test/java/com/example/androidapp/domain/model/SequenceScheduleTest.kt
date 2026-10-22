@@ -54,6 +54,27 @@ class SequenceScheduleTest {
     ) = sequenceSchedule(slots, sessions, skips, from, today)
 
     @Test
+    fun aSessionBeforeTheStart_doesNotCount() {
+        // B196: sessions are matched by template, and templates are shared by every program that names
+        // them, so the block would otherwise arrive part-done on history it never did.
+        val schedule = schedule(
+            sessions = listOf(done("tpl_a", start.minusDays(30))),
+            today = start.minusDays(1),
+        )!!
+
+        assertThat(schedule.settled).isEqualTo(0)
+        assertThat(schedule.next?.id).isEqualTo("a")
+    }
+
+    @Test
+    fun aSessionOnTheStartDay_doesCount() {
+        val schedule = schedule(sessions = listOf(done("tpl_a", start)))!!
+
+        assertThat(schedule.settled).isEqualTo(1)
+        assertThat(schedule.next?.id).isEqualTo("b")
+    }
+
+    @Test
     fun nothingDone_theFirstSessionIsDueOnItsFirstWeekdayAfterTheStart() {
         val schedule = schedule(today = start.minusDays(1))!!
 

@@ -42,6 +42,11 @@ data class SequenceSchedule(
  *
  * Sessions are matched to slots **in order, by template**, the way `programRun`'s fallback does: a
  * session naming a template no slot names (a workout started by hand) moves nothing.
+ *
+ * **Only what happened at or after the start counts** (B196). A session is matched by template, and
+ * templates are shared by every program that names them (N73), so without the floor a program turned
+ * into a block would arrive part-done on the history it already had, and a workout trained in another
+ * program would advance the block that names it. A block's own sessions begin when the block does.
  */
 fun sequenceSchedule(
     slots: List<ProgramSlot>,
@@ -52,7 +57,11 @@ fun sequenceSchedule(
 ): SequenceSchedule? {
     if (slots.isEmpty()) return null
     val ordered = slots.sortedBy { it.position }
-    val walk = walk(ordered, sessions, skips)
+    val walk = walk(
+        ordered = ordered,
+        sessions = sessions.filter { !it.date.isBefore(start) },
+        skips = skips.filter { !it.weekStart.isBefore(start) },
+    )
     val next = walk.next
     val due = next?.let { dueOf(it.weekday, walk.last ?: start, strictlyAfter = walk.last != null) }
     return SequenceSchedule(
