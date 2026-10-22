@@ -10,9 +10,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.shared.ChangeKind
 import com.example.androidapp.shared.WarningCode
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
 
@@ -71,6 +76,10 @@ private fun EditSummary(edit: ProgramDocumentPreview.Edit) {
     val renamedTo = edit.changes
         .firstOrNull { it.kind == ChangeKind.PROGRAM_RENAMED }
         ?.name
+    // A block's shape is part of the definition an edit carries (N186), and it changes what every
+    // day means — so the diff states it in words rather than as one more row.
+    val kind = edit.changes.firstOrNull { it.kind == ChangeKind.PROGRAM_KIND }?.detail
+    val start = edit.changes.firstOrNull { it.kind == ChangeKind.PROGRAM_START }
     val newMovements = edit.warnings
         .filter { it.code == WarningCode.NEW_MOVEMENT }
         .mapNotNull { it.name ?: it.id }
@@ -81,6 +90,8 @@ private fun EditSummary(edit: ProgramDocumentPreview.Edit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.program_edit_intro))
         if (renamedTo != null) Text(stringResource(R.string.program_edit_renamed, renamedTo))
+        if (kind != null) ProgramKindLine(kind)
+        if (start != null) ProgramStartLine(start.detail)
         if (days + workouts + exercises + sets > 0) {
             Text(stringResource(R.string.program_edit_rows, days, workouts, exercises, sets))
         }
@@ -110,6 +121,42 @@ private fun EditSummary(edit: ProgramDocumentPreview.Edit) {
         }
     }
 }
+
+/**
+ * What a program becomes, when the edit changes its shape (ROADMAP N186).
+ *
+ * Its own composable because the summary is a list of counts and two of these are sentences: a
+ * block's kind and its start change what every day means, so they are read rather than counted.
+ */
+@Composable
+private fun ProgramKindLine(kind: String) {
+    Text(
+        stringResource(
+            if (kind == ProgramKind.SEQUENCE.name) {
+                R.string.program_edit_kind_sequence
+            } else {
+                R.string.program_edit_kind_weekly
+            },
+        ),
+    )
+}
+
+/** The day a block starts, or that it goes back to its creation date (ROADMAP N186). */
+@Composable
+private fun ProgramStartLine(detail: String?) {
+    val day = detail?.toLongOrNull()?.let(LocalDate::ofEpochDay)
+    Text(
+        if (day == null) {
+            stringResource(R.string.program_edit_start_created)
+        } else {
+            stringResource(R.string.program_edit_start_day, formatDay(day))
+        },
+    )
+}
+
+/** The day a block starts, in the reader's own locale — the wording N186 asks the dialog for. */
+private fun formatDay(date: LocalDate): String =
+    date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(Locale.getDefault()))
 
 private val DAY_CHANGES = setOf(
     ChangeKind.SLOT_ADDED,

@@ -117,6 +117,39 @@
       t.eq(document.exportedAt, 500, 'the backup time is the base');
     });
 
+    t.check('a table can say the program is a block, and when it starts', function () {
+      var text = [
+        'Day\tWeekday\tExercise\tSets\tReps\tLoad\tRest\tRPE\tKind\tStart',
+        '1\tMonday\tBench Press\t3\t3\t97.5\t240\t8\tblock\t2026-10-05',
+        '2\tFriday\tSquat\t3\t6\t100\t180\t7\tblock\t2026-10-05'
+      ].join('\n');
+      var sheet = H.parseProgramSheet(text, {});
+
+      t.eq(sheet.problems.length, 0, 'the table parses');
+      t.eq(sheet.kind, 'SEQUENCE');
+      var document = H.buildProgramDocument(sheet, {}).document;
+      t.eq(document.program.kind, 'SEQUENCE', 'the document says it is a block');
+      t.eq(document.program.startDate, 20731, 'and the day it starts');
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+
+      // A table without the column is what every table written before it is: weekly.
+      var weekly = H.buildProgramDocument(
+        H.parseProgramSheet('Day\tExercise\tSets\tReps\n1\tBench Press\t3\t3', {}), {}
+      ).document;
+      t.eq(weekly.program.kind, 'WEEKLY');
+    });
+
+    t.check('a table that names two program kinds is refused', function () {
+      var text = [
+        'Day\tExercise\tSets\tReps\tKind',
+        '1\tBench Press\t3\t3\tblock',
+        '2\tSquat\t3\t6\tweekly'
+      ].join('\n');
+      var sheet = H.parseProgramSheet(text, {});
+
+      t.ok(sheet.problems.length > 0, 'two kinds cannot both be true');
+    });
+
     t.check('a load is weight or assistance, and reads back the same way', function () {
       t.eq(H.editorLoadText(82500, null), '82.5');
       t.eq(H.editorLoadText(0, 20000), '-20');

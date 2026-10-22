@@ -897,6 +897,10 @@
     <string name="program_edit_dialog_title">Update “%1$s”?</string>
     <string name="program_edit_intro">This changes the program on this device. Your logged history is not touched.</string>
     <string name="program_edit_renamed">Renamed to “%1$s”.</string>
+    <string name="program_edit_kind_sequence">The program becomes a block, done once in order.</string>
+    <string name="program_edit_kind_weekly">The program becomes a weekly schedule.</string>
+    <string name="program_edit_start_day">The block starts on %1$s.</string>
+    <string name="program_edit_start_created">The block starts the day it was created.</string>
     <string name="program_edit_rows">Days: %1$d · Workouts: %2$d · Exercises: %3$d · Sets: %4$d</string>
     <string name="program_edit_new_movements">New movements: %1$s</string>
     <string name="program_edit_kept_workouts">These workouts stay in your library: %1$s</string>

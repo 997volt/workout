@@ -4876,7 +4876,10 @@
     rest: ['rest', 'rest seconds', 'rest (s)'],
     rpe: ['rpe', 'effort'],
     note: ['note', 'notes', 'cue'],
-    unit: ['unit', 'units']
+    unit: ['unit', 'units'],
+    // A block's shape, said once for the whole table rather than per row (N186).
+    kind: ['kind', 'program kind', 'program type'],
+    start: ['start', 'starts', 'start date', 'starts on']
   };
 
   function programFieldOf(header) {
@@ -4949,6 +4952,10 @@
     cells[0].forEach(function (header) {
       headerFields.push(programFieldOf(header));
     });
+    ["kind", "start"].forEach(function (field) {
+      if (headerFields.indexOf(field) === -1) { return; }
+      sheet[field] = [];
+    });
     ['day', 'exercise', 'sets'].forEach(function (field) {
       if (headerFields.indexOf(field) === -1) {
         sheet.problems.push({
@@ -4959,6 +4966,12 @@
       }
     });
     if (sheet.problems.length > 0) { return sheet; }
+
+    function collectProgramField(row, field) {
+      if (!has(sheet, field)) { return; }
+      var value = valueOf(row, field);
+      if (value !== '') { sheet[field].push(value); }
+    }
 
     function valueOf(row, field) {
       var index = headerFields.indexOf(field);
@@ -4999,6 +5012,8 @@
         }
       }
 
+      collectProgramField(row, 'kind');
+      collectProgramField(row, 'start');
       var exerciseName = valueOf(row, 'exercise');
       if (exerciseName === '') {
         sheet.problems.push({ message: 'Row ' + (rowIndex + 1) + ' has no Exercise.' });
@@ -5072,7 +5087,67 @@
     if (sheet.rows === 0) {
       sheet.problems.push({ message: 'The table has headers but no exercise rows.' });
     }
+    resolveProgramShape(sheet);
     return sheet;
+  }
+
+  /**
+   * The table's program-level cells as one value each (ROADMAP N186).
+   *
+   * A program kind is a fact about the whole program, so a table that says two different things is
+   * refused rather than resolved by whichever row came last. A start is a day, and is read the same
+   * way: one date, or none — which leaves the app's creation-date fallback.
+   */
+  function resolveProgramShape(sheet) {
+    if (has(sheet, 'kind')) {
+      var kinds = sheet.kind.map(parseProgramKind);
+      if (kinds.indexOf(null) !== -1) {
+        sheet.problems.push({
+          message: 'Kind must be "weekly" or "block" (or "one block").'
+        });
+        sheet.kind = 'WEEKLY';
+      } else {
+        var distinct = kinds.filter(function (value, index) { return kinds.indexOf(value) === index; });
+        if (distinct.length > 1) {
+          sheet.problems.push({ message: 'The table names two program kinds; use one.' });
+        }
+        sheet.kind = distinct[0];
+      }
+    }
+    if (has(sheet, 'start')) {
+      var days = sheet.start.map(parseProgramDay);
+      if (days.indexOf(null) !== -1) {
+        sheet.problems.push({ message: 'Start must be a date, like 2026-08-04.' });
+        sheet.start = null;
+      } else {
+        var dates = days.filter(function (value, index) { return days.indexOf(value) === index; });
+        if (dates.length > 1) {
+          sheet.problems.push({ message: 'The table names two start dates; use one.' });
+        }
+        sheet.start = dates[0];
+      }
+    }
+  }
+
+  /** "Every week" or "one block" as a program kind, or null for a value the table cannot mean. */
+  function parseProgramKind(text) {
+    var name = normalizeName(text).replace(/[^a-z0-9]/g, '');
+    if (name === 'weekly' || name === 'week' || name === 'everyweek' || name === 'repeating') {
+      return 'WEEKLY';
+    }
+    if (name === 'block' || name === 'oneblock' || name === 'sequence' || name === 'finite') {
+      return 'SEQUENCE';
+    }
+    return null;
+  }
+
+  /** An ISO date as an epoch day, or null when the cell is not one. */
+  function parseProgramDay(text) {
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(text).trim());
+    if (!match) { return null; }
+    var ms = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    if (isNaN(ms)) { return null; }
+    return Math.round(ms / 86400000);
   }
 
   function programExerciseIndex(rows) {
@@ -5229,6 +5304,11 @@
         name: programName,
         isActive: false,
         position: 0,
+        // Absent means weekly, which is what every table written before this column is (N186).
+        // Type-checked rather than defaulted: a table that failed to parse still builds a preview,
+        // and an array left in this field would be a kind no reader can name.
+        kind: sheet.kind === 'SEQUENCE' ? 'SEQUENCE' : 'WEEKLY',
+        startDate: typeof sheet.start === 'number' ? sheet.start : null,
         createdAt: time,
         updatedAt: time,
         deletedAt: null
@@ -6530,6 +6610,25 @@
     return Number(trimmed);
   }
 
+  /** A stored epoch day as the date input's value, which is always `yyyy-mm-dd` in UTC. */
+  function editorDayText(epochDay) {
+    if (typeof epochDay !== 'number') { return ''; }
+    return new Date(epochDay * 86400000).toISOString().slice(0, 10);
+  }
+
+  /** A date input's value as an epoch day, or null for a cleared field. */
+  function editorParseDay(text) {
+    if (!text) { return null; }
+    var ms = Date.parse(text + 'T00:00:00Z');
+    return isNaN(ms) ? null : Math.round(ms / 86400000);
+  }
+
+  /** An epoch day as the sentence a preview says, in the page's own month names. */
+  function editorDayLabel(epochDay) {
+    var day = new Date(Number(epochDay) * 86400000);
+    return day.getUTCDate() + ' ' + MONTH_NAMES[day.getUTCMonth()] + ' ' + day.getUTCFullYear();
+  }
+
   function editorParseHalves(text) {
     var trimmed = String(text === null || text === undefined ? '' : text).trim();
     if (trimmed === '') { return null; }
@@ -6961,6 +7060,21 @@
         working.program.name = value;
       })
     );
+    // A program's shape is part of the document (N186): a week that repeats, or a block done once.
+    // The start is the anchor a block's first due date is read from, and a weekly program has no
+    // use for one, so the field is only offered for a block.
+    host.appendChild(editorSelect('Program kind', [
+      { value: 'WEEKLY', label: 'Every week' },
+      { value: 'SEQUENCE', label: 'One block' }
+    ], working.program.kind || 'WEEKLY', function (value) {
+      working.program.kind = value;
+      editorRender();
+    }, 'root:kind'));
+    if ((working.program.kind || 'WEEKLY') === 'SEQUENCE') {
+      host.appendChild(editorTextField('Starts on', editorDayText(working.program.startDate), function (value) {
+        working.program.startDate = editorParseDay(value);
+      }, { type: 'date' }));
+    }
     editorRenderExerciseNames(host, working);
 
     var days = (working.slots || []).slice().sort(function (a, b) { return a.position - b.position; });
@@ -7272,6 +7386,8 @@
   function editorChangeText(change) {
     var labels = {
       PROGRAM_RENAMED: 'Rename the program',
+      PROGRAM_KIND: 'Change the program kind',
+      PROGRAM_START: 'Change when the block starts',
       SLOT_ADDED: 'Add a day',
       SLOT_UPDATED: 'Change a day',
       SLOT_REMOVED: 'Remove a day',
@@ -7285,6 +7401,16 @@
       SET_REMOVED: 'Remove a set',
       EXERCISE_ADDED: 'Add a movement'
     };
+    // A block's shape reads as what it becomes rather than which field moved (N186): the detail is
+    // the new value, and a cleared start is its own sentence rather than a missing one.
+    if (change.kind === 'PROGRAM_KIND') {
+      return change.detail === 'SEQUENCE' ? 'Make the program a block' : 'Make the program weekly';
+    }
+    if (change.kind === 'PROGRAM_START') {
+      return change.detail
+        ? 'Start the block on ' + editorDayLabel(change.detail)
+        : 'Start the block the day it was created';
+    }
     var label = labels[change.kind] || change.kind;
     return change.name ? label + ': ' + change.name : label;
   }

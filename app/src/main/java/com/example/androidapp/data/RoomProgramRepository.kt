@@ -797,6 +797,7 @@ private suspend fun applyProgramEdit(
         programDao = database.programDao(),
     )
     if (writer.renamed) writer.rename()
+    writer.applySchedule()
     val exercises = writer.writeExercises()
     val templates = writer.writeTemplates()
     writer.writeTemplateExercises()
@@ -832,6 +833,30 @@ private class ProgramEditWriter(
 
     suspend fun rename() {
         programDao.renameProgram(document.program.id, document.program.name, now)
+    }
+
+    /**
+     * A block's shape, when the edit names it (ROADMAP N186).
+     *
+     * The document's own values, not the change's detail: the detail is for wording the preview, and
+     * parsing it back into a kind or a date would be a second reading of what the document already
+     * says. `isActive` and `position` stay the device's — they are placement, not the plan.
+     */
+    suspend fun applySchedule() {
+        if (byKind.containsKey(ChangeKind.PROGRAM_KIND)) {
+            programDao.setProgramKind(
+                id = document.program.id,
+                kind = document.program.kind,
+                at = now,
+            )
+        }
+        if (byKind.containsKey(ChangeKind.PROGRAM_START)) {
+            programDao.setProgramStartDate(
+                id = document.program.id,
+                startDate = document.program.startDate,
+                at = now,
+            )
+        }
     }
 
     /** New movements first: every planned exercise below names one. */

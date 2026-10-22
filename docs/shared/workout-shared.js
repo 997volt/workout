@@ -528,7 +528,7 @@
         var _iterator__ex2g4s_0 = this_5.iterator_jk1svi_k$();
         while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
           var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
-          var tmp$ret$11 = new ChangeOut(item_0.kind_1.name_1, item_0.id_1, item_0.name_1);
+          var tmp$ret$11 = new ChangeOut(item_0.kind_1.name_1, item_0.id_1, item_0.name_1, item_0.detail_1);
           destination_0.add_utx5q5_k$(tmp$ret$11);
         }
         var tmp_2 = destination_0;
@@ -691,10 +691,11 @@
   }
   function $serializer_0() {
     $serializer_instance_0 = this;
-    var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ChangeOut', this, 3);
+    var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ChangeOut', this, 4);
     tmp0_serialDesc.addElement_5pzumi_k$('kind', false);
     tmp0_serialDesc.addElement_5pzumi_k$('id', false);
     tmp0_serialDesc.addElement_5pzumi_k$('name', true);
+    tmp0_serialDesc.addElement_5pzumi_k$('detail', true);
     this.descriptor_1 = tmp0_serialDesc;
   }
   protoOf($serializer_0).serialize_9drw3r_k$ = function (encoder, value) {
@@ -704,6 +705,9 @@
     tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.id_1);
     if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 2) ? true : !(value.name_1 == null)) {
       tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 2, StringSerializer_getInstance(), value.name_1);
+    }
+    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 3) ? true : !(value.detail_1 == null)) {
+      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 3, StringSerializer_getInstance(), value.detail_1);
     }
     tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
   };
@@ -718,39 +722,46 @@
     var tmp4_local0 = null;
     var tmp5_local1 = null;
     var tmp6_local2 = null;
-    var tmp7_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    if (tmp7_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp7_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp7_local3 = null;
+    var tmp8_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
+    if (tmp8_input.decodeSequentially_xlblqy_k$()) {
+      tmp4_local0 = tmp8_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp7_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp8_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp7_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+      tmp6_local2 = tmp8_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
+      tmp7_local3 = tmp8_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 3, StringSerializer_getInstance(), tmp7_local3);
+      tmp3_bitMask0 = tmp3_bitMask0 | 8;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp7_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp8_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp7_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp8_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp7_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp8_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp7_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+            tmp6_local2 = tmp8_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
+            break;
+          case 3:
+            tmp7_local3 = tmp8_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 3, StringSerializer_getInstance(), tmp7_local3);
+            tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp7_input.endStructure_1xqz0n_k$(tmp0_desc);
-    return ChangeOut_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, null);
+    tmp8_input.endStructure_1xqz0n_k$(tmp0_desc);
+    return ChangeOut_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, null);
   };
   protoOf($serializer_0).get_descriptor_wjt6a0_k$ = function () {
     return this.descriptor_1;
@@ -759,7 +770,7 @@
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    return [StringSerializer_getInstance(), StringSerializer_getInstance(), get_nullable(StringSerializer_getInstance())];
+    return [StringSerializer_getInstance(), StringSerializer_getInstance(), get_nullable(StringSerializer_getInstance()), get_nullable(StringSerializer_getInstance())];
   };
   var $serializer_instance_0;
   function $serializer_getInstance_0() {
@@ -767,7 +778,7 @@
       new $serializer_0();
     return $serializer_instance_0;
   }
-  function ChangeOut_init_$Init$(seen0, kind, id, name, serializationConstructorMarker, $this) {
+  function ChangeOut_init_$Init$(seen0, kind, id, name, detail, serializationConstructorMarker, $this) {
     if (!(3 === (3 & seen0))) {
       throwMissingFieldException(seen0, 3, $serializer_getInstance_0().descriptor_1);
     }
@@ -777,24 +788,31 @@
       $this.name_1 = null;
     else
       $this.name_1 = name;
+    if (0 === (seen0 & 8))
+      $this.detail_1 = null;
+    else
+      $this.detail_1 = detail;
     return $this;
   }
-  function ChangeOut_init_$Create$(seen0, kind, id, name, serializationConstructorMarker) {
-    return ChangeOut_init_$Init$(seen0, kind, id, name, serializationConstructorMarker, objectCreate(protoOf(ChangeOut)));
+  function ChangeOut_init_$Create$(seen0, kind, id, name, detail, serializationConstructorMarker) {
+    return ChangeOut_init_$Init$(seen0, kind, id, name, detail, serializationConstructorMarker, objectCreate(protoOf(ChangeOut)));
   }
-  function ChangeOut(kind, id, name) {
+  function ChangeOut(kind, id, name, detail) {
     name = name === VOID ? null : name;
+    detail = detail === VOID ? null : detail;
     this.kind_1 = kind;
     this.id_1 = id;
     this.name_1 = name;
+    this.detail_1 = detail;
   }
   protoOf(ChangeOut).toString = function () {
-    return 'ChangeOut(kind=' + this.kind_1 + ', id=' + this.id_1 + ', name=' + this.name_1 + ')';
+    return 'ChangeOut(kind=' + this.kind_1 + ', id=' + this.id_1 + ', name=' + this.name_1 + ', detail=' + this.detail_1 + ')';
   };
   protoOf(ChangeOut).hashCode = function () {
     var result = getStringHashCode(this.kind_1);
     result = imul(result, 31) + getStringHashCode(this.id_1) | 0;
     result = imul(result, 31) + (this.name_1 == null ? 0 : getStringHashCode(this.name_1)) | 0;
+    result = imul(result, 31) + (this.detail_1 == null ? 0 : getStringHashCode(this.detail_1)) | 0;
     return result;
   };
   protoOf(ChangeOut).equals = function (other) {
@@ -807,6 +825,8 @@
     if (!(this.id_1 === other.id_1))
       return false;
     if (!(this.name_1 == other.name_1))
+      return false;
+    if (!(this.detail_1 == other.detail_1))
       return false;
     return true;
   };
@@ -3307,20 +3327,24 @@
       return Unit_instance;
     static_init_called_3 = true;
     ChangeKind_PROGRAM_RENAMED_instance = new ChangeKind('PROGRAM_RENAMED', 0);
-    ChangeKind_SLOT_ADDED_instance = new ChangeKind('SLOT_ADDED', 1);
-    ChangeKind_SLOT_UPDATED_instance = new ChangeKind('SLOT_UPDATED', 2);
-    ChangeKind_SLOT_REMOVED_instance = new ChangeKind('SLOT_REMOVED', 3);
-    ChangeKind_TEMPLATE_ADDED_instance = new ChangeKind('TEMPLATE_ADDED', 4);
-    ChangeKind_TEMPLATE_UPDATED_instance = new ChangeKind('TEMPLATE_UPDATED', 5);
-    ChangeKind_TEMPLATE_EXERCISE_ADDED_instance = new ChangeKind('TEMPLATE_EXERCISE_ADDED', 6);
-    ChangeKind_TEMPLATE_EXERCISE_UPDATED_instance = new ChangeKind('TEMPLATE_EXERCISE_UPDATED', 7);
-    ChangeKind_TEMPLATE_EXERCISE_REMOVED_instance = new ChangeKind('TEMPLATE_EXERCISE_REMOVED', 8);
-    ChangeKind_SET_ADDED_instance = new ChangeKind('SET_ADDED', 9);
-    ChangeKind_SET_UPDATED_instance = new ChangeKind('SET_UPDATED', 10);
-    ChangeKind_SET_REMOVED_instance = new ChangeKind('SET_REMOVED', 11);
-    ChangeKind_EXERCISE_ADDED_instance = new ChangeKind('EXERCISE_ADDED', 12);
+    ChangeKind_PROGRAM_KIND_instance = new ChangeKind('PROGRAM_KIND', 1);
+    ChangeKind_PROGRAM_START_instance = new ChangeKind('PROGRAM_START', 2);
+    ChangeKind_SLOT_ADDED_instance = new ChangeKind('SLOT_ADDED', 3);
+    ChangeKind_SLOT_UPDATED_instance = new ChangeKind('SLOT_UPDATED', 4);
+    ChangeKind_SLOT_REMOVED_instance = new ChangeKind('SLOT_REMOVED', 5);
+    ChangeKind_TEMPLATE_ADDED_instance = new ChangeKind('TEMPLATE_ADDED', 6);
+    ChangeKind_TEMPLATE_UPDATED_instance = new ChangeKind('TEMPLATE_UPDATED', 7);
+    ChangeKind_TEMPLATE_EXERCISE_ADDED_instance = new ChangeKind('TEMPLATE_EXERCISE_ADDED', 8);
+    ChangeKind_TEMPLATE_EXERCISE_UPDATED_instance = new ChangeKind('TEMPLATE_EXERCISE_UPDATED', 9);
+    ChangeKind_TEMPLATE_EXERCISE_REMOVED_instance = new ChangeKind('TEMPLATE_EXERCISE_REMOVED', 10);
+    ChangeKind_SET_ADDED_instance = new ChangeKind('SET_ADDED', 11);
+    ChangeKind_SET_UPDATED_instance = new ChangeKind('SET_UPDATED', 12);
+    ChangeKind_SET_REMOVED_instance = new ChangeKind('SET_REMOVED', 13);
+    ChangeKind_EXERCISE_ADDED_instance = new ChangeKind('EXERCISE_ADDED', 14);
   }
   var ChangeKind_PROGRAM_RENAMED_instance;
+  var ChangeKind_PROGRAM_KIND_instance;
+  var ChangeKind_PROGRAM_START_instance;
   var ChangeKind_SLOT_ADDED_instance;
   var ChangeKind_SLOT_UPDATED_instance;
   var ChangeKind_SLOT_REMOVED_instance;
@@ -3336,19 +3360,22 @@
   function ChangeKind(name, ordinal) {
     Enum.call(this, name, ordinal);
   }
-  function Change(kind, id, name) {
+  function Change(kind, id, name, detail) {
     name = name === VOID ? null : name;
+    detail = detail === VOID ? null : detail;
     this.kind_1 = kind;
     this.id_1 = id;
     this.name_1 = name;
+    this.detail_1 = detail;
   }
   protoOf(Change).toString = function () {
-    return 'Change(kind=' + this.kind_1.toString() + ', id=' + this.id_1 + ', name=' + this.name_1 + ')';
+    return 'Change(kind=' + this.kind_1.toString() + ', id=' + this.id_1 + ', name=' + this.name_1 + ', detail=' + this.detail_1 + ')';
   };
   protoOf(Change).hashCode = function () {
     var result = this.kind_1.hashCode();
     result = imul(result, 31) + getStringHashCode(this.id_1) | 0;
     result = imul(result, 31) + (this.name_1 == null ? 0 : getStringHashCode(this.name_1)) | 0;
+    result = imul(result, 31) + (this.detail_1 == null ? 0 : getStringHashCode(this.detail_1)) | 0;
     return result;
   };
   protoOf(Change).equals = function (other) {
@@ -3361,6 +3388,8 @@
     if (!(this.id_1 === other.id_1))
       return false;
     if (!(this.name_1 == other.name_1))
+      return false;
+    if (!(this.detail_1 == other.detail_1))
       return false;
     return true;
   };
@@ -3540,13 +3569,26 @@
     return tmp_0;
   }
   function planProgram(snapshot, edit) {
-    var tmp;
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var changes = ArrayList_init_$Create$_0();
     if (!(snapshot.program_1.name_1 === edit.program_1.name_1)) {
-      tmp = listOf(new Change(ChangeKind_PROGRAM_RENAMED_getInstance(), edit.program_1.id_1, edit.program_1.name_1));
-    } else {
-      tmp = emptyList();
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element = new Change(ChangeKind_PROGRAM_RENAMED_getInstance(), edit.program_1.id_1, edit.program_1.name_1);
+      changes.add_utx5q5_k$(element);
     }
-    return tmp;
+    if (!snapshot.program_1.kind_1.equals(edit.program_1.kind_1)) {
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_0 = new Change(ChangeKind_PROGRAM_KIND_getInstance(), edit.program_1.id_1, edit.program_1.name_1, edit.program_1.kind_1.name_1);
+      changes.add_utx5q5_k$(element_0);
+    }
+    if (!equals(snapshot.program_1.startDate_1, edit.program_1.startDate_1)) {
+      var tmp = ChangeKind_PROGRAM_START_getInstance();
+      var tmp0_safe_receiver = edit.program_1.startDate_1;
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element_1 = new Change(tmp, edit.program_1.id_1, edit.program_1.name_1, tmp0_safe_receiver == null ? null : tmp0_safe_receiver.toString());
+      changes.add_utx5q5_k$(element_1);
+    }
+    return changes;
   }
   function planSlots(snapshot, edit, warnings) {
     // Inline function 'kotlin.collections.mutableListOf' call
@@ -3993,6 +4035,14 @@
   function ChangeKind_PROGRAM_RENAMED_getInstance() {
     static_init_3();
     return ChangeKind_PROGRAM_RENAMED_instance;
+  }
+  function ChangeKind_PROGRAM_KIND_getInstance() {
+    static_init_3();
+    return ChangeKind_PROGRAM_KIND_instance;
+  }
+  function ChangeKind_PROGRAM_START_getInstance() {
+    static_init_3();
+    return ChangeKind_PROGRAM_START_instance;
   }
   function ChangeKind_SLOT_ADDED_getInstance() {
     static_init_3();

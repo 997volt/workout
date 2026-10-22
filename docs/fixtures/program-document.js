@@ -15,6 +15,8 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     "name": "Autumn block",
     "isActive": false,
     "position": 0,
+    "kind": "WEEKLY",
+    "startDate": null,
     "createdAt": 1790000000000,
     "updatedAt": 1790000000000,
     "deletedAt": null

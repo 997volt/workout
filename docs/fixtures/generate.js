@@ -156,6 +156,15 @@ var editCases = [
     expected: { ok: true, kinds: ['PROGRAM_RENAMED'] }
   },
   {
+    name: 'make the program a block that starts on a day',
+    snapshot: editSnapshot,
+    edit: editFrom(editSnapshot, function (edit) {
+      edit.program.kind = 'SEQUENCE';
+      edit.program.startDate = 20305;
+    }),
+    expected: { ok: true, kinds: ['PROGRAM_KIND', 'PROGRAM_START'] }
+  },
+  {
     name: 'a base older than the program',
     snapshot: editSnapshot,
     edit: editFrom(editSnapshot, function (edit) {

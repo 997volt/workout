@@ -477,9 +477,9 @@ round trip.
 ## Program sheet
 
 A table dropped into **Programs** (or into the Import source) becomes a **program document**
-(`formatVersion` 4) the app imports from Programs → Load program (N167). Columns: `Program` (optional), `Day`, `Weekday` (optional), `Exercise`,
-`Sets`, `Reps`, `Load`, `Rest`, `RPE` (optional), `Note` (optional). A tab-separated paste from a spreadsheet
-is the intended input.
+(`formatVersion` 5) the app imports from Programs → Load program (N167). Columns: `Program` (optional), `Day`, `Weekday` (optional), `Exercise`,
+`Sets`, `Reps`, `Load`, `Rest`, `RPE` (optional), `Note` (optional), `Kind` (optional) and `Start` (optional). A
+tab-separated paste from a spreadsheet is the intended input.
 
 - **One row is one planned exercise**: `Sets` of the same rep target, at one load, with an optional rest and
   RPE. `Reps` is `5` or a range like `6-8`.

@@ -17,15 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**A block can be authored entirely in the helper.** A program table or the program editor can already
-describe a block's days and its loads, but not that it *is* a block: `kind` and `startDate` are
-device-owned on an edit (N174), so every block costs a trip to the app's editor.
-
-| # | Severity | What | Fix |
-| --- | --- | --- | --- |
-| N186 | medium | **The helper cannot make a program a block.** The page carries `kind` and `startDate` but offers no control for either, and the program table has no column: a document authored in the helper is weekly, so a nine-session block arrives as five Monday cards. The app's editor fixes it, one program at a time. | `Kind` and `Start` columns on the program table — said once for the whole table, and two answers refused — and the same two controls in the program editor. The planner names `PROGRAM_KIND` and `PROGRAM_START`, with the new value as the change's `detail` so each host can word its own sentence, and the app applies them from the document rather than from the detail. **Amends N174**: `isActive` and `position` stay the device's, because they are placement; what kind a program is and when it starts are its definition. |
-
-The rows before this one are in [CHANGELOG.md](CHANGELOG.md).
+**Nothing.** What has left this queue is in [CHANGELOG.md](CHANGELOG.md): the release review's rows and
+the finite-program block (N179–N184, P3.21, N174–N178), the format ruling they needed (N185), and the
+helper's own authoring of a block (N186).
 
 ## Later — decided, and not being started
 

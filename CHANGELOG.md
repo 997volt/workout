@@ -44,6 +44,15 @@ unreleased.
   somewhere", and the node runner declares how many cases it expects and fails when it checks another
   number — which immediately found that a fixture case named "remove the only day" removed three.
 
+- **A block can be authored entirely in the helper** (N186). The program table gains `Kind` — `weekly`, or
+  `block` — and `Start`, a date like `2026-10-05`, said once for the whole table: two rows naming different
+  kinds, or two starts, are refused rather than resolved by whichever came last. The program editor carries
+  the same two controls, so a program already authored can be turned into a block, given a start and have its
+  loads filled in before the app ever opens the file. The edit path applies them: a document that changes a
+  program's kind or start names those changes in the preview, and the app writes them, because what a program
+  is and when it starts are its definition rather than its placement (`isActive` and `position` stay the
+  device's). A block authored in the helper now arrives as a block — no trip to the app's editor first.
+
 ### Changed
 
 - **The build job pins the Node it runs on** (N182), and the page takes the document's format version

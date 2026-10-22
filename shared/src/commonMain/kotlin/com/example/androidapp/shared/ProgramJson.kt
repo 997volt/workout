@@ -24,7 +24,12 @@ private val json = Json {
 private data class ProblemOut(val code: String, val path: String, val detail: String? = null)
 
 @Serializable
-private data class ChangeOut(val kind: String, val id: String, val name: String? = null)
+private data class ChangeOut(
+    val kind: String,
+    val id: String,
+    val name: String? = null,
+    val detail: String? = null,
+)
 
 @Serializable
 private data class WarningOut(val code: String, val id: String? = null, val name: String? = null)
@@ -76,7 +81,7 @@ fun planJson(snapshotJson: String, editJson: String): String {
         is PlanResult.Ready -> json.encodeToString(
             PlanOut(
                 ok = true,
-                changes = result.changes.map { ChangeOut(it.kind.name, it.id, it.name) },
+                changes = result.changes.map { ChangeOut(it.kind.name, it.id, it.name, it.detail) },
                 warnings = result.warnings.map { WarningOut(it.code.name, it.id, it.name) },
             ),
         )

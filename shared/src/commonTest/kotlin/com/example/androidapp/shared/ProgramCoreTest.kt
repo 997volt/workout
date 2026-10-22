@@ -247,6 +247,23 @@ class ProgramCoreTest {
     }
 
     @Test
+    fun an_edit_can_make_a_program_a_block_and_say_where_it_starts() {
+        val block = baseDocument().let { snapshot ->
+            snapshot to snapshot.copy(
+                program = snapshot.program.copy(kind = ProgramKind.SEQUENCE, startDate = A_START_DAY),
+                edit = EditMarker(baseExportedAt = T),
+            )
+        }
+
+        val ready = plan(block.first, block.second) as PlanResult.Ready
+
+        val kind = ready.changes.single { it.kind == ChangeKind.PROGRAM_KIND }
+        val start = ready.changes.single { it.kind == ChangeKind.PROGRAM_START }
+        assertEquals(ProgramKind.SEQUENCE.name, kind.detail)
+        assertEquals(A_START_DAY.toString(), start.detail)
+    }
+
+    @Test
     fun an_edit_of_a_program_that_moved_since_the_export_is_refused() {
         val snapshot = baseDocument(
             templates = listOf(templateRow("tpl_a", "Upper A", updatedAt = T + 10)),

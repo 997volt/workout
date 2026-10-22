@@ -3,6 +3,12 @@ package com.example.androidapp.shared
 /** What an edit would change, one row at a time (ROADMAP N170, N171). */
 enum class ChangeKind {
     PROGRAM_RENAMED,
+
+    /** The program becomes a block, or a week that repeats (ROADMAP N186). */
+    PROGRAM_KIND,
+
+    /** The day a block starts, or that it goes back to the creation date (ROADMAP N186). */
+    PROGRAM_START,
     SLOT_ADDED,
     SLOT_UPDATED,
     SLOT_REMOVED,
@@ -23,7 +29,17 @@ enum class ChangeKind {
  * [name] is what the row is called — a template's name, a movement's, the program's own — so each host
  * can describe the change without holding the document, and neither has to guess which row an id means.
  */
-data class Change(val kind: ChangeKind, val id: String, val name: String? = null)
+data class Change(
+    val kind: ChangeKind,
+    val id: String,
+    val name: String? = null,
+    /**
+     * What the row becomes, when the row carries a value a host has to word (ROADMAP N186): a kind by
+     * name, a start as an epoch day, or null for "the creation date". Never prose — each host renders
+     * its own sentence, the rule [ProgramProblem.detail] already follows.
+     */
+    val detail: String? = null,
+)
 
 /** A consequence of an edit that is worth stating but is not a refusal (ROADMAP N170). */
 enum class WarningCode {
@@ -137,12 +153,32 @@ private fun staleProblem(
     }
 }
 
-private fun planProgram(snapshot: ProgramDocument, edit: ProgramDocument): List<Change> =
+private fun planProgram(snapshot: ProgramDocument, edit: ProgramDocument): List<Change> {
+    val changes = mutableListOf<Change>()
     if (snapshot.program.name != edit.program.name) {
-        listOf(Change(ChangeKind.PROGRAM_RENAMED, edit.program.id, edit.program.name))
-    } else {
-        emptyList()
+        changes += Change(ChangeKind.PROGRAM_RENAMED, edit.program.id, edit.program.name)
     }
+    // A block's shape is part of what a document describes, so an edit may author it (N186). It is
+    // not placement: `isActive` and `position` stay the device's, because they are the program's
+    // place among programs rather than the program's plan.
+    if (snapshot.program.kind != edit.program.kind) {
+        changes += Change(
+            ChangeKind.PROGRAM_KIND,
+            edit.program.id,
+            edit.program.name,
+            edit.program.kind.name,
+        )
+    }
+    if (snapshot.program.startDate != edit.program.startDate) {
+        changes += Change(
+            ChangeKind.PROGRAM_START,
+            edit.program.id,
+            edit.program.name,
+            edit.program.startDate?.toString(),
+        )
+    }
+    return changes
+}
 
 private fun planSlots(
     snapshot: ProgramDocument,

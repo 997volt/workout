@@ -1170,12 +1170,26 @@ the rule; that one argues it.
   it out — the ratio and its grid, breakdown and streak, the missed-day question, the deload creator,
   and the substitute pick — or every Monday of a nine-session block would count as a scheduled day
   forever. A sequence's progress is its place in the block instead.
-- **A program's kind and start are the device's to author** (N174, N178). `kind` and `startDate` are
-  honored when a program is **created** — a document load, a backup restore — because a block must be
-  able to arrive as one, and **ignored by an edit**, exactly as `isActive` and `position` are: the app's
-  editor authors them, the page does not offer them, and a plan is not a placement. The editor shows the
-  start date only for a block, because a weekly program's weeks are the calendar's, and an absent start
-  keeps the fallback N174 gives it: the day the program was created.
+- **A program's kind and start belong to the program's definition, so an edit may author them**
+  (N174, N178, **amended by N186**). N174 first had them device-owned on an edit, like `isActive` and
+  `position`; N186 reverses that half because the helper must be able to build a whole block, and a
+  field the page can show but change only in the app is a round trip for every program it authors.
+  The distinction the split rests on is *placement* versus *plan*: which program home follows and where
+  it sits in the list are the device's (`isActive`, `position`), while what kind it is and when it
+  starts are part of what the document describes. So an edit compares both, names `PROGRAM_KIND` and
+  `PROGRAM_START` with the new value as the change's `detail`, and the app writes them from the
+  document's own values rather than re-parsing the detail — which exists to word each host's preview.
+  They are still honored when a program is created, so a table or a new program can arrive as a block.
+  Both editors show the start only for a block, because a weekly program's weeks are the calendar's,
+  and an absent start keeps the fallback N174 gives it: the day the program was created.
+- **A block can be authored entirely in the helper** (N186). The program table gains `Kind` (weekly, or
+  block — `one block` and `sequence` are the same answer) and `Start` (`2026-10-05`), said **once for
+  the whole table**: two rows naming different kinds, or two starts, are refused rather than resolved
+  by whichever came last, because a program kind is a fact about the program rather than about a row.
+  The program editor carries the same two controls for a program already authored, and both write
+  straight into the document, so a block — its shape, its start, its loads — can be finished before
+  the app ever opens the file. Rejected: a second kind of table (a block sheet beside the weekly one),
+  which would be two dialects of one format for a column.
 - **A block's progression is its own session's, and that is why RPE still earns steps** (N174, P3.21).
   Progression is per prescribed set of a template, and in a sequence every session is its own template —
   so a step accepted on session 3 rewrites session 3 and nothing else, and a block's prescribed numbers

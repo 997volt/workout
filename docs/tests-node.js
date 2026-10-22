@@ -34,7 +34,7 @@ var editorTests = require('./editor-tests.js');
  * left the loop over nothing and every case passed by being absent. Executed must equal declared, and
  * adding a case is a deliberate edit here as well as in the fixture.
  */
-var EXPECTED_FIXTURE_CASES = 5;
+var EXPECTED_FIXTURE_CASES = 6;
 if (!Array.isArray(globalThis.PROGRAM_EDIT_CASES)) {
   console.error('the edit fixture did not load: PROGRAM_EDIT_CASES is not an array');
   process.exit(1);
