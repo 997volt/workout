@@ -63,33 +63,47 @@ class ProgramsViewModel @Inject constructor(
         viewModelScope.launch {
             val text = documentIo.read(context, uri)
             if (text == null) {
-                _edited.value = false
-                _imported.value = DataResult.Failure(
-                    DataError.Storage(IllegalStateException("the file could not be read")),
-                )
+                reportUnreadable()
                 return@launch
             }
-            // An edit is a proposal to change a program this device holds, so it stops here for a
-            // confirmation (N171). A document to add still goes straight through, as it always has.
-            when (val preview = repository.previewProgramDocument(text)) {
-                is DataResult.Failure -> {
+            openDocument(text)
+        }
+    }
+
+    /**
+     * What the read document means — the half that is about the document rather than about Android.
+     *
+     * An edit is a proposal to change a program this device holds, so it stops here for a
+     * confirmation (N171); a document to add still goes straight through, as it always has. Split
+     * from [readDocument] so this decision is testable without a content resolver (N180).
+     */
+    internal suspend fun openDocument(text: String) {
+        when (val preview = repository.previewProgramDocument(text)) {
+            is DataResult.Failure -> {
+                _edited.value = false
+                _imported.value = preview
+            }
+
+            is DataResult.Success -> when (val value = preview.data) {
+                ProgramDocumentPreview.Add -> {
                     _edited.value = false
-                    _imported.value = preview
+                    _imported.value = importDocument(text)
                 }
 
-                is DataResult.Success -> when (val value = preview.data) {
-                    ProgramDocumentPreview.Add -> {
-                        _edited.value = false
-                        _imported.value = importDocument(text)
-                    }
-
-                    is ProgramDocumentPreview.Edit -> {
-                        _edited.value = false
-                        _pendingEdit.value = PendingProgramEdit(text, value)
-                    }
+                is ProgramDocumentPreview.Edit -> {
+                    _edited.value = false
+                    _pendingEdit.value = PendingProgramEdit(text, value)
                 }
             }
         }
+    }
+
+    /** A file that could not be read: the same sentence whether it was unreadable or empty (B159). */
+    private fun reportUnreadable() {
+        _edited.value = false
+        _imported.value = DataResult.Failure(
+            DataError.Storage(IllegalStateException("the file could not be read")),
+        )
     }
 
     private val _pendingEdit = MutableStateFlow<PendingProgramEdit?>(null)
