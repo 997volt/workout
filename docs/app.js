@@ -3367,6 +3367,9 @@
       'Read ' + rows.length + ' row' + (rows.length === 1 ? '' : 's') + ' from ' + name +
       '. Each list starts its own first session; combine a date below when two lists share one.';
     announce('Loaded ' + rows.length + ' row' + (rows.length === 1 ? '' : 's') + ' from ' + name + '.');
+    // A CSV dropped on Programs is read here but belongs on Import, which is where its rows are shown and
+    // where this message lives — so go there, as a JSON rows list already does (B192's rule).
+    if (ui.selectTool) { ui.selectTool('import', false, false); }
   }
 
   /* Rebuilds the flat row list from the loaded lists, annotating each row with
