@@ -433,7 +433,10 @@ class RoomProgramRepository @Inject constructor(
                 return@dataResultOf ProgramDocumentPreview.Add
             }
             val snapshot = buildProgramDocument(database, timeSource, document.program.id)
-            when (val planned = plan(snapshot.toShared(), document.toShared())) {
+            // The device's own newest write, soft-deleted rows included: a deletion after the export
+            // is not in the snapshot at all, so only this read can see it (B183).
+            val newest = database.programEditDao().newestWriteForProgram(document.program.id)
+            when (val planned = plan(snapshot.toShared(), document.toShared(), newest)) {
                 is PlanResult.Refused -> throw InvalidInputException(editRefusal(planned.problems))
                 is PlanResult.Ready -> ProgramDocumentPreview.Edit(
                     programName = document.program.name,
@@ -618,7 +621,8 @@ private suspend fun mergeProgramDocument(
  * The snapshot is read **inside** the transaction and planned against the edit again, so a change
  * made on the phone between the preview and the confirmation is refused rather than overwritten —
  * the preview and the write ask the same function the same question, and the second answer is the one
- * that writes.
+ * that writes. The device's newest write is read in the same transaction and for the same reason: a
+ * row deleted since the export is a change too, and the document cannot carry one (B183).
  *
  * Rows are applied in dependency order: new movements, then workouts, then their exercises, their
  * sets, and the slots that name a workout last. A removal is always a soft delete; the library keeps a
@@ -630,8 +634,13 @@ private suspend fun applyProgramEdit(
     document: ProgramDocument,
     now: Long,
 ): ProgramImportSummary {
+    val editDao = database.programEditDao()
     val snapshot = buildProgramDocument(database, timeSource, document.program.id)
-    val planned = plan(snapshot.toShared(), document.toShared())
+    val planned = plan(
+        snapshot.toShared(),
+        document.toShared(),
+        editDao.newestWriteForProgram(document.program.id),
+    )
     val ready = when (planned) {
         is PlanResult.Refused -> throw InvalidInputException(editRefusal(planned.problems))
         is PlanResult.Ready -> planned
@@ -642,7 +651,7 @@ private suspend fun applyProgramEdit(
         changes = ready.changes,
         now = now,
         backupDao = database.backupDao(),
-        editDao = database.programEditDao(),
+        editDao = editDao,
         programDao = database.programDao(),
     )
     if (writer.renamed) writer.rename()

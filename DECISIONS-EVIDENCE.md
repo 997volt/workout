@@ -2698,9 +2698,10 @@ record and never travel in a program document, so an edit cannot touch them. Del
 an edit changes one, and removing it is the app's own action.
 
 **Covered by** the shared core's `commonTest` (the plan's add, update and remove cases, the stale
-refusal, the library-immutable case), the instrumented `ProgramDocumentTest` (an edit changes the
-program it names, a stale base is refused, a removed day keeps its workout, the preview writes
-nothing), and `ProgramEditDialogTest` for the confirmation's own words.
+refusal, the device's own newest write, the library-immutable case), the instrumented
+`ProgramDocumentTest` (an edit changes the program it names, a stale base is refused, a set and a day
+deleted after the export are refused, a removed day keeps its workout, the preview writes nothing),
+and `ProgramEditDialogTest` for the confirmation's own words.
 
 ## N172
 

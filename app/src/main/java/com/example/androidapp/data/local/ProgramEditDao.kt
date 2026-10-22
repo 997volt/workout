@@ -5,7 +5,8 @@ import androidx.room.Query
 import androidx.room.Update
 
 /**
- * The writes an edit needs, kept apart from [BackupDao] (ROADMAP N171).
+ * The writes an edit needs — and the one read only a device can answer — kept apart from [BackupDao]
+ * (ROADMAP N171).
  *
  * A backup is insert-or-ignore: it may add rows and must never change one, which is why its DAO is
  * shaped that way. An edit is the opposite promise — it updates rows the device already holds and
@@ -15,6 +16,38 @@ import androidx.room.Update
  */
 @Dao
 interface ProgramEditDao {
+
+    /**
+     * The newest write anywhere in one program's definition, **soft-deleted rows included** (B183).
+     *
+     * The document an edit was made from cannot carry a deleted row — deleting is what removes it —
+     * so the plan's own staleness read is blind to a deletion. This is the question only the device
+     * can answer: the same `updatedAt` the plan compares, taken over the program, every slot it ever
+     * had, the workouts those slots named, and their planned exercises and sets. A null answer means
+     * the program has no rows here at all, which the plan refuses as a missing program anyway.
+     */
+    @Query(
+        """
+        SELECT MAX(updatedAt) FROM (
+            SELECT updatedAt FROM programs WHERE id = :programId
+            UNION ALL
+            SELECT updatedAt FROM program_slots WHERE programId = :programId
+            UNION ALL
+            SELECT updatedAt FROM templates
+                WHERE id IN (SELECT templateId FROM program_slots WHERE programId = :programId)
+            UNION ALL
+            SELECT updatedAt FROM template_exercises
+                WHERE templateId IN (SELECT templateId FROM program_slots WHERE programId = :programId)
+            UNION ALL
+            SELECT updatedAt FROM template_sets
+                WHERE templateExerciseId IN (
+                    SELECT id FROM template_exercises
+                    WHERE templateId IN (SELECT templateId FROM program_slots WHERE programId = :programId)
+                )
+        )
+        """,
+    )
+    suspend fun newestWriteForProgram(programId: String): Long?
 
     /** Rewrites slots in place: a weekday, a position, or the workout the slot points at. */
     @Update

@@ -17,16 +17,14 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The release candidate's defects come first.** A review of everything since 2.11 — the shared core
-(N170–N173) and the helper commits beside it — found the rows below. Every gate is green, and that is the
-finding rather than a rebuttal: each row is a gap between what the changelog, [DECISIONS.md](DECISIONS.md) or
-the page's own specification already say and what the code does, so no test fails when it regresses. The three
-defects at the top are the release's, not the next block's; the rest are planned work with nothing built. The
-rows are in the order they should be built.
+**A review of everything since 2.11 found these, and the gates caught none of them.** The shared core
+(N170–N173) and the helper commits beside it: each row below is a gap between what the changelog,
+[DECISIONS.md](DECISIONS.md) or the page's own specification already say and what the code does, so no test
+fails when it regresses. The defects go first and each leaves this file as it lands; the rest are planned work
+with nothing built, and the rows are in the order they should be built.
 
 | # | Severity | What | Fix |
 | --- | --- | --- | --- |
-| B183 | high | **An edit of a program whose row was deleted after the export is not refused.** The staleness read takes the newest `updatedAt` among the rows the snapshot still holds, and a soft delete — the only operation that removes a row from that set — is invisible to it, so the plan proceeds as if the row had never existed. A deleted planned set or workout is then planned as an addition that the insert-or-ignore write silently skips, while the lifter is told the program was updated; a deleted day is planned as a slot insert that collides with the row still there under its id, so the transaction rolls back and the lifter is told the file could not be read. DECISIONS N171 says such a document is refused, and the changelog entry for N171 repeats it. | Ask the device, not the document: a staleness read of `MAX(updatedAt)` over the program's own rows **including the soft-deleted ones**, and over the templates their rows still name, refuses before planning when it is later than `edit.baseExportedAt`. The plan's snapshot stays live-only — a deleted row is neither one to resurrect nor one to re-add — so the two questions stay separate. Covered by a case that deletes a set and a day after exporting and imports the older edit: refused, nothing written. |
 | B184 | high | **A file that fails to open, or a backup that asks which program to edit, leaves the previous program's editor live.** A bad file only rewrites the status line and the backup chooser only clears the form host, so `ui.state.programEditor` still holds the program opened before and the Preview, Download and Save buttons keep the enabled state the last successful check gave them. Drop a backup over an edited program, answer "choose a program", and **Download edit writes the previous program's edit** under the file name the lifter is reading. The app's own confirmation names the program, and that is the only thing catching it. | Every path that starts a document — file, drop, draft, backup chooser, and every refusal — goes through one function that clears the editor's state, empties the host and the preview, and re-renders, which is what disables the three buttons. A failed open clears to that same empty state and says why. |
 | B185 | medium | **"Download edit" is not re-planned, so a stale preview ships a file the core refuses.** The new-program path re-checks before it writes, deliberately — "the fields may have changed since the last check" — while the edit path trusts the last preview's `ok` and writes the working copy as it stands now. Text fields change the model without re-rendering, so the button never returns to disabled: preview a program, type `4000` in Rest, download, and the page still says *Ready* while the app answers `MALFORMED`. | Re-plan on download in edit mode exactly as the new path re-validates, or clear the preview on every model write and let the button's disabled state be the invalidation — the second makes both modes read the same rule and a stale *Ready* impossible. |
 | N179 | medium | **The shared core is outside the static analysis every other line of the app passes.** `:shared` applies the multiplatform and serialization plugins only, detekt is applied in `:app` alone, and the `detekt` task therefore builds `:app:detekt` — so the module that decides what an edit writes into the lifter's data is the one nobody lints, and it misses the build's warnings-as-errors posture too. | Apply detekt to `:shared` with the same config, and add `:shared:detekt` to the gate and to CI in the change that drops the duplicated task list — `DocsConsistencyTest` holds AGENTS.md to CI's, so the two move together. Not the Compose ruleset: `:shared` has no Compose. |
@@ -44,10 +42,9 @@ rows are in the order they should be built.
 | N184 | low | **The download is copied a third time.** A new blob-and-anchor download joins two already hand-rolled in the page, and the rule is to extract at the second caller. | One download function for all three, with the file name as its argument. |
 | N185 | medium | **N174's format decision does not follow its own argument.** That row moves the backup's `schemaVersion` because an older build reading a sequence as weekly "would repeat the block forever — a wrong meaning rather than a dropped extra", and then keeps the program document at format 4, where the same older build drops the kind and repeats the block forever. A program document is the path a block actually arrives by, so it is the wrong meaning that matters most. | Settle it before N174 is built: either the document's format moves with the backup's and its floor with it, or the row says why an imported block may be repeated by a build that cannot read its kind. Recorded as a decision with the row that implements it, as this section already requires. |
 
-B183 is the distance between a sentence N171's changelog entry already makes and what the app does, so either
-the write earns that sentence or the entry waits for it. Two questions the defects raise belong in
-[DECISIONS.md](DECISIONS.md) with the rows that settle them — what an edit does with a row the device has
-deleted but the document still names, and what a page may promise before the app plans the same document.
+The rows that ask a question rather than only a fix — what an edit does with a row the device has deleted, and
+what a page may promise before the app plans the same document — settle it in [DECISIONS.md](DECISIONS.md) with
+the row that answers it, not here.
 
 **A program can be a finite block, not only a weekly rotation.** A program is a week that repeats: a slot is a
 template plus a weekday, that weekday recurs, and every week reads the same templates. A peaking block — nine

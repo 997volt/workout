@@ -47,7 +47,17 @@ class ProgramDocumentTest {
     private lateinit var programs: RoomProgramRepository
     private lateinit var templates: RoomTemplateRepository
 
-    private val clock = TimeSource { Instant.parse("2026-10-07T12:00:00Z") }
+    /**
+     * A clock the new cases can move, because a change *after* an export is what staleness means and
+     * one fixed instant cannot express it (B183). The older cases never move it, so they read the
+     * fixed instant they always did.
+     */
+    private var now = Instant.parse("2026-10-07T12:00:00Z")
+    private val clock = TimeSource { now }
+
+    private fun aMomentLater() {
+        now = now.plusSeconds(1)
+    }
 
     @Before
     fun setUp() = runTest {
@@ -349,6 +359,53 @@ class ProgramDocumentTest {
             "Heavy lower",
             programs.observePrograms().first().single().name,
         )
+    }
+
+    @Test
+    fun anEditOfAProgramWhoseSetWasDeletedSinceTheExport_isRefused() = runTest {
+        // B183: the deleted row is absent from the snapshot, so the document cannot show the deletion.
+        // The device's own read can, and the write refuses — rather than planning the set as an
+        // addition that insert-or-ignore would silently skip while reporting success.
+        val programId = seedProgram()
+        val original = ProgramDocumentCodec.decode(exportOf(programId))
+        val edit = original.copy(
+            program = original.program.copy(name = "Renamed after the deletion"),
+            edit = EditMarker(baseExportedAt = original.exportedAt),
+        )
+        aMomentLater()
+        val stored = templates.observeTemplates().first().single()
+        val planned = templates.observeExercises(stored.id).first().single()
+        (templates.removeSet(planned.sets.single().id) as DataResult.Success)
+
+        val failure = programs.importProgramDocument(ProgramDocumentCodec.encode(edit)) as DataResult.Failure
+
+        assertTrue((failure.error as DataError.Invalid).message.contains("changed on the phone"))
+        assertEquals(
+            "the rename was not written either",
+            "Heavy lower",
+            programs.observePrograms().first().single().name,
+        )
+    }
+
+    @Test
+    fun anEditOfAProgramWhoseDayWasDeletedSinceTheExport_isRefusedRatherThanCrashing() = runTest {
+        // The day is soft-deleted, so the older edit plans it as an addition and the insert would hit
+        // the row still holding that id — a constraint failure that rolled the whole edit back. It is
+        // refused before anything is written, with the sentence the lifter can act on (B183).
+        val programId = seedProgram()
+        val original = ProgramDocumentCodec.decode(exportOf(programId))
+        val edit = original.copy(
+            program = original.program.copy(name = "Renamed after the deletion"),
+            edit = EditMarker(baseExportedAt = original.exportedAt),
+        )
+        aMomentLater()
+        val slot = programs.observeSlots(programId).first().single()
+        (programs.removeSlot(slot.id) as DataResult.Success)
+
+        val failure = programs.importProgramDocument(ProgramDocumentCodec.encode(edit)) as DataResult.Failure
+
+        assertTrue((failure.error as DataError.Invalid).message.contains("changed on the phone"))
+        assertTrue("the day stays removed", programs.observeSlots(programId).first().isEmpty())
     }
 
     @Test

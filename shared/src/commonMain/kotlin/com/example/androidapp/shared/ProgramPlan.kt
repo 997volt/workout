@@ -62,8 +62,17 @@ sealed interface PlanResult {
  * **Staleness is a refusal, not a merge.** The edit names the export it was made from
  * ([ProgramDocument.edit]); if the program's newest row is later than that, the lifter changed it on
  * the phone after exporting and the app refuses rather than guessing which change wins.
+ *
+ * [deviceNewestWrite] is that newest write as only a device can read it: a document holds live rows,
+ * and deleting one is exactly what takes it out of them, so a document alone cannot show a deletion
+ * (B183). The app passes the timestamp it reads from its own tables, soft-deleted rows included; the
+ * page passes nothing, because it has no device to ask and its preview is the app's decision anyway.
  */
-fun plan(snapshot: ProgramDocument, edit: ProgramDocument): PlanResult {
+fun plan(
+    snapshot: ProgramDocument,
+    edit: ProgramDocument,
+    deviceNewestWrite: Long? = null,
+): PlanResult {
     val marker = edit.edit ?: return PlanResult.Refused(
         listOf(ProgramProblem(ProblemCode.NO_EDIT_MARKER, "edit")),
     )
@@ -85,10 +94,13 @@ fun plan(snapshot: ProgramDocument, edit: ProgramDocument): PlanResult {
     val invalid = validate(edit)
     if (invalid.isNotEmpty()) return PlanResult.Refused(invalid)
 
-    val latest = latestWrite(snapshot)
-    if (latest > marker.baseExportedAt) {
+    // The document's own rows are the page's whole answer; the device's read adds the rows it has
+    // deleted, which the document cannot carry at all (B183).
+    val fromDocument = latestWrite(snapshot)
+    val newestWrite = if (deviceNewestWrite == null) fromDocument else maxOf(fromDocument, deviceNewestWrite)
+    if (newestWrite > marker.baseExportedAt) {
         return PlanResult.Refused(
-            listOf(ProgramProblem(ProblemCode.STALE_BASE, "edit.baseExportedAt", latest.toString())),
+            listOf(ProgramProblem(ProblemCode.STALE_BASE, "edit.baseExportedAt", newestWrite.toString())),
         )
     }
 

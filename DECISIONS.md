@@ -1281,7 +1281,9 @@ the rule; that one argues it.
   A document with an `edit` marker is a proposal to change the program it names: the app reads the
   program as it stands, asks the shared planner what the edit would do, and states that diff before
   anything is written. **The base is the export's `exportedAt`**, compared with the newest `updatedAt`
-  among the program's own rows; a program that moved after the export is refused, not merged — a merge
+  among the program's own rows **soft-deleted ones included**: a deletion is a change like any other, and
+  it is the one change a document cannot carry, because deleting is what takes the row out of it (B183).
+  A program that moved after the export is refused, not merged — a merge
   would have to guess which change wins, and there is no clock that makes guessing safe. **The write is
   program-scoped and exact**: slots are the edit's set (an absent one is soft-deleted), templates are
   upserted but never removed from the library (the app's own removal rule), and the planned exercises

@@ -161,6 +161,38 @@ class ProgramCoreTest {
     }
 
     @Test
+    fun an_edit_is_refused_when_the_device_reports_a_write_the_document_cannot_hold() {
+        // A deleted row is absent from the document by construction — deleting is what removes it — so
+        // the snapshot's own read cannot see the deletion. The host that can read its tables passes
+        // the newest write it finds, and that is the whole reason the parameter exists (B183).
+        val refused = plan(
+            snapshot = baseDocument(),
+            edit = baseDocument(edit = EditMarker(baseExportedAt = T)),
+            deviceNewestWrite = T + 10,
+        ) as PlanResult.Refused
+
+        assertEquals(ProblemCode.STALE_BASE, refused.problems.single().code)
+    }
+
+    @Test
+    fun an_edit_of_an_undisturbed_program_is_planned_the_same_with_or_without_the_device_answer() {
+        val snapshot = baseDocument()
+        val edit = baseDocument(
+            program = programRow(name = "Autumn block"),
+            edit = EditMarker(baseExportedAt = T),
+        )
+
+        val withoutDevice = plan(snapshot, edit) as PlanResult.Ready
+        val withDevice = plan(snapshot, edit, deviceNewestWrite = T) as PlanResult.Ready
+
+        assertEquals(
+            withoutDevice.changes,
+            withDevice.changes,
+            "a device that has not moved changes no answer",
+        )
+    }
+
+    @Test
     fun a_document_without_an_edit_marker_is_refused_as_an_edit() {
         val refused = plan(baseDocument(), baseDocument()) as PlanResult.Refused
 
