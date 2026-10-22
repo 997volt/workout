@@ -413,6 +413,20 @@
       t.eq(set.dropValueGrams, null);
     });
 
+    check('a table authored as a block previews as one (B203)', function () {
+      var stats = { days: 3, exercises: 9, sets: 27 };
+      var block = H.programPanelSummary(
+        { name: 'Peak', kind: 'SEQUENCE', start: 20731, unit: 'kg' },
+        stats
+      );
+      var weekly = H.programPanelSummary({ name: 'Base', unit: 'kg' }, stats);
+
+      t.ok(block.indexOf('one block') !== -1, block);
+      t.ok(block.indexOf('starting') !== -1, block);
+      t.ok(weekly.indexOf('every week') !== -1, weekly);
+      t.ok(weekly.indexOf('starting') === -1, weekly);
+    });
+
     check('the summary words a block change as a block (B202)', function () {
       var summary = H.editorSummary([
         { kind: 'PROGRAM_KIND', id: 'pgm_1', detail: 'SEQUENCE' },

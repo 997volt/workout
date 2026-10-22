@@ -5818,10 +5818,8 @@
     state.programResult = built;
     var stats = built.stats;
 
-    var summary = 'Program "' + (sheet.name || 'My program') + '" · ' + formatInt(stats.days) +
-      ' day' + (stats.days === 1 ? '' : 's') + ' · ' + formatInt(stats.exercises) +
-      ' exercise row' + (stats.exercises === 1 ? '' : 's') + ' · ' + formatInt(stats.sets) +
-      ' set' + (stats.sets === 1 ? '' : 's') + ' · loads in ' + sheet.unit + '.';
+    var isSequence = sheet.kind === 'SEQUENCE';
+    var summary = programPanelSummary(sheet, stats);
     if (stats.newExercises.length > 0) {
       summary += ' Created as new movements: ' + stats.newExercises.join(', ') + '.';
     }
@@ -5829,11 +5827,15 @@
 
     var host = ui.elements.programPreview;
     host.textContent = '';
-    (sheet.days || []).forEach(function (day) {
+    (sheet.days || []).forEach(function (day, index) {
       var block = h('section', 'program-day');
-      var heading = h('h3', 'program-day-name', day.name);
+      var label = isSequence
+        ? 'Day ' + (index + 1) + ' of ' + (sheet.days || []).length + ' · ' + day.name
+        : day.name;
+      var heading = h('h3', 'program-day-name', label);
       if (day.weekdays.length > 0) {
-        heading.appendChild(h('span', 'hint', ' · ' + day.weekdays.map(programWeekdayLabel).join(', ')));
+        heading.appendChild(h('span', 'hint',
+          (isSequence ? ' · due ' : ' · ') + day.weekdays.map(programWeekdayLabel).join(', ')));
       } else {
         heading.appendChild(h('span', 'hint', ' · any day'));
       }
@@ -7090,18 +7092,25 @@
 
   function editorDayNode(working, slot) {
     var template = editorFind(working.templates, slot.templateId);
+    var isSequence = (working.program.kind || 'WEEKLY') === 'SEQUENCE';
+    var orderedSlots = working.slots.slice().sort(function (a, b) { return a.position - b.position; });
     var section = h('section', 'editor-day');
     var head = h('div', 'editor-day-head');
-    head.appendChild(h('h3', '', template ? template.name : 'A workout this file does not carry'));
+    var title = template ? template.name : 'A workout this file does not carry';
+    // A block's day is its place in the order, and its weekday is a placement rather than a
+    // recurrence (N174): "Day 4 of 9" and a control labelled Due say what the day means here (B203).
+    if (isSequence) {
+      title = 'Day ' + (orderedSlots.indexOf(slot) + 1) + ' of ' + orderedSlots.length + ' · ' + title;
+    }
+    head.appendChild(h('h3', '', title));
 
-    var weekdayOptions = [{ value: '', label: 'Any day' }].concat(
+    var weekdayOptions = [{ value: '', label: isSequence ? 'Any day' : 'Any day' }].concat(
       EDITOR_WEEKDAYS.map(function (day) { return { value: day, label: programWeekdayLabel(day) }; })
     );
-    head.appendChild(editorSelect('Day', weekdayOptions, slot.weekday || '', function (value) {
+    head.appendChild(editorSelect(isSequence ? 'Due' : 'Day', weekdayOptions, slot.weekday || '', function (value) {
       slot.weekday = value === '' ? null : value;
     }));
 
-    var orderedSlots = working.slots.slice().sort(function (a, b) { return a.position - b.position; });
     var dayName = template ? 'day "' + template.name + '"' : 'this day';
     head.appendChild(editorButton(
       '\u2191',
@@ -7521,6 +7530,25 @@
 
   /** The file a download writes: the working copy as it stands, and the name it gets (B185). */
   /**
+   * What the program table's preview says about the table (B203).
+   *
+   * Its kind and, for a block, its start, beside the counts: a table authored as a block used to
+   * preview identically to a weekly program, so a start a year off was invisible until the app
+   * refused the file or the block was already overdue.
+   */
+  function programPanelSummary(sheet, stats) {
+    var isSequence = sheet.kind === 'SEQUENCE';
+    return 'Program "' + (sheet.name || 'My program') + '" · ' + formatInt(stats.days) +
+      ' day' + (stats.days === 1 ? '' : 's') + ' · ' + formatInt(stats.exercises) +
+      ' exercise row' + (stats.exercises === 1 ? '' : 's') + ' · ' + formatInt(stats.sets) +
+      ' set' + (stats.sets === 1 ? '' : 's') + ' · loads in ' + sheet.unit + ' · ' +
+      (isSequence ? 'one block' : 'every week') +
+      (isSequence && typeof sheet.start === 'number'
+        ? ', starting ' + editorDayLabel(sheet.start)
+        : '') + '.';
+  }
+
+  /**
    * A plan's changes as one line: one count and one sentence per kind (B202).
    *
    * The sentence comes from a representative change rather than from its kind alone, because the
@@ -7825,6 +7853,7 @@
     editorApplyRole: editorApplyRole,
     editorChangeText: editorChangeText,
     editorSummary: editorSummary,
+    programPanelSummary: programPanelSummary,
     editorSharedProgramNames: editorSharedProgramNames,
     editorMove: editorMove,
     editorParseInt: editorParseInt,
