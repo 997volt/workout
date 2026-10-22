@@ -14,6 +14,42 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
+## [Unreleased]
+
+### Added
+
+- **A block can be a program, not only a week** (P3.21, N174–N178). A program is no longer only a week
+  that repeats: it says what kind it is — every week, or one block — and, for a block, the day it starts.
+  A sequence's nine sessions are nine workouts, each with the loads it prescribes, done in order once and
+  then over. Its weekday is a **placement**, not a recurrence: a session is due on the first such weekday
+  after the last thing done, so a block trained late slides rather than counting a week as missed, and a
+  start date in the future is not overdue. Home offers the next session as a card when it is due —
+  *Day 4 of 9 · due Friday* — and starts it with the slot it was scheduled as, so the plan's own history
+  still prefills it; a rest day names what is coming, for a weekly program as well. A block ends instead
+  of wrapping, and the editor authors the kind and the start date, labels a sequence slot's weekday
+  *Due*, and marks the run's place as *Day 4 of 9*. The document format moves to 5 and the backup's
+  schema to 6, both with their floors left where they are: an older build refuses a block rather than
+  repeating it forever, while every saved export, v4 starter program and older backup still reads.
+
+- **The shared core passes the same static analysis as the app** (N179). `:shared` — the module that
+  decides what an edit writes into the lifter's data — had no detekt at all. It now loads the app's
+  config, minus the two rulesets only the app carries, and the eleven findings that first run reported
+  were fixed rather than suppressed: the two longest functions became one small function per table they
+  check, and the codec's swallowed serialization failures keep their cause.
+
+- **The editor's tests run where the gate does, and the cross-host fixture is exact** (N180, N181). The
+  program list's edit path — an add goes through, an edit stops at its question, the answer decides what
+  is written — now runs as a JVM test over a hand-written fake rather than only on a device. The page's
+  fixture asserts exactly which changes the planner names, in place of "each expected kind appears
+  somewhere", and the node runner declares how many cases it expects and fails when it checks another
+  number — which immediately found that a fixture case named "remove the only day" removed three.
+
+### Changed
+
+- **The build job pins the Node it runs on** (N182), and the page takes the document's format version
+  from the shared core instead of declaring its own (N183) — a version written in two places is the
+  first thing to disagree — and has one download function rather than four copies (N184).
+
 ## [2.12] — 2026-10-22 (versionCode 32)
 
 ### Added

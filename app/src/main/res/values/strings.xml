@@ -911,7 +911,6 @@
     <string name="program_kind">Program kind</string>
     <string name="program_kind_weekly">Every week</string>
     <string name="program_kind_sequence">One block</string>
-    <string name="program_kind_weekly_hint">The week repeats: each day is due every week.</string>
     <string name="program_kind_sequence_hint">Done once, in order: each session is due once and the block ends.</string>
     <string name="program_due">Due</string>
     <string name="program_sequence_day">Day %1$d of %2$d</string>

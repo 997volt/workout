@@ -1155,6 +1155,34 @@ the rule; that one argues it.
   wording, which named the weight step as the only one) — and adds no storage.
   ([evidence](DECISIONS-EVIDENCE.md#p317))
 
+- **A finite program is an order with an end, never a dated plan** (N174, N175). A sequence is a
+  program whose slots are done once, in order: its kind and an authored **start date** are two columns
+  on the program, and where it has got to is **derived** from what was done, like the run. Nothing is
+  written per day or per week — no plan-per-date entity, no stored due date — so a session trained late,
+  a slot moved, or a program edited afterwards re-derives the schedule instead of leaving a date that has
+  passed. This is N16 read forward rather than reversed: a dated *instance* is still refused; what a
+  sequence adds is an end, and the anchor a first due date needs.
+- **In a sequence a weekday places one occurrence; in a weekly program it repeats** (N174, N176). The
+  same column means two things by kind, and that is the whole difference the kind makes to a reader. The
+  due date is the first matching weekday **strictly after** the last thing done, or at the start when
+  nothing has been, so a session done on Saturday is not instantly overdue; a slot with no weekday is
+  due the next day. Because a sequence's weekday is not a recurrence, the four week-keyed readers leave
+  it out — the ratio and its grid, breakdown and streak, the missed-day question, the deload creator,
+  and the substitute pick — or every Monday of a nine-session block would count as a scheduled day
+  forever. A sequence's progress is its place in the block instead.
+- **A program's kind and start are the device's to author** (N174, N178). `kind` and `startDate` are
+  honored when a program is **created** — a document load, a backup restore — because a block must be
+  able to arrive as one, and **ignored by an edit**, exactly as `isActive` and `position` are: the app's
+  editor authors them, the page does not offer them, and a plan is not a placement. The editor shows the
+  start date only for a block, because a weekly program's weeks are the calendar's, and an absent start
+  keeps the fallback N174 gives it: the day the program was created.
+- **A block's progression is its own session's, and that is why RPE still earns steps** (N174, P3.21).
+  Progression is per prescribed set of a template, and in a sequence every session is its own template —
+  so a step accepted on session 3 rewrites session 3 and nothing else, and a block's prescribed numbers
+  never drift. No per-program progression mode is needed for that, and none exists: the global switch is
+  still the lifter's, and a block that wants none is a block where *Off* is chosen rather than a second
+  setting.
+
 ## Adherence
 
 - **Adherence counts occurrences; the calendar marks days. They are two questions** (P3.5). The
@@ -1429,6 +1457,35 @@ the rule; that one argues it.
   (`formatting: active: false`), because loading the plugin registers its rules as defaults for every
   detekt task and the exclusion is what makes the gate's own run unchanged.
   ([evidence](DECISIONS-EVIDENCE.md#b123))
+- **The shared core is held to the same static analysis as the app, and the harness knows where its
+  code lives** (N179). detekt is applied to `:shared` with the app's config through a four-line overlay
+  ([detekt-shared.yml](config/detekt/detekt-shared.yml)) that only tolerates the two rulesets the app
+  carries and the core does not; the file is still validated by `:app:detekt`, so a misspelled rule is
+  still caught, by the module that can. The plugin's default source is `src/main/java`, which a
+  multiplatform module does not have, and the first run was **NO-SOURCE**: a gate that passes by finding
+  nothing is the failure this row existed for, so the source set is named explicitly. Not the Compose
+  ruleset: there is no Compose there, and a dependency that finds nothing is one more to keep current.
+- **The edit path is tested where the gate runs, and the shared fixture is exact** (N180, N181). What a
+  picked document means — an add goes through, an edit stops at a question, the answer decides what is
+  written — is a JVM test over a hand-written fake, because the instrumented suite is not the default
+  gate and a break in the confirmation stayed green. The cross-host fixture asserts **exactly** the
+  changes a plan names rather than that each expected kind appears: presence let a planner over-report an
+  addition the write would skip, which is the shape B183 turned out to have, and its first exact run found
+  a case called "remove the only day" that removed three. The node runner declares its case count and
+  fails when it checks another number, the instrumented check's rule, so a renamed global cannot shrink
+  the suite silently.
+- **CI pins the Node it runs the shared tests on** (N182). The build job runs `:shared:jsNodeTest` and
+  `:shared:syncSharedJs`, so Node is a toolchain of that job — and it was the one neither pinned nor
+  declared. `actions/setup-node` takes the newest 22.x, so an image that moves its Node fails as a Node
+  problem rather than as a Kotlin task that cannot say why. The docs job keeps the runner's own node on
+  purpose: it proves the page needs no particular one.
+- **Two copies of one number are the bug, not the bookkeeping** (N183, N184). The page declared the
+  document's format version twice, so a format bump would have had the page stamping new programs at the
+  old one with nothing catching it; it now calls the core's `programFormatVersion()`, and a page whose
+  core did not load cannot write a document at all. The page had also grown four copies of the same
+  blob-and-anchor download, so a fix to one was a fix to a quarter of it: they are one function with the
+  file name as its argument.
+
 - **A release's mechanical checks are one script, and its commit is named rather than swept** (N128, B128).
   Two of the release's four mechanical checks are about the APK an update is installed over, and one of
   those — the certificate — is the only defect here whose repair **deletes a user's history**, because
