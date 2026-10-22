@@ -215,6 +215,38 @@
       var problems = JSON.parse(shared.validateJson(JSON.stringify(broken))).problems;
       t.ok(problems.some(function (problem) { return problem.code === 'DANGLING_SLOT_TEMPLATE'; }));
     });
+
+    t.check('a rung refusal names its own cause, not one sentence for five (B186)', function () {
+      var broken = baseDocument();
+      broken.templateSets.push(row({
+        id: 'set_drop',
+        templateExerciseId: 'te_a',
+        setIndex: 1,
+        role: 'DROP',
+        targetWeightGrams: null,
+        targetAssistanceGrams: null,
+        targetRepsMin: null,
+        targetRepsMax: null,
+        targetRepsCurrent: null,
+        dropValueGrams: null,
+        note: null
+      }));
+      var problems = JSON.parse(shared.validateJson(JSON.stringify(broken))).problems;
+      t.ok(problems.some(function (problem) { return problem.code === 'RUNG_WITHOUT_VALUE'; }),
+        'the first drop of a run with no value is its own code');
+      t.ok(!problems.some(function (problem) { return problem.code === 'INVALID_RUNG'; }),
+        'no catch-all code survives');
+      t.ok(problems.every(function (problem) { return !problem.detail || problem.code !== 'RUNG_WITHOUT_VALUE'; }),
+        'the cause is the code, not an English detail');
+    });
+
+    t.check('a rest the app cannot store is its own refusal (B186)', function () {
+      var broken = baseDocument();
+      broken.templateExercises[0].restSeconds = 4000;
+      var problems = JSON.parse(shared.validateJson(JSON.stringify(broken))).problems;
+      t.ok(problems.some(function (problem) { return problem.code === 'INVALID_REST'; }),
+        'a 4000-second rest is a rest problem, not a malformed file');
+    });
   }
 
   return { run: run };

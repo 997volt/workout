@@ -80,7 +80,9 @@ fun validate(document: ProgramDocument): List<ProgramProblem> {
         }
         if (planned.position < 0) refuse(ProblemCode.INVALID_POSITION, "$path.position")
         planned.restSeconds?.let { rest ->
-            if (rest < 0 || rest > 3600) refuse(ProblemCode.MALFORMED, "$path.restSeconds")
+            // Its own code: the number is a value the host can word, not a file that is not a file
+            // (B186). A 4000-second rest used to answer "this is not shaped like a program".
+            if (rest < 0 || rest > 3600) refuse(ProblemCode.INVALID_REST, "$path.restSeconds")
         }
         planned.targetRpeHalves?.let { halves ->
             if (halves !in 1..20) refuse(ProblemCode.INVALID_RPE, "$path.targetRpeHalves")
@@ -133,6 +135,10 @@ fun validate(document: ProgramDocument): List<ProgramProblem> {
 /**
  * A run's shape (ROADMAP N79): a rung sits under something, a run's first rung names its value if it
  * is a drop, the rest of the run continues the same kind, and a rung carries no load or reps of its own.
+ *
+ * **Each cause is its own code** (B186): one `INVALID_RUNG` carried all five and an English `detail`
+ * that no host read, so the page had to guess a sentence and guessed wrong for three of them. A code
+ * per cause is what lets each host say which set is wrong and why.
  */
 private fun validateRuns(
     ordered: List<TemplateSetDto>,
@@ -147,24 +153,24 @@ private fun validateRuns(
         ) {
             // A rung's load and reps are derived from its anchor, so writing either back would put a
             // number on the row that nothing reads (N79).
-            refuse(ProblemCode.INVALID_RUNG, path, "a rung carries no targets")
+            refuse(ProblemCode.RUNG_CARRIES_TARGETS, path, null)
         }
         val above = ordered.getOrNull(index - 1)
         when {
-            above == null -> refuse(ProblemCode.INVALID_RUNG, path, "no anchor above")
+            above == null -> refuse(ProblemCode.RUNG_WITHOUT_ANCHOR, path, null)
             above.role == ProgramSetRole.WARMUP -> {
-                refuse(ProblemCode.INVALID_RUNG, path, "a warm-up cannot anchor a run")
+                refuse(ProblemCode.RUNG_UNDER_WARMUP, path, null)
             }
 
             !above.role.isRung -> {
                 // The run starts here: a drop has to name the value it takes off.
                 if (set.role == ProgramSetRole.DROP && (set.dropValueGrams ?: 0L) <= 0L) {
-                    refuse(ProblemCode.INVALID_RUNG, path, "a drop run needs its value")
+                    refuse(ProblemCode.RUNG_WITHOUT_VALUE, path, null)
                 }
             }
 
             above.role != set.role -> {
-                refuse(ProblemCode.INVALID_RUNG, path, "a run is one kind of rung")
+                refuse(ProblemCode.RUN_MIXES_KINDS, path, null)
             }
         }
     }

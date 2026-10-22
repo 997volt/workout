@@ -86,7 +86,67 @@ class ProgramCoreTest {
             ),
         )
 
-        assertTrue(validate(document).any { it.code == ProblemCode.INVALID_RUNG })
+        assertEquals(listOf(ProblemCode.RUNG_UNDER_WARMUP), validate(document).map { it.code })
+    }
+
+    @Test
+    fun every_rung_refusal_names_its_own_cause_and_carries_no_english() {
+        // B186: one code carried all five causes and an English `detail` no host read, so the page
+        // guessed a sentence and was wrong for three of them. A host words a code; it cannot word
+        // five causes through one.
+        val causes = linkedMapOf(
+            ProblemCode.RUNG_WITHOUT_ANCHOR to baseDocument(
+                templateSets = listOf(
+                    setRow("set_drop", "te_a", 0, role = ProgramSetRole.DROP, dropValueGrams = 10_000),
+                ),
+            ),
+            ProblemCode.RUNG_UNDER_WARMUP to baseDocument(
+                templateSets = listOf(
+                    setRow("set_warm", "te_a", 0, role = ProgramSetRole.WARMUP),
+                    setRow("set_drop", "te_a", 1, role = ProgramSetRole.DROP, dropValueGrams = 10_000),
+                ),
+            ),
+            ProblemCode.RUNG_WITHOUT_VALUE to baseDocument(
+                templateSets = listOf(
+                    setRow("set_a", "te_a", 0),
+                    setRow("set_drop", "te_a", 1, role = ProgramSetRole.DROP),
+                ),
+            ),
+            ProblemCode.RUN_MIXES_KINDS to baseDocument(
+                templateSets = listOf(
+                    setRow("set_a", "te_a", 0),
+                    setRow("set_drop", "te_a", 1, role = ProgramSetRole.DROP, dropValueGrams = 10_000),
+                    setRow("set_cluster", "te_a", 2, role = ProgramSetRole.CLUSTER),
+                ),
+            ),
+            ProblemCode.RUNG_CARRIES_TARGETS to baseDocument(
+                templateSets = listOf(
+                    setRow("set_a", "te_a", 0),
+                    setRow("set_drop", "te_a", 1, role = ProgramSetRole.DROP, dropValueGrams = 10_000)
+                        .copy(targetWeightGrams = 80_000L),
+                ),
+            ),
+        )
+
+        causes.forEach { (code, document) ->
+            val problems = validate(document)
+            assertTrue(problems.any { it.code == code }, "expected $code, got ${problems.map { it.code }}")
+            assertTrue(
+                problems.filter { it.code == code }.all { it.detail == null },
+                "$code carries prose no host can word",
+            )
+        }
+    }
+
+    @Test
+    fun a_rest_outside_its_bound_is_its_own_refusal() {
+        val document = baseDocument(
+            templateExercises = listOf(
+                plannedExerciseRow("te_a", "tpl_a", "ex_a").copy(restSeconds = 4_000),
+            ),
+        )
+
+        assertEquals(listOf(ProblemCode.INVALID_REST), validate(document).map { it.code })
     }
 
     @Test

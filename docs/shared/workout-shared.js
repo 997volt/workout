@@ -168,7 +168,12 @@
     ProblemCode_INVALID_REPS_instance = new ProblemCode('INVALID_REPS', 16);
     ProblemCode_INVALID_LOAD_instance = new ProblemCode('INVALID_LOAD', 17);
     ProblemCode_INVALID_RPE_instance = new ProblemCode('INVALID_RPE', 18);
-    ProblemCode_INVALID_RUNG_instance = new ProblemCode('INVALID_RUNG', 19);
+    ProblemCode_INVALID_REST_instance = new ProblemCode('INVALID_REST', 19);
+    ProblemCode_RUNG_WITHOUT_ANCHOR_instance = new ProblemCode('RUNG_WITHOUT_ANCHOR', 20);
+    ProblemCode_RUNG_UNDER_WARMUP_instance = new ProblemCode('RUNG_UNDER_WARMUP', 21);
+    ProblemCode_RUNG_WITHOUT_VALUE_instance = new ProblemCode('RUNG_WITHOUT_VALUE', 22);
+    ProblemCode_RUN_MIXES_KINDS_instance = new ProblemCode('RUN_MIXES_KINDS', 23);
+    ProblemCode_RUNG_CARRIES_TARGETS_instance = new ProblemCode('RUNG_CARRIES_TARGETS', 24);
   }
   var ProblemCode_MALFORMED_instance;
   var ProblemCode_MISSING_VERSION_instance;
@@ -189,7 +194,12 @@
   var ProblemCode_INVALID_REPS_instance;
   var ProblemCode_INVALID_LOAD_instance;
   var ProblemCode_INVALID_RPE_instance;
-  var ProblemCode_INVALID_RUNG_instance;
+  var ProblemCode_INVALID_REST_instance;
+  var ProblemCode_RUNG_WITHOUT_ANCHOR_instance;
+  var ProblemCode_RUNG_UNDER_WARMUP_instance;
+  var ProblemCode_RUNG_WITHOUT_VALUE_instance;
+  var ProblemCode_RUN_MIXES_KINDS_instance;
+  var ProblemCode_RUNG_CARRIES_TARGETS_instance;
   function ProblemCode(name, ordinal) {
     Enum.call(this, name, ordinal);
   }
@@ -367,9 +377,29 @@
     static_init();
     return ProblemCode_INVALID_RPE_instance;
   }
-  function ProblemCode_INVALID_RUNG_getInstance() {
+  function ProblemCode_INVALID_REST_getInstance() {
     static_init();
-    return ProblemCode_INVALID_RUNG_instance;
+    return ProblemCode_INVALID_REST_instance;
+  }
+  function ProblemCode_RUNG_WITHOUT_ANCHOR_getInstance() {
+    static_init();
+    return ProblemCode_RUNG_WITHOUT_ANCHOR_instance;
+  }
+  function ProblemCode_RUNG_UNDER_WARMUP_getInstance() {
+    static_init();
+    return ProblemCode_RUNG_UNDER_WARMUP_instance;
+  }
+  function ProblemCode_RUNG_WITHOUT_VALUE_getInstance() {
+    static_init();
+    return ProblemCode_RUNG_WITHOUT_VALUE_instance;
+  }
+  function ProblemCode_RUN_MIXES_KINDS_getInstance() {
+    static_init();
+    return ProblemCode_RUN_MIXES_KINDS_instance;
+  }
+  function ProblemCode_RUNG_CARRIES_TARGETS_getInstance() {
+    static_init();
+    return ProblemCode_RUNG_CARRIES_TARGETS_instance;
   }
   function get_json() {
     _init_properties_ProgramJson_kt__8o3jdm();
@@ -3280,7 +3310,8 @@
       return false;
     return true;
   };
-  function plan(snapshot, edit) {
+  function plan(snapshot, edit, deviceNewestWrite) {
+    deviceNewestWrite = deviceNewestWrite === VOID ? null : deviceNewestWrite;
     var tmp0_elvis_lhs = edit.edit_1;
     var tmp;
     if (tmp0_elvis_lhs == null) {
@@ -3302,9 +3333,17 @@
     // Inline function 'kotlin.collections.isNotEmpty' call
     if (!invalid.isEmpty_y1axqb_k$())
       return new Refused(invalid);
-    var latest = latestWrite(snapshot);
-    if (compare(latest, marker.baseExportedAt_1) > 0) {
-      return new Refused(listOf(new ProgramProblem(ProblemCode_STALE_BASE_getInstance(), 'edit.baseExportedAt', latest.toString())));
+    var fromDocument = latestWrite(snapshot);
+    var tmp_0;
+    if (deviceNewestWrite == null) {
+      tmp_0 = fromDocument;
+    } else {
+      // Inline function 'kotlin.comparisons.maxOf' call
+      tmp_0 = compare(fromDocument, deviceNewestWrite) >= 0 ? fromDocument : deviceNewestWrite;
+    }
+    var newestWrite = tmp_0;
+    if (compare(newestWrite, marker.baseExportedAt_1) > 0) {
+      return new Refused(listOf(new ProgramProblem(ProblemCode_STALE_BASE_getInstance(), 'edit.baseExportedAt', newestWrite.toString())));
     }
     // Inline function 'kotlin.collections.mutableListOf' call
     var changes = ArrayList_init_$Create$_0();
@@ -3323,8 +3362,8 @@
     var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
     while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
       var element_0 = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$6 = element_0.id_1;
-      destination.put_4fpzoq_k$(tmp$ret$6, element_0);
+      var tmp$ret$7 = element_0.id_1;
+      destination.put_4fpzoq_k$(tmp$ret$7, element_0);
     }
     var snapshotSlots = destination;
     // Inline function 'kotlin.collections.map' call
@@ -3334,8 +3373,8 @@
     var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
       var item = _iterator__ex2g4s_0.next_20eer_k$();
-      var tmp$ret$9 = item.id_1;
-      destination_0.add_utx5q5_k$(tmp$ret$9);
+      var tmp$ret$10 = item.id_1;
+      destination_0.add_utx5q5_k$(tmp$ret$10);
     }
     var editSlotIds = toSet(destination_0);
     // Inline function 'kotlin.collections.forEach' call
@@ -3344,20 +3383,20 @@
       var element_1 = _iterator__ex2g4s_1.next_20eer_k$();
       var old = snapshotSlots.get_wei43m_k$(element_1.id_1);
       var tmp0 = edit.templates_1;
-      var tmp$ret$12;
+      var tmp$ret$13;
       $l$block: {
         // Inline function 'kotlin.collections.firstOrNull' call
         var _iterator__ex2g4s_2 = tmp0.iterator_jk1svi_k$();
         while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
           var element_2 = _iterator__ex2g4s_2.next_20eer_k$();
           if (element_2.id_1 === element_1.templateId_1) {
-            tmp$ret$12 = element_2;
+            tmp$ret$13 = element_2;
             break $l$block;
           }
         }
-        tmp$ret$12 = null;
+        tmp$ret$13 = null;
       }
-      var tmp0_safe_receiver = tmp$ret$12;
+      var tmp0_safe_receiver = tmp$ret$13;
       var name = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.name_1;
       if (old == null) {
         // Inline function 'kotlin.collections.plusAssign' call
@@ -3385,20 +3424,20 @@
     while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
       var element_6 = _iterator__ex2g4s_4.next_20eer_k$();
       var tmp0_1 = snapshot.templates_1;
-      var tmp$ret$21;
+      var tmp$ret$22;
       $l$block_0: {
         // Inline function 'kotlin.collections.firstOrNull' call
         var _iterator__ex2g4s_5 = tmp0_1.iterator_jk1svi_k$();
         while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
           var element_7 = _iterator__ex2g4s_5.next_20eer_k$();
           if (element_7.id_1 === element_6.templateId_1) {
-            tmp$ret$21 = element_7;
+            tmp$ret$22 = element_7;
             break $l$block_0;
           }
         }
-        tmp$ret$21 = null;
+        tmp$ret$22 = null;
       }
-      var tmp0_safe_receiver_0 = tmp$ret$21;
+      var tmp0_safe_receiver_0 = tmp$ret$22;
       var name_0 = tmp0_safe_receiver_0 == null ? null : tmp0_safe_receiver_0.name_1;
       // Inline function 'kotlin.collections.plusAssign' call
       var element_8 = new Change(ChangeKind_SLOT_REMOVED_getInstance(), element_6.id_1, name_0);
@@ -3412,8 +3451,8 @@
     var _iterator__ex2g4s_6 = this_2.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_6.hasNext_bitz1p_k$()) {
       var element_9 = _iterator__ex2g4s_6.next_20eer_k$();
-      var tmp$ret$26 = element_9.id_1;
-      destination_2.put_4fpzoq_k$(tmp$ret$26, element_9);
+      var tmp$ret$27 = element_9.id_1;
+      destination_2.put_4fpzoq_k$(tmp$ret$27, element_9);
     }
     var snapshotTemplates = destination_2;
     // Inline function 'kotlin.collections.forEach' call
@@ -3438,8 +3477,8 @@
     var _iterator__ex2g4s_8 = this_3.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_8.hasNext_bitz1p_k$()) {
       var item_0 = _iterator__ex2g4s_8.next_20eer_k$();
-      var tmp$ret$33 = item_0.templateId_1;
-      destination_3.add_utx5q5_k$(tmp$ret$33);
+      var tmp$ret$34 = item_0.templateId_1;
+      destination_3.add_utx5q5_k$(tmp$ret$34);
     }
     var editSlotTemplateIds = toSet(destination_3);
     // Inline function 'kotlin.collections.filter' call
@@ -3459,8 +3498,8 @@
     var _iterator__ex2g4s_10 = destination_4.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_10.hasNext_bitz1p_k$()) {
       var item_1 = _iterator__ex2g4s_10.next_20eer_k$();
-      var tmp$ret$39 = item_1.templateId_1;
-      destination_5.add_utx5q5_k$(tmp$ret$39);
+      var tmp$ret$40 = item_1.templateId_1;
+      destination_5.add_utx5q5_k$(tmp$ret$40);
     }
     // Inline function 'kotlin.collections.filter' call
     // Inline function 'kotlin.collections.filterTo' call
@@ -3476,24 +3515,24 @@
     var _iterator__ex2g4s_12 = distinct(destination_6).iterator_jk1svi_k$();
     while (_iterator__ex2g4s_12.hasNext_bitz1p_k$()) {
       var element_15 = _iterator__ex2g4s_12.next_20eer_k$();
-      var tmp_0 = WarningCode_WORKOUT_KEPT_getInstance();
+      var tmp_1 = WarningCode_WORKOUT_KEPT_getInstance();
       var tmp0_3 = snapshot.templates_1;
-      var tmp$ret$45;
+      var tmp$ret$46;
       $l$block_1: {
         // Inline function 'kotlin.collections.firstOrNull' call
         var _iterator__ex2g4s_13 = tmp0_3.iterator_jk1svi_k$();
         while (_iterator__ex2g4s_13.hasNext_bitz1p_k$()) {
           var element_16 = _iterator__ex2g4s_13.next_20eer_k$();
           if (element_16.id_1 === element_15) {
-            tmp$ret$45 = element_16;
+            tmp$ret$46 = element_16;
             break $l$block_1;
           }
         }
-        tmp$ret$45 = null;
+        tmp$ret$46 = null;
       }
-      var tmp0_safe_receiver_1 = tmp$ret$45;
+      var tmp0_safe_receiver_1 = tmp$ret$46;
       // Inline function 'kotlin.collections.plusAssign' call
-      var element_17 = new PlanWarning(tmp_0, element_15, tmp0_safe_receiver_1 == null ? null : tmp0_safe_receiver_1.name_1);
+      var element_17 = new PlanWarning(tmp_1, element_15, tmp0_safe_receiver_1 == null ? null : tmp0_safe_receiver_1.name_1);
       warnings.add_utx5q5_k$(element_17);
     }
     // Inline function 'kotlin.collections.map' call
@@ -3503,8 +3542,8 @@
     var _iterator__ex2g4s_14 = this_4.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_14.hasNext_bitz1p_k$()) {
       var item_2 = _iterator__ex2g4s_14.next_20eer_k$();
-      var tmp$ret$50 = item_2.id_1;
-      destination_7.add_utx5q5_k$(tmp$ret$50);
+      var tmp$ret$51 = item_2.id_1;
+      destination_7.add_utx5q5_k$(tmp$ret$51);
     }
     var editTemplateIds = toSet(destination_7);
     // Inline function 'kotlin.collections.map' call
@@ -3514,8 +3553,8 @@
     var _iterator__ex2g4s_15 = this_5.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_15.hasNext_bitz1p_k$()) {
       var item_3 = _iterator__ex2g4s_15.next_20eer_k$();
-      var tmp$ret$53 = item_3.id_1;
-      destination_8.add_utx5q5_k$(tmp$ret$53);
+      var tmp$ret$54 = item_3.id_1;
+      destination_8.add_utx5q5_k$(tmp$ret$54);
     }
     var editTemplateExerciseIds = toSet(destination_8);
     // Inline function 'kotlin.collections.associateBy' call
@@ -3526,8 +3565,8 @@
     var _iterator__ex2g4s_16 = this_6.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_16.hasNext_bitz1p_k$()) {
       var element_18 = _iterator__ex2g4s_16.next_20eer_k$();
-      var tmp$ret$56 = element_18.id_1;
-      destination_9.put_4fpzoq_k$(tmp$ret$56, element_18);
+      var tmp$ret$57 = element_18.id_1;
+      destination_9.put_4fpzoq_k$(tmp$ret$57, element_18);
     }
     var snapshotTemplateExercises = destination_9;
     // Inline function 'kotlin.collections.forEach' call
@@ -3572,8 +3611,8 @@
     var _iterator__ex2g4s_20 = this_7.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_20.hasNext_bitz1p_k$()) {
       var element_25 = _iterator__ex2g4s_20.next_20eer_k$();
-      var tmp$ret$69 = element_25.id_1;
-      destination_11.put_4fpzoq_k$(tmp$ret$69, element_25);
+      var tmp$ret$70 = element_25.id_1;
+      destination_11.put_4fpzoq_k$(tmp$ret$70, element_25);
     }
     var snapshotSets = destination_11;
     // Inline function 'kotlin.collections.map' call
@@ -3583,8 +3622,8 @@
     var _iterator__ex2g4s_21 = this_8.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_21.hasNext_bitz1p_k$()) {
       var item_4 = _iterator__ex2g4s_21.next_20eer_k$();
-      var tmp$ret$72 = item_4.id_1;
-      destination_12.add_utx5q5_k$(tmp$ret$72);
+      var tmp$ret$73 = item_4.id_1;
+      destination_12.add_utx5q5_k$(tmp$ret$73);
     }
     var editSetIds = toSet(destination_12);
     // Inline function 'kotlin.collections.forEach' call
@@ -3628,8 +3667,8 @@
     var _iterator__ex2g4s_25 = this_9.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_25.hasNext_bitz1p_k$()) {
       var item_5 = _iterator__ex2g4s_25.next_20eer_k$();
-      var tmp$ret$85 = item_5.id_1;
-      destination_14.add_utx5q5_k$(tmp$ret$85);
+      var tmp$ret$86 = item_5.id_1;
+      destination_14.add_utx5q5_k$(tmp$ret$86);
     }
     var snapshotExerciseIds = toSet(destination_14);
     // Inline function 'kotlin.collections.filter' call
@@ -3984,7 +4023,7 @@
       else {
         // Inline function 'kotlin.let' call
         if (tmp1_safe_receiver < 0 || tmp1_safe_receiver > 3600) {
-          validate$refuse(problems, ProblemCode_MALFORMED_getInstance(), path + '.restSeconds');
+          validate$refuse(problems, ProblemCode_INVALID_REST_getInstance(), path + '.restSeconds');
         }
       }
       var tmp2_safe_receiver = item_11.targetRpeHalves_1;
@@ -4177,13 +4216,13 @@
         }
         var path = 'templateSets(' + plannedId + ')[' + tmp0 + ']';
         if (!(item.targetWeightGrams_1 == null) || !(item.targetAssistanceGrams_1 == null) || !(item.targetRepsMin_1 == null) || !(item.targetRepsMax_1 == null)) {
-          refuse(ProblemCode_INVALID_RUNG_getInstance(), path, 'a rung carries no targets');
+          refuse(ProblemCode_RUNG_CARRIES_TARGETS_getInstance(), path, null);
         }
         var above = getOrNull(ordered, tmp0 - 1 | 0);
         if (above == null)
-          refuse(ProblemCode_INVALID_RUNG_getInstance(), path, 'no anchor above');
+          refuse(ProblemCode_RUNG_WITHOUT_ANCHOR_getInstance(), path, null);
         else if (above.role_1.equals(ProgramSetRole_WARMUP_getInstance())) {
-          refuse(ProblemCode_INVALID_RUNG_getInstance(), path, 'a warm-up cannot anchor a run');
+          refuse(ProblemCode_RUNG_UNDER_WARMUP_getInstance(), path, null);
         } else if (!above.role_1.get_isRung_ew5llb_k$()) {
           var tmp;
           if (item.role_1.equals(ProgramSetRole_DROP_getInstance())) {
@@ -4193,10 +4232,10 @@
             tmp = false;
           }
           if (tmp) {
-            refuse(ProblemCode_INVALID_RUNG_getInstance(), path, 'a drop run needs its value');
+            refuse(ProblemCode_RUNG_WITHOUT_VALUE_getInstance(), path, null);
           }
         } else if (!above.role_1.equals(item.role_1)) {
-          refuse(ProblemCode_INVALID_RUNG_getInstance(), path, 'a run is one kind of rung');
+          refuse(ProblemCode_RUN_MIXES_KINDS_getInstance(), path, null);
         }
       }
     }

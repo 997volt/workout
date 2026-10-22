@@ -72,8 +72,23 @@ enum class ProblemCode {
     /** A target effort is outside 1..10. */
     INVALID_RPE,
 
-    /** A rung does not sit under an anchor, or a run's first rung carries no value. */
-    INVALID_RUNG,
+    /** A rest is below zero or above an hour. */
+    INVALID_REST,
+
+    /** A rung is the first set of its plan, so nothing above it says what it takes off. */
+    RUNG_WITHOUT_ANCHOR,
+
+    /** A warm-up is the set above the rung, and a warm-up is not a working set to run down from. */
+    RUNG_UNDER_WARMUP,
+
+    /** A run's first rung is a drop and names no value to take off. */
+    RUNG_WITHOUT_VALUE,
+
+    /** A run changes kind part-way: a drop cannot continue as a cluster, or the reverse. */
+    RUN_MIXES_KINDS,
+
+    /** A rung carries a load or a rep target, which it has to take from the set above it instead. */
+    RUNG_CARRIES_TARGETS,
 }
 
 /** One refusal, located where the reader can act on it. */
