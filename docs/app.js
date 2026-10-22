@@ -7076,12 +7076,26 @@
     return change.name ? label + ': ' + change.name : label;
   }
 
+  /**
+   * Leaves the editor with nothing open (B184).
+   *
+   * Every path that refuses a file goes through here, because the previous program's working copy,
+   * its preview and the enabled Download are state, not screen: a failure that only rewrote the status
+   * line left the old edit one click from being downloaded under the new file's name.
+   */
+  function editorClear(message) {
+    ui.state.programEditor = null;
+    ui.elements.editorPreview.textContent = '';
+    editorRender();
+    if (message) { editorMessage(message); }
+  }
+
   function editorOpenText(text, fileName) {
     var parsed;
     try {
       parsed = JSON.parse(text);
     } catch (ignored) {
-      editorMessage('That does not look like JSON.');
+      editorClear('That does not look like JSON.');
       return;
     }
     if (isObject(parsed) && parsed.kind === EDITOR_DRAFT_KIND) {
@@ -7090,7 +7104,7 @@
     }
     if (isObject(parsed) && typeof parsed.formatVersion === 'number' && isObject(parsed.program)) {
       if (isObject(parsed.edit)) {
-        editorMessage('That is an edit, not a program. Open the program\'s export, or a draft.');
+        editorClear('That is an edit, not a program. Open the program\'s export, or a draft.');
         return;
       }
       editorLoadDocument(parsed, fileName);
@@ -7100,7 +7114,7 @@
       editorOfferBackup(parsed, fileName);
       return;
     }
-    editorMessage('That does not look like a program document or a backup.');
+    editorClear('That does not look like a program document or a backup.');
   }
 
   function editorLoadDocument(document, fileName) {
@@ -7133,12 +7147,12 @@
 
   function editorLoadDraft(draft, fileName) {
     if (!isObject(draft.working)) {
-      editorMessage('That draft is missing its program.');
+      editorClear('That draft is missing its program.');
       return;
     }
     var mode = draft.mode === 'new' ? 'new' : 'edit';
     if (mode === 'edit' && !isObject(draft.original)) {
-      editorMessage('That draft is missing the export it was made from.');
+      editorClear('That draft is missing the export it was made from.');
       return;
     }
     var working = editorDeepCopy(draft.working);
@@ -7161,11 +7175,13 @@
   function editorOfferBackup(backup, fileName) {
     var programs = (backup.programs || []).filter(function (row) { return row && !row.deletedAt; });
     if (programs.length === 0) {
-      editorMessage('That backup holds no programs.');
+      editorClear('That backup holds no programs.');
       return;
     }
+    // Nothing is open until a program is chosen: the question must not sit above the previous
+    // program's form with its Download still enabled (B184).
+    editorClear('');
     var host = ui.elements.programEditorHost;
-    host.textContent = '';
     host.appendChild(h('p', 'hint', 'That is a backup. Choose the program to edit:'));
     var select = document.createElement('select');
     programs.forEach(function (program) {
@@ -7178,7 +7194,7 @@
     host.appendChild(editorButton('Edit this program', function () {
       var document = programDocumentFromBackup(backup, select.value);
       if (!document) {
-        editorMessage('That program cannot be read from this backup.');
+        editorClear('That program cannot be read from this backup.');
         return;
       }
       editorLoadDocument(document, fileName);
