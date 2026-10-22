@@ -19,6 +19,11 @@ var fs = require('fs');
 var vm = require('vm');
 var api = require(path.join(__dirname, '..', 'app.js'));
 
+// The page reads the document's format version from the shared core rather than declaring one
+// (N183), so the generator loads the same committed build the page does.
+global.window = globalThis;
+global.window['workout:shared'] = require(path.join(__dirname, '..', 'shared', 'workout-shared.js'));
+
 /* ------------------------------------------------------------------ *
  * The synthetic backup (N160)
  * ------------------------------------------------------------------ */

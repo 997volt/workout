@@ -178,7 +178,7 @@
 
     t.check('a new program is a valid document with no edit marker', function () {
       var document = H.newProgramDocument('New block', 'pgm_test', 1000);
-      t.eq(document.formatVersion, 4);
+      t.eq(document.formatVersion, shared.programFormatVersion(), 'the core writes the version');
       t.eq(document.program.name, 'New block');
       t.eq(document.program.id, 'pgm_test');
       t.eq(document.slots.length, 0);

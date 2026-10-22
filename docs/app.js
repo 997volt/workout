@@ -4864,7 +4864,6 @@
    * Program sheets (N167)
    * ------------------------------------------------------------------ */
 
-  var PROGRAM_FORMAT_VERSION = 4;
   var PROGRAM_WEEKDAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
   var PROGRAM_COLUMNS = {
     program: ['program'],
@@ -5223,7 +5222,7 @@
     }
 
     var document = {
-      formatVersion: PROGRAM_FORMAT_VERSION,
+      formatVersion: programFormatVersion(),
       exportedAt: time,
       program: {
         id: programId,
@@ -5723,6 +5722,15 @@
       exercises = exercises.concat(state.catalogFile.exercises);
     }
     exercises = exercises.concat(window.SEEDED_EXERCISES || []);
+    // The document's format version comes from the shared core (N183), so a page without it cannot
+    // write a program table at all — say so rather than failing inside a render.
+    if (!programCore()) {
+      panel.textContent = '';
+      panel.appendChild(h('p', 'refusal',
+        'The program table cannot become a document: the shared core did not load. ' +
+        'Run ./gradlew :shared:syncSharedJs and reload the page.'));
+      return;
+    }
     var built = buildProgramDocument(sheet, {
       exportedAt: state.exportedAt,
       exercises: exercises
@@ -6406,6 +6414,22 @@
   }
 
   /**
+   * The document format the page writes, read from the core rather than declared here (N183).
+   *
+   * The core exports it for exactly this reason: a version in two places is the first thing to
+   * disagree, and the page would then stamp a new program with the version it remembered while the
+   * app refuses it. A page whose core did not load cannot write a document at all, and says so
+   * rather than guessing a number.
+   */
+  function programFormatVersion() {
+    var core = programCore();
+    if (!core) {
+      throw new Error('the shared core is not loaded; run ./gradlew :shared:syncSharedJs');
+    }
+    return core.programFormatVersion();
+  }
+
+  /**
    * A blank program, as the document the app adds (the same shape the sheet writes, N172).
    *
    * It has no `edit` marker: a new program is a proposal to add, and the app's insert-only merge is
@@ -6415,7 +6439,7 @@
   function newProgramDocument(name, id, time) {
     var now = typeof time === 'number' ? time : Date.now();
     return {
-      formatVersion: PROGRAM_FORMAT_VERSION_FOR_EDITOR,
+      formatVersion: programFormatVersion(),
       exportedAt: now,
       program: {
         id: typeof id === 'string' && id !== '' ? id : editorNewId('pgm'),
@@ -6561,7 +6585,7 @@
     });
 
     return {
-      formatVersion: PROGRAM_FORMAT_VERSION_FOR_EDITOR,
+      formatVersion: programFormatVersion(),
       exportedAt: typeof backup.exportedAt === 'number' ? backup.exportedAt : Date.now(),
       program: editorDeepCopy(program),
       slots: editorDeepCopy(slots),
@@ -6571,8 +6595,6 @@
       exercises: Object.keys(carried).map(function (id) { return editorDeepCopy(carried[id]); })
     };
   }
-
-  var PROGRAM_FORMAT_VERSION_FOR_EDITOR = 4;
 
   /** Resolves a typed name to an id, creating or carrying a movement when it is new (N47). */
   /**
