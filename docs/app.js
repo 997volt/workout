@@ -7213,6 +7213,8 @@
     try {
       checked = JSON.parse(core.validateJson(JSON.stringify(ed.working)));
     } catch (problem) {
+      ed.preview = null;
+      ui.elements.downloadProgramEdit.disabled = true;
       editorMessage('The shared core could not check this program: ' + problem);
       return;
     }
@@ -7254,6 +7256,8 @@
     try {
       planned = JSON.parse(core.planJson(JSON.stringify(ed.original), JSON.stringify(ed.working)));
     } catch (problem) {
+      ed.preview = null;
+      ui.elements.downloadProgramEdit.disabled = true;
       editorMessage('The shared core could not plan this edit: ' + problem);
       return;
     }
@@ -7304,10 +7308,12 @@
   function editorDownload() {
     var ed = ui.state.programEditor;
     if (!ed || !ed.working || !ed.preview || !ed.preview.ok) { return; }
+    // The download is the promise, and typing does not re-render, so the document is planned here and
+    // now rather than trusted from the last Preview (B185). A field that stopped being valid turns
+    // into the refusal in the preview panel instead of a file the app will refuse.
+    editorPreview();
+    if (!ed.preview || !ed.preview.ok) { return; }
     if (ed.mode === 'new') {
-      // The fields may have changed since the last check; the download is the promise.
-      editorCheckNew(programCore(), ed);
-      if (!ed.preview || !ed.preview.ok) { return; }
       downloadText(JSON.stringify(ed.working, null, 2) + '\n', 'program.json');
       announce('Downloaded program.json. Load it in Programs, then Load, to add it.');
       return;
