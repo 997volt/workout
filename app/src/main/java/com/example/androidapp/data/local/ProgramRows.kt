@@ -20,6 +20,8 @@ data class ProgramSummaryRow(
     val kind: ProgramKind,
     /** The day a block begins, as an epoch day, or null (N174). */
     val startDate: Long?,
+    /** When the row was written: the start a sequence that names none falls back to (N175). */
+    val createdAt: Long,
 )
 
 /**

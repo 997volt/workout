@@ -13,6 +13,14 @@ data class ProgramRun(
     val slot: ProgramSlot,
     /** True when nothing has been trained or skipped yet, so the run is at the first slot. */
     val isAtStart: Boolean,
+    /**
+     * True when a finite program has no session left (ROADMAP N175).
+     *
+     * Only a sequence can be complete: a weekly program's run wraps, because its schedule does. The
+     * slot is the last one in that case — there is no "next" — and the screens say the block is done
+     * rather than offering its first session again.
+     */
+    val isComplete: Boolean = false,
 )
 
 /**

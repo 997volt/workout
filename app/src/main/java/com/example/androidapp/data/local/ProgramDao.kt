@@ -32,6 +32,7 @@ interface ProgramDao {
                p.position AS position,
                p.kind AS kind,
                p.startDate AS startDate,
+               p.createdAt AS createdAt,
                (
                    SELECT COUNT(*) FROM program_slots ps
                    WHERE ps.programId = p.id AND ps.deletedAt IS NULL
@@ -52,6 +53,7 @@ interface ProgramDao {
                p.position AS position,
                p.kind AS kind,
                p.startDate AS startDate,
+               p.createdAt AS createdAt,
                (
                    SELECT COUNT(*) FROM program_slots ps
                    WHERE ps.programId = p.id AND ps.deletedAt IS NULL
@@ -77,6 +79,7 @@ interface ProgramDao {
                p.position AS position,
                p.kind AS kind,
                p.startDate AS startDate,
+               p.createdAt AS createdAt,
                (
                    SELECT COUNT(*) FROM program_slots ps
                    WHERE ps.programId = p.id AND ps.deletedAt IS NULL
@@ -96,6 +99,7 @@ interface ProgramDao {
                p.position AS position,
                p.kind AS kind,
                p.startDate AS startDate,
+               p.createdAt AS createdAt,
                (
                    SELECT COUNT(*) FROM program_slots ps
                    WHERE ps.programId = p.id AND ps.deletedAt IS NULL
@@ -124,6 +128,7 @@ interface ProgramDao {
                p.position AS position,
                p.kind AS kind,
                p.startDate AS startDate,
+               p.createdAt AS createdAt,
                (
                    SELECT COUNT(*) FROM program_slots ps
                    WHERE ps.programId = p.id AND ps.deletedAt IS NULL

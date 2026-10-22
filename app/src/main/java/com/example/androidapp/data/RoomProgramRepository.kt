@@ -12,6 +12,7 @@ import com.example.androidapp.data.local.ProgramRunDao
 import com.example.androidapp.data.local.ProgramSkipDao
 import com.example.androidapp.data.local.ProgramSkipEntity
 import com.example.androidapp.data.local.ProgramSlotEntity
+import com.example.androidapp.data.local.ProgramSummaryRow
 import com.example.androidapp.data.local.ProgramSubstitutionDao
 import com.example.androidapp.data.local.ProgramSubstitutionEntity
 import com.example.androidapp.data.local.WorkoutDatabase
@@ -32,6 +33,9 @@ import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgramRun
+import com.example.androidapp.domain.model.ProgramSession
+import com.example.androidapp.domain.model.ProgramKind
+import com.example.androidapp.domain.model.sequenceSchedule
 import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.RecordedSkip
@@ -56,6 +60,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
@@ -252,41 +257,88 @@ class RoomProgramRepository @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeProgramRun(programId: String): Flow<ProgramRun?> =
-        dao.observeSlotDetails(programId).flatMapLatest { rows ->
-            val slots = rows.map { it.toDomain() }
-            if (slots.isEmpty()) {
-                flowOf(null)
-            } else {
-                val slotIds = slots.map { it.id }
-                // The substitutions drive the session read: a session started from a stand-in
-                // template trains that slot, so its template has to be read too (P3.11).
-                substitutionDao.observeSubstitutionsForSlots(slotIds).flatMapLatest { substitutions ->
-                    val templates = (slots.map { it.templateId } + substitutions.map { it.templateId }).distinct()
-                    combine(
-                        runDao.observeFinishedSessions(templates),
-                        runDao.observeSkipsForSlots(slotIds),
-                    ) { sessions, skips ->
-                        // The zone is read when the data arrives rather than captured (B45); it is
-                        // the fallback only for a session recorded before N25.
-                        val zone = ZoneId.systemDefault()
-                        programRun(
-                            slots = slots,
-                            sessions = sessions.mapNotNull { it.toRunSession(zone) },
-                            skips = skips.map {
+        combine(
+            dao.observeProgram(programId),
+            dao.observeSlotDetails(programId),
+        ) { program, rows -> program to rows }
+            .flatMapLatest { (program, rows) ->
+                val slots = rows.map { it.toDomain() }
+                if (program == null || slots.isEmpty()) {
+                    flowOf(null)
+                } else {
+                    val slotIds = slots.map { it.id }
+                    // The substitutions drive the session read: a session started from a stand-in
+                    // template trains that slot, so its template has to be read too (P3.11).
+                    substitutionDao.observeSubstitutionsForSlots(slotIds).flatMapLatest { substitutions ->
+                        val templates =
+                            (slots.map { it.templateId } + substitutions.map { it.templateId }).distinct()
+                        combine(
+                            runDao.observeFinishedSessions(templates),
+                            runDao.observeSkipsForSlots(slotIds),
+                        ) { sessions, skips ->
+                            // The zone is read when the data arrives rather than captured (B45); it is
+                            // the fallback only for a session recorded before N25.
+                            val zone = ZoneId.systemDefault()
+                            val programSessions = sessions.mapNotNull { it.toRunSession(zone) }
+                            val recordedSkips = skips.map {
                                 RecordedSkip(slotId = it.slotId, weekStart = LocalDate.ofEpochDay(it.weekStart))
-                            },
-                            substitutions = substitutions.map {
-                                RecordedSubstitution(
-                                    slotId = it.slotId,
-                                    weekStart = LocalDate.ofEpochDay(it.weekStart),
-                                    templateId = it.templateId,
+                            }
+                            // A sequence's place is its own derivation (N175): a run that wrapped
+                            // would put the first session of the block back on the schedule.
+                            if (program.kind == ProgramKind.SEQUENCE) {
+                                sequenceRun(program, slots, programSessions, recordedSkips, zone)
+                            } else {
+                                programRun(
+                                    slots = slots,
+                                    sessions = programSessions,
+                                    skips = recordedSkips,
+                                    substitutions = substitutions.map {
+                                        RecordedSubstitution(
+                                            slotId = it.slotId,
+                                            weekStart = LocalDate.ofEpochDay(it.weekStart),
+                                            templateId = it.templateId,
+                                        )
+                                    },
                                 )
-                            },
-                        )
+                            }
+                        }
                     }
                 }
             }
+
+    /**
+     * A sequence's place, as the editor and home read it (ROADMAP N175).
+     *
+     * From a *finished* block there is no next session, and the run says so instead of pointing back
+     * at the first: the slot it carries is the last one, which is where the block ended.
+     */
+    private fun sequenceRun(
+        program: ProgramSummaryRow,
+        slots: List<ProgramSlot>,
+        sessions: List<ProgramSession>,
+        skips: List<RecordedSkip>,
+        zone: ZoneId,
+    ): ProgramRun? {
+        val start = program.startDate?.let(LocalDate::ofEpochDay)
+            ?: Instant.ofEpochMilli(program.createdAt).atZone(zone).toLocalDate()
+        val schedule = sequenceSchedule(
+            slots = slots,
+            sessions = sessions,
+            skips = skips,
+            start = start,
+            today = LocalDate.now(zone),
+        ) ?: return null
+        val next = schedule.next
+        return if (next != null) {
+            ProgramRun(slot = next, isAtStart = schedule.settled == 0)
+        } else {
+            ProgramRun(
+                slot = slots.sortedBy { it.position }.last(),
+                isAtStart = false,
+                isComplete = true,
+            )
         }
+    }
 
     override suspend fun pendingOccurrences(
         today: LocalDate,
