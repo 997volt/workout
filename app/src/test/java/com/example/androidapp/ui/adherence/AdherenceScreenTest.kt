@@ -6,7 +6,10 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -20,6 +23,7 @@ import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.SlotAdherence
 import com.example.androidapp.domain.model.Streak
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.google.common.truth.Truth.assertThat
@@ -74,6 +78,27 @@ class AdherenceScreenTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun aFollowedBlock_saysHowFarItIs() {
+        // N189: the ratio, grid and streak leave a sequence out, so its own place is what the screen
+        // says about it — and a finished block does not read as waiting on its last day.
+        setScreen(
+            state = AdherenceUiState(
+                month = october,
+                currentMonth = october,
+                isLoading = false,
+                blocks = listOf(
+                    BlockProgress(name = "Peak", position = 4, length = 9, complete = false),
+                    BlockProgress(name = "Base", position = 6, length = 6, complete = true),
+                ),
+            ),
+        )
+
+        composeTestRule.onAllNodesWithTag(TestTags.Adherence.BLOCK_PROGRESS).assertCountEquals(2)
+        composeTestRule.onNodeWithText("Peak · day 4 of 9", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Base · complete", substring = true).assertIsDisplayed()
     }
 
     @Test

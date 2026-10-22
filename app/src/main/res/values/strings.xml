@@ -483,6 +483,9 @@
     <string name="home_block_skip_label">Skip day %1$d of %2$d</string>
     <string name="home_block_skipped">Session skipped.</string>
     <string name="home_block_finished">Block complete: %1$s.</string>
+    <!-- A block is excluded from the ratio, so its own place is what this screen says (N189). -->
+    <string name="adherence_block_progress">%1$s · day %2$d of %3$d</string>
+    <string name="adherence_block_complete">%1$s · complete</string>
     <string name="home_substitute_title">Train something else?</string>
     <string name="home_substitute_clear">Restore the scheduled workout</string>
     <plurals name="home_plan_exercises">

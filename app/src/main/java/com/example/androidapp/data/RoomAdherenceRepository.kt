@@ -17,6 +17,7 @@ import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.AdherenceReport
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.DeloadDay
 import com.example.androidapp.domain.model.DeloadWeek
@@ -30,6 +31,7 @@ import com.example.androidapp.domain.model.RecordedSubstitution
 import com.example.androidapp.domain.model.Streak
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.AdherenceRepository
+import com.example.androidapp.domain.repository.ProgramRepository
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
@@ -37,6 +39,12 @@ import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 
 /**
  * Room-backed [AdherenceRepository] (ROADMAP P3.5, P3.13).
@@ -46,8 +54,10 @@ import javax.inject.Singleton
  * sessions, and the skips, deloads and substitutions recorded against them.
  */
 @Singleton
+@OptIn(ExperimentalCoroutinesApi::class)
 class RoomAdherenceRepository @Inject constructor(
     private val database: WorkoutDatabase,
+    private val programs: ProgramRepository,
     private val timeSource: TimeSource,
 ) : AdherenceRepository {
 
@@ -302,6 +312,33 @@ class RoomAdherenceRepository @Inject constructor(
             skipDao.softDeleteSkip(slotId, epochDay, now)
         }
     }
+
+    override fun observeBlockProgress(): Flow<List<BlockProgress>> =
+        programs.observePrograms()
+            .map { list -> list.filter { it.kind == ProgramKind.SEQUENCE && it.isActive } }
+            .flatMapLatest { sequences ->
+                if (sequences.isEmpty()) {
+                    flowOf(emptyList())
+                } else {
+                    combine(
+                        sequences.map { program ->
+                            programs.observeSequenceSchedule(program.id)
+                                .map { schedule -> program.name to schedule }
+                        },
+                    ) { pairs ->
+                        pairs.mapNotNull { (name, schedule) ->
+                            schedule?.let {
+                                BlockProgress(
+                                    name = name,
+                                    position = it.position,
+                                    length = it.length,
+                                    complete = it.isComplete,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
 
     /** The union of the active programs' slots, in the authored order (P3.12). */
     /**

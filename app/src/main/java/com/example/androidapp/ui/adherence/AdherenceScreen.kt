@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MonthAdherence
 import com.example.androidapp.domain.model.OccurrenceState
@@ -295,6 +296,32 @@ private fun MonthHeader(
  * Null is two different facts — no program was followed, or the program scheduled nothing
  * elapsed this month — and they are worded apart because only one of them is the user's to fix.
  */
+/** One line per followed block: its place, or that it is done (ROADMAP N189). */
+@Composable
+private fun BlockProgressLines(blocks: List<BlockProgress>) {
+    if (blocks.isEmpty()) {
+        return
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        blocks.forEach { block ->
+            Text(
+                text = if (block.complete) {
+                    stringResource(R.string.adherence_block_complete, block.name)
+                } else {
+                    stringResource(
+                        R.string.adherence_block_progress,
+                        block.name,
+                        block.position,
+                        block.length,
+                    )
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.testTag(TestTags.Adherence.BLOCK_PROGRESS),
+            )
+        }
+    }
+}
+
 @Composable
 private fun AdherenceBody(
     state: AdherenceUiState,
@@ -322,6 +349,10 @@ private fun AdherenceBody(
         // A number with its start, never a nudge: the app has no notifications, and a streak that
         // pushes is a coach (ROADMAP P3.15).
         state.streak?.let { StreakSummary(streak = it) }
+
+        // The blocks this screen cannot score, by their own measure (ROADMAP N189): a sequence's
+        // weekday is not a recurrence, so its progress replaces the ratio it is excluded from.
+        BlockProgressLines(blocks = state.blocks)
 
         Calendar(month = state.month, adherence = state.adherence, onSelectDay = onSelectDay)
 

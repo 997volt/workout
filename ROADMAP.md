@@ -26,7 +26,6 @@ Nothing here is fixed.
 
 | # | Severity | What | Fix |
 | --- | --- | --- | --- |
-| N189 | medium | **A block counts for nothing in the weekly record, and nothing else counts it.** The ratio, the grid, the breakdown and the streak exclude sequences — the right call, since a block's weekday is not a recurrence — but no surface replaces them: beyond the home card and the editor's label, a lifter on a block sees their streak and their month's ratio stop, with nothing saying the block itself is 4 of 9 done. | A block's own progress where the weekly record would otherwise be: the adherence screen says how far the block is, so training a block is not silent in the record. |
 | N190 | low | **The docs still describe the table before its two new columns.** IMPORT-HELPER lists `Kind` and `Start` without saying what they accept, that they are said once for the whole table, or that a block's order is the rows' day order; its "a day with no weekday is a workout the lifter starts by hand" is false for a block (no weekday means the day after the last one); its "every part is editable" omits the kind and the start; and the page's own column hint and missing-column message still name the old set, so the new columns are undiscoverable from the page. | State the two columns where the table's columns are stated, fix the two sentences that are only true of a weekly program, and add them to the page's hint and its missing-column message. |
 
 B194–B196 are one mistake on three surfaces: a block is still read as a week by the day's plan, by the

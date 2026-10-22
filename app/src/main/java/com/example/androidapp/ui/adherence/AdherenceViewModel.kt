@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MonthAdherence
 import com.example.androidapp.domain.model.MonthlyRatio
@@ -73,6 +74,14 @@ data class AdherenceUiState(
      * [streak]: a point per month, with a null ratio where a month scored nothing.
      */
     val history: List<MonthlyRatio> = emptyList(),
+    /**
+     * The followed blocks and how far they got (ROADMAP N189).
+     *
+     * The ratio, the grid and the streak leave a sequence out because its weekday is not a
+     * recurrence; this is what replaces them for a lifter who is training one, so a block is not
+     * silent in the record it cannot be scored by.
+     */
+    val blocks: List<BlockProgress> = emptyList(),
     val error: DataError? = null,
 ) {
     /** False on the current month: the calendar navigates back through history, never forward. */
@@ -143,12 +152,16 @@ class AdherenceViewModel @Inject constructor(
             if (date == null) flowOf(null) else flow { emit(loadDay(date)) }
         }
 
+    /** The followed blocks' places (ROADMAP N189), read with the adherence record itself. */
+    private val blockProgress = adherence.observeBlockProgress()
+
     val uiState: StateFlow<AdherenceUiState> = combine(
         shownMonth.mapLatest { month -> load(month) },
         writeError,
         day,
-    ) { loaded, failure, openDay ->
-        loaded.copy(error = failure ?: loaded.error, day = openDay)
+        blockProgress,
+    ) { loaded, failure, openDay, blocks ->
+        loaded.copy(error = failure ?: loaded.error, day = openDay, blocks = blocks)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),

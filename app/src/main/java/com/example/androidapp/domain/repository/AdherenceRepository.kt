@@ -2,9 +2,11 @@ package com.example.androidapp.domain.repository
 
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.AdherenceReport
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MonthlyRatio
 import com.example.androidapp.domain.model.Streak
+import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
@@ -18,6 +20,15 @@ import java.time.ZoneId
  * arithmetic; this is only where the rows come from.
  */
 interface AdherenceRepository {
+
+    /**
+     * The followed blocks and how far they got (ROADMAP N189).
+     *
+     * The ratio, the grid, the breakdown and the streak leave a sequence out because its weekday is
+     * not a recurrence; this is what replaces them for a lifter training a block, so a block is not
+     * silent in the record it cannot be scored by.
+     */
+    fun observeBlockProgress(): Flow<List<BlockProgress>>
 
     /**
      * One month of adherence: what the active programs scheduled, what happened, and the days

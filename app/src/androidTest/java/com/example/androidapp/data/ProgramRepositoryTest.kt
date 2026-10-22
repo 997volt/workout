@@ -66,7 +66,7 @@ class ProgramRepositoryTest {
             WorkoutDatabase::class.java,
         ).build()
         repository = RoomProgramRepository(database, clock)
-        adherence = RoomAdherenceRepository(database, clock)
+        adherence = RoomAdherenceRepository(database, repository, clock)
         runTest {
             database.exerciseDao().insertAll(listOf(exercise("back-squat")))
         }

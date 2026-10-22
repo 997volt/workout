@@ -74,7 +74,7 @@ class DeloadRepositoryTest {
         deloads = RoomDeloadRepository(database, clock)
         programs = RoomProgramRepository(database, clock)
         templates = RoomTemplateRepository(database, clock)
-        adherence = RoomAdherenceRepository(database, clock)
+        adherence = RoomAdherenceRepository(database, programs, clock)
         runTest {
             database.exerciseDao().insertAll(listOf(exercise("back-squat")))
             program = (programs.createProgram("Upper/Lower") as DataResult.Success).data

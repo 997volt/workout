@@ -25,6 +25,9 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.Flow
+import com.example.androidapp.domain.model.BlockProgress
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
@@ -329,6 +332,8 @@ class AdherenceViewModelTest {
 
     /** Hand-written, because the project uses no mocking framework (DECISIONS.md). */
     private class FakeAdherenceRepository : AdherenceRepository {
+        override fun observeBlockProgress(): Flow<List<BlockProgress>> = flowOf(emptyList())
+
         var report: DataResult<AdherenceReport> =
             DataResult.Success(AdherenceReport(hasActiveProgram = true, adherence = MonthAdherence()))
 

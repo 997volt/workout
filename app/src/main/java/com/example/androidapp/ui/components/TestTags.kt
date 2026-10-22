@@ -1008,6 +1008,9 @@ object TestTags {
         /** Shown in place of the ratio when there is no elapsed schedule to score. */
         const val NO_RATIO = "adherence_no_ratio"
 
+        /** A followed block's own progress line (B193's siblings, N189). */
+        const val BLOCK_PROGRESS = "adherence_block_progress"
+
         /** The weeks that can be marked as a deload (ROADMAP P3.10). */
         const val DELOAD_TITLE = "adherence_deload_title"
 
