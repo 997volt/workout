@@ -413,6 +413,26 @@
       t.eq(set.dropValueGrams, null);
     });
 
+    check('a Start without a block is refused, and leaving a block clears it (B205)', function () {
+      var parsed = H.parseProgramSheet(
+        'Day\tExercise\tSets\tReps\tStart\n' +
+        'A\tSquat\t3\t5\t2026-10-05\n'
+      );
+      t.ok(parsed.problems.some(function (problem) {
+        return problem.message.indexOf('Start needs') !== -1;
+      }), 'the table is told why');
+
+      t.eq(H.programStartOf({ kind: 'WEEKLY', start: 20731 }), null, 'a weekly program writes no start');
+      t.eq(H.programStartOf({ kind: 'SEQUENCE', start: 20731 }), 20731);
+
+      var working = H.newProgramDocument('Peak', 'pgm_1', 1000);
+      working.program.kind = 'SEQUENCE';
+      working.program.startDate = 20731;
+      H.editorSetKind(working, 'WEEKLY');
+      t.eq(working.program.startDate, null, 'the hidden date is gone');
+      t.eq(working.program.kind, 'WEEKLY');
+    });
+
     check('a date must be the day it says, and an unreadable one renders nothing (B204)', function () {
       t.eq(H.parseProgramDay('2026-10-05'), 20731, 'a real day is its epoch day');
       t.eq(H.parseProgramDay('2026-02-31'), null, 'February has no 31st');

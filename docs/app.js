@@ -5114,6 +5114,11 @@
         sheet.kind = distinct[0];
       }
     }
+    // A Start without Kind is two contradictory statements, and a weekly program's start is a field
+    // nothing reads: refuse it rather than write it and hide it (B205).
+    if (has(sheet, 'start') && sheet.kind !== 'SEQUENCE') {
+      sheet.problems.push({ message: 'A Start needs Kind: block.' });
+    }
     if (has(sheet, 'start')) {
       var days = sheet.start.map(parseProgramDay);
       if (days.indexOf(null) !== -1) {
@@ -5319,7 +5324,7 @@
         // Type-checked rather than defaulted: a table that failed to parse still builds a preview,
         // and an array left in this field would be a kind no reader can name.
         kind: sheet.kind === 'SEQUENCE' ? 'SEQUENCE' : 'WEEKLY',
-        startDate: typeof sheet.start === 'number' ? sheet.start : null,
+        startDate: programStartOf(sheet),
         createdAt: time,
         updatedAt: time,
         deletedAt: null
@@ -7095,7 +7100,7 @@
       { value: 'WEEKLY', label: 'Every week' },
       { value: 'SEQUENCE', label: 'One block' }
     ], working.program.kind || 'WEEKLY', function (value) {
-      working.program.kind = value;
+      editorSetKind(working, value);
       editorRender();
     }, 'root:kind'));
     if ((working.program.kind || 'WEEKLY') === 'SEQUENCE') {
@@ -7114,6 +7119,17 @@
       editorRender();
     }, 'add-day'));
     host.appendChild(addDay);
+  }
+
+  /**
+   * A program's kind, and the start that only a block has (B205).
+   *
+   * Switching a block back to "every week" kept its start date, hid the field that could have cleared
+   * it, and reported no start change — so the app kept a date no screen could show.
+   */
+  function editorSetKind(working, kind) {
+    working.program.kind = kind;
+    if (kind !== 'SEQUENCE') { working.program.startDate = null; }
   }
 
   function editorDayNode(working, slot) {
@@ -7556,6 +7572,16 @@
 
   /** The file a download writes: the working copy as it stands, and the name it gets (B185). */
   /**
+   * The start a table's document carries: only a block's, and only a real day (B205).
+   *
+   * A weekly program's start is a field nothing reads, and a table that names one without a kind is
+   * refused by the resolver; this is the belt that keeps such a value out of the document anyway.
+   */
+  function programStartOf(sheet) {
+    return sheet.kind === 'SEQUENCE' && typeof sheet.start === 'number' ? sheet.start : null;
+  }
+
+  /**
    * What the program table's preview says about the table (B203).
    *
    * Its kind and, for a block, its start, beside the counts: a table authored as a block used to
@@ -7880,9 +7906,11 @@
     editorChangeText: editorChangeText,
     editorSummary: editorSummary,
     programPanelSummary: programPanelSummary,
+    programStartOf: programStartOf,
     parseProgramDay: parseProgramDay,
     editorParseDay: editorParseDay,
     editorDayText: editorDayText,
+    editorSetKind: editorSetKind,
     editorSharedProgramNames: editorSharedProgramNames,
     editorMove: editorMove,
     editorParseInt: editorParseInt,
