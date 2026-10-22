@@ -1,0 +1,9 @@
+# The overlay `:shared` loads after [detekt.yml](detekt.yml) (ROADMAP N179).
+#
+# detekt.yml carries two sections for rulesets only the app loads — `formatting` (the plugin is on
+# the app's classpath so `detektFormattingCheck` can load it) and `Compose`. The shared core has
+# neither, and detekt refuses a config property whose ruleset is not on the classpath. Switching
+# validation off here is not a second rules source: the file is the same one, and `:app:detekt`
+# validates it on every run, so a misspelled rule is still caught — by the module that can.
+config:
+  validation: false

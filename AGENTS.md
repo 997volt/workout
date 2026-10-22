@@ -82,7 +82,7 @@ Match these — they are the existing ones. Reasons, scope and rejected alternat
 `lint` fails on warnings and detekt carries the Compose ruleset. Run what CI runs:
 
 ```sh
-./gradlew testDebugUnitTest :shared:jvmTest :shared:jsNodeTest lint detekt assembleDebug assembleRelease --console=plain
+./gradlew testDebugUnitTest :shared:jvmTest :shared:jsNodeTest lint detekt :shared:detekt assembleDebug assembleRelease --console=plain
 ```
 
 [`DocsConsistencyTest`](app/src/test/java/com/example/androidapp/DocsConsistencyTest.kt)

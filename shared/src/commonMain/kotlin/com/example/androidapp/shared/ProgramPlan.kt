@@ -73,44 +73,83 @@ fun plan(
     edit: ProgramDocument,
     deviceNewestWrite: Long? = null,
 ): PlanResult {
-    val marker = edit.edit ?: return PlanResult.Refused(
-        listOf(ProgramProblem(ProblemCode.NO_EDIT_MARKER, "edit")),
-    )
-    if (edit.program.id != snapshot.program.id) {
-        return PlanResult.Refused(
-            listOf(ProgramProblem(ProblemCode.PROGRAM_MISMATCH, "program.id", edit.program.id)),
-        )
+    refusalProblems(snapshot, edit, deviceNewestWrite)?.let { return PlanResult.Refused(it) }
+
+    val warnings = mutableListOf<PlanWarning>()
+    val changes = buildList {
+        addAll(planProgram(snapshot, edit))
+        addAll(planSlots(snapshot, edit, warnings))
+        addAll(planTemplates(snapshot, edit))
+        addAll(planTemplateExercises(snapshot, edit))
+        addAll(planSets(snapshot, edit))
+        addAll(planExercises(snapshot, edit, warnings))
     }
-    if (snapshot.program.deletedAt != null) {
-        return PlanResult.Refused(
-            listOf(ProgramProblem(ProblemCode.PROGRAM_MISSING, "program.id", edit.program.id)),
-        )
-    }
-    if (edit.program.deletedAt != null) {
-        return PlanResult.Refused(
-            listOf(ProgramProblem(ProblemCode.MALFORMED, "program.deletedAt")),
-        )
+    return PlanResult.Ready(changes, warnings)
+}
+
+/**
+ * Why the edit cannot be planned, or null when it can (N171).
+ *
+ * The order is the order the answers depend on: the envelope, the two programs, the body, and only
+ * then the clock — a document that is not a document is not stale. Validation runs before the
+ * staleness check because a refused document's warnings would be about rows that will not be written.
+ */
+private fun refusalProblems(
+    snapshot: ProgramDocument,
+    edit: ProgramDocument,
+    deviceNewestWrite: Long?,
+): List<ProgramProblem>? {
+    val marker = edit.edit
+    val shape = when {
+        marker == null -> ProgramProblem(ProblemCode.NO_EDIT_MARKER, "edit")
+        edit.program.id != snapshot.program.id ->
+            ProgramProblem(ProblemCode.PROGRAM_MISMATCH, "program.id", edit.program.id)
+
+        snapshot.program.deletedAt != null ->
+            ProgramProblem(ProblemCode.PROGRAM_MISSING, "program.id", edit.program.id)
+
+        edit.program.deletedAt != null -> ProgramProblem(ProblemCode.MALFORMED, "program.deletedAt")
+        else -> null
     }
     val invalid = validate(edit)
-    if (invalid.isNotEmpty()) return PlanResult.Refused(invalid)
+    val stale = marker?.let { staleProblem(snapshot, it, deviceNewestWrite) }
+    return shape?.let { listOf(it) }
+        ?: invalid.takeIf { it.isNotEmpty() }
+        ?: stale?.let { listOf(it) }
+}
 
-    // The document's own rows are the page's whole answer; the device's read adds the rows it has
-    // deleted, which the document cannot carry at all (B183).
+/** The staleness refusal, or null when the edit's base still matches every row the device holds. */
+private fun staleProblem(
+    snapshot: ProgramDocument,
+    marker: EditMarker,
+    deviceNewestWrite: Long?,
+): ProgramProblem? {
     val fromDocument = latestWrite(snapshot)
-    val newestWrite = if (deviceNewestWrite == null) fromDocument else maxOf(fromDocument, deviceNewestWrite)
-    if (newestWrite > marker.baseExportedAt) {
-        return PlanResult.Refused(
-            listOf(ProgramProblem(ProblemCode.STALE_BASE, "edit.baseExportedAt", newestWrite.toString())),
-        )
+    val newestWrite = if (deviceNewestWrite == null) {
+        fromDocument
+    } else {
+        maxOf(fromDocument, deviceNewestWrite)
     }
+    return if (newestWrite > marker.baseExportedAt) {
+        ProgramProblem(ProblemCode.STALE_BASE, "edit.baseExportedAt", newestWrite.toString())
+    } else {
+        null
+    }
+}
 
-    val changes = mutableListOf<Change>()
-    val warnings = mutableListOf<PlanWarning>()
-
+private fun planProgram(snapshot: ProgramDocument, edit: ProgramDocument): List<Change> =
     if (snapshot.program.name != edit.program.name) {
-        changes += Change(ChangeKind.PROGRAM_RENAMED, edit.program.id, edit.program.name)
+        listOf(Change(ChangeKind.PROGRAM_RENAMED, edit.program.id, edit.program.name))
+    } else {
+        emptyList()
     }
 
+private fun planSlots(
+    snapshot: ProgramDocument,
+    edit: ProgramDocument,
+    warnings: MutableList<PlanWarning>,
+): List<Change> {
+    val changes = mutableListOf<Change>()
     val snapshotSlots = snapshot.slots.associateBy { it.id }
     val editSlotIds = edit.slots.map { it.id }.toSet()
     edit.slots.forEach { slot ->
@@ -125,68 +164,97 @@ fun plan(
         val name = snapshot.templates.firstOrNull { it.id == slot.templateId }?.name
         changes += Change(ChangeKind.SLOT_REMOVED, slot.id, name)
     }
+    warnings += keptWorkoutWarnings(snapshot, edit, editSlotIds)
+    return changes
+}
 
-    val snapshotTemplates = snapshot.templates.associateBy { it.id }
-    edit.templates.forEach { template ->
-        val old = snapshotTemplates[template.id]
-        when {
-            old == null -> changes += Change(ChangeKind.TEMPLATE_ADDED, template.id, template.name)
-            !sameTemplate(old, template) ->
-                changes += Change(ChangeKind.TEMPLATE_UPDATED, template.id, template.name)
-        }
-    }
-
-    // A removed day's workout stays, and saying so is the difference between a deletion and a loss.
-    val editSlotTemplateIds = edit.slots.map { it.templateId }.toSet()
-    snapshot.slots.filter { it.id !in editSlotIds }
+/**
+ * The workouts whose day left the schedule: the template stays in the library, and saying so is the
+ * difference between a deletion and a loss (N73).
+ */
+private fun keptWorkoutWarnings(
+    snapshot: ProgramDocument,
+    edit: ProgramDocument,
+    editSlotIds: Set<String>,
+): List<PlanWarning> {
+    val keptTemplateIds = edit.slots.map { it.templateId }.toSet()
+    return snapshot.slots
+        .filter { it.id !in editSlotIds }
         .map { it.templateId }
-        .filter { it !in editSlotTemplateIds }
+        .filter { it !in keptTemplateIds }
         .distinct()
-        .forEach { templateId ->
-            warnings += PlanWarning(
+        .map { templateId ->
+            PlanWarning(
                 WarningCode.WORKOUT_KEPT,
                 templateId,
                 snapshot.templates.firstOrNull { it.id == templateId }?.name,
             )
         }
+}
 
-    val editTemplateIds = edit.templates.map { it.id }.toSet()
-    val editTemplateExerciseIds = edit.templateExercises.map { it.id }.toSet()
-    val snapshotTemplateExercises = snapshot.templateExercises.associateBy { it.id }
-    edit.templateExercises.forEach { planned ->
-        val old = snapshotTemplateExercises[planned.id]
+private fun planTemplates(snapshot: ProgramDocument, edit: ProgramDocument): List<Change> {
+    val snapshotTemplates = snapshot.templates.associateBy { it.id }
+    return edit.templates.mapNotNull { template ->
+        val old = snapshotTemplates[template.id]
         when {
-            old == null -> changes += Change(ChangeKind.TEMPLATE_EXERCISE_ADDED, planned.id, null)
-            !sameTemplateExercise(old, planned) ->
-                changes += Change(ChangeKind.TEMPLATE_EXERCISE_UPDATED, planned.id, null)
+            old == null -> Change(ChangeKind.TEMPLATE_ADDED, template.id, template.name)
+            !sameTemplate(old, template) ->
+                Change(ChangeKind.TEMPLATE_UPDATED, template.id, template.name)
+
+            else -> null
         }
     }
-    snapshot.templateExercises
-        .filter { it.id !in editTemplateExerciseIds && it.templateId in editTemplateIds }
-        .forEach { changes += Change(ChangeKind.TEMPLATE_EXERCISE_REMOVED, it.id, null) }
+}
 
+private fun planTemplateExercises(snapshot: ProgramDocument, edit: ProgramDocument): List<Change> {
+    val editTemplateIds = edit.templates.map { it.id }.toSet()
+    val editIds = edit.templateExercises.map { it.id }.toSet()
+    val snapshotRows = snapshot.templateExercises.associateBy { it.id }
+    val changed = edit.templateExercises.mapNotNull { planned ->
+        val old = snapshotRows[planned.id]
+        when {
+            old == null -> Change(ChangeKind.TEMPLATE_EXERCISE_ADDED, planned.id, null)
+            !sameTemplateExercise(old, planned) ->
+                Change(ChangeKind.TEMPLATE_EXERCISE_UPDATED, planned.id, null)
+
+            else -> null
+        }
+    }
+    val removed = snapshot.templateExercises
+        .filter { it.id !in editIds && it.templateId in editTemplateIds }
+        .map { Change(ChangeKind.TEMPLATE_EXERCISE_REMOVED, it.id, null) }
+    return changed + removed
+}
+
+private fun planSets(snapshot: ProgramDocument, edit: ProgramDocument): List<Change> {
+    val editExerciseIds = edit.templateExercises.map { it.id }.toSet()
+    val editIds = edit.templateSets.map { it.id }.toSet()
     val snapshotSets = snapshot.templateSets.associateBy { it.id }
-    val editSetIds = edit.templateSets.map { it.id }.toSet()
-    edit.templateSets.forEach { set ->
+    val changed = edit.templateSets.mapNotNull { set ->
         val old = snapshotSets[set.id]
         when {
-            old == null -> changes += Change(ChangeKind.SET_ADDED, set.id, null)
-            !sameSet(old, set) -> changes += Change(ChangeKind.SET_UPDATED, set.id, null)
+            old == null -> Change(ChangeKind.SET_ADDED, set.id, null)
+            !sameSet(old, set) -> Change(ChangeKind.SET_UPDATED, set.id, null)
+            else -> null
         }
     }
     // A set removed with its exercise is covered by that exercise's removal; only a set removed from a
     // plan that keeps the exercise is its own change.
-    snapshot.templateSets
-        .filter { it.id !in editSetIds && it.templateExerciseId in editTemplateExerciseIds }
-        .forEach { changes += Change(ChangeKind.SET_REMOVED, it.id, null) }
+    val removed = snapshot.templateSets
+        .filter { it.id !in editIds && it.templateExerciseId in editExerciseIds }
+        .map { Change(ChangeKind.SET_REMOVED, it.id, null) }
+    return changed + removed
+}
 
-    val snapshotExerciseIds = snapshot.exercises.map { it.id }.toSet()
-    edit.exercises.filter { it.id !in snapshotExerciseIds }.forEach { exercise ->
-        changes += Change(ChangeKind.EXERCISE_ADDED, exercise.id, exercise.name)
-        warnings += PlanWarning(WarningCode.NEW_MOVEMENT, exercise.id, exercise.name)
-    }
-
-    return PlanResult.Ready(changes, warnings)
+private fun planExercises(
+    snapshot: ProgramDocument,
+    edit: ProgramDocument,
+    warnings: MutableList<PlanWarning>,
+): List<Change> {
+    val known = snapshot.exercises.map { it.id }.toSet()
+    val added = edit.exercises.filter { it.id !in known }
+    warnings += added.map { PlanWarning(WarningCode.NEW_MOVEMENT, it.id, it.name) }
+    return added.map { Change(ChangeKind.EXERCISE_ADDED, it.id, it.name) }
 }
 
 /** The newest write among the program's own rows — not the library's, which an edit never rewrites. */

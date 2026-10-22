@@ -2,6 +2,7 @@ package com.example.androidapp.shared
 
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -101,7 +102,10 @@ data class ProgramProblem(
 )
 
 /** Thrown by [ProgramDocumentCodec.decode] when the text is not a document this build reads. */
-class ProgramFormatException(val problem: ProgramProblem) : Exception(problem.code.name)
+class ProgramFormatException(
+    val problem: ProgramProblem,
+    cause: Throwable? = null,
+) : Exception(problem.code.name, cause)
 
 /**
  * Reads and writes a program document (ROADMAP N47, N170).
@@ -128,26 +132,40 @@ object ProgramDocumentCodec {
     fun encode(document: ProgramDocument): String = json.encodeToString(document)
 
     fun decode(text: String): ProgramDocument {
-        val element = try {
-            Json.parseToJsonElement(text)
-        } catch (malformed: SerializationException) {
-            throw ProgramFormatException(ProgramProblem(ProblemCode.MALFORMED))
-        }
-        val version = ((element as? JsonObject)?.get("formatVersion") as? JsonPrimitive)?.intOrNull
-        when {
-            version == null -> throw ProgramFormatException(ProgramProblem(ProblemCode.MISSING_VERSION))
-            version > CURRENT_FORMAT_VERSION -> throw ProgramFormatException(
-                ProgramProblem(ProblemCode.NEWER_VERSION, detail = version.toString()),
-            )
+        val element = parseOrRefuse(text)
+        refuseUnreadable(versionOf(element))
+        return bodyOrRefuse(element)
+    }
 
-            version < MINIMUM_FORMAT_VERSION -> throw ProgramFormatException(
-                ProgramProblem(ProblemCode.OLDER_VERSION, detail = version.toString()),
-            )
+    /** The text as JSON, or the format's own refusal — with what the parser said kept as the cause. */
+    private fun parseOrRefuse(text: String): JsonElement = try {
+        Json.parseToJsonElement(text)
+    } catch (malformed: SerializationException) {
+        throw ProgramFormatException(ProgramProblem(ProblemCode.MALFORMED), malformed)
+    }
+
+    private fun versionOf(element: JsonElement): Int =
+        ((element as? JsonObject)?.get("formatVersion") as? JsonPrimitive)?.intOrNull
+            ?: throw ProgramFormatException(ProgramProblem(ProblemCode.MISSING_VERSION))
+
+    /** The version gate, which runs before the body: a newer document may name what this build lacks. */
+    private fun refuseUnreadable(version: Int) {
+        val problem = when {
+            version > CURRENT_FORMAT_VERSION ->
+                ProgramProblem(ProblemCode.NEWER_VERSION, detail = version.toString())
+
+            version < MINIMUM_FORMAT_VERSION ->
+                ProgramProblem(ProblemCode.OLDER_VERSION, detail = version.toString())
+
+            else -> return
         }
-        return try {
-            json.decodeFromJsonElement<ProgramDocument>(element)
-        } catch (malformed: SerializationException) {
-            throw ProgramFormatException(ProgramProblem(ProblemCode.MALFORMED))
-        }
+        throw ProgramFormatException(problem)
+    }
+
+    /** The body, read only once the version said this build understands it. */
+    private fun bodyOrRefuse(element: JsonElement): ProgramDocument = try {
+        json.decodeFromJsonElement<ProgramDocument>(element)
+    } catch (malformed: SerializationException) {
+        throw ProgramFormatException(ProgramProblem(ProblemCode.MALFORMED), malformed)
     }
 }

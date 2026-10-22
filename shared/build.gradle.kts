@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.detekt)
 }
 
 /**
@@ -60,4 +61,26 @@ val syncSharedJs by tasks.registering(Copy::class) {
         include("*.js")
     }
     into(rootProject.layout.projectDirectory.dir("docs/shared"))
+}
+
+/**
+ * Static analysis (ROADMAP N179).
+ *
+ * The same config the app uses, and deliberately **not** the Compose ruleset: this module has no
+ * Compose, and a ruleset that loaded nothing would still be a dependency to keep current. :shared
+ * decides what an edit writes into the lifter's data, so the module the app calls was the one
+ * nobody linted.
+ */
+detekt {
+    buildUponDefaultConfig = true
+    parallel = true
+    // Only the deltas live here; detekt's defaults stay authoritative.
+    // The app's config, then the overlay that tolerates its two plugin sections (see the file).
+    config.setFrom(
+        rootProject.files("config/detekt/detekt.yml", "config/detekt/detekt-shared.yml"),
+    )
+    // A multiplatform module keeps its code under `src/commonMain`, which the plugin's default
+    // `src/main/java` does not reach: without this the task is NO-SOURCE and the gate is a task
+    // that passes by finding nothing, which is the failure N179 was written about.
+    source.setFrom(files("src/commonMain/kotlin", "src/commonTest/kotlin"))
 }
