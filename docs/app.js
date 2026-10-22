@@ -5145,8 +5145,19 @@
   function parseProgramDay(text) {
     var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(text).trim());
     if (!match) { return null; }
-    var ms = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    var year = Number(match[1]);
+    var month = Number(match[2]);
+    var dayOfMonth = Number(match[3]);
+    var ms = Date.UTC(year, month - 1, dayOfMonth);
     if (isNaN(ms)) { return null; }
+    // `Date.UTC` normalises instead of refusing, so a well-shaped wrong day became a start its author
+    // never typed: 2026-02-31 turned into 3 March, 2026-13-01 into January 2027, 0000-01-01 into 1900
+    // (B204). The day is accepted only when it survives the round trip.
+    var check = new Date(ms);
+    if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 ||
+        check.getUTCDate() !== dayOfMonth) {
+      return null;
+    }
     return Math.round(ms / 86400000);
   }
 
@@ -6614,20 +6625,35 @@
 
   /** A stored epoch day as the date input's value, which is always `yyyy-mm-dd` in UTC. */
   function editorDayText(epochDay) {
-    if (typeof epochDay !== 'number') { return ''; }
-    return new Date(epochDay * 86400000).toISOString().slice(0, 10);
+    if (typeof epochDay !== 'number' || !isFinite(epochDay)) { return ''; }
+    var day = new Date(epochDay * 86400000);
+    // A millis-valued or huge start would make toISOString throw out of the file reader and leave the
+    // editor half built, with no message (B204): a value this page cannot render is no value.
+    if (isNaN(day.getTime())) { return ''; }
+    return day.toISOString().slice(0, 10);
   }
 
   /** A date input's value as an epoch day, or null for a cleared field. */
   function editorParseDay(text) {
     if (!text) { return null; }
-    var ms = Date.parse(text + 'T00:00:00Z');
-    return isNaN(ms) ? null : Math.round(ms / 86400000);
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(text).trim());
+    if (!match) { return null; }
+    var ms = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    if (isNaN(ms)) { return null; }
+    var day = new Date(ms);
+    // The same round trip the table's parser keeps (B204): a date input only emits real days, but the
+    // function is reachable with anything, and a rolled-over day is a day nobody chose.
+    if (day.getUTCFullYear() !== Number(match[1]) || day.getUTCMonth() !== Number(match[2]) - 1 ||
+        day.getUTCDate() !== Number(match[3])) {
+      return null;
+    }
+    return Math.round(ms / 86400000);
   }
 
   /** An epoch day as the sentence a preview says, in the page's own month names. */
   function editorDayLabel(epochDay) {
     var day = new Date(Number(epochDay) * 86400000);
+    if (isNaN(day.getTime())) { return String(epochDay); }
     return day.getUTCDate() + ' ' + MONTH_NAMES[day.getUTCMonth()] + ' ' + day.getUTCFullYear();
   }
 
@@ -7854,6 +7880,9 @@
     editorChangeText: editorChangeText,
     editorSummary: editorSummary,
     programPanelSummary: programPanelSummary,
+    parseProgramDay: parseProgramDay,
+    editorParseDay: editorParseDay,
+    editorDayText: editorDayText,
     editorSharedProgramNames: editorSharedProgramNames,
     editorMove: editorMove,
     editorParseInt: editorParseInt,

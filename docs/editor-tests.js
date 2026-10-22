@@ -413,6 +413,17 @@
       t.eq(set.dropValueGrams, null);
     });
 
+    check('a date must be the day it says, and an unreadable one renders nothing (B204)', function () {
+      t.eq(H.parseProgramDay('2026-10-05'), 20731, 'a real day is its epoch day');
+      t.eq(H.parseProgramDay('2026-02-31'), null, 'February has no 31st');
+      t.eq(H.parseProgramDay('2026-13-01'), null, 'there is no month 13');
+      t.eq(H.parseProgramDay('0000-01-01'), null, 'year zero is not read as 1900');
+      t.eq(H.editorParseDay('2026-04-31'), null);
+
+      t.eq(H.editorDayText(1.79e12), '', 'a millis-valued start renders nothing');
+      t.eq(H.editorDayText(20731), '2026-10-05');
+    });
+
     check('a table authored as a block previews as one (B203)', function () {
       var stats = { days: 3, exercises: 9, sets: 27 };
       var block = H.programPanelSummary(
