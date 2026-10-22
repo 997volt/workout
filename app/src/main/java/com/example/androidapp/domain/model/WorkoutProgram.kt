@@ -1,6 +1,7 @@
 package com.example.androidapp.domain.model
 
 import java.time.DayOfWeek
+import java.time.LocalDate
 
 /**
  * A named, ordered list of training slots (ROADMAP P3.3).
@@ -24,6 +25,10 @@ data class WorkoutProgram(
     val slotCount: Int = 0,
     val isActive: Boolean = false,
     val position: Int = 0,
+    /** A week that repeats (the default), or an order that ends (ROADMAP N174). */
+    val kind: ProgramKind = ProgramKind.WEEKLY,
+    /** The day a block begins, or null for the day it was created. Only a sequence reads it (N174). */
+    val startDate: LocalDate? = null,
 )
 
 /**

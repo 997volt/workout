@@ -26,6 +26,7 @@ import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
@@ -431,6 +432,52 @@ class BackupRoundTripTest {
 
         assertEquals("the goal period is what this restore brought", 1, second.added)
         assertEquals(1, database.metricGoalDao().allForBackup().size)
+    }
+
+    @Test
+    fun aSequenceProgram_keepsItsKindAndStartDate() = runTest {
+        // ROADMAP N174: a block is not a weekly program, and a restore that lost the kind would
+        // repeat its nine sessions forever. The backup's schema version moved with the field (N185),
+        // and this is the half of that which a device can prove.
+        database.exerciseDao().insertAll(listOf(seedExercise()))
+        database.templateDao().insertTemplate(
+            TemplateEntity(id = "t1", name = "Peak A", createdAt = 1L, updatedAt = 1L, deletedAt = null),
+        )
+        database.programDao().insertProgram(
+            ProgramEntity(
+                id = "p2",
+                name = "Peak",
+                isActive = true,
+                position = 0,
+                kind = ProgramKind.SEQUENCE,
+                startDate = 20_305L,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = null,
+            ),
+        )
+        database.programDao().insertSlot(
+            ProgramSlotEntity(
+                id = "slot2",
+                programId = "p2",
+                templateId = "t1",
+                position = 0,
+                weekday = DayOfWeek.MONDAY,
+                createdAt = 1L,
+                updatedAt = 1L,
+                deletedAt = null,
+            ),
+        )
+
+        val json = exportedJson()
+        database.clearAllTables()
+        val imported = repository.import(json)
+
+        assertTrue("the restore must succeed", imported is DataResult.Success)
+        val restored = database.programDao().findProgram("p2")
+        assertNotNull(restored)
+        assertEquals(ProgramKind.SEQUENCE, restored!!.kind)
+        assertEquals(20_305L, restored.startDate)
     }
 
     private suspend fun exportedJson(): String =

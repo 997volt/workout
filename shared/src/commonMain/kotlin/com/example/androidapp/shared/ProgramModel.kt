@@ -49,10 +49,24 @@ data class ProgramDto(
     val name: String,
     val isActive: Boolean = false,
     val position: Int = 0,
+    /**
+     * A week that repeats, or an order that ends (ROADMAP N174).
+     *
+     * Defaulted so a document written before the choice existed is what it always was: a weekly
+     * program. The **format** moved with it (N185), because a build that did not know the name would
+     * read a sequence as weekly and repeat the block forever.
+     */
+    val kind: ProgramKind = ProgramKind.WEEKLY,
+    /** The day a block begins, as `LocalDate.toEpochDay()`, or null for the day it was created. */
+    val startDate: Long? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,
 )
+
+/** Whether a program repeats or ends, by name (ROADMAP N174). */
+@Serializable
+enum class ProgramKind { WEEKLY, SEQUENCE }
 
 @Serializable
 data class ProgramSlotDto(

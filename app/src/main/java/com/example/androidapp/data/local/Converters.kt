@@ -5,6 +5,7 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
@@ -19,6 +20,12 @@ import java.time.DayOfWeek
  * throws loudly if a name ever disappears — which is the failure we want.
  */
 class Converters {
+
+    @TypeConverter
+    fun fromProgramKind(value: ProgramKind): String = value.name
+
+    @TypeConverter
+    fun toProgramKind(value: String): ProgramKind = ProgramKind.valueOf(value)
 
     @TypeConverter
     fun fromDayOfWeek(value: DayOfWeek?): String? = value?.name

@@ -50,7 +50,9 @@ class ImportHelperFixtureTest {
     fun the_backup_decodes_and_is_the_fixtures_shape() {
         val file = BackupCodec.decode(text)
 
-        assertThat(file.schemaVersion).isEqualTo(BackupCodec.CURRENT_SCHEMA_VERSION)
+        // The helper writes the oldest shape this build reads: its backup carries no programs at all,
+        // so nothing in it needs the schema N174 moved to 6, and the floor still reads it (N185).
+        assertThat(file.schemaVersion).isEqualTo(BackupCodec.MINIMUM_SCHEMA_VERSION)
         assertThat(file.sessions).hasSize(2)
         assertThat(file.sessionExercises).hasSize(3)
         assertThat(file.sets).hasSize(6)

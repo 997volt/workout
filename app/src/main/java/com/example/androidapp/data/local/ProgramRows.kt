@@ -1,5 +1,6 @@
 package com.example.androidapp.data.local
 
+import com.example.androidapp.domain.model.ProgramKind
 import java.time.DayOfWeek
 
 /**
@@ -15,6 +16,10 @@ data class ProgramSummaryRow(
     /** The authored order, low first (ROADMAP P3.12). */
     val position: Int,
     val slotCount: Int,
+    /** A week that repeats, or an order that ends (N174). */
+    val kind: ProgramKind,
+    /** The day a block begins, as an epoch day, or null (N174). */
+    val startDate: Long?,
 )
 
 /**

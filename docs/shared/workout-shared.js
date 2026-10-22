@@ -20,33 +20,33 @@
   //region block: imports
   var imul = Math.imul;
   var Unit_instance = kotlin_kotlin.$_$.o2;
-  var Enum = kotlin_kotlin.$_$.t9;
-  var protoOf = kotlin_kotlin.$_$.z7;
-  var initMetadataForClass = kotlin_kotlin.$_$.f7;
+  var Enum = kotlin_kotlin.$_$.v9;
+  var protoOf = kotlin_kotlin.$_$.b8;
+  var initMetadataForClass = kotlin_kotlin.$_$.h7;
   var VOID = kotlin_kotlin.$_$.b;
-  var getStringHashCode = kotlin_kotlin.$_$.d7;
-  var Exception = kotlin_kotlin.$_$.u9;
+  var getStringHashCode = kotlin_kotlin.$_$.f7;
+  var Exception = kotlin_kotlin.$_$.w9;
   var Exception_init_$Init$ = kotlin_kotlin.$_$.f3;
-  var captureStack = kotlin_kotlin.$_$.s6;
-  var Json = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_json.$_$.d;
+  var captureStack = kotlin_kotlin.$_$.u6;
   var Default_getInstance = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_json.$_$.a;
   var SerializationException = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.h2;
   var JsonObject = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_json.$_$.b;
   var JsonPrimitive = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_json.$_$.c;
   var get_intOrNull = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_json.$_$.e;
-  var getKClass = kotlin_kotlin.$_$.k8;
-  var arrayOf = kotlin_kotlin.$_$.ka;
-  var createKType = kotlin_kotlin.$_$.i8;
+  var getKClass = kotlin_kotlin.$_$.m8;
+  var arrayOf = kotlin_kotlin.$_$.ma;
+  var createKType = kotlin_kotlin.$_$.k8;
   var serializer = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.l2;
-  var THROW_CCE = kotlin_kotlin.$_$.z9;
+  var THROW_CCE = kotlin_kotlin.$_$.ba;
   var KSerializer = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.e2;
-  var isInterface = kotlin_kotlin.$_$.s7;
-  var initMetadataForObject = kotlin_kotlin.$_$.k7;
-  var collectionSizeOrDefault = kotlin_kotlin.$_$.c4;
+  var isInterface = kotlin_kotlin.$_$.u7;
+  var Json = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_json.$_$.d;
+  var initMetadataForObject = kotlin_kotlin.$_$.m7;
+  var collectionSizeOrDefault = kotlin_kotlin.$_$.d4;
   var ArrayList_init_$Create$ = kotlin_kotlin.$_$.p2;
-  var listOf = kotlin_kotlin.$_$.f5;
-  var noWhenBranchMatchedException = kotlin_kotlin.$_$.ta;
-  var initMetadataForCompanion = kotlin_kotlin.$_$.g7;
+  var listOf = kotlin_kotlin.$_$.g5;
+  var noWhenBranchMatchedException = kotlin_kotlin.$_$.va;
+  var initMetadataForCompanion = kotlin_kotlin.$_$.i7;
   var PluginGeneratedSerialDescriptor = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.u1;
   var StringSerializer_getInstance = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.l;
   var UnknownFieldException_init_$Create$ = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.o;
@@ -54,42 +54,43 @@
   var typeParametersSerializers = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.q1;
   var GeneratedSerializer = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.r1;
   var throwMissingFieldException = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.z1;
-  var objectCreate = kotlin_kotlin.$_$.y7;
+  var objectCreate = kotlin_kotlin.$_$.a8;
   var ArrayListSerializer = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.o1;
   var LazyThreadSafetyMode_PUBLICATION_getInstance = kotlin_kotlin.$_$.u1;
-  var lazy = kotlin_kotlin.$_$.ra;
-  var toString = kotlin_kotlin.$_$.b8;
-  var hashCode = kotlin_kotlin.$_$.e7;
-  var equals = kotlin_kotlin.$_$.a7;
-  var emptyList = kotlin_kotlin.$_$.s4;
+  var lazy = kotlin_kotlin.$_$.ta;
+  var toString = kotlin_kotlin.$_$.d8;
+  var hashCode = kotlin_kotlin.$_$.g7;
+  var equals = kotlin_kotlin.$_$.c7;
+  var emptyList = kotlin_kotlin.$_$.t4;
   var BooleanSerializer_getInstance = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.i;
-  var getBooleanHashCode = kotlin_kotlin.$_$.b7;
+  var getBooleanHashCode = kotlin_kotlin.$_$.d7;
   var SerializableWith = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.g2;
-  var Long = kotlin_kotlin.$_$.w9;
+  var Long = kotlin_kotlin.$_$.y9;
   var IntSerializer_getInstance = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.j;
   var LongSerializer_getInstance = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.k;
-  var toString_0 = kotlin_kotlin.$_$.va;
-  var equalsLong = kotlin_kotlin.$_$.f6;
+  var toString_0 = kotlin_kotlin.$_$.xa;
+  var equalsLong = kotlin_kotlin.$_$.h6;
   var createSimpleEnumSerializer = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.w1;
   var Companion_instance = kotlin_kotlin.$_$.h2;
   var SerializerFactory = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.v1;
-  var compare = kotlin_kotlin.$_$.b6;
   var ArrayList_init_$Create$_0 = kotlin_kotlin.$_$.q2;
-  var mapCapacity = kotlin_kotlin.$_$.g5;
-  var coerceAtLeast = kotlin_kotlin.$_$.d8;
+  var compare = kotlin_kotlin.$_$.d6;
+  var mapCapacity = kotlin_kotlin.$_$.h5;
+  var coerceAtLeast = kotlin_kotlin.$_$.f8;
   var LinkedHashMap_init_$Create$ = kotlin_kotlin.$_$.y2;
-  var toSet = kotlin_kotlin.$_$.s5;
-  var distinct = kotlin_kotlin.$_$.q4;
-  var isBlank = kotlin_kotlin.$_$.s8;
-  var checkIndexOverflow = kotlin_kotlin.$_$.b4;
+  var toSet = kotlin_kotlin.$_$.u5;
+  var addAll = kotlin_kotlin.$_$.z3;
+  var distinct = kotlin_kotlin.$_$.r4;
+  var plus = kotlin_kotlin.$_$.k5;
+  var isBlank = kotlin_kotlin.$_$.u8;
+  var checkIndexOverflow = kotlin_kotlin.$_$.c4;
   var LinkedHashMap_init_$Create$_0 = kotlin_kotlin.$_$.z2;
-  var sortedWith = kotlin_kotlin.$_$.m5;
-  var getOrNull = kotlin_kotlin.$_$.v4;
-  var eachCount = kotlin_kotlin.$_$.r4;
-  var FunctionAdapter = kotlin_kotlin.$_$.p6;
-  var Comparator = kotlin_kotlin.$_$.q9;
-  var compareValues = kotlin_kotlin.$_$.v5;
-  var constructCallableReference = kotlin_kotlin.$_$.y6;
+  var sortedWith = kotlin_kotlin.$_$.o5;
+  var getOrNull = kotlin_kotlin.$_$.w4;
+  var eachCount = kotlin_kotlin.$_$.s4;
+  var FunctionAdapter = kotlin_kotlin.$_$.r6;
+  var Comparator = kotlin_kotlin.$_$.s9;
+  var compareValues = kotlin_kotlin.$_$.x5;
   //endregion
   //region block: pre-declaration
   initMetadataForClass(ProblemCode, 'ProblemCode', VOID, Enum);
@@ -116,31 +117,35 @@
   initMetadataForClass(ProgramDocument, 'ProgramDocument', VOID, VOID, VOID, VOID, VOID, {0: $serializer_getInstance_4});
   initMetadataForObject($serializer_5, '$serializer', VOID, VOID, [GeneratedSerializer]);
   initMetadataForClass(EditMarker, 'EditMarker', VOID, VOID, VOID, VOID, VOID, {0: $serializer_getInstance_5});
+  initMetadataForCompanion(Companion_5);
   initMetadataForObject($serializer_6, '$serializer', VOID, VOID, [GeneratedSerializer]);
   initMetadataForClass(ProgramDto, 'ProgramDto', VOID, VOID, VOID, VOID, VOID, {0: $serializer_getInstance_6});
-  initMetadataForCompanion(Companion_5);
+  initMetadataForCompanion(Companion_6, VOID, [SerializerFactory]);
+  initMetadataForClass(ProgramKind, 'ProgramKind', VOID, Enum, VOID, VOID, VOID, {0: Companion_getInstance_6});
+  initMetadataForCompanion(Companion_7);
   initMetadataForObject($serializer_7, '$serializer', VOID, VOID, [GeneratedSerializer]);
   initMetadataForClass(ProgramSlotDto, 'ProgramSlotDto', VOID, VOID, VOID, VOID, VOID, {0: $serializer_getInstance_7});
   initMetadataForObject($serializer_8, '$serializer', VOID, VOID, [GeneratedSerializer]);
   initMetadataForClass(TemplateDto, 'TemplateDto', VOID, VOID, VOID, VOID, VOID, {0: $serializer_getInstance_8});
   initMetadataForObject($serializer_9, '$serializer', VOID, VOID, [GeneratedSerializer]);
   initMetadataForClass(TemplateExerciseDto, 'TemplateExerciseDto', VOID, VOID, VOID, VOID, VOID, {0: $serializer_getInstance_9});
-  initMetadataForCompanion(Companion_6);
+  initMetadataForCompanion(Companion_8);
   initMetadataForObject($serializer_10, '$serializer', VOID, VOID, [GeneratedSerializer]);
   initMetadataForClass(TemplateSetDto, 'TemplateSetDto', VOID, VOID, VOID, VOID, VOID, {0: $serializer_getInstance_10});
-  initMetadataForCompanion(Companion_7);
+  initMetadataForCompanion(Companion_9);
   initMetadataForObject($serializer_11, '$serializer', VOID, VOID, [GeneratedSerializer]);
   initMetadataForClass(ExerciseDto, 'ExerciseDto', VOID, VOID, VOID, VOID, VOID, {0: $serializer_getInstance_11});
-  initMetadataForCompanion(Companion_8, VOID, [SerializerFactory]);
-  initMetadataForClass(Weekday, 'Weekday', VOID, Enum, VOID, VOID, VOID, {0: Companion_getInstance_8});
-  initMetadataForCompanion(Companion_9, VOID, [SerializerFactory]);
-  initMetadataForClass(ProgramSetRole, 'ProgramSetRole', VOID, Enum, VOID, VOID, VOID, {0: Companion_getInstance_9});
+  initMetadataForCompanion(Companion_10, VOID, [SerializerFactory]);
+  initMetadataForClass(Weekday, 'Weekday', VOID, Enum, VOID, VOID, VOID, {0: Companion_getInstance_10});
+  initMetadataForCompanion(Companion_11, VOID, [SerializerFactory]);
+  initMetadataForClass(ProgramSetRole, 'ProgramSetRole', VOID, Enum, VOID, VOID, VOID, {0: Companion_getInstance_11});
   initMetadataForClass(ChangeKind, 'ChangeKind', VOID, Enum);
   initMetadataForClass(Change, 'Change');
   initMetadataForClass(WarningCode, 'WarningCode', VOID, Enum);
   initMetadataForClass(PlanWarning, 'PlanWarning');
   initMetadataForClass(Ready, 'Ready');
   initMetadataForClass(Refused, 'Refused');
+  initMetadataForClass(Refusal, 'Refusal');
   initMetadataForClass(sam$kotlin_Comparator$0, 'sam$kotlin_Comparator$0', VOID, VOID, [Comparator, FunctionAdapter]);
   initMetadataForClass(duplicates$$inlined$groupingBy$1);
   //endregion
@@ -232,10 +237,73 @@
       return false;
     return true;
   };
-  function ProgramFormatException(problem) {
-    Exception_init_$Init$(problem.code_1.name_1, this);
+  function ProgramFormatException(problem, cause) {
+    cause = cause === VOID ? null : cause;
+    Exception_init_$Init$(problem.code_1.name_1, cause, this);
     captureStack(this, ProgramFormatException);
     this.problem_1 = problem;
+  }
+  function parseOrRefuse($this, text) {
+    var tmp;
+    try {
+      tmp = Default_getInstance().parseToJsonElement_rqvr2k_k$(text);
+    } catch ($p) {
+      var tmp_0;
+      if ($p instanceof SerializationException) {
+        var malformed = $p;
+        throw new ProgramFormatException(new ProgramProblem(ProblemCode_MALFORMED_getInstance()), malformed);
+      } else {
+        throw $p;
+      }
+    }
+    return tmp;
+  }
+  function versionOf($this, element) {
+    var tmp0_safe_receiver = element instanceof JsonObject ? element : null;
+    var tmp = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.get_6bo4tg_k$('formatVersion');
+    var tmp1_safe_receiver = tmp instanceof JsonPrimitive ? tmp : null;
+    var tmp2_elvis_lhs = tmp1_safe_receiver == null ? null : get_intOrNull(tmp1_safe_receiver);
+    var tmp_0;
+    if (tmp2_elvis_lhs == null) {
+      throw new ProgramFormatException(new ProgramProblem(ProblemCode_MISSING_VERSION_getInstance()));
+    } else {
+      tmp_0 = tmp2_elvis_lhs;
+    }
+    return tmp_0;
+  }
+  function refuseUnreadable($this, version) {
+    var tmp;
+    if (version > 5) {
+      tmp = new ProgramProblem(ProblemCode_NEWER_VERSION_getInstance(), VOID, version.toString());
+    } else if (version < 4) {
+      tmp = new ProgramProblem(ProblemCode_OLDER_VERSION_getInstance(), VOID, version.toString());
+    } else {
+      return Unit_instance;
+    }
+    var problem = tmp;
+    throw new ProgramFormatException(problem);
+  }
+  function bodyOrRefuse($this, element) {
+    var tmp;
+    try {
+      // Inline function 'kotlinx.serialization.json.decodeFromJsonElement' call
+      var this_0 = $this.json_1;
+      // Inline function 'kotlinx.serialization.serializer' call
+      var this_1 = this_0.get_serializersModule_piitvg_k$();
+      // Inline function 'kotlinx.serialization.internal.cast' call
+      var this_2 = serializer(this_1, createKType(getKClass(ProgramDocument), arrayOf([]), false));
+      var tmp$ret$1 = isInterface(this_2, KSerializer) ? this_2 : THROW_CCE();
+      tmp = this_0.decodeFromJsonElement_tsogwj_k$(tmp$ret$1, element);
+    } catch ($p) {
+      var tmp_0;
+      if ($p instanceof SerializationException) {
+        var malformed = $p;
+        throw new ProgramFormatException(new ProgramProblem(ProblemCode_MALFORMED_getInstance()), malformed);
+      } else {
+        throw $p;
+      }
+    }
+    return tmp;
   }
   function ProgramDocumentCodec$json$lambda($this$Json) {
     $this$Json.prettyPrint_1 = true;
@@ -245,55 +313,15 @@
   }
   function ProgramDocumentCodec() {
     ProgramDocumentCodec_instance = this;
-    this.CURRENT_FORMAT_VERSION_1 = 4;
+    this.CURRENT_FORMAT_VERSION_1 = 5;
     this.MINIMUM_FORMAT_VERSION_1 = 4;
     var tmp = this;
     tmp.json_1 = Json(VOID, ProgramDocumentCodec$json$lambda);
   }
   protoOf(ProgramDocumentCodec).decode_gmof1w_k$ = function (text) {
-    var tmp;
-    try {
-      tmp = Default_getInstance().parseToJsonElement_rqvr2k_k$(text);
-    } catch ($p) {
-      var tmp_0;
-      if ($p instanceof SerializationException) {
-        var malformed = $p;
-        throw new ProgramFormatException(new ProgramProblem(ProblemCode_MALFORMED_getInstance()));
-      } else {
-        throw $p;
-      }
-    }
-    var element = tmp;
-    var tmp0_safe_receiver = element instanceof JsonObject ? element : null;
-    var tmp_1 = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.get_6bo4tg_k$('formatVersion');
-    var tmp1_safe_receiver = tmp_1 instanceof JsonPrimitive ? tmp_1 : null;
-    var version = tmp1_safe_receiver == null ? null : get_intOrNull(tmp1_safe_receiver);
-    if (version == null)
-      throw new ProgramFormatException(new ProgramProblem(ProblemCode_MISSING_VERSION_getInstance()));
-    else if (version > 4)
-      throw new ProgramFormatException(new ProgramProblem(ProblemCode_NEWER_VERSION_getInstance(), VOID, version.toString()));
-    else if (version < 4)
-      throw new ProgramFormatException(new ProgramProblem(ProblemCode_OLDER_VERSION_getInstance(), VOID, version.toString()));
-    var tmp_2;
-    try {
-      // Inline function 'kotlinx.serialization.json.decodeFromJsonElement' call
-      var this_0 = this.json_1;
-      // Inline function 'kotlinx.serialization.serializer' call
-      var this_1 = this_0.get_serializersModule_piitvg_k$();
-      // Inline function 'kotlinx.serialization.internal.cast' call
-      var this_2 = serializer(this_1, createKType(getKClass(ProgramDocument), arrayOf([]), false));
-      var tmp$ret$1 = isInterface(this_2, KSerializer) ? this_2 : THROW_CCE();
-      tmp_2 = this_0.decodeFromJsonElement_tsogwj_k$(tmp$ret$1, element);
-    } catch ($p_0) {
-      var tmp_3;
-      if ($p_0 instanceof SerializationException) {
-        var malformed_0 = $p_0;
-        throw new ProgramFormatException(new ProgramProblem(ProblemCode_MALFORMED_getInstance()));
-      } else {
-        throw $p_0;
-      }
-    }
-    return tmp_2;
+    var element = parseOrRefuse(this, text);
+    refuseUnreadable(this, versionOf(this, element));
+    return bodyOrRefuse(this, element);
   };
   var ProgramDocumentCodec_instance;
   function ProgramDocumentCodec_getInstance() {
@@ -408,7 +436,7 @@
   var json;
   function programFormatVersion() {
     _init_properties_ProgramJson_kt__8o3jdm();
-    return 4;
+    return 5;
   }
   function validateJson(documentJson) {
     _init_properties_ProgramJson_kt__8o3jdm();
@@ -1580,13 +1608,33 @@
       return false;
     return true;
   };
+  function ProgramDto$Companion$$childSerializers$_anonymous__lqadm7() {
+    return Companion_getInstance_6().serializer_9w0wvi_k$();
+  }
+  function Companion_5() {
+    Companion_instance_6 = this;
+    var tmp = this;
+    var tmp_0 = LazyThreadSafetyMode_PUBLICATION_getInstance();
+    // Inline function 'kotlin.arrayOf' call
+    // Inline function 'kotlin.js.unsafeCast' call
+    // Inline function 'kotlin.js.asDynamic' call
+    tmp.$childSerializers_1 = [null, null, null, null, lazy(tmp_0, ProgramDto$Companion$$childSerializers$_anonymous__lqadm7), null, null, null, null];
+  }
+  var Companion_instance_6;
+  function Companion_getInstance_5() {
+    if (Companion_instance_6 == null)
+      new Companion_5();
+    return Companion_instance_6;
+  }
   function $serializer_6() {
     $serializer_instance_6 = this;
-    var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ProgramDto', this, 7);
+    var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ProgramDto', this, 9);
     tmp0_serialDesc.addElement_5pzumi_k$('id', false);
     tmp0_serialDesc.addElement_5pzumi_k$('name', false);
     tmp0_serialDesc.addElement_5pzumi_k$('isActive', true);
     tmp0_serialDesc.addElement_5pzumi_k$('position', true);
+    tmp0_serialDesc.addElement_5pzumi_k$('kind', true);
+    tmp0_serialDesc.addElement_5pzumi_k$('startDate', true);
     tmp0_serialDesc.addElement_5pzumi_k$('createdAt', false);
     tmp0_serialDesc.addElement_5pzumi_k$('updatedAt', false);
     tmp0_serialDesc.addElement_5pzumi_k$('deletedAt', true);
@@ -1595,6 +1643,7 @@
   protoOf($serializer_6).serialize_1hczuu_k$ = function (encoder, value) {
     var tmp0_desc = this.descriptor_1;
     var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
+    var tmp2_cached = Companion_getInstance_5().$childSerializers_1;
     tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.id_1);
     tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.name_1);
     if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 2) ? true : !(value.isActive_1 === false)) {
@@ -1603,10 +1652,16 @@
     if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 3) ? true : !(value.position_1 === 0)) {
       tmp1_output.encodeIntElement_krhhce_k$(tmp0_desc, 3, value.position_1);
     }
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 4, value.createdAt_1);
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 5, value.updatedAt_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 6) ? true : !(value.deletedAt_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 6, LongSerializer_getInstance(), value.deletedAt_1);
+    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 4) ? true : !value.kind_1.equals(ProgramKind_WEEKLY_getInstance())) {
+      tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 4, tmp2_cached[4].get_value_j01efc_k$(), value.kind_1);
+    }
+    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 5) ? true : !(value.startDate_1 == null)) {
+      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 5, LongSerializer_getInstance(), value.startDate_1);
+    }
+    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 6, value.createdAt_1);
+    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 7, value.updatedAt_1);
+    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 8) ? true : !(value.deletedAt_1 == null)) {
+      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 8, LongSerializer_getInstance(), value.deletedAt_1);
     }
     tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
   };
@@ -1622,75 +1677,91 @@
     var tmp5_local1 = null;
     var tmp6_local2 = false;
     var tmp7_local3 = 0;
-    var tmp8_local4 = new Long(0, 0);
-    var tmp9_local5 = new Long(0, 0);
-    var tmp10_local6 = null;
-    var tmp11_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    if (tmp11_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp11_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp8_local4 = null;
+    var tmp9_local5 = null;
+    var tmp10_local6 = new Long(0, 0);
+    var tmp11_local7 = new Long(0, 0);
+    var tmp12_local8 = null;
+    var tmp13_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
+    var tmp14_cached = Companion_getInstance_5().$childSerializers_1;
+    if (tmp13_input.decodeSequentially_xlblqy_k$()) {
+      tmp4_local0 = tmp13_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp11_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp13_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp11_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 2);
+      tmp6_local2 = tmp13_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
-      tmp7_local3 = tmp11_input.decodeIntElement_941u6a_k$(tmp0_desc, 3);
+      tmp7_local3 = tmp13_input.decodeIntElement_941u6a_k$(tmp0_desc, 3);
       tmp3_bitMask0 = tmp3_bitMask0 | 8;
-      tmp8_local4 = tmp11_input.decodeLongElement_994anb_k$(tmp0_desc, 4);
+      tmp8_local4 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 4, tmp14_cached[4].get_value_j01efc_k$(), tmp8_local4);
       tmp3_bitMask0 = tmp3_bitMask0 | 16;
-      tmp9_local5 = tmp11_input.decodeLongElement_994anb_k$(tmp0_desc, 5);
+      tmp9_local5 = tmp13_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
       tmp3_bitMask0 = tmp3_bitMask0 | 32;
-      tmp10_local6 = tmp11_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 6, LongSerializer_getInstance(), tmp10_local6);
+      tmp10_local6 = tmp13_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
       tmp3_bitMask0 = tmp3_bitMask0 | 64;
+      tmp11_local7 = tmp13_input.decodeLongElement_994anb_k$(tmp0_desc, 7);
+      tmp3_bitMask0 = tmp3_bitMask0 | 128;
+      tmp12_local8 = tmp13_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
+      tmp3_bitMask0 = tmp3_bitMask0 | 256;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp11_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp13_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp11_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp13_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp11_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp13_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp11_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 2);
+            tmp6_local2 = tmp13_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           case 3:
-            tmp7_local3 = tmp11_input.decodeIntElement_941u6a_k$(tmp0_desc, 3);
+            tmp7_local3 = tmp13_input.decodeIntElement_941u6a_k$(tmp0_desc, 3);
             tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           case 4:
-            tmp8_local4 = tmp11_input.decodeLongElement_994anb_k$(tmp0_desc, 4);
+            tmp8_local4 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 4, tmp14_cached[4].get_value_j01efc_k$(), tmp8_local4);
             tmp3_bitMask0 = tmp3_bitMask0 | 16;
             break;
           case 5:
-            tmp9_local5 = tmp11_input.decodeLongElement_994anb_k$(tmp0_desc, 5);
+            tmp9_local5 = tmp13_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
             tmp3_bitMask0 = tmp3_bitMask0 | 32;
             break;
           case 6:
-            tmp10_local6 = tmp11_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 6, LongSerializer_getInstance(), tmp10_local6);
+            tmp10_local6 = tmp13_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
             tmp3_bitMask0 = tmp3_bitMask0 | 64;
+            break;
+          case 7:
+            tmp11_local7 = tmp13_input.decodeLongElement_994anb_k$(tmp0_desc, 7);
+            tmp3_bitMask0 = tmp3_bitMask0 | 128;
+            break;
+          case 8:
+            tmp12_local8 = tmp13_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
+            tmp3_bitMask0 = tmp3_bitMask0 | 256;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp11_input.endStructure_1xqz0n_k$(tmp0_desc);
-    return ProgramDto_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, tmp8_local4, tmp9_local5, tmp10_local6, null);
+    tmp13_input.endStructure_1xqz0n_k$(tmp0_desc);
+    return ProgramDto_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, tmp8_local4, tmp9_local5, tmp10_local6, tmp11_local7, tmp12_local8, null);
   };
   protoOf($serializer_6).get_descriptor_wjt6a0_k$ = function () {
     return this.descriptor_1;
   };
   protoOf($serializer_6).childSerializers_5ghqw5_k$ = function () {
+    var tmp0_cached = Companion_getInstance_5().$childSerializers_1;
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    return [StringSerializer_getInstance(), StringSerializer_getInstance(), BooleanSerializer_getInstance(), IntSerializer_getInstance(), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance())];
+    return [StringSerializer_getInstance(), StringSerializer_getInstance(), BooleanSerializer_getInstance(), IntSerializer_getInstance(), tmp0_cached[4].get_value_j01efc_k$(), get_nullable(LongSerializer_getInstance()), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance())];
   };
   var $serializer_instance_6;
   function $serializer_getInstance_6() {
@@ -1698,9 +1769,9 @@
       new $serializer_6();
     return $serializer_instance_6;
   }
-  function ProgramDto_init_$Init$(seen0, id, name, isActive, position, createdAt, updatedAt, deletedAt, serializationConstructorMarker, $this) {
-    if (!(51 === (51 & seen0))) {
-      throwMissingFieldException(seen0, 51, $serializer_getInstance_6().descriptor_1);
+  function ProgramDto_init_$Init$(seen0, id, name, isActive, position, kind, startDate, createdAt, updatedAt, deletedAt, serializationConstructorMarker, $this) {
+    if (!(195 === (195 & seen0))) {
+      throwMissingFieldException(seen0, 195, $serializer_getInstance_6().descriptor_1);
     }
     $this.id_1 = id;
     $this.name_1 = name;
@@ -1712,27 +1783,37 @@
       $this.position_1 = 0;
     else
       $this.position_1 = position;
+    if (0 === (seen0 & 16))
+      $this.kind_1 = ProgramKind_WEEKLY_getInstance();
+    else
+      $this.kind_1 = kind;
+    if (0 === (seen0 & 32))
+      $this.startDate_1 = null;
+    else
+      $this.startDate_1 = startDate;
     $this.createdAt_1 = createdAt;
     $this.updatedAt_1 = updatedAt;
-    if (0 === (seen0 & 64))
+    if (0 === (seen0 & 256))
       $this.deletedAt_1 = null;
     else
       $this.deletedAt_1 = deletedAt;
     return $this;
   }
-  function ProgramDto_init_$Create$(seen0, id, name, isActive, position, createdAt, updatedAt, deletedAt, serializationConstructorMarker) {
-    return ProgramDto_init_$Init$(seen0, id, name, isActive, position, createdAt, updatedAt, deletedAt, serializationConstructorMarker, objectCreate(protoOf(ProgramDto)));
+  function ProgramDto_init_$Create$(seen0, id, name, isActive, position, kind, startDate, createdAt, updatedAt, deletedAt, serializationConstructorMarker) {
+    return ProgramDto_init_$Init$(seen0, id, name, isActive, position, kind, startDate, createdAt, updatedAt, deletedAt, serializationConstructorMarker, objectCreate(protoOf(ProgramDto)));
   }
   function ProgramDto() {
   }
   protoOf(ProgramDto).toString = function () {
-    return 'ProgramDto(id=' + this.id_1 + ', name=' + this.name_1 + ', isActive=' + this.isActive_1 + ', position=' + this.position_1 + ', createdAt=' + this.createdAt_1.toString() + ', updatedAt=' + this.updatedAt_1.toString() + ', deletedAt=' + toString_0(this.deletedAt_1) + ')';
+    return 'ProgramDto(id=' + this.id_1 + ', name=' + this.name_1 + ', isActive=' + this.isActive_1 + ', position=' + this.position_1 + ', kind=' + this.kind_1.toString() + ', startDate=' + toString_0(this.startDate_1) + ', createdAt=' + this.createdAt_1.toString() + ', updatedAt=' + this.updatedAt_1.toString() + ', deletedAt=' + toString_0(this.deletedAt_1) + ')';
   };
   protoOf(ProgramDto).hashCode = function () {
     var result = getStringHashCode(this.id_1);
     result = imul(result, 31) + getStringHashCode(this.name_1) | 0;
     result = imul(result, 31) + getBooleanHashCode(this.isActive_1) | 0;
     result = imul(result, 31) + this.position_1 | 0;
+    result = imul(result, 31) + this.kind_1.hashCode() | 0;
+    result = imul(result, 31) + (this.startDate_1 == null ? 0 : this.startDate_1.hashCode()) | 0;
     result = imul(result, 31) + this.createdAt_1.hashCode() | 0;
     result = imul(result, 31) + this.updatedAt_1.hashCode() | 0;
     result = imul(result, 31) + (this.deletedAt_1 == null ? 0 : this.deletedAt_1.hashCode()) | 0;
@@ -1751,6 +1832,10 @@
       return false;
     if (!(this.position_1 === other.position_1))
       return false;
+    if (!this.kind_1.equals(other.kind_1))
+      return false;
+    if (!equals(this.startDate_1, other.startDate_1))
+      return false;
     if (!equalsLong(this.createdAt_1, other.createdAt_1))
       return false;
     if (!equalsLong(this.updatedAt_1, other.updatedAt_1))
@@ -1759,11 +1844,55 @@
       return false;
     return true;
   };
-  function ProgramSlotDto$Companion$$childSerializers$_anonymous__iuzt59() {
-    return Companion_getInstance_8().serializer_9w0wvi_k$();
+  function _get_$cachedSerializer__te6jhj($this) {
+    return $this.$cachedSerializer$delegate_1.get_value_j01efc_k$();
   }
-  function Companion_5() {
-    Companion_instance_6 = this;
+  function ProgramKind$Companion$_anonymous__fa263t() {
+    return createSimpleEnumSerializer('com.example.androidapp.shared.ProgramKind', values());
+  }
+  var static_init_called_0;
+  function static_init_0() {
+    if (static_init_called_0)
+      return Unit_instance;
+    static_init_called_0 = true;
+    ProgramKind_WEEKLY_instance = new ProgramKind('WEEKLY', 0);
+    ProgramKind_SEQUENCE_instance = new ProgramKind('SEQUENCE', 1);
+    if (Companion_instance_7 == null) {
+      Companion_instance;
+      new Companion_6();
+    }
+  }
+  var ProgramKind_WEEKLY_instance;
+  var ProgramKind_SEQUENCE_instance;
+  function values() {
+    static_init_0();
+    return [ProgramKind_WEEKLY_getInstance(), ProgramKind_SEQUENCE_getInstance()];
+  }
+  function Companion_6() {
+    Companion_instance_7 = this;
+    var tmp = this;
+    var tmp_0 = LazyThreadSafetyMode_PUBLICATION_getInstance();
+    tmp.$cachedSerializer$delegate_1 = lazy(tmp_0, ProgramKind$Companion$_anonymous__fa263t);
+  }
+  protoOf(Companion_6).serializer_9w0wvi_k$ = function () {
+    return _get_$cachedSerializer__te6jhj(this);
+  };
+  protoOf(Companion_6).serializer_nv39qc_k$ = function (typeParamsSerializers) {
+    return this.serializer_9w0wvi_k$();
+  };
+  var Companion_instance_7;
+  function Companion_getInstance_6() {
+    static_init_0();
+    return Companion_instance_7;
+  }
+  function ProgramKind(name, ordinal) {
+    Enum.call(this, name, ordinal);
+  }
+  function ProgramSlotDto$Companion$$childSerializers$_anonymous__iuzt59() {
+    return Companion_getInstance_10().serializer_9w0wvi_k$();
+  }
+  function Companion_7() {
+    Companion_instance_8 = this;
     var tmp = this;
     var tmp_0 = LazyThreadSafetyMode_PUBLICATION_getInstance();
     // Inline function 'kotlin.arrayOf' call
@@ -1771,11 +1900,11 @@
     // Inline function 'kotlin.js.asDynamic' call
     tmp.$childSerializers_1 = [null, null, null, null, lazy(tmp_0, ProgramSlotDto$Companion$$childSerializers$_anonymous__iuzt59), null, null, null];
   }
-  var Companion_instance_6;
-  function Companion_getInstance_5() {
-    if (Companion_instance_6 == null)
-      new Companion_5();
-    return Companion_instance_6;
+  var Companion_instance_8;
+  function Companion_getInstance_7() {
+    if (Companion_instance_8 == null)
+      new Companion_7();
+    return Companion_instance_8;
   }
   function $serializer_7() {
     $serializer_instance_7 = this;
@@ -1793,7 +1922,7 @@
   protoOf($serializer_7).serialize_cdcbhg_k$ = function (encoder, value) {
     var tmp0_desc = this.descriptor_1;
     var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp2_cached = Companion_getInstance_5().$childSerializers_1;
+    var tmp2_cached = Companion_getInstance_7().$childSerializers_1;
     tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.id_1);
     tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.programId_1);
     tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 2, value.templateId_1);
@@ -1825,7 +1954,7 @@
     var tmp10_local6 = new Long(0, 0);
     var tmp11_local7 = null;
     var tmp12_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp13_cached = Companion_getInstance_5().$childSerializers_1;
+    var tmp13_cached = Companion_getInstance_7().$childSerializers_1;
     if (tmp12_input.decodeSequentially_xlblqy_k$()) {
       tmp4_local0 = tmp12_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
@@ -1893,7 +2022,7 @@
     return this.descriptor_1;
   };
   protoOf($serializer_7).childSerializers_5ghqw5_k$ = function () {
-    var tmp0_cached = Companion_getInstance_5().$childSerializers_1;
+    var tmp0_cached = Companion_getInstance_7().$childSerializers_1;
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
@@ -2370,10 +2499,10 @@
     return true;
   };
   function TemplateSetDto$Companion$$childSerializers$_anonymous__so0lp() {
-    return Companion_getInstance_9().serializer_9w0wvi_k$();
+    return Companion_getInstance_11().serializer_9w0wvi_k$();
   }
-  function Companion_6() {
-    Companion_instance_7 = this;
+  function Companion_8() {
+    Companion_instance_9 = this;
     var tmp = this;
     var tmp_0 = LazyThreadSafetyMode_PUBLICATION_getInstance();
     // Inline function 'kotlin.arrayOf' call
@@ -2381,11 +2510,11 @@
     // Inline function 'kotlin.js.asDynamic' call
     tmp.$childSerializers_1 = [null, null, null, lazy(tmp_0, TemplateSetDto$Companion$$childSerializers$_anonymous__so0lp), null, null, null, null, null, null, null, null, null, null];
   }
-  var Companion_instance_7;
-  function Companion_getInstance_6() {
-    if (Companion_instance_7 == null)
-      new Companion_6();
-    return Companion_instance_7;
+  var Companion_instance_9;
+  function Companion_getInstance_8() {
+    if (Companion_instance_9 == null)
+      new Companion_8();
+    return Companion_instance_9;
   }
   function $serializer_10() {
     $serializer_instance_10 = this;
@@ -2409,7 +2538,7 @@
   protoOf($serializer_10).serialize_bg5ncm_k$ = function (encoder, value) {
     var tmp0_desc = this.descriptor_1;
     var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp2_cached = Companion_getInstance_6().$childSerializers_1;
+    var tmp2_cached = Companion_getInstance_8().$childSerializers_1;
     tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.id_1);
     tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.templateExerciseId_1);
     tmp1_output.encodeIntElement_krhhce_k$(tmp0_desc, 2, value.setIndex_1);
@@ -2465,7 +2594,7 @@
     var tmp16_local12 = new Long(0, 0);
     var tmp17_local13 = null;
     var tmp18_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp19_cached = Companion_getInstance_6().$childSerializers_1;
+    var tmp19_cached = Companion_getInstance_8().$childSerializers_1;
     if (tmp18_input.decodeSequentially_xlblqy_k$()) {
       tmp4_local0 = tmp18_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
@@ -2569,7 +2698,7 @@
     return this.descriptor_1;
   };
   protoOf($serializer_10).childSerializers_5ghqw5_k$ = function () {
-    var tmp0_cached = Companion_getInstance_6().$childSerializers_1;
+    var tmp0_cached = Companion_getInstance_8().$childSerializers_1;
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
@@ -2688,8 +2817,8 @@
   function ExerciseDto$Companion$$childSerializers$_anonymous__falojn() {
     return new ArrayListSerializer(StringSerializer_getInstance());
   }
-  function Companion_7() {
-    Companion_instance_8 = this;
+  function Companion_9() {
+    Companion_instance_10 = this;
     var tmp = this;
     var tmp_0 = LazyThreadSafetyMode_PUBLICATION_getInstance();
     // Inline function 'kotlin.arrayOf' call
@@ -2697,11 +2826,11 @@
     // Inline function 'kotlin.js.asDynamic' call
     tmp.$childSerializers_1 = [null, null, null, lazy(tmp_0, ExerciseDto$Companion$$childSerializers$_anonymous__falojn), null, null, null, null, null, null, null, null, null, null, null];
   }
-  var Companion_instance_8;
-  function Companion_getInstance_7() {
-    if (Companion_instance_8 == null)
-      new Companion_7();
-    return Companion_instance_8;
+  var Companion_instance_10;
+  function Companion_getInstance_9() {
+    if (Companion_instance_10 == null)
+      new Companion_9();
+    return Companion_instance_10;
   }
   function $serializer_11() {
     $serializer_instance_11 = this;
@@ -2726,7 +2855,7 @@
   protoOf($serializer_11).serialize_viznsy_k$ = function (encoder, value) {
     var tmp0_desc = this.descriptor_1;
     var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp2_cached = Companion_getInstance_7().$childSerializers_1;
+    var tmp2_cached = Companion_getInstance_9().$childSerializers_1;
     tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.id_1);
     tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.name_1);
     tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 2, StringSerializer_getInstance(), value.primaryMuscle_1);
@@ -2782,7 +2911,7 @@
     var tmp17_local13 = null;
     var tmp18_local14 = null;
     var tmp19_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp20_cached = Companion_getInstance_7().$childSerializers_1;
+    var tmp20_cached = Companion_getInstance_9().$childSerializers_1;
     if (tmp19_input.decodeSequentially_xlblqy_k$()) {
       tmp4_local0 = tmp19_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
@@ -2892,7 +3021,7 @@
     return this.descriptor_1;
   };
   protoOf($serializer_11).childSerializers_5ghqw5_k$ = function () {
-    var tmp0_cached = Companion_getInstance_7().$childSerializers_1;
+    var tmp0_cached = Companion_getInstance_9().$childSerializers_1;
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
@@ -3009,17 +3138,17 @@
       return false;
     return true;
   };
-  function _get_$cachedSerializer__te6jhj($this) {
+  function _get_$cachedSerializer__te6jhj_0($this) {
     return $this.$cachedSerializer$delegate_1.get_value_j01efc_k$();
   }
   function Weekday$Companion$_anonymous__wjgbbt() {
-    return createSimpleEnumSerializer('com.example.androidapp.shared.Weekday', values());
+    return createSimpleEnumSerializer('com.example.androidapp.shared.Weekday', values_0());
   }
-  var static_init_called_0;
-  function static_init_0() {
-    if (static_init_called_0)
+  var static_init_called_1;
+  function static_init_1() {
+    if (static_init_called_1)
       return Unit_instance;
-    static_init_called_0 = true;
+    static_init_called_1 = true;
     Weekday_MONDAY_instance = new Weekday('MONDAY', 0);
     Weekday_TUESDAY_instance = new Weekday('TUESDAY', 1);
     Weekday_WEDNESDAY_instance = new Weekday('WEDNESDAY', 2);
@@ -3027,9 +3156,9 @@
     Weekday_FRIDAY_instance = new Weekday('FRIDAY', 4);
     Weekday_SATURDAY_instance = new Weekday('SATURDAY', 5);
     Weekday_SUNDAY_instance = new Weekday('SUNDAY', 6);
-    if (Companion_instance_9 == null) {
+    if (Companion_instance_11 == null) {
       Companion_instance;
-      new Companion_8();
+      new Companion_10();
     }
   }
   var Weekday_MONDAY_instance;
@@ -3039,49 +3168,49 @@
   var Weekday_FRIDAY_instance;
   var Weekday_SATURDAY_instance;
   var Weekday_SUNDAY_instance;
-  function values() {
-    static_init_0();
+  function values_0() {
+    static_init_1();
     return [Weekday_MONDAY_getInstance(), Weekday_TUESDAY_getInstance(), Weekday_WEDNESDAY_getInstance(), Weekday_THURSDAY_getInstance(), Weekday_FRIDAY_getInstance(), Weekday_SATURDAY_getInstance(), Weekday_SUNDAY_getInstance()];
   }
-  function Companion_8() {
-    Companion_instance_9 = this;
+  function Companion_10() {
+    Companion_instance_11 = this;
     var tmp = this;
     var tmp_0 = LazyThreadSafetyMode_PUBLICATION_getInstance();
     tmp.$cachedSerializer$delegate_1 = lazy(tmp_0, Weekday$Companion$_anonymous__wjgbbt);
   }
-  protoOf(Companion_8).serializer_9w0wvi_k$ = function () {
-    return _get_$cachedSerializer__te6jhj(this);
+  protoOf(Companion_10).serializer_9w0wvi_k$ = function () {
+    return _get_$cachedSerializer__te6jhj_0(this);
   };
-  protoOf(Companion_8).serializer_nv39qc_k$ = function (typeParamsSerializers) {
+  protoOf(Companion_10).serializer_nv39qc_k$ = function (typeParamsSerializers) {
     return this.serializer_9w0wvi_k$();
   };
-  var Companion_instance_9;
-  function Companion_getInstance_8() {
-    static_init_0();
-    return Companion_instance_9;
+  var Companion_instance_11;
+  function Companion_getInstance_10() {
+    static_init_1();
+    return Companion_instance_11;
   }
   function Weekday(name, ordinal) {
     Enum.call(this, name, ordinal);
   }
-  function _get_$cachedSerializer__te6jhj_0($this) {
+  function _get_$cachedSerializer__te6jhj_1($this) {
     return $this.$cachedSerializer$delegate_1.get_value_j01efc_k$();
   }
   function ProgramSetRole$Companion$_anonymous__csnl4r() {
-    return createSimpleEnumSerializer('com.example.androidapp.shared.ProgramSetRole', values_0());
+    return createSimpleEnumSerializer('com.example.androidapp.shared.ProgramSetRole', values_1());
   }
-  var static_init_called_1;
-  function static_init_1() {
-    if (static_init_called_1)
+  var static_init_called_2;
+  function static_init_2() {
+    if (static_init_called_2)
       return Unit_instance;
-    static_init_called_1 = true;
+    static_init_called_2 = true;
     ProgramSetRole_NORMAL_instance = new ProgramSetRole('NORMAL', 0);
     ProgramSetRole_WARMUP_instance = new ProgramSetRole('WARMUP', 1);
     ProgramSetRole_TOP_SET_instance = new ProgramSetRole('TOP_SET', 2);
     ProgramSetRole_DROP_instance = new ProgramSetRole('DROP', 3);
     ProgramSetRole_CLUSTER_instance = new ProgramSetRole('CLUSTER', 4);
-    if (Companion_instance_10 == null) {
+    if (Companion_instance_12 == null) {
       Companion_instance;
-      new Companion_9();
+      new Companion_11();
     }
   }
   var ProgramSetRole_NORMAL_instance;
@@ -3089,26 +3218,26 @@
   var ProgramSetRole_TOP_SET_instance;
   var ProgramSetRole_DROP_instance;
   var ProgramSetRole_CLUSTER_instance;
-  function values_0() {
-    static_init_1();
+  function values_1() {
+    static_init_2();
     return [ProgramSetRole_NORMAL_getInstance(), ProgramSetRole_WARMUP_getInstance(), ProgramSetRole_TOP_SET_getInstance(), ProgramSetRole_DROP_getInstance(), ProgramSetRole_CLUSTER_getInstance()];
   }
-  function Companion_9() {
-    Companion_instance_10 = this;
+  function Companion_11() {
+    Companion_instance_12 = this;
     var tmp = this;
     var tmp_0 = LazyThreadSafetyMode_PUBLICATION_getInstance();
     tmp.$cachedSerializer$delegate_1 = lazy(tmp_0, ProgramSetRole$Companion$_anonymous__csnl4r);
   }
-  protoOf(Companion_9).serializer_9w0wvi_k$ = function () {
-    return _get_$cachedSerializer__te6jhj_0(this);
+  protoOf(Companion_11).serializer_9w0wvi_k$ = function () {
+    return _get_$cachedSerializer__te6jhj_1(this);
   };
-  protoOf(Companion_9).serializer_nv39qc_k$ = function (typeParamsSerializers) {
+  protoOf(Companion_11).serializer_nv39qc_k$ = function (typeParamsSerializers) {
     return this.serializer_9w0wvi_k$();
   };
-  var Companion_instance_10;
-  function Companion_getInstance_9() {
-    static_init_1();
-    return Companion_instance_10;
+  var Companion_instance_12;
+  function Companion_getInstance_11() {
+    static_init_2();
+    return Companion_instance_12;
   }
   function ProgramSetRole(name, ordinal) {
     Enum.call(this, name, ordinal);
@@ -3116,59 +3245,67 @@
   protoOf(ProgramSetRole).get_isRung_ew5llb_k$ = function () {
     return this.equals(ProgramSetRole_DROP_getInstance()) || this.equals(ProgramSetRole_CLUSTER_getInstance());
   };
-  function Weekday_MONDAY_getInstance() {
+  function ProgramKind_WEEKLY_getInstance() {
     static_init_0();
+    return ProgramKind_WEEKLY_instance;
+  }
+  function ProgramKind_SEQUENCE_getInstance() {
+    static_init_0();
+    return ProgramKind_SEQUENCE_instance;
+  }
+  function Weekday_MONDAY_getInstance() {
+    static_init_1();
     return Weekday_MONDAY_instance;
   }
   function Weekday_TUESDAY_getInstance() {
-    static_init_0();
+    static_init_1();
     return Weekday_TUESDAY_instance;
   }
   function Weekday_WEDNESDAY_getInstance() {
-    static_init_0();
+    static_init_1();
     return Weekday_WEDNESDAY_instance;
   }
   function Weekday_THURSDAY_getInstance() {
-    static_init_0();
+    static_init_1();
     return Weekday_THURSDAY_instance;
   }
   function Weekday_FRIDAY_getInstance() {
-    static_init_0();
+    static_init_1();
     return Weekday_FRIDAY_instance;
   }
   function Weekday_SATURDAY_getInstance() {
-    static_init_0();
+    static_init_1();
     return Weekday_SATURDAY_instance;
   }
   function Weekday_SUNDAY_getInstance() {
-    static_init_0();
+    static_init_1();
     return Weekday_SUNDAY_instance;
   }
   function ProgramSetRole_NORMAL_getInstance() {
-    static_init_1();
+    static_init_2();
     return ProgramSetRole_NORMAL_instance;
   }
   function ProgramSetRole_WARMUP_getInstance() {
-    static_init_1();
+    static_init_2();
     return ProgramSetRole_WARMUP_instance;
   }
   function ProgramSetRole_TOP_SET_getInstance() {
-    static_init_1();
+    static_init_2();
     return ProgramSetRole_TOP_SET_instance;
   }
   function ProgramSetRole_DROP_getInstance() {
-    static_init_1();
+    static_init_2();
     return ProgramSetRole_DROP_instance;
   }
   function ProgramSetRole_CLUSTER_getInstance() {
-    static_init_1();
+    static_init_2();
     return ProgramSetRole_CLUSTER_instance;
   }
-  var static_init_called_2;
-  function static_init_2() {
-    if (static_init_called_2)
+  var static_init_called_3;
+  function static_init_3() {
+    if (static_init_called_3)
       return Unit_instance;
-    static_init_called_2 = true;
+    static_init_called_3 = true;
     ChangeKind_PROGRAM_RENAMED_instance = new ChangeKind('PROGRAM_RENAMED', 0);
     ChangeKind_SLOT_ADDED_instance = new ChangeKind('SLOT_ADDED', 1);
     ChangeKind_SLOT_UPDATED_instance = new ChangeKind('SLOT_UPDATED', 2);
@@ -3227,11 +3364,11 @@
       return false;
     return true;
   };
-  var static_init_called_3;
-  function static_init_3() {
-    if (static_init_called_3)
+  var static_init_called_4;
+  function static_init_4() {
+    if (static_init_called_4)
       return Unit_instance;
-    static_init_called_3 = true;
+    static_init_called_4 = true;
     WarningCode_NEW_MOVEMENT_instance = new WarningCode('NEW_MOVEMENT', 0);
     WarningCode_WORKOUT_KEPT_instance = new WarningCode('WORKOUT_KEPT', 1);
   }
@@ -3312,48 +3449,108 @@
   };
   function plan(snapshot, edit, deviceNewestWrite) {
     deviceNewestWrite = deviceNewestWrite === VOID ? null : deviceNewestWrite;
-    var tmp0_elvis_lhs = edit.edit_1;
-    var tmp;
-    if (tmp0_elvis_lhs == null) {
-      return new Refused(listOf(new ProgramProblem(ProblemCode_NO_EDIT_MARKER_getInstance(), 'edit')));
-    } else {
-      tmp = tmp0_elvis_lhs;
+    var tmp0_safe_receiver = refusalProblems(snapshot, edit, deviceNewestWrite);
+    if (tmp0_safe_receiver == null)
+      null;
+    else {
+      // Inline function 'kotlin.let' call
+      return new Refused(tmp0_safe_receiver);
     }
-    var marker = tmp;
-    if (!(edit.program_1.id_1 === snapshot.program_1.id_1)) {
-      return new Refused(listOf(new ProgramProblem(ProblemCode_PROGRAM_MISMATCH_getInstance(), 'program.id', edit.program_1.id_1)));
-    }
-    if (!(snapshot.program_1.deletedAt_1 == null)) {
-      return new Refused(listOf(new ProgramProblem(ProblemCode_PROGRAM_MISSING_getInstance(), 'program.id', edit.program_1.id_1)));
-    }
-    if (!(edit.program_1.deletedAt_1 == null)) {
-      return new Refused(listOf(new ProgramProblem(ProblemCode_MALFORMED_getInstance(), 'program.deletedAt')));
-    }
-    var invalid = validate(edit);
-    // Inline function 'kotlin.collections.isNotEmpty' call
-    if (!invalid.isEmpty_y1axqb_k$())
-      return new Refused(invalid);
-    var fromDocument = latestWrite(snapshot);
-    var tmp_0;
-    if (deviceNewestWrite == null) {
-      tmp_0 = fromDocument;
-    } else {
-      // Inline function 'kotlin.comparisons.maxOf' call
-      tmp_0 = compare(fromDocument, deviceNewestWrite) >= 0 ? fromDocument : deviceNewestWrite;
-    }
-    var newestWrite = tmp_0;
-    if (compare(newestWrite, marker.baseExportedAt_1) > 0) {
-      return new Refused(listOf(new ProgramProblem(ProblemCode_STALE_BASE_getInstance(), 'edit.baseExportedAt', newestWrite.toString())));
-    }
-    // Inline function 'kotlin.collections.mutableListOf' call
-    var changes = ArrayList_init_$Create$_0();
     // Inline function 'kotlin.collections.mutableListOf' call
     var warnings = ArrayList_init_$Create$_0();
-    if (!(snapshot.program_1.name_1 === edit.program_1.name_1)) {
-      // Inline function 'kotlin.collections.plusAssign' call
-      var element = new Change(ChangeKind_PROGRAM_RENAMED_getInstance(), edit.program_1.id_1, edit.program_1.name_1);
-      changes.add_utx5q5_k$(element);
+    // Inline function 'kotlin.collections.buildList' call
+    // Inline function 'kotlin.collections.buildListInternal' call
+    // Inline function 'kotlin.apply' call
+    var this_0 = ArrayList_init_$Create$_0();
+    this_0.addAll_h3ej1q_k$(planProgram(snapshot, edit));
+    this_0.addAll_h3ej1q_k$(planSlots(snapshot, edit, warnings));
+    this_0.addAll_h3ej1q_k$(planTemplates(snapshot, edit));
+    this_0.addAll_h3ej1q_k$(planTemplateExercises(snapshot, edit));
+    this_0.addAll_h3ej1q_k$(planSets(snapshot, edit));
+    this_0.addAll_h3ej1q_k$(planExercises(snapshot, edit, warnings));
+    var changes = this_0.build_nmwvly_k$();
+    return new Ready(changes, warnings);
+  }
+  function refusalProblems(snapshot, edit, deviceNewestWrite) {
+    var marker = edit.edit_1;
+    var shape = marker == null ? new ProgramProblem(ProblemCode_NO_EDIT_MARKER_getInstance(), 'edit') : !(edit.program_1.id_1 === snapshot.program_1.id_1) ? new ProgramProblem(ProblemCode_PROGRAM_MISMATCH_getInstance(), 'program.id', edit.program_1.id_1) : !(snapshot.program_1.deletedAt_1 == null) ? new ProgramProblem(ProblemCode_PROGRAM_MISSING_getInstance(), 'program.id', edit.program_1.id_1) : !(edit.program_1.deletedAt_1 == null) ? new ProgramProblem(ProblemCode_MALFORMED_getInstance(), 'program.deletedAt') : null;
+    var invalid = validate(edit);
+    var tmp;
+    if (marker == null) {
+      tmp = null;
+    } else {
+      // Inline function 'kotlin.let' call
+      tmp = staleProblem(snapshot, marker, deviceNewestWrite);
     }
+    var stale = tmp;
+    var tmp_0;
+    if (shape == null) {
+      tmp_0 = null;
+    } else {
+      // Inline function 'kotlin.let' call
+      tmp_0 = listOf(shape);
+    }
+    var tmp2_elvis_lhs = tmp_0;
+    var tmp_1;
+    if (tmp2_elvis_lhs == null) {
+      // Inline function 'kotlin.takeIf' call
+      var tmp_2;
+      // Inline function 'kotlin.collections.isNotEmpty' call
+      if (!invalid.isEmpty_y1axqb_k$()) {
+        tmp_2 = invalid;
+      } else {
+        tmp_2 = null;
+      }
+      tmp_1 = tmp_2;
+    } else {
+      tmp_1 = tmp2_elvis_lhs;
+    }
+    var tmp3_elvis_lhs = tmp_1;
+    var tmp_3;
+    if (tmp3_elvis_lhs == null) {
+      var tmp_4;
+      if (stale == null) {
+        tmp_4 = null;
+      } else {
+        // Inline function 'kotlin.let' call
+        tmp_4 = listOf(stale);
+      }
+      tmp_3 = tmp_4;
+    } else {
+      tmp_3 = tmp3_elvis_lhs;
+    }
+    return tmp_3;
+  }
+  function staleProblem(snapshot, marker, deviceNewestWrite) {
+    var fromDocument = latestWrite(snapshot);
+    var tmp;
+    if (deviceNewestWrite == null) {
+      tmp = fromDocument;
+    } else {
+      // Inline function 'kotlin.comparisons.maxOf' call
+      tmp = compare(fromDocument, deviceNewestWrite) >= 0 ? fromDocument : deviceNewestWrite;
+    }
+    var newestWrite = tmp;
+    var tmp_0;
+    if (compare(newestWrite, marker.baseExportedAt_1) > 0) {
+      tmp_0 = new ProgramProblem(ProblemCode_STALE_BASE_getInstance(), 'edit.baseExportedAt', newestWrite.toString());
+    } else {
+      tmp_0 = null;
+    }
+    return tmp_0;
+  }
+  function planProgram(snapshot, edit) {
+    var tmp;
+    if (!(snapshot.program_1.name_1 === edit.program_1.name_1)) {
+      tmp = listOf(new Change(ChangeKind_PROGRAM_RENAMED_getInstance(), edit.program_1.id_1, edit.program_1.name_1));
+    } else {
+      tmp = emptyList();
+    }
+    return tmp;
+  }
+  function planSlots(snapshot, edit, warnings) {
+    // Inline function 'kotlin.collections.mutableListOf' call
+    var changes = ArrayList_init_$Create$_0();
     // Inline function 'kotlin.collections.associateBy' call
     var this_0 = snapshot.slots_1;
     var capacity = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_0, 10)), 16);
@@ -3361,9 +3558,9 @@
     var destination = LinkedHashMap_init_$Create$(capacity);
     var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
     while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var element_0 = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$7 = element_0.id_1;
-      destination.put_4fpzoq_k$(tmp$ret$7, element_0);
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$3 = element.id_1;
+      destination.put_4fpzoq_k$(tmp$ret$3, element);
     }
     var snapshotSlots = destination;
     // Inline function 'kotlin.collections.map' call
@@ -3373,39 +3570,39 @@
     var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
       var item = _iterator__ex2g4s_0.next_20eer_k$();
-      var tmp$ret$10 = item.id_1;
-      destination_0.add_utx5q5_k$(tmp$ret$10);
+      var tmp$ret$6 = item.id_1;
+      destination_0.add_utx5q5_k$(tmp$ret$6);
     }
     var editSlotIds = toSet(destination_0);
     // Inline function 'kotlin.collections.forEach' call
     var _iterator__ex2g4s_1 = edit.slots_1.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var element_1 = _iterator__ex2g4s_1.next_20eer_k$();
-      var old = snapshotSlots.get_wei43m_k$(element_1.id_1);
+      var element_0 = _iterator__ex2g4s_1.next_20eer_k$();
+      var old = snapshotSlots.get_wei43m_k$(element_0.id_1);
       var tmp0 = edit.templates_1;
-      var tmp$ret$13;
+      var tmp$ret$9;
       $l$block: {
         // Inline function 'kotlin.collections.firstOrNull' call
         var _iterator__ex2g4s_2 = tmp0.iterator_jk1svi_k$();
         while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-          var element_2 = _iterator__ex2g4s_2.next_20eer_k$();
-          if (element_2.id_1 === element_1.templateId_1) {
-            tmp$ret$13 = element_2;
+          var element_1 = _iterator__ex2g4s_2.next_20eer_k$();
+          if (element_1.id_1 === element_0.templateId_1) {
+            tmp$ret$9 = element_1;
             break $l$block;
           }
         }
-        tmp$ret$13 = null;
+        tmp$ret$9 = null;
       }
-      var tmp0_safe_receiver = tmp$ret$13;
+      var tmp0_safe_receiver = tmp$ret$9;
       var name = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.name_1;
       if (old == null) {
         // Inline function 'kotlin.collections.plusAssign' call
-        var element_3 = new Change(ChangeKind_SLOT_ADDED_getInstance(), element_1.id_1, name);
-        changes.add_utx5q5_k$(element_3);
-      } else if (!sameSlot(old, element_1)) {
+        var element_2 = new Change(ChangeKind_SLOT_ADDED_getInstance(), element_0.id_1, name);
+        changes.add_utx5q5_k$(element_2);
+      } else if (!sameSlot(old, element_0)) {
         // Inline function 'kotlin.collections.plusAssign' call
-        var element_4 = new Change(ChangeKind_SLOT_UPDATED_getInstance(), element_1.id_1, name);
-        changes.add_utx5q5_k$(element_4);
+        var element_3 = new Change(ChangeKind_SLOT_UPDATED_getInstance(), element_0.id_1, name);
+        changes.add_utx5q5_k$(element_3);
       }
     }
     // Inline function 'kotlin.collections.filter' call
@@ -3414,286 +3611,339 @@
     var destination_1 = ArrayList_init_$Create$_0();
     var _iterator__ex2g4s_3 = tmp0_0.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
-      var element_5 = _iterator__ex2g4s_3.next_20eer_k$();
-      if (!editSlotIds.contains_aljjnj_k$(element_5.id_1)) {
-        destination_1.add_utx5q5_k$(element_5);
+      var element_4 = _iterator__ex2g4s_3.next_20eer_k$();
+      if (!editSlotIds.contains_aljjnj_k$(element_4.id_1)) {
+        destination_1.add_utx5q5_k$(element_4);
       }
     }
     // Inline function 'kotlin.collections.forEach' call
     var _iterator__ex2g4s_4 = destination_1.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
-      var element_6 = _iterator__ex2g4s_4.next_20eer_k$();
+      var element_5 = _iterator__ex2g4s_4.next_20eer_k$();
       var tmp0_1 = snapshot.templates_1;
-      var tmp$ret$22;
+      var tmp$ret$18;
       $l$block_0: {
         // Inline function 'kotlin.collections.firstOrNull' call
         var _iterator__ex2g4s_5 = tmp0_1.iterator_jk1svi_k$();
         while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
-          var element_7 = _iterator__ex2g4s_5.next_20eer_k$();
-          if (element_7.id_1 === element_6.templateId_1) {
-            tmp$ret$22 = element_7;
+          var element_6 = _iterator__ex2g4s_5.next_20eer_k$();
+          if (element_6.id_1 === element_5.templateId_1) {
+            tmp$ret$18 = element_6;
             break $l$block_0;
           }
         }
-        tmp$ret$22 = null;
+        tmp$ret$18 = null;
       }
-      var tmp0_safe_receiver_0 = tmp$ret$22;
+      var tmp0_safe_receiver_0 = tmp$ret$18;
       var name_0 = tmp0_safe_receiver_0 == null ? null : tmp0_safe_receiver_0.name_1;
       // Inline function 'kotlin.collections.plusAssign' call
-      var element_8 = new Change(ChangeKind_SLOT_REMOVED_getInstance(), element_6.id_1, name_0);
-      changes.add_utx5q5_k$(element_8);
+      var element_7 = new Change(ChangeKind_SLOT_REMOVED_getInstance(), element_5.id_1, name_0);
+      changes.add_utx5q5_k$(element_7);
     }
-    // Inline function 'kotlin.collections.associateBy' call
-    var this_2 = snapshot.templates_1;
-    var capacity_0 = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_2, 10)), 16);
-    // Inline function 'kotlin.collections.associateByTo' call
-    var destination_2 = LinkedHashMap_init_$Create$(capacity_0);
-    var _iterator__ex2g4s_6 = this_2.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_6.hasNext_bitz1p_k$()) {
-      var element_9 = _iterator__ex2g4s_6.next_20eer_k$();
-      var tmp$ret$27 = element_9.id_1;
-      destination_2.put_4fpzoq_k$(tmp$ret$27, element_9);
-    }
-    var snapshotTemplates = destination_2;
-    // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_7 = edit.templates_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_7.hasNext_bitz1p_k$()) {
-      var element_10 = _iterator__ex2g4s_7.next_20eer_k$();
-      var old_0 = snapshotTemplates.get_wei43m_k$(element_10.id_1);
-      if (old_0 == null) {
-        // Inline function 'kotlin.collections.plusAssign' call
-        var element_11 = new Change(ChangeKind_TEMPLATE_ADDED_getInstance(), element_10.id_1, element_10.name_1);
-        changes.add_utx5q5_k$(element_11);
-      } else if (!sameTemplate(old_0, element_10)) {
-        // Inline function 'kotlin.collections.plusAssign' call
-        var element_12 = new Change(ChangeKind_TEMPLATE_UPDATED_getInstance(), element_10.id_1, element_10.name_1);
-        changes.add_utx5q5_k$(element_12);
-      }
-    }
+    // Inline function 'kotlin.collections.plusAssign' call
+    var elements = keptWorkoutWarnings(snapshot, edit, editSlotIds);
+    addAll(warnings, elements);
+    return changes;
+  }
+  function keptWorkoutWarnings(snapshot, edit, editSlotIds) {
     // Inline function 'kotlin.collections.map' call
-    var this_3 = edit.slots_1;
+    var this_0 = edit.slots_1;
     // Inline function 'kotlin.collections.mapTo' call
-    var destination_3 = ArrayList_init_$Create$(collectionSizeOrDefault(this_3, 10));
-    var _iterator__ex2g4s_8 = this_3.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_8.hasNext_bitz1p_k$()) {
-      var item_0 = _iterator__ex2g4s_8.next_20eer_k$();
-      var tmp$ret$34 = item_0.templateId_1;
-      destination_3.add_utx5q5_k$(tmp$ret$34);
+    var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
+    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$2 = item.templateId_1;
+      destination.add_utx5q5_k$(tmp$ret$2);
     }
-    var editSlotTemplateIds = toSet(destination_3);
+    var keptTemplateIds = toSet(destination);
     // Inline function 'kotlin.collections.filter' call
-    var tmp0_2 = snapshot.slots_1;
+    var tmp0 = snapshot.slots_1;
     // Inline function 'kotlin.collections.filterTo' call
-    var destination_4 = ArrayList_init_$Create$_0();
-    var _iterator__ex2g4s_9 = tmp0_2.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_9.hasNext_bitz1p_k$()) {
-      var element_13 = _iterator__ex2g4s_9.next_20eer_k$();
-      if (!editSlotIds.contains_aljjnj_k$(element_13.id_1)) {
-        destination_4.add_utx5q5_k$(element_13);
+    var destination_0 = ArrayList_init_$Create$_0();
+    var _iterator__ex2g4s_0 = tmp0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s_0.next_20eer_k$();
+      if (!editSlotIds.contains_aljjnj_k$(element.id_1)) {
+        destination_0.add_utx5q5_k$(element);
       }
     }
     // Inline function 'kotlin.collections.map' call
     // Inline function 'kotlin.collections.mapTo' call
-    var destination_5 = ArrayList_init_$Create$(collectionSizeOrDefault(destination_4, 10));
-    var _iterator__ex2g4s_10 = destination_4.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_10.hasNext_bitz1p_k$()) {
-      var item_1 = _iterator__ex2g4s_10.next_20eer_k$();
-      var tmp$ret$40 = item_1.templateId_1;
-      destination_5.add_utx5q5_k$(tmp$ret$40);
+    var destination_1 = ArrayList_init_$Create$(collectionSizeOrDefault(destination_0, 10));
+    var _iterator__ex2g4s_1 = destination_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+      var item_0 = _iterator__ex2g4s_1.next_20eer_k$();
+      var tmp$ret$8 = item_0.templateId_1;
+      destination_1.add_utx5q5_k$(tmp$ret$8);
     }
     // Inline function 'kotlin.collections.filter' call
     // Inline function 'kotlin.collections.filterTo' call
-    var destination_6 = ArrayList_init_$Create$_0();
-    var _iterator__ex2g4s_11 = destination_5.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_11.hasNext_bitz1p_k$()) {
-      var element_14 = _iterator__ex2g4s_11.next_20eer_k$();
-      if (!editSlotTemplateIds.contains_aljjnj_k$(element_14)) {
-        destination_6.add_utx5q5_k$(element_14);
+    var destination_2 = ArrayList_init_$Create$_0();
+    var _iterator__ex2g4s_2 = destination_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+      var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
+      if (!keptTemplateIds.contains_aljjnj_k$(element_0)) {
+        destination_2.add_utx5q5_k$(element_0);
       }
     }
-    // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_12 = distinct(destination_6).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_12.hasNext_bitz1p_k$()) {
-      var element_15 = _iterator__ex2g4s_12.next_20eer_k$();
-      var tmp_1 = WarningCode_WORKOUT_KEPT_getInstance();
-      var tmp0_3 = snapshot.templates_1;
-      var tmp$ret$46;
-      $l$block_1: {
+    // Inline function 'kotlin.collections.map' call
+    var this_1 = distinct(destination_2);
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_3 = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
+    var _iterator__ex2g4s_3 = this_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
+      var item_1 = _iterator__ex2g4s_3.next_20eer_k$();
+      var tmp = WarningCode_WORKOUT_KEPT_getInstance();
+      var tmp0_0 = snapshot.templates_1;
+      var tmp$ret$15;
+      $l$block: {
         // Inline function 'kotlin.collections.firstOrNull' call
-        var _iterator__ex2g4s_13 = tmp0_3.iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_13.hasNext_bitz1p_k$()) {
-          var element_16 = _iterator__ex2g4s_13.next_20eer_k$();
-          if (element_16.id_1 === element_15) {
-            tmp$ret$46 = element_16;
-            break $l$block_1;
+        var _iterator__ex2g4s_4 = tmp0_0.iterator_jk1svi_k$();
+        while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
+          var element_1 = _iterator__ex2g4s_4.next_20eer_k$();
+          if (element_1.id_1 === item_1) {
+            tmp$ret$15 = element_1;
+            break $l$block;
           }
         }
-        tmp$ret$46 = null;
+        tmp$ret$15 = null;
       }
-      var tmp0_safe_receiver_1 = tmp$ret$46;
-      // Inline function 'kotlin.collections.plusAssign' call
-      var element_17 = new PlanWarning(tmp_1, element_15, tmp0_safe_receiver_1 == null ? null : tmp0_safe_receiver_1.name_1);
-      warnings.add_utx5q5_k$(element_17);
+      var tmp0_safe_receiver = tmp$ret$15;
+      var tmp$ret$14 = new PlanWarning(tmp, item_1, tmp0_safe_receiver == null ? null : tmp0_safe_receiver.name_1);
+      destination_3.add_utx5q5_k$(tmp$ret$14);
     }
-    // Inline function 'kotlin.collections.map' call
-    var this_4 = edit.templates_1;
-    // Inline function 'kotlin.collections.mapTo' call
-    var destination_7 = ArrayList_init_$Create$(collectionSizeOrDefault(this_4, 10));
-    var _iterator__ex2g4s_14 = this_4.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_14.hasNext_bitz1p_k$()) {
-      var item_2 = _iterator__ex2g4s_14.next_20eer_k$();
-      var tmp$ret$51 = item_2.id_1;
-      destination_7.add_utx5q5_k$(tmp$ret$51);
-    }
-    var editTemplateIds = toSet(destination_7);
-    // Inline function 'kotlin.collections.map' call
-    var this_5 = edit.templateExercises_1;
-    // Inline function 'kotlin.collections.mapTo' call
-    var destination_8 = ArrayList_init_$Create$(collectionSizeOrDefault(this_5, 10));
-    var _iterator__ex2g4s_15 = this_5.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_15.hasNext_bitz1p_k$()) {
-      var item_3 = _iterator__ex2g4s_15.next_20eer_k$();
-      var tmp$ret$54 = item_3.id_1;
-      destination_8.add_utx5q5_k$(tmp$ret$54);
-    }
-    var editTemplateExerciseIds = toSet(destination_8);
+    return destination_3;
+  }
+  function planTemplates(snapshot, edit) {
     // Inline function 'kotlin.collections.associateBy' call
-    var this_6 = snapshot.templateExercises_1;
-    var capacity_1 = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_6, 10)), 16);
+    var this_0 = snapshot.templates_1;
+    var capacity = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_0, 10)), 16);
     // Inline function 'kotlin.collections.associateByTo' call
-    var destination_9 = LinkedHashMap_init_$Create$(capacity_1);
-    var _iterator__ex2g4s_16 = this_6.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_16.hasNext_bitz1p_k$()) {
-      var element_18 = _iterator__ex2g4s_16.next_20eer_k$();
-      var tmp$ret$57 = element_18.id_1;
-      destination_9.put_4fpzoq_k$(tmp$ret$57, element_18);
+    var destination = LinkedHashMap_init_$Create$(capacity);
+    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$2 = element.id_1;
+      destination.put_4fpzoq_k$(tmp$ret$2, element);
     }
-    var snapshotTemplateExercises = destination_9;
+    var snapshotTemplates = destination;
+    // Inline function 'kotlin.collections.mapNotNull' call
+    var tmp0 = edit.templates_1;
+    // Inline function 'kotlin.collections.mapNotNullTo' call
+    var destination_0 = ArrayList_init_$Create$_0();
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_17 = edit.templateExercises_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_17.hasNext_bitz1p_k$()) {
-      var element_19 = _iterator__ex2g4s_17.next_20eer_k$();
-      var old_1 = snapshotTemplateExercises.get_wei43m_k$(element_19.id_1);
-      if (old_1 == null) {
-        // Inline function 'kotlin.collections.plusAssign' call
-        var element_20 = new Change(ChangeKind_TEMPLATE_EXERCISE_ADDED_getInstance(), element_19.id_1, null);
-        changes.add_utx5q5_k$(element_20);
-      } else if (!sameTemplateExercise(old_1, element_19)) {
-        // Inline function 'kotlin.collections.plusAssign' call
-        var element_21 = new Change(ChangeKind_TEMPLATE_EXERCISE_UPDATED_getInstance(), element_19.id_1, null);
-        changes.add_utx5q5_k$(element_21);
+    var _iterator__ex2g4s_0 = tmp0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var element_0 = _iterator__ex2g4s_0.next_20eer_k$();
+      var old = snapshotTemplates.get_wei43m_k$(element_0.id_1);
+      var tmp0_safe_receiver = old == null ? new Change(ChangeKind_TEMPLATE_ADDED_getInstance(), element_0.id_1, element_0.name_1) : !sameTemplate(old, element_0) ? new Change(ChangeKind_TEMPLATE_UPDATED_getInstance(), element_0.id_1, element_0.name_1) : null;
+      if (tmp0_safe_receiver == null)
+        null;
+      else {
+        // Inline function 'kotlin.let' call
+        destination_0.add_utx5q5_k$(tmp0_safe_receiver);
       }
     }
-    // Inline function 'kotlin.collections.filter' call
-    var tmp0_4 = snapshot.templateExercises_1;
-    // Inline function 'kotlin.collections.filterTo' call
-    var destination_10 = ArrayList_init_$Create$_0();
-    var _iterator__ex2g4s_18 = tmp0_4.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_18.hasNext_bitz1p_k$()) {
-      var element_22 = _iterator__ex2g4s_18.next_20eer_k$();
-      if (!editTemplateExerciseIds.contains_aljjnj_k$(element_22.id_1) && editTemplateIds.contains_aljjnj_k$(element_22.templateId_1)) {
-        destination_10.add_utx5q5_k$(element_22);
-      }
+    return destination_0;
+  }
+  function planTemplateExercises(snapshot, edit) {
+    // Inline function 'kotlin.collections.map' call
+    var this_0 = edit.templates_1;
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
+    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$2 = item.id_1;
+      destination.add_utx5q5_k$(tmp$ret$2);
     }
-    // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_19 = destination_10.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_19.hasNext_bitz1p_k$()) {
-      var element_23 = _iterator__ex2g4s_19.next_20eer_k$();
-      // Inline function 'kotlin.collections.plusAssign' call
-      var element_24 = new Change(ChangeKind_TEMPLATE_EXERCISE_REMOVED_getInstance(), element_23.id_1, null);
-      changes.add_utx5q5_k$(element_24);
+    var editTemplateIds = toSet(destination);
+    // Inline function 'kotlin.collections.map' call
+    var this_1 = edit.templateExercises_1;
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
+    var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
+      var tmp$ret$5 = item_0.id_1;
+      destination_0.add_utx5q5_k$(tmp$ret$5);
     }
+    var editIds = toSet(destination_0);
     // Inline function 'kotlin.collections.associateBy' call
-    var this_7 = snapshot.templateSets_1;
-    var capacity_2 = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_7, 10)), 16);
+    var this_2 = snapshot.templateExercises_1;
+    var capacity = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_2, 10)), 16);
     // Inline function 'kotlin.collections.associateByTo' call
-    var destination_11 = LinkedHashMap_init_$Create$(capacity_2);
-    var _iterator__ex2g4s_20 = this_7.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_20.hasNext_bitz1p_k$()) {
-      var element_25 = _iterator__ex2g4s_20.next_20eer_k$();
-      var tmp$ret$70 = element_25.id_1;
-      destination_11.put_4fpzoq_k$(tmp$ret$70, element_25);
+    var destination_1 = LinkedHashMap_init_$Create$(capacity);
+    var _iterator__ex2g4s_1 = this_2.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s_1.next_20eer_k$();
+      var tmp$ret$8 = element.id_1;
+      destination_1.put_4fpzoq_k$(tmp$ret$8, element);
     }
-    var snapshotSets = destination_11;
-    // Inline function 'kotlin.collections.map' call
-    var this_8 = edit.templateSets_1;
-    // Inline function 'kotlin.collections.mapTo' call
-    var destination_12 = ArrayList_init_$Create$(collectionSizeOrDefault(this_8, 10));
-    var _iterator__ex2g4s_21 = this_8.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_21.hasNext_bitz1p_k$()) {
-      var item_4 = _iterator__ex2g4s_21.next_20eer_k$();
-      var tmp$ret$73 = item_4.id_1;
-      destination_12.add_utx5q5_k$(tmp$ret$73);
-    }
-    var editSetIds = toSet(destination_12);
+    var snapshotRows = destination_1;
+    // Inline function 'kotlin.collections.mapNotNull' call
+    var tmp0 = edit.templateExercises_1;
+    // Inline function 'kotlin.collections.mapNotNullTo' call
+    var destination_2 = ArrayList_init_$Create$_0();
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_22 = edit.templateSets_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_22.hasNext_bitz1p_k$()) {
-      var element_26 = _iterator__ex2g4s_22.next_20eer_k$();
-      var old_2 = snapshotSets.get_wei43m_k$(element_26.id_1);
-      if (old_2 == null) {
-        // Inline function 'kotlin.collections.plusAssign' call
-        var element_27 = new Change(ChangeKind_SET_ADDED_getInstance(), element_26.id_1, null);
-        changes.add_utx5q5_k$(element_27);
-      } else if (!sameSet(old_2, element_26)) {
-        // Inline function 'kotlin.collections.plusAssign' call
-        var element_28 = new Change(ChangeKind_SET_UPDATED_getInstance(), element_26.id_1, null);
-        changes.add_utx5q5_k$(element_28);
+    var _iterator__ex2g4s_2 = tmp0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+      var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
+      var old = snapshotRows.get_wei43m_k$(element_0.id_1);
+      var tmp0_safe_receiver = old == null ? new Change(ChangeKind_TEMPLATE_EXERCISE_ADDED_getInstance(), element_0.id_1, null) : !sameTemplateExercise(old, element_0) ? new Change(ChangeKind_TEMPLATE_EXERCISE_UPDATED_getInstance(), element_0.id_1, null) : null;
+      if (tmp0_safe_receiver == null)
+        null;
+      else {
+        // Inline function 'kotlin.let' call
+        destination_2.add_utx5q5_k$(tmp0_safe_receiver);
       }
     }
+    var changed = destination_2;
     // Inline function 'kotlin.collections.filter' call
-    var tmp0_5 = snapshot.templateSets_1;
+    var tmp0_0 = snapshot.templateExercises_1;
     // Inline function 'kotlin.collections.filterTo' call
-    var destination_13 = ArrayList_init_$Create$_0();
-    var _iterator__ex2g4s_23 = tmp0_5.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_23.hasNext_bitz1p_k$()) {
-      var element_29 = _iterator__ex2g4s_23.next_20eer_k$();
-      if (!editSetIds.contains_aljjnj_k$(element_29.id_1) && editTemplateExerciseIds.contains_aljjnj_k$(element_29.templateExerciseId_1)) {
-        destination_13.add_utx5q5_k$(element_29);
+    var destination_3 = ArrayList_init_$Create$_0();
+    var _iterator__ex2g4s_3 = tmp0_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
+      var element_1 = _iterator__ex2g4s_3.next_20eer_k$();
+      if (!editIds.contains_aljjnj_k$(element_1.id_1) && editTemplateIds.contains_aljjnj_k$(element_1.templateId_1)) {
+        destination_3.add_utx5q5_k$(element_1);
       }
-    }
-    // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_24 = destination_13.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_24.hasNext_bitz1p_k$()) {
-      var element_30 = _iterator__ex2g4s_24.next_20eer_k$();
-      // Inline function 'kotlin.collections.plusAssign' call
-      var element_31 = new Change(ChangeKind_SET_REMOVED_getInstance(), element_30.id_1, null);
-      changes.add_utx5q5_k$(element_31);
     }
     // Inline function 'kotlin.collections.map' call
-    var this_9 = snapshot.exercises_1;
     // Inline function 'kotlin.collections.mapTo' call
-    var destination_14 = ArrayList_init_$Create$(collectionSizeOrDefault(this_9, 10));
-    var _iterator__ex2g4s_25 = this_9.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_25.hasNext_bitz1p_k$()) {
-      var item_5 = _iterator__ex2g4s_25.next_20eer_k$();
-      var tmp$ret$86 = item_5.id_1;
-      destination_14.add_utx5q5_k$(tmp$ret$86);
+    var destination_4 = ArrayList_init_$Create$(collectionSizeOrDefault(destination_3, 10));
+    var _iterator__ex2g4s_4 = destination_3.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
+      var item_1 = _iterator__ex2g4s_4.next_20eer_k$();
+      var tmp$ret$21 = new Change(ChangeKind_TEMPLATE_EXERCISE_REMOVED_getInstance(), item_1.id_1, null);
+      destination_4.add_utx5q5_k$(tmp$ret$21);
     }
-    var snapshotExerciseIds = toSet(destination_14);
-    // Inline function 'kotlin.collections.filter' call
-    var tmp0_6 = edit.exercises_1;
-    // Inline function 'kotlin.collections.filterTo' call
-    var destination_15 = ArrayList_init_$Create$_0();
-    var _iterator__ex2g4s_26 = tmp0_6.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_26.hasNext_bitz1p_k$()) {
-      var element_32 = _iterator__ex2g4s_26.next_20eer_k$();
-      if (!snapshotExerciseIds.contains_aljjnj_k$(element_32.id_1)) {
-        destination_15.add_utx5q5_k$(element_32);
+    var removed = destination_4;
+    return plus(changed, removed);
+  }
+  function planSets(snapshot, edit) {
+    // Inline function 'kotlin.collections.map' call
+    var this_0 = edit.templateExercises_1;
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
+    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$2 = item.id_1;
+      destination.add_utx5q5_k$(tmp$ret$2);
+    }
+    var editExerciseIds = toSet(destination);
+    // Inline function 'kotlin.collections.map' call
+    var this_1 = edit.templateSets_1;
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
+    var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
+      var tmp$ret$5 = item_0.id_1;
+      destination_0.add_utx5q5_k$(tmp$ret$5);
+    }
+    var editIds = toSet(destination_0);
+    // Inline function 'kotlin.collections.associateBy' call
+    var this_2 = snapshot.templateSets_1;
+    var capacity = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_2, 10)), 16);
+    // Inline function 'kotlin.collections.associateByTo' call
+    var destination_1 = LinkedHashMap_init_$Create$(capacity);
+    var _iterator__ex2g4s_1 = this_2.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s_1.next_20eer_k$();
+      var tmp$ret$8 = element.id_1;
+      destination_1.put_4fpzoq_k$(tmp$ret$8, element);
+    }
+    var snapshotSets = destination_1;
+    // Inline function 'kotlin.collections.mapNotNull' call
+    var tmp0 = edit.templateSets_1;
+    // Inline function 'kotlin.collections.mapNotNullTo' call
+    var destination_2 = ArrayList_init_$Create$_0();
+    // Inline function 'kotlin.collections.forEach' call
+    var _iterator__ex2g4s_2 = tmp0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+      var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
+      var old = snapshotSets.get_wei43m_k$(element_0.id_1);
+      var tmp0_safe_receiver = old == null ? new Change(ChangeKind_SET_ADDED_getInstance(), element_0.id_1, null) : !sameSet(old, element_0) ? new Change(ChangeKind_SET_UPDATED_getInstance(), element_0.id_1, null) : null;
+      if (tmp0_safe_receiver == null)
+        null;
+      else {
+        // Inline function 'kotlin.let' call
+        destination_2.add_utx5q5_k$(tmp0_safe_receiver);
       }
     }
-    // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_27 = destination_15.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_27.hasNext_bitz1p_k$()) {
-      var element_33 = _iterator__ex2g4s_27.next_20eer_k$();
-      // Inline function 'kotlin.collections.plusAssign' call
-      var element_34 = new Change(ChangeKind_EXERCISE_ADDED_getInstance(), element_33.id_1, element_33.name_1);
-      changes.add_utx5q5_k$(element_34);
-      // Inline function 'kotlin.collections.plusAssign' call
-      var element_35 = new PlanWarning(WarningCode_NEW_MOVEMENT_getInstance(), element_33.id_1, element_33.name_1);
-      warnings.add_utx5q5_k$(element_35);
+    var changed = destination_2;
+    // Inline function 'kotlin.collections.filter' call
+    var tmp0_0 = snapshot.templateSets_1;
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination_3 = ArrayList_init_$Create$_0();
+    var _iterator__ex2g4s_3 = tmp0_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
+      var element_1 = _iterator__ex2g4s_3.next_20eer_k$();
+      if (!editIds.contains_aljjnj_k$(element_1.id_1) && editExerciseIds.contains_aljjnj_k$(element_1.templateExerciseId_1)) {
+        destination_3.add_utx5q5_k$(element_1);
+      }
     }
-    return new Ready(changes, warnings);
+    // Inline function 'kotlin.collections.map' call
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_4 = ArrayList_init_$Create$(collectionSizeOrDefault(destination_3, 10));
+    var _iterator__ex2g4s_4 = destination_3.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
+      var item_1 = _iterator__ex2g4s_4.next_20eer_k$();
+      var tmp$ret$21 = new Change(ChangeKind_SET_REMOVED_getInstance(), item_1.id_1, null);
+      destination_4.add_utx5q5_k$(tmp$ret$21);
+    }
+    var removed = destination_4;
+    return plus(changed, removed);
+  }
+  function planExercises(snapshot, edit, warnings) {
+    // Inline function 'kotlin.collections.map' call
+    var this_0 = snapshot.exercises_1;
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
+    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$2 = item.id_1;
+      destination.add_utx5q5_k$(tmp$ret$2);
+    }
+    var known = toSet(destination);
+    // Inline function 'kotlin.collections.filter' call
+    var tmp0 = edit.exercises_1;
+    // Inline function 'kotlin.collections.filterTo' call
+    var destination_0 = ArrayList_init_$Create$_0();
+    var _iterator__ex2g4s_0 = tmp0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s_0.next_20eer_k$();
+      if (!known.contains_aljjnj_k$(element.id_1)) {
+        destination_0.add_utx5q5_k$(element);
+      }
+    }
+    var added = destination_0;
+    // Inline function 'kotlin.collections.map' call
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_1 = ArrayList_init_$Create$(collectionSizeOrDefault(added, 10));
+    var _iterator__ex2g4s_1 = added.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+      var item_0 = _iterator__ex2g4s_1.next_20eer_k$();
+      var tmp$ret$8 = new PlanWarning(WarningCode_NEW_MOVEMENT_getInstance(), item_0.id_1, item_0.name_1);
+      destination_1.add_utx5q5_k$(tmp$ret$8);
+    }
+    // Inline function 'kotlin.collections.plusAssign' call
+    addAll(warnings, destination_1);
+    // Inline function 'kotlin.collections.map' call
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_2 = ArrayList_init_$Create$(collectionSizeOrDefault(added, 10));
+    var _iterator__ex2g4s_2 = added.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+      var item_1 = _iterator__ex2g4s_2.next_20eer_k$();
+      var tmp$ret$12 = new Change(ChangeKind_EXERCISE_ADDED_getInstance(), item_1.id_1, item_1.name_1);
+      destination_2.add_utx5q5_k$(tmp$ret$12);
+    }
+    return destination_2;
   }
   function latestWrite(document) {
     var latest = {_v: document.program_1.updatedAt_1};
@@ -3741,74 +3991,102 @@
     }
   }
   function ChangeKind_PROGRAM_RENAMED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_PROGRAM_RENAMED_instance;
   }
   function ChangeKind_SLOT_ADDED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_SLOT_ADDED_instance;
   }
   function ChangeKind_SLOT_UPDATED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_SLOT_UPDATED_instance;
   }
   function ChangeKind_SLOT_REMOVED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_SLOT_REMOVED_instance;
   }
   function ChangeKind_TEMPLATE_ADDED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_TEMPLATE_ADDED_instance;
   }
   function ChangeKind_TEMPLATE_UPDATED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_TEMPLATE_UPDATED_instance;
   }
   function ChangeKind_TEMPLATE_EXERCISE_ADDED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_TEMPLATE_EXERCISE_ADDED_instance;
   }
   function ChangeKind_TEMPLATE_EXERCISE_UPDATED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_TEMPLATE_EXERCISE_UPDATED_instance;
   }
   function ChangeKind_TEMPLATE_EXERCISE_REMOVED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_TEMPLATE_EXERCISE_REMOVED_instance;
   }
   function ChangeKind_SET_ADDED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_SET_ADDED_instance;
   }
   function ChangeKind_SET_UPDATED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_SET_UPDATED_instance;
   }
   function ChangeKind_SET_REMOVED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_SET_REMOVED_instance;
   }
   function ChangeKind_EXERCISE_ADDED_getInstance() {
-    static_init_2();
+    static_init_3();
     return ChangeKind_EXERCISE_ADDED_instance;
   }
   function WarningCode_NEW_MOVEMENT_getInstance() {
-    static_init_3();
+    static_init_4();
     return WarningCode_NEW_MOVEMENT_instance;
   }
   function WarningCode_WORKOUT_KEPT_getInstance() {
-    static_init_3();
+    static_init_4();
     return WarningCode_WORKOUT_KEPT_instance;
   }
+  function Refusal(sink) {
+    this.sink_1 = sink;
+  }
+  protoOf(Refusal).invoke_kookoy_k$ = function (code, path, detail) {
+    this.sink_1(code, path, detail);
+  };
+  protoOf(Refusal).invoke$default_jiat1m_k$ = function (code, path, detail, $super) {
+    path = path === VOID ? '' : path;
+    detail = detail === VOID ? null : detail;
+    var tmp;
+    if ($super === VOID) {
+      this.invoke_kookoy_k$(code, path, detail);
+      tmp = Unit_instance;
+    } else {
+      tmp = $super.invoke_kookoy_k$.call(this, code, path, detail);
+    }
+    return tmp;
+  };
   function validate(document) {
     // Inline function 'kotlin.collections.mutableListOf' call
     var problems = ArrayList_init_$Create$_0();
+    var refuse = new Refusal(validate$lambda(problems));
     if (isBlank(document.program_1.id_1)) {
-      validate$refuse(problems, ProblemCode_MALFORMED_getInstance(), 'program.id');
+      refuse.invoke$default_jiat1m_k$(ProblemCode_MALFORMED_getInstance(), 'program.id');
     }
     if (isBlank(document.program_1.name_1)) {
-      validate$refuse(problems, ProblemCode_EMPTY_NAME_getInstance(), 'program.name');
+      refuse.invoke$default_jiat1m_k$(ProblemCode_EMPTY_NAME_getInstance(), 'program.name');
     }
+    validateDuplicates(document, refuse);
+    validateTemplates(document, refuse);
+    validateExercises(document, refuse);
+    validateSlots(document, refuse);
+    validateTemplateExercises(document, refuse);
+    validateSets(document, refuse);
+    return problems;
+  }
+  function validateDuplicates(document, refuse) {
     // Inline function 'kotlin.collections.map' call
     var this_0 = document.templates_1;
     // Inline function 'kotlin.collections.mapTo' call
@@ -3816,390 +4094,404 @@
     var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
     while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
       var item = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$3 = item.id_1;
-      destination.add_utx5q5_k$(tmp$ret$3);
+      var tmp$ret$2 = item.id_1;
+      destination.add_utx5q5_k$(tmp$ret$2);
     }
-    var templateIds = toSet(destination);
+    // Inline function 'kotlin.collections.forEach' call
+    var _iterator__ex2g4s_0 = duplicates(destination).iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s_0.next_20eer_k$();
+      refuse.invoke_kookoy_k$(ProblemCode_DUPLICATE_ID_getInstance(), 'templates', element);
+    }
     // Inline function 'kotlin.collections.map' call
-    var this_1 = document.exercises_1;
+    var this_1 = document.slots_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
-    var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
-      var tmp$ret$6 = item_0.id_1;
-      destination_0.add_utx5q5_k$(tmp$ret$6);
-    }
-    var exerciseIds = toSet(destination_0);
-    // Inline function 'kotlin.collections.associateBy' call
-    var this_2 = document.exercises_1;
-    var capacity = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_2, 10)), 16);
-    // Inline function 'kotlin.collections.associateByTo' call
-    var destination_1 = LinkedHashMap_init_$Create$(capacity);
-    var _iterator__ex2g4s_1 = this_2.iterator_jk1svi_k$();
+    var _iterator__ex2g4s_1 = this_1.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s_1.next_20eer_k$();
-      var tmp$ret$9 = element.id_1;
-      destination_1.put_4fpzoq_k$(tmp$ret$9, element);
+      var item_0 = _iterator__ex2g4s_1.next_20eer_k$();
+      var tmp$ret$7 = item_0.id_1;
+      destination_0.add_utx5q5_k$(tmp$ret$7);
     }
-    var exerciseById = destination_1;
+    // Inline function 'kotlin.collections.forEach' call
+    var _iterator__ex2g4s_2 = duplicates(destination_0).iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+      var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
+      refuse.invoke_kookoy_k$(ProblemCode_DUPLICATE_ID_getInstance(), 'slots', element_0);
+    }
     // Inline function 'kotlin.collections.map' call
-    var this_3 = document.templateExercises_1;
+    var this_2 = document.templateExercises_1;
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination_1 = ArrayList_init_$Create$(collectionSizeOrDefault(this_2, 10));
+    var _iterator__ex2g4s_3 = this_2.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
+      var item_1 = _iterator__ex2g4s_3.next_20eer_k$();
+      var tmp$ret$12 = item_1.id_1;
+      destination_1.add_utx5q5_k$(tmp$ret$12);
+    }
+    // Inline function 'kotlin.collections.forEach' call
+    var _iterator__ex2g4s_4 = duplicates(destination_1).iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
+      var element_1 = _iterator__ex2g4s_4.next_20eer_k$();
+      refuse.invoke_kookoy_k$(ProblemCode_DUPLICATE_ID_getInstance(), 'templateExercises', element_1);
+    }
+    // Inline function 'kotlin.collections.map' call
+    var this_3 = document.templateSets_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination_2 = ArrayList_init_$Create$(collectionSizeOrDefault(this_3, 10));
-    var _iterator__ex2g4s_2 = this_3.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-      var item_1 = _iterator__ex2g4s_2.next_20eer_k$();
-      var tmp$ret$12 = item_1.id_1;
-      destination_2.add_utx5q5_k$(tmp$ret$12);
+    var _iterator__ex2g4s_5 = this_3.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
+      var item_2 = _iterator__ex2g4s_5.next_20eer_k$();
+      var tmp$ret$17 = item_2.id_1;
+      destination_2.add_utx5q5_k$(tmp$ret$17);
     }
-    var templateExerciseIds = toSet(destination_2);
+    // Inline function 'kotlin.collections.forEach' call
+    var _iterator__ex2g4s_6 = duplicates(destination_2).iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_6.hasNext_bitz1p_k$()) {
+      var element_2 = _iterator__ex2g4s_6.next_20eer_k$();
+      refuse.invoke_kookoy_k$(ProblemCode_DUPLICATE_ID_getInstance(), 'templateSets', element_2);
+    }
     // Inline function 'kotlin.collections.map' call
-    var this_4 = document.templates_1;
+    var this_4 = document.exercises_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination_3 = ArrayList_init_$Create$(collectionSizeOrDefault(this_4, 10));
-    var _iterator__ex2g4s_3 = this_4.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
-      var item_2 = _iterator__ex2g4s_3.next_20eer_k$();
-      var tmp$ret$15 = item_2.id_1;
-      destination_3.add_utx5q5_k$(tmp$ret$15);
-    }
-    // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_4 = duplicates(destination_3).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
-      var element_0 = _iterator__ex2g4s_4.next_20eer_k$();
-      validate$refuse(problems, ProblemCode_DUPLICATE_ID_getInstance(), 'templates', element_0);
-    }
-    // Inline function 'kotlin.collections.map' call
-    var this_5 = document.slots_1;
-    // Inline function 'kotlin.collections.mapTo' call
-    var destination_4 = ArrayList_init_$Create$(collectionSizeOrDefault(this_5, 10));
-    var _iterator__ex2g4s_5 = this_5.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
-      var item_3 = _iterator__ex2g4s_5.next_20eer_k$();
-      var tmp$ret$20 = item_3.id_1;
-      destination_4.add_utx5q5_k$(tmp$ret$20);
-    }
-    // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_6 = duplicates(destination_4).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_6.hasNext_bitz1p_k$()) {
-      var element_1 = _iterator__ex2g4s_6.next_20eer_k$();
-      validate$refuse(problems, ProblemCode_DUPLICATE_ID_getInstance(), 'slots', element_1);
-    }
-    // Inline function 'kotlin.collections.map' call
-    var this_6 = document.templateExercises_1;
-    // Inline function 'kotlin.collections.mapTo' call
-    var destination_5 = ArrayList_init_$Create$(collectionSizeOrDefault(this_6, 10));
-    var _iterator__ex2g4s_7 = this_6.iterator_jk1svi_k$();
+    var _iterator__ex2g4s_7 = this_4.iterator_jk1svi_k$();
     while (_iterator__ex2g4s_7.hasNext_bitz1p_k$()) {
-      var item_4 = _iterator__ex2g4s_7.next_20eer_k$();
-      var tmp$ret$25 = item_4.id_1;
-      destination_5.add_utx5q5_k$(tmp$ret$25);
+      var item_3 = _iterator__ex2g4s_7.next_20eer_k$();
+      var tmp$ret$22 = item_3.id_1;
+      destination_3.add_utx5q5_k$(tmp$ret$22);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_8 = duplicates(destination_5).iterator_jk1svi_k$();
+    var _iterator__ex2g4s_8 = duplicates(destination_3).iterator_jk1svi_k$();
     while (_iterator__ex2g4s_8.hasNext_bitz1p_k$()) {
-      var element_2 = _iterator__ex2g4s_8.next_20eer_k$();
-      validate$refuse(problems, ProblemCode_DUPLICATE_ID_getInstance(), 'templateExercises', element_2);
+      var element_3 = _iterator__ex2g4s_8.next_20eer_k$();
+      refuse.invoke_kookoy_k$(ProblemCode_DUPLICATE_ID_getInstance(), 'exercises', element_3);
     }
-    // Inline function 'kotlin.collections.map' call
-    var this_7 = document.templateSets_1;
-    // Inline function 'kotlin.collections.mapTo' call
-    var destination_6 = ArrayList_init_$Create$(collectionSizeOrDefault(this_7, 10));
-    var _iterator__ex2g4s_9 = this_7.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_9.hasNext_bitz1p_k$()) {
-      var item_5 = _iterator__ex2g4s_9.next_20eer_k$();
-      var tmp$ret$30 = item_5.id_1;
-      destination_6.add_utx5q5_k$(tmp$ret$30);
-    }
-    // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_10 = duplicates(destination_6).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_10.hasNext_bitz1p_k$()) {
-      var element_3 = _iterator__ex2g4s_10.next_20eer_k$();
-      validate$refuse(problems, ProblemCode_DUPLICATE_ID_getInstance(), 'templateSets', element_3);
-    }
-    // Inline function 'kotlin.collections.map' call
-    var this_8 = document.exercises_1;
-    // Inline function 'kotlin.collections.mapTo' call
-    var destination_7 = ArrayList_init_$Create$(collectionSizeOrDefault(this_8, 10));
-    var _iterator__ex2g4s_11 = this_8.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_11.hasNext_bitz1p_k$()) {
-      var item_6 = _iterator__ex2g4s_11.next_20eer_k$();
-      var tmp$ret$35 = item_6.id_1;
-      destination_7.add_utx5q5_k$(tmp$ret$35);
-    }
-    // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_12 = duplicates(destination_7).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_12.hasNext_bitz1p_k$()) {
-      var element_4 = _iterator__ex2g4s_12.next_20eer_k$();
-      validate$refuse(problems, ProblemCode_DUPLICATE_ID_getInstance(), 'exercises', element_4);
-    }
+  }
+  function validateTemplates(document, refuse) {
     // Inline function 'kotlin.collections.forEachIndexed' call
     var index = 0;
-    var _iterator__ex2g4s_13 = document.templates_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_13.hasNext_bitz1p_k$()) {
-      var item_7 = _iterator__ex2g4s_13.next_20eer_k$();
+    var _iterator__ex2g4s = document.templates_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
       var _unary__edvuaz = index;
       index = _unary__edvuaz + 1 | 0;
       var index_0 = checkIndexOverflow(_unary__edvuaz);
-      if (isBlank(item_7.name_1)) {
-        validate$refuse(problems, ProblemCode_EMPTY_NAME_getInstance(), 'templates[' + index_0 + '].name');
+      if (isBlank(item.name_1)) {
+        refuse.invoke$default_jiat1m_k$(ProblemCode_EMPTY_NAME_getInstance(), 'templates[' + index_0 + '].name');
       }
     }
+  }
+  function validateExercises(document, refuse) {
     // Inline function 'kotlin.collections.forEachIndexed' call
-    var index_1 = 0;
-    var _iterator__ex2g4s_14 = document.exercises_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_14.hasNext_bitz1p_k$()) {
-      var item_8 = _iterator__ex2g4s_14.next_20eer_k$();
-      var _unary__edvuaz_0 = index_1;
-      index_1 = _unary__edvuaz_0 + 1 | 0;
-      var index_2 = checkIndexOverflow(_unary__edvuaz_0);
-      if (isBlank(item_8.name_1)) {
-        validate$refuse(problems, ProblemCode_EMPTY_NAME_getInstance(), 'exercises[' + index_2 + '].name');
+    var index = 0;
+    var _iterator__ex2g4s = document.exercises_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var _unary__edvuaz = index;
+      index = _unary__edvuaz + 1 | 0;
+      var index_0 = checkIndexOverflow(_unary__edvuaz);
+      if (isBlank(item.name_1)) {
+        refuse.invoke$default_jiat1m_k$(ProblemCode_EMPTY_NAME_getInstance(), 'exercises[' + index_0 + '].name');
       }
-      if (!(item_8.rowKind_1 === 'MOVEMENT') && !(item_8.rowKind_1 === 'CATEGORY')) {
-        validate$refuse(problems, ProblemCode_MALFORMED_getInstance(), 'exercises[' + index_2 + '].rowKind', item_8.rowKind_1);
+      if (!(item.rowKind_1 === 'MOVEMENT') && !(item.rowKind_1 === 'CATEGORY')) {
+        refuse.invoke_kookoy_k$(ProblemCode_MALFORMED_getInstance(), 'exercises[' + index_0 + '].rowKind', item.rowKind_1);
       }
     }
+  }
+  function validateSlots(document, refuse) {
+    // Inline function 'kotlin.collections.map' call
+    var this_0 = document.templates_1;
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
+    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$2 = item.id_1;
+      destination.add_utx5q5_k$(tmp$ret$2);
+    }
+    var templateIds = toSet(destination);
     // Inline function 'kotlin.collections.forEachIndexed' call
-    var index_3 = 0;
-    var _iterator__ex2g4s_15 = document.slots_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_15.hasNext_bitz1p_k$()) {
-      var item_9 = _iterator__ex2g4s_15.next_20eer_k$();
-      var _unary__edvuaz_1 = index_3;
-      index_3 = _unary__edvuaz_1 + 1 | 0;
-      var index_4 = checkIndexOverflow(_unary__edvuaz_1);
-      if (!(item_9.programId_1 === document.program_1.id_1)) {
-        validate$refuse(problems, ProblemCode_MALFORMED_getInstance(), 'slots[' + index_4 + '].programId', item_9.programId_1);
+    var index = 0;
+    var _iterator__ex2g4s_0 = document.slots_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
+      var _unary__edvuaz = index;
+      index = _unary__edvuaz + 1 | 0;
+      var index_0 = checkIndexOverflow(_unary__edvuaz);
+      if (!(item_0.programId_1 === document.program_1.id_1)) {
+        refuse.invoke_kookoy_k$(ProblemCode_MALFORMED_getInstance(), 'slots[' + index_0 + '].programId', item_0.programId_1);
       }
-      if (!templateIds.contains_aljjnj_k$(item_9.templateId_1)) {
-        validate$refuse(problems, ProblemCode_DANGLING_SLOT_TEMPLATE_getInstance(), 'slots[' + index_4 + '].templateId', item_9.templateId_1);
+      if (!templateIds.contains_aljjnj_k$(item_0.templateId_1)) {
+        refuse.invoke_kookoy_k$(ProblemCode_DANGLING_SLOT_TEMPLATE_getInstance(), 'slots[' + index_0 + '].templateId', item_0.templateId_1);
       }
-      if (item_9.position_1 < 0) {
-        validate$refuse(problems, ProblemCode_INVALID_POSITION_getInstance(), 'slots[' + index_4 + '].position');
+      if (item_0.position_1 < 0) {
+        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_POSITION_getInstance(), 'slots[' + index_0 + '].position');
       }
     }
     // Inline function 'kotlin.collections.map' call
-    var this_9 = document.slots_1;
+    var this_1 = document.slots_1;
     // Inline function 'kotlin.collections.mapTo' call
-    var destination_8 = ArrayList_init_$Create$(collectionSizeOrDefault(this_9, 10));
-    var _iterator__ex2g4s_16 = this_9.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_16.hasNext_bitz1p_k$()) {
-      var item_10 = _iterator__ex2g4s_16.next_20eer_k$();
-      var tmp$ret$46 = item_10.position_1;
-      destination_8.add_utx5q5_k$(tmp$ret$46);
+    var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
+    var _iterator__ex2g4s_1 = this_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+      var item_1 = _iterator__ex2g4s_1.next_20eer_k$();
+      var tmp$ret$7 = item_1.position_1;
+      destination_0.add_utx5q5_k$(tmp$ret$7);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_17 = duplicates(destination_8).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_17.hasNext_bitz1p_k$()) {
-      var element_5 = _iterator__ex2g4s_17.next_20eer_k$();
-      validate$refuse(problems, ProblemCode_INVALID_POSITION_getInstance(), 'slots', element_5);
+    var _iterator__ex2g4s_2 = duplicates(destination_0).iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s_2.next_20eer_k$();
+      refuse.invoke_kookoy_k$(ProblemCode_INVALID_POSITION_getInstance(), 'slots', element);
     }
+  }
+  function validateTemplateExercises(document, refuse) {
+    // Inline function 'kotlin.collections.map' call
+    var this_0 = document.templates_1;
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
+    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$2 = item.id_1;
+      destination.add_utx5q5_k$(tmp$ret$2);
+    }
+    var templateIds = toSet(destination);
+    // Inline function 'kotlin.collections.associateBy' call
+    var this_1 = document.exercises_1;
+    var capacity = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_1, 10)), 16);
+    // Inline function 'kotlin.collections.associateByTo' call
+    var destination_0 = LinkedHashMap_init_$Create$(capacity);
+    var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s_0.next_20eer_k$();
+      var tmp$ret$5 = element.id_1;
+      destination_0.put_4fpzoq_k$(tmp$ret$5, element);
+    }
+    var exerciseById = destination_0;
     // Inline function 'kotlin.collections.forEachIndexed' call
-    var index_5 = 0;
-    var _iterator__ex2g4s_18 = document.templateExercises_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_18.hasNext_bitz1p_k$()) {
-      var item_11 = _iterator__ex2g4s_18.next_20eer_k$();
-      var _unary__edvuaz_2 = index_5;
-      index_5 = _unary__edvuaz_2 + 1 | 0;
-      var path = 'templateExercises[' + checkIndexOverflow(_unary__edvuaz_2) + ']';
-      if (!templateIds.contains_aljjnj_k$(item_11.templateId_1)) {
-        validate$refuse(problems, ProblemCode_DANGLING_TEMPLATE_EXERCISE_getInstance(), path + '.templateId', item_11.templateId_1);
+    var index = 0;
+    var _iterator__ex2g4s_1 = document.templateExercises_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+      var item_0 = _iterator__ex2g4s_1.next_20eer_k$();
+      var _unary__edvuaz = index;
+      index = _unary__edvuaz + 1 | 0;
+      var path = 'templateExercises[' + checkIndexOverflow(_unary__edvuaz) + ']';
+      if (!templateIds.contains_aljjnj_k$(item_0.templateId_1)) {
+        refuse.invoke_kookoy_k$(ProblemCode_DANGLING_TEMPLATE_EXERCISE_getInstance(), path + '.templateId', item_0.templateId_1);
       }
-      if (!exerciseIds.contains_aljjnj_k$(item_11.exerciseId_1)) {
-        validate$refuse(problems, ProblemCode_DANGLING_EXERCISE_getInstance(), path + '.exerciseId', item_11.exerciseId_1);
-      } else {
-        var tmp0_safe_receiver = exerciseById.get_wei43m_k$(item_11.exerciseId_1);
-        if (!((tmp0_safe_receiver == null ? null : tmp0_safe_receiver.rowKind_1) === 'MOVEMENT')) {
-          validate$refuse(problems, ProblemCode_DANGLING_EXERCISE_getInstance(), path + '.exerciseId', item_11.exerciseId_1);
-        }
+      var tmp0_safe_receiver = exerciseById.get_wei43m_k$(item_0.exerciseId_1);
+      if (!((tmp0_safe_receiver == null ? null : tmp0_safe_receiver.rowKind_1) === 'MOVEMENT')) {
+        refuse.invoke_kookoy_k$(ProblemCode_DANGLING_EXERCISE_getInstance(), path + '.exerciseId', item_0.exerciseId_1);
       }
-      if (item_11.position_1 < 0) {
-        validate$refuse(problems, ProblemCode_INVALID_POSITION_getInstance(), path + '.position');
+      if (item_0.position_1 < 0) {
+        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_POSITION_getInstance(), path + '.position');
       }
-      var tmp1_safe_receiver = item_11.restSeconds_1;
+      var tmp1_safe_receiver = item_0.restSeconds_1;
       if (tmp1_safe_receiver == null)
         null;
       else {
         // Inline function 'kotlin.let' call
         if (tmp1_safe_receiver < 0 || tmp1_safe_receiver > 3600) {
-          validate$refuse(problems, ProblemCode_INVALID_REST_getInstance(), path + '.restSeconds');
+          refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REST_getInstance(), path + '.restSeconds');
         }
       }
-      var tmp2_safe_receiver = item_11.targetRpeHalves_1;
+      var tmp2_safe_receiver = item_0.targetRpeHalves_1;
       if (tmp2_safe_receiver == null)
         null;
       else {
         // Inline function 'kotlin.let' call
         if (!(1 <= tmp2_safe_receiver ? tmp2_safe_receiver <= 20 : false)) {
-          validate$refuse(problems, ProblemCode_INVALID_RPE_getInstance(), path + '.targetRpeHalves');
+          refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_RPE_getInstance(), path + '.targetRpeHalves');
         }
       }
     }
     // Inline function 'kotlin.collections.groupBy' call
     var tmp0 = document.templateExercises_1;
     // Inline function 'kotlin.collections.groupByTo' call
-    var destination_9 = LinkedHashMap_init_$Create$_0();
-    var _iterator__ex2g4s_19 = tmp0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_19.hasNext_bitz1p_k$()) {
-      var element_6 = _iterator__ex2g4s_19.next_20eer_k$();
-      var key = element_6.templateId_1;
+    var destination_1 = LinkedHashMap_init_$Create$_0();
+    var _iterator__ex2g4s_2 = tmp0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+      var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
+      var key = element_0.templateId_1;
       // Inline function 'kotlin.collections.getOrPut' call
-      var value = destination_9.get_wei43m_k$(key);
+      var value = destination_1.get_wei43m_k$(key);
       var tmp;
       if (value == null) {
         var answer = ArrayList_init_$Create$_0();
-        destination_9.put_4fpzoq_k$(key, answer);
+        destination_1.put_4fpzoq_k$(key, answer);
         tmp = answer;
       } else {
         tmp = value;
       }
       var list = tmp;
-      list.add_utx5q5_k$(element_6);
+      list.add_utx5q5_k$(element_0);
     }
     // Inline function 'kotlin.collections.forEach' call
     // Inline function 'kotlin.collections.iterator' call
-    var _iterator__ex2g4s_20 = destination_9.get_entries_p20ztl_k$().iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_20.hasNext_bitz1p_k$()) {
-      var element_7 = _iterator__ex2g4s_20.next_20eer_k$();
+    var _iterator__ex2g4s_3 = destination_1.get_entries_p20ztl_k$().iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
+      var element_1 = _iterator__ex2g4s_3.next_20eer_k$();
       // Inline function 'kotlin.collections.component1' call
-      var templateId = element_7.get_key_18j28a_k$();
+      var templateId = element_1.get_key_18j28a_k$();
       // Inline function 'kotlin.collections.component2' call
-      var rows = element_7.get_value_j01efc_k$();
+      var rows = element_1.get_value_j01efc_k$();
       // Inline function 'kotlin.collections.map' call
       // Inline function 'kotlin.collections.mapTo' call
-      var destination_10 = ArrayList_init_$Create$(collectionSizeOrDefault(rows, 10));
-      var _iterator__ex2g4s_21 = rows.iterator_jk1svi_k$();
-      while (_iterator__ex2g4s_21.hasNext_bitz1p_k$()) {
-        var item_12 = _iterator__ex2g4s_21.next_20eer_k$();
-        var tmp$ret$67 = item_12.position_1;
-        destination_10.add_utx5q5_k$(tmp$ret$67);
+      var destination_2 = ArrayList_init_$Create$(collectionSizeOrDefault(rows, 10));
+      var _iterator__ex2g4s_4 = rows.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
+        var item_1 = _iterator__ex2g4s_4.next_20eer_k$();
+        var tmp$ret$24 = item_1.position_1;
+        destination_2.add_utx5q5_k$(tmp$ret$24);
       }
       // Inline function 'kotlin.collections.forEach' call
-      var _iterator__ex2g4s_22 = duplicates(destination_10).iterator_jk1svi_k$();
-      while (_iterator__ex2g4s_22.hasNext_bitz1p_k$()) {
-        var element_8 = _iterator__ex2g4s_22.next_20eer_k$();
-        validate$refuse(problems, ProblemCode_INVALID_POSITION_getInstance(), 'templateExercises', templateId + '/' + element_8);
+      var _iterator__ex2g4s_5 = duplicates(destination_2).iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
+        var element_2 = _iterator__ex2g4s_5.next_20eer_k$();
+        refuse.invoke_kookoy_k$(ProblemCode_INVALID_POSITION_getInstance(), 'templateExercises', templateId + '/' + element_2);
       }
     }
+  }
+  function validateSets(document, refuse) {
+    validateSetTargets(document, refuse);
+    validateSetIndexes(document, refuse);
+  }
+  function validateSetTargets(document, refuse) {
+    // Inline function 'kotlin.collections.map' call
+    var this_0 = document.templateExercises_1;
+    // Inline function 'kotlin.collections.mapTo' call
+    var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
+    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var item = _iterator__ex2g4s.next_20eer_k$();
+      var tmp$ret$2 = item.id_1;
+      destination.add_utx5q5_k$(tmp$ret$2);
+    }
+    var plannedIds = toSet(destination);
     // Inline function 'kotlin.collections.forEachIndexed' call
-    var index_6 = 0;
-    var _iterator__ex2g4s_23 = document.templateSets_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_23.hasNext_bitz1p_k$()) {
-      var item_13 = _iterator__ex2g4s_23.next_20eer_k$();
-      var _unary__edvuaz_3 = index_6;
-      index_6 = _unary__edvuaz_3 + 1 | 0;
-      var path_0 = 'templateSets[' + checkIndexOverflow(_unary__edvuaz_3) + ']';
-      if (!templateExerciseIds.contains_aljjnj_k$(item_13.templateExerciseId_1)) {
-        validate$refuse(problems, ProblemCode_DANGLING_SET_getInstance(), path_0 + '.templateExerciseId', item_13.templateExerciseId_1);
+    var index = 0;
+    var _iterator__ex2g4s_0 = document.templateSets_1.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
+      var _unary__edvuaz = index;
+      index = _unary__edvuaz + 1 | 0;
+      var path = 'templateSets[' + checkIndexOverflow(_unary__edvuaz) + ']';
+      if (!plannedIds.contains_aljjnj_k$(item_0.templateExerciseId_1)) {
+        refuse.invoke_kookoy_k$(ProblemCode_DANGLING_SET_getInstance(), path + '.templateExerciseId', item_0.templateExerciseId_1);
       }
-      if (item_13.setIndex_1 < 0) {
-        validate$refuse(problems, ProblemCode_INVALID_SET_INDEX_getInstance(), path_0 + '.setIndex');
+      if (item_0.setIndex_1 < 0) {
+        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_SET_INDEX_getInstance(), path + '.setIndex');
       }
-      var tmp0_elvis_lhs = item_13.targetWeightGrams_1;
+      var tmp0_elvis_lhs = item_0.targetWeightGrams_1;
       if (compare(tmp0_elvis_lhs == null ? new Long(0, 0) : tmp0_elvis_lhs, new Long(0, 0)) < 0) {
-        validate$refuse(problems, ProblemCode_INVALID_LOAD_getInstance(), path_0 + '.targetWeightGrams');
+        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_LOAD_getInstance(), path + '.targetWeightGrams');
       }
-      var tmp1_elvis_lhs = item_13.targetAssistanceGrams_1;
+      var tmp1_elvis_lhs = item_0.targetAssistanceGrams_1;
       if (compare(tmp1_elvis_lhs == null ? new Long(0, 0) : tmp1_elvis_lhs, new Long(0, 0)) < 0) {
-        validate$refuse(problems, ProblemCode_INVALID_LOAD_getInstance(), path_0 + '.targetAssistanceGrams');
+        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_LOAD_getInstance(), path + '.targetAssistanceGrams');
       }
-      var tmp2_elvis_lhs = item_13.dropValueGrams_1;
+      var tmp2_elvis_lhs = item_0.dropValueGrams_1;
       if (compare(tmp2_elvis_lhs == null ? new Long(0, 0) : tmp2_elvis_lhs, new Long(0, 0)) < 0) {
-        validate$refuse(problems, ProblemCode_INVALID_LOAD_getInstance(), path_0 + '.dropValueGrams');
+        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_LOAD_getInstance(), path + '.dropValueGrams');
       }
-      var tmp3_safe_receiver = item_13.targetRepsMin_1;
-      if (tmp3_safe_receiver == null)
-        null;
-      else {
-        // Inline function 'kotlin.let' call
-        if (tmp3_safe_receiver < 1) {
-          validate$refuse(problems, ProblemCode_INVALID_REPS_getInstance(), path_0 + '.targetRepsMin');
-        }
-      }
-      var tmp4_safe_receiver = item_13.targetRepsMax_1;
-      if (tmp4_safe_receiver == null)
-        null;
-      else {
-        // Inline function 'kotlin.let' call
-        if (tmp4_safe_receiver < 1) {
-          validate$refuse(problems, ProblemCode_INVALID_REPS_getInstance(), path_0 + '.targetRepsMax');
-        }
-      }
-      var min = item_13.targetRepsMin_1;
-      var max = item_13.targetRepsMax_1;
-      if (!(min == null) && !(max == null) && min > max) {
-        validate$refuse(problems, ProblemCode_INVALID_REPS_getInstance(), path_0);
-      }
-      var tmp5_safe_receiver = item_13.targetRepsCurrent_1;
-      if (tmp5_safe_receiver == null)
-        null;
-      else {
-        // Inline function 'kotlin.let' call
-        if (tmp5_safe_receiver < 1) {
-          validate$refuse(problems, ProblemCode_INVALID_REPS_getInstance(), path_0 + '.targetRepsCurrent');
-        }
-        if (!(max == null) && tmp5_safe_receiver > max) {
-          validate$refuse(problems, ProblemCode_INVALID_REPS_getInstance(), path_0 + '.targetRepsCurrent');
-        }
-        if (!(min == null) && tmp5_safe_receiver < min) {
-          validate$refuse(problems, ProblemCode_INVALID_REPS_getInstance(), path_0 + '.targetRepsCurrent');
-        }
+      validateReps(item_0, path, refuse);
+    }
+  }
+  function validateReps(set, path, refuse) {
+    var tmp0_safe_receiver = set.targetRepsMin_1;
+    if (tmp0_safe_receiver == null)
+      null;
+    else {
+      // Inline function 'kotlin.let' call
+      if (tmp0_safe_receiver < 1) {
+        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsMin');
       }
     }
-    // Inline function 'kotlin.collections.groupBy' call
-    var tmp0_0 = document.templateSets_1;
-    // Inline function 'kotlin.collections.groupByTo' call
-    var destination_11 = LinkedHashMap_init_$Create$_0();
-    var _iterator__ex2g4s_24 = tmp0_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_24.hasNext_bitz1p_k$()) {
-      var element_9 = _iterator__ex2g4s_24.next_20eer_k$();
-      var key_0 = element_9.templateExerciseId_1;
-      // Inline function 'kotlin.collections.getOrPut' call
-      var value_0 = destination_11.get_wei43m_k$(key_0);
-      var tmp_0;
-      if (value_0 == null) {
-        var answer_0 = ArrayList_init_$Create$_0();
-        destination_11.put_4fpzoq_k$(key_0, answer_0);
-        tmp_0 = answer_0;
-      } else {
-        tmp_0 = value_0;
+    var tmp1_safe_receiver = set.targetRepsMax_1;
+    if (tmp1_safe_receiver == null)
+      null;
+    else {
+      // Inline function 'kotlin.let' call
+      if (tmp1_safe_receiver < 1) {
+        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsMax');
       }
-      var list_0 = tmp_0;
-      list_0.add_utx5q5_k$(element_9);
+    }
+    var min = set.targetRepsMin_1;
+    var max = set.targetRepsMax_1;
+    if (!(min == null) && !(max == null) && min > max) {
+      refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path);
+    }
+    var tmp2_safe_receiver = set.targetRepsCurrent_1;
+    if (tmp2_safe_receiver == null)
+      null;
+    else {
+      // Inline function 'kotlin.let' call
+      if (tmp2_safe_receiver < 1) {
+        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsCurrent');
+      }
+      if (!(max == null) && tmp2_safe_receiver > max) {
+        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsCurrent');
+      }
+      if (!(min == null) && tmp2_safe_receiver < min) {
+        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsCurrent');
+      }
+    }
+  }
+  function validateSetIndexes(document, refuse) {
+    // Inline function 'kotlin.collections.groupBy' call
+    var tmp0 = document.templateSets_1;
+    // Inline function 'kotlin.collections.groupByTo' call
+    var destination = LinkedHashMap_init_$Create$_0();
+    var _iterator__ex2g4s = tmp0.iterator_jk1svi_k$();
+    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
+      var element = _iterator__ex2g4s.next_20eer_k$();
+      var key = element.templateExerciseId_1;
+      // Inline function 'kotlin.collections.getOrPut' call
+      var value = destination.get_wei43m_k$(key);
+      var tmp;
+      if (value == null) {
+        var answer = ArrayList_init_$Create$_0();
+        destination.put_4fpzoq_k$(key, answer);
+        tmp = answer;
+      } else {
+        tmp = value;
+      }
+      var list = tmp;
+      list.add_utx5q5_k$(element);
     }
     // Inline function 'kotlin.collections.forEach' call
     // Inline function 'kotlin.collections.iterator' call
-    var _iterator__ex2g4s_25 = destination_11.get_entries_p20ztl_k$().iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_25.hasNext_bitz1p_k$()) {
-      var element_10 = _iterator__ex2g4s_25.next_20eer_k$();
+    var _iterator__ex2g4s_0 = destination.get_entries_p20ztl_k$().iterator_jk1svi_k$();
+    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
+      var element_0 = _iterator__ex2g4s_0.next_20eer_k$();
       // Inline function 'kotlin.collections.component1' call
-      var plannedId = element_10.get_key_18j28a_k$();
+      var plannedId = element_0.get_key_18j28a_k$();
       // Inline function 'kotlin.collections.component2' call
-      var rows_0 = element_10.get_value_j01efc_k$();
+      var rows = element_0.get_value_j01efc_k$();
       // Inline function 'kotlin.collections.map' call
       // Inline function 'kotlin.collections.mapTo' call
-      var destination_12 = ArrayList_init_$Create$(collectionSizeOrDefault(rows_0, 10));
-      var _iterator__ex2g4s_26 = rows_0.iterator_jk1svi_k$();
-      while (_iterator__ex2g4s_26.hasNext_bitz1p_k$()) {
-        var item_14 = _iterator__ex2g4s_26.next_20eer_k$();
-        var tmp$ret$90 = item_14.setIndex_1;
-        destination_12.add_utx5q5_k$(tmp$ret$90);
+      var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(rows, 10));
+      var _iterator__ex2g4s_1 = rows.iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
+        var item = _iterator__ex2g4s_1.next_20eer_k$();
+        var tmp$ret$12 = item.setIndex_1;
+        destination_0.add_utx5q5_k$(tmp$ret$12);
       }
       // Inline function 'kotlin.collections.forEach' call
-      var _iterator__ex2g4s_27 = duplicates(destination_12).iterator_jk1svi_k$();
-      while (_iterator__ex2g4s_27.hasNext_bitz1p_k$()) {
-        var element_11 = _iterator__ex2g4s_27.next_20eer_k$();
-        validate$refuse(problems, ProblemCode_INVALID_SET_INDEX_getInstance(), 'templateSets', plannedId + '/' + element_11);
+      var _iterator__ex2g4s_2 = duplicates(destination_0).iterator_jk1svi_k$();
+      while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
+        var element_1 = _iterator__ex2g4s_2.next_20eer_k$();
+        refuse.invoke_kookoy_k$(ProblemCode_INVALID_SET_INDEX_getInstance(), 'templateSets', plannedId + '/' + element_1);
       }
       // Inline function 'kotlin.collections.sortedBy' call
       // Inline function 'kotlin.comparisons.compareBy' call
-      var tmp_1 = validate$lambda;
-      var tmp$ret$94 = new sam$kotlin_Comparator$0(tmp_1);
-      var tmp_2 = sortedWith(rows_0, tmp$ret$94);
-      validateRuns(tmp_2, plannedId, validate$refuse$ref(problems));
+      var tmp_0 = validateSetIndexes$lambda;
+      var tmp$ret$16 = new sam$kotlin_Comparator$0(tmp_0);
+      var tmp$ret$15 = sortedWith(rows, tmp$ret$16);
+      validateRuns(tmp$ret$15, plannedId, refuse);
     }
-    return problems;
   }
   function validateRuns(ordered, plannedId, refuse) {
     // Inline function 'kotlin.collections.forEachIndexed' call
@@ -4215,14 +4507,14 @@
           break $l$block;
         }
         var path = 'templateSets(' + plannedId + ')[' + tmp0 + ']';
-        if (!(item.targetWeightGrams_1 == null) || !(item.targetAssistanceGrams_1 == null) || !(item.targetRepsMin_1 == null) || !(item.targetRepsMax_1 == null)) {
-          refuse(ProblemCode_RUNG_CARRIES_TARGETS_getInstance(), path, null);
+        if (carriesTargets(item)) {
+          refuse.invoke_kookoy_k$(ProblemCode_RUNG_CARRIES_TARGETS_getInstance(), path, null);
         }
         var above = getOrNull(ordered, tmp0 - 1 | 0);
-        if (above == null)
-          refuse(ProblemCode_RUNG_WITHOUT_ANCHOR_getInstance(), path, null);
-        else if (above.role_1.equals(ProgramSetRole_WARMUP_getInstance())) {
-          refuse(ProblemCode_RUNG_UNDER_WARMUP_getInstance(), path, null);
+        if (above == null) {
+          refuse.invoke_kookoy_k$(ProblemCode_RUNG_WITHOUT_ANCHOR_getInstance(), path, null);
+        } else if (above.role_1.equals(ProgramSetRole_WARMUP_getInstance())) {
+          refuse.invoke_kookoy_k$(ProblemCode_RUNG_UNDER_WARMUP_getInstance(), path, null);
         } else if (!above.role_1.get_isRung_ew5llb_k$()) {
           var tmp;
           if (item.role_1.equals(ProgramSetRole_DROP_getInstance())) {
@@ -4232,13 +4524,22 @@
             tmp = false;
           }
           if (tmp) {
-            refuse(ProblemCode_RUNG_WITHOUT_VALUE_getInstance(), path, null);
+            refuse.invoke_kookoy_k$(ProblemCode_RUNG_WITHOUT_VALUE_getInstance(), path, null);
           }
         } else if (!above.role_1.equals(item.role_1)) {
-          refuse(ProblemCode_RUN_MIXES_KINDS_getInstance(), path, null);
+          refuse.invoke_kookoy_k$(ProblemCode_RUN_MIXES_KINDS_getInstance(), path, null);
         }
       }
     }
+  }
+  function carriesTargets(_this__u8e3s4) {
+    return carriesLoad(_this__u8e3s4) || carriesReps(_this__u8e3s4);
+  }
+  function carriesLoad(_this__u8e3s4) {
+    return !(_this__u8e3s4.targetWeightGrams_1 == null) || !(_this__u8e3s4.targetAssistanceGrams_1 == null);
+  }
+  function carriesReps(_this__u8e3s4) {
+    return !(_this__u8e3s4.targetRepsMin_1 == null) || !(_this__u8e3s4.targetRepsMax_1 == null);
   }
   function duplicates(ids) {
     // Inline function 'kotlin.collections.groupingBy' call
@@ -4296,24 +4597,20 @@
   protoOf(sam$kotlin_Comparator$0).hashCode = function () {
     return hashCode(this.getFunctionDelegate_jtodtf_k$());
   };
-  function validate$refuse(problems, code, path, detail) {
-    path = path === VOID ? '' : path;
-    detail = detail === VOID ? null : detail;
-    // Inline function 'kotlin.collections.plusAssign' call
-    var element = new ProgramProblem(code, path, detail);
-    problems.add_utx5q5_k$(element);
+  function validate$lambda($problems) {
+    return function (code, path, detail) {
+      var tmp0 = $problems;
+      // Inline function 'kotlin.collections.plusAssign' call
+      var element = new ProgramProblem(code, path, detail);
+      tmp0.add_utx5q5_k$(element);
+      return Unit_instance;
+    };
   }
-  function validate$lambda(a, b) {
+  function validateSetIndexes$lambda(a, b) {
     // Inline function 'kotlin.comparisons.compareValuesBy' call
     var tmp = a.setIndex_1;
     var tmp$ret$2 = b.setIndex_1;
     return compareValues(tmp, tmp$ret$2);
-  }
-  function validate$refuse$ref($problems) {
-    return constructCallableReference(function (p0, p1, p2) {
-      validate$refuse($problems, p0, p1, p2);
-      return Unit_instance;
-    }, 3, 0, 10, 'refuse', [$problems]);
   }
   function duplicates$$inlined$groupingBy$1($this) {
     this.$this_1 = $this;

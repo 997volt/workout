@@ -32,6 +32,9 @@ import androidx.room.TypeConverters
  * **Schema 7 is N147**, one new table: a marked deload week can name the workouts it prescribes, so the
  * week's own days are rows hanging off the `program_deloads` mark P3.10 already keeps. See [MIGRATION_6_7].
  *
+ * 8 adds a program's kind and its authored start date (N174): every row already on disk is WEEKLY,
+ * which is the rule it was written under. See [MIGRATION_7_8].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -58,7 +61,7 @@ import androidx.room.TypeConverters
         MeasurementSoreMuscleEntity::class,
         MetricGoalEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

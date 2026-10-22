@@ -46,10 +46,16 @@ object BackupCodec {
      * required became absent, which is a change of meaning rather than an addition: a 2.x build must
      * refuse the file rather than read a missing weight as zero. The floor moves for N104's reason,
      * which is that this build reads exactly the one shape it writes.
+     *
+     * **N174 moves it to 6 and leaves the floor at 5** (N185's ruling). A program carries a kind, and
+     * a build that does not know the name would read a sequence as a weekly program and repeat the
+     * block forever — a wrong meaning, which is what the ceiling is for. The floor does not move for
+     * the opposite reason: a v5 file says every one of its programs is weekly, and they all are, so
+     * this build still reads it and every older backup keeps working.
      */
-    const val CURRENT_SCHEMA_VERSION = 5
+    const val CURRENT_SCHEMA_VERSION = 6
 
-    /** The oldest file this build reads: its own shape, and nothing earlier (ROADMAP N104, N113). */
+    /** The oldest file this build reads: a shape whose meaning is still this one (ROADMAP N104, N185). */
     const val MINIMUM_SCHEMA_VERSION = 5
 
     private val json = Json {

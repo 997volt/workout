@@ -6,4 +6,4 @@ package com.example.androidapp.shared
  * Kept here rather than in either host: the page refuses what it cannot write and the app refuses
  * what it cannot read, and a version that lived twice would be the first thing to disagree.
  */
-const val PROGRAM_FORMAT_VERSION: Int = 4
+const val PROGRAM_FORMAT_VERSION: Int = 5

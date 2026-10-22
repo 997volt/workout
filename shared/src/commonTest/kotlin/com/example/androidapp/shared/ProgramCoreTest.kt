@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -27,7 +28,7 @@ class ProgramCoreTest {
     @Test
     fun the_codec_refuses_a_newer_document_before_reading_it() {
         val refused = assertFailsWith<ProgramFormatException> {
-            ProgramDocumentCodec.decode("""{"formatVersion": 5}""")
+            ProgramDocumentCodec.decode("""{"formatVersion": ${ProgramDocumentCodec.CURRENT_FORMAT_VERSION + 1}}""")
         }
 
         assertEquals(ProblemCode.NEWER_VERSION, refused.problem.code)
@@ -41,6 +42,33 @@ class ProgramCoreTest {
         val encoded = ProgramDocumentCodec.encode(baseDocument())
 
         assertFalse(encoded.contains("\"edit\""), "an export carries no edit marker")
+    }
+
+    @Test
+    fun a_document_carries_a_program_kind_and_its_start() {
+        val block = baseDocument(
+            program = programRow().copy(kind = ProgramKind.SEQUENCE, startDate = A_START_DAY),
+        )
+
+        val decoded = ProgramDocumentCodec.decode(ProgramDocumentCodec.encode(block))
+
+        assertEquals(ProgramKind.SEQUENCE, decoded.program.kind)
+        assertEquals(A_START_DAY, decoded.program.startDate)
+    }
+
+    @Test
+    fun a_document_from_before_the_kind_is_read_as_weekly() {
+        // The floor stays at 4 (N185): a v4 document says every program is weekly, and they all are,
+        // so a build that knows the kind still reads it rather than refusing a file that is right.
+        val older = ProgramDocumentCodec.encode(baseDocument()).replace(
+            Regex("\"formatVersion\"\\s*:\\s*\\d+"),
+            "\"formatVersion\": 4",
+        )
+
+        val decoded = ProgramDocumentCodec.decode(older)
+
+        assertEquals(ProgramKind.WEEKLY, decoded.program.kind)
+        assertNull(decoded.program.startDate)
     }
 
     @Test
@@ -435,3 +463,6 @@ internal fun baseDocument(
     exercises = exercises,
     edit = edit,
 )
+
+/** A day a block begins: 2025-08-04, an ordinary Monday rather than a named date. */
+private const val A_START_DAY = 20_305L

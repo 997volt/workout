@@ -38,7 +38,7 @@ class ProgramDocumentFixtureTest {
     fun theHelpersProgramSheetIsADocumentTheAppAccepts() {
         val document = ProgramDocumentCodec.decode(fixtureJson())
 
-        assertThat(document.formatVersion).isEqualTo(4)
+        assertThat(document.formatVersion).isEqualTo(ProgramDocumentCodec.CURRENT_FORMAT_VERSION)
         assertThat(document.program.name).isEqualTo("Autumn block")
         assertThat(document.program.isActive).isFalse()
 

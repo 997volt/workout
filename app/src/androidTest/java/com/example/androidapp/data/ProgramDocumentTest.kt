@@ -12,6 +12,7 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.repository.ProgramDocumentPreview
@@ -227,6 +228,37 @@ class ProgramDocumentTest {
     }
 
     /** A program with one template, one planned set and one slot, ready to export. */
+    @Test
+    fun aSequenceDocument_isImportedAsASequenceWithItsStart() = runTest {
+        // ROADMAP N174: `kind` and `startDate` are honored when a program is *created*, because a
+        // block arrives by document — and ignored by an edit, where the phone's editor owns them.
+        // A document that arrived as weekly would put five Monday cards on every Monday.
+        val programId = seedProgram()
+        val original = ProgramDocumentCodec.decode(exportOf(programId))
+        val block = original.copy(
+            program = original.program.copy(
+                id = "pgm_block",
+                name = "Peak",
+                kind = ProgramKind.SEQUENCE,
+                startDate = 20_305L,
+            ),
+            slots = original.slots.map { it.copy(id = it.id + "_block", programId = "pgm_block") },
+            templates = original.templates.map { it.copy(id = it.id + "_block") },
+            templateExercises = original.templateExercises.map {
+                it.copy(id = it.id + "_block", templateId = it.templateId + "_block")
+            },
+            templateSets = original.templateSets.map {
+                it.copy(id = it.id + "_block", templateExerciseId = it.templateExerciseId + "_block")
+            },
+        )
+
+        importOf(ProgramDocumentCodec.encode(block))
+
+        val stored = database.programDao().findProgram("pgm_block")
+        assertEquals(ProgramKind.SEQUENCE, stored?.kind)
+        assertEquals(20_305L, stored?.startDate)
+    }
+
     private suspend fun seedProgram(exerciseId: String = "back-squat"): String {
         val programId = (programs.createProgram("Heavy lower") as DataResult.Success).data
         val templateId = (templates.createTemplate("Squat day") as DataResult.Success).data

@@ -617,6 +617,18 @@ if (typeof String.prototype.startsWith === 'undefined') {
   function distinct(_this__u8e3s4) {
     return toList_0(toMutableSet(_this__u8e3s4));
   }
+  function plus(_this__u8e3s4, elements) {
+    if (isInterface(elements, Collection)) {
+      var result = ArrayList_init_$Create$_0(_this__u8e3s4.get_size_woubt6_k$() + elements.get_size_woubt6_k$() | 0);
+      result.addAll_h3ej1q_k$(_this__u8e3s4);
+      result.addAll_h3ej1q_k$(elements);
+      return result;
+    } else {
+      var result_0 = ArrayList_init_$Create$_1(_this__u8e3s4);
+      addAll(result_0, elements);
+      return result_0;
+    }
+  }
   function getOrNull_0(_this__u8e3s4, index) {
     return (0 <= index ? index < _this__u8e3s4.get_size_woubt6_k$() : false) ? _this__u8e3s4.get_c1px32_k$(index) : null;
   }
@@ -764,7 +776,7 @@ if (typeof String.prototype.startsWith === 'undefined') {
     }
     return dst;
   }
-  function plus(_this__u8e3s4, elements) {
+  function plus_0(_this__u8e3s4, elements) {
     var tmp0_safe_receiver = collectionSizeOrNull(elements);
     var tmp;
     if (tmp0_safe_receiver == null) {
@@ -923,7 +935,7 @@ if (typeof String.prototype.startsWith === 'undefined') {
     var tmp1_elvis_lhs = _this__u8e3s4 == null ? null : toString_1(_this__u8e3s4);
     return tmp1_elvis_lhs == null ? 'null' : tmp1_elvis_lhs;
   }
-  function plus_0(_this__u8e3s4, other) {
+  function plus_1(_this__u8e3s4, other) {
     var tmp = _this__u8e3s4 == null ? 'null' : _this__u8e3s4;
     var tmp2_elvis_lhs = other == null ? null : toString_1(other);
     return tmp + (tmp2_elvis_lhs == null ? 'null' : tmp2_elvis_lhs);
@@ -3119,6 +3131,11 @@ if (typeof String.prototype.startsWith === 'undefined') {
     this.array_1 = array;
     this.isReadOnly_1 = false;
   }
+  protoOf(ArrayList).build_nmwvly_k$ = function () {
+    this.checkIsMutable_jn1ih0_k$();
+    this.isReadOnly_1 = true;
+    return this.get_size_woubt6_k$() > 0 ? this : Companion_getInstance_2().Empty_1;
+  };
   protoOf(ArrayList).ensureCapacity_wr7980_k$ = function (minCapacity) {
   };
   protoOf(ArrayList).get_size_woubt6_k$ = function () {
@@ -6772,15 +6789,6 @@ if (typeof String.prototype.startsWith === 'undefined') {
     putAll(this_0, pairs);
     return this_0;
   }
-  function removeLast(_this__u8e3s4) {
-    var tmp;
-    if (_this__u8e3s4.isEmpty_y1axqb_k$()) {
-      throw NoSuchElementException_init_$Create$_0('List is empty.');
-    } else {
-      tmp = _this__u8e3s4.removeAt_6niowx_k$(get_lastIndex_2(_this__u8e3s4));
-    }
-    return tmp;
-  }
   function addAll(_this__u8e3s4, elements) {
     if (isInterface(elements, Collection))
       return _this__u8e3s4.addAll_h3ej1q_k$(elements);
@@ -6794,6 +6802,15 @@ if (typeof String.prototype.startsWith === 'undefined') {
       }
       return result;
     }
+  }
+  function removeLast(_this__u8e3s4) {
+    var tmp;
+    if (_this__u8e3s4.isEmpty_y1axqb_k$()) {
+      throw NoSuchElementException_init_$Create$_0('List is empty.');
+    } else {
+      tmp = _this__u8e3s4.removeAt_6niowx_k$(get_lastIndex_2(_this__u8e3s4));
+    }
+    return tmp;
   }
   function IntIterator() {
   }
@@ -11084,7 +11101,7 @@ if (typeof String.prototype.startsWith === 'undefined') {
   _.$_$.c3 = LinkedHashSet_init_$Create$_0;
   _.$_$.d3 = StringBuilder_init_$Create$;
   _.$_$.e3 = StringBuilder_init_$Create$_0;
-  _.$_$.f3 = Exception_init_$Init$_0;
+  _.$_$.f3 = Exception_init_$Init$_1;
   _.$_$.g3 = IllegalArgumentException_init_$Init$;
   _.$_$.h3 = IllegalArgumentException_init_$Init$_0;
   _.$_$.i3 = IllegalArgumentException_init_$Create$_0;
@@ -11104,186 +11121,188 @@ if (typeof String.prototype.startsWith === 'undefined') {
   _.$_$.w3 = KtMutableMap;
   _.$_$.x3 = KtMutableSet;
   _.$_$.y3 = KtSet;
-  _.$_$.z3 = arrayCopy;
-  _.$_$.a4 = asList;
-  _.$_$.b4 = checkIndexOverflow;
-  _.$_$.c4 = collectionSizeOrDefault;
-  _.$_$.d4 = contentEquals;
-  _.$_$.e4 = contentHashCode;
-  _.$_$.f4 = contentToString;
-  _.$_$.g4 = copyOf_5;
-  _.$_$.h4 = copyOf_4;
-  _.$_$.i4 = copyOf_7;
-  _.$_$.j4 = copyOf_1;
-  _.$_$.k4 = copyOf_6;
-  _.$_$.l4 = copyOf_2;
-  _.$_$.m4 = copyOf_3;
-  _.$_$.n4 = copyOf_0;
-  _.$_$.o4 = copyOf;
-  _.$_$.p4 = copyToArray;
-  _.$_$.q4 = distinct;
-  _.$_$.r4 = eachCount;
-  _.$_$.s4 = emptyList;
-  _.$_$.t4 = emptyMap;
-  _.$_$.u4 = emptySet;
-  _.$_$.v4 = getOrNull_0;
-  _.$_$.w4 = getValue;
-  _.$_$.x4 = indexOf;
-  _.$_$.y4 = get_indices_0;
-  _.$_$.z4 = get_indices;
-  _.$_$.a5 = joinToString_0;
-  _.$_$.b5 = get_lastIndex_0;
-  _.$_$.c5 = get_lastIndex_2;
-  _.$_$.d5 = lastOrNull;
-  _.$_$.e5 = last;
-  _.$_$.f5 = listOf;
-  _.$_$.g5 = mapCapacity;
-  _.$_$.h5 = mapOf_0;
-  _.$_$.i5 = plus;
-  _.$_$.j5 = removeLast;
-  _.$_$.k5 = setOf_0;
-  _.$_$.l5 = singleOrNull;
-  _.$_$.m5 = sortedWith;
-  _.$_$.n5 = toBooleanArray;
-  _.$_$.o5 = toHashSet;
-  _.$_$.p5 = toList_0;
-  _.$_$.q5 = toList;
-  _.$_$.r5 = toMap;
-  _.$_$.s5 = toSet_0;
-  _.$_$.t5 = toSet;
-  _.$_$.u5 = withIndex;
-  _.$_$.v5 = compareValues;
-  _.$_$.w5 = get_COROUTINE_SUSPENDED;
-  _.$_$.x5 = CoroutineImpl;
-  _.$_$.y5 = enumEntries;
-  _.$_$.z5 = add;
-  _.$_$.a6 = bitwiseOr;
-  _.$_$.b6 = compare;
-  _.$_$.c6 = convertToByte;
-  _.$_$.d6 = convertToInt;
-  _.$_$.e6 = convertToShort;
-  _.$_$.f6 = equalsLong;
-  _.$_$.g6 = fromInt;
-  _.$_$.h6 = invert;
-  _.$_$.i6 = isLongArray;
-  _.$_$.j6 = multiply;
-  _.$_$.k6 = negate;
-  _.$_$.l6 = numberToLong;
-  _.$_$.m6 = shiftLeft;
-  _.$_$.n6 = subtract;
-  _.$_$.o6 = toNumber;
-  _.$_$.p6 = FunctionAdapter;
-  _.$_$.q6 = arrayIterator;
-  _.$_$.r6 = booleanArray;
-  _.$_$.s6 = captureStack;
-  _.$_$.t6 = charArray;
-  _.$_$.u6 = charCodeAt;
-  _.$_$.v6 = charSequenceGet;
-  _.$_$.w6 = charSequenceLength;
-  _.$_$.x6 = charSequenceSubSequence;
-  _.$_$.y6 = constructCallableReference;
-  _.$_$.z6 = defineProp;
-  _.$_$.a7 = equals;
-  _.$_$.b7 = getBooleanHashCode;
-  _.$_$.c7 = getPropertyCallableRef;
-  _.$_$.d7 = getStringHashCode;
-  _.$_$.e7 = hashCode_0;
-  _.$_$.f7 = initMetadataForClass;
-  _.$_$.g7 = initMetadataForCompanion;
-  _.$_$.h7 = initMetadataForCoroutine;
-  _.$_$.i7 = initMetadataForInterface;
-  _.$_$.j7 = initMetadataForLambda;
-  _.$_$.k7 = initMetadataForObject;
-  _.$_$.l7 = isArray;
-  _.$_$.m7 = isBooleanArray;
-  _.$_$.n7 = isByteArray;
-  _.$_$.o7 = isCharArray;
-  _.$_$.p7 = isDoubleArray;
-  _.$_$.q7 = isFloatArray;
-  _.$_$.r7 = isIntArray;
-  _.$_$.s7 = isInterface;
-  _.$_$.t7 = isShortArray;
-  _.$_$.u7 = get_js;
-  _.$_$.v7 = longArray;
-  _.$_$.w7 = numberRangeToNumber;
-  _.$_$.x7 = numberToChar;
-  _.$_$.y7 = objectCreate;
-  _.$_$.z7 = protoOf;
-  _.$_$.a8 = toByte;
-  _.$_$.b8 = toString_1;
-  _.$_$.c8 = ClosedRange;
-  _.$_$.d8 = coerceAtLeast;
-  _.$_$.e8 = coerceAtMost;
-  _.$_$.f8 = contains_0;
-  _.$_$.g8 = step;
-  _.$_$.h8 = until;
-  _.$_$.i8 = createKType;
-  _.$_$.j8 = getKClassFromExpression;
-  _.$_$.k8 = getKClass;
-  _.$_$.l8 = KClass;
-  _.$_$.m8 = KProperty1;
-  _.$_$.n8 = KTypeParameter;
-  _.$_$.o8 = contains_1;
-  _.$_$.p8 = equals_0;
-  _.$_$.q8 = indexOf_1;
-  _.$_$.r8 = indexOf_0;
-  _.$_$.s8 = isBlank;
-  _.$_$.t8 = lastIndexOf;
-  _.$_$.u8 = removeSuffix;
-  _.$_$.v8 = single_0;
-  _.$_$.w8 = startsWith;
-  _.$_$.x8 = substringAfter;
-  _.$_$.y8 = substringBefore;
-  _.$_$.z8 = substring;
-  _.$_$.a9 = toBooleanStrictOrNull;
-  _.$_$.b9 = toDoubleOrNull;
-  _.$_$.c9 = toDouble;
-  _.$_$.d9 = toIntOrNull;
-  _.$_$.e9 = toInt;
-  _.$_$.f9 = toLongOrNull;
-  _.$_$.g9 = toUByte;
-  _.$_$.h9 = toUInt;
-  _.$_$.i9 = toULongOrNull;
-  _.$_$.j9 = toULong;
-  _.$_$.k9 = toUShort;
-  _.$_$.l9 = trimIndent;
-  _.$_$.m9 = Duration;
-  _.$_$.n9 = Instant;
-  _.$_$.o9 = Uuid;
-  _.$_$.p9 = Char;
-  _.$_$.q9 = Comparator;
-  _.$_$.r9 = DeepRecursiveFunction;
-  _.$_$.s9 = DeepRecursiveScope;
-  _.$_$.t9 = Enum;
-  _.$_$.u9 = Exception;
-  _.$_$.v9 = IllegalArgumentException;
-  _.$_$.w9 = Long;
-  _.$_$.x9 = Pair;
-  _.$_$.y9 = Result;
-  _.$_$.z9 = THROW_CCE;
-  _.$_$.aa = Triple;
-  _.$_$.ba = UByteArray;
-  _.$_$.ca = UByte;
-  _.$_$.da = UIntArray;
-  _.$_$.ea = UInt;
-  _.$_$.fa = ULongArray;
-  _.$_$.ga = ULong;
-  _.$_$.ha = UShortArray;
-  _.$_$.ia = UShort;
-  _.$_$.ja = Unit;
-  _.$_$.ka = arrayOf;
-  _.$_$.la = countTrailingZeroBits;
-  _.$_$.ma = createFailure;
-  _.$_$.na = ensureNotNull;
-  _.$_$.oa = invoke;
-  _.$_$.pa = isFinite_0;
-  _.$_$.qa = isFinite;
-  _.$_$.ra = lazy;
-  _.$_$.sa = lazy_0;
-  _.$_$.ta = noWhenBranchMatchedException;
-  _.$_$.ua = plus_0;
-  _.$_$.va = toString_0;
-  _.$_$.wa = to;
+  _.$_$.z3 = addAll;
+  _.$_$.a4 = arrayCopy;
+  _.$_$.b4 = asList;
+  _.$_$.c4 = checkIndexOverflow;
+  _.$_$.d4 = collectionSizeOrDefault;
+  _.$_$.e4 = contentEquals;
+  _.$_$.f4 = contentHashCode;
+  _.$_$.g4 = contentToString;
+  _.$_$.h4 = copyOf_5;
+  _.$_$.i4 = copyOf_4;
+  _.$_$.j4 = copyOf_7;
+  _.$_$.k4 = copyOf_1;
+  _.$_$.l4 = copyOf_6;
+  _.$_$.m4 = copyOf_2;
+  _.$_$.n4 = copyOf_3;
+  _.$_$.o4 = copyOf_0;
+  _.$_$.p4 = copyOf;
+  _.$_$.q4 = copyToArray;
+  _.$_$.r4 = distinct;
+  _.$_$.s4 = eachCount;
+  _.$_$.t4 = emptyList;
+  _.$_$.u4 = emptyMap;
+  _.$_$.v4 = emptySet;
+  _.$_$.w4 = getOrNull_0;
+  _.$_$.x4 = getValue;
+  _.$_$.y4 = indexOf;
+  _.$_$.z4 = get_indices_0;
+  _.$_$.a5 = get_indices;
+  _.$_$.b5 = joinToString_0;
+  _.$_$.c5 = get_lastIndex_0;
+  _.$_$.d5 = get_lastIndex_2;
+  _.$_$.e5 = lastOrNull;
+  _.$_$.f5 = last;
+  _.$_$.g5 = listOf;
+  _.$_$.h5 = mapCapacity;
+  _.$_$.i5 = mapOf_0;
+  _.$_$.j5 = plus_0;
+  _.$_$.k5 = plus;
+  _.$_$.l5 = removeLast;
+  _.$_$.m5 = setOf_0;
+  _.$_$.n5 = singleOrNull;
+  _.$_$.o5 = sortedWith;
+  _.$_$.p5 = toBooleanArray;
+  _.$_$.q5 = toHashSet;
+  _.$_$.r5 = toList_0;
+  _.$_$.s5 = toList;
+  _.$_$.t5 = toMap;
+  _.$_$.u5 = toSet_0;
+  _.$_$.v5 = toSet;
+  _.$_$.w5 = withIndex;
+  _.$_$.x5 = compareValues;
+  _.$_$.y5 = get_COROUTINE_SUSPENDED;
+  _.$_$.z5 = CoroutineImpl;
+  _.$_$.a6 = enumEntries;
+  _.$_$.b6 = add;
+  _.$_$.c6 = bitwiseOr;
+  _.$_$.d6 = compare;
+  _.$_$.e6 = convertToByte;
+  _.$_$.f6 = convertToInt;
+  _.$_$.g6 = convertToShort;
+  _.$_$.h6 = equalsLong;
+  _.$_$.i6 = fromInt;
+  _.$_$.j6 = invert;
+  _.$_$.k6 = isLongArray;
+  _.$_$.l6 = multiply;
+  _.$_$.m6 = negate;
+  _.$_$.n6 = numberToLong;
+  _.$_$.o6 = shiftLeft;
+  _.$_$.p6 = subtract;
+  _.$_$.q6 = toNumber;
+  _.$_$.r6 = FunctionAdapter;
+  _.$_$.s6 = arrayIterator;
+  _.$_$.t6 = booleanArray;
+  _.$_$.u6 = captureStack;
+  _.$_$.v6 = charArray;
+  _.$_$.w6 = charCodeAt;
+  _.$_$.x6 = charSequenceGet;
+  _.$_$.y6 = charSequenceLength;
+  _.$_$.z6 = charSequenceSubSequence;
+  _.$_$.a7 = constructCallableReference;
+  _.$_$.b7 = defineProp;
+  _.$_$.c7 = equals;
+  _.$_$.d7 = getBooleanHashCode;
+  _.$_$.e7 = getPropertyCallableRef;
+  _.$_$.f7 = getStringHashCode;
+  _.$_$.g7 = hashCode_0;
+  _.$_$.h7 = initMetadataForClass;
+  _.$_$.i7 = initMetadataForCompanion;
+  _.$_$.j7 = initMetadataForCoroutine;
+  _.$_$.k7 = initMetadataForInterface;
+  _.$_$.l7 = initMetadataForLambda;
+  _.$_$.m7 = initMetadataForObject;
+  _.$_$.n7 = isArray;
+  _.$_$.o7 = isBooleanArray;
+  _.$_$.p7 = isByteArray;
+  _.$_$.q7 = isCharArray;
+  _.$_$.r7 = isDoubleArray;
+  _.$_$.s7 = isFloatArray;
+  _.$_$.t7 = isIntArray;
+  _.$_$.u7 = isInterface;
+  _.$_$.v7 = isShortArray;
+  _.$_$.w7 = get_js;
+  _.$_$.x7 = longArray;
+  _.$_$.y7 = numberRangeToNumber;
+  _.$_$.z7 = numberToChar;
+  _.$_$.a8 = objectCreate;
+  _.$_$.b8 = protoOf;
+  _.$_$.c8 = toByte;
+  _.$_$.d8 = toString_1;
+  _.$_$.e8 = ClosedRange;
+  _.$_$.f8 = coerceAtLeast;
+  _.$_$.g8 = coerceAtMost;
+  _.$_$.h8 = contains_0;
+  _.$_$.i8 = step;
+  _.$_$.j8 = until;
+  _.$_$.k8 = createKType;
+  _.$_$.l8 = getKClassFromExpression;
+  _.$_$.m8 = getKClass;
+  _.$_$.n8 = KClass;
+  _.$_$.o8 = KProperty1;
+  _.$_$.p8 = KTypeParameter;
+  _.$_$.q8 = contains_1;
+  _.$_$.r8 = equals_0;
+  _.$_$.s8 = indexOf_1;
+  _.$_$.t8 = indexOf_0;
+  _.$_$.u8 = isBlank;
+  _.$_$.v8 = lastIndexOf;
+  _.$_$.w8 = removeSuffix;
+  _.$_$.x8 = single_0;
+  _.$_$.y8 = startsWith;
+  _.$_$.z8 = substringAfter;
+  _.$_$.a9 = substringBefore;
+  _.$_$.b9 = substring;
+  _.$_$.c9 = toBooleanStrictOrNull;
+  _.$_$.d9 = toDoubleOrNull;
+  _.$_$.e9 = toDouble;
+  _.$_$.f9 = toIntOrNull;
+  _.$_$.g9 = toInt;
+  _.$_$.h9 = toLongOrNull;
+  _.$_$.i9 = toUByte;
+  _.$_$.j9 = toUInt;
+  _.$_$.k9 = toULongOrNull;
+  _.$_$.l9 = toULong;
+  _.$_$.m9 = toUShort;
+  _.$_$.n9 = trimIndent;
+  _.$_$.o9 = Duration;
+  _.$_$.p9 = Instant;
+  _.$_$.q9 = Uuid;
+  _.$_$.r9 = Char;
+  _.$_$.s9 = Comparator;
+  _.$_$.t9 = DeepRecursiveFunction;
+  _.$_$.u9 = DeepRecursiveScope;
+  _.$_$.v9 = Enum;
+  _.$_$.w9 = Exception;
+  _.$_$.x9 = IllegalArgumentException;
+  _.$_$.y9 = Long;
+  _.$_$.z9 = Pair;
+  _.$_$.aa = Result;
+  _.$_$.ba = THROW_CCE;
+  _.$_$.ca = Triple;
+  _.$_$.da = UByteArray;
+  _.$_$.ea = UByte;
+  _.$_$.fa = UIntArray;
+  _.$_$.ga = UInt;
+  _.$_$.ha = ULongArray;
+  _.$_$.ia = ULong;
+  _.$_$.ja = UShortArray;
+  _.$_$.ka = UShort;
+  _.$_$.la = Unit;
+  _.$_$.ma = arrayOf;
+  _.$_$.na = countTrailingZeroBits;
+  _.$_$.oa = createFailure;
+  _.$_$.pa = ensureNotNull;
+  _.$_$.qa = invoke;
+  _.$_$.ra = isFinite_0;
+  _.$_$.sa = isFinite;
+  _.$_$.ta = lazy;
+  _.$_$.ua = lazy_0;
+  _.$_$.va = noWhenBranchMatchedException;
+  _.$_$.wa = plus_1;
+  _.$_$.xa = toString_0;
+  _.$_$.ya = to;
   //endregion
   return _;
 }));

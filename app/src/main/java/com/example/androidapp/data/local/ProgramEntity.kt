@@ -2,6 +2,7 @@ package com.example.androidapp.data.local
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.androidapp.domain.model.ProgramKind
 
 /**
  * A named, ordered list of training slots (ROADMAP P3.3).
@@ -29,6 +30,13 @@ data class ProgramEntity(
     val isActive: Boolean = false,
     /** The program's place in the list and in the union, low first (P3.12). */
     val position: Int = 0,
+    /** A week that repeats, or an order that ends (N174). Written as a name, never an ordinal. */
+    val kind: ProgramKind = ProgramKind.WEEKLY,
+    /**
+     * The day the block begins, as `LocalDate.toEpochDay()`, or null for "the day it was created"
+     * (N174). Only a sequence reads it: a weekly program's weeks are the calendar's.
+     */
+    val startDate: Long? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

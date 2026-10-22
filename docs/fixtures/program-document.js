@@ -8,7 +8,7 @@
  */
 window.PROGRAM_SHEET_TEXT = "Program\tDay\tWeekday\tExercise\tSets\tReps\tLoad\tRest\tRPE\tNote\nAutumn block\tUpper A\tMon\tCompetition Bench Press\t5\t3\t82.5\t180\t8\tpause 1s\nAutumn block\tUpper A\tMon\tBarbell Row\t4\t6-8\t70\t120\t8\t\nAutumn block\tUpper A\tWed\tCompetition Bench Press\t5\t3\t82.5\t180\t8\t\nAutumn block\tLower A\tFri\tBack Squat\t5\t5\t100\t240\t8\tbelts on\nAutumn block\tLower A\tFri\tMachine Curl Call\t3\t10\t30\t90\t8\t";
 window.PROGRAM_DOCUMENT_FIXTURE = {
-  "formatVersion": 4,
+  "formatVersion": 5,
   "exportedAt": 1790000000000,
   "program": {
     "id": "pgm_2a06bc2cd386d9ae",

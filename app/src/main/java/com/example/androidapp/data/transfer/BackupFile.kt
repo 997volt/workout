@@ -5,6 +5,7 @@ import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
@@ -488,6 +489,16 @@ data class ProgramDto(
      * reorderable rather than stuck.
      */
     val position: Int = 0,
+    /**
+     * A week that repeats, or an order that ends (ROADMAP N174).
+     *
+     * Defaulted so every file written before the choice existed decodes as what it is: a weekly
+     * program. The **backup's** schema version moved with it, because a build that did not know the
+     * name would read a sequence as a weekly program and repeat it forever (N185).
+     */
+    val kind: ProgramKind = ProgramKind.WEEKLY,
+    /** The day a block begins, as `LocalDate.toEpochDay()`, or null (ROADMAP N174). */
+    val startDate: Long? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

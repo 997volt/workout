@@ -23,6 +23,8 @@ internal fun ProgramSummaryRow.toDomain(): WorkoutProgram = WorkoutProgram(
     slotCount = slotCount,
     isActive = isActive,
     position = position,
+    kind = kind,
+    startDate = startDate?.let(LocalDate::ofEpochDay),
 )
 
 internal fun ProgramSlotDetail.toDomain(): ProgramSlot = ProgramSlot(

@@ -120,8 +120,15 @@ object ProgramDocumentCodec {
     /** The version this build writes, and the newest it reads. */
     const val CURRENT_FORMAT_VERSION: Int = PROGRAM_FORMAT_VERSION
 
-    /** The oldest document this build reads: 2.0's own, and nothing earlier (N104). */
-    const val MINIMUM_FORMAT_VERSION: Int = PROGRAM_FORMAT_VERSION
+    /**
+     * The oldest document this build reads: 2.0's own, and nothing earlier (N104).
+     *
+     * **Not the ceiling's number** (N185). A v4 document is a weekly program and means exactly what it
+     * says, so this build reads it; the ceiling is what stops an older build reading a *sequence* it
+     * cannot represent. Moving the floor with the ceiling would refuse every saved export and the
+     * three bundled starter programs for no safety at all.
+     */
+    const val MINIMUM_FORMAT_VERSION: Int = 4
 
     private val json = Json {
         prettyPrint = true

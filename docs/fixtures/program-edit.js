@@ -9,7 +9,7 @@ window.PROGRAM_EDIT_CASES = [
   {
     "name": "rename the program",
     "snapshot": {
-      "formatVersion": 4,
+      "formatVersion": 5,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -550,7 +550,7 @@ window.PROGRAM_EDIT_CASES = [
       ]
     },
     "edit": {
-      "formatVersion": 4,
+      "formatVersion": 5,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -1103,7 +1103,7 @@ window.PROGRAM_EDIT_CASES = [
   {
     "name": "a base older than the program",
     "snapshot": {
-      "formatVersion": 4,
+      "formatVersion": 5,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -1644,7 +1644,7 @@ window.PROGRAM_EDIT_CASES = [
       ]
     },
     "edit": {
-      "formatVersion": 4,
+      "formatVersion": 5,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -2197,7 +2197,7 @@ window.PROGRAM_EDIT_CASES = [
   {
     "name": "remove every day",
     "snapshot": {
-      "formatVersion": 4,
+      "formatVersion": 5,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -2738,7 +2738,7 @@ window.PROGRAM_EDIT_CASES = [
       ]
     },
     "edit": {
-      "formatVersion": 4,
+      "formatVersion": 5,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -3266,7 +3266,7 @@ window.PROGRAM_EDIT_CASES = [
   {
     "name": "add a set",
     "snapshot": {
-      "formatVersion": 4,
+      "formatVersion": 5,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -3807,7 +3807,7 @@ window.PROGRAM_EDIT_CASES = [
       ]
     },
     "edit": {
-      "formatVersion": 4,
+      "formatVersion": 5,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -4376,7 +4376,7 @@ window.PROGRAM_EDIT_CASES = [
   {
     "name": "a day naming a workout the file does not carry",
     "snapshot": {
-      "formatVersion": 4,
+      "formatVersion": 5,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -4917,7 +4917,7 @@ window.PROGRAM_EDIT_CASES = [
       ]
     },
     "edit": {
-      "formatVersion": 4,
+      "formatVersion": 5,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",

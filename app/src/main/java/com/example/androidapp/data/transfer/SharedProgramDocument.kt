@@ -3,6 +3,7 @@ package com.example.androidapp.data.transfer
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.shared.ProgramSetRole
@@ -11,6 +12,7 @@ import java.time.DayOfWeek
 import com.example.androidapp.shared.ExerciseDto as SharedExerciseDto
 import com.example.androidapp.shared.ProgramDocument as SharedProgramDocument
 import com.example.androidapp.shared.ProgramDto as SharedProgramDto
+import com.example.androidapp.shared.ProgramKind as SharedProgramKind
 import com.example.androidapp.shared.ProgramSlotDto as SharedProgramSlotDto
 import com.example.androidapp.shared.TemplateDto as SharedTemplateDto
 import com.example.androidapp.shared.TemplateExerciseDto as SharedTemplateExerciseDto
@@ -58,6 +60,10 @@ private fun ProgramDto.toShared() = SharedProgramDto(
     name = name,
     isActive = isActive,
     position = position,
+    // The format carries the names the app's own enum already has; the mapping is the seam N170
+    // describes, and an unknown name cannot reach here because the codec decoded it first.
+    kind = SharedProgramKind.valueOf(kind.name),
+    startDate = startDate,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,
@@ -68,6 +74,8 @@ private fun SharedProgramDto.toApp() = ProgramDto(
     name = name,
     isActive = isActive,
     position = position,
+    kind = ProgramKind.valueOf(kind.name),
+    startDate = startDate,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,
