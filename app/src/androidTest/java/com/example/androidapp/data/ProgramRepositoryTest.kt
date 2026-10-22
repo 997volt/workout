@@ -20,11 +20,6 @@ import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetType
-import java.time.DayOfWeek
-import java.time.Instant
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneOffset
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -35,6 +30,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.DayOfWeek
+import java.time.Instant
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneOffset
 
 /**
  * Program writes and the missed-day read, end to end through the schema (ROADMAP P3.3).
@@ -795,7 +795,13 @@ class ProgramRepositoryTest {
     }
 
     /** A session row, finished or abandoned, started from [templateId] or by hand. */
-    private suspend fun insertSession(id: String, date: String, finished: Boolean, templateId: String?) {        val startedAt = Instant.parse(date).toEpochMilli()
+    private suspend fun insertSession(
+        id: String,
+        date: String,
+        finished: Boolean,
+        templateId: String?
+    ) {
+        val startedAt = Instant.parse(date).toEpochMilli()
         database.workoutDao().insertSession(
             WorkoutSessionEntity(
                 id = id,

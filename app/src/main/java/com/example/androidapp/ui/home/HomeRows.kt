@@ -26,11 +26,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.ui.components.AppCard
@@ -314,55 +314,54 @@ private fun PlanCardActions(
     } else {
         ""
     }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Only a program slot can be substituted: the event is keyed by slot and week
-            // (P3.11), and a pinned plan has no slot to key it by. A block's session offers none
-            // either (N176): its slot happens once, so a week-keyed record would never matter.
-            if (plan.slotId != null && !plan.isSequence) {
-                AppTextButton(
-                    onClick = onSubstitute,
-                    modifier = Modifier.testTag(TestTags.homeSubstitute(plan.id)),
-                ) {
-                    Text(stringResource(R.string.home_substitute))
-                }
-            }
-            // A block's session happens once, so the weekly *Continue* is not its skip: this is
-            // the one way past a session that cannot be trained (B195).
-            if (plan.isSequence && plan.slotId != null) {
-                AppTextButton(
-                    onClick = onSkipBlock,
-                    modifier = Modifier
-                        .testTag(TestTags.homeSkipBlock(plan.id))
-                        .semantics { contentDescription = skipLabel },
-                ) {
-                    Text(stringResource(R.string.home_block_skip))
-                }
-            }
-            Button(
-                // The row's identity is the slot's, and the whole row travels: what starts
-                // is the template, and the slot id travels for the prefill history (P3.3, N73).
-                onClick = onStart,
-                // Today's planned start and the next-up pill are one action on one plan, so they are one
-                // colour (N83): the tonal container *Log set* draws, rather than the accent.
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ),
-                modifier = Modifier
-                    .padding(start = 4.dp)
-                    .testTag(TestTags.Home.startPlan(plan.id)),
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Only a program slot can be substituted: the event is keyed by slot and week
+        // (P3.11), and a pinned plan has no slot to key it by. A block's session offers none
+        // either (N176): its slot happens once, so a week-keyed record would never matter.
+        if (plan.slotId != null && !plan.isSequence) {
+            AppTextButton(
+                onClick = onSubstitute,
+                modifier = Modifier.testTag(TestTags.homeSubstitute(plan.id)),
             ) {
-                Text(stringResource(R.string.home_plan_start))
+                Text(stringResource(R.string.home_substitute))
             }
         }
+        // A block's session happens once, so the weekly *Continue* is not its skip: this is
+        // the one way past a session that cannot be trained (B195).
+        if (plan.isSequence && plan.slotId != null) {
+            AppTextButton(
+                onClick = onSkipBlock,
+                modifier = Modifier
+                    .testTag(TestTags.homeSkipBlock(plan.id))
+                    .semantics { contentDescription = skipLabel },
+            ) {
+                Text(stringResource(R.string.home_block_skip))
+            }
+        }
+        Button(
+            // The row's identity is the slot's, and the whole row travels: what starts
+            // is the template, and the slot id travels for the prefill history (P3.3, N73).
+            onClick = onStart,
+            // Today's planned start and the next-up pill are one action on one plan, so they are one
+            // colour (N83): the tonal container *Log set* draws, rather than the accent.
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ),
+            modifier = Modifier
+                .padding(start = 4.dp)
+                .testTag(TestTags.Home.startPlan(plan.id)),
+        ) {
+            Text(stringResource(R.string.home_plan_start))
+        }
+    }
 }
-
 
 /**
  * A card's supporting line: what it plans and which program it belongs to (N127, N147).

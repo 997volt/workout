@@ -4,6 +4,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.AdherenceReport
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.MonthAdherence
 import com.example.androidapp.domain.model.MonthlyRatio
@@ -11,27 +12,26 @@ import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.Streak
 import com.example.androidapp.domain.repository.AdherenceRepository
 import com.google.common.truth.Truth.assertThat
-import java.io.IOException
-import java.time.Instant
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.ZoneId
-import java.util.TimeZone
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.Flow
-import com.example.androidapp.domain.model.BlockProgress
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
+import java.time.Instant
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
+import java.util.TimeZone
 
 /**
  * What the Adherence screen reads (ROADMAP P3.5).

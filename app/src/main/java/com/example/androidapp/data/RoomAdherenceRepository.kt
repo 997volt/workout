@@ -7,10 +7,10 @@ import com.example.androidapp.data.local.ProgramDeloadEntity
 import com.example.androidapp.data.local.ProgramSkipDao
 import com.example.androidapp.data.local.ProgramSkipEntity
 import com.example.androidapp.data.local.ProgramSubstitutionDao
+import com.example.androidapp.data.local.ProgramSummaryRow
 import com.example.androidapp.data.local.TemplateDao
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toAdherenceSession
-import com.example.androidapp.data.local.ProgramSummaryRow
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.NotFoundException
@@ -22,8 +22,8 @@ import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.DeloadDay
 import com.example.androidapp.domain.model.DeloadWeek
 import com.example.androidapp.domain.model.MonthlyRatio
-import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramKind
+import com.example.androidapp.domain.model.ProgramSchedule
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.RecordedDeload
 import com.example.androidapp.domain.model.RecordedSkip
@@ -32,6 +32,12 @@ import com.example.androidapp.domain.model.Streak
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.AdherenceRepository
 import com.example.androidapp.domain.repository.ProgramRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
@@ -39,12 +45,6 @@ import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 
 /**
  * Room-backed [AdherenceRepository] (ROADMAP P3.5, P3.13).

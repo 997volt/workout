@@ -14,9 +14,9 @@ import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.shared.ChangeKind
 import com.example.androidapp.shared.WarningCode
-import java.time.LocalDate
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
+import java.time.LocalDate
 
 /**
  * The confirmation an edit document stops at (ROADMAP N171).

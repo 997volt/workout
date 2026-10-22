@@ -1,20 +1,21 @@
 package com.example.androidapp.ui.adherence
 
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
+import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.domain.model.DayOccurrence
 import com.example.androidapp.domain.model.ExerciseAdherence
 import com.example.androidapp.domain.model.MonthAdherence
@@ -23,7 +24,6 @@ import com.example.androidapp.domain.model.OccurrenceState
 import com.example.androidapp.domain.model.SlotAdherence
 import com.example.androidapp.domain.model.Streak
 import com.example.androidapp.domain.model.WorkoutProgram
-import com.example.androidapp.domain.model.BlockProgress
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.google.common.truth.Truth.assertThat
