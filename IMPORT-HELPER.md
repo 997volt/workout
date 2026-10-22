@@ -442,9 +442,10 @@ points.
 ## Program editor
 
 A program the app **exported** (Programs → a program → ⋮ → Export), a program taken from a backup, a draft,
-or **Start a new program** opens as a document. Every part of it is editable — the program's name, its days and
-weekdays, each workout's name, its exercises with rest, target RPE, superset group and cue, and each planned
-set's role, rep range and current rung, load or assistance, drop value and note. The model is the document
+or **Start a new program** opens as a document. Every part of it is editable — the program's name,
+whether it repeats or is one block, a block's start, the days in their order and their weekdays, each
+workout's name, its exercises with rest, target RPE, superset group and cue, and each planned set's
+role, rep range and current rung, load or assistance, drop value and note. The model is the document
 itself, so what the page does not change it still carries: a field this UI never learned cannot be lost by a
 round trip.
 
@@ -485,6 +486,13 @@ tab-separated paste from a spreadsheet is the intended input.
   RPE. `Reps` is `5` or a range like `6-8`.
 - **Days become templates, weekdays become slots.** A day named on two rows with different weekdays is
   scheduled on both; a day with no weekday is a workout the lifter starts by hand.
+- **Kind makes the table a block, and Start says when it begins.** `Kind` is `weekly` or `block` (`one
+  block` and `sequence` mean the same thing) and `Start` is a date like `2026-10-05`, each said **once
+  for the whole table**: two rows naming different kinds, or two starts, are refused rather than
+  resolved by whichever came last. In a block the weekday is a **placement** rather than a recurrence
+  — a session is due on the first such weekday after the last one done, and a day with no weekday is
+  due the day after it — and the rows' day order is the block's order. A `Start` without `Kind` is
+  refused: a block begins on a day, and a weekly program's weeks are the calendar's.
 - **Names resolve against the lifter's library, then the seeded library.** A name in neither is created as a
   movement, carried in the document with no taxonomy and listed in the preview.
 - **Loads are kilograms**, converted to whole grams.

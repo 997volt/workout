@@ -4961,7 +4961,7 @@
         sheet.problems.push({
           message: 'The table has no "' + (field === 'sets' ? 'Sets' : field === 'day' ? 'Day' : 'Exercise') +
             '" column. A program sheet needs Program (optional), Day, Weekday (optional), Exercise, Sets, ' +
-            'Reps, Load, Rest, RPE and Note.'
+            'Reps, Load, Rest, RPE and Note, and optionally Kind (weekly or block) and Start (yyyy-mm-dd).'
         });
       }
     });

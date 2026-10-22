@@ -26,7 +26,6 @@ Nothing here is fixed.
 
 | # | Severity | What | Fix |
 | --- | --- | --- | --- |
-| N190 | low | **The docs still describe the table before its two new columns.** IMPORT-HELPER lists `Kind` and `Start` without saying what they accept, that they are said once for the whole table, or that a block's order is the rows' day order; its "a day with no weekday is a workout the lifter starts by hand" is false for a block (no weekday means the day after the last one); its "every part is editable" omits the kind and the start; and the page's own column hint and missing-column message still name the old set, so the new columns are undiscoverable from the page. | State the two columns where the table's columns are stated, fix the two sentences that are only true of a weekly program, and add them to the page's hint and its missing-column message. |
 
 B194–B196 are one mistake on three surfaces: a block is still read as a week by the day's plan, by the
 missed-day question, and by the schedule's own match. B193 and B199 are the suite around it — a red run and
