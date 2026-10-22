@@ -684,6 +684,10 @@ object TestTags {
         const val START_DATE = "program_start_date"
         const val START_DATE_CHANGE = "program_start_date_change"
 
+        /** The picker's own two answers (B201): named and addressable, not just "Set" and "Cancel". */
+        const val START_DATE_SET = "program_start_date_set"
+        const val START_DATE_CANCEL = "program_start_date_cancel"
+
         /** A finished block says so, rather than marking its last day as next (B197). */
         const val BLOCK_COMPLETE = "program_block_complete"
 

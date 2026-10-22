@@ -53,6 +53,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -869,12 +871,27 @@ private fun SlotWeekdayPicker(
         )
         DayOfWeek.entries.forEach { day ->
             val selected = slot.weekday == day
+            // In a block the seven chips repeat under a bare "Due", so each says which session's
+            // due day it sets (B201): "Due Tue for Peak day" is the control, not "Tue".
+            val spoken = if (isSequence) {
+                stringResource(R.string.program_due_for, day.shortLabel(), slot.templateName)
+            } else {
+                null
+            }
             FilterChip(
                 selected = selected,
                 // Tapping the chosen day again makes the slot order-only.
                 onClick = { onSelect(if (selected) null else day) },
                 label = { Text(day.shortLabel()) },
-                modifier = Modifier.testTag(TestTags.Programs.slotWeekday(slot.id, day.name)),
+                modifier = Modifier
+                    .testTag(TestTags.Programs.slotWeekday(slot.id, day.name))
+                    .then(
+                        if (spoken == null) {
+                            Modifier
+                        } else {
+                            Modifier.semantics { contentDescription = spoken }
+                        },
+                    ),
             )
         }
     }

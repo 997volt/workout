@@ -265,16 +265,21 @@ class ProgramEditorScreenTest {
     }
 
     @Test
-    fun changingABlocksStart_opensTheDatePicker() {
+    fun changingABlocksStart_opensTheDatePicker_andItsAnswerReachesTheCallback() {
+        // B201: the picker's answers are addressed by tag rather than the English "Set", and the date
+        // it returns reaches the screen's callback — the write itself is the repository's.
+        var chosen: LocalDate? = null
         setScreen(
             state = twoSlots.copy(program = twoSlots.program?.copy(kind = ProgramKind.SEQUENCE)),
+            onSetStartDate = { chosen = it },
         )
 
         composeTestRule.onNodeWithTag(TestTags.Programs.START_DATE_CHANGE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Programs.START_DATE_SET).performClick()
 
-        // The picker's own confirm is the thing on screen; the chosen date is the repository's to
-        // write, which the ViewModel test and the instrumented suite cover.
-        composeTestRule.onNodeWithText("Set").assertIsDisplayed()
+        // The picker opens on the authored day (or today when none is authored), so its confirm
+        // returns that day rather than nothing.
+        assertThat(chosen).isNotNull()
     }
 
     @Test

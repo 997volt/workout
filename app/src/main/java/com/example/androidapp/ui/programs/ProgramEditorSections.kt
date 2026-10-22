@@ -238,12 +238,16 @@ private fun StartDateDialog(
                         },
                     )
                 },
+                modifier = Modifier.testTag(TestTags.Programs.START_DATE_SET),
             ) {
                 Text(stringResource(R.string.program_starts_confirm))
             }
         },
         dismissButton = {
-            AppTextButton(onClick = onDismiss) {
+            AppTextButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag(TestTags.Programs.START_DATE_CANCEL),
+            ) {
                 Text(stringResource(R.string.program_edit_cancel))
             }
         },

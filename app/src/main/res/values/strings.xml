@@ -925,9 +925,10 @@
     <string name="program_sequence_day">Day %1$d of %2$d</string>
     <string name="program_starts_on">Starts on %1$s</string>
     <string name="program_starts_created">the day it was created</string>
-    <string name="program_starts_change">Change</string>
-    <string name="program_starts_confirm">Set</string>
+    <string name="program_starts_change">Change start</string>
+    <string name="program_starts_confirm">Set start</string>
     <string name="program_block_complete">Block complete — every session is done.</string>
+    <string name="program_due_for">Due %1$s for %2$s</string>
     <string name="program_active">Active program</string>
     <string name="program_next_up">Next up</string>
     <string name="program_active_hint">Home follows this program’s days. More than one can be active at once; with none active, nothing is scheduled.</string>
