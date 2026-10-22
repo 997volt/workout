@@ -69,6 +69,16 @@
   }
 
   function run(H, shared, t, cases) {
+    // The fixture is a global the runner loads, so a renamed one used to leave the loop over nothing
+    // and every case pass by being absent (N181). It is required rather than defaulted, and the
+    // runner counts what was checked against what it declares.
+    if (!Array.isArray(cases)) {
+      throw new Error('the edit fixture did not load: PROGRAM_EDIT_CASES is not an array');
+    }
+    if (cases.length === 0) {
+      throw new Error('the edit fixture is empty: no case would be checked');
+    }
+
     t.check('a backup becomes one program document with only its own rows', function () {
       var backup = {
         exportedAt: 500,
@@ -184,30 +194,91 @@
       t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
     });
 
-    (cases || []).forEach(function (testCase) {
+    t.check('an opened document plans and downloads with its base and its rows', function () {
+      // The page's own half of the edit path: open a program, ask the core what it would do, and
+      // write the file — through the functions the buttons call rather than through the core alone
+      // (N181). A wrong base, a missing marker or a dropped field used to leave this green.
+      var backup = {
+        exportedAt: 4242,
+        programs: [row({ id: 'pgm_9', name: 'Block', isActive: false, position: 0 })],
+        programSlots: [row({ id: 'slot_9', programId: 'pgm_9', templateId: 'tpl_9', position: 0, weekday: 'FRIDAY' })],
+        templates: [row({ id: 'tpl_9', name: 'Lower', versionOf: null })],
+        templateExercises: [row({
+          id: 'te_9',
+          templateId: 'tpl_9',
+          exerciseId: 'ex_9',
+          position: 0,
+          restSeconds: 180,
+          techniqueNote: 'pause',
+          targetRpeHalves: 17,
+          supersetGroup: null
+        })],
+        templateSets: [row({
+          id: 'set_9',
+          templateExerciseId: 'te_9',
+          setIndex: 0,
+          role: 'TOP_SET',
+          targetWeightGrams: 90000,
+          targetAssistanceGrams: null,
+          targetRepsMin: 3,
+          targetRepsMax: 3,
+          targetRepsCurrent: null,
+          dropValueGrams: null,
+          note: 'first'
+        })],
+        exercises: [exercise('ex_9', 'Back Squat')]
+      };
+      var document = H.programDocumentFromBackup(backup, 'pgm_9');
+      var opened = H.editorOpenSnapshot(document, backup);
+
+      t.eq(opened.working.edit.baseExportedAt, 4242, 'the marker names the export it was opened from');
+      t.eq(opened.source, backup, 'the backup travels, so shared workouts are known');
+
+      var planned = H.editorPlanEdit(shared, opened);
+      t.eq(planned.ok, true, 'an untouched document plans clean');
+      t.eq((planned.changes || []).length, 0, 'and changes nothing');
+
+      var payload = H.editorDownloadPayload(opened);
+      t.eq(payload.fileName, 'program-edit.json');
+      var written = JSON.parse(payload.text);
+      t.eq(written.edit.baseExportedAt, 4242, 'the download carries the base');
+      t.eq(written.program.name, 'Block', 'the program travels');
+      t.eq(written.slots.length, 1);
+      t.eq(written.templates[0].name, 'Lower', 'the workout travels');
+      t.eq(written.templateExercises[0].techniqueNote, 'pause', 'a field the UI shows travels');
+      t.eq(written.templateSets[0].targetWeightGrams, 90000, 'the plan travels');
+      t.eq(written.templateSets[0].role, 'TOP_SET');
+      t.eq(written.exercises[0].name, 'Back Squat', 'the movement travels');
+    });
+
+    // Exact membership, not order: the planner writes categories in its own order, and the claim is
+    // which changes it makes rather than how it sorts them.
+    function listed(list) {
+      return list.slice().sort().join(',');
+    }
+
+    cases.forEach(function (testCase) {
       t.check('fixture: ' + testCase.name, function () {
         var result = JSON.parse(shared.planJson(
           JSON.stringify(testCase.snapshot),
           JSON.stringify(testCase.edit)
         ));
         t.eq(result.ok, testCase.expected.ok, 'ok');
-        var seen = testCase.expected.ok
-          ? result.changes.map(function (change) { return change.kind; })
-          : result.problems.map(function (problem) { return problem.code; });
-        (testCase.expected.kinds || []).forEach(function (kind) {
-          t.ok(seen.indexOf(kind) !== -1, 'the plan names ' + kind);
-        });
-        (testCase.expected.codes || []).forEach(function (code) {
-          t.ok(seen.indexOf(code) !== -1, 'the plan refuses with ' + code);
-        });
-        var warnings = testCase.expected.ok
-          ? result.warnings.map(function (warning) { return warning.code; })
-          : [];
-        (testCase.expected.warnings || []).forEach(function (code) {
-          t.ok(warnings.indexOf(code) !== -1, 'the plan warns ' + code);
-        });
+        // Exactly what the fixture says, in its order — not "the expected kinds appear somewhere"
+        // (N181): a planner that over-reported an addition the write would skip used to pass.
+        if (testCase.expected.ok) {
+          var kinds = result.changes.map(function (change) { return change.kind; });
+          var warnings = result.warnings.map(function (warning) { return warning.code; });
+          t.eq(listed(kinds), listed(testCase.expected.kinds || []), 'the changes, exactly');
+          t.eq(listed(warnings), listed(testCase.expected.warnings || []), 'the warnings, exactly');
+        } else {
+          var codes = result.problems.map(function (problem) { return problem.code; });
+          t.eq(listed(codes), listed(testCase.expected.codes || []), 'the refusals, exactly');
+        }
       });
     });
+
+    return cases.length;
 
     t.check('a day naming a workout the file does not carry is refused', function () {
       var broken = baseDocument();

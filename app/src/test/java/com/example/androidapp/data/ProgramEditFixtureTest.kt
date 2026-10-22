@@ -43,28 +43,27 @@ class ProgramEditFixtureTest {
             when (val result = plan(snapshot, edit)) {
                 is PlanResult.Ready -> {
                     assertWithMessage("$name: the fixture expected a refusal").that(expectedOk).isTrue()
-                    val kinds = result.changes.map { it.kind.name }
-                    expected["kinds"]?.jsonArray?.forEach { kind ->
-                        assertWithMessage("$name: changes").that(kinds).contains(kind.jsonPrimitive.content)
-                    }
-                    val warnings = result.warnings.map { it.code.name }
-                    expected["warnings"]?.jsonArray?.forEach { code ->
-                        assertWithMessage("$name: warnings").that(warnings)
-                            .contains(code.jsonPrimitive.content)
-                    }
+                    // Exactly the fixture's list, in its order — not "the expected kinds appear
+                    // somewhere" (N181). A planner that over-reported an addition the write would
+                    // skip used to pass this, and did (B183).
+                    assertWithMessage("$name: changes").that(result.changes.map { it.kind.name })
+                        .containsExactlyElementsIn(names(expected, "kinds"))
+                    assertWithMessage("$name: warnings").that(result.warnings.map { it.code.name })
+                        .containsExactlyElementsIn(names(expected, "warnings"))
                 }
 
                 is PlanResult.Refused -> {
                     assertWithMessage("$name: the fixture expected an edit").that(expectedOk).isFalse()
-                    val codes = result.problems.map { it.code.name }
-                    expected["codes"]?.jsonArray?.forEach { code ->
-                        assertWithMessage("$name: problems").that(codes)
-                            .contains(code.jsonPrimitive.content)
-                    }
+                    assertWithMessage("$name: problems").that(result.problems.map { it.code.name })
+                        .containsExactlyElementsIn(names(expected, "codes"))
                 }
             }
         }
     }
+
+    /** One expected list, or empty when the fixture names none — which means "nothing". */
+    private fun names(expected: JsonObject, key: String): List<String> =
+        expected[key]?.jsonArray?.map { it.jsonPrimitive.content }.orEmpty()
 
     /** The cases out of the one-line script assignment the generated file wraps them in. */
     private fun cases(): List<JsonObject> = Json.parseToJsonElement(

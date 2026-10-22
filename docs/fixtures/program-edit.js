@@ -2195,7 +2195,7 @@ window.PROGRAM_EDIT_CASES = [
     }
   },
   {
-    "name": "remove the only day",
+    "name": "remove every day",
     "snapshot": {
       "formatVersion": 4,
       "exportedAt": 1790000000000,
@@ -3253,9 +3253,12 @@ window.PROGRAM_EDIT_CASES = [
     "expected": {
       "ok": true,
       "kinds": [
+        "SLOT_REMOVED",
+        "SLOT_REMOVED",
         "SLOT_REMOVED"
       ],
       "warnings": [
+        "WORKOUT_KEPT",
         "WORKOUT_KEPT"
       ]
     }
@@ -4957,7 +4960,16 @@ window.PROGRAM_EDIT_CASES = [
           "deletedAt": null
         }
       ],
-      "templates": [],
+      "templates": [
+        {
+          "id": "tpl_793d0a2ef56137fd",
+          "name": "Upper A",
+          "versionOf": null,
+          "createdAt": 1790000000000,
+          "updatedAt": 1790000000000,
+          "deletedAt": null
+        }
+      ],
       "templateExercises": [
         {
           "id": "tex_d796a97e73240212",
@@ -5443,7 +5455,9 @@ window.PROGRAM_EDIT_CASES = [
     "expected": {
       "ok": false,
       "codes": [
-        "DANGLING_SLOT_TEMPLATE"
+        "DANGLING_SLOT_TEMPLATE",
+        "DANGLING_TEMPLATE_EXERCISE",
+        "DANGLING_TEMPLATE_EXERCISE"
       ]
     }
   }

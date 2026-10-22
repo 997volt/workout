@@ -34,6 +34,16 @@ class ProgramCoreTest {
     }
 
     @Test
+    fun an_ordinary_document_is_encoded_without_an_edit_marker() {
+        // The format's one compatibility claim (N171): an export is a proposal to add, so its JSON
+        // says nothing about an edit at all. A build that wrote `"edit": null` would be asking every
+        // older reader to know a field it has never heard of.
+        val encoded = ProgramDocumentCodec.encode(baseDocument())
+
+        assertFalse(encoded.contains("\"edit\""), "an export carries no edit marker")
+    }
+
+    @Test
     fun the_codec_refuses_text_that_names_no_version() {
         val refused = assertFailsWith<ProgramFormatException> {
             ProgramDocumentCodec.decode("""{"program": {}}""")

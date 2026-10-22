@@ -160,12 +160,18 @@ var editCases = [
     expected: { ok: false, codes: ['STALE_BASE'] }
   },
   {
-    name: 'remove the only day',
+    name: 'remove every day',
     snapshot: editSnapshot,
     edit: editFrom(editSnapshot, function (edit) {
       edit.slots = [];
     }),
-    expected: { ok: true, kinds: ['SLOT_REMOVED'], warnings: ['WORKOUT_KEPT'] }
+    // The fixture program has three days over two workouts, and the warning is per workout rather
+    // than per day — the exact lists are what proves that (N181).
+    expected: {
+      ok: true,
+      kinds: ['SLOT_REMOVED', 'SLOT_REMOVED', 'SLOT_REMOVED'],
+      warnings: ['WORKOUT_KEPT', 'WORKOUT_KEPT']
+    }
   },
   {
     name: 'add a set',
@@ -195,9 +201,16 @@ var editCases = [
     name: 'a day naming a workout the file does not carry',
     snapshot: editSnapshot,
     edit: editFrom(editSnapshot, function (edit) {
-      edit.templates = [];
+      var dropped = edit.slots[2].templateId;
+      edit.templates = edit.templates.filter(function (template) {
+        return template.id !== dropped;
+      });
     }),
-    expected: { ok: false, codes: ['DANGLING_SLOT_TEMPLATE'] }
+    // The day is refused, and so are the two planned exercises of the workout it named.
+    expected: {
+      ok: false,
+      codes: ['DANGLING_SLOT_TEMPLATE', 'DANGLING_TEMPLATE_EXERCISE', 'DANGLING_TEMPLATE_EXERCISE']
+    }
   }
 ];
 

@@ -7314,22 +7314,63 @@
     editorClear('That is not a program document or a backup. A history or rows file belongs on Import.');
   }
 
-  function editorLoadDocument(document, fileName, source) {
+  /**
+   * What an opened document becomes: the snapshot it was opened from, the copy being edited, and the
+   * marker the app reads (N171).
+   *
+   * Separate from [editorLoadDocument] because this is the whole of the state and a test can call it
+   * with no DOM (N181). The marker names the export it was opened from, so an edit of a program this
+   * device changed after the export is refused rather than merged.
+   */
+  function editorOpenSnapshot(document, source) {
     var original = editorDeepCopy(document);
     var working = editorDeepCopy(document);
     working.edit = { baseExportedAt: original.exportedAt };
-    ui.state.programEditor = {
+    return {
       original: original,
       working: working,
-      fileName: fileName || '',
+      fileName: '',
       // A program taken from a backup keeps it: the other programs that share its workouts are a fact
       // only the backup holds (B191). A plain export carries one program and nothing to compare.
       source: isObject(source) ? source : null,
       mode: 'edit',
       preview: null
     };
+  }
+
+  function editorLoadDocument(document, fileName, source) {
+    var opened = editorOpenSnapshot(document, source);
+    opened.fileName = fileName || '';
+    ui.state.programEditor = opened;
     ui.elements.editorPreview.textContent = '';
     editorRender();
+  }
+
+  /**
+   * What the core would do with the working copy — the answer the preview shows and the download
+   * re-plans, so the two cannot disagree (B185).
+   *
+   * Returns the plan, or `{ error }` when the core could not be asked; a test calls this without a
+   * DOM (N181).
+   */
+  function editorPlanEdit(core, ed) {
+    if (!core || !ed || !ed.working) { return { error: 'no program is open' }; }
+    // What is planned is what is written, so a movement nothing names leaves before the plan (B187).
+    editorPruneExercises(ed.working);
+    if (ed.mode === 'new') { return { error: 'a new program is checked, not planned' }; }
+    try {
+      return JSON.parse(core.planJson(JSON.stringify(ed.original), JSON.stringify(ed.working)));
+    } catch (problem) {
+      return { error: String(problem) };
+    }
+  }
+
+  /** The file a download writes: the working copy as it stands, and the name it gets (B185). */
+  function editorDownloadPayload(ed) {
+    return {
+      text: JSON.stringify(ed.working, null, 2) + '\n',
+      fileName: ed.mode === 'new' ? 'program.json' : 'program-edit.json'
+    };
   }
 
   /** A blank program in the editor: no snapshot, no edit marker, validated and downloaded (N172). */
@@ -7456,13 +7497,11 @@
       editorCheckNew(core, ed);
       return;
     }
-    var planned;
-    try {
-      planned = JSON.parse(core.planJson(JSON.stringify(ed.original), JSON.stringify(ed.working)));
-    } catch (problem) {
+    var planned = editorPlanEdit(core, ed);
+    if (planned.error) {
       ed.preview = null;
       ui.elements.downloadProgramEdit.disabled = true;
-      editorMessage('The shared core could not plan this edit: ' + problem);
+      editorMessage('The shared core could not plan this edit: ' + planned.error);
       return;
     }
     ed.preview = planned;
@@ -7519,13 +7558,11 @@
     // into the refusal in the preview panel instead of a file the app will refuse.
     editorPreview();
     if (!ed.preview || !ed.preview.ok) { return; }
-    if (ed.mode === 'new') {
-      downloadText(JSON.stringify(ed.working, null, 2) + '\n', 'program.json');
-      announce('Downloaded program.json. Load it in Programs, then Load, to add it.');
-      return;
-    }
-    downloadText(JSON.stringify(ed.working, null, 2) + '\n', 'program-edit.json');
-    announce('Downloaded program-edit.json. Load it in Programs, then Load.');
+    var payload = editorDownloadPayload(ed);
+    downloadText(payload.text, payload.fileName);
+    announce(ed.mode === 'new'
+      ? 'Downloaded program.json. Load it in Programs, then Load, to add it.'
+      : 'Downloaded program-edit.json. Load it in Programs, then Load.');
   }
 
   function editorSaveDraft() {
@@ -7614,6 +7651,9 @@
     parseProgramSheet: parseProgramSheet,
     programDocumentFromBackup: programDocumentFromBackup,
     newProgramDocument: newProgramDocument,
+    editorOpenSnapshot: editorOpenSnapshot,
+    editorPlanEdit: editorPlanEdit,
+    editorDownloadPayload: editorDownloadPayload,
     editorLoadText: editorLoadText,
     editorParseLoad: editorParseLoad,
     editorResolveExercise: editorResolveExercise,

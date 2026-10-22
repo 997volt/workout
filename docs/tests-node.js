@@ -28,6 +28,23 @@ if (!shared) {
 global.window['workout:shared'] = core;
 
 var editorTests = require('./editor-tests.js');
+
+/*
+ * The declared count, the instrumented check's rule (N181): the fixture is a global, so a renamed one
+ * left the loop over nothing and every case passed by being absent. Executed must equal declared, and
+ * adding a case is a deliberate edit here as well as in the fixture.
+ */
+var EXPECTED_FIXTURE_CASES = 5;
+if (!Array.isArray(globalThis.PROGRAM_EDIT_CASES)) {
+  console.error('the edit fixture did not load: PROGRAM_EDIT_CASES is not an array');
+  process.exit(1);
+}
+if (globalThis.PROGRAM_EDIT_CASES.length !== EXPECTED_FIXTURE_CASES) {
+  console.error('the edit fixture holds ' + globalThis.PROGRAM_EDIT_CASES.length +
+    ' cases; the runner declares ' + EXPECTED_FIXTURE_CASES);
+  process.exit(1);
+}
+
 var passes = 0;
 var failures = 0;
 
@@ -53,7 +70,12 @@ var t = {
   }
 };
 
-editorTests.run(H, shared, t, globalThis.PROGRAM_EDIT_CASES);
+var checked = editorTests.run(H, shared, t, globalThis.PROGRAM_EDIT_CASES);
+if (checked !== EXPECTED_FIXTURE_CASES) {
+  console.error('the runner checked ' + checked + ' fixture cases; it declares ' +
+    EXPECTED_FIXTURE_CASES);
+  process.exit(1);
+}
 
-console.log(passes + ' passed, ' + failures + ' failed');
+console.log(passes + ' passed, ' + failures + ' failed (' + checked + ' fixture cases)');
 process.exit(failures === 0 ? 0 : 1);
