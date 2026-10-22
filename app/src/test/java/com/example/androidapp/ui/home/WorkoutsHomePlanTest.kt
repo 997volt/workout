@@ -2,6 +2,7 @@ package com.example.androidapp.ui.home
 
 import com.example.androidapp.domain.model.DeloadDay
 import com.example.androidapp.domain.model.DeloadWeek
+import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.google.common.truth.Truth.assertThat
@@ -116,6 +117,18 @@ class WorkoutsHomePlanTest {
         val plan = todaysPlanFor(listOf(program, second), slots, DayOfWeek.FRIDAY)
 
         assertThat(plan.map { it.id }).containsExactly("a0", "a1", "b1").inOrder()
+    }
+
+    @Test
+    fun aBlocksSlot_isNotADaysPlan() {
+        // B194: a sequence's weekday places one session rather than scheduling a recurring one, so a
+        // slot that happens to fall on Friday is not Friday's plan — its card is the block's own.
+        val block = program.copy(id = "p3", name = "Peak", kind = ProgramKind.SEQUENCE)
+        val slots = listOf(slot("s1", DayOfWeek.FRIDAY, position = 0, templateId = "t1", programId = "p3"))
+
+        val plan = todaysPlanFor(listOf(block), slots, DayOfWeek.FRIDAY)
+
+        assertThat(plan).isEmpty()
     }
 
     @Test

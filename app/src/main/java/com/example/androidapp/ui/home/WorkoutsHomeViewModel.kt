@@ -342,10 +342,14 @@ class WorkoutsHomeViewModel @Inject constructor(
      */
     private val activeProgramSlots: Flow<List<ProgramSlot>> = activePrograms
         .flatMapLatest { programs ->
-            if (programs.isEmpty()) {
+            // A block's weekday is a placement, not a recurrence (N174): its slots are not this week's
+            // plan, and reading them here put a block on the calendar every week forever (B194). The
+            // weekly surface reads weekly programs, exactly as adherence already does.
+            val weekly = programs.filter { it.kind == ProgramKind.WEEKLY }
+            if (weekly.isEmpty()) {
                 flowOf(emptyList())
             } else {
-                combine(programs.map { program -> programRepository.observeSlots(program.id) }) { perProgram ->
+                combine(weekly.map { program -> programRepository.observeSlots(program.id) }) { perProgram ->
                     perProgram.toList().flatten()
                 }
             }
@@ -535,6 +539,9 @@ internal fun sequenceTodayPlans(
  * they read (ROADMAP N56): with no active program there is then no *Today* list, which is the change
  * stating that a day is a scheduling fact and scheduling is what a program is for.
  *
+ * **Only a weekly program's slots are a day's plan** (B194): a block's weekday places one session
+ * rather than scheduling a recurring one, and its card is [sequenceTodayPlans]' own.
+ *
  * File-level and pure so the union can be tested without a database or a ViewModel.
  */
 internal fun todaysPlanFor(
@@ -550,7 +557,7 @@ internal fun todaysPlanFor(
         emptyList()
     } else {
         val plans = deloadWeeks.associateBy { it.programId }
-        programs.flatMap { program ->
+        programs.filter { it.kind == ProgramKind.WEEKLY }.flatMap { program ->
             // A built plan replaces the whole week it was made for (ROADMAP N147): the days it kept
             // are the week's days, and the slots it did not keep offer nothing that day. A week marked
             // with no plan has no entry, which is P3.10's shape and keeps the slots.
