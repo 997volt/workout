@@ -7303,7 +7303,7 @@
     editorClear('That does not look like a program document or a backup.');
   }
 
-  function editorLoadDocument(document, fileName) {
+  function editorLoadDocument(document, fileName, source) {
     var original = editorDeepCopy(document);
     var working = editorDeepCopy(document);
     working.edit = { baseExportedAt: original.exportedAt };
@@ -7311,6 +7311,9 @@
       original: original,
       working: working,
       fileName: fileName || '',
+      // A program taken from a backup keeps it: the other programs that share its workouts are a fact
+      // only the backup holds (B191). A plain export carries one program and nothing to compare.
+      source: isObject(source) ? source : null,
       mode: 'edit',
       preview: null
     };
@@ -7324,6 +7327,7 @@
       original: null,
       working: newProgramDocument('My program'),
       fileName: 'a new program',
+      source: null,
       mode: 'new',
       preview: null
     };
@@ -7351,6 +7355,7 @@
       original: mode === 'edit' ? editorDeepCopy(draft.original) : null,
       working: working,
       fileName: fileName || '',
+      source: isObject(draft.source) ? draft.source : null,
       mode: mode,
       preview: null
     };
@@ -7383,7 +7388,7 @@
         editorClear('That program cannot be read from this backup.');
         return;
       }
-      editorLoadDocument(document, fileName);
+      editorLoadDocument(document, fileName, backup);
     }));
     editorMessage('A program taken from a backup carries the time the backup was made; the app refuses the edit if the program changed after that.');
   }
@@ -7486,7 +7491,9 @@
         host.appendChild(h('p', 'hint', 'The workout "' + (warning.name || warning.id) + '" stays in the app\'s library.'));
       }
     });
-    var shared = editorSharedProgramNames(ed.working, ui.state.catalogFile);
+    // The document's own source first: a program opened from a backup knows what shared its workouts
+    // even when no export was ever loaded (B191). The export is the fallback.
+    var shared = editorSharedProgramNames(ed.working, ed.source || ui.state.catalogFile);
     if (shared.length > 0) {
       host.appendChild(h('p', 'hint', 'Also used by ' + shared.join(', ') + '; this edit changes them too.'));
     }
@@ -7519,6 +7526,7 @@
       version: 1,
       mode: ed.mode,
       original: ed.original,
+      source: ed.source || null,
       working: ed.working
     };
     downloadText(JSON.stringify(draft, null, 2) + '\n', 'program-draft.json');
@@ -7605,6 +7613,7 @@
     editorRemoveExercise: editorRemoveExercise,
     editorPruneExercises: editorPruneExercises,
     editorApplyRole: editorApplyRole,
+    editorSharedProgramNames: editorSharedProgramNames,
     editorMove: editorMove,
     editorParseInt: editorParseInt,
     editorParseHalves: editorParseHalves,

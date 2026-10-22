@@ -252,6 +252,23 @@
         'the minted typo is gone');
     });
 
+    t.check('a program taken from a backup names the other program that shares its workouts (B191)', function () {
+      var backup = {
+        programs: [row({ id: 'pgm_1', name: 'Autumn block' }), row({ id: 'pgm_2', name: 'Conditioning' })],
+        programSlots: [
+          row({ id: 'slot_a', programId: 'pgm_1', templateId: 'tpl_a', position: 0 }),
+          row({ id: 'slot_b', programId: 'pgm_2', templateId: 'tpl_a', position: 0 })
+        ]
+      };
+      var working = {
+        program: { id: 'pgm_1' },
+        templates: [{ id: 'tpl_a' }]
+      };
+
+      t.eq(H.editorSharedProgramNames(working, backup).join(','), 'Conditioning');
+      t.eq(H.editorSharedProgramNames(working, null).length, 0, 'no source, nothing to say');
+    });
+
     t.check('a role change clears what it cannot carry and keeps what it can (B190)', function () {
       var set = row({
         id: 'set_a',
