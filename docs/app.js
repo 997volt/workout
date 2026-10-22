@@ -6798,9 +6798,17 @@
     setText(ui.elements.editorStatus, text);
   }
 
-  function editorButton(label, onClick) {
+  /**
+   * A button in the editor (B188).
+   *
+   * [key] is how a re-render finds this control again, so focus can return to it; [ariaLabel] is for
+   * the controls whose visible text is a glyph or repeats on every row.
+   */
+  function editorButton(label, onClick, key, ariaLabel) {
     var button = h('button', 'secondary', label);
     button.type = 'button';
+    if (key) { button.setAttribute('data-editor-key', key); }
+    if (ariaLabel) { button.setAttribute('aria-label', ariaLabel); }
     button.addEventListener('click', onClick);
     return button;
   }
@@ -6820,10 +6828,11 @@
     return wrap;
   }
 
-  function editorSelect(label, values, value, onChange) {
+  function editorSelect(label, values, value, onChange, key) {
     var wrap = h('label', 'editor-field');
     wrap.appendChild(h('span', 'editor-field-label', label));
     var select = document.createElement('select');
+    if (key) { select.setAttribute('data-editor-key', key); }
     values.forEach(function (option) {
       var node = document.createElement('option');
       node.value = option.value;
@@ -6861,7 +6870,40 @@
     host.appendChild(list);
   }
 
+  /**
+   * The control that had focus, and the re-render that gives it back (B188).
+   *
+   * The editor has no diffing: a re-render rebuilds every node, so the focused button is destroyed
+   * and focus falls to the body. The key the action buttons carry is what finds the same control
+   * afterwards — and when the action removed it (a deleted row, the last set), the region's heading
+   * is where a keyboard user resumes.
+   */
+  function editorFocusedKey() {
+    var active = document.activeElement;
+    return active && active.getAttribute ? active.getAttribute('data-editor-key') : null;
+  }
+
+  function editorRestoreFocus(key) {
+    if (!key) { return; }
+    var found = ui.elements.programEditorHost.querySelector('[data-editor-key="' + key + '"]');
+    if (found && typeof found.focus === 'function') {
+      found.focus();
+      return;
+    }
+    var heading = document.getElementById('editor-heading');
+    if (heading && typeof heading.focus === 'function') {
+      heading.setAttribute('tabindex', '-1');
+      heading.focus();
+    }
+  }
+
   function editorRender() {
+    var focusKey = editorFocusedKey();
+    editorRenderBody();
+    editorRestoreFocus(focusKey);
+  }
+
+  function editorRenderBody() {
     var ed = ui.state.programEditor;
     var host = ui.elements.programEditorHost;
     if (!host) { return; }
@@ -6901,7 +6943,7 @@
     addDay.appendChild(editorButton('Add a day', function () {
       editorAddDay(working);
       editorRender();
-    }));
+    }, 'add-day'));
     host.appendChild(addDay);
   }
 
@@ -6919,18 +6961,34 @@
     }));
 
     var orderedSlots = working.slots.slice().sort(function (a, b) { return a.position - b.position; });
-    head.appendChild(editorButton('\u2191', function () {
-      editorMove(orderedSlots, slot, -1);
-      editorRender();
-    }));
-    head.appendChild(editorButton('\u2193', function () {
-      editorMove(orderedSlots, slot, 1);
-      editorRender();
-    }));
-    head.appendChild(editorButton('Remove day', function () {
-      editorRemoveDay(working, slot);
-      editorRender();
-    }));
+    var dayName = template ? 'day "' + template.name + '"' : 'this day';
+    head.appendChild(editorButton(
+      '\u2191',
+      function () {
+        editorMove(orderedSlots, slot, -1);
+        editorRender();
+      },
+      'move-day-up:' + slot.id,
+      'Move ' + dayName + ' up'
+    ));
+    head.appendChild(editorButton(
+      '\u2193',
+      function () {
+        editorMove(orderedSlots, slot, 1);
+        editorRender();
+      },
+      'move-day-down:' + slot.id,
+      'Move ' + dayName + ' down'
+    ));
+    head.appendChild(editorButton(
+      'Remove day',
+      function () {
+        editorRemoveDay(working, slot);
+        editorRender();
+      },
+      'remove-day:' + slot.id,
+      'Remove ' + dayName
+    ));
     section.appendChild(head);
 
     if (template) {
@@ -6949,6 +7007,7 @@
       var nameInput = document.createElement('input');
       nameInput.type = 'text';
       nameInput.setAttribute('list', 'editorExerciseNames');
+      nameInput.setAttribute('aria-label', 'Movement to add to ' + (template ? template.name : 'this day'));
       nameInput.placeholder = 'Add an exercise';
       add.appendChild(nameInput);
       add.appendChild(editorButton('Add exercise', function () {
@@ -6987,26 +7046,42 @@
     head.appendChild(editorTextField('Superset', planned.supersetGroup, function (value) {
       planned.supersetGroup = editorParseInt(value);
     }, { type: 'number', step: '1' }));
-    head.appendChild(editorButton('\u2191', function () {
-      editorMove(
-        working.templateExercises.filter(function (row) { return row.templateId === template.id; }),
-        planned,
-        -1
-      );
-      editorRender();
-    }));
-    head.appendChild(editorButton('\u2193', function () {
-      editorMove(
-        working.templateExercises.filter(function (row) { return row.templateId === template.id; }),
-        planned,
-        1
-      );
-      editorRender();
-    }));
-    head.appendChild(editorButton('Remove', function () {
-      editorRemoveExercise(working, planned);
-      editorRender();
-    }));
+    var exerciseName = exercise ? exercise.name : planned.exerciseId;
+    head.appendChild(editorButton(
+      '\u2191',
+      function () {
+        editorMove(
+          working.templateExercises.filter(function (row) { return row.templateId === template.id; }),
+          planned,
+          -1
+        );
+        editorRender();
+      },
+      'move-exercise-up:' + planned.id,
+      'Move ' + exerciseName + ' up'
+    ));
+    head.appendChild(editorButton(
+      '\u2193',
+      function () {
+        editorMove(
+          working.templateExercises.filter(function (row) { return row.templateId === template.id; }),
+          planned,
+          1
+        );
+        editorRender();
+      },
+      'move-exercise-down:' + planned.id,
+      'Move ' + exerciseName + ' down'
+    ));
+    head.appendChild(editorButton(
+      'Remove',
+      function () {
+        editorRemoveExercise(working, planned);
+        editorRender();
+      },
+      'remove-exercise:' + planned.id,
+      'Remove ' + exerciseName
+    ));
     node.appendChild(head);
 
     var note = editorTextField('Cue', planned.techniqueNote || '', function (value) {
@@ -7021,10 +7096,15 @@
     sets.forEach(function (set) { node.appendChild(editorSetNode(working, set)); });
 
     var add = h('div', 'editor-add');
-    add.appendChild(editorButton('Add set', function () {
-      editorAddSet(working, planned.id);
-      editorRender();
-    }));
+    add.appendChild(editorButton(
+      'Add set',
+      function () {
+        editorAddSet(working, planned.id);
+        editorRender();
+      },
+      'add-set:' + planned.id,
+      'Add a set to ' + exerciseName
+    ));
     node.appendChild(add);
     return node;
   }
@@ -7045,7 +7125,7 @@
         set.targetRepsCurrent = null;
       }
       editorRender();
-    }));
+    }, 'role:' + set.id));
 
     row.appendChild(editorTextField('Set', set.setIndex, function (value) {
       var parsed = editorParseInt(value);
