@@ -6895,6 +6895,171 @@
     });
   }
 
+  /**
+   * The fields a run of identical sets shares: everything a set says except its identity, its place
+   * in the workout and the times it was written. Two neighbouring sets equal on all of them are one
+   * line with a count.
+   */
+  var EDITOR_SET_FIELDS = [
+    'role',
+    'targetWeightGrams',
+    'targetAssistanceGrams',
+    'targetRepsMin',
+    'targetRepsMax',
+    'targetRepsCurrent',
+    'dropValueGrams',
+    'note'
+  ];
+
+  /** How many sets one line may stand for: a slipped keystroke must not mint a hundred rows. */
+  var EDITOR_SET_COUNT_MAX = 20;
+
+  /**
+   * Two sets a lifter writes as "3 × 8": the same role and the same targets.
+   *
+   * A rung is never one of a run of identical lines, because its place in the ladder is the set's own
+   * index (N79) — three drops are three rows even when they say the same thing.
+   */
+  function editorSetsAlike(a, b) {
+    if (!a || !b || a.role !== b.role) { return false; }
+    if (a.editorAlone || b.editorAlone) { return false; }
+    if (editorRung(a.role)) { return false; }
+    return EDITOR_SET_FIELDS.every(function (field) { return a[field] === b[field]; });
+  }
+
+  /**
+   * A workout's sets as the lines the editor draws, one line per run of identical sets (N172's form).
+   *
+   * Runs are neighbourly: only consecutive sets in index order join, because merging sets the lifter
+   * put apart would reorder the plan. Every row the document holds stays a row here — the count is a
+   * way of reading them, not a field, so the app still receives one set per set.
+   */
+  function editorSetRuns(working, templateExerciseId) {
+    var rows = (working.templateSets || []).filter(function (row) {
+      return row && row.templateExerciseId === templateExerciseId;
+    }).sort(function (a, b) { return a.setIndex - b.setIndex; });
+    var runs = [];
+    rows.forEach(function (row) {
+      var run = runs[runs.length - 1];
+      if (run && editorSetsAlike(run[0], row)) { run.push(row); } else { runs.push([row]); }
+    });
+    return runs;
+  }
+
+  /** One set's editable content on a new row: the identity, the index and the times are the row's. */
+  function editorCopySet(source, setIndex, now) {
+    var copy = {
+      id: editorNewId('tset'),
+      templateExerciseId: source.templateExerciseId,
+      setIndex: setIndex,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null
+    };
+    EDITOR_SET_FIELDS.forEach(function (field) { copy[field] = source[field]; });
+    return copy;
+  }
+
+  /**
+   * A run of identical sets made `requested` long.
+   *
+   * Growing appends copies at the back of the run and trimming takes the same rows off it, because a
+   * plan's order is the set index. Indexes are **not** renumbered: the app reads a gap as a set
+   * deleted on the phone (B157), so the page touches only the rows the count names. Numbers a count
+   * cannot be — blank, a fraction, zero — leave the run alone and the render puts the number back,
+   * so typing into the field never silently deletes work.
+   */
+  function editorSetRunCount(working, firstSetId, requested) {
+    var first = editorFind(working.templateSets, firstSetId);
+    if (!first) { return null; }
+    var run = null;
+    editorSetRuns(working, first.templateExerciseId).forEach(function (candidate) {
+      if (candidate[0].id === firstSetId) { run = candidate; }
+    });
+    if (!run) { return null; }
+    var parsed = editorParseInt(requested);
+    if (parsed === null) { return run; }
+    var count = Math.min(Math.max(parsed, 1), EDITOR_SET_COUNT_MAX);
+    if (count < run.length) {
+      var dropped = run.slice(count);
+      working.templateSets = working.templateSets.filter(function (row) {
+        return dropped.indexOf(row) === -1;
+      });
+      return run.slice(0, count);
+    }
+    if (count > run.length) {
+      var rows = (working.templateSets || []).filter(function (row) {
+        return row && row.templateExerciseId === first.templateExerciseId;
+      }).sort(function (a, b) { return a.setIndex - b.setIndex; });
+      var next = editorNextSetIndex(rows);
+      var now = Date.now();
+      for (var index = run.length; index < count; index += 1) {
+        var copy = editorCopySet(run[0], next, now);
+        next += 1;
+        working.templateSets.push(copy);
+        run.push(copy);
+      }
+    }
+    return run;
+  }
+
+  /**
+   * A line broken into one row per set, so one of them can be written differently from its neighbours.
+   *
+   * The mark is the form's memory, not the document's: it is non-enumerable, so the file the app
+   * receives is unchanged, and the sets can still be read as one line by reopening the program.
+   */
+  function editorSplitSetRun(working, firstSetId) {
+    var first = editorFind(working.templateSets, firstSetId);
+    if (!first) { return null; }
+    var exerciseId = first.templateExerciseId;
+    var split = null;
+    editorSetRuns(working, exerciseId).forEach(function (run) {
+      if (run[0].id === firstSetId) { split = run; }
+    });
+    if (!split) { return null; }
+    split.forEach(function (set) {
+      Object.defineProperty(set, 'editorAlone', {
+        value: true,
+        writable: true,
+        configurable: true,
+        enumerable: false
+      });
+    });
+    return editorSetRuns(working, exerciseId);
+  }
+
+  /**
+   * A split set back in a line with the neighbours it still agrees with (N172's form).
+   *
+   * The stretch is every set that says the same thing on both sides of it, so a misclick on *Split*
+   * costs nothing, and a set that was written differently is left on its own — which is what the
+   * split was for.
+   */
+  function editorMergeSetRun(working, setId) {
+    var set = editorFind(working.templateSets, setId);
+    if (!set || editorRung(set.role)) { return null; }
+    var rows = (working.templateSets || []).filter(function (row) {
+      return row && row.templateExerciseId === set.templateExerciseId;
+    }).sort(function (a, b) { return a.setIndex - b.setIndex; });
+    var at = rows.indexOf(set);
+    if (at < 0) { return null; }
+    function sameContent(candidate) {
+      return candidate.role === set.role && EDITOR_SET_FIELDS.every(function (field) {
+        return candidate[field] === set[field];
+      });
+    }
+    var members = [set];
+    for (var before = at - 1; before >= 0 && sameContent(rows[before]); before -= 1) {
+      members.unshift(rows[before]);
+    }
+    for (var after = at + 1; after < rows.length && sameContent(rows[after]); after += 1) {
+      members.push(rows[after]);
+    }
+    members.forEach(function (member) { delete member.editorAlone; });
+    return editorSetRuns(working, set.templateExerciseId);
+  }
+
   function editorRemoveDay(working, slot) {
     working.slots = working.slots.filter(function (row) { return row !== slot; });
     var stillUsed = working.slots.some(function (row) { return row.templateId === slot.templateId; });
@@ -7286,10 +7451,9 @@
     note.className = 'editor-field-wide';
     node.appendChild(note);
 
-    var sets = (working.templateSets || []).filter(function (row) {
-      return row && row.templateExerciseId === planned.id;
-    }).sort(function (a, b) { return a.setIndex - b.setIndex; });
-    sets.forEach(function (set) { node.appendChild(editorSetNode(working, set)); });
+    editorSetRuns(working, planned.id).forEach(function (run) {
+      node.appendChild(editorSetRunNode(working, run, exerciseName));
+    });
 
     var add = h('div', 'editor-add');
     add.appendChild(editorButton(
@@ -7348,61 +7512,125 @@
     if (set.role !== 'DROP') { set.dropValueGrams = null; }
   }
 
-  function editorSetNode(working, set) {
+  /**
+   * One line of the editor's sets: a run of identical sets, how many, and the fields they share.
+   *
+   * Every field is written to every member, so the line cannot drift into two by editing; the count
+   * is the only thing that makes it more than one set.
+   */
+  function editorSetRunNode(working, run, exerciseName) {
     var row = h('div', 'editor-set');
+    var first = run[0];
+    /** What removing this line takes away, said with the count it currently stands for. */
+    function removeLabel(members) {
+      return members.length === 1
+        ? 'Remove set ' + (first.setIndex + 1) + ' of ' + exerciseName
+        : 'Remove ' + members.length + ' sets of ' + exerciseName;
+    }
+    var removeButton = null;
+    var countInput = null;
+    /** Every member carries the same value, so one edit is written to all of them. */
+    function writes(field, parse) {
+      return function (value) {
+        var parsed = parse(value);
+        run.forEach(function (set) { set[field] = parsed; });
+      };
+    }
     row.appendChild(editorSelect('Role', EDITOR_ROLES.map(function (role) {
       return { value: role, label: roleLabel(role) };
-    }), set.role, function (value) {
-      set.role = value;
-      editorApplyRole(set);
+    }), first.role, function (value) {
+      run.forEach(function (set) {
+        set.role = value;
+        editorApplyRole(set);
+      });
       editorRender();
-    }, 'role:' + set.id));
+    }, 'role:' + first.id));
 
-    row.appendChild(editorTextField('Set', set.setIndex, function (value) {
-      var parsed = editorParseInt(value);
-      if (parsed !== null) { set.setIndex = parsed; }
-    }, { type: 'number', step: '1' }));
+    if (!editorRung(first.role)) {
+      // A set that was split off its line is one set: it has no count to edit (editorSplitSetRun).
+      if (first.editorAlone) {
+        row.appendChild(h('span', 'hint', 'One set, on its own.'));
+      } else {
+        // The count is applied where it is typed rather than by re-rendering the editor: the rows
+        // it grows or trims are this line's own members, so nothing else on screen changes — and a
+        // rebuild here would take the focus out of the field the lifter is still in.
+        var count = editorTextField('Sets', run.length, function (value) {
+          var resized = editorSetRunCount(working, first.id, value);
+          if (!resized) { return; }
+          run = resized;
+          countInput.value = String(run.length);
+          if (removeButton) { removeButton.setAttribute('aria-label', removeLabel(run)); }
+        }, { type: 'number', step: '1', event: 'change' });
+        countInput = count.querySelector('input');
+        // Kept for a render another control's edit can cause while this field holds the focus.
+        countInput.setAttribute('data-editor-key', 'sets:' + first.id);
+        countInput.setAttribute('min', '1');
+        countInput.setAttribute('max', String(EDITOR_SET_COUNT_MAX));
+        row.appendChild(count);
+      }
 
-    if (!editorRung(set.role)) {
-      row.appendChild(editorTextField('Reps from', set.targetRepsMin, function (value) {
-        set.targetRepsMin = editorParseInt(value);
-      }, { type: 'number', step: '1' }));
-      row.appendChild(editorTextField('Reps to', set.targetRepsMax, function (value) {
-        set.targetRepsMax = editorParseInt(value);
-      }, { type: 'number', step: '1' }));
-      row.appendChild(editorTextField('At', set.targetRepsCurrent, function (value) {
-        set.targetRepsCurrent = editorParseInt(value);
-      }, { type: 'number', step: '1' }));
-      row.appendChild(editorTextField('Load (kg, -assist)', editorLoadText(set.targetWeightGrams, set.targetAssistanceGrams), function (value) {
+      row.appendChild(editorTextField('Reps from', first.targetRepsMin, writes('targetRepsMin', editorParseInt), { type: 'number', step: '1' }));
+      row.appendChild(editorTextField('Reps to', first.targetRepsMax, writes('targetRepsMax', editorParseInt), { type: 'number', step: '1' }));
+      // Named for what the field holds rather than the spreadsheet's "at": the current rep target
+      // inside the range, which is the number the sets ask for now (N74).
+      row.appendChild(editorTextField('Rep target', first.targetRepsCurrent, writes('targetRepsCurrent', editorParseInt), { type: 'number', step: '1' }));
+      row.appendChild(editorTextField('Load (kg, -assist)', editorLoadText(first.targetWeightGrams, first.targetAssistanceGrams), function (value) {
         var load = editorParseLoad(value);
-        if (load) {
+        if (!load) { return; }
+        run.forEach(function (set) {
           set.targetWeightGrams = load.weightGrams;
           set.targetAssistanceGrams = load.assistanceGrams;
-        }
+        });
       }));
     } else {
       row.appendChild(h('span', 'hint', 'Load and reps come from the set above.'));
     }
 
-    if (set.role === 'DROP') {
-      row.appendChild(editorTextField('Drop (kg)', typeof set.dropValueGrams === 'number' ? editorKg(set.dropValueGrams) : '', function (value) {
+    if (first.role === 'DROP') {
+      row.appendChild(editorTextField('Drop (kg)', typeof first.dropValueGrams === 'number' ? editorKg(first.dropValueGrams) : '', function (value) {
         var load = editorParseLoad(value);
-        set.dropValueGrams = load && load.weightGrams !== null ? load.weightGrams : null;
+        var grams = load && load.weightGrams !== null ? load.weightGrams : null;
+        run.forEach(function (set) { set.dropValueGrams = grams; });
       }));
     }
 
-    row.appendChild(editorTextField('Note', set.note || '', function (value) {
-      set.note = value.trim() === '' ? null : value;
-    }));
-    row.appendChild(editorButton(
+    row.appendChild(editorTextField('Note', first.note || '', writes('note', function (value) {
+      return value.trim() === '' ? null : value;
+    })));
+    if (first.editorAlone && !editorRung(first.role)) {
+      row.appendChild(editorButton(
+        'Merge',
+        function () {
+          editorMergeSetRun(working, first.id);
+          editorRender();
+        },
+        'merge-sets:' + first.id,
+        'Merge this set with the sets beside it'
+      ));
+    }
+    if (run.length > 1) {
+      row.appendChild(editorButton(
+        'Split',
+        function () {
+          editorSplitSetRun(working, first.id);
+          editorRender();
+        },
+        'split-sets:' + first.id,
+        'Split ' + run.length + ' sets into separate lines'
+      ));
+    }
+    removeButton = editorButton(
       'Remove',
       function () {
-        working.templateSets = working.templateSets.filter(function (candidate) { return candidate !== set; });
+        working.templateSets = working.templateSets.filter(function (candidate) {
+          return run.indexOf(candidate) === -1;
+        });
         editorRender();
       },
-      'remove-set:' + set.id,
-      'Remove set ' + (typeof set.setIndex === 'number' ? set.setIndex + 1 : '')
-    ));
+      'remove-set:' + first.id,
+      removeLabel(run)
+    );
+    row.appendChild(removeButton);
     return row;
   }
 
@@ -7903,6 +8131,11 @@
     editorAddDay: editorAddDay,
     editorAddExercise: editorAddExercise,
     editorAddSet: editorAddSet,
+    editorSetRuns: editorSetRuns,
+    editorSetRunCount: editorSetRunCount,
+    editorSplitSetRun: editorSplitSetRun,
+    editorMergeSetRun: editorMergeSetRun,
+    EDITOR_SET_COUNT_MAX: EDITOR_SET_COUNT_MAX,
     editorRemoveDay: editorRemoveDay,
     editorRemoveExercise: editorRemoveExercise,
     editorPruneExercises: editorPruneExercises,

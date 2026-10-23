@@ -194,6 +194,120 @@
       t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
     });
 
+    // A plan stores one row per set and the app reads one per set, but a lifter writes "3 × 8": the
+    // editor draws a run of identical neighbours as one line with a count, and the count grows or
+    // trims those rows. The document is what the app receives, so these check the rows.
+    function setsOf(document) {
+      return document.templateSets.slice().sort(function (a, b) { return a.setIndex - b.setIndex; });
+    }
+
+    check('neighbouring identical sets are one line, and one that differs breaks it', function () {
+      var document = baseDocument();
+      H.editorAddSet(document, 'te_a');
+      H.editorAddSet(document, 'te_a');
+
+      var runs = H.editorSetRuns(document, 'te_a');
+      t.eq(runs.length, 1, 'three sets that say the same thing are one line');
+      t.eq(runs[0].length, 3);
+
+      setsOf(document)[2].note = 'last one heavy';
+      runs = H.editorSetRuns(document, 'te_a');
+      t.eq(runs.length, 2, 'a note is part of what a line stands for');
+      t.eq(runs[0].length, 2);
+      t.eq(runs[1].length, 1);
+    });
+
+    check('a count appends copies of the run, numbered after the workout\'s last set', function () {
+      var document = baseDocument();
+      var run = H.editorSetRunCount(document, 'set_a', '4');
+
+      t.eq(run.length, 4, 'the line is four sets');
+      t.eq(document.templateSets.length, 4);
+      var sets = setsOf(document);
+      t.eq(sets.map(function (set) { return set.setIndex; }).join(','), '0,1,2,3');
+      t.ok(sets.every(function (set) {
+        return set.role === 'NORMAL' && set.targetWeightGrams === 80000 &&
+          set.targetRepsMin === 5 && set.targetRepsMax === 5;
+      }), 'every copy says what the first set said');
+      var ids = {};
+      sets.forEach(function (set) { ids[set.id] = true; });
+      t.eq(Object.keys(ids).length, 4, 'each row gets its own id');
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+    });
+
+    check('a count trims the run at the back and leaves the rest of the plan alone', function () {
+      var document = baseDocument();
+      H.editorSetRunCount(document, 'set_a', '3');
+      H.editorAddSet(document, 'te_a');
+      setsOf(document)[3].note = 'back-off';
+
+      var run = H.editorSetRunCount(document, 'set_a', '2');
+      t.eq(run.length, 2);
+      var left = setsOf(document);
+      t.eq(left.length, 3, 'the trimmed rows went and the different set stayed');
+      t.eq(left.map(function (set) { return set.setIndex; }).join(','), '0,1,3',
+        'indexes are not renumbered: the gap is a set deleted on the phone (B157)');
+      t.eq(left[2].note, 'back-off');
+    });
+
+    check('a count that is not a number leaves the run alone', function () {
+      var document = baseDocument();
+      t.eq(H.editorSetRunCount(document, 'set_a', '').length, 1, 'a blank field is not a deletion');
+      t.eq(H.editorSetRunCount(document, 'set_a', '2.5').length, 1, 'nor is a fraction');
+      t.eq(H.editorSetRunCount(document, 'set_a', '0').length, 1, 'and one set is the floor');
+      t.eq(document.templateSets.length, 1, 'nothing was written');
+    });
+
+    check('a count stops where the line stops standing for sets', function () {
+      var document = baseDocument();
+      var run = H.editorSetRunCount(document, 'set_a', '999');
+      t.eq(run.length, H.EDITOR_SET_COUNT_MAX, 'the cap is the line\'s, not a typo\'s');
+      t.eq(document.templateSets.length, H.EDITOR_SET_COUNT_MAX);
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+    });
+
+    check('a line splits into one row per set, and the split is not in the document', function () {
+      var document = baseDocument();
+      H.editorSetRunCount(document, 'set_a', '3');
+
+      var runs = H.editorSplitSetRun(document, 'set_a');
+      t.eq(runs.length, 3, 'each set is a row of its own');
+      t.ok(runs.every(function (run) { return run.length === 1; }));
+
+      var written = JSON.stringify(document);
+      t.eq(written.indexOf('editorAlone'), -1, 'the mark is the form\'s memory, not the file');
+
+      // One row can now be written differently without its neighbours moving.
+      document.templateSets[0].targetWeightGrams = 90000;
+      t.eq(document.templateSets[1].targetWeightGrams, 80000, 'its neighbour kept what it had');
+    });
+
+    check('a split set merges back with the neighbours it still agrees with', function () {
+      var document = baseDocument();
+      H.editorSetRunCount(document, 'set_a', '3');
+      H.editorSplitSetRun(document, 'set_a');
+      document.templateSets[2].targetWeightGrams = 90000;
+
+      var runs = H.editorMergeSetRun(document, document.templateSets[1].id);
+      t.eq(runs.length, 2, 'the two that still agree are one line again');
+      t.eq(runs[0].length, 2);
+      t.eq(runs[1].length, 1, 'the set that changed keeps its own row');
+    });
+
+    check('a rung is never one of a run of identical sets', function () {
+      var document = baseDocument();
+      H.editorAddSet(document, 'te_a');
+      H.editorAddSet(document, 'te_a');
+      setsOf(document).forEach(function (set) {
+        set.role = 'DROP';
+        set.dropValueGrams = 20000;
+      });
+
+      var runs = H.editorSetRuns(document, 'te_a');
+      t.eq(runs.length, 3, 'each drop is a place in the ladder, so each keeps its own row');
+      t.ok(runs.every(function (run) { return run.length === 1; }));
+    });
+
     check('removing a day keeps a workout another day still uses', function () {
       var document = baseDocument();
       document.slots.push(row({
