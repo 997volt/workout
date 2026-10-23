@@ -7280,10 +7280,31 @@
 
     var addDay = h('div', 'editor-add');
     addDay.appendChild(editorButton('Add a day', function () {
+      var known = {};
+      (working.slots || []).forEach(function (row) { known[row.id] = true; });
       editorAddDay(working);
+      // The day just made is the one about to be filled in, so it opens even though days start folded.
+      (working.slots || []).forEach(function (row) {
+        if (row && !known[row.id]) { editorDaySetOpen(row.id, true); }
+      });
       editorRender();
     }, 'add-day'));
     host.appendChild(addDay);
+  }
+
+  /**
+   * Which days the editor has unfolded, by slot id (N172's form).
+   *
+   * A day starts folded — a program of fifteen days is a lot of scrolling, and its head already says
+   * what it holds — and the state is the form's memory rather than the document's, so a re-render
+   * keeps it and the file the app receives never carries it.
+   */
+  var editorOpenDays = Object.create(null);
+
+  function editorDayIsOpen(slotId) { return editorOpenDays[slotId] === true; }
+
+  function editorDaySetOpen(slotId, open) {
+    if (open) { editorOpenDays[slotId] = true; } else { delete editorOpenDays[slotId]; }
   }
 
   /**
@@ -7309,7 +7330,40 @@
     if (isSequence) {
       title = 'Day ' + (orderedSlots.indexOf(slot) + 1) + ' of ' + orderedSlots.length + ' · ' + title;
     }
-    head.appendChild(h('h3', '', title));
+    var planned = (working.templateExercises || []).filter(function (row) {
+      return row && !row.deletedAt && row.templateId === slot.templateId;
+    }).sort(function (a, b) { return a.position - b.position; });
+    var plannedIds = {};
+    planned.forEach(function (row) { plannedIds[row.id] = true; });
+    var setCount = (working.templateSets || []).filter(function (row) {
+      return row && !row.deletedAt && plannedIds[row.templateExerciseId];
+    }).length;
+
+    var bodyId = 'day-body-' + slot.id;
+    var body = h('div', 'editor-day-body');
+    body.id = bodyId;
+    body.hidden = !editorDayIsOpen(slot.id);
+    /** The disclosure itself: toggled in place, so the day does not lose focus or scroll position. */
+    var toggle = editorButton(editorDayIsOpen(slot.id) ? '\u25be' : '\u25b8', function () {
+      var expand = !editorDayIsOpen(slot.id);
+      editorDaySetOpen(slot.id, expand);
+      body.hidden = !expand;
+      actions.hidden = !expand;
+      toggle.textContent = expand ? '\u25be' : '\u25b8';
+      toggle.setAttribute('aria-expanded', expand ? 'true' : 'false');
+      toggle.setAttribute('aria-label', (expand ? 'Fold ' : 'Unfold ') + title);
+    }, 'fold-day:' + slot.id, (editorDayIsOpen(slot.id) ? 'Fold ' : 'Unfold ') + title);
+    toggle.className = 'editor-fold';
+    toggle.setAttribute('aria-expanded', editorDayIsOpen(slot.id) ? 'true' : 'false');
+    toggle.setAttribute('aria-controls', bodyId);
+    head.appendChild(toggle);
+    // What the folded day holds, so its head says something without unfolding it: the count rides in
+    // the heading rather than beside it, because two boxes in a row read as two unrelated facts.
+    var heading = h('h3', '', title);
+    heading.appendChild(h('span', 'editor-day-meta',
+      planned.length + ' exercise' + (planned.length === 1 ? '' : 's') + ' \u00b7 ' +
+      setCount + ' set' + (setCount === 1 ? '' : 's')));
+    head.appendChild(heading);
 
     var weekdayOptions = [{ value: '', label: isSequence ? 'Any day' : 'Any day' }].concat(
       EDITOR_WEEKDAYS.map(function (day) { return { value: day, label: programWeekdayLabel(day) }; })
@@ -7319,7 +7373,11 @@
     }));
 
     var dayName = template ? 'day "' + template.name + '"' : 'this day';
-    head.appendChild(editorButton(
+    // A folded day is a summary row, so its own actions wait until it is unfolded: the weekday stays
+    // visible because setting the week up is worth doing without opening every day.
+    var actions = h('span', 'editor-day-actions');
+    actions.hidden = !editorDayIsOpen(slot.id);
+    actions.appendChild(editorButton(
       '\u2191',
       function () {
         editorMove(orderedSlots, slot, -1);
@@ -7328,7 +7386,7 @@
       'move-day-up:' + slot.id,
       'Move ' + dayName + ' up'
     ));
-    head.appendChild(editorButton(
+    actions.appendChild(editorButton(
       '\u2193',
       function () {
         editorMove(orderedSlots, slot, 1);
@@ -7337,7 +7395,7 @@
       'move-day-down:' + slot.id,
       'Move ' + dayName + ' down'
     ));
-    head.appendChild(editorButton(
+    actions.appendChild(editorButton(
       'Remove day',
       function () {
         editorRemoveDay(working, slot);
@@ -7346,19 +7404,18 @@
       'remove-day:' + slot.id,
       'Remove ' + dayName
     ));
+    head.appendChild(actions);
     section.appendChild(head);
+    section.appendChild(body);
 
     if (template) {
-      section.appendChild(
+      body.appendChild(
         editorTextField('Workout name', template.name, function (value) {
           template.name = value;
         })
       );
-      var planned = (working.templateExercises || []).filter(function (row) {
-        return row && row.templateId === template.id;
-      }).sort(function (a, b) { return a.position - b.position; });
       planned.forEach(function (row) {
-        section.appendChild(editorExerciseNode(working, template, row));
+        body.appendChild(editorExerciseNode(working, template, row));
       });
       var add = h('div', 'editor-add');
       var nameInput = document.createElement('input');
@@ -7373,7 +7430,7 @@
         editorAddExercise(working, template.id, exerciseId);
         editorRender();
       }));
-      section.appendChild(add);
+      body.appendChild(add);
     }
 
     return section;

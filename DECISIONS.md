@@ -1373,6 +1373,12 @@ the rule; that one argues it.
   the file — and *Merge* reunites a set with the neighbours that still agree, because a misclick must
   not cost the line. Rejected: a `count` field in the document, which would move the format version and
   make every reader expand it, for a compression the page can do on the way out.
+- **A day starts folded, and the fold is the form's memory.** A program of fifteen days is a lot of
+  scrolling, so a day's head — its title, what it holds, and its weekday — reads as one line and the
+  body waits behind a disclosure that is never written to the document, so a re-render keeps it and the
+  app receives nothing. The actions that act on the day itself (move, remove) wait with the body, while
+  the weekday stays visible, because setting a week up is worth doing without opening every day. A day
+  just added opens, because it is the one about to be filled in.
 - **A document's format version moves when its meaning does, and the floor does not** (N185). The
   backup's `schemaVersion` moves for a program kind because an older build reading a sequence as a
   weekly program would repeat it forever — a wrong meaning, not a dropped extra — and the **program

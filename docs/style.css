@@ -1241,6 +1241,39 @@ tbody tr:last-child td {
   margin: 0 8px 4px 0;
 }
 
+/* A day's own disclosure: folded by default, its head still saying what the day holds. The triangle
+ * is a quiet control rather than a filled button, because it is read as part of the row's title. */
+.editor-fold {
+  flex: 0 0 auto;
+  min-width: 2.25rem;
+  padding: 0 0.4rem;
+  background: transparent;
+  border-color: transparent;
+  color: var(--accent);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.editor-day-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.editor-day-meta {
+  margin-left: 0.6rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.editor-day-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /*
  * An exercise's row stays one line: the name field takes the room the numbers do not need, so the
  * row's own actions — move up, move down, remove — sit beside the exercise they act on instead of

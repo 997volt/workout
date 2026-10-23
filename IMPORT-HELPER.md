@@ -459,6 +459,9 @@ round trip.
   is a line of its own, which is what makes the count trustworthy. *Split* breaks a line into one row per
   set so a single set can be written differently, and *Merge* puts it back with the neighbours that still
   agree; neither is written to the file.
+- **Days start folded.** A day's head says its title, how many exercises and sets it holds, and its
+  weekday; the body opens behind the disclosure at its left, and the day's own move and remove actions
+  wait with the body. A day you add opens by itself, because it is the one about to be filled in.
 - **The preview is the app's plan, not the page's opinion.** *Preview changes* sends the opened document and
   the edited one to the shared core (N170), and shows the same change list and refusals the app will produce.
   *Download edit* asks the same question again as the button is pressed, so the file that ships is the form as
