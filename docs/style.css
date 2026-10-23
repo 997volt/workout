@@ -1241,6 +1241,55 @@ tbody tr:last-child td {
   margin: 0 8px 4px 0;
 }
 
+/*
+ * An exercise's row stays one line: the name field takes the room the numbers do not need, so the
+ * row's own actions — move up, move down, remove — sit beside the exercise they act on instead of
+ * wrapping onto a line of their own. Below the width where three number fields and three buttons
+ * stop fitting, the name takes a line of its own and the rest wrap as they did before.
+ */
+.editor-exercise-head {
+  flex-wrap: nowrap;
+}
+
+.editor-exercise-head > .editor-field {
+  min-width: 0;
+}
+
+.editor-exercise-head > .editor-field:first-child {
+  flex: 1 1 140px;
+}
+
+.editor-exercise-head > .editor-field:not(:first-child) {
+  flex: 0 0 80px;
+}
+
+.editor-exercise-head > .editor-exercise-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: flex-end;
+  margin-left: auto;
+}
+
+.editor-exercise-head > .editor-exercise-actions > button {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .editor-exercise-head {
+    flex-wrap: wrap;
+  }
+
+  .editor-exercise-head > .editor-field:first-child {
+    flex: 1 1 100%;
+  }
+
+  .editor-exercise-head > .editor-field:not(:first-child) {
+    flex: 1 1 80px;
+    min-width: 96px;
+  }
+}
+
 .editor-exercise {
   border-top: 1px dashed var(--rule, #d9d4c7);
   padding-top: 10px;

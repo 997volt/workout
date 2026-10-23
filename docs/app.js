@@ -7239,7 +7239,11 @@
       planned.supersetGroup = editorParseInt(value);
     }, { type: 'number', step: '1' }));
     var exerciseName = exercise ? exercise.name : planned.exerciseId;
-    head.appendChild(editorButton(
+    // The row's own actions travel together: an outer flex line may put them beside the fields or
+    // below them, but never splits them across two lines (style.css).
+    var actions = h('span', 'editor-exercise-actions');
+    head.appendChild(actions);
+    actions.appendChild(editorButton(
       '\u2191',
       function () {
         editorMove(
@@ -7252,7 +7256,7 @@
       'move-exercise-up:' + planned.id,
       'Move ' + exerciseName + ' up'
     ));
-    head.appendChild(editorButton(
+    actions.appendChild(editorButton(
       '\u2193',
       function () {
         editorMove(
@@ -7265,7 +7269,7 @@
       'move-exercise-down:' + planned.id,
       'Move ' + exerciseName + ' down'
     ));
-    head.appendChild(editorButton(
+    actions.appendChild(editorButton(
       'Remove',
       function () {
         editorRemoveExercise(working, planned);
