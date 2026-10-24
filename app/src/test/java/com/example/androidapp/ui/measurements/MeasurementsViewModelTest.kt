@@ -91,6 +91,23 @@ class MeasurementsViewModelTest {
     }
 
     @Test
+    fun theGoalAndItsHistory_areInTheStateTheRowReads() = runTest(dispatcher) {
+        // B215: the row moved from statistics to this screen, and the three-flow combine that feeds it had no
+        // test — only the write was checked, not that the goal and its periods reach the state the row draws.
+        val goals = FakeGoalRepository()
+        val viewModel = viewModelOf(FakeMeasurementRepository(entries), goals)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSetWeightGoal(WeightGoal.Target(75_000L))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(WeightGoal.Target(75_000L), state.weightGoal)
+        assertEquals(1, state.goalHistory.size)
+    }
+
+    @Test
     fun itShowsWhatTheRepositoryHolds_newestFirst() = runTest(dispatcher) {
         entries.value = listOf(entry("m2", weight = 82_000L), entry("m1", weight = 83_000L))
         val viewModel = viewModelOf(FakeMeasurementRepository(entries), FakeGoalRepository())
