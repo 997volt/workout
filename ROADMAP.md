@@ -30,12 +30,11 @@ for the reason a parked row names its revisit trigger: a queue that cannot say w
 
 **What the statistics pass left open, and what it made visible.** N203–N206 and N208–N209 shipped and are in
 [CHANGELOG.md](CHANGELOG.md); **N210 was struck** because the range has been remembered since N35. What remains is the
-structural split, the moving-average row, a recents row and pinch.
+structural split, a recents row and pinch.
 
 | # | What it changes | Brought forward when |
 | --- | --- | --- |
 | N207 | **`ui/statistics` splits into a chart package.** The screen is 877 lines, hit the 20-function ceiling three times in one pass, and the chart now spans four files. A refactor with no behaviour change, which is why it lands alone. | The next change that adds a function to `StatisticsScreen.kt`. |
-| N211 | **The moving-average picker folds into a menu**, like the range's *More*, leaving the card to the figure and its axis. | The 7/14/30 row costs the figure height it needs on a phone. |
 | N212 | **A short "recently used" row above the metric trigger**, now that groups and search have made the menu navigable. | The same two or three series are what actually gets read. |
 | N213 | **Pinch changes the window**, the gesture a chart on a phone already invites; it needs a policy for pinching past the data before it can land. | Re-choosing the range by hand to zoom is what people do. |
 

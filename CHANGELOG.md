@@ -32,7 +32,8 @@ unreleased.
   scrub names the reading under the finger **and marks it on the figure** — a line down to the axis and an
   emphasised dot — and the readout is announced to a screen reader instead of only seen. The axis names a tick
   between its ends, the summary's three numbers follow the figure instead of preceding it, the joint sites are
-  grouped under their joint, and the expanded view says which series it shows and carries the card's own extras.
+  grouped under their joint, the expanded view says which series it shows and carries the card's own extras, and the
+  moving-average window is one control naming the window on screen rather than three chips in the card.
 
 ## [2.13] — 2026-10-22 (versionCode 33)
 
