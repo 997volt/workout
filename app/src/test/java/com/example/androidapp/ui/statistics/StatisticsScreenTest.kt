@@ -8,6 +8,8 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -309,6 +311,19 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_LAST_DATE).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_MIN).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_MAX).assertExists()
+        // N196: the scale is a gutter beside the figure, not a row underneath it.
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_AXIS).assertExists()
+    }
+
+    @Test
+    fun theScaleSitsBesideTheFigure_andCarriesItsMiddleToo() {
+        // N196: three numbers against the figure's own top, middle and foot, so "min" and "max" say which end
+        // of the line they belong to.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_AXIS)
+            .onChildren()
+            .assertCountEquals(3)
     }
 
     @Test

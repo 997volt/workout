@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -125,7 +126,14 @@ fun TrendChart(
     }
 }
 
-/** The chart's own frame: a fixed height, with the caller deciding the width. */
+/**
+ * The chart's own frame: a height the caller chooses, and the width it is given (N196).
+ *
+ * The height used to be fixed at the sparkline's, which made a screen whose subject *was* the figure draw a
+ * thumbnail: statistics asks for a figure's height now, and the adherence breakdown keeps the small one it was
+ * designed around. The default is the small one on purpose — a caller that has not thought about it gets what
+ * every existing screen already looked like.
+ */
 @Composable
 fun TrendChartFrame(
     points: List<ChartPoint>,
@@ -138,6 +146,7 @@ fun TrendChartFrame(
     trend: ChartLine? = null,
     movingAverage: List<ChartPoint> = emptyList(),
     goals: List<ChartSegment> = emptyList(),
+    height: Dp = CHART_HEIGHT_DP.dp,
 ) {
     TrendChart(
         points = points,
@@ -150,7 +159,7 @@ fun TrendChartFrame(
         goals = goals,
         modifier = modifier
             .fillMaxWidth()
-            .height(CHART_HEIGHT_DP.dp)
+            .height(height)
             .padding(top = 12.dp)
             .testTag(testTag),
     )

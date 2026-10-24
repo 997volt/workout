@@ -483,6 +483,15 @@ the rule; that one argues it.
 - **A gap is distance, and the line breaks at it** (N37). On a time axis a straight
   segment across missing weeks is a claim about weeks nobody measured; this is where the
   app deliberately differs from the tool whose shape it borrows.
+- **The figure's height is the screen's, and its scale sits beside it** (N196). The chart component drew at one
+  fixed height because every caller until statistics was a sparkline in a card; statistics' subject *is* the
+  figure, so the height is a parameter — the adherence breakdown keeps the small one it was designed around —
+  and the default is still the sparkline's, so a caller that has not thought about it changes nothing. The
+  axis's numbers moved from a row *under* the chart, where "min" and "max" said nothing about which end of
+  the line they meant, into a gutter against the figure, and gained the middle. They stay real `Text` rather
+  than paint inside the canvas: the canvas is blanked for a screen reader, and three numbers are the part of a
+  chart that is a sentence.
+
 - **The moving average's period counts readings, not days** (N40). A seven-day window for
   a lift trained twice a week would often average one reading, and a window that is
   sometimes empty is worse than one whose unit is stated on the control.

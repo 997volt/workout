@@ -293,6 +293,7 @@ private fun RangeChips(
 /** Six fixed ranges, two rows of three — which is the layout rather than a rule about ranges. */
 private const val CHIPS_PER_ROW = 3
 
+
 @Composable
 private fun RangeChip(kind: RangeKind, selected: Boolean, onSelectRange: (StatisticsRange) -> Unit) {
     AppFilterChip(
@@ -484,88 +485,6 @@ private fun ReadingRow(label: String, value: String, testTag: String) {
 }
 
 /**
- * The series, drawn through the chart every other trend uses. N37 gives it a time axis.
- *
- * Two functions rather than one: the frame decides *when* and *how much*, and the body works out what to
- * draw inside it. Kept apart because the whole thing together was past the length a reader can hold, and the
- * seam is a real one — nothing in the body knows about the picker or the restart.
- */
-@Composable
-private fun SeriesChart(
-    series: MetricSeries,
-    metric: MetricEntry,
-    goalPeriods: List<GoalPeriod>,
-    planTargets: List<PlanTarget>,
-) {
-    if (series.readings.count { it.value != null } < 2) return
-    var period by rememberSaveable { mutableStateOf(DAYS) }
-    val overlay = chartOverlay(series, metric, goalPeriods, planTargets, period)
-
-    // The chart, the window it is averaged over and the axis in words are one card: they are one
-    // reading of one series, and separating the picker from the line it changes would make the
-    // control look like a setting rather than part of the figure.
-    AppCard {
-        TrendChartFrame(
-            points = overlay.projected,
-            goals = overlay.goals,
-            minValue = overlay.axis.min,
-            maxValue = overlay.axis.max,
-            testTag = TestTags.Statistics.CHART,
-            bars = metric.isBars,
-            average = series.average(),
-            // The line is evaluated across the same elapsed time the points are placed by (N37), so it leans
-            // the way the readings do rather than the way the index would.
-            movingAverage = overlay.mean,
-            trend = overlay.fittedLine,
-        )
-        MovingAveragePicker(period = period, onSelect = { period = it })
-
-        // The axis in words (ROADMAP N37). A canvas cannot be read by a screen reader, and even for a
-        // reader who can see it, "when did this start and end, and what scale is it" is the first question.
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                text = HistoryFormat.date(recordedSpan(series).first, zone = ZoneId.systemDefault()),
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.testTag(TestTags.Statistics.CHART_FIRST_DATE),
-            )
-            Text(
-                text = HistoryFormat.date(recordedSpan(series).second, zone = ZoneId.systemDefault()),
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.testTag(TestTags.Statistics.CHART_LAST_DATE),
-            )
-        }
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                text = metric.unit.format(overlay.axis.min),
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.testTag(TestTags.Statistics.CHART_MIN),
-            )
-            Text(
-                text = metric.unit.format(overlay.axis.max),
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.testTag(TestTags.Statistics.CHART_MAX),
-            )
-        }
-
-        // The plans whose targets the chart draws (ROADMAP N39), named: the dashed lines are a prescription
-        // rather than the lifter's own goal, and a chart that left the distinction to a dash pattern would be
-        // asking the reader to know it already.
-        if (overlay.planLevels.isNotEmpty()) {
-            val unit = stringResource(metric.unit.labelRes)
-            val named = overlay.planLevels.map { (plan, level) ->
-                stringResource(R.string.statistics_plan_target, plan, metric.unit.format(level), unit)
-            }
-            Text(
-                text = stringResource(R.string.statistics_plan_targets, named.joinToString(" · ")),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.testTag(TestTags.Statistics.PLAN_TARGETS),
-            )
-        }
-    }
-}
-
-/**
  * Everything the chart draws, worked out away from the canvas (ROADMAP N37, N39, N40).
  *
  * A pure function rather than locals in the composable so the arithmetic can be asserted without rendering:
@@ -630,6 +549,83 @@ private fun chartOverlay(
         ),
     )
 }
+
+/**
+ * The series, drawn through the chart every other trend uses. N37 gives it a time axis.
+ *
+ * Two functions rather than one: the frame decides *when* and *how much*, and the body works out what to
+ * draw inside it. Kept apart because the whole thing together was past the length a reader can hold, and the
+ * seam is a real one — nothing in the body knows about the picker or the restart.
+ */
+@Composable
+private fun SeriesChart(
+    series: MetricSeries,
+    metric: MetricEntry,
+    goalPeriods: List<GoalPeriod>,
+    planTargets: List<PlanTarget>,
+) {
+    if (series.readings.count { it.value != null } < 2) return
+    var period by rememberSaveable { mutableStateOf(DAYS) }
+    val overlay = chartOverlay(series, metric, goalPeriods, planTargets, period)
+
+    // The chart, the window it is averaged over and the axis in words are one card: they are one
+    // reading of one series, and separating the picker from the line it changes would make the
+    // control look like a setting rather than part of the figure.
+    AppCard {
+        // The figure and its scale, side by side (N196): the numbers are the axis, so they belong against it
+        // rather than in a row underneath where "left" and "right" said nothing about up and down.
+        Row(modifier = Modifier.fillMaxWidth()) {
+            ChartAxis(axis = overlay.axis, format = { metric.unit.format(it) })
+            TrendChartFrame(
+                points = overlay.projected,
+                goals = overlay.goals,
+                minValue = overlay.axis.min,
+                maxValue = overlay.axis.max,
+                testTag = TestTags.Statistics.CHART,
+                bars = metric.isBars,
+                average = series.average(),
+                // The line is evaluated across the same elapsed time the points are placed by (N37), so it leans
+                // the way the readings do rather than the way the index would.
+                movingAverage = overlay.mean,
+                trend = overlay.fittedLine,
+                height = CHART_FIGURE_HEIGHT,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        MovingAveragePicker(period = period, onSelect = { period = it })
+
+        // The axis in words (ROADMAP N37). A canvas cannot be read by a screen reader, and even for a
+        // reader who can see it, "when did this start and end, and what scale is it" is the first question.
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                text = HistoryFormat.date(recordedSpan(series).first, zone = ZoneId.systemDefault()),
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.testTag(TestTags.Statistics.CHART_FIRST_DATE),
+            )
+            Text(
+                text = HistoryFormat.date(recordedSpan(series).second, zone = ZoneId.systemDefault()),
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.testTag(TestTags.Statistics.CHART_LAST_DATE),
+            )
+        }
+        // The plans whose targets the chart draws (ROADMAP N39), named: the dashed lines are a prescription
+        // rather than the lifter's own goal, and a chart that left the distinction to a dash pattern would be
+        // asking the reader to know it already.
+        if (overlay.planLevels.isNotEmpty()) {
+            val unit = stringResource(metric.unit.labelRes)
+            val named = overlay.planLevels.map { (plan, level) ->
+                stringResource(R.string.statistics_plan_target, plan, metric.unit.format(level), unit)
+            }
+            Text(
+                text = stringResource(R.string.statistics_plan_targets, named.joinToString(" · ")),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag(TestTags.Statistics.PLAN_TARGETS),
+            )
+        }
+    }
+}
+
 
 /**
  * The first and last moments that recorded something, which is what the axis labels span.
