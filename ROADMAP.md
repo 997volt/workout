@@ -28,19 +28,14 @@ not now — and it is not *Next*, which is what is actually being worked on. Eac
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-**What the statistics pass left open, and what it made visible.** Rows N203–N206 finish the pass's own loose ends; N207 is
-the structural debt it exposed; N208–N209 and N211–N213 are improvements found while building it. **N210 was struck
-before it started**: the range has been remembered in preferences since N35, so it described shipped work.
+**What the statistics pass left open, and what it made visible.** N203, N205, N206, N208 and N209 shipped and are in
+[CHANGELOG.md](CHANGELOG.md); **N210 was struck** because the range has been remembered since N35. What remains is the
+expanded view's parity, the structural split, the moving-average row, a recents row and pinch.
 
 | # | What it changes | Brought forward when |
 | --- | --- | --- |
-| N203 | **A marker on the figure for the scrub** — a vertical line and an emphasised dot at the reading the readout names, instead of naming it below the figure and leaving the line unpointed. | Reading the value means looking away from the point it belongs to often enough to grate. |
 | N204 | **The expanded figure carries what the card carries** — the dates, the plan targets' names and the moving-average picker — so the two readings of one series cannot disagree. | The expanded view is opened to read a target rather than the line. |
-| N205 | **The joint sites group under their joint** (eight headings, three sides each) instead of one list of twenty-four. | A site is picked from the list rather than found by searching its name. |
-| N206 | **The readout is announced and the expanded view named** — a live region on the scrub's text, a title on the dialog — so the pass's one touch-only affordance has an accessible counterpart. | The next accessibility pass over statistics, or a TalkBack user on it first. |
 | N207 | **`ui/statistics` splits into a chart package.** The screen is 877 lines, hit the 20-function ceiling three times in one pass, and the chart now spans four files. A refactor with no behaviour change, which is why it lands alone. | The next change that adds a function to `StatisticsScreen.kt`. |
-| N208 | **The overview's three numbers leave the row above the figure** — one line under the title, or below the chart — giving the figure back the space it occupies. | The figure is opened on a small phone and is still the smallest thing on the screen. |
-| N209 | **The x axis carries ticks between its ends** — month or week, whatever the range is — rather than only the first and last date. | A range is long enough that its two end dates are the only time on the figure. |
 | N211 | **The moving-average picker folds into a menu**, like the range's *More*, leaving the card to the figure and its axis. | The 7/14/30 row costs the figure height it needs on a phone. |
 | N212 | **A short "recently used" row above the metric trigger**, now that groups and search have made the menu navigable. | The same two or three series are what actually gets read. |
 | N213 | **Pinch changes the window**, the gesture a chart on a phone already invites; it needs a policy for pinching past the data before it can land. | Re-choosing the range by hand to zoom is what people do. |

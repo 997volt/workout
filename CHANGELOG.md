@@ -25,7 +25,14 @@ unreleased.
   reading** under the finger is named below it, and **Expand** opens the same figure at the height of the window.
   The range is **one row** — a week, a month, three months, and one control for the rest including custom — and the
   menu opens on a **group** with a **search** over the series' labels and the groups' names, the twenty-four joint
-  sites collapsed to **one row** at each level. Nothing about the series, the store or the goal line moved.
+  sites collapsed to **one row** at each level, grouped under their joint. Nothing about the series, the store or
+  the goal line moved.
+
+- **The statistics figure says where you are pointing, and where you are in time** (N203, N205, N206, N208, N209). The
+  scrub names the reading under the finger **and marks it on the figure** — a line down to the axis and an
+  emphasised dot — and the readout is announced to a screen reader instead of only seen. The axis names a tick
+  between its ends, the summary's three numbers follow the figure instead of preceding it, the joint sites are
+  grouped under their joint, and the expanded view says which series it shows.
 
 ## [2.13] — 2026-10-22 (versionCode 33)
 
