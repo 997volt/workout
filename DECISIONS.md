@@ -483,6 +483,12 @@ the rule; that one argues it.
 - **A gap is distance, and the line breaks at it** (N37). On a time axis a straight
   segment across missing weeks is a claim about weeks nobody measured; this is where the
   app deliberately differs from the tool whose shape it borrows.
+- **The range is one row, and the rare windows are one control away** (N197). Seven chips wrapped three to a
+  row spent two rows on a control used once a visit, and every one of them read as equally likely. The three a
+  thumb reaches for stay out; six months, a year, all time and custom sit behind one *More* control, which takes
+  the active range's own name while it is chosen — a window must never be selected and unsaid. Custom still asks
+  its dates before it applies, because an unbounded window makes a chart look broken rather than empty.
+
 - **The figure's height is the screen's, and its scale sits beside it** (N196). The chart component drew at one
   fixed height because every caller until statistics was a sparkline in a card; statistics' subject *is* the
   figure, so the height is a parameter — the adherence breakdown keeps the small one it was designed around —

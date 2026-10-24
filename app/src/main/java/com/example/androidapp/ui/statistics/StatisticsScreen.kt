@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.statistics
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -149,7 +151,7 @@ fun StatisticsScreen(
                 .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            RangeChips(
+            RangeControl(
                 range = state.range,
                 onSelectRange = onSelectRange,
                 onChooseDates = { choosingDates = true },
@@ -248,50 +250,65 @@ private fun StatisticsBody(
 }
 
 /**
- * The range, as chips.
+ * The ranges, as one row and one menu (N197).
  *
- * Custom asks for its dates before it applies, because the alternative is a chip that selects an unbounded
- * window and a chart that looks broken rather than empty.
+ * Seven chips wrapped three to a row spent two rows of the screen on a control that is used once a visit, and
+ * every one of them was a button of equal weight. The three a thumb reaches for stay out; the rest — six months,
+ * a year, all, custom — sit behind one *More* control, which takes the chosen range's own name while it is
+ * active, so the screen still says which window is on screen.
  */
 @Composable
-private fun RangeChips(
+private fun RangeControl(
     range: StatisticsRange,
     onSelectRange: (StatisticsRange) -> Unit,
     onChooseDates: () -> Unit,
 ) {
-    // One source at the top level, which the Compose ruleset asks for and which reads better: the chips
-    // are one control, wrapped over as many rows as they need.
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        RangeKind.entries
-            .chunked(CHIPS_PER_ROW)
-            .forEach { row ->
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { kind ->
-                        if (kind == RangeKind.CUSTOM) {
-                            // Custom is a chip like the others, but choosing it asks a question first: the
-                            // dates. It is selected whenever the range *is* custom, so the bar still says
-                            // which window is on screen.
-                            AppFilterChip(
-                                selected = range.kind == RangeKind.CUSTOM,
-                                onClick = onChooseDates,
-                                label = stringResource(kind.labelRes),
-                                testTag = TestTags.Statistics.range(kind.name),
-                            )
-                        } else {
-                            RangeChip(
-                                kind = kind,
-                                selected = range.kind == kind,
-                                onSelectRange = onSelectRange,
-                            )
-                        }
-                    }
+    val overflow = RangeKind.entries.filterNot { it in COMMON_RANGES }
+    val selectedOverflow = range.kind.takeIf { it in overflow }
+    var open by remember { mutableStateOf(false) }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        COMMON_RANGES.forEach { kind ->
+            RangeChip(kind = kind, selected = range.kind == kind, onSelectRange = onSelectRange)
+        }
+        Box {
+            AppFilterChip(
+                selected = selectedOverflow != null,
+                onClick = { open = true },
+                label = stringResource(selectedOverflow?.labelRes ?: R.string.range_more),
+                testTag = TestTags.Statistics.RANGE_MORE,
+            )
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                overflow.forEach { kind ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(kind.labelRes)) },
+                        onClick = {
+                            open = false
+                            // Custom asks its dates before it applies: an unbounded window would make the
+                            // chart look broken rather than empty.
+                            if (kind == RangeKind.CUSTOM) {
+                                onChooseDates()
+                            } else {
+                                onSelectRange(StatisticsRange(kind))
+                            }
+                        },
+                        modifier = Modifier.testTag(TestTags.Statistics.range(kind.name)),
+                    )
                 }
             }
+        }
     }
 }
 
-/** Six fixed ranges, two rows of three — which is the layout rather than a rule about ranges. */
-private const val CHIPS_PER_ROW = 3
+/** The ranges a thumb reaches for; the rest sit behind one control (N197). */
+private val COMMON_RANGES = listOf(
+    RangeKind.LAST_7_DAYS,
+    RangeKind.LAST_MONTH,
+    RangeKind.LAST_3_MONTHS,
+)
 
 
 @Composable

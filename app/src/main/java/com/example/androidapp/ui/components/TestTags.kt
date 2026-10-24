@@ -1001,6 +1001,9 @@ object TestTags {
         /** One range chip, and one picker row, named by what they select. */
         fun range(kind: String) = "statistics_range_$kind"
 
+        /** The control the rare ranges sit behind (N197). */
+        const val RANGE_MORE = "statistics_range_more"
+
         fun metric(id: String) = "statistics_metric_$id"
     }
 

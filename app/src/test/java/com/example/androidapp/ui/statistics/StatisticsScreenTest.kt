@@ -109,13 +109,16 @@ class StatisticsScreenTest {
     }
 
     @Test
-    fun theRangeChips_sayWhichIsSelected_andReportAChoice() {
+    fun theRange_saysWhichIsSelected_andReportsAChoice() {
+        // N197: three ranges stand out and the rest sit behind one control, so choosing a rare range is the
+        // control and then the range.
         var chosen: StatisticsRange? = null
         setScreen(onSelectRange = { chosen = it })
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.range(RangeKind.LAST_MONTH.name)).assertIsSelected()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.range(RangeKind.LAST_YEAR.name)).assertIsNotSelected()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE).assertIsNotSelected()
 
+        composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.range(RangeKind.LAST_YEAR.name)).performClick()
 
         assertThat(chosen?.kind).isEqualTo(RangeKind.LAST_YEAR)
@@ -196,6 +199,7 @@ class StatisticsScreenTest {
         // custom asks its question first and refuses to apply a window with one end.
         setScreen()
 
+        composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.range(RangeKind.CUSTOM.name)).performClick()
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.CUSTOM_FROM).assertExists()
@@ -216,7 +220,9 @@ class StatisticsScreenTest {
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.range(RangeKind.CUSTOM.name)).assertIsSelected()
+        // The control carries the active range's own name, so a window chosen from the menu is still said
+        // on screen (N197).
+        composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE).assertIsSelected()
         composeTestRule.onNodeWithTag(TestTags.Statistics.range(RangeKind.LAST_MONTH.name)).assertIsNotSelected()
     }
 

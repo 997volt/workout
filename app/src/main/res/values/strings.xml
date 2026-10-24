@@ -313,6 +313,7 @@
     <string name="range_6_months">Last 6 months</string>
     <string name="range_year">Last year</string>
     <string name="range_all">All time</string>
+    <string name="range_more">More</string>
     <string name="range_custom">Custom</string>
     <string name="statistics_overview_workouts">Workouts</string>
     <string name="statistics_overview_volume">Volume</string>
