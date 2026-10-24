@@ -22,6 +22,11 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   Only an explicit choice is recorded, so opening the tab does not push the series actually read out of the row,
   and the row waits until there are two, because one chip repeating the picker's own label is not a shortcut.
 
+- **Pinching the statistics figure changes the window** (N213). Fingers apart narrows it around the point
+  pinched and fingers together widens it — never before the first reading or after the last, and never narrower
+  than two days — and the result is a custom range, so the range row says *Custom* while it is on screen. The
+  window is written once, after the fingers settle, not on every motion event.
+
 ### Changed
 
 - **The statistics chart lives in its own package** (N207). The overlay, the figure, the axis, the scrub and the

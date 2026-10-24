@@ -562,6 +562,14 @@ the rule; that one argues it.
   reads as selected, and the row waits for a second, because one chip repeating the picker's label is not a
   shortcut.
 
+- **A pinch narrows the window around the point pinched, inside the readings** (N213). The gesture reports a
+  scale and the centroid across the figure; the ViewModel turns that into whole days around the pinched point.
+  The window may leave the range that was chosen — zooming out is how you see more — but it never leaves the
+  **recorded readings**: it starts no earlier than the metric's first reading and ends no later than its last,
+  and it never shrinks below two days, because one day cannot show a change. A pinch becomes a **custom** range,
+  because a window the finger chose cannot be named by a rolling kind. The write is one settings commit after
+  the fingers settle rather than one per motion event, and a range chip chosen while it waits cancels it.
+
 - **The range is one row, and the rare windows are one control away** (N197). Seven chips wrapped three to a
   row spent two rows on a control used once a visit, and every one of them read as equally likely. The three a
   thumb reaches for stay out; six months, a year, all time and custom sit behind one *More* control, which takes
