@@ -490,6 +490,11 @@ the rule; that one argues it.
   of the **window** a dialog is drawn in, not the display setting: `LocalConfiguration` can disagree with the space
   the dialog actually has, and lint has a rule for exactly that.
 
+- **The summary numbers follow the figure, and the time axis has a middle** (N208, N209). Three numbers between the
+  metric and the chart cost the figure a row, and they summarise the window the figure draws — so they come after
+  it. The axis's two end dates said nothing about the time between them on a range wider than a week, so a tick at
+  the middle is named as well; the ticks are real `Text` beside the figure for the same reason the axis is.
+
 - **The scrub's value is announced, and the expanded view says its name** (N206). A readout that only exists while a
   finger is on the figure is a value a screen-reader user cannot have, so it carries a **polite live region**: the
   value is read when it changes, not on every frame, and the figure itself stays decorative. The expanded dialog is

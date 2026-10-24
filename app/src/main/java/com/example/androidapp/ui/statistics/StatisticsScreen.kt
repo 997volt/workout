@@ -194,8 +194,6 @@ private fun StatisticsBody(
     onSetGoal: (Double?) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Overview(overview = state.overview)
-
         // The picker is drawn whenever the metric is about a lift, not only when nothing is chosen yet.
         // Gating it on "no lift selected" made it unreachable: every entry point arrives with one selected,
         // so the lift could never be changed, and the picker's own selected-name branch was dead code.
@@ -246,6 +244,9 @@ private fun StatisticsBody(
                 targetReached = state.targetReached,
             )
         }
+        // The three numbers sit after the figure rather than above it (N208): they summarise the window, and the
+        // window is what the chart is for — a card between the metric and the chart is a row the figure pays for.
+        Overview(overview = state.overview)
     }
 }
 
@@ -571,27 +572,23 @@ private fun SeriesChart(
         )
         MovingAveragePicker(period = period, onSelect = { period = it })
 
-        // The axis in words (ROADMAP N37). A canvas cannot be read by a screen reader, and even for a
-        // reader who can see it, "when did this start and end, and what scale is it" is the first question.
+        // The axis in words (ROADMAP N37). A canvas cannot be read by a screen reader, and "when did this start
+        // and end" is the first question — with a **middle** tick now (N209), because two dates at a month's
+        // edges say nothing about the time between them.
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                text = HistoryFormat.date(recordedSpan(series).first, zone = ZoneId.systemDefault()),
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.testTag(TestTags.Statistics.CHART_FIRST_DATE),
-            )
-            // The figure at a size it can be inspected at (N201): the card's height is the screen's choice, and
-            // this is the reader overruling it for a moment.
+            ChartDate(fraction = 0.0, span = recordedSpan(series), tag = TestTags.Statistics.CHART_FIRST_DATE)
+            ChartDate(fraction = 0.5, span = recordedSpan(series), tag = TestTags.Statistics.CHART_MIDDLE_DATE)
+            ChartDate(fraction = 1.0, span = recordedSpan(series), tag = TestTags.Statistics.CHART_LAST_DATE)
+        }
+        // The figure at a size it can be inspected at (N201): the card's height is the screen's choice, and this
+        // is the reader overruling it for a moment.
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             AppTextButton(
                 onClick = { expanded = true },
                 modifier = Modifier.testTag(TestTags.Statistics.CHART_EXPAND),
             ) {
                 Text(stringResource(R.string.statistics_chart_expand))
             }
-            Text(
-                text = HistoryFormat.date(recordedSpan(series).second, zone = ZoneId.systemDefault()),
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.testTag(TestTags.Statistics.CHART_LAST_DATE),
-            )
         }
 
         // The plans whose targets the chart draws (ROADMAP N39), named: the dashed lines are a prescription
@@ -633,6 +630,18 @@ private fun SeriesChart(
  */
 private fun recordedSpan(series: MetricSeries): Pair<Instant, Instant> =
     series.readings.first { it.value != null }.at to series.readings.last { it.value != null }.at
+
+/** One tick on the time axis, at [fraction] of the span (N209). */
+@Composable
+private fun ChartDate(fraction: Double, span: Pair<Instant, Instant>, tag: String) {
+    val from = span.first.toEpochMilli()
+    val at = from + ((span.second.toEpochMilli() - from) * fraction).toLong()
+    Text(
+        text = HistoryFormat.date(Instant.ofEpochMilli(at), zone = ZoneId.systemDefault()),
+        style = MaterialTheme.typography.labelSmall,
+        modifier = Modifier.testTag(tag),
+    )
+}
 
 /** The ends of the axis, so the chart can be read without the readings list. */
 

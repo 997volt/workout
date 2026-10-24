@@ -330,6 +330,21 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_MAX).assertExists()
         // N196: the scale is a gutter beside the figure, not a row underneath it.
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_AXIS).assertExists()
+        // N209: and the time axis names a point between its ends.
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_MIDDLE_DATE).assertExists()
+    }
+
+    @Test
+    fun theSummaryNumbers_followTheFigure_ratherThanSittingAboveIt() {
+        // N208: the three numbers summarise the window, and the window is what the figure is for.
+        setScreen()
+
+        val chart = composeTestRule.onNodeWithTag(TestTags.Statistics.CHART)
+            .getUnclippedBoundsInRoot().top
+        val overview = composeTestRule.onNodeWithTag(TestTags.Statistics.OVERVIEW_WORKOUTS)
+            .getUnclippedBoundsInRoot().top
+
+        assertThat(overview).isGreaterThan(chart)
     }
 
     @Test

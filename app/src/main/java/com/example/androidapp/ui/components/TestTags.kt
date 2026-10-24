@@ -904,6 +904,8 @@ object TestTags {
         const val CHART = "statistics_chart"
         const val CHART_FIRST_DATE = "statistics_chart_first_date"
         const val CHART_LAST_DATE = "statistics_chart_last_date"
+        /** The tick between the axis's ends (N209). */
+        const val CHART_MIDDLE_DATE = "statistics_chart_middle_date"
         const val CHART_MIN = "statistics_chart_min"
         /** The figure's scale: the gutter holding its top, middle and foot (N196). */
         const val CHART_AXIS = "statistics_chart_axis"
