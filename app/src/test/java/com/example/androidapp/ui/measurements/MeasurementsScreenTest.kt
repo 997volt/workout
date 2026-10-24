@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -32,6 +33,8 @@ import com.example.androidapp.ui.statistics.MetricReading
 import com.example.androidapp.ui.statistics.goalOutcomes
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -142,11 +145,20 @@ class MeasurementsScreenTest {
 
     @Test
     fun theWeightGoal_sitsAtTheTopOfTheList() {
-        // The row the statistics screen used to carry under its chart is this screen's first item now.
-        setScreen(state = stateWithGoal(WeightGoal.Target(80_000L)))
+        // The row the statistics screen used to carry under its chart is this screen's first item now — and
+        // "top" is the claim, so the test compares it with the entry it sits above (B216).
+        setScreen(
+            state = stateWithGoal(WeightGoal.Target(80_000L)).copy(entries = listOf(today)),
+        )
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).assertIsDisplayed()
+        val goalTop = composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL)
+            .assertIsDisplayed()
+            .getUnclippedBoundsInRoot().top
+        val entryTop = composeTestRule.onNodeWithTag(TestTags.Measurements.row(today.id))
+            .assertIsDisplayed()
+            .getUnclippedBoundsInRoot().top
+
+        assertTrue("the goal sits above the entries it is about", goalTop < entryTop)
     }
 
     @Test
@@ -228,6 +240,26 @@ class MeasurementsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CLEAR).performClick()
 
         assertTrue(cleared)
+    }
+
+    @Test
+    fun aDirectionGoal_offersNoWeight_andInventsNone() {
+        // N135's rule, moved here with the row: the band decides the rate, and the app never manufactures an end
+        // weight the lifter did not state — so the field is not offered at all, and a stale one cannot become a
+        // target. The test went with the statistics row and was not re-added (B215); it is back beside the row.
+        var set: WeightGoal? = null
+        setScreen(
+            state = stateWithGoal(WeightGoal.Target(80_000L)),
+            onSetWeightGoal = { value -> set = value },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.weightGoalKind(WeightGoalKind.LOSE)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
+
+        assertEquals(WeightGoal.Direction(gain = false), set)
     }
 
     /** A state whose goal the row can read: the readings are the two the history is judged against. */
@@ -629,5 +661,33 @@ class MeasurementsScreenTest {
             .assertExists()
         composeTestRule.onNodeWithText(context.getString(R.string.measurements_kind_tape), substring = true)
             .assertExists()
+    }
+
+    @Test
+    fun theEditForm_savesTheDayItWasCorrectedTo() {
+        // B214: opening the calendar was proved; that the day picked in it reaches the saved draft was not.
+        // The record is in 2020 so the day is never "in the future" for the picker's bound (B212).
+        val record = BodyMeasurement(
+            id = "m-date",
+            measuredAt = Instant.parse("2020-02-04T08:00:00Z"),
+            kind = MeasurementKind.DAILY,
+            weightGrams = 80_000L,
+        )
+        var saved: BodyMeasurement? = null
+        setScreen(initialEdit = record, onSave = { saved = it })
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT_DATE_CHANGE).performClick()
+        // The calendar opens on the record's own month; a day cell is named by its whole date.
+        composeTestRule.onNodeWithText("February 20, 2020", substring = true).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT_DATE_CONFIRM).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).performClick()
+
+        val zone = ZoneId.systemDefault()
+        assertEquals(LocalDate.of(2020, 2, 20), saved!!.measuredAt.atZone(zone).toLocalDate())
+        assertEquals(
+            "the reading keeps the hour it was taken at",
+            record.measuredAt.atZone(zone).toLocalTime(),
+            saved!!.measuredAt.atZone(zone).toLocalTime(),
+        )
     }
 }

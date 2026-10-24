@@ -14,6 +14,7 @@ import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.TenPointScale
+import com.example.androidapp.domain.model.isMeasurementDayAfterToday
 import com.example.androidapp.domain.model.localDayBounds
 import com.example.androidapp.domain.nowEpochMillis
 import com.example.androidapp.domain.repository.MeasurementRepository
@@ -86,13 +87,20 @@ class RoomMeasurementRepository @Inject constructor(
         }
         // One entry of each kind for a day, so a tape entry edits its own row rather than the one the
         // scale wrote (N113). The day is the local one, not a fixed span (N32, B133).
-        val (dayStart, dayEnd) = measurement.measuredAt.localDayBounds(ZoneId.systemDefault())
+        val zone = ZoneId.systemDefault()
+        val (dayStart, dayEnd) = measurement.measuredAt.localDayBounds(zone)
         // The entry and its sore list are one save: a failure between them would leave a daily record
         // whose soreness is a previous save's.
         database.withTransaction {
             // The timestamp is taken here, with the row it stamps, so `createdAt` is the write's moment
             // rather than the request's.
             val now = nextWriteAt()
+            // A record is of the past (B212): a future day would make the charts plot a reading that has not
+            // happened and the rate verdict read it as the newest one. The picker refuses it too; this is the
+            // boundary, for anything that did not come through the form.
+            if (measurement.measuredAt.isMeasurementDayAfterToday(Instant.ofEpochMilli(now), zone)) {
+                throw InvalidInputException("A measurement cannot be dated after today.")
+            }
             // **The day's read is inside the transaction too** (B151), like the guard the undo applies
             // (`restore` reads `findLiveWrittenSince` in here for the same reason). Outside it, a save
             // committing between this read and this write was invisible to both: the second one found no

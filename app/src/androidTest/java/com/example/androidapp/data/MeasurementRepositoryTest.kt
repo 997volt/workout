@@ -337,6 +337,19 @@ class MeasurementRepositoryTest {
     }
 
     @Test
+    fun aReadingDatedAfterToday_isRefused_andNothingIsWritten() = runTest {
+        // B212: a record is of the past. The picker does not offer a future day, and this is the boundary for
+        // anything that did not come through the form — a chart plotting a reading that has not happened is a
+        // claim about the future, and the rate verdict would read it as the newest one.
+        val failure = repository.save(
+            entry(at = localHour(8).plusSeconds(86_400L), weightGrams = 82_000L),
+        ) as DataResult.Failure
+
+        assertTrue("the refusal is a sentence, not a storage error", failure.error is DataError.Invalid)
+        assertEquals("and nothing was written", 0, repository.observeAll().first().size)
+    }
+
+    @Test
     fun twoSavesOnADayThatArriveTogether_leaveOneEntry() = runTest {
         // B151. The day's read used to happen **outside** the save's transaction, so two saves racing for the
         // same day and kind both found nothing, both inserted, and the day held two live entries — which every

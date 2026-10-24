@@ -104,8 +104,7 @@ fun Instant.localDayBounds(zone: ZoneId): Pair<Long, Long> {
 }
 
 /**
- * The same reading on another day, keeping the hour it was taken at (a request in use; no roadmap id covers
- * it).
+ * The same reading on another day, keeping the hour it was taken at (B212).
  *
  * The edit form corrects **which day** a measurement belongs to, and that is not a claim that the reading was
  * taken at a different hour: a morning weigh-in moved to the wrong date is still a morning weigh-in. Built in
@@ -115,6 +114,17 @@ fun Instant.localDayBounds(zone: ZoneId): Pair<Long, Long> {
  */
 fun Instant.withDay(day: LocalDate, zone: ZoneId): Instant =
     day.atTime(atZone(zone).toLocalTime()).atZone(zone).toInstant()
+
+/**
+ * Whether this reading's day is after [now]'s day, in [zone] (B212).
+ *
+ * A record is of the past: a day after today would make the charts plot a reading that has not happened and
+ * the trend's newest value a prediction. The comparison is between **days**, not instants — this morning is
+ * today even though it is earlier, and 23:30 in Berlin still belongs to the day Berlin is on — which is the
+ * same reading of a day [localDayBounds] writes rows by.
+ */
+fun Instant.isMeasurementDayAfterToday(now: Instant, zone: ZoneId): Boolean =
+    localDay(zone).isAfter(now.localDay(zone))
 
 /**
  * Whether this entry is [day]'s **daily** record, in [zone] (ROADMAP N114).

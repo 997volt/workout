@@ -138,4 +138,15 @@ class BodyMeasurementDayTest {
 
         assertThat(moved.localDay(berlin)).isEqualTo(LocalDate.of(2027, 3, 28))
     }
+
+    @Test
+    fun tomorrowIsAfterToday_andThisMorningIsNot() {
+        // B212: a record is of the past. The comparison is between days, so a reading from earlier today is
+        // not "after" a later one, and the date is read in the entry's zone.
+        val now = Instant.parse("2026-10-12T22:00:00Z") // 00:00 on the 13th in Berlin
+
+        assertThat(Instant.parse("2026-10-13T00:30:00Z").isMeasurementDayAfterToday(now, berlin)).isFalse()
+        assertThat(Instant.parse("2026-10-14T08:00:00Z").isMeasurementDayAfterToday(now, berlin)).isTrue()
+        assertThat(Instant.parse("2026-10-12T08:00:00Z").isMeasurementDayAfterToday(now, berlin)).isFalse()
+    }
 }

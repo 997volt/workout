@@ -54,7 +54,6 @@ import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.at
 import com.example.androidapp.domain.model.statesSomething
-import com.example.androidapp.domain.model.withDay
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.DEFAULT_SCORED_PICK
@@ -71,7 +70,6 @@ import com.example.androidapp.ui.statistics.EnergyAdjustment
 import com.example.androidapp.ui.statistics.MetricKey
 import com.example.androidapp.ui.statistics.MetricRegistry
 import com.example.androidapp.ui.statistics.WeightGoalRow
-import java.time.Instant
 import java.time.ZoneId
 
 /** Measurements, reached from home (ROADMAP N32, two records since N113). */
@@ -529,17 +527,18 @@ private fun MeasurementDialog(
     var soreMuscles by rememberSaveable(stateSaver = SoreMusclesSaver) {
         mutableStateOf(initial?.soreMuscles.orEmpty())
     }
-    // The day is editable **only when correcting a record** (a request in use; no roadmap id covers it): a
-    // new entry belongs to today, and the form that corrects a record is the one that can say it was not
-    // today after all. The zone is the one the entry's day is read in, which is the device's.
+    // The day is editable **only when correcting a record** (B212): a new entry belongs to today, and the form
+    // that corrects a record is the one that can say it was not today after all. The zone is the one the entry's
+    // day is read in, which is the device's. The state is keyed on the record so a recomposition cannot re-read
+    // the stored day over a picked one (B214).
     val zone = ZoneId.systemDefault()
-    var measuredAt by remember { mutableStateOf(initial?.measuredAt ?: Instant.now()) }
+    val dayState = remember(initial) { MeasurementDayState(initial?.measuredAt, zone) }
 
     val draft = BodyMeasurement(
         // A blank id is a new entry, which the repository places by its day and kind; an edit keeps the
         // id it came from, which is how it corrects that row rather than writing beside it.
         id = initial?.id.orEmpty(),
-        measuredAt = measuredAt,
+        measuredAt = dayState.measuredAt,
         kind = kind,
         weightGrams = Weight.parseKilograms(weight),
         bodyFatTenths = tenths(bodyFat),
@@ -556,9 +555,9 @@ private fun MeasurementDialog(
         text = {
             MeasurementFormBody(
                 kind = kind,
-                day = initial?.let { measuredAt.atZone(zone).toLocalDate() },
-                dayText = HistoryFormat.date(measuredAt, zone = zone),
-                onPickDay = { picked -> measuredAt = measuredAt.withDay(picked, zone) },
+                day = initial?.let { dayState.day },
+                dayText = HistoryFormat.date(dayState.measuredAt, zone = zone),
+                onPickDay = { picked -> dayState.pick(picked) },
                 weight = weight,
                 onWeightChange = { weight = it },
                 bodyFat = bodyFat,
