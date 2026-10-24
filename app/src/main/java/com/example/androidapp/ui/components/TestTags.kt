@@ -914,6 +914,8 @@ object TestTags {
         const val CHART_EXPAND = "statistics_chart_expand"
         const val CHART_EXPANDED = "statistics_chart_expanded"
         const val CHART_EXPANDED_FIGURE = "statistics_chart_expanded_figure"
+        /** The expanded view's name, announced with the dialog (N206). */
+        const val CHART_EXPANDED_TITLE = "statistics_chart_expanded_title"
         const val CHART_COLLAPSE = "statistics_chart_collapse"
         const val CHART_MAX = "statistics_chart_max"
         const val CHOOSE_LIFT = "statistics_choose_lift"

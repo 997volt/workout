@@ -9,6 +9,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.history.HistoryFormat
 import java.time.ZoneId
@@ -71,6 +74,10 @@ internal fun ScrubReadout(reading: MetricReading, metric: MetricEntry) {
         text = HistoryFormat.date(reading.at, zone = ZoneId.systemDefault()) + " \u00b7 " +
             metric.unit.format(reading.value ?: 0.0),
         style = MaterialTheme.typography.labelMedium,
-        modifier = Modifier.testTag(TestTags.Statistics.SCRUB_READOUT),
+        // Announced as it changes (N206): a value that only exists for a sighted finger is a value half the
+        // readers of this screen cannot have.
+        modifier = Modifier
+            .testTag(TestTags.Statistics.SCRUB_READOUT)
+            .semantics { liveRegion = LiveRegionMode.Polite },
     )
 }

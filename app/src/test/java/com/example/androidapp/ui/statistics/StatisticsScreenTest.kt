@@ -8,6 +8,9 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithText
@@ -350,6 +353,8 @@ class StatisticsScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED_FIGURE).assertExists()
+        // N206: the dialog is named, so a screen reader announces what it opened.
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED_TITLE).assertExists()
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_COLLAPSE).performClick()
         composeTestRule.waitForIdle()
@@ -365,6 +370,9 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART).performTouchInput { down(centerLeft) }
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.SCRUB_READOUT).assertExists()
+        // N206: and it is announced, because a value only a sighted finger can have is half a feature.
+        composeTestRule.onNodeWithTag(TestTags.Statistics.SCRUB_READOUT)
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.LiveRegion))
     }
 
     @Test

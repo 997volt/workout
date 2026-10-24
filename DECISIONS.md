@@ -490,6 +490,11 @@ the rule; that one argues it.
   of the **window** a dialog is drawn in, not the display setting: `LocalConfiguration` can disagree with the space
   the dialog actually has, and lint has a rule for exactly that.
 
+- **The scrub's value is announced, and the expanded view says its name** (N206). A readout that only exists while a
+  finger is on the figure is a value a screen-reader user cannot have, so it carries a **polite live region**: the
+  value is read when it changes, not on every frame, and the figure itself stays decorative. The expanded dialog is
+  named ("Weight chart") rather than being an unnamed window with a close button.
+
 - **The point being read is drawn on the figure, not only named under it** (N203). The readout answered *which*
   value; the eye still had to find the place it belonged to. A line down the figure and an emphasised dot mark the
   same point the text names, drawn **before** the series so the dot is never hidden by the line it sits on, and

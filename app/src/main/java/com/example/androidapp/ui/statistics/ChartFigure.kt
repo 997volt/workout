@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -109,8 +110,16 @@ internal fun ChartExpandedDialog(
                 // close button exactly where it cannot be reached.
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // A dialog needs a name to be announced with (N206): a figure with nothing but a close button
+                    // is a window a screen reader calls "dialog" and nothing else.
+                    Text(
+                        text = stringResource(R.string.statistics_chart_figure, metric.label()),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.testTag(TestTags.Statistics.CHART_EXPANDED_TITLE),
+                    )
                     AppTextButton(
                         onClick = onDismiss,
                         modifier = Modifier.testTag(TestTags.Statistics.CHART_COLLAPSE),
