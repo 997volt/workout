@@ -1007,6 +1007,13 @@ object TestTags {
         /** The control the rare ranges sit behind (N197). */
         const val RANGE_MORE = "statistics_range_more"
 
+        /** The group chips the series menu opens on (N199). */
+        fun metricGroupChoice(group: String) = "statistics_metric_group_$group"
+
+        /** The one row the joint sites sit behind, and the row that goes back (N199). */
+        const val METRIC_JOINT = "statistics_metric_joint"
+        const val METRIC_JOINT_BACK = "statistics_metric_joint_back"
+
         fun metric(id: String) = "statistics_metric_$id"
     }
 

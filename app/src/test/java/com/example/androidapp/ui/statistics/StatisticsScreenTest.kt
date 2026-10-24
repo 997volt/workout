@@ -144,74 +144,62 @@ class StatisticsScreenTest {
     }
 
     @Test
-    fun thePicker_offersEverySeries_andReportsTheChoice() {
+    fun thePicker_offersEveryGroup_andReportsAChoice() {
+        // N199: one group's list is on screen at a time, so choosing a series is choosing its group and then
+        // the series. The registry's own test proves the list is complete; this is about the picker showing it.
         var chosen: MetricKey? = null
         setScreen(onSelectMetric = { chosen = it })
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC).performClick()
 
-        // One from each group, rather than all twenty-one: the registry's own test proves it is complete,
-        // and this is about the picker showing what the registry holds.
+        // The menu opens on the selected series' group — weight, from the state the screen was given — and a
+        // series from another group is not on that list.
         val volume = MetricKey.Exercise(ExerciseTrendMetric.VOLUME)
-        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(volume.id)).assertExists()
-        composeTestRule.onNodeWithTag(
-            TestTags.Statistics.metric(
-                MetricKey.Workout(
-                    com.example.androidapp.domain.model.TrendMetric.RPE,
-                ).id
-            )
-        ).assertExists()
-        composeTestRule.onNodeWithTag(
-            TestTags.Statistics.metric(
-                MetricKey.Tape(
-                    com.example.androidapp.domain.model.TapeSite.WAIST,
-                ).id
-            )
-        ).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(volume.id)).assertDoesNotExist()
 
-        // Scrolled to rather than clicked where it sits: the registry has grown past a screenful, so the
-        // picker scrolls and an off-screen item is a node that exists but takes no click (N130).
-        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(volume.id))
-            .performScrollTo()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.metricGroupChoice(MetricGroup.EXERCISE.name))
             .performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(volume.id)).performScrollTo().performClick()
 
         assertThat(chosen).isEqualTo(volume)
     }
-
     @Test
-    fun thePicker_saysWhichGroup_eachSeriesIsIn() {
-        // ROADMAP N130: the list went flat once two series could share a label — *Left knee* is both a
-        // workout series (a session's ratings for the lift chosen) and a per-lift one (that lift's own
-        // points) — and the trigger shows the label alone, so without headings the two are the same word
-        // before and after choosing.
+    fun thePicker_opensOnAGroup_andTheSitesSitBehindOneRow() {
+        // N199: four group choices, then that group's own list; the twenty-four joint sites are one row
+        // rather than twenty-four, at either level.
         setScreen()
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC).performClick()
 
-        val headingTops = MetricGroup.entries.map { group ->
-            composeTestRule.onNodeWithTag(TestTags.Statistics.metricGroup(group.name))
+        // The groups read in the enum's order, and the menu opens on the selected series' group.
+        val tops = MetricGroup.entries.map { group ->
+            composeTestRule.onNodeWithTag(TestTags.Statistics.metricGroupChoice(group.name))
                 .assertExists()
                 .getUnclippedBoundsInRoot()
                 .top
         }
-        // In the enum's order, which is the order the menu draws them in: a heading per group, not one
-        // label repeated wherever the registry happened to list it.
-        assertThat(headingTops).isInOrder()
+        assertThat(tops).isInOrder()
+        val rpe = MetricKey.Workout(com.example.androidapp.domain.model.TrendMetric.RPE)
+        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(rpe.id)).assertDoesNotExist()
 
-        // Both sites exist, and each sits after its own group's heading and before the next one — which is
-        // what makes the two *Left knee* entries distinguishable rather than the same words twice.
-        val workoutSite = composeTestRule.onNodeWithTag(
+        // The workout group lists its own series and one row for the sites.
+        composeTestRule.onNodeWithTag(TestTags.Statistics.metricGroupChoice(MetricGroup.WORKOUT.name))
+            .performClick()
+        composeTestRule.onNodeWithTag(
             TestTags.Statistics.metric(MetricKey.JointSite(Joint.KNEE, Side.LEFT).id),
-        ).assertExists().getUnclippedBoundsInRoot().top
-        val liftSite = composeTestRule.onNodeWithTag(
-            TestTags.Statistics.metric(MetricKey.ExerciseJointSite(Joint.KNEE, Side.LEFT).id),
-        ).assertExists().getUnclippedBoundsInRoot().top
-        assertThat(workoutSite).isGreaterThan(headingTops[MetricGroup.WORKOUT.ordinal])
-        assertThat(workoutSite).isLessThan(headingTops[MetricGroup.EXERCISE.ordinal])
-        assertThat(liftSite).isGreaterThan(headingTops[MetricGroup.EXERCISE.ordinal])
-        assertThat(liftSite).isLessThan(headingTops[MetricGroup.BODY.ordinal])
-    }
+        ).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC_JOINT).performClick()
 
+        // The site is two taps behind the row, and the per-lift twin stays in the other group's list.
+        val workoutSite = TestTags.Statistics.metric(MetricKey.JointSite(Joint.KNEE, Side.LEFT).id)
+        composeTestRule.onNodeWithTag(workoutSite).assertExists()
+        composeTestRule.onNodeWithTag(
+            TestTags.Statistics.metric(MetricKey.ExerciseJointSite(Joint.KNEE, Side.LEFT).id),
+        ).assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC_JOINT_BACK).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC_JOINT).assertExists()
+    }
     @Test
     fun choosingCustom_asksForTheDatesBeforeItApplies() {
         // A chip that selected an unbounded window would make the chart look broken rather than empty, so

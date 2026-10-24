@@ -483,6 +483,13 @@ the rule; that one argues it.
 - **A gap is distance, and the line breaks at it** (N37). On a time axis a straight
   segment across missing weeks is a claim about weeks nobody measured; this is where the
   app deliberately differs from the tool whose shape it borrows.
+- **The series menu opens on a group, and a joint site is one row away** (N199). The four groups are the only
+  split whose size never changes, so the menu is a group choice and then that group's list rather than one
+  eighty-item column with headings — the headings said *which kind* of series a word was, which a group choice
+  says better. **The twenty-four joint sites are one row**: they are a second question ("which site?") behind
+  *Joint pain*, at the workout level and the per-lift one, so both lists are their own series. A search still
+  reaches a site directly, because a filter that hid the thing typed is not a filter.
+
 - **The series menu can be searched, and the search matches the group's name too** (N198). The menu is every
   series the registry holds, so a list of headings was never going to be short enough: the headings say which
   *kind* of thing a word is (N130), and the filter says which one you meant. Typing "body" finds weight without
