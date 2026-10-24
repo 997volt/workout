@@ -509,10 +509,13 @@ the rule; that one argues it.
   it. The axis's two end dates said nothing about the time between them on a range wider than a week, so a tick at
   the middle is named as well; the ticks are real `Text` beside the figure for the same reason the axis is.
 
-- **The scrub's value is announced, and the expanded view says its name** (N206). A readout that only exists while a
-  finger is on the figure is a value a screen-reader user cannot have, so it carries a **polite live region**: the
-  value is read when it changes, not on every frame, and the figure itself stays decorative. The expanded dialog is
-  named ("Weight chart") rather than being an unnamed window with a close button.
+- **The scrub's value is announced, and the expanded view says its name** (N206, B213). A readout that only exists
+  while a finger is on the figure is a value a screen-reader user cannot have, so it carries a **polite live
+  region**: the value is read when it changes, not on every frame. The canvas stays decorative — it is blanked for
+  the reader — but the **frame** around it carries *Previous reading* and *Next reading* custom actions, because an
+  announcement a finger alone can move is still half a feature; the steps go to the next **recorded** reading, skip
+  a gap, and stop at the ends rather than wrapping. The expanded dialog is **named as a pane title** ("Weight
+  chart"), not only as a heading inside it, so it is not an unnamed window with a close button.
 
 - **The point being read is drawn on the figure, not only named under it** (N203). The readout answered *which*
   value; the eye still had to find the place it belonged to. A line down the figure and an emphasised dot mark the

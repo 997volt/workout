@@ -65,6 +65,24 @@ internal fun scrubPoint(
 ): ScrubPoint? = nearestReadingIndex(projected, fraction)?.let { scrubPointAt(projected, readings, it) }
 
 /**
+ * The recorded index [step] places from [current], or the first/last when nothing is being read (B213).
+ *
+ * Stops at the ends rather than wrapping: a reader on the last reading who asks for the next one stays where
+ * they are. Null only when the figure has nothing recorded at all.
+ */
+internal fun recordedNeighbour(projected: List<ChartPoint>, current: Int?, step: Int): Int? {
+    val recorded = projected.indices.filter { projected[it].value != null }
+    if (recorded.isEmpty()) return null
+    if (current == null) return if (step > 0) recorded.first() else recorded.last()
+    val moved = if (step > 0) {
+        recorded.firstOrNull { it > current }
+    } else {
+        recorded.lastOrNull { it < current }
+    }
+    return moved ?: current
+}
+
+/**
  * Which gesture a drag that has moved [total] from its down is: the figure's (`true`), the screen's (`false`),
  * or undecided while it is still inside the touch slop (B211).
  *

@@ -51,10 +51,11 @@ unreleased.
   sites collapsed to **one row** at each level, grouped under their joint. Nothing about the series, the store or
   the goal line moved.
 
-- **The statistics figure says where you are pointing, and where you are in time** (N203, N205, N206, N208, N209). The
-  scrub names the reading under the finger **and marks it on the figure** — a line down to the axis and an
-  emphasised dot — and the readout is announced to a screen reader instead of only seen. The axis names a tick
-  between its ends, the summary's three numbers follow the figure instead of preceding it, the joint sites are
+- **The statistics figure says where you are pointing, and where you are in time** (N203, N205, N206, N208, N209, B213).
+  The scrub names the reading under the finger **and marks it on the figure** — a line down to the axis and an
+  emphasised dot — and the readout is announced to a screen reader instead of only seen, with **Previous reading**
+  and **Next reading** actions on the figure so a reader who cannot touch it can still move it. The axis names a
+  tick between its ends, the summary's three numbers follow the figure instead of preceding it, the joint sites are
   grouped under their joint, the expanded view says which series it shows and carries the card's own extras, and the
   moving-average window is one control naming the window on screen rather than three chips in the card.
 

@@ -1,6 +1,8 @@
 package com.example.androidapp.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -35,7 +37,8 @@ import com.example.androidapp.ui.statistics.scrubbable
  * cliff. That policy belongs to the metric, so it lives in the registry beside the metric rather than here.
  *
  * Marked as decorative: the labels and the caption carry the numbers, so a screen reader hears the sentence
- * rather than a description of a picture it cannot see.
+ * rather than a description of a picture it cannot see. The frame above it is where a caller puts the figure's
+ * own actions, outside this cleared node (B213).
  */
 @Composable
 fun TrendChart(
@@ -167,24 +170,37 @@ fun TrendChartFrame(
     onScrub: ((Float?) -> Unit)? = null,
     /** The point the scrub is naming, drawn on the figure as well (N203). */
     marker: ChartMarker? = null,
+    /**
+     * Semantics on the frame rather than on the canvas (B213).
+     *
+     * The canvas is blanked for a screen reader on purpose, so the figure's own actions — a reader stepping
+     * through the readings — live on the frame that holds it, outside the cleared node.
+     */
+    semantics: Modifier = Modifier,
 ) {
-    TrendChart(
-        points = points,
-        minValue = minValue,
-        maxValue = maxValue,
-        bars = bars,
-        average = average,
-        trend = trend,
-        movingAverage = movingAverage,
-        goals = goals,
-        marker = marker,
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .padding(top = 12.dp)
-            .then(if (onScrub == null) Modifier else Modifier.scrubbable(onScrub))
+            .then(semantics)
             .testTag(testTag),
-    )
+    ) {
+        TrendChart(
+            points = points,
+            minValue = minValue,
+            maxValue = maxValue,
+            bars = bars,
+            average = average,
+            trend = trend,
+            movingAverage = movingAverage,
+            goals = goals,
+            marker = marker,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 12.dp)
+                .then(if (onScrub == null) Modifier else Modifier.scrubbable(onScrub)),
+        )
+    }
 }
 
 /** A trend line drawn across the whole width: its value at the first reading and at the last. */

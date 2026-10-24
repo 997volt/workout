@@ -82,4 +82,15 @@ class ChartScrubTest {
         assertThat(scrubDirection(Offset(40f, 30f), slop = 8f)).isTrue()
         assertThat(scrubDirection(Offset(30f, 40f), slop = 8f)).isFalse()
     }
+
+    @Test
+    fun steppingMovesBetweenRecordedReadings_andStopsAtTheEnds() {
+        // B213: the two actions a screen reader uses instead of a finger. The gap is stepped over, and the
+        // ends hold rather than wrapping.
+        assertThat(recordedNeighbour(projected, current = null, step = 1)).isEqualTo(0)
+        assertThat(recordedNeighbour(projected, current = 0, step = 1)).isEqualTo(2)
+        assertThat(recordedNeighbour(projected, current = 2, step = 1)).isEqualTo(2)
+        assertThat(recordedNeighbour(projected, current = 2, step = -1)).isEqualTo(0)
+        assertThat(recordedNeighbour(projected, current = null, step = -1)).isEqualTo(2)
+    }
 }

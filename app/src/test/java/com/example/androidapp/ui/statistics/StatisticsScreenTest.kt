@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -377,6 +378,9 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED_FIGURE).assertExists()
         // N206: the dialog is named, so a screen reader announces what it opened.
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED_TITLE).assertExists()
+        // B213: and the window itself carries the name, rather than only the heading inside it.
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED)
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.PaneTitle))
         // N204: the expanded view carries the card's extras — its dates are on screen twice now.
         composeTestRule.onAllNodesWithTag(TestTags.Statistics.CHART_FIRST_DATE).assertCountEquals(2)
 
@@ -402,6 +406,23 @@ class StatisticsScreenTest {
         // reading, drawn against a figure that is no longer being pointed at.
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART).performTouchInput { up() }
         composeTestRule.onNodeWithTag(TestTags.Statistics.SCRUB_READOUT).assertDoesNotExist()
+    }
+
+    @Test
+    fun aScreenReaderCanStepThroughTheReadings() {
+        // B213: the readout is announced, but only a finger could move it. The figure carries the two steps, so
+        // the reader N206 named can read every point on it without a touch.
+        setScreen()
+
+        val actions = composeTestRule.onNodeWithTag(TestTags.Statistics.CHART)
+            .fetchSemanticsNode()
+            .config[SemanticsActions.CustomActions]
+        assertThat(actions).hasSize(2)
+
+        actions[1].action()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.SCRUB_READOUT).assertExists()
     }
 
     @Test

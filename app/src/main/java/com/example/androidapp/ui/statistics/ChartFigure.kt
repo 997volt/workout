@@ -22,6 +22,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -51,6 +55,17 @@ internal fun ChartFigure(
     // naming whatever now sits at that place.
     var scrub by remember(series) { mutableStateOf<ScrubPoint?>(null) }
 
+    // How a screen reader moves the readout (B213): the canvas is blanked, so the two steps live on the frame.
+    val previousLabel = stringResource(R.string.statistics_chart_previous_reading)
+    val nextLabel = stringResource(R.string.statistics_chart_next_reading)
+    fun read(index: Int?) {
+        scrub = index?.let { scrubPointAt(overlay.projected, series.readings, it) }
+    }
+
+    fun step(by: Int) {
+        read(recordedNeighbour(overlay.projected, scrub?.index, by))
+    }
+
     Row(modifier = Modifier.fillMaxWidth()) {
         ChartAxis(axis = overlay.axis, format = { metric.unit.format(it) })
         TrendChartFrame(
@@ -66,7 +81,12 @@ internal fun ChartFigure(
             movingAverage = overlay.mean,
             trend = overlay.fittedLine,
             height = height,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).semantics {
+                customActions = listOf(
+                    CustomAccessibilityAction(previousLabel) { step(-1); true },
+                    CustomAccessibilityAction(nextLabel) { step(+1); true },
+                )
+            },
             // The nearest recorded reading under the finger (N200): the same points the line is drawn through, so
             // a readout cannot name a value the figure does not show.
             onScrub = { fraction ->
@@ -103,11 +123,15 @@ internal fun ChartExpandedDialog(
     val density = LocalDensity.current
     val windowHeight = LocalWindowInfo.current.containerSize.height
     val height = with(density) { (windowHeight * EXPANDED_CHART_FRACTION).toDp() }
+    // The dialog's name, said twice on purpose: once as a pane title for a screen reader (B213), once as the
+    // heading a sighted reader sees.
+    val title = stringResource(R.string.statistics_chart_figure, metric.label())
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag(TestTags.Statistics.CHART_EXPANDED),
+                .testTag(TestTags.Statistics.CHART_EXPANDED)
+                .semantics { paneTitle = title },
             shape = MaterialTheme.shapes.large,
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -121,7 +145,7 @@ internal fun ChartExpandedDialog(
                     // A dialog needs a name to be announced with (N206): a figure with nothing but a close button
                     // is a window a screen reader calls "dialog" and nothing else.
                     Text(
-                        text = stringResource(R.string.statistics_chart_figure, metric.label()),
+                        text = title,
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.testTag(TestTags.Statistics.CHART_EXPANDED_TITLE),
                     )

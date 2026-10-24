@@ -325,6 +325,9 @@
     <string name="statistics_chart_expand">Expand</string>
     <string name="statistics_chart_collapse">Close</string>
     <string name="statistics_chart_figure">%1$s chart</string>
+    <!-- The two ways a screen reader moves the scrub, since a finger cannot (B213). -->
+    <string name="statistics_chart_previous_reading">Previous reading</string>
+    <string name="statistics_chart_next_reading">Next reading</string>
     <string name="range_custom">Custom</string>
     <string name="statistics_overview_workouts">Workouts</string>
     <string name="statistics_overview_volume">Volume</string>
