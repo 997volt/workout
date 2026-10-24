@@ -1026,6 +1026,9 @@ object TestTags {
         const val METRIC_JOINT = "statistics_metric_joint"
         const val METRIC_JOINT_BACK = "statistics_metric_joint_back"
 
+        /** A joint's heading over its sides (N205). */
+        fun metricJointHeading(joint: String) = "statistics_metric_joint_$joint"
+
         fun metric(id: String) = "statistics_metric_$id"
     }
 

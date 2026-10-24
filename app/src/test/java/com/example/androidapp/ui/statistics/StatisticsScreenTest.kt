@@ -197,6 +197,8 @@ class StatisticsScreenTest {
         // The site is two taps behind the row, and the per-lift twin stays in the other group's list.
         val workoutSite = TestTags.Statistics.metric(MetricKey.JointSite(Joint.KNEE, Side.LEFT).id)
         composeTestRule.onNodeWithTag(workoutSite).assertExists()
+        // N205: the sites sit under their joint, so the list is a choice rather than a scroll.
+        composeTestRule.onNodeWithTag(TestTags.Statistics.metricJointHeading(Joint.KNEE.name)).assertExists()
         composeTestRule.onNodeWithTag(
             TestTags.Statistics.metric(MetricKey.ExerciseJointSite(Joint.KNEE, Side.LEFT).id),
         ).assertDoesNotExist()

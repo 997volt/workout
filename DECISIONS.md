@@ -490,6 +490,10 @@ the rule; that one argues it.
   of the **window** a dialog is drawn in, not the display setting: `LocalConfiguration` can disagree with the space
   the dialog actually has, and lint has a rule for exactly that.
 
+- **A site list is grouped by joint** (N205). Twenty-four rows in one column is a scroll, not a choice: the reader
+  who opens *Joint pain* already has "which joint" in mind, so each joint is a heading with its three sides under
+  it — and the headings are `Text`, like every other thing a screen reader has to read in this menu.
+
 - **The summary numbers follow the figure, and the time axis has a middle** (N208, N209). Three numbers between the
   metric and the chart cost the figure a row, and they summarise the window the figure draws — so they come after
   it. The axis's two end dates said nothing about the time between them on a range wider than a week, so a tick at

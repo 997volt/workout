@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import com.example.androidapp.R
+import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
@@ -179,8 +180,20 @@ private fun SiteRows(
             onClick = onBack,
             modifier = Modifier.testTag(TestTags.Statistics.METRIC_JOINT_BACK),
         )
-        sites.forEach { (entry, label) ->
-            MetricMenuItem(label = label, key = entry.key, onSelect = onSelect)
+        // A heading per joint, three sides under it (N205): one list of twenty-four sites is a scroll rather than
+        // a choice, and the joint is the question the reader already has when they open this.
+        sites.groupBy { (entry, _) -> entry.jointOf() }.forEach { (joint, sides) ->
+            Text(
+                text = joint.label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .testTag(TestTags.Statistics.metricJointHeading(joint.name)),
+            )
+            sides.forEach { (entry, label) ->
+                MetricMenuItem(label = label, key = entry.key, onSelect = onSelect)
+            }
         }
     }
 }
@@ -216,6 +229,13 @@ private fun MetricMenuItem(label: String, key: MetricKey, onSelect: (MetricKey) 
         onClick = { onSelect(key) },
         modifier = Modifier.testTag(TestTags.Statistics.metric(key.id)),
     )
+}
+
+/** The joint a site row names, at either level (N130, N205). */
+private fun MetricEntry.jointOf(): Joint = when (val site = key) {
+    is MetricKey.JointSite -> site.joint
+    is MetricKey.ExerciseJointSite -> site.joint
+    else -> error("not a joint site: $key")
 }
 
 /** True for the two keys that name a joint site, at either level (N130). */
