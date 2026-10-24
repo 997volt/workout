@@ -1,11 +1,11 @@
 package com.example.androidapp.ui.measurements
 
 import com.google.common.truth.Truth.assertThat
+import org.junit.Test
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import org.junit.Test
 
 /**
  * The day an edit form holds, and what a picked day does to it (B212, B214).

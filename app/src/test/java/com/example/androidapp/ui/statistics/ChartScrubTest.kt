@@ -4,8 +4,8 @@ import androidx.compose.ui.geometry.Offset
 import com.example.androidapp.ui.components.ChartPoint
 import com.example.androidapp.ui.components.scrubDirection
 import com.google.common.truth.Truth.assertThat
-import java.time.Instant
 import org.junit.Test
+import java.time.Instant
 
 /**
  * Which reading a finger on the figure is over (N200).

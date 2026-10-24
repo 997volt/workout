@@ -1,5 +1,10 @@
 package com.example.androidapp.ui.statistics
 
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -7,20 +12,15 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onChildren
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.Equipment
@@ -188,6 +188,7 @@ class StatisticsScreenTest {
 
         assertThat(chosen).isEqualTo(volume)
     }
+
     @Test
     fun thePicker_opensOnAGroup_andTheSitesSitBehindOneRow() {
         // N199: four group choices, then that group's own list; the twenty-four joint sites are one row
@@ -227,6 +228,7 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC_JOINT_BACK).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC_JOINT).assertExists()
     }
+
     @Test
     fun choosingCustom_asksForTheDatesBeforeItApplies() {
         // A chip that selected an unbounded window would make the chart look broken rather than empty, so

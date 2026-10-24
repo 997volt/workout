@@ -1,11 +1,11 @@
 package com.example.androidapp.domain.model
 
 import com.google.common.truth.Truth.assertThat
+import org.junit.Test
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
-import org.junit.Test
 
 /**
  * Which local day an entry belongs to, and whether a day's daily record already exists (ROADMAP N114).

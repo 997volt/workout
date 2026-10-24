@@ -12,8 +12,8 @@ import com.example.androidapp.domain.model.isDailyOn
 import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.ui.statistics.BodyMetric
-import com.example.androidapp.ui.statistics.GoalPeriodOutcome
 import com.example.androidapp.ui.statistics.EnergyAdjustment
+import com.example.androidapp.ui.statistics.GoalPeriodOutcome
 import com.example.androidapp.ui.statistics.MetricKey
 import com.example.androidapp.ui.statistics.MetricReading
 import com.example.androidapp.ui.statistics.MetricSeries

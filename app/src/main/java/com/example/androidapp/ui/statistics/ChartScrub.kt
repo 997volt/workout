@@ -45,10 +45,14 @@ internal fun scrubPointAt(
     readings: List<MetricReading>,
     index: Int,
 ): ScrubPoint? {
-    val point = projected.getOrNull(index) ?: return null
-    val reading = readings.getOrNull(index) ?: return null
-    val value = reading.value ?: return null
-    return ScrubPoint(index = index, x = point.x, at = reading.at, value = value)
+    val point = projected.getOrNull(index)
+    val reading = readings.getOrNull(index)
+    val value = reading?.value
+    return if (point == null || reading == null || value == null) {
+        null
+    } else {
+        ScrubPoint(index = index, x = point.x, at = reading.at, value = value)
+    }
 }
 
 /** The point nearest [fraction] across the figure, or null when nothing recorded is there (B208). */
@@ -66,14 +70,17 @@ internal fun scrubPoint(
  */
 internal fun recordedNeighbour(projected: List<ChartPoint>, current: Int?, step: Int): Int? {
     val recorded = projected.indices.filter { projected[it].value != null }
-    if (recorded.isEmpty()) return null
-    if (current == null) return if (step > 0) recorded.first() else recorded.last()
-    val moved = if (step > 0) {
-        recorded.firstOrNull { it > current }
-    } else {
-        recorded.lastOrNull { it < current }
+    return when {
+        recorded.isEmpty() -> null
+        current == null -> if (step > 0) recorded.first() else recorded.last()
+        else -> (
+            if (step > 0) {
+                recorded.firstOrNull { it > current }
+            } else {
+                recorded.lastOrNull { it < current }
+            }
+            ) ?: current
     }
-    return moved ?: current
 }
 
 /**

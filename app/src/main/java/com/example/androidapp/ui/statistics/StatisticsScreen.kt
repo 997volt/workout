@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -101,7 +101,6 @@ fun StatisticsScreen(
     onSelectExercise: (String) -> Unit = {},
     /** Sets or clears the chosen metric's target (ROADMAP N39). */
     onSetGoal: (Double?) -> Unit = {},
-    /** Sets or clears the **weight** goal, kind and all (ROADMAP N135). */
     /**
      * Opens body measurements (ROADMAP N35).
      *
@@ -186,7 +185,7 @@ fun StatisticsScreen(
 @Composable
 private fun StatisticsBody(
     state: StatisticsUiState,
-    series: com.example.androidapp.ui.statistics.MetricSeries?,
+    series: MetricSeries?,
     onSelectExercise: (String) -> Unit,
     onSetGoal: (Double?) -> Unit,
 ) {
@@ -311,7 +310,6 @@ private val COMMON_RANGES = listOf(
     RangeKind.LAST_3_MONTHS,
 )
 
-
 @Composable
 private fun RangeChip(kind: RangeKind, selected: Boolean, onSelectRange: (StatisticsRange) -> Unit) {
     AppFilterChip(
@@ -330,10 +328,6 @@ private fun RangeChip(kind: RangeKind, selected: Boolean, onSelectRange: (Statis
         testTag = TestTags.Statistics.range(kind.name),
     )
 }
-
-
-
-
 
 /** The three numbers, and no more (ROADMAP N35). */
 @Composable
@@ -590,10 +584,6 @@ private fun SeriesChart(
     }
 }
 
-
-
-
-
 /**
  * The first and last moments that recorded something, which is what the axis labels span.
  *
@@ -628,9 +618,6 @@ private fun planLines(overlay: ChartOverlay, metric: MetricEntry): List<String> 
         stringResource(R.string.statistics_plan_target, plan, metric.unit.format(level), unit)
     }
 }
-
-
-/** The ends of the axis, so the chart can be read without the readings list. */
 
 /**
  * The custom range, with its From and To (ROADMAP N35).
@@ -811,5 +798,3 @@ private fun StatisticsTopBar(
         },
     )
 }
-
-

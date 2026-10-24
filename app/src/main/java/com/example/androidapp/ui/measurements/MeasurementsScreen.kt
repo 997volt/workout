@@ -47,22 +47,22 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
-import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SORE_MUSCLE_GROUPS
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
+import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.at
 import com.example.androidapp.domain.model.statesSomething
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.DEFAULT_SCORED_PICK
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.ScoredPick
 import com.example.androidapp.ui.components.ScoredPickStrings
 import com.example.androidapp.ui.components.ScoredPicksEditor
 import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.statistics.BodyMetric
@@ -232,8 +232,6 @@ fun MeasurementsScreen(
         )
     }
 }
-
-
 
 /**
  * The bar over the list: back, the title, and the one control that changes the mode (ROADMAP N132).
@@ -473,6 +471,7 @@ private const val EMPTY_KEY = "measurements_empty"
 
 /** The goal's row is the list's own first item, so it scrolls with the readings it is about. */
 private const val GOAL_KEY = "measurements_weight_goal"
+
 /** Clearance for the add button, which floats over the list's last row. */
 private val LIST_FOOT_CLEARANCE = 88.dp
 
@@ -584,7 +583,6 @@ private fun MeasurementDialog(
         },
     )
 }
-
 
 private fun kindAddLabel(kind: MeasurementKind): Int = when (kind) {
     MeasurementKind.DAILY -> R.string.measurements_add_daily

@@ -39,11 +39,8 @@ internal fun Modifier.scrubbable(onScrub: (Float?) -> Unit): Modifier = pointerI
         onScrub(down.fraction(size.width))
         // Null while the gesture could still become either one.
         var direction: Boolean? = null
-        var pressed = true
-        while (pressed) {
-            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-            pressed = change.pressed
-            if (!pressed) break
+        var change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+        while (change != null && change.pressed) {
             if (direction == null) {
                 direction = scrubDirection(
                     total = change.position - down.position,
@@ -55,6 +52,7 @@ internal fun Modifier.scrubbable(onScrub: (Float?) -> Unit): Modifier = pointerI
                 onScrub(change.fraction(size.width))
                 if (direction == true) change.consume()
             }
+            change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
         }
         onScrub(null)
     }

@@ -153,6 +153,13 @@ fun TrendChartFrame(
     maxValue: Double,
     testTag: String,
     modifier: Modifier = Modifier,
+    /**
+     * Semantics on the frame rather than on the canvas (B213).
+     *
+     * The canvas is blanked for a screen reader on purpose, so the figure's own actions — a reader stepping
+     * through the readings — live on the frame that holds it, outside the cleared node.
+     */
+    semanticsModifier: Modifier = Modifier,
     bars: Boolean = false,
     average: Double? = null,
     trend: ChartLine? = null,
@@ -169,19 +176,12 @@ fun TrendChartFrame(
     onScrub: ((Float?) -> Unit)? = null,
     /** The point the scrub is naming, drawn on the figure as well (N203). */
     marker: ChartMarker? = null,
-    /**
-     * Semantics on the frame rather than on the canvas (B213).
-     *
-     * The canvas is blanked for a screen reader on purpose, so the figure's own actions — a reader stepping
-     * through the readings — live on the frame that holds it, outside the cleared node.
-     */
-    semantics: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .then(semantics)
+            .then(semanticsModifier)
             .testTag(testTag),
     ) {
         TrendChart(

@@ -898,17 +898,21 @@ object TestTags {
         const val OVERVIEW_VOLUME = "statistics_overview_volume"
         const val OVERVIEW_RECORDS = "statistics_overview_records"
         const val METRIC = "statistics_metric"
+
         /** The metric menu's filter field and its empty answer (N198). */
         const val METRIC_SEARCH = "statistics_metric_search"
         const val METRIC_NO_MATCHES = "statistics_metric_no_matches"
         const val CHART = "statistics_chart"
         const val CHART_FIRST_DATE = "statistics_chart_first_date"
         const val CHART_LAST_DATE = "statistics_chart_last_date"
+
         /** The tick between the axis's ends (N209). */
         const val CHART_MIDDLE_DATE = "statistics_chart_middle_date"
         const val CHART_MIN = "statistics_chart_min"
+
         /** The figure's scale: the gutter holding its top, middle and foot (N196). */
         const val CHART_AXIS = "statistics_chart_axis"
+
         /** The date and value a finger on the figure is over (N200). */
         const val SCRUB_READOUT = "statistics_scrub_readout"
 
@@ -916,8 +920,10 @@ object TestTags {
         const val CHART_EXPAND = "statistics_chart_expand"
         const val CHART_EXPANDED = "statistics_chart_expanded"
         const val CHART_EXPANDED_FIGURE = "statistics_chart_expanded_figure"
+
         /** The expanded view's scrolling body, so a short window is proved to scroll rather than clip (B219). */
         const val CHART_EXPANDED_BODY = "statistics_chart_expanded_body"
+
         /** The expanded view's name, announced with the dialog (N206). */
         const val CHART_EXPANDED_TITLE = "statistics_chart_expanded_title"
         const val CHART_COLLAPSE = "statistics_chart_collapse"

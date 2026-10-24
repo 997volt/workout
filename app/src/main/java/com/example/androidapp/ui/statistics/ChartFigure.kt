@@ -8,9 +8,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -84,10 +84,17 @@ internal fun ChartFigure(
             movingAverage = overlay.mean,
             trend = overlay.fittedLine,
             height = height,
-            modifier = Modifier.weight(1f).semantics {
+            modifier = Modifier.weight(1f),
+            semanticsModifier = Modifier.semantics {
                 customActions = listOf(
-                    CustomAccessibilityAction(previousLabel) { step(-1); true },
-                    CustomAccessibilityAction(nextLabel) { step(+1); true },
+                    CustomAccessibilityAction(previousLabel) {
+                        step(-1)
+                        true
+                    },
+                    CustomAccessibilityAction(nextLabel) {
+                        step(+1)
+                        true
+                    },
                 )
             },
             // The nearest recorded reading under the finger (N200): the same points the line is drawn through, so
@@ -206,40 +213,40 @@ internal fun ChartExtras(
     onExpand: (() -> Unit)? = null,
 ) {
     Column {
-    MovingAveragePicker(period = period, onSelect = onSelectPeriod)
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        dates.forEachIndexed { index, date ->
-            Text(
-                text = date,
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.testTag(
-                    when (index) {
-                        0 -> TestTags.Statistics.CHART_FIRST_DATE
-                        1 -> TestTags.Statistics.CHART_MIDDLE_DATE
-                        else -> TestTags.Statistics.CHART_LAST_DATE
-                    },
-                ),
-            )
-        }
-    }
-    if (planLines.isNotEmpty()) {
-        Text(
-            text = stringResource(R.string.statistics_plan_targets, planLines.joinToString(" · ")),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.testTag(TestTags.Statistics.PLAN_TARGETS),
-        )
-    }
-    if (onExpand != null) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            AppTextButton(
-                onClick = onExpand,
-                modifier = Modifier.testTag(TestTags.Statistics.CHART_EXPAND),
-            ) {
-                Text(stringResource(R.string.statistics_chart_expand))
+        MovingAveragePicker(period = period, onSelect = onSelectPeriod)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            dates.forEachIndexed { index, date ->
+                Text(
+                    text = date,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.testTag(
+                        when (index) {
+                            0 -> TestTags.Statistics.CHART_FIRST_DATE
+                            1 -> TestTags.Statistics.CHART_MIDDLE_DATE
+                            else -> TestTags.Statistics.CHART_LAST_DATE
+                        },
+                    ),
+                )
             }
         }
-    }
+        if (planLines.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.statistics_plan_targets, planLines.joinToString(" · ")),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag(TestTags.Statistics.PLAN_TARGETS),
+            )
+        }
+        if (onExpand != null) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                AppTextButton(
+                    onClick = onExpand,
+                    modifier = Modifier.testTag(TestTags.Statistics.CHART_EXPAND),
+                ) {
+                    Text(stringResource(R.string.statistics_chart_expand))
+                }
+            }
+        }
     }
 }
 
