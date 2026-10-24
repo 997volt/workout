@@ -530,6 +530,9 @@ the rule; that one argues it.
   is named below it as a date and a value. The readout is real `Text` beside the canvas rather than paint on it,
   because the canvas is blanked for a screen reader; and the arithmetic is a pure function (`nearestReadingIndex`)
   with its own test, because "did the touch read the right point" is not something a gesture test can assert.
+  **A drag that is more vertical than horizontal belongs to the screen** (B211): the scrub reads only the
+  horizontal place, and consuming a drag that was the scrollable's made the figure a dead zone on the page. Nothing
+  is consumed until the direction is past the touch slop, so the first move that says "scroll" reaches the column.
 
 - **The series menu opens on a group, and a joint site is one row away** (N199). The four groups are the only
   split whose size never changes, so the menu is a group choice and then that group's list rather than one
@@ -1472,7 +1475,11 @@ the rule; that one argues it.
   of each kind (N32, N113), so a move onto a day that already has one is refused in the repository rather
   than left to the form, the way the restore path already refuses the same collision (N133) — the row keeps
   its id, so `find` cannot see the day it is moving onto, and this is the one write that could put two live
-  entries on a day.
+  entries on a day. **A day after today is refused** (B212): a record is of the past, so the calendar offers
+  nothing later than today and the repository refuses a future day at the save boundary — a reading that has not
+  happened would be plotted by the charts and read as the newest one by the rate verdict. The calendar is the
+  same `DatePrompt` the statistics range asks for (B217), which is how the UTC-midnight reading of a picker's
+  millis has one statement instead of two.
 
 - **A day starts folded, and the fold is the form's memory.** A program of fifteen days is a lot of
   scrolling, so a day's head — its title, what it holds, and its weekday — reads as one line and the

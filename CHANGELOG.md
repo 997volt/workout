@@ -53,11 +53,29 @@ unreleased.
 
 - **The statistics figure says where you are pointing, and where you are in time** (N203, N205, N206, N208, N209, B213).
   The scrub names the reading under the finger **and marks it on the figure** — a line down to the axis and an
-  emphasised dot — and the readout is announced to a screen reader instead of only seen, with **Previous reading**
-  and **Next reading** actions on the figure so a reader who cannot touch it can still move it. The axis names a
-  tick between its ends, the summary's three numbers follow the figure instead of preceding it, the joint sites are
+  emphasised dot — and the readout is announced to a screen reader instead of only seen. The axis names a tick
+  between its ends, the summary's three numbers follow the figure instead of preceding it, the joint sites are
   grouped under their joint, the expanded view says which series it shows and carries the card's own extras, and the
   moving-average window is one control naming the window on screen rather than three chips in the card.
+
+### Fixed
+
+- **The import helper counts a line without losing it** (B206, B207). Clearing a line's *Sets* count to zero used to
+  clamp to one and delete the rest of its sets; zero, a blank, a fraction and a negative now all leave the line
+  alone. Growing a line that was not the workout's last appended its copies after the last set, so the exercise's
+  order became *2 · 2 · 2* where *4 · 2* was asked for and the line split in two on the next render; the copies are
+  inserted inside the line now, and the sets after it shift along.
+
+- **The statistics figure answers the finger and the screen** (B208, B210, B211, B213, B219). A drag on the figure
+  scrolls the page again instead of dying on a scrub it did not want; the scrub holds the reading it names, so a
+  range or metric changed under a held finger cannot name another series' value or crash; and the figure carries
+  *Previous reading* / *Next reading* actions, with the expanded dialog named as a pane title, so a screen reader can
+  move the readout without a touch. The series search reaches **every group** and each hit names its own, and the
+  expanded view scrolls its body on a short window instead of clipping the extras.
+
+- **A measurement cannot be dated after today** (B212). The calendar offers today and every day before it, and the
+  save refuses a future day: a record is of the past, and a reading that has not happened would be plotted by the
+  charts and read as the newest one by the rate verdict.
 
 ## [2.13] — 2026-10-22 (versionCode 33)
 
