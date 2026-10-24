@@ -18,8 +18,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,7 +26,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +54,7 @@ import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.ChartLine
 import com.example.androidapp.ui.components.ChartPoint
 import com.example.androidapp.ui.components.ChartSegment
+import com.example.androidapp.ui.components.DatePrompt
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
@@ -65,7 +63,6 @@ import com.example.androidapp.ui.theme.EyebrowStyle
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
 
 /** The Statistics tab (ROADMAP N35). */
 @Composable
@@ -690,47 +687,15 @@ private fun CustomRangeDialog(
     )
 
     picking?.let { choosing ->
+        // The calendar is shared with the measurement day field (B217); this end of a range may be any day.
         DatePrompt(
-            initial = (if (choosing) from else to)?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli(),
+            initial = if (choosing) from else to,
             onDismiss = { picking = null },
             onPick = { date ->
                 if (choosing) from = date else to = date
                 picking = null
             },
         )
-    }
-}
-
-/**
- * One calendar, for one end of the range.
- *
- * Its own composable rather than a block inside the dialog: the dialog has a question, an answer and two
- * dates to explain, and the calendar is a screen-sized thing that happens to be nested in it.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DatePrompt(initial: Long?, onDismiss: () -> Unit, onPick: (LocalDate) -> Unit) {
-    val state = rememberDatePickerState(initialSelectedDateMillis = initial)
-
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            AppTextButton(
-                onClick = {
-                    state.selectedDateMillis?.let { millis ->
-                        onPick(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
-                    }
-                    onDismiss()
-                },
-            ) {
-                Text(stringResource(R.string.action_save))
-            }
-        },
-        dismissButton = {
-            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-        },
-    ) {
-        DatePicker(state = state)
     }
 }
 

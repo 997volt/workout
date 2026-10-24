@@ -18,7 +18,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.androidapp.ui.statistics.scrubbable
 
 /**
  * A line over time, hand-drawn (ROADMAP N13, N37).

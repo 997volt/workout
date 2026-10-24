@@ -4,13 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,11 +22,11 @@ import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.withDay
 import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.DatePrompt
 import com.example.androidapp.ui.components.TestTags
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
 
 /**
  * The day an edited record belongs to, and the one operation the form applies to it (B212, B214).
@@ -114,13 +109,18 @@ internal fun MeasurementFormBody(
     }
 
     if (picking && day != null) {
-        MeasurementDayPrompt(
+        // A record is of the past (B212), so the calendar offers today and every day before it. The calendar
+        // itself is shared with the statistics range (B217).
+        DatePrompt(
             initial = day,
             onDismiss = { picking = false },
             onPick = { picked ->
                 onPickDay(picked)
                 picking = false
             },
+            confirmLabel = stringResource(R.string.measurements_date_confirm),
+            confirmTestTag = TestTags.Measurements.EDIT_DATE_CONFIRM,
+            latestDay = LocalDate.now(ZoneId.systemDefault()),
         )
     }
 }
@@ -186,54 +186,5 @@ private fun MeasurementDayRow(day: String, onChange: () -> Unit) {
                 Text(stringResource(R.string.measurements_date_change))
             }
         }
-    }
-}
-
-/**
- * The calendar a corrected day is picked in.
- *
- * The day in and the day out are **calendar days**, which is why both ends step through UTC midnight: a date
- * picker's millis are a day on a calendar rather than an instant, and reading them in the device's zone would
- * shift the day for anyone west of UTC.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MeasurementDayPrompt(
-    initial: LocalDate,
-    onDismiss: () -> Unit,
-    onPick: (LocalDate) -> Unit,
-) {
-    // A record is of the past (B212), so the calendar offers today and every day before it. The picker's
-    // millis are a calendar day at UTC midnight, so the bound is built the same way rather than in the device's
-    // zone; the repository refuses a future day as well, for anything that did not come through here.
-    val today = LocalDate.now(ZoneId.systemDefault()).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-    val state = rememberDatePickerState(
-        initialSelectedDateMillis = initial.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
-        selectableDates = remember(today) {
-            object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= today
-            }
-        },
-    )
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            AppTextButton(
-                onClick = {
-                    state.selectedDateMillis?.let { millis ->
-                        onPick(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
-                    }
-                    onDismiss()
-                },
-                modifier = Modifier.testTag(TestTags.Measurements.EDIT_DATE_CONFIRM),
-            ) {
-                Text(stringResource(R.string.measurements_date_confirm))
-            }
-        },
-        dismissButton = {
-            AppTextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-        },
-    ) {
-        DatePicker(state = state)
     }
 }
