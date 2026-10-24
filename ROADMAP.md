@@ -17,9 +17,30 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** What has left this queue is in [CHANGELOG.md](CHANGELOG.md): the finite-program block and
-the helper's authoring of one (P3.21, N174–N186), and the review that followed it (B193–B205,
-N187–N190).
+**The statistics screen's figure cannot be read, and this is the pass that makes it one.** The chart draws into the
+height of a sparkline (`CHART_HEIGHT_DP`), the range is seven chips wrapped three to a row, and the metric menu
+lists every series the registry holds — the joint sites being the bulk of them. None of that is a data problem: the
+series, the goal line drawn from its periods and the tags are right, and only the presentation fails. The rows are
+ordered by payoff per line of code, each ships on its own, and **none of them is started**.
+
+| # | What | Change | Done when |
+| --- | --- | --- | --- |
+| N196 | The chart is a figure, not a thumbnail | `TrendChartFrame`'s height becomes a parameter — statistics passes a figure's height, adherence keeps its sparkline — and a y-axis gutter carries the minimum, the middle and the maximum. | A month of weight is readable on a phone without squinting, and the adherence chart draws exactly what it drew before. |
+| N197 | The range is one control | A segmented row for the three common ranges with an overflow menu for the rest, custom included; the dates dialog and every range's tag stay. | The control is one row, and every range is at most two taps away. |
+| N198 | The metric menu can be searched | A filter field over the labels, above the four headings N130 and B137 require. | A series is reachable by typing part of its name, whatever the menu's length. |
+| N199 | The menu opens on a group, and joint pain is a site | Four group choices, then that group's list; one *Joint pain* row per level opens the sites (joint × side), so the menu loses its forty-odd site rows and gains two. | No group is longer than a screen, and a site is two taps behind its one row. |
+| N200 | A reading can be read off the chart | Tap and drag place a crosshair with the reading's date and value on the figure. | Any point's value is reachable without leaving the chart. |
+| N201 | The chart can fill the screen | An expand affordance opens the same canvas at full height. | A long range can be inspected without pinching or scrolling. |
+| N202 | The readings start folded | The list that makes the figure accessible (N36) becomes a count with a disclosure, closed until opened. | The screen is the figure and the goal, and every reading is still one tap away. |
+
+**What depends on what.** N200 and N201 both need N196 — a sparkline's height has no room for a crosshair or a
+full-screen view. N199 should follow N198 rather than precede it: search keeps the menu usable while the nesting
+changes what it holds. N197 and N202 stand alone. Not in this batch: moving the body series onto the measurements
+screen (a second chart on a second screen), pinch-zoom (the range already windows the series), and a favourites
+store for metrics (search and grouping answer the same complaint until they have been used). **None of these
+touches the model, the store or a series** — the chart, the goal line and every reading stay as they are, which is
+what keeps each row a UI change with its tests; the row that changes how a figure or a picker behaves records the
+call in [DECISIONS.md](DECISIONS.md), as the program editor's screen does (N172).
 
 ## Later — decided, and not being started
 
