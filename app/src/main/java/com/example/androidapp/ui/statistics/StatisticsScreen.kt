@@ -3,7 +3,9 @@ package com.example.androidapp.ui.statistics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -33,7 +35,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
@@ -256,6 +257,7 @@ private fun StatisticsBody(
  * a year, all, custom — sit behind one *More* control, which takes the chosen range's own name while it is
  * active, so the screen still says which window is on screen.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RangeControl(
     range: StatisticsRange,
@@ -266,9 +268,11 @@ private fun RangeControl(
     val selectedOverflow = range.kind.takeIf { it in overflow }
     var open by remember { mutableStateOf(false) }
 
-    Row(
+    // A wrapping row rather than a plain one: four controls fit one row on a phone, and a device that cannot is
+    // better with a second row than with a clipped control.
+    FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         COMMON_RANGES.forEach { kind ->
             RangeChip(kind = kind, selected = range.kind == kind, onSelectRange = onSelectRange)
@@ -315,7 +319,16 @@ private fun RangeChip(kind: RangeKind, selected: Boolean, onSelectRange: (Statis
     AppFilterChip(
         selected = selected,
         onClick = { onSelectRange(StatisticsRange(kind)) },
-        label = stringResource(kind.labelRes),
+        // The short name: "Last" is understood from the control, and dropping it is what keeps four controls on
+        // one row. The menu behind *More* keeps the full names, where there is room for them.
+        label = stringResource(
+            when (kind) {
+                RangeKind.LAST_7_DAYS -> R.string.range_7_days_short
+                RangeKind.LAST_MONTH -> R.string.range_month_short
+                RangeKind.LAST_3_MONTHS -> R.string.range_3_months_short
+                else -> kind.labelRes
+            },
+        ),
         testTag = TestTags.Statistics.range(kind.name),
     )
 }

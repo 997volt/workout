@@ -314,6 +314,10 @@
     <string name="range_year">Last year</string>
     <string name="range_all">All time</string>
     <string name="range_more">More</string>
+    <!-- The chips say the three common ranges without the word "Last": four buttons have to fit one row. -->
+    <string name="range_7_days_short">7 days</string>
+    <string name="range_month_short">1 month</string>
+    <string name="range_3_months_short">3 months</string>
     <string name="statistics_metric_search">Search series</string>
     <string name="statistics_metric_no_matches">No series matches.</string>
     <string name="statistics_metric_joint">Joint pain</string>
