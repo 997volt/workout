@@ -131,6 +131,50 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun theRecentSeries_areAShortcutAboveThePicker_withTheCurrentOneSelected() {
+        // N212: the two or three series actually read, one tap away instead of a group and a search away,
+        // and one of them reads as the series on screen.
+        val weight = MetricKey.Body(BodyMetric.WEIGHT)
+        val volume = MetricKey.Exercise(ExerciseTrendMetric.VOLUME)
+        val rpe = MetricKey.Workout(com.example.androidapp.domain.model.TrendMetric.RPE)
+        var chosen: MetricKey? = null
+        setScreen(
+            state = StatisticsUiState(
+                isLoading = false,
+                range = StatisticsRange(RangeKind.LAST_MONTH),
+                selection = StatisticsSelection(metric = weight),
+                recentSeries = listOf(weight, volume, rpe),
+                series = series,
+            ),
+            onSelectMetric = { chosen = it },
+        )
+
+        val recentTop = composeTestRule.onNodeWithTag(TestTags.Statistics.recentSeries(weight.id))
+            .assertIsSelected()
+            .getUnclippedBoundsInRoot().top
+        val pickerTop = composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC)
+            .getUnclippedBoundsInRoot().top
+        assertThat(recentTop).isLessThan(pickerTop)
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.recentSeries(volume.id))
+            .assertIsNotSelected()
+            .performClick()
+
+        assertThat(chosen).isEqualTo(volume)
+    }
+
+    @Test
+    fun theRecentRow_waitsUntilThereAreTwoSeries() {
+        // One chip repeating the picker's own label is not a shortcut.
+        val weight = MetricKey.Body(BodyMetric.WEIGHT)
+        setScreen(
+            state = StatisticsUiState(isLoading = false, recentSeries = listOf(weight), series = series),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.recentSeries(weight.id)).assertDoesNotExist()
+    }
+
+    @Test
     fun thePicker_canBeSearched_andSaysWhenNothingMatches() {
         // N198: the menu is every series the registry holds, so a word is the fastest way in.
         setScreen()

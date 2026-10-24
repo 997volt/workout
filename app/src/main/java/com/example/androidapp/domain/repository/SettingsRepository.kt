@@ -96,6 +96,19 @@ interface SettingsRepository {
 
     suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit>
 
+    /**
+     * The series most recently read on the Statistics screen, newest first (N212).
+     *
+     * Ids rather than the screen's keys: the store stays a domain type, and an id written by a build that knew
+     * a series this one does not is dropped by the reader rather than breaking the screen — the same rule
+     * [observeStatisticsRange] follows for an unknown range name. The caller keeps the list short (three); the
+     * store keeps what it is given.
+     */
+    fun observeRecentSeries(): Flow<List<String>>
+
+    /** Stores [ids] newest first. An empty list clears the row. */
+    suspend fun setRecentSeries(ids: List<String>): DataResult<Unit>
+
     companion object {
         /**
          * What the setting accepts, in seconds.

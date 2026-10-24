@@ -36,12 +36,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -79,6 +82,13 @@ data class StatisticsUiState(
     val isLoading: Boolean = true,
     val range: StatisticsRange = StatisticsRange(),
     val selection: StatisticsSelection = StatisticsSelection(),
+    /**
+     * The series read most recently, newest first, at most three (N212).
+     *
+     * The current selection is in the list, so the row can show which one is on screen; it is hidden while
+     * there is fewer than two, because one chip repeating the picker's own label is not a shortcut.
+     */
+    val recentSeries: List<MetricKey> = emptyList(),
     val overview: StatisticsOverview = StatisticsOverview(),
     val series: MetricSeries? = null,
     /** The read failed, shown in place of the chart (the same shape the trends screen uses). */
@@ -185,6 +195,9 @@ class StatisticsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
+    /** One recents write at a time, so two quick choices cannot both read the same list (N212). */
+    private val recentWrites = Mutex()
+
     private val selection = MutableStateFlow(
         initialSelection(savedStateHandle.toRoute<Statistics>().exerciseId),
     )
@@ -201,6 +214,7 @@ class StatisticsViewModel @Inject constructor(
     private data class Sources(
         val range: StatisticsRange,
         val selection: StatisticsSelection,
+        val recentSeries: List<MetricKey>,
         val summaries: List<WorkoutSummary>,
         val workoutPoints: DataResult<List<TrendPoint>>,
         val measurements: List<BodyMeasurement>,
@@ -221,18 +235,33 @@ class StatisticsViewModel @Inject constructor(
         summaries to (result as? DataResult.Success)?.data.orEmpty()
     }
 
+    /**
+     * The series read recently, as keys (N212).
+     *
+     * Ids are stored; an id this build's registry does not know is dropped here rather than shown as a chip
+     * that would select nothing.
+     */
+    private val recents: Flow<List<MetricKey>> = settings.observeRecentSeries().map { ids ->
+        ids.mapNotNull { id -> MetricRegistry.entries.firstOrNull { it.key.id == id }?.key }
+    }
+
+    /** The selection and the recents as one source, so the five-flow combine keeps its five (N212). */
+    private val chosen = combine(selection, recents) { selection, recent -> selection to recent }
+
     private val sources = combine(
         range,
-        selection,
+        chosen,
         library,
         repositories.trends.observeTrends(NO_LIMIT),
         repositories.measurements.observeAll(),
-    ) { range, selection, library, points, body ->
+    ) { range, chosen, library, points, body ->
+        val selection = chosen.first
         val acceptsHead = MetricRegistry.entryFor(selection.metric).acceptsHead
         val rows = library.second
         Sources(
             range = range,
             selection = selection,
+            recentSeries = chosen.second,
             summaries = library.first,
             // A head is offered only where the chosen metric **reads** one (ROADMAP N97, B98), and only where
             // it actually heads something: a category a lifter has made and not yet filed anything under is
@@ -362,6 +391,7 @@ class StatisticsViewModel @Inject constructor(
                     isLoading = false,
                     range = sources.range,
                     selection = sources.selection,
+                    recentSeries = sources.recentSeries,
                     error = workoutPoints.error,
                     lifts = sources.lifts,
                     goal = levelGoal,
@@ -390,6 +420,7 @@ class StatisticsViewModel @Inject constructor(
                     isLoading = false,
                     range = sources.range,
                     selection = sources.selection,
+                    recentSeries = sources.recentSeries,
                     overview = statisticsOverview(
                         range = sources.range,
                         today = today(),
@@ -456,6 +487,25 @@ class StatisticsViewModel @Inject constructor(
             metric = metric,
             exerciseId = selection.value.exerciseId.takeIf { offered },
         )
+        rememberSeries(metric)
+    }
+
+    /**
+     * Records a series as just read, newest first and at most [RECENT_SERIES_MAX] (N212).
+     *
+     * Only an explicit choice records: opening the tab on its default series is not "using" it, and writing
+     * that on every visit would push the three actually read out of the row. Writes are serialised because
+     * two quick choices would otherwise both read the same list and the second would drop the first.
+     */
+    private fun rememberSeries(metric: MetricKey) {
+        viewModelScope.launch {
+            recentWrites.withLock {
+                val current = settings.observeRecentSeries().first()
+                val next = (listOf(metric.id) + current.filterNot { it == metric.id })
+                    .take(RECENT_SERIES_MAX)
+                if (next != current) settings.setRecentSeries(next)
+            }
+        }
     }
 
     /** Stored, not held: the range has to mean the same thing the next time the tab is opened. */
@@ -467,6 +517,9 @@ class StatisticsViewModel @Inject constructor(
         Instant.ofEpochMilli(timeSource.nowEpochMillis()).atZone(currentZone()).toLocalDate()
 
     private companion object {
+        /** How many series the recent row holds: enough for the habitual three, not a second menu (N212). */
+        const val RECENT_SERIES_MAX = 3
+
         /**
          * How many sessions the training series are asked for: no limit.
          *

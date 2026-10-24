@@ -28,9 +28,10 @@ import javax.inject.Singleton
  * Settings in `SharedPreferences` (ROADMAP N21).
  *
  * Chosen over DataStore because it needs **no new dependency**: what lives here is a
- * handful of integers and booleans owned by one process, which is the case
- * `SharedPreferences` is still the right tool for. If settings ever need to hold a
- * collection, a schema or a migration, that is the moment to move.
+ * handful of integers, booleans and short strings owned by one process, which is the case
+ * `SharedPreferences` is still the right tool for. A **bounded** list encoded as one value — the
+ * goals' legacy lines, the three recently read series (N212) — is still a string preference; a
+ * growing collection with its own structure, a schema or a migration is the moment to move.
  *
  * Writes are applied with `commit` inside the caller's coroutine rather than `apply`: the
  * caller is a screen that reports success or failure, and a fire-and-forget write would let
@@ -179,6 +180,46 @@ class PreferencesSettingsRepository @Inject constructor(
             }
         }
 
+    override fun observeRecentSeries(): Flow<List<String>> = callbackFlow {
+        trySend(currentRecentSeries())
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
+            if (changed == null || changed == KEY_RECENT_SERIES) trySend(currentRecentSeries())
+        }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate().distinctUntilChanged()
+
+    /** Committed and read back off the main thread, for the reason [writeFlag] states (B158). */
+    override suspend fun setRecentSeries(ids: List<String>): DataResult<Unit> =
+        withContext(Dispatchers.IO) {
+            preferences.edit(commit = true) {
+                // Absent rather than an empty string: no recents and a blank preference are the same thing,
+                // and one of them is a value that has to be remembered not to mean anything.
+                if (ids.isEmpty()) {
+                    remove(KEY_RECENT_SERIES)
+                } else {
+                    putString(KEY_RECENT_SERIES, ids.joinToString(SEPARATOR))
+                }
+            }
+            if (currentRecentSeries() == ids) {
+                DataResult.Success(Unit)
+            } else {
+                DataResult.Failure(DataError.Storage(IllegalStateException("the recent series were not stored")))
+            }
+        }
+
+    /**
+     * The stored recents, newest first.
+     *
+     * One newline-joined value rather than a set, because the order is the meaning: the row shows the last
+     * three in the order they were read. Ids cannot contain a newline, so the encoding is unambiguous.
+     */
+    private fun currentRecentSeries(): List<String> =
+        preferences.getString(KEY_RECENT_SERIES, null)
+            ?.split(SEPARATOR)
+            ?.filter { it.isNotBlank() }
+            .orEmpty()
+
     /**
      * The stored range, defaulted.
      *
@@ -258,6 +299,10 @@ class PreferencesSettingsRepository @Inject constructor(
         const val KEY_RANGE_KIND = "statistics_range_kind"
         const val KEY_RANGE_FROM = "statistics_range_from"
         const val KEY_RANGE_TO = "statistics_range_to"
+
+        /** The series the Statistics screen read last, newest first (N212). */
+        const val KEY_RECENT_SERIES = "statistics_recent_series"
+        const val SEPARATOR = "\n"
 
         /** The three keys that together are one value. */
         val RANGE_KEYS = setOf(KEY_RANGE_KIND, KEY_RANGE_FROM, KEY_RANGE_TO)

@@ -562,6 +562,28 @@ class StatisticsViewModelTest {
     }
 
     @Test
+    fun choosingSeries_recordsThemNewestFirst_andStopsAtThree() = runTest(dispatcher) {
+        // N212: the recents row is what was actually read, newest first, capped so it stays a shortcut. Only
+        // an explicit choice records, and re-choosing moves a series to the front without a twin.
+        val settings = FakeSettingsRepository()
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        val weight = MetricKey.Body(BodyMetric.WEIGHT)
+        val volume = MetricKey.Exercise(ExerciseTrendMetric.VOLUME)
+        val rpe = MetricKey.Workout(com.example.androidapp.domain.model.TrendMetric.RPE)
+        viewModel.onSelectMetric(weight)
+        viewModel.onSelectMetric(volume)
+        viewModel.onSelectMetric(rpe)
+        viewModel.onSelectMetric(weight)
+        advanceUntilIdle()
+
+        assertThat(settings.recent.value).containsExactly(weight.id, rpe.id, volume.id).inOrder()
+        assertThat(viewModel.uiState.value.recentSeries).containsExactly(weight, rpe, volume).inOrder()
+    }
+
+    @Test
     fun aGoalForAnotherMetric_isNotShown() = runTest(dispatcher) {
         // Otherwise a target set for bodyweight would draw a line across a chart of volume.
         val viewModel = viewModel(
@@ -623,6 +645,14 @@ private class FakeSettingsRepository(
     override fun observeStatisticsRange(): Flow<StatisticsRange> = stored
     override suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit> {
         stored.value = range
+        return DataResult.Success(Unit)
+    }
+
+    /** The recents the screen wrote (N212), newest first. */
+    val recent = MutableStateFlow<List<String>>(emptyList())
+    override fun observeRecentSeries(): Flow<List<String>> = recent
+    override suspend fun setRecentSeries(ids: List<String>): DataResult<Unit> {
+        recent.value = ids
         return DataResult.Success(Unit)
     }
 }

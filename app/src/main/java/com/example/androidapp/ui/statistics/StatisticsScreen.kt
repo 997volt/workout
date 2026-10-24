@@ -147,6 +147,7 @@ fun StatisticsScreen(
                 onSelectRange = onSelectRange,
                 onChooseDates = { choosingDates = true },
             )
+            RecentSeries(state = state, onSelectMetric = onSelectMetric)
             MetricPicker(selected = state.selection.metric, onSelectMetric = onSelectMetric)
 
             // The overview and the chart both read the series, so neither is drawn until it exists: a frame
@@ -238,6 +239,29 @@ private fun StatisticsBody(
         // The three numbers sit after the figure rather than above it (N208): they summarise the window, and the
         // window is what the chart is for — a card between the metric and the chart is a row the figure pays for.
         Overview(overview = state.overview)
+    }
+}
+
+/**
+ * The two or three series read lately, one tap from the chart (N212).
+ *
+ * Hidden while there are fewer than two: one chip repeating the picker's own label is not a shortcut, and a
+ * row that appears before there is anything in it is a control that promises a memory it does not have. The
+ * current series is one of the chips and reads as selected, so the row also says which one is on screen.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun RecentSeries(state: StatisticsUiState, onSelectMetric: (MetricKey) -> Unit) {
+    if (state.recentSeries.size < 2) return
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        state.recentSeries.forEach { key ->
+            AppFilterChip(
+                selected = key == state.selection.metric,
+                onClick = { onSelectMetric(key) },
+                label = MetricRegistry.entryFor(key).label(),
+                testTag = TestTags.Statistics.recentSeries(key.id),
+            )
+        }
     }
 }
 

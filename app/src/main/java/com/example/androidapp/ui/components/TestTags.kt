@@ -1038,6 +1038,9 @@ object TestTags {
         fun metricJointHeading(joint: String) = "statistics_metric_joint_$joint"
 
         fun metric(id: String) = "statistics_metric_$id"
+
+        /** A series in the recently used row, named by its key (N212). */
+        fun recentSeries(id: String) = "statistics_recent_$id"
     }
 
     /**
