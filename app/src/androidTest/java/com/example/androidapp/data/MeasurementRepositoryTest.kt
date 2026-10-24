@@ -39,20 +39,24 @@ class MeasurementRepositoryTest {
     private lateinit var database: WorkoutDatabase
     private lateinit var repository: RoomMeasurementRepository
 
+    /** Morning and evening of the same local day, whatever zone the device is in. */
+    private val today = LocalDate.now(ZoneId.systemDefault())
+
     /**
      * A clock that advances a second per call (ROADMAP N133).
      *
      * The suite's writes used to share one instant, which is fine until an undo has to tell "before the
      * delete" from "after it" — and the whole refusal is that comparison. One second per call is also
      * what the real clock does, so the suite exercises the ordering the device will.
+     *
+     * It starts on **today**, because a record dated after the clock's day is refused (B212). The suite's
+     * entries are today's, so a clock fixed in the past would make every one of them a future record.
      */
-    private var now = Instant.parse("2026-10-02T09:00:00Z")
+    private var now = today.atTime(9, 0).atZone(ZoneId.systemDefault()).toInstant()
     private val clock = TimeSource {
         now.also { now = it.plusSeconds(1) }
     }
 
-    /** Morning and evening of the same local day, whatever zone the device is in. */
-    private val today = LocalDate.now(ZoneId.systemDefault())
     private fun localHour(hour: Int): Instant =
         today.atTime(hour, 0).atZone(ZoneId.systemDefault()).toInstant()
 
@@ -83,8 +87,9 @@ class MeasurementRepositoryTest {
     @Test
     fun savingOnAnotherDay_addsAnEntry() = runTest {
         repository.save(entry(at = localHour(8), weightGrams = 82_000L))
-        val tomorrow = localHour(8).plusSeconds(86_400L)
-        repository.save(entry(at = tomorrow, weightGrams = 81_000L))
+        // A day after today is refused now (B212), so "another day" is taken from the past.
+        val yesterday = localHour(8).minusSeconds(86_400L)
+        repository.save(entry(at = yesterday, weightGrams = 81_000L))
 
         assertEquals(2, repository.observeAll().first().size)
     }
@@ -270,7 +275,7 @@ class MeasurementRepositoryTest {
         // save path writes the same field when it replaces a list — so a save and a delete sharing a
         // millisecond would be one marker, and the undo would restore the soreness the save replaced. The
         // clock is frozen on purpose: only a unique write timestamp can tell the two apart.
-        val frozen = Instant.parse("2026-10-02T09:00:00Z")
+        val frozen = today.atTime(9, 0).atZone(ZoneId.systemDefault()).toInstant()
         val frozenClock = RoomMeasurementRepository(database, TimeSource { frozen })
 
         frozenClock.save(
@@ -305,7 +310,8 @@ class MeasurementRepositoryTest {
         // day rather than a second one written beside it.
         repository.save(entry(at = localHour(8), weightGrams = 82_000L))
         val saved = repository.observeAll().first().single()
-        val otherDay = saved.measuredAt.plusSeconds(3 * 86_400L)
+        // A move is a correction of a past record (B212), so the other day is three days back, not forward.
+        val otherDay = saved.measuredAt.minusSeconds(3 * 86_400L)
 
         repository.save(saved.copy(measuredAt = otherDay, weightGrams = 81_500L))
 
@@ -323,7 +329,8 @@ class MeasurementRepositoryTest {
         // and it is refused rather than letting a day hold two live entries.
         repository.save(entry(at = localHour(8), weightGrams = 82_000L))
         val first = repository.observeAll().first().single()
-        repository.save(entry(at = localHour(8).plusSeconds(86_400L), weightGrams = 83_000L))
+        // The second entry is yesterday's, so both days are in the past and the collision is the only refusal.
+        repository.save(entry(at = localHour(8).minusSeconds(86_400L), weightGrams = 83_000L))
         val second = repository.observeAll().first().single { it.id != first.id }
 
         val failure = repository.save(second.copy(measuredAt = first.measuredAt)) as DataResult.Failure
