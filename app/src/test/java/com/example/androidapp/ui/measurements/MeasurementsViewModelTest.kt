@@ -15,10 +15,12 @@ import com.example.androidapp.domain.model.statedWeightGrams
 import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
+import com.example.androidapp.ui.statistics.WEIGHT_METRIC_ID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -54,6 +56,39 @@ class MeasurementsViewModelTest {
 
     @After
     fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun settingADirectionGoal_opensAPeriodWithTheKind_andNoWeight() = runTest(dispatcher) {
+        // N135's write, moved here with the row: the goal is set where the body is recorded.
+        val goals = FakeGoalRepository()
+        val viewModel = viewModelOf(FakeMeasurementRepository(entries), goals)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSetWeightGoal(WeightGoal.Direction(gain = true))
+        advanceUntilIdle()
+
+        val open = goals.observePeriods(WEIGHT_METRIC_ID).first().last()
+        assertEquals(WeightGoalKind.GAIN.name, open.kind)
+        assertNull(open.value)
+    }
+
+    @Test
+    fun settingATargetGoal_opensOnePeriodWithBothTheWeight_andItsKind() = runTest(dispatcher) {
+        // One row rather than two writes (N137), so a failure between the value and the kind cannot arise.
+        val goals = FakeGoalRepository()
+        val viewModel = viewModelOf(FakeMeasurementRepository(entries), goals)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSetWeightGoal(WeightGoal.Target(75_000L))
+        advanceUntilIdle()
+
+        val periods = goals.observePeriods(WEIGHT_METRIC_ID).first()
+        assertEquals(1, periods.size)
+        assertEquals(75_000.0, periods.last().value)
+        assertEquals(WeightGoalKind.TARGET.name, periods.last().kind)
+    }
 
     @Test
     fun itShowsWhatTheRepositoryHolds_newestFirst() = runTest(dispatcher) {

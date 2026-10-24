@@ -1,6 +1,5 @@
 package com.example.androidapp.ui.statistics
 
-import android.content.Context
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -14,9 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
@@ -30,7 +27,6 @@ import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.WeightGoal
-import com.example.androidapp.domain.model.WeightGoalKind
 import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
@@ -71,7 +67,6 @@ class StatisticsScreenTest {
         onOpenMeasurements: (() -> Unit)? = null,
         onOpenAdherence: (() -> Unit)? = null,
         onSetGoal: (Double?) -> Unit = {},
-        onSetWeightGoal: (WeightGoal?) -> Unit = {},
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -83,7 +78,6 @@ class StatisticsScreenTest {
                     onOpenMeasurements = onOpenMeasurements,
                     onOpenAdherence = onOpenAdherence,
                     onSetGoal = onSetGoal,
-                    onSetWeightGoal = onSetWeightGoal,
                 )
             }
         }
@@ -749,120 +743,13 @@ class StatisticsScreenTest {
     }
 
     @Test
-    fun theGoalHistory_listsEachPeriod_withItsVerdict() {
-        // N137: keeping the past is only worth it if it can be read — what the goal was in a period and whether
-        // it was met.
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        setScreen(
-            state = stateWithGoal(
-                goal = WeightGoal.Direction(gain = false),
-                periods = listOf(
-                    GoalPeriod(startedAt = null, kind = "TARGET", value = 75_000.0),
-                    GoalPeriod(
-                        startedAt = Instant.parse("2026-09-10T08:00:00Z"),
-                        kind = "LOSE",
-                        value = null,
-                    ),
-                ),
-            ),
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performScrollTo().performClick()
-
-        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY_DIALOG).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(0)).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(1)).assertExists()
-        composeTestRule.onNodeWithText(context.getString(R.string.statistics_goal_unjudged)).assertExists()
-        composeTestRule.onNodeWithText(context.getString(R.string.statistics_goal_missed)).assertExists()
-    }
-
-    @Test
-    fun theHistory_isOfferedOnlyWhenThereIsAPast() {
-        // One open period is what the row already says, so a button opening it would have nothing behind it.
-        setScreen(
-            state = stateWithGoal(
-                goal = WeightGoal.Direction(gain = false),
-                periods = listOf(GoalPeriod(startedAt = null, kind = "LOSE", value = null)),
-            ),
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).assertDoesNotExist()
-    }
-
-    @Test
-    fun closingTheHistory_takesItAway() {
-        setScreen(
-            state = stateWithGoal(
-                goal = WeightGoal.Direction(gain = false),
-                periods = listOf(
-                    GoalPeriod(startedAt = null, kind = "LOSE", value = null),
-                    GoalPeriod(
-                        startedAt = Instant.parse("2026-09-10T08:00:00Z"),
-                        kind = "LOSE",
-                        value = null,
-                    ),
-                ),
-            ),
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performScrollTo().performClick()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY_CLOSE).performClick()
-
-        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY_DIALOG).assertDoesNotExist()
-    }
-
-    @Test
-    fun theWeightGoal_isChosenKindFirst_andClearedFromTheSameDialog() {
-        // N135: the kind is the question and the weight only where the kind asks for one, so the two are set
-        // in one place rather than as two numbers that can disagree.
-        var set: WeightGoal? = null
-        var cleared = false
-        setScreen(
-            state = stateWithGoal(WeightGoal.Target(80_000L)),
-            onSetWeightGoal = { value -> if (value == null) cleared = true else set = value },
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performScrollTo().performClick()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.weightGoalKind(WeightGoalKind.MAINTAIN)).performClick()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextClearance()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextInput("80")
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
-
-        assertThat(set).isEqualTo(WeightGoal.Maintain(80_000L))
-
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performScrollTo().performClick()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CLEAR).performClick()
-
-        assertThat(cleared).isTrue()
-    }
-
-    @Test
-    fun aDirectionGoal_offersNoWeight_andInventsNone() {
-        // N135's rule: the band decides the rate, and the app never manufactures an end weight the lifter did
-        // not state — so the field is not offered at all, and a stale one cannot become a target.
-        var set: WeightGoal? = null
-        setScreen(
-            state = stateWithGoal(WeightGoal.Target(80_000L)),
-            onSetWeightGoal = { value -> set = value },
-        )
-
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performScrollTo().performClick()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.weightGoalKind(WeightGoalKind.LOSE)).performClick()
-
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
-
-        assertThat(set).isEqualTo(WeightGoal.Direction(gain = false))
-    }
-
-    @Test
     fun aMaintenanceGoal_readsAsACorridor_ratherThanARateOfZero() {
         // N135: "hold within ±X" is what makes maintenance a goal; a literal 0.0 kg/week is broken by the
         // first glass of water, so neither the goal row nor the rate row draws one.
         setScreen(state = stateWithGoal(WeightGoal.Maintain(80_000L)))
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).assertTextEquals("80 ±1")
+        // The goal's own row is on the measurements screen now; what stays here is the rate it derives, drawn
+        // as the corridor rather than as a zero.
         composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY_TARGET).assertTextEquals("80 ±1")
     }
 

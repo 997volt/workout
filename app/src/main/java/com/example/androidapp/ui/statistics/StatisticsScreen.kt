@@ -46,7 +46,6 @@ import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.StatisticsRange
-import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppFilterChip
@@ -82,7 +81,6 @@ fun StatisticsRoute(
         modifier = modifier,
         onSelectExercise = viewModel::onSelectExercise,
         onSetGoal = viewModel::onSetGoal,
-        onSetWeightGoal = viewModel::onSetWeightGoal,
         onOpenMeasurements = onOpenMeasurements,
         onOpenAdherence = onOpenAdherence,
     )
@@ -105,7 +103,6 @@ fun StatisticsScreen(
     /** Sets or clears the chosen metric's target (ROADMAP N39). */
     onSetGoal: (Double?) -> Unit = {},
     /** Sets or clears the **weight** goal, kind and all (ROADMAP N135). */
-    onSetWeightGoal: (WeightGoal?) -> Unit = {},
     /**
      * Opens body measurements (ROADMAP N35).
      *
@@ -175,7 +172,6 @@ fun StatisticsScreen(
                     series = state.series,
                     onSelectExercise = onSelectExercise,
                     onSetGoal = onSetGoal,
-                    onSetWeightGoal = onSetWeightGoal,
                 )
             }
         }
@@ -194,7 +190,6 @@ private fun StatisticsBody(
     series: com.example.androidapp.ui.statistics.MetricSeries?,
     onSelectExercise: (String) -> Unit,
     onSetGoal: (Double?) -> Unit,
-    onSetWeightGoal: (WeightGoal?) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Overview(overview = state.overview)
@@ -230,19 +225,9 @@ private fun StatisticsBody(
             // Under the chart, and the literal answer to "see everything" — which is also the accessible
             // counterpart to a canvas this app blanks out for screen readers (ROADMAP N36).
             ReadingsSection(series = series, metric = entry)
-            // The weight goal states a **kind** as well as a number (N135), so it has its own row where
-            // the number alone had one; every other metric's target is still one number.
-            if (entry.key == MetricKey.Body(BodyMetric.WEIGHT)) {
-                WeightGoalRow(
-                    goal = state.weightGoal,
-                    metric = entry,
-                    // The **unwindowed** series (B141): a period is judged on the readings inside it, not on
-                    // the ones the range chips happen to show, or a verdict about the past would change with
-                    // the chart's window.
-                    history = goalOutcomes(state.goalPeriods, state.goalReadings),
-                    onSetGoal = onSetWeightGoal,
-                )
-            } else {
+            // A weight goal is set on the measurements screen now, where the body is recorded (a request in
+            // use; no roadmap id covers the move) — the chart still draws it from the goal's periods.
+            if (entry.key != MetricKey.Body(BodyMetric.WEIGHT)) {
                 GoalRow(goal = state.goal, metric = entry, onSetGoal = onSetGoal)
             }
             // Under the goal, because the rate is now *derived* from it rather than typed beside it

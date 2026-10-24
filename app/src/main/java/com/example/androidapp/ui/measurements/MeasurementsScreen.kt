@@ -47,6 +47,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SORE_MUSCLE_GROUPS
 import com.example.androidapp.domain.model.SoreMuscle
@@ -54,6 +55,7 @@ import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.at
 import com.example.androidapp.domain.model.statesSomething
 import com.example.androidapp.domain.model.withDay
+import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.DEFAULT_SCORED_PICK
 import com.example.androidapp.ui.components.MessageSnackbar
@@ -64,7 +66,11 @@ import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.history.HistoryFormat
+import com.example.androidapp.ui.statistics.BodyMetric
 import com.example.androidapp.ui.statistics.EnergyAdjustment
+import com.example.androidapp.ui.statistics.MetricKey
+import com.example.androidapp.ui.statistics.MetricRegistry
+import com.example.androidapp.ui.statistics.WeightGoalRow
 import java.time.Instant
 import java.time.ZoneId
 
@@ -109,6 +115,9 @@ fun MeasurementsRoute(
         // What the weigh-in just saved says about the goal's rate (N136), the same way.
         rateVerdict = rateVerdict,
         onDismissRateVerdict = viewModel::onDismissRateVerdict,
+        // The weight goal is set here now: it is a fact about the body, and this is where the body is recorded
+        // (a request in use; no roadmap id covers the move).
+        onSetWeightGoal = viewModel::onSetWeightGoal,
     )
 }
 
@@ -151,6 +160,8 @@ fun MeasurementsScreen(
      */
     rateVerdict: EnergyAdjustment? = null,
     onDismissRateVerdict: () -> Unit = {},
+    /** Sets the weight goal, or clears it with null (N135) — the row the statistics screen used to carry. */
+    onSetWeightGoal: (WeightGoal?) -> Unit = {},
 ) {
     // Two steps rather than one: the record is two records, so *Add* asks which before it opens a form
     // (N113). Null is "no form open"; `choosing` is the question.
@@ -218,6 +229,7 @@ fun MeasurementsScreen(
             // default view it opens the record read-only (N132, and the request in use).
             onOpen = { entry -> if (editing) editingEntry = entry else openEntry = entry },
             onDelete = onDelete,
+            onSetWeightGoal = onSetWeightGoal,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -260,6 +272,25 @@ private fun MeasurementsTopBar(editing: Boolean, onToggleEditing: () -> Unit, on
 }
 
 /**
+ * The weight goal, and its history (N135, N137).
+ *
+ * A card rather than a row of its own beside the data: the goal is one statement about the series, and the row
+ * it draws is the same one the statistics screen showed under its chart — moved here because a goal is set
+ * where the body is recorded, not beside a drawing of the past.
+ */
+@Composable
+private fun WeightGoalCard(state: MeasurementsUiState, onSetWeightGoal: (WeightGoal?) -> Unit) {
+    AppCard {
+        WeightGoalRow(
+            goal = state.weightGoal,
+            metric = MetricRegistry.entryFor(MetricKey.Body(BodyMetric.WEIGHT)),
+            history = state.goalHistory,
+            onSetGoal = onSetWeightGoal,
+        )
+    }
+}
+
+/**
  * The list under the app bar, with the sentence an empty one says (N32, N113).
  *
  * A `LazyColumn` with the empty sentence as an item rather than a `Column` of rows (B130): a `Column`
@@ -273,6 +304,7 @@ private fun MeasurementList(
     editing: Boolean,
     onOpen: (BodyMeasurement) -> Unit,
     onDelete: (String) -> Unit,
+    onSetWeightGoal: (WeightGoal?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -280,6 +312,11 @@ private fun MeasurementList(
         // The last row must clear the add button, which floats over the list's foot.
         contentPadding = PaddingValues(bottom = LIST_FOOT_CLEARANCE),
     ) {
+        // The goal comes before the entries: it is what those readings are *for*, and the row it draws is the
+        // one the statistics screen used to carry under its chart (N135).
+        item(key = GOAL_KEY) {
+            WeightGoalCard(state = state, onSetWeightGoal = onSetWeightGoal)
+        }
         if (state.entries.isEmpty() && !state.isLoading) {
             item(key = EMPTY_KEY) {
                 Text(
@@ -435,6 +472,9 @@ private fun MeasurementRow(
 
 /** The empty sentence is a keyed item of a list that may hold none (B130). */
 private const val EMPTY_KEY = "measurements_empty"
+
+/** The goal's row is the list's own first item, so it scrolls with the readings it is about. */
+private const val GOAL_KEY = "measurements_weight_goal"
 /** Clearance for the add button, which floats over the list's last row. */
 private val LIST_FOOT_CLEARANCE = 88.dp
 

@@ -7,23 +7,26 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.isDailyOn
 import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.ui.statistics.BodyMetric
+import com.example.androidapp.ui.statistics.GoalPeriodOutcome
 import com.example.androidapp.ui.statistics.EnergyAdjustment
 import com.example.androidapp.ui.statistics.MetricKey
 import com.example.androidapp.ui.statistics.MetricReading
 import com.example.androidapp.ui.statistics.MetricSeries
 import com.example.androidapp.ui.statistics.WEIGHT_METRIC_ID
+import com.example.androidapp.ui.statistics.goalOutcomes
 import com.example.androidapp.ui.statistics.weighInVerdict
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -43,6 +46,16 @@ data class MeasurementsUiState(
      * `findOnDay`, so the shortcut has to know which it is asking for.
      */
     val todayEntry: BodyMeasurement? = null,
+    /**
+     * The weight goal's open period, or null when it asks for none (N135).
+     *
+     * The goal lives here because it is a fact about the body, and this is the screen that records one — the
+     * statistics screen draws where the weight went, which is a different question and reads the goal from
+     * here rather than owning it.
+     */
+    val weightGoal: WeightGoal? = null,
+    /** Every period of it, oldest first, with what became of each (N137). */
+    val goalHistory: List<GoalPeriodOutcome> = emptyList(),
 )
 
 /**
@@ -69,14 +82,26 @@ class MeasurementsViewModel @Inject constructor(
 
     private val lastError = MutableStateFlow<DataError?>(null)
 
-    val uiState: StateFlow<MeasurementsUiState> = repository.observeAll()
-        .map { entries ->
-            MeasurementsUiState(
-                isLoading = false,
-                entries = entries,
-                todayEntry = entries.firstOrNull { it.isDailyOn(todayDate, zone) },
-            )
-        }
+    val uiState: StateFlow<MeasurementsUiState> = combine(
+        repository.observeAll(),
+        goals.observeCurrent(),
+        goals.observePeriods(WEIGHT_METRIC_ID),
+    ) { entries, current, periods ->
+        // The readings the goal is read against: every recorded weight, oldest first, whatever the list shows
+        // (B141's whole-series rule, which the goal history shares).
+        val readings = entries
+            .mapNotNull { entry ->
+                entry.weightGrams?.let { grams -> MetricReading(entry.measuredAt, grams.toDouble()) }
+            }
+            .sortedBy { it.at }
+        MeasurementsUiState(
+            isLoading = false,
+            entries = entries,
+            todayEntry = entries.firstOrNull { it.isDailyOn(todayDate, zone) },
+            weightGoal = current[WEIGHT_METRIC_ID]?.weightGoal,
+            goalHistory = goalOutcomes(periods, readings),
+        )
+    }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -155,6 +180,21 @@ class MeasurementsViewModel @Inject constructor(
     /** Takes the sentence away once its snackbar has been read (ROADMAP N136). */
     fun onDismissRateVerdict() {
         _rateVerdict.value = null
+    }
+
+    /**
+     * Sets the weight goal, or clears it with null (N135, N137).
+     *
+     * The same call the statistics screen made before the goal moved here: closing the open period and
+     * opening the next is the repository's job, so the past stays answerable.
+     */
+    fun onSetWeightGoal(goal: WeightGoal?) {
+        viewModelScope.launch {
+            when (val result = goals.setGoal(WEIGHT_METRIC_ID, goal)) {
+                is DataResult.Success -> lastError.value = null
+                is DataResult.Failure -> lastError.value = result.error
+            }
+        }
     }
 
     fun onDelete(id: String) {

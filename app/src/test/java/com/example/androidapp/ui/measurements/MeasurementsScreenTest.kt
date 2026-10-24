@@ -23,8 +23,13 @@ import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
+import com.example.androidapp.domain.model.WeightGoal
+import com.example.androidapp.domain.model.WeightGoalKind
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.statistics.EnergyAdjustment
+import com.example.androidapp.domain.repository.GoalPeriod
+import com.example.androidapp.ui.statistics.MetricReading
+import com.example.androidapp.ui.statistics.goalOutcomes
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import java.time.Instant
 import org.junit.Assert.assertEquals
@@ -68,6 +73,7 @@ class MeasurementsScreenTest {
         onDismissUndo: () -> Unit = {},
         rateVerdict: EnergyAdjustment? = null,
         onDismissRateVerdict: () -> Unit = {},
+        onSetWeightGoal: (WeightGoal?) -> Unit = {},
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -85,6 +91,7 @@ class MeasurementsScreenTest {
                     onDismissUndo = onDismissUndo,
                     rateVerdict = rateVerdict,
                     onDismissRateVerdict = onDismissRateVerdict,
+                    onSetWeightGoal = onSetWeightGoal,
                 )
             }
         }
@@ -132,6 +139,112 @@ class MeasurementsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT_DATE_CHANGE).performClick()
         composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT_DATE_CONFIRM).assertIsDisplayed()
     }
+
+    @Test
+    fun theWeightGoal_sitsAtTheTopOfTheList() {
+        // The row the statistics screen used to carry under its chart is this screen's first item now.
+        setScreen(state = stateWithGoal(WeightGoal.Target(80_000L)))
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).assertIsDisplayed()
+    }
+
+    @Test
+    fun theGoalHistory_listsEachPeriod_withItsVerdict() {
+        // N137, moved here with the row it opens: keeping the past is only worth it if it can be read.
+        setScreen(
+            state = stateWithGoal(
+                goal = WeightGoal.Direction(gain = false),
+                periods = listOf(
+                    GoalPeriod(startedAt = null, kind = "TARGET", value = 75_000.0),
+                    GoalPeriod(
+                        startedAt = Instant.parse("2026-09-10T08:00:00Z"),
+                        kind = "LOSE",
+                        value = null,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY_DIALOG).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(0)).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(1)).assertExists()
+    }
+
+    @Test
+    fun theHistory_isOfferedOnlyWhenThereIsAPast() {
+        setScreen(
+            state = stateWithGoal(
+                goal = WeightGoal.Direction(gain = false),
+                periods = listOf(GoalPeriod(startedAt = null, kind = "LOSE", value = null)),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).assertDoesNotExist()
+    }
+
+    @Test
+    fun closingTheHistory_takesItAway() {
+        setScreen(
+            state = stateWithGoal(
+                goal = WeightGoal.Direction(gain = false),
+                periods = listOf(
+                    GoalPeriod(startedAt = null, kind = "LOSE", value = null),
+                    GoalPeriod(
+                        startedAt = Instant.parse("2026-09-10T08:00:00Z"),
+                        kind = "LOSE",
+                        value = null,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY_CLOSE).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY_DIALOG).assertDoesNotExist()
+    }
+
+    @Test
+    fun theWeightGoal_isChosenKindFirst_andClearedFromTheSameDialog() {
+        var set: WeightGoal? = null
+        var cleared = false
+        setScreen(
+            state = stateWithGoal(WeightGoal.Target(80_000L)),
+            onSetWeightGoal = { value -> if (value == null) cleared = true else set = value },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.weightGoalKind(WeightGoalKind.MAINTAIN)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextInput("80")
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
+
+        assertEquals(WeightGoal.Maintain(80_000L), set)
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CLEAR).performClick()
+
+        assertTrue(cleared)
+    }
+
+    /** A state whose goal the row can read: the readings are the two the history is judged against. */
+    private fun stateWithGoal(
+        goal: WeightGoal?,
+        periods: List<GoalPeriod> = emptyList(),
+    ) = MeasurementsUiState(
+        isLoading = false,
+        weightGoal = goal,
+        goalHistory = goalOutcomes(
+            periods,
+            listOf(
+                MetricReading(Instant.parse("2026-09-01T08:00:00Z"), 83_000.0),
+                MetricReading(Instant.parse("2026-09-15T08:00:00Z"), 82_000.0),
+            ),
+        ),
+    )
 
     @Test
     fun theAddForm_doesNotOfferTheDay() {

@@ -562,39 +562,6 @@ class StatisticsViewModelTest {
     }
 
     @Test
-    fun settingADirectionGoal_opensAPeriodWithTheKind_andNoWeight() = runTest(dispatcher) {
-        val goalRepository = FakeGoalRepository()
-        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), goalRepository = goalRepository)
-        observe(viewModel)
-        advanceUntilIdle()
-
-        viewModel.onSetWeightGoal(WeightGoal.Direction(gain = true))
-        advanceUntilIdle()
-
-        val open = goalRepository.periods.value.getValue("BODY:WEIGHT").last()
-        assertThat(open.kind).isEqualTo(WeightGoalKind.GAIN.name)
-        assertThat(open.value).isNull()
-    }
-
-    @Test
-    fun settingATargetGoal_opensOnePeriodWithBothTheWeight_andItsKind() = runTest(dispatcher) {
-        // One row rather than two writes (N137), so the caveat N135 recorded — a failure between the value and
-        // the kind leaves a value with no kind — cannot arise.
-        val goalRepository = FakeGoalRepository()
-        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), goalRepository = goalRepository)
-        observe(viewModel)
-        advanceUntilIdle()
-
-        viewModel.onSetWeightGoal(WeightGoal.Target(75_000L))
-        advanceUntilIdle()
-
-        assertThat(goalRepository.periods.value.getValue("BODY:WEIGHT")).hasSize(1)
-        val open = goalRepository.periods.value.getValue("BODY:WEIGHT").last()
-        assertThat(open.value).isEqualTo(75_000.0)
-        assertThat(open.kind).isEqualTo(WeightGoalKind.TARGET.name)
-    }
-
-    @Test
     fun aGoalForAnotherMetric_isNotShown() = runTest(dispatcher) {
         // Otherwise a target set for bodyweight would draw a line across a chart of volume.
         val viewModel = viewModel(

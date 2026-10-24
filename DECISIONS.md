@@ -681,6 +681,13 @@ the rule; that one argues it.
   flows would be drawn again on every return to the screen, which is the pursuit it must not have.
   ([evidence](DECISIONS-EVIDENCE.md#n136))
 
+- **The weight goal is set where the body is recorded; the chart only draws it.** The goal row — its kind, its
+  number and the history behind it — sat under the statistics chart, which is a drawing of the past rather than
+  the place a reading is written. It is the **measurements screen's first item** now, above the entries it is
+  about. The chart keeps the **goal line**, because a line on a chart is what a target is for, and the energy
+  statement stays under the chart, because it is a verdict about the trend rather than a fact about the body.
+  Nothing about the store moved: one open period per metric, closed by the next write (N137), whoever writes it.
+
 - **A goal is rows with periods, not a setting** (N137). The store was a `metricId=value` string rewritten on
   every change, which meant the past did not exist: changing a goal re-judged every earlier range, and the
   chart drew the current target across it. A goal is now a **row per period** in `metric_goals`, the newest row

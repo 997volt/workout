@@ -435,10 +435,6 @@ class StatisticsViewModel @Inject constructor(
      * One write in one transaction now, because the kind and the value are one row (N137): the caveat N135
      * recorded — "a failure between the two writes leaves a value with no kind" — went with the second map.
      */
-    fun onSetWeightGoal(goal: WeightGoal?) {
-        viewModelScope.launch { goals.setGoal(WEIGHT_METRIC_ID, goal) }
-    }
-
     fun onSelectExercise(exerciseId: String?) {
         selection.value = selection.value.copy(exerciseId = exerciseId)
     }
