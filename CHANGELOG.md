@@ -14,6 +14,19 @@ repeated here.
 id a 1.x commit names is still looked up by it. This file carries the current release and what is
 unreleased.
 
+## [Unreleased]
+
+### Changed
+
+- **The statistics screen is a figure you can read** (N196–N201). The chart drew at the height of the adherence
+  sparkline, its range was seven chips wrapped three to a row, and its series menu listed every series the registry
+  holds — the joint sites being the bulk of them. The figure is 180 dp now, with the **axis's numbers in a gutter**
+  beside it (top, middle and bottom) instead of a row underneath, and it answers a touch: **the nearest recorded
+  reading** under the finger is named below it, and **Expand** opens the same figure at the height of the window.
+  The range is **one row** — a week, a month, three months, and one control for the rest including custom — and the
+  menu opens on a **group** with a **search** over the series' labels and the groups' names, the twenty-four joint
+  sites collapsed to **one row** at each level. Nothing about the series, the store or the goal line moved.
+
 ## [2.13] — 2026-10-22 (versionCode 33)
 
 ### Added
