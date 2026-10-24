@@ -17,9 +17,14 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The review of everything after 2.13 (B206–B219) is done: what the lifter can see is in
-[CHANGELOG.md](CHANGELOG.md), and the rest was the test coverage, the layering and the formatting the review also
-found. What it deferred is the structural split below, not a defect.
+**The three rows the statistics pass left in *Later*, taken together.** The split lands first, because it changes no
+behaviour; the recents row and pinch are the two things the pass made visible.
+
+| # | What it changes |
+| --- | --- |
+| N207 | **`ui/statistics` splits into a chart package.** The screen hit the 20-function ceiling three times in one pass, and the chart now spans four files; the overlay, the figure, the axis, the scrub and the series card move to `ui/statistics/chart`, and the screen keeps the range, the picker, the readings and the summary. A refactor with no behaviour change, which is why it lands alone. |
+| N212 | **A short "recently used" row above the metric trigger**, so the two or three series that are actually read are one tap away instead of a group and a search away. |
+| N213 | **Pinch changes the window**, the gesture a chart on a phone already invites, with a policy that cannot leave the recorded data: the window narrows around the pinched point and never widens past the range on screen or the readings it holds. |
 
 ## Later — decided, and not being started
 
@@ -29,15 +34,7 @@ not now — and it is not *Next*, which is what is actually being worked on. Eac
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-**What the statistics pass left open, and what it made visible.** N203–N206 and N208–N209 shipped and are in
-[CHANGELOG.md](CHANGELOG.md); **N210 was struck** because the range has been remembered since N35. What remains is the
-structural split, a recents row and pinch.
-
-| # | What it changes | Brought forward when |
-| --- | --- | --- |
-| N207 | **`ui/statistics` splits into a chart package.** The screen hit the 20-function ceiling three times in one pass, and the chart now spans four files; the menu, the figure and the axis already live in files of their own, so the next function that has to live on the screen is the one that starts the split. A refactor with no behaviour change, which is why it lands alone. | The next change that adds a function to `StatisticsScreen.kt`. |
-| N212 | **A short "recently used" row above the metric trigger**, now that groups and search have made the menu navigable. | The same two or three series are what actually gets read. |
-| N213 | **Pinch changes the window**, the gesture a chart on a phone already invites; it needs a policy for pinching past the data before it can land. | Re-choosing the range by hand to zoom is what people do. |
+**Nothing.** The rows this section held are in *Next* now (N207, N212, N213).
 
 ## Parked — deliberately not planned
 
