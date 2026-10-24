@@ -29,7 +29,8 @@ for the reason a parked row names its revisit trigger: a queue that cannot say w
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
 **What the statistics pass left open, and what it made visible.** Rows N203–N206 finish the pass's own loose ends; N207 is
-the structural debt it exposed; N208–N213 are improvements found while building it. Nothing here is started.
+the structural debt it exposed; N208–N209 and N211–N213 are improvements found while building it. **N210 was struck
+before it started**: the range has been remembered in preferences since N35, so it described shipped work.
 
 | # | What it changes | Brought forward when |
 | --- | --- | --- |
@@ -40,7 +41,6 @@ the structural debt it exposed; N208–N213 are improvements found while buildin
 | N207 | **`ui/statistics` splits into a chart package.** The screen is 877 lines, hit the 20-function ceiling three times in one pass, and the chart now spans four files. A refactor with no behaviour change, which is why it lands alone. | The next change that adds a function to `StatisticsScreen.kt`. |
 | N208 | **The overview's three numbers leave the row above the figure** — one line under the title, or below the chart — giving the figure back the space it occupies. | The figure is opened on a small phone and is still the smallest thing on the screen. |
 | N209 | **The x axis carries ticks between its ends** — month or week, whatever the range is — rather than only the first and last date. | A range is long enough that its two end dates are the only time on the figure. |
-| N210 | **The range is remembered across visits**, as the weight unit is. | A visit's first act is re-choosing the range it was left at. |
 | N211 | **The moving-average picker folds into a menu**, like the range's *More*, leaving the card to the figure and its axis. | The 7/14/30 row costs the figure height it needs on a phone. |
 | N212 | **A short "recently used" row above the metric trigger**, now that groups and search have made the menu navigable. | The same two or three series are what actually gets read. |
 | N213 | **Pinch changes the window**, the gesture a chart on a phone already invites; it needs a policy for pinching past the data before it can land. | Re-choosing the range by hand to zoom is what people do. |
