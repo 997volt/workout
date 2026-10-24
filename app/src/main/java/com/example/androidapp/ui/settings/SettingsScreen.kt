@@ -418,19 +418,21 @@ private fun WorkoutSwitches(
     modifier: Modifier = Modifier,
 ) {
     AppCard(modifier = modifier) {
+        // Progression leads the card: it is the one setting here that decides whether the app edits a plan,
+        // and the rest are about the timer the workout screen runs on.
+        SettingProgressionMode(
+            label = stringResource(R.string.settings_progression),
+            hint = stringResource(R.string.settings_progression_hint),
+            mode = state.progressionMode,
+            onSetMode = onSetProgressionMode,
+        )
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         SettingSwitch(
             label = stringResource(R.string.settings_rest_timer),
             hint = stringResource(R.string.settings_rest_timer_hint),
             checked = state.restTimerEnabled,
             onCheckedChange = onSetRestTimer,
             testTag = TestTags.SETTINGS_REST_TIMER,
-        )
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        SettingProgressionMode(
-            label = stringResource(R.string.settings_progression),
-            hint = stringResource(R.string.settings_progression_hint),
-            mode = state.progressionMode,
-            onSetMode = onSetProgressionMode,
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         SettingSwitch(
