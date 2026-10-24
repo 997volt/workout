@@ -909,6 +909,12 @@ object TestTags {
         const val CHART_AXIS = "statistics_chart_axis"
         /** The date and value a finger on the figure is over (N200). */
         const val SCRUB_READOUT = "statistics_scrub_readout"
+
+        /** The full-height view of the figure, its own chart and the way back (N201). */
+        const val CHART_EXPAND = "statistics_chart_expand"
+        const val CHART_EXPANDED = "statistics_chart_expanded"
+        const val CHART_EXPANDED_FIGURE = "statistics_chart_expanded_figure"
+        const val CHART_COLLAPSE = "statistics_chart_collapse"
         const val CHART_MAX = "statistics_chart_max"
         const val CHOOSE_LIFT = "statistics_choose_lift"
         const val LIFT = "statistics_lift"

@@ -341,6 +341,23 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun theFigure_canBeOpenedAtFullHeight_andClosedAgain() {
+        // N201: the card's height is the screen's choice; expanding is the reader overruling it for a moment
+        // without leaving the range and metric they chose.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPAND).performScrollTo().performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED_FIGURE).assertExists()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_COLLAPSE).performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED).assertDoesNotExist()
+    }
+
+    @Test
     fun touchingTheFigureReadsTheReadingUnderTheFinger() {
         // N200: a crosshair and a line of text, so a phone-sized figure can be interrogated without leaving it.
         setScreen()

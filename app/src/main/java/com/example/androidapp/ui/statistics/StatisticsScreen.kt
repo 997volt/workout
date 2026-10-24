@@ -58,7 +58,6 @@ import com.example.androidapp.ui.components.ChartPoint
 import com.example.androidapp.ui.components.ChartSegment
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
-import com.example.androidapp.ui.components.TrendChartFrame
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.history.HistoryFormat
 import com.example.androidapp.ui.theme.EyebrowStyle
@@ -467,7 +466,7 @@ private fun ReadingRow(label: String, value: String, testTag: String) {
  * the axis depending on the fitted line is the kind of thing that is wrong invisibly, since a clamped line
  * still draws.
  */
-private data class ChartOverlay(
+internal data class ChartOverlay(
     val projected: List<ChartPoint>,
     val mean: List<ChartPoint>,
     val fittedLine: ChartLine?,
@@ -547,39 +546,16 @@ private fun SeriesChart(
     // The chart, the window it is averaged over and the axis in words are one card: they are one
     // reading of one series, and separating the picker from the line it changes would make the
     // control look like a setting rather than part of the figure.
-    // The reading the finger is over, or null (N200). Held here rather than in the frame because the answer is
-    // a date and a value, which is the screen's knowledge rather than the drawing's.
-    var scrubbed by remember { mutableStateOf<MetricReading?>(null) }
+    var expanded by remember { mutableStateOf(false) }
 
     AppCard {
-        // The figure and its scale, side by side (N196): the numbers are the axis, so they belong against it
-        // rather than in a row underneath where "left" and "right" said nothing about up and down.
-        Row(modifier = Modifier.fillMaxWidth()) {
-            ChartAxis(axis = overlay.axis, format = { metric.unit.format(it) })
-            TrendChartFrame(
-                points = overlay.projected,
-                goals = overlay.goals,
-                minValue = overlay.axis.min,
-                maxValue = overlay.axis.max,
-                testTag = TestTags.Statistics.CHART,
-                bars = metric.isBars,
-                average = series.average(),
-                // The line is evaluated across the same elapsed time the points are placed by (N37), so it leans
-                // the way the readings do rather than the way the index would.
-                movingAverage = overlay.mean,
-                trend = overlay.fittedLine,
-                height = CHART_FIGURE_HEIGHT,
-                modifier = Modifier.weight(1f),
-                // The nearest recorded reading under the finger (N200): the same points the line is drawn
-                // through, so a readout cannot name a value the figure does not show.
-                onScrub = { fraction ->
-                    scrubbed = fraction?.let { at ->
-                        nearestReadingIndex(overlay.projected, at)?.let { series.readings[it] }
-                    }
-                },
-            )
-        }
-        scrubbed?.let { reading -> ScrubReadout(reading = reading, metric = metric) }
+        ChartFigure(
+            overlay = overlay,
+            series = series,
+            metric = metric,
+            height = CHART_FIGURE_HEIGHT,
+            testTag = TestTags.Statistics.CHART,
+        )
         MovingAveragePicker(period = period, onSelect = { period = it })
 
         // The axis in words (ROADMAP N37). A canvas cannot be read by a screen reader, and even for a
@@ -590,12 +566,21 @@ private fun SeriesChart(
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.testTag(TestTags.Statistics.CHART_FIRST_DATE),
             )
+            // The figure at a size it can be inspected at (N201): the card's height is the screen's choice, and
+            // this is the reader overruling it for a moment.
+            AppTextButton(
+                onClick = { expanded = true },
+                modifier = Modifier.testTag(TestTags.Statistics.CHART_EXPAND),
+            ) {
+                Text(stringResource(R.string.statistics_chart_expand))
+            }
             Text(
                 text = HistoryFormat.date(recordedSpan(series).second, zone = ZoneId.systemDefault()),
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.testTag(TestTags.Statistics.CHART_LAST_DATE),
             )
         }
+
         // The plans whose targets the chart draws (ROADMAP N39), named: the dashed lines are a prescription
         // rather than the lifter's own goal, and a chart that left the distinction to a dash pattern would be
         // asking the reader to know it already.
@@ -612,7 +597,19 @@ private fun SeriesChart(
             )
         }
     }
+
+    if (expanded) {
+        ChartExpandedDialog(
+            overlay = overlay,
+            series = series,
+            metric = metric,
+            onDismiss = { expanded = false },
+        )
+    }
 }
+
+
+
 
 
 /**

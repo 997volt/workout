@@ -483,6 +483,13 @@ the rule; that one argues it.
 - **A gap is distance, and the line breaks at it** (N37). On a time axis a straight
   segment across missing weeks is a claim about weeks nobody measured; this is where the
   app deliberately differs from the tool whose shape it borrows.
+- **The figure can be given the screen, and it is a dialog rather than a route** (N201). The card's height is
+  the screen's choice; expanding overrules it for a moment without losing the range and metric just chosen, which
+  leaving the screen would. The expanded figure is the **same composable** as the card's — the axis, the line and
+  the scrub have to agree about the same points, and a second drawing is how they stop. Its height is a fraction
+  of the **window** a dialog is drawn in, not the display setting: `LocalConfiguration` can disagree with the space
+  the dialog actually has, and lint has a rule for exactly that.
+
 - **A finger on the figure names the reading under it** (N200). A phone-sized chart cannot hold a label per
   point, so the figure answers a touch instead: the nearest **recorded** reading — a gap is never the answer —
   is named below it as a date and a value. The readout is real `Text` beside the canvas rather than paint on it,

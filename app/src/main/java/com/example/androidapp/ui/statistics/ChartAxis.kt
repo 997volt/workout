@@ -22,6 +22,14 @@ import com.example.androidapp.ui.components.TestTags
  */
 internal val CHART_FIGURE_HEIGHT = 180.dp
 
+/**
+ * How much of the screen the expanded figure takes (N201).
+ *
+ * A fraction rather than a height: the point of expanding is to use the room the device has, and a fixed number
+ * would be a second, larger sparkline on a small phone and a small figure on a tablet.
+ */
+internal const val EXPANDED_CHART_FRACTION = 0.55f
+
 /** The axis gutter's width, so three numbers do not push the figure off its own card on a small phone. */
 private val CHART_AXIS_WIDTH = 52.dp
 

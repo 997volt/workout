@@ -318,6 +318,8 @@
     <string name="statistics_metric_no_matches">No series matches.</string>
     <string name="statistics_metric_joint">Joint pain</string>
     <string name="statistics_metric_joint_back">← Joint pain</string>
+    <string name="statistics_chart_expand">Expand</string>
+    <string name="statistics_chart_collapse">Close</string>
     <string name="range_custom">Custom</string>
     <string name="statistics_overview_workouts">Workouts</string>
     <string name="statistics_overview_volume">Volume</string>
