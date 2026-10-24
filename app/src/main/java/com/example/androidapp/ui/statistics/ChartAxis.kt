@@ -30,6 +30,14 @@ internal val CHART_FIGURE_HEIGHT = 180.dp
  */
 internal const val EXPANDED_CHART_FRACTION = 0.55f
 
+/**
+ * How much of the window the expanded dialog itself may take (B219).
+ *
+ * More than the figure's fraction, because the title and the extras are above and below it; the dialog's body
+ * scrolls past this rather than clipping, so a short window loses nothing but a swipe.
+ */
+internal const val EXPANDED_DIALOG_MAX_FRACTION = 0.9f
+
 /** The axis gutter's width, so three numbers do not push the figure off its own card on a small phone. */
 private val CHART_AXIS_WIDTH = 52.dp
 

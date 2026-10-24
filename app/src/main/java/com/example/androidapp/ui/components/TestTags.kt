@@ -916,6 +916,8 @@ object TestTags {
         const val CHART_EXPAND = "statistics_chart_expand"
         const val CHART_EXPANDED = "statistics_chart_expanded"
         const val CHART_EXPANDED_FIGURE = "statistics_chart_expanded_figure"
+        /** The expanded view's scrolling body, so a short window is proved to scroll rather than clip (B219). */
+        const val CHART_EXPANDED_BODY = "statistics_chart_expanded_body"
         /** The expanded view's name, announced with the dialog (N206). */
         const val CHART_EXPANDED_TITLE = "statistics_chart_expanded_title"
         const val CHART_COLLAPSE = "statistics_chart_collapse"

@@ -483,12 +483,15 @@ the rule; that one argues it.
 - **A gap is distance, and the line breaks at it** (N37). On a time axis a straight
   segment across missing weeks is a claim about weeks nobody measured; this is where the
   app deliberately differs from the tool whose shape it borrows.
-- **The figure can be given the screen, and it is a dialog rather than a route** (N201). The card's height is
+- **The figure can be given the screen, and it is a dialog rather than a route** (N201, B219). The card's height is
   the screen's choice; expanding overrules it for a moment without losing the range and metric just chosen, which
   leaving the screen would. The expanded figure is the **same composable** as the card's — the axis, the line and
   the scrub have to agree about the same points, and a second drawing is how they stop. Its height is a fraction
   of the **window** a dialog is drawn in, not the display setting: `LocalConfiguration` can disagree with the space
-  the dialog actually has, and lint has a rule for exactly that.
+  the dialog actually has, and lint has a rule for exactly that. The dialog may take most of the window and its
+  **body scrolls** past that: a fraction plus a title and the card's extras has no room to spare on a short window,
+  and the alternative to a swipe is clipping what the expanded view was opened to show. The header — the name and
+  the way out — is outside the scrolling body, so the exit cannot be scrolled away.
 
 - **The moving-average window is one control, not three chips** (N211). Three chips inside the figure's card were a
   fourth row for a setting most readers choose once; the control names the window on screen and opens the three,

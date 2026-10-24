@@ -400,6 +400,9 @@ class StatisticsScreenTest {
         // B213: and the window itself carries the name, rather than only the heading inside it.
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED)
             .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.PaneTitle))
+        // B219: the body scrolls, so a short window loses nothing but a swipe.
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED_BODY)
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
         // N204: the expanded view carries the card's extras — its dates are on screen twice now.
         composeTestRule.onAllNodesWithTag(TestTags.Statistics.CHART_FIRST_DATE).assertCountEquals(2)
 

@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -123,6 +126,10 @@ internal fun ChartExpandedDialog(
     val density = LocalDensity.current
     val windowHeight = LocalWindowInfo.current.containerSize.height
     val height = with(density) { (windowHeight * EXPANDED_CHART_FRACTION).toDp() }
+    // The dialog may use most of the window, and its **body** scrolls rather than clipping (B219): the figure is
+    // still a fraction of the window, but a short one would push the extras off the bottom of a window that has
+    // nowhere to go. The header stays put so the way out is never scrolled away.
+    val maxHeight = with(density) { (windowHeight * EXPANDED_DIALOG_MAX_FRACTION).toDp() }
     // The dialog's name, said twice on purpose: once as a pane title for a screen reader (B213), once as the
     // heading a sighted reader sees.
     val title = stringResource(R.string.statistics_chart_figure, metric.label())
@@ -134,7 +141,7 @@ internal fun ChartExpandedDialog(
                 .semantics { paneTitle = title },
             shape = MaterialTheme.shapes.large,
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.heightIn(max = maxHeight).padding(16.dp)) {
                 // The way out sits above the figure, not under it: a dialog taller than the screen would put a
                 // close button exactly where it cannot be reached.
                 Row(
@@ -156,21 +163,28 @@ internal fun ChartExpandedDialog(
                         Text(stringResource(R.string.statistics_chart_collapse))
                     }
                 }
-                ChartFigure(
-                    overlay = overlay,
-                    series = series,
-                    metric = metric,
-                    height = height,
-                    testTag = TestTags.Statistics.CHART_EXPANDED_FIGURE,
-                )
-                // The same extras the card carries (N204): the expanded view is the same reading of the same
-                // series, so it cannot be a figure with less said about it.
-                ChartExtras(
-                    dates = dates,
-                    planLines = planLines,
-                    period = period,
-                    onSelectPeriod = onSelectPeriod,
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState())
+                        .testTag(TestTags.Statistics.CHART_EXPANDED_BODY),
+                ) {
+                    ChartFigure(
+                        overlay = overlay,
+                        series = series,
+                        metric = metric,
+                        height = height,
+                        testTag = TestTags.Statistics.CHART_EXPANDED_FIGURE,
+                    )
+                    // The same extras the card carries (N204): the expanded view is the same reading of the same
+                    // series, so it cannot be a figure with less said about it.
+                    ChartExtras(
+                        dates = dates,
+                        planLines = planLines,
+                        period = period,
+                        onSelectPeriod = onSelectPeriod,
+                    )
+                }
             }
         }
     }
