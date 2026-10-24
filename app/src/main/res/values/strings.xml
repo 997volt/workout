@@ -294,6 +294,9 @@
     <!-- The edit mode corrects a record as well as deleting it, so its form opens holding what the
          record already states. -->
     <string name="measurements_edit_title">Edit measurement</string>
+    <string name="measurements_date_label">Measured on</string>
+    <string name="measurements_date_change">Change</string>
+    <string name="measurements_date_confirm">Use this day</string>
     <string name="measurements_edit_entry">Edit %1$s</string>
     <!-- N133: the snackbar naming what went, with the way back. -->
     <string name="measurements_deleted">Measurement deleted</string>

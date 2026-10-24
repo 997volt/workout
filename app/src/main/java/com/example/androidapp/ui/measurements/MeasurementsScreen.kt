@@ -53,6 +53,7 @@ import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
 import com.example.androidapp.domain.model.at
 import com.example.androidapp.domain.model.statesSomething
+import com.example.androidapp.domain.model.withDay
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.DEFAULT_SCORED_PICK
 import com.example.androidapp.ui.components.MessageSnackbar
@@ -488,7 +489,11 @@ private fun MeasurementDialog(
     var soreMuscles by rememberSaveable(stateSaver = SoreMusclesSaver) {
         mutableStateOf(initial?.soreMuscles.orEmpty())
     }
-    val measuredAt = remember { initial?.measuredAt ?: Instant.now() }
+    // The day is editable **only when correcting a record** (a request in use; no roadmap id covers it): a
+    // new entry belongs to today, and the form that corrects a record is the one that can say it was not
+    // today after all. The zone is the one the entry's day is read in, which is the device's.
+    val zone = ZoneId.systemDefault()
+    var measuredAt by remember { mutableStateOf(initial?.measuredAt ?: Instant.now()) }
 
     val draft = BodyMeasurement(
         // A blank id is a new entry, which the repository places by its day and kind; an edit keeps the
@@ -509,22 +514,22 @@ private fun MeasurementDialog(
             Text(stringResource(if (initial == null) kindAddLabel(kind) else R.string.measurements_edit_title))
         },
         text = {
-            when (kind) {
-                MeasurementKind.DAILY -> DailyFields(
-                    weight = weight,
-                    onWeightChange = { weight = it },
-                    bodyFat = bodyFat,
-                    onBodyFatChange = { bodyFat = it },
-                    muscle = muscle,
-                    onMuscleChange = { muscle = it },
-                    soreMuscles = soreMuscles,
-                    onSoreMusclesChange = { soreMuscles = it },
-                )
-
-                MeasurementKind.TAPE -> TapeFields(tape = tape, onTapeChange = { site, text ->
-                    tape = tape + (site to text)
-                })
-            }
+            MeasurementFormBody(
+                kind = kind,
+                day = initial?.let { measuredAt.atZone(zone).toLocalDate() },
+                dayText = HistoryFormat.date(measuredAt, zone = zone),
+                onPickDay = { picked -> measuredAt = measuredAt.withDay(picked, zone) },
+                weight = weight,
+                onWeightChange = { weight = it },
+                bodyFat = bodyFat,
+                onBodyFatChange = { bodyFat = it },
+                muscle = muscle,
+                onMuscleChange = { muscle = it },
+                soreMuscles = soreMuscles,
+                onSoreMusclesChange = { soreMuscles = it },
+                tape = tape,
+                onTapeChange = { site, text -> tape = tape + (site to text) },
+            )
         },
         confirmButton = {
             AppTextButton(
@@ -541,6 +546,7 @@ private fun MeasurementDialog(
     )
 }
 
+
 private fun kindAddLabel(kind: MeasurementKind): Int = when (kind) {
     MeasurementKind.DAILY -> R.string.measurements_add_daily
     MeasurementKind.TAPE -> R.string.measurements_add_tape
@@ -548,7 +554,7 @@ private fun kindAddLabel(kind: MeasurementKind): Int = when (kind) {
 
 /** What a day says about the body: soreness, weight and the two percentages (N113). */
 @Composable
-private fun DailyFields(
+internal fun DailyFields(
     weight: String,
     onWeightChange: (String) -> Unit,
     bodyFat: String,
@@ -608,7 +614,7 @@ private fun DailyFields(
 
 /** A tape day: the sites, and nothing else (N113). */
 @Composable
-private fun TapeFields(tape: Map<TapeSite, String>, onTapeChange: (TapeSite, String) -> Unit) {
+internal fun TapeFields(tape: Map<TapeSite, String>, onTapeChange: (TapeSite, String) -> Unit) {
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(8.dp),

@@ -1373,6 +1373,16 @@ the rule; that one argues it.
   the file — and *Merge* reunites a set with the neighbours that still agree, because a misclick must
   not cost the line. Rejected: a `count` field in the document, which would move the format version and
   make every reader expand it, for a compression the page can do on the way out.
+- **A measurement's day is corrected from the edit form, and a move onto an occupied day is refused.** The
+  day a record belongs to was fixed when it was saved, so a morning typed onto the wrong date had no way
+  back; the field now sits above the numbers, **only in the form that corrects a record** — a new entry is
+  today's, and a day is a fact about the record rather than one of its readings. The move keeps the entry's
+  **id and hour**: it is the same reading on another day, not a second one beside it. A day holds one record
+  of each kind (N32, N113), so a move onto a day that already has one is refused in the repository rather
+  than left to the form, the way the restore path already refuses the same collision (N133) — the row keeps
+  its id, so `find` cannot see the day it is moving onto, and this is the one write that could put two live
+  entries on a day.
+
 - **A day starts folded, and the fold is the form's memory.** A program of fifteen days is a lot of
   scrolling, so a day's head — its title, what it holds, and its weekday — reads as one line and the
   body waits behind a disclosure that is never written to the document, so a re-render keeps it and the

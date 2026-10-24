@@ -105,6 +105,17 @@ class RoomMeasurementRepository @Inject constructor(
                     to = dayEnd,
                     kind = measurement.kind.name,
                 )
+            // A correction that **moves** a row to another day must not land beside one already there: a day
+            // holds one entry of each kind (N32, N113), and the restore path refuses the same collision
+            // (N133). The row keeps its id, so `find` above can never see the day it is moving onto — this is
+            // the one write that could put two live entries on a day.
+            if (existing != null && existing.measuredAt !in dayStart until dayEnd) {
+                if (dao.findOnDay(from = dayStart, to = dayEnd, kind = measurement.kind.name) != null) {
+                    throw InvalidInputException(
+                        "That day already has a ${measurement.kind.name.lowercase()} measurement.",
+                    )
+                }
+            }
             val row = measurement.toEntity(
                 // An existing row keeps its identity: an edit is an edit, not a replacement.
                 id = existing?.id ?: measurement.id.ifBlank { UUID.randomUUID().toString() },

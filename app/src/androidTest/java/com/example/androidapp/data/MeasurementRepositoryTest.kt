@@ -299,6 +299,44 @@ class MeasurementRepositoryTest {
     }
 
     @Test
+    fun aCorrectionCanMoveAnEntryToAnotherDay() = runTest {
+        // A request in use; no roadmap id covers it. The day was fixed when the record was saved, so a morning
+        // typed onto the wrong date had no way back. The row keeps its id: this is the same entry on another
+        // day rather than a second one written beside it.
+        repository.save(entry(at = localHour(8), weightGrams = 82_000L))
+        val saved = repository.observeAll().first().single()
+        val otherDay = saved.measuredAt.plusSeconds(3 * 86_400L)
+
+        repository.save(saved.copy(measuredAt = otherDay, weightGrams = 81_500L))
+
+        val all = repository.observeAll().first()
+        assertEquals("moved, not copied", 1, all.size)
+        assertEquals("and it is the same entry", saved.id, all.single().id)
+        assertEquals(otherDay, all.single().measuredAt)
+        assertEquals(81_500L, all.single().weightGrams)
+    }
+
+    @Test
+    fun movingAnEntryOntoADayThatAlreadyHasOne_isRefused_andNothingChanges() = runTest {
+        // A record's identity is its day and its kind (N32, N113), and the restore path already refuses to
+        // resurrect one onto a day re-entered since (N133). A move is the other way to make that collision,
+        // and it is refused rather than letting a day hold two live entries.
+        repository.save(entry(at = localHour(8), weightGrams = 82_000L))
+        val first = repository.observeAll().first().single()
+        repository.save(entry(at = localHour(8).plusSeconds(86_400L), weightGrams = 83_000L))
+        val second = repository.observeAll().first().single { it.id != first.id }
+
+        val failure = repository.save(second.copy(measuredAt = first.measuredAt)) as DataResult.Failure
+
+        assertTrue("the refusal is a sentence, not a storage error", failure.error is DataError.Invalid)
+        assertEquals(
+            "the refused move changed neither row",
+            listOf(first, second).sortedBy { it.measuredAt },
+            repository.observeAll().first().sortedBy { it.measuredAt },
+        )
+    }
+
+    @Test
     fun twoSavesOnADayThatArriveTogether_leaveOneEntry() = runTest {
         // B151. The day's read used to happen **outside** the save's transaction, so two saves racing for the
         // same day and kind both found nothing, both inserted, and the day held two live entries — which every

@@ -853,6 +853,19 @@ object TestTags {
         const val EMPTY = "measurements_empty"
 
         /**
+         * The day an edited record belongs to, and the way to change it (a request in use; no roadmap id
+         * covers it).
+         *
+         * Only the edit form carries it: a new entry is today's, so a test can name the difference between
+         * the two forms by this tag alone.
+         */
+        const val EDIT_DATE = "measurements_edit_date"
+        const val EDIT_DATE_CHANGE = "measurements_edit_date_change"
+
+        /** The calendar's own confirmation, so a test can prove the picker opened. */
+        const val EDIT_DATE_CONFIRM = "measurements_edit_date_confirm"
+
+        /**
          * One record opened to read (a request in use; no roadmap id covers it).
          *
          * The row is the field that opens it, so a test names the entry rather than a position in the

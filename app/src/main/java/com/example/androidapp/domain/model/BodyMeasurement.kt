@@ -104,6 +104,19 @@ fun Instant.localDayBounds(zone: ZoneId): Pair<Long, Long> {
 }
 
 /**
+ * The same reading on another day, keeping the hour it was taken at (a request in use; no roadmap id covers
+ * it).
+ *
+ * The edit form corrects **which day** a measurement belongs to, and that is not a claim that the reading was
+ * taken at a different hour: a morning weigh-in moved to the wrong date is still a morning weigh-in. Built in
+ * [zone] because that is the zone the day is read in ([localDayBounds]), so the round trip through a picker
+ * cannot land an entry on the day beside the one that was chosen — including the spring-forward day, where
+ * 02:30 does not exist and the resolver moves it forward rather than into the next day.
+ */
+fun Instant.withDay(day: LocalDate, zone: ZoneId): Instant =
+    day.atTime(atZone(zone).toLocalTime()).atZone(zone).toInstant()
+
+/**
  * Whether this entry is [day]'s **daily** record, in [zone] (ROADMAP N114).
  *
  * The daily kind, not either kind: a day keeps one entry of each (N113), so a tape day is no reason to stop

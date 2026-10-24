@@ -112,4 +112,30 @@ class BodyMeasurementDayTest {
         assertThat(nextMorning >= springStart && nextMorning < springEnd).isFalse()
         assertThat(lateEvening >= fallStart && lateEvening < fallEnd).isTrue()
     }
+
+    @Test
+    fun aCorrectedDayKeepsTheHourTheReadingWasTakenAt() {
+        // A request in use; no roadmap id covers it. The edit form corrects which day a record belongs to,
+        // and that is not a claim that it was taken at a different hour — 23:30 in Berlin is already the next
+        // day in UTC, which is why the move is built in the entry's zone rather than in UTC.
+        val lateEvening = Instant.parse("2026-10-12T21:30:00Z")
+        assertThat(lateEvening.localDay(berlin)).isEqualTo(day)
+
+        val moved = lateEvening.withDay(LocalDate.of(2026, 10, 20), berlin)
+
+        assertThat(moved.localDay(berlin)).isEqualTo(LocalDate.of(2026, 10, 20))
+        assertThat(moved.atZone(berlin).toLocalTime())
+            .isEqualTo(lateEvening.atZone(berlin).toLocalTime())
+    }
+
+    @Test
+    fun movingOntoTheSpringForwardDay_landsOnThatDay() {
+        // 02:30 does not exist on 2027-03-28 in Berlin. The zone's resolver moves it forward rather than
+        // throwing or landing on the 29th, which is what a day field must do.
+        val before = Instant.parse("2027-03-20T01:30:00Z")
+
+        val moved = before.withDay(LocalDate.of(2027, 3, 28), berlin)
+
+        assertThat(moved.localDay(berlin)).isEqualTo(LocalDate.of(2027, 3, 28))
+    }
 }

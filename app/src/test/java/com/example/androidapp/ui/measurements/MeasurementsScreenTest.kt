@@ -121,6 +121,27 @@ class MeasurementsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Measurements.CONFIRM).assertIsEnabled()
     }
 
+    @Test
+    fun theEditForm_carriesTheDay_andOffersToChangeIt() {
+        // A request in use; no roadmap id covers it. A record's day was fixed when it was saved, so a morning
+        // typed onto the wrong date could not be corrected anywhere — and the edit form is the one that
+        // corrects a record.
+        setScreen(initialEdit = today)
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT_DATE).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT_DATE_CHANGE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT_DATE_CONFIRM).assertIsDisplayed()
+    }
+
+    @Test
+    fun theAddForm_doesNotOfferTheDay() {
+        // A new entry belongs to today: the day is what an edit corrects, not something to choose while
+        // adding.
+        setScreen(initialAdd = MeasurementKind.DAILY)
+
+        composeTestRule.onNodeWithTag(TestTags.Measurements.EDIT_DATE).assertDoesNotExist()
+    }
+
     /** The two taps every add takes now: the button, then which of the two records (N113). */
     private fun startAdding(kind: MeasurementKind) {
         composeTestRule.onNodeWithTag(TestTags.Measurements.ADD).performClick()
