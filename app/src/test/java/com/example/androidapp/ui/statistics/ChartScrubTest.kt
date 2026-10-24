@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.statistics
 
+import androidx.compose.ui.geometry.Offset
 import com.example.androidapp.ui.components.ChartPoint
 import com.google.common.truth.Truth.assertThat
 import java.time.Instant
@@ -62,5 +63,23 @@ class ChartScrubTest {
         // B208: a range or metric can change under a held finger. The old read read the new series at the old
         // index; there is no point when the two do not line up.
         assertThat(scrubPoint(projected, readings.take(1), 0.9f)).isNull()
+    }
+
+    @Test
+    fun aDragInsideTheSlop_isNotYetEitherGesture() {
+        // B211: nothing is consumed while the direction is undecided, so the screen can still take the drag.
+        assertThat(scrubDirection(Offset(2f, 2f), slop = 8f)).isNull()
+    }
+
+    @Test
+    fun aVerticalDragBelongsToTheScreen_andAHorizontalOneToTheFigure() {
+        assertThat(scrubDirection(Offset(2f, 40f), slop = 8f)).isFalse()
+        assertThat(scrubDirection(Offset(40f, 2f), slop = 8f)).isTrue()
+    }
+
+    @Test
+    fun aDiagonalDragTakesTheAxisItMovedFurther() {
+        assertThat(scrubDirection(Offset(40f, 30f), slop = 8f)).isTrue()
+        assertThat(scrubDirection(Offset(30f, 40f), slop = 8f)).isFalse()
     }
 }
