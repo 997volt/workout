@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,7 +26,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.androidapp.R
-import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.ChartMarker
 import com.example.androidapp.ui.components.TestTags
@@ -205,25 +206,33 @@ internal fun ChartExtras(
     }
 }
 
-/** The window the trailing average is taken over (N40). */
+/**
+ * The window the trailing average is taken over (N40), behind one control (N211).
+ *
+ * Three chips for a setting most people pick once were a fourth row inside the figure's card; the control says
+ * which window is on screen and opens the three, the shape the range's *More* already uses.
+ */
 @Composable
 private fun MovingAveragePicker(period: Int, onSelect: (Int) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.statistics_moving_average),
-            style = MaterialTheme.typography.labelSmall,
+    var open by remember { mutableStateOf(false) }
+    Column {
+        AppTextButton(
+            onClick = { open = true },
             modifier = Modifier.testTag(TestTags.Statistics.MOVING_AVERAGE),
-        )
-        MOVING_AVERAGE_PERIODS.forEach { option ->
-            AppFilterChip(
-                selected = period == option,
-                onClick = { onSelect(option) },
-                label = option.toString(),
-                testTag = TestTags.Statistics.movingAveragePeriod(option),
-            )
+        ) {
+            Text(stringResource(R.string.statistics_moving_average) + ": " + period)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            MOVING_AVERAGE_PERIODS.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.toString()) },
+                    onClick = {
+                        open = false
+                        onSelect(option)
+                    },
+                    modifier = Modifier.testTag(TestTags.Statistics.movingAveragePeriod(option)),
+                )
+            }
         }
     }
 }

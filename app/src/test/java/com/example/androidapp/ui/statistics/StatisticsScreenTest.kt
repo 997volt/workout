@@ -291,12 +291,16 @@ class StatisticsScreenTest {
         // noise of the days (N40).
         setScreen()
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.MOVING_AVERAGE).assertExists()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.movingAveragePeriod(DAYS)).assertIsSelected()
+        // N211: one control names the window on screen, and the three windows are behind it.
+        val control = composeTestRule.onNodeWithTag(TestTags.Statistics.MOVING_AVERAGE)
+        control.performScrollTo().assertExists()
+        control.assertTextContains(DAYS.toString(), substring = true)
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.movingAveragePeriod(14)).performScrollTo().performClick()
+        control.performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.movingAveragePeriod(14)).performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.movingAveragePeriod(14)).assertIsSelected()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.MOVING_AVERAGE)
+            .assertTextContains("14", substring = true)
     }
 
     @Test

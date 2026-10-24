@@ -490,6 +490,11 @@ the rule; that one argues it.
   of the **window** a dialog is drawn in, not the display setting: `LocalConfiguration` can disagree with the space
   the dialog actually has, and lint has a rule for exactly that.
 
+- **The moving-average window is one control, not three chips** (N211). Three chips inside the figure's card were a
+  fourth row for a setting most readers choose once; the control names the window on screen and opens the three,
+  the shape the range's *More* already uses. The card is the figure and its axis, and everything that changes what
+  the figure shows sits one tap behind a control that says what it currently is.
+
 - **The expanded figure carries the card's extras** (N204). The dialog used to be the figure and a close button, a
   thinner answer to the question the card answers: the window it averages over, the time it spans and the plans it
   draws are one composable (`ChartExtras`) drawn in both places now. A second copy is how the two readings of one
