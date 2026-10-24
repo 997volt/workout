@@ -1442,15 +1442,18 @@ the rule; that one argues it.
 - **A run of identical sets is one line with a count, and the count is a view.** A plan stores one row
   per set and the app reads one row per set — two sets can differ by role, load, reps, drop value or
   note — so the page draws only **neighbouring** sets that agree on all of those as one line, and its
-  *Sets* number grows or trims that line rather than being written anywhere. Growing appends copies
-  numbered after the workout's last set; trimming takes the same rows off the back, at most twenty to
-  a line so a slipped keystroke cannot mint a hundred. **Indexes are never renumbered**, because a gap
-  is how a plan says a set was deleted on the phone (B157), and a **rung is never a member of a run**,
-  because its place in the ladder is its own row (N79). A line can be **split** into one row per set so
-  that one of them is written differently — the split is a non-enumerable mark on the form, never in
-  the file — and *Merge* reunites a set with the neighbours that still agree, because a misclick must
-  not cost the line. Rejected: a `count` field in the document, which would move the format version and
-  make every reader expand it, for a compression the page can do on the way out.
+  *Sets* number grows or trims that line rather than being written anywhere. Growing inserts copies
+  **inside** the line and shifts the sets after it, because the plan's order is the index and appending
+  them at the end would put a middle line's sets after a later one; trimming takes the same rows off the
+  back, at most twenty to a line so a slipped keystroke cannot mint a hundred. **A trim renumbers nothing**,
+  because a gap is how a plan says a set was deleted on the phone (B157), and a **rung is never a member
+  of a run**, because its place in the ladder is its own row (N79). A count that is blank, a fraction or
+  zero leaves the line alone: clamping zero to the floor would delete the sets on the way past. A line can
+  be **split** into one row per set so that one of them is written differently — the split is a
+  non-enumerable mark on the form, never in the file — and *Merge* reunites a set with the neighbours that
+  still agree, because a misclick must not cost the line. Rejected: a `count` field in the document, which
+  would move the format version and make every reader expand it, for a compression the page can do on the
+  way out.
 - **A measurement's day is corrected from the edit form, and a move onto an occupied day is refused.** The
   day a record belongs to was fixed when it was saved, so a morning typed onto the wrong date had no way
   back; the field now sits above the numbers, **only in the form that corrects a record** — a new entry is

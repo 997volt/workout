@@ -217,7 +217,7 @@
       t.eq(runs[1].length, 1);
     });
 
-    check('a count appends copies of the run, numbered after the workout\'s last set', function () {
+    check('a count grows the line in place, and every copy says what the first said', function () {
       var document = baseDocument();
       var run = H.editorSetRunCount(document, 'set_a', '4');
 
@@ -233,6 +233,38 @@
       sets.forEach(function (set) { ids[set.id] = true; });
       t.eq(Object.keys(ids).length, 4, 'each row gets its own id');
       t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+    });
+
+    // B206, B207. Growing a line that is not the workout's last used to append its copies after the
+    // last set, so a middle line's extra sets landed at the end and the line split in two on the next
+    // render; and zero used to clamp to one and delete the rest of the line.
+    check('a count grows a middle line in place, and the line after it stays after it', function () {
+      var document = baseDocument();
+      H.editorAddSet(document, 'te_a');
+      setsOf(document)[1].note = 'back-off';
+      t.eq(H.editorSetRuns(document, 'te_a').length, 2, 'two lines to start with');
+
+      var grown = H.editorSetRunCount(document, 'set_a', '3');
+
+      t.eq(grown.length, 3, 'the line the count was typed into is three sets');
+      var sets = setsOf(document);
+      t.eq(sets.length, 4);
+      t.eq(sets.map(function (set) { return set.setIndex; }).join(','), '0,1,2,3',
+        'the later line moved along rather than being overtaken');
+      t.eq(sets[3].note, 'back-off', 'and it is still the last set');
+      var after = H.editorSetRuns(document, 'te_a');
+      t.eq(after.length, 2, 'the grown line did not split into two');
+      t.eq(after[0].length, 3);
+      t.eq(after[1].length, 1);
+      t.eq(JSON.parse(shared.validateJson(JSON.stringify(document))).problems.length, 0);
+    });
+
+    check('a count of zero is not a count, on a line of any length', function () {
+      var document = baseDocument();
+      H.editorSetRunCount(document, 'set_a', '4');
+
+      t.eq(H.editorSetRunCount(document, 'set_a', '0').length, 4, 'zero leaves the line alone');
+      t.eq(document.templateSets.length, 4, 'and nothing was deleted');
     });
 
     check('a count trims the run at the back and leaves the rest of the plan alone', function () {
@@ -254,7 +286,7 @@
       var document = baseDocument();
       t.eq(H.editorSetRunCount(document, 'set_a', '').length, 1, 'a blank field is not a deletion');
       t.eq(H.editorSetRunCount(document, 'set_a', '2.5').length, 1, 'nor is a fraction');
-      t.eq(H.editorSetRunCount(document, 'set_a', '0').length, 1, 'and one set is the floor');
+      t.eq(H.editorSetRunCount(document, 'set_a', '-1').length, 1, 'nor is a negative');
       t.eq(document.templateSets.length, 1, 'nothing was written');
     });
 

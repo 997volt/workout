@@ -452,13 +452,14 @@ round trip.
 - **A run of identical sets is one row, with a count.** The document still holds one row per set, because
   that is what a plan is and what the app reads, so the editor draws *neighbouring* sets that agree on
   every field — role, range, current rep target, load or assistance, drop value, note — as one line, and
-  the *Sets* number grows or trims that line: growing appends copies numbered after the workout's last
-  set, trimming takes them off the back, and no index is ever renumbered, because a gap is how a plan says
-  a set was deleted on the phone (B157). A rung is never one of a run, because its place in the ladder is
-  its own row (N79), and a line stands for at most twenty sets. A set that differs in any of those fields
-  is a line of its own, which is what makes the count trustworthy. *Split* breaks a line into one row per
-  set so a single set can be written differently, and *Merge* puts it back with the neighbours that still
-  agree; neither is written to the file.
+  the *Sets* number grows or trims that line: growing inserts copies **inside** the line and shifts the
+  sets after it along, trimming takes them off the back, and a trim renumbers nothing, because a gap is
+  how a plan says a set was deleted on the phone (B157). A blank, a fraction and zero are not counts, so
+  the line is left alone and the number is put back. A rung is never one of a run, because its place in
+  the ladder is its own row (N79), and a line stands for at most twenty sets. A set that differs in any
+  of those fields is a line of its own, which is what makes the count trustworthy. *Split* breaks a line
+  into one row per set so a single set can be written differently, and *Merge* puts it back with the
+  neighbours that still agree; neither is written to the file.
 - **Days start folded.** A day's head says its title, how many exercises and sets it holds, and its
   weekday; the body opens behind the disclosure at its left, and the day's own move and remove actions
   wait with the body. A day you add opens by itself, because it is the one about to be filled in.

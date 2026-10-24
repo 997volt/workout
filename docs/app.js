@@ -6963,11 +6963,13 @@
   /**
    * A run of identical sets made `requested` long.
    *
-   * Growing appends copies at the back of the run and trimming takes the same rows off it, because a
-   * plan's order is the set index. Indexes are **not** renumbered: the app reads a gap as a set
-   * deleted on the phone (B157), so the page touches only the rows the count names. Numbers a count
-   * cannot be — blank, a fraction, zero — leave the run alone and the render puts the number back,
-   * so typing into the field never silently deletes work.
+   * Growing inserts the copies **inside the line** and shifts the exercise's later sets by the same
+   * number, because a plan's order is the set index (`ProgramPlan` compares it) — appending them after
+   * the workout's last set would put a middle line's extra sets at the end and split the line on the
+   * next render. Trimming takes rows off the back of the line and renumbers nothing, because the app
+   * reads a gap as a set deleted on the phone (B157). Numbers a count cannot be — blank, a fraction,
+   * zero — leave the run alone and the render puts the number back, so typing into the field never
+   * silently deletes work.
    */
   function editorSetRunCount(working, firstSetId, requested) {
     var first = editorFind(working.templateSets, firstSetId);
@@ -6978,8 +6980,9 @@
     });
     if (!run) { return null; }
     var parsed = editorParseInt(requested);
-    if (parsed === null) { return run; }
-    var count = Math.min(Math.max(parsed, 1), EDITOR_SET_COUNT_MAX);
+    // Zero is not a count: clamping it to the floor would delete the line's sets on the way past.
+    if (parsed === null || parsed < 1) { return run; }
+    var count = Math.min(parsed, EDITOR_SET_COUNT_MAX);
     if (count < run.length) {
       var dropped = run.slice(count);
       working.templateSets = working.templateSets.filter(function (row) {
@@ -6991,7 +6994,13 @@
       var rows = (working.templateSets || []).filter(function (row) {
         return row && row.templateExerciseId === first.templateExerciseId;
       }).sort(function (a, b) { return a.setIndex - b.setIndex; });
-      var next = editorNextSetIndex(rows);
+      var lastIndex = run[run.length - 1].setIndex;
+      var inserted = count - run.length;
+      // The sets after the line keep their order by moving along by what was inserted.
+      rows.forEach(function (row) {
+        if (row.setIndex > lastIndex) { row.setIndex += inserted; }
+      });
+      var next = lastIndex + 1;
       var now = Date.now();
       for (var index = run.length; index < count; index += 1) {
         var copy = editorCopySet(run[0], next, now);
