@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.androidapp.R
+import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.ChartMarker
 import com.example.androidapp.ui.components.TestTags
@@ -91,6 +92,10 @@ internal fun ChartExpandedDialog(
     overlay: ChartOverlay,
     series: MetricSeries,
     metric: MetricEntry,
+    dates: List<String>,
+    planLines: List<String>,
+    period: Int,
+    onSelectPeriod: (Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
     // The room the window has, not the preferences' idea of it: LocalConfiguration is a display setting that
@@ -134,7 +139,91 @@ internal fun ChartExpandedDialog(
                     height = height,
                     testTag = TestTags.Statistics.CHART_EXPANDED_FIGURE,
                 )
+                // The same extras the card carries (N204): the expanded view is the same reading of the same
+                // series, so it cannot be a figure with less said about it.
+                ChartExtras(
+                    dates = dates,
+                    planLines = planLines,
+                    period = period,
+                    onSelectPeriod = onSelectPeriod,
+                )
             }
+        }
+    }
+}
+
+/**
+ * What the figure says around itself: the window it averages over, the time it spans and the plans it draws
+ * (N204).
+ *
+ * One composable for the card and the expanded view, because the two are the same reading: a dialog that dropped
+ * the dates or the plans would be a second, thinner answer to the same question.
+ */
+@Composable
+internal fun ChartExtras(
+    dates: List<String>,
+    planLines: List<String>,
+    period: Int,
+    onSelectPeriod: (Int) -> Unit,
+    onExpand: (() -> Unit)? = null,
+) {
+    Column {
+    MovingAveragePicker(period = period, onSelect = onSelectPeriod)
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        dates.forEachIndexed { index, date ->
+            Text(
+                text = date,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.testTag(
+                    when (index) {
+                        0 -> TestTags.Statistics.CHART_FIRST_DATE
+                        1 -> TestTags.Statistics.CHART_MIDDLE_DATE
+                        else -> TestTags.Statistics.CHART_LAST_DATE
+                    },
+                ),
+            )
+        }
+    }
+    if (planLines.isNotEmpty()) {
+        Text(
+            text = stringResource(R.string.statistics_plan_targets, planLines.joinToString(" · ")),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.testTag(TestTags.Statistics.PLAN_TARGETS),
+        )
+    }
+    if (onExpand != null) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            AppTextButton(
+                onClick = onExpand,
+                modifier = Modifier.testTag(TestTags.Statistics.CHART_EXPAND),
+            ) {
+                Text(stringResource(R.string.statistics_chart_expand))
+            }
+        }
+    }
+    }
+}
+
+/** The window the trailing average is taken over (N40). */
+@Composable
+private fun MovingAveragePicker(period: Int, onSelect: (Int) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.statistics_moving_average),
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.testTag(TestTags.Statistics.MOVING_AVERAGE),
+        )
+        MOVING_AVERAGE_PERIODS.forEach { option ->
+            AppFilterChip(
+                selected = period == option,
+                onClick = { onSelect(option) },
+                label = option.toString(),
+                testTag = TestTags.Statistics.movingAveragePeriod(option),
+            )
         }
     }
 }

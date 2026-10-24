@@ -12,6 +12,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -372,6 +373,8 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED_FIGURE).assertExists()
         // N206: the dialog is named, so a screen reader announces what it opened.
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED_TITLE).assertExists()
+        // N204: the expanded view carries the card's extras — its dates are on screen twice now.
+        composeTestRule.onAllNodesWithTag(TestTags.Statistics.CHART_FIRST_DATE).assertCountEquals(2)
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_COLLAPSE).performClick()
         composeTestRule.waitForIdle()

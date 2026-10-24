@@ -570,42 +570,13 @@ private fun SeriesChart(
             height = CHART_FIGURE_HEIGHT,
             testTag = TestTags.Statistics.CHART,
         )
-        MovingAveragePicker(period = period, onSelect = { period = it })
-
-        // The axis in words (ROADMAP N37). A canvas cannot be read by a screen reader, and "when did this start
-        // and end" is the first question — with a **middle** tick now (N209), because two dates at a month's
-        // edges say nothing about the time between them.
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            ChartDate(fraction = 0.0, span = recordedSpan(series), tag = TestTags.Statistics.CHART_FIRST_DATE)
-            ChartDate(fraction = 0.5, span = recordedSpan(series), tag = TestTags.Statistics.CHART_MIDDLE_DATE)
-            ChartDate(fraction = 1.0, span = recordedSpan(series), tag = TestTags.Statistics.CHART_LAST_DATE)
-        }
-        // The figure at a size it can be inspected at (N201): the card's height is the screen's choice, and this
-        // is the reader overruling it for a moment.
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            AppTextButton(
-                onClick = { expanded = true },
-                modifier = Modifier.testTag(TestTags.Statistics.CHART_EXPAND),
-            ) {
-                Text(stringResource(R.string.statistics_chart_expand))
-            }
-        }
-
-        // The plans whose targets the chart draws (ROADMAP N39), named: the dashed lines are a prescription
-        // rather than the lifter's own goal, and a chart that left the distinction to a dash pattern would be
-        // asking the reader to know it already.
-        if (overlay.planLevels.isNotEmpty()) {
-            val unit = stringResource(metric.unit.labelRes)
-            val named = overlay.planLevels.map { (plan, level) ->
-                stringResource(R.string.statistics_plan_target, plan, metric.unit.format(level), unit)
-            }
-            Text(
-                text = stringResource(R.string.statistics_plan_targets, named.joinToString(" · ")),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.testTag(TestTags.Statistics.PLAN_TARGETS),
-            )
-        }
+        ChartExtras(
+            dates = tickDates(series),
+            planLines = planLines(overlay, metric),
+            period = period,
+            onSelectPeriod = { period = it },
+            onExpand = { expanded = true },
+        )
     }
 
     if (expanded) {
@@ -613,6 +584,10 @@ private fun SeriesChart(
             overlay = overlay,
             series = series,
             metric = metric,
+            dates = tickDates(series),
+            planLines = planLines(overlay, metric),
+            period = period,
+            onSelectPeriod = { period = it },
             onDismiss = { expanded = false },
         )
     }
@@ -631,17 +606,32 @@ private fun SeriesChart(
 private fun recordedSpan(series: MetricSeries): Pair<Instant, Instant> =
     series.readings.first { it.value != null }.at to series.readings.last { it.value != null }.at
 
-/** One tick on the time axis, at [fraction] of the span (N209). */
-@Composable
-private fun ChartDate(fraction: Double, span: Pair<Instant, Instant>, tag: String) {
+/** Where the time axis puts its ticks: its two ends and the middle between them (N209). */
+private const val AXIS_START = 0.0
+private const val AXIS_MIDDLE = 0.5
+private const val AXIS_END = 1.0
+private val CHART_TICKS = listOf(AXIS_START, AXIS_MIDDLE, AXIS_END)
+
+/** The three moments the time axis names: its ends and the middle between them (N209). */
+private fun tickDates(series: MetricSeries): List<String> {
+    val span = recordedSpan(series)
     val from = span.first.toEpochMilli()
-    val at = from + ((span.second.toEpochMilli() - from) * fraction).toLong()
-    Text(
-        text = HistoryFormat.date(Instant.ofEpochMilli(at), zone = ZoneId.systemDefault()),
-        style = MaterialTheme.typography.labelSmall,
-        modifier = Modifier.testTag(tag),
-    )
+    val length = span.second.toEpochMilli() - from
+    return CHART_TICKS.map { fraction ->
+        HistoryFormat.date(Instant.ofEpochMilli(from + (length * fraction).toLong()), zone = ZoneId.systemDefault())
+    }
 }
+
+/** The plans whose targets the figure draws, named rather than left to a dash pattern (N39). */
+@Composable
+private fun planLines(overlay: ChartOverlay, metric: MetricEntry): List<String> {
+    if (overlay.planLevels.isEmpty()) return emptyList()
+    val unit = stringResource(metric.unit.labelRes)
+    return overlay.planLevels.map { (plan, level) ->
+        stringResource(R.string.statistics_plan_target, plan, metric.unit.format(level), unit)
+    }
+}
+
 
 /** The ends of the axis, so the chart can be read without the readings list. */
 
@@ -857,30 +847,4 @@ private fun StatisticsTopBar(
     )
 }
 
-/**
- * The period the trailing mean is taken over (ROADMAP N40).
- *
- * Readings rather than days, stated on the control rather than only in the code: a day window would often hold
- * one reading for a lift trained twice a week, and the mean of one reading is that reading.
- */
-@Composable
-private fun MovingAveragePicker(period: Int, onSelect: (Int) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.statistics_moving_average),
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.testTag(TestTags.Statistics.MOVING_AVERAGE),
-        )
-        MOVING_AVERAGE_PERIODS.forEach { option ->
-            AppFilterChip(
-                selected = period == option,
-                onClick = { onSelect(option) },
-                label = option.toString(),
-                testTag = TestTags.Statistics.movingAveragePeriod(option),
-            )
-        }
-    }
-}
+

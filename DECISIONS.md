@@ -490,6 +490,11 @@ the rule; that one argues it.
   of the **window** a dialog is drawn in, not the display setting: `LocalConfiguration` can disagree with the space
   the dialog actually has, and lint has a rule for exactly that.
 
+- **The expanded figure carries the card's extras** (N204). The dialog used to be the figure and a close button, a
+  thinner answer to the question the card answers: the window it averages over, the time it spans and the plans it
+  draws are one composable (`ChartExtras`) drawn in both places now. A second copy is how the two readings of one
+  series stop agreeing, which is the argument every shared formatter in this file already makes.
+
 - **A site list is grouped by joint** (N205). Twenty-four rows in one column is a scroll, not a choice: the reader
   who opens *Joint pain* already has "which joint" in mind, so each joint is a heading with its three sides under
   it — and the headings are `Text`, like every other thing a screen reader has to read in this menu.
