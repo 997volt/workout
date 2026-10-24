@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.androidapp.R
 import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.ChartMarker
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TrendChartFrame
 
@@ -42,8 +43,9 @@ internal fun ChartFigure(
     testTag: String,
 ) {
     // The reading the finger is over, or null (N200). Held here because the answer is a date and a value, which
-    // is the screen's knowledge rather than the drawing's.
-    var scrubbed by remember { mutableStateOf<MetricReading?>(null) }
+    // is the screen's knowledge rather than the drawing's; the index names the same point in the projection and
+    // in the series, which is what lets the marker and the readout agree (N203).
+    var scrubbedIndex by remember { mutableStateOf<Int?>(null) }
 
     Row(modifier = Modifier.fillMaxWidth()) {
         ChartAxis(axis = overlay.axis, format = { metric.unit.format(it) })
@@ -63,14 +65,17 @@ internal fun ChartFigure(
             modifier = Modifier.weight(1f),
             // The nearest recorded reading under the finger (N200): the same points the line is drawn through, so
             // a readout cannot name a value the figure does not show.
-            onScrub = { fraction ->
-                scrubbed = fraction?.let { at ->
-                    nearestReadingIndex(overlay.projected, at)?.let { series.readings[it] }
+            onScrub = { fraction -> scrubbedIndex = fraction?.let { nearestReadingIndex(overlay.projected, it) } },
+            // The same point the readout names, drawn on the figure: a line to the axis and a dot on the reading
+            // (N203), so the value does not have to be matched to a place by eye.
+            marker = scrubbedIndex?.let { index ->
+                overlay.projected.getOrNull(index)?.value?.let { value ->
+                    ChartMarker(x = overlay.projected[index].x, value = value)
                 }
             },
         )
     }
-    scrubbed?.let { reading -> ScrubReadout(reading = reading, metric = metric) }
+    scrubbedIndex?.let { index -> ScrubReadout(reading = series.readings[index], metric = metric) }
 }
 
 /**

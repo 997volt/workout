@@ -490,6 +490,11 @@ the rule; that one argues it.
   of the **window** a dialog is drawn in, not the display setting: `LocalConfiguration` can disagree with the space
   the dialog actually has, and lint has a rule for exactly that.
 
+- **The point being read is drawn on the figure, not only named under it** (N203). The readout answered *which*
+  value; the eye still had to find the place it belonged to. A line down the figure and an emphasised dot mark the
+  same point the text names, drawn **before** the series so the dot is never hidden by the line it sits on, and
+  the pointer's line is thinner than the data because it is a question rather than a reading.
+
 - **A finger on the figure names the reading under it** (N200). A phone-sized chart cannot hold a label per
   point, so the figure answers a touch instead: the nearest **recorded** reading — a gap is never the answer —
   is named below it as a date and a value. The readout is real `Text` beside the canvas rather than paint on it,

@@ -57,6 +57,8 @@ fun TrendChart(
      * applied to, so the chart never claims a target applied to a range it did not.
      */
     goals: List<ChartSegment> = emptyList(),
+    /** A point the reader is pointing at, drawn as a line up the figure and a dot on it (N203). */
+    marker: ChartMarker? = null,
 ) {
     val lineColor = MaterialTheme.colorScheme.primary
     val dotColor = MaterialTheme.colorScheme.primary
@@ -74,6 +76,10 @@ fun TrendChart(
         fun y(value: Double): Float = size.height * (1f - axis.fractionOf(value).toFloat())
 
         drawAxisGrid(gridColor = gridColor, minValue = minValue, maxValue = maxValue, y = ::y)
+
+        // The marker under the readings: a line the eye can follow down to the axis, then the reading itself
+        // (N203). Drawn before the series so the dot is never hidden by the line it belongs to.
+        marker?.let { drawMarker(it, line = referenceColor, dot = dotColor, y = ::y) }
 
         drawReferenceLines(
             referenceColor = referenceColor,
@@ -127,6 +133,9 @@ fun TrendChart(
     }
 }
 
+/** One point the reader is pointing at: where it is across the figure, and what it says (N203). */
+data class ChartMarker(val x: Float, val value: Double)
+
 /**
  * The chart's own frame: a height the caller chooses, and the width it is given (N196).
  *
@@ -156,6 +165,8 @@ fun TrendChartFrame(
      * only knows where the finger landed.
      */
     onScrub: ((Float?) -> Unit)? = null,
+    /** The point the scrub is naming, drawn on the figure as well (N203). */
+    marker: ChartMarker? = null,
 ) {
     TrendChart(
         points = points,
@@ -166,6 +177,7 @@ fun TrendChartFrame(
         trend = trend,
         movingAverage = movingAverage,
         goals = goals,
+        marker = marker,
         modifier = modifier
             .fillMaxWidth()
             .height(height)
@@ -241,6 +253,12 @@ private const val DASH_ON_PX = 6f
 private const val DASH_OFF_PX = 6f
 private const val CHART_HEIGHT_DP = 72
 
+/** The pointer's line is thinner than the data: it is a question, not a reading (N203). */
+private const val MARKER_STROKE_PX = 1.5f
+
+/** And its dot is larger than a reading's, so the one being pointed at is the one the eye finds (N203). */
+private const val MARKER_RADIUS_PX = 6f
+
 /**
  * One reading's place in the chart (ROADMAP N37).
  *
@@ -249,6 +267,18 @@ private const val CHART_HEIGHT_DP = 72
  * question about time and this component never sees a date.
  */
 data class ChartPoint(val x: Float, val value: Double?)
+
+/** The point a finger is over: a line down the figure and an emphasised dot on the reading (N203). */
+private fun DrawScope.drawMarker(marker: ChartMarker, line: Color, dot: Color, y: (Double) -> Float) {
+    val x = marker.x * size.width
+    drawLine(
+        color = line,
+        start = Offset(x, 0f),
+        end = Offset(x, size.height),
+        strokeWidth = MARKER_STROKE_PX,
+    )
+    drawCircle(color = dot, radius = MARKER_RADIUS_PX, center = Offset(x, y(marker.value)))
+}
 
 /**
  * Bars from the baseline up (ROADMAP N38).
