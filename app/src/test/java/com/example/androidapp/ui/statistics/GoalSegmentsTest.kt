@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.statistics
 
 import com.example.androidapp.domain.repository.GoalPeriod
+import com.example.androidapp.ui.statistics.chart.goalSegments
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import java.time.Duration

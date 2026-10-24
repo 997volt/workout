@@ -1,4 +1,4 @@
-package com.example.androidapp.ui.statistics
+package com.example.androidapp.ui.statistics.chart
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test

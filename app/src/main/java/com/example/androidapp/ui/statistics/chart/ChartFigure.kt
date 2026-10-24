@@ -1,4 +1,4 @@
-package com.example.androidapp.ui.statistics
+package com.example.androidapp.ui.statistics.chart
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,6 +37,11 @@ import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.ChartMarker
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TrendChartFrame
+import com.example.androidapp.ui.statistics.MOVING_AVERAGE_PERIODS
+import com.example.androidapp.ui.statistics.MetricEntry
+import com.example.androidapp.ui.statistics.MetricSeries
+import com.example.androidapp.ui.statistics.average
+import com.example.androidapp.ui.statistics.label
 
 /**
  * The figure and its scale, drawn once for both the card and the full-height view (N196, N200).

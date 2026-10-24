@@ -1,4 +1,4 @@
-package com.example.androidapp.ui.statistics
+package com.example.androidapp.ui.statistics.chart
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

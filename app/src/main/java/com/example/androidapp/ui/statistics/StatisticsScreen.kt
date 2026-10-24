@@ -43,24 +43,19 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.headsOthers
 import com.example.androidapp.domain.model.Exercise
-import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.StatisticsRange
-import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
-import com.example.androidapp.ui.components.ChartLine
-import com.example.androidapp.ui.components.ChartPoint
-import com.example.androidapp.ui.components.ChartSegment
 import com.example.androidapp.ui.components.DatePrompt
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
 import com.example.androidapp.ui.history.HistoryFormat
+import com.example.androidapp.ui.statistics.chart.SeriesChart
 import com.example.androidapp.ui.theme.EyebrowStyle
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -461,161 +456,6 @@ private fun ReadingRow(label: String, value: String, testTag: String) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
-    }
-}
-
-/**
- * Everything the chart draws, worked out away from the canvas (ROADMAP N37, N39, N40).
- *
- * A pure function rather than locals in the composable so the arithmetic can be asserted without rendering:
- * the axis depending on the fitted line is the kind of thing that is wrong invisibly, since a clamped line
- * still draws.
- */
-internal data class ChartOverlay(
-    val projected: List<ChartPoint>,
-    val mean: List<ChartPoint>,
-    val fittedLine: ChartLine?,
-    /** One line per goal period, and one per plan that prescribes the lift (ROADMAP N137, N39). */
-    val goals: List<ChartSegment>,
-    /** The plans drawn, named, so the line under the chart can say which is which (ROADMAP N39). */
-    val planLevels: List<Pair<String, Double>>,
-    val axis: AxisBounds,
-)
-
-private fun chartOverlay(
-    series: MetricSeries,
-    metric: MetricEntry,
-    goalPeriods: List<GoalPeriod>,
-    planTargets: List<PlanTarget>,
-    period: Int,
-): ChartOverlay {
-    val recorded = series.readings.mapNotNull { it.value }
-    val firstAt = series.readings.first().at.toEpochMilli().toDouble()
-    val timeSpan = series.readings.last().at.toEpochMilli().toDouble() - firstAt
-    val trend = series.trend()
-    val projected = projectByTime(series.readings)
-
-    // The fitted line can leave the range of the readings — a series rising fast ends above its own last
-    // point — so its ends are part of the axis. Built from the readings alone, the line was clamped flat along
-    // the top edge for its last stretch and appeared to level off where it rose fastest.
-    fun endAt(fraction: Double) = trend?.valueAt(fraction, first = firstAt, span = timeSpan)
-    val fittedLine = trend?.let {
-        ChartLine(start = endAt(0.0)!!, end = endAt(1.0)!!)
-    }
-
-    // The mean is a subset of the same readings, so it shares their places on the axis rather than being
-    // projected again — two projections of the same instants would be two chances to disagree.
-    val xByInstant = series.readings.mapIndexed { index, reading -> reading.at to projected[index].x }.toMap()
-    val mean = series.movingAverage(period).mapNotNull { reading ->
-        xByInstant[reading.at]?.let { x -> ChartPoint(x = x, value = reading.value) }
-    }
-
-    // The lifter's own goal and the plans' targets in one list: the chart draws reference lines, and the axis
-    // has to hold all of them for any of them to be visible.
-    val planSegments = planSegments(series, planTargets, metric.key)
-    val goals = goalSegments(series, goalPeriods) + planSegments
-
-    return ChartOverlay(
-        projected = projected,
-        mean = mean,
-        fittedLine = fittedLine,
-        goals = goals,
-        planLevels = planSegments.mapNotNull { segment -> segment.planName?.let { it to segment.value } },
-        axis = axisBounds(
-            recorded + listOfNotNull(endAt(0.0), endAt(1.0)),
-            fromZero = metric.fromZero,
-            goals = goals.map { it.value },
-            fixedRange = metric.fixedRange,
-        ),
-    )
-}
-
-/**
- * The series, drawn through the chart every other trend uses. N37 gives it a time axis.
- *
- * Two functions rather than one: the frame decides *when* and *how much*, and the body works out what to
- * draw inside it. Kept apart because the whole thing together was past the length a reader can hold, and the
- * seam is a real one — nothing in the body knows about the picker or the restart.
- */
-@Composable
-private fun SeriesChart(
-    series: MetricSeries,
-    metric: MetricEntry,
-    goalPeriods: List<GoalPeriod>,
-    planTargets: List<PlanTarget>,
-) {
-    if (series.readings.count { it.value != null } < 2) return
-    var period by rememberSaveable { mutableStateOf(DAYS) }
-    val overlay = chartOverlay(series, metric, goalPeriods, planTargets, period)
-
-    // The chart, the window it is averaged over and the axis in words are one card: they are one
-    // reading of one series, and separating the picker from the line it changes would make the
-    // control look like a setting rather than part of the figure.
-    var expanded by remember { mutableStateOf(false) }
-
-    AppCard {
-        ChartFigure(
-            overlay = overlay,
-            series = series,
-            metric = metric,
-            height = CHART_FIGURE_HEIGHT,
-            testTag = TestTags.Statistics.CHART,
-        )
-        ChartExtras(
-            dates = tickDates(series),
-            planLines = planLines(overlay, metric),
-            period = period,
-            onSelectPeriod = { period = it },
-            onExpand = { expanded = true },
-        )
-    }
-
-    if (expanded) {
-        ChartExpandedDialog(
-            overlay = overlay,
-            series = series,
-            metric = metric,
-            dates = tickDates(series),
-            planLines = planLines(overlay, metric),
-            period = period,
-            onSelectPeriod = { period = it },
-            onDismiss = { expanded = false },
-        )
-    }
-}
-
-/**
- * The first and last moments that recorded something, which is what the axis labels span.
- *
- * A gap means "not recorded", so an empty reading at either end is not the end of the window. One function
- * rather than two because the pair is only ever used together, and the file is at its function ceiling.
- */
-private fun recordedSpan(series: MetricSeries): Pair<Instant, Instant> =
-    series.readings.first { it.value != null }.at to series.readings.last { it.value != null }.at
-
-/** Where the time axis puts its ticks: its two ends and the middle between them (N209). */
-private const val AXIS_START = 0.0
-private const val AXIS_MIDDLE = 0.5
-private const val AXIS_END = 1.0
-private val CHART_TICKS = listOf(AXIS_START, AXIS_MIDDLE, AXIS_END)
-
-/** The three moments the time axis names: its ends and the middle between them (N209). */
-private fun tickDates(series: MetricSeries): List<String> {
-    val span = recordedSpan(series)
-    val from = span.first.toEpochMilli()
-    val length = span.second.toEpochMilli() - from
-    return CHART_TICKS.map { fraction ->
-        HistoryFormat.date(Instant.ofEpochMilli(from + (length * fraction).toLong()), zone = ZoneId.systemDefault())
-    }
-}
-
-/** The plans whose targets the figure draws, named rather than left to a dash pattern (N39). */
-@Composable
-private fun planLines(overlay: ChartOverlay, metric: MetricEntry): List<String> {
-    if (overlay.planLevels.isEmpty()) return emptyList()
-    val unit = stringResource(metric.unit.labelRes)
-    return overlay.planLevels.map { (plan, level) ->
-        stringResource(R.string.statistics_plan_target, plan, metric.unit.format(level), unit)
     }
 }
 

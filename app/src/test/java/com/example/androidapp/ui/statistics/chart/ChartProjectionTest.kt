@@ -1,10 +1,11 @@
-package com.example.androidapp.ui.statistics
+package com.example.androidapp.ui.statistics.chart
 
+import com.example.androidapp.ui.components.ChartPoint
+import com.example.androidapp.ui.statistics.MetricReading
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import com.example.androidapp.ui.components.ChartPoint
-import java.time.Instant
 import org.junit.Test
+import java.time.Instant
 
 /**
  * Where the readings sit on the x-axis (ROADMAP N37).

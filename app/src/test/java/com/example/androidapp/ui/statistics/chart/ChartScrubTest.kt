@@ -1,8 +1,9 @@
-package com.example.androidapp.ui.statistics
+package com.example.androidapp.ui.statistics.chart
 
 import androidx.compose.ui.geometry.Offset
 import com.example.androidapp.ui.components.ChartPoint
 import com.example.androidapp.ui.components.scrubDirection
+import com.example.androidapp.ui.statistics.MetricReading
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import java.time.Instant

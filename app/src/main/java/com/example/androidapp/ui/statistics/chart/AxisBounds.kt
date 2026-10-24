@@ -1,4 +1,4 @@
-package com.example.androidapp.ui.statistics
+package com.example.androidapp.ui.statistics.chart
 
 /**
  * The ends of a chart's value axis (ROADMAP N38).

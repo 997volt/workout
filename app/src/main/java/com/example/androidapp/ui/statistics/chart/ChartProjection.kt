@@ -1,10 +1,13 @@
-package com.example.androidapp.ui.statistics
+package com.example.androidapp.ui.statistics.chart
 
 import com.example.androidapp.domain.model.PlanTarget
 import com.example.androidapp.domain.model.levelFor
 import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.ChartPoint
 import com.example.androidapp.ui.components.ChartSegment
+import com.example.androidapp.ui.statistics.MetricKey
+import com.example.androidapp.ui.statistics.MetricReading
+import com.example.androidapp.ui.statistics.MetricSeries
 import java.time.Instant
 
 /**

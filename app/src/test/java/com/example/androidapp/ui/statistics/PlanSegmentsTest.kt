@@ -2,6 +2,7 @@ package com.example.androidapp.ui.statistics
 
 import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.PlanTarget
+import com.example.androidapp.ui.statistics.chart.planSegments
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import java.time.Duration

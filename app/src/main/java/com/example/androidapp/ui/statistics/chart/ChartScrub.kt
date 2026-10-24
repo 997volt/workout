@@ -1,4 +1,4 @@
-package com.example.androidapp.ui.statistics
+package com.example.androidapp.ui.statistics.chart
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -11,6 +11,8 @@ import androidx.compose.ui.semantics.semantics
 import com.example.androidapp.ui.components.ChartPoint
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.history.HistoryFormat
+import com.example.androidapp.ui.statistics.MetricEntry
+import com.example.androidapp.ui.statistics.MetricReading
 import java.time.Instant
 import java.time.ZoneId
 
