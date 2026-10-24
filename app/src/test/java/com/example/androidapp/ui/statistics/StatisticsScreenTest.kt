@@ -397,6 +397,11 @@ class StatisticsScreenTest {
         // N206: and it is announced, because a value only a sighted finger can have is half a feature.
         composeTestRule.onNodeWithTag(TestTags.Statistics.SCRUB_READOUT)
             .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.LiveRegion))
+
+        // B216: and it goes when the finger does. A readout that outlived its touch would be a value nobody is
+        // reading, drawn against a figure that is no longer being pointed at.
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART).performTouchInput { up() }
+        composeTestRule.onNodeWithTag(TestTags.Statistics.SCRUB_READOUT).assertDoesNotExist()
     }
 
     @Test
