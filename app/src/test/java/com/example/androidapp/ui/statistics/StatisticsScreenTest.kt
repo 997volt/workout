@@ -150,6 +150,25 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun theSearchReachesAnotherGroup_andTheRowSaysWhichItIsIn() {
+        // B210: the menu opens on the selected series' group, and the group chips narrow the browse list — but a
+        // query is not scoped to the group on screen. "weight" from the per-lift list used to answer "nothing
+        // matched", and the two *Left knee* entries were the same two words without a group to tell them apart.
+        setScreen()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.metricGroupChoice(MetricGroup.EXERCISE.name))
+            .performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC_SEARCH).performTextInput("weight")
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(MetricKey.Body(BodyMetric.WEIGHT).id))
+            .assertExists()
+            // The chips wait while a query narrows, so the row itself has to name the group it came from.
+            .assertTextContains("Body", substring = true)
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC_NO_MATCHES).assertDoesNotExist()
+    }
+
+    @Test
     fun thePicker_offersEveryGroup_andReportsAChoice() {
         // N199: one group's list is on screen at a time, so choosing a series is choosing its group and then
         // the series. The registry's own test proves the list is complete; this is about the picker showing it.

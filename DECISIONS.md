@@ -535,12 +535,16 @@ the rule; that one argues it.
   *Joint pain*, at the workout level and the per-lift one, so both lists are their own series. A search still
   reaches a site directly, because a filter that hid the thing typed is not a filter.
 
-- **The series menu can be searched, and the search matches the group's name too** (N198). The menu is every
-  series the registry holds, so a list of headings was never going to be short enough: the headings say which
-  *kind* of thing a word is (N130), and the filter says which one you meant. Typing "body" finds weight without
-  the lifter knowing the word "weight", which is why the match runs over the group's label as well as the
-  series'. The field lives inside the menu and takes focus, because a search box in a menu that cannot be typed
-  into is a decoration.
+- **The series menu can be searched, the search reaches every group, and it matches the group's name too**
+  (N198, B210). The menu is every series the registry holds, so a list of headings was never going to be short
+  enough: the headings say which *kind* of thing a word is (N130), and the filter says which one you meant.
+  Typing "body" finds weight without the lifter knowing the word "weight", which is why the match runs over the
+  group's label as well as the series'. A query is **not scoped to the group on screen**: the group chips choose a
+  list to browse, and typing replaces that list with every group's matches, each row naming the group it came from
+  — otherwise a series in another group answered "nothing matched", and the two *Left knee* entries were the same
+  two words again. The chips wait while a query narrows, because a selected group over a list of all of them would
+  be a label that lies. The field lives inside the menu and takes focus, because a search box in a menu that
+  cannot be typed into is a decoration.
 
 - **The range is one row, and the rare windows are one control away** (N197). Seven chips wrapped three to a
   row spent two rows on a control used once a visit, and every one of them read as equally likely. The three a

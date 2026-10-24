@@ -27,11 +27,14 @@ import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
 
 /**
- * One picker over every series, grouped the way the registry groups them (ROADMAP N35), and searchable (N198).
+ * One picker over every series, grouped the way the registry groups them (ROADMAP N35), and searchable
+ * (N198, B210).
  *
  * The list is every series the registry holds, which is a long menu however it is headed — so the picker opens
- * on **one group** and lists only that group's series (N199), and a filter narrows what is left (N198). The
- * group's own name is matched by the filter too, so "body" finds weight without knowing the word "weight".
+ * on **one group** and lists only that group's series (N199), and a filter narrows what is left (N198). A query
+ * is **not** scoped to the group on screen: it searches every group and each hit says which one it is in, because
+ * a search that answered "nothing" for a series in another group is a search that lies about the registry. The
+ * group's own name is matched too, so "body" finds weight without knowing the word "weight".
  */
 @Composable
 internal fun MetricPicker(selected: MetricKey, onSelectMetric: (MetricKey) -> Unit) {
@@ -85,30 +88,37 @@ private fun MetricMenuContents(selected: MetricKey, onSelect: (MetricKey) -> Uni
 
     val groupLabels = MetricGroup.entries.associateWith { stringResource(it.labelRes) }
     val needle = query.trim()
-    val labelled = MetricRegistry.entries
-        .filter { it.group == group }
-        .map { entry -> entry to entry.label() }
-    val matches = labelled.filter { (_, label) ->
-        needle.isEmpty() ||
+    val searching = needle.isNotEmpty()
+    // Every series, and — while a query is typed — every group's matches. The group chips only narrow the
+    // browse list; a filter that hid a literal match in another group was the bug B210 records.
+    val all = MetricRegistry.entries.map { entry -> entry to entry.label() }
+    val matches = if (searching) {
+        all.filter { (entry, label) ->
             label.contains(needle, ignoreCase = true) ||
-            groupLabels.getValue(group).contains(needle, ignoreCase = true)
+                groupLabels.getValue(entry.group).contains(needle, ignoreCase = true)
+        }
+    } else {
+        all.filter { (entry, _) -> entry.group == group }
     }
     // A site is one row behind *Joint pain* while the group is being read, and its own row once it is being
     // searched for: a filter that hid the thing you typed is not a filter.
-    val searching = needle.isNotEmpty()
-    val sites = labelled.filter { (entry, _) -> entry.isJointSite() }
-    val series = matches.filter { (entry, _) -> !entry.isJointSite() || searching }
+    val sites = if (searching) emptyList() else matches.filter { (entry, _) -> entry.isJointSite() }
+    val series = if (searching) matches else matches.filter { (entry, _) -> !entry.isJointSite() }
     val showingSites = siteGroup == group && !searching
 
     Column {
-        GroupChoices(
-            labels = groupLabels,
-            selected = group,
-            onSelect = {
-                group = it
-                siteGroup = null
-            },
-        )
+        // The chips choose a browse list, so they wait while a query is the thing narrowing. Leaving them on
+        // screen would say a group is selected over a list that is showing all of them.
+        if (!searching) {
+            GroupChoices(
+                labels = groupLabels,
+                selected = group,
+                onSelect = {
+                    group = it
+                    siteGroup = null
+                },
+            )
+        }
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -126,6 +136,7 @@ private fun MetricMenuContents(selected: MetricKey, onSelect: (MetricKey) -> Uni
                 series = series,
                 hasSites = sites.isNotEmpty() && !searching,
                 nothingMatches = matches.isEmpty(),
+                searching = searching,
                 onOpenSites = { siteGroup = group },
                 onSelect = onSelect,
             )
@@ -139,6 +150,7 @@ private fun SeriesRows(
     series: List<Pair<MetricEntry, String>>,
     hasSites: Boolean,
     nothingMatches: Boolean,
+    searching: Boolean,
     onOpenSites: () -> Unit,
     onSelect: (MetricKey) -> Unit,
 ) {
@@ -154,7 +166,14 @@ private fun SeriesRows(
             )
         }
         series.forEach { (entry, label) ->
-            MetricMenuItem(label = label, key = entry.key, onSelect = onSelect)
+            MetricMenuItem(
+                label = label,
+                key = entry.key,
+                // A search reaches every group, so a hit has to say which one it came from — otherwise the two
+                // *Left knee* entries are the same two words again (N130, B210).
+                subtitle = if (searching) stringResource(entry.group.labelRes) else null,
+                onSelect = onSelect,
+            )
         }
         // The sites' one row, offered only where the group has sites and nothing is being searched.
         if (hasSites) {
@@ -221,11 +240,29 @@ private fun GroupChoices(
     }
 }
 
-/** One series in the list: a word and the row it chooses. */
+/** One series in the list: a word, the group it came from when that is not the list being browsed, and its row. */
 @Composable
-private fun MetricMenuItem(label: String, key: MetricKey, onSelect: (MetricKey) -> Unit) {
+private fun MetricMenuItem(
+    label: String,
+    key: MetricKey,
+    onSelect: (MetricKey) -> Unit,
+    subtitle: String? = null,
+) {
     DropdownMenuItem(
-        text = { Text(label) },
+        text = {
+            if (subtitle == null) {
+                Text(label)
+            } else {
+                Column {
+                    Text(label)
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
         onClick = { onSelect(key) },
         modifier = Modifier.testTag(TestTags.Statistics.metric(key.id)),
     )

@@ -47,9 +47,9 @@ unreleased.
   beside it (top, middle and bottom) instead of a row underneath, and it answers a touch: **the nearest recorded
   reading** under the finger is named below it, and **Expand** opens the same figure at the height of the window.
   The range is **one row** — a week, a month, three months, and one control for the rest including custom — and the
-  menu opens on a **group** with a **search** over the series' labels and the groups' names, the twenty-four joint
-  sites collapsed to **one row** at each level, grouped under their joint. Nothing about the series, the store or
-  the goal line moved.
+  menu opens on a **group** with a **search** that reaches **every group**, each hit naming its own, the twenty-four
+  joint sites collapsed to **one row** at each level, grouped under their joint. Nothing about the series, the store
+  or the goal line moved.
 
 - **The statistics figure says where you are pointing, and where you are in time** (N203, N205, N206, N208, N209, B213).
   The scrub names the reading under the finger **and marks it on the figure** — a line down to the axis and an
