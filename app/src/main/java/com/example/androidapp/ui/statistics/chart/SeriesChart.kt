@@ -32,6 +32,7 @@ internal fun SeriesChart(
     metric: MetricEntry,
     goalPeriods: List<GoalPeriod>,
     planTargets: List<PlanTarget>,
+    onZoom: (scale: Float, focus: Float) -> Unit,
 ) {
     if (series.readings.count { it.value != null } < 2) return
     var period by rememberSaveable { mutableStateOf(DAYS) }
@@ -49,6 +50,7 @@ internal fun SeriesChart(
             metric = metric,
             height = CHART_FIGURE_HEIGHT,
             testTag = TestTags.Statistics.CHART,
+            onZoom = onZoom,
         )
         ChartExtras(
             dates = tickDates(series),
@@ -69,6 +71,7 @@ internal fun SeriesChart(
             period = period,
             onSelectPeriod = { period = it },
             onDismiss = { expanded = false },
+            onZoom = onZoom,
         )
     }
 }

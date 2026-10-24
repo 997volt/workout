@@ -74,6 +74,7 @@ fun StatisticsRoute(
         onSelectMetric = viewModel::onSelectMetric,
         modifier = modifier,
         onSelectExercise = viewModel::onSelectExercise,
+        onPinch = viewModel::onPinch,
         onSetGoal = viewModel::onSetGoal,
         onOpenMeasurements = onOpenMeasurements,
         onOpenAdherence = onOpenAdherence,
@@ -94,6 +95,8 @@ fun StatisticsScreen(
     onSelectMetric: (MetricKey) -> Unit,
     modifier: Modifier = Modifier,
     onSelectExercise: (String) -> Unit = {},
+    /** A two-finger pinch over the figure, which narrows or widens the window (N213). */
+    onPinch: (scale: Float, focus: Float) -> Unit = { _, _ -> },
     /** Sets or clears the chosen metric's target (ROADMAP N39). */
     onSetGoal: (Double?) -> Unit = {},
     /**
@@ -165,6 +168,7 @@ fun StatisticsScreen(
                     state = state,
                     series = state.series,
                     onSelectExercise = onSelectExercise,
+                    onPinch = onPinch,
                     onSetGoal = onSetGoal,
                 )
             }
@@ -183,6 +187,7 @@ private fun StatisticsBody(
     state: StatisticsUiState,
     series: MetricSeries?,
     onSelectExercise: (String) -> Unit,
+    onPinch: (scale: Float, focus: Float) -> Unit,
     onSetGoal: (Double?) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -213,6 +218,7 @@ private fun StatisticsBody(
                 metric = entry,
                 goalPeriods = state.goalPeriods,
                 planTargets = state.planTargets,
+                onZoom = onPinch,
             )
             // Under the chart, and the literal answer to "see everything" — which is also the accessible
             // counterpart to a canvas this app blanks out for screen readers (ROADMAP N36).

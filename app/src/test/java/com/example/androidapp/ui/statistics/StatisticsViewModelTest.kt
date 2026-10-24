@@ -584,6 +584,80 @@ class StatisticsViewModelTest {
     }
 
     @Test
+    fun aPinchNarrowsTheWindowAroundThePointPinched() = runTest(dispatcher) {
+        // N213. Seven days on screen and ten days of readings: halving around the middle leaves four days,
+        // shifted so the point under the fingers stays under them.
+        val today = now.atZone(ZoneId.systemDefault()).toLocalDate()
+        val range = StatisticsRange(RangeKind.LAST_7_DAYS)
+        val settings = FakeSettingsRepository(range)
+        val body = (0..9).map { daysAgo ->
+            measurement(at = now.minusSeconds(daysAgo * 86_400L), weight = 80_000L + daysAgo)
+        }
+        val viewModel = viewModel(range = range, body = body, settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onPinch(scale = 2f, focus = 0.5f)
+        advanceUntilIdle()
+
+        val stored = settings.stored.value
+        assertThat(stored.kind).isEqualTo(RangeKind.CUSTOM)
+        assertThat(stored.from).isEqualTo(today.minusDays(5))
+        assertThat(stored.to).isEqualTo(today.minusDays(2))
+    }
+
+    @Test
+    fun aPinchOutWidensToTheReadings_andStopsThere() = runTest(dispatcher) {
+        // Zooming out may leave the range that was chosen — the point is to see more — but never the data.
+        val today = now.atZone(ZoneId.systemDefault()).toLocalDate()
+        val range = StatisticsRange(RangeKind.LAST_7_DAYS)
+        val settings = FakeSettingsRepository(range)
+        val body = (0..9).map { daysAgo ->
+            measurement(at = now.minusSeconds(daysAgo * 86_400L), weight = 80_000L + daysAgo)
+        }
+        val viewModel = viewModel(range = range, body = body, settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onPinch(scale = 0.5f, focus = 0.5f)
+        advanceUntilIdle()
+
+        assertThat(settings.stored.value.from).isEqualTo(today.minusDays(9))
+        assertThat(settings.stored.value.to).isEqualTo(today)
+    }
+
+    @Test
+    fun aPinchInStopsAtTwoDays_andAFewReadingsMeanNoPinch() = runTest(dispatcher) {
+        val today = now.atZone(ZoneId.systemDefault()).toLocalDate()
+        val range = StatisticsRange(RangeKind.CUSTOM, from = today.minusDays(3), to = today)
+        val settings = FakeSettingsRepository(range)
+        val body = (0..9).map { daysAgo ->
+            measurement(at = now.minusSeconds(daysAgo * 86_400L), weight = 80_000L + daysAgo)
+        }
+        val viewModel = viewModel(range = range, body = body, settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onPinch(scale = 10f, focus = 0.5f)
+        advanceUntilIdle()
+
+        val stored = settings.stored.value
+        assertThat(java.time.temporal.ChronoUnit.DAYS.between(stored.from, stored.to)).isEqualTo(1)
+
+        // One reading cannot define a window, so the gesture leaves the range alone.
+        val one = viewModel(
+            range = StatisticsRange(RangeKind.LAST_7_DAYS),
+            body = listOf(measurement(at = now, weight = 80_000L)),
+            settings = FakeSettingsRepository(StatisticsRange(RangeKind.LAST_7_DAYS)),
+        )
+        observe(one)
+        advanceUntilIdle()
+        one.onPinch(scale = 2f, focus = 0.5f)
+        advanceUntilIdle()
+        assertThat(one.uiState.value.range.kind).isEqualTo(RangeKind.LAST_7_DAYS)
+    }
+
+    @Test
     fun aGoalForAnotherMetric_isNotShown() = runTest(dispatcher) {
         // Otherwise a target set for bodyweight would draw a line across a chart of volume.
         val viewModel = viewModel(

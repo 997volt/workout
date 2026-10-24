@@ -2,8 +2,11 @@ package com.example.androidapp.ui.components
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.abs
@@ -28,33 +31,82 @@ internal fun scrubDirection(total: Offset, slop: Float): Boolean? {
  *
  * A tap and a drag are the same gesture here — the finger lands and the nearest reading is named — so this
  * awaits the pointer's own stream rather than composing two detectors that would disagree about a zero-distance
- * drag. Nothing is consumed until the drag is known to be the figure's (B211).
- *
- * Lives beside [TrendChart] rather than in a feature package (B217): the component is the one that draws the
- * points, so it is also the one that knows where a finger is on them.
+ * drag. Nothing is consumed until the drag is known to be the figure's (B211), and a second finger hands the
+ * gesture to [onZoom] (N213).
  */
-internal fun Modifier.scrubbable(onScrub: (Float?) -> Unit): Modifier = pointerInput(Unit) {
+internal fun Modifier.scrubbable(
+    onScrub: (Float?) -> Unit,
+    onZoom: ((scale: Float, focus: Float) -> Unit)? = null,
+): Modifier = pointerInput(onZoom) {
     awaitEachGesture {
         val down = awaitFirstDown(requireUnconsumed = false)
         onScrub(down.fraction(size.width))
-        // Null while the gesture could still become either one.
-        var direction: Boolean? = null
-        var change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
-        while (change != null && change.pressed) {
+        val gesture = ChartGesture(
+            down = down,
+            onScrub = onScrub,
+            onZoom = onZoom,
+            slop = viewConfiguration.touchSlop,
+            width = size.width,
+        )
+        var event = awaitPointerEvent()
+        while (event.changes.any { it.pressed }) {
+            gesture.apply(event)
+            event = awaitPointerEvent()
+        }
+        onScrub(null)
+    }
+}
+
+/**
+ * One chart gesture's state and its two shapes: a scrub while one finger is down, a pinch once a second joins.
+ *
+ * A pinch takes the gesture over for good — the rest of it is not a scrub — and consumes its events so the
+ * enclosing scrollable stays out of it. A drag that is more vertical than horizontal is left unconsumed, which
+ * is what lets the screen scroll (B211).
+ */
+private class ChartGesture(
+    private val down: PointerInputChange,
+    private val onScrub: (Float?) -> Unit,
+    private val onZoom: ((scale: Float, focus: Float) -> Unit)?,
+    private val slop: Float,
+    private val width: Int,
+) {
+    private var direction: Boolean? = null
+    private var pinching = false
+
+    fun apply(event: PointerEvent) {
+        val pressed = event.changes.count { it.pressed }
+        if (onZoom != null && (pressed >= 2 || pinching)) {
+            pinch(event)
+        } else if (!pinching) {
+            scrub(event)
+        }
+    }
+
+    private fun pinch(event: PointerEvent) {
+        if (!pinching) {
+            pinching = true
+            onScrub(null)
+        }
+        val zoom = event.calculateZoom()
+        if (zoom.isFinite() && zoom > 0f) {
+            onZoom?.invoke(zoom, event.calculateCentroid(useCurrent = true).x / width)
+        }
+        event.changes.forEach { it.consume() }
+    }
+
+    private fun scrub(event: PointerEvent) {
+        val change = event.changes.firstOrNull { it.id == down.id }
+        if (change != null && change.pressed) {
             if (direction == null) {
-                direction = scrubDirection(
-                    total = change.position - down.position,
-                    slop = viewConfiguration.touchSlop,
-                )
+                direction = scrubDirection(change.position - down.position, slop)
                 if (direction == false) onScrub(null)
             }
             if (direction != false) {
-                onScrub(change.fraction(size.width))
+                onScrub(change.fraction(width))
                 if (direction == true) change.consume()
             }
-            change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
         }
-        onScrub(null)
     }
 }
 

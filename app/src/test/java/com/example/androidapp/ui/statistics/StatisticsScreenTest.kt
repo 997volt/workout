@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.statistics
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -72,6 +73,7 @@ class StatisticsScreenTest {
         onSelectRange: (StatisticsRange) -> Unit = {},
         onSelectMetric: (MetricKey) -> Unit = {},
         onSelectExercise: (String) -> Unit = {},
+        onPinch: (scale: Float, focus: Float) -> Unit = { _, _ -> },
         onOpenMeasurements: (() -> Unit)? = null,
         onOpenAdherence: (() -> Unit)? = null,
         onSetGoal: (Double?) -> Unit = {},
@@ -83,6 +85,7 @@ class StatisticsScreenTest {
                     onSelectRange = onSelectRange,
                     onSelectMetric = onSelectMetric,
                     onSelectExercise = onSelectExercise,
+                    onPinch = onPinch,
                     onOpenMeasurements = onOpenMeasurements,
                     onOpenAdherence = onOpenAdherence,
                     onSetGoal = onSetGoal,
@@ -474,6 +477,32 @@ class StatisticsScreenTest {
         // reading, drawn against a figure that is no longer being pointed at.
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART).performTouchInput { up() }
         composeTestRule.onNodeWithTag(TestTags.Statistics.SCRUB_READOUT).assertDoesNotExist()
+    }
+
+    @Test
+    fun pinchingTheFigure_reportsTheScaleAndItsFocus() {
+        // N213: the figure reports a two-finger scale and where it is centred; the window it becomes is the
+        // ViewModel's business (and is tested there).
+        val zooms = mutableListOf<Pair<Float, Float>>()
+        setScreen(onPinch = { scale, focus -> zooms += scale to focus })
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART).performTouchInput {
+            down(0, center + Offset(-20f, 0f))
+            advanceEventTime(16)
+            down(1, center + Offset(20f, 0f))
+            advanceEventTime(16)
+            moveTo(0, center + Offset(-90f, 0f))
+            advanceEventTime(16)
+            moveTo(1, center + Offset(90f, 0f))
+            advanceEventTime(16)
+            up(0)
+            up(1)
+        }
+
+        // Fingers moving apart is a zoom in; the last event of the gesture is a lift, which reports 1.
+        assertThat(zooms).isNotEmpty()
+        assertThat(zooms.any { (scale, _) -> scale > 1f }).isTrue()
+        assertThat(zooms.all { (_, focus) -> focus in 0f..1f }).isTrue()
     }
 
     @Test

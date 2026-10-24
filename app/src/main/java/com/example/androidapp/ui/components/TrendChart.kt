@@ -174,6 +174,12 @@ fun TrendChartFrame(
      * only knows where the finger landed.
      */
     onScrub: ((Float?) -> Unit)? = null,
+    /**
+     * A two-finger pinch over the figure: the scale since the last event and the centroid across it (N213).
+     *
+     * Reported rather than applied: the caller owns the window and the data it may not leave.
+     */
+    onZoom: ((scale: Float, focus: Float) -> Unit)? = null,
     /** The point the scrub is naming, drawn on the figure as well (N203). */
     marker: ChartMarker? = null,
 ) {
@@ -197,7 +203,7 @@ fun TrendChartFrame(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 12.dp)
-                .then(if (onScrub == null) Modifier else Modifier.scrubbable(onScrub)),
+                .then(if (onScrub == null) Modifier else Modifier.scrubbable(onScrub, onZoom)),
         )
     }
 }

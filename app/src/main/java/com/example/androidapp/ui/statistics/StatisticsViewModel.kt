@@ -11,6 +11,7 @@ import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.PlanTarget
+import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TrendPoint
@@ -30,6 +31,8 @@ import com.example.androidapp.domain.seriesSubjectIds
 import com.example.androidapp.ui.navigation.Statistics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -48,6 +51,8 @@ import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
+import kotlin.math.roundToInt
 import javax.inject.Inject
 
 /**
@@ -198,6 +203,16 @@ class StatisticsViewModel @Inject constructor(
     /** One recents write at a time, so two quick choices cannot both read the same list (N212). */
     private val recentWrites = Mutex()
 
+    /**
+     * The window a pinch is still changing (N213).
+     *
+     * A pinch reports a scale per motion event; writing the settings file on each one would put dozens of
+     * commits on disk for one gesture. The pending window is what the screen draws, and it is written once,
+     * shortly after the fingers stop — or dropped if a range chip is chosen while it waits.
+     */
+    private val pendingRange = MutableStateFlow<StatisticsRange?>(null)
+    private var pinchWrite: Job? = null
+
     private val selection = MutableStateFlow(
         initialSelection(savedStateHandle.toRoute<Statistics>().exerciseId),
     )
@@ -208,7 +223,10 @@ class StatisticsViewModel @Inject constructor(
      * From the store rather than from local state, so a range chosen here is the range it comes back to —
      * and so the screen and the store cannot disagree about which one is current.
      */
-    private val range = settings.observeStatisticsRange()
+    private val range = combine(
+        settings.observeStatisticsRange(),
+        pendingRange,
+    ) { stored, pending -> pending ?: stored }
 
     /** The four sources, gathered before they are combined: five flows is the typed combine's limit. */
     private data class Sources(
@@ -510,7 +528,63 @@ class StatisticsViewModel @Inject constructor(
 
     /** Stored, not held: the range has to mean the same thing the next time the tab is opened. */
     fun onSelectRange(range: StatisticsRange) {
+        // A chip overrules a pinch that is still settling; otherwise the pending write would land after it.
+        pinchWrite?.cancel()
+        pendingRange.value = null
         viewModelScope.launch { settings.setStatisticsRange(range) }
+    }
+
+    /**
+     * Pinches the window around [focus] (N213).
+     *
+     * The gesture reports a scale per motion event; the window is computed from the range on screen and held
+     * pending until the fingers settle, so one gesture is one settings write rather than dozens.
+     */
+    fun onPinch(scale: Float, focus: Float) {
+        if (!scale.isFinite() || scale <= 0f) return
+        val next = pinchedWindow(uiState.value, scale, focus) ?: return
+        pendingRange.value = next
+        pinchWrite?.cancel()
+        pinchWrite = viewModelScope.launch {
+            delay(PINCH_SETTLE_MILLIS)
+            val settled = pendingRange.value ?: return@launch
+            settings.setStatisticsRange(settled)
+            pendingRange.value = null
+        }
+    }
+
+    /**
+     * The window a pinch asks for, or null when it would change nothing (N213).
+     *
+     * Whole days around the pinched point, clamped inside the **recorded readings** and never narrower than
+     * [MIN_PINCH_DAYS]. A pinch becomes a custom range, because a window the finger chose has no rolling name.
+     */
+    private fun pinchedWindow(state: StatisticsUiState, scale: Float, focus: Float): StatisticsRange? {
+        val zone = currentZone()
+        val days = state.goalReadings
+            .mapNotNull { reading -> reading.value?.let { reading.at.atZone(zone).toLocalDate() } }
+            .distinct()
+        if (days.size < 2) return null
+        val firstDay = days.min()
+        val lastDay = days.max()
+        val maxSpan = ChronoUnit.DAYS.between(firstDay, lastDay).toInt() + 1
+
+        val bounds = state.range.window(today(), zone)
+        val fromDay = bounds?.let { it.from.atZone(zone).toLocalDate() } ?: firstDay
+        val toDay = bounds?.let { it.toExclusive.minusMillis(1).atZone(zone).toLocalDate() } ?: lastDay
+        val span = (ChronoUnit.DAYS.between(fromDay, toDay).toInt() + 1).coerceAtLeast(1)
+        val focusOnWindow = focus.coerceIn(0f, 1f)
+        val anchor = fromDay.plusDays((focusOnWindow * (span - 1)).roundToInt().toLong())
+        val newSpan = (span / scale).roundToInt().coerceIn(MIN_PINCH_DAYS, maxSpan)
+        val start = anchor
+            .minusDays((focusOnWindow * (newSpan - 1)).roundToInt().toLong())
+            .coerceAtLeast(firstDay)
+            .coerceAtMost(lastDay.minusDays(newSpan - 1L))
+        return if (newSpan == span) {
+            null
+        } else {
+            StatisticsRange(RangeKind.CUSTOM, from = start, to = start.plusDays(newSpan - 1L))
+        }
     }
 
     private fun today(): LocalDate =
@@ -519,6 +593,12 @@ class StatisticsViewModel @Inject constructor(
     private companion object {
         /** How many series the recent row holds: enough for the habitual three, not a second menu (N212). */
         const val RECENT_SERIES_MAX = 3
+
+        /** The narrowest window a pinch may leave: one day cannot show a change (N213). */
+        const val MIN_PINCH_DAYS = 2
+
+        /** How long after the last pinch motion the window is written, once (N213). */
+        const val PINCH_SETTLE_MILLIS = 250L
 
         /**
          * How many sessions the training series are asked for: no limit.

@@ -56,6 +56,8 @@ internal fun ChartFigure(
     metric: MetricEntry,
     height: Dp,
     testTag: String,
+    /** A pinch over the figure, reported rather than applied (N213). */
+    onZoom: ((scale: Float, focus: Float) -> Unit)? = null,
 ) {
     // The reading the finger is over, or null (N200). Held here because the answer is a date and a value, which
     // is the screen's knowledge rather than the drawing's. A **reading** rather than an index (B208): keyed on
@@ -90,6 +92,7 @@ internal fun ChartFigure(
             trend = overlay.fittedLine,
             height = height,
             modifier = Modifier.weight(1f),
+            onZoom = onZoom,
             semanticsModifier = Modifier.semantics {
                 customActions = listOf(
                     CustomAccessibilityAction(previousLabel) {
@@ -132,6 +135,7 @@ internal fun ChartExpandedDialog(
     period: Int,
     onSelectPeriod: (Int) -> Unit,
     onDismiss: () -> Unit,
+    onZoom: ((scale: Float, focus: Float) -> Unit)? = null,
 ) {
     // The room the window has, not the preferences' idea of it: LocalConfiguration is a display setting that
     // can disagree with the window a dialog is actually drawn in.
@@ -187,6 +191,7 @@ internal fun ChartExpandedDialog(
                         metric = metric,
                         height = height,
                         testTag = TestTags.Statistics.CHART_EXPANDED_FIGURE,
+                        onZoom = onZoom,
                     )
                     // The same extras the card carries (N204): the expanded view is the same reading of the same
                     // series, so it cannot be a figure with less said about it.
