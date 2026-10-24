@@ -16,7 +16,30 @@ unreleased.
 
 ## [Unreleased]
 
+### Added
+
+- **A measurement's day can be corrected** (a request in use). A record's day was fixed when it was saved, so a
+  morning typed onto the wrong date had no way back. The edit form now carries the day above the numbers, and
+  changing it keeps the entry's **id and hour** — the same reading on another day, not a second one beside it.
+  A day holds one record of each kind, so a move onto a day that already has one is refused rather than leaving
+  two live entries; the form that adds a record still has no day field, because a new entry is today's.
+
+- **The import helper draws a plan as its lines, and folds its days** (N172's form). Neighbouring sets that agree
+  on every field are one line with a **Sets** count that grows or trims the rows behind it; *Split* breaks a line
+  so one set can be written differently, *Merge* puts it back, and neither is written to the file. A program's
+  days start folded, their heads saying how many exercises and sets they hold, and a day just added opens by
+  itself.
+
 ### Changed
+
+- **The weight goal is set where the body is recorded.** The goal's row — its kind, its number and the history
+  behind it — sat under the statistics chart, which draws the past rather than where a reading is written. It is
+  the measurements screen's first item now, and the chart keeps the goal's line; the energy statement stays under
+  the chart, because it is a verdict about the trend. One open period per metric, closed by the next write, is
+  unchanged.
+
+- **Progression leads the workout settings.** It is the one switch there that decides whether the app edits a
+  plan; the rest are about the timer the workout screen runs on.
 
 - **The statistics screen is a figure you can read** (N196–N201). The chart drew at the height of the adherence
   sparkline, its range was seven chips wrapped three to a row, and its series menu listed every series the registry
