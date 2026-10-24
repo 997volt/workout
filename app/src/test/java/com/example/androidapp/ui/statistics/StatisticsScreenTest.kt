@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -337,6 +338,16 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_AXIS)
             .onChildren()
             .assertCountEquals(3)
+    }
+
+    @Test
+    fun touchingTheFigureReadsTheReadingUnderTheFinger() {
+        // N200: a crosshair and a line of text, so a phone-sized figure can be interrogated without leaving it.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART).performTouchInput { down(centerLeft) }
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.SCRUB_READOUT).assertExists()
     }
 
     @Test

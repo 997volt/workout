@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.androidapp.ui.statistics.scrubbable
 
 /**
  * A line over time, hand-drawn (ROADMAP N13, N37).
@@ -147,6 +148,14 @@ fun TrendChartFrame(
     movingAverage: List<ChartPoint> = emptyList(),
     goals: List<ChartSegment> = emptyList(),
     height: Dp = CHART_HEIGHT_DP.dp,
+    /**
+     * Where a finger is across the figure, and null when it lifts (N200), or null to leave the chart
+     * untouchable.
+     *
+     * A fraction of the width rather than an index: the caller knows what its points mean, and this component
+     * only knows where the finger landed.
+     */
+    onScrub: ((Float?) -> Unit)? = null,
 ) {
     TrendChart(
         points = points,
@@ -161,6 +170,7 @@ fun TrendChartFrame(
             .fillMaxWidth()
             .height(height)
             .padding(top = 12.dp)
+            .then(if (onScrub == null) Modifier else Modifier.scrubbable(onScrub))
             .testTag(testTag),
     )
 }

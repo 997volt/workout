@@ -483,6 +483,12 @@ the rule; that one argues it.
 - **A gap is distance, and the line breaks at it** (N37). On a time axis a straight
   segment across missing weeks is a claim about weeks nobody measured; this is where the
   app deliberately differs from the tool whose shape it borrows.
+- **A finger on the figure names the reading under it** (N200). A phone-sized chart cannot hold a label per
+  point, so the figure answers a touch instead: the nearest **recorded** reading — a gap is never the answer —
+  is named below it as a date and a value. The readout is real `Text` beside the canvas rather than paint on it,
+  because the canvas is blanked for a screen reader; and the arithmetic is a pure function (`nearestReadingIndex`)
+  with its own test, because "did the touch read the right point" is not something a gesture test can assert.
+
 - **The series menu opens on a group, and a joint site is one row away** (N199). The four groups are the only
   split whose size never changes, so the menu is a group choice and then that group's list rather than one
   eighty-item column with headings — the headings said *which kind* of series a word was, which a group choice

@@ -547,6 +547,10 @@ private fun SeriesChart(
     // The chart, the window it is averaged over and the axis in words are one card: they are one
     // reading of one series, and separating the picker from the line it changes would make the
     // control look like a setting rather than part of the figure.
+    // The reading the finger is over, or null (N200). Held here rather than in the frame because the answer is
+    // a date and a value, which is the screen's knowledge rather than the drawing's.
+    var scrubbed by remember { mutableStateOf<MetricReading?>(null) }
+
     AppCard {
         // The figure and its scale, side by side (N196): the numbers are the axis, so they belong against it
         // rather than in a row underneath where "left" and "right" said nothing about up and down.
@@ -566,8 +570,16 @@ private fun SeriesChart(
                 trend = overlay.fittedLine,
                 height = CHART_FIGURE_HEIGHT,
                 modifier = Modifier.weight(1f),
+                // The nearest recorded reading under the finger (N200): the same points the line is drawn
+                // through, so a readout cannot name a value the figure does not show.
+                onScrub = { fraction ->
+                    scrubbed = fraction?.let { at ->
+                        nearestReadingIndex(overlay.projected, at)?.let { series.readings[it] }
+                    }
+                },
             )
         }
+        scrubbed?.let { reading -> ScrubReadout(reading = reading, metric = metric) }
         MovingAveragePicker(period = period, onSelect = { period = it })
 
         // The axis in words (ROADMAP N37). A canvas cannot be read by a screen reader, and even for a
