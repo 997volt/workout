@@ -28,13 +28,12 @@ not now — and it is not *Next*, which is what is actually being worked on. Eac
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-**What the statistics pass left open, and what it made visible.** N203, N205, N206, N208 and N209 shipped and are in
+**What the statistics pass left open, and what it made visible.** N203–N206 and N208–N209 shipped and are in
 [CHANGELOG.md](CHANGELOG.md); **N210 was struck** because the range has been remembered since N35. What remains is the
-expanded view's parity, the structural split, the moving-average row, a recents row and pinch.
+structural split, the moving-average row, a recents row and pinch.
 
 | # | What it changes | Brought forward when |
 | --- | --- | --- |
-| N204 | **The expanded figure carries what the card carries** — the dates, the plan targets' names and the moving-average picker — so the two readings of one series cannot disagree. | The expanded view is opened to read a target rather than the line. |
 | N207 | **`ui/statistics` splits into a chart package.** The screen is 877 lines, hit the 20-function ceiling three times in one pass, and the chart now spans four files. A refactor with no behaviour change, which is why it lands alone. | The next change that adds a function to `StatisticsScreen.kt`. |
 | N211 | **The moving-average picker folds into a menu**, like the range's *More*, leaving the card to the figure and its axis. | The 7/14/30 row costs the figure height it needs on a phone. |
 | N212 | **A short "recently used" row above the metric trigger**, now that groups and search have made the menu navigable. | The same two or three series are what actually gets read. |
