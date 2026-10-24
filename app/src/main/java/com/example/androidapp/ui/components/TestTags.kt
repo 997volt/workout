@@ -898,6 +898,9 @@ object TestTags {
         const val OVERVIEW_VOLUME = "statistics_overview_volume"
         const val OVERVIEW_RECORDS = "statistics_overview_records"
         const val METRIC = "statistics_metric"
+        /** The metric menu's filter field and its empty answer (N198). */
+        const val METRIC_SEARCH = "statistics_metric_search"
+        const val METRIC_NO_MATCHES = "statistics_metric_no_matches"
         const val CHART = "statistics_chart"
         const val CHART_FIRST_DATE = "statistics_chart_first_date"
         const val CHART_LAST_DATE = "statistics_chart_last_date"

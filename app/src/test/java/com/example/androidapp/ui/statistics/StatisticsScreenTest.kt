@@ -125,6 +125,25 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun thePicker_canBeSearched_andSaysWhenNothingMatches() {
+        // N198: the menu is every series the registry holds, so a word is the fastest way in.
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC_SEARCH).performTextInput("weight")
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(MetricKey.Body(BodyMetric.WEIGHT).id))
+            .assertExists()
+        val rpe = MetricKey.Workout(com.example.androidapp.domain.model.TrendMetric.RPE)
+        composeTestRule.onNodeWithTag(TestTags.Statistics.metric(rpe.id)).assertDoesNotExist()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC_SEARCH).performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC_SEARCH).performTextInput("zzz")
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC_NO_MATCHES).assertExists()
+    }
+
+    @Test
     fun thePicker_offersEverySeries_andReportsTheChoice() {
         var chosen: MetricKey? = null
         setScreen(onSelectMetric = { chosen = it })

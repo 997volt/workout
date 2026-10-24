@@ -483,6 +483,13 @@ the rule; that one argues it.
 - **A gap is distance, and the line breaks at it** (N37). On a time axis a straight
   segment across missing weeks is a claim about weeks nobody measured; this is where the
   app deliberately differs from the tool whose shape it borrows.
+- **The series menu can be searched, and the search matches the group's name too** (N198). The menu is every
+  series the registry holds, so a list of headings was never going to be short enough: the headings say which
+  *kind* of thing a word is (N130), and the filter says which one you meant. Typing "body" finds weight without
+  the lifter knowing the word "weight", which is why the match runs over the group's label as well as the
+  series'. The field lives inside the menu and takes focus, because a search box in a menu that cannot be typed
+  into is a decoration.
+
 - **The range is one row, and the rare windows are one control away** (N197). Seven chips wrapped three to a
   row spent two rows on a control used once a visit, and every one of them read as equally likely. The three a
   thumb reaches for stay out; six months, a year, all time and custom sit behind one *More* control, which takes

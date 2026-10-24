@@ -314,6 +314,8 @@
     <string name="range_year">Last year</string>
     <string name="range_all">All time</string>
     <string name="range_more">More</string>
+    <string name="statistics_metric_search">Search series</string>
+    <string name="statistics_metric_no_matches">No series matches.</string>
     <string name="range_custom">Custom</string>
     <string name="statistics_overview_workouts">Workouts</string>
     <string name="statistics_overview_volume">Volume</string>
