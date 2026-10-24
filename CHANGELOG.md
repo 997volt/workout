@@ -11,10 +11,9 @@ alternatives rejected, the measurements, the argument — lives in
 repeated here.
 
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
-id a 1.x commit names is still looked up by it. This file carries the current release and what is
-unreleased.
+id a 1.x commit names is still looked up by it. This file carries the current release.
 
-## [Unreleased]
+## [2.14] — 2026-10-24 (versionCode 34)
 
 ### Added
 
@@ -49,9 +48,9 @@ unreleased.
   The range is **one row** — a week, a month, three months, and one control for the rest including custom — and the
   menu opens on a **group** with a **search** that reaches **every group**, each hit naming its own, the twenty-four
   joint sites collapsed to **one row** at each level, grouped under their joint. Nothing about the series, the store
-  or the goal line moved.
+  or the goal's line on the chart moved.
 
-- **The statistics figure says where you are pointing, and where you are in time** (N203, N205, N206, N208, N209, B213).
+- **The statistics figure says where you are pointing, and where you are in time** (N203, N205, N206, N208, N209).
   The scrub names the reading under the finger **and marks it on the figure** — a line down to the axis and an
   emphasised dot — and the readout is announced to a screen reader instead of only seen. The axis names a tick
   between its ends, the summary's three numbers follow the figure instead of preceding it, the joint sites are
@@ -59,6 +58,10 @@ unreleased.
   moving-average window is one control naming the window on screen rather than three chips in the card.
 
 ### Fixed
+
+- **An exercise's row keeps its actions beside its fields.** The program editor's name field takes the room the
+  numbers do not need, so the move and remove buttons stay beside the exercise they act on; below the width where
+  three numbers and three buttons stop fitting, the name takes its own line and the rest wrap as before.
 
 - **The import helper counts a line without losing it** (B206, B207). Clearing a line's *Sets* count to zero used to
   clamp to one and delete the rest of its sets; zero, a blank, a fraction and a negative now all leave the line
