@@ -17,13 +17,11 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The three rows the statistics pass left in *Later*, taken together.** The split lands first, because it changes no
-behaviour; the recents row and pinch are the two things the pass made visible.
+**The last of what the statistics pass made visible.** The split (N207) and the recents row (N212) shipped and are
+in [CHANGELOG.md](CHANGELOG.md); the pinch policy is the one left.
 
 | # | What it changes |
 | --- | --- |
-| N207 | **`ui/statistics` splits into a chart package.** The screen hit the 20-function ceiling three times in one pass, and the chart now spans four files; the overlay, the figure, the axis, the scrub and the series card move to `ui/statistics/chart`, and the screen keeps the range, the picker, the readings and the summary. A refactor with no behaviour change, which is why it lands alone. |
-| N212 | **A short "recently used" row above the metric trigger**, so the two or three series that are actually read are one tap away instead of a group and a search away. |
 | N213 | **Pinch changes the window**, the gesture a chart on a phone already invites, with a policy that cannot leave the recorded data: the window narrows around the pinched point and never widens past the range on screen or the readings it holds. |
 
 ## Later — decided, and not being started
@@ -34,7 +32,7 @@ not now — and it is not *Next*, which is what is actually being worked on. Eac
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-**Nothing.** The rows this section held are in *Next* now (N207, N212, N213).
+**Nothing.** The last row of the statistics pass is in *Next* now (N213).
 
 ## Parked — deliberately not planned
 

@@ -552,6 +552,16 @@ the rule; that one argues it.
   be a label that lies. The field lives inside the menu and takes focus, because a search box in a menu that
   cannot be typed into is a decoration.
 
+- **The recently read series are three ids, written when one is chosen** (N212). The row above the picker is a
+  shortcut to the series actually read, so it is remembered across launches: the ids go in the settings file as
+  one newline-joined value, because the **order is the meaning** and the list is bounded — a table would be a
+  Room migration for a preference, and this store's own rule is that a *growing* collection is what moves it.
+  Only an explicit selection records (opening the tab on its default series would push the real three out),
+  re-choosing moves a series to the front without a twin, and an id this build's registry does not know is
+  dropped when read rather than drawn as a chip that selects nothing. The current series is one of the chips and
+  reads as selected, and the row waits for a second, because one chip repeating the picker's label is not a
+  shortcut.
+
 - **The range is one row, and the rare windows are one control away** (N197). Seven chips wrapped three to a
   row spent two rows on a control used once a visit, and every one of them read as equally likely. The three a
   thumb reaches for stay out; six months, a year, all time and custom sit behind one *More* control, which takes

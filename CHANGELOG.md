@@ -13,6 +13,21 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Added
+
+- **The statistics screen remembers the series you read** (N212). A short row above the series picker holds the
+  three most recently chosen series, newest first, one tap from the chart — the current one reads as selected.
+  Only an explicit choice is recorded, so opening the tab does not push the series actually read out of the row,
+  and the row waits until there are two, because one chip repeating the picker's own label is not a shortcut.
+
+### Changed
+
+- **The statistics chart lives in its own package** (N207). The overlay, the figure, the axis, the scrub and the
+  series card moved out of the screen's file into `ui/statistics/chart`; the screen keeps the range, the picker,
+  the readings and the summary. No behaviour change — the same composables, tags, strings and arithmetic.
+
 ## [2.14] — 2026-10-24 (versionCode 34)
 
 ### Added
