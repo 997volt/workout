@@ -191,6 +191,15 @@ class MeasurementsScreenTest {
     }
 
     @Test
+    fun theGoalCard_waitsForTheFirstEmission() {
+        // B225: the default state's `today` is LocalDate.MIN, and formatting it throws. The card is not
+        // reachable until the real day is known.
+        setScreen(state = MeasurementsUiState())
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL).assertDoesNotExist()
+    }
+
+    @Test
     fun theHistory_isOfferedAsSoonAsThereIsAPeriod() {
         // N215: the list is also where a past is added, so it cannot wait for a past to exist.
         setScreen(

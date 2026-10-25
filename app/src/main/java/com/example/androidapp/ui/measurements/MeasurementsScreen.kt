@@ -323,16 +323,20 @@ private fun MeasurementList(
         // one the statistics screen used to carry under its chart (N135).
         // The goal is one statement about the series, so it is a card above the readings it is about
         // (N135, N137): the row the statistics screen used to carry under its chart.
-        item(key = GOAL_KEY) {
-            AppCard {
-                WeightGoalRow(
-                    goal = state.weightGoal,
-                    metric = MetricRegistry.entryFor(MetricKey.Body(BodyMetric.WEIGHT)),
-                    history = state.goalHistory,
-                    today = state.today,
-                    onSavePeriod = onSaveGoalPeriod,
-                    onRemovePeriod = onRemoveGoalPeriod,
-                )
+        // It waits for the first emission: until then `today` has no real value, and the editor would open on
+        // it and format a date that cannot exist (B225).
+        if (!state.isLoading) {
+            item(key = GOAL_KEY) {
+                AppCard {
+                    WeightGoalRow(
+                        goal = state.weightGoal,
+                        metric = MetricRegistry.entryFor(MetricKey.Body(BodyMetric.WEIGHT)),
+                        history = state.goalHistory,
+                        today = state.today,
+                        onSavePeriod = onSaveGoalPeriod,
+                        onRemovePeriod = onRemoveGoalPeriod,
+                    )
+                }
             }
         }
         if (state.entries.isEmpty() && !state.isLoading) {
