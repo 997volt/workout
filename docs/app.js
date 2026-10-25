@@ -4855,6 +4855,23 @@
     });
   }
 
+  /**
+   * What the body panel draws, worked out away from the DOM (B222).
+   *
+   * The page calls this on every render, including the first one, when there is no Waistline file: the
+   * empty state is the silent one, not a reason to dereference a null reader. A file whose days could not
+   * be read keeps its reasons, so the panel can say why it is empty instead of claiming a load (B220).
+   */
+  function waistlinePanel(waistline, unit) {
+    var rows = waistlineRows(waistline, unit);
+    var problems = waistline && Array.isArray(waistline.problems) ? waistline.problems : [];
+    return {
+      rows: rows,
+      problems: problems,
+      hidden: rows.length === 0 && problems.length === 0
+    };
+  }
+
   /* The id is the day and the kind, the app's own identity for a measurement (N113), so a
    * second import of the same file adds nothing and restores a row the app hid. */
   function makeMeasurementId(dateText, kind) {
@@ -6054,11 +6071,13 @@
     var panel = ui.elements.bodyPanel;
     if (!panel) { return; }
     var waistline = state.waistline;
-    var rows = waistlineRows(waistline, state.waistlineUnit);
+    var plan = waistlinePanel(waistline, state.waistlineUnit);
+    var rows = plan.rows;
+    var problems = plan.problems;
     // Nothing read and nothing to explain is the only silent case (B220). A file whose days could not be
     // read keeps the panel, so the reason is on the page rather than only in a status line that said
     // "loaded" — which is how a real export's missing `date` went unnoticed.
-    panel.hidden = rows.length === 0 && waistline.problems.length === 0;
+    panel.hidden = plan.hidden;
     if (panel.hidden) { return; }
 
     var host = ui.elements.bodyPreview;
@@ -6066,10 +6085,10 @@
 
     if (rows.length === 0) {
       setText(ui.elements.bodySummary,
-        'No daily record could be read: ' + formatInt(waistline.problems.length) + ' day' +
-        (waistline.problems.length === 1 ? '' : 's') +
+        'No daily record could be read: ' + formatInt(problems.length) + ' day' +
+        (problems.length === 1 ? '' : 's') +
         ' could not be dated, and nothing was added to the export.');
-      host.appendChild(bodyProblemList(waistline));
+      host.appendChild(bodyProblemList(problems));
       return;
     }
 
@@ -6118,8 +6137,8 @@
     table.appendChild(tbody);
     host.appendChild(table);
 
-    if (waistline.problems.length > 0) {
-      host.appendChild(bodyProblemList(waistline));
+    if (problems.length > 0) {
+      host.appendChild(bodyProblemList(problems));
     }
   }
 
@@ -6129,14 +6148,14 @@
    * Shared by the two states the panel can be in — records read with some days refused, and none read at
    * all — because the reader's problems are the reason in both.
    */
-  function bodyProblemList(waistline) {
+  function bodyProblemList(problems) {
     var list = document.createElement('ul');
     list.className = 'body-problems';
-    waistline.problems.slice(0, 8).forEach(function (problem) {
+    problems.slice(0, 8).forEach(function (problem) {
       list.appendChild(h('li', '', problem.message));
     });
-    if (waistline.problems.length > 8) {
-      list.appendChild(h('li', '', '…and ' + formatInt(waistline.problems.length - 8) + ' more.'));
+    if (problems.length > 8) {
+      list.appendChild(h('li', '', '…and ' + formatInt(problems.length - 8) + ' more.'));
     }
     return list;
   }
@@ -8367,6 +8386,7 @@
     programClashNote: programClashNote,
     looksLikeProgramTable: looksLikeProgramTable,
     waistlineRows: waistlineRows,
+    waistlinePanel: waistlinePanel,
     waistlineMeasurements: waistlineMeasurements,
     noonOfDate: noonOfDate,
     roleLabel: roleLabel,

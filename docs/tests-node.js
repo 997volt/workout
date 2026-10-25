@@ -41,7 +41,7 @@ var EXPECTED_FIXTURE_CASES = 6;
  * checks executed, not of cases handed in, so a block of `check` calls behind an early return is a
  * failure here rather than a number that quietly fell.
  */
-var EXPECTED_CHECKS = 40;
+var EXPECTED_CHECKS = 41;
 if (!Array.isArray(globalThis.PROGRAM_EDIT_CASES)) {
   console.error('the edit fixture did not load: PROGRAM_EDIT_CASES is not an array');
   process.exit(1);
@@ -104,6 +104,25 @@ t.check('a Waistline export dated with dateTime imports its days (B220)', functi
     H.noonOfDate('2026-01-01'),
     'a day becomes local noon, from the day the file named'
   );
+});
+checked += 1;
+
+/*
+ * The panel's empty state is a state, not a missing object (B222): the page renders before any file is
+ * loaded and again after Clear body, when `state.waistline` is null. The pure plan is what the panel draws,
+ * so it is what the gate can pin without a DOM.
+ */
+t.check('the body panel survives no file and keeps a broken one explainable (B222)', function () {
+  var empty = H.waistlinePanel(null, 'kg');
+  t.eq(empty.hidden, true, 'no file is the silent state');
+  t.eq(empty.rows.length, 0);
+  t.eq(empty.problems.length, 0);
+
+  var parsed = H.parseWaistlineDoc({ diary: [{ items: [], stats: { weight: 80 } }] });
+  var plan = H.waistlinePanel(parsed, parsed.unit);
+  t.eq(plan.hidden, false, 'a file with an unreadable day is not silent');
+  t.eq(plan.problems.length, 1);
+  t.eq(plan.rows.length, 0);
 });
 checked += 1;
 
