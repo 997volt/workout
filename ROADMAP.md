@@ -17,7 +17,12 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** A real Waistline backup imports its body data (B220) and is in [CHANGELOG.md](CHANGELOG.md).
+**A goal's past is a record the lifter may correct.** Periods already exist, but the only write appends at the
+clock's now: a stretch that began in March cannot be entered, and one entered wrongly cannot be edited or removed.
+
+| # | What it changes |
+| --- | --- |
+| N215 | **Past goal periods can be added, edited and removed.** A period is a Start, an optional End and a kind — Target, Lose, Gain, Maintain or *No goal* — at local midnight, so a goal "from 1 March" owns that day. Adding a finished stretch writes the goal it replaced as one restoring boundary, so the timeline stays contiguous; editing moves a boundary only within its neighbours; removing merges the stretch into the period before it, and the snackbar can put it back. The newest boundary stays the goal in force and keeps no end, and an edit re-reads that stretch's verdict, because the outcomes are derived. |
 
 ## Later — decided, and not being started
 
