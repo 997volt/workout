@@ -733,6 +733,76 @@ class StatisticsViewModelTest {
     }
 
     @Test
+    fun aPinchOnASparseWindow_anchorsOnThePlottedSpan_notTheWindow() = runTest(dispatcher) {
+        // B227: the figure's axis spans the readings, not the range's empty ends. Three consecutive weigh-ins
+        // inside a seven-day window: a centre pinch is on yesterday, and a 2x pinch leaves the two days around
+        // it, not a window four days earlier that drops both.
+        val today = now.atZone(ZoneId.systemDefault()).toLocalDate()
+        val range = StatisticsRange(RangeKind.LAST_7_DAYS)
+        val settings = FakeSettingsRepository(range)
+        val body = (0..2).map { daysAgo ->
+            measurement(at = now.minusSeconds(daysAgo * 86_400L), weight = 80_000L + daysAgo)
+        }
+        val viewModel = viewModel(range = range, body = body, settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onPinch(scale = 2f, focus = 0.5f)
+        advanceUntilIdle()
+
+        val stored = settings.stored.value
+        assertThat(stored.kind).isEqualTo(RangeKind.CUSTOM)
+        assertThat(stored.from).isEqualTo(today.minusDays(2))
+        assertThat(stored.to).isEqualTo(today.minusDays(1))
+    }
+
+    @Test
+    fun aPinchThatWouldLeaveOneReading_isRefused() = runTest(dispatcher) {
+        // B227: the left edge of a sparse chart would otherwise produce a two-day window with a single
+        // reading, and the figure would disappear while the range row said Custom.
+        val range = StatisticsRange(RangeKind.LAST_7_DAYS)
+        val settings = FakeSettingsRepository(range)
+        val body = listOf(
+            measurement(at = now.minusSeconds(3 * 86_400L), weight = 80_000L),
+            measurement(at = now, weight = 79_000L),
+        )
+        val viewModel = viewModel(range = range, body = body, settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onPinch(scale = 2f, focus = 0f)
+        advanceUntilIdle()
+
+        assertThat(settings.stored.value.kind).isEqualTo(RangeKind.LAST_7_DAYS)
+        assertThat(viewModel.uiState.value.range.kind).isEqualTo(RangeKind.LAST_7_DAYS)
+    }
+
+    @Test
+    fun aPinchWriteThatFails_isReported_andTheWindowReverts() = runTest(dispatcher) {
+        // B229: a failed settings commit used to be dropped and the pending window cleared, so the chart
+        // silently went back to the old one with no message.
+        val range = StatisticsRange(RangeKind.LAST_7_DAYS)
+        val settings = FakeSettingsRepository(range).apply { failRangeWrites = true }
+        val body = (0..9).map { daysAgo ->
+            measurement(at = now.minusSeconds(daysAgo * 86_400L), weight = 80_000L + daysAgo)
+        }
+        val viewModel = viewModel(range = range, body = body, settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onPinch(scale = 2f, focus = 0.5f)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.rangeError).isNotNull()
+        assertThat(viewModel.uiState.value.range.kind).isEqualTo(RangeKind.LAST_7_DAYS)
+        assertThat(settings.stored.value.kind).isEqualTo(RangeKind.LAST_7_DAYS)
+
+        viewModel.onDismissRangeError()
+        advanceUntilIdle()
+        assertThat(viewModel.uiState.value.rangeError).isNull()
+    }
+
+    @Test
     fun aGoalForAnotherMetric_isNotShown() = runTest(dispatcher) {
         // Otherwise a target set for bodyweight would draw a line across a chart of volume.
         val viewModel = viewModel(
@@ -776,6 +846,9 @@ private class FakeSettingsRepository(
     initiallyRecent: List<String> = emptyList(),
 ) : SettingsRepository {
     val stored = MutableStateFlow(initial)
+
+    /** A range write can fail (B229); the fake only fails when a test asks it to. */
+    var failRangeWrites = false
     override fun observeDefaultRestSeconds(): Flow<Int> = flowOf(45)
     override suspend fun setDefaultRestSeconds(seconds: Int): DataResult<Unit> = DataResult.Success(Unit)
     override fun observeRestCueEnabled(): Flow<Boolean> = flowOf(true)
@@ -794,6 +867,9 @@ private class FakeSettingsRepository(
         DataResult.Success(Unit)
     override fun observeStatisticsRange(): Flow<StatisticsRange> = stored
     override suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit> {
+        if (failRangeWrites) {
+            return DataResult.Failure(DataError.Storage(IllegalStateException("the range was not stored")))
+        }
         stored.value = range
         return DataResult.Success(Unit)
     }

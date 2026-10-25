@@ -48,6 +48,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -107,6 +108,8 @@ data class StatisticsUiState(
     val series: MetricSeries? = null,
     /** The read failed, shown in place of the chart (the same shape the trends screen uses). */
     val error: DataError? = null,
+    /** A range write failed; shown as a snackbar rather than replacing the chart (B229). */
+    val rangeError: DataError? = null,
     /** The library, for choosing the lift an Exercise metric is about. */
     val lifts: List<Exercise> = emptyList(),
     /** The target set for the chosen metric, in its own units, or null when there is none (ROADMAP N39). */
@@ -220,6 +223,9 @@ class StatisticsViewModel @Inject constructor(
      * shortly after the fingers stop — or dropped if a range chip is chosen while it waits.
      */
     private val pendingRange = MutableStateFlow<StatisticsRange?>(null)
+
+    /** The last range write's failure, consumed by the screen's snackbar (B229). */
+    private val rangeError = MutableStateFlow<DataError?>(null)
     private var pinchWrite: Job? = null
 
     private val selection = MutableStateFlow(
@@ -242,6 +248,7 @@ class StatisticsViewModel @Inject constructor(
         val range: StatisticsRange,
         val selection: StatisticsSelection,
         val recentSeries: List<StatisticsSelection>,
+        val rangeError: DataError?,
         val summaries: List<WorkoutSummary>,
         val workoutPoints: DataResult<List<TrendPoint>>,
         val measurements: List<BodyMeasurement>,
@@ -274,8 +281,10 @@ class StatisticsViewModel @Inject constructor(
         entries.mapNotNull(::recentSelection).distinct().take(RECENT_SERIES_MAX)
     }
 
-    /** The selection and the recents as one source, so the five-flow combine keeps its five (N212). */
-    private val chosen = combine(selection, recents) { selection, recent -> selection to recent }
+    /** The selection, the recents and the last write's failure, so the five-flow combine keeps its five. */
+    private val chosen = combine(selection, recents, rangeError) { selection, recent, failed ->
+        Triple(selection, recent, failed)
+    }
 
     private val sources = combine(
         range,
@@ -291,6 +300,7 @@ class StatisticsViewModel @Inject constructor(
             range = range,
             selection = selection,
             recentSeries = chosen.second,
+            rangeError = chosen.third,
             summaries = library.first,
             // A head is offered only where the chosen metric **reads** one (ROADMAP N97, B98), and only where
             // it actually heads something: a category a lifter has made and not yet filed anything under is
@@ -352,7 +362,9 @@ class StatisticsViewModel @Inject constructor(
     }
 
     /** How many records the window contains. Its own flow because it is a suspend read, not a stream. */
-    private val records = range.mapLatest { current ->
+    private val records = settings.observeStatisticsRange().mapLatest { current ->
+        // The settled range, not the pinch's pending one: a gesture must not issue a database count per
+        // motion event, and the overview is a summary of the window that was chosen (B236).
         // "All" has no window, and the count is still a question worth answering — it is the range where a
         // lifetime record count means most. A null window means unbounded, which the query expresses as the
         // ends of the Long range rather than as a missing clause.
@@ -422,6 +434,7 @@ class StatisticsViewModel @Inject constructor(
                     selection = sources.selection,
                     recentSeries = sources.recentSeries,
                     error = workoutPoints.error,
+                    rangeError = sources.rangeError,
                     lifts = sources.lifts,
                     goal = levelGoal,
                     weightGoal = weightGoal,
@@ -450,6 +463,7 @@ class StatisticsViewModel @Inject constructor(
                     range = sources.range,
                     selection = sources.selection,
                     recentSeries = sources.recentSeries,
+                    rangeError = sources.rangeError,
                     overview = statisticsOverview(
                         range = sources.range,
                         today = today(),
@@ -587,7 +601,15 @@ class StatisticsViewModel @Inject constructor(
         // A chip overrules a pinch that is still settling; otherwise the pending write would land after it.
         pinchWrite?.cancel()
         pendingRange.value = null
-        viewModelScope.launch { settings.setStatisticsRange(range) }
+        viewModelScope.launch {
+            val result = settings.setStatisticsRange(range)
+            if (result is DataResult.Failure) rangeError.value = result.error
+        }
+    }
+
+    /** Takes the range-write failure away once its snackbar has been read (B229). */
+    fun onDismissRangeError() {
+        rangeError.value = null
     }
 
     /**
@@ -604,8 +626,21 @@ class StatisticsViewModel @Inject constructor(
         pinchWrite = viewModelScope.launch {
             delay(PINCH_SETTLE_MILLIS)
             val settled = pendingRange.value ?: return@launch
-            settings.setStatisticsRange(settled)
-            pendingRange.value = null
+            when (val result = settings.setStatisticsRange(settled)) {
+                is DataResult.Success -> {
+                    // Keep the pending window until the preferences listener reports it: clearing first lets
+                    // the stored old range paint for a frame before the new one arrives (B229).
+                    withTimeoutOrNull(RANGE_SETTLE_WAIT_MILLIS) {
+                        settings.observeStatisticsRange().first { it == settled }
+                    }
+                    pendingRange.value = null
+                }
+
+                is DataResult.Failure -> {
+                    pendingRange.value = null
+                    rangeError.value = result.error
+                }
+            }
         }
     }
 
@@ -617,6 +652,20 @@ class StatisticsViewModel @Inject constructor(
      */
     private fun pinchedWindow(state: StatisticsUiState, scale: Float, focus: Float): StatisticsRange? {
         val zone = currentZone()
+        val today = today()
+        // The window the gesture is building, read synchronously: a scale is reported since the previous
+        // motion event, and `uiState` catches up only after three flow hops, so reading it lost every
+        // increment delivered before the collector ran (B228).
+        val base = pendingRange.value ?: state.range
+        val plotted = base.inWindow(state.goalReadings, today, zone)
+        if (plotted.count { it.value != null } < 2) return null
+
+        val firstPlot = plotted.first().at
+        val lastPlot = plotted.last().at
+        val firstPlotDay = firstPlot.atZone(zone).toLocalDate()
+        val lastPlotDay = lastPlot.atZone(zone).toLocalDate()
+        val plottedSpan = (ChronoUnit.DAYS.between(firstPlotDay, lastPlotDay).toInt() + 1).coerceAtLeast(1)
+
         val days = state.goalReadings
             .mapNotNull { reading -> reading.value?.let { reading.at.atZone(zone).toLocalDate() } }
             .distinct()
@@ -625,22 +674,37 @@ class StatisticsViewModel @Inject constructor(
         val lastDay = days.max()
         val maxSpan = ChronoUnit.DAYS.between(firstDay, lastDay).toInt() + 1
 
-        val bounds = state.range.window(today(), zone)
-        val fromDay = bounds?.let { it.from.atZone(zone).toLocalDate() } ?: firstDay
-        val toDay = bounds?.let { it.toExclusive.minusMillis(1).atZone(zone).toLocalDate() } ?: lastDay
-        val span = (ChronoUnit.DAYS.between(fromDay, toDay).toInt() + 1).coerceAtLeast(1)
-        val focusOnWindow = focus.coerceIn(0f, 1f)
-        val anchor = fromDay.plusDays((focusOnWindow * (span - 1)).roundToInt().toLong())
-        val newSpan = (span / scale).roundToInt().coerceIn(MIN_PINCH_DAYS, maxSpan)
-        val start = anchor
-            .minusDays((focusOnWindow * (newSpan - 1)).roundToInt().toLong())
+        val bounds = base.window(today, zone)
+        val baseFrom = bounds?.from?.atZone(zone)?.toLocalDate()
+        val baseTo = bounds?.toExclusive?.minusMillis(1)?.atZone(zone)?.toLocalDate()
+        val baseSpan = if (baseFrom != null && baseTo != null) {
+            ChronoUnit.DAYS.between(baseFrom, baseTo).toInt() + 1
+        } else {
+            maxSpan
+        }
+        // The focus is a fraction of the **plotted** domain, because that is the axis the finger is on; the old
+        // range-window mapping anchored a centre pinch two days away from the reading under it (B227). A
+        // pinch-out scales the window it is opening (never below the window already shown); a pinch-in scales
+        // the span the data actually fills, which is what the eye is being asked to magnify.
+        val focusOnPlot = focus.coerceIn(0f, 1f)
+        val focusMillis = firstPlot.toEpochMilli() +
+            ((lastPlot.toEpochMilli() - firstPlot.toEpochMilli()) * focusOnPlot).toLong()
+        val focusDay = Instant.ofEpochMilli(focusMillis).atZone(zone).toLocalDate()
+        val domainSpan = if (scale < 1f) maxOf(plottedSpan, baseSpan) else plottedSpan
+        val newSpan = (domainSpan / scale).roundToInt().coerceIn(MIN_PINCH_DAYS, maxSpan)
+        val start = focusDay
+            .minusDays((focusOnPlot * (newSpan - 1)).roundToInt().toLong())
             .coerceAtLeast(firstDay)
             .coerceAtMost(lastDay.minusDays(newSpan - 1L))
-        return if (newSpan == span) {
-            null
-        } else {
-            StatisticsRange(RangeKind.CUSTOM, from = start, to = start.plusDays(newSpan - 1L))
+        val candidate = StatisticsRange(RangeKind.CUSTOM, from = start, to = start.plusDays(newSpan - 1L))
+        // The window a finger chose still has to be one the figure can draw; a pinch that leaves a single
+        // reading would empty the card and leave the range row saying Custom (B227).
+        if (plotted.count { it.value != null } >= 2 &&
+            candidate.inWindow(state.goalReadings, today, zone).count { it.value != null } < 2
+        ) {
+            return null
         }
+        return candidate.takeUnless { start == baseFrom && candidate.to == baseTo }
     }
 
     private fun today(): LocalDate =
@@ -655,6 +719,9 @@ class StatisticsViewModel @Inject constructor(
 
         /** How long after the last pinch motion the window is written, once (N213). */
         const val PINCH_SETTLE_MILLIS = 250L
+
+        /** How long to wait for the stored range to report a settled pinch before clearing the pending one (B229). */
+        const val RANGE_SETTLE_WAIT_MILLIS = 500L
 
         /**
          * How many sessions the training series are asked for: no limit.

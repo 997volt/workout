@@ -25,6 +25,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,6 +52,7 @@ import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.DatePrompt
+import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
@@ -79,6 +82,7 @@ fun StatisticsRoute(
         onSetGoal = viewModel::onSetGoal,
         onOpenMeasurements = onOpenMeasurements,
         onOpenAdherence = onOpenAdherence,
+        onDismissRangeError = viewModel::onDismissRangeError,
     )
 }
 
@@ -102,6 +106,8 @@ fun StatisticsScreen(
     onPinch: (scale: Float, focus: Float) -> Unit = { _, _ -> },
     /** Sets or clears the chosen metric's target (ROADMAP N39). */
     onSetGoal: (Double?) -> Unit = {},
+    /** Takes a failed range write away once its snackbar has been read (B229). */
+    onDismissRangeError: () -> Unit = {},
     /**
      * Opens body measurements (ROADMAP N35).
      *
@@ -120,6 +126,12 @@ fun StatisticsScreen(
     onOpenAdherence: (() -> Unit)? = null,
 ) {
     var choosingDates by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    MessageSnackbar(
+        message = state.rangeError?.let { dataErrorMessage(it) },
+        hostState = snackbarHostState,
+        onDismiss = onDismissRangeError,
+    )
     if (choosingDates) {
         CustomRangeDialog(
             initial = state.range,
@@ -133,6 +145,7 @@ fun StatisticsScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             StatisticsTopBar(
                 onOpenMeasurements = onOpenMeasurements,
