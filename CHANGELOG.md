@@ -54,6 +54,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Changed
 
+- **The *6 months* range is named that way on the row** (a request in use). The control read *Last 6 months* —
+  the only one in the row carrying a word the other three drop — so the row says *6 months*, matching *7 days*,
+  *1 month* and *3 months*. The menu behind *More* keeps the full name, where there is room for it.
+
 - **The statistics chart lives in its own package** (N207). The overlay, the figure, the axis, the scrub and the
   series card moved out of the screen's file into `ui/statistics/chart`; the screen keeps the range, the picker,
   the readings and the summary. No behaviour change — the same composables, tags, strings and arithmetic.

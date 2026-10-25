@@ -26,6 +26,22 @@ val RangeKind.labelRes: Int
         RangeKind.CUSTOM -> R.string.range_custom
     }
 
+/**
+ * The name the range row gives a range (ROADMAP N197).
+ *
+ * Shorter than [labelRes] because the row has four controls to fit on one row: "Last" is understood from the
+ * control, and the menu behind *More* keeps the full names, where there is room for them.
+ */
+@get:StringRes
+val RangeKind.chipLabelRes: Int
+    get() = when (this) {
+        RangeKind.LAST_7_DAYS -> R.string.range_7_days_short
+        RangeKind.LAST_MONTH -> R.string.range_month_short
+        RangeKind.LAST_3_MONTHS -> R.string.range_3_months_short
+        RangeKind.LAST_6_MONTHS -> R.string.range_6_months_short
+        else -> labelRes
+    }
+
 /** The readings inside the window, gaps and all: a moment with no value is still a moment. */
 fun StatisticsRange.inWindow(
     readings: List<MetricReading>,

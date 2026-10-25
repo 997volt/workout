@@ -310,6 +310,28 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun aRangeBehindMore_isNamedWithoutTheWordLast_onTheRow_andInFullInTheMenu() {
+        // The row says the window in the shortest form the control can carry: "Last" is understood from the
+        // control, and the three common chips already drop it (N197). Six months read longer than any other
+        // control in the row, so it is named the same way — while the menu, where there is room, keeps the
+        // full name (a request in use).
+        setScreen(
+            state = StatisticsUiState(
+                isLoading = false,
+                range = StatisticsRange(RangeKind.LAST_6_MONTHS),
+                series = series,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE)
+            .assertIsSelected()
+            .assertTextEquals("6 months")
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE).performClick()
+        composeTestRule.onNodeWithText("Last 6 months").assertExists()
+    }
+
+    @Test
     fun aTarget_isShownInTheMetricsOwnUnit_andEditable() {
         // Typed as 82 kilograms and reported as 82000 grams: the row shows what a person reads, and the
         // screen hands over what the app stores (ROADMAP N39).

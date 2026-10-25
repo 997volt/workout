@@ -303,7 +303,7 @@ private fun RangeControl(
             AppFilterChip(
                 selected = selectedOverflow != null,
                 onClick = { open = true },
-                label = stringResource(selectedOverflow?.labelRes ?: R.string.range_more),
+                label = stringResource(selectedOverflow?.chipLabelRes ?: R.string.range_more),
                 testTag = TestTags.Statistics.RANGE_MORE,
             )
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
@@ -340,16 +340,7 @@ private fun RangeChip(kind: RangeKind, selected: Boolean, onSelectRange: (Statis
     AppFilterChip(
         selected = selected,
         onClick = { onSelectRange(StatisticsRange(kind)) },
-        // The short name: "Last" is understood from the control, and dropping it is what keeps four controls on
-        // one row. The menu behind *More* keeps the full names, where there is room for them.
-        label = stringResource(
-            when (kind) {
-                RangeKind.LAST_7_DAYS -> R.string.range_7_days_short
-                RangeKind.LAST_MONTH -> R.string.range_month_short
-                RangeKind.LAST_3_MONTHS -> R.string.range_3_months_short
-                else -> kind.labelRes
-            },
-        ),
+        label = stringResource(kind.chipLabelRes),
         testTag = TestTags.Statistics.range(kind.name),
     )
 }
