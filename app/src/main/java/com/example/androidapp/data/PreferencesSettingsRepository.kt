@@ -190,18 +190,18 @@ class PreferencesSettingsRepository @Inject constructor(
     }.conflate().distinctUntilChanged()
 
     /** Committed and read back off the main thread, for the reason [writeFlag] states (B158). */
-    override suspend fun setRecentSeries(ids: List<String>): DataResult<Unit> =
+    override suspend fun setRecentSeries(entries: List<String>): DataResult<Unit> =
         withContext(Dispatchers.IO) {
             preferences.edit(commit = true) {
                 // Absent rather than an empty string: no recents and a blank preference are the same thing,
                 // and one of them is a value that has to be remembered not to mean anything.
-                if (ids.isEmpty()) {
+                if (entries.isEmpty()) {
                     remove(KEY_RECENT_SERIES)
                 } else {
-                    putString(KEY_RECENT_SERIES, ids.joinToString(SEPARATOR))
+                    putString(KEY_RECENT_SERIES, entries.joinToString(SEPARATOR))
                 }
             }
-            if (currentRecentSeries() == ids) {
+            if (currentRecentSeries() == entries) {
                 DataResult.Success(Unit)
             } else {
                 DataResult.Failure(DataError.Storage(IllegalStateException("the recent series were not stored")))
@@ -212,7 +212,8 @@ class PreferencesSettingsRepository @Inject constructor(
      * The stored recents, newest first.
      *
      * One newline-joined value rather than a set, because the order is the meaning: the row shows the last
-     * three in the order they were read. Ids cannot contain a newline, so the encoding is unambiguous.
+     * three in the order they were read. The entries themselves are the screen's encoding (a metric id, and a
+     * lift after `|`); they cannot contain a newline, so the outer encoding is unambiguous (B226).
      */
     private fun currentRecentSeries(): List<String> =
         preferences.getString(KEY_RECENT_SERIES, null)
@@ -300,7 +301,7 @@ class PreferencesSettingsRepository @Inject constructor(
         const val KEY_RANGE_FROM = "statistics_range_from"
         const val KEY_RANGE_TO = "statistics_range_to"
 
-        /** The series the Statistics screen read last, newest first (N212). */
+        /** The series the Statistics screen read last, newest first; a metric id and an optional lift (N212, B226). */
         const val KEY_RECENT_SERIES = "statistics_recent_series"
         const val SEPARATOR = "\n"
 

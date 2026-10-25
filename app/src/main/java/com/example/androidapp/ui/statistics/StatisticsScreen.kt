@@ -74,6 +74,7 @@ fun StatisticsRoute(
         onSelectMetric = viewModel::onSelectMetric,
         modifier = modifier,
         onSelectExercise = viewModel::onSelectExercise,
+        onSelectRecent = viewModel::onSelectRecent,
         onPinch = viewModel::onPinch,
         onSetGoal = viewModel::onSetGoal,
         onOpenMeasurements = onOpenMeasurements,
@@ -95,6 +96,8 @@ fun StatisticsScreen(
     onSelectMetric: (MetricKey) -> Unit,
     modifier: Modifier = Modifier,
     onSelectExercise: (String) -> Unit = {},
+    /** Restores one series from the recents row, lift and all (N212, B226). */
+    onSelectRecent: (StatisticsSelection) -> Unit = {},
     /** A two-finger pinch over the figure, which narrows or widens the window (N213). */
     onPinch: (scale: Float, focus: Float) -> Unit = { _, _ -> },
     /** Sets or clears the chosen metric's target (ROADMAP N39). */
@@ -150,7 +153,7 @@ fun StatisticsScreen(
                 onSelectRange = onSelectRange,
                 onChooseDates = { choosingDates = true },
             )
-            RecentSeries(state = state, onSelectMetric = onSelectMetric)
+            RecentSeries(state = state, onSelectRecent = onSelectRecent)
             MetricPicker(selected = state.selection.metric, onSelectMetric = onSelectMetric)
 
             // The overview and the chart both read the series, so neither is drawn until it exists: a frame
@@ -249,23 +252,26 @@ private fun StatisticsBody(
 }
 
 /**
- * The two or three series read lately, one tap from the chart (N212).
+ * The two or three series read lately, one tap from the chart (N212, B226).
  *
- * Hidden while there are fewer than two: one chip repeating the picker's own label is not a shortcut, and a
- * row that appears before there is anything in it is a control that promises a memory it does not have. The
- * current series is one of the chips and reads as selected, so the row also says which one is on screen.
+ * Each chip is a **selection**, not a metric: an Exercise series is named with its lift, because "Volume" alone
+ * is the same word under every lift. Hidden while there are fewer than two: one chip repeating the picker's own
+ * label is not a shortcut, and a row that appears before there is anything in it promises a memory it does not
+ * have. The current selection is one of the chips and reads as selected.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun RecentSeries(state: StatisticsUiState, onSelectMetric: (MetricKey) -> Unit) {
+private fun RecentSeries(state: StatisticsUiState, onSelectRecent: (StatisticsSelection) -> Unit) {
     if (state.recentSeries.size < 2) return
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        state.recentSeries.forEach { key ->
+        state.recentSeries.forEach { recent ->
+            val entry = MetricRegistry.entryFor(recent.metric)
+            val lift = state.lifts.firstOrNull { it.id == recent.exerciseId }?.name
             AppFilterChip(
-                selected = key == state.selection.metric,
-                onClick = { onSelectMetric(key) },
-                label = MetricRegistry.entryFor(key).label(),
-                testTag = TestTags.Statistics.recentSeries(key.id),
+                selected = recent == state.selection,
+                onClick = { onSelectRecent(recent) },
+                label = if (lift == null) entry.label() else entry.label() + " · " + lift,
+                testTag = TestTags.Statistics.recentSeries(recent.recentTag()),
             )
         }
     }

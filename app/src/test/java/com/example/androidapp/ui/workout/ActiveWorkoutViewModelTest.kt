@@ -2874,7 +2874,7 @@ private class FakeSettingsRepository(
         DataResult.Success(Unit)
 
     override fun observeRecentSeries(): Flow<List<String>> = flowOf(emptyList())
-    override suspend fun setRecentSeries(ids: List<String>): DataResult<Unit> = DataResult.Success(Unit)
+    override suspend fun setRecentSeries(entries: List<String>): DataResult<Unit> = DataResult.Success(Unit)
 }
 
 /**

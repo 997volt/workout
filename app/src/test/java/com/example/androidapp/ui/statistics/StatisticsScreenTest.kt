@@ -73,6 +73,7 @@ class StatisticsScreenTest {
         onSelectRange: (StatisticsRange) -> Unit = {},
         onSelectMetric: (MetricKey) -> Unit = {},
         onSelectExercise: (String) -> Unit = {},
+        onSelectRecent: (StatisticsSelection) -> Unit = {},
         onPinch: (scale: Float, focus: Float) -> Unit = { _, _ -> },
         onOpenMeasurements: (() -> Unit)? = null,
         onOpenAdherence: (() -> Unit)? = null,
@@ -85,6 +86,7 @@ class StatisticsScreenTest {
                     onSelectRange = onSelectRange,
                     onSelectMetric = onSelectMetric,
                     onSelectExercise = onSelectExercise,
+                    onSelectRecent = onSelectRecent,
                     onPinch = onPinch,
                     onOpenMeasurements = onOpenMeasurements,
                     onOpenAdherence = onOpenAdherence,
@@ -136,31 +138,47 @@ class StatisticsScreenTest {
     @Test
     fun theRecentSeries_areAShortcutAboveThePicker_withTheCurrentOneSelected() {
         // N212: the two or three series actually read, one tap away instead of a group and a search away,
-        // and one of them reads as the series on screen.
-        val weight = MetricKey.Body(BodyMetric.WEIGHT)
-        val volume = MetricKey.Exercise(ExerciseTrendMetric.VOLUME)
-        val rpe = MetricKey.Workout(com.example.androidapp.domain.model.TrendMetric.RPE)
-        var chosen: MetricKey? = null
+        // and one of them reads as the series on screen. A per-lift series keeps its lift (B226).
+        val weight = StatisticsSelection(metric = MetricKey.Body(BodyMetric.WEIGHT))
+        val volume = StatisticsSelection(
+            metric = MetricKey.Exercise(ExerciseTrendMetric.VOLUME),
+            exerciseId = "bench",
+        )
+        val rpe = StatisticsSelection(
+            metric = MetricKey.Workout(com.example.androidapp.domain.model.TrendMetric.RPE),
+        )
+        val bench = Exercise(
+            id = "bench",
+            name = "Bench Press",
+            primaryMuscle = MuscleGroup.QUADS,
+            secondaryMuscles = emptyList(),
+            equipment = Equipment.BARBELL,
+            movementPattern = MovementPattern.SQUAT,
+            rowKind = RowKind.MOVEMENT,
+        )
+        var chosen: StatisticsSelection? = null
         setScreen(
             state = StatisticsUiState(
                 isLoading = false,
                 range = StatisticsRange(RangeKind.LAST_MONTH),
-                selection = StatisticsSelection(metric = weight),
+                selection = weight,
                 recentSeries = listOf(weight, volume, rpe),
+                lifts = listOf(bench),
                 series = series,
             ),
-            onSelectMetric = { chosen = it },
+            onSelectRecent = { chosen = it },
         )
 
-        val recentTop = composeTestRule.onNodeWithTag(TestTags.Statistics.recentSeries(weight.id))
+        val recentTop = composeTestRule.onNodeWithTag(TestTags.Statistics.recentSeries(weight.recentTag()))
             .assertIsSelected()
             .getUnclippedBoundsInRoot().top
         val pickerTop = composeTestRule.onNodeWithTag(TestTags.Statistics.METRIC)
             .getUnclippedBoundsInRoot().top
         assertThat(recentTop).isLessThan(pickerTop)
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.recentSeries(volume.id))
+        composeTestRule.onNodeWithTag(TestTags.Statistics.recentSeries(volume.recentTag()))
             .assertIsNotSelected()
+            .assertTextEquals("Volume · Bench Press")
             .performClick()
 
         assertThat(chosen).isEqualTo(volume)
@@ -169,12 +187,13 @@ class StatisticsScreenTest {
     @Test
     fun theRecentRow_waitsUntilThereAreTwoSeries() {
         // One chip repeating the picker's own label is not a shortcut.
-        val weight = MetricKey.Body(BodyMetric.WEIGHT)
+        val weight = StatisticsSelection(metric = MetricKey.Body(BodyMetric.WEIGHT))
         setScreen(
             state = StatisticsUiState(isLoading = false, recentSeries = listOf(weight), series = series),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.recentSeries(weight.id)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.recentSeries(weight.recentTag()))
+            .assertDoesNotExist()
     }
 
     @Test

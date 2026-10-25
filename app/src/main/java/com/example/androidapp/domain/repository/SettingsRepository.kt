@@ -97,17 +97,18 @@ interface SettingsRepository {
     suspend fun setStatisticsRange(range: StatisticsRange): DataResult<Unit>
 
     /**
-     * The series most recently read on the Statistics screen, newest first (N212).
+     * The series most recently read on the Statistics screen, newest first (N212, B226).
      *
-     * Ids rather than the screen's keys: the store stays a domain type, and an id written by a build that knew
-     * a series this one does not is dropped by the reader rather than breaking the screen — the same rule
-     * [observeStatisticsRange] follows for an unknown range name. The caller keeps the list short (three); the
-     * store keeps what it is given.
+     * Each entry is the metric's id, with the lift's id after `|` where the metric reads one — a per-lift series
+     * is not the metric alone. Entries rather than the screen's types: the store stays a domain value, and an
+     * entry written by a build that knew a series this one does not is dropped by the reader rather than
+     * breaking the screen — the same rule [observeStatisticsRange] follows for an unknown range name. The
+     * caller keeps the list short (three); the store keeps what it is given.
      */
     fun observeRecentSeries(): Flow<List<String>>
 
-    /** Stores [ids] newest first. An empty list clears the row. */
-    suspend fun setRecentSeries(ids: List<String>): DataResult<Unit>
+    /** Stores [entries] newest first. An empty list clears the row. */
+    suspend fun setRecentSeries(entries: List<String>): DataResult<Unit>
 
     companion object {
         /**

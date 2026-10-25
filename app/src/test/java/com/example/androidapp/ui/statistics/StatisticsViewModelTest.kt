@@ -565,22 +565,97 @@ class StatisticsViewModelTest {
     fun choosingSeries_recordsThemNewestFirst_andStopsAtThree() = runTest(dispatcher) {
         // N212: the recents row is what was actually read, newest first, capped so it stays a shortcut. Only
         // an explicit choice records, and re-choosing moves a series to the front without a twin.
-        val settings = FakeSettingsRepository()
+        val settings = FakeSettingsRepository(StatisticsRange(RangeKind.ALL))
         val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
         observe(viewModel)
         advanceUntilIdle()
 
         val weight = MetricKey.Body(BodyMetric.WEIGHT)
-        val volume = MetricKey.Exercise(ExerciseTrendMetric.VOLUME)
+        val fat = MetricKey.Body(BodyMetric.BODY_FAT)
+        val muscle = MetricKey.Body(BodyMetric.MUSCLE)
         val rpe = MetricKey.Workout(com.example.androidapp.domain.model.TrendMetric.RPE)
         viewModel.onSelectMetric(weight)
-        viewModel.onSelectMetric(volume)
+        viewModel.onSelectMetric(fat)
+        viewModel.onSelectMetric(muscle)
         viewModel.onSelectMetric(rpe)
         viewModel.onSelectMetric(weight)
         advanceUntilIdle()
 
-        assertThat(settings.recent.value).containsExactly(weight.id, rpe.id, volume.id).inOrder()
-        assertThat(viewModel.uiState.value.recentSeries).containsExactly(weight, rpe, volume).inOrder()
+        assertThat(settings.recent.value).containsExactly(weight.id, rpe.id, muscle.id).inOrder()
+        assertThat(viewModel.uiState.value.recentSeries).containsExactly(
+            StatisticsSelection(weight),
+            StatisticsSelection(rpe),
+            StatisticsSelection(muscle),
+        ).inOrder()
+    }
+
+    @Test
+    fun aLiftSeries_recordsItsLift_andTheChipRestoresIt() = runTest(dispatcher) {
+        // B226: an Exercise series is the metric **and** the lift; storing the metric alone made two lifts'
+        // volume one chip and brought back whichever lift happened to be selected.
+        val bench = lift(id = "bench", name = "Bench Press")
+        val squat = lift(id = "squat", name = "Back Squat")
+        val settings = FakeSettingsRepository(StatisticsRange(RangeKind.ALL))
+        val viewModel = viewModel(
+            range = StatisticsRange(RangeKind.ALL),
+            lifts = listOf(bench, squat),
+            settings = settings,
+        )
+        observe(viewModel)
+        advanceUntilIdle()
+
+        val volume = MetricKey.Exercise(ExerciseTrendMetric.VOLUME)
+        viewModel.onSelectMetric(volume)
+        advanceUntilIdle()
+        assertThat(settings.recent.value).isEmpty()
+
+        viewModel.onSelectExercise("bench")
+        viewModel.onSelectExercise("squat")
+        advanceUntilIdle()
+
+        assertThat(settings.recent.value).containsExactly(
+            "EXERCISE:VOLUME|squat",
+            "EXERCISE:VOLUME|bench",
+        ).inOrder()
+        assertThat(viewModel.uiState.value.recentSeries).containsExactly(
+            StatisticsSelection(volume, "squat"),
+            StatisticsSelection(volume, "bench"),
+        ).inOrder()
+
+        viewModel.onSelectMetric(MetricKey.Body(BodyMetric.WEIGHT))
+        viewModel.onSelectRecent(StatisticsSelection(volume, "bench"))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.selection).isEqualTo(StatisticsSelection(volume, "bench"))
+        assertThat(settings.recent.value).containsExactly(
+            "EXERCISE:VOLUME|bench",
+            "BODY:WEIGHT",
+            "EXERCISE:VOLUME|squat",
+        ).inOrder()
+    }
+
+    @Test
+    fun theRecentsReader_dropsUnknownAndLiftlessEntries_andDedupes() = runTest(dispatcher) {
+        // A stored entry this build cannot offer must not draw a chip that selects nothing; the old N212
+        // format stored an Exercise metric with no lift, and that is not a series (B226).
+        val settings = FakeSettingsRepository(
+            initial = StatisticsRange(RangeKind.ALL),
+            initiallyRecent = listOf(
+                "NOPE",
+                "EXERCISE:VOLUME",
+                "BODY:WEIGHT",
+                "BODY:WEIGHT",
+                "BODY:BODY_FAT",
+            ),
+        )
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.recentSeries).containsExactly(
+            StatisticsSelection(MetricKey.Body(BodyMetric.WEIGHT)),
+            StatisticsSelection(MetricKey.Body(BodyMetric.BODY_FAT)),
+        ).inOrder()
     }
 
     @Test
@@ -698,6 +773,7 @@ class StatisticsViewModelTest {
 
 private class FakeSettingsRepository(
     initial: StatisticsRange = StatisticsRange(),
+    initiallyRecent: List<String> = emptyList(),
 ) : SettingsRepository {
     val stored = MutableStateFlow(initial)
     override fun observeDefaultRestSeconds(): Flow<Int> = flowOf(45)
@@ -722,11 +798,11 @@ private class FakeSettingsRepository(
         return DataResult.Success(Unit)
     }
 
-    /** The recents the screen wrote (N212), newest first. */
-    val recent = MutableStateFlow<List<String>>(emptyList())
+    /** The recents the screen wrote (N212, B226), newest first. */
+    val recent = MutableStateFlow(initiallyRecent)
     override fun observeRecentSeries(): Flow<List<String>> = recent
-    override suspend fun setRecentSeries(ids: List<String>): DataResult<Unit> {
-        recent.value = ids
+    override suspend fun setRecentSeries(entries: List<String>): DataResult<Unit> {
+        recent.value = entries
         return DataResult.Success(Unit)
     }
 }

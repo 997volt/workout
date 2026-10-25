@@ -82,6 +82,13 @@ data class StatisticsSelection(
     val exerciseId: String? = null,
 )
 
+/** The separator between a stored metric id and its lift: neither id contains it (N212, B226). */
+internal const val RECENT_LIFT_SEPARATOR = "|"
+
+/** The stable name of a recent selection, for its test tag and its stored entry (B226). */
+internal fun StatisticsSelection.recentTag(): String =
+    metric.id + (exerciseId?.let { RECENT_LIFT_SEPARATOR + it }.orEmpty())
+
 /** What the Statistics screen shows (ROADMAP N35). */
 data class StatisticsUiState(
     val isLoading: Boolean = true,
@@ -90,10 +97,12 @@ data class StatisticsUiState(
     /**
      * The series read most recently, newest first, at most three (N212).
      *
-     * The current selection is in the list, so the row can show which one is on screen; it is hidden while
-     * there is fewer than two, because one chip repeating the picker's own label is not a shortcut.
+     * A selection, not a metric: an Exercise series is meaningless without its lift, and storing the id alone
+     * made two lifts' volume one chip and restored whichever lift happened to be on screen (B226). The current
+     * selection is in the list, so the row can show which one is on screen; the row is hidden while there is
+     * fewer than two, because one chip repeating the picker's own label is not a shortcut.
      */
-    val recentSeries: List<MetricKey> = emptyList(),
+    val recentSeries: List<StatisticsSelection> = emptyList(),
     val overview: StatisticsOverview = StatisticsOverview(),
     val series: MetricSeries? = null,
     /** The read failed, shown in place of the chart (the same shape the trends screen uses). */
@@ -232,7 +241,7 @@ class StatisticsViewModel @Inject constructor(
     private data class Sources(
         val range: StatisticsRange,
         val selection: StatisticsSelection,
-        val recentSeries: List<MetricKey>,
+        val recentSeries: List<StatisticsSelection>,
         val summaries: List<WorkoutSummary>,
         val workoutPoints: DataResult<List<TrendPoint>>,
         val measurements: List<BodyMeasurement>,
@@ -254,13 +263,15 @@ class StatisticsViewModel @Inject constructor(
     }
 
     /**
-     * The series read recently, as keys (N212).
+     * The series read recently, as selections (N212, B226).
      *
-     * Ids are stored; an id this build's registry does not know is dropped here rather than shown as a chip
-     * that would select nothing.
+     * The store holds one entry per selection: the metric's id, then the lift's id after [RECENT_LIFT_SEPARATOR]
+     * where the metric reads one. An entry this build's registry does not know is dropped rather than shown as a
+     * chip that would select nothing, a lift-less Exercise entry (the old N212 format) is dropped for the same
+     * reason, and duplicates or an over-long store are pruned here.
      */
-    private val recents: Flow<List<MetricKey>> = settings.observeRecentSeries().map { ids ->
-        ids.mapNotNull { id -> MetricRegistry.entries.firstOrNull { it.key.id == id }?.key }
+    private val recents: Flow<List<StatisticsSelection>> = settings.observeRecentSeries().map { entries ->
+        entries.mapNotNull(::recentSelection).distinct().take(RECENT_SERIES_MAX)
     }
 
     /** The selection and the recents as one source, so the five-flow combine keeps its five (N212). */
@@ -479,13 +490,15 @@ class StatisticsViewModel @Inject constructor(
     }
 
     /**
-     * Sets or clears the **weight** goal, kind and all (ROADMAP N135).
+     * Chooses the lift an Exercise metric reads (N110, B226).
      *
-     * One write in one transaction now, because the kind and the value are one row (N137): the caveat N135
-     * recorded — "a failure between the two writes leaves a value with no kind" — went with the second map.
+     * It records the selection: choosing the metric alone is not enough to make a per-lift series, and a row
+     * that remembered only the metric could not come back to this lift.
      */
     fun onSelectExercise(exerciseId: String?) {
-        selection.value = selection.value.copy(exerciseId = exerciseId)
+        val next = selection.value.copy(exerciseId = exerciseId)
+        selection.value = next
+        rememberSelection(next)
     }
 
     /**
@@ -497,33 +510,76 @@ class StatisticsViewModel @Inject constructor(
      * keeps its place under every metric (N110): it heads nothing, and the ones that read one id read it as
      * the single lift it is. The library is read from the state rather than re-queried, because the row's
      * kind is the whole question and it cannot change with the metric.
+     *
+     * An Exercise metric with no lift yet is not recorded: the lift picker is the next step, and it records the
+     * series when it is answered (B226).
      */
     fun onSelectMetric(metric: MetricKey) {
         val chosen = uiState.value.lifts.firstOrNull { it.id == selection.value.exerciseId }
         val offered = MetricRegistry.entryFor(metric).acceptsHead || chosen?.rowKind != RowKind.CATEGORY
-        selection.value = selection.value.copy(
+        val next = selection.value.copy(
             metric = metric,
             exerciseId = selection.value.exerciseId.takeIf { offered },
         )
-        rememberSeries(metric)
+        selection.value = next
+        rememberSelection(next)
     }
 
     /**
-     * Records a series as just read, newest first and at most [RECENT_SERIES_MAX] (N212).
+     * Restores a series from the recents row (N212, B226).
+     *
+     * The whole selection travels, so an Exercise chip returns to its own lift. A lift this build no longer
+     * holds is dropped rather than selected invisibly, and the category rule is the picker's: a metric that
+     * reads one id does not keep a category head.
+     */
+    fun onSelectRecent(recent: StatisticsSelection) {
+        val entry = MetricRegistry.entryFor(recent.metric)
+        val chosen = uiState.value.lifts.firstOrNull { it.id == recent.exerciseId }
+        val offered = entry.acceptsHead || chosen?.rowKind != RowKind.CATEGORY
+        val next = recent.copy(
+            exerciseId = recent.exerciseId.takeIf { entry.needsExercise && offered },
+        )
+        selection.value = next
+        rememberSelection(next)
+    }
+
+    /**
+     * Records a series as just read, newest first and at most [RECENT_SERIES_MAX] (N212, B226).
      *
      * Only an explicit choice records: opening the tab on its default series is not "using" it, and writing
-     * that on every visit would push the three actually read out of the row. Writes are serialised because
-     * two quick choices would otherwise both read the same list and the second would drop the first.
+     * that on every visit would push the three actually read out of the row. An Exercise metric without its
+     * lift is not a series yet, so it waits for the picker. Writes are serialised because two quick choices
+     * would otherwise both read the same list and the second would drop the first.
      */
-    private fun rememberSeries(metric: MetricKey) {
+    private fun rememberSelection(selection: StatisticsSelection) {
+        val entry = MetricRegistry.entryFor(selection.metric)
+        if (entry.needsExercise && selection.exerciseId == null) return
+        val encoded = recentEntry(selection)
         viewModelScope.launch {
             recentWrites.withLock {
                 val current = settings.observeRecentSeries().first()
-                val next = (listOf(metric.id) + current.filterNot { it == metric.id })
+                val next = (listOf(encoded) + current.filterNot { it == encoded })
                     .take(RECENT_SERIES_MAX)
                 if (next != current) settings.setRecentSeries(next)
             }
         }
+    }
+
+    /** The stored form of one selection: the metric's id, and the lift's after the separator (B226). */
+    private fun recentEntry(selection: StatisticsSelection): String {
+        val needsExercise = MetricRegistry.entryFor(selection.metric).needsExercise
+        return selection.metric.id +
+            (selection.exerciseId?.takeIf { needsExercise }?.let { RECENT_LIFT_SEPARATOR + it }.orEmpty())
+    }
+
+    /** The selection an entry names, or null when this build cannot offer it or it has no lift where one is asked. */
+    private fun recentSelection(entry: String): StatisticsSelection? {
+        val parts = entry.split(RECENT_LIFT_SEPARATOR, limit = 2)
+        val metric = MetricRegistry.entries.firstOrNull { it.key.id == parts[0] }?.key ?: return null
+        val needsExercise = MetricRegistry.entryFor(metric).needsExercise
+        val exerciseId = parts.getOrNull(1)?.takeIf { needsExercise && it.isNotBlank() }
+        if (needsExercise && exerciseId == null) return null
+        return StatisticsSelection(metric = metric, exerciseId = exerciseId)
     }
 
     /** Stored, not held: the range has to mean the same thing the next time the tab is opened. */
