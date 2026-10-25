@@ -1442,24 +1442,41 @@
   });
 
   check('a Waistline backup becomes daily measurements (N166)', function () {
+    // A real export dates each day with `dateTime`, an ISO instant at UTC midnight; the plain `date` is
+    // kept because a hand-built document may still give one (B220). The fixture is the shape of the file
+    // Waistline writes — `version`, `items`, `stats` — not the one this page used to expect.
     var doc = {
-      settings: { bodyStatsUnits: { weight: 'lb' } },
+      version: 34,
+      settings: { units: { weight: 'lb' } },
       diary: [
-        { date: '2026-01-02', stats: { weight: 180.5, 'body fat': 18.2, waist: 90 } },
-        { date: '2026-01-01', stats: { weight: 182, muscle: 41.3 } },
-        { date: '2026-01-03', stats: { waist: 89 } }
+        {
+          id: 1,
+          dateTime: '2026-01-02T00:00:00.000Z',
+          items: [],
+          stats: { weight: 180.5, 'body fat': 18.2, waist: 90 }
+        },
+        {
+          id: 2,
+          dateTime: '2026-01-01T00:00:00.000Z',
+          items: [],
+          stats: { weight: 182, muscle: 41.3 }
+        },
+        { id: 3, dateTime: '2026-01-03T00:00:00.000Z', items: [], stats: { waist: 89 } },
+        { id: 4, date: '2026-01-04', items: [], stats: { weight: 181 } }
       ]
     };
     var parsed = H.parseWaistlineDoc(doc);
     eq(parsed.unit, 'lb');
-    eq(parsed.days.length, 2);
+    eq(parsed.problems.length, 0);
+    eq(parsed.days.length, 3);
     eq(parsed.days[0].date, '2026-01-01');
+    eq(parsed.days[2].date, '2026-01-04');
     eq(parsed.ignored.length, 1);
     eq(parsed.ignored[0], 'waist');
     eq(parsed.skippedDays, 1);
 
     var measurements = H.waistlineMeasurements(parsed, parsed.unit, 1700000000000);
-    eq(measurements.length, 2);
+    eq(measurements.length, 3);
     eq(measurements[0].kind, 'DAILY');
     eq(measurements[0].weightGrams, 82554);
     eq(measurements[0].muscleTenths, 413);
@@ -1470,6 +1487,17 @@
     eq(measurements[1].waistMm, null);
     eq(measurements[0].id, H.waistlineMeasurements(parsed, parsed.unit, 1)[0].id);
     ok(measurements[0].id.indexOf('mes_') === 0, 'the id should be namespaced');
+  });
+
+  check('a Waistline day with no readable day says so rather than disappearing (B220)', function () {
+    var parsed = H.parseWaistlineDoc({
+      diary: [{ items: [], stats: { weight: 80 } }]
+    });
+
+    eq(parsed.days.length, 0);
+    eq(parsed.problems.length, 1);
+    ok(parsed.problems[0].message.indexOf('neither "date"') !== -1, parsed.problems[0].message);
+    eq(parsed.problems[0].path, 'diary[0].dateTime');
   });
 
   check("the tool's series equals the app's for the progress fixture (N165)", function () {

@@ -3302,11 +3302,15 @@
 
     if (parsed.kind === 'waistline') {
       setWaistline(parsed.waistline, fileName);
-      ui.elements.sourceStatus.textContent = 'That is a Waistline backup: ' +
-        parsed.waistline.days.length + ' day' +
-        (parsed.waistline.days.length === 1 ? '' : 's') +
-        ' of daily body data. It is not a row list, so it was kept as body data.';
-      announce('That is a Waistline backup. It was kept as body data, not rows.');
+      // A file that yields no day says why (B220): the day count alone read as "loaded nothing", and a
+      // real export whose days use `dateTime` produced exactly that.
+      var waistlineStatus = parsed.waistline.days.length > 0
+        ? 'That is a Waistline backup: ' + formatInt(parsed.waistline.days.length) + ' day' +
+          (parsed.waistline.days.length === 1 ? '' : 's') +
+          ' of daily body data. It is not a row list, so it was kept as body data.'
+        : waistlineReadFailure(parsed.waistline, fileName || 'the backup');
+      ui.elements.sourceStatus.textContent = waistlineStatus;
+      announce(waistlineStatus);
       return;
     }
 
@@ -4768,6 +4772,24 @@
     return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate());
   }
 
+  /* The day a diary entry is for, or '' when it names none this page can read (B220).
+   *
+   * A real Waistline export dates each day with **`dateTime`** — an ISO instant at UTC midnight — while the
+   * first shape this page was written against carried a plain `date`. Both are read, `date` first because it
+   * says the day outright, and the instant by **its own date part** rather than through a local `Date`: UTC
+   * midnight is the previous day anywhere west of Greenwich, and a weigh-in that moved a day would be wrong
+   * by a day for every lifter in the Americas. */
+  function waistlineDayText(entry) {
+    if (typeof entry.date === 'string' && entry.date.trim() !== '') {
+      return entry.date.trim();
+    }
+    if (typeof entry.dateTime === 'string') {
+      var match = /^(\d{4}-\d{2}-\d{2})(?:[T ]|$)/.exec(entry.dateTime.trim());
+      if (match) { return match[1]; }
+    }
+    return '';
+  }
+
   function parseWaistlineDoc(doc) {
     var result = { days: [], ignored: [], problems: [], unit: 'kg', skippedDays: 0 };
     if (!isObject(doc) || !Array.isArray(doc.diary)) { return result; }
@@ -4775,11 +4797,13 @@
     var ignored = {};
     doc.diary.forEach(function (entry, index) {
       if (!isObject(entry)) { return; }
-      var dateText = typeof entry.date === 'string' ? entry.date.trim() : '';
+      var dateText = waistlineDayText(entry);
       if (noonOfDate(dateText) === null) {
         result.problems.push({
-          path: 'diary[' + index + '].date',
-          message: 'The date "' + dateText + '" is not a real YYYY-MM-DD day.'
+          path: 'diary[' + index + '].dateTime',
+          message: dateText === ''
+            ? 'The day is missing: the entry names neither "date" nor a readable "dateTime".'
+            : 'The date "' + dateText + '" is not a real YYYY-MM-DD day.'
         });
         return;
       }
@@ -5985,8 +6009,28 @@
     }
     setWaistline(parsed.waistline, fileName);
     var label = fileName || 'the backup';
-    setText(ui.elements.bodyStatus, 'Loaded the daily body data from ' + label + '.');
-    announce('Loaded the daily body data from ' + label + '.');
+    var message = parsed.waistline.days.length > 0
+      ? 'Loaded ' + formatInt(parsed.waistline.days.length) + ' day' +
+        (parsed.waistline.days.length === 1 ? '' : 's') + ' of daily body data from ' + label + '.'
+      : waistlineReadFailure(parsed.waistline, label);
+    setText(ui.elements.bodyStatus, message);
+    announce(message);
+  }
+
+  /**
+   * Why a Waistline backup yielded no daily record (B220).
+   *
+   * A file the page cannot date is a **defect to report**, never a load that happened: saying "loaded" over
+   * zero days is how a real export's `dateTime` absence went unnoticed, and the reader collects the reason
+   * for every day it could not use.
+   */
+  function waistlineReadFailure(waistline, label) {
+    if (waistline.problems.length === 0) {
+      return 'The Waistline backup ' + label + ' holds no daily weight, body fat or muscle.';
+    }
+    return 'The Waistline backup ' + label + ' has ' + formatInt(waistline.problems.length) +
+      ' day' + (waistline.problems.length === 1 ? '' : 's') + ' it cannot read: ' +
+      waistline.problems[0].message;
   }
 
   function setWaistline(waistline, fileName) {
@@ -6011,8 +6055,23 @@
     if (!panel) { return; }
     var waistline = state.waistline;
     var rows = waistlineRows(waistline, state.waistlineUnit);
-    panel.hidden = rows.length === 0;
-    if (rows.length === 0) { return; }
+    // Nothing read and nothing to explain is the only silent case (B220). A file whose days could not be
+    // read keeps the panel, so the reason is on the page rather than only in a status line that said
+    // "loaded" — which is how a real export's missing `date` went unnoticed.
+    panel.hidden = rows.length === 0 && waistline.problems.length === 0;
+    if (panel.hidden) { return; }
+
+    var host = ui.elements.bodyPreview;
+    host.textContent = '';
+
+    if (rows.length === 0) {
+      setText(ui.elements.bodySummary,
+        'No daily record could be read: ' + formatInt(waistline.problems.length) + ' day' +
+        (waistline.problems.length === 1 ? '' : 's') +
+        ' could not be dated, and nothing was added to the export.');
+      host.appendChild(bodyProblemList(waistline));
+      return;
+    }
 
     var first = noonOfDate(rows[0].date);
     var last = noonOfDate(rows[rows.length - 1].date);
@@ -6031,9 +6090,6 @@
         ' had only stats the app cannot store and were skipped.';
     }
     setText(ui.elements.bodySummary, text);
-
-    var host = ui.elements.bodyPreview;
-    host.textContent = '';
 
     var table = document.createElement('table');
     table.className = 'body-table';
@@ -6063,13 +6119,26 @@
     host.appendChild(table);
 
     if (waistline.problems.length > 0) {
-      var list = document.createElement('ul');
-      list.className = 'body-problems';
-      waistline.problems.slice(0, 8).forEach(function (problem) {
-        list.appendChild(h('li', '', problem.message));
-      });
-      host.appendChild(list);
+      host.appendChild(bodyProblemList(waistline));
     }
+  }
+
+  /**
+   * The days a Waistline backup could not use, capped so a broken file cannot bury the page (B220).
+   *
+   * Shared by the two states the panel can be in — records read with some days refused, and none read at
+   * all — because the reader's problems are the reason in both.
+   */
+  function bodyProblemList(waistline) {
+    var list = document.createElement('ul');
+    list.className = 'body-problems';
+    waistline.problems.slice(0, 8).forEach(function (problem) {
+      list.appendChild(h('li', '', problem.message));
+    });
+    if (waistline.problems.length > 8) {
+      list.appendChild(h('li', '', '…and ' + formatInt(waistline.problems.length - 8) + ' more.'));
+    }
+    return list;
   }
 
   function renderExport() {

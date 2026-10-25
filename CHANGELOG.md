@@ -48,6 +48,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   series card moved out of the screen's file into `ui/statistics/chart`; the screen keeps the range, the picker,
   the readings and the summary. No behaviour change — the same composables, tags, strings and arithmetic.
 
+### Fixed
+
+- **A real Waistline backup imports its body data** (B220). A real export dates every diary day with `dateTime`
+  — an ISO instant at UTC midnight — while the helper parsed a `date` that only its own hand-written test ever
+  wrote, so a real file produced **zero days** and the page still said it had loaded them. The day is now read
+  from whichever field the file carries, the instant by its own date part so a western timezone cannot move a
+  weigh-in to the day before, and a file that yields no daily record says why instead of claiming a load.
+
 ## [2.14] — 2026-10-24 (versionCode 34)
 
 ### Added

@@ -1211,6 +1211,12 @@ the rule; that one argues it.
   A stat the app cannot store is named in the panel, never silently dropped — refusing the whole file would
   refuse every Waistline backup, which always holds tape sites. The app needs no new format: it already
   carries measurements and restores them, and a fixture proves its codec decodes the output.
+  **A real export dates a day with `dateTime`, not `date`** (B220): an ISO instant at UTC midnight, read by
+  its own date part rather than through a local `Date`, because UTC midnight is the previous day anywhere west
+  of Greenwich and a weigh-in moved by a day is a wrong record. A `date`-only document is still read, and a
+  file whose days cannot be dated **says so**: it is reported with the reason, never shown as loaded over
+  zero days — the first version of this reader trusted a hand-written fixture and silently imported nothing
+  from every real file.
   ([evidence](DECISIONS-EVIDENCE.md#n166))
 - **A program may be written from a table, as a document, and the app stays the editor** (N167). The helper
   writes a `ProgramDocument` (format version 4) from a sheet: one row per planned exercise, days become

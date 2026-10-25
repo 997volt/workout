@@ -540,7 +540,12 @@ and `muscle`, and writes weight in grams and the percentages in tenths of a perc
 
 - **The unit is the file's.** Waistline stores each number in whichever unit the lifter chose and its
   `settings` names it; the panel shows the detected unit and lets it be corrected.
+- **The day is the one the file carries.** A real export dates a diary entry with `dateTime` — an ISO instant
+  at UTC midnight — and an older or hand-built document may give a plain `date`; both are read, the instant by
+  its own date part so a western timezone cannot move a weigh-in to the day before (B220).
 - **A day becomes local noon**, so a timezone change cannot move a weigh-in to the day before.
+- **A file that yields no day says why.** The days that cannot be dated are counted and the first reason is
+  shown, because "loaded the daily body data" over zero days is how a real export's field name went unnoticed.
 - **The id is a hash of the day and the kind**, so a second import of the same file adds nothing and restores
   a row the app hid.
 - **A day the app already holds wins** (B178). The app keeps one entry of each kind per day, so its own row

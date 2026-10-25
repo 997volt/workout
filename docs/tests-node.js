@@ -41,7 +41,7 @@ var EXPECTED_FIXTURE_CASES = 6;
  * checks executed, not of cases handed in, so a block of `check` calls behind an early return is a
  * failure here rather than a number that quietly fell.
  */
-var EXPECTED_CHECKS = 39;
+var EXPECTED_CHECKS = 40;
 if (!Array.isArray(globalThis.PROGRAM_EDIT_CASES)) {
   console.error('the edit fixture did not load: PROGRAM_EDIT_CASES is not an array');
   process.exit(1);
@@ -78,6 +78,35 @@ var t = {
 };
 
 var checked = editorTests.run(H, shared, t, globalThis.PROGRAM_EDIT_CASES);
+
+/*
+ * The body reader is not an editor case, but this runner is the gate CI runs, so its one regression lives
+ * here as well (B220). A real Waistline export dates each day with `dateTime`; the day comes from its own
+ * text, not through a local `Date`, which would move a UTC midnight to the day before in the Americas.
+ */
+t.check('a Waistline export dated with dateTime imports its days (B220)', function () {
+  var parsed = H.parseWaistlineDoc({
+    version: 34,
+    settings: { units: { weight: 'kg' } },
+    diary: [
+      { id: 1, dateTime: '2026-01-02T00:00:00.000Z', items: [], stats: { weight: 80.5 } },
+      { id: 2, dateTime: '2026-01-01T00:00:00.000Z', items: [], stats: { weight: 81 } },
+      { id: 3, items: [], stats: { weight: 82 } }
+    ]
+  });
+  t.eq(parsed.unit, 'kg');
+  t.eq(parsed.days.length, 2, 'the two dated days are read');
+  t.eq(parsed.days[0].date, '2026-01-01');
+  t.eq(parsed.days[1].date, '2026-01-02');
+  t.eq(parsed.problems.length, 1, 'and the undated one is reported rather than dropped');
+  t.eq(
+    H.waistlineMeasurements(parsed, parsed.unit, 1)[0].measuredAt,
+    H.noonOfDate('2026-01-01'),
+    'a day becomes local noon, from the day the file named'
+  );
+});
+checked += 1;
+
 if (checked !== EXPECTED_CHECKS) {
   console.error('the runner executed ' + checked + ' checks; it declares ' + EXPECTED_CHECKS +
     ' (' + EXPECTED_FIXTURE_CASES + ' fixture cases and the named ones)');
