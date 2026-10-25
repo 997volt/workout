@@ -1,6 +1,8 @@
 package com.example.androidapp.data
 
 import androidx.room.withTransaction
+import com.example.androidapp.data.local.GoalBoundary
+import com.example.androidapp.data.local.GoalTimeline
 import com.example.androidapp.data.local.MetricGoalDao
 import com.example.androidapp.data.local.MetricGoalEntity
 import com.example.androidapp.data.local.WorkoutDatabase
@@ -32,8 +34,10 @@ import javax.inject.Singleton
  * may also **correct** the timeline — add a stretch that began in the past, edit one, remove one — which is the
  * one thing the append-only rule could not do, and why a period carries its id now.
  *
- * **Days, not moments.** An edited or added boundary is local midnight of the day chosen, because a goal is a
- * statement about days; `setLevelGoal` keeps the clock because a metric's single number has no editor yet.
+ * **Days, not moments.** A boundary is matched and ordered by its local day, so a row the old `setGoal` path
+ * wrote at a clock time and one N215 writes at midnight are the same statement. A goal-only correction keeps the
+ * stored instant; a moved or added boundary is local midnight. `setLevelGoal` keeps the clock because a metric's
+ * single number has no editor yet.
  */
 @Singleton
 class RoomGoalRepository @Inject constructor(
@@ -74,18 +78,29 @@ class RoomGoalRepository @Inject constructor(
             if (!end.isAfter(start)) throw InvalidInputException(END_BEFORE_START)
             if (end.isAfter(today)) throw InvalidInputException(END_AFTER_TODAY)
         }
-        val startMillis = start.atStartOfDay(zone).toInstant().toEpochMilli()
-        val endMillis = end?.atStartOfDay(zone)?.toInstant()?.toEpochMilli()
+        val startMillis = GoalTimeline.startOfDay(start, zone)
+        val endMillis = end?.let { GoalTimeline.startOfDay(it, zone) }
         database.withTransaction {
-            val write = PeriodWrite(metricId, startMillis, endMillis, goal, timeSource.nowEpochMillis())
+            val write = PeriodWrite(
+                metricId = metricId,
+                start = startMillis,
+                startDay = start,
+                end = endMillis,
+                endDay = end,
+                goal = goal,
+                zone = zone,
+                now = timeSource.nowEpochMillis(),
+            )
             val periods = dao.periodsFor(metricId)
             val named = id?.let {
                 val row = dao.findById(it) ?: throw NotFoundException("goal period $it")
                 if (row.metricId != metricId) throw NotFoundException("goal period $it")
                 row
             }
-            // A day that already carries a boundary is that boundary, not a second one at the same instant.
-            when (val existing = named ?: periods.firstOrNull { it.startedAt == startMillis }) {
+            // A day that already carries a boundary is that boundary, whether the row was written at midnight
+            // or at a clock time by the old path (B223). If a legacy day holds more than one row, the newest is
+            // the one in force, so that is the one a new statement edits.
+            when (val existing = named ?: periods.lastOrNull { GoalTimeline.startsOn(it.startedAt, start, zone) }) {
                 null -> insertPeriod(periods, write)
                 else -> editPeriod(existing, periods, write)
             }
@@ -147,10 +162,25 @@ class RoomGoalRepository @Inject constructor(
      * the end at all, the restoring row states **no goal** — a period cannot end into nothing.
      */
     private suspend fun insertPeriod(periods: List<MetricGoalEntity>, write: PeriodWrite) {
+        val boundaries = periods.map { it.toBoundary() }
+        // B140's guard: a period that restates the goal in force asks for nothing (B224). A finished
+        // stretch is different — the end is the statement — so only an open-ended write is a no-op.
+        val governing = GoalTimeline.governing(boundaries, write.startDay, write.zone)
+        if (write.end == null && governing != null &&
+            GoalTimeline.sameGoal(
+                write.goal.storedKind(),
+                write.goal.storedValue(),
+                governing.kind,
+                governing.value,
+            )
+        ) {
+            return
+        }
         val after = periods.firstOrNull { it.startedAt != null && it.startedAt > write.start }
+        val afterDay = after?.startedAt?.let { GoalTimeline.dayOf(it, write.zone) }
         val problem = when {
-            write.end == null || after?.startedAt == null -> null
-            write.end > after.startedAt -> END_PASSES_NEXT
+            write.endDay == null || afterDay == null -> null
+            write.endDay > afterDay -> END_PASSES_NEXT
             else -> null
         }
         refuse(problem)
@@ -168,7 +198,7 @@ class RoomGoalRepository @Inject constructor(
         )
         // A boundary already on the end means the period that starts there is what follows; otherwise the goal
         // that covered the end resumes, which is one row rather than a gap.
-        if (write.end != null && after?.startedAt != write.end) {
+        if (write.end != null && afterDay != write.endDay) {
             dao.insert(
                 MetricGoalEntity(
                     id = UUID.randomUUID().toString(),
@@ -196,21 +226,27 @@ class RoomGoalRepository @Inject constructor(
         write: PeriodWrite,
     ) {
         val index = periods.indexOfFirst { it.id == row.id }
-        refuse(startProblem(row, periods, index, write.start))
-        refuse(endProblem(periods, index, write.end))
+        refuse(startProblem(row, periods, index, write.startDay, write.zone))
+        refuse(endProblem(periods, index, write.endDay, write.zone))
         val next = periods.getOrNull(index + 1)
-        val unchanged = row.startedAt == write.start && row.kind == write.goal.storedKind() &&
-            row.value == write.goal.storedValue() && (write.end == null || write.end == next?.startedAt)
+        val nextOnEndDay = next?.startedAt != null && write.endDay != null &&
+            GoalTimeline.startsOn(next.startedAt, write.endDay, write.zone)
+        // A goal-only correction keeps the day's original instant: moving a clock-time boundary to midnight
+        // would hand this period the readings earlier on that day (B223).
+        val effectiveStart = row.startedAt?.takeIf { GoalTimeline.startsOn(it, write.startDay, write.zone) }
+            ?: write.start
+        val unchanged = effectiveStart == row.startedAt && row.kind == write.goal.storedKind() &&
+            row.value == write.goal.storedValue() && (write.end == null || nextOnEndDay)
         if (unchanged) return
         dao.update(
             row.copy(
                 kind = write.goal.storedKind(),
                 value = write.goal.storedValue(),
-                startedAt = write.start,
+                startedAt = effectiveStart,
                 updatedAt = write.now,
             ),
         )
-        if (write.end != null && next != null && next.startedAt != write.end) {
+        if (write.end != null && next != null && !nextOnEndDay) {
             dao.update(next.copy(startedAt = write.end, updatedAt = write.now))
         }
     }
@@ -220,28 +256,35 @@ class RoomGoalRepository @Inject constructor(
         row: MetricGoalEntity,
         periods: List<MetricGoalEntity>,
         index: Int,
-        start: Long,
+        startDay: LocalDate,
+        zone: ZoneId,
     ): String? {
         val before = periods.getOrNull(index - 1)
         val next = periods.getOrNull(index + 1)
+        // A goal-only correction keeps the row's own day. Two rows written by the old path can share a day,
+        // and the row is still the one being corrected; only a *moved* start has to find a day of its own.
+        val keepsItsDay = GoalTimeline.startsOn(row.startedAt, startDay, zone)
         return when {
-            periods.any { it.id != row.id && it.startedAt == start } -> BOUNDARY_TAKEN
-            before?.startedAt != null && start <= before.startedAt -> START_OUTSIDE
-            next?.startedAt != null && start >= next.startedAt -> START_OUTSIDE
+            !keepsItsDay &&
+                GoalTimeline.isTaken(periods.map { it.toBoundary() }, row.id, startDay, zone) -> BOUNDARY_TAKEN
+            !keepsItsDay &&
+                before?.startedAt != null && GoalTimeline.dayOf(before.startedAt, zone) >= startDay -> START_OUTSIDE
+            !keepsItsDay &&
+                next?.startedAt != null && GoalTimeline.dayOf(next.startedAt, zone) <= startDay -> START_OUTSIDE
             else -> null
         }
     }
 
     /** Why a period's end cannot sit where it was put, or null. */
-    private fun endProblem(periods: List<MetricGoalEntity>, index: Int, end: Long?): String? {
+    private fun endProblem(periods: List<MetricGoalEntity>, index: Int, endDay: LocalDate?, zone: ZoneId): String? {
         val next = periods.getOrNull(index + 1)
         // The boundary after the next one is what an end may not swallow; the next boundary itself is what the
         // end *is*, so moving it either way is the correction.
         val afterNext = periods.getOrNull(index + 2)
         return when {
-            end == null -> null
+            endDay == null -> null
             next == null -> OPEN_HAS_NO_END
-            afterNext?.startedAt != null && end >= afterNext.startedAt -> END_PASSES_NEXT
+            afterNext?.startedAt != null && GoalTimeline.dayOf(afterNext.startedAt, zone) <= endDay -> END_PASSES_NEXT
             else -> null
         }
     }
@@ -256,14 +299,21 @@ class RoomGoalRepository @Inject constructor(
     }
 }
 
-/** One write, as the caller asked for it: the day, the optional end, the goal, and the moment to stamp (N215). */
+/** One write, as the caller asked for it: the days, the optional end, the goal, and the moment to stamp (N215). */
 private data class PeriodWrite(
     val metricId: String,
     val start: Long,
+    val startDay: LocalDate,
     val end: Long?,
+    val endDay: LocalDate?,
     val goal: WeightGoal?,
+    val zone: ZoneId,
     val now: Long,
 )
+
+/** A row as the day rules read it, without Room (B223, B238). */
+private fun MetricGoalEntity.toBoundary(): GoalBoundary =
+    GoalBoundary(id = id, startedAt = startedAt, kind = kind, value = value)
 
 /** The row as the caller reads it: the store's millis become an instant, or stay absent (N137); the id travels. */
 private fun MetricGoalEntity.toPeriod(): GoalPeriod = GoalPeriod(

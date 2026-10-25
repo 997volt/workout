@@ -133,7 +133,23 @@ class GoalMigrationTest {
 
         assertEquals("the same value twice on one day is one period", 2, goals.observePeriods(WEIGHT).first().size)
 
-        // N215's day granularity: a change is a period on another day, so the clock moves one.
+        // B140 is about the goal, not the instant: the same value on a later day is still the same
+        // statement, while a different value is a new period (B224).
+        now = now.plus(Duration.ofDays(1))
+        repository.savePeriod(
+            WEIGHT,
+            null,
+            now.atZone(ZoneId.systemDefault()).toLocalDate(),
+            null,
+            WeightGoal.Target(75_000L),
+        )
+
+        assertEquals(
+            "the same goal on a later day is not a new period",
+            2,
+            goals.observePeriods(WEIGHT).first().size,
+        )
+
         now = now.plus(Duration.ofDays(1))
         repository.savePeriod(
             WEIGHT,

@@ -106,6 +106,95 @@ class GoalPeriodsTest {
     }
 
     @Test
+    fun theSameGoalOnALaterDay_writesNothing() = runTest {
+        // B140 is about the goal, not the day: a new boundary that restates the goal in force is a button
+        // press, not a change (B224).
+        save(start = day(2026, 1, 1), goal = WeightGoal.Target(80_000L))
+
+        save(start = day(2026, 2, 1), goal = WeightGoal.Target(80_000L))
+
+        assertEquals(1, periods().size)
+    }
+
+    @Test
+    fun aSameGoalWithAnEnd_isStillACut() = runTest {
+        // The end is the statement, so B140's no-op must not swallow it (B224).
+        save(start = day(2026, 1, 1), goal = WeightGoal.Target(80_000L))
+
+        save(start = day(2026, 2, 1), end = day(2026, 3, 1), goal = WeightGoal.Target(80_000L))
+
+        assertEquals(3, periods().size)
+    }
+
+    @Test
+    fun aGoalOnAClockBoundaryDay_editsThatRowAndKeepsItsInstant() = runTest {
+        // The row the old setGoal path wrote carries 09:15, while N215 asks for 1 March at midnight. The
+        // day is the same statement, and a goal-only change keeps the instant it already had (B223).
+        val at = day(2026, 3, 1).atTime(9, 15).atZone(zone).toInstant().toEpochMilli()
+        insertClockGoal(id = "old", at = at, kind = "TARGET", value = 80_000.0)
+
+        val result = save(start = day(2026, 3, 1), goal = WeightGoal.Target(75_000L))
+
+        assertTrue(result is DataResult.Success)
+        val row = periods().single()
+        assertEquals("the day's boundary was edited, not duplicated", "old", row.id)
+        assertEquals("and its original instant stayed", at, row.startedAt?.toEpochMilli())
+        assertEquals(WeightGoal.Target(75_000L), row.weightGoal)
+    }
+
+    @Test
+    fun theNewestRowOnAClockBoundaryDay_isTheOneAGoalEdits() = runTest {
+        // Two rows on one day are a legacy inconsistency. The newest is the goal in force, so that is the
+        // row a new statement on the day must change (B223).
+        val chosen = day(2026, 3, 1)
+        insertClockGoal(
+            id = "early",
+            at = chosen.atTime(9, 15).atZone(zone).toInstant().toEpochMilli(),
+            kind = "TARGET",
+            value = 80_000.0,
+        )
+        insertClockGoal(
+            id = "late",
+            at = chosen.atTime(15, 0).atZone(zone).toInstant().toEpochMilli(),
+            kind = "LOSE",
+            value = null,
+        )
+
+        save(start = chosen, goal = WeightGoal.Target(75_000L))
+
+        assertEquals(listOf("early", "late"), periods().map { it.id })
+        assertEquals(
+            "the goal in force changed, rather than the earlier row",
+            WeightGoal.Target(75_000L),
+            repository.observeCurrent().first()[WEIGHT]?.weightGoal,
+        )
+    }
+
+    @Test
+    fun anOlderSameDayRow_canStillChangeItsGoal() = runTest {
+        // The correction of a same-day row is goal-only, so it keeps its place even when a later row shares
+        // the day; only a moved start has to find a day of its own (B223).
+        val chosen = day(2026, 3, 1)
+        insertClockGoal(
+            id = "early",
+            at = chosen.atTime(9, 15).atZone(zone).toInstant().toEpochMilli(),
+            kind = "TARGET",
+            value = 80_000.0,
+        )
+        insertClockGoal(
+            id = "late",
+            at = chosen.atTime(15, 0).atZone(zone).toInstant().toEpochMilli(),
+            kind = "LOSE",
+            value = null,
+        )
+
+        val result = save(id = "early", start = chosen, goal = WeightGoal.Target(75_000L))
+
+        assertTrue(result is DataResult.Success)
+        assertEquals(WeightGoal.Target(75_000L), periods().first().weightGoal)
+    }
+
+    @Test
     fun aChangeOnALaterDay_isANewPeriod() = runTest {
         save(start = today.minusDays(10), goal = WeightGoal.Target(75_000L))
 
@@ -309,6 +398,21 @@ class GoalPeriodsTest {
         end: LocalDate? = null,
         goal: WeightGoal?,
     ): DataResult<Unit> = repository.savePeriod(WEIGHT, id, start, end, goal)
+
+    /** A row the old `setGoal` path wrote: the boundary is a clock instant, not local midnight (B223). */
+    private suspend fun insertClockGoal(id: String, at: Long, kind: String?, value: Double?) {
+        database.metricGoalDao().insert(
+            MetricGoalEntity(
+                id = id,
+                metricId = WEIGHT,
+                kind = kind,
+                value = value,
+                startedAt = at,
+                createdAt = at,
+                updatedAt = at,
+            ),
+        )
+    }
 
     private suspend fun periods() = repository.observePeriods(WEIGHT).first()
 

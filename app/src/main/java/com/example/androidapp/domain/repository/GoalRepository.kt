@@ -60,17 +60,22 @@ interface GoalRepository {
     /**
      * Writes one period — the row [id] names, or a new one beginning on [start] (ROADMAP N215).
      *
-     * **Days, not moments**: [start] and [end] become local midnight, so a goal "from 1 March" owns 1 March's
-     * weigh-in. A start that already carries a boundary edits that boundary rather than opening a second one at
-     * the same day, which is what makes setting a goal twice on one day one statement.
+     * **Days, not moments**: [start] and [end] name local days, so a goal "from 1 March" owns 1 March's
+     * weigh-in. A start that already carries a boundary — at midnight or at a clock time written before N215 —
+     * edits that boundary rather than opening a second one that day. A goal-only correction keeps the stored
+     * instant, so the day's earlier readings stay with the period that had them; an added or moved boundary is
+     * local midnight.
      *
      * **The end is the next boundary.** Passing [end] closes the period there; when no boundary already sits on
      * that day, the goal that covered it before is written back as one restoring row, so the timeline stays
      * contiguous without the app inventing a stretch. A period still in force has no end — a null [end] is the
      * ordinary case, and an end on the newest period is refused because nothing would follow it.
      *
-     * Refused with its reason: a day after today, an end not after its start, a start on a day another period
-     * already begins, a start that crosses a neighbour, and an end past the boundary that follows it.
+     * **A new period that restates the goal in force writes nothing** (B140, B224); an end is a statement, so a
+     * finished stretch is written even when its goal repeats.
+     *
+     * Refused with its reason: a day after today, an end not after its start, a moved start onto a day another
+     * period begins, a start that crosses a neighbour, and an end past the boundary that follows it.
      */
     suspend fun savePeriod(
         metricId: String,
