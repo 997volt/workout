@@ -18,4 +18,7 @@ internal fun TemplateSummaryRow.toDomain(): WorkoutTemplate = WorkoutTemplate(
     // Only a version keeps the timestamp: a template's age is a fact nothing reads, and null is what
     // says "this row is a template" to the surface that shows the two (ROADMAP N134).
     keptAt = versionOf?.let { Instant.ofEpochMilli(createdAt) },
+    // Hidden only means "not offered" (ROADMAP N214): a hidden template still resolves by id, so the
+    // row that carries it is not marked in any way beyond this one fact.
+    hiddenAt = hiddenAt?.let { Instant.ofEpochMilli(it) },
 )

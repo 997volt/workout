@@ -169,8 +169,10 @@ class TemplatesViewModelTest {
         var createdId = "t-new"
         var createdName: String? = null
         var failWrites = false
+        /** Every hide or unhide, as the id and the state asked for (ROADMAP N214). */
+        val hiddenWrites = mutableListOf<Pair<String, Boolean>>()
 
-        override fun observeTemplates(): Flow<List<WorkoutTemplate>> = templates
+        override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = templates
 
         override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> =
             templates.map { rows -> rows.firstOrNull { it.id == templateId } }
@@ -245,6 +247,11 @@ class TemplatesViewModelTest {
 
         override suspend fun deleteTemplate(templateId: String): DataResult<Unit> =
             writeFailureOrSuccess()
+
+        override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> {
+            hiddenWrites += templateId to hidden
+            return writeFailureOrSuccess()
+        }
 
         override suspend fun addExercise(templateId: String, exerciseId: String): DataResult<Unit> =
             writeFailureOrSuccess()

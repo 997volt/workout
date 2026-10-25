@@ -33,6 +33,14 @@ data class WorkoutTemplate(
      * templates read leaves it null because a template's age is a fact nothing on screen asks for.
      */
     val keptAt: Instant? = null,
+    /**
+     * When the lifter hid this workout from the choices, or null (ROADMAP N214).
+     *
+     * **Hidden is not deleted.** The plan still resolves by id, so a program slot that names it still
+     * schedules and starts it; what the flag takes it out of is the templates list and the picker a
+     * program's day chooses from. Nothing the app creates starts hidden.
+     */
+    val hiddenAt: Instant? = null,
 )
 
 /**

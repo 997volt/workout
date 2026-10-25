@@ -426,10 +426,12 @@ class TemplateEditorViewModelTest {
         val addedSets = mutableListOf<Pair<String, TemplateSetEdit>>()
         val savedPlans = mutableListOf<SavedExercisePlan>()
         var failWrites = false
+        /** Every hide or unhide, as the id and the state asked for (ROADMAP N214). */
+        val hiddenWrites = mutableListOf<Pair<String, Boolean>>()
         /** Every group write, as the ids it covered — one entry per call, which is the point. */
         val supersetGroups = mutableListOf<List<String>>()
 
-        override fun observeTemplates(): Flow<List<WorkoutTemplate>> = templates
+        override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = templates
 
         override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> =
             templates.map { rows -> rows.firstOrNull { it.id == templateId } }
@@ -533,6 +535,12 @@ class TemplateEditorViewModelTest {
         override suspend fun deleteTemplate(templateId: String): DataResult<Unit> {
             if (failWrites) return failure()
             deleted += templateId
+            return DataResult.Success(Unit)
+        }
+
+        override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> {
+            if (failWrites) return failure()
+            hiddenWrites += templateId to hidden
             return DataResult.Success(Unit)
         }
 

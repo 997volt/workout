@@ -2098,7 +2098,7 @@ class ActiveWorkoutViewModelTest {
             templateExerciseIds: List<String>,
             group: Int?,
         ): DataResult<Unit> = DataResult.Success(Unit)
-        override fun observeTemplates(): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
+        override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
         override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> = flowOf(null)
         override fun observeTemplateName(templateId: String): Flow<String?> = flowOf(null)
         override fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
@@ -2117,7 +2117,9 @@ class ActiveWorkoutViewModelTest {
             notUsed()
 
         override suspend fun deleteTemplate(templateId: String): DataResult<Unit> = notUsed()
-        override suspend fun addExercise(templateId: String, exerciseId: String): DataResult<Unit> =
+        override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> =
+            notUsed()
+                override suspend fun addExercise(templateId: String, exerciseId: String): DataResult<Unit> =
             notUsed()
 
         override suspend fun removeExercise(templateExerciseId: String): DataResult<Unit> =

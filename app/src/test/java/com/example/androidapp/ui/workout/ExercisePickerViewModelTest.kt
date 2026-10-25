@@ -527,7 +527,7 @@ class ExercisePickerViewModelTest {
         val added = mutableListOf<Pair<String, String>>()
         var failAdds = false
 
-        override fun observeTemplates(): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
+        override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
         override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> = flowOf(null)
         override fun observeTemplateName(templateId: String): Flow<String?> = flowOf(null)
         override fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
@@ -589,7 +589,9 @@ class ExercisePickerViewModelTest {
         override suspend fun createTemplate(name: String): DataResult<String> = unused()
         override suspend fun renameTemplate(templateId: String, name: String): DataResult<Unit> = unused()
         override suspend fun deleteTemplate(templateId: String): DataResult<Unit> = unused()
-
+        override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> =
+            unused()
+        
         override suspend fun addExercise(templateId: String, exerciseId: String): DataResult<Unit> {
             if (failAdds) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             added += templateId to exerciseId

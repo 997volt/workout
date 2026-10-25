@@ -48,7 +48,8 @@ interface TemplateDao {
                    WHERE te.templateId = t.id AND te.deletedAt IS NULL
                ) AS exerciseCount,
                t.versionOf AS versionOf,
-               t.createdAt AS createdAt
+               t.createdAt AS createdAt,
+               t.hiddenAt AS hiddenAt
         FROM templates t
         WHERE t.deletedAt IS NULL AND t.versionOf IS NULL
         ORDER BY t.name ASC
@@ -71,7 +72,8 @@ interface TemplateDao {
                    WHERE te.templateId = t.id AND te.deletedAt IS NULL
                ) AS exerciseCount,
                t.versionOf AS versionOf,
-               t.createdAt AS createdAt
+               t.createdAt AS createdAt,
+               t.hiddenAt AS hiddenAt
         FROM templates t
         WHERE t.deletedAt IS NULL AND t.versionOf = :templateId
         ORDER BY t.createdAt DESC
@@ -93,7 +95,8 @@ interface TemplateDao {
                    WHERE te.templateId = t.id AND te.deletedAt IS NULL
                ) AS exerciseCount,
                t.versionOf AS versionOf,
-               t.createdAt AS createdAt
+               t.createdAt AS createdAt,
+               t.hiddenAt AS hiddenAt
         FROM templates t
         WHERE t.id = :id AND t.deletedAt IS NULL AND t.versionOf IS NULL
         """,
@@ -134,6 +137,23 @@ interface TemplateDao {
 
     @Query("UPDATE templates SET deletedAt = :at, updatedAt = :at WHERE id = :id AND deletedAt IS NULL")
     suspend fun softDeleteTemplate(id: String, at: Long): Int
+
+    /**
+     * Hides a template from the choices, or brings it back (ROADMAP N214). Rows updated: 0 when it is gone.
+     *
+     * **`updatedAt` is deliberately not written.** Hiding changes no plan, and that column is the clock
+     * N171 reads to refuse a stale edit, so moving it would make every program carrying this workout
+     * read as changed on the phone. The version predicate is [rename]'s rule: a kept version is never
+     * hidden, because it never appears in the list to need it.
+     */
+    @Query(
+        """
+        UPDATE templates
+        SET hiddenAt = :at
+        WHERE id = :id AND deletedAt IS NULL AND versionOf IS NULL
+        """,
+    )
+    suspend fun setHiddenAt(id: String, at: Long?): Int
 
     /** The template's exercises with their library details, in stored order. */
     @Query(

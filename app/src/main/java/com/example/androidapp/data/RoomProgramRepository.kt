@@ -822,6 +822,9 @@ private suspend fun applyProgramEdit(
 
     val writer = ProgramEditWriter(
         document = document,
+        // The device's own rows, so a write this document cannot describe — `hiddenAt` (N214) — is
+        // carried across rather than cleared.
+        snapshot = snapshot,
         changes = ready.changes,
         now = now,
         backupDao = database.backupDao(),
@@ -853,6 +856,14 @@ private suspend fun applyProgramEdit(
  */
 private class ProgramEditWriter(
     private val document: ProgramDocument,
+    /**
+     * The program as the device holds it, read in the same transaction (N171, N214).
+     *
+     * Carried for the columns a program document **cannot** describe: a template's `hiddenAt` is the
+     * library's view rather than the program's definition, so the decoded document always says null,
+     * and writing that back would unhide a workout on any edit that touched it.
+     */
+    private val snapshot: ProgramDocument,
     changes: List<Change>,
     private val now: Long,
     private val backupDao: BackupDao,
@@ -905,18 +916,33 @@ private class ProgramEditWriter(
     }
 
     suspend fun writeTemplates(): Int {
+        // A program document cannot carry `hiddenAt` — hiding is the library's view, not the plan's
+        // definition — so `toEntity()` reads null for it. The device's value is what survives an edit,
+        // and a workout arriving with a program is offered: nothing the app creates starts hidden.
+        val hiddenOnDevice = snapshot.templates.associate { it.id to it.hiddenAt }
         val added = document.templates.filter { it.id in ids(ChangeKind.TEMPLATE_ADDED) }
         if (added.isNotEmpty()) {
             backupDao.insertTemplates(
                 added.map {
-                    it.toEntity().copy(createdAt = now, updatedAt = now, deletedAt = null)
+                    it.toEntity().copy(
+                        createdAt = now,
+                        updatedAt = now,
+                        deletedAt = null,
+                        hiddenAt = null,
+                    )
                 },
             )
         }
         val updated = document.templates.filter { it.id in ids(ChangeKind.TEMPLATE_UPDATED) }
         if (updated.isNotEmpty()) {
             editDao.updateTemplates(
-                updated.map { it.toEntity().copy(updatedAt = now, deletedAt = null) },
+                updated.map {
+                    it.toEntity().copy(
+                        updatedAt = now,
+                        deletedAt = null,
+                        hiddenAt = hiddenOnDevice[it.id],
+                    )
+                },
             )
         }
         return added.size + updated.size

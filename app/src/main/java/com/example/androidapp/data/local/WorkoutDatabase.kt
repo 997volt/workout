@@ -35,6 +35,9 @@ import androidx.room.TypeConverters
  * 8 adds a program's kind and its authored start date (N174): every row already on disk is WEEKLY,
  * which is the rule it was written under. See [MIGRATION_7_8].
  *
+ * **Schema 9 is N214**, one nullable column: a workout can be **hidden** from the choices without being
+ * deleted, and every row already on disk is visible, which is what it was. See [MIGRATION_8_9].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -61,7 +64,7 @@ import androidx.room.TypeConverters
         MeasurementSoreMuscleEntity::class,
         MetricGoalEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

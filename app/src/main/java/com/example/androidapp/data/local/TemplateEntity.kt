@@ -36,4 +36,15 @@ data class TemplateEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,
+    /**
+     * When the lifter took this workout out of the choices, or null (ROADMAP N214).
+     *
+     * **Hidden is not deleted.** The row, its exercises and its sets are untouched, so every program
+     * slot that names it keeps scheduling and starting it and history keeps reading its name; what
+     * hiding takes it out of is the templates list and the picker a program's day chooses from. The
+     * write deliberately **does not move [updatedAt]** — hiding changes no plan, and that column is
+     * the clock N171's staleness check reads, so moving it would make every program carrying the
+     * workout read as changed.
+     */
+    val hiddenAt: Long? = null,
 )

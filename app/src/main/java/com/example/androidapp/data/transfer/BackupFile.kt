@@ -421,6 +421,16 @@ data class TemplateDto(
      * — is the one loss this feature cannot survive.
      */
     val versionOf: String? = null,
+    /**
+     * When the lifter hid this workout from the choices, or null (ROADMAP N214).
+     *
+     * Defaulted like every added field, and **the backup carries it**: the file is the only path off
+     * the device, so a restore that lost which workouts were hidden would hand back a library the
+     * lifter had already tidied. It is a plain addition, not a change of meaning, so
+     * [BackupCodec.CURRENT_SCHEMA_VERSION] does not move: an older build drops the key and shows
+     * everything, which is what it did before the feature existed.
+     */
+    val hiddenAt: Long? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long? = null,

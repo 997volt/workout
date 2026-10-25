@@ -380,7 +380,9 @@ private class FakeTemplateRepository(
     override suspend fun createTemplate(name: String): DataResult<String> = unused()
     override suspend fun renameTemplate(templateId: String, name: String): DataResult<Unit> = unused()
     override suspend fun deleteTemplate(templateId: String): DataResult<Unit> = unused()
-    override suspend fun setSupersetGroup(
+    override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> =
+        unused()
+        override suspend fun setSupersetGroup(
         templateExerciseIds: List<String>,
         group: Int?,
     ): DataResult<Unit> = unused()
@@ -410,7 +412,7 @@ private class FakeTemplateRepository(
         targetRpeHalves: Int?,
     ): DataResult<Unit> = unused()
 
-    override fun observeTemplates(): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
+    override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
     override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> = flowOf(null)
     override fun observeTemplateName(templateId: String): Flow<String?> = flowOf(templateName)
     override fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>> = flowOf(emptyList())

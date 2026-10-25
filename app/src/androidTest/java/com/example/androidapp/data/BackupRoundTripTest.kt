@@ -480,6 +480,31 @@ class BackupRoundTripTest {
         assertEquals(20_305L, restored.startDate)
     }
 
+    @Test
+    fun aHiddenWorkout_staysHiddenAfterARestore() = runTest {
+        database.exerciseDao().insertAll(listOf(seedExercise()))
+        database.templateDao().insertTemplate(
+            TemplateEntity(
+                id = "hidden-1",
+                name = "Autumn plan",
+                createdAt = 1_000L,
+                updatedAt = 1_000L,
+                deletedAt = null,
+                hiddenAt = 2_000L,
+            ),
+        )
+
+        val json = exportedJson()
+        database.clearAllTables()
+        assertTrue(repository.import(json) is DataResult.Success)
+
+        assertEquals(
+            "which workouts were hidden is the lifter's tidying, and a restore brings it back",
+            2_000L,
+            database.templateDao().findById("hidden-1")?.hiddenAt,
+        )
+    }
+
     private suspend fun exportedJson(): String =
         (repository.export() as DataResult.Success).data
 

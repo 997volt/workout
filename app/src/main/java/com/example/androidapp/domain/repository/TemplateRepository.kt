@@ -15,8 +15,17 @@ import kotlinx.coroutines.flow.Flow
  */
 interface TemplateRepository {
 
-    /** Every live template, name-ordered, with its exercise count. */
-    fun observeTemplates(): Flow<List<WorkoutTemplate>>
+    /**
+     * Every live template, name-ordered, with its exercise count.
+     *
+     * [includeHidden] is the one place N214's rule is stated: a surface that **offers** a workout — the
+     * picker a program's day chooses from — takes the default and never sees a hidden one, while the
+     * two that legitimately show them ask for them: the templates list (its filter) and home's
+     * substitute picker (a stand-in is what you train today, not what a program is composed from).
+     * Nothing that resolves a workout **by id** goes through here, which is why a program slot naming a
+     * hidden template still schedules and starts it.
+     */
+    fun observeTemplates(includeHidden: Boolean = false): Flow<List<WorkoutTemplate>>
 
     /** One template, re-emitting when it is renamed. Null when it is gone. */
     fun observeTemplate(templateId: String): Flow<WorkoutTemplate?>
@@ -94,6 +103,19 @@ interface TemplateRepository {
     suspend fun createTemplateFromSession(sessionId: String, name: String): DataResult<String>
 
     suspend fun renameTemplate(templateId: String, name: String): DataResult<Unit>
+
+    /**
+     * Hides the template from the choices, or brings it back (ROADMAP N214).
+     *
+     * **Not a delete**: the row, its exercises, its sets and every program slot that names it are
+     * untouched. **It does not write [updatedAt]**, because that is the clock a program document's
+     * staleness check reads (N171) and hiding changes no plan — were it written, every program
+     * carrying the workout would refuse an edit the lifter had every right to make.
+     *
+     * Creation never hides: a new workout is visible, and a lifter who wants a brand-new plan gone
+     * deletes it. This is the only way in.
+     */
+    suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit>
 
     /** Soft-deletes the template; its rows stay for an export to carry. */
     suspend fun deleteTemplate(templateId: String): DataResult<Unit>

@@ -91,4 +91,11 @@ data class TemplateSummaryRow(
      * serves both reads, and the mapper only lets a version keep the timestamp.
      */
     val createdAt: Long,
+    /**
+     * When the lifter hid this template from the choices, or null (ROADMAP N214).
+     *
+     * Selected by every read that serves the list and the editor; a version's read carries it too
+     * because one row type serves both, and a version is never in the list to be hidden.
+     */
+    val hiddenAt: Long? = null,
 )

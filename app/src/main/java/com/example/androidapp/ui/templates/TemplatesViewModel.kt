@@ -51,7 +51,9 @@ class TemplatesViewModel @Inject constructor(
     val createdTemplateId: StateFlow<String?> = _created
 
     val uiState: StateFlow<TemplatesUiState> = combine(
-        repository.observeTemplates(),
+        // The one list that shows the hidden ones: its filter decides what is drawn, so the read
+        // carries them all and the state below splits them (ROADMAP N214).
+        repository.observeTemplates(includeHidden = true),
         workoutRepository.observeActiveSession(),
         error,
     ) { templates, session, currentError ->

@@ -27,6 +27,7 @@ import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -372,6 +373,33 @@ class ProgramDocumentTest {
             "the second set was added",
             2,
             templates.observeExercises(stored.id).first().single().sets.size,
+        )
+    }
+
+    @Test
+    fun anEditCannotCarryHiding_soAWorkoutStaysHidden() = runTest {
+        val programId = seedProgram()
+        val templateId = templates.observeTemplates().first().single().id
+        templates.setTemplateHidden(templateId, true)
+
+        val file = exportOf(programId)
+        // Hiding is the library's view, not the program's definition (N214): the document says nothing
+        // about it, and a document that did would rewrite the receiving device's own choices.
+        assertFalse("the document does not carry the flag", file.contains("hiddenAt"))
+
+        val original = ProgramDocumentCodec.decode(file)
+        val edit = original.copy(
+            templates = listOf(original.templates.single().copy(name = "Squat day B")),
+            edit = EditMarker(baseExportedAt = original.exportedAt),
+        )
+
+        importOf(ProgramDocumentCodec.encode(edit))
+
+        val after = database.templateDao().findById(templateId)
+        assertEquals("the edit was applied", "Squat day B", after?.name)
+        assertNotNull(
+            "and the workout the lifter had hidden is still hidden",
+            after?.hiddenAt,
         )
     }
 

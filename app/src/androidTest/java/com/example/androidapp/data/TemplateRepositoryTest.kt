@@ -230,6 +230,57 @@ class TemplateRepositoryTest {
         )
     }
 
+    @Test
+    fun hiding_takesTheWorkoutOutOfTheOffers_andKeepsItResolvable() = runTest {
+        val id = create("Push day")
+
+        assertTrue(repository.setTemplateHidden(id, true) is DataResult.Success)
+
+        assertTrue(
+            "a picker no longer offers it",
+            repository.observeTemplates().first().isEmpty(),
+        )
+        assertEquals(
+            "the list that shows hidden ones still has it",
+            listOf(id),
+            repository.observeTemplates(includeHidden = true).first().map { it.id },
+        )
+        assertNotNull(
+            "and it still resolves by id, so a program slot that names it still runs it",
+            repository.observeTemplate(id).first(),
+        )
+
+        assertTrue(repository.setTemplateHidden(id, false) is DataResult.Success)
+        assertEquals(
+            "unhiding offers it again",
+            listOf(id),
+            repository.observeTemplates().first().map { it.id },
+        )
+    }
+
+    @Test
+    fun hiding_doesNotMoveTheWriteClock_aProgramEditReads() = runTest {
+        val id = create("Push day")
+        val written = database.templateDao().findById(id)?.updatedAt
+
+        now = now.plusSeconds(60)
+        repository.setTemplateHidden(id, true)
+
+        assertEquals(
+            "hiding changes no plan, so a program that carries it is not stale (N171, N214)",
+            written,
+            database.templateDao().findById(id)?.updatedAt,
+        )
+        assertNotNull("while the flag itself is written", database.templateDao().findById(id)?.hiddenAt)
+    }
+
+    @Test
+    fun hidingAWorkoutThatIsGone_isRefused() = runTest {
+        val failure = repository.setTemplateHidden("missing", true) as DataResult.Failure
+
+        assertTrue(failure.error is DataError.NotFound)
+    }
+
     private suspend fun create(name: String): String =
         (repository.createTemplate(name) as DataResult.Success).data
 

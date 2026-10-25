@@ -432,7 +432,10 @@ class WorkoutsHomeViewModel @Inject constructor(
 
     val uiState: StateFlow<WorkoutsHomeUiState> = combine(
         activeWorkout,
-        templateRepository.observeTemplates(),
+        // Hidden workouts are offered here (ROADMAP N214): a substitute is what the lifter trains
+        // today, not what a program is composed from, so hiding one must not take it out of the one
+        // picker that can put a rarely used plan into a session.
+        templateRepository.observeTemplates(includeHidden = true),
         programsPart,
         measurementRepository.observeAll(),
     ) { workout, templates, programs, measurements ->

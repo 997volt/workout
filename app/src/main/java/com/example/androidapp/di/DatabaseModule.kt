@@ -11,6 +11,7 @@ import com.example.androidapp.data.local.MIGRATION_4_5
 import com.example.androidapp.data.local.MIGRATION_5_6
 import com.example.androidapp.data.local.MIGRATION_6_7
 import com.example.androidapp.data.local.MIGRATION_7_8
+import com.example.androidapp.data.local.MIGRATION_8_9
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.seedMissingExercises
 import com.example.androidapp.data.moveLegacyGoals
@@ -51,6 +52,7 @@ object DatabaseModule {
                 MIGRATION_5_6,
                 MIGRATION_6_7,
                 MIGRATION_7_8,
+                MIGRATION_8_9,
             )
             .addCallback(
                 object : RoomDatabase.Callback() {

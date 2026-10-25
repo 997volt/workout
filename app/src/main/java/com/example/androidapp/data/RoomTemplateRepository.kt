@@ -50,8 +50,16 @@ class RoomTemplateRepository @Inject constructor(
 
     private val dao = database.templateDao()
 
-    override fun observeTemplates(): Flow<List<WorkoutTemplate>> =
-        dao.observeTemplates().map { rows -> rows.map { it.toDomain() } }
+    /**
+     * Every live template, or only the ones a picker may offer (ROADMAP N214).
+     *
+     * One read, filtered here rather than in each surface: the rule "hidden means not offered" is a
+     * property of this port, and a caller that asks for the hidden ones says so by name.
+     */
+    override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> =
+        dao.observeTemplates().map { rows ->
+            rows.map { it.toDomain() }.filter { includeHidden || it.hiddenAt == null }
+        }
 
     override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> =
         dao.observeTemplate(templateId).map { it?.toDomain() }
@@ -185,6 +193,21 @@ class RoomTemplateRepository @Inject constructor(
     override suspend fun renameTemplate(templateId: String, name: String): DataResult<Unit> =
         dataResultOf {
             if (dao.rename(id = templateId, name = requireTemplateName(name), at = timeSource.nowEpochMillis()) == 0) {
+                throw NotFoundException("template $templateId")
+            }
+        }
+
+    /**
+     * Hides the plan from the choices, or brings it back (ROADMAP N214).
+     *
+     * One write and no other column: not `updatedAt`, for the reason the DAO gives — a program
+     * document's staleness is read off it, and hiding is not a change to the plan. The returned row
+     * count is the existence check, exactly as a rename's is.
+     */
+    override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> =
+        dataResultOf {
+            val at = if (hidden) timeSource.nowEpochMillis() else null
+            if (dao.setHiddenAt(id = templateId, at = at) == 0) {
                 throw NotFoundException("template $templateId")
             }
         }

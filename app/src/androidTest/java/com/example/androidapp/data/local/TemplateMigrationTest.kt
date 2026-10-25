@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
@@ -81,6 +82,38 @@ class TemplateMigrationTest {
         )
     }
 
+    @Test
+    fun aTemplateWrittenBeforeHiding_isVisible_andOneHiddenAfter_itIsReadBack() = runTest {
+        val db = v8Store(
+            "INSERT INTO templates (id, name, createdAt, updatedAt) VALUES ('t1', 'Push day', 1, 2)",
+        )
+
+        MIGRATION_8_9.migrate(db)
+
+        val row = database.templateDao().findById("t1")
+        assertEquals("Push day", row?.name)
+        assertNull("a row written before the column existed is offered", row?.hiddenAt)
+        assertEquals(
+            "and the list holds it",
+            listOf("t1"),
+            database.templateDao().observeTemplates().first().map { it.id },
+        )
+
+        // The write the feature adds, on the migrated column: hidden is read back, and the row still
+        // resolves by id, which is what keeps a program slot naming it running (ROADMAP N214).
+        database.templateDao().setHiddenAt("t1", 9L)
+
+        assertEquals(
+            "the list carries the flag",
+            9L,
+            database.templateDao().observeTemplates().first().single().hiddenAt,
+        )
+        assertNotNull(
+            "a hidden template is still a template",
+            database.templateDao().findById("t1"),
+        )
+    }
+
     /**
      * A schema-3 store with `templates` rewound to its old shape.
      *
@@ -89,6 +122,13 @@ class TemplateMigrationTest {
      * the drop and that table is left standing — the summary queries read it, and this migration does
      * not touch it.
      */
+    /** A schema-8 store: `templates` as it was before `hiddenAt`, with the version column it already had. */
+    private fun v8Store(vararg inserts: String) = database.openHelper.writableDatabase.apply {
+        execSQL("DROP TABLE templates")
+        execSQL(V8_TEMPLATES)
+        inserts.forEach { execSQL(it) }
+    }
+
     private fun v3Store(vararg inserts: String) = database.openHelper.writableDatabase.apply {
         execSQL("DROP TABLE templates")
         execSQL(V3_TEMPLATES)
@@ -96,6 +136,19 @@ class TemplateMigrationTest {
     }
 
     private companion object {
+        /** `8.json`'s `createSql` for `templates`, with the table's real name in place. */
+        const val V8_TEMPLATES = """
+            CREATE TABLE IF NOT EXISTS `templates` (
+                `id` TEXT NOT NULL,
+                `name` TEXT NOT NULL,
+                `versionOf` TEXT,
+                `createdAt` INTEGER NOT NULL,
+                `updatedAt` INTEGER NOT NULL,
+                `deletedAt` INTEGER,
+                PRIMARY KEY(`id`)
+            )
+        """
+
         /** `3.json`'s `createSql` for `templates`, with the table's real name in place. */
         const val V3_TEMPLATES = """
             CREATE TABLE IF NOT EXISTS `templates` (

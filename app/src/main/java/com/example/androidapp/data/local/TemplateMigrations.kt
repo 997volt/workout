@@ -25,3 +25,22 @@ private const val TO_VERSION = 4
 
 /** Nullable with no default, so a row written before this is not a version of anything. */
 private const val ADD_VERSION_OF = "ALTER TABLE templates ADD COLUMN versionOf TEXT"
+
+/**
+ * A workout can be hidden from the choices without being deleted (ROADMAP N214).
+ *
+ * One nullable column and no row moves: every template already on disk is visible, which is what it
+ * was, because hiding is something the lifter does from here on. The column carries no default for
+ * [MIGRATION_3_4]'s reason — null is the visible state, so the ALTER is the whole migration.
+ */
+internal val MIGRATION_8_9 = object : Migration(FROM_VERSION_HIDDEN, TO_VERSION_HIDDEN) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(ADD_HIDDEN_AT)
+    }
+}
+
+private const val FROM_VERSION_HIDDEN = 8
+private const val TO_VERSION_HIDDEN = 9
+
+/** Nullable with no default: every template written before the feature is visible. */
+private const val ADD_HIDDEN_AT = "ALTER TABLE templates ADD COLUMN hiddenAt INTEGER"
