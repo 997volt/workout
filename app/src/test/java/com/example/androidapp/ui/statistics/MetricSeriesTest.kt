@@ -149,6 +149,53 @@ class MetricSeriesTest {
     }
 
     @Test
+    fun aTapeEntry_isNotAWeighIn() {
+        // B221: every measurement row became a weight reading, so a tape day was a null point and the line
+        // stopped and restarted there. A tape entry is not a moment of the weight series at all.
+        val series = metricSeries(
+            key = MetricKey.Body(BodyMetric.WEIGHT),
+            measurements = listOf(
+                measurement(at = first, weight = 82_400L),
+                measurement(at = second, waist = 864L, kind = MeasurementKind.TAPE),
+            ),
+        )
+
+        assertThat(series.readings.map { it.value }).isEqualTo(listOf(82_400.0))
+    }
+
+    @Test
+    fun aDailyEntryThatLeftTheWeightBlank_isNotAPointInTheWeightSeries() {
+        // The other half of B221: the day recorded soreness and no weight, and the weigh-ins either side are
+        // not in question — so the line runs between them rather than stopping at a day that weighed nothing.
+        val series = metricSeries(
+            key = MetricKey.Body(BodyMetric.WEIGHT),
+            measurements = listOf(
+                measurement(at = first, weight = 82_400L),
+                measurement(at = second, bodyFat = 183),
+            ),
+        )
+
+        assertThat(series.readings.map { it.value }).isEqualTo(listOf(82_400.0))
+    }
+
+    @Test
+    fun aBodySeries_holdsNoGaps_becauseAReadingsAbsenceIsNotAMoment() {
+        // What the chart reads: with no null in the series there is nothing to break the line at. A skipped
+        // weigh-in is a longer segment between two readings, which is the shape the chart already drew for a
+        // day with no entry at all. The scope is pinned by the two tests above it — a tape **site** and a
+        // soreness score still leave their gap (N37), because there the entry is a moment of that series.
+        val series = metricSeries(
+            key = MetricKey.Body(BodyMetric.WEIGHT),
+            measurements = listOf(
+                measurement(at = first, weight = 82_400L),
+                measurement(at = second, kind = MeasurementKind.TAPE, waist = 864L),
+            ),
+        )
+
+        assertThat(series.readings.none { it.value == null }).isTrue()
+    }
+
+    @Test
     fun sorenessReadsTheMuscleItNames_andLeavesTheOthersGaps() {
         // N118: the daily record states soreness one muscle at a time (N113), so one series per muscle is
         // what the data already is. A muscle the day did not mention is a **gap**, not a zero — a line at

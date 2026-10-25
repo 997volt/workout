@@ -10,9 +10,14 @@ import java.time.Instant
 /**
  * One point of a series: when it was, and what the metric was then (ROADMAP N35).
  *
- * [value] is null where the reading was not taken, and that null is kept rather than dropped. It is the
- * difference between "you did not measure this then" and "there was no then": N37 breaks the line at a
- * missing reading instead of spanning it, and a series that quietly closed its own gaps could not.
+ * [value] is null where the moment belongs to this series and states nothing about it — a session that rated
+ * no RPE, a daily entry that did not mention this muscle — and that null is kept rather than dropped. It is the
+ * difference between "you did not measure this then" and "there was no then": N37 breaks the line at a missing
+ * reading instead of spanning it, and a series that quietly closed its own gaps could not.
+ *
+ * **A moment that is not of this series at all is not a reading** (B221): a tape entry is not a weigh-in and a
+ * daily entry that left the weight blank is not one either, so a body metric's series holds only the entries
+ * that state it, and its line runs between them rather than stopping at every day something else was recorded.
  */
 data class MetricReading(val at: Instant, val value: Double?)
 
@@ -44,7 +49,13 @@ fun metricSeries(
     readings = when (key) {
         is MetricKey.Workout -> workouts.map { MetricReading(it.startedAt, key.metric.valueOf(it)) }
         is MetricKey.Exercise -> exercises.map { MetricReading(it.startedAt, key.metric.valueOf(it)) }
-        is MetricKey.Body -> measurements.map { MetricReading(it.measuredAt, bodyValue(key.metric, it)) }
+        // B221: only the entries that **state** this body metric are moments of its series. A tape entry never
+        // states a weight, and a daily entry may leave it blank (N113); neither is a weigh-in, so neither is a
+        // point the line stops at — it runs between the readings that exist, which is what the chart already
+        // does for a day with no entry at all.
+        is MetricKey.Body -> measurements.mapNotNull { measurement ->
+            bodyValue(key.metric, measurement)?.let { value -> MetricReading(measurement.measuredAt, value) }
+        }
         is MetricKey.Tape -> measurements.map { MetricReading(it.measuredAt, it.at(key.site)?.toDouble()) }
         // N118: the daily record's own list. A day that does not state this muscle is a null reading — the
         // gap the tape sites already leave — because a zero would claim a lifter was not sore on a day they
@@ -71,8 +82,8 @@ fun metricSeries(
 
 /** What a body metric reads from an entry, in the units the registry formats (ROADMAP N32, N113). */
 private fun bodyValue(metric: BodyMetric, measurement: BodyMeasurement): Double? = when (metric) {
-    // A daily entry may state no weight at all (N113), and a tape entry never does: null is a reading
-    // this series simply does not have, which is what the chart already skips.
+    // A daily entry may state no weight at all (N113), and a tape entry never does: null here means the entry
+    // is not a moment of this series, so [metricSeries] leaves it out rather than breaking the line on it.
     BodyMetric.WEIGHT -> measurement.weightGrams?.toDouble()
     BodyMetric.BODY_FAT -> measurement.bodyFatTenths?.toDouble()
     BodyMetric.MUSCLE -> measurement.muscleTenths?.toDouble()

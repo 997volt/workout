@@ -60,6 +60,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The weight line no longer breaks on a tape day** (B221). Every measurement row became a reading, so a tape
+  entry — which never states a weight — and a daily entry saved with the weight blank both inserted a null point
+  into the weight series, and the chart stopped and restarted there although the weigh-ins either side were not
+  in question. A body metric's series is now the entries that state it, so the line runs between actual
+  weigh-ins and a skipped day is a longer segment rather than a hole. Tape sites, soreness scores and joint sites
+  keep the break: there the entry *is* a moment of that series, and saying nothing about the site is the answer.
+
 - **A real Waistline backup imports its body data** (B220). A real export dates every diary day with `dateTime`
   — an ISO instant at UTC midnight — while the helper parsed a `date` that only its own hand-written test ever
   wrote, so a real file produced **zero days** and the page still said it had loaded them. The day is now read

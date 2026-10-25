@@ -500,6 +500,17 @@ the rule; that one argues it.
 - **A gap is distance, and the line breaks at it** (N37). On a time axis a straight
   segment across missing weeks is a claim about weeks nobody measured; this is where the
   app deliberately differs from the tool whose shape it borrows.
+
+  **The gap is a moment of that series, not a day of the calendar** (B221). A tape entry is not a weigh-in, and a
+  daily entry that left the weight blank states nothing about weight, so neither is a moment of the weight
+  series: a body metric's series holds only the entries that state it, and the line runs between them instead of
+  stopping at every day something else was recorded — the shape the chart already drew for a day with no entry
+  at all. A **tape site, a soreness score and a joint site keep the break**, because there the entry *is* a
+  moment of that series and "nobody said" is what a gap states; a skipped site is not a second site's value.
+  Rejected: materialising every day of the window as a reading so a skipped weigh-in broke the line — that turns
+  a line chart into stubs and treats a calendar day as a measurement nobody made. Compared with N137's periods,
+  which a lifter may now enter in the past: a period is *stated*, a weigh-in is *recorded*, and only the second
+  is a point.
 - **The figure can be given the screen, and it is a dialog rather than a route** (N201, B219). The card's height is
   the screen's choice; expanding overrules it for a moment without losing the range and metric just chosen, which
   leaving the screen would. The expanded figure is the **same composable** as the card's — the axis, the line and
