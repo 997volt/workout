@@ -17,6 +17,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A workout can be hidden from the templates list without being deleted** (N214). *Hide*, in the editor's
+  overflow under *Versions*, takes a plan out of the choices while every program that names it still schedules
+  and runs it; a *Hidden* filter in the list brings the hidden ones back in place, marked, each with its own
+  *Unhide*. The picker a program's day chooses from stops offering them, which is the list's length dealt with
+  where it actually hurt — while *Substitute* on home still offers a hidden plan, because a stand-in is what
+  you train today rather than what a program is composed from. A new workout is always visible, and a backup
+  still carries which ones were hidden.
+
 - **A program opened in the editor can be downloaded as an add** (a request in use). *Download as new program*
   writes `program-add.json` — the same document with no `edit` marker — for a program the receiving device does
   not hold yet, where an edit is refused because the app plans an edit against a program it already has. The ids

@@ -17,14 +17,7 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**A hidden workout is still a workout.** A large library makes the pickers unusable, and every plan in it is still
-real: deleting one to clear the list would take its exercises and planned sets with it and change what history
-calls the sessions it started. Hiding keeps the plan and takes it out of what a program is composed from — not
-out of what it is trained as.
-
-| # | What it changes |
-| --- | --- |
-| N214 | **A workout can be hidden from the templates list, and shown again.** *Hide* sits in the editor's overflow under *Versions*; the list then leaves the workout out and offers a *Hidden* filter that brings hidden rows back, each marked, with *Unhide* on the row as well as in the overflow. Hidden means **not offered when a program is composed, still offered when it is trained**: the picker when a program's day chooses a workout leaves it out, while a slot that already names it still schedules and starts it, the *Substitute* picker on home still offers it as a stand-in, history still says its name and a backup still carries it. A new workout can never be hidden — creation always writes it visible, and *Hide* is offered only once the plan holds an exercise. |
+**Nothing.** Hiding a workout from the choices (N214) shipped and is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Later — decided, and not being started
 

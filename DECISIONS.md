@@ -109,6 +109,23 @@ the rule; that one argues it.
   **The export carries versions and the link with them**, since the file is the only path off the device.
   Rejected: three revision tables and a migration — a version is a plan, and one nullable column is the whole
   of the difference. ([evidence](DECISIONS-EVIDENCE.md#n134))
+- **A workout can be hidden from the choices without being deleted** (N214). A large library makes the pickers
+  unusable, and the plans in it are still real, so hiding is a **choice filter** rather than a state of the
+  plan: one nullable `hiddenAt` column (schema 9) applied by the two reads that *offer* a workout — the
+  templates list, whose *Hidden* filter is the one surface that shows them, and the picker a program's day
+  chooses from — while every read that resolves a workout **by id** is untouched, so a slot that already
+  names a hidden plan still schedules and starts it, history still says its name, and the export still carries
+  it. **The substitute picker on home keeps offering them**, because a stand-in is what the lifter trains
+  today rather than what a program is composed from. **Hiding does not write `updatedAt`**: that column is
+  the clock N171 reads to refuse a stale edit, and hiding changes no plan, so moving it would make every
+  program carrying the workout read as changed and refuse an edit the lifter had every right to make.
+  **A program document cannot carry the flag** — it is the receiving library's view, so the shared model has
+  no field for it and the edit writer copies the device's value across; a document's null would otherwise
+  unhide the workout on any edit that touched it. **The backup does carry it**, a plain addition with no
+  version bump: a restored library comes back tidied. **Nothing the app creates is hidden** — a new workout,
+  one saved from a session, or one received with a program — and *Hide* is offered only once the plan holds
+  an exercise, because a brand-new empty plan is deleted rather than hidden, while *Unhide* is offered
+  always so a hidden plan emptied later still has a way back.
 - **A plan is read by position, and position stays contiguous** (B72). A running session matches its
   logged sets to the plan by `setIndex` against the number logged, and a run's continuation is keyed by
   the same index, so a stored index *is* the plan's order rather than a durable id. Removing a planned set
