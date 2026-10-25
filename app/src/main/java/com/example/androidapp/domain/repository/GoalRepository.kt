@@ -74,13 +74,16 @@ interface GoalRepository {
      * **A new period that restates the goal in force writes nothing** (B140, B224); an end is a statement, so a
      * finished stretch is written even when its goal repeats.
      *
+     * A null [start] is the undated first period's "keep it unknown" (B232): only the row the N137 migration
+     * creates may be edited that way, and a new period still needs a day.
+     *
      * Refused with its reason: a day after today, an end not after its start, a moved start onto a day another
      * period begins, a start that crosses a neighbour, and an end past the boundary that follows it.
      */
     suspend fun savePeriod(
         metricId: String,
         id: String?,
-        start: LocalDate,
+        start: LocalDate?,
         end: LocalDate?,
         goal: WeightGoal?,
     ): DataResult<Unit>

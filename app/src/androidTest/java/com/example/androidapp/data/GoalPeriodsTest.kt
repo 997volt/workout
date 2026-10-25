@@ -328,6 +328,22 @@ class GoalPeriodsTest {
     }
 
     @Test
+    fun anUndoOntoADayAlreadyTaken_isRefused() = runTest {
+        // A save made while the removal's snackbar was up is newer than the row being put back, and the
+        // restore must not write both on one day (B233).
+        save(start = day(2026, 1, 1), goal = WeightGoal.Target(80_000L))
+        val removed = periods().single()
+        repository.removePeriod(removed.id)
+        save(start = day(2026, 1, 1), goal = WeightGoal.Target(75_000L))
+
+        val restored = repository.restorePeriod(WEIGHT, removed)
+
+        assertTrue(restored is DataResult.Failure)
+        assertEquals(1, periods().size)
+        assertEquals(WeightGoal.Target(75_000L), periods().single().weightGoal)
+    }
+
+    @Test
     fun aStartInTheFuture_isRefused() = runTest {
         val refused = save(start = today.plusDays(1), goal = WeightGoal.Target(80_000L))
 
@@ -382,6 +398,49 @@ class GoalPeriodsTest {
     }
 
     @Test
+    fun anUndatedPeriodsGoalChangesWithoutInventingAStart() = runTest {
+        // B232: the N137 migration leaves the first period undated. Correcting its goal must not invent a
+        // beginning the app never had, so the write keeps startedAt null.
+        database.metricGoalDao().insert(
+            MetricGoalEntity(
+                id = "legacy:$WEIGHT",
+                metricId = WEIGHT,
+                kind = "TARGET",
+                value = 80_000.0,
+                startedAt = null,
+                createdAt = 1L,
+                updatedAt = 1L,
+            ),
+        )
+
+        val result = save(id = "legacy:$WEIGHT", start = null, goal = WeightGoal.Maintain(79_000L))
+
+        assertTrue(result is DataResult.Success)
+        val row = periods().single()
+        assertNull("the unknown start stays unknown", row.startedAt)
+        assertEquals(WeightGoal.Maintain(79_000L), row.weightGoal)
+    }
+
+    @Test
+    fun aNewPeriodNeedsAStart() = runTest {
+        val refused = save(start = null, goal = WeightGoal.Target(80_000L))
+
+        assertTrue(refused is DataResult.Failure)
+        assertTrue(periods().isEmpty())
+    }
+
+    @Test
+    fun aDatedPeriodCannotLoseItsStart() = runTest {
+        save(start = day(2026, 1, 1), goal = WeightGoal.Target(80_000L))
+        val id = periods().single().id
+
+        val refused = save(id = id, start = null, goal = WeightGoal.Target(80_000L))
+
+        assertTrue(refused is DataResult.Failure)
+        assertEquals(day(2026, 1, 1), periods().single().startedAt?.atZone(zone)?.toLocalDate())
+    }
+
+    @Test
     fun removingTheOnlyPeriod_leavesTheMetricWithoutAGoal() = runTest {
         save(start = day(2026, 1, 1), goal = WeightGoal.Target(80_000L))
         val only = periods().single().id
@@ -394,7 +453,7 @@ class GoalPeriodsTest {
 
     private suspend fun save(
         id: String? = null,
-        start: LocalDate,
+        start: LocalDate?,
         end: LocalDate? = null,
         goal: WeightGoal?,
     ): DataResult<Unit> = repository.savePeriod(WEIGHT, id, start, end, goal)

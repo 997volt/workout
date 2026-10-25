@@ -143,6 +143,15 @@ class MeasurementsViewModel @Inject constructor(
     private val _pendingGoalUndo = MutableStateFlow<GoalPeriod?>(null)
     val pendingGoalUndo: StateFlow<GoalPeriod?> = _pendingGoalUndo.asStateFlow()
 
+    /**
+     * The result of the last goal-period save, or null before one (B234).
+     *
+     * The editor stays open until this says the write succeeded, so a repository refusal (a taken day, a
+     * start outside its neighbours) does not throw away the typed weight and both picked days.
+     */
+    private val _goalSave = MutableStateFlow<Boolean?>(null)
+    val goalSave: StateFlow<Boolean?> = _goalSave.asStateFlow()
+
     val pendingUndo: StateFlow<BodyMeasurement?> = _pendingUndo.asStateFlow()
 
     /**
@@ -210,16 +219,32 @@ class MeasurementsViewModel @Inject constructor(
      * Writes one goal period — the row [id] names, or a new one from [start] (N135, N215).
      *
      * The unit is the day: the repository turns both dates into local midnight, and a row that asks for what is
-     * already there writes nothing. Null [goal] is *No goal*, a period rather than a deletion, so the stretch
-     * still says what was asked for — nothing — and when it stopped being asked for.
+     * already there writes nothing. A null [start] is the undated first period keeping its unknown beginning
+     * (B232). Null [goal] is *No goal*, a period rather than a deletion, so the stretch still says what was
+     * asked for — nothing — and when it stopped being asked for.
      */
-    fun onSaveGoalPeriod(id: String?, start: LocalDate, end: LocalDate?, goal: WeightGoal?) {
+    fun onSaveGoalPeriod(id: String?, start: LocalDate?, end: LocalDate?, goal: WeightGoal?) {
+        _goalSave.value = null
         viewModelScope.launch {
             when (val result = goals.savePeriod(WEIGHT_METRIC_ID, id, start, end, goal)) {
-                is DataResult.Success -> lastError.value = null
-                is DataResult.Failure -> lastError.value = result.error
+                is DataResult.Success -> {
+                    lastError.value = null
+                    // A newer statement ends the previous removal's offer: its row may no longer fit (B233).
+                    _pendingGoalUndo.value = null
+                    _goalSave.value = true
+                }
+
+                is DataResult.Failure -> {
+                    lastError.value = result.error
+                    _goalSave.value = false
+                }
             }
         }
+    }
+
+    /** Takes the save result away once the editor has acted on it (B234). */
+    fun onDismissGoalSave() {
+        _goalSave.value = null
     }
 
     /**

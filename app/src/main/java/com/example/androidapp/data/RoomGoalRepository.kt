@@ -59,6 +59,9 @@ class RoomGoalRepository @Inject constructor(
     /**
      * Writes one period, or edits the one [id] names (ROADMAP N215).
      *
+     * [start] may be null only for the undated first period — the row the N137 migration creates has no
+     * recorded beginning, and a goal-only correction must not invent one (B232). A new period needs a day.
+     *
      * The guesses a caller would otherwise make are refused here, in one transaction: the day is not in the
      * future, the end follows the start, a start does not land on a boundary another period owns, and an end does
      * not pass the boundary after it. A start that lands on a boundary **edits** that boundary — the same rule
@@ -67,18 +70,18 @@ class RoomGoalRepository @Inject constructor(
     override suspend fun savePeriod(
         metricId: String,
         id: String?,
-        start: LocalDate,
+        start: LocalDate?,
         end: LocalDate?,
         goal: WeightGoal?,
     ): DataResult<Unit> = dataResultOf {
         val zone = ZoneId.systemDefault()
         val today = timeSource.now().atZone(zone).toLocalDate()
-        if (start.isAfter(today)) throw InvalidInputException(START_AFTER_TODAY)
+        if (start != null && start.isAfter(today)) throw InvalidInputException(START_AFTER_TODAY)
         if (end != null) {
-            if (!end.isAfter(start)) throw InvalidInputException(END_BEFORE_START)
+            if (start != null && !end.isAfter(start)) throw InvalidInputException(END_BEFORE_START)
             if (end.isAfter(today)) throw InvalidInputException(END_AFTER_TODAY)
         }
-        val startMillis = GoalTimeline.startOfDay(start, zone)
+        val startMillis = start?.let { GoalTimeline.startOfDay(it, zone) }
         val endMillis = end?.let { GoalTimeline.startOfDay(it, zone) }
         database.withTransaction {
             val write = PeriodWrite(
@@ -100,9 +103,17 @@ class RoomGoalRepository @Inject constructor(
             // A day that already carries a boundary is that boundary, whether the row was written at midnight
             // or at a clock time by the old path (B223). If a legacy day holds more than one row, the newest is
             // the one in force, so that is the one a new statement edits.
-            when (val existing = named ?: periods.lastOrNull { GoalTimeline.startsOn(it.startedAt, start, zone) }) {
-                null -> insertPeriod(periods, write)
-                else -> editPeriod(existing, periods, write)
+            val existing = when {
+                named != null -> named
+                start == null -> throw InvalidInputException(START_REQUIRED)
+                else -> periods.lastOrNull { GoalTimeline.startsOn(it.startedAt, start, zone) }
+            }
+            if (existing == null) {
+                insertPeriod(periods, write)
+            } else {
+                // A null start is the undated period's "keep it unknown"; a dated row cannot lose its day.
+                if (start == null && existing.startedAt != null) throw InvalidInputException(KEEP_UNKNOWN_ONLY)
+                editPeriod(existing, periods, write)
             }
         }
     }
@@ -113,18 +124,32 @@ class RoomGoalRepository @Inject constructor(
 
     override suspend fun restorePeriod(metricId: String, period: GoalPeriod): DataResult<Unit> = dataResultOf {
         val now = timeSource.nowEpochMillis()
-        // The id travels, so the row this puts back is the one that went; an undo repeated is a no-op.
-        dao.restore(
-            MetricGoalEntity(
-                id = period.id,
-                metricId = metricId,
-                kind = period.kind,
-                value = period.value,
-                startedAt = period.startedAt?.toEpochMilli(),
-                createdAt = now,
-                updatedAt = now,
-            ),
-        )
+        val zone = ZoneId.systemDefault()
+        database.withTransaction {
+            val day = period.startedAt?.let { GoalTimeline.dayOf(it.toEpochMilli(), zone) }
+            // The undo must not lay a second boundary on a day the timeline has since taken: a save while the
+            // snackbar was up is a newer statement than the row being put back (B233).
+            val taken = dao.periodsFor(metricId).any { row ->
+                row.id != period.id && if (day == null) {
+                    row.startedAt == null
+                } else {
+                    GoalTimeline.startsOn(row.startedAt, day, zone)
+                }
+            }
+            if (taken) throw InvalidInputException(RESTORE_TAKEN)
+            // The id travels, so the row this puts back is the one that went; an undo repeated is a no-op.
+            dao.restore(
+                MetricGoalEntity(
+                    id = period.id,
+                    metricId = metricId,
+                    kind = period.kind,
+                    value = period.value,
+                    startedAt = period.startedAt?.toEpochMilli(),
+                    createdAt = now,
+                    updatedAt = now,
+                ),
+            )
+        }
     }
 
     /**
@@ -162,10 +187,12 @@ class RoomGoalRepository @Inject constructor(
      * the end at all, the restoring row states **no goal** — a period cannot end into nothing.
      */
     private suspend fun insertPeriod(periods: List<MetricGoalEntity>, write: PeriodWrite) {
+        val start = write.start ?: throw InvalidInputException(START_REQUIRED)
+        val startDay = write.startDay ?: throw InvalidInputException(START_REQUIRED)
         val boundaries = periods.map { it.toBoundary() }
         // B140's guard: a period that restates the goal in force asks for nothing (B224). A finished
         // stretch is different — the end is the statement — so only an open-ended write is a no-op.
-        val governing = GoalTimeline.governing(boundaries, write.startDay, write.zone)
+        val governing = GoalTimeline.governing(boundaries, startDay, write.zone)
         if (write.end == null && governing != null &&
             GoalTimeline.sameGoal(
                 write.goal.storedKind(),
@@ -176,7 +203,7 @@ class RoomGoalRepository @Inject constructor(
         ) {
             return
         }
-        val after = periods.firstOrNull { it.startedAt != null && it.startedAt > write.start }
+        val after = periods.firstOrNull { it.startedAt != null && it.startedAt > start }
         val afterDay = after?.startedAt?.let { GoalTimeline.dayOf(it, write.zone) }
         val problem = when {
             write.endDay == null || afterDay == null -> null
@@ -191,7 +218,7 @@ class RoomGoalRepository @Inject constructor(
                 metricId = write.metricId,
                 kind = write.goal.storedKind(),
                 value = write.goal.storedValue(),
-                startedAt = write.start,
+                startedAt = start,
                 createdAt = write.now,
                 updatedAt = write.now,
             ),
@@ -232,9 +259,14 @@ class RoomGoalRepository @Inject constructor(
         val nextOnEndDay = next?.startedAt != null && write.endDay != null &&
             GoalTimeline.startsOn(next.startedAt, write.endDay, write.zone)
         // A goal-only correction keeps the day's original instant: moving a clock-time boundary to midnight
-        // would hand this period the readings earlier on that day (B223).
-        val effectiveStart = row.startedAt?.takeIf { GoalTimeline.startsOn(it, write.startDay, write.zone) }
-            ?: write.start
+        // would hand this period the readings earlier on that day (B223). A null start is the undated row's
+        // "keep it unknown" (B232).
+        val effectiveStart = when {
+            write.start == null -> null
+            write.startDay == null -> write.start
+            else -> row.startedAt?.takeIf { GoalTimeline.startsOn(it, write.startDay, write.zone) }
+                ?: write.start
+        }
         val unchanged = effectiveStart == row.startedAt && row.kind == write.goal.storedKind() &&
             row.value == write.goal.storedValue() && (write.end == null || nextOnEndDay)
         if (unchanged) return
@@ -256,9 +288,10 @@ class RoomGoalRepository @Inject constructor(
         row: MetricGoalEntity,
         periods: List<MetricGoalEntity>,
         index: Int,
-        startDay: LocalDate,
+        startDay: LocalDate?,
         zone: ZoneId,
     ): String? {
+        if (startDay == null) return null
         val before = periods.getOrNull(index - 1)
         val next = periods.getOrNull(index + 1)
         // A goal-only correction keeps the row's own day. Two rows written by the old path can share a day,
@@ -302,8 +335,8 @@ class RoomGoalRepository @Inject constructor(
 /** One write, as the caller asked for it: the days, the optional end, the goal, and the moment to stamp (N215). */
 private data class PeriodWrite(
     val metricId: String,
-    val start: Long,
-    val startDay: LocalDate,
+    val start: Long?,
+    val startDay: LocalDate?,
     val end: Long?,
     val endDay: LocalDate?,
     val goal: WeightGoal?,
@@ -336,3 +369,9 @@ private const val START_OUTSIDE = "That start is outside the periods either side
 private const val END_PASSES_NEXT = "Another goal starts before that end."
 
 private const val OPEN_HAS_NO_END = "A goal still in force has no end; add what came after it instead."
+
+private const val START_REQUIRED = "A new goal period needs a start day."
+
+private const val KEEP_UNKNOWN_ONLY = "A period with a start cannot lose it."
+
+private const val RESTORE_TAKEN = "That goal period's day is already taken."

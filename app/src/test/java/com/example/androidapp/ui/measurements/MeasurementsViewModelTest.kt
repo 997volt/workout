@@ -180,6 +180,48 @@ class MeasurementsViewModelTest {
     }
 
     @Test
+    fun savingAGoal_takesTheRemovalOfferAway() = runTest(dispatcher) {
+        val goals = FakeGoalRepository(
+            current = mapOf(
+                WEIGHT_ID to GoalPeriod(id = "p1", startedAt = FIRST_DAY, kind = "TARGET", value = 80_000.0),
+            ),
+        )
+        val viewModel = viewModelOf(FakeMeasurementRepository(entries), goals)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onRemoveGoalPeriod("p1")
+        advanceUntilIdle()
+        assertEquals("the removal offered its undo", "p1", viewModel.pendingGoalUndo.value?.id)
+
+        viewModel.onSaveGoalPeriod(id = null, start = today, end = null, goal = WeightGoal.Target(79_000L))
+        advanceUntilIdle()
+
+        assertNull("a newer statement ends the offer", viewModel.pendingGoalUndo.value)
+    }
+
+    @Test
+    fun aGoalSave_reportsItsResult_andCanBeDismissed() = runTest(dispatcher) {
+        // B234: the editor closes on true and stays on false; the one-shot is taken away by the screen.
+        val goals = FakeGoalRepository()
+        val viewModel = viewModelOf(FakeMeasurementRepository(entries), goals)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSaveGoalPeriod(id = null, start = today, end = null, goal = WeightGoal.Target(80_000L))
+        advanceUntilIdle()
+        assertEquals(true, viewModel.goalSave.value)
+
+        viewModel.onDismissGoalSave()
+        assertNull(viewModel.goalSave.value)
+
+        goals.failSaves = true
+        viewModel.onSaveGoalPeriod(id = null, start = today, end = null, goal = WeightGoal.Target(81_000L))
+        advanceUntilIdle()
+        assertEquals(false, viewModel.goalSave.value)
+    }
+
+    @Test
     fun itShowsWhatTheRepositoryHolds_newestFirst() = runTest(dispatcher) {
         entries.value = listOf(entry("m2", weight = 82_000L), entry("m1", weight = 83_000L))
         val viewModel = viewModelOf(FakeMeasurementRepository(entries), FakeGoalRepository())
@@ -553,6 +595,9 @@ private class FakeGoalRepository(
 
     /** Every period write, as the id asked for (null for a new one) and the goal it stated (N215). */
     val saves = mutableListOf<Pair<String?, WeightGoal?>>()
+
+    /** A goal write can be refused; only a test asks for that (B234). */
+    var failSaves = false
     val removed = mutableListOf<String>()
     val restored = mutableListOf<String>()
 
@@ -565,18 +610,23 @@ private class FakeGoalRepository(
     override suspend fun savePeriod(
         metricId: String,
         id: String?,
-        start: LocalDate,
+        start: LocalDate?,
         end: LocalDate?,
         goal: WeightGoal?,
     ): DataResult<Unit> {
+        if (failSaves) {
+            return DataResult.Failure(DataError.Storage(IllegalStateException("the goal was not stored")))
+        }
         saves += id to goal
         val rows = periods.value[metricId].orEmpty()
-        val startedAt = start.atStartOfDay(ZoneId.systemDefault()).toInstant()
+        val startedAt = start?.atStartOfDay(ZoneId.systemDefault())?.toInstant()
         val kind = goal?.kind()?.name
         val value = goal?.statedWeightGrams()?.toDouble()
         periods.value = periods.value + (
             metricId to if (id != null) {
-                rows.map { if (it.id == id) it.copy(startedAt = startedAt, kind = kind, value = value) else it }
+                rows.map {
+                    if (it.id == id) it.copy(startedAt = startedAt ?: it.startedAt, kind = kind, value = value) else it
+                }
             } else {
                 rows + GoalPeriod(id = "p${rows.size + 1}", startedAt = startedAt, kind = kind, value = value)
             }

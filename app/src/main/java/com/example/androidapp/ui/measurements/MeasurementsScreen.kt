@@ -89,6 +89,7 @@ fun MeasurementsRoute(
     val error by viewModel.error.collectAsStateWithLifecycle()
     val pendingUndo by viewModel.pendingUndo.collectAsStateWithLifecycle()
     val pendingGoalUndo by viewModel.pendingGoalUndo.collectAsStateWithLifecycle()
+    val goalSave by viewModel.goalSave.collectAsStateWithLifecycle()
     val rateVerdict by viewModel.rateVerdict.collectAsStateWithLifecycle()
     // The shortcut opens **today's record** (B182), and only the loaded list can say whether that is an
     // entry to edit or a day with nothing on it — so it waits for the answer rather than opening a blank
@@ -119,6 +120,8 @@ fun MeasurementsRoute(
         // (a request in use; no roadmap id covers the move). Since N215 a past period can be written too.
         onSaveGoalPeriod = viewModel::onSaveGoalPeriod,
         onRemoveGoalPeriod = viewModel::onRemoveGoalPeriod,
+        goalSave = goalSave,
+        onDismissGoalSave = viewModel::onDismissGoalSave,
         goalPeriodUi = GoalPeriodUi(
             pendingRemoval = pendingGoalUndo,
             onUndo = viewModel::onUndoGoalPeriodRemoval,
@@ -188,8 +191,11 @@ fun MeasurementsScreen(
     rateVerdict: EnergyAdjustment? = null,
     onDismissRateVerdict: () -> Unit = {},
     /** Writes one goal period — the row [id] names, or a new one from [start]; null [goal] is *No goal* (N215). */
-    onSaveGoalPeriod: (String?, LocalDate, LocalDate?, WeightGoal?) -> Unit = { _, _, _, _ -> },
+    onSaveGoalPeriod: (String?, LocalDate?, LocalDate?, WeightGoal?) -> Unit = { _, _, _, _ -> },
     onRemoveGoalPeriod: (String) -> Unit = {},
+    /** The last goal-period save's result, so its editor can wait for it (B234). */
+    goalSave: Boolean? = null,
+    onDismissGoalSave: () -> Unit = {},
     goalPeriodUi: GoalPeriodUi = GoalPeriodUi(),
 ) {
     // Two steps rather than one: the record is two records, so *Add* asks which before it opens a form
@@ -257,6 +263,8 @@ fun MeasurementsScreen(
             onDelete = onDelete,
             onSaveGoalPeriod = onSaveGoalPeriod,
             onRemoveGoalPeriod = onRemoveGoalPeriod,
+            goalSave = goalSave,
+            onDismissGoalSave = onDismissGoalSave,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -310,8 +318,10 @@ private fun MeasurementList(
     editing: Boolean,
     onOpen: (BodyMeasurement) -> Unit,
     onDelete: (String) -> Unit,
-    onSaveGoalPeriod: (String?, LocalDate, LocalDate?, WeightGoal?) -> Unit,
+    onSaveGoalPeriod: (String?, LocalDate?, LocalDate?, WeightGoal?) -> Unit,
     onRemoveGoalPeriod: (String) -> Unit,
+    goalSave: Boolean?,
+    onDismissGoalSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -335,6 +345,8 @@ private fun MeasurementList(
                         today = state.today,
                         onSavePeriod = onSaveGoalPeriod,
                         onRemovePeriod = onRemoveGoalPeriod,
+                        saveOutcome = goalSave,
+                        onDismissSave = onDismissGoalSave,
                     )
                 }
             }

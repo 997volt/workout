@@ -78,7 +78,7 @@ class MeasurementsScreenTest {
         onDismissUndo: () -> Unit = {},
         rateVerdict: EnergyAdjustment? = null,
         onDismissRateVerdict: () -> Unit = {},
-        onSaveGoalPeriod: (String?, LocalDate, LocalDate?, WeightGoal?) -> Unit = { _, _, _, _ -> },
+        onSaveGoalPeriod: (String?, LocalDate?, LocalDate?, WeightGoal?) -> Unit = { _, _, _, _ -> },
         onRemoveGoalPeriod: (String) -> Unit = {},
         goalPeriodUi: GoalPeriodUi = GoalPeriodUi(),
     ) {
@@ -212,6 +212,31 @@ class MeasurementsScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).assertExists()
+    }
+
+    @Test
+    fun anUndatedPeriod_canChangeItsGoal_withoutInventingADate() {
+        // B232: the undated first period's editor must save a goal-only change with no start, rather than
+        // forcing a date the record never had.
+        var savedId: String? = "not called"
+        var savedStart: LocalDate? = LocalDate.of(2000, 1, 1)
+        setScreen(
+            state = stateWithGoal(
+                goal = WeightGoal.Direction(gain = false),
+                periods = listOf(GoalPeriod(id = "p0", startedAt = null, kind = "LOSE", value = null)),
+            ),
+            onSaveGoalPeriod = { id, start, _, _ ->
+                savedId = id
+                savedStart = start
+            },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(0)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
+
+        assertEquals("p0", savedId)
+        assertEquals(null, savedStart)
     }
 
     @Test
@@ -359,6 +384,10 @@ class MeasurementsScreenTest {
         assertEquals("the card opens a new period", null, saved?.first)
         assertEquals(WeightGoal.Maintain(80_000L), saved?.second)
         assertEquals("and it starts on the day the screen calls today", LocalDate.of(2026, 10, 2), started)
+
+        // B234: the editor now waits for the write's result, and this screen test has no ViewModel to send
+        // one, so close it explicitly before opening the next statement.
+        composeTestRule.onNodeWithText("Cancel").performClick()
 
         // N215: clearing is a period of No goal, one of the kinds rather than a second button.
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performClick()

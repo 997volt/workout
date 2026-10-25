@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -115,11 +116,33 @@ fun WeightGoalRow(
     /** The day this screen calls today: a new period starts there, and no period may begin after it. */
     today: LocalDate,
     modifier: Modifier = Modifier,
-    onSavePeriod: (id: String?, start: LocalDate, end: LocalDate?, goal: WeightGoal?) -> Unit = { _, _, _, _ -> },
+    onSavePeriod: (id: String?, start: LocalDate?, end: LocalDate?, goal: WeightGoal?) -> Unit = { _, _, _, _ -> },
     onRemovePeriod: (String) -> Unit = {},
+    /** The last save's result: the editor closes only when it succeeded (B234). */
+    saveOutcome: Boolean? = null,
+    onDismissSave: () -> Unit = {},
 ) {
     var showingHistory by rememberSaveable { mutableStateOf(false) }
     var editor by remember { mutableStateOf<GoalPeriodEditor?>(null) }
+    var saving by remember { mutableStateOf(false) }
+
+    LaunchedEffect(saveOutcome) {
+        when (saveOutcome) {
+            true -> {
+                editor = null
+                saving = false
+                onDismissSave()
+            }
+
+            false -> {
+                // The error is on the screen's snackbar; the editor stays so the values can be corrected.
+                saving = false
+                onDismissSave()
+            }
+
+            null -> Unit
+        }
+    }
 
     GoalHeader(
         goal = goal,
@@ -147,15 +170,20 @@ fun WeightGoalRow(
             metric = metric,
             editor = current,
             today = today,
+            saving = saving,
             onSave = { id, start, end, value ->
+                saving = true
                 onSavePeriod(id, start, end, value)
-                editor = null
             },
             onRemove = { id ->
                 onRemovePeriod(id)
                 editor = null
+                saving = false
             },
-            onDismiss = { editor = null },
+            onDismiss = {
+                editor = null
+                saving = false
+            },
         )
     }
 
@@ -406,9 +434,10 @@ private fun GoalPeriodDialog(
     metric: MetricEntry,
     editor: GoalPeriodEditor,
     today: LocalDate,
-    onSave: (String?, LocalDate, LocalDate?, WeightGoal?) -> Unit,
+    onSave: (String?, LocalDate?, LocalDate?, WeightGoal?) -> Unit,
     onRemove: (String) -> Unit,
     onDismiss: () -> Unit,
+    saving: Boolean = false,
 ) {
     val draft = rememberGoalPeriodDraft(editor, metric, today)
 
@@ -421,8 +450,8 @@ private fun GoalPeriodDialog(
         text = { GoalPeriodFields(metric = metric, draft = draft) },
         confirmButton = {
             AppTextButton(
-                onClick = { draft.start?.let { start -> onSave(editor.id, start, draft.end, draft.goal) } },
-                enabled = draft.valid,
+                onClick = { onSave(editor.id, draft.start, draft.end, draft.goal) },
+                enabled = draft.valid && !saving,
                 modifier = Modifier.testTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM),
             ) {
                 Text(stringResource(R.string.statistics_goal_confirm))
@@ -538,6 +567,9 @@ private class GoalPeriodDraft(
     editor: GoalPeriodEditor,
 ) {
     val canHaveEnd: Boolean = editor.canHaveEnd
+
+    /** Only the undated row the N137 migration creates, and only when it already exists, may keep no start (B232). */
+    private val startMayBeUnknown = !editor.startKnown && editor.id != null
     var kindName by mutableStateOf(editor.goal?.kind()?.name)
     var weight by mutableStateOf(
         editor.goal?.statedWeightGrams()?.let { metric.unit.format(it.toDouble()) }.orEmpty(),
@@ -563,10 +595,13 @@ private class GoalPeriodDraft(
     /** A day after today is not a record, and an end that is not after its start would write an empty stretch. */
     val valid: Boolean
         get() {
-            val start = start ?: return false
+            val start = start
             val end = end
-            val datesValid = !start.isAfter(today) &&
-                (end == null || (end.isAfter(start) && !end.isAfter(today)))
+            val datesValid = if (start == null) {
+                startMayBeUnknown && (end == null || !end.isAfter(today))
+            } else {
+                !start.isAfter(today) && (end == null || (end.isAfter(start) && !end.isAfter(today)))
+            }
             return datesValid && (!needsWeight || goal != null) && (canHaveEnd || end == null)
         }
 

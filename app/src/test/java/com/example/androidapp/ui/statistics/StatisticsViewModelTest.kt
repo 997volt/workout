@@ -972,7 +972,7 @@ private class FakeGoalRepository(
     override suspend fun savePeriod(
         metricId: String,
         id: String?,
-        start: LocalDate,
+        start: LocalDate?,
         end: LocalDate?,
         goal: WeightGoal?,
     ): DataResult<Unit> {
