@@ -17,7 +17,13 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** Hiding a workout from the choices (N214) shipped and is in [CHANGELOG.md](CHANGELOG.md).
+**The helper was tested against a Waistline export nobody has.** A real backup dates every diary day with
+`dateTime`; the reader wanted a `date` that only its hand-written fixture ever wrote, so a real file produced
+zero days — and the page said it had loaded them.
+
+| # | What it changes |
+| --- | --- |
+| B220 | **A real Waistline backup imports its body data.** The day is read from `dateTime` when `date` is absent, by its own date part — the instant is UTC midnight, and a local parse would move a western weigh-in to the day before — and a file that yields no daily record says why instead of *"Loaded the daily body data"*. Every real export is affected, not one file: the test's document becomes the shape Waistline writes (`dateTime`, `items`, `version`), and both the page's tests and the node runner assert it. |
 
 ## Later — decided, and not being started
 
