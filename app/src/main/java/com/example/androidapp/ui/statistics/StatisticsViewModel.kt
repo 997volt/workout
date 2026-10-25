@@ -550,8 +550,9 @@ class StatisticsViewModel @Inject constructor(
         val entry = MetricRegistry.entryFor(recent.metric)
         val chosen = uiState.value.lifts.firstOrNull { it.id == recent.exerciseId }
         val offered = entry.acceptsHead || chosen?.rowKind != RowKind.CATEGORY
+        // A lift the library no longer holds is dropped, not selected invisibly.
         val next = recent.copy(
-            exerciseId = recent.exerciseId.takeIf { entry.needsExercise && offered },
+            exerciseId = recent.exerciseId.takeIf { entry.needsExercise && offered && chosen != null },
         )
         selection.value = next
         rememberSelection(next)

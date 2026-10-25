@@ -646,6 +646,8 @@ class StatisticsViewModelTest {
                 "BODY:WEIGHT",
                 "BODY:WEIGHT",
                 "BODY:BODY_FAT",
+                "BODY:MUSCLE",
+                "WORKOUT:RPE",
             ),
         )
         val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
@@ -655,7 +657,27 @@ class StatisticsViewModelTest {
         assertThat(viewModel.uiState.value.recentSeries).containsExactly(
             StatisticsSelection(MetricKey.Body(BodyMetric.WEIGHT)),
             StatisticsSelection(MetricKey.Body(BodyMetric.BODY_FAT)),
+            StatisticsSelection(MetricKey.Body(BodyMetric.MUSCLE)),
         ).inOrder()
+    }
+
+    @Test
+    fun aRecentLiftTheLibraryNoLongerHolds_isDroppedOnSelection() = runTest(dispatcher) {
+        // B226: a chip is a stored memory, not a promise the lift is still there; selecting a missing one
+        // must leave the metric and ask for a lift, not hold an id the picker cannot show.
+        val volume = MetricKey.Exercise(ExerciseTrendMetric.VOLUME)
+        val settings = FakeSettingsRepository(
+            initial = StatisticsRange(RangeKind.ALL),
+            initiallyRecent = listOf("EXERCISE:VOLUME|gone"),
+        )
+        val viewModel = viewModel(range = StatisticsRange(RangeKind.ALL), settings = settings)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onSelectRecent(StatisticsSelection(volume, "gone"))
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.selection).isEqualTo(StatisticsSelection(volume, null))
     }
 
     @Test
