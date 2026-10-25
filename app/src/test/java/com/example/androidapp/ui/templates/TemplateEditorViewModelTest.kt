@@ -425,7 +425,7 @@ class TemplateEditorViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
-        viewModel.onToggleHidden()
+        viewModel.onToggleHide()
         advanceUntilIdle()
 
         assertEquals(listOf("t1" to true), repository.hiddenWrites)
@@ -445,10 +445,10 @@ class TemplateEditorViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
-        viewModel.onToggleHidden()
+        viewModel.onToggleHide()
         advanceUntilIdle()
         viewModel.onDismissHiddenNotice()
-        viewModel.onToggleHidden()
+        viewModel.onToggleHide()
         advanceUntilIdle()
 
         assertEquals(listOf("t1" to true, "t1" to false), repository.hiddenWrites)
@@ -465,7 +465,7 @@ class TemplateEditorViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
-        viewModel.onToggleHidden()
+        viewModel.onToggleHide()
         advanceUntilIdle()
 
         assertNotNull("the failure reaches the screen's host", viewModel.uiState.value.error)
@@ -485,6 +485,7 @@ class TemplateEditorViewModelTest {
         val addedSets = mutableListOf<Pair<String, TemplateSetEdit>>()
         val savedPlans = mutableListOf<SavedExercisePlan>()
         var failWrites = false
+
         /** Every hide or unhide, as the id and the state asked for (ROADMAP N214). */
         val hiddenWrites = mutableListOf<Pair<String, Boolean>>()
         /** Every group write, as the ids it covered — one entry per call, which is the point. */

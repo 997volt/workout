@@ -47,6 +47,7 @@ class RoomDeloadRepository @Inject constructor(
     private val deloadDao = database.programDeloadDao()
     private val programDao = database.programDao()
     private val templateDao = database.templateDao()
+    private val templateSetDao = database.templateSetDao()
 
     override fun observeWeekPlans(weekStart: LocalDate): Flow<List<DeloadWeek>> =
         deloadDao.observeDeloadDaysForWeek(weekStart.toEpochDay()).map { rows -> rows.toDeloadWeeks() }
@@ -202,7 +203,7 @@ class RoomDeloadRepository @Inject constructor(
             ),
         )
         exercise.sets.forEachIndexed { index, set ->
-            templateDao.insertTemplateSet(
+            templateSetDao.insertTemplateSet(
                 TemplateSetEntity(
                     id = UUID.randomUUID().toString(),
                     templateExerciseId = plannedId,

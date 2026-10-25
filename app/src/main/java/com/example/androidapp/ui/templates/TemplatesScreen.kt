@@ -111,6 +111,40 @@ fun TemplatesRoute(
     )
 }
 
+/** The list's own bar: the title, back, and the way across to Programs (ROADMAP N93, N214). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TemplatesTopBar(onBack: () -> Unit, onOpenPrograms: () -> Unit) {
+    TopAppBar(
+        title = {
+            Text(
+                text = stringResource(R.string.templates_title),
+                modifier = Modifier.testTag(TestTags.TEMPLATES_TITLE),
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.nav_back),
+                )
+            }
+        },
+        actions = {
+            // The sibling list, one tap away (ROADMAP N93): Programs was back-home-and-in from
+            // here, and the two screens answer the same question from two sides. It is a way
+            // across rather than a start, so it says nothing about a session being open — the
+            // rows below carry that withholding themselves (N78, B43).
+            AppTextButton(
+                onClick = onOpenPrograms,
+                modifier = Modifier.testTag(TestTags.TEMPLATES_PROGRAMS),
+            ) {
+                Text(stringResource(R.string.home_programs))
+            }
+        },
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TemplatesScreen(
@@ -149,36 +183,7 @@ fun TemplatesScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.templates_title),
-                        modifier = Modifier.testTag(TestTags.TEMPLATES_TITLE),
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.nav_back),
-                        )
-                    }
-                },
-                actions = {
-                    // The sibling list, one tap away (ROADMAP N93): Programs was back-home-and-in from
-                    // here, and the two screens answer the same question from two sides. It is a way
-                    // across rather than a start, so it says nothing about a session being open — the
-                    // rows below carry that withholding themselves (N78, B43).
-                    AppTextButton(
-                        onClick = onOpenPrograms,
-                        modifier = Modifier.testTag(TestTags.TEMPLATES_PROGRAMS),
-                    ) {
-                        Text(stringResource(R.string.home_programs))
-                    }
-                },
-            )
-        },
+        topBar = { TemplatesTopBar(onBack = onBack, onOpenPrograms = onOpenPrograms) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { onCreateTemplate(defaultName) },

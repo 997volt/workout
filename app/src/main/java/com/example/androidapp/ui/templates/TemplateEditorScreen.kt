@@ -24,8 +24,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
@@ -154,7 +152,7 @@ fun TemplateEditorRoute(
             onOpenVersion = viewModel::onOpenVersion,
             onDismissVersion = viewModel::onDismissVersion,
         ),
-        onToggleHidden = viewModel::onToggleHidden,
+        onToggleHide = viewModel::onToggleHide,
         hiddenChange = hiddenChange,
         onDismissHiddenNotice = viewModel::onDismissHiddenNotice,
         onDismissMessage = viewModel::onErrorShown,
@@ -189,9 +187,8 @@ fun TemplateEditorScreen(
     onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
     /** The versions kept of this plan, and what may be done with them (ROADMAP N134). */
     versionUi: TemplateVersionUi = TemplateVersionUi(),
-    /** Hides the plan from the choices, or brings it back (ROADMAP N214). */
-    onToggleHidden: () -> Unit = {},
-    /** True when it was just hidden, false when it was brought back, null for nothing to say. */
+    /** Hiding: the action, the one-shot sentence, and nothing to say with null (ROADMAP N214). */
+    onToggleHide: () -> Unit = {},
     hiddenChange: Boolean? = null,
     onDismissHiddenNotice: () -> Unit = {},
 ) {
@@ -216,18 +213,12 @@ fun TemplateEditorScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TemplateEditorTopBar(
-                name = state.template?.name,
-                versionCount = state.versions.size,
-                // Hide is offered for a plan that holds something, and for one already hidden whatever it
-                // holds: a brand-new empty workout is deleted, not hidden, but a hidden plan that was
-                // emptied afterwards must still be bringable back (ROADMAP N214).
-                hidden = state.template?.hiddenAt != null,
-                canHide = (state.template?.exerciseCount ?: 0) > 0,
+                state = state,
+                versionUi = versionUi,
                 onBack = onBack,
                 onDelete = { confirmingDelete = true },
-                onKeepVersion = versionUi.onKeepVersion,
                 onOpenVersions = { showingVersions = true },
-                onToggleHidden = onToggleHidden,
+                onToggleHide = onToggleHide,
             )
         },
         floatingActionButton = { AddExerciseButton(onClick = onAddExercise) },
@@ -299,28 +290,27 @@ private fun DeleteTemplateConfirmation(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TemplateEditorTopBar(
-    name: String?,
-    versionCount: Int,
-    /** True when the plan is hidden from the choices (ROADMAP N214). */
-    hidden: Boolean,
-    /** False for a plan that holds no exercise: a brand-new workout is deleted, never hidden. */
-    canHide: Boolean,
+    state: TemplateEditorUiState,
+    versionUi: TemplateVersionUi,
     onBack: () -> Unit,
     onDelete: () -> Unit,
-    onKeepVersion: () -> Unit,
     onOpenVersions: () -> Unit,
-    onToggleHidden: () -> Unit,
+    onToggleHide: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
+    val versionCount = state.versions.size
     val versionsLabel = if (versionCount > 0) {
         stringResource(R.string.template_versions_with_count, versionCount)
     } else {
         stringResource(R.string.template_versions)
     }
+    val hidden = state.template?.hiddenAt != null
+    // Hide needs a plan that holds something; Unhide never does (ROADMAP N214).
+    val canHide = (state.template?.exerciseCount ?: 0) > 0
     TopAppBar(
         title = {
             Text(
-                text = name ?: stringResource(R.string.template_edit_title),
+                text = state.template?.name ?: stringResource(R.string.template_edit_title),
                 modifier = Modifier.testTag(TestTags.TEMPLATE_EDIT_TITLE),
             )
         },
@@ -344,42 +334,16 @@ private fun TemplateEditorTopBar(
                     contentDescription = versionsLabel,
                 )
             }
-            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.template_keep_version)) },
-                    onClick = {
-                        menuOpen = false
-                        onKeepVersion()
-                    },
-                    modifier = Modifier.testTag(TestTags.TEMPLATE_KEEP_VERSION),
-                )
-                DropdownMenuItem(
-                    text = { Text(versionsLabel) },
-                    onClick = {
-                        menuOpen = false
-                        onOpenVersions()
-                    },
-                    modifier = Modifier.testTag(TestTags.TEMPLATE_VERSIONS),
-                )
-                // Under the versions, as the plan's own actions: hiding is what the lifter does to a plan
-                // they keep but no longer choose from (ROADMAP N214).
-                if (hidden || canHide) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(
-                                    if (hidden) R.string.template_unhide_action else R.string.template_hide,
-                                ),
-                            )
-                        },
-                        onClick = {
-                            menuOpen = false
-                            onToggleHidden()
-                        },
-                        modifier = Modifier.testTag(TestTags.TEMPLATE_HIDE),
-                    )
-                }
-            }
+            TemplateEditorMenu(
+                expanded = menuOpen,
+                versionsLabel = versionsLabel,
+                hidden = hidden,
+                canHide = canHide,
+                onDismiss = { menuOpen = false },
+                onKeepVersion = versionUi.onKeepVersion,
+                onOpenVersions = onOpenVersions,
+                onToggleHide = onToggleHide,
+            )
             IconButton(onClick = onDelete, modifier = Modifier.testTag(TestTags.TEMPLATE_DELETE)) {
                 Icon(
                     imageVector = Icons.Filled.Delete,

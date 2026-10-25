@@ -649,7 +649,7 @@ private suspend fun buildProgramDocument(
     val templateIds = slots.map { it.templateId }.distinct()
     val templates = templateIds.mapNotNull { database.templateDao().findById(it) }
     val templateExercises = templateIds.flatMap { database.templateDao().findTemplateExercises(it) }
-    val templateSets = templateIds.flatMap { database.templateDao().findTemplateSets(it) }
+    val templateSets = templateIds.flatMap { database.templateSetDao().findTemplateSets(it) }
     // The definition of every exercise the plan names, so a receiving device can create the ones it
     // has never seen — a user's own exercise id means nothing anywhere else (N47) — **and of every row above
     // them** (N103, N110). A movement's category is part of its definition: a document naming a movement
@@ -822,9 +822,6 @@ private suspend fun applyProgramEdit(
 
     val writer = ProgramEditWriter(
         document = document,
-        // The device's own rows, so a write this document cannot describe — `hiddenAt` (N214) — is
-        // carried across rather than cleared.
-        snapshot = snapshot,
         changes = ready.changes,
         now = now,
         backupDao = database.backupDao(),
@@ -856,14 +853,6 @@ private suspend fun applyProgramEdit(
  */
 private class ProgramEditWriter(
     private val document: ProgramDocument,
-    /**
-     * The program as the device holds it, read in the same transaction (N171, N214).
-     *
-     * Carried for the columns a program document **cannot** describe: a template's `hiddenAt` is the
-     * library's view rather than the program's definition, so the decoded document always says null,
-     * and writing that back would unhide a workout on any edit that touched it.
-     */
-    private val snapshot: ProgramDocument,
     changes: List<Change>,
     private val now: Long,
     private val backupDao: BackupDao,
@@ -916,14 +905,11 @@ private class ProgramEditWriter(
     }
 
     suspend fun writeTemplates(): Int {
-        // A program document cannot carry `hiddenAt` — hiding is the library's view, not the plan's
-        // definition — so `toEntity()` reads null for it. The device's value is what survives an edit,
-        // and a workout arriving with a program is offered: nothing the app creates starts hidden.
-        val hiddenOnDevice = snapshot.templates.associate { it.id to it.hiddenAt }
         val added = document.templates.filter { it.id in ids(ChangeKind.TEMPLATE_ADDED) }
         if (added.isNotEmpty()) {
             backupDao.insertTemplates(
                 added.map {
+                    // A workout arriving with a program is offered: nothing the app creates starts hidden.
                     it.toEntity().copy(
                         createdAt = now,
                         updatedAt = now,
@@ -933,17 +919,11 @@ private class ProgramEditWriter(
                 },
             )
         }
+        // A targeted write rather than the whole row: the document cannot carry `hiddenAt`, so a
+        // full-row update would unhide a workout the lifter hid (ROADMAP N214).
         val updated = document.templates.filter { it.id in ids(ChangeKind.TEMPLATE_UPDATED) }
-        if (updated.isNotEmpty()) {
-            editDao.updateTemplates(
-                updated.map {
-                    it.toEntity().copy(
-                        updatedAt = now,
-                        deletedAt = null,
-                        hiddenAt = hiddenOnDevice[it.id],
-                    )
-                },
-            )
+        updated.forEach {
+            editDao.updateTemplatePlan(id = it.id, name = it.name, versionOf = it.versionOf, at = now)
         }
         return added.size + updated.size
     }

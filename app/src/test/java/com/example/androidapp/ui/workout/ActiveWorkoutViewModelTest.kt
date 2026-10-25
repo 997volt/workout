@@ -2119,7 +2119,8 @@ class ActiveWorkoutViewModelTest {
         override suspend fun deleteTemplate(templateId: String): DataResult<Unit> = notUsed()
         override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> =
             notUsed()
-                override suspend fun addExercise(templateId: String, exerciseId: String): DataResult<Unit> =
+
+        override suspend fun addExercise(templateId: String, exerciseId: String): DataResult<Unit> =
             notUsed()
 
         override suspend fun removeExercise(templateExerciseId: String): DataResult<Unit> =

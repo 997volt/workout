@@ -53,8 +53,22 @@ interface ProgramEditDao {
     @Update
     suspend fun updateProgramSlots(rows: List<ProgramSlotEntity>): Int
 
-    @Update
-    suspend fun updateTemplates(rows: List<TemplateEntity>): Int
+    /**
+     * Rewrites the columns a program edit **owns** on a template, and nothing else (ROADMAP N214).
+     *
+     * `@Update` would write every column, and a program document cannot describe `hiddenAt` — hiding is
+     * the library's view, not the program's definition — so the decoded row reads as null and would
+     * bring a workout the lifter hid back into the offers. The columns named here are exactly what a
+     * document carries; the rest of the row is the device's.
+     */
+    @Query(
+        """
+        UPDATE templates
+        SET name = :name, versionOf = :versionOf, updatedAt = :at, deletedAt = NULL
+        WHERE id = :id
+        """,
+    )
+    suspend fun updateTemplatePlan(id: String, name: String, versionOf: String?, at: Long): Int
 
     @Update
     suspend fun updateTemplateExercises(rows: List<TemplateExerciseEntity>): Int

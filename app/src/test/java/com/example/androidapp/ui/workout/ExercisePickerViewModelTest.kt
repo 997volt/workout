@@ -591,7 +591,7 @@ class ExercisePickerViewModelTest {
         override suspend fun deleteTemplate(templateId: String): DataResult<Unit> = unused()
         override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> =
             unused()
-        
+
         override suspend fun addExercise(templateId: String, exerciseId: String): DataResult<Unit> {
             if (failAdds) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             added += templateId to exerciseId

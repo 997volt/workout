@@ -382,7 +382,8 @@ private class FakeTemplateRepository(
     override suspend fun deleteTemplate(templateId: String): DataResult<Unit> = unused()
     override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> =
         unused()
-        override suspend fun setSupersetGroup(
+
+    override suspend fun setSupersetGroup(
         templateExerciseIds: List<String>,
         group: Int?,
     ): DataResult<Unit> = unused()

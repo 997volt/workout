@@ -251,6 +251,7 @@ class TemplatesViewModelTest {
         var createdId = "t-new"
         var createdName: String? = null
         var failWrites = false
+
         /** Every hide or unhide, as the id and the state asked for (ROADMAP N214). */
         val hiddenWrites = mutableListOf<Pair<String, Boolean>>()
 

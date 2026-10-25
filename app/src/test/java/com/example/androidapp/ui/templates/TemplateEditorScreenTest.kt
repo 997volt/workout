@@ -76,7 +76,7 @@ class TemplateEditorScreenTest {
         val onOpenVersion: (WorkoutTemplate) -> Unit = {},
         val onDismissVersion: () -> Unit = {},
         /** Hiding the plan from the choices, or bringing it back (ROADMAP N214). */
-        val onToggleHidden: () -> Unit = {},
+        val onToggleHide: () -> Unit = {},
         val onDismissHiddenNotice: () -> Unit = {},
     )
 
@@ -132,7 +132,7 @@ class TemplateEditorScreenTest {
                     onOpenVersion = actions.onOpenVersion,
                     onDismissVersion = actions.onDismissVersion,
                 ),
-                onToggleHidden = actions.onToggleHidden,
+                onToggleHide = actions.onToggleHide,
                 hiddenChange = hiddenChange,
                 onDismissHiddenNotice = actions.onDismissHiddenNotice,
                 onBack = {},
@@ -157,7 +157,7 @@ class TemplateEditorScreenTest {
     fun theEditorsMenu_hidesAPlanThatHoldsSomething() {
         // ROADMAP N214: the item sits under the versions, which is where the plan's own actions are.
         var toggled = false
-        setScreen(actions = Actions(onToggleHidden = { toggled = true }))
+        setScreen(actions = Actions(onToggleHide = { toggled = true }))
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSIONS_MENU).performClick()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_HIDE).performClick()
@@ -193,7 +193,7 @@ class TemplateEditorScreenTest {
                 ),
                 exercises = emptyList(),
             ),
-            actions = Actions(onToggleHidden = { toggled = true }),
+            actions = Actions(onToggleHide = { toggled = true }),
         )
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSIONS_MENU).performClick()

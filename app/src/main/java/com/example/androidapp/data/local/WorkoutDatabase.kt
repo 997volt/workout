@@ -89,6 +89,9 @@ abstract class WorkoutDatabase : RoomDatabase() {
     /** Templates and their exercises (ROADMAP N3). */
     abstract fun templateDao(): TemplateDao
 
+    /** A plan's planned sets, split out of [TemplateDao] at schema 9 (ROADMAP N3, N14). */
+    abstract fun templateSetDao(): TemplateSetDao
+
     /** Programs and their slots (ROADMAP P3.3). */
     abstract fun programDao(): ProgramDao
 

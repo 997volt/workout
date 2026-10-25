@@ -335,7 +335,7 @@ class TemplateEditorViewModel @Inject constructor(
      * out of step with what is stored. **Stays in the editor**: unlike a delete, the plan is still here,
      * so the screen still has something to show and the item flips to *Unhide*.
      */
-    fun onToggleHidden() {
+    fun onToggleHide() {
         val template = uiState.value.template ?: return
         val hide = template.hiddenAt == null
         viewModelScope.launch {

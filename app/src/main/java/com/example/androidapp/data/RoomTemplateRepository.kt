@@ -5,6 +5,7 @@ import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.TemplateDao
 import com.example.androidapp.data.local.TemplateEntity
+import com.example.androidapp.data.local.TemplateSetDao
 import com.example.androidapp.data.local.TemplateExerciseEntity
 import com.example.androidapp.data.local.TemplateSetEntity
 import com.example.androidapp.data.local.WorkoutDatabase
@@ -49,6 +50,7 @@ class RoomTemplateRepository @Inject constructor(
 ) : TemplateRepository {
 
     private val dao = database.templateDao()
+    private val setDao = database.templateSetDao()
 
     /**
      * Every live template, or only the ones a picker may offer (ROADMAP N214).
@@ -78,7 +80,7 @@ class RoomTemplateRepository @Inject constructor(
         // `findById` hides a version, so a version of a version is refused here rather than at the UI.
         val template = dao.findById(templateId) ?: throw NotFoundException("template $templateId")
         val exercises = dao.findTemplateExercises(templateId)
-        val sets = dao.findTemplateSets(templateId).groupBy { it.templateExerciseId }
+        val sets = setDao.findTemplateSets(templateId).groupBy { it.templateExerciseId }
         val now = timeSource.nowEpochMillis()
 
         database.withTransaction {
@@ -106,7 +108,7 @@ class RoomTemplateRepository @Inject constructor(
                     ),
                 )
                 sets[exercise.id].orEmpty().forEach { set ->
-                    dao.insertTemplateSet(
+                    setDao.insertTemplateSet(
                         set.copy(
                             id = UUID.randomUUID().toString(),
                             templateExerciseId = copyId,
@@ -125,7 +127,7 @@ class RoomTemplateRepository @Inject constructor(
     override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> =
         combine(
             dao.observeTemplateExercises(templateId),
-            dao.observeTemplateSets(templateId),
+            setDao.observeTemplateSets(templateId),
         ) { exercises, sets ->
             val byExercise = sets.groupBy { it.templateExerciseId }
             exercises.map { row ->
@@ -134,7 +136,7 @@ class RoomTemplateRepository @Inject constructor(
         }
 
     override fun observeSets(templateId: String): Flow<List<TemplateSet>> =
-        dao.observeTemplateSets(templateId).map { rows -> rows.map { it.toDomain() } }
+        setDao.observeTemplateSets(templateId).map { rows -> rows.map { it.toDomain() } }
 
     override suspend fun createTemplate(name: String): DataResult<String> = dataResultOf {
         val trimmed = requireTemplateName(name)
@@ -177,7 +179,7 @@ class RoomTemplateRepository @Inject constructor(
                     deletedAt = null,
                 ),
             )
-            val plan = PlanBeingBuilt(dao = dao, templateId = templateId, now = now)
+            val plan = PlanBeingBuilt(dao = dao, setDao = setDao, templateId = templateId, now = now)
             exercises.forEachIndexed { index, exercise ->
                 copyExerciseInto(
                     plan = plan,
@@ -268,9 +270,9 @@ class RoomTemplateRepository @Inject constructor(
         database.withTransaction {
             // One statement moves the existing sets down; the ramp then takes indices 0..n-1 in the
             // order it was computed, so the plan reads warm-ups first and work after (ROADMAP B34).
-            dao.shiftSetIndexes(templateExerciseId, by = edits.size, at = now)
+            setDao.shiftSetIndexes(templateExerciseId, by = edits.size, at = now)
             edits.forEachIndexed { index, edit ->
-                dao.insertTemplateSet(
+                setDao.insertTemplateSet(
                     TemplateSetEntity(
                         id = UUID.randomUUID().toString(),
                         templateExerciseId = templateExerciseId,
@@ -303,7 +305,7 @@ class RoomTemplateRepository @Inject constructor(
             id = UUID.randomUUID().toString(),
             templateExerciseId = templateExerciseId,
             // Appended, so the plan reads in the order it was written.
-            setIndex = dao.maxSetIndex(templateExerciseId) + 1,
+            setIndex = setDao.maxSetIndex(templateExerciseId) + 1,
             role = edit.role,
             targetWeightGrams = edit.targetWeightGrams,
             targetAssistanceGrams = edit.targetAssistanceGrams,
@@ -321,13 +323,13 @@ class RoomTemplateRepository @Inject constructor(
         // which problems this write *creates* rather than which ones it inherits (B59).
         val sets = plannedSetsOf(exercise)
         validateRun(stored = sets, after = sets + row.toDomain())
-        dao.insertTemplateSet(row)
+        setDao.insertTemplateSet(row)
     }
 
     override suspend fun updateSet(templateSetId: String, edit: TemplateSetEdit): DataResult<Unit> =
         dataResultOf {
             validate(edit)
-            val stored = dao.findTemplateSet(templateSetId)
+            val stored = setDao.findTemplateSet(templateSetId)
                 ?: throw NotFoundException("template set $templateSetId")
             val edited = stored.copy(
                 role = edit.role,
@@ -347,7 +349,7 @@ class RoomTemplateRepository @Inject constructor(
                 stored = sets,
                 after = sets.map { if (it.id == templateSetId) edited.toDomain() else it },
             )
-            val updated = dao.updateTemplateSet(edited)
+            val updated = setDao.updateTemplateSet(edited)
             if (updated == 0) throw NotFoundException("template set $templateSetId")
         }
 
@@ -371,7 +373,7 @@ class RoomTemplateRepository @Inject constructor(
      * indistinguishable from ones the lifter authored. Deleting is the rule the shape was planned with.
      */
     override suspend fun removeSet(templateSetId: String): DataResult<Unit> = dataResultOf {
-        val stored = dao.findTemplateSet(templateSetId)
+        val stored = setDao.findTemplateSet(templateSetId)
             ?: throw NotFoundException("template set $templateSetId")
         val exercise = dao.findTemplateExercise(stored.templateExerciseId)
             ?: throw NotFoundException("template exercise ${stored.templateExerciseId}")
@@ -401,13 +403,13 @@ class RoomTemplateRepository @Inject constructor(
         }
         val now = timeSource.nowEpochMillis()
         database.withTransaction {
-            going.forEach { dao.softDeleteTemplateSet(id = it, at = now) }
-            dao.findTemplateSets(exercise.templateId)
+            going.forEach { setDao.softDeleteTemplateSet(id = it, at = now) }
+            setDao.findTemplateSets(exercise.templateId)
                 .filter { it.templateExerciseId == exercise.id }
                 .sortedBy { it.setIndex }
                 .forEachIndexed { position, row ->
                     if (row.setIndex != position) {
-                        dao.updateTemplateSet(row.copy(setIndex = position, updatedAt = now))
+                        setDao.updateTemplateSet(row.copy(setIndex = position, updatedAt = now))
                     }
                 }
         }
@@ -435,14 +437,14 @@ class RoomTemplateRepository @Inject constructor(
     override suspend fun restoreSet(templateSetId: String): DataResult<Unit> = dataResultOf {
         // The row the undo names may be hidden, so it is read through the one query that can see it — and
         // that query carries the plan too, because the rows to renumber are read back by template.
-        val removed = dao.findTemplateSetWithPlan(templateSetId)
+        val removed = setDao.findTemplateSetWithPlan(templateSetId)
             ?: throw NotFoundException("template set $templateSetId")
         val hiddenAt = removed.deletedAt
             ?: throw InvalidInputException("That planned set was not removed")
 
         val now = timeSource.nowEpochMillis()
         database.withTransaction {
-            val all = dao.findTemplateSetsIncludingDeleted(removed.owningTemplateId)
+            val all = setDao.findTemplateSetsIncludingDeleted(removed.owningTemplateId)
                 .filter { it.templateExerciseId == removed.templateExerciseId }
             val coming = all.filter { it.deletedAt == hiddenAt }
             val live = all.filter { it.deletedAt == null }
@@ -451,7 +453,7 @@ class RoomTemplateRepository @Inject constructor(
             (live.take(above) + coming.sortedBy { it.setIndex } + live.drop(above))
                 .forEachIndexed { position, set ->
                     if (set.setIndex != position || set.deletedAt != null) {
-                        dao.updateTemplateSet(
+                        setDao.updateTemplateSet(
                             set.copy(setIndex = position, deletedAt = null, updatedAt = now),
                         )
                     }
@@ -516,7 +518,7 @@ class RoomTemplateRepository @Inject constructor(
 
     /** This exercise's planned sets in stored order, for the rules that are about the run (N79). */
     private suspend fun plannedSetsOf(exercise: TemplateExerciseEntity): List<TemplateSet> =
-        dao.findTemplateSets(exercise.templateId)
+        setDao.findTemplateSets(exercise.templateId)
             .filter { it.templateExerciseId == exercise.id }
             .map { it.toDomain() }
             .sortedBy { it.setIndex }
@@ -672,6 +674,7 @@ private fun requireTemplateName(name: String): String {
 /** The plan a copy is being written into: what every exercise shares. */
 private class PlanBeingBuilt(
     val dao: TemplateDao,
+    val setDao: TemplateSetDao,
     val templateId: String,
     val now: Long,
 )
@@ -705,7 +708,7 @@ private suspend fun copyExerciseInto(
         ),
     )
     sets.forEachIndexed { setIndex, set ->
-        plan.dao.insertTemplateSet(
+        plan.setDao.insertTemplateSet(
             TemplateSetEntity(
                 id = UUID.randomUUID().toString(),
                 templateExerciseId = plannedId,
