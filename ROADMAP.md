@@ -17,8 +17,13 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** A weight goal's past can be entered, corrected and removed (N215) and is in
-[CHANGELOG.md](CHANGELOG.md).
+**The weight line breaks where nothing was weighed.** The weight series is built from every measurement row, so a
+tape day — or a daily entry saved with the weight left blank — is a null reading in it, and the chart breaks there
+although the two weigh-ins either side are not in question. A day with no entry at all is already spanned.
+
+| # | What it changes |
+| --- | --- |
+| B221 | **A body metric's series is the entries that state it.** A tape entry is not a weigh-in, and a daily entry that left the weight blank is not one either: neither is a moment of the weight series, so the line runs between the readings that exist instead of stopping at every day something else was recorded. The scope is the three body metrics. A tape site, a soreness score and a joint site keep N37's break, because there the entry *is* a moment of that series and saying nothing about it is the answer — a skipped site is a gap, not another site's value. |
 
 ## Later — decided, and not being started
 
