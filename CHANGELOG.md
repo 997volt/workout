@@ -13,7 +13,7 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
-## [Unreleased]
+## [2.15] — 2026-10-25 (versionCode 35)
 
 ### Added
 
