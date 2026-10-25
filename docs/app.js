@@ -3023,6 +3023,7 @@
       bodyStatus: byId('bodyStatus'),
       previewProgramEdit: byId('previewProgramEdit'),
       downloadProgramEdit: byId('downloadProgramEdit'),
+      downloadProgramAdd: byId('downloadProgramAdd'),
       saveProgramDraft: byId('saveProgramDraft'),
       bodyPanel: byId('panel-body'),
       bodySummary: byId('bodySummary'),
@@ -7246,6 +7247,10 @@
     ui.elements.previewProgramEdit.disabled = !has;
     ui.elements.downloadProgramEdit.disabled = true;
     ui.elements.saveProgramDraft.disabled = !has;
+    // An add is a different file only when an edit is what is open: a new program's download is
+    // already one, so the action would be the same button twice (N172).
+    ui.elements.downloadProgramAdd.hidden = !has || isNew;
+    ui.elements.downloadProgramAdd.disabled = !has;
     setText(ui.elements.previewProgramEdit, isNew ? 'Check the program' : 'Preview changes');
     setText(ui.elements.downloadProgramEdit, isNew ? 'Download program' : 'Download edit');
     if (!has) {
@@ -7925,6 +7930,22 @@
     };
   }
 
+  /**
+   * The working copy as a proposal to add (N172).
+   *
+   * The one thing an edit cannot become by itself: a program the receiving device does not hold has
+   * no base to plan against, and the app refuses an edit with no program to change. The marker is
+   * the whole difference — the ids and timestamps travel unchanged, so the app's insert-only merge
+   * adds it once and a second load of the same file is a no-op (B180). The version is stamped here
+   * for the reason opening stamps it (B198): the file this build writes is the one it reads.
+   */
+  function editorAddPayload(ed) {
+    var document = editorDeepCopy(ed.working);
+    delete document.edit;
+    document.formatVersion = programFormatVersion();
+    return { text: JSON.stringify(document, null, 2) + '\n', fileName: 'program-add.json' };
+  }
+
   /** A blank program in the editor: no snapshot, no edit marker, validated and downloaded (N172). */
   function editorStartNew() {
     ui.state.programEditor = {
@@ -8001,6 +8022,23 @@
   }
 
   /**
+   * The core's refusals, listed in the panel the preview and both downloads share (N172).
+   *
+   * Extracted at its second caller rather than repeated: three paths ask the core a question and
+   * three would otherwise write the same heading, list and item text by hand.
+   */
+  function editorShowProblems(heading, problems) {
+    var host = ui.elements.editorPreview;
+    host.textContent = '';
+    host.appendChild(h('p', 'refusal', heading));
+    var list = document.createElement('ul');
+    (problems || []).forEach(function (problem) {
+      list.appendChild(h('li', '', editorProblemText(problem)));
+    });
+    host.appendChild(list);
+  }
+
+  /**
    * The new-program half of the check button (N172): validate, not plan.
    *
    * There is no export to plan an edit against, so the shared core's `validate` is the whole
@@ -8018,19 +8056,14 @@
     }
     var problems = checked.problems || [];
     ed.preview = { ok: problems.length === 0, problems: problems, changes: [], warnings: [] };
-    var host = ui.elements.editorPreview;
-    host.textContent = '';
     ui.elements.downloadProgramEdit.disabled = problems.length > 0;
     if (problems.length > 0) {
-      host.appendChild(h('p', 'refusal', 'The app would refuse this program:'));
-      var list = document.createElement('ul');
-      problems.forEach(function (problem) {
-        list.appendChild(h('li', '', editorProblemText(problem)));
-      });
-      host.appendChild(list);
+      editorShowProblems('The app would refuse this program:', problems);
       editorMessage('The program is not ready; fix the problems above.');
       return;
     }
+    var host = ui.elements.editorPreview;
+    host.textContent = '';
     var days = (ed.working.slots || []).length;
     var workouts = (ed.working.templates || []).length;
     var exercises = (ed.working.templateExercises || []).length;
@@ -8061,18 +8094,13 @@
     }
     ed.preview = planned;
     ui.elements.downloadProgramEdit.disabled = !planned.ok;
-    var host = ui.elements.editorPreview;
-    host.textContent = '';
     if (!planned.ok) {
-      host.appendChild(h('p', 'refusal', 'The app would refuse this edit:'));
-      var problems = document.createElement('ul');
-      (planned.problems || []).forEach(function (problem) {
-        problems.appendChild(h('li', '', editorProblemText(problem)));
-      });
-      host.appendChild(problems);
+      editorShowProblems('The app would refuse this edit:', planned.problems);
       editorMessage('The edit is not ready; fix the problems above.');
       return;
     }
+    var host = ui.elements.editorPreview;
+    host.textContent = '';
 
     var summary = editorSummary(planned.changes);
     host.appendChild(h('p', '', summary.length > 0 ? 'The app would: ' + summary.join(' \u00b7 ') + '.' : 'The app would change nothing.'));
@@ -8114,6 +8142,40 @@
       : 'Downloaded program-edit.json. Load it in Programs, then Load.');
   }
 
+  /**
+   * Downloads the working copy as an add, which is the file an edit cannot be (N172).
+   *
+   * Validated rather than planned — an add has no base to plan against — and unlike *Download edit*
+   * it is not armed by a Preview: there is no diff to promise, so the click checks with the
+   * shared `validate` and writes nothing when the app would refuse the program, stating why in the
+   * same panel. The ids travel, so the app's insert-only merge adds it once.
+   */
+  function editorDownloadAdd() {
+    var core = programCore();
+    var ed = ui.state.programEditor;
+    if (!core || !ed || !ed.working) { return; }
+    // What is checked is what is written, so a movement nothing names leaves first (B187).
+    editorPruneExercises(ed.working);
+    var payload = editorAddPayload(ed);
+    var checked;
+    try {
+      checked = JSON.parse(core.validateJson(payload.text));
+    } catch (problem) {
+      editorMessage('The shared core could not check this program: ' + problem);
+      return;
+    }
+    var problems = checked.problems || [];
+    if (problems.length > 0) {
+      editorShowProblems('The app would refuse this program:', problems);
+      editorMessage('The program is not ready; fix the problems above.');
+      return;
+    }
+    downloadText(payload.text, payload.fileName);
+    announce('Downloaded program-add.json. Load it in Programs, then Load, to add it.');
+    editorMessage('Downloaded program-add.json: a load adds it as a new program, and its id makes a ' +
+      'second load of the same file do nothing.');
+  }
+
   function editorSaveDraft() {
     var ed = ui.state.programEditor;
     if (!ed || !ed.working) { return; }
@@ -8144,6 +8206,7 @@
     });
     elements.previewProgramEdit.addEventListener('click', editorPreview);
     elements.downloadProgramEdit.addEventListener('click', editorDownload);
+    elements.downloadProgramAdd.addEventListener('click', editorDownloadAdd);
     elements.saveProgramDraft.addEventListener('click', editorSaveDraft);
   }
 
@@ -8191,6 +8254,7 @@
     editorOpenSnapshot: editorOpenSnapshot,
     editorPlanEdit: editorPlanEdit,
     editorDownloadPayload: editorDownloadPayload,
+    editorAddPayload: editorAddPayload,
     editorLoadText: editorLoadText,
     editorParseLoad: editorParseLoad,
     editorResolveExercise: editorResolveExercise,

@@ -472,6 +472,14 @@ round trip.
   app refuses it if the program changed since (N171). A row the lifter deleted on the phone counts: the app
   compares against its own rows with the deleted ones included, because a document cannot carry a deletion.
   A program taken from a backup carries the backup's time, so an old backup is refused rather than merged.
+- **An opened program can also leave as an add.** *Download as new program* writes the same document with the
+  `edit` marker removed, as `program-add.json`, for a program the receiving device does not hold yet — the one
+  file an edit cannot be, because the app plans an edit against a program it already has and answers "not on
+  this device" otherwise. The ids and timestamps travel unchanged, so the app's insert-only merge adds it once
+  and a second load of the same file does nothing (B180). There is no base to plan against, so the click is
+  **validated, not planned**: a refusal lists the app's problems and writes no file, and unlike *Download edit*
+  the button is not armed by a Preview — there is no diff to promise. A new program's own *Download program* is
+  already marker-free, so this action appears only when an edit is what is open.
 - **The library is read-only, and a name resolves before it is created.** A name that matches the opened
   document, the loaded export's movements or the seeded library *is* that movement; only a name none of them
   has is created, carried in the document so the app can add it. A movement nothing ends up naming leaves the

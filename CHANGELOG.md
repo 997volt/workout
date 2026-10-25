@@ -17,6 +17,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A program opened in the editor can be downloaded as an add** (a request in use). *Download as new program*
+  writes `program-add.json` — the same document with no `edit` marker — for a program the receiving device does
+  not hold yet, where an edit is refused because the app plans an edit against a program it already has. The ids
+  and timestamps travel unchanged, so the load adds it once and a second load of the same file adds nothing. There
+  is no base to plan against, so the click is validated rather than planned: a refusal lists the app's problems
+  and writes no file.
+
 - **The statistics screen remembers the series you read** (N212). A short row above the series picker holds the
   three most recently chosen series, newest first, one tap from the chart — the current one reads as selected.
   Only an explicit choice is recorded, so opening the tab does not push the series actually read out of the row,

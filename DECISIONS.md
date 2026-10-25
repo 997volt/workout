@@ -1469,7 +1469,14 @@ the rule; that one argues it.
   panel's or the app's job. **Start a new program** makes a blank document: there is no base to plan
   against, so *Check* runs the shared `validate` and the download carries no `edit` marker — the app's
   insert-only merge adds it, exactly as the sheet's document is added. The page mints the id, so a
-  re-import of the same file is a no-op rather than a twin.
+  re-import of the same file is a no-op rather than a twin. **An opened program can also leave as an
+  add** — the same document with no `edit` marker, as `program-add.json`, its ids unchanged — because
+  an edit cannot reach a program the receiving device does not hold: the app looks the program up
+  before it plans, and answers "not on this device" to a document that would otherwise be perfect.
+  The alternative routes are worse than a second button: starting over cannot carry what the editor
+  holds, and a table would lose it. It is **validated, not planned** (an add has no base to plan
+  against), and it is not armed by a Preview like *Download edit* — there is no diff to promise, so
+  the click checks and writes nothing when the app would refuse, stating why.
 - **A run of identical sets is one line with a count, and the count is a view.** A plan stores one row
   per set and the app reads one row per set — two sets can differ by role, load, reps, drop value or
   note — so the page draws only **neighbouring** sets that agree on all of those as one line, and its

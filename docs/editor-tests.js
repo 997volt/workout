@@ -439,6 +439,30 @@
       t.eq(written.exercises[0].name, 'Back Squat', 'the movement travels');
     });
 
+    check('an opened program can also leave as an add, with no base and its ids unchanged', function () {
+      // The program a receiving device does not hold yet: an edit names a base that is not there,
+      // and the app refuses it rather than adding anything. The add is the same document with the
+      // marker gone — the ids travel, so the app's insert-only merge adds it once (N172, B180).
+      var document = baseDocument();
+      var opened = H.editorOpenSnapshot(document, null);
+      t.ok('edit' in opened.working, 'opening makes it an edit');
+
+      var payload = H.editorAddPayload(opened);
+      t.eq(payload.fileName, 'program-add.json');
+      var written = JSON.parse(payload.text);
+      t.ok(!('edit' in written), 'an add names no base');
+      t.eq(written.formatVersion, shared.programFormatVersion(), 'the core writes the version');
+      t.eq(written.program.id, 'pgm_1', 'the id is the identity, so a re-import adds nothing');
+      t.eq(written.program.name, 'Block');
+      t.eq(written.slots.length, 1);
+      t.eq(written.templates[0].name, 'Upper A', 'the workout travels');
+      t.eq(written.templateSets[0].targetWeightGrams, 80000, 'the plan travels');
+      t.eq(written.exercises[0].name, 'Bench Press', 'the movement travels');
+      t.eq(JSON.parse(shared.validateJson(payload.text)).problems.length, 0,
+        'the app would add it');
+      t.ok('edit' in opened.working, 'the edit is still open: the add was a copy');
+    });
+
     // Exact membership, not order: the planner writes categories in its own order, and the claim is
     // which changes it makes rather than how it sorts them.
     function listed(list) {
