@@ -97,6 +97,16 @@ class TemplateEditorViewModel @Inject constructor(
     private val _versionKept = MutableStateFlow(false)
     val versionKept: StateFlow<Boolean> = _versionKept.asStateFlow()
 
+    /**
+     * True when the plan was just hidden, false when it was brought back, null when there is nothing to
+     * say (ROADMAP N214).
+     *
+     * A one-shot like [versionKept]: the edit that happened is a flag on the row, so **nothing else on
+     * this screen changes**, and the sentence is the whole of what the lifter sees.
+     */
+    private val _hiddenChange = MutableStateFlow<Boolean?>(null)
+    val hiddenChange: StateFlow<Boolean?> = _hiddenChange.asStateFlow()
+
     val uiState: StateFlow<TemplateEditorUiState> = combine(
         repository.observeTemplate(templateId),
         repository.observeExercises(templateId),
@@ -316,6 +326,33 @@ class TemplateEditorViewModel @Inject constructor(
                 is DataResult.Failure -> error.value = result.error
             }
         }
+    }
+
+    /**
+     * Hides the plan from the choices, or brings it back (ROADMAP N214).
+     *
+     * The state is read from the row rather than passed in, so the item that asked for it cannot be
+     * out of step with what is stored. **Stays in the editor**: unlike a delete, the plan is still here,
+     * so the screen still has something to show and the item flips to *Unhide*.
+     */
+    fun onToggleHidden() {
+        val template = uiState.value.template ?: return
+        val hide = template.hiddenAt == null
+        viewModelScope.launch {
+            when (val result = repository.setTemplateHidden(templateId, hidden = hide)) {
+                is DataResult.Success -> {
+                    error.value = null
+                    _hiddenChange.value = hide
+                }
+
+                is DataResult.Failure -> error.value = result.error
+            }
+        }
+    }
+
+    /** The hide or unhide sentence has been shown, so it is not shown again. */
+    fun onDismissHiddenNotice() {
+        _hiddenChange.value = null
     }
 
     /** The "version kept" sentence has been shown, so it is not shown again. */

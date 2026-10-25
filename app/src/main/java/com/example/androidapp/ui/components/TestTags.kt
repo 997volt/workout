@@ -417,6 +417,19 @@ object TestTags {
     fun templateRow(id: String) = "template_row_$id"
 
     /**
+     * Hiding a workout from the choices, and the two controls that undo it (ROADMAP N214).
+     *
+     * The filter is one control in the list's own header; the row's marker says a visible row is a hidden
+     * one being shown, and its own button is the way back without opening the editor.
+     */
+    const val TEMPLATES_HIDDEN_FILTER = "templates_hidden_filter"
+    fun templateHidden(id: String) = "template_hidden_$id"
+    fun templateUnhide(id: String) = "template_unhide_$id"
+
+    /** The editor's overflow item that hides or brings back the plan (ROADMAP N214). */
+    const val TEMPLATE_HIDE = "template_hide"
+
+    /**
      * A planned exercise's name, which opens and folds its block (ROADMAP N91).
      *
      * The exercise's own row tag stays the address of the row as a whole; this is the control inside it,

@@ -36,6 +36,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import java.time.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -74,6 +75,9 @@ class TemplateEditorScreenTest {
         val onDismissVersionNotice: () -> Unit = {},
         val onOpenVersion: (WorkoutTemplate) -> Unit = {},
         val onDismissVersion: () -> Unit = {},
+        /** Hiding the plan from the choices, or bringing it back (ROADMAP N214). */
+        val onToggleHidden: () -> Unit = {},
+        val onDismissHiddenNotice: () -> Unit = {},
     )
 
     /**
@@ -103,6 +107,7 @@ class TemplateEditorScreenTest {
         actions: Actions = Actions(),
         openVersion: TemplateVersionPlan? = null,
         versionKept: Boolean = false,
+        hiddenChange: Boolean? = null,
     ) {
         composeTestRule.setContent {
             TemplateEditorScreen(
@@ -127,6 +132,9 @@ class TemplateEditorScreenTest {
                     onOpenVersion = actions.onOpenVersion,
                     onDismissVersion = actions.onDismissVersion,
                 ),
+                onToggleHidden = actions.onToggleHidden,
+                hiddenChange = hiddenChange,
+                onDismissHiddenNotice = actions.onDismissHiddenNotice,
                 onBack = {},
             )
         }
@@ -143,6 +151,55 @@ class TemplateEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.TEMPLATE_KEEP_VERSION).performClick()
 
         assertTrue("the menu's item is the write", kept)
+    }
+
+    @Test
+    fun theEditorsMenu_hidesAPlanThatHoldsSomething() {
+        // ROADMAP N214: the item sits under the versions, which is where the plan's own actions are.
+        var toggled = false
+        setScreen(actions = Actions(onToggleHidden = { toggled = true }))
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSIONS_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_HIDE).performClick()
+
+        assertTrue("the menu's item is the write", toggled)
+    }
+
+    @Test
+    fun aBrandNewEmptyPlan_offersNoHide_becauseItIsDeletedInstead() {
+        setScreen(
+            state = twoExercises.copy(
+                template = WorkoutTemplate(id = "t1", name = "New template", exerciseCount = 0),
+                exercises = emptyList(),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSIONS_MENU).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_HIDE).assertDoesNotExist()
+    }
+
+    @Test
+    fun aHiddenPlan_canBeBroughtBack_evenWhenItHoldsNothing() {
+        // The asymmetry is deliberate: a hidden plan emptied later must still have a way back (N214).
+        var toggled = false
+        setScreen(
+            state = twoExercises.copy(
+                template = WorkoutTemplate(
+                    id = "t1",
+                    name = "Old plan",
+                    exerciseCount = 0,
+                    hiddenAt = Instant.EPOCH,
+                ),
+                exercises = emptyList(),
+            ),
+            actions = Actions(onToggleHidden = { toggled = true }),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_VERSIONS_MENU).performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_HIDE).performClick()
+
+        assertTrue(toggled)
     }
 
     @Test

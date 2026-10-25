@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.templates
 
 import kotlinx.coroutines.flow.flowOf
+import java.time.Instant
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.DataError
@@ -65,6 +66,87 @@ class TemplatesViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
         assertEquals(listOf("Push day"), state.templates.map { it.name })
+    }
+
+    @Test
+    fun aHiddenWorkout_isNotDrawn_andTheFilterSaysHowManyAre() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(
+                WorkoutTemplate(id = "t1", name = "Push day"),
+                WorkoutTemplate(id = "t2", name = "Autumn plan", hiddenAt = Instant.EPOCH),
+            )
+        }
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
+        observe(viewModel)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals("only the offered workout is drawn", listOf("Push day"), state.templates.map { it.name })
+        assertEquals("and the filter can say there is one", 1, state.hiddenCount)
+        assertFalse("with the filter off", state.showHidden)
+    }
+
+    @Test
+    fun showingHidden_drawsThemInTheSameList() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(
+                WorkoutTemplate(id = "t1", name = "Push day"),
+                WorkoutTemplate(id = "t2", name = "Autumn plan", hiddenAt = Instant.EPOCH),
+            )
+        }
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onShowHiddenChange(true)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.showHidden)
+        assertEquals(
+            "one list, name-ordered, hidden ones included rather than a second section",
+            listOf("Push day", "Autumn plan"),
+            state.templates.map { it.name },
+        )
+        assertEquals(1, state.hiddenCount)
+    }
+
+    @Test
+    fun unhide_writesTheChoice_andReturnsTheWorkoutToTheList() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(
+                WorkoutTemplate(id = "t2", name = "Autumn plan", hiddenAt = Instant.EPOCH),
+            )
+        }
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onUnhide("t2")
+        advanceUntilIdle()
+
+        assertEquals(listOf("t2" to false), repository.hiddenWrites)
+        val state = viewModel.uiState.value
+        assertEquals("the row is back", listOf("t2"), state.templates.map { it.id })
+        assertEquals("and nothing is hidden any more", 0, state.hiddenCount)
+    }
+
+    @Test
+    fun aFailedUnhide_isSurfaced_ratherThanSwallowed() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            failWrites = true
+            templates.value = listOf(
+                WorkoutTemplate(id = "t2", name = "Autumn plan", hiddenAt = Instant.EPOCH),
+            )
+        }
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onUnhide("t2")
+        advanceUntilIdle()
+
+        assertNotNull("the failure reaches the screen's message host", viewModel.uiState.value.error)
     }
 
     @Test
@@ -249,8 +331,14 @@ class TemplatesViewModelTest {
             writeFailureOrSuccess()
 
         override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> {
-            hiddenWrites += templateId to hidden
-            return writeFailureOrSuccess()
+            val result = writeFailureOrSuccess()
+            if (result is DataResult.Success) {
+                hiddenWrites += templateId to hidden
+                templates.value = templates.value.map { row ->
+                    if (row.id == templateId) row.copy(hiddenAt = if (hidden) Instant.EPOCH else null) else row
+                }
+            }
+            return result
         }
 
         override suspend fun addExercise(templateId: String, exerciseId: String): DataResult<Unit> =

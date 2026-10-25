@@ -26,6 +26,8 @@ internal fun TemplateEditorMessages(
     onDismissMessage: () -> Unit,
     onUndoRemoveSet: () -> Unit,
     onDismissUndo: () -> Unit,
+    hiddenChange: Boolean? = null,
+    onDismissHiddenNotice: () -> Unit = {},
 ) {
     ShowRemovedSetUndo(
         pendingUndo = state.undoableSet,
@@ -39,6 +41,34 @@ internal fun TemplateEditorMessages(
         hostState = hostState,
         onDismiss = versionUi.onDismissVersionNotice,
     )
+    ShowHiddenChanged(
+        hidden = hiddenChange,
+        hostState = hostState,
+        onDismiss = onDismissHiddenNotice,
+    )
+}
+
+/**
+ * Hiding or unhiding the plan, said once (ROADMAP N214).
+ *
+ * Nothing else on the screen changes when the item is used — the plan is not deleted and the editor
+ * stays — so the sentence is the confirmation, and the item's own label is the state afterwards.
+ */
+@Composable
+internal fun ShowHiddenChanged(
+    hidden: Boolean?,
+    hostState: SnackbarHostState,
+    onDismiss: () -> Unit,
+) {
+    if (hidden == null) { return }
+    val message = stringResource(
+        if (hidden) R.string.template_hidden_notice else R.string.template_unhidden_notice,
+    )
+    val currentOnDismiss by rememberUpdatedState(onDismiss)
+    LaunchedEffect(hidden) {
+        hostState.showSnackbar(message)
+        currentOnDismiss()
+    }
 }
 
 /**

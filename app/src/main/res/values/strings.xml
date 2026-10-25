@@ -179,6 +179,19 @@
         <item quantity="one">%1$d exercise</item>
         <item quantity="other">%1$d exercises</item>
     </plurals>
+    <!-- Hiding a workout from the choices (ROADMAP N214): it is not a delete, so every sentence says
+         "hidden" rather than gone, and the filter says how many are out of sight. -->
+    <string name="templates_hidden_filter">Hidden (%1$d)</string>
+    <string name="template_hidden_marker">Hidden</string>
+    <string name="template_unhide">Unhide</string>
+    <string name="template_hide">Hide workout</string>
+    <string name="template_unhide_action">Unhide workout</string>
+    <string name="template_hidden_notice">Hidden. The templates list\'s Hidden filter brings it back.</string>
+    <string name="template_unhidden_notice">Back in the list.</string>
+    <!-- Said instead of "no templates yet" when the list is empty because every plan is hidden: the
+         list must not read as data loss (ROADMAP N214). -->
+    <string name="templates_all_hidden">Every workout is hidden</string>
+    <string name="templates_all_hidden_hint">Use the Hidden filter above to bring one back.</string>
     <string name="template_edit_title">Template</string>
     <string name="template_name_label">Name</string>
     <string name="template_save_name">Save name</string>
@@ -981,8 +994,8 @@
     <string name="program_new_workout">New workout</string>
     <string name="program_new_workout_hint">An empty plan, opened for you to fill in.</string>
     <string name="program_pick_title">Add a workout</string>
-    <string name="program_pick_empty">No templates to add yet</string>
-    <string name="program_pick_empty_hint">A slot is a template, so create one first.</string>
+    <string name="program_pick_empty">No workouts to add</string>
+    <string name="program_pick_empty_hint">A day is a workout: create one here, or show a hidden one in the templates list.</string>
     <plurals name="program_slots">
         <item quantity="one">%1$d workout</item>
         <item quantity="other">%1$d workouts</item>

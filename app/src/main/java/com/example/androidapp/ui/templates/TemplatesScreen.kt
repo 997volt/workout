@@ -39,6 +39,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.MessageSnackbar
 import com.example.androidapp.ui.components.TestTags
@@ -100,6 +101,8 @@ fun TemplatesRoute(
             )
         },
         onDismissMessage = viewModel::onErrorShown,
+        onShowHiddenChange = viewModel::onShowHiddenChange,
+        onUnhide = viewModel::onUnhide,
         onBack = onBack,
         onOpenPrograms = onOpenPrograms,
         modifier = modifier,
@@ -123,6 +126,10 @@ fun TemplatesScreen(
     /** A sentence from the point-of-start question, shown on the same host (ROADMAP P3.3). */
     message: String? = null,
     onDismissGateMessage: () -> Unit = {},
+    /** The list's own filter (ROADMAP N214): false draws only the workouts a picker would offer. */
+    onShowHiddenChange: (Boolean) -> Unit = {},
+    /** Puts a workout back in the choices from its row, without opening the editor (N214). */
+    onUnhide: (String) -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val defaultName = stringResource(R.string.template_default_name)
@@ -185,6 +192,8 @@ fun TemplatesScreen(
             state = state,
             onOpenTemplate = onOpenTemplate,
             onStartTemplate = onStartTemplate,
+            onUnhide = onUnhide,
+            onShowHiddenChange = onShowHiddenChange,
             modifier = Modifier.padding(innerPadding),
             startEnabled = !state.hasActiveWorkout,
         )
@@ -196,35 +205,59 @@ private fun TemplatesContent(
     state: TemplatesUiState,
     onOpenTemplate: (String) -> Unit,
     onStartTemplate: (String) -> Unit,
+    onUnhide: (String) -> Unit,
+    onShowHiddenChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     /** False while a session is open, which one template list cannot start (ROADMAP N78). */
     startEnabled: Boolean = true,
 ) {
-    when {
-        state.isLoading -> CenteredMessage(
-            text = stringResource(R.string.templates_loading),
-            modifier = modifier,
-        )
+    Column(modifier = modifier.fillMaxSize()) {
+        // Only when there is something to reveal: a list with nothing hidden gains no control it never
+        // needed, and the filter is the one place the hidden rows come back (ROADMAP N214).
+        if (state.hiddenCount > 0) {
+            AppFilterChip(
+                selected = state.showHidden,
+                onClick = { onShowHiddenChange(!state.showHidden) },
+                label = stringResource(R.string.templates_hidden_filter, state.hiddenCount),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                testTag = TestTags.TEMPLATES_HIDDEN_FILTER,
+            )
+        }
+        when {
+            state.isLoading -> CenteredMessage(
+                text = stringResource(R.string.templates_loading),
+                modifier = Modifier.fillMaxSize(),
+            )
 
-        state.templates.isEmpty() -> CenteredMessage(
-            text = stringResource(R.string.templates_empty),
-            hint = stringResource(R.string.templates_empty_hint),
-            modifier = modifier.testTag(TestTags.TEMPLATES_EMPTY),
-        )
+            // Empty because everything is hidden is not empty: saying "no templates yet" over a library
+            // the lifter tidied would read as data loss (ROADMAP N214).
+            state.templates.isEmpty() && state.hiddenCount > 0 && !state.showHidden -> CenteredMessage(
+                text = stringResource(R.string.templates_all_hidden),
+                hint = stringResource(R.string.templates_all_hidden_hint),
+                modifier = Modifier.fillMaxSize().testTag(TestTags.TEMPLATES_EMPTY),
+            )
 
-        else -> LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            // Leaves room for the extended FAB so it cannot cover the last row.
-            contentPadding = PaddingValues(bottom = 96.dp),
-        ) {
-            items(items = state.templates, key = { it.id }) { template ->
-                TemplateRow(
-                    template = template,
-                    onOpen = { onOpenTemplate(template.id) },
-                    onStart = { onStartTemplate(template.id) },
-                    startEnabled = startEnabled,
-                )
-                HorizontalDivider()
+            state.templates.isEmpty() -> CenteredMessage(
+                text = stringResource(R.string.templates_empty),
+                hint = stringResource(R.string.templates_empty_hint),
+                modifier = Modifier.fillMaxSize().testTag(TestTags.TEMPLATES_EMPTY),
+            )
+
+            else -> LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                // Leaves room for the extended FAB so it cannot cover the last row.
+                contentPadding = PaddingValues(bottom = 96.dp),
+            ) {
+                items(items = state.templates, key = { it.id }) { template ->
+                    TemplateRow(
+                        template = template,
+                        onOpen = { onOpenTemplate(template.id) },
+                        onStart = { onStartTemplate(template.id) },
+                        onUnhide = { onUnhide(template.id) },
+                        startEnabled = startEnabled,
+                    )
+                    HorizontalDivider()
+                }
             }
         }
     }
@@ -235,9 +268,11 @@ private fun TemplateRow(
     template: WorkoutTemplate,
     onOpen: () -> Unit,
     onStart: () -> Unit,
+    onUnhide: () -> Unit,
     modifier: Modifier = Modifier,
     startEnabled: Boolean = true,
 ) {
+    val hidden = template.hiddenAt != null
     ListItem(
         headlineContent = { Text(template.name) },
         supportingContent = {
@@ -249,6 +284,23 @@ private fun TemplateRow(
                         template.exerciseCount,
                     ),
                 )
+                // A row drawn while the filter is on is hidden, and saying so is what keeps it from
+                // reading as an ordinary workout (ROADMAP N214). Its own button is the way back without
+                // opening the editor.
+                if (hidden) {
+                    Text(
+                        text = stringResource(R.string.template_hidden_marker),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag(TestTags.templateHidden(template.id)),
+                    )
+                    AppTextButton(
+                        onClick = onUnhide,
+                        modifier = Modifier.testTag(TestTags.templateUnhide(template.id)),
+                    ) {
+                        Text(stringResource(R.string.template_unhide))
+                    }
+                }
                 // Greying alone would leave "why" to be guessed, and a Start that resumes a workout
                 // from another template is exactly what needs saying (N78).
                 if (!startEnabled) {

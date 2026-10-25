@@ -18,7 +18,17 @@ import kotlinx.coroutines.launch
 
 data class TemplatesUiState(
     val isLoading: Boolean = true,
+    /**
+     * The rows the list draws: every live workout, or only the visible ones while the filter is off.
+     *
+     * A hidden row is drawn **only** when [showHidden] is on, and then it is marked (ROADMAP N214) — the
+     * list is the one surface that shows them, so the whole of "not offered" lives in this one split.
+     */
     val templates: List<WorkoutTemplate> = emptyList(),
+    /** How many live workouts are hidden, so the filter can say the number and hide itself when it is 0. */
+    val hiddenCount: Int = 0,
+    /** True while the hidden ones are drawn (ROADMAP N214): the filter's selected state. */
+    val showHidden: Boolean = false,
     /**
      * True while a session is already open (ROADMAP N78).
      *
@@ -46,6 +56,9 @@ class TemplatesViewModel @Inject constructor(
 
     private val error = MutableStateFlow<DataError?>(null)
 
+    /** The list's own filter (ROADMAP N214). The form's memory, not the document's. */
+    private val showHidden = MutableStateFlow(false)
+
     /** Emits the id of a just-created template, so the screen can open it. */
     private val _created = MutableStateFlow<String?>(null)
     val createdTemplateId: StateFlow<String?> = _created
@@ -56,10 +69,13 @@ class TemplatesViewModel @Inject constructor(
         repository.observeTemplates(includeHidden = true),
         workoutRepository.observeActiveSession(),
         error,
-    ) { templates, session, currentError ->
+        showHidden,
+    ) { templates, session, currentError, showing ->
         TemplatesUiState(
             isLoading = false,
-            templates = templates,
+            templates = if (showing) templates else templates.filter { it.hiddenAt == null },
+            hiddenCount = templates.count { it.hiddenAt != null },
+            showHidden = showing,
             hasActiveWorkout = session != null,
             error = currentError,
         )
@@ -68,6 +84,26 @@ class TemplatesViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
         initialValue = TemplatesUiState(),
     )
+
+    /** Shows or hides the hidden rows, which is the filter and nothing else (ROADMAP N214). */
+    fun onShowHiddenChange(show: Boolean) {
+        showHidden.value = show
+    }
+
+    /**
+     * Puts a workout back in the choices from the list itself, without opening its editor (N214).
+     *
+     * A write like any other, so a failure is said rather than swallowed; on success the row simply
+     * stops being hidden, and the filter's count drops.
+     */
+    fun onUnhide(templateId: String) {
+        viewModelScope.launch {
+            when (val result = repository.setTemplateHidden(templateId, hidden = false)) {
+                is DataResult.Success -> error.value = null
+                is DataResult.Failure -> error.value = result.error
+            }
+        }
+    }
 
     fun onCreateTemplate(name: String) {
         viewModelScope.launch {

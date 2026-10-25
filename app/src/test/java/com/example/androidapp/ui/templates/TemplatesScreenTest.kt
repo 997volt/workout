@@ -12,6 +12,7 @@ import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import java.time.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,6 +36,8 @@ class TemplatesScreenTest {
         onOpen: (String) -> Unit = {},
         onStart: (String) -> Unit = {},
         onOpenPrograms: () -> Unit = {},
+        onShowHiddenChange: (Boolean) -> Unit = {},
+        onUnhide: (String) -> Unit = {},
     ) {
         composeTestRule.setContent {
             TemplatesScreen(
@@ -44,6 +47,8 @@ class TemplatesScreenTest {
                 onStartTemplate = onStart,
                 onBack = {},
                 onOpenPrograms = onOpenPrograms,
+                onShowHiddenChange = onShowHiddenChange,
+                onUnhide = onUnhide,
             )
         }
     }
@@ -130,7 +135,53 @@ class TemplatesScreenTest {
         assertTrue("the button must create, not open", created != null)
     }
 
+    @Test
+    fun nothingHidden_offersNoFilter_atAll() {
+        // A clean list should not gain a control it never needed (ROADMAP N214).
+        setScreen()
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_HIDDEN_FILTER).assertDoesNotExist()
+    }
+
+    @Test
+    fun aHiddenWorkout_drawsWithItsMarker_andTheFilterTurnsOff() {
+        var shown: Boolean? = null
+        setScreen(hiddenTemplate.copy(hiddenCount = 1), onShowHiddenChange = { shown = it })
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_HIDDEN_FILTER).assertIsDisplayed().performClick()
+        composeTestRule.onNodeWithTag(TestTags.templateHidden("t2"), useUnmergedTree = true)
+            .assertExists()
+
+        assertEquals("the state was on, so one tap asks for them to be put away", false, shown)
+    }
+
+    @Test
+    fun aHiddenRowsOwnButton_bringsItBack() {
+        var unhidden: String? = null
+        setScreen(hiddenTemplate, onUnhide = { unhidden = it })
+
+        composeTestRule.onNodeWithTag(TestTags.templateUnhide("t2")).performClick()
+
+        assertEquals("t2", unhidden)
+    }
+
+    @Test
+    fun whenEveryWorkoutIsHidden_theListSaysTheFilterBringsOneBack() {
+        // "No templates yet" over a library the lifter tidied would read as data loss.
+        setScreen(TemplatesUiState(isLoading = false, templates = emptyList(), hiddenCount = 3))
+
+        composeTestRule.onNodeWithText("Every workout is hidden").assertIsDisplayed()
+    }
+
     private companion object {
+        val hiddenTemplate = TemplatesUiState(
+            isLoading = false,
+            showHidden = true,
+            templates = listOf(
+                WorkoutTemplate(id = "t2", name = "Autumn plan", exerciseCount = 4, hiddenAt = Instant.EPOCH),
+            ),
+        )
+
         val twoTemplates = TemplatesUiState(
             isLoading = false,
             templates = listOf(

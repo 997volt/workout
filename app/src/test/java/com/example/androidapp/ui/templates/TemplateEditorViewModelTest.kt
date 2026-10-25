@@ -3,6 +3,7 @@ package com.example.androidapp.ui.templates
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.SetType
 import kotlinx.coroutines.flow.flowOf
+import java.time.Instant
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.domain.model.TemplateSet
 import androidx.lifecycle.SavedStateHandle
@@ -413,6 +414,64 @@ class TemplateEditorViewModelTest {
 
     /** One planned exercise, which is all these tests need to know about it. */
 
+    @Test
+    fun hiding_thePlan_writesTheChoice_andSaysItOnce() = runTest(dispatcher) {
+        // ROADMAP N214: the edit that happened is a flag on the row, so the sentence is the whole of what
+        // the lifter sees — and it is said once, like a kept version's.
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onToggleHidden()
+        advanceUntilIdle()
+
+        assertEquals(listOf("t1" to true), repository.hiddenWrites)
+        assertEquals(true, viewModel.hiddenChange.value)
+
+        viewModel.onDismissHiddenNotice()
+
+        assertNull("the sentence is said once", viewModel.hiddenChange.value)
+    }
+
+    @Test
+    fun aSecondToggle_bringsThePlanBack() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onToggleHidden()
+        advanceUntilIdle()
+        viewModel.onDismissHiddenNotice()
+        viewModel.onToggleHidden()
+        advanceUntilIdle()
+
+        assertEquals(listOf("t1" to true, "t1" to false), repository.hiddenWrites)
+        assertEquals("the item flipped, so the second press brings it back", false, viewModel.hiddenChange.value)
+    }
+
+    @Test
+    fun aFailedHide_isReported_ratherThanSwallowed() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            failWrites = true
+            templates.value = listOf(WorkoutTemplate(id = "t1", name = "Push day"))
+        }
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onToggleHidden()
+        advanceUntilIdle()
+
+        assertNotNull("the failure reaches the screen's host", viewModel.uiState.value.error)
+        assertNull("and no sentence claims it happened", viewModel.hiddenChange.value)
+    }
+
     private class FakeTemplateRepository : TemplateRepository {
         val templates = MutableStateFlow<List<WorkoutTemplate>>(emptyList())
         val exercises = MutableStateFlow<List<TemplateExercise>>(emptyList())
@@ -541,6 +600,9 @@ class TemplateEditorViewModelTest {
         override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> {
             if (failWrites) return failure()
             hiddenWrites += templateId to hidden
+            templates.value = templates.value.map { row ->
+                if (row.id == templateId) row.copy(hiddenAt = if (hidden) Instant.EPOCH else null) else row
+            }
             return DataResult.Success(Unit)
         }
 

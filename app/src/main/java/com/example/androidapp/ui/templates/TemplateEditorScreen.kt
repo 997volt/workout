@@ -119,6 +119,7 @@ fun TemplateEditorRoute(
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     val openVersion by viewModel.openVersion.collectAsStateWithLifecycle()
     val versionKept by viewModel.versionKept.collectAsStateWithLifecycle()
+    val hiddenChange by viewModel.hiddenChange.collectAsStateWithLifecycle()
     val currentOnBack by rememberUpdatedState(onBack)
     val templateId = state.template?.id
 
@@ -153,6 +154,9 @@ fun TemplateEditorRoute(
             onOpenVersion = viewModel::onOpenVersion,
             onDismissVersion = viewModel::onDismissVersion,
         ),
+        onToggleHidden = viewModel::onToggleHidden,
+        hiddenChange = hiddenChange,
+        onDismissHiddenNotice = viewModel::onDismissHiddenNotice,
         onDismissMessage = viewModel::onErrorShown,
         onBack = onBack,
         modifier = modifier,
@@ -185,6 +189,11 @@ fun TemplateEditorScreen(
     onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
     /** The versions kept of this plan, and what may be done with them (ROADMAP N134). */
     versionUi: TemplateVersionUi = TemplateVersionUi(),
+    /** Hides the plan from the choices, or brings it back (ROADMAP N214). */
+    onToggleHidden: () -> Unit = {},
+    /** True when it was just hidden, false when it was brought back, null for nothing to say. */
+    hiddenChange: Boolean? = null,
+    onDismissHiddenNotice: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
@@ -198,6 +207,8 @@ fun TemplateEditorScreen(
         onDismissMessage = currentOnDismissMessage,
         onUndoRemoveSet = onUndoRemoveSet,
         onDismissUndo = onDismissUndo,
+        hiddenChange = hiddenChange,
+        onDismissHiddenNotice = onDismissHiddenNotice,
     )
 
     Scaffold(
@@ -207,10 +218,16 @@ fun TemplateEditorScreen(
             TemplateEditorTopBar(
                 name = state.template?.name,
                 versionCount = state.versions.size,
+                // Hide is offered for a plan that holds something, and for one already hidden whatever it
+                // holds: a brand-new empty workout is deleted, not hidden, but a hidden plan that was
+                // emptied afterwards must still be bringable back (ROADMAP N214).
+                hidden = state.template?.hiddenAt != null,
+                canHide = (state.template?.exerciseCount ?: 0) > 0,
                 onBack = onBack,
                 onDelete = { confirmingDelete = true },
                 onKeepVersion = versionUi.onKeepVersion,
                 onOpenVersions = { showingVersions = true },
+                onToggleHidden = onToggleHidden,
             )
         },
         floatingActionButton = { AddExerciseButton(onClick = onAddExercise) },
@@ -284,10 +301,15 @@ private fun DeleteTemplateConfirmation(
 private fun TemplateEditorTopBar(
     name: String?,
     versionCount: Int,
+    /** True when the plan is hidden from the choices (ROADMAP N214). */
+    hidden: Boolean,
+    /** False for a plan that holds no exercise: a brand-new workout is deleted, never hidden. */
+    canHide: Boolean,
     onBack: () -> Unit,
     onDelete: () -> Unit,
     onKeepVersion: () -> Unit,
     onOpenVersions: () -> Unit,
+    onToggleHidden: () -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val versionsLabel = if (versionCount > 0) {
@@ -339,6 +361,24 @@ private fun TemplateEditorTopBar(
                     },
                     modifier = Modifier.testTag(TestTags.TEMPLATE_VERSIONS),
                 )
+                // Under the versions, as the plan's own actions: hiding is what the lifter does to a plan
+                // they keep but no longer choose from (ROADMAP N214).
+                if (hidden || canHide) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                stringResource(
+                                    if (hidden) R.string.template_unhide_action else R.string.template_hide,
+                                ),
+                            )
+                        },
+                        onClick = {
+                            menuOpen = false
+                            onToggleHidden()
+                        },
+                        modifier = Modifier.testTag(TestTags.TEMPLATE_HIDE),
+                    )
+                }
             }
             IconButton(onClick = onDelete, modifier = Modifier.testTag(TestTags.TEMPLATE_DELETE)) {
                 Icon(
