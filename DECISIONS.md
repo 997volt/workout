@@ -580,23 +580,31 @@ the rule; that one argues it.
   be a label that lies. The field lives inside the menu and takes focus, because a search box in a menu that
   cannot be typed into is a decoration.
 
-- **The recently read series are three ids, written when one is chosen** (N212). The row above the picker is a
-  shortcut to the series actually read, so it is remembered across launches: the ids go in the settings file as
-  one newline-joined value, because the **order is the meaning** and the list is bounded — a table would be a
+- **The recently read series are three selections, written when one is chosen** (N212, B226). The row above the
+  picker is a shortcut to the series actually read, so it is remembered across launches: each entry is the
+  metric's id, then its lift's id after `|` where the metric reads one, and the entries go in the settings file
+  as one newline-joined value, because the **order is the meaning** and the list is bounded — a table would be a
   Room migration for a preference, and this store's own rule is that a *growing* collection is what moves it.
-  Only an explicit selection records (opening the tab on its default series would push the real three out),
-  re-choosing moves a series to the front without a twin, and an id this build's registry does not know is
-  dropped when read rather than drawn as a chip that selects nothing. The current series is one of the chips and
-  reads as selected, and the row waits for a second, because one chip repeating the picker's label is not a
-  shortcut.
+  A per-lift series is the metric **and** the lift: storing the id alone made two lifts' volume one chip and
+  restored whichever lift happened to be on screen. Only an explicit selection records, a lift choice records
+  once the lift exists, re-choosing moves a selection to the front without a twin, and the reader drops an entry
+  this build cannot offer — an unknown metric, a lift-less Exercise entry from the old format, a lift the library
+  no longer holds — dedupes, and keeps three. The current selection is one of the chips and reads as selected,
+  and the row waits for a second, because one chip repeating the picker's label is not a shortcut.
 
-- **A pinch narrows the window around the point pinched, inside the readings** (N213). The gesture reports a
-  scale and the centroid across the figure; the ViewModel turns that into whole days around the pinched point.
-  The window may leave the range that was chosen — zooming out is how you see more — but it never leaves the
+- **A pinch narrows the window around the point pinched, inside the readings** (N213, B227–B229, B236). The
+  gesture reports a scale and the centroid across the figure; the ViewModel turns that into whole days around
+  the pinched point. The point is a fraction of the **plotted** span — the axis the finger is on — not of the
+  range's empty ends, and the scale applies to that span; a pinch that would leave a single reading is refused,
+  because the figure cannot draw a trend from one and the card would empty while the row said *Custom*. The
+  window may leave the range that was chosen — zooming out is how you see more — but it never leaves the
   **recorded readings**: it starts no earlier than the metric's first reading and ends no later than its last,
   and it never shrinks below two days, because one day cannot show a change. A pinch becomes a **custom** range,
   because a window the finger chose cannot be named by a rolling kind. The write is one settings commit after
-  the fingers settle rather than one per motion event, and a range chip chosen while it waits cancels it.
+  the fingers settle rather than one per motion event, a range chip chosen while it waits cancels it, a failed
+  write is said rather than silently reverting, and the settled window is written only once the store reports
+  it back so the chart does not flash the old one. The record count and the overview follow the settled range,
+  not each motion event.
 
 - **The range is one row, and the rare windows are one control away** (N197). Seven chips wrapped three to a
   row spent two rows on a control used once a visit, and every one of them read as equally likely. The three a
@@ -843,18 +851,25 @@ the rule; that one argues it.
   that this feature exists to stop; a direction-only goal draws no line, since it states no weight and a level
   invented from the band would be the end weight N135 refuses to manufacture.
 
-  **The past is a record the lifter may correct** (N215). A period carries its **id** now, so it can be edited
-  rather than only overlaid: the day is **local midnight** of the day chosen — a goal "from 1 March" owns that
-  day's weigh-in, and two changes on one day are one statement rather than two boundaries — the **end is the
-  next boundary**, and adding a finished stretch writes the goal that covered it back as one restoring row, so
-  the timeline stays contiguous without a gap the lifter did not state. A correction keeps the row's **place**:
-  its start sits between the periods either side of it, because a start that crossed a neighbour would silently
-  reorder the history it is correcting. **No goal is a kind of period**, so a stretch with nothing asked for can
-  be entered and read like any other, and clearing never deletes a row; **removing** is the escape hatch for a
-  mis-entry and merges the stretch into the period before it, the removed row keeping its id so the snackbar's
-  undo is the same row back. The newest period is the goal in force and therefore has **no end**. An edit
-  **re-reads that stretch's verdict** — the outcomes are derived — which is not N137's silent re-judgement: that
-  was a new goal rewriting the past unasked, and this is the lifter asking.
+  **The past is a record the lifter may correct** (N215, B223, B224, B232–B234). A period carries its **id** now,
+  so it can be edited rather than only overlaid: a boundary is matched and ordered by the **local day** — a goal
+  "from 1 March" owns that day's weigh-in, an older row written at a clock time is the same statement, and two
+  changes on one day are one rather than two at different instants. A goal-only correction **keeps the stored
+  instant**, so the day's earlier readings stay with the period that had them; a moved or added start is local
+  midnight. A new open-ended period that restates the goal in force **writes nothing** (B140), while an end is a
+  statement and is written; the **end is the next boundary**, and adding a finished stretch writes the goal that
+  covered it back as one restoring row, so the timeline stays contiguous without a gap the lifter did not state.
+  A correction keeps the row's **place**: its start sits between the periods either side of it, because a start
+  that crossed a neighbour would silently reorder the history it is correcting; a goal-only correction keeps
+  a **legacy day that holds two rows** editable, because the row is not moving. The **undated first period** —
+  the N137 migration's row — may keep its unknown start while its goal changes (B232), and a new period still
+  needs a day. **No goal is a kind of period**, so a stretch with nothing asked for can be entered and read like
+  any other, and clearing never deletes a row; **removing** is the escape hatch for a mis-entry and merges the
+  stretch into the period before it, the removed row keeping its id so the snackbar's undo is the same row back,
+  and the undo **refuses a day a newer statement has taken** (B233). The newest period is the goal in force and
+  therefore has **no end**. The editor waits for the save's result, so a refusal keeps the values (B234), and an
+  edit **re-reads that stretch's verdict** — the outcomes are derived — which is not N137's silent
+  re-judgement: that was a new goal rewriting the past unasked, and this is the lifter asking.
   ([evidence](DECISIONS-EVIDENCE.md#n137))
 
 
@@ -1241,7 +1256,9 @@ the rule; that one argues it.
   of Greenwich and a weigh-in moved by a day is a wrong record. A `date`-only document is still read, and a
   file whose days cannot be dated **says so**: it is reported with the reason, never shown as loaded over
   zero days — the first version of this reader trusted a hand-written fixture and silently imported nothing
-  from every real file.
+  from every real file. The **panel renders with no file at all** (B222): its empty and broken-file plans are
+  pure and null-safe, because the page draws once before a load and once after *Clear body*, when there is no
+  reader to ask.
   ([evidence](DECISIONS-EVIDENCE.md#n166))
 - **A program may be written from a table, as a document, and the app stays the editor** (N167). The helper
   writes a `ProgramDocument` (format version 4) from a sheet: one row per planned exercise, days become

@@ -20,12 +20,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 - **A weight goal's past can be added, edited and removed** (N215). The goal's history was read-only and could
   only grow at the clock's now, so a stretch that began in March could not be entered and one entered wrongly
   could not be corrected. A period is now a Start, an optional End and a kind — Target, Lose, Gain, Maintain or
-  **No goal** — at the day's own midnight, so a goal "from 1 March" owns that day and two changes on one day are
-  one statement. A finished stretch writes the goal it replaced back as one restoring boundary, so the timeline
-  has no gaps; a correction moves a boundary only between its neighbours; removing merges the stretch into the
-  period before it, and the snackbar puts it back. The goal in force stays the newest boundary and keeps no end,
-  and a correction re-reads that stretch's verdict, because the history is derived from what each period asked
-  for.
+  **No goal** — matched by the day, so a goal "from 1 March" owns that day, an older row written at a clock time
+  is the same statement, and two changes on one day are one. A goal-only correction keeps the stored instant; the
+  undated first period keeps its unknown start; a finished stretch writes the goal it replaced back as one
+  restoring boundary, so the timeline has no gaps; a correction moves a boundary only between its neighbours;
+  removing merges the stretch into the period before it, and the snackbar puts it back. The goal in force stays
+  the newest boundary and keeps no end, a refused save keeps the editor open, and a correction re-reads that
+  stretch's verdict, because the history is derived from what each period asked for.
 
 - **A workout can be hidden from the templates list without being deleted** (N214). *Hide*, in the editor's
   overflow under *Versions*, takes a plan out of the choices while every program that names it still schedules
@@ -43,14 +44,16 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   and writes no file.
 
 - **The statistics screen remembers the series you read** (N212). A short row above the series picker holds the
-  three most recently chosen series, newest first, one tap from the chart — the current one reads as selected.
+  three most recently chosen series, newest first, one tap from the chart — the current one reads as selected,
+  and a per-lift series carries its lift, so bench volume and squat volume are two chips rather than one.
   Only an explicit choice is recorded, so opening the tab does not push the series actually read out of the row,
   and the row waits until there are two, because one chip repeating the picker's own label is not a shortcut.
 
 - **Pinching the statistics figure changes the window** (N213). Fingers apart narrows it around the point
   pinched and fingers together widens it — never before the first reading or after the last, and never narrower
   than two days — and the result is a custom range, so the range row says *Custom* while it is on screen. The
-  window is written once, after the fingers settle, not on every motion event.
+  anchor and the scale follow the span the figure actually draws, a window that would leave a single reading is
+  refused, and the window is written once after the fingers settle; a failed write says so.
 
 ### Changed
 
@@ -76,6 +79,45 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   wrote, so a real file produced **zero days** and the page still said it had loaded them. The day is now read
   from whichever field the file carries, the instant by its own date part so a western timezone cannot move a
   weigh-in to the day before, and a file that yields no daily record says why instead of claiming a load.
+
+- **The import helper page opens again** (B222). The body panel read the reader's problems on every render,
+  including the first one before a file is loaded and the one after *Clear body*, when there is no reader at
+  all; the page threw during init and the helper was unusable. The panel's empty and broken-file plans are now
+  pure and null-safe, and the node runner pins both, so a page that cannot render its first frame is a gate
+  failure rather than a browser surprise.
+
+- **A weight goal's past is corrected by the day** (B223, B224, B232, B233, B234). A boundary written before N215
+  carries a clock time while the editor writes local midnight, so a goal set on that day could be inserted before
+  it and never become the goal in force; a goal-only correction moved the boundary and took that day's earlier
+  readings with it; a period restating the goal already in force opened a duplicate boundary; the undated first
+  period could not change its goal without inventing a start; the removal's undo could write a day that a newer
+  save had taken; and a refused save closed the editor and lost the typed values. Boundaries are matched and
+  ordered by the local day, an unchanged day keeps its instant, a new open-ended period that restates the goal in
+  force writes nothing, an existing undated row may keep its unknown start, the undo refuses a taken day, and the
+  editor waits for the write's result.
+
+- **The goal card waits for the measurements to load** (B225). The state's `today` is `LocalDate.MIN` until the
+  first emission, and the card was drawn during that frame; opening its editor formatted the sentinel and threw.
+  The card is drawn only after the list has loaded.
+
+- **The recents row keeps the lift** (B226). The stored entry was only the metric's id, and an Exercise metric's
+  id has no lift in it; two lifts' volume were one chip, a chip pressed from bodyweight left the lift empty, and
+  a lift the library had lost was selected invisibly. The entry is the metric and its lift, the chip names the
+  lift and restores it, choosing a lift records it, and the reader drops what it cannot offer, dedupes and keeps
+  three.
+
+- **A pinch follows the chart it is on** (B227, B228, B229, B236). The focus was mapped over the range window
+  while the figure's axis spans the windowed readings, so a sparse window anchored the zoom days from the
+  finger and a left-edge pinch could empty the figure; the scale was applied to a state that catches up after
+  three flow hops, losing events; the settled write was dropped and cleared without a word; and each motion
+  event ran a record-count query. Focus and scale use the plotted span, the gesture reads the pending window
+  synchronously, a window with a single reading is refused, a failed write reaches a snackbar, and the count
+  follows the settled range.
+
+- **The goal editor and the range row say what they mean** (B230, B231, B235). The card's goal editor was titled
+  *Add a past goal*; removing a period said *Goal removed.* although the previous goal comes into force; and the
+  year range kept the *Last* the row had dropped for six months. The title travels with the editor, the snackbar
+  says *Goal period removed.*, and the row says *1 year* while the menu keeps *Last year*.
 
 ## [2.14] — 2026-10-24 (versionCode 34)
 
