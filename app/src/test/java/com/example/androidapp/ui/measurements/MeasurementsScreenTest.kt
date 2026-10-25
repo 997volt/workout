@@ -259,19 +259,27 @@ class MeasurementsScreenTest {
     }
 
     @Test
-    fun aPastGoal_canBeAddedFromTheList() {
+    fun anAddedPeriod_isANewRow_andStatesItsGoal() {
+        // B237: the old case confirmed No goal and never looked at the values it passed. The date is the
+        // screen's today; a real past date is the repository's case (aPastStretch_endsWhereItSays).
         var savedId: String? = "not called"
+        var savedGoal: WeightGoal? = null
         setScreen(
             state = stateWithGoal(goal = WeightGoal.Direction(gain = false), periods = twoPeriods()),
-            onSaveGoalPeriod = { id, _, _, _ -> savedId = id },
+            onSaveGoalPeriod = { id, _, _, goal ->
+                savedId = id
+                savedGoal = goal
+            },
         )
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_ADD).performClick()
         composeTestRule.onNodeWithText("Add a past goal").assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.weightGoalKind(WeightGoalKind.LOSE)).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
 
         assertNull("an added period is a new row, not an edit", savedId)
+        assertEquals(WeightGoal.Direction(gain = false), savedGoal)
     }
 
     @Test

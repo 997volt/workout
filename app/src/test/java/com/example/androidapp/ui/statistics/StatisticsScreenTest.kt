@@ -560,10 +560,14 @@ class StatisticsScreenTest {
             up(1)
         }
 
-        // Fingers moving apart is a zoom in; the last event of the gesture is a lift, which reports 1.
-        assertThat(zooms).isNotEmpty()
-        assertThat(zooms.any { (scale, _) -> scale > 1f }).isTrue()
-        assertThat(zooms.all { (_, focus) -> focus in 0f..1f }).isTrue()
+        // Fingers moving apart is a zoom in, and they move symmetrically about the centre: every magnifying
+        // event says a real scale and a focus at the middle, not merely some number in range (B237).
+        val pinches = zooms.filter { (scale, _) -> scale > 1f }
+        assertThat(pinches).isNotEmpty()
+        // A real magnification happened, and once both fingers have moved the event is centred. The fingers
+        // move one at a time, so the intermediate events are asymmetric on purpose.
+        assertThat(pinches.any { (scale, _) -> scale > 1.5f }).isTrue()
+        assertThat(pinches.any { (scale, focus) -> scale > 1f && focus in 0.45f..0.55f }).isTrue()
     }
 
     @Test
