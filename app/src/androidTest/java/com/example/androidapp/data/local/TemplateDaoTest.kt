@@ -32,6 +32,7 @@ class TemplateDaoTest {
 
     private lateinit var database: WorkoutDatabase
     private lateinit var dao: TemplateDao
+    private lateinit var setDao: TemplateSetDao
 
     @Before
     fun setUp() {
@@ -40,6 +41,7 @@ class TemplateDaoTest {
             WorkoutDatabase::class.java,
         ).build()
         dao = database.templateDao()
+        setDao = database.templateSetDao()
         runTest { database.exerciseDao().insertAll(listOf(exercise("back-squat"), exercise("bench-press"))) }
     }
 
@@ -246,11 +248,11 @@ class TemplateDaoTest {
         dao.insertTemplate(template("t1", "Legs"))
         dao.insertTemplateExercise(templateExercise("te2", "t1", "bench-press", 1))
         dao.insertTemplateExercise(templateExercise("te1", "t1", "back-squat", 0))
-        dao.insertTemplateSet(plannedSet("s3", "te2", 0))
-        dao.insertTemplateSet(plannedSet("s1", "te1", 0))
-        dao.insertTemplateSet(plannedSet("s2", "te1", 1))
+        setDao.insertTemplateSet(plannedSet("s3", "te2", 0))
+        setDao.insertTemplateSet(plannedSet("s1", "te1", 0))
+        setDao.insertTemplateSet(plannedSet("s2", "te1", 1))
 
-        val rows = dao.observeTemplateSets("t1").first()
+        val rows = setDao.observeTemplateSets("t1").first()
 
         assertEquals(listOf("s1", "s2", "s3"), rows.map { it.id })
         assertEquals(listOf(0, 1, 0), rows.map { it.setIndex })
@@ -260,13 +262,13 @@ class TemplateDaoTest {
     fun aRemovedPlannedSet_leavesTheFlow_butNotTheTable() = runTest {
         dao.insertTemplate(template("t1", "Legs"))
         dao.insertTemplateExercise(templateExercise("te1", "t1", "back-squat", 0))
-        dao.insertTemplateSet(plannedSet("s1", "te1", 0))
-        dao.insertTemplateSet(plannedSet("s2", "te1", 1))
+        setDao.insertTemplateSet(plannedSet("s1", "te1", 0))
+        setDao.insertTemplateSet(plannedSet("s2", "te1", 1))
 
-        dao.softDeleteTemplateSet("s1", at = 500L)
+        setDao.softDeleteTemplateSet("s1", at = 500L)
 
-        assertEquals(listOf("s2"), dao.observeTemplateSets("t1").first().map { it.id })
-        assertNull("a soft-deleted set is not found by id", dao.findTemplateSet("s1"))
+        assertEquals(listOf("s2"), setDao.observeTemplateSets("t1").first().map { it.id })
+        assertNull("a soft-deleted set is not found by id", setDao.findTemplateSet("s1"))
     }
 
     @Test
@@ -274,10 +276,10 @@ class TemplateDaoTest {
         dao.insertTemplate(template("t1", "Legs"))
         dao.insertTemplateExercise(templateExercise("te1", "t1", "back-squat", 0))
 
-        assertEquals("an empty plan starts at 0", -1, dao.maxSetIndex("te1"))
-        dao.insertTemplateSet(plannedSet("s1", "te1", 0))
-        dao.insertTemplateSet(plannedSet("s2", "te1", 1))
-        assertEquals(1, dao.maxSetIndex("te1"))
+        assertEquals("an empty plan starts at 0", -1, setDao.maxSetIndex("te1"))
+        setDao.insertTemplateSet(plannedSet("s1", "te1", 0))
+        setDao.insertTemplateSet(plannedSet("s2", "te1", 1))
+        assertEquals(1, setDao.maxSetIndex("te1"))
     }
 
     @Test

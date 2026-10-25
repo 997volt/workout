@@ -587,7 +587,7 @@ class BackupRoundTripTest {
                 deletedAt = null,
             ),
         )
-        templateDao.insertTemplateSet(
+        database.templateSetDao().insertTemplateSet(
             com.example.androidapp.data.local.TemplateSetEntity(
                 id = "template-set-1",
                 templateExerciseId = "template-exercise-1",

@@ -47,6 +47,9 @@ class TemplateMigrationTest {
         )
 
         MIGRATION_3_4.migrate(db)
+        // The readers select the current shape, so the rest of this table's chain runs too: what the
+        // case asserts is what 3_4 adds, not that the later column is absent (N214).
+        MIGRATION_8_9.migrate(db)
 
         val row = database.templateDao().findById("t1")
         assertEquals("Push day", row?.name)
@@ -64,6 +67,9 @@ class TemplateMigrationTest {
             "INSERT INTO templates (id, name, createdAt, updatedAt) VALUES ('t1', 'Push day', 1, 2)",
         )
         MIGRATION_3_4.migrate(db)
+        // The readers select the current shape, so the rest of this table's chain runs too: what the
+        // case asserts is what 3_4 adds, not that the later column is absent (N214).
+        MIGRATION_8_9.migrate(db)
 
         db.execSQL(
             "INSERT INTO templates (id, name, versionOf, createdAt, updatedAt) " +

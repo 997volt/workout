@@ -260,16 +260,17 @@ class StatisticsDaoTest {
         // plan the lifter follows — a kept version (N134), a deleted plan, and a set taken out of the plan.
         // Only SQLite can be asked whether the query says so.
         val templates = database.templateDao()
+        val templateSets = database.templateSetDao()
         templates.insertTemplate(template("t-live", "Push day"))
         templates.insertTemplate(template("t-version", "Push day (kept)", versionOf = "t-live"))
         templates.insertTemplate(template("t-deleted", "Gone", deletedAt = 5L))
         listOf("t-live", "t-version", "t-deleted").forEachIndexed { index, templateId ->
             templates.insertTemplateExercise(plannedExercise("e-$index", templateId))
-            templates.insertTemplateSet(plannedSet("s-$index", "e-$index", weight = 100_000L))
+            templateSets.insertTemplateSet(plannedSet("s-$index", "e-$index", weight = 100_000L))
         }
         // A heavier set the lifter took out of the live plan: it is not a prescription any more.
         templates.insertTemplateExercise(plannedExercise("e-removed", "t-live"))
-        templates.insertTemplateSet(plannedSet("s-removed", "e-removed", weight = 140_000L, deletedAt = 7L))
+        templateSets.insertTemplateSet(plannedSet("s-removed", "e-removed", weight = 140_000L, deletedAt = 7L))
 
         val targets = dao.observePlanTargets(listOf("back-squat")).first()
 
@@ -282,11 +283,12 @@ class StatisticsDaoTest {
         // B143: a metric that accepts a head draws its whole family, so its plan lines are read over the same
         // ids — a set never names a category, so the chosen id alone drew no line at all.
         val templates = database.templateDao()
+        val templateSets = database.templateSetDao()
         templates.insertTemplate(template("t-live", "Push day"))
         templates.insertTemplateExercise(plannedExercise("e-bench", "t-live", exerciseId = "bench-press"))
-        templates.insertTemplateSet(plannedSet("s-bench", "e-bench", weight = 100_000L))
+        templateSets.insertTemplateSet(plannedSet("s-bench", "e-bench", weight = 100_000L))
         templates.insertTemplateExercise(plannedExercise("e-squat", "t-live", exerciseId = "back-squat"))
-        templates.insertTemplateSet(plannedSet("s-squat", "e-squat", weight = 120_000L))
+        templateSets.insertTemplateSet(plannedSet("s-squat", "e-squat", weight = 120_000L))
 
         val targets = dao.observePlanTargets(listOf("bench-press", "back-squat")).first()
 
@@ -303,9 +305,10 @@ class StatisticsDaoTest {
         // chart's plan line is one reading of the same stored row — a second answer would draw an estimated
         // 1RM the plan never asked for.
         val templates = database.templateDao()
+        val templateSets = database.templateSetDao()
         templates.insertTemplate(template("t-live", "Push day"))
         templates.insertTemplateExercise(plannedExercise("e1", "t-live"))
-        templates.insertTemplateSet(
+        templateSets.insertTemplateSet(
             plannedSet("s1", "e1", weight = 100_000L, repsMin = 5, repsMax = 8, repsCurrent = null),
         )
 
