@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,7 +36,6 @@ import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.DatePrompt
 import com.example.androidapp.ui.components.TestTags
-import com.example.androidapp.ui.history.HistoryFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -126,22 +126,10 @@ fun WeightGoalRow(
     var editor by remember { mutableStateOf<GoalPeriodEditor?>(null) }
     var saving by remember { mutableStateOf(false) }
 
-    LaunchedEffect(saveOutcome) {
-        when (saveOutcome) {
-            true -> {
-                editor = null
-                saving = false
-                onDismissSave()
-            }
-
-            false -> {
-                // The error is on the screen's snackbar; the editor stays so the values can be corrected.
-                saving = false
-                onDismissSave()
-            }
-
-            null -> Unit
-        }
+    GoalSaveEffect(saveOutcome) { success ->
+        if (success) editor = null
+        saving = false
+        onDismissSave()
     }
 
     GoalHeader(
@@ -151,65 +139,124 @@ fun WeightGoalRow(
         onOpenHistory = { showingHistory = true },
         modifier = modifier,
         onSetGoal = {
-            // The card writes the period that starts today: a change of goal is a new period, and the stretch
-            // before it keeps what was asked for (N137). An ongoing period has no end.
-            editor = GoalPeriodEditor(
-                id = null,
-                start = today,
-                end = null,
+            editor = newEditor(
                 goal = goal,
                 canHaveEnd = false,
-                startKnown = true,
                 titleRes = R.string.statistics_weight_goal,
+                today = today,
             )
         },
     )
 
-    editor?.let { current ->
-        GoalPeriodDialog(
-            metric = metric,
-            editor = current,
-            today = today,
-            saving = saving,
-            onSave = { id, start, end, value ->
-                saving = true
-                onSavePeriod(id, start, end, value)
-            },
-            onRemove = { id ->
-                onRemovePeriod(id)
-                editor = null
-                saving = false
-            },
-            onDismiss = {
-                editor = null
-                saving = false
-            },
-        )
-    }
+    GoalEditorHost(
+        metric = metric,
+        editor = editor,
+        today = today,
+        saving = saving,
+        onSavePeriod = onSavePeriod,
+        onRemovePeriod = onRemovePeriod,
+        onSaving = { saving = it },
+        onClose = {
+            editor = null
+            saving = false
+        },
+    )
 
-    if (showingHistory) {
-        GoalHistoryDialog(
-            history = history,
-            metric = metric,
-            onEdit = { period, nextStart ->
-                editor = periodEditor(period, nextStart, today)
-                showingHistory = false
-            },
-            onAdd = {
-                editor = GoalPeriodEditor(
-                    id = null,
-                    start = today,
-                    end = null,
-                    goal = null,
-                    canHaveEnd = true,
-                    startKnown = true,
-                    titleRes = R.string.statistics_goal_period_add_title,
-                )
-                showingHistory = false
-            },
-            onDismiss = { showingHistory = false },
-        )
+    GoalHistoryHost(
+        showing = showingHistory,
+        history = history,
+        metric = metric,
+        onEdit = { period, nextStart ->
+            editor = periodEditor(period, nextStart, today)
+            showingHistory = false
+        },
+        onAdd = {
+            editor = newEditor(
+                goal = null,
+                canHaveEnd = true,
+                titleRes = R.string.statistics_goal_period_add_title,
+                today = today,
+            )
+            showingHistory = false
+        },
+        onDismiss = { showingHistory = false },
+    )
+}
+
+/** A new period from [today]: either the card's goal or an empty stretch from the history list. */
+private fun newEditor(
+    goal: WeightGoal?,
+    canHaveEnd: Boolean,
+    @StringRes titleRes: Int,
+    today: LocalDate,
+): GoalPeriodEditor =
+    GoalPeriodEditor(
+        id = null,
+        start = today,
+        end = null,
+        goal = goal,
+        canHaveEnd = canHaveEnd,
+        startKnown = true,
+        titleRes = titleRes,
+    )
+
+/** Closes the editor on a successful save and leaves it open on a refusal (B234). */
+@Composable
+private fun GoalSaveEffect(saveOutcome: Boolean?, onResult: (Boolean) -> Unit) {
+    val currentOnResult by rememberUpdatedState(onResult)
+    LaunchedEffect(saveOutcome) {
+        saveOutcome?.let(currentOnResult)
     }
+}
+
+/** The one period editor, drawn only while an editor is open. */
+@Composable
+private fun GoalEditorHost(
+    metric: MetricEntry,
+    editor: GoalPeriodEditor?,
+    today: LocalDate,
+    saving: Boolean,
+    onSavePeriod: (String?, LocalDate?, LocalDate?, WeightGoal?) -> Unit,
+    onRemovePeriod: (String) -> Unit,
+    onSaving: (Boolean) -> Unit,
+    onClose: () -> Unit,
+) {
+    if (editor == null) return
+    GoalPeriodDialog(
+        metric = metric,
+        editor = editor,
+        today = today,
+        saving = saving,
+        onSave = { id, start, end, value ->
+            onSaving(true)
+            onSavePeriod(id, start, end, value)
+        },
+        onRemove = { id ->
+            onRemovePeriod(id)
+            onClose()
+        },
+        onDismiss = onClose,
+    )
+}
+
+/** The goal history list, drawn only while it is open. */
+@Composable
+private fun GoalHistoryHost(
+    showing: Boolean,
+    history: List<GoalPeriodOutcome>,
+    metric: MetricEntry,
+    onEdit: (GoalPeriod, Instant?) -> Unit,
+    onAdd: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (!showing) return
+    GoalHistoryDialog(
+        history = history,
+        metric = metric,
+        onEdit = onEdit,
+        onAdd = onAdd,
+        onDismiss = onDismiss,
+    )
 }
 
 /** The row itself: the goal in force, the way to its list, and the way to set one (N135, N215). */
@@ -417,10 +464,6 @@ private fun weightGoalText(goal: WeightGoal?, metric: MetricEntry): String = whe
         metric.unit.format(MAINTENANCE_CORRIDOR_GRAMS.toDouble()),
     )
 }
-
-/** A day as the row writes it: the app's own date format, in the device's zone (N215). */
-private fun goalDayText(date: LocalDate): String =
-    HistoryFormat.date(date.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault())
 
 /**
  * The dialog a goal period is written in (ROADMAP N135, N215).
@@ -630,13 +673,6 @@ private fun weightGoalFor(kind: WeightGoalKind?, typed: String, metric: MetricEn
     WeightGoalKind.GAIN -> WeightGoal.Direction(gain = true)
     WeightGoalKind.TARGET -> metric.unit.parse(typed)?.let { WeightGoal.Target(it.toLong()) }
     WeightGoalKind.MAINTAIN -> metric.unit.parse(typed)?.let { WeightGoal.Maintain(it.toLong()) }
-}
-
-private fun weightGoalKindLabel(kind: WeightGoalKind): Int = when (kind) {
-    WeightGoalKind.TARGET -> R.string.statistics_weight_goal_target
-    WeightGoalKind.LOSE -> R.string.statistics_weight_goal_lose
-    WeightGoalKind.GAIN -> R.string.statistics_weight_goal_gain
-    WeightGoalKind.MAINTAIN -> R.string.statistics_weight_goal_maintain
 }
 
 /**

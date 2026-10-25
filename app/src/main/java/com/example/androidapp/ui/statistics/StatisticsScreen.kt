@@ -127,11 +127,7 @@ fun StatisticsScreen(
 ) {
     var choosingDates by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    MessageSnackbar(
-        message = state.rangeError?.let { dataErrorMessage(it) },
-        hostState = snackbarHostState,
-        onDismiss = onDismissRangeError,
-    )
+    RangeErrorSnackbar(state, snackbarHostState, onDismissRangeError)
     if (choosingDates) {
         CustomRangeDialog(
             initial = state.range,
@@ -262,6 +258,16 @@ private fun StatisticsBody(
         // window is what the chart is for — a card between the metric and the chart is a row the figure pays for.
         Overview(overview = state.overview)
     }
+}
+
+/** A failed range write, said once rather than silently reverting the window (B229). */
+@Composable
+private fun RangeErrorSnackbar(state: StatisticsUiState, host: SnackbarHostState, onDismiss: () -> Unit) {
+    MessageSnackbar(
+        message = state.rangeError?.let { dataErrorMessage(it) },
+        hostState = host,
+        onDismiss = onDismiss,
+    )
 }
 
 /**

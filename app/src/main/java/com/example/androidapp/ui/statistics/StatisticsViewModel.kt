@@ -593,8 +593,11 @@ class StatisticsViewModel @Inject constructor(
         val metric = MetricRegistry.entries.firstOrNull { it.key.id == parts[0] }?.key ?: return null
         val needsExercise = MetricRegistry.entryFor(metric).needsExercise
         val exerciseId = parts.getOrNull(1)?.takeIf { needsExercise && it.isNotBlank() }
-        if (needsExercise && exerciseId == null) return null
-        return StatisticsSelection(metric = metric, exerciseId = exerciseId)
+        return if (needsExercise && exerciseId == null) {
+            null
+        } else {
+            StatisticsSelection(metric = metric, exerciseId = exerciseId)
+        }
     }
 
     /** Stored, not held: the range has to mean the same thing the next time the tab is opened. */
@@ -659,18 +662,17 @@ class StatisticsViewModel @Inject constructor(
         // increment delivered before the collector ran (B228).
         val base = pendingRange.value ?: state.range
         val plotted = base.inWindow(state.goalReadings, today, zone)
-        if (plotted.count { it.value != null } < 2) return null
+        val recorded = plotted.count { it.value != null }
+        val days = state.goalReadings
+            .mapNotNull { reading -> reading.value?.let { reading.at.atZone(zone).toLocalDate() } }
+            .distinct()
+        if (recorded < 2 || days.size < 2) return null
 
         val firstPlot = plotted.first().at
         val lastPlot = plotted.last().at
         val firstPlotDay = firstPlot.atZone(zone).toLocalDate()
         val lastPlotDay = lastPlot.atZone(zone).toLocalDate()
         val plottedSpan = (ChronoUnit.DAYS.between(firstPlotDay, lastPlotDay).toInt() + 1).coerceAtLeast(1)
-
-        val days = state.goalReadings
-            .mapNotNull { reading -> reading.value?.let { reading.at.atZone(zone).toLocalDate() } }
-            .distinct()
-        if (days.size < 2) return null
         val firstDay = days.min()
         val lastDay = days.max()
         val maxSpan = ChronoUnit.DAYS.between(firstDay, lastDay).toInt() + 1
@@ -700,12 +702,8 @@ class StatisticsViewModel @Inject constructor(
         val candidate = StatisticsRange(RangeKind.CUSTOM, from = start, to = start.plusDays(newSpan - 1L))
         // The window a finger chose still has to be one the figure can draw; a pinch that leaves a single
         // reading would empty the card and leave the range row saying Custom (B227).
-        if (plotted.count { it.value != null } >= 2 &&
-            candidate.inWindow(state.goalReadings, today, zone).count { it.value != null } < 2
-        ) {
-            return null
-        }
-        return candidate.takeUnless { start == baseFrom && candidate.to == baseTo }
+        val draws = candidate.inWindow(state.goalReadings, today, zone).count { it.value != null } >= 2
+        return if (!draws) null else candidate.takeUnless { start == baseFrom && candidate.to == baseTo }
     }
 
     private fun today(): LocalDate =
