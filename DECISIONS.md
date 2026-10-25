@@ -832,6 +832,20 @@ the rule; that one argues it.
   that this feature exists to stop; a direction-only goal draws no line, since it states no weight and a level
   invented from the band would be the end weight N135 refuses to manufacture.
 
+  **The past is a record the lifter may correct** (N215). A period carries its **id** now, so it can be edited
+  rather than only overlaid: the day is **local midnight** of the day chosen — a goal "from 1 March" owns that
+  day's weigh-in, and two changes on one day are one statement rather than two boundaries — the **end is the
+  next boundary**, and adding a finished stretch writes the goal that covered it back as one restoring row, so
+  the timeline stays contiguous without a gap the lifter did not state. A correction keeps the row's **place**:
+  its start sits between the periods either side of it, because a start that crossed a neighbour would silently
+  reorder the history it is correcting. **No goal is a kind of period**, so a stretch with nothing asked for can
+  be entered and read like any other, and clearing never deletes a row; **removing** is the escape hatch for a
+  mis-entry and merges the stretch into the period before it, the removed row keeping its id so the snackbar's
+  undo is the same row back. The newest period is the goal in force and therefore has **no end**. An edit
+  **re-reads that stretch's verdict** — the outcomes are derived — which is not N137's silent re-judgement: that
+  was a new goal rewriting the past unasked, and this is the lifter asking.
+  ([evidence](DECISIONS-EVIDENCE.md#n137))
+
 
 - **A plan's target is drawn on a lift's chart, and the plan is named** (N39). A plan already states what it asks
   for — a weight, an assistance, a rep range and an effort per set — and the chart for a lift now draws it beside

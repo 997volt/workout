@@ -70,6 +70,7 @@ import com.example.androidapp.ui.statistics.EnergyAdjustment
 import com.example.androidapp.ui.statistics.MetricKey
 import com.example.androidapp.ui.statistics.MetricRegistry
 import com.example.androidapp.ui.statistics.WeightGoalRow
+import java.time.LocalDate
 import java.time.ZoneId
 
 /** Measurements, reached from home (ROADMAP N32, two records since N113). */
@@ -87,6 +88,7 @@ fun MeasurementsRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val pendingUndo by viewModel.pendingUndo.collectAsStateWithLifecycle()
+    val pendingGoalUndo by viewModel.pendingGoalUndo.collectAsStateWithLifecycle()
     val rateVerdict by viewModel.rateVerdict.collectAsStateWithLifecycle()
     // The shortcut opens **today's record** (B182), and only the loaded list can say whether that is an
     // entry to edit or a day with nothing on it — so it waits for the answer rather than opening a blank
@@ -114,9 +116,42 @@ fun MeasurementsRoute(
         rateVerdict = rateVerdict,
         onDismissRateVerdict = viewModel::onDismissRateVerdict,
         // The weight goal is set here now: it is a fact about the body, and this is where the body is recorded
-        // (a request in use; no roadmap id covers the move).
-        onSetWeightGoal = viewModel::onSetWeightGoal,
+        // (a request in use; no roadmap id covers the move). Since N215 a past period can be written too.
+        onSaveGoalPeriod = viewModel::onSaveGoalPeriod,
+        onRemoveGoalPeriod = viewModel::onRemoveGoalPeriod,
+        goalPeriodUi = GoalPeriodUi(
+            pendingRemoval = pendingGoalUndo,
+            onUndo = viewModel::onUndoGoalPeriodRemoval,
+            onDismiss = viewModel::onDismissGoalUndo,
+        ),
     )
+}
+
+/** The screen's three dialogs: which record, the record's form, and a record read (N113, B182). */
+@Composable
+private fun MeasurementsDialogs(
+    choosing: Boolean,
+    onPick: (MeasurementKind) -> Unit,
+    adding: MeasurementKind?,
+    editingEntry: BodyMeasurement?,
+    openEntry: BodyMeasurement?,
+    onDismissForm: () -> Unit,
+    onSave: (BodyMeasurement) -> Unit,
+    onDismissOpen: () -> Unit,
+    onDismissChoosing: () -> Unit,
+) {
+    if (choosing) {
+        AddMeasurementDialog(onDismiss = onDismissChoosing, onPick = onPick)
+    }
+    MeasurementFormDialogs(
+        adding = adding,
+        editingEntry = editingEntry,
+        onDismiss = onDismissForm,
+        onSave = onSave,
+    )
+    openEntry?.let { entry ->
+        MeasurementDetailsDialog(entry = entry, onDismiss = onDismissOpen)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -149,17 +184,13 @@ fun MeasurementsScreen(
     pendingUndo: BodyMeasurement? = null,
     onUndo: () -> Unit = {},
     onDismissUndo: () -> Unit = {},
-    /**
-     * What a weigh-in just said about the goal's rate, or null (ROADMAP N136).
-     *
-     * A **line after the save**, not a dialog: it states, it is dismissible and it does not pursue (P4.7) —
-     * which is why it is a snackbar like the undo beside it, and why the ViewModel hands it over once rather
-     * than deriving it from the data on show.
-     */
+    /** What a weigh-in said about the goal's rate, or null (N136): a line after the save, not a dialog. */
     rateVerdict: EnergyAdjustment? = null,
     onDismissRateVerdict: () -> Unit = {},
-    /** Sets the weight goal, or clears it with null (N135) — the row the statistics screen used to carry. */
-    onSetWeightGoal: (WeightGoal?) -> Unit = {},
+    /** Writes one goal period — the row [id] names, or a new one from [start]; null [goal] is *No goal* (N215). */
+    onSaveGoalPeriod: (String?, LocalDate, LocalDate?, WeightGoal?) -> Unit = { _, _, _, _ -> },
+    onRemoveGoalPeriod: (String) -> Unit = {},
+    goalPeriodUi: GoalPeriodUi = GoalPeriodUi(),
 ) {
     // Two steps rather than one: the record is two records, so *Add* asks which before it opens a form
     // (N113). Null is "no form open"; `choosing` is the question.
@@ -176,29 +207,26 @@ fun MeasurementsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(error?.let { dataErrorMessage(it) }, snackbarHostState, onDismissError)
     ShowDeletedMeasurementUndo(pendingUndo, snackbarHostState, onUndo, onDismissUndo)
+    ShowRemovedGoalUndo(goalPeriodUi.pendingRemoval, snackbarHostState, goalPeriodUi.onUndo, goalPeriodUi.onDismiss)
     ShowRateVerdict(rateVerdict, snackbarHostState, onDismissRateVerdict)
 
-    if (choosing) {
-        AddMeasurementDialog(
-            onDismiss = { choosing = false },
-            onPick = { kind ->
-                choosing = false
-                adding = kind
-            },
-        )
-    }
-    MeasurementFormDialogs(
+    MeasurementsDialogs(
+        choosing = choosing,
+        onPick = { kind ->
+            choosing = false
+            adding = kind
+        },
         adding = adding,
         editingEntry = editingEntry,
-        onDismiss = {
+        openEntry = openEntry,
+        onDismissForm = {
             adding = null
             editingEntry = null
         },
         onSave = onSave,
+        onDismissOpen = { openEntry = null },
+        onDismissChoosing = { choosing = false },
     )
-    openEntry?.let { entry ->
-        MeasurementDetailsDialog(entry = entry, onDismiss = { openEntry = null })
-    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -227,7 +255,8 @@ fun MeasurementsScreen(
             // default view it opens the record read-only (N132, and the request in use).
             onOpen = { entry -> if (editing) editingEntry = entry else openEntry = entry },
             onDelete = onDelete,
-            onSetWeightGoal = onSetWeightGoal,
+            onSaveGoalPeriod = onSaveGoalPeriod,
+            onRemoveGoalPeriod = onRemoveGoalPeriod,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -268,25 +297,6 @@ private fun MeasurementsTopBar(editing: Boolean, onToggleEditing: () -> Unit, on
 }
 
 /**
- * The weight goal, and its history (N135, N137).
- *
- * A card rather than a row of its own beside the data: the goal is one statement about the series, and the row
- * it draws is the same one the statistics screen showed under its chart — moved here because a goal is set
- * where the body is recorded, not beside a drawing of the past.
- */
-@Composable
-private fun WeightGoalCard(state: MeasurementsUiState, onSetWeightGoal: (WeightGoal?) -> Unit) {
-    AppCard {
-        WeightGoalRow(
-            goal = state.weightGoal,
-            metric = MetricRegistry.entryFor(MetricKey.Body(BodyMetric.WEIGHT)),
-            history = state.goalHistory,
-            onSetGoal = onSetWeightGoal,
-        )
-    }
-}
-
-/**
  * The list under the app bar, with the sentence an empty one says (N32, N113).
  *
  * A `LazyColumn` with the empty sentence as an item rather than a `Column` of rows (B130): a `Column`
@@ -300,7 +310,8 @@ private fun MeasurementList(
     editing: Boolean,
     onOpen: (BodyMeasurement) -> Unit,
     onDelete: (String) -> Unit,
-    onSetWeightGoal: (WeightGoal?) -> Unit,
+    onSaveGoalPeriod: (String?, LocalDate, LocalDate?, WeightGoal?) -> Unit,
+    onRemoveGoalPeriod: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -310,8 +321,19 @@ private fun MeasurementList(
     ) {
         // The goal comes before the entries: it is what those readings are *for*, and the row it draws is the
         // one the statistics screen used to carry under its chart (N135).
+        // The goal is one statement about the series, so it is a card above the readings it is about
+        // (N135, N137): the row the statistics screen used to carry under its chart.
         item(key = GOAL_KEY) {
-            WeightGoalCard(state = state, onSetWeightGoal = onSetWeightGoal)
+            AppCard {
+                WeightGoalRow(
+                    goal = state.weightGoal,
+                    metric = MetricRegistry.entryFor(MetricKey.Body(BodyMetric.WEIGHT)),
+                    history = state.goalHistory,
+                    today = state.today,
+                    onSavePeriod = onSaveGoalPeriod,
+                    onRemovePeriod = onRemoveGoalPeriod,
+                )
+            }
         }
         if (state.entries.isEmpty() && !state.isLoading) {
             item(key = EMPTY_KEY) {

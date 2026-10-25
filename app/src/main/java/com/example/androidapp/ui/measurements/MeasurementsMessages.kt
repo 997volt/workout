@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.res.stringResource
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.statistics.EnergyAdjustment
 import com.example.androidapp.ui.statistics.adjustmentBandText
 
@@ -42,6 +43,36 @@ internal fun ShowDeletedMeasurementUndo(
 
     // Held as a State so the effect's key stays the removed entry, the workout screen's rule (B3): a
     // second delete of the same row must still offer its own undo.
+    LaunchedEffect(pendingUndo) {
+        if (pendingUndo == null) return@LaunchedEffect
+        val result = hostState.showSnackbar(
+            message = message,
+            actionLabel = undoLabel,
+            duration = SnackbarDuration.Short,
+        )
+        if (result == SnackbarResult.ActionPerformed) currentOnUndo() else currentOnDismiss()
+    }
+}
+
+/**
+ * Undo for a goal period a removal just took (ROADMAP N215).
+ *
+ * The same shape a deleted measurement has (N133), and for the same reason: removing a period is a correction
+ * the lifter may have mis-tapped, and the row it took is what goes back — id and all, so the snackbar's undo is
+ * the write that put it there. One at a time, held by the ViewModel.
+ */
+@Composable
+internal fun ShowRemovedGoalUndo(
+    pendingUndo: GoalPeriod?,
+    hostState: SnackbarHostState,
+    onUndo: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val message = stringResource(R.string.statistics_goal_period_removed)
+    val undoLabel = stringResource(R.string.measurements_undo)
+    val currentOnUndo by rememberUpdatedState(onUndo)
+    val currentOnDismiss by rememberUpdatedState(onDismiss)
+
     LaunchedEffect(pendingUndo) {
         if (pendingUndo == null) return@LaunchedEffect
         val result = hostState.showSnackbar(

@@ -38,12 +38,17 @@ import org.junit.Before
 import org.junit.Test
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 /** What the measurements screen's ViewModel owns: passing an entry on, and reporting what came back. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class MeasurementsViewModelTest {
 
     private val clock = TimeSource { Instant.parse("2026-10-21T10:00:00Z") }
+
+    /** The day the ViewModel calls today, read the way it reads it, so these tests hold in any zone. */
+    private val today: LocalDate = clock.now().atZone(ZoneId.systemDefault()).toLocalDate()
 
     private fun viewModelOf(repository: MeasurementRepository, goals: GoalRepository) =
         MeasurementsViewModel(repository, goals, clock)
@@ -65,7 +70,7 @@ class MeasurementsViewModelTest {
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
-        viewModel.onSetWeightGoal(WeightGoal.Direction(gain = true))
+        viewModel.onSaveGoalPeriod(id = null, start = today, end = null, goal = WeightGoal.Direction(gain = true))
         advanceUntilIdle()
 
         val open = goals.observePeriods(WEIGHT_METRIC_ID).first().last()
@@ -81,7 +86,7 @@ class MeasurementsViewModelTest {
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
-        viewModel.onSetWeightGoal(WeightGoal.Target(75_000L))
+        viewModel.onSaveGoalPeriod(id = null, start = today, end = null, goal = WeightGoal.Target(75_000L))
         advanceUntilIdle()
 
         val periods = goals.observePeriods(WEIGHT_METRIC_ID).first()
@@ -99,12 +104,79 @@ class MeasurementsViewModelTest {
         backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
         advanceUntilIdle()
 
-        viewModel.onSetWeightGoal(WeightGoal.Target(75_000L))
+        viewModel.onSaveGoalPeriod(id = null, start = today, end = null, goal = WeightGoal.Target(75_000L))
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
         assertEquals(WeightGoal.Target(75_000L), state.weightGoal)
         assertEquals(1, state.goalHistory.size)
+    }
+
+    @Test
+    fun editingAPeriod_writesTheRowTheEditorNamed() = runTest(dispatcher) {
+        // N215: the editor names the period, and the write is that row rather than a new boundary.
+        val goals = FakeGoalRepository(
+            current = mapOf(
+                WEIGHT_ID to GoalPeriod(id = "p1", startedAt = FIRST_DAY, kind = "LOSE", value = null),
+            ),
+        )
+        val viewModel = viewModelOf(FakeMeasurementRepository(entries), goals)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onSaveGoalPeriod(
+            id = "p1",
+            start = today.minusDays(30),
+            end = null,
+            goal = WeightGoal.Target(80_000L),
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf("p1" to WeightGoal.Target(80_000L)), goals.saves)
+        assertEquals("p1", goals.observePeriods(WEIGHT_METRIC_ID).first().single().id)
+    }
+
+    @Test
+    fun removingAPeriod_offersItBack_andTheUndoPutsItBack() = runTest(dispatcher) {
+        val goals = FakeGoalRepository(
+            current = mapOf(
+                WEIGHT_ID to GoalPeriod(id = "p1", startedAt = FIRST_DAY, kind = "TARGET", value = 80_000.0),
+            ),
+        )
+        val viewModel = viewModelOf(FakeMeasurementRepository(entries), goals)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onRemoveGoalPeriod("p1")
+        advanceUntilIdle()
+
+        assertEquals(listOf("p1"), goals.removed)
+        assertEquals("p1", viewModel.pendingGoalUndo.value?.id)
+
+        viewModel.onUndoGoalPeriodRemoval()
+        advanceUntilIdle()
+
+        assertEquals(listOf("p1"), goals.restored)
+        assertNull("the offer is taken by the undo", viewModel.pendingGoalUndo.value)
+    }
+
+    @Test
+    fun dismissingTheGoalUndo_takesTheOfferAway() = runTest(dispatcher) {
+        val goals = FakeGoalRepository(
+            current = mapOf(
+                WEIGHT_ID to GoalPeriod(id = "p1", startedAt = FIRST_DAY, kind = "TARGET", value = 80_000.0),
+            ),
+        )
+        val viewModel = viewModelOf(FakeMeasurementRepository(entries), goals)
+        backgroundScope.launch(dispatcher) { viewModel.uiState.collect {} }
+        advanceUntilIdle()
+
+        viewModel.onRemoveGoalPeriod("p1")
+        advanceUntilIdle()
+        viewModel.onDismissGoalUndo()
+
+        assertNull(viewModel.pendingGoalUndo.value)
+        assertTrue("nothing is restored when the offer is dismissed", goals.restored.isEmpty())
     }
 
     @Test
@@ -388,7 +460,7 @@ class MeasurementsViewModelTest {
 
     /** The period that is open: a weight goal of [kind], at [grams] where the kind states a weight (N135). */
     private fun settingsFor(kind: WeightGoalKind, grams: Double = 78_000.0) = FakeGoalRepository(
-        current = mapOf(WEIGHT_ID to GoalPeriod(startedAt = null, kind = kind.name, value = grams)),
+        current = mapOf(WEIGHT_ID to GoalPeriod(id = "p0", startedAt = null, kind = kind.name, value = grams)),
     )
 
     private fun entry(id: String, weight: Long, at: Instant = FIRST_DAY) = BodyMeasurement(
@@ -479,31 +551,52 @@ private class FakeGoalRepository(
 ) : GoalRepository {
     private val periods = MutableStateFlow(current.mapValues { (_, period) -> listOf(period) })
 
+    /** Every period write, as the id asked for (null for a new one) and the goal it stated (N215). */
+    val saves = mutableListOf<Pair<String?, WeightGoal?>>()
+    val removed = mutableListOf<String>()
+    val restored = mutableListOf<String>()
+
     override fun observeCurrent(): Flow<Map<String, GoalPeriod>> =
-        periods.map { all -> all.mapValues { (_, rows) -> rows.last() } }
+        periods.map { all -> all.mapNotNull { (id, rows) -> rows.lastOrNull()?.let { id to it } }.toMap() }
 
     override fun observePeriods(metricId: String): Flow<List<GoalPeriod>> =
         periods.map { it[metricId].orEmpty() }
 
-    override suspend fun setGoal(metricId: String, goal: WeightGoal?): DataResult<Unit> {
-        open(metricId, goal?.kind()?.name, goal?.statedWeightGrams()?.toDouble())
+    override suspend fun savePeriod(
+        metricId: String,
+        id: String?,
+        start: LocalDate,
+        end: LocalDate?,
+        goal: WeightGoal?,
+    ): DataResult<Unit> {
+        saves += id to goal
+        val rows = periods.value[metricId].orEmpty()
+        val startedAt = start.atStartOfDay(ZoneId.systemDefault()).toInstant()
+        val kind = goal?.kind()?.name
+        val value = goal?.statedWeightGrams()?.toDouble()
+        periods.value = periods.value + (
+            metricId to if (id != null) {
+                rows.map { if (it.id == id) it.copy(startedAt = startedAt, kind = kind, value = value) else it }
+            } else {
+                rows + GoalPeriod(id = "p${rows.size + 1}", startedAt = startedAt, kind = kind, value = value)
+            }
+            )
         return DataResult.Success(Unit)
     }
 
     override suspend fun setLevelGoal(metricId: String, value: Double?): DataResult<Unit> {
-        open(metricId, kind = null, value = value)
         return DataResult.Success(Unit)
     }
 
-    private fun open(metricId: String, kind: String?, value: Double?) {
-        periods.value = periods.value + (
-            metricId to (
-                periods.value[metricId].orEmpty() + GoalPeriod(
-                    startedAt = Instant.parse("2026-10-22T08:00:00Z"),
-                    kind = kind,
-                    value = value,
-                )
-                )
-            )
+    override suspend fun removePeriod(id: String): DataResult<Unit> {
+        removed += id
+        periods.value = periods.value.mapValues { (_, rows) -> rows.filterNot { it.id == id } }
+        return DataResult.Success(Unit)
+    }
+
+    override suspend fun restorePeriod(metricId: String, period: GoalPeriod): DataResult<Unit> {
+        restored += period.id
+        periods.value = periods.value + (metricId to periods.value[metricId].orEmpty() + period)
+        return DataResult.Success(Unit)
     }
 }

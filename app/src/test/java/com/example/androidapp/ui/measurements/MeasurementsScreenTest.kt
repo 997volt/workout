@@ -76,7 +76,9 @@ class MeasurementsScreenTest {
         onDismissUndo: () -> Unit = {},
         rateVerdict: EnergyAdjustment? = null,
         onDismissRateVerdict: () -> Unit = {},
-        onSetWeightGoal: (WeightGoal?) -> Unit = {},
+        onSaveGoalPeriod: (String?, LocalDate, LocalDate?, WeightGoal?) -> Unit = { _, _, _, _ -> },
+        onRemoveGoalPeriod: (String) -> Unit = {},
+        goalPeriodUi: GoalPeriodUi = GoalPeriodUi(),
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -94,7 +96,9 @@ class MeasurementsScreenTest {
                     onDismissUndo = onDismissUndo,
                     rateVerdict = rateVerdict,
                     onDismissRateVerdict = onDismissRateVerdict,
-                    onSetWeightGoal = onSetWeightGoal,
+                    onSaveGoalPeriod = onSaveGoalPeriod,
+                    onRemoveGoalPeriod = onRemoveGoalPeriod,
+                    goalPeriodUi = goalPeriodUi,
                 )
             }
         }
@@ -168,8 +172,9 @@ class MeasurementsScreenTest {
             state = stateWithGoal(
                 goal = WeightGoal.Direction(gain = false),
                 periods = listOf(
-                    GoalPeriod(startedAt = null, kind = "TARGET", value = 75_000.0),
+                    GoalPeriod(id = "p0", startedAt = null, kind = "TARGET", value = 75_000.0),
                     GoalPeriod(
+                        id = "p1",
                         startedAt = Instant.parse("2026-09-10T08:00:00Z"),
                         kind = "LOSE",
                         value = null,
@@ -186,16 +191,96 @@ class MeasurementsScreenTest {
     }
 
     @Test
-    fun theHistory_isOfferedOnlyWhenThereIsAPast() {
+    fun theHistory_isOfferedAsSoonAsThereIsAPeriod() {
+        // N215: the list is also where a past is added, so it cannot wait for a past to exist.
         setScreen(
             state = stateWithGoal(
                 goal = WeightGoal.Direction(gain = false),
-                periods = listOf(GoalPeriod(startedAt = null, kind = "LOSE", value = null)),
+                periods = listOf(GoalPeriod(id = "p0", startedAt = null, kind = "LOSE", value = null)),
             ),
         )
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).assertExists()
     }
+
+    @Test
+    fun aPeriodRow_opensItsEditor_andSavesTheRowItNames() {
+        // N215: the past is corrected by naming the row, not by laying a new boundary over it.
+        var savedId: String? = "not called"
+        setScreen(
+            state = stateWithGoal(goal = WeightGoal.Direction(gain = false), periods = twoPeriods()),
+            onSaveGoalPeriod = { id, _, _, _ -> savedId = id },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(0)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_DIALOG).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_START).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
+
+        assertEquals("the newest period, which the first row is", "p1", savedId)
+    }
+
+    @Test
+    fun aPastGoal_canBeAddedFromTheList() {
+        var savedId: String? = "not called"
+        setScreen(
+            state = stateWithGoal(goal = WeightGoal.Direction(gain = false), periods = twoPeriods()),
+            onSaveGoalPeriod = { id, _, _, _ -> savedId = id },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_ADD).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
+
+        assertNull("an added period is a new row, not an edit", savedId)
+    }
+
+    @Test
+    fun aPeriod_canBeRemovedFromItsEditor() {
+        var removed: String? = null
+        setScreen(
+            state = stateWithGoal(goal = WeightGoal.Direction(gain = false), periods = twoPeriods()),
+            onRemoveGoalPeriod = { removed = it },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(0)).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_REMOVE).performClick()
+
+        assertEquals("p1", removed)
+    }
+
+    @Test
+    fun onlyAPeriodThatHasASuccessor_offersAnEnd() {
+        // The end of a period is the next one's start, so the period still in force has none (N215).
+        setScreen(
+            state = stateWithGoal(goal = WeightGoal.Direction(gain = false), periods = twoPeriods()),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(0)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_END).assertDoesNotExist()
+    }
+
+    @Test
+    fun anEarlierPeriod_offersTheEndThatClosesIt() {
+        setScreen(
+            state = stateWithGoal(goal = WeightGoal.Direction(gain = false), periods = twoPeriods()),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(1)).performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_END).assertExists()
+    }
+
+    /** A goal with a past: the undated first period, then one that began in September. */
+    private fun twoPeriods() = listOf(
+        GoalPeriod(id = "p0", startedAt = null, kind = "TARGET", value = 75_000.0),
+        GoalPeriod(id = "p1", startedAt = Instant.parse("2026-09-10T08:00:00Z"), kind = "LOSE", value = null),
+    )
 
     @Test
     fun closingTheHistory_takesItAway() {
@@ -203,8 +288,9 @@ class MeasurementsScreenTest {
             state = stateWithGoal(
                 goal = WeightGoal.Direction(gain = false),
                 periods = listOf(
-                    GoalPeriod(startedAt = null, kind = "LOSE", value = null),
+                    GoalPeriod(id = "p0", startedAt = null, kind = "LOSE", value = null),
                     GoalPeriod(
+                        id = "p1",
                         startedAt = Instant.parse("2026-09-10T08:00:00Z"),
                         kind = "LOSE",
                         value = null,
@@ -220,12 +306,15 @@ class MeasurementsScreenTest {
     }
 
     @Test
-    fun theWeightGoal_isChosenKindFirst_andClearedFromTheSameDialog() {
-        var set: WeightGoal? = null
-        var cleared = false
+    fun theWeightGoal_isChosenKindFirst_andNoGoalIsOneOfTheKinds() {
+        var saved: Pair<String?, WeightGoal?>? = null
+        var started: LocalDate? = null
         setScreen(
             state = stateWithGoal(WeightGoal.Target(80_000L)),
-            onSetWeightGoal = { value -> if (value == null) cleared = true else set = value },
+            onSaveGoalPeriod = { id, start, _, value ->
+                saved = id to value
+                started = start
+            },
         )
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performClick()
@@ -234,12 +323,16 @@ class MeasurementsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextInput("80")
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
 
-        assertEquals(WeightGoal.Maintain(80_000L), set)
+        assertEquals("the card opens a new period", null, saved?.first)
+        assertEquals(WeightGoal.Maintain(80_000L), saved?.second)
+        assertEquals("and it starts on the day the screen calls today", LocalDate.of(2026, 10, 2), started)
 
+        // N215: clearing is a period of No goal, one of the kinds rather than a second button.
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performClick()
-        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CLEAR).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_KIND_NONE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
 
-        assertTrue(cleared)
+        assertEquals("a period that asks for nothing", null, saved?.second)
     }
 
     @Test
@@ -250,7 +343,7 @@ class MeasurementsScreenTest {
         var set: WeightGoal? = null
         setScreen(
             state = stateWithGoal(WeightGoal.Target(80_000L)),
-            onSetWeightGoal = { value -> set = value },
+            onSaveGoalPeriod = { _, _, _, value -> set = value },
         )
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performClick()
@@ -268,6 +361,7 @@ class MeasurementsScreenTest {
         periods: List<GoalPeriod> = emptyList(),
     ) = MeasurementsUiState(
         isLoading = false,
+        today = LocalDate.of(2026, 10, 2),
         weightGoal = goal,
         goalHistory = goalOutcomes(
             periods,

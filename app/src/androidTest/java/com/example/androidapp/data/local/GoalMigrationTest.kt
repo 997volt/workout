@@ -11,7 +11,9 @@ import com.example.androidapp.data.SETTINGS_FILE_NAME
 import com.example.androidapp.data.moveLegacyGoals
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.WeightGoal
+import java.time.Duration
 import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -122,17 +124,27 @@ class GoalMigrationTest {
         // change at all (Success, with nothing written).
         val goals = database.metricGoalDao()
         goals.insert(legacyRow(value = 80_000.0))
-        val repository = RoomGoalRepository(database, TimeSource { Instant.ofEpochMilli(500L) })
+        var now = Instant.ofEpochMilli(500L)
+        val repository = RoomGoalRepository(database, TimeSource { now })
+        val firstDay = now.atZone(ZoneId.systemDefault()).toLocalDate()
 
-        repository.setGoal(WEIGHT, WeightGoal.Target(75_000L))
-        repository.setGoal(WEIGHT, WeightGoal.Target(75_000L))
+        repository.savePeriod(WEIGHT, null, firstDay, null, WeightGoal.Target(75_000L))
+        repository.savePeriod(WEIGHT, null, firstDay, null, WeightGoal.Target(75_000L))
 
-        assertEquals("the same value twice is one period", 2, goals.observePeriods(WEIGHT).first().size)
+        assertEquals("the same value twice on one day is one period", 2, goals.observePeriods(WEIGHT).first().size)
 
-        repository.setGoal(WEIGHT, WeightGoal.Target(80_000L))
+        // N215's day granularity: a change is a period on another day, so the clock moves one.
+        now = now.plus(Duration.ofDays(1))
+        repository.savePeriod(
+            WEIGHT,
+            null,
+            now.atZone(ZoneId.systemDefault()).toLocalDate(),
+            null,
+            WeightGoal.Target(80_000L),
+        )
 
         assertEquals(
-            "a change back to the legacy value is a change to the open goal, not a no-op",
+            "a change on a later day is a change to the open goal, not a no-op",
             3,
             goals.observePeriods(WEIGHT).first().size,
         )

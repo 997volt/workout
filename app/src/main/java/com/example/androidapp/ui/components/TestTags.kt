@@ -986,9 +986,21 @@ object TestTags {
         const val WEIGHT_GOAL_SET = "statistics_weight_goal_set"
         const val WEIGHT_GOAL_FIELD = "statistics_weight_goal_field"
         const val WEIGHT_GOAL_CONFIRM = "statistics_weight_goal_confirm"
-        const val WEIGHT_GOAL_CLEAR = "statistics_weight_goal_clear"
 
         fun weightGoalKind(kind: WeightGoalKind) = "statistics_weight_goal_kind_${kind.name.lowercase()}"
+
+        /**
+         * The period editor, and the kinds it can state (ROADMAP N215).
+         *
+         * *No goal* is a kind of period rather than a clear button: a stretch with nothing asked for is what a
+         * cleared goal always wrote, and stating it lets one be entered in the past like any other.
+         */
+        const val GOAL_KIND_NONE = "statistics_goal_kind_none"
+        const val GOAL_PERIOD_DIALOG = "statistics_goal_period_dialog"
+        const val GOAL_PERIOD_START = "statistics_goal_period_start"
+        const val GOAL_PERIOD_END = "statistics_goal_period_end"
+        const val GOAL_PERIOD_REMOVE = "statistics_goal_period_remove"
+        const val GOAL_PERIOD_ADD = "statistics_goal_period_add"
 
         /**
          * The goal's history: the way in, the list, and one row per period (ROADMAP N137).

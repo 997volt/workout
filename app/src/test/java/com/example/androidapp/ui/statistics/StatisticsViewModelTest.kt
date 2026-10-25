@@ -402,7 +402,7 @@ class StatisticsViewModelTest {
         // periods existed looks like on disk (N137).
         goalRepository: FakeGoalRepository = FakeGoalRepository(
             current = (goals.keys + goalKinds.keys).associateWith { metricId ->
-                GoalPeriod(startedAt = null, kind = goalKinds[metricId], value = goals[metricId])
+                GoalPeriod(id = "p-$metricId", startedAt = null, kind = goalKinds[metricId], value = goals[metricId])
             },
         ),
         statistics: FakeStatisticsRepository = FakeStatisticsRepository(sessions, records),
@@ -817,7 +817,13 @@ private class FakeGoalRepository(
     override fun observePeriods(metricId: String): Flow<List<GoalPeriod>> =
         periods.map { it[metricId].orEmpty() }
 
-    override suspend fun setGoal(metricId: String, goal: WeightGoal?): DataResult<Unit> {
+    override suspend fun savePeriod(
+        metricId: String,
+        id: String?,
+        start: LocalDate,
+        end: LocalDate?,
+        goal: WeightGoal?,
+    ): DataResult<Unit> {
         open(metricId, goal?.kind()?.name, goal?.statedWeightGrams()?.toDouble())
         return DataResult.Success(Unit)
     }
@@ -827,11 +833,26 @@ private class FakeGoalRepository(
         return DataResult.Success(Unit)
     }
 
+    override suspend fun removePeriod(id: String): DataResult<Unit> {
+        periods.value = periods.value.mapValues { (_, rows) -> rows.filterNot { it.id == id } }
+        return DataResult.Success(Unit)
+    }
+
+    override suspend fun restorePeriod(metricId: String, period: GoalPeriod): DataResult<Unit> {
+        periods.value = periods.value + (metricId to periods.value[metricId].orEmpty() + period)
+        return DataResult.Success(Unit)
+    }
+
     private fun open(metricId: String, kind: String?, value: Double?) {
         periods.value = periods.value + (
             metricId to (
                 periods.value[metricId].orEmpty() +
-                    GoalPeriod(startedAt = null, kind = kind, value = value)
+                    GoalPeriod(
+                        id = "p${periods.value.values.sumOf { it.size }}",
+                        startedAt = null,
+                        kind = kind,
+                        value = value,
+                    )
                 )
             )
     }

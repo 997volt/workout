@@ -17,6 +17,16 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A weight goal's past can be added, edited and removed** (N215). The goal's history was read-only and could
+  only grow at the clock's now, so a stretch that began in March could not be entered and one entered wrongly
+  could not be corrected. A period is now a Start, an optional End and a kind — Target, Lose, Gain, Maintain or
+  **No goal** — at the day's own midnight, so a goal "from 1 March" owns that day and two changes on one day are
+  one statement. A finished stretch writes the goal it replaced back as one restoring boundary, so the timeline
+  has no gaps; a correction moves a boundary only between its neighbours; removing merges the stretch into the
+  period before it, and the snackbar puts it back. The goal in force stays the newest boundary and keeps no end,
+  and a correction re-reads that stretch's verdict, because the history is derived from what each period asked
+  for.
+
 - **A workout can be hidden from the templates list without being deleted** (N214). *Hide*, in the editor's
   overflow under *Versions*, takes a plan out of the choices while every program that names it still schedules
   and runs it; a *Hidden* filter in the list brings the hidden ones back in place, marked, each with its own

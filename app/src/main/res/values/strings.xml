@@ -388,6 +388,20 @@
     <string name="statistics_goal_history_title">Goal history</string>
     <string name="statistics_goal_from">From %1$s</string>
     <string name="statistics_goal_from_unknown">Start not recorded</string>
+    <!-- N215: the period editor. A period is a start, an optional end and a kind; "No goal" is one of the
+         kinds, so a stretch with nothing asked for can be entered in the past like any other. -->
+    <string name="statistics_goal_kind_none">No goal</string>
+    <string name="statistics_goal_period_add">Add a past goal</string>
+    <string name="statistics_goal_period_add_title">Add a past goal</string>
+    <string name="statistics_goal_period_edit_title">Goal period</string>
+    <string name="statistics_goal_period_since">Since %1$s</string>
+    <string name="statistics_goal_period_until">Until %1$s</string>
+    <string name="statistics_goal_period_ongoing">Ongoing</string>
+    <string name="statistics_goal_period_remove">Remove</string>
+    <string name="statistics_goal_period_edit">Edit this goal period</string>
+    <string name="statistics_goal_period_removed">Goal removed.</string>
+    <!-- The stretch a period covered: its own start to the next one's. -->
+    <string name="statistics_goal_range">%1$s – %2$s</string>
     <string name="statistics_goal_met">Met</string>
     <string name="statistics_goal_missed">Missed</string>
     <string name="statistics_goal_no_goal">No goal</string>

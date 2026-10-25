@@ -48,6 +48,7 @@ import org.junit.runner.RunWith
 import java.nio.file.Files
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 
 /**
  * Instrumented round-trip tests for backup and restore (ROADMAP P1.12).
@@ -377,8 +378,8 @@ class BackupRoundTripTest {
         // the goal and lose the answer to "what was I asking for in March". The goals' **missing-only** import
         // rule went with the preferences string it existed for — a period is a row with an id, so rows merge.
         val goals = RoomGoalRepository(database, clock)
-        goals.setGoal("BODY:WEIGHT", WeightGoal.Target(80_000L))
-        goals.setGoal("BODY:WEIGHT", WeightGoal.Maintain(79_000L))
+        goals.savePeriod("BODY:WEIGHT", null, LocalDate.of(2026, 1, 1), null, WeightGoal.Target(80_000L))
+        goals.savePeriod("BODY:WEIGHT", null, LocalDate.of(2026, 2, 1), null, WeightGoal.Maintain(79_000L))
         val json = exportedJson()
         val exported = database.metricGoalDao().allForBackup()
         assertEquals("the export carries both periods", 2, exported.size)
@@ -845,7 +846,8 @@ class BackupRoundTripTest {
         // *open*, so a clear that only emptied tables would leave the library empty until
         // the process restarted — a clean start that looks broken.
         seedAWorkout()
-        RoomGoalRepository(database, clock).setGoal("BODY:WEIGHT", WeightGoal.Target(80_000L))
+        RoomGoalRepository(database, clock)
+            .savePeriod("BODY:WEIGHT", null, LocalDate.of(2026, 1, 1), null, WeightGoal.Target(80_000L))
         crashLogs.record(
             CrashLog(
                 timestamp = 1_000L,

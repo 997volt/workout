@@ -22,6 +22,7 @@ class GoalOutcomesTest {
     }
 
     private fun period(day: Long?, kind: String?, value: Double?) = GoalPeriod(
+        id = "p${day ?: 0}-${kind ?: "none"}-${value ?: 0}",
         startedAt = day?.let { start.plus(Duration.ofDays(it)) },
         kind = kind,
         value = value,

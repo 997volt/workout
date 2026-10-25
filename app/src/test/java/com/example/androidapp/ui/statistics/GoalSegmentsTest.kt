@@ -25,6 +25,7 @@ class GoalSegmentsTest {
     )
 
     private fun period(day: Long?, value: Double?) = GoalPeriod(
+        id = "p${day ?: 0}-${value ?: 0}",
         startedAt = day?.let { start.plus(Duration.ofDays(it)) },
         kind = "TARGET",
         value = value,
@@ -75,7 +76,7 @@ class GoalSegmentsTest {
     fun aDirectionGoal_drawsNoLine_atAll() {
         // It states no weight (N135), and a level invented from the band would be the end weight the app
         // refuses to manufacture.
-        val direction = GoalPeriod(startedAt = null, kind = "LOSE", value = null)
+        val direction = GoalPeriod(id = "p-direction", startedAt = null, kind = "LOSE", value = null)
 
         assertThat(goalSegments(series, listOf(direction))).isEmpty()
     }

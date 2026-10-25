@@ -9,6 +9,7 @@ import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.isDailyOn
+import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.domain.repository.GoalRepository
 import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.ui.statistics.BodyMetric
@@ -34,6 +35,18 @@ import java.time.ZoneId
 import javax.inject.Inject
 
 /** What the measurements screen renders (ROADMAP N32). */
+/**
+ * The goal-period removal the screen offers back, one period at a time (ROADMAP N215).
+ *
+ * A value like the template editor's `TemplateVersionUi`: the ViewModel holds the removed period, and the screen
+ * draws the snackbar from it, so the offer cannot outlive the write that took the row.
+ */
+data class GoalPeriodUi(
+    val pendingRemoval: GoalPeriod? = null,
+    val onUndo: () -> Unit = {},
+    val onDismiss: () -> Unit = {},
+)
+
 data class MeasurementsUiState(
     val isLoading: Boolean = true,
     /** Entries, newest first — the order the list and the chart both read in. */
@@ -56,6 +69,12 @@ data class MeasurementsUiState(
     val weightGoal: WeightGoal? = null,
     /** Every period of it, oldest first, with what became of each (N137). */
     val goalHistory: List<GoalPeriodOutcome> = emptyList(),
+    /**
+     * The day this screen calls today (B182), so a new goal period's start defaults to the day it is added on.
+     *
+     * `LocalDate.MIN` until the first emission; the editor is only reachable when the list has loaded.
+     */
+    val today: LocalDate = LocalDate.MIN,
 )
 
 /**
@@ -100,6 +119,7 @@ class MeasurementsViewModel @Inject constructor(
             todayEntry = entries.firstOrNull { it.isDailyOn(todayDate, zone) },
             weightGoal = current[WEIGHT_METRIC_ID]?.weightGoal,
             goalHistory = goalOutcomes(periods, readings),
+            today = todayDate,
         )
     }
         .stateIn(
@@ -118,6 +138,10 @@ class MeasurementsViewModel @Inject constructor(
      * own snackbar.
      */
     private val _pendingUndo = MutableStateFlow<BodyMeasurement?>(null)
+
+    /** The goal period a removal just took, awaiting its own snackbar (ROADMAP N215). */
+    private val _pendingGoalUndo = MutableStateFlow<GoalPeriod?>(null)
+    val pendingGoalUndo: StateFlow<GoalPeriod?> = _pendingGoalUndo.asStateFlow()
 
     val pendingUndo: StateFlow<BodyMeasurement?> = _pendingUndo.asStateFlow()
 
@@ -183,18 +207,55 @@ class MeasurementsViewModel @Inject constructor(
     }
 
     /**
-     * Sets the weight goal, or clears it with null (N135, N137).
+     * Writes one goal period — the row [id] names, or a new one from [start] (N135, N215).
      *
-     * The same call the statistics screen made before the goal moved here: closing the open period and
-     * opening the next is the repository's job, so the past stays answerable.
+     * The unit is the day: the repository turns both dates into local midnight, and a row that asks for what is
+     * already there writes nothing. Null [goal] is *No goal*, a period rather than a deletion, so the stretch
+     * still says what was asked for — nothing — and when it stopped being asked for.
      */
-    fun onSetWeightGoal(goal: WeightGoal?) {
+    fun onSaveGoalPeriod(id: String?, start: LocalDate, end: LocalDate?, goal: WeightGoal?) {
         viewModelScope.launch {
-            when (val result = goals.setGoal(WEIGHT_METRIC_ID, goal)) {
+            when (val result = goals.savePeriod(WEIGHT_METRIC_ID, id, start, end, goal)) {
                 is DataResult.Success -> lastError.value = null
                 is DataResult.Failure -> lastError.value = result.error
             }
         }
+    }
+
+    /**
+     * Removes a period, holding it for the snackbar's undo (N215, the shape a deleted measurement has).
+     *
+     * The row is read before it goes, so the offer is the period that went rather than a re-derived guess.
+     */
+    fun onRemoveGoalPeriod(id: String) {
+        val period = uiState.value.goalHistory.firstOrNull { it.period.id == id }?.period ?: return
+        viewModelScope.launch {
+            when (val result = goals.removePeriod(id)) {
+                is DataResult.Success -> {
+                    lastError.value = null
+                    _pendingGoalUndo.value = period
+                }
+
+                is DataResult.Failure -> lastError.value = result.error
+            }
+        }
+    }
+
+    /** Puts the removed period back, id and all (N215). */
+    fun onUndoGoalPeriodRemoval() {
+        val period = _pendingGoalUndo.value ?: return
+        _pendingGoalUndo.value = null
+        viewModelScope.launch {
+            when (val result = goals.restorePeriod(WEIGHT_METRIC_ID, period)) {
+                is DataResult.Success -> lastError.value = null
+                is DataResult.Failure -> lastError.value = result.error
+            }
+        }
+    }
+
+    /** Takes the removal's sentence away once its snackbar has been read (N215). */
+    fun onDismissGoalUndo() {
+        _pendingGoalUndo.value = null
     }
 
     fun onDelete(id: String) {

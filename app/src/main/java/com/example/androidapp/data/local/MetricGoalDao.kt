@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -49,6 +50,39 @@ interface MetricGoalDao {
     /** Opens a period. Nothing is updated: a change is a new row, which is what keeps the past (N137). */
     @Insert
     suspend fun insert(row: MetricGoalEntity)
+
+    // ------------------------------------------------------------------ editing the past (N215)
+
+    @Query("SELECT * FROM metric_goals WHERE id = :id")
+    suspend fun findById(id: String): MetricGoalEntity?
+
+    /**
+     * One metric's periods, **oldest first**, read for the write's own ordering check.
+     *
+     * The same order [observePeriods] gives the screen, taken inside the transaction so the window a boundary
+     * may move inside is read and written together (N215).
+     */
+    @Query(
+        "SELECT * FROM metric_goals WHERE metricId = :metricId " +
+            "ORDER BY (startedAt IS NULL) DESC, startedAt ASC, createdAt ASC",
+    )
+    suspend fun periodsFor(metricId: String): List<MetricGoalEntity>
+
+    /** Rewrites one period in place, `updatedAt` and the columns its editor owns (N215). */
+    @Update
+    suspend fun update(row: MetricGoalEntity): Int
+
+    /** Deletes one boundary, so the stretch it covered merges into the period before it (N215). */
+    @Query("DELETE FROM metric_goals WHERE id = :id")
+    suspend fun delete(id: String): Int
+
+    /**
+     * Puts a removed period back **with its own id**, which is what the removal's undo is (N215).
+     *
+     * `IGNORE`, so a repeated undo is a no-op rather than a second row.
+     */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun restore(row: MetricGoalEntity): Long
 
     /**
      * The one period this metric has open — the same row [observeCurrent] returns for it.

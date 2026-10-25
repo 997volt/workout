@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.statistics
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -26,10 +28,14 @@ import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.model.WeightGoalKind
 import com.example.androidapp.domain.model.kind
 import com.example.androidapp.domain.model.statedWeightGrams
+import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.DatePrompt
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.history.HistoryFormat
+import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 
 /**
@@ -88,12 +94,16 @@ fun GoalRow(
 }
 
 /**
- * The **weight** goal, and the one place its kind is set (ROADMAP N135).
+ * The **weight** goal, its periods, and the one editor both are written from (ROADMAP N135, N215).
  *
  * The number alone used to be the whole goal, with the rate typed beside it — two answers to one question,
- * which could disagree. Here the lifter states what they want and the rate follows: a weight to reach, a
- * way to go with no weight invented for it, or a weight to hold within the app's corridor. So the row says
- * the kind as well as the number, because the kind is half of what was chosen.
+ * which could disagree. Here the lifter states what they want and the rate follows: a weight to reach, a way to
+ * go with no weight invented for it, or a weight to hold within the app's corridor.
+ *
+ * **The past is editable.** A period is a start, an optional end and a kind — including *No goal* — so a stretch
+ * that began in March can be entered, corrected or removed, and the outcomes under the list re-read that stretch
+ * because they are derived. One editor serves the card (a period from today), a history row (that period, or the
+ * end that belongs to the one after it) and *Add a past goal* (a new one anywhere before today).
  */
 @Composable
 fun WeightGoalRow(
@@ -101,12 +111,86 @@ fun WeightGoalRow(
     metric: MetricEntry,
     /** Every period of the goal, oldest first, with what became of each (ROADMAP N137). */
     history: List<GoalPeriodOutcome>,
-    onSetGoal: (WeightGoal?) -> Unit,
+    /** The day this screen calls today: a new period starts there, and no period may begin after it. */
+    today: LocalDate,
+    modifier: Modifier = Modifier,
+    onSavePeriod: (id: String?, start: LocalDate, end: LocalDate?, goal: WeightGoal?) -> Unit = { _, _, _, _ -> },
+    onRemovePeriod: (String) -> Unit = {},
+) {
+    var showingHistory by rememberSaveable { mutableStateOf(false) }
+    var editor by remember { mutableStateOf<GoalPeriodEditor?>(null) }
+
+    GoalHeader(
+        goal = goal,
+        metric = metric,
+        history = history,
+        onOpenHistory = { showingHistory = true },
+        modifier = modifier,
+        onSetGoal = {
+            // The card writes the period that starts today: a change of goal is a new period, and the stretch
+            // before it keeps what was asked for (N137). An ongoing period has no end.
+            editor = GoalPeriodEditor(
+                id = null,
+                start = today,
+                end = null,
+                goal = goal,
+                canHaveEnd = false,
+                startKnown = true,
+            )
+        },
+    )
+
+    editor?.let { current ->
+        GoalPeriodDialog(
+            metric = metric,
+            editor = current,
+            today = today,
+            onSave = { id, start, end, value ->
+                onSavePeriod(id, start, end, value)
+                editor = null
+            },
+            onRemove = { id ->
+                onRemovePeriod(id)
+                editor = null
+            },
+            onDismiss = { editor = null },
+        )
+    }
+
+    if (showingHistory) {
+        GoalHistoryDialog(
+            history = history,
+            metric = metric,
+            onEdit = { period, nextStart ->
+                editor = periodEditor(period, nextStart, today)
+                showingHistory = false
+            },
+            onAdd = {
+                editor = GoalPeriodEditor(
+                    id = null,
+                    start = today,
+                    end = null,
+                    goal = null,
+                    canHaveEnd = true,
+                    startKnown = true,
+                )
+                showingHistory = false
+            },
+            onDismiss = { showingHistory = false },
+        )
+    }
+}
+
+/** The row itself: the goal in force, the way to its list, and the way to set one (N135, N215). */
+@Composable
+private fun GoalHeader(
+    goal: WeightGoal?,
+    metric: MetricEntry,
+    history: List<GoalPeriodOutcome>,
+    onOpenHistory: () -> Unit,
+    onSetGoal: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var editing by rememberSaveable { mutableStateOf(false) }
-    var showingHistory by rememberSaveable { mutableStateOf(false) }
-
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -119,57 +203,62 @@ fun WeightGoalRow(
             style = MaterialTheme.typography.bodyMedium,
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Offered only when there is a past to read: one open period is what the row already says, and a
-            // button that opened a list of the goal on screen would be a control with nothing behind it.
-            if (history.size > 1) {
+            // The list is the way to a period that already ended, and to adding one: it is offered as soon as
+            // there is a period to look at, because a goal set today must still be able to gain a past.
+            if (history.isNotEmpty()) {
                 AppTextButton(
-                    onClick = { showingHistory = true },
+                    onClick = onOpenHistory,
                     modifier = Modifier.testTag(TestTags.Statistics.GOAL_HISTORY),
                 ) {
                     Text(stringResource(R.string.statistics_goal_history))
                 }
             }
             AppTextButton(
-                onClick = { editing = true },
+                onClick = onSetGoal,
                 modifier = Modifier.testTag(TestTags.Statistics.WEIGHT_GOAL_SET),
             ) {
                 Text(text = weightGoalText(goal, metric))
             }
         }
     }
-
-    if (editing) {
-        WeightGoalDialog(
-            goal = goal,
-            metric = metric,
-            onSet = { value ->
-                onSetGoal(value)
-                editing = false
-            },
-            onDismiss = { editing = false },
-        )
-    }
-
-    if (showingHistory) {
-        GoalHistoryDialog(
-            history = history,
-            metric = metric,
-            onDismiss = { showingHistory = false },
-        )
-    }
 }
+
+/** What the editor is writing: a period that exists, or a new one, and the end its neighbours allow. */
+private data class GoalPeriodEditor(
+    val id: String?,
+    val start: LocalDate,
+    val end: LocalDate?,
+    val goal: WeightGoal?,
+    /** True when a later period exists — the only case an end can move a boundary into. */
+    val canHaveEnd: Boolean,
+    /** False for the undated first period: its start was never recorded, so saving needs one chosen. */
+    val startKnown: Boolean,
+)
+
+/** A period as the editor opens it: its own start, and the next boundary as the end it owns (N215). */
+private fun periodEditor(period: GoalPeriod, nextStart: Instant?, today: LocalDate): GoalPeriodEditor =
+    GoalPeriodEditor(
+        id = period.id,
+        start = period.startedAt?.atZone(ZoneId.systemDefault())?.toLocalDate() ?: today,
+        end = nextStart?.atZone(ZoneId.systemDefault())?.toLocalDate(),
+        goal = period.weightGoal,
+        canHaveEnd = nextStart != null,
+        startKnown = period.startedAt != null,
+    )
 
 /**
  * What each period of the goal asked for, and whether it was met (ROADMAP N137).
  *
- * Newest first, because the period a lifter is in is the one they are asking about — and each row says when it
- * began rather than a range, since the periods are contiguous: the row above is when this one ended. A row with
- * no recorded start says so rather than showing a date the app does not have.
+ * Newest first, because the period a lifter is in is the one they are asking about — and each row says the
+ * stretch it covered, which is its own start to the next one's. A row with no recorded start says so rather than
+ * showing a date the app does not have. Tapping one edits it; *Add a past goal* opens the same editor empty.
  */
 @Composable
 private fun GoalHistoryDialog(
     history: List<GoalPeriodOutcome>,
     metric: MetricEntry,
+    onEdit: (GoalPeriod, Instant?) -> Unit,
+    onAdd: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -181,12 +270,22 @@ private fun GoalHistoryDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                history.reversed().forEachIndexed { index, outcome ->
-                    GoalHistoryRow(
-                        outcome = outcome,
-                        metric = metric,
-                        testTag = TestTags.Statistics.goalOutcome(index),
-                    )
+                history.mapIndexed { index, outcome -> outcome to history.getOrNull(index + 1)?.period?.startedAt }
+                    .reversed()
+                    .forEachIndexed { index, (outcome, nextStart) ->
+                        GoalHistoryRow(
+                            outcome = outcome,
+                            nextStart = nextStart,
+                            metric = metric,
+                            testTag = TestTags.Statistics.goalOutcome(index),
+                            onClick = { onEdit(outcome.period, nextStart) },
+                        )
+                    }
+                AppTextButton(
+                    onClick = onAdd,
+                    modifier = Modifier.testTag(TestTags.Statistics.GOAL_PERIOD_ADD),
+                ) {
+                    Text(stringResource(R.string.statistics_goal_period_add))
                 }
             }
         },
@@ -201,10 +300,39 @@ private fun GoalHistoryDialog(
     )
 }
 
-/** One period: what it asked for, whether it was met, and when it began (ROADMAP N137). */
+/**
+ * One period: what it asked for, whether it was met, and the stretch it covered (ROADMAP N137, N215).
+ *
+ * The whole row is the control that edits it, and its name says so — a row that only looked like a fact would
+ * leave the correction this feature is for undiscoverable.
+ */
 @Composable
-private fun GoalHistoryRow(outcome: GoalPeriodOutcome, metric: MetricEntry, testTag: String) {
-    Column(modifier = Modifier.fillMaxWidth().testTag(testTag)) {
+private fun GoalHistoryRow(
+    outcome: GoalPeriodOutcome,
+    nextStart: Instant?,
+    metric: MetricEntry,
+    testTag: String,
+    onClick: () -> Unit,
+) {
+    val start = outcome.period.startedAt
+    val range = when {
+        start == null -> stringResource(R.string.statistics_goal_from_unknown)
+        nextStart == null -> stringResource(
+            R.string.statistics_goal_from,
+            goalDayText(start.atZone(ZoneId.systemDefault()).toLocalDate()),
+        )
+        else -> stringResource(
+            R.string.statistics_goal_range,
+            goalDayText(start.atZone(ZoneId.systemDefault()).toLocalDate()),
+            goalDayText(nextStart.atZone(ZoneId.systemDefault()).toLocalDate()),
+        )
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(testTag)
+            .clickable(onClickLabel = stringResource(R.string.statistics_goal_period_edit), onClick = onClick),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -219,12 +347,7 @@ private fun GoalHistoryRow(outcome: GoalPeriodOutcome, metric: MetricEntry, test
             )
         }
         Text(
-            text = outcome.period.startedAt?.let {
-                stringResource(
-                    R.string.statistics_goal_from,
-                    HistoryFormat.date(it, zone = ZoneId.systemDefault()),
-                )
-            } ?: stringResource(R.string.statistics_goal_from_unknown),
+            text = range,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -256,76 +379,213 @@ private fun weightGoalText(goal: WeightGoal?, metric: MetricEntry): String = whe
     )
 }
 
+/** A day as the row writes it: the app's own date format, in the device's zone (N215). */
+private fun goalDayText(date: LocalDate): String =
+    HistoryFormat.date(date.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault())
+
 /**
- * The dialog the weight goal is chosen in (ROADMAP N135).
+ * The dialog a goal period is written in (ROADMAP N135, N215).
  *
- * The kind first, because it is the question; the weight only where the kind asks for one. Confirming with
- * a value kind whose field cannot be read sets nothing rather than a zero — the rule the target dialog
- * follows, so the mistake stays visible in the field instead of becoming a goal.
+ * The kind first, because it is the question; the weight only where the kind asks for one; the days last, because
+ * an edit to an existing period is usually about the goal rather than its boundary. **No goal** is one of the
+ * kinds, so the period a *Clear* used to write is stated like any other stretch.
  */
 @Composable
-private fun WeightGoalDialog(
-    goal: WeightGoal?,
+private fun GoalPeriodDialog(
     metric: MetricEntry,
-    onSet: (WeightGoal?) -> Unit,
+    editor: GoalPeriodEditor,
+    today: LocalDate,
+    onSave: (String?, LocalDate, LocalDate?, WeightGoal?) -> Unit,
+    onRemove: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var kind by rememberSaveable { mutableStateOf(goal?.kind()) }
-    var typed by rememberSaveable {
-        mutableStateOf(goal?.statedWeightGrams()?.let { metric.unit.format(it.toDouble()) }.orEmpty())
-    }
+    val draft = rememberGoalPeriodDraft(editor, metric, today)
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.statistics_weight_goal)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                WeightGoalKind.entries.forEach { option ->
-                    AppFilterChip(
-                        selected = kind == option,
-                        onClick = { kind = option },
-                        label = stringResource(weightGoalKindLabel(option)),
-                        testTag = TestTags.Statistics.weightGoalKind(option),
-                    )
-                }
-                if (kind == WeightGoalKind.TARGET || kind == WeightGoalKind.MAINTAIN) {
-                    OutlinedTextField(
-                        value = typed,
-                        onValueChange = { typed = it },
-                        singleLine = true,
-                        suffix = { Text(stringResource(metric.unit.labelRes)) },
-                        modifier = Modifier.testTag(TestTags.Statistics.WEIGHT_GOAL_FIELD),
-                    )
-                }
-            }
+        modifier = Modifier.testTag(TestTags.Statistics.GOAL_PERIOD_DIALOG),
+        title = {
+            Text(
+                stringResource(
+                    if (editor.id == null) {
+                        R.string.statistics_goal_period_add_title
+                    } else {
+                        R.string.statistics_goal_period_edit_title
+                    },
+                ),
+            )
         },
+        text = { GoalPeriodFields(metric = metric, draft = draft) },
         confirmButton = {
             AppTextButton(
-                onClick = { weightGoalFor(kind, typed, metric)?.let(onSet) },
+                onClick = { draft.start?.let { start -> onSave(editor.id, start, draft.end, draft.goal) } },
+                enabled = draft.valid,
                 modifier = Modifier.testTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM),
             ) {
                 Text(stringResource(R.string.statistics_goal_confirm))
             }
         },
         dismissButton = {
-            if (goal != null) {
-                AppTextButton(
-                    onClick = { onSet(null) },
-                    modifier = Modifier.testTag(TestTags.Statistics.WEIGHT_GOAL_CLEAR),
-                ) {
-                    Text(stringResource(R.string.statistics_goal_clear))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (editor.id != null) {
+                    AppTextButton(
+                        onClick = { onRemove(editor.id) },
+                        modifier = Modifier.testTag(TestTags.Statistics.GOAL_PERIOD_REMOVE),
+                    ) {
+                        Text(stringResource(R.string.statistics_goal_period_remove))
+                    }
+                }
+                AppTextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         },
     )
+
+    if (draft.pickingStart) {
+        DatePrompt(
+            initial = draft.start ?: today,
+            latestDay = today,
+            onDismiss = { draft.pickingStart = false },
+            onPick = draft::pickStart,
+        )
+    }
+    if (draft.pickingEnd) {
+        DatePrompt(
+            initial = draft.end ?: draft.start?.plusMonths(1) ?: today,
+            latestDay = today,
+            onDismiss = { draft.pickingEnd = false },
+            onPick = draft::pickEnd,
+        )
+    }
+}
+
+/** The kind chips, the weight where it is asked for, and the two days (N215). */
+@Composable
+private fun GoalPeriodFields(metric: MetricEntry, draft: GoalPeriodDraft) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        GoalPeriodKinds(draft.kind) { draft.kindName = it?.name }
+        if (draft.needsWeight) {
+            OutlinedTextField(
+                value = draft.weight,
+                onValueChange = { draft.weight = it },
+                singleLine = true,
+                isError = draft.weight.isNotBlank() && draft.goal == null,
+                suffix = { Text(stringResource(metric.unit.labelRes)) },
+                modifier = Modifier.testTag(TestTags.Statistics.WEIGHT_GOAL_FIELD),
+            )
+        }
+        AppTextButton(
+            onClick = { draft.pickingStart = true },
+            modifier = Modifier.testTag(TestTags.Statistics.GOAL_PERIOD_START),
+        ) {
+            Text(
+                stringResource(
+                    R.string.statistics_goal_period_since,
+                    draft.start?.let(::goalDayText) ?: stringResource(R.string.statistics_goal_from_unknown),
+                ),
+            )
+        }
+        if (draft.canHaveEnd) {
+            AppTextButton(
+                onClick = { draft.pickingEnd = true },
+                modifier = Modifier.testTag(TestTags.Statistics.GOAL_PERIOD_END),
+            ) {
+                Text(
+                    stringResource(
+                        R.string.statistics_goal_period_until,
+                        draft.end?.let(::goalDayText) ?: stringResource(R.string.statistics_goal_period_ongoing),
+                    ),
+                )
+            }
+        }
+    }
+}
+
+/** The kinds, *No goal* included: a period is what the lifter asked for, and nothing is one answer (N215). */
+@Composable
+private fun GoalPeriodKinds(kind: WeightGoalKind?, onKind: (WeightGoalKind?) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        WeightGoalKind.entries.forEach { option ->
+            AppFilterChip(
+                selected = kind == option,
+                onClick = { onKind(option) },
+                label = stringResource(weightGoalKindLabel(option)),
+                testTag = TestTags.Statistics.weightGoalKind(option),
+            )
+        }
+        AppFilterChip(
+            selected = kind == null,
+            onClick = { onKind(null) },
+            label = stringResource(R.string.statistics_goal_kind_none),
+            testTag = TestTags.Statistics.GOAL_KIND_NONE,
+        )
+    }
 }
 
 /**
- * The goal [kind] and [typed] state, or null when they state nothing usable.
+ * The editor's form, held as state (ROADMAP N215).
  *
- * A direction kind ignores the field on purpose: it states no weight, and a value left in the box from an
- * earlier target must not become one.
+ * A state holder rather than six `remember`s in the dialog, the shape Compose recommends for a form: the dialog
+ * is the layout, and the rules that decide what can be saved live beside the fields they read.
  */
+private class GoalPeriodDraft(
+    private val metric: MetricEntry,
+    private val today: LocalDate,
+    editor: GoalPeriodEditor,
+) {
+    val canHaveEnd: Boolean = editor.canHaveEnd
+    var kindName by mutableStateOf(editor.goal?.kind()?.name)
+    var weight by mutableStateOf(
+        editor.goal?.statedWeightGrams()?.let { metric.unit.format(it.toDouble()) }.orEmpty(),
+    )
+    private var startDay by mutableStateOf(editor.start.takeIf { editor.startKnown }?.toEpochDay())
+    private var endDay by mutableStateOf(editor.end?.toEpochDay())
+    var pickingStart by mutableStateOf(false)
+    var pickingEnd by mutableStateOf(false)
+
+    val kind: WeightGoalKind?
+        get() = kindName?.let { name -> WeightGoalKind.entries.firstOrNull { it.name == name } }
+
+    val start: LocalDate? get() = startDay?.let { LocalDate.ofEpochDay(it) }
+
+    /** An end only exists for a period with a next one (N215): the goal in force is open by definition. */
+    val end: LocalDate? get() = endDay?.takeIf { canHaveEnd }?.let { LocalDate.ofEpochDay(it) }
+
+    val needsWeight: Boolean
+        get() = kind == WeightGoalKind.TARGET || kind == WeightGoalKind.MAINTAIN
+
+    val goal: WeightGoal? get() = weightGoalFor(kind, weight, metric)
+
+    /** A day after today is not a record, and an end that is not after its start would write an empty stretch. */
+    val valid: Boolean
+        get() {
+            val start = start ?: return false
+            val end = end
+            val datesValid = !start.isAfter(today) &&
+                (end == null || (end.isAfter(start) && !end.isAfter(today)))
+            return datesValid && (!needsWeight || goal != null) && (canHaveEnd || end == null)
+        }
+
+    /** A start picked past the end takes the end with it, rather than leaving an invisible invalid form. */
+    fun pickStart(day: LocalDate) {
+        startDay = day.toEpochDay()
+        val end = end
+        if (end != null && !end.isAfter(day)) endDay = null
+    }
+
+    fun pickEnd(day: LocalDate) {
+        endDay = day.toEpochDay()
+    }
+}
+
+@Composable
+private fun rememberGoalPeriodDraft(
+    editor: GoalPeriodEditor,
+    metric: MetricEntry,
+    today: LocalDate,
+): GoalPeriodDraft = remember(editor) { GoalPeriodDraft(metric, today, editor) }
+
 private fun weightGoalFor(kind: WeightGoalKind?, typed: String, metric: MetricEntry): WeightGoal? = when (kind) {
     null -> null
     WeightGoalKind.LOSE -> WeightGoal.Direction(gain = false)

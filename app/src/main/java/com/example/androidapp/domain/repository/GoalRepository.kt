@@ -7,6 +7,7 @@ import com.example.androidapp.domain.model.statedWeightGrams
 import com.example.androidapp.domain.model.weightGoalOf
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
+import java.time.LocalDate
 
 /**
  * One **period** of a metric's goal (ROADMAP N137).
@@ -17,8 +18,12 @@ import java.time.Instant
  *
  * [startedAt] is null for the first period of a goal that was already stored when periods arrived — the move
  * cannot know when it began, and inventing the upgrade's own timestamp would be inventing history.
+ *
+ * [id] is the row's, and it is what makes the past **editable** (ROADMAP N215): without it a period could be
+ * read and judged but never addressed, so a stretch entered wrongly could only be overlaid with another.
  */
 data class GoalPeriod(
+    val id: String,
     val startedAt: Instant?,
     val kind: String?,
     val value: Double?,
@@ -53,15 +58,42 @@ interface GoalRepository {
     fun observePeriods(metricId: String): Flow<List<GoalPeriod>>
 
     /**
-     * Closes the open period and opens one asking for [goal] (ROADMAP N135's kinds).
+     * Writes one period — the row [id] names, or a new one beginning on [start] (ROADMAP N215).
      *
-     * Null opens a period of **no goal** rather than deleting the open one: clearing is a change like any
-     * other, and a deleted row would take the answer to "what was I asking for until today" with it.
+     * **Days, not moments**: [start] and [end] become local midnight, so a goal "from 1 March" owns 1 March's
+     * weigh-in. A start that already carries a boundary edits that boundary rather than opening a second one at
+     * the same day, which is what makes setting a goal twice on one day one statement.
+     *
+     * **The end is the next boundary.** Passing [end] closes the period there; when no boundary already sits on
+     * that day, the goal that covered it before is written back as one restoring row, so the timeline stays
+     * contiguous without the app inventing a stretch. A period still in force has no end — a null [end] is the
+     * ordinary case, and an end on the newest period is refused because nothing would follow it.
+     *
+     * Refused with its reason: a day after today, an end not after its start, a start on a day another period
+     * already begins, a start that crosses a neighbour, and an end past the boundary that follows it.
      */
-    suspend fun setGoal(metricId: String, goal: WeightGoal?): DataResult<Unit>
+    suspend fun savePeriod(
+        metricId: String,
+        id: String?,
+        start: LocalDate,
+        end: LocalDate?,
+        goal: WeightGoal?,
+    ): DataResult<Unit>
 
     /** The same for a metric whose goal is one number — every metric but weight (ROADMAP N39). */
     suspend fun setLevelGoal(metricId: String, value: Double?): DataResult<Unit>
+
+    /**
+     * Removes one period, so the stretch it covered merges into the period before it (ROADMAP N215).
+     *
+     * **The lifter's correction, not the app's tidy-up**: removing the newest period is how a change that was
+     * not a change is taken back, and removing the last one leaves the metric with no goal rather than a period
+     * saying there is none — [restorePeriod] is what the snackbar offers straight after.
+     */
+    suspend fun removePeriod(id: String): DataResult<Unit>
+
+    /** Puts a removed period back, **id and all**, which is what the removal's undo is (ROADMAP N215). */
+    suspend fun restorePeriod(metricId: String, period: GoalPeriod): DataResult<Unit>
 }
 
 /** The kind's stored name, or null for a goal that states none (a plain level target). */
