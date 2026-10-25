@@ -351,6 +351,26 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun aYearBehindMore_isAlsoNamedWithoutTheWordLast() {
+        // B235: the six-month name was shortened but the year kept the word the row had dropped. The menu
+        // keeps the full name, as it does for six months.
+        setScreen(
+            state = StatisticsUiState(
+                isLoading = false,
+                range = StatisticsRange(RangeKind.LAST_YEAR),
+                series = series,
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE)
+            .assertIsSelected()
+            .assertTextEquals("1 year")
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.RANGE_MORE).performClick()
+        composeTestRule.onNodeWithText("Last year").assertExists()
+    }
+
+    @Test
     fun aTarget_isShownInTheMetricsOwnUnit_andEditable() {
         // Typed as 82 kilograms and reported as 82000 grams: the row shows what a person reads, and the
         // screen hands over what the app stores (ROADMAP N39).

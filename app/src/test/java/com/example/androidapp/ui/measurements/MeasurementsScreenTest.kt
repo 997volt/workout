@@ -1,6 +1,7 @@
 package com.example.androidapp.ui.measurements
 
 import android.content.Context
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -8,6 +9,7 @@ import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -224,6 +226,7 @@ class MeasurementsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.goalOutcome(0)).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_DIALOG).assertExists()
+        composeTestRule.onNodeWithText("Goal period").assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_START).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
 
@@ -240,6 +243,7 @@ class MeasurementsScreenTest {
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_HISTORY).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_ADD).performClick()
+        composeTestRule.onNodeWithText("Add a past goal").assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_CONFIRM).performClick()
 
         assertNull("an added period is a new row, not an edit", savedId)
@@ -258,6 +262,25 @@ class MeasurementsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.GOAL_PERIOD_REMOVE).performClick()
 
         assertEquals("p1", removed)
+    }
+
+    @Test
+    fun aRemovedPeriod_saysItWasAPeriod_andOffersTheUndo() {
+        // B231: removing a period leaves the previous goal in force, so "Goal removed." was false. B237:
+        // this also composes the snackbar the old tests never did.
+        var undone = false
+        setScreen(
+            state = stateWithGoal(goal = WeightGoal.Direction(gain = false), periods = twoPeriods()),
+            goalPeriodUi = GoalPeriodUi(
+                pendingRemoval = twoPeriods().first(),
+                onUndo = { undone = true },
+            ),
+        )
+
+        composeTestRule.onNodeWithText("Goal period removed.").assertExists()
+        composeTestRule.onNodeWithText("Undo").performClick()
+
+        assertEquals(true, undone)
     }
 
     @Test
@@ -327,6 +350,7 @@ class MeasurementsScreenTest {
         )
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_SET).performClick()
+        composeTestRule.onAllNodesWithText("Weight goal").assertCountEquals(2)
         composeTestRule.onNodeWithTag(TestTags.Statistics.weightGoalKind(WeightGoalKind.MAINTAIN)).performClick()
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextClearance()
         composeTestRule.onNodeWithTag(TestTags.Statistics.WEIGHT_GOAL_FIELD).performTextInput("80")

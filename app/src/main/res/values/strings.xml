@@ -332,6 +332,7 @@
     <string name="range_7_days_short">7 days</string>
     <string name="range_month_short">1 month</string>
     <string name="range_3_months_short">3 months</string>
+    <string name="range_year_short">1 year</string>
     <string name="range_6_months_short">6 months</string>
     <string name="statistics_metric_search">Search series</string>
     <string name="statistics_metric_no_matches">No series matches.</string>
@@ -401,7 +402,7 @@
     <string name="statistics_goal_period_ongoing">Ongoing</string>
     <string name="statistics_goal_period_remove">Remove</string>
     <string name="statistics_goal_period_edit">Edit this goal period</string>
-    <string name="statistics_goal_period_removed">Goal removed.</string>
+    <string name="statistics_goal_period_removed">Goal period removed.</string>
     <!-- The stretch a period covered: its own start to the next one's. -->
     <string name="statistics_goal_range">%1$s – %2$s</string>
     <string name="statistics_goal_met">Met</string>

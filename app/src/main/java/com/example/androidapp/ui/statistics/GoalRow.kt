@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.statistics
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -136,6 +137,7 @@ fun WeightGoalRow(
                 goal = goal,
                 canHaveEnd = false,
                 startKnown = true,
+                titleRes = R.string.statistics_weight_goal,
             )
         },
     )
@@ -173,6 +175,7 @@ fun WeightGoalRow(
                     goal = null,
                     canHaveEnd = true,
                     startKnown = true,
+                    titleRes = R.string.statistics_goal_period_add_title,
                 )
                 showingHistory = false
             },
@@ -233,6 +236,13 @@ private data class GoalPeriodEditor(
     val canHaveEnd: Boolean,
     /** False for the undated first period: its start was never recorded, so saving needs one chosen. */
     val startKnown: Boolean,
+    /**
+     * What the dialog is called (B230).
+     *
+     * The card sets today's goal, a history row corrects one and *Add a past goal* adds one; the same fields
+     * are not the same question, so the title travels with the editor rather than being guessed from a null id.
+     */
+    @StringRes val titleRes: Int,
 )
 
 /** A period as the editor opens it: its own start, and the next boundary as the end it owns (N215). */
@@ -244,6 +254,7 @@ private fun periodEditor(period: GoalPeriod, nextStart: Instant?, today: LocalDa
         goal = period.weightGoal,
         canHaveEnd = nextStart != null,
         startKnown = period.startedAt != null,
+        titleRes = R.string.statistics_goal_period_edit_title,
     )
 
 /**
@@ -405,15 +416,7 @@ private fun GoalPeriodDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.testTag(TestTags.Statistics.GOAL_PERIOD_DIALOG),
         title = {
-            Text(
-                stringResource(
-                    if (editor.id == null) {
-                        R.string.statistics_goal_period_add_title
-                    } else {
-                        R.string.statistics_goal_period_edit_title
-                    },
-                ),
-            )
+            Text(stringResource(editor.titleRes))
         },
         text = { GoalPeriodFields(metric = metric, draft = draft) },
         confirmButton = {

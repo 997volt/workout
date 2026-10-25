@@ -39,6 +39,7 @@ val RangeKind.chipLabelRes: Int
         RangeKind.LAST_MONTH -> R.string.range_month_short
         RangeKind.LAST_3_MONTHS -> R.string.range_3_months_short
         RangeKind.LAST_6_MONTHS -> R.string.range_6_months_short
+        RangeKind.LAST_YEAR -> R.string.range_year_short
         else -> labelRes
     }
 
