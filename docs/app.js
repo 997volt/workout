@@ -8062,17 +8062,27 @@
       editorMessage('The program is not ready; fix the problems above.');
       return;
     }
+    editorShowReady(ed.working);
+    editorMessage('Ready: download the program and load it in Programs → Load.');
+  }
+
+  /**
+   * What the core found in a program it would add: counts, never a promise about a diff (N172).
+   *
+   * Shared by the two validated paths — *Check the program* for a new program and *Download as new
+   * program* for an opened one — so the panel says the same thing about the same document.
+   */
+  function editorShowReady(working) {
     var host = ui.elements.editorPreview;
     host.textContent = '';
-    var days = (ed.working.slots || []).length;
-    var workouts = (ed.working.templates || []).length;
-    var exercises = (ed.working.templateExercises || []).length;
-    var sets = (ed.working.templateSets || []).length;
+    var days = (working.slots || []).length;
+    var workouts = (working.templates || []).length;
+    var exercises = (working.templateExercises || []).length;
+    var sets = (working.templateSets || []).length;
     host.appendChild(h('p', '', 'The program is ready: ' + days + ' day' + (days === 1 ? '' : 's') +
       ', ' + workouts + ' workout' + (workouts === 1 ? '' : 's') + ', ' + exercises + ' exercise' +
       (exercises === 1 ? '' : 's') + ', ' + sets + ' set' + (sets === 1 ? '' : 's') + '.'));
     host.appendChild(h('p', 'hint', 'Programs → Load adds it as a new program; it is not an edit of anything.'));
-    editorMessage('Ready: download the program and load it in Programs → Load.');
   }
 
   function editorPreview() {
@@ -8172,6 +8182,8 @@
     }
     downloadText(payload.text, payload.fileName);
     announce('Downloaded program-add.json. Load it in Programs, then Load, to add it.');
+    // The panel's last answer was the edit's, which is not what was written: say what the file is.
+    editorShowReady(ed.working);
     editorMessage('Downloaded program-add.json: a load adds it as a new program, and its id makes a ' +
       'second load of the same file do nothing.');
   }
