@@ -28,16 +28,7 @@ not now — and it is not *Next*, which is what is actually being worked on. Eac
 for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a graveyard.
 **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for the changelog.
 
-- **A set can be a hold rather than a rep count** (N220). An exercise can be marked *timed* in the library, the
-  way one is marked bodyweight (N219), and its sets then record a duration instead of reps — the row reads
-  `0:45` where a rep count would be. Load stays on the set, because a farmer's carry is both, but **volume
-  stays `reps × load`**: a timed set adds none. A plank is forty-five seconds, not forty-five reps of nothing,
-  and inventing a rep equivalent is the thing this app refuses to do to a number. Records stay by reps until a
-  timed best is a question somebody actually asks. It needs a migration (a duration on the set, the flag on the
-  exercise), and the log fields, the set row and the history's set editor have to move together, which is most
-  of the cost. **Brought forward when** a session first has to record a hold and has nowhere honest to put it —
-  the first plank or carry logged as reps is the event this row exists for, and it is the evidence that will
-  say whether the volume rule above was the right one.
+**Nothing.** The timed set (N220) has shipped to the unreleased section.
 
 ## Parked — deliberately not planned
 

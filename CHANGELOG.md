@@ -17,6 +17,16 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A set can be a hold instead of a rep count** (N220). An exercise can be marked *timed*, and its sets then
+  record how long they were held — the row reads `0:45` — with the weight field still there, because a carry is
+  loaded as well as timed. A hold states **no reps at all**: reps go to zero rather than a forty-five-second
+  plank reading as forty-five of something, which is exactly the lie the old shape told. Volume stays
+  `reps × load` and records stay by reps, so a hold contributes to neither — the same answer N15 gave
+  bodyweight before N219 reopened it, and the honest one here. The set floor and the ± pair follow the shape:
+  a hold steps fifteen seconds, is refused at zero, and the correction dialog edits it as a hold rather than
+  as reps. A plan can still only prescribe reps, so a timed movement inside one ignores its rep target; that
+  is this change's boundary, stated rather than hidden.
+
 - **A backup writes itself when the app is next opened** (N218). Periodic backup as a setting: pick a folder
   once, choose Daily, Weekly or Monthly, and a timestamped file is written there the next time the app comes
   to the front after the period has run out. It never runs in the background — no job, no alarm, no

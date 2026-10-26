@@ -1619,6 +1619,13 @@ the rule; that one argues it.
   prune, record — so a crash anywhere leaves the previous copies intact and the period still due. Pruning
   touches only files this app named and keeps five, because the folder is the user's.
 
+- **A hold is a set with no reps** (N220). A timed movement's set records seconds and writes `reps = 0`: the
+  two are one shape, and the write boundary refuses a row that states both. Volume and records need no new
+  rule, because both are built on reps — a hold contributes to neither, which is the same answer N15 gave
+  bodyweight and assistance before N219 revisited them. **Plans still prescribe reps**: a timed movement in a
+  plan ignores its rep target, and that boundary is written down rather than left to be discovered, because the
+  alternative — a template target that carries a duration — is a plan-editor change rather than a set one.
+
 - **A bodyweight set snapshots the lifter's weight** (N219). Taken once, when the set is logged, and stored
   on the set: a later measurement corrects the body, not what was lifted, and resolving it at read time would
   let every trend rewrite itself when the scale moved. The load is `bodyweight + added − assistance`, floored
