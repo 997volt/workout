@@ -57,6 +57,31 @@ class ExerciseTrendPointTest {
     }
 
     @Test
+    fun aBodyweightSet_isTheLoadItWasPerformedAt() {
+        // B256: the trend's volume, heaviest set and estimate all read `loadGrams` now (N219). None of them
+        // was ever exercised with a bodyweight row, so a regression to the added weight alone was invisible.
+        val points = rows(
+            row(weight = 20_000L, reps = 5, bodyweight = 75_000L),
+            row(weight = 0L, reps = 8, bodyweight = 75_000L),
+        ).toExerciseTrendPoints()
+
+        assertEquals("95 kg × 5 is the heaviest", 95_000L, points.single().heaviestSetGrams)
+        assertEquals(5 * 95_000L + 8 * 75_000L, points.single().volumeGrams)
+        assertEquals(13, points.single().totalReps)
+    }
+
+    @Test
+    fun anAssistedBodyweightSet_floorsItsLoadAtZero() {
+        // A band taking more than the lifter weighs is still a set: the trend must not plot a negative.
+        val points = rows(
+            row(weight = 0L, reps = 8, bodyweight = 20_000L, assistance = 50_000L),
+        ).toExerciseTrendPoints()
+
+        assertEquals(0L, points.single().volumeGrams)
+        assertNull(points.single().heaviestSetGrams)
+    }
+
+    @Test
     fun epley_estimatesFromTheHeaviestSet() {
         // 100 kg for 5: 100 × (1 + 5/30) = 116.67 kg, rounded to the nearest half.
         val points = rows(row(weight = 100_000L, reps = 5)).toExerciseTrendPoints()
@@ -269,6 +294,7 @@ class ExerciseTrendPointTest {
             rpeHalves = it.rpeHalves,
             setType = it.type,
             assistanceGrams = it.assistance,
+            bodyweightGrams = it.bodyweight,
         )
     }
 
@@ -284,7 +310,20 @@ class ExerciseTrendPointTest {
         exercise: String = "exercise-1",
         muscleFeel: Int? = null,
         jointPain: Int? = null,
-    ) = SetRow(session, startedAt, weight, reps, rpeHalves, type, assistance, exercise, muscleFeel, jointPain)
+        bodyweight: Long? = null,
+    ) = SetRow(
+        session,
+        startedAt,
+        weight,
+        reps,
+        rpeHalves,
+        type,
+        assistance,
+        exercise,
+        muscleFeel,
+        jointPain,
+        bodyweight,
+    )
 
     private data class SetRow(
         val session: String,
@@ -297,5 +336,6 @@ class ExerciseTrendPointTest {
         val exercise: String,
         val muscleFeel: Int?,
         val jointPain: Int?,
+        val bodyweight: Long?,
     )
 }

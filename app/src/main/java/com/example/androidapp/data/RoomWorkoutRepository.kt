@@ -524,16 +524,6 @@ class RoomWorkoutRepository @Inject constructor(
      * and displayed by whichever field the screen happens to read first. The duration's ceiling is one day —
      * a mistyped `4500` on a plank is a typo, not a forty-five-minute hold.
      */
-    private fun heldShape(reps: Int, durationSeconds: Int?): Pair<Int, Int?> = when {
-        durationSeconds == null -> reps.coerceAtLeast(1) to null
-        durationSeconds < 1 -> throw InvalidInputException("A hold must be longer than zero seconds.")
-        durationSeconds > MAX_SET_SECONDS ->
-            throw InvalidInputException("A hold cannot be longer than a day.")
-
-        reps != 0 -> throw InvalidInputException("A timed set records a duration instead of reps.")
-        else -> 0 to durationSeconds
-    }
-
     override suspend fun deleteSet(setId: String): DataResult<Unit> = dataResultOf {
         val updated = dao.softDeleteSet(id = setId, at = timeSource.nowEpochMillis())
         if (updated == 0) throw NotFoundException("set $setId")
@@ -678,4 +668,23 @@ private suspend fun appendExercise(
 
 
 /** One day, in seconds: the ceiling on a hold, so a mistyped number cannot become a session (N220). */
-private const val MAX_SET_SECONDS = 86_400
+internal const val MAX_SET_SECONDS = 86_400
+
+/**
+ * What a set's reps and duration are allowed to be together (ROADMAP N220).
+ *
+ * A row states **one** of them: a hold is seconds and no reps, a counted set is reps and no duration.
+ * Asking for both is two answers to one question, so it is refused at this boundary rather than written and
+ * displayed by whichever field the screen happens to read first. The duration's ceiling is one day — a
+ * mistyped `4500` on a plank is a typo, not a forty-five-minute hold.
+ *
+ * File-level and internal so the rule can be tested without a database (B256): it is one decision, and the
+ * cases that matter are the three refusals and the clamp that keeps a zero-rep set out of history.
+ */
+internal fun heldShape(reps: Int, durationSeconds: Int?): Pair<Int, Int?> = when {
+    durationSeconds == null -> reps.coerceAtLeast(1) to null
+    durationSeconds < 1 -> throw InvalidInputException("A hold must be longer than zero seconds.")
+    durationSeconds > MAX_SET_SECONDS -> throw InvalidInputException("A hold cannot be longer than a day.")
+    reps != 0 -> throw InvalidInputException("A timed set records a duration instead of reps.")
+    else -> 0 to durationSeconds
+}

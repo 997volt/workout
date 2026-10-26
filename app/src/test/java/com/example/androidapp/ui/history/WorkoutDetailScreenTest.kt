@@ -71,6 +71,26 @@ class WorkoutDetailScreenTest {
     )
 
     @Test
+    fun aHold_readsAsItsDuration_andIsSpokenInWords() {
+        // B256: the row is the one place a lifter reads a set back, and nothing tested that a hold renders
+        // as "0:45" rather than "0 reps" — nor that a screen reader gets words instead of digits.
+        setScreen(
+            state.copy(
+                exercises = listOf(
+                    state.exercises.single().copy(
+                        sets = listOf(
+                            HistorySet(id = "set1", reps = 0, weightGrams = 0L, durationSeconds = 45),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("0:45", substring = true).assertExists()
+        composeTestRule.onNodeWithContentDescription("45 seconds", substring = true).assertExists()
+    }
+
+    @Test
     fun anActivity_isNamed_andHasNoSetOrVolumeTotals() {
         // B167: an activity opened from history was an empty workout with "0 sets"; the title and the
         // totals now say what it was.

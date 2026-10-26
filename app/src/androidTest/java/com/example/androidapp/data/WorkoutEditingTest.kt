@@ -19,6 +19,9 @@ import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.ui.history.HistoryExercise
+import com.example.androidapp.ui.history.HistorySet
+import com.example.androidapp.ui.history.WorkoutDetailUiState
 import com.example.androidapp.domain.model.Side
 import java.time.Instant
 import kotlinx.coroutines.flow.first
@@ -676,10 +679,11 @@ class WorkoutEditingTest {
 
     @Test
     fun theUiVolumeFormula_agreesWithTheSql() = runTest {
-        // `WorkoutDetailViewModel.volumeGrams` says it is "one formula in two places" and
-        // that "the instrumented history test asserts they agree" — which no test did
-        // (ROADMAP B9). This is that assertion: the sum the detail screen computes over
-        // its own rows, against the figure the history query returns for the same rows.
+        // `WorkoutDetailUiState.volumeGrams` says it is "one formula in two places" and that the instrumented
+        // history test asserts they agree — which it did not (ROADMAP B9, B241, B256). This is that
+        // assertion, and it now calls the property itself rather than recomputing a formula beside it, over
+        // the two shapes the rule has: an assisted set (its weight alone) and a bodyweight one (the lifter
+        // plus the belt).
         seedFinishedWorkout()
         repository.logSet(
             sessionExerciseId = "se1",
@@ -689,12 +693,58 @@ class WorkoutEditingTest {
             note = null,
             assistanceGrams = 20_000L,
         )
+        repository.logSet(
+            sessionExerciseId = "se1",
+            reps = 8,
+            weightGrams = 20_000L,
+            rpeHalves = null,
+            note = null,
+            bodyweightGrams = 75_000L,
+        )
 
         val sets = database.workoutDao().observeSetsForSession("s1").first()
-        val uiFormula = sets.sumOf { it.reps.toLong() * it.weightGrams }
+        val ui = WorkoutDetailUiState(
+            isLoading = false,
+            exercises = listOf(
+                HistoryExercise(
+                    id = "se1",
+                    exerciseId = "back-squat",
+                    name = "Back Squat",
+                    sets = sets.map {
+                        HistorySet(
+                            id = it.id,
+                            reps = it.reps,
+                            weightGrams = it.weightGrams,
+                            bodyweightGrams = it.bodyweightGrams,
+                            assistanceGrams = it.assistanceGrams,
+                        )
+                    },
+                ),
+            ),
+        ).volumeGrams
 
-        assertEquals("the assisted set contributes nothing, not a negative", 500_000L, uiFormula)
-        assertEquals(uiFormula, historyVolume())
+        assertEquals("an assisted set adds nothing, a bodyweight set adds the lifter", 500_000L + 760_000L, ui)
+        assertEquals(ui, historyVolume())
+    }
+
+    @Test
+    fun aBodyweightOfZero_isWrittenAsTheOrdinarySetItIs() = runTest {
+        // B256: the boundary treats a zero bodyweight as "no bodyweight", because a set that claims to be
+        // loaded by the body at 0 kg would weigh nothing while counting as one. Nothing tested the branch.
+        seedFinishedWorkout()
+
+        repository.logSet(
+            sessionExerciseId = "se1",
+            reps = 8,
+            weightGrams = 20_000L,
+            rpeHalves = null,
+            note = null,
+            bodyweightGrams = 0L,
+        )
+
+        val stored = database.workoutDao().observeSetsForSession("s1").first().single()
+        assertTrue("a zero is the ordinary set it is", stored.bodyweightGrams == null)
+        assertEquals(20_000L, stored.weightGrams)
     }
 
     @Test
