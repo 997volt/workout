@@ -42,6 +42,14 @@ data class SetEntryEntity(
      * assisted set contributes nothing, exactly as bodyweight does.
      */
     val assistanceGrams: Long = 0,
+    /**
+     * The lifter's own weight when this set was bodyweight-loaded, in grams, or null for an ordinary set
+     * (ROADMAP N219).
+     *
+     * Nullable with no default, so the migration is a plain ALTER and every existing row reads as an ordinary
+     * set — which is exactly what it was, because nothing could record a bodyweight before this column.
+     */
+    val bodyweightGrams: Long? = null,
     val setType: SetType,
     /**
      * Perceived effort, 1–10, or null when the set was logged without one

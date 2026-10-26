@@ -92,6 +92,13 @@ data class ExerciseEntity(
      * offer meant before an exercise could say otherwise.
      */
     val stepGrams: Long? = null,
+    /**
+     * Whether this movement is loaded by the lifter's own body (ROADMAP N219).
+     *
+     * Backed by a Kotlin default and a SQL `DEFAULT 0`, so the migration is one plain ALTER and every existing
+     * row reads as an ordinary movement — which is what it was.
+     */
+    val isBodyweight: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

@@ -165,6 +165,19 @@ class ExerciseDetailScreenTest {
     }
 
     @Test
+    fun theBodyweightSwitch_isOffForAMovement_andReportsWhatWasChosen() {
+        // ROADMAP N219: the flag is a property of the movement, so it is offered once here rather than asked
+        // on every set. Off is the ordinary movement, which is what every exercise was before this existed.
+        var saved: ExerciseEdit? = null
+        show(ExerciseDetailUiState(isLoading = false, isEditing = true, exercise = seeded), onSave = { saved = it })
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_BODYWEIGHT).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performScrollTo().performClick()
+
+        assertEquals(true, saved?.isBodyweight)
+    }
+
+    @Test
     fun anUnparseableRest_disablesSave_ratherThanGuessingASecondsValue() {
         show(ExerciseDetailUiState(isLoading = false, isEditing = true, exercise = seeded))
 

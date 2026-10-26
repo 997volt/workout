@@ -11,7 +11,11 @@ import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.model.Activity
+import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.MeasurementKind
+import com.example.androidapp.domain.model.localDayBounds
 import com.example.androidapp.domain.model.ExerciseActual
 import com.example.androidapp.domain.model.ExercisePlan
 import com.example.androidapp.domain.model.JointPain
@@ -40,6 +44,7 @@ import com.example.androidapp.domain.model.progressionPromptFor
 import com.example.androidapp.domain.model.runContinuesAfter
 import com.example.androidapp.domain.model.taxonomySubtitle
 import com.example.androidapp.domain.model.zoneIdOrNull
+import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
@@ -94,10 +99,24 @@ data class SetRow(
     val setType: SetType = SetType.NORMAL,
     /** The machine's assistance, 0 for none (ROADMAP N15). */
     val assistanceGrams: Long = 0,
+    /** The bodyweight this set was logged at, or null for an ordinary set (ROADMAP N219). */
+    val bodyweightGrams: Long? = null,
     /** The unit this exercise's numbers read in (ROADMAP N64). */
     val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
     /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
     val stepGrams: Long? = null,
+)
+
+/**
+ * A bodyweight set held while the lifter says what they weigh (ROADMAP N219).
+ *
+ * The edit travels with it, because the tap that started it was the *Log set* the fields stated — asking
+ * again after the answer would lose what was typed between them.
+ */
+data class PendingBodyweight(
+    val sessionExerciseId: String,
+    val exerciseName: String,
+    val edit: SetEdit,
 )
 
 /** One exercise in the workout, with its sets and what the next set will prefill. */
@@ -137,6 +156,13 @@ data class SessionExerciseRow(
      * for a plan with no runs in it, which is every plan before this and most after it.
      */
     val runContinuesAfter: Set<Int> = emptySet(),
+    /**
+     * Whether this movement is loaded by the body (ROADMAP N219).
+     *
+     * What the *next* set's weight field means: on a bodyweight movement it holds what was added, and the
+     * lifter's own weight is snapshotted onto the set as it is logged.
+     */
+    val isBodyweight: Boolean = false,
     /**
      * How many sets the plan behind this workout writes for this exercise, or null when there is no
      * plan (ROADMAP N52).
@@ -256,6 +282,10 @@ data class ActiveWorkoutUiState(
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
+// The logger owns the session, its sets, its rest, its edits and its prompt: splitting it by function would put
+// one write's read in a different object from the write it guards, which is the locking B126/B129 exists to stop.
+// Each constructor parameter is a different port it has to ask (N219 added the body's weight on record).
+@Suppress("LongParameterList", "TooManyFunctions")
 class ActiveWorkoutViewModel @Inject constructor(
     private val workoutRepository: WorkoutRepository,
     private val timeSource: TimeSource,
@@ -263,6 +293,7 @@ class ActiveWorkoutViewModel @Inject constructor(
     private val programRepository: ProgramRepository,
     savedStateHandle: SavedStateHandle,
     private val settingsRepository: SettingsRepository,
+    private val measurementRepository: MeasurementRepository,
 ) : ViewModel() {
 
     /**
@@ -385,6 +416,15 @@ class ActiveWorkoutViewModel @Inject constructor(
      */
     private val _personalRecord = MutableStateFlow<PersonalRecordMoment?>(null)
     val personalRecord: StateFlow<PersonalRecordMoment?> = _personalRecord.asStateFlow()
+
+    /**
+     * A set that cannot be written until the lifter's weight is known (ROADMAP N219).
+     *
+     * A state rather than a silent default: a bodyweight set whose load is unknown is not a set of zero
+     * kilograms, and writing one would put a figure in every volume and 1RM trend that never happened.
+     */
+    private val _bodyweightPrompt = MutableStateFlow<PendingBodyweight?>(null)
+    val bodyweightPrompt: StateFlow<PendingBodyweight?> = _bodyweightPrompt.asStateFlow()
 
     /**
      * The review of the workout that just finished, published instead of closing the
@@ -807,6 +847,17 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onLogSet(sessionExerciseId: String, edit: SetEdit) {
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId } ?: return
         viewModelScope.launch {
+            // ROADMAP N219: the snapshot is resolved once, here, and travels with the set. With nothing on
+            // record the set is *held* while the lifter says what they weigh, rather than written as zero.
+            val bodyweight = if (row.isBodyweight) latestWeightGrams() else null
+            if (row.isBodyweight && bodyweight == null) {
+                _bodyweightPrompt.value = PendingBodyweight(
+                    sessionExerciseId = sessionExerciseId,
+                    exerciseName = row.name,
+                    edit = edit,
+                )
+                return@launch
+            }
             // **One set is written at a time** (ROADMAP N23, B118, B126, B129): the comparison, the write
             // and the banner that follows it are one step, so neither a second tap nor an edit or delete
             // beside it can move the picture this compared against.
@@ -825,6 +876,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                     note = edit.note,
                     setType = edit.setType,
                     assistanceGrams = edit.assistanceGrams,
+                    bodyweightGrams = bodyweight,
                 )
                 handle(result)
                 if (result is DataResult.Success) {
@@ -1034,6 +1086,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                         note = set.note,
                         setType = set.setType,
                         assistanceGrams = set.assistanceGrams,
+                        bodyweightGrams = set.bodyweightGrams,
                     ),
                 )
             }
@@ -1042,6 +1095,66 @@ class ActiveWorkoutViewModel @Inject constructor(
 
     fun onDismissUndo() {
         pendingUndo.value = null
+    }
+
+    /**
+     * Answers the bodyweight prompt (ROADMAP N219): the weight is saved, then the held set is logged.
+     *
+     * The weigh-in is written as **today's measurement** rather than onto the set alone, so Measurements,
+     * statistics and the weight goal all read one value — and the set snapshots it, so a later correction
+     * changes the record of the body without rewriting what was lifted.
+     */
+    fun onBodyweightTaken(grams: Long) {
+        val pending = _bodyweightPrompt.value ?: return
+        if (grams <= 0L) return
+        viewModelScope.launch {
+            when (val saved = saveTodayWeight(grams)) {
+                is DataResult.Success -> {
+                    _bodyweightPrompt.value = null
+                    // The lookup inside onLogSet now finds it, which keeps one write path for a set.
+                    onLogSet(pending.sessionExerciseId, pending.edit)
+                }
+
+                is DataResult.Failure -> {
+                    _bodyweightPrompt.value = null
+                    lastError.value = saved.error
+                }
+            }
+        }
+    }
+
+    /** The prompt was dismissed: the set is not logged, and nothing is written (ROADMAP N219). */
+    fun onDismissBodyweightPrompt() {
+        _bodyweightPrompt.value = null
+    }
+
+    /** The newest weight on record, or null — the one the logged set would add (ROADMAP N219). */
+    private suspend fun latestWeightGrams(): Long? =
+        measurementRepository.latestWeightGrams().getOrNull()
+
+    /**
+     * Writes [grams] as today's daily measurement, keeping whatever else today already says.
+     *
+     * A save replaces the day's record, so an existing entry is copied with the weight changed rather than
+     * replaced by a weight-only row — otherwise answering this prompt would silently delete the body fat and
+     * soreness the day already had (N62, N113).
+     */
+    private suspend fun saveTodayWeight(grams: Long): DataResult<Unit> {
+        val now = timeSource.now()
+        val (dayStart, dayEnd) = now.localDayBounds(ZoneId.systemDefault())
+        val todays = measurementRepository.observeAll().first()
+            .firstOrNull { entry ->
+                val at = entry.measuredAt.toEpochMilli()
+                entry.kind == MeasurementKind.DAILY && at >= dayStart && at < dayEnd
+            }
+        val measurement = todays?.copy(weightGrams = grams)
+            ?: BodyMeasurement(
+                id = "",
+                measuredAt = now,
+                kind = MeasurementKind.DAILY,
+                weightGrams = grams,
+            )
+        return measurementRepository.save(measurement)
     }
 
     /**
@@ -1487,6 +1600,7 @@ private fun SessionExercise.toRow(
         restSeconds = restSeconds,
         weightUnit = plan.unit,
         stepGrams = stepGrams,
+        isBodyweight = isBodyweight,
         runContinuesAfter = plan.plannedEntry?.sets?.runContinuesAfter().orEmpty(),
         plannedSetCount = plan.plannedSetCount,
         isFinished = isFinished,
@@ -1523,6 +1637,7 @@ private fun List<SetEntry>.loggedRowsFor(
             note = set.note,
             setType = set.setType,
             assistanceGrams = set.assistanceGrams,
+            bodyweightGrams = set.bodyweightGrams,
             stepGrams = stepGrams,
         )
     }

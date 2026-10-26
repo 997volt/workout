@@ -64,6 +64,7 @@ import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.ui.components.AppTextButton
+import com.example.androidapp.ui.components.BodyweightPromptDialog
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.ProgressionDialog
 import com.example.androidapp.ui.components.ReadinessNoteDialog
@@ -103,6 +104,7 @@ fun ActiveWorkoutRoute(
     RestCueAndScreenOn(clock, restCueEnabled, keepScreenOn, restTimerEnabled)
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
+    val bodyweightPrompt by viewModel.bodyweightPrompt.collectAsStateWithLifecycle()
 
     ActiveWorkoutScreen(
         state = state,
@@ -114,6 +116,9 @@ fun ActiveWorkoutRoute(
         summary = summary,
         onDismissSummary = viewModel::onDismissSummary,
         personalRecord = personalRecord,
+        bodyweightPrompt = bodyweightPrompt,
+        onEnterBodyweight = viewModel::onBodyweightTaken,
+        onDismissBodyweight = viewModel::onDismissBodyweightPrompt,
         onUpdateSet = viewModel::onUpdateSet,
         onRemoveExercise = viewModel::onRemoveExercise,
         onMoveExercise = viewModel::onMoveExercise,
@@ -181,6 +186,9 @@ fun ActiveWorkoutScreen(
     summary: WorkoutReview? = null,
     onDismissSummary: () -> Unit = {},
     personalRecord: PersonalRecordMoment? = null,
+    bodyweightPrompt: PendingBodyweight? = null,
+    onEnterBodyweight: (Long) -> Unit = {},
+    onDismissBodyweight: () -> Unit = {},
     /**
      * True when dropping out is recorded against a program rather than reading as no workout at
      * all (ROADMAP N41): the discard prompt says so, because only a finished session settles a
@@ -218,6 +226,9 @@ fun ActiveWorkoutScreen(
     var editing by remember { mutableStateOf<SetRow?>(null) }
 
     if (summary != null) WorkoutReviewDialog(summary = summary, onDismiss = onDismissSummary)
+    BodyweightPromptDialog(
+        exerciseName = bodyweightPrompt?.exerciseName, onSave = onEnterBodyweight, onDismiss = onDismissBodyweight,
+    )
 
     UndoOffers(state, snackbarHostState, onUndoDelete, onDismissUndo, onUndoFinishExercise, onDismissFinishUndo)
 

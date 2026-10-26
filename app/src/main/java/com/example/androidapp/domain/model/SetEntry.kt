@@ -17,10 +17,22 @@ data class SetEntry(
     /**
      * How much assistance the machine gave, in grams, or 0 for none (ROADMAP N15).
      *
-     * Not a signed weight: an assisted pull-up is not negative tonnage. Volume counts
-     * `weightGrams * reps` alone, so an assisted set contributes nothing.
+     * Not a signed weight: an assisted pull-up is not negative tonnage. On an ordinary set the load is
+     * [weightGrams] and assistance is a fact about the machine; on a bodyweight set it is subtracted from
+     * the bodyweight, because there it is the difference between a pull-up and a jump ([loadGrams]).
      */
     val assistanceGrams: Long = 0,
+    /**
+     * The lifter's own weight when this set was bodyweight-loaded, in grams, or null for an ordinary set
+     * (ROADMAP N219).
+     *
+     * **Snapshotted at logging time, not resolved when the set is read.** A later correction to a
+     * measurement says something about the body on the day it was taken; rewriting what an old set weighed
+     * would change every trend, record and volume figure that set supports, retroactively and without the
+     * lifter asking. Null is "this set was its added weight", which is what every set written before this
+     * column, and every ordinary set after it, means.
+     */
+    val bodyweightGrams: Long? = null,
     val setType: SetType = SetType.NORMAL,
     /** Perceived effort, 1–10, or null when none was recorded (ROADMAP N6). */
     val rpeHalves: Int? = null,
@@ -32,6 +44,29 @@ data class SetEntry(
      */
     val note: String? = null,
 )
+
+/**
+ * The load a set was performed at, in grams (ROADMAP N219).
+ *
+ * An ordinary set is its added weight, exactly as before. A **bodyweight** set is the lifter plus what was
+ * added, less what the machine took off: 75 kg of bodyweight with a 20 kg belt is 95 kg, and an assisted
+ * pull-up taking 30 kg off is 45 kg. The floor at zero is deliberate — a heavily assisted set is still a
+ * set, and a negative load would silently subtract from every total built on it.
+ *
+ * One function for the whole app, because volume, the 1RM estimate and the record check all have to agree
+ * about what "the load" is, and the previous shape of this rule was `weightGrams * reps` written out at
+ * each of them.
+ */
+fun loadGrams(weightGrams: Long, bodyweightGrams: Long?, assistanceGrams: Long): Long =
+    if (bodyweightGrams == null) {
+        weightGrams
+    } else {
+        (bodyweightGrams + weightGrams - assistanceGrams).coerceAtLeast(0L)
+    }
+
+/** This set's load: see [loadGrams]. */
+val SetEntry.totalLoadGrams: Long
+    get() = loadGrams(weightGrams, bodyweightGrams, assistanceGrams)
 
 /**
  * What kind of set this was: a set of its own, or a *rung* of the group above it (ROADMAP N79).

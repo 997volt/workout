@@ -57,8 +57,10 @@ interface WorkoutDao {
      * aggregates are exactly what an index is for. `COALESCE` keeps an empty
      * workout at 0 rather than null.
      *
-     * `weightGrams * reps` is gram-reps, summed as a Long — the same exactness
-     * argument as storing grams in the first place.
+     * Gram-reps, summed as a Long — the same exactness argument as storing grams in the first place. A
+     * bodyweight set counts its bodyweight plus what was added, less what the machine took off, which is
+     * `loadGrams` written as SQL: the same rule the detail screen and the trends apply, and the reason it is
+     * spelled out here rather than left as bare `weightGrams * reps` (ROADMAP N219).
      */
     @Query(
         """
@@ -75,7 +77,11 @@ interface WorkoutDao {
                    WHERE se.sessionId = ws.id AND se.deletedAt IS NULL AND s.deletedAt IS NULL
                ) AS setCount,
                (
-                   SELECT COALESCE(SUM(s.weightGrams * s.reps), 0) FROM set_entries s
+                   SELECT COALESCE(SUM(
+                       CASE WHEN s.bodyweightGrams IS NULL THEN s.weightGrams
+                            ELSE MAX(s.bodyweightGrams + s.weightGrams - s.assistanceGrams, 0)
+                       END * s.reps
+                   ), 0) FROM set_entries s
                    JOIN session_exercises se ON se.id = s.sessionExerciseId
                    WHERE se.sessionId = ws.id AND se.deletedAt IS NULL AND s.deletedAt IS NULL
                ) AS volumeGrams,
@@ -118,6 +124,7 @@ interface WorkoutDao {
                COALESCE(se.techniqueNote, e.techniqueNote) AS techniqueNote,
                e.weightUnit AS weightUnit,
                e.stepGrams AS stepGrams,
+               e.isBodyweight AS isBodyweight,
                se.finishedAt AS finishedAt,
                se.muscleFeel AS muscleFeel,
                se.supersetGroup AS supersetGroup

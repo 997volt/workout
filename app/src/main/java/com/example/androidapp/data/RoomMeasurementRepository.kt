@@ -76,6 +76,10 @@ class RoomMeasurementRepository @Inject constructor(
             rows.map { row -> row.toDomain(byMeasurement[row.id].orEmpty()) }
         }
 
+    override suspend fun latestWeightGrams(): DataResult<Long?> = dataResultOf {
+        dao.latestWeightGrams()
+    }
+
     override suspend fun save(measurement: BodyMeasurement): DataResult<Unit> = dataResultOf {
         // The same 1–10 scale as a set's RPE and the per-exercise ratings, so the one validator covers
         // them (N8, N62). The picker clamps and cannot produce a bad score; this is the boundary, the

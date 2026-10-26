@@ -104,6 +104,7 @@ internal class FakeWorkoutRepository : WorkoutRepository {
         note: String?,
         setType: SetType,
         assistanceGrams: Long,
+        bodyweightGrams: Long?,
     ): DataResult<Unit> = unused()
     override suspend fun updateSet(
         setId: String,

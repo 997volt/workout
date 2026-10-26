@@ -136,6 +136,13 @@ data class SessionExercise(
      */
     val stepGrams: Long? = null,
     /**
+     * Whether the movement is loaded by the body (ROADMAP N219).
+     *
+     * Read from the library like [stepGrams] rather than snapshotted: it decides what the *next* set's
+     * weight field means, which is a fact about the movement today.
+     */
+    val isBodyweight: Boolean = false,
+    /**
      * When this exercise was marked done (ROADMAP N7), or null while it is open.
      *
      * Deliberately not a delete: [finishedAt] set means no more sets are added and

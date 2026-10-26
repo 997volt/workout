@@ -94,6 +94,7 @@ internal fun ExerciseEntity.toDto() = ExerciseDto(
     techniqueNote = techniqueNote,
     weightUnit = weightUnit,
     stepGrams = stepGrams,
+    isBodyweight = isBodyweight,
     parentId = parentId,
     rowKind = rowKind,
 )
@@ -113,6 +114,9 @@ internal fun ExerciseDto.toEntity() = ExerciseEntity(
     // And its own weight step (ROADMAP N77), for the same reason: dropping it would silently put
     // every exercise back on the unit's step, which is what the field exists to override.
     stepGrams = stepGrams,
+    // Whether the movement is loaded by the body (ROADMAP N219). Dropping it would restore a pull-up as an
+    // ordinary movement, and its sets would then read as their added weight alone.
+    isBodyweight = isBodyweight,
     // The library's shape (ROADMAP N95). Dropping `parentId` would flatten a restored library into a list,
     // and dropping `rowKind` would turn every head into a lift a picker offers — the two halves of the
     // feature that a round trip has to carry or it is not a round trip.
@@ -232,6 +236,9 @@ internal fun SetEntryEntity.toDto() = SetDto(
     reps = reps,
     weightGrams = weightGrams,
     assistanceGrams = assistanceGrams,
+    // The snapshot travels with the set (ROADMAP N219): the file is the copy, and a copy that dropped it
+    // would restore every bodyweight set as its added weight alone.
+    bodyweightGrams = bodyweightGrams,
     setType = setType,
     rpeHalves = rpeHalves,
     note = note,
@@ -247,6 +254,9 @@ internal fun SetDto.toEntity() = SetEntryEntity(
     reps = reps,
     weightGrams = weightGrams,
     assistanceGrams = assistanceGrams,
+    // The snapshot travels with the set (ROADMAP N219): the file is the copy, and a copy that dropped it
+    // would restore every bodyweight set as its added weight alone.
+    bodyweightGrams = bodyweightGrams,
     setType = setType,
     // A warm-up carries no effort at all (ROADMAP N67), so the role decides here as it does at
     // every other write boundary.

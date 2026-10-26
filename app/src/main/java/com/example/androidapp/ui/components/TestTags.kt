@@ -557,6 +557,14 @@ object TestTags {
     const val EXERCISE_WEIGHT_UNIT = "exercise_weight_unit"
     const val EXERCISE_WEIGHT_STEP = "exercise_weight_step"
     const val EXERCISE_EDIT_WEIGHT_UNIT_DEFAULT = "exercise_edit_weight_unit_default"
+    /** The bodyweight switch in the exercise editor (ROADMAP N219). */
+    const val EXERCISE_EDIT_BODYWEIGHT = "exercise_edit_bodyweight"
+
+    /** The prompt a bodyweight set raises when no weight is on record (ROADMAP N219). */
+    const val BODYWEIGHT_FIELD = "bodyweight_field"
+    const val BODYWEIGHT_SAVE = "bodyweight_save"
+    const val BODYWEIGHT_DISMISS = "bodyweight_dismiss"
+
     const val EXERCISE_EDIT_WEIGHT_UNIT_KG = "exercise_edit_weight_unit_kg"
     const val EXERCISE_EDIT_WEIGHT_UNIT_LB = "exercise_edit_weight_unit_lb"
 

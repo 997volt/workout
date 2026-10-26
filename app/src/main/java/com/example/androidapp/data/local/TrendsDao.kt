@@ -184,7 +184,8 @@ interface TrendsDao {
                s.reps AS reps,
                s.rpeHalves AS rpeHalves,
                s.setType AS setType,
-               s.assistanceGrams AS assistanceGrams
+               s.assistanceGrams AS assistanceGrams,
+               s.bodyweightGrams AS bodyweightGrams
         FROM session_exercises se
         JOIN workout_sessions ws ON ws.id = se.sessionId
         LEFT JOIN set_entries s ON s.sessionExerciseId = se.id AND s.deletedAt IS NULL
@@ -274,4 +275,11 @@ data class ExerciseTrendRowEntity(
     val rpeHalves: Int?,
     val setType: String?,
     val assistanceGrams: Long?,
+    /**
+     * The lifter's weight if this set was bodyweight-loaded, or null (ROADMAP N219).
+     *
+     * Read so the trend's volume, heaviest set and 1RM can be computed at the same load the row was performed
+     * at — see `loadGrams`.
+     */
+    val bodyweightGrams: Long?,
 )

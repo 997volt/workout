@@ -206,6 +206,13 @@ data class ExerciseDto(
      */
     val stepGrams: Long? = null,
     /**
+     * Whether this movement is loaded by the lifter's own body (ROADMAP N219).
+     *
+     * Defaulted and unbumped, like the fields above: a file written before bodyweight loading existed
+     * decodes with every movement ordinary, which is exactly what it was.
+     */
+    val isBodyweight: Boolean = false,
+    /**
      * The row this exercise hangs under, or null (ROADMAP N95).
      *
      * Defaulted and unbumped, like the two fields above: a file written before categories existed decodes
@@ -380,6 +387,13 @@ data class SetDto(
     val weightGrams: Long,
     /** The machine's assistance in grams, 0 for none (ROADMAP N15). */
     val assistanceGrams: Long = 0,
+    /**
+     * The lifter's weight if this set was bodyweight-loaded, in grams, or null (ROADMAP N219).
+     *
+     * Defaulted and unbumped, like the rest of the added fields: an older file decodes with ordinary sets,
+     * and null means exactly what a set meant before the column existed.
+     */
+    val bodyweightGrams: Long? = null,
     val setType: SetType,
     /** Defaulted for the same reason as [ExerciseDto.restSeconds] (ROADMAP N6). */
     val rpeHalves: Int? = null,

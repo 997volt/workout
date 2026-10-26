@@ -971,6 +971,10 @@ private class FakeMeasurementRepository(
     override suspend fun save(measurement: BodyMeasurement): DataResult<Unit> = DataResult.Success(Unit)
     override suspend fun delete(id: String): DataResult<Unit> = DataResult.Success(Unit)
     override suspend fun restore(id: String): DataResult<Unit> = DataResult.Success(Unit)
+
+    /** N219: this screen never logs a set, so the newest weight is whatever the fake was seeded with. */
+    override suspend fun latestWeightGrams(): DataResult<Long?> =
+        DataResult.Success(entries.mapNotNull { it.weightGrams }.maxOrNull())
 }
 
 private class FakeExerciseRepository(private val lifts: List<Exercise>) : ExerciseRepository {

@@ -859,6 +859,13 @@
     <string name="settings_backup_failed">The last backup failed. Check that the folder still exists.</string>
     <string name="settings_backup_no_folder">Choose a folder — until then a backup has nowhere to go.</string>
     <string name="settings_backup_kept">The newest five backups are kept; older ones are removed.</string>
+    <!-- A bodyweight movement (ROADMAP N219): the weight field is what was *added*. -->
+    <string name="exercise_detail_bodyweight">Bodyweight exercise</string>
+    <string name="exercise_detail_bodyweight_hint">The weight field is what you add — a belt, a dumbbell. Your own weight is added when the set is logged.</string>
+    <string name="bodyweight_prompt_title">How much do you weigh?</string>
+    <string name="bodyweight_prompt_body">%1$s is a bodyweight movement, and there is no weight on record yet. This is saved as today\'s measurement, so every bodyweight set can add it.</string>
+    <string name="bodyweight_prompt_field">Bodyweight</string>
+    <string name="bodyweight_prompt_save">Save and log the set</string>
     <!-- The record just set (ROADMAP N23). -->
     <string name="personal_record_title">Personal record: %2$s %3$s × %1$d</string>
     <string name="personal_record_beats">%1$s — your best before was %2$s %3$s</string>

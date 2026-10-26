@@ -558,6 +558,12 @@ private class FakeMeasurementRepository(
 
     override fun observeAll(): Flow<List<BodyMeasurement>> = entries
 
+    /** N219: the newest weight the fake holds. */
+    override suspend fun latestWeightGrams(): DataResult<Long?> =
+        DataResult.Success(
+            entries.value.filter { it.weightGrams != null }.maxByOrNull { it.measuredAt }?.weightGrams,
+        )
+
     override suspend fun save(measurement: BodyMeasurement): DataResult<Unit> {
         if (failNextSave) return DataResult.Failure(DataError.Storage(IllegalStateException()))
         // Placed by its id, as the real repository places it: a save both adds and corrects, which is what the

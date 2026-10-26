@@ -391,6 +391,8 @@ private data class ExerciseDraft(
     val stepText: String = "",
     /** The three-way choice: null follows the app setting (ROADMAP N64). */
     val weightUnit: WeightUnit? = null,
+    /** Whether the movement is loaded by the body (ROADMAP N219). */
+    val isBodyweight: Boolean = false,
     /**
      * The unit in force when the form opened, carried because a draft cannot read the ambient.
      *
@@ -453,6 +455,7 @@ private data class ExerciseDraft(
         techniqueNote = techniqueNote.trim().ifEmpty { null },
         stepGrams = stepGrams,
         weightUnit = weightUnit,
+        isBodyweight = isBodyweight,
         parentId = parentId,
     )
 }
@@ -467,6 +470,7 @@ private fun Exercise.toDraft(appUnit: WeightUnit) = ExerciseDraft(
     // Shown in the unit it is parsed in, which is this exercise's own where it has one (N77).
     stepText = stepGrams?.let { Weight.format(it, weightUnit ?: appUnit) }.orEmpty(),
     weightUnit = weightUnit,
+    isBodyweight = isBodyweight,
     appUnit = appUnit,
     parentId = parentId,
 )
@@ -665,6 +669,12 @@ private fun ExercisePrescriptionFields(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // Offered once per movement rather than per set (N219): it changes what the weight field means.
+        BodyweightField(
+            checked = draft.isBodyweight,
+            onCheckedChange = { onDraftChange(draft.copy(isBodyweight = it)) },
+        )
+
         OutlinedTextField(
             value = draft.restText,
             onValueChange = { onDraftChange(draft.copy(restText = it)) },

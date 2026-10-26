@@ -412,6 +412,7 @@ class RoomWorkoutRepository @Inject constructor(
         note: String?,
         setType: SetType,
         assistanceGrams: Long,
+        bodyweightGrams: Long?,
     ): DataResult<Unit> = dataResultOf {
         // The screen's field is the real guard; this is the boundary that keeps an
         // out-of-range value from reaching the database (ROADMAP N6).
@@ -445,6 +446,9 @@ class RoomWorkoutRepository @Inject constructor(
                 // A magnitude, so a negative arriving here becomes none rather than
                 // a weight that subtracts (ROADMAP N15).
                 assistanceGrams = assistanceGrams.coerceAtLeast(0L),
+                // A bodyweight of zero is not a bodyweight: it would make a pull-up weigh nothing while
+                // claiming to be loaded, so it is written as the ordinary set it actually is (N219).
+                bodyweightGrams = bodyweightGrams?.takeIf { it > 0L },
                 setType = setType,
                 // What the set felt like, written with the set rather than after it: the
                 // inline fields are on screen before *Log set*, so they are part of what it

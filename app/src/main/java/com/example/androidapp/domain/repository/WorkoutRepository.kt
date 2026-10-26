@@ -193,6 +193,13 @@ interface WorkoutRepository {
         setType: SetType = SetType.NORMAL,
         /** The machine's assistance, as a magnitude (ROADMAP N15). */
         assistanceGrams: Long = 0,
+        /**
+         * The lifter's weight if this is a bodyweight set, or null (ROADMAP N219).
+         *
+         * Snapshot, not a lookup: the caller resolves it once, when the set is logged, and the set keeps
+         * it — see `SetEntry.bodyweightGrams`.
+         */
+        bodyweightGrams: Long? = null,
     ): DataResult<Unit>
 
     /**

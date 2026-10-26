@@ -27,6 +27,22 @@ interface MeasurementDao {
     suspend fun allForExport(): List<MeasurementEntity>
 
     /**
+     * The most recent weight on record, or null when none was ever entered (ROADMAP N219).
+     *
+     * One row and one column, because this is read on the logging path: a bodyweight set needs the weight
+     * now, and loading a year of measurements to find the newest one would make logging wait on the tape.
+     */
+    @Query(
+        """
+        SELECT weightGrams FROM measurements
+        WHERE weightGrams IS NOT NULL AND deletedAt IS NULL
+        ORDER BY measuredAt DESC
+        LIMIT 1
+        """,
+    )
+    suspend fun latestWeightGrams(): Long?
+
+    /**
      * Returns one rowid per input row, `-1` where a row was skipped as a duplicate (P1.12).
      *
      * `IGNORE` like every other table's import, because a row already on the device — live, or hidden by

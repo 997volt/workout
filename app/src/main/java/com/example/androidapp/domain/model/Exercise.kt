@@ -70,4 +70,13 @@ data class Exercise(
      * it is a fact about the equipment, which is why it is not cleared when the unit changes.
      */
     val stepGrams: Long? = null,
+    /**
+     * Whether this movement is loaded by the lifter's own body (ROADMAP N219).
+     *
+     * A property of the movement rather than of a set, because that is what it is: a pull-up is a pull-up on
+     * every set, and asking on each one would be a question with the same answer every time. What it changes
+     * is what the weight field means — the *added* load — and what the set stores, which is the bodyweight in
+     * force when it was logged, snapshotted so history cannot rewrite itself.
+     */
+    val isBodyweight: Boolean = false,
 )

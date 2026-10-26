@@ -164,6 +164,8 @@ data class ExerciseTrendRow(
     val rpeHalves: Int?,
     val setType: SetType?,
     val assistanceGrams: Long?,
+    /** The lifter's weight if this set was bodyweight-loaded, or null (ROADMAP N219). */
+    val bodyweightGrams: Long? = null,
 )
 
 /**
@@ -182,15 +184,25 @@ fun List<ExerciseTrendRow>.toExerciseTrendPoints(
         .sortedBy { it.first }
         .map { (startedAt, rows) -> rows.toPoint(startedAt, jointPainBySite) }
 
+/**
+ * The load this row was performed at, in grams (ROADMAP N219).
+ *
+ * [weightGrams] is null only when the exercise has no set in this session — a `LEFT JOIN` row, which the
+ * caller filters out — so treating it as zero here is safe and keeps the arithmetic in one place.
+ */
+private val ExerciseTrendRow.performedLoadGrams: Long
+    get() = loadGrams(weightGrams ?: 0L, bodyweightGrams, assistanceGrams ?: 0L)
+
 private fun List<ExerciseTrendRow>.toPoint(
     startedAt: Instant,
     jointPainBySite: Map<String, Map<String, Double>>,
 ): ExerciseTrendPoint {
     // A warm-up is not a working set: it must not become the heaviest set on the chart.
     val working = filter { it.weightGrams != null && it.setType != SetType.WARMUP }
-    // And a set with no added weight is not a load: bodyweight and assisted work carry
-    // reps and volume (both zero here), which is exactly what N15 decided they carry.
-    val heaviest = working.filter { it.weightGrams!! > 0L }.maxByOrNull { it.weightGrams!! }
+    // A bodyweight set carries the lifter as its load and is the heaviest set of the day if it is; an
+    // assisted set carries what is left after the machine — `loadGrams` decides, once, for all three figures
+    // below (ROADMAP N219).
+    val heaviest = working.filter { it.performedLoadGrams > 0L }.maxByOrNull { it.performedLoadGrams }
     // One value per *exercise*, not per set (ROADMAP B97). A head feeds several exercises of one family into
     // this session, each stating its own rating while the DAO repeats it on that exercise's every set row —
     // so `first()` reported whichever row sorted first, and averaging the rows would weight a movement by how
@@ -205,11 +217,11 @@ private fun List<ExerciseTrendRow>.toPoint(
 
     return ExerciseTrendPoint(
         startedAt = startedAt,
-        heaviestSetGrams = heaviest?.weightGrams,
+        heaviestSetGrams = heaviest?.performedLoadGrams,
         estimatedOneRepMaxGrams = heaviest?.let {
-            estimatedOneRepMax(it.weightGrams!!, it.reps ?: 0)
+            estimatedOneRepMax(it.performedLoadGrams, it.reps ?: 0)
         },
-        volumeGrams = working.sumOf { (it.weightGrams ?: 0L) * (it.reps ?: 0) },
+        volumeGrams = working.sumOf { it.performedLoadGrams * (it.reps ?: 0) },
         totalReps = working.sumOf { it.reps ?: 0 },
         leastAssistanceGrams = working
             .mapNotNull { it.assistanceGrams?.takeIf { help -> help > 0L } }

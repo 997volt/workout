@@ -9,6 +9,7 @@ import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.loadGrams
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.repository.ProgramRepository
@@ -44,6 +45,8 @@ data class HistorySet(
     val note: String? = null,
     /** The machine's assistance, 0 for none (ROADMAP N15). */
     val assistanceGrams: Long = 0,
+    /** The bodyweight this set was logged at, or null (ROADMAP N219). */
+    val bodyweightGrams: Long? = null,
     /**
      * The role it was performed as (ROADMAP N14).
      *
@@ -111,7 +114,7 @@ data class WorkoutDetailUiState(
      * they agree.
      */
     val volumeGrams: Long get() = exercises.sumOf { exercise ->
-        exercise.sets.sumOf { it.weightGrams * it.reps }
+        exercise.sets.sumOf { loadGrams(it.weightGrams, it.bodyweightGrams, it.assistanceGrams) * it.reps }
     }
 }
 
@@ -267,6 +270,7 @@ class WorkoutDetailViewModel @Inject constructor(
                                     // Every column the row has, or the screen silently
                                     // renders a default (ROADMAP B5, N15).
                                     assistanceGrams = it.assistanceGrams,
+                                    bodyweightGrams = it.bodyweightGrams,
                                     setType = it.setType,
                                     weightUnit = row.weightUnit,
                                     // And the movement's own step, so correcting a past set steps the

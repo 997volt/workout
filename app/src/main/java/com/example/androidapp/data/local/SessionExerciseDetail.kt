@@ -45,6 +45,8 @@ data class SessionExerciseDetail(
     val weightUnit: String?,
     /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
     val stepGrams: Long?,
+    /** Whether the movement is loaded by the body (ROADMAP N219). */
+    val isBodyweight: Boolean,
     /** When this exercise was marked done, or null (ROADMAP N7). */
     val finishedAt: Long?,
     /** How well the target muscle was worked, 1–10, or null (ROADMAP N8). */
@@ -73,6 +75,7 @@ internal fun SessionExerciseDetail.toDomain(
     techniqueNote = techniqueNote,
     weightUnit = WeightUnit.fromName(weightUnit),
     stepGrams = stepGrams,
+    isBodyweight = isBodyweight,
     finishedAt = finishedAt?.let(Instant::ofEpochMilli),
     muscleFeel = muscleFeel,
     joints = joints.map { it.toDomain() },

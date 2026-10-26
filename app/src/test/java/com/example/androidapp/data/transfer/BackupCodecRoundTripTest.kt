@@ -149,6 +149,9 @@ class BackupCodecRoundTripTest {
             note = "slow eccentric",
             setType = SetType.TOP_SET,
             assistanceGrams = 20_000L,
+            // The column N219 added: the snapshot a bodyweight set carries. A codec that forgot it would
+            // restore the set at its added weight alone, silently changing what was lifted.
+            bodyweightGrams = 75_000L,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,
@@ -414,6 +417,9 @@ class BackupCodecRoundTripTest {
             // And the one N77 added, on the same reasoning: a restore that drops it silently puts
             // every exercise back on the unit's step, which is what the field exists to override (B70).
             stepGrams = 5_000L,
+            // And the one N219 added: a restore that drops it turns a pull-up back into an ordinary
+            // movement, whose sets then read as their added weight alone.
+            isBodyweight = true,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,

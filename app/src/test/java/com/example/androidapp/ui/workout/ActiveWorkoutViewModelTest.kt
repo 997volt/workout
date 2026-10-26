@@ -9,6 +9,7 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Activity
+import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.BackupFolder
 import com.example.androidapp.domain.model.BackupSchedule
 import com.example.androidapp.domain.model.BackupSettings
@@ -40,6 +41,7 @@ import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.domain.repository.ProgramImportSummary
+import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.StartedSession
@@ -144,6 +146,7 @@ class ActiveWorkoutViewModelTest {
         repeatSessionId: String? = null,
         programs: FakeProgramRepository = FakeProgramRepository(),
         slotId: String? = null,
+        measurements: FakeBodyMeasurements = FakeBodyMeasurements(),
     ) = ActiveWorkoutViewModel(
         repository,
         clock,
@@ -151,6 +154,7 @@ class ActiveWorkoutViewModelTest {
         programs,
         activeWorkoutRoute(templateId, repeatSessionId, slotId),
         settings,
+        measurements,
     )
 
     /**
@@ -1007,6 +1011,92 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aBodyweightSet_snapshotsTheWeightOnRecord() = runTest(dispatcher) {
+        // ROADMAP N219: the load is resolved once, at logging time, and the set keeps it.
+        val repository = FakeWorkoutRepository()
+        repository.isBodyweightForNextExercise = true
+        val measurements = FakeBodyMeasurements(latest = 75_000L)
+        val viewModel = viewModelFor(repository, measurements = measurements)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("pull-up")
+        settle()
+
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
+        settle()
+
+        assertEquals(listOf(75_000L), repository.loggedBodyweights)
+        assertEquals(listOf(75_000L), repository.sets.value.map { it.bodyweightGrams })
+        assertNull("no prompt is needed when the weight is known", viewModel.bodyweightPrompt.value)
+    }
+
+    @Test
+    fun withNoWeightOnRecord_theSetIsHeld_ratherThanWrittenAtZero() = runTest(dispatcher) {
+        // The prompt exists because a bodyweight set of unknown load is not a set of zero kilograms: writing
+        // one would put a figure in every volume and 1RM trend that never happened.
+        val repository = FakeWorkoutRepository()
+        repository.isBodyweightForNextExercise = true
+        val viewModel = viewModelFor(repository, measurements = FakeBodyMeasurements(latest = null))
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("pull-up")
+        settle()
+
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
+        settle()
+
+        assertTrue("nothing was written", repository.sets.value.isEmpty())
+        // The fake names every added movement Back Squat, so the prompt is asserted on the row it holds rather
+        // than on a name this fixture does not control.
+        assertEquals(
+            viewModel.uiState.value.exercises.single().id,
+            viewModel.bodyweightPrompt.value?.sessionExerciseId,
+        )
+    }
+
+    @Test
+    fun answeringThePrompt_savesTodaysMeasurement_andLogsTheHeldSet() = runTest(dispatcher) {
+        val repository = FakeWorkoutRepository()
+        repository.isBodyweightForNextExercise = true
+        val measurements = FakeBodyMeasurements(latest = null)
+        val viewModel = viewModelFor(repository, measurements = measurements)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("pull-up")
+        settle()
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
+        settle()
+
+        viewModel.onBodyweightTaken(80_000L)
+        settle()
+
+        assertEquals("the answer is a real measurement", listOf(80_000L), measurements.saved.map { it.weightGrams })
+        assertEquals("and the held set is logged with it", listOf(80_000L), repository.loggedBodyweights)
+        assertNull(viewModel.bodyweightPrompt.value)
+    }
+
+    @Test
+    fun dismissingThePrompt_logsNothing_andWritesNothing() = runTest(dispatcher) {
+        val repository = FakeWorkoutRepository()
+        repository.isBodyweightForNextExercise = true
+        val measurements = FakeBodyMeasurements(latest = null)
+        val viewModel = viewModelFor(repository, measurements = measurements)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("pull-up")
+        settle()
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
+        settle()
+
+        viewModel.onDismissBodyweightPrompt()
+        settle()
+
+        assertNull(viewModel.bodyweightPrompt.value)
+        assertTrue(repository.sets.value.isEmpty())
+        assertTrue(measurements.saved.isEmpty())
+    }
+
+    @Test
     fun finishingWithAComment_writesTheNote_beforeClosing() = runTest(dispatcher) {
         // ROADMAP B35, the third: its name described cancelling an alert that no longer exists, and it
         // asserted nothing. What it exercised — a comment written on the way to finishing — is real
@@ -1597,6 +1687,7 @@ class ActiveWorkoutViewModelTest {
             FakeProgramRepository(),
             activeWorkoutRoute(),
             FakeSettingsRepository(),
+            FakeBodyMeasurements(),
         )
 
         val states = mutableListOf<ActiveWorkoutUiState>()
@@ -1622,8 +1713,35 @@ class ActiveWorkoutViewModelTest {
         assertEquals("1:00:03", viewModel.clock.value.elapsed)
     }
 
+    /**
+     * The body's record as the logger reads it (ROADMAP N219).
+     *
+     * [latest] is what a bodyweight set snapshots; a save lands in [saved] so the prompt's answer can be
+     * asserted, and changes the weight the next set would read.
+     */
+    private class FakeBodyMeasurements(private var latest: Long? = 80_000L) : MeasurementRepository {
+        val saved = mutableListOf<BodyMeasurement>()
+
+        override fun observeAll(): Flow<List<BodyMeasurement>> = flowOf(saved.toList())
+
+        override suspend fun save(measurement: BodyMeasurement): DataResult<Unit> {
+            saved += measurement
+            measurement.weightGrams?.let { latest = it }
+            return DataResult.Success(Unit)
+        }
+
+        override suspend fun delete(id: String): DataResult<Unit> = DataResult.Success(Unit)
+
+        override suspend fun restore(id: String): DataResult<Unit> = DataResult.Success(Unit)
+
+        override suspend fun latestWeightGrams(): DataResult<Long?> = DataResult.Success(latest)
+    }
+
     private class FakeWorkoutRepository : WorkoutRepository {
         val sessions = MutableStateFlow<WorkoutSession?>(null)
+
+        /** The bodyweight each logged set carried, in order (ROADMAP N219). */
+        val loggedBodyweights = mutableListOf<Long?>()
 
         /** What the session was made into, so a test can read the write back (ROADMAP N141). */
         var lastActivity: Activity? = null
@@ -1679,6 +1797,9 @@ class ActiveWorkoutViewModelTest {
         /** The library exercise's own weight step, so a row can be given one (ROADMAP N77). */
         var stepGramsForNextExercise: Long? = null
         var techniqueNoteForNextExercise: String? = null
+
+        /** Whether the next added exercise is loaded by the body, so N219's path can be reached (N219). */
+        var isBodyweightForNextExercise = false
 
         /** The rest length the ViewModel actually asked for, or null if never asked. */
         var lastRestSeconds: Int? = null
@@ -1747,6 +1868,7 @@ class ActiveWorkoutViewModelTest {
                 restSeconds = restSecondsForNextExercise,
                 techniqueNote = techniqueNoteForNextExercise,
                 stepGrams = stepGramsForNextExercise,
+                isBodyweight = isBodyweightForNextExercise,
             )
             return DataResult.Success(Unit)
         }
@@ -1859,8 +1981,11 @@ class ActiveWorkoutViewModelTest {
             note: String?,
             setType: SetType,
             assistanceGrams: Long,
+            bodyweightGrams: Long?,
         ): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
+            // N219: the snapshot the screen resolved has to reach the row, or a bodyweight set looks ordinary.
+            loggedBodyweights += bodyweightGrams
             // The write is in flight: a second log's read can land before this row does (B126).
             setWritesInFlight++
             maxConcurrentSetWrites = maxOf(maxConcurrentSetWrites, setWritesInFlight)
@@ -1880,6 +2005,7 @@ class ActiveWorkoutViewModelTest {
                     // *Log set*, so a fake that drops them hides the write path losing them (N6, N59).
                     rpeHalves = rpeHalves,
                     note = note,
+                    bodyweightGrams = bodyweightGrams,
                 )
             } finally {
                 setWritesInFlight--

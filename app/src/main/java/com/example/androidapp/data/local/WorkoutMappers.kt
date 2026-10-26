@@ -43,6 +43,7 @@ internal fun SetEntryEntity.toDomain(): SetEntry = SetEntry(
     reps = reps,
     weightGrams = weightGrams,
     assistanceGrams = assistanceGrams,
+    bodyweightGrams = bodyweightGrams,
     setType = setType,
     rpeHalves = rpeHalves,
     note = note,

@@ -50,6 +50,8 @@ data class ExerciseEdit(
     val weightUnit: WeightUnit? = null,
     /** This exercise's own weight step in grams, or null for the unit's (ROADMAP N77). */
     val stepGrams: Long? = null,
+    /** Whether the movement is loaded by the body (ROADMAP N219). */
+    val isBodyweight: Boolean = false,
     /**
      * The category this row is filed under, or null for none (ROADMAP N95, N110).
      *
@@ -262,6 +264,7 @@ class ExerciseDetailViewModel @Inject constructor(
         techniqueNote = edit.techniqueNote,
         weightUnit = edit.weightUnit,
         stepGrams = edit.stepGrams,
+        isBodyweight = edit.isBodyweight,
         // The one field that makes this write *move to category* as well as an edit (N95).
         parentId = edit.parentId,
     )

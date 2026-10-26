@@ -24,6 +24,15 @@ interface MeasurementRepository {
      */
     suspend fun save(measurement: BodyMeasurement): DataResult<Unit>
 
+    /**
+     * The newest weight on record, or null when the scale was never stepped on (ROADMAP N219).
+     *
+     * What a bodyweight set adds to its load. Null is an answer rather than a failure, and it is the one the
+     * screen turns into a prompt: a set whose load cannot be stated is not one this app writes quietly as
+     * zero.
+     */
+    suspend fun latestWeightGrams(): DataResult<Long?>
+
     suspend fun delete(id: String): DataResult<Unit>
 
     /**

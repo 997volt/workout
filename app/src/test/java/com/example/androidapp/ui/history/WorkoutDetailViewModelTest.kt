@@ -323,6 +323,7 @@ class WorkoutDetailViewModelTest {
             note: String?,
             setType: com.example.androidapp.domain.model.SetType,
             assistanceGrams: Long,
+            bodyweightGrams: Long?,
         ): DataResult<Unit> = unused()
 
         override suspend fun updateSet(
