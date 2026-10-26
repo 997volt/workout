@@ -159,13 +159,16 @@ class RoomMeasurementRepository @Inject constructor(
                     throw NotFoundException("measurement ${existing.id}")
                 }
             } else {
+                // The row's own id: `toEntity` takes it from the argument, and an empty one would collide
+                // with the next weight-only day.
+                val id = UUID.randomUUID().toString()
                 dao.insert(
                     BodyMeasurement(
-                        id = UUID.randomUUID().toString(),
+                        id = id,
                         measuredAt = at,
                         kind = MeasurementKind.DAILY,
                         weightGrams = grams,
-                    ).toEntity(id = "", createdAt = now, now = now),
+                    ).toEntity(id = id, createdAt = now, now = now),
                 )
             }
         }

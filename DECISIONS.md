@@ -1625,16 +1625,24 @@ the rule; that one argues it.
   bodyweight and assistance before N219 revisited them. **Plans still prescribe reps**: a timed movement in a
   plan ignores its rep target, and that boundary is written down rather than left to be discovered, because the
   alternative — a template target that carries a duration — is a plan-editor change rather than a set one.
+  **The review and the next-step question honour that boundary** (B243): a hold reads as `3×0:45` and the
+  plan's rep target is not stated for it, a session of holds is counted in holds rather than "0 reps", and
+  progression answers a hold with "a hold is not measured in reps" instead of calling it N reps short. A hold
+  session saved as a plan writes **no** rep target (B244), which is a shape a plan already allows.
 
 - **A bodyweight set snapshots the lifter's weight** (N219). Taken once, when the set is logged, and stored
   on the set: a later measurement corrects the body, not what was lifted, and resolving it at read time would
   let every trend rewrite itself when the scale moved. The load is `bodyweight + added − assistance`, floored
   at zero, and it is **one function** because the history SQL, the detail screen and the trend point all have
   to agree about what "the load" is. Volume and the estimated 1RM read that load; **records do not** — N23's
-  rule that a bodyweight set has no weight to compare was written before this and was not reopened. With no
-  weight on record the set is held and the answer is written as today's daily measurement, keeping the day's
-  other values and soreness; dismissal logs nothing rather than a set of zero, which would put a figure in
-  every total that never happened.
+  rule that a bodyweight set has no weight to compare was written before this and was not reopened — the
+  record check and the history it reads both skip such a set (B246). With no weight on record the set is held
+  and the answer is written as the day's **weight** (one statement, so the day's body fat and soreness
+  survive); dismissal logs nothing rather than a set of zero, which would put a figure in every total that
+  never happened. **A weigh-in more than a month old is a question rather than an answer** (B251): the newest
+  weight on record is used only while it is current, because the body moves and a number from last season
+  written into today's sets puts a figure in every total that was never measured. A failed read is the third
+  answer — said, and nothing written — never "nobody has weighed in".
 
 ## Rules that apply to every change
 

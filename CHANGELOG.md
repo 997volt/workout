@@ -69,6 +69,66 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The library keeps what a movement is** (B240). `updateExercise` rebuilt the row field by field and never
+  mentioned `isBodyweight` or `isTimed`, while the write is a whole-row update — so every save put the stored
+  *false* back. Neither flag could be switched on at all: the switch read as saved and the next open
+  disagreed, which left the two features above unreachable until it was fixed.
+
+- **The finish review counts the load the history counts** (B241). The review's volume was added weight ×
+  reps while the history and the workout's own SQL counted the lifter as well, so an all-bodyweight session
+  finished on "0 kg" and read 600 kg in the history. It uses the same rule now.
+
+- **A prefill adds nothing it was not told to** (B242). With no plan and no history a bodyweight movement
+  prefilled 20 kg, which is 20 kg *added*: a first pull-up logged at 95 kg for a 75 kg lifter, and a plank
+  opened loaded. The fallback opens at zero when the field means what was added, while "what I did last time"
+  still wins where there is one.
+
+- **A hold is stated as a hold** (B243). The finish review read "3×0 at 20 kg" for a carry and the next-step
+  dialog called it "24 reps short of the plan". A hold now reads `3×0:45`, the plan's rep target is not
+  stated for a timed movement because it does not apply, a session of holds is counted in holds, and
+  progression answers with its own sentence instead of a rep shortfall.
+
+- **A plan saved from a hold session has no rep target** (B244). The copy wrote `0` into all three target
+  columns — a plan the app's own validator refuses and a program document that cannot be imported. The plan
+  names the set and its load, a shape it already allows.
+
+- **A bodyweight set reads as the load it was** (B245, B246). Set rows printed the added weight beside a
+  volume that counted the lifter, so a pull-up read "0 kg × 8"; both screens now share one sentence that
+  reads `95 kg × 8 · BW`, the weight field says "Added weight" on such a movement, and a bodyweight set
+  claims no personal record at its belt — N23's rule, restored.
+
+- **A program document keeps both flags** (B247). The shared exercise model had no field for them, so a
+  document recreated pull-ups as ordinary movements and planks as counted lifts. Both travel now, defaulted,
+  and the page's copy of the core is regenerated.
+
+- **An automatic backup never rewrites a copy** (B248). Names were second-resolution and an existing name
+  was reopened with a truncating stream, so two foregroundings inside one second could destroy the copy just
+  written; a failed write also left a partial file among the five kept. Runs take a mutex, names carry
+  milliseconds, a taken name lands beside it with a `-2`, and a failed write deletes what it created.
+
+- **A failing backup retries at the period's pace** (B249). Due-ness read only the last success, so a deleted
+  folder ran a full export on every foregrounding and failed at the write. The attempt is recorded and is the
+  retry's clock; a clock that went backwards is due rather than a silent stop.
+
+- **The backup's own words are true** (B250). "Nothing leaves the device" is not true of a folder another app
+  syncs; the hint says the app has no network access of its own instead. Pruning also matches the app's own
+  name shape, so a `workout-backup-notes.json` in the folder survives.
+
+- **A stale or unreadable weigh-in is asked about** (B251). The newest weight ever was written into every
+  bodyweight set, so a six-month-old number loaded a set without a word, and a failed read became "nobody has
+  weighed in", which asked and then wrote a measurement over the error. A month-old weigh-in now asks, with
+  the age in the question; a failed read is said and nothing is written.
+
+- **The two flags and a hold are named for a screen reader** (B252). The switches carried no accessible name,
+  the hold field promised `m:ss` on a keyboard with no colon, and a hold was read as digits around a colon.
+  Each switch is named by its label, the field accepts a colon, and a hold is spoken in words.
+
+- **A hold raises the backup format to 7** (B253). A hold is `reps = 0` beside a duration an older build
+  ignores, so it would import as an invalid zero-rep set and be clamped to one rep on the next save. The
+  floor stays at 5: every older file still reads. **Schemas 10 and 11** join the database's own account
+  (B254), and the rest of the review's small print is in (B255): the weigh-in answer is one targeted write,
+  `1:75` is refused rather than read as 2:15, and the migration tests say what they actually prove.
+
 - **The day's block keeps its place at the foot of the main screen** (B239). A day with nothing scheduled
   led with the no-plan line and *Record today's measurements*, while a day with a workout kept them under
   the ways in (B182) — so the two rows a lifter checks most moved from the top of the screen to the bottom

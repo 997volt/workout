@@ -379,6 +379,40 @@ class MeasurementRepositoryTest {
         )
     }
 
+    @Test
+    fun settingTheDaysWeight_keepsTheDaysOtherValues() = runTest {
+        // B255: the bodyweight prompt's answer is a targeted write, not a whole-entry save — a save would
+        // replace the day's body fat and soreness with nulls, and reading them back to copy is a scan.
+        repository.save(
+            entry(
+                at = today.atTime(7, 0).atZone(ZoneId.systemDefault()).toInstant(),
+                weightGrams = 74_000L,
+                soreMuscles = listOf(SoreMuscle(muscle = MuscleGroup.QUADS, score = 6)),
+            ),
+        )
+        repository.setDailyWeight(
+            at = today.atTime(9, 0).atZone(ZoneId.systemDefault()).toInstant(),
+            grams = 75_000L,
+        )
+
+        val after = repository.observeAll().first().single()
+        assertEquals(75_000L, after.weightGrams)
+        assertEquals("the soreness it was not asked about survives", 1, after.soreMuscles.size)
+        assertEquals("and the day stays one entry", 1, repository.observeAll().first().size)
+    }
+
+    @Test
+    fun settingTheDaysWeight_onAnEmptyDay_createsIt() = runTest {
+        repository.setDailyWeight(
+            at = today.atTime(9, 0).atZone(ZoneId.systemDefault()).toInstant(),
+            grams = 75_000L,
+        )
+
+        val stored = repository.observeAll().first().single()
+        assertEquals(75_000L, stored.weightGrams)
+        assertEquals(MeasurementKind.DAILY, stored.kind)
+    }
+
     private fun entry(
         at: Instant,
         kind: MeasurementKind = MeasurementKind.DAILY,
