@@ -1767,6 +1767,10 @@ private fun SessionExercise.suggestionFor(
         previous = previous,
         planned = planned,
         sameSetLastTime = sameSetLastTime,
+        // What the weight field means here: on a bodyweight movement it is the added part, and a hold
+        // needs no load at all unless the plan or the history names one (B242).
+        bodyweight = isBodyweight,
+        timed = isTimed,
     )
     // The line names the set the prefill read, which for a rung is its own place last time (N168).
     return suggestion.copy(reason = suggestionReason(previous, planned, sameSetLastTime))

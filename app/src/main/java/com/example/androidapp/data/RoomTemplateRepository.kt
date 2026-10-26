@@ -729,6 +729,10 @@ private suspend fun copyExerciseInto(
         ),
     )
     sets.forEachIndexed { setIndex, set ->
+        // A hold carries no rep target to copy (ROADMAP N220, B244): `reps` is zero on a timed set, and a
+        // plan stating "0 reps" is one the app's own validator refuses. The plan says the set without a rep
+        // target, which is a shape it already allows — a plan can name a set and only its load.
+        val repTarget = set.reps.takeIf { set.durationSeconds == null }
         plan.setDao.insertTemplateSet(
             TemplateSetEntity(
                 id = UUID.randomUUID().toString(),
@@ -739,11 +743,11 @@ private suspend fun copyExerciseInto(
                 // A set stores assistance as a magnitude and so does a plan; zero means "none", which
                 // is what a plan should say rather than zero.
                 targetAssistanceGrams = set.assistanceGrams.takeIf { it > 0L },
-                targetRepsMin = set.reps,
-                targetRepsMax = set.reps,
+                targetRepsMin = repTarget,
+                targetRepsMax = repTarget,
                 // A copied set is one number, so the range's floor and its current target are that
                 // same number — the shape a plan written by hand for "3 sets of 5" has (N74).
-                targetRepsCurrent = set.reps,
+                targetRepsCurrent = repTarget,
                 note = set.note,
                 createdAt = plan.now,
                 updatedAt = plan.now,

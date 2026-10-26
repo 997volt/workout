@@ -103,7 +103,9 @@ interface TemplateRepository {
      * from a plan, in the other direction.
      *
      * Copies the exercises in order and **their performed sets as targets** — role, weight, assistance,
-     * reps and RPE — so a copied warm-up ramp is a ramp and a copied superset stays paired. The
+     * reps and RPE — so a copied warm-up ramp is a ramp and a copied superset stays paired. **A hold
+     * copies no rep target** (N220): its reps are zero by definition and a plan stating zero reps is one
+     * the validator refuses (B244). The
      * exercise's own target RPE is the last set that named one, which is what the plan builds to
      * (N59). It copies neither the readiness note, the ratings nor the workout comment: those describe
      * that day rather than the plan. The source workout is untouched and stays independent of the copy.

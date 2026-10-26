@@ -110,6 +110,41 @@ class SetSuggestionTest {
     }
 
     @Test
+    fun aBodyweightMovementWithNothingToGoOn_addsNothing() {
+        // B242: the 20 kg a new exercise starts at is an *added* load on a bodyweight movement, so a first
+        // pull-up would be logged at 95 kg for a 75 kg lifter without the number ever being typed.
+        val suggestion = suggestionForNextSet(
+            loggedSets = emptyList(),
+            previous = null,
+            bodyweight = true,
+        )
+
+        assertEquals(DEFAULT_REPS, suggestion.reps)
+        assertEquals("nothing was added, so nothing is prefilled", 0L, suggestion.weightGrams)
+    }
+
+    @Test
+    fun aTimedMovementWithNothingToGoOn_opensUnloaded() {
+        // The same for a hold: a plank is not a loaded lift, and 20 kg on the bar would feed the volume and
+        // the heaviest-set series with a number nobody entered (B242).
+        val suggestion = suggestionForNextSet(loggedSets = emptyList(), previous = null, timed = true)
+
+        assertEquals(0L, suggestion.weightGrams)
+    }
+
+    @Test
+    fun aBodyweightMovementWithHistory_keepsWhatWasAdded() {
+        // Only the fallback changes: last time's belt is the best evidence there is (N219).
+        val suggestion = suggestionForNextSet(
+            loggedSets = listOf(SetRow(id = "s1", number = 1, reps = 5, weightGrams = 20_000)),
+            previous = null,
+            bodyweight = true,
+        )
+
+        assertEquals(20_000L, suggestion.weightGrams)
+    }
+
+    @Test
     fun withinASession_itRepeatsTheSetJustLogged() {
         val suggestion = suggestionForNextSet(
             loggedSets = listOf(SetRow(id = "s1", number = 1, reps = 5, weightGrams = 100_000)),

@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -83,6 +84,21 @@ class TemplateFromSessionTest {
             listOf(5, 3, 8),
             planned.flatMap { it.sets }.map { it.targetRepsMax },
         )
+    }
+
+    @Test
+    fun aHoldInTheWorkout_copiesWithoutARepTarget() = runTest {
+        // B244: a hold's reps are zero by definition, and copying them into the plan wrote "0 reps" — a
+        // row the app's own validator refuses and a plan the editor could not save unchanged. The plan
+        // names the set and its load instead, which is a shape it already allows.
+        seedFinishedWorkoutWithHolds()
+        val templateId = saved("Carry day")
+
+        val planned = templates.observeExercises(templateId).first().flatMap { it.sets }
+        assertEquals("the set came across", 1, planned.size)
+        assertNull("with no rep target to state", planned.single().targetRepsMin)
+        assertNull(planned.single().targetRepsMax)
+        assertNull(planned.single().targetRepsCurrent)
     }
 
     @Test
@@ -263,6 +279,44 @@ class TemplateFromSessionTest {
         val result = templates.createTemplateFromSession("past", name)
         assertTrue("saving succeeded: $result", result is DataResult.Success)
         return (result as DataResult.Success<String>).data
+    }
+
+    /** A finished workout holding one hold: a 45-second carry with nothing on the bar. */
+    private suspend fun seedFinishedWorkoutWithHolds() {
+        val dao = database.workoutDao()
+        dao.insertSession(
+            WorkoutSessionEntity(
+                id = "past",
+                startedAt = 1_000L,
+                finishedAt = 2_000L,
+                notes = null,
+                restEndsAt = null,
+                readinessNote = null,
+                createdAt = 1_000L,
+                updatedAt = 2_000L,
+                deletedAt = null,
+            ),
+        )
+        dao.insertSessionExercise(
+            SessionExerciseEntity(
+                id = "past-0",
+                sessionId = "past",
+                exerciseId = "back-squat",
+                position = 0,
+                restSeconds = 120,
+                techniqueNote = null,
+                finishedAt = null,
+                supersetGroup = null,
+                createdAt = 1_000L,
+                updatedAt = 1_000L,
+                deletedAt = null,
+            ),
+        )
+        dao.insertSet(
+            set("past-0-0", "past-0", 0, reps = 0, type = SetType.NORMAL, weightGrams = 0L).copy(
+                durationSeconds = 45,
+            ),
+        )
     }
 
     /** A finished workout holding [exercises], each with the given sets in order. */

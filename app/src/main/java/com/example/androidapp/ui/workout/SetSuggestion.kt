@@ -140,6 +140,16 @@ fun suggestionForNextSet(
      * above it just did. Null where the set has never been performed, which leaves the old fallback.
      */
     sameSetLastTime: SetEntry? = null,
+    /**
+     * Whether the movement is loaded by the body, so its weight field holds what was *added* (N219).
+     *
+     * Only the fallback reads it: with no plan and no history there is nothing to add, and the 20 kg a
+     * brand-new exercise starts at would be an added load nobody entered (B242).
+     */
+    bodyweight: Boolean = false,
+    /** Whether a set of this movement is held rather than counted (N220) — same reason, and a plank is
+     * not a loaded lift either. */
+    timed: Boolean = false,
 ): SetSuggestion {
     // "What you just did" beats "what you did last time": within a session the set before is the best
     // evidence there is.
@@ -160,7 +170,10 @@ fun suggestionForNextSet(
             durationSeconds = lastTime.durationSeconds,
         )
 
-        else -> SetSuggestion(reps = DEFAULT_REPS, weightGrams = Weight.DEFAULT_GRAMS)
+        else -> SetSuggestion(
+            reps = DEFAULT_REPS,
+            weightGrams = if (bodyweight || timed) 0L else Weight.DEFAULT_GRAMS,
+        )
     }
 
     // A plan's load is *one* number: `-20` is 20 kg of help and no added weight, and `100` is 100 kg and
