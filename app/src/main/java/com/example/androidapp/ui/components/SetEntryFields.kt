@@ -262,7 +262,9 @@ internal fun SetEntryNumbers(
                 decreaseTag = tags.decreaseDuration,
                 value = draft.durationText,
                 onValueChange = { onDraftChange(draft.copy(durationText = it)) },
-                keyboardType = KeyboardType.Number,
+                // Ascii rather than Number so the colon the label promises can be typed (B252); the ± steps
+                // remain the common way in, and a bare `90` is still read as seconds.
+                keyboardType = KeyboardType.Ascii,
                 onStep = { delta ->
                     val stepped = ((values.durationSeconds ?: DEFAULT_HOLD_SECONDS) + delta * HOLD_STEP_SECONDS)
                         .coerceAtLeast(1)

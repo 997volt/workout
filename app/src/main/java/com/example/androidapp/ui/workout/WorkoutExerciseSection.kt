@@ -28,6 +28,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -744,6 +746,9 @@ private fun SetLine(
                     reps = set.reps,
                     unit = set.weightUnit,
                 ),
+                modifier = set.spokenSummary()?.let { description ->
+                    Modifier.semantics { contentDescription = description }
+                } ?: Modifier,
                 style = MaterialTheme.typography.bodyLarge,
             )
             // What a set was is reps, load *and* effort, so the RPE reads on the line rather than as a
@@ -769,6 +774,25 @@ private fun SetLine(
             }
         }
     }
+}
+
+/**
+ * The set's sentence in words for a screen reader, or null when it is counted (B252).
+ *
+ * `1:30` is read as digits around a colon; "1 minute 30 seconds" is how a hold is stated.
+ */
+@Composable
+private fun SetRow.spokenSummary(): String? {
+    if (durationSeconds == null) return null
+    return setSummaryText(
+        weightGrams = weightGrams,
+        assistanceGrams = assistanceGrams,
+        bodyweightGrams = bodyweightGrams,
+        durationSeconds = durationSeconds,
+        reps = reps,
+        unit = weightUnit,
+        spokenDuration = true,
+    )
 }
 
 /**

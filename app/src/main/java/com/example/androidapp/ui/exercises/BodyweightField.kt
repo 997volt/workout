@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import com.example.androidapp.R
 import com.example.androidapp.ui.components.TestTags
@@ -89,7 +91,11 @@ private fun ExerciseFlagField(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            modifier = Modifier.testTag(testTag),
+            // The label is beside it, not on it: without this a screen reader announces "Switch, off" and
+            // leaves which flag to be guessed (B252).
+            modifier = Modifier
+                .testTag(testTag)
+                .semantics { contentDescription = label },
         )
     }
 }

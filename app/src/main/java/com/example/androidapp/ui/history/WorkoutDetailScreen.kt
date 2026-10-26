@@ -39,6 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -649,6 +651,20 @@ private fun HistorySetNumbers(set: HistorySet, number: Int?, modifier: Modifier 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             // A warm-up leaves this column blank rather than taking a number (N112).
             SetNumber(number)
+            // A screen reader gets the hold in words, not as digits around a colon (B252).
+            val spoken = if (set.durationSeconds != null) {
+                setSummaryText(
+                    weightGrams = set.weightGrams,
+                    assistanceGrams = set.assistanceGrams,
+                    bodyweightGrams = set.bodyweightGrams,
+                    durationSeconds = set.durationSeconds,
+                    reps = set.reps,
+                    unit = exerciseWeightUnit(set.weightUnit),
+                    spokenDuration = true,
+                )
+            } else {
+                null
+            }
             Text(
                 // The same sentence the workout screen states (N220, B245): a hold says how long, and a
                 // bodyweight set reads at the load it counted.
@@ -660,6 +676,9 @@ private fun HistorySetNumbers(set: HistorySet, number: Int?, modifier: Modifier 
                     reps = set.reps,
                     unit = exerciseWeightUnit(set.weightUnit),
                 ),
+                modifier = spoken?.let { description ->
+                    Modifier.semantics { contentDescription = description }
+                } ?: Modifier,
                 style = MaterialTheme.typography.bodyLarge,
             )
             // The detail is where the full text lives (N6); the workout row only carries a marker. A

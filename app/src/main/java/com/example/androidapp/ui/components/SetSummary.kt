@@ -28,6 +28,8 @@ internal fun setSummaryText(
     durationSeconds: Int?,
     reps: Int,
     unit: WeightUnit,
+    /** True to state the hold in words, for a screen reader (B252): "1 minute 30 seconds". */
+    spokenDuration: Boolean = false,
 ): String {
     val bodyweight = bodyweightGrams != null
     // The same rule the totals use (N219): a bodyweight set's load is the lifter plus what was added,
@@ -40,19 +42,22 @@ internal fun setSummaryText(
     val shownAssistance = if (bodyweight) 0L else assistanceGrams
     val weight = Weight.display(load, shownAssistance, unit)
     val label = unit.label()
+    val hold = durationSeconds?.let {
+        if (spokenDuration) DurationFormat.spokenSeconds(it.toLong()) else DurationFormat.ofSeconds(it.toLong())
+    }
     return when {
         durationSeconds != null && bodyweight -> stringResource(
             R.string.set_summary_timed_bodyweight,
             weight,
             label,
-            DurationFormat.ofSeconds(durationSeconds.toLong()),
+            hold.orEmpty(),
         )
 
         durationSeconds != null -> stringResource(
             R.string.set_summary_timed,
             weight,
             label,
-            DurationFormat.ofSeconds(durationSeconds.toLong()),
+            hold.orEmpty(),
         )
 
         bodyweight -> stringResource(R.string.set_summary_bodyweight, weight, label, reps)

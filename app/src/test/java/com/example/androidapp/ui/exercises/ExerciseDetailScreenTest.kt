@@ -12,6 +12,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.semantics.SemanticsActions
@@ -187,6 +188,15 @@ class ExerciseDetailScreenTest {
         composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performScrollTo().performClick()
 
         assertEquals(true, saved?.isTimed)
+    }
+
+    @Test
+    fun theTwoFlagsAreNamed_forAScreenReader() {
+        // B252: a bare switch beside a label announces "Switch, off" and leaves which flag to be guessed.
+        show(ExerciseDetailUiState(isLoading = false, isEditing = true, exercise = seeded))
+
+        composeTestRule.onNodeWithContentDescription("Bodyweight exercise").assertExists()
+        composeTestRule.onNodeWithContentDescription("Timed exercise").assertExists()
     }
 
     @Test

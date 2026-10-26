@@ -31,6 +31,28 @@ object DurationFormat {
     fun of(duration: Duration): String = ofSeconds(duration.seconds)
 
     /**
+     * The same hold in words: "45 seconds", "1 minute 30 seconds" (B252).
+     *
+     * A screen reader reads `1:30` as digits and a colon, which is not how anybody states a hold. The
+     * visual format stays compact; this is only what is spoken.
+     */
+    fun spokenSeconds(totalSeconds: Long): String {
+        val safe = totalSeconds.coerceAtLeast(0)
+        val hours = safe / SECONDS_PER_HOUR
+        val minutes = (safe % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE
+        val seconds = safe % SECONDS_PER_MINUTE
+        val parts = buildList {
+            if (hours > 0) add(count(hours, "hour"))
+            if (minutes > 0) add(count(minutes, "minute"))
+            if (seconds > 0 || isEmpty()) add(count(seconds, "second"))
+        }
+        return parts.joinToString(" ")
+    }
+
+    private fun count(value: Long, unit: String): String =
+        if (value == 1L) "1 $unit" else "$value ${unit}s"
+
+    /**
      * What a typed hold means in seconds, or null when it is not a duration at all.
      *
      * Accepts what [ofSeconds] prints and what a lifter types: `45`, `1:30` and `1:30:00`. Blank is null —

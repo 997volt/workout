@@ -16,6 +16,17 @@ import org.junit.Test
 class DurationFormatTest {
 
     @Test
+    fun spoken_holdsSayTheUnitInWords() {
+        // B252: a screen reader reads "1:30" as digits around a colon, which is not how a hold is stated.
+        assertEquals("45 seconds", DurationFormat.spokenSeconds(45))
+        assertEquals("1 minute", DurationFormat.spokenSeconds(60))
+        assertEquals("1 minute 30 seconds", DurationFormat.spokenSeconds(90))
+        assertEquals("2 minutes", DurationFormat.spokenSeconds(120))
+        assertEquals("1 hour 5 minutes", DurationFormat.spokenSeconds(3_900))
+        assertEquals("0 seconds", DurationFormat.spokenSeconds(0))
+    }
+
+    @Test
     fun minutesAndSeconds_areZeroPadded() {
         assertEquals("0:00", DurationFormat.ofSeconds(0))
         assertEquals("0:07", DurationFormat.ofSeconds(7))
