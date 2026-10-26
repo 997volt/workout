@@ -13,6 +13,30 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Added
+
+- **A deleted workout can be restored** (N216). A delete was final in the app even though the plan was never
+  really gone: the row and its exercises and sets stayed, which is what let a backup written *before* the
+  delete bring it back, and nothing else could. The templates list now carries a *Deleted* chip beside the
+  hidden one, holding every deleted workout with a *Restore* on its row. One write clears the delete flag;
+  the plan returns with it, and a program day that still pointed at the workout reappears on its weekday,
+  because that list only ever needed the workout to be live again. A workout deleted while hidden comes back
+  hidden. A day *removed* from a program is still removed — restoring the workout brings back the plan, not
+  the schedule you deleted separately — and nothing is restored automatically: a backup from before the
+  delete is still the undo for a delete that was meant.
+
+### Changed
+
+- **The templates filter shows one group at a time** (N217). *Hidden* used to be a reveal: it added the
+  hidden workouts to every live one, so the list a lifter opened to see what they had put away was longer
+  than the list they left. The chips are modes now — *All*, *Hidden (n)* and *Deleted (n)* — and each draws
+  its group alone, with the counts read from the whole library. A group that empties while it is selected
+  (the last *Unhide* or *Restore*) falls back to *All* rather than leaving a blank list under a selected
+  chip, and the hidden row no longer carries its own *Hidden* marker, because a hidden row never stands
+  beside a live one any more.
+
 ## [2.15] — 2026-10-25 (versionCode 35)
 
 ### Added

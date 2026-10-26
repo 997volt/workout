@@ -112,7 +112,7 @@ the rule; that one argues it.
 - **A workout can be hidden from the choices without being deleted** (N214). A large library makes the pickers
   unusable, and the plans in it are still real, so hiding is a **choice filter** rather than a state of the
   plan: one nullable `hiddenAt` column (schema 9) applied by the two reads that *offer* a workout — the
-  templates list, whose *Hidden* filter is the one surface that shows them, and the picker a program's day
+  templates list, whose *Hidden* chip is the one surface that shows them, and the picker a program's day
   chooses from — while every read that resolves a workout **by id** is untouched, so a slot that already
   names a hidden plan still schedules and starts it, history still says its name, and the export still carries
   it. **The substitute picker on home keeps offering them**, because a stand-in is what the lifter trains
@@ -125,7 +125,24 @@ the rule; that one argues it.
   version bump: a restored library comes back tidied. **Nothing the app creates is hidden** — a new workout,
   one saved from a session, or one received with a program — and *Hide* is offered only once the plan holds
   an exercise, because a brand-new empty plan is deleted rather than hidden, while *Unhide* is offered
-  always so a hidden plan emptied later still has a way back.
+  always so a hidden plan emptied later still has a way back. **The list's chips are modes, not a reveal**
+  (N217): *All*, *Hidden* and, since N216, *Deleted* each draw their own group *instead of* the live
+  workouts, with the counts read from the whole library, and a group that empties while it is selected
+  falls back to *All* rather than drawing a blank list under a selected chip. The hidden row's marker is
+  gone with the reveal, because a hidden row no longer stands beside a live one — the selected chip is the
+  statement.
+- **A deleted workout can be brought back, and a backup is still the undo** (N216). A delete is a soft one —
+  the row and its planned work stay — but nothing in the app could un-hide one, so the list gains the one
+  control that can: a *Deleted* chip beside *Hidden*, holding the deleted workouts with a *Restore* on each
+  row. The write is one statement clearing `deletedAt` on the workout alone: its exercises and sets were
+  never deleted, and a program day whose slot survived reappears on its weekday because that list joins
+  live workouts. `hiddenAt` is left alone, so a workout deleted while hidden comes back hidden, and
+  `updatedAt` moves, so a program document exported before the restore is refused as stale (N171) rather
+  than merged into a definition that changed. **A slot removed on its own is not restored**: the day is the
+  program's, and the workout it named is a separate row. **Nothing is restored automatically** — a backup
+  from before the delete stays the undo for a delete the lifter meant, which is the reason the soft delete
+  exists (P1.12). Rejected: a *Deleted* menu entry or a visible row, which advertises an undo this is not,
+  and un-deleting on import, which would overwrite the lifter's own decision.
 - **A plan is read by position, and position stays contiguous** (B72). A running session matches its
   logged sets to the plan by `setIndex` against the number logged, and a run's continuation is keyed by
   the same index, so a stored index *is* the plan's order rather than a durable id. Removing a planned set
