@@ -162,6 +162,11 @@ class RoomExerciseRepository @Inject constructor(
             weightUnit = exercise.weightUnit?.name,
             // The exercise's own weight step in grams, or null for the unit's own (ROADMAP N77).
             stepGrams = exercise.stepGrams,
+            // The two flags that change what a set means (ROADMAP N219, N220). `stored.copy` keeps every
+            // field it is not told, so leaving these out silently put the old value back and the switch on
+            // the screen became a lie: the edit is the only way a movement is ever marked (B240).
+            isBodyweight = exercise.isBodyweight,
+            isTimed = exercise.isTimed,
             updatedAt = timeSource.nowEpochMillis(),
         )
         if (dao.update(updated) == 0) throw NotFoundException("exercise ${exercise.id}")

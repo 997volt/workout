@@ -125,6 +125,28 @@ class RoomExerciseRepositoryTest {
             ?: error("exercise $id should exist")
 
     @Test
+    fun updateExercise_keepsTheFlagsThatChangeWhatASetMeans() = runTest {
+        // B240: the flags are the whole of N219 and N220 at the write boundary. A copy that forgot them
+        // looked saved on screen and stored the old value, which made both features impossible to switch on.
+        val created = created("Pull-up")
+
+        assertTrue(
+            repository.updateExercise(created.copy(isBodyweight = true, isTimed = true))
+                is DataResult.Success,
+        )
+
+        val stored = stored(created.id)
+        assertTrue("a movement marked bodyweight stays bodyweight", stored.isBodyweight)
+        assertTrue("and a hold stays a hold", stored.isTimed)
+
+        // And a later edit that says nothing about them keeps them, which is what `stored.copy` is for.
+        assertTrue(repository.updateExercise(stored.copy(name = "Pull-up heavy")) is DataResult.Success)
+        val renamed = stored(created.id)
+        assertTrue(renamed.isBodyweight)
+        assertTrue(renamed.isTimed)
+    }
+
+    @Test
     fun updateExercise_storesAZeroRest_asADeliberateNone() = runTest {
         // ROADMAP N45: zero is a value — "this exercise has no rest" — not input to refuse.
         val created = created("Sled Push")
