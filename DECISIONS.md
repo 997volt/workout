@@ -1609,6 +1609,26 @@ the rule; that one argues it.
   starter programs for no safety at all. Rejected: a per-document version that stamps 5 only for a
   sequence, because a format with two current versions is the drift N183 names.
 
+## Automatic backup and bodyweight loading
+
+- **A backup pays its window at the next launch** (N218). The period is the setting; the moment is the next
+  time the app comes to the front, because a real background job needs WorkManager or an exact alarm plus a
+  battery exemption — the P4.7 non-goal, and the end of a manifest that declares no permissions. The
+  consequence is stated rather than hidden: someone who never opens the app is never backed up, and the
+  settings row's date is how they find that out. The order of the run is the safety argument — export, write,
+  prune, record — so a crash anywhere leaves the previous copies intact and the period still due. Pruning
+  touches only files this app named and keeps five, because the folder is the user's.
+
+- **A bodyweight set snapshots the lifter's weight** (N219). Taken once, when the set is logged, and stored
+  on the set: a later measurement corrects the body, not what was lifted, and resolving it at read time would
+  let every trend rewrite itself when the scale moved. The load is `bodyweight + added − assistance`, floored
+  at zero, and it is **one function** because the history SQL, the detail screen and the trend point all have
+  to agree about what "the load" is. Volume and the estimated 1RM read that load; **records do not** — N23's
+  rule that a bodyweight set has no weight to compare was written before this and was not reopened. With no
+  weight on record the set is held and the answer is written as today's daily measurement, keeping the day's
+  other values and soreness; dismissal logs nothing rather than a set of zero, which would put a figure in
+  every total that never happened.
+
 ## Rules that apply to every change
 
 - **A range is a window in the current zone; a session's date is where it happened**

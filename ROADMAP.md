@@ -17,21 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-- **A backup writes itself when the app is next opened** (N218). Periodic backup as a setting: the user picks a
-  folder once, chooses Daily, Weekly or Monthly, and the app writes a timestamped file there the next time it is
-  opened after the period has run out. It never runs in the background — no job, no alarm, no notification — so
-  the app still declares no permissions and P4.7 stands, and a window missed because the app stayed shut is
-  simply paid at the next launch. The newest five files are kept and the older ones pruned. Settings shows when
-  the last backup succeeded, and a failed one is reported rather than swallowed: a backup that quietly stopped
-  is worse than none at all.
-
-- **A bodyweight set adds the lifter's weight to the load** (N219). An exercise can be marked bodyweight in the
-  library; its sets then add the bodyweight in force when the set was logged, snapshotted onto the set so that
-  editing a weight entry later cannot rewrite history. The weight field holds *added* load, and machine
-  assistance subtracts from the bodyweight. Bodyweight counts as load in both volume and the estimated 1RM.
-  With no weight on record, logging the set asks for it first, and that answer is written as a real daily
-  measurement rather than a number attached to one set — so Measurements, statistics and the weight goal all
-  read the same value.
+**Nothing.** The backup that writes itself and bodyweight loading (N218, N219) have shipped to the
+unreleased section.
 
 ## Later — decided, and not being started
 

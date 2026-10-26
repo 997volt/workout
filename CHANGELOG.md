@@ -17,6 +17,26 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A backup writes itself when the app is next opened** (N218). Periodic backup as a setting: pick a folder
+  once, choose Daily, Weekly or Monthly, and a timestamped file is written there the next time the app comes
+  to the front after the period has run out. It never runs in the background — no job, no alarm, no
+  notification — so the app still declares no permissions and P4.7 stands; a window missed because the app
+  stayed shut is paid at the next launch, and the settings row's date is how that becomes visible. The newest
+  five files are kept and older ones pruned, and only files this app named are ever deleted: the folder is
+  the user's. The run is ordered export, write, prune, record, so a crash anywhere leaves the previous copies
+  intact and the period still due. A failure keeps the date of the last success beside it, because "the last
+  backup failed" without "when one last worked" cannot tell a week from a minute.
+
+- **A bodyweight set adds the lifter's weight to the load** (N219). An exercise can be marked bodyweight, and
+  its sets then count bodyweight plus what was added, less machine assistance — so a 75 kg lifter with a 20 kg
+  belt is lifting 95 kg, and an assisted pull-up taking 30 kg off is 45 kg. The weight is snapshotted onto the
+  set when it is logged, so correcting a measurement later changes the record of the body without rewriting
+  what was lifted. The load is one function, and the history list, the workout detail and the trend's volume,
+  heaviest set and 1RM all read it, which is what stops them disagreeing. Records stay by added weight: N23's
+  rule about bodyweight sets was written before this and was not reopened. With no weight on record, logging
+  holds the set and asks; the answer is saved as today's daily measurement, keeping whatever else that day
+  already says, and dismissing the prompt logs nothing rather than a set of zero kilograms.
+
 - **A deleted workout can be restored** (N216). A delete was final in the app even though the plan was never
   really gone: the row and its exercises and sets stayed, which is what let a backup written *before* the
   delete bring it back, and nothing else could. The templates list now carries a *Deleted* chip beside the
