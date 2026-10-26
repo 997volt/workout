@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -40,6 +41,8 @@ fun BodyweightPromptDialog(
     onSave: (Long) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    /** How old the stored weigh-in is, in days, when that is why this is being asked (B251). */
+    staleDays: Long? = null,
 ) {
     if (exerciseName == null) return
     val unit = LocalWeightUnit.current
@@ -52,7 +55,20 @@ fun BodyweightPromptDialog(
         title = { Text(stringResource(R.string.bodyweight_prompt_title)) },
         text = {
             Column {
-                Text(stringResource(R.string.bodyweight_prompt_body, exerciseName))
+                // A stale weight is a different question from no weight, and the sentence says which
+                // (B251): one asks for a first number, the other asks whether the old one still holds.
+                Text(
+                    if (staleDays == null) {
+                        stringResource(R.string.bodyweight_prompt_body, exerciseName)
+                    } else {
+                        pluralStringResource(
+                            R.plurals.bodyweight_prompt_body_stale,
+                            staleDays.toInt(),
+                            exerciseName,
+                            staleDays,
+                        )
+                    },
+                )
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },

@@ -34,13 +34,13 @@ interface MeasurementDao {
      */
     @Query(
         """
-        SELECT weightGrams FROM measurements
+        SELECT weightGrams, measuredAt FROM measurements
         WHERE weightGrams IS NOT NULL AND deletedAt IS NULL
         ORDER BY measuredAt DESC
         LIMIT 1
         """,
     )
-    suspend fun latestWeightGrams(): Long?
+    suspend fun latestWeight(): LatestWeightRow?
 
     /**
      * Returns one rowid per input row, `-1` where a row was skipped as a duplicate (P1.12).
@@ -152,3 +152,14 @@ interface MeasurementDao {
     @Query("UPDATE measurements SET deletedAt = :at, updatedAt = :at WHERE id = :id AND deletedAt IS NULL")
     suspend fun softDelete(id: String, at: Long): Int
 }
+
+/**
+ * The newest weight on record and when it was taken (ROADMAP N219, B251).
+ *
+ * The instant travels because a weight is only an answer while it is current: six months later it is a
+ * question about today, and the screen decides that rather than reading a bare number it cannot date.
+ */
+data class LatestWeightRow(
+    val weightGrams: Long,
+    val measuredAt: Long,
+)

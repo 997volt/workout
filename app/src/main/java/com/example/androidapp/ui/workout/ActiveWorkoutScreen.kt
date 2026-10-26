@@ -226,9 +226,7 @@ fun ActiveWorkoutScreen(
     var editing by remember { mutableStateOf<SetRow?>(null) }
 
     if (summary != null) WorkoutReviewDialog(summary = summary, onDismiss = onDismissSummary)
-    BodyweightPromptDialog(
-        exerciseName = bodyweightPrompt?.exerciseName, onSave = onEnterBodyweight, onDismiss = onDismissBodyweight,
-    )
+    BodyweightPrompt(prompt = bodyweightPrompt, onSave = onEnterBodyweight, onDismiss = onDismissBodyweight)
 
     UndoOffers(state, snackbarHostState, onUndoDelete, onDismissUndo, onUndoFinishExercise, onDismissFinishUndo)
 
@@ -301,6 +299,22 @@ fun ActiveWorkoutScreen(
  * The *open* state stays with the screen, because the body is what opens it; this is
  * only the rendering, which is where the lines were.
  */
+/** The bodyweight question, shown only while a set is held for one (N219, B251). */
+@Composable
+private fun BodyweightPrompt(
+    prompt: PendingBodyweight?,
+    onSave: (Long) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (prompt == null) return
+    BodyweightPromptDialog(
+        exerciseName = prompt.exerciseName,
+        onSave = onSave,
+        onDismiss = onDismiss,
+        staleDays = prompt.staleDays,
+    )
+}
+
 @Composable
 internal fun SetEditorSection(
     editing: SetRow?,

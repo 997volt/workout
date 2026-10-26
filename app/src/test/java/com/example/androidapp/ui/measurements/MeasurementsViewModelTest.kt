@@ -4,6 +4,7 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.LatestWeight
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.SoreMuscle
@@ -558,10 +559,12 @@ private class FakeMeasurementRepository(
 
     override fun observeAll(): Flow<List<BodyMeasurement>> = entries
 
-    /** N219: the newest weight the fake holds. */
-    override suspend fun latestWeightGrams(): DataResult<Long?> =
+    /** N219: the newest weight the fake holds, with its day (B251). */
+    override suspend fun latestWeight(): DataResult<LatestWeight?> =
         DataResult.Success(
-            entries.value.filter { it.weightGrams != null }.maxByOrNull { it.measuredAt }?.weightGrams,
+            entries.value.filter { it.weightGrams != null }
+                .maxByOrNull { it.measuredAt }
+                ?.let { LatestWeight(grams = it.weightGrams!!, at = it.measuredAt) },
         )
 
     override suspend fun save(measurement: BodyMeasurement): DataResult<Unit> {

@@ -5,15 +5,16 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.WeightUnit
-import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.BackupFolder
 import com.example.androidapp.domain.model.BackupSchedule
 import com.example.androidapp.domain.model.BackupSettings
+import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.ExerciseTrendMetric
 import com.example.androidapp.domain.model.ExerciseTrendPoint
 import com.example.androidapp.domain.model.Joint
+import com.example.androidapp.domain.model.LatestWeight
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
@@ -977,8 +978,11 @@ private class FakeMeasurementRepository(
     override suspend fun restore(id: String): DataResult<Unit> = DataResult.Success(Unit)
 
     /** N219: this screen never logs a set, so the newest weight is whatever the fake was seeded with. */
-    override suspend fun latestWeightGrams(): DataResult<Long?> =
-        DataResult.Success(entries.mapNotNull { it.weightGrams }.maxOrNull())
+    override suspend fun latestWeight(): DataResult<LatestWeight?> =
+        DataResult.Success(
+            entries.filter { it.weightGrams != null }.maxByOrNull { it.measuredAt }
+                ?.let { LatestWeight(grams = it.weightGrams!!, at = it.measuredAt) },
+        )
 }
 
 private class FakeExerciseRepository(private val lifts: List<Exercise>) : ExerciseRepository {

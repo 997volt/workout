@@ -149,3 +149,15 @@ fun BodyMeasurement.statesSomething(): Boolean = when (kind) {
 
     MeasurementKind.TAPE -> tape.isNotEmpty()
 }
+
+/**
+ * The newest weight on record, with the day it was taken (ROADMAP N219, B251).
+ *
+ * What a bodyweight set adds to its load, and **how old that answer is**. A weight with no date is read
+ * as today's by every caller, which is the one thing it is not: six months later it is a question about
+ * today, and the screen asks it rather than writing a stale number into every set.
+ */
+data class LatestWeight(
+    val grams: Long,
+    val at: Instant,
+)

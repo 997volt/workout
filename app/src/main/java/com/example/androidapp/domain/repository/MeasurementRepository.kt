@@ -2,6 +2,7 @@ package com.example.androidapp.domain.repository
 
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.LatestWeight
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -31,7 +32,7 @@ interface MeasurementRepository {
      * screen turns into a prompt: a set whose load cannot be stated is not one this app writes quietly as
      * zero.
      */
-    suspend fun latestWeightGrams(): DataResult<Long?>
+    suspend fun latestWeight(): DataResult<LatestWeight?>
 
     suspend fun delete(id: String): DataResult<Unit>
 

@@ -9,13 +9,14 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Activity
-import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.BackupFolder
 import com.example.androidapp.domain.model.BackupSchedule
 import com.example.androidapp.domain.model.BackupSettings
+import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.LatestWeight
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PersonalRecords
@@ -39,9 +40,9 @@ import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
 import com.example.androidapp.domain.model.WorkoutSummary
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramDocumentPreview
 import com.example.androidapp.domain.repository.ProgramImportSummary
-import com.example.androidapp.domain.repository.MeasurementRepository
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.StartedSession
@@ -76,6 +77,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
 import java.time.DayOfWeek
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 
@@ -1075,6 +1077,52 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aStaleWeighIn_isAskedAbout_ratherThanWrittenIntoTheSet() = runTest(dispatcher) {
+        // B251: the newest weight ever was used however old it was, so a six-month-old number loaded every
+        // set until the lifter happened to measure again. A month-old one is a question now.
+        val repository = FakeWorkoutRepository()
+        repository.isBodyweightForNextExercise = true
+        val measurements = FakeBodyMeasurements(latest = 75_000L).apply {
+            weighedAt = FIXED_INSTANT.minus(Duration.ofDays(40))
+        }
+        val viewModel = viewModelFor(repository, measurements = measurements)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("pull-up")
+        settle()
+
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
+        settle()
+
+        val prompt = viewModel.bodyweightPrompt.value
+        assertNotNull("the set is held while the weight is confirmed", prompt)
+        assertEquals(40L, prompt!!.staleDays)
+        assertTrue("and nothing was written", repository.sets.value.isEmpty())
+    }
+
+    @Test
+    fun aFailedWeightRead_isSaid_ratherThanReadAsNoWeight() = runTest(dispatcher) {
+        // B251: `getOrNull` turned a storage failure into "nobody has weighed in", which then wrote a
+        // measurement over an error and logged the set. The failure is surfaced and the set is not written.
+        val repository = FakeWorkoutRepository()
+        repository.isBodyweightForNextExercise = true
+        val measurements = FakeBodyMeasurements(latest = 75_000L).apply { failLatest = true }
+        val viewModel = viewModelFor(repository, measurements = measurements)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("pull-up")
+        settle()
+
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
+        settle()
+
+        assertNull("no prompt: the weight is unknown, not absent", viewModel.bodyweightPrompt.value)
+        assertNotNull("the failure reaches the screen", viewModel.uiState.value.error)
+        assertTrue("and no set is written", repository.sets.value.isEmpty())
+        assertTrue("nor a measurement", measurements.saved.isEmpty())
+    }
+
+    @Test
     fun aTimedSet_isLoggedAsAHold_withNoReps() = runTest(dispatcher) {
         // ROADMAP N220: the row states seconds, and reps go to zero rather than carrying whatever the field
         // held — a hold is not forty-five of anything.
@@ -1787,7 +1835,13 @@ class ActiveWorkoutViewModelTest {
      * [latest] is what a bodyweight set snapshots; a save lands in [saved] so the prompt's answer can be
      * asserted, and changes the weight the next set would read.
      */
-    private class FakeBodyMeasurements(private var latest: Long? = 80_000L) : MeasurementRepository {
+    private class FakeBodyMeasurements(
+        private var latest: Long? = 80_000L,
+        /** When [latest] was taken; the default is "a moment ago" against the test clock (B251). */
+        var weighedAt: Instant = Instant.parse("2026-09-28T07:00:00Z"),
+        /** True makes the read fail, which must be said rather than read as "no weight" (B251). */
+        var failLatest: Boolean = false,
+    ) : MeasurementRepository {
         val saved = mutableListOf<BodyMeasurement>()
 
         override fun observeAll(): Flow<List<BodyMeasurement>> = flowOf(saved.toList())
@@ -1802,7 +1856,11 @@ class ActiveWorkoutViewModelTest {
 
         override suspend fun restore(id: String): DataResult<Unit> = DataResult.Success(Unit)
 
-        override suspend fun latestWeightGrams(): DataResult<Long?> = DataResult.Success(latest)
+        override suspend fun latestWeight(): DataResult<LatestWeight?> = if (failLatest) {
+            DataResult.Failure(DataError.Storage(IOException("the measurements could not be read")))
+        } else {
+            DataResult.Success(latest?.let { LatestWeight(grams = it, at = weighedAt) })
+        }
     }
 
     private class FakeWorkoutRepository : WorkoutRepository {

@@ -93,7 +93,10 @@ complexity:
     # for the separate reason that its terse `barbell(...)` builder exists so each
     # of the 30 rows stays a single line.
     ignoreAnnotated: ['Composable']
-    excludes: ['**/data/SeedExercises.kt']
+    # The workout logger asks seven ports — the session, the clock, plans, programs, the saved route, the
+    # settings and the body's own weight (N219). Each is a different question it has to put, and grouping
+    # them into a "context" object would be the same parameters with a name (B255, from the N219 review).
+    excludes: ['**/data/SeedExercises.kt', '**/ui/workout/ActiveWorkoutViewModel.kt']
 
   TooManyFunctions:
     # These thresholds are raised, not disabled, and for one shape of type: a DAO
@@ -140,6 +143,12 @@ complexity:
     thresholdInInterfaces: 31
     thresholdInClasses: 30
     thresholdInFiles: 20
+    # The workout logger is the one type the notes above describe: every action the workout screen has,
+    # sharing one session, one exercise list and one error channel. It has been at the ceiling since N10 and
+    # the split is architectural — several ViewModels per screen — which is a bigger change than any feature
+    # here. Recorded rather than silenced with a `@Suppress` on the class, which is what N219 shipped and
+    # what this file exists to keep visible (B255).
+    excludes: ['**/test/**', '**/androidTest/**', '**/ui/workout/ActiveWorkoutViewModel.kt']
     # `TestTags` is a flat namespace of tags, and the parameterised ones (a row
     # addressed by id, a chart addressed by metric) are the pattern the quality bar
     # asks for: a test addresses a control by identity rather than by position or by

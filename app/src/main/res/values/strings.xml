@@ -881,6 +881,11 @@
     <string name="exercise_detail_bodyweight_hint">The weight field is what you add — a belt, a dumbbell. Your own weight is added when the set is logged.</string>
     <string name="bodyweight_prompt_title">How much do you weigh?</string>
     <string name="bodyweight_prompt_body">%1$s is a bodyweight movement, and there is no weight on record yet. This is saved as today\'s measurement, so every bodyweight set can add it.</string>
+    <!-- The same question when the stored weight is old (B251): a month-old number is not today's. -->
+    <plurals name="bodyweight_prompt_body_stale">
+        <item quantity="one">%1$s is a bodyweight movement, and your last weigh-in was %2$d day ago. What do you weigh today? This is saved as today\'s measurement, so every bodyweight set can add it.</item>
+        <item quantity="other">%1$s is a bodyweight movement, and your last weigh-in was %2$d days ago. What do you weigh today? This is saved as today\'s measurement, so every bodyweight set can add it.</item>
+    </plurals>
     <string name="bodyweight_prompt_field">Bodyweight</string>
     <string name="bodyweight_prompt_save">Save and log the set</string>
     <!-- The record just set (ROADMAP N23). -->

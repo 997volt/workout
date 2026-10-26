@@ -10,6 +10,7 @@ import com.example.androidapp.domain.NotFoundException
 import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.BodyMeasurement
+import com.example.androidapp.domain.model.LatestWeight
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.SoreMuscle
 import com.example.androidapp.domain.model.TapeSite
@@ -76,8 +77,8 @@ class RoomMeasurementRepository @Inject constructor(
             rows.map { row -> row.toDomain(byMeasurement[row.id].orEmpty()) }
         }
 
-    override suspend fun latestWeightGrams(): DataResult<Long?> = dataResultOf {
-        dao.latestWeightGrams()
+    override suspend fun latestWeight(): DataResult<LatestWeight?> = dataResultOf {
+        dao.latestWeight()?.let { LatestWeight(grams = it.weightGrams, at = Instant.ofEpochMilli(it.measuredAt)) }
     }
 
     override suspend fun save(measurement: BodyMeasurement): DataResult<Unit> = dataResultOf {

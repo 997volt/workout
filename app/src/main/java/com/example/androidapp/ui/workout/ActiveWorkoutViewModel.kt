@@ -14,18 +14,14 @@ import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.BodyMeasurement
-import com.example.androidapp.domain.model.MeasurementKind
-import com.example.androidapp.domain.model.localDayBounds
-import com.example.androidapp.domain.model.loadGrams
-import com.example.androidapp.domain.model.ExerciseActual
-import com.example.androidapp.domain.model.ExercisePlan
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.LatestWeight
+import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.PerformedSetSpec
 import com.example.androidapp.domain.model.PersonalRecordMoment
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PlanComparison
-import com.example.androidapp.domain.model.PlannedSetSpec
 import com.example.androidapp.domain.model.PreviousPerformance
 import com.example.androidapp.domain.model.ProgressionChoice
 import com.example.androidapp.domain.model.ProgressionDirection
@@ -39,7 +35,7 @@ import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutSession
-import com.example.androidapp.domain.model.comparePlanToActual
+import com.example.androidapp.domain.model.localDayBounds
 import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.domain.model.progressionPromptFor
 import com.example.androidapp.domain.model.runContinuesAfter
@@ -120,6 +116,11 @@ data class PendingBodyweight(
     val sessionExerciseId: String,
     val exerciseName: String,
     val edit: SetEdit,
+    /**
+     * How old the newest weigh-in is, in days, when the set is held for being stale, or null when there is
+     * no weight at all (B251). The dialog says which question it is asking.
+     */
+    val staleDays: Long? = null,
 )
 
 /** One exercise in the workout, with its sets and what the next set will prefill. */
@@ -289,12 +290,12 @@ data class ActiveWorkoutUiState(
  * nothing. A session with no exercises is left for the user to discard rather
  * than cleaned up implicitly — an invisible delete is worse than a visible one.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
-@HiltViewModel
 // The logger owns the session, its sets, its rest, its edits and its prompt: splitting it by function would put
 // one write's read in a different object from the write it guards, which is the locking B126/B129 exists to stop.
-// Each constructor parameter is a different port it has to ask (N219 added the body's weight on record).
-@Suppress("LongParameterList", "TooManyFunctions")
+// Each constructor parameter is a different port it has to ask (N219 added the body's weight on record). The two
+// ceilings this type crosses are recorded in detekt.yml, where a reviewer sees them (B255).
+@OptIn(ExperimentalCoroutinesApi::class)
+@HiltViewModel
 class ActiveWorkoutViewModel @Inject constructor(
     private val workoutRepository: WorkoutRepository,
     private val timeSource: TimeSource,
@@ -855,83 +856,108 @@ class ActiveWorkoutViewModel @Inject constructor(
      */
     fun onLogSet(sessionExerciseId: String, edit: SetEdit) {
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId } ?: return
-        viewModelScope.launch {
-            // ROADMAP N219: the snapshot is resolved once, here, and travels with the set. With nothing on
-            // record the set is *held* while the lifter says what they weigh, rather than written as zero.
-            val bodyweight = if (row.isBodyweight) latestWeightGrams() else null
-            if (row.isBodyweight && bodyweight == null) {
-                _bodyweightPrompt.value = PendingBodyweight(
-                    sessionExerciseId = sessionExerciseId,
-                    exerciseName = row.name,
-                    edit = edit,
-                )
-                return@launch
-            }
-            // **One set is written at a time** (ROADMAP N23, B118, B126, B129): the comparison, the write
-            // and the banner that follows it are one step, so neither a second tap nor an edit or delete
-            // beside it can move the picture this compared against.
-            writingASet.withLock {
-                // Read *before* the set is written (ROADMAP N23, B118): the set being logged is not history.
-                val against = recordsAgainst(row)
-                _personalRecord.value = null
+        viewModelScope.launch { writeLoggedSet(row, edit) }
+    }
 
-                val result = workoutRepository.logSet(
-                    sessionExerciseId = sessionExerciseId,
-                    reps = edit.reps,
-                    weightGrams = edit.weightGrams,
-                    // What the fields hold is what *Log set* writes (N59, N6). Leaving these out is what
-                    // made every inline set come back with no effort recorded.
-                    rpeHalves = edit.rpeHalves,
-                    note = edit.note,
-                    setType = edit.setType,
-                    assistanceGrams = edit.assistanceGrams,
-                    bodyweightGrams = bodyweight,
-                    durationSeconds = edit.durationSeconds,
-                )
-                handle(result)
-                if (result is DataResult.Success) {
-                    // A record noticed a week later in a list is a record nobody feels (N23).
-                    // The role goes in, or a heavy warm-up raises a best (B17); and what it beat is
-                    // read from the *merged* view, because the bar may have been set earlier in this
-                    // same session — saying "the first time at this rep count" then would be false
-                    // while claiming a record over that very set (B18).
-                    if (
-                        against != null &&
-                        // A bodyweight set has no weight to compare (N23, N219): its belt is not the lift,
-                        // and claiming a record at the added weight would read as one (B246).
-                        !row.isBodyweight &&
-                        against.isRecord(edit.reps, edit.weightGrams, edit.setType)
-                    ) {
-                        _personalRecord.value = PersonalRecordMoment(
+    /**
+     * Resolves the snapshot once, then writes the set (ROADMAP N219, B251).
+     *
+     * The load is resolved before the write and travels with it. With nothing on record — or a weigh-in
+     * more than a month old — the set is **held** while the lifter says what they weigh, rather than
+     * written as zero; and a read that failed is not "no weight on record": it is said, and nothing is
+     * written.
+     */
+    /**
+     * Says a record the moment it happens, or nothing (ROADMAP N23).
+     *
+     * A record noticed a week later in a list is a record nobody feels, so it is announced from the write
+     * that produced it: the role goes in, or a heavy warm-up raises a best (B17), and what it beat is read
+     * from the *merged* view, because the bar may have been set earlier in this same session — saying "the
+     * first time at this rep count" then would be false while claiming a record over that very set (B18).
+     * A **bodyweight** set claims nothing (B246): its belt is not the lift.
+     */
+    private fun announceRecord(row: SessionExerciseRow, against: PersonalRecords?, edit: SetEdit) {
+        if (against == null || row.isBodyweight) return
+        if (!against.isRecord(edit.reps, edit.weightGrams, edit.setType)) return
+        _personalRecord.value = PersonalRecordMoment(
+            exerciseName = row.name,
+            reps = edit.reps,
+            weightGrams = edit.weightGrams,
+            previousBestGrams = against.bestAt(edit.reps),
+            weightUnit = row.weightUnit,
+        )
+    }
+
+    private suspend fun writeLoggedSet(row: SessionExerciseRow, edit: SetEdit) {
+        var bodyweight: Long? = null
+        if (row.isBodyweight) {
+            when (val read = latestWeight()) {
+                is DataResult.Failure -> {
+                    lastError.value = read.error
+                    return
+                }
+
+                is DataResult.Success -> {
+                    val latest = read.data
+                    if (latest == null || latest.isStale()) {
+                        _bodyweightPrompt.value = PendingBodyweight(
+                            sessionExerciseId = row.id,
                             exerciseName = row.name,
-                            reps = edit.reps,
-                            weightGrams = edit.weightGrams,
-                            previousBestGrams = against.bestAt(edit.reps),
-                            weightUnit = row.weightUnit,
+                            edit = edit,
+                            staleDays = latest?.ageInDays(),
                         )
+                        return
                     }
+                    bodyweight = latest.grams
+                }
+            }
+        }
+        val sessionExerciseId = row.id
+        // **One set is written at a time** (ROADMAP N23, B118, B126, B129): the comparison, the write
+        // and the banner that follows it are one step, so neither a second tap nor an edit or delete
+        // beside it can move the picture this compared against.
+        writingASet.withLock {
+            // Read *before* the set is written (ROADMAP N23, B118): the set being logged is not history.
+            val against = recordsAgainst(row)
+            _personalRecord.value = null
 
-                    // ROADMAP N24: in a superset the rest belongs to the round, not the set, so
-                    // it waits until nothing else in the group is behind. Resting here would
-                    // defeat the pairing the user just asked for.
-                    // And the group's own rest waits for the run to close (N79): a rung has no rest of its
-                    // own between it and the next, because the point of a drop or a cluster is that the
-                    // sets follow each other.
-                    val runContinues = row.sets.size in row.runContinuesAfter
-                    if (!runContinues && uiState.value.roundIsCompleteFor(row)) {
-                        // The group's own rest wins in a superset, then this exercise's, then the
-                        // app setting (ROADMAP N5, N21, B15). Taking the rest from whichever member
-                        // happened to close the round made the wait depend on the order the user
-                        // logged in — the same round resting differently every time round — and the
-                        // settled rule is the group's longest, so the pair is paced by its slowest
-                        // member.
-                        val rest = uiState.value.longestRestInRound(row)
-                            ?: row.restSeconds
-                            ?: defaultRestSeconds.value
-                        // Off means the timer is genuinely not running (N44): the end instant is simply
-                        // never written, and the screen shows the prescription as a fixed label instead.
-                        if (restTimerEnabled.value) startRest(rest)
-                    }
+            val result = workoutRepository.logSet(
+                sessionExerciseId = sessionExerciseId,
+                reps = edit.reps,
+                weightGrams = edit.weightGrams,
+                // What the fields hold is what *Log set* writes (N59, N6). Leaving these out is what
+                // made every inline set come back with no effort recorded.
+                rpeHalves = edit.rpeHalves,
+                note = edit.note,
+                setType = edit.setType,
+                assistanceGrams = edit.assistanceGrams,
+                bodyweightGrams = bodyweight,
+                durationSeconds = edit.durationSeconds,
+            )
+            handle(result)
+            if (result is DataResult.Success) {
+                announceRecord(row, against, edit)
+
+                // ROADMAP N24: in a superset the rest belongs to the round, not the set, so
+                // it waits until nothing else in the group is behind. Resting here would
+                // defeat the pairing the user just asked for.
+                // And the group's own rest waits for the run to close (N79): a rung has no rest of its
+                // own between it and the next, because the point of a drop or a cluster is that the
+                // sets follow each other.
+                val runContinues = row.sets.size in row.runContinuesAfter
+                if (!runContinues && uiState.value.roundIsCompleteFor(row)) {
+                    // The group's own rest wins in a superset, then this exercise's, then the
+                    // app setting (ROADMAP N5, N21, B15). Taking the rest from whichever member
+                    // happened to close the round made the wait depend on the order the user
+                    // logged in — the same round resting differently every time round — and the
+                    // settled rule is the group's longest, so the pair is paced by its slowest
+                    // member.
+                    val rest = uiState.value.longestRestInRound(row)
+                        ?: row.restSeconds
+                        ?: defaultRestSeconds.value
+                    // Off means the timer is genuinely not running (N44): the end instant is simply
+                    // never written, and the screen shows the prescription as a fixed label instead.
+                    if (restTimerEnabled.value) startRest(rest)
                 }
             }
         }
@@ -1144,9 +1170,20 @@ class ActiveWorkoutViewModel @Inject constructor(
         _bodyweightPrompt.value = null
     }
 
-    /** The newest weight on record, or null — the one the logged set would add (ROADMAP N219). */
-    private suspend fun latestWeightGrams(): Long? =
-        measurementRepository.latestWeightGrams().getOrNull()
+    /** The newest weight on record, with its day (ROADMAP N219, B251). */
+    private suspend fun latestWeight(): DataResult<LatestWeight?> = measurementRepository.latestWeight()
+
+    /**
+     * Whether the newest weigh-in is too old to be used without being asked about (B251).
+     *
+     * A month is the line: the body moves, and a number from last season written into today's sets would
+     * put a figure in every total that was never measured. The lifter answers with today's weight, which
+     * is then what the app keeps.
+     */
+    private fun LatestWeight.isStale(): Boolean = ageInDays() >= STALE_WEIGH_IN_DAYS
+
+    private fun LatestWeight.ageInDays(): Long =
+        Duration.between(at, timeSource.now()).toDays().coerceAtLeast(0L)
 
     /**
      * Writes [grams] as today's daily measurement, keeping whatever else today already says.
@@ -1335,6 +1372,9 @@ class ActiveWorkoutViewModel @Inject constructor(
         val GONE_FROM_SESSION = DataError.Invalid("That exercise is no longer in this workout.")
 
         const val STOP_TIMEOUT_MILLIS = 5_000L
+
+        /** A weigh-in older than this is a question rather than an answer (ROADMAP N219, B251). */
+        const val STALE_WEIGH_IN_DAYS = 30L
         const val TICK_MILLIS = 1_000L
     }
 }
@@ -1419,92 +1459,6 @@ data class ExerciseRating(
     /** The joints that hurt, each with its side and score (ROADMAP N63), or empty. */
     val joints: List<JointPain>,
 )
-
-/** One performed exercise as the comparison reads it. */
-private fun SessionExerciseRow.toActual(): ExerciseActual = ExerciseActual(
-    exerciseId = exerciseId,
-    name = name,
-    // The row already carries its exercise's effective unit (N64).
-    weightUnit = weightUnit,
-    sets = sets.map {
-        PerformedSetSpec(
-            role = it.setType,
-            weightGrams = it.weightGrams,
-            assistanceGrams = it.assistanceGrams,
-            reps = it.reps,
-            // What the set felt like, so the review can compare the effort with the plan's target
-            // (ROADMAP N131). Null stays null: RPE is skippable (N6).
-            rpeHalves = it.rpeHalves,
-            // A hold states a duration instead of reps (N220), and the comparison says the hold rather
-            // than "0 reps" (B243).
-            durationSeconds = it.durationSeconds,
-        )
-    },
-)
-
-/** One prescribed exercise as the comparison reads it. */
-private fun TemplateExercise.toPlan(appUnit: WeightUnit): ExercisePlan = ExercisePlan(
-    exerciseId = exerciseId,
-    name = exerciseName,
-    weightUnit = weightUnit ?: appUnit,
-    sets = sets.map {
-        PlannedSetSpec(
-            role = it.role,
-            weightGrams = it.targetWeightGrams,
-            assistanceGrams = it.targetAssistanceGrams,
-            minReps = it.targetRepsMin,
-            maxReps = it.targetRepsMax,
-        )
-    },
-    // The exercise's one target, read from the plan rather than from a set: N59's number is carried
-    // onto every prescribed set, and the review compares against the exercise (N131).
-    targetRpeHalves = targetRpeHalves,
-)
-
-/**
- * The review, assembled from what is already in memory (ROADMAP N20).
- *
- * A file-level function rather than a member: the class is at the function ceiling detekt
- * enforces, and this only translates the state it is given into a value — it reads nothing
- * from the ViewModel and writes nothing back, so it does not belong to it.
- */
-private fun buildSummary(
-    state: ActiveWorkoutUiState,
-    plan: List<TemplateExercise>,
-    note: String?,
-    appUnit: WeightUnit,
-): WorkoutReview {
-    val actual = state.exercises.map { it.toActual() }
-    val planned = plan.map { it.toPlan(appUnit) }
-    val allSets = state.exercises.flatMap { it.sets }
-    return WorkoutReview(
-        note = note?.takeIf { it.isNotBlank() },
-        readinessNote = state.readinessNote,
-        totalSets = allSets.size,
-        // A hold is counted as a hold, not as zero of anything (B243).
-        totalHolds = allSets.count { it.durationSeconds != null },
-        totalReps = allSets.sumOf { it.reps },
-        // The same definition the history and the database use (ROADMAP B10, N219): the load the set was
-        // performed at, times its reps. A bodyweight set's load includes the lifter, so a summary that
-        // counted the added weight alone ended an all-bodyweight session on zero (B241).
-        totalVolumeGrams = allSets.sumOf {
-            loadGrams(it.weightGrams, it.bodyweightGrams, it.assistanceGrams) * it.reps
-        },
-        ratings = state.exercises.mapNotNull { row ->
-            val feel = row.muscleFeel
-            if (feel == null && row.joints.isEmpty()) {
-                null
-            } else {
-                ExerciseRating(
-                    name = row.name,
-                    muscleFeel = feel,
-                    joints = row.joints,
-                )
-            }
-        },
-        comparisons = comparePlanToActual(planned = planned, performed = actual),
-    )
-}
 
 /**
  * True while this exercise is still part of the session (ROADMAP N7's undo).
