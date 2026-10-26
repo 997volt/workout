@@ -6,6 +6,9 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.BackupFolder
+import com.example.androidapp.domain.model.BackupSchedule
+import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -61,6 +64,11 @@ class SettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(weightUnit = unit) }
             }
         }
+        viewModelScope.launch {
+            settingsRepository.observeBackupSettings().collect { backup ->
+                _uiState.update { it.copy(backup = backup) }
+            }
+        }
     }
 
     fun onSetRestCue(enabled: Boolean) {
@@ -81,6 +89,19 @@ class SettingsViewModel @Inject constructor(
 
     fun onSetWeightUnit(unit: WeightUnit) {
         write { settingsRepository.setWeightUnit(unit) }
+    }
+
+    fun onEnableBackup(enabled: Boolean) {
+        write { settingsRepository.setBackupEnabled(enabled) }
+    }
+
+    fun onSetBackupSchedule(schedule: BackupSchedule) {
+        write { settingsRepository.setBackupSchedule(schedule) }
+    }
+
+    /** Remembers the folder a backup writes to; the picker has already taken the grant (ROADMAP N218). */
+    fun onChooseBackupFolder(folder: BackupFolder) {
+        write { settingsRepository.setBackupFolder(folder) }
     }
 
     /** One place where a failed write becomes the error the screen shows. */
@@ -121,6 +142,8 @@ data class SettingsUiState(
     val progressionMode: ProgressionMode = ProgressionMode.SUGGEST,
     /** The unit every weight is read in unless an exercise names its own (ROADMAP N64). */
     val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
+    /** The backup that writes itself: switch, period, folder and where the last attempt ended (N218). */
+    val backup: BackupSettings = BackupSettings(),
     val error: DataError? = null,
 ) {
     val choices: List<Int> get() = REST_CHOICES

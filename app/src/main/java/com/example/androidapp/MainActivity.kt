@@ -11,9 +11,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.lifecycle.lifecycleScope
+import com.example.androidapp.data.AutomaticBackup
 import com.example.androidapp.ui.navigation.AppNavHost
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * The app's single activity.
@@ -24,6 +28,18 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    /**
+     * The backup that writes itself when the app is next opened (ROADMAP N218).
+     *
+     * Injected here rather than started from `Application`, because **onStart is what "opened" means**: a
+     * process can sit in the background for days, so a check in `onCreate` would run once and then miss every
+     * period that elapsed while it was alive. Running it on each foregrounding is cheap — the first thing it
+     * reads is the stored settings, and a backup that is not due returns before touching the database.
+     */
+    @Inject
+    lateinit var automaticBackup: AutomaticBackup
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Dark bars, unconditionally. `enableEdgeToEdge()` with no arguments picks the status
@@ -46,5 +62,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * Checks whether a backup is due each time the app comes to the front (ROADMAP N218).
+     *
+     * Fire-and-forget in the activity's own scope, which is the right lifetime for it: a rotation cancels and
+     * restarts the check, and a cancelled check either has not written yet or has written and recorded nothing
+     * — the second case simply runs again, and the folder gains a file it would have gained anyway.
+     */
+    override fun onStart() {
+        super.onStart()
+        lifecycleScope.launch { automaticBackup.runIfDue() }
     }
 }

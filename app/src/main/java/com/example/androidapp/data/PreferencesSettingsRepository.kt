@@ -8,6 +8,9 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.BackupFolder
+import com.example.androidapp.domain.model.BackupSchedule
+import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.RangeKind
 import com.example.androidapp.domain.model.StatisticsRange
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.withContext
+import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -244,6 +248,100 @@ class PreferencesSettingsRepository @Inject constructor(
     }
 
     /**
+     * Every key that makes up one backup answer, watched as one value (ROADMAP N218).
+     *
+     * The listener fires once per committed key, so a folder change writes two keys and the screen would
+     * otherwise be told about a half-written folder; `distinctUntilChanged` collapses the pair.
+     */
+    override fun observeBackupSettings(): Flow<BackupSettings> = callbackFlow {
+        trySend(currentBackupSettings())
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changed ->
+            if (changed == null || changed in BACKUP_KEYS) trySend(currentBackupSettings())
+        }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.conflate().distinctUntilChanged()
+
+    /** Committed and read back off the main thread, for the reason [writeFlag] states (B158). */
+    override suspend fun setBackupEnabled(enabled: Boolean): DataResult<Unit> = withContext(Dispatchers.IO) {
+        preferences.edit(commit = true) { putBoolean(KEY_BACKUP_ENABLED, enabled) }
+        if (currentBackupSettings().enabled == enabled) {
+            DataResult.Success(Unit)
+        } else {
+            DataResult.Failure(DataError.Storage(IllegalStateException("the backup switch was not stored")))
+        }
+    }
+
+    override suspend fun setBackupSchedule(schedule: BackupSchedule): DataResult<Unit> =
+        withContext(Dispatchers.IO) {
+            preferences.edit(commit = true) { putString(KEY_BACKUP_SCHEDULE, schedule.name) }
+            if (currentBackupSettings().schedule == schedule) {
+                DataResult.Success(Unit)
+            } else {
+                DataResult.Failure(DataError.Storage(IllegalStateException("the backup period was not stored")))
+            }
+        }
+
+    override suspend fun setBackupFolder(folder: BackupFolder?): DataResult<Unit> = withContext(Dispatchers.IO) {
+        preferences.edit(commit = true) {
+            if (folder == null) {
+                // Absent rather than an empty string: "no folder" and a blank one are the same answer, and one
+                // of them is a value that has to be remembered not to mean anything.
+                remove(KEY_BACKUP_FOLDER_URI)
+                remove(KEY_BACKUP_FOLDER_LABEL)
+            } else {
+                putString(KEY_BACKUP_FOLDER_URI, folder.uri)
+                putString(KEY_BACKUP_FOLDER_LABEL, folder.label)
+            }
+        }
+        if (currentBackupSettings().folder == folder) {
+            DataResult.Success(Unit)
+        } else {
+            DataResult.Failure(DataError.Storage(IllegalStateException("the backup folder was not stored")))
+        }
+    }
+
+    override suspend fun recordBackupResult(at: Instant?, failed: Boolean): DataResult<Unit> =
+        withContext(Dispatchers.IO) {
+            preferences.edit(commit = true) {
+                if (at != null) putLong(KEY_BACKUP_LAST_SUCCESS, at.toEpochMilli())
+                putBoolean(KEY_BACKUP_LAST_FAILED, failed)
+            }
+            val stored = currentBackupSettings()
+            if (stored.failed == failed && (at == null || stored.lastSuccessAt == at)) {
+                DataResult.Success(Unit)
+            } else {
+                DataResult.Failure(DataError.Storage(IllegalStateException("the backup result was not stored")))
+            }
+        }
+
+    /**
+     * The stored backup answer, defaulted field by field.
+     *
+     * A schedule this build does not know falls back to the default rather than throwing, the same rule the
+     * statistics range follows: a preference is not worth a broken screen. A folder with a URI but no stored
+     * label is a folder with an empty label rather than none — the grant is what matters, and the label is
+     * re-resolved the next time one is picked.
+     */
+    private fun currentBackupSettings(): BackupSettings {
+        val uri = preferences.getString(KEY_BACKUP_FOLDER_URI, null)
+        val label = preferences.getString(KEY_BACKUP_FOLDER_LABEL, null)
+        val lastSuccess = if (preferences.contains(KEY_BACKUP_LAST_SUCCESS)) {
+            Instant.ofEpochMilli(preferences.getLong(KEY_BACKUP_LAST_SUCCESS, 0L))
+        } else {
+            null
+        }
+        return BackupSettings(
+            enabled = preferences.getBoolean(KEY_BACKUP_ENABLED, false),
+            schedule = BackupSchedule.named(preferences.getString(KEY_BACKUP_SCHEDULE, null))
+                ?: BackupSchedule.DEFAULT,
+            folder = if (uri.isNullOrBlank()) null else BackupFolder(uri = uri, label = label.orEmpty()),
+            lastSuccessAt = lastSuccess,
+            failed = preferences.getBoolean(KEY_BACKUP_LAST_FAILED, false),
+        )
+    }
+
+    /**
      * One flag, committed and confirmed (B158).
      *
      * **The commit runs off the main thread.** `commit = true` is a synchronous write plus fsync, and every
@@ -305,8 +403,26 @@ class PreferencesSettingsRepository @Inject constructor(
         const val KEY_RECENT_SERIES = "statistics_recent_series"
         const val SEPARATOR = "\n"
 
+        /** Automatic backup: the switch, the period, the chosen folder and where the last attempt ended (N218). */
+        const val KEY_BACKUP_ENABLED = "backup_enabled"
+        const val KEY_BACKUP_SCHEDULE = "backup_schedule"
+        const val KEY_BACKUP_FOLDER_URI = "backup_folder_uri"
+        const val KEY_BACKUP_FOLDER_LABEL = "backup_folder_label"
+        const val KEY_BACKUP_LAST_SUCCESS = "backup_last_success"
+        const val KEY_BACKUP_LAST_FAILED = "backup_last_failed"
+
         /** The three keys that together are one value. */
         val RANGE_KEYS = setOf(KEY_RANGE_KIND, KEY_RANGE_FROM, KEY_RANGE_TO)
+
+        /** The six keys that together are one backup answer. */
+        val BACKUP_KEYS = setOf(
+            KEY_BACKUP_ENABLED,
+            KEY_BACKUP_SCHEDULE,
+            KEY_BACKUP_FOLDER_URI,
+            KEY_BACKUP_FOLDER_LABEL,
+            KEY_BACKUP_LAST_SUCCESS,
+            KEY_BACKUP_LAST_FAILED,
+        )
     }
 }
 

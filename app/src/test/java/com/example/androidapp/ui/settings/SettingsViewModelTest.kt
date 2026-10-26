@@ -4,15 +4,20 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.BackupFolder
+import com.example.androidapp.domain.model.BackupSchedule
+import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.repository.SettingsRepository
+import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -198,4 +203,36 @@ private class FakeSettingsRepository(
 
     override fun observeRecentSeries(): Flow<List<String>> = flowOf(emptyList())
     override suspend fun setRecentSeries(entries: List<String>): DataResult<Unit> = DataResult.Success(Unit)
+
+    /** N218: the switch, the period and the folder, each read back so a refused write cannot look applied. */
+    private val backup = MutableStateFlow(BackupSettings())
+    val backupEnabledWrites = mutableListOf<Boolean>()
+    val backupScheduleWrites = mutableListOf<BackupSchedule>()
+    val backupFolderWrites = mutableListOf<BackupFolder?>()
+
+    override fun observeBackupSettings(): Flow<BackupSettings> = backup.asStateFlow()
+
+    override suspend fun setBackupEnabled(enabled: Boolean): DataResult<Unit> {
+        backupEnabledWrites += enabled
+        if (refuseWrites) return DataResult.Failure(DataError.Invalid("refused"))
+        backup.update { it.copy(enabled = enabled) }
+        return DataResult.Success(Unit)
+    }
+
+    override suspend fun setBackupSchedule(schedule: BackupSchedule): DataResult<Unit> {
+        backupScheduleWrites += schedule
+        if (refuseWrites) return DataResult.Failure(DataError.Invalid("refused"))
+        backup.update { it.copy(schedule = schedule) }
+        return DataResult.Success(Unit)
+    }
+
+    override suspend fun setBackupFolder(folder: BackupFolder?): DataResult<Unit> {
+        backupFolderWrites += folder
+        if (refuseWrites) return DataResult.Failure(DataError.Invalid("refused"))
+        backup.update { it.copy(folder = folder) }
+        return DataResult.Success(Unit)
+    }
+
+    override suspend fun recordBackupResult(at: Instant?, failed: Boolean): DataResult<Unit> =
+        DataResult.Success(Unit)
 }

@@ -840,6 +840,25 @@
     <string name="settings_data_export_hint">Write a backup file, choosing where it goes.</string>
     <string name="settings_data_import_hint">Merge a backup into this device. Nothing is overwritten.</string>
     <string name="settings_data_clear_hint">Delete every workout, measurement and target. This cannot be undone.</string>
+    <!-- The backup that writes itself (ROADMAP N218). The hint says "when the app is opened" rather than
+         "in the background", because that is what happens and a sentence that implied more would be a lie the
+         settings row could not back up. -->
+    <string name="settings_backup_title">Automatic backup</string>
+    <string name="settings_backup_enable">Back up automatically</string>
+    <string name="settings_backup_enable_hint">A copy of everything is written to a folder you choose, the next time the app is opened once the period has run out. Nothing leaves the device.</string>
+    <string name="settings_backup_schedule">How often</string>
+    <string name="settings_backup_daily">Daily</string>
+    <string name="settings_backup_weekly">Weekly</string>
+    <string name="settings_backup_monthly">Monthly</string>
+    <string name="settings_backup_folder">Folder</string>
+    <string name="settings_backup_folder_none">Choose a folder</string>
+    <string name="settings_backup_folder_pick">Choose a folder for backups</string>
+    <string name="settings_backup_last">Last backup: %1$s</string>
+    <string name="settings_backup_last_success">Last successful backup: %1$s</string>
+    <string name="settings_backup_never">No backup yet</string>
+    <string name="settings_backup_failed">The last backup failed. Check that the folder still exists.</string>
+    <string name="settings_backup_no_folder">Choose a folder — until then a backup has nowhere to go.</string>
+    <string name="settings_backup_kept">The newest five backups are kept; older ones are removed.</string>
     <!-- The record just set (ROADMAP N23). -->
     <string name="personal_record_title">Personal record: %2$s %3$s × %1$d</string>
     <string name="personal_record_beats">%1$s — your best before was %2$s %3$s</string>

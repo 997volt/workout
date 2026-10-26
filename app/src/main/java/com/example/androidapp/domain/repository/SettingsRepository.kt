@@ -2,9 +2,13 @@ package com.example.androidapp.domain.repository
 
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.BackupFolder
+import com.example.androidapp.domain.model.BackupSchedule
+import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.StatisticsRange
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 /**
  * The choices that apply to the whole app rather than to one workout (ROADMAP N21).
@@ -109,6 +113,31 @@ interface SettingsRepository {
 
     /** Stores [entries] newest first. An empty list clears the row. */
     suspend fun setRecentSeries(entries: List<String>): DataResult<Unit>
+
+    /**
+     * Automatic backup: the switch, the period, the folder, and where the last attempt ended (ROADMAP N218).
+     *
+     * One flow rather than six, because they are read as one answer: "is a backup due, and where would it
+     * go". The launcher reads it once per app start and the settings screen collects it, so a change made
+     * while the screen is open — including one the launcher itself made by recording a result — arrives
+     * without the screen being reopened.
+     */
+    fun observeBackupSettings(): Flow<BackupSettings>
+
+    suspend fun setBackupEnabled(enabled: Boolean): DataResult<Unit>
+
+    suspend fun setBackupSchedule(schedule: BackupSchedule): DataResult<Unit>
+
+    /** Stores the folder a backup writes to, or clears it. */
+    suspend fun setBackupFolder(folder: BackupFolder?): DataResult<Unit>
+
+    /**
+     * Records how an attempt ended: [at] is when one succeeded, or null for a failure.
+     *
+     * A failure leaves the last success alone — the point of the row is "when did a copy last land", and
+     * overwriting that with the moment it stopped working would answer a different question.
+     */
+    suspend fun recordBackupResult(at: Instant?, failed: Boolean): DataResult<Unit>
 
     companion object {
         /**

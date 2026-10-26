@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,6 +46,8 @@ import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.BackupSchedule
+import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.ui.components.AppCard
 import com.example.androidapp.ui.components.AppFilterChip
@@ -63,6 +66,9 @@ import com.example.androidapp.ui.transfer.ClearOutcome
 import com.example.androidapp.ui.transfer.DataTransferViewModel
 import com.example.androidapp.ui.transfer.rememberDataTransferActions
 import kotlinx.coroutines.launch
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 /** Five chips fit a phone's width; a sixth runs off it. */
 private const val CHOICES_PER_ROW = 5
@@ -93,6 +99,7 @@ fun SettingsRoute(
     val clearedText = stringResource(R.string.clear_done)
     var failure by remember { mutableStateOf<DataError?>(null) }
     FailureMessage(failure = failure, onMessage = { message = it }, onClear = { failure = null })
+    val chooseBackupFolder = rememberBackupFolderPicker(viewModel::onChooseBackupFolder)
 
     SettingsScreen(
         state = state,
@@ -102,6 +109,9 @@ fun SettingsRoute(
         onSetRestTimer = viewModel::onSetRestTimer,
         onSetProgressionMode = viewModel::onSetProgressionMode,
         onSetWeightUnit = viewModel::onSetWeightUnit,
+        onEnableBackup = viewModel::onEnableBackup,
+        onSetBackupSchedule = viewModel::onSetBackupSchedule,
+        onChooseBackupFolder = chooseBackupFolder,
         onExportData = transferActions.export,
         onImportData = transferActions.import,
         onClearData = {
@@ -131,6 +141,9 @@ fun SettingsScreen(
     onSetRestTimer: (Boolean) -> Unit = {},
     onSetProgressionMode: (ProgressionMode) -> Unit = {},
     onSetWeightUnit: (WeightUnit) -> Unit = {},
+    onEnableBackup: (Boolean) -> Unit = {},
+    onSetBackupSchedule: (BackupSchedule) -> Unit = {},
+    onChooseBackupFolder: () -> Unit = {},
     onExportData: () -> Unit = {},
     onImportData: () -> Unit = {},
     onClearData: () -> Unit = {},
@@ -176,6 +189,9 @@ fun SettingsScreen(
             onSetRestTimer = onSetRestTimer,
             onSetProgressionMode = onSetProgressionMode,
             onSetWeightUnit = onSetWeightUnit,
+            onEnableBackup = onEnableBackup,
+            onSetBackupSchedule = onSetBackupSchedule,
+            onChooseBackupFolder = onChooseBackupFolder,
             onExportData = onExportData,
             onImportData = onImportData,
             onClearData = { confirmingClear = true },
@@ -199,6 +215,9 @@ private fun SettingsBody(
     onSetRestTimer: (Boolean) -> Unit,
     onSetProgressionMode: (ProgressionMode) -> Unit,
     onSetWeightUnit: (WeightUnit) -> Unit,
+    onEnableBackup: (Boolean) -> Unit,
+    onSetBackupSchedule: (BackupSchedule) -> Unit,
+    onChooseBackupFolder: () -> Unit,
     onExportData: () -> Unit,
     onImportData: () -> Unit,
     onClearData: () -> Unit,
@@ -226,6 +245,14 @@ private fun SettingsBody(
             onSetKeepScreenOn = onSetKeepScreenOn,
             onSetRestTimer = onSetRestTimer,
             onSetProgressionMode = onSetProgressionMode,
+        )
+        // Backup sits with the data it copies, above the one action that can cost the user something: the
+        // export below is still the hand-made copy, and this is the one that happens on its own (ROADMAP N218).
+        BackupSection(
+            state = state,
+            onEnableBackup = onEnableBackup,
+            onSetSchedule = onSetBackupSchedule,
+            onChooseFolder = onChooseBackupFolder,
         )
         DataSection(
             onExport = onExportData,
@@ -311,6 +338,139 @@ private fun DataSection(
             )
         }
     }
+}
+
+/**
+ * The backup that writes itself (ROADMAP N218).
+ *
+ * The switch gates the whole card: off hides the period, the folder and the date, because none of them mean
+ * anything until something is going to write. On with no folder is a state the row **says** rather than one
+ * the launcher quietly fails to reach, which is the difference between a setting that is off and a backup that
+ * appears to be on and is not.
+ */
+@Composable
+private fun BackupSection(
+    state: SettingsUiState,
+    onEnableBackup: (Boolean) -> Unit,
+    onSetSchedule: (BackupSchedule) -> Unit,
+    onChooseFolder: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        SectionHeader(text = stringResource(R.string.settings_backup_title))
+        AppCard {
+            SettingSwitch(
+                label = stringResource(R.string.settings_backup_enable),
+                hint = stringResource(R.string.settings_backup_enable_hint),
+                checked = state.backup.enabled,
+                onCheckedChange = onEnableBackup,
+                testTag = TestTags.SETTINGS_BACKUP_SWITCH,
+            )
+            if (state.backup.enabled) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                BackupPeriodChoice(schedule = state.backup.schedule, onSelect = onSetSchedule)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                AppRow(
+                    headline = stringResource(R.string.settings_backup_folder),
+                    supporting = state.backup.folder?.label?.takeIf { it.isNotBlank() }
+                        ?: stringResource(R.string.settings_backup_folder_none),
+                    leading = { IconTile(icon = Icons.Filled.Folder, accent = TileAccent.Indigo) },
+                    onClick = onChooseFolder,
+                    onClickLabel = stringResource(R.string.settings_backup_folder_pick),
+                    testTag = TestTags.SETTINGS_BACKUP_FOLDER,
+                )
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                BackupStatus(backup = state.backup)
+            }
+        }
+    }
+}
+
+/** The period, as chips: three named periods rather than a number of days (ROADMAP N218). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun BackupPeriodChoice(
+    schedule: BackupSchedule,
+    onSelect: (BackupSchedule) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.padding(16.dp)) {
+        Text(text = stringResource(R.string.settings_backup_schedule), style = MaterialTheme.typography.bodyLarge)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            BackupSchedule.entries.forEach { option ->
+                AppFilterChip(
+                    selected = option == schedule,
+                    onClick = { onSelect(option) },
+                    label = stringResource(backupScheduleLabel(option)),
+                    testTag = TestTags.settingsBackupSchedule(option.name),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * When a copy last landed, or why the last attempt did not (ROADMAP N218).
+ *
+ * A failure keeps the last success on screen beside it: "the last backup failed" alone leaves someone unable
+ * to tell whether they lost a week or a minute, and the date is the answer to that question.
+ */
+@Composable
+private fun BackupStatus(backup: BackupSettings, modifier: Modifier = Modifier) {
+    val lastSuccess = backup.lastSuccessAt?.let { instant ->
+        remember(instant) {
+            DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+                .withZone(ZoneId.systemDefault())
+                .format(instant)
+        }
+    }
+    Column(modifier = modifier.padding(16.dp).testTag(TestTags.SETTINGS_BACKUP_LAST)) {
+        when {
+            backup.failed -> {
+                Text(
+                    text = stringResource(R.string.settings_backup_failed),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                lastSuccess?.let { date ->
+                    Text(
+                        text = stringResource(R.string.settings_backup_last_success, date),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+
+            lastSuccess != null -> Text(
+                text = stringResource(R.string.settings_backup_last, lastSuccess),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+
+            else -> Text(
+                text = stringResource(R.string.settings_backup_never),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = stringResource(
+                if (backup.folder == null) R.string.settings_backup_no_folder else R.string.settings_backup_kept,
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
+private fun backupScheduleLabel(schedule: BackupSchedule): Int = when (schedule) {
+    BackupSchedule.DAILY -> R.string.settings_backup_daily
+    BackupSchedule.WEEKLY -> R.string.settings_backup_weekly
+    BackupSchedule.MONTHLY -> R.string.settings_backup_monthly
 }
 
 /** One row of rest choices, each one tap. */

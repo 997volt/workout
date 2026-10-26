@@ -579,6 +579,13 @@ object TestTags {
     /** The row that opens the typed delete-everything confirmation (ROADMAP N43). */
     const val SETTINGS_CLEAR_DATA = "settings_clear_data"
 
+    /** The backup that writes itself (ROADMAP N218): the switch, one chip per period, the folder and the date. */
+    const val SETTINGS_BACKUP_SWITCH = "settings_backup_switch"
+    const val SETTINGS_BACKUP_FOLDER = "settings_backup_folder"
+    const val SETTINGS_BACKUP_LAST = "settings_backup_last"
+
+    fun settingsBackupSchedule(name: String) = "settings_backup_$name"
+
     fun settingRest(seconds: Int) = "setting_rest_$seconds"
 
     /** Joining or leaving the superset above (ROADMAP N24). */

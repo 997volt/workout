@@ -9,6 +9,9 @@ import com.example.androidapp.domain.TimeSource
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Activity
+import com.example.androidapp.domain.model.BackupFolder
+import com.example.androidapp.domain.model.BackupSchedule
+import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
@@ -2877,6 +2880,15 @@ private class FakeSettingsRepository(
 
     override fun observeRecentSeries(): Flow<List<String>> = flowOf(emptyList())
     override suspend fun setRecentSeries(entries: List<String>): DataResult<Unit> = DataResult.Success(Unit)
+
+    /** N218: this screen never touches the backup; the fake only has to satisfy the contract. */
+    override fun observeBackupSettings(): Flow<BackupSettings> = flowOf(BackupSettings())
+    override suspend fun setBackupEnabled(enabled: Boolean): DataResult<Unit> = DataResult.Success(Unit)
+    override suspend fun setBackupSchedule(schedule: BackupSchedule): DataResult<Unit> =
+        DataResult.Success(Unit)
+    override suspend fun setBackupFolder(folder: BackupFolder?): DataResult<Unit> = DataResult.Success(Unit)
+    override suspend fun recordBackupResult(at: Instant?, failed: Boolean): DataResult<Unit> =
+        DataResult.Success(Unit)
 }
 
 /**

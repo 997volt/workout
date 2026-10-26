@@ -22,6 +22,8 @@ import com.example.androidapp.domain.repository.StatisticsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TrendsRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
+import com.example.androidapp.platform.BackupFolderFiles
+import com.example.androidapp.platform.SafBackupFolderFiles
 import com.example.androidapp.ui.programs.DeloadSourceReader
 import com.example.androidapp.ui.programs.RoomDeloadSourceLoader
 import dagger.Binds
@@ -102,4 +104,15 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindGoalRepository(impl: RoomGoalRepository): GoalRepository
+
+    /**
+     * The folder an automatic backup writes into (N218).
+     *
+     * Behind an interface for the same reason [bindDeloadSourceReader] is: the interesting failure is a
+     * provider that refuses or a grant that was revoked, and a test has to be able to produce that without a
+     * document provider.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindBackupFolderFiles(impl: SafBackupFolderFiles): BackupFolderFiles
 }

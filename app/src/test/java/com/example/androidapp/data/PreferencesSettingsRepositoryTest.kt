@@ -10,6 +10,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.RestTimer
+import com.example.androidapp.domain.model.BackupFolder
+import com.example.androidapp.domain.model.BackupSchedule
+import java.time.Instant
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -133,5 +136,75 @@ class PreferencesSettingsRepositoryTest {
         repository().setDefaultRestSeconds(120)
 
         assertThat(repository().observeDefaultRestSeconds().first()).isEqualTo(120)
+    }
+
+    @Test
+    fun backupIsOffUntilItIsAskedFor() = runTest {
+        // ROADMAP N218: an upgrade must not start writing files into a folder nobody chose.
+        context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+            .edit().clear().commit()
+
+        val stored = repository().observeBackupSettings().first()
+
+        assertThat(stored.enabled).isFalse()
+        assertThat(stored.schedule).isEqualTo(BackupSchedule.WEEKLY)
+        assertThat(stored.folder).isNull()
+        assertThat(stored.lastSuccessAt).isNull()
+        assertThat(stored.failed).isFalse()
+    }
+
+    @Test
+    fun aBackupAnswer_roundTrips() = runTest {
+        val repository = repository()
+        val folder = BackupFolder(uri = "content://tree/primary%3ADownload", label = "Download")
+        val at = Instant.parse("2026-10-26T10:00:00Z")
+
+        repository.setBackupEnabled(true)
+        repository.setBackupSchedule(BackupSchedule.MONTHLY)
+        repository.setBackupFolder(folder)
+        repository.recordBackupResult(at, failed = false)
+
+        val stored = repository.observeBackupSettings().first()
+        assertThat(stored.enabled).isTrue()
+        assertThat(stored.schedule).isEqualTo(BackupSchedule.MONTHLY)
+        assertThat(stored.folder).isEqualTo(folder)
+        assertThat(stored.lastSuccessAt).isEqualTo(at)
+        assertThat(stored.failed).isFalse()
+    }
+
+    @Test
+    fun clearingTheFolder_leavesNoStaleUri() = runTest {
+        // A removed folder that left its URI behind would look configured and write nothing.
+        val repository = repository()
+        repository.setBackupFolder(BackupFolder(uri = "content://tree/x", label = "x"))
+
+        repository.setBackupFolder(null)
+
+        assertThat(repository.observeBackupSettings().first().folder).isNull()
+    }
+
+    @Test
+    fun aScheduleThisBuildDoesNotKnow_fallsBackToWeekly() = runTest {
+        // Enums are stored by name, so a name from a future build is readable rather than a number meaning
+        // something else — and it resolves to the default instead of throwing at a screen nobody can use.
+        context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+            .edit().clear().putString("backup_schedule", "HOURLY").commit()
+
+        assertThat(repository().observeBackupSettings().first().schedule).isEqualTo(BackupSchedule.WEEKLY)
+    }
+
+    @Test
+    fun aFailure_keepsTheDateOfTheLastSuccessfulCopy() = runTest {
+        // "The last backup failed" and "when did one last land" are two questions, and overwriting the second
+        // with the moment the first happened would lose the one the user needs.
+        val repository = repository()
+        val at = Instant.parse("2026-10-26T10:00:00Z")
+        repository.recordBackupResult(at, failed = false)
+
+        repository.recordBackupResult(at = null, failed = true)
+
+        val stored = repository.observeBackupSettings().first()
+        assertThat(stored.failed).isTrue()
+        assertThat(stored.lastSuccessAt).isEqualTo(at)
     }
 }

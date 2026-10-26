@@ -11,8 +11,11 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.BackupSchedule
+import com.example.androidapp.domain.model.BackupSettings
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.ui.components.TestTags
+import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -39,6 +42,9 @@ class SettingsScreenTest {
     private val restTimerWrites = mutableListOf<Boolean>()
     private val progressionWrites = mutableListOf<ProgressionMode>()
     private val unitWrites = mutableListOf<WeightUnit>()
+    private val backupEnabledWrites = mutableListOf<Boolean>()
+    private val backupScheduleWrites = mutableListOf<BackupSchedule>()
+    private var folderPicks = 0
 
     private fun show(state: SettingsUiState, message: String? = null) {
         composeTestRule.setContent {
@@ -49,6 +55,9 @@ class SettingsScreenTest {
                 onSetRestTimer = { restTimerWrites += it },
                 onSetWeightUnit = { unitWrites += it },
                 onSetProgressionMode = { progressionWrites += it },
+                onEnableBackup = { backupEnabledWrites += it },
+                onSetBackupSchedule = { backupScheduleWrites += it },
+                onChooseBackupFolder = { folderPicks++ },
                 onExportData = { exported++ },
                 onImportData = { imported++ },
                 onClearData = { cleared++ },
@@ -171,5 +180,74 @@ class SettingsScreenTest {
         composeTestRule.onNodeWithContentDescription("Back").performClick()
 
         assertEquals(1, backs)
+    }
+
+    @Test
+    fun theBackupSwitch_sendsItsChoice() {
+        // ROADMAP N218: off by default, so the first tap is the one that turns it on.
+        show(SettingsUiState())
+
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_BACKUP_SWITCH).performScrollTo().performClick()
+
+        assertEquals(listOf(true), backupEnabledWrites)
+    }
+
+    @Test
+    fun aBackupPeriod_showsTheStoredOne_andSendsTheTappedOne() {
+        // The period is only offered once the backup will actually run: a period for a backup that never
+        // happens would be a control with nothing behind it.
+        show(SettingsUiState(backup = BackupSettings(enabled = true, schedule = BackupSchedule.WEEKLY)))
+
+        composeTestRule.onNodeWithTag(TestTags.settingsBackupSchedule(BackupSchedule.WEEKLY.name))
+            .performScrollTo()
+            .assertIsSelected()
+        composeTestRule.onNodeWithTag(TestTags.settingsBackupSchedule(BackupSchedule.DAILY.name))
+            .performScrollTo()
+            .performClick()
+
+        assertEquals(listOf(BackupSchedule.DAILY), backupScheduleWrites)
+    }
+
+    @Test
+    fun theFolderRow_opensThePicker() {
+        show(SettingsUiState(backup = BackupSettings(enabled = true)))
+
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_BACKUP_FOLDER).performScrollTo().performClick()
+
+        assertEquals(1, folderPicks)
+    }
+
+    @Test
+    fun theLastBackup_isShownAsADate() {
+        // The date is formatted for the device's locale and zone, so the assertion is on the label rather than
+        // on a literal no other machine would produce.
+        show(
+            SettingsUiState(
+                backup = BackupSettings(
+                    enabled = true,
+                    lastSuccessAt = Instant.parse("2026-10-26T10:00:00Z"),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.SETTINGS_BACKUP_LAST).assertExists()
+        composeTestRule.onNodeWithText("Last backup:", substring = true).assertExists()
+    }
+
+    @Test
+    fun aFailedBackup_isSaidOutLoud() {
+        // The whole reason the row exists: a backup that quietly stopped is worse than none (N218).
+        show(SettingsUiState(backup = BackupSettings(enabled = true, failed = true)))
+
+        composeTestRule.onNodeWithText("The last backup failed. Check that the folder still exists.")
+            .assertExists()
+    }
+
+    @Test
+    fun aBackupWithNoFolder_saysThereIsNowhereToWrite() {
+        show(SettingsUiState(backup = BackupSettings(enabled = true)))
+
+        composeTestRule.onNodeWithText("Choose a folder — until then a backup has nowhere to go.")
+            .assertExists()
     }
 }
