@@ -39,4 +39,34 @@ class SetEntryDraftTest {
 
         assertThat(draft.toEdit(WeightUnit.KILOGRAMS).rpeHalves).isEqualTo(17)
     }
+
+    @Test
+    fun aTimedDraft_statesADurationInsteadOfReps() {
+        // ROADMAP N220: one payload, and the hold is what a timed set records. Reps go to zero rather than
+        // being left at whatever the field held before the movement was marked timed.
+        val draft = SetEntryDraft(
+            repsText = "12",
+            rpeText = "9",
+            durationText = "1:30",
+            timed = true,
+            weightText = "",
+        )
+
+        val edit = draft.toEdit(WeightUnit.KILOGRAMS)
+
+        assertThat(edit.durationSeconds).isEqualTo(90)
+        assertThat(edit.reps).isEqualTo(0)
+        // A plank carries no load, and blank means none rather than an unanswerable question.
+        assertThat(edit.weightGrams).isEqualTo(0L)
+    }
+
+    @Test
+    fun aTimedDraft_isIncompleteUntilItStatesAHold() {
+        // The save gate: a hold of nothing is not a set, so an empty or zero field cannot commit one.
+        val empty = SetEntryDraft(repsText = "12", rpeText = "", weightText = "", timed = true)
+
+        assertThat(empty.values(WeightUnit.KILOGRAMS).isComplete).isFalse()
+        assertThat(empty.copy(durationText = "0").values(WeightUnit.KILOGRAMS).isComplete).isFalse()
+        assertThat(empty.copy(durationText = "0:30").values(WeightUnit.KILOGRAMS).isComplete).isTrue()
+    }
 }

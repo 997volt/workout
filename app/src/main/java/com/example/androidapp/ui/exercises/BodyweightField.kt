@@ -31,18 +31,57 @@ fun BodyweightField(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    ExerciseFlagField(
+        label = stringResource(R.string.exercise_detail_bodyweight),
+        hint = stringResource(R.string.exercise_detail_bodyweight_hint),
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        testTag = TestTags.EXERCISE_EDIT_BODYWEIGHT,
+        modifier = modifier,
+    )
+}
+
+/**
+ * Whether a set of the movement is **held** rather than counted (ROADMAP N220).
+ *
+ * The second flag row, and the point at which the layout was extracted: two switches with a label and a
+ * sentence are one component, not two copies that drift.
+ */
+@Composable
+fun TimedField(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ExerciseFlagField(
+        label = stringResource(R.string.exercise_detail_timed),
+        hint = stringResource(R.string.exercise_detail_timed_hint),
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        testTag = TestTags.EXERCISE_EDIT_TIMED,
+        modifier = modifier,
+    )
+}
+
+/** A labelled switch with one sentence saying what it changes. */
+@Composable
+private fun ExerciseFlagField(
+    label: String,
+    hint: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    testTag: String,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
+            Text(text = label, style = MaterialTheme.typography.bodyMedium)
             Text(
-                text = stringResource(R.string.exercise_detail_bodyweight),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = stringResource(R.string.exercise_detail_bodyweight_hint),
+                text = hint,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -50,7 +89,7 @@ fun BodyweightField(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            modifier = Modifier.testTag(TestTags.EXERCISE_EDIT_BODYWEIGHT),
+            modifier = Modifier.testTag(testTag),
         )
     }
 }

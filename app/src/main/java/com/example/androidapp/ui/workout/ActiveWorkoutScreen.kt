@@ -163,7 +163,7 @@ fun ActiveWorkoutScreen(
     /** Makes the session an activity, or a workout again (ROADMAP N141). */
     onSetActivity: (Activity?) -> Unit,
     onLogSet: (String, SetEdit) -> Unit,
-    onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit,
+    onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long, Int?) -> Unit,
     onRemoveExercise: (String) -> Unit,
     onDeleteSet: (String) -> Unit,
     onUndoDelete: () -> Unit,
@@ -306,7 +306,7 @@ internal fun SetEditorSection(
     editing: SetRow?,
     /** The session's exercises, so the row being edited can be placed among them (N145). */
     exercises: List<SessionExerciseRow>,
-    onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit,
+    onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long, Int?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val set = editing ?: return
@@ -343,6 +343,7 @@ internal fun SetEditorSection(
                 edit.note,
                 edit.setType,
                 edit.assistanceGrams,
+                edit.durationSeconds,
             )
             onDismiss()
         },
@@ -930,7 +931,7 @@ private fun ActiveWorkoutScreenPreview() {
             onAddExercise = {},
             onSetActivity = {},
             onLogSet = { _, _ -> },
-            onUpdateSet = { _, _, _, _, _, _, _ -> },
+            onUpdateSet = { _, _, _, _, _, _, _, _ -> },
             onRemoveExercise = {},
             onDeleteSet = {},
             onUndoDelete = {},

@@ -33,6 +33,14 @@ data class SetEntry(
      * column, and every ordinary set after it, means.
      */
     val bodyweightGrams: Long? = null,
+    /**
+     * How long this set was held, in seconds, or null for a counted set (ROADMAP N220).
+     *
+     * A timed set states **this** instead of reps: [reps] is 0, because a forty-five-second plank is not
+     * forty-five of anything, and every total built on reps — volume, records, the trend's rep count — then
+     * excludes it without a second rule. Load stays on the set, since a farmer's carry is both.
+     */
+    val durationSeconds: Int? = null,
     val setType: SetType = SetType.NORMAL,
     /** Perceived effort, 1–10, or null when none was recorded (ROADMAP N6). */
     val rpeHalves: Int? = null,

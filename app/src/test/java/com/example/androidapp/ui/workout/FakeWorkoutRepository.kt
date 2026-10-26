@@ -105,6 +105,7 @@ internal class FakeWorkoutRepository : WorkoutRepository {
         setType: SetType,
         assistanceGrams: Long,
         bodyweightGrams: Long?,
+        durationSeconds: Int?,
     ): DataResult<Unit> = unused()
     override suspend fun updateSet(
         setId: String,
@@ -114,6 +115,7 @@ internal class FakeWorkoutRepository : WorkoutRepository {
         note: String?,
         setType: SetType,
         assistanceGrams: Long,
+        durationSeconds: Int?,
     ): DataResult<Unit> = unused()
     override suspend fun deleteSet(setId: String): DataResult<Unit> = unused()
     override suspend fun previousPerformance(

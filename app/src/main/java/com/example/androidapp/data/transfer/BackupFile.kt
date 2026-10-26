@@ -213,6 +213,13 @@ data class ExerciseDto(
      */
     val isBodyweight: Boolean = false,
     /**
+     * Whether a set of this movement is held rather than counted (ROADMAP N220).
+     *
+     * Defaulted and unbumped like the fields above: a file written before timed sets existed decodes with
+     * every movement counted.
+     */
+    val isTimed: Boolean = false,
+    /**
      * The row this exercise hangs under, or null (ROADMAP N95).
      *
      * Defaulted and unbumped, like the two fields above: a file written before categories existed decodes
@@ -394,6 +401,8 @@ data class SetDto(
      * and null means exactly what a set meant before the column existed.
      */
     val bodyweightGrams: Long? = null,
+    /** How long the set was held, in seconds, or null for a counted set (ROADMAP N220). */
+    val durationSeconds: Int? = null,
     val setType: SetType,
     /** Defaulted for the same reason as [ExerciseDto.restSeconds] (ROADMAP N6). */
     val rpeHalves: Int? = null,

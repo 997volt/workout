@@ -22,6 +22,13 @@ data class SetSuggestion(
     /** The assistance to prefill, or 0 for none (ROADMAP N15). */
     val assistanceGrams: Long = 0,
     /**
+     * The hold to prefill for a timed movement, or null for a counted one (ROADMAP N220).
+     *
+     * "What I did" like reps: the last set of this movement, then last time's, then nothing — a plan cannot
+     * prescribe a hold yet, because a plan's targets are reps (N220's boundary).
+     */
+    val durationSeconds: Int? = null,
+    /**
      * The role the pending set is armed with (ROADMAP B48).
      *
      * The plan's next unlogged set decides it, carried the way reps and weight already are: a
@@ -139,11 +146,18 @@ fun suggestionForNextSet(
     val logged = loggedSets.lastOrNull()
     val lastTime = previous?.sets?.lastOrNull()
     val prefill = when {
-        logged != null -> SetSuggestion(logged.reps, logged.weightGrams, logged.assistanceGrams)
+        logged != null -> SetSuggestion(
+            reps = logged.reps,
+            weightGrams = logged.weightGrams,
+            assistanceGrams = logged.assistanceGrams,
+            durationSeconds = logged.durationSeconds,
+        )
+
         lastTime != null -> SetSuggestion(
             reps = lastTime.reps,
             weightGrams = lastTime.weightGrams,
             assistanceGrams = lastTime.assistanceGrams,
+            durationSeconds = lastTime.durationSeconds,
         )
 
         else -> SetSuggestion(reps = DEFAULT_REPS, weightGrams = Weight.DEFAULT_GRAMS)

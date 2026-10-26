@@ -413,6 +413,7 @@ class RoomWorkoutRepository @Inject constructor(
         setType: SetType,
         assistanceGrams: Long,
         bodyweightGrams: Long?,
+        durationSeconds: Int?,
     ): DataResult<Unit> = dataResultOf {
         // The screen's field is the real guard; this is the boundary that keeps an
         // out-of-range value from reaching the database (ROADMAP N6).
@@ -434,6 +435,8 @@ class RoomWorkoutRepository @Inject constructor(
             throw InvalidInputException(it.sentence(setType))
         }
         val now = timeSource.nowEpochMillis()
+        // Resolved once: the shape refuses a contradictory row, and asking twice would decide it twice.
+        val shape = heldShape(reps, durationSeconds)
         dao.insertSet(
             SetEntryEntity(
                 id = UUID.randomUUID().toString(),
@@ -441,7 +444,7 @@ class RoomWorkoutRepository @Inject constructor(
                 setIndex = setIndex,
                 // A set of zero reps is not a set. Clamping here rather than
                 // trusting the caller keeps a mistyped field out of the history.
-                reps = reps.coerceAtLeast(1),
+                reps = shape.first,
                 weightGrams = weightGrams.coerceAtLeast(0L),
                 // A magnitude, so a negative arriving here becomes none rather than
                 // a weight that subtracts (ROADMAP N15).
@@ -449,6 +452,7 @@ class RoomWorkoutRepository @Inject constructor(
                 // A bodyweight of zero is not a bodyweight: it would make a pull-up weigh nothing while
                 // claiming to be loaded, so it is written as the ordinary set it actually is (N219).
                 bodyweightGrams = bodyweightGrams?.takeIf { it > 0L },
+                durationSeconds = shape.second,
                 setType = setType,
                 // What the set felt like, written with the set rather than after it: the
                 // inline fields are on screen before *Log set*, so they are part of what it
@@ -472,6 +476,7 @@ class RoomWorkoutRepository @Inject constructor(
         note: String?,
         setType: SetType,
         assistanceGrams: Long,
+        durationSeconds: Int?,
     ): DataResult<Unit> =
         dataResultOf {
             // The editor's field is the real guard; this is the boundary that keeps
@@ -491,8 +496,10 @@ class RoomWorkoutRepository @Inject constructor(
             rungRefusal(stored.sessionExerciseId, stored.setIndex, setType)?.let {
                 throw InvalidInputException(it.sentence(setType))
             }
+            val shape = heldShape(reps, durationSeconds)
             val updated = stored.copy(
-                reps = reps.coerceAtLeast(1),
+                reps = shape.first,
+                durationSeconds = shape.second,
                 weightGrams = weightGrams.coerceAtLeast(0L),
                 // The same rule the log path holds (N67): a warm-up carries no effort, so an
                 // edit that re-roles a set to warm-up drops the number rather than keeping it
@@ -508,6 +515,24 @@ class RoomWorkoutRepository @Inject constructor(
             )
             if (dao.updateSet(updated) == 0) throw NotFoundException("set $setId")
         }
+
+    /**
+     * What a set's reps and duration are allowed to be together (ROADMAP N220).
+     *
+     * A row states **one** of them: a hold is seconds and no reps, a counted set is reps and no duration.
+     * Asking for both is two answers to one question, so it is refused at this boundary rather than written
+     * and displayed by whichever field the screen happens to read first. The duration's ceiling is one day —
+     * a mistyped `4500` on a plank is a typo, not a forty-five-minute hold.
+     */
+    private fun heldShape(reps: Int, durationSeconds: Int?): Pair<Int, Int?> = when {
+        durationSeconds == null -> reps.coerceAtLeast(1) to null
+        durationSeconds < 1 -> throw InvalidInputException("A hold must be longer than zero seconds.")
+        durationSeconds > MAX_SET_SECONDS ->
+            throw InvalidInputException("A hold cannot be longer than a day.")
+
+        reps != 0 -> throw InvalidInputException("A timed set records a duration instead of reps.")
+        else -> 0 to durationSeconds
+    }
 
     override suspend fun deleteSet(setId: String): DataResult<Unit> = dataResultOf {
         val updated = dao.softDeleteSet(id = setId, at = timeSource.nowEpochMillis())
@@ -650,3 +675,7 @@ private suspend fun appendExercise(
         ),
     )
 }
+
+
+/** One day, in seconds: the ceiling on a hold, so a mistyped number cannot become a session (N220). */
+private const val MAX_SET_SECONDS = 86_400

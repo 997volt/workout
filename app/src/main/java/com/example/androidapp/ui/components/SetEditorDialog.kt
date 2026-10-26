@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.components
 
+import com.example.androidapp.domain.DurationFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,6 +59,8 @@ fun SetEditorDialog(
     initialUnit: WeightUnit = WeightUnit.KILOGRAMS,
     /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
     initialStepGrams: Long? = null,
+    /** The hold this set was, or null for a counted set (ROADMAP N220). */
+    initialDurationSeconds: Int? = null,
     /**
      * Which roles this position can take, answered by the caller that holds the exercise's rows (N145).
      *
@@ -72,7 +75,10 @@ fun SetEditorDialog(
     var draft by remember {
         mutableStateOf(
             SetEntryDraft(
-                repsText = initialReps.toString(),
+                // A hold states no rep count, and its own field is the one the dialog then shows (N220).
+                repsText = if (initialDurationSeconds == null) initialReps.toString() else "",
+                durationText = initialDurationSeconds?.let { DurationFormat.ofSeconds(it.toLong()) }.orEmpty(),
+                timed = initialDurationSeconds != null,
                 // Shown as one signed number: -20 is 20 kg of assistance (N15).
                 weightText = Weight.display(initialWeightGrams, initialAssistanceGrams, initialUnit),
                 // The halves the set recorded, shown as a lifter writes them. A set that recorded
@@ -98,6 +104,7 @@ fun SetEditorDialog(
                 unit = initialUnit,
                 stepGrams = initialStepGrams,
                 offers = offers,
+                timed = draft.timed,
             )
         },
         confirmButton = {
@@ -133,6 +140,7 @@ private fun SetEditingFields(
     unit: WeightUnit,
     stepGrams: Long?,
     offers: (SetType) -> Boolean,
+    timed: Boolean,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // **The same gate the log path applies** (N145). This picker offered Drop and Cluster at every
@@ -145,6 +153,7 @@ private fun SetEditingFields(
             offers = offers,
         )
         SetEntryNumbers(
+            timed = timed,
             draft = draft,
             onDraftChange = onDraftChange,
             unit = unit,

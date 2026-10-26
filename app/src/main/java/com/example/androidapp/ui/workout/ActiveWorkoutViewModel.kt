@@ -101,6 +101,8 @@ data class SetRow(
     val assistanceGrams: Long = 0,
     /** The bodyweight this set was logged at, or null for an ordinary set (ROADMAP N219). */
     val bodyweightGrams: Long? = null,
+    /** How long the set was held, or null for a counted set (ROADMAP N220). */
+    val durationSeconds: Int? = null,
     /** The unit this exercise's numbers read in (ROADMAP N64). */
     val weightUnit: WeightUnit = WeightUnit.KILOGRAMS,
     /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
@@ -156,6 +158,12 @@ data class SessionExerciseRow(
      * for a plan with no runs in it, which is every plan before this and most after it.
      */
     val runContinuesAfter: Set<Int> = emptySet(),
+    /**
+     * Whether this movement's sets are held rather than counted (ROADMAP N220).
+     *
+     * What the *next* set's fields state: a duration instead of a rep count.
+     */
+    val isTimed: Boolean = false,
     /**
      * Whether this movement is loaded by the body (ROADMAP N219).
      *
@@ -877,6 +885,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                     setType = edit.setType,
                     assistanceGrams = edit.assistanceGrams,
                     bodyweightGrams = bodyweight,
+                    durationSeconds = edit.durationSeconds,
                 )
                 handle(result)
                 if (result is DataResult.Success) {
@@ -1017,6 +1026,7 @@ class ActiveWorkoutViewModel @Inject constructor(
         note: String? = null,
         setType: SetType = SetType.NORMAL,
         assistanceGrams: Long = 0,
+        durationSeconds: Int? = null,
     ) {
         viewModelScope.launch {
             // An edit moves a set a log's comparison may be reading, so it takes its turn with logging
@@ -1031,6 +1041,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                         note = note,
                         setType = setType,
                         assistanceGrams = assistanceGrams,
+                        durationSeconds = durationSeconds,
                     ),
                 )
             }
@@ -1087,6 +1098,7 @@ class ActiveWorkoutViewModel @Inject constructor(
                         setType = set.setType,
                         assistanceGrams = set.assistanceGrams,
                         bodyweightGrams = set.bodyweightGrams,
+                        durationSeconds = set.durationSeconds,
                     ),
                 )
             }
@@ -1600,6 +1612,7 @@ private fun SessionExercise.toRow(
         restSeconds = restSeconds,
         weightUnit = plan.unit,
         stepGrams = stepGrams,
+        isTimed = isTimed,
         isBodyweight = isBodyweight,
         runContinuesAfter = plan.plannedEntry?.sets?.runContinuesAfter().orEmpty(),
         plannedSetCount = plan.plannedSetCount,
@@ -1638,6 +1651,7 @@ private fun List<SetEntry>.loggedRowsFor(
             setType = set.setType,
             assistanceGrams = set.assistanceGrams,
             bodyweightGrams = set.bodyweightGrams,
+            durationSeconds = set.durationSeconds,
             stepGrams = stepGrams,
         )
     }

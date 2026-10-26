@@ -26,6 +26,7 @@ internal fun ExerciseEntity.toDomain(): Exercise = Exercise(
     weightUnit = WeightUnit.fromName(weightUnit),
     stepGrams = stepGrams,
     isBodyweight = isBodyweight,
+    isTimed = isTimed,
 )
 
 /**
@@ -48,6 +49,7 @@ internal fun Exercise.toEntity(now: Long): ExerciseEntity = ExerciseEntity(
     weightUnit = weightUnit?.name,
     stepGrams = stepGrams,
     isBodyweight = isBodyweight,
+    isTimed = isTimed,
     createdAt = now,
     updatedAt = now,
     deletedAt = null,

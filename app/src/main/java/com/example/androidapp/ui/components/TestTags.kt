@@ -19,6 +19,11 @@ object TestTags {
     const val SET_WEIGHT_FIELD = "set_weight_field"
     const val SET_REPS_FIELD = "set_reps_field"
 
+    /** The hold this set was logged at, which replaces reps on a timed movement (ROADMAP N220). */
+    const val SET_DURATION_FIELD = "set_duration_field"
+    const val SET_INCREASE_DURATION = "set_increase_duration"
+    const val SET_DECREASE_DURATION = "set_decrease_duration"
+
     /** RPE and the set comment (ROADMAP N6). The RPE is a stepper; the logging path always states a
      *  number, and the edit path shows "Not recorded" for a set that gave none (N59). */
     const val SET_RPE_FIELD = "set_rpe_field"
@@ -57,6 +62,11 @@ object TestTags {
     const val SET_EDIT_INCREASE_WEIGHT = "set_edit_increase_weight"
     const val SET_EDIT_DECREASE_WEIGHT = "set_edit_decrease_weight"
     const val SET_EDIT_REPS_FIELD = "set_edit_reps_field"
+
+    /** The correction dialog's hold field (ROADMAP N220). */
+    const val SET_EDIT_DURATION_FIELD = "set_edit_duration_field"
+    const val SET_EDIT_INCREASE_DURATION = "set_edit_increase_duration"
+    const val SET_EDIT_DECREASE_DURATION = "set_edit_decrease_duration"
     const val SET_EDIT_INCREASE_REPS = "set_edit_increase_reps"
     const val SET_EDIT_DECREASE_REPS = "set_edit_decrease_reps"
     const val SET_EDIT_RPE_FIELD = "set_edit_rpe_field"
@@ -559,6 +569,9 @@ object TestTags {
     const val EXERCISE_EDIT_WEIGHT_UNIT_DEFAULT = "exercise_edit_weight_unit_default"
     /** The bodyweight switch in the exercise editor (ROADMAP N219). */
     const val EXERCISE_EDIT_BODYWEIGHT = "exercise_edit_bodyweight"
+
+    /** The timed switch in the exercise editor (ROADMAP N220). */
+    const val EXERCISE_EDIT_TIMED = "exercise_edit_timed"
 
     /** The prompt a bodyweight set raises when no weight is on record (ROADMAP N219). */
     const val BODYWEIGHT_FIELD = "bodyweight_field"

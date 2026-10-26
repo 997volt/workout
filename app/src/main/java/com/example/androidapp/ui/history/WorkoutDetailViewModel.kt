@@ -47,6 +47,8 @@ data class HistorySet(
     val assistanceGrams: Long = 0,
     /** The bodyweight this set was logged at, or null (ROADMAP N219). */
     val bodyweightGrams: Long? = null,
+    /** How long the set was held, or null for a counted set (ROADMAP N220). */
+    val durationSeconds: Int? = null,
     /**
      * The role it was performed as (ROADMAP N14).
      *
@@ -271,6 +273,7 @@ class WorkoutDetailViewModel @Inject constructor(
                                     // renders a default (ROADMAP B5, N15).
                                     assistanceGrams = it.assistanceGrams,
                                     bodyweightGrams = it.bodyweightGrams,
+                                    durationSeconds = it.durationSeconds,
                                     setType = it.setType,
                                     weightUnit = row.weightUnit,
                                     // And the movement's own step, so correcting a past set steps the
@@ -296,6 +299,7 @@ class WorkoutDetailViewModel @Inject constructor(
         note: String? = null,
         setType: SetType = SetType.NORMAL,
         assistanceGrams: Long = 0,
+        durationSeconds: Int? = null,
     ) = write {
         workoutRepository.updateSet(
             setId = setId,
@@ -305,6 +309,7 @@ class WorkoutDetailViewModel @Inject constructor(
             note = note,
             setType = setType,
             assistanceGrams = assistanceGrams,
+            durationSeconds = durationSeconds,
         )
     }
 

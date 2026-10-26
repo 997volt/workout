@@ -200,6 +200,13 @@ interface WorkoutRepository {
          * it — see `SetEntry.bodyweightGrams`.
          */
         bodyweightGrams: Long? = null,
+        /**
+         * How long the set was held, in seconds, or null for a counted set (ROADMAP N220).
+         *
+         * When present, [reps] must be 0: a timed set states a duration *instead of* reps, and a row
+         * carrying both would be two answers to one question.
+         */
+        durationSeconds: Int? = null,
     ): DataResult<Unit>
 
     /**
@@ -219,6 +226,8 @@ interface WorkoutRepository {
         setType: SetType = SetType.NORMAL,
         /** The machine's assistance, as a magnitude (ROADMAP N15). */
         assistanceGrams: Long = 0,
+        /** How long the set was held, in seconds, or null for a counted set (ROADMAP N220). */
+        durationSeconds: Int? = null,
     ): DataResult<Unit>
 
     suspend fun deleteSet(setId: String): DataResult<Unit>

@@ -18,4 +18,11 @@ data class SetEdit(
     val setType: SetType = SetType.NORMAL,
     /** The machine's assistance, 0 for none (ROADMAP N15). */
     val assistanceGrams: Long = 0,
+    /**
+     * How long the set was held, in seconds, or null for a counted set (ROADMAP N220).
+     *
+     * The one payload both editors produce, so a timed set travels the same way a counted one does: when
+     * this is present [reps] is 0, and the write boundary refuses the two disagreeing.
+     */
+    val durationSeconds: Int? = null,
 )

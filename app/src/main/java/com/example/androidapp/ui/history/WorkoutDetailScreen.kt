@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.history
 
+import com.example.androidapp.domain.DurationFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -137,7 +138,7 @@ private fun DetailErrorEffect(error: DataError?, host: SnackbarHostState) {
 @Composable
 fun WorkoutDetailScreen(
     state: WorkoutDetailUiState,
-    onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit,
+    onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long, Int?) -> Unit,
     onDeleteSet: (String) -> Unit,
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onDeleteWorkout: () -> Unit,
@@ -649,16 +650,31 @@ private fun HistorySetNumbers(set: HistorySet, number: Int?, modifier: Modifier 
             // A warm-up leaves this column blank rather than taking a number (N112).
             SetNumber(number)
             Text(
-                text = stringResource(
-                    R.string.set_summary,
-                    Weight.display(
-                        set.weightGrams,
-                        set.assistanceGrams,
-                        exerciseWeightUnit(set.weightUnit),
-                    ),
-                    exerciseWeightUnit(set.weightUnit).label(),
-                    set.reps,
-                ),
+                // A hold reads as a hold here too (N220), or history would restate the lie the workout
+                // screen no longer tells.
+                text = if (set.durationSeconds != null) {
+                    stringResource(
+                        R.string.set_summary_timed,
+                        Weight.display(
+                            set.weightGrams,
+                            set.assistanceGrams,
+                            exerciseWeightUnit(set.weightUnit),
+                        ),
+                        exerciseWeightUnit(set.weightUnit).label(),
+                        DurationFormat.ofSeconds(set.durationSeconds.toLong()),
+                    )
+                } else {
+                    stringResource(
+                        R.string.set_summary,
+                        Weight.display(
+                            set.weightGrams,
+                            set.assistanceGrams,
+                            exerciseWeightUnit(set.weightUnit),
+                        ),
+                        exerciseWeightUnit(set.weightUnit).label(),
+                        set.reps,
+                    )
+                },
                 style = MaterialTheme.typography.bodyLarge,
             )
             // The detail is where the full text lives (N6); the workout row only carries a marker. A
@@ -720,7 +736,7 @@ private fun WorkoutDetailScreenPreview() {
                     ),
                 ),
             ),
-            onUpdateSet = { _, _, _, _, _, _, _ -> },
+            onUpdateSet = { _, _, _, _, _, _, _, _ -> },
             onDeleteSet = {},
             onRateExercise = { _, _, _ -> },
             onDeleteWorkout = {},
@@ -738,7 +754,7 @@ private fun WorkoutDetailScreenPreview() {
 private fun EditSetDialog(
     set: HistorySet,
     onDismiss: () -> Unit,
-    onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long) -> Unit,
+    onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long, Int?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     SetEditorDialog(
@@ -753,6 +769,8 @@ private fun EditSetDialog(
         // The exercise's own step, so the ± buttons here move the way they do in the workout this set
         // came from (ROADMAP N77, B65): the same correction made in two places must step the same.
         initialStepGrams = set.stepGrams,
+        // The set's own shape decides the field: a hold is edited as a hold (N220).
+        initialDurationSeconds = set.durationSeconds,
         onDismiss = onDismiss,
         onSave = { edit ->
             onUpdateSet(
@@ -763,6 +781,7 @@ private fun EditSetDialog(
                 edit.note,
                 edit.setType,
                 edit.assistanceGrams,
+                edit.durationSeconds,
             )
             onDismiss()
         },

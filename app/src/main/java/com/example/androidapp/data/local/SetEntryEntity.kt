@@ -50,6 +50,13 @@ data class SetEntryEntity(
      * set — which is exactly what it was, because nothing could record a bodyweight before this column.
      */
     val bodyweightGrams: Long? = null,
+    /**
+     * How long the set was held, in seconds, or null for a counted set (ROADMAP N220).
+     *
+     * Nullable with no default, so the migration is a plain ALTER and every existing row reads as counted —
+     * which is exactly what it was.
+     */
+    val durationSeconds: Int? = null,
     val setType: SetType,
     /**
      * Perceived effort, 1–10, or null when the set was logged without one

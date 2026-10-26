@@ -324,6 +324,7 @@ class WorkoutDetailViewModelTest {
             setType: com.example.androidapp.domain.model.SetType,
             assistanceGrams: Long,
             bodyweightGrams: Long?,
+            durationSeconds: Int?,
         ): DataResult<Unit> = unused()
 
         override suspend fun updateSet(
@@ -334,6 +335,7 @@ class WorkoutDetailViewModelTest {
             note: String?,
             setType: com.example.androidapp.domain.model.SetType,
             assistanceGrams: Long,
+            durationSeconds: Int?,
         ): DataResult<Unit> = unused()
 
         override suspend fun deleteSet(setId: String): DataResult<Unit> = unused()

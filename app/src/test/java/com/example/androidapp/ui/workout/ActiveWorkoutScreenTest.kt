@@ -113,7 +113,7 @@ class ActiveWorkoutScreenTest {
                 onLogSet = actions.onLogSet,
                 onToggleSuperset = onToggleSuperset,
                 personalRecord = personalRecord,
-                onUpdateSet = { _, _, _, _, _, _, _ -> },
+                onUpdateSet = { _, _, _, _, _, _, _, _ -> },
                 onRemoveExercise = actions.onRemoveExercise,
                 onMoveExercise = actions.onMoveExercise,
                 onRateExercise = actions.onRateExercise,

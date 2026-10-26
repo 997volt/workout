@@ -143,7 +143,8 @@ class BackupCodecRoundTripTest {
             id = "set1",
             sessionExerciseId = "se1",
             setIndex = 1,
-            reps = 8,
+            // A timed set states a hold instead of a rep count (N220), so the fixture is one.
+            reps = 0,
             weightGrams = 100_000L,
             rpeHalves = 17,
             note = "slow eccentric",
@@ -152,6 +153,8 @@ class BackupCodecRoundTripTest {
             // The column N219 added: the snapshot a bodyweight set carries. A codec that forgot it would
             // restore the set at its added weight alone, silently changing what was lifted.
             bodyweightGrams = 75_000L,
+            // And N220's: the hold. A dropped duration restores a set nobody can read as performed.
+            durationSeconds = 45,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,
@@ -420,6 +423,8 @@ class BackupCodecRoundTripTest {
             // And the one N219 added: a restore that drops it turns a pull-up back into an ordinary
             // movement, whose sets then read as their added weight alone.
             isBodyweight = true,
+            // And N220's: dropped, a plank comes back as a movement whose sets ask for reps.
+            isTimed = true,
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,

@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.workout
 
+import com.example.androidapp.domain.DurationFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -44,6 +45,7 @@ import com.example.androidapp.ui.components.ExerciseActionsMenu
 import com.example.androidapp.ui.components.ExerciseMenuTags
 import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.SetEdit
+import com.example.androidapp.ui.components.DEFAULT_HOLD_SECONDS
 import com.example.androidapp.ui.components.SetEntryDraft
 import com.example.androidapp.ui.components.SetEntryNumbers
 import com.example.androidapp.ui.components.SetNumber
@@ -423,8 +425,11 @@ internal fun SetEntryDraft.withRole(role: SetType, planRpeHalves: Int?): SetEntr
  * carries one; a planned warm-up opens it empty instead, since a warm-up carries no effort to show.
  * Extracted from [NextSetEditor] at the length this project allows.
  */
-private fun SetSuggestion.initialDraft(unit: WeightUnit): SetEntryDraft = SetEntryDraft(
-    repsText = reps.toString(),
+private fun SetSuggestion.initialDraft(unit: WeightUnit, timed: Boolean): SetEntryDraft = SetEntryDraft(
+    repsText = if (timed) "" else reps.toString(),
+    // A hold opens on the last one, or on a minute where there is none — never on "reps" it does not have.
+    durationText = if (timed) DurationFormat.ofSeconds((durationSeconds ?: DEFAULT_HOLD_SECONDS).toLong()) else "",
+    timed = timed,
     weightText = Weight.display(weightGrams, assistanceGrams, unit),
     rpeText = if (setType.recordsEffort) {
         Rpe.format(targetRpeHalves ?: DEFAULT_RPE_HALVES)
@@ -523,7 +528,7 @@ private fun NextSetEditor(
     // wrong weight the moment *Log set* was pressed without touching it.
     val unit = row.weightUnit
     var draft by remember(row.id, row.sets.size) {
-        mutableStateOf(suggestion.initialDraft(unit))
+        mutableStateOf(suggestion.initialDraft(unit, row.isTimed))
     }
     val values = draft.values(unit)
 
@@ -558,6 +563,8 @@ private fun NextSetEditor(
                 onDraftChange = { draft = it },
                 unit = unit,
                 stepGrams = row.stepGrams,
+                // A timed movement's fields state a hold instead of a rep count (N220).
+                timed = row.isTimed,
             )
             // A warm-up has no effort to state, so the field is not offered at all rather than
             // shown disabled: a control that cannot write is worse than no control (N67). The
@@ -724,12 +731,23 @@ private fun SetLine(
             // A warm-up leaves this column blank rather than taking a number (N112).
             SetNumber(set.number)
             Text(
-                text = stringResource(
-                    R.string.set_summary,
-                    Weight.display(set.weightGrams, set.assistanceGrams, set.weightUnit),
-                    set.weightUnit.label(),
-                    set.reps,
-                ),
+                // A hold says how long, not how many (N220): the row would otherwise read "0 × 45",
+                // which is the lie this feature exists to remove.
+                text = if (set.durationSeconds != null) {
+                    stringResource(
+                        R.string.set_summary_timed,
+                        Weight.display(set.weightGrams, set.assistanceGrams, set.weightUnit),
+                        set.weightUnit.label(),
+                        DurationFormat.ofSeconds(set.durationSeconds.toLong()),
+                    )
+                } else {
+                    stringResource(
+                        R.string.set_summary,
+                        Weight.display(set.weightGrams, set.assistanceGrams, set.weightUnit),
+                        set.weightUnit.label(),
+                        set.reps,
+                    )
+                },
                 style = MaterialTheme.typography.bodyLarge,
             )
             // What a set was is reps, load *and* effort, so the RPE reads on the line rather than as a

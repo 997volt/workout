@@ -178,6 +178,18 @@ class ExerciseDetailScreenTest {
     }
 
     @Test
+    fun theTimedSwitch_isOffForAMovement_andReportsWhatWasChosen() {
+        // ROADMAP N220: a hold is a property of the movement, offered once rather than asked per set.
+        var saved: ExerciseEdit? = null
+        show(ExerciseDetailUiState(isLoading = false, isEditing = true, exercise = seeded), onSave = { saved = it })
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_TIMED).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performScrollTo().performClick()
+
+        assertEquals(true, saved?.isTimed)
+    }
+
+    @Test
     fun anUnparseableRest_disablesSave_ratherThanGuessingASecondsValue() {
         show(ExerciseDetailUiState(isLoading = false, isEditing = true, exercise = seeded))
 

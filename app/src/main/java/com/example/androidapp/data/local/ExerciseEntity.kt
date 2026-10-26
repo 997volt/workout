@@ -99,6 +99,13 @@ data class ExerciseEntity(
      * row reads as an ordinary movement — which is what it was.
      */
     val isBodyweight: Boolean = false,
+    /**
+     * Whether a set of this movement is held rather than counted (ROADMAP N220).
+     *
+     * Backed by a SQL `DEFAULT 0`, so the migration is one plain ALTER and every existing row reads as a
+     * counted movement — which is what it was.
+     */
+    val isTimed: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

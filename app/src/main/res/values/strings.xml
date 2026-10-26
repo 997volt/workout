@@ -714,6 +714,9 @@
     <string name="set_plan_done">Planned work done — log extra sets if you want them.</string>
     <string name="set_number">%1$d</string>
     <string name="set_summary">%1$s %2$s × %3$d</string>
+    <!-- A set that is a hold rather than a rep count (ROADMAP N220). -->
+    <string name="set_summary_timed">%1$s %2$s · %3$s</string>
+    <string name="set_duration_label">Hold (m:ss)</string>
     <string name="set_edit_title">Edit set</string>
     <!-- Tap action for a set row (P1.17): announces what tapping does. -->
     <string name="set_edit_action">Edit set</string>
@@ -861,6 +864,8 @@
     <string name="settings_backup_kept">The newest five backups are kept; older ones are removed.</string>
     <!-- A bodyweight movement (ROADMAP N219): the weight field is what was *added*. -->
     <string name="exercise_detail_bodyweight">Bodyweight exercise</string>
+    <string name="exercise_detail_timed">Timed exercise</string>
+    <string name="exercise_detail_timed_hint">Sets record how long they were held instead of reps. Load stays available, for a carry.</string>
     <string name="exercise_detail_bodyweight_hint">The weight field is what you add — a belt, a dumbbell. Your own weight is added when the set is logged.</string>
     <string name="bodyweight_prompt_title">How much do you weigh?</string>
     <string name="bodyweight_prompt_body">%1$s is a bodyweight movement, and there is no weight on record yet. This is saved as today\'s measurement, so every bodyweight set can add it.</string>

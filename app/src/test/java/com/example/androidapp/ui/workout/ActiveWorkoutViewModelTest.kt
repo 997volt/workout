@@ -1031,6 +1031,30 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aTimedSet_isLoggedAsAHold_withNoReps() = runTest(dispatcher) {
+        // ROADMAP N220: the row states seconds, and reps go to zero rather than carrying whatever the field
+        // held — a hold is not forty-five of anything.
+        val repository = FakeWorkoutRepository()
+        repository.isTimedForNextExercise = true
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("plank")
+        settle()
+
+        viewModel.onLogSet(
+            viewModel.uiState.value.exercises.single().id,
+            SetEdit(reps = 0, weightGrams = 0L, rpeHalves = null, note = null, durationSeconds = 900),
+        )
+        settle()
+
+        assertEquals(listOf<Int?>(900), repository.loggedDurations)
+        val logged = repository.sets.value.single()
+        assertEquals("the hold reaches the row", 900, logged.durationSeconds)
+        assertEquals("and the set states no reps", 0, logged.reps)
+    }
+
+    @Test
     fun withNoWeightOnRecord_theSetIsHeld_ratherThanWrittenAtZero() = runTest(dispatcher) {
         // The prompt exists because a bodyweight set of unknown load is not a set of zero kilograms: writing
         // one would put a figure in every volume and 1RM trend that never happened.
@@ -1743,6 +1767,9 @@ class ActiveWorkoutViewModelTest {
         /** The bodyweight each logged set carried, in order (ROADMAP N219). */
         val loggedBodyweights = mutableListOf<Long?>()
 
+        /** The hold each logged set carried, in order (ROADMAP N220). */
+        val loggedDurations = mutableListOf<Int?>()
+
         /** What the session was made into, so a test can read the write back (ROADMAP N141). */
         var lastActivity: Activity? = null
 
@@ -1800,6 +1827,9 @@ class ActiveWorkoutViewModelTest {
 
         /** Whether the next added exercise is loaded by the body, so N219's path can be reached (N219). */
         var isBodyweightForNextExercise = false
+
+        /** Whether the next added exercise is a hold, so N220's path can be reached. */
+        var isTimedForNextExercise = false
 
         /** The rest length the ViewModel actually asked for, or null if never asked. */
         var lastRestSeconds: Int? = null
@@ -1869,6 +1899,7 @@ class ActiveWorkoutViewModelTest {
                 techniqueNote = techniqueNoteForNextExercise,
                 stepGrams = stepGramsForNextExercise,
                 isBodyweight = isBodyweightForNextExercise,
+                isTimed = isTimedForNextExercise,
             )
             return DataResult.Success(Unit)
         }
@@ -1982,10 +2013,12 @@ class ActiveWorkoutViewModelTest {
             setType: SetType,
             assistanceGrams: Long,
             bodyweightGrams: Long?,
+            durationSeconds: Int?,
         ): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             // N219: the snapshot the screen resolved has to reach the row, or a bodyweight set looks ordinary.
             loggedBodyweights += bodyweightGrams
+            loggedDurations += durationSeconds
             // The write is in flight: a second log's read can land before this row does (B126).
             setWritesInFlight++
             maxConcurrentSetWrites = maxOf(maxConcurrentSetWrites, setWritesInFlight)
@@ -2006,6 +2039,7 @@ class ActiveWorkoutViewModelTest {
                     rpeHalves = rpeHalves,
                     note = note,
                     bodyweightGrams = bodyweightGrams,
+                    durationSeconds = durationSeconds,
                 )
             } finally {
                 setWritesInFlight--
@@ -2021,6 +2055,7 @@ class ActiveWorkoutViewModelTest {
             note: String?,
             setType: SetType,
             assistanceGrams: Long,
+            durationSeconds: Int?,
         ): DataResult<Unit> {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             // The edit is in flight: a log's comparison can run before this row changes (B129).

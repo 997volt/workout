@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
@@ -37,6 +38,15 @@ import com.example.androidapp.domain.model.SetType
  */
 internal data class SetEntryDraft(
     val repsText: String,
+    /**
+     * The hold as typed, for a timed movement (ROADMAP N220); ignored when [timed] is false.
+     *
+     * Text rather than a number for the reason every field here is: a half-typed `1:` must not become a
+     * value, and the parse is what decides.
+     */
+    val durationText: String = "",
+    /** Whether this movement's sets are held rather than counted (ROADMAP N220). */
+    val timed: Boolean = false,
     val weightText: String,
     /**
      * The RPE as text — the halves [values] parses back out of it.
@@ -63,26 +73,48 @@ internal data class SetEntryDraft(
  */
 internal const val DEFAULT_RPE_HALVES = 18
 
+/** What a hold's first tap states, in seconds: a minute is the shortest hold worth counting (N220). */
+internal const val DEFAULT_HOLD_SECONDS = 60
+
+/** How far one ± tap moves a hold. Fifteen seconds is the increment a plank is actually adjusted by. */
+internal const val HOLD_STEP_SECONDS = 15
+
 /** What a [SetEntryDraft]'s text says, and whether each field is a usable value. */
 internal data class SetEntryValues(
     val reps: Int?,
+    /** Whether this movement is timed, which decides which of reps and duration completeness reads (N220). */
+    val timed: Boolean = false,
+    /** The hold, in seconds, for a timed movement (ROADMAP N220). */
+    val durationSeconds: Int? = null,
     val load: Load?,
     val rpeHalves: Int?,
     val rpeValid: Boolean,
 ) {
-    /** A set needs reps and a load; the comment and a not-recorded RPE stay optional (N6, N59). */
-    val isComplete: Boolean get() = reps != null && load != null && rpeValid
+    /**
+     * A set needs reps and a load; the comment and a not-recorded RPE stay optional (N6, N59).
+     *
+     * A **timed** set states a duration instead of reps, and its load may be blank — a plank is not a
+     * loaded lift — which is the one place the two shapes differ.
+     */
+    val isComplete: Boolean
+        get() = rpeValid && load != null && if (timed) durationSeconds != null else reps != null
 }
 
 internal fun SetEntryDraft.values(unit: WeightUnit): SetEntryValues {
-    // A set of zero reps is not a set, which is why this floor is 1.
-    val reps = repsText.toIntOrNull()?.takeIf { it > 0 }
-    // One field, two columns: a leading minus is assistance (ROADMAP N15).
+    // A hold of zero seconds is not a set, for the reason a set of zero reps is not one.
+    val duration = if (timed) DurationFormat.parseSeconds(durationText)?.takeIf { it > 0 } else null
+    // A set of zero reps is not a set, which is why this floor is 1 — and a timed set states none at all.
+    val reps = if (timed) 0 else repsText.toIntOrNull()?.takeIf { it > 0 }
+    // One field, two columns: a leading minus is assistance (ROADMAP N15). A timed set may state no load:
+    // a plank is bodyweight and nothing else, which is 0 rather than a question left unanswered.
     val load = Weight.parseLoad(weightText, unit)
+        ?: if (timed && weightText.isBlank()) Load(weightGrams = 0L, assistanceGrams = 0L) else null
     // Halves, so 9.5 is a value and 9.3 is not (ROADMAP N6).
     val rpeHalves = rpeText.trim().ifEmpty { null }?.let(Rpe::parse)
     return SetEntryValues(
         reps = reps,
+        timed = timed,
+        durationSeconds = duration,
         load = load,
         rpeHalves = rpeHalves,
         // Blank is valid; anything typed has to parse *and* sit on the scale.
@@ -95,6 +127,7 @@ internal fun SetEntryDraft.toEdit(unit: WeightUnit): SetEdit {
     val values = values(unit)
     return SetEdit(
         reps = values.reps ?: 0,
+        durationSeconds = values.durationSeconds,
         weightGrams = values.load?.weightGrams ?: 0L,
         assistanceGrams = values.load?.assistanceGrams ?: 0L,
         setType = setType,
@@ -120,6 +153,10 @@ internal data class SetFieldTags(
     val reps: String,
     val increaseReps: String,
     val decreaseReps: String,
+    /** The hold's field and its ± taps, which replace the reps controls on a timed movement (N220). */
+    val duration: String,
+    val increaseDuration: String,
+    val decreaseDuration: String,
     val rpe: String,
     val increaseRpe: String,
     val decreaseRpe: String,
@@ -133,6 +170,9 @@ internal data class SetFieldTags(
             reps = TestTags.SET_REPS_FIELD,
             increaseReps = TestTags.SET_INCREASE_REPS,
             decreaseReps = TestTags.SET_DECREASE_REPS,
+            duration = TestTags.SET_DURATION_FIELD,
+            increaseDuration = TestTags.SET_INCREASE_DURATION,
+            decreaseDuration = TestTags.SET_DECREASE_DURATION,
             rpe = TestTags.SET_RPE_FIELD,
             increaseRpe = TestTags.SET_INCREASE_RPE,
             decreaseRpe = TestTags.SET_DECREASE_RPE,
@@ -146,6 +186,9 @@ internal data class SetFieldTags(
             reps = TestTags.SET_EDIT_REPS_FIELD,
             increaseReps = TestTags.SET_EDIT_INCREASE_REPS,
             decreaseReps = TestTags.SET_EDIT_DECREASE_REPS,
+            duration = TestTags.SET_EDIT_DURATION_FIELD,
+            increaseDuration = TestTags.SET_EDIT_INCREASE_DURATION,
+            decreaseDuration = TestTags.SET_EDIT_DECREASE_DURATION,
             rpe = TestTags.SET_EDIT_RPE_FIELD,
             increaseRpe = TestTags.SET_EDIT_INCREASE_RPE,
             decreaseRpe = TestTags.SET_EDIT_DECREASE_RPE,
@@ -169,6 +212,8 @@ internal fun SetEntryNumbers(
      */
     stepGrams: Long? = null,
     tags: SetFieldTags = SetFieldTags.Logging,
+    /** Whether this movement's sets are held rather than counted (ROADMAP N220). */
+    timed: Boolean = false,
 ) {
     val values = draft.values(unit)
     val step = Weight.stepGramsFor(stepGrams, unit)
@@ -197,22 +242,42 @@ internal fun SetEntryNumbers(
                 )
             },
         )
-        NumberStepper(
-            label = stringResource(R.string.set_reps_label),
-            testTag = tags.reps,
-            increaseTag = tags.increaseReps,
-            decreaseTag = tags.decreaseReps,
-            value = draft.repsText,
-            onValueChange = { onDraftChange(draft.copy(repsText = it)) },
-            keyboardType = KeyboardType.Number,
-            // A set of zero reps is not a set, so this floor is 1 rather than 0 —
-            // unlike weight, where 0 is meaningful (bodyweight).
-            onStep = { delta ->
-                onDraftChange(
-                    draft.copy(repsText = ((values.reps ?: 1) + delta).coerceAtLeast(1).toString()),
-                )
-            },
-        )
+        if (timed) {
+            // The hold, not a rep count (ROADMAP N220). Typed as `1:30` or `45`; steered by ±15 s so a
+            // plank adjusted mid-hold needs no keyboard, and floored at one second because a zero-second
+            // hold is not a set.
+            NumberStepper(
+                label = stringResource(R.string.set_duration_label),
+                testTag = tags.duration,
+                increaseTag = tags.increaseDuration,
+                decreaseTag = tags.decreaseDuration,
+                value = draft.durationText,
+                onValueChange = { onDraftChange(draft.copy(durationText = it)) },
+                keyboardType = KeyboardType.Number,
+                onStep = { delta ->
+                    val stepped = ((values.durationSeconds ?: DEFAULT_HOLD_SECONDS) + delta * HOLD_STEP_SECONDS)
+                        .coerceAtLeast(1)
+                    onDraftChange(draft.copy(durationText = DurationFormat.ofSeconds(stepped.toLong())))
+                },
+            )
+        } else {
+            NumberStepper(
+                label = stringResource(R.string.set_reps_label),
+                testTag = tags.reps,
+                increaseTag = tags.increaseReps,
+                decreaseTag = tags.decreaseReps,
+                value = draft.repsText,
+                onValueChange = { onDraftChange(draft.copy(repsText = it)) },
+                keyboardType = KeyboardType.Number,
+                // A set of zero reps is not a set, so this floor is 1 rather than 0 —
+                // unlike weight, where 0 is meaningful (bodyweight).
+                onStep = { delta ->
+                    onDraftChange(
+                        draft.copy(repsText = ((values.reps ?: 1) + delta).coerceAtLeast(1).toString()),
+                    )
+                },
+            )
+        }
     }
 }
 

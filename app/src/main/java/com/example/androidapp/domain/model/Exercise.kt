@@ -79,4 +79,12 @@ data class Exercise(
      * force when it was logged, snapshotted so history cannot rewrite itself.
      */
     val isBodyweight: Boolean = false,
+    /**
+     * Whether a set of this movement is **held** rather than counted (ROADMAP N220).
+     *
+     * The same shape as [isBodyweight] and for the same reason: a plank is a plank on every set, so the
+     * question is about the movement rather than about one row. What it changes is which number the set
+     * records — seconds instead of reps — and the weight field stays, because a carry is loaded *and* timed.
+     */
+    val isTimed: Boolean = false,
 )

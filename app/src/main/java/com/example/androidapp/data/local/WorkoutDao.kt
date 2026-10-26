@@ -125,6 +125,7 @@ interface WorkoutDao {
                e.weightUnit AS weightUnit,
                e.stepGrams AS stepGrams,
                e.isBodyweight AS isBodyweight,
+               e.isTimed AS isTimed,
                se.finishedAt AS finishedAt,
                se.muscleFeel AS muscleFeel,
                se.supersetGroup AS supersetGroup

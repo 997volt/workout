@@ -143,6 +143,12 @@ data class SessionExercise(
      */
     val isBodyweight: Boolean = false,
     /**
+     * Whether a set of this movement is held rather than counted (ROADMAP N220).
+     *
+     * Read from the library like [isBodyweight]: it decides which number the *next* set's fields state.
+     */
+    val isTimed: Boolean = false,
+    /**
      * When this exercise was marked done (ROADMAP N7), or null while it is open.
      *
      * Deliberately not a delete: [finishedAt] set means no more sets are added and
