@@ -110,7 +110,12 @@ class AutomaticBackup @Inject constructor(
     }
 }
 
-/** How many files one folder keeps. Five weeklies is roughly a month of history without growing forever. */
+/**
+ * How many files one folder keeps: five periods of history (B255).
+ *
+ * "Five weeklies" was the comment, but the period is the setting — a daily schedule keeps five days and a
+ * monthly one five months. The number is the ceiling; the period decides how much time that is.
+ */
 internal const val KEEP_BACKUPS = 5
 
 private const val BACKUP_PREFIX = "workout-backup-"

@@ -264,6 +264,23 @@ class BackupCodecTest {
     }
 
     @Test
+    fun aFileFromBeforeHolds_isRead_asTheCountedSetsItHolds() {
+        // B253 moved the ceiling to 7 because a hold cannot be represented by a v6 build. The floor stays
+        // at 5, which is the other half of that decision: every older file still reads, and a set without a
+        // duration is simply counted.
+        val older = sample.copy(
+            schemaVersion = 6,
+            sets = sample.sets.map { it.copy(durationSeconds = null, reps = 8) },
+        )
+
+        val decoded = BackupCodec.decode(BackupCodec.encode(older))
+
+        assertEquals(6, decoded.schemaVersion)
+        assertNull(decoded.sets.first().durationSeconds)
+        assertEquals(8, decoded.sets.first().reps)
+    }
+
+    @Test
     fun aNewerFileCarryingAValueThisBuildCannotRead_isRefusedAsNewer() {
         // ROADMAP B62: the version is read before the body, so a file whose only fault is being newer
         // is answered as newer even when it carries an enum name this build has no constant for —

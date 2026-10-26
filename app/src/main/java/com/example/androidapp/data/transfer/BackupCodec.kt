@@ -52,8 +52,15 @@ object BackupCodec {
      * block forever — a wrong meaning, which is what the ceiling is for. The floor does not move for
      * the opposite reason: a v5 file says every one of its programs is weekly, and they all are, so
      * this build still reads it and every older backup keeps working.
+     *
+     * **N220 moves it to 7 and leaves the floor at 5** (B253). A hold is a set with **no reps**: it is
+     * written as `reps = 0` beside a `durationSeconds` an older build has never heard of, so that build
+     * would import a hold as a zero-rep counted set — a row its own screens call invalid, and one its
+     * editor clamps to a single rep on the next save. That is data an older build cannot represent, which
+     * is what this ceiling is for. The floor does not move: a v6 file simply has no holds, so this build
+     * reads every older backup.
      */
-    const val CURRENT_SCHEMA_VERSION = 6
+    const val CURRENT_SCHEMA_VERSION = 7
 
     /** The oldest file this build reads: a shape whose meaning is still this one (ROADMAP N104, N185). */
     const val MINIMUM_SCHEMA_VERSION = 5

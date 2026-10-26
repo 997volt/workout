@@ -13,10 +13,8 @@ import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.getOrNull
 import com.example.androidapp.domain.model.Activity
-import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.LatestWeight
-import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.PerformedSetSpec
 import com.example.androidapp.domain.model.PersonalRecordMoment
@@ -35,7 +33,6 @@ import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutSession
-import com.example.androidapp.domain.model.localDayBounds
 import com.example.androidapp.domain.model.pendingProgressionFor
 import com.example.androidapp.domain.model.progressionPromptFor
 import com.example.androidapp.domain.model.runContinuesAfter
@@ -1186,29 +1183,14 @@ class ActiveWorkoutViewModel @Inject constructor(
         Duration.between(at, timeSource.now()).toDays().coerceAtLeast(0L)
 
     /**
-     * Writes [grams] as today's daily measurement, keeping whatever else today already says.
+     * Writes [grams] as today's daily weight, keeping whatever else today already says (N62, N113).
      *
-     * A save replaces the day's record, so an existing entry is copied with the weight changed rather than
-     * replaced by a weight-only row — otherwise answering this prompt would silently delete the body fat and
-     * soreness the day already had (N62, N113).
+     * The targeted write rather than a whole-entry save: a save replaces the day's record, so answering this
+     * prompt used to copy the day's body fat and soreness back by hand — after scanning every measurement to
+     * find them (B255). The day keeps its numbers, and the logging path performs one query.
      */
-    private suspend fun saveTodayWeight(grams: Long): DataResult<Unit> {
-        val now = timeSource.now()
-        val (dayStart, dayEnd) = now.localDayBounds(ZoneId.systemDefault())
-        val todays = measurementRepository.observeAll().first()
-            .firstOrNull { entry ->
-                val at = entry.measuredAt.toEpochMilli()
-                entry.kind == MeasurementKind.DAILY && at >= dayStart && at < dayEnd
-            }
-        val measurement = todays?.copy(weightGrams = grams)
-            ?: BodyMeasurement(
-                id = "",
-                measuredAt = now,
-                kind = MeasurementKind.DAILY,
-                weightGrams = grams,
-            )
-        return measurementRepository.save(measurement)
-    }
+    private suspend fun saveTodayWeight(grams: Long): DataResult<Unit> =
+        measurementRepository.setDailyWeight(at = timeSource.now(), grams = grams)
 
     /**
      * Writes the readiness note (ROADMAP N4), from the row in the workout header — the only way in since N140

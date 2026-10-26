@@ -16,6 +16,15 @@ import org.junit.Test
 class DurationFormatTest {
 
     @Test
+    fun aMinuteColumnThatIsNotMinutes_isNotADuration() {
+        // B255: `1:75` folded to 2:15 and moved the hold the lifter typed. Base 60 means base 60.
+        assertEquals(null, DurationFormat.parseSeconds("1:75"))
+        assertEquals(null, DurationFormat.parseSeconds("1:75:00"))
+        assertEquals(90, DurationFormat.parseSeconds("1:30"))
+        assertEquals(45, DurationFormat.parseSeconds("45"))
+    }
+
+    @Test
     fun spoken_holdsSayTheUnitInWords() {
         // B252: a screen reader reads "1:30" as digits around a colon, which is not how a hold is stated.
         assertEquals("45 seconds", DurationFormat.spokenSeconds(45))

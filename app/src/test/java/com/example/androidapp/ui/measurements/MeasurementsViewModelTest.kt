@@ -567,6 +567,9 @@ private class FakeMeasurementRepository(
                 ?.let { LatestWeight(grams = it.weightGrams!!, at = it.measuredAt) },
         )
 
+    /** The day-weight write the workout prompt uses (B255); this screen does not log sets. */
+    override suspend fun setDailyWeight(at: Instant, grams: Long): DataResult<Unit> = DataResult.Success(Unit)
+
     override suspend fun save(measurement: BodyMeasurement): DataResult<Unit> {
         if (failNextSave) return DataResult.Failure(DataError.Storage(IllegalStateException()))
         // Placed by its id, as the real repository places it: a save both adds and corrects, which is what the

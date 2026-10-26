@@ -67,8 +67,12 @@ object DurationFormat {
         val numbers = if (numeric) parts.map { it.toLongOrNull() } else emptyList()
         // Folded rather than branched per shape: each group is the next base-60 column, so 45, 1:30 and
         // 1:30:00 are one expression and a fourth group cannot quietly mean something else.
-        val total = if (numbers.isNotEmpty() && numbers.all { it != null }) {
-            numbers.filterNotNull().fold(0L) { seconds, part -> seconds * SECONDS_PER_MINUTE + part }
+        val parts60 = numbers.filterNotNull()
+        // Every column but the first is base 60, so `1:75` is not 2:15 — it is not a duration at all, and
+        // reading it as one silently moves the hold the lifter typed (B255).
+        val base60 = parts60.drop(1).all { it < SECONDS_PER_MINUTE }
+        val total = if (parts60.isNotEmpty() && parts60.size == numbers.size && base60) {
+            parts60.fold(0L) { seconds, part -> seconds * SECONDS_PER_MINUTE + part }
         } else {
             null
         }

@@ -147,6 +147,30 @@ class RoomMeasurementRepository @Inject constructor(
         }
     }
 
+    override suspend fun setDailyWeight(at: Instant, grams: Long): DataResult<Unit> = dataResultOf {
+        if (grams <= 0L) throw InvalidInputException("A weight must be more than zero.")
+        val zone = ZoneId.systemDefault()
+        val (dayStart, dayEnd) = at.localDayBounds(zone)
+        database.withTransaction {
+            val now = nextWriteAt()
+            val existing = dao.findOnDay(from = dayStart, to = dayEnd, kind = MeasurementKind.DAILY.name)
+            if (existing != null) {
+                if (dao.updateWeight(id = existing.id, grams = grams, at = now) == 0) {
+                    throw NotFoundException("measurement ${existing.id}")
+                }
+            } else {
+                dao.insert(
+                    BodyMeasurement(
+                        id = UUID.randomUUID().toString(),
+                        measuredAt = at,
+                        kind = MeasurementKind.DAILY,
+                        weightGrams = grams,
+                    ).toEntity(id = "", createdAt = now, now = now),
+                )
+            }
+        }
+    }
+
     override suspend fun delete(id: String): DataResult<Unit> = dataResultOf {
         val now = nextWriteAt()
         database.withTransaction {

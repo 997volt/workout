@@ -17,6 +17,7 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.LatestWeight
+import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PendingOccurrence
 import com.example.androidapp.domain.model.PersonalRecords
@@ -1849,6 +1850,17 @@ class ActiveWorkoutViewModelTest {
         override suspend fun save(measurement: BodyMeasurement): DataResult<Unit> {
             saved += measurement
             measurement.weightGrams?.let { latest = it }
+            return DataResult.Success(Unit)
+        }
+
+        override suspend fun setDailyWeight(at: Instant, grams: Long): DataResult<Unit> {
+            saved += BodyMeasurement(
+                id = "today",
+                measuredAt = at,
+                kind = MeasurementKind.DAILY,
+                weightGrams = grams,
+            )
+            latest = grams
             return DataResult.Success(Unit)
         }
 

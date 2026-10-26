@@ -38,6 +38,15 @@ import androidx.room.TypeConverters
  * **Schema 9 is N214**, one nullable column: a workout can be **hidden** from the choices without being
  * deleted, and every row already on disk is visible, which is what it was. See [MIGRATION_8_9].
  *
+ * **Schema 10 is N219**, two columns and no backfill: a movement can say it is **loaded by the body** (not
+ * null, defaulting to ordinary) and a set can carry the lifter's weight at the moment it was logged
+ * (nullable, because a set written before this had only its added weight — which is what it was). See
+ * [MIGRATION_9_10].
+ *
+ * **Schema 11 is N220**, the same shape again: a movement can say its sets are **held** (not null, defaulting
+ * to counted) and a set can carry a duration (nullable, because every set on disk was a counted one). See
+ * [MIGRATION_10_11].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0

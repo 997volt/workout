@@ -3,6 +3,7 @@ package com.example.androidapp.domain.repository
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.LatestWeight
+import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -33,6 +34,15 @@ interface MeasurementRepository {
      * zero.
      */
     suspend fun latestWeight(): DataResult<LatestWeight?>
+
+    /**
+     * Sets [at]'s daily weight, keeping whatever else that day already says (B255).
+     *
+     * The targeted write the bodyweight prompt needs: saving a whole entry would replace the day's body
+     * fat, muscle and soreness with nulls, and reading the whole record to copy them back is a scan on the
+     * logging path. A day with no daily entry gains a weight-only one.
+     */
+    suspend fun setDailyWeight(at: Instant, grams: Long): DataResult<Unit>
 
     suspend fun delete(id: String): DataResult<Unit>
 

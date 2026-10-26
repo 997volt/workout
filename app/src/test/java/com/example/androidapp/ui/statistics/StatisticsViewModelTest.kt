@@ -977,6 +977,9 @@ private class FakeMeasurementRepository(
     override suspend fun delete(id: String): DataResult<Unit> = DataResult.Success(Unit)
     override suspend fun restore(id: String): DataResult<Unit> = DataResult.Success(Unit)
 
+    /** This screen never logs a set, so nothing calls the day-weight write (B255). */
+    override suspend fun setDailyWeight(at: Instant, grams: Long): DataResult<Unit> = DataResult.Success(Unit)
+
     /** N219: this screen never logs a set, so the newest weight is whatever the fake was seeded with. */
     override suspend fun latestWeight(): DataResult<LatestWeight?> =
         DataResult.Success(

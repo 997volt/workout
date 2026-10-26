@@ -91,6 +91,10 @@ interface MeasurementDao {
     )
     suspend fun findOnDay(from: Long, to: Long, kind: String): MeasurementEntity?
 
+    /** Rewrites one day's weight, leaving its tape, body fat, muscle and sore rows untouched (B255). */
+    @Query("UPDATE measurements SET weightGrams = :grams, updatedAt = :at WHERE id = :id")
+    suspend fun updateWeight(id: String, grams: Long, at: Long): Int
+
     @Query("SELECT * FROM measurements WHERE id = :id AND deletedAt IS NULL")
     suspend fun find(id: String): MeasurementEntity?
 

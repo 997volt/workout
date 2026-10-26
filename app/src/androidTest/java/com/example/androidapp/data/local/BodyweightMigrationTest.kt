@@ -77,10 +77,11 @@ class BodyweightMigrationTest {
     }
 
     /**
-     * A schema-9 store with both tables rewound to their old shape.
+     * A reduced v9-shaped store, not `9.json`: enough columns for the ALTERs and the assertions, and no more.
      *
-     * Only the columns the migration and the assertions need are declared: the ALTERs add one column each, and
-     * a table carrying every other column would say nothing more about them. The user's rows go with the drops,
+     * Only the columns the migration and the assertions need are declared, so this proves the ALTERs and what
+     * they leave behind — **not** that the result matches `10.json`, which only Room's own validation could say
+     * (B255). The user's rows go with the drops,
      * and this migration touches nothing else.
      */
     private fun v9Store() = database.openHelper.writableDatabase.apply {
