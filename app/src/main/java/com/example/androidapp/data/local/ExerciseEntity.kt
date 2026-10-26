@@ -1,5 +1,6 @@
 package com.example.androidapp.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.androidapp.domain.model.Equipment
@@ -98,6 +99,7 @@ data class ExerciseEntity(
      * Backed by a Kotlin default and a SQL `DEFAULT 0`, so the migration is one plain ALTER and every existing
      * row reads as an ordinary movement — which is what it was.
      */
+    @ColumnInfo(defaultValue = "0")
     val isBodyweight: Boolean = false,
     /**
      * Whether a set of this movement is held rather than counted (ROADMAP N220).
@@ -105,6 +107,7 @@ data class ExerciseEntity(
      * Backed by a SQL `DEFAULT 0`, so the migration is one plain ALTER and every existing row reads as a
      * counted movement — which is what it was.
      */
+    @ColumnInfo(defaultValue = "0")
     val isTimed: Boolean = false,
     val createdAt: Long,
     val updatedAt: Long,

@@ -684,25 +684,35 @@ class WorkoutEditingTest {
         // assertion, and it now calls the property itself rather than recomputing a formula beside it, over
         // the two shapes the rule has: an assisted set (its weight alone) and a bodyweight one (the lifter
         // plus the belt).
-        seedFinishedWorkout()
-        repository.logSet(
-            sessionExerciseId = "se1",
-            reps = 8,
-            weightGrams = 0L,
-            rpeHalves = null,
-            note = null,
-            assistanceGrams = 20_000L,
+        // An **open** workout while the sets are logged, then finished: a finished session refuses a new set
+        // (it is history), which is why the original shape of this test seeded a finished one and asserted
+        // only the seeded row — it passed without the set it thought it had logged (B256).
+        val sessionId = seedOpenWorkout()
+        assertTrue(
+            "the assisted set lands",
+            repository.logSet(
+                sessionExerciseId = "se1",
+                reps = 8,
+                weightGrams = 0L,
+                rpeHalves = null,
+                note = null,
+                assistanceGrams = 20_000L,
+            ) is DataResult.Success,
         )
-        repository.logSet(
-            sessionExerciseId = "se1",
-            reps = 8,
-            weightGrams = 20_000L,
-            rpeHalves = null,
-            note = null,
-            bodyweightGrams = 75_000L,
+        assertTrue(
+            "and the bodyweight one",
+            repository.logSet(
+                sessionExerciseId = "se1",
+                reps = 8,
+                weightGrams = 20_000L,
+                rpeHalves = null,
+                note = null,
+                bodyweightGrams = 75_000L,
+            ) is DataResult.Success,
         )
+        database.workoutDao().markFinished(id = sessionId, at = 2_000L)
 
-        val sets = database.workoutDao().observeSetsForSession("s1").first()
+        val sets = database.workoutDao().observeSetsForSession(sessionId).first()
         val ui = WorkoutDetailUiState(
             isLoading = false,
             exercises = listOf(
@@ -723,7 +733,8 @@ class WorkoutEditingTest {
             ),
         ).volumeGrams
 
-        assertEquals("an assisted set adds nothing, a bodyweight set adds the lifter", 500_000L + 760_000L, ui)
+        // The assisted set contributes nothing; the bodyweight one is 75 kg of lifter plus a 20 kg belt.
+        assertEquals("an assisted set adds nothing, a bodyweight set adds the lifter", 95_000L * 8, ui)
         assertEquals(ui, historyVolume())
     }
 
@@ -731,18 +742,21 @@ class WorkoutEditingTest {
     fun aBodyweightOfZero_isWrittenAsTheOrdinarySetItIs() = runTest {
         // B256: the boundary treats a zero bodyweight as "no bodyweight", because a set that claims to be
         // loaded by the body at 0 kg would weigh nothing while counting as one. Nothing tested the branch.
-        seedFinishedWorkout()
+        val sessionId = seedOpenWorkout()
 
-        repository.logSet(
-            sessionExerciseId = "se1",
-            reps = 8,
-            weightGrams = 20_000L,
-            rpeHalves = null,
-            note = null,
-            bodyweightGrams = 0L,
+        assertTrue(
+            "the set lands",
+            repository.logSet(
+                sessionExerciseId = "se1",
+                reps = 8,
+                weightGrams = 20_000L,
+                rpeHalves = null,
+                note = null,
+                bodyweightGrams = 0L,
+            ) is DataResult.Success,
         )
 
-        val stored = database.workoutDao().observeSetsForSession("s1").first().single()
+        val stored = database.workoutDao().observeSetsForSession(sessionId).first().single()
         assertTrue("a zero is the ordinary set it is", stored.bodyweightGrams == null)
         assertEquals(20_000L, stored.weightGrams)
     }
