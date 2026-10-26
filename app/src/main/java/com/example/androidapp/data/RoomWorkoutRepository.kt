@@ -567,7 +567,7 @@ class RoomWorkoutRepository @Inject constructor(
             .observeExerciseTrendRows(listOf(exerciseId), limit = ALL_SESSIONS)
             .first()
         PersonalRecords.from(
-            rows.filter { it.sessionId != excludingSessionId }
+            rows.filter { it.sessionId != excludingSessionId && it.bodyweightGrams == null }
                 .mapNotNull { it.toPerformedSetSpec() },
         )
     }

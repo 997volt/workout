@@ -72,9 +72,6 @@ fun loadGrams(weightGrams: Long, bodyweightGrams: Long?, assistanceGrams: Long):
         (bodyweightGrams + weightGrams - assistanceGrams).coerceAtLeast(0L)
     }
 
-/** This set's load: see [loadGrams]. */
-val SetEntry.totalLoadGrams: Long
-    get() = loadGrams(weightGrams, bodyweightGrams, assistanceGrams)
 
 /**
  * What kind of set this was: a set of its own, or a *rung* of the group above it (ROADMAP N79).

@@ -1031,6 +1031,50 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun theReview_countsTheLoadABodyweightSetCarries() = runTest(dispatcher) {
+        // B241: the finish summary used the added weight alone, so an all-bodyweight session ended on
+        // "0 kg" while history, the trend and the workout's own SQL counted the lifter.
+        val repository = FakeWorkoutRepository()
+        repository.isBodyweightForNextExercise = true
+        val measurements = FakeBodyMeasurements(latest = 75_000L)
+        val viewModel = viewModelFor(repository, measurements = measurements)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("pull-up")
+        settle()
+
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel, weightGrams = 0L))
+        settle()
+        viewModel.onFinish()
+        settle()
+
+        val summary = requireNotNull(viewModel.summary.value)
+        assertEquals("the lifter's own weight is the load", 75_000L * 8, summary.totalVolumeGrams)
+    }
+
+    @Test
+    fun aBodyweightSet_claimsNoRecord() = runTest(dispatcher) {
+        // B246: the check read the added weight, so a 20 kg belt was compared as if the belt were the lift.
+        // N23's rule — a bodyweight set has no weight to compare — still stands after N219.
+        val repository = FakeWorkoutRepository()
+        repository.isBodyweightForNextExercise = true
+        val measurements = FakeBodyMeasurements(latest = 75_000L)
+        val viewModel = viewModelFor(repository, measurements = measurements)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("pull-up")
+        settle()
+
+        viewModel.onLogSet(
+            viewModel.uiState.value.exercises.single().id,
+            offeredSet(viewModel, weightGrams = 20_000L),
+        )
+        settle()
+
+        assertNull("the belt is not the lift, so it claims nothing", viewModel.personalRecord.value)
+    }
+
+    @Test
     fun aTimedSet_isLoggedAsAHold_withNoReps() = runTest(dispatcher) {
         // ROADMAP N220: the row states seconds, and reps go to zero rather than carrying whatever the field
         // held — a hold is not forty-five of anything.

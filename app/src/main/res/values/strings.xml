@@ -716,11 +716,17 @@
     <string name="set_summary">%1$s %2$s × %3$d</string>
     <!-- A set that is a hold rather than a rep count (ROADMAP N220). -->
     <string name="set_summary_timed">%1$s %2$s · %3$s</string>
+    <!-- A bodyweight set reads at its load, with the marker saying the lifter's own weight is in it
+         (B245). The weight field is the *added* part, and the two must not be confused. -->
+    <string name="set_summary_bodyweight">%1$s %2$s × %3$d · BW</string>
+    <string name="set_summary_timed_bodyweight">%1$s %2$s · %3$s · BW</string>
     <string name="set_duration_label">Hold (m:ss)</string>
     <string name="set_edit_title">Edit set</string>
     <!-- Tap action for a set row (P1.17): announces what tapping does. -->
     <string name="set_edit_action">Edit set</string>
     <string name="set_weight_label">Weight (%1$s)</string>
+    <!-- On a bodyweight movement the field holds what was added to the lifter's own weight (B245). -->
+    <string name="set_weight_added_label">Added weight (%1$s)</string>
     <string name="set_reps_label">Reps</string>
     <string name="set_save">Save</string>
     <string name="set_cancel">Cancel</string>

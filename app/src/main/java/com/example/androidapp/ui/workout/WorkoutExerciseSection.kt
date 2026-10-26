@@ -45,6 +45,7 @@ import com.example.androidapp.ui.components.ExerciseActionsMenu
 import com.example.androidapp.ui.components.ExerciseMenuTags
 import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.SetEdit
+import com.example.androidapp.ui.components.setSummaryText
 import com.example.androidapp.ui.components.DEFAULT_HOLD_SECONDS
 import com.example.androidapp.ui.components.SetEntryDraft
 import com.example.androidapp.ui.components.SetEntryNumbers
@@ -563,8 +564,10 @@ private fun NextSetEditor(
                 onDraftChange = { draft = it },
                 unit = unit,
                 stepGrams = row.stepGrams,
-                // A timed movement's fields state a hold instead of a rep count (N220).
+                // A timed movement's fields state a hold instead of a rep count (N220), and a bodyweight
+                // one's weight field says what it holds — the added part (B245).
                 timed = row.isTimed,
+                bodyweight = row.isBodyweight,
             )
             // A warm-up has no effort to state, so the field is not offered at all rather than
             // shown disabled: a control that cannot write is worse than no control (N67). The
@@ -731,23 +734,16 @@ private fun SetLine(
             // A warm-up leaves this column blank rather than taking a number (N112).
             SetNumber(set.number)
             Text(
-                // A hold says how long, not how many (N220): the row would otherwise read "0 × 45",
-                // which is the lie this feature exists to remove.
-                text = if (set.durationSeconds != null) {
-                    stringResource(
-                        R.string.set_summary_timed,
-                        Weight.display(set.weightGrams, set.assistanceGrams, set.weightUnit),
-                        set.weightUnit.label(),
-                        DurationFormat.ofSeconds(set.durationSeconds.toLong()),
-                    )
-                } else {
-                    stringResource(
-                        R.string.set_summary,
-                        Weight.display(set.weightGrams, set.assistanceGrams, set.weightUnit),
-                        set.weightUnit.label(),
-                        set.reps,
-                    )
-                },
+                // A hold says how long, not how many (N220), and a bodyweight set reads at the load it
+                // counted rather than at what was added (B245) — one sentence, shared with history.
+                text = setSummaryText(
+                    weightGrams = set.weightGrams,
+                    assistanceGrams = set.assistanceGrams,
+                    bodyweightGrams = set.bodyweightGrams,
+                    durationSeconds = set.durationSeconds,
+                    reps = set.reps,
+                    unit = set.weightUnit,
+                ),
                 style = MaterialTheme.typography.bodyLarge,
             )
             // What a set was is reps, load *and* effort, so the RPE reads on the line rather than as a

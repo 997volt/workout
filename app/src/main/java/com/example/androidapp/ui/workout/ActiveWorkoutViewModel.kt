@@ -16,6 +16,7 @@ import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.BodyMeasurement
 import com.example.androidapp.domain.model.MeasurementKind
 import com.example.androidapp.domain.model.localDayBounds
+import com.example.androidapp.domain.model.loadGrams
 import com.example.androidapp.domain.model.ExerciseActual
 import com.example.androidapp.domain.model.ExercisePlan
 import com.example.androidapp.domain.model.JointPain
@@ -896,6 +897,9 @@ class ActiveWorkoutViewModel @Inject constructor(
                     // while claiming a record over that very set (B18).
                     if (
                         against != null &&
+                        // A bodyweight set has no weight to compare (N23, N219): its belt is not the lift,
+                        // and claiming a record at the added weight would read as one (B246).
+                        !row.isBodyweight &&
                         against.isRecord(edit.reps, edit.weightGrams, edit.setType)
                     ) {
                         _personalRecord.value = PersonalRecordMoment(
@@ -1471,9 +1475,12 @@ private fun buildSummary(
         readinessNote = state.readinessNote,
         totalSets = allSets.size,
         totalReps = allSets.sumOf { it.reps },
-        // The same definition the history and the database use (ROADMAP B10): added
-        // weight times reps, with assistance and bodyweight contributing zero.
-        totalVolumeGrams = allSets.sumOf { it.weightGrams * it.reps },
+        // The same definition the history and the database use (ROADMAP B10, N219): the load the set was
+        // performed at, times its reps. A bodyweight set's load includes the lifter, so a summary that
+        // counted the added weight alone ended an all-bodyweight session on zero (B241).
+        totalVolumeGrams = allSets.sumOf {
+            loadGrams(it.weightGrams, it.bodyweightGrams, it.assistanceGrams) * it.reps
+        },
         ratings = state.exercises.mapNotNull { row ->
             val feel = row.muscleFeel
             if (feel == null && row.joints.isEmpty()) {

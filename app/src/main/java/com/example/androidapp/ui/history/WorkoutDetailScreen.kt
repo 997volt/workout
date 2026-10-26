@@ -1,6 +1,5 @@
 package com.example.androidapp.ui.history
 
-import com.example.androidapp.domain.DurationFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,6 +59,7 @@ import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.SetEditorDialog
+import com.example.androidapp.ui.components.setSummaryText
 import com.example.androidapp.ui.components.SetNumber
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
@@ -650,31 +650,16 @@ private fun HistorySetNumbers(set: HistorySet, number: Int?, modifier: Modifier 
             // A warm-up leaves this column blank rather than taking a number (N112).
             SetNumber(number)
             Text(
-                // A hold reads as a hold here too (N220), or history would restate the lie the workout
-                // screen no longer tells.
-                text = if (set.durationSeconds != null) {
-                    stringResource(
-                        R.string.set_summary_timed,
-                        Weight.display(
-                            set.weightGrams,
-                            set.assistanceGrams,
-                            exerciseWeightUnit(set.weightUnit),
-                        ),
-                        exerciseWeightUnit(set.weightUnit).label(),
-                        DurationFormat.ofSeconds(set.durationSeconds.toLong()),
-                    )
-                } else {
-                    stringResource(
-                        R.string.set_summary,
-                        Weight.display(
-                            set.weightGrams,
-                            set.assistanceGrams,
-                            exerciseWeightUnit(set.weightUnit),
-                        ),
-                        exerciseWeightUnit(set.weightUnit).label(),
-                        set.reps,
-                    )
-                },
+                // The same sentence the workout screen states (N220, B245): a hold says how long, and a
+                // bodyweight set reads at the load it counted.
+                text = setSummaryText(
+                    weightGrams = set.weightGrams,
+                    assistanceGrams = set.assistanceGrams,
+                    bodyweightGrams = set.bodyweightGrams,
+                    durationSeconds = set.durationSeconds,
+                    reps = set.reps,
+                    unit = exerciseWeightUnit(set.weightUnit),
+                ),
                 style = MaterialTheme.typography.bodyLarge,
             )
             // The detail is where the full text lives (N6); the workout row only carries a marker. A
@@ -769,8 +754,10 @@ private fun EditSetDialog(
         // The exercise's own step, so the ± buttons here move the way they do in the workout this set
         // came from (ROADMAP N77, B65): the same correction made in two places must step the same.
         initialStepGrams = set.stepGrams,
-        // The set's own shape decides the field: a hold is edited as a hold (N220).
+        // The set's own shape decides the field: a hold is edited as a hold (N220), and a bodyweight
+        // movement's weight field says what it holds (B245).
         initialDurationSeconds = set.durationSeconds,
+        initialBodyweight = set.isBodyweight,
         onDismiss = onDismiss,
         onSave = { edit ->
             onUpdateSet(

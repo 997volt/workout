@@ -197,6 +197,13 @@ internal data class SetFieldTags(
 }
 
 /** The weight and reps steppers, in the order both callers read them (ROADMAP P1.3a, N59). */
+/** What the weight field is called: a bodyweight movement's holds what was added (B245). */
+@Composable
+private fun weightFieldLabel(unit: WeightUnit, bodyweight: Boolean): String = stringResource(
+    if (bodyweight) R.string.set_weight_added_label else R.string.set_weight_label,
+    unit.label(),
+)
+
 @Composable
 internal fun SetEntryNumbers(
     draft: SetEntryDraft,
@@ -214,13 +221,15 @@ internal fun SetEntryNumbers(
     tags: SetFieldTags = SetFieldTags.Logging,
     /** Whether this movement's sets are held rather than counted (ROADMAP N220). */
     timed: Boolean = false,
+    /** Whether the field holds what is *added* to the lifter's own weight (ROADMAP N219, B245). */
+    bodyweight: Boolean = false,
 ) {
     val values = draft.values(unit)
     val step = Weight.stepGramsFor(stepGrams, unit)
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         NumberStepper(
-            label = stringResource(R.string.set_weight_label, unit.label()),
+            label = weightFieldLabel(unit, bodyweight),
             testTag = tags.weight,
             increaseTag = tags.increaseWeight,
             decreaseTag = tags.decreaseWeight,

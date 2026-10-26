@@ -49,6 +49,8 @@ data class HistorySet(
     val bodyweightGrams: Long? = null,
     /** How long the set was held, or null for a counted set (ROADMAP N220). */
     val durationSeconds: Int? = null,
+    /** Whether the movement is loaded by the body, so the editor's weight field says "added" (B245). */
+    val isBodyweight: Boolean = false,
     /**
      * The role it was performed as (ROADMAP N14).
      *
@@ -274,6 +276,7 @@ class WorkoutDetailViewModel @Inject constructor(
                                     assistanceGrams = it.assistanceGrams,
                                     bodyweightGrams = it.bodyweightGrams,
                                     durationSeconds = it.durationSeconds,
+                                    isBodyweight = row.isBodyweight,
                                     setType = it.setType,
                                     weightUnit = row.weightUnit,
                                     // And the movement's own step, so correcting a past set steps the

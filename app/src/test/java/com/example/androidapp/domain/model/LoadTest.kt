@@ -62,6 +62,7 @@ class LoadTest {
             assistanceGrams = 0L,
         )
 
-        assertThat(set.totalLoadGrams).isEqualTo(95_000L)
+        assertThat(loadGrams(set.weightGrams, set.bodyweightGrams, set.assistanceGrams))
+            .isEqualTo(95_000L)
     }
 }

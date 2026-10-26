@@ -312,8 +312,8 @@ internal fun SetEditorSection(
     val set = editing ?: return
     // The live sets **above** the one being edited, in stored order — which is what a rung's anchor question is
     // asked of. The exercise is whichever one holds the row, since a row carries no back-reference to it.
-    val above = exercises
-        .firstOrNull { exercise -> exercise.sets.any { it.id == set.id } }
+    val exercise = exercises.firstOrNull { exercise -> exercise.sets.any { it.id == set.id } }
+    val above = exercise
         ?.sets
         ?.takeWhile { it.id != set.id }
         .orEmpty()
@@ -330,6 +330,10 @@ internal fun SetEditorSection(
         // and the assistance (ROADMAP B14).
         initialSetType = set.setType,
         initialAssistanceGrams = set.assistanceGrams,
+        // The set's own shape, or a hold would open as a counted set with no reps to save (N220), and the
+        // movement's own meaning, or its weight field would ask for a load the wrong way (B245).
+        initialDurationSeconds = set.durationSeconds,
+        initialBodyweight = exercise?.isBodyweight == true,
         // The write boundary's own question, asked before the tap: a rung needs a working set directly above
         // it, and this dialog now says so by not offering the role rather than by refusing the save (N145).
         offers = { role -> above.refusalForLoggingAs(role) == null },

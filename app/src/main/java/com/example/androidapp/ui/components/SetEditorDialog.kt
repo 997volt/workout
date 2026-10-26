@@ -61,6 +61,8 @@ fun SetEditorDialog(
     initialStepGrams: Long? = null,
     /** The hold this set was, or null for a counted set (ROADMAP N220). */
     initialDurationSeconds: Int? = null,
+    /** Whether the movement is loaded by the body, so the weight field says "added" (ROADMAP N219, B245). */
+    initialBodyweight: Boolean = false,
     /**
      * Which roles this position can take, answered by the caller that holds the exercise's rows (N145).
      *
@@ -105,6 +107,7 @@ fun SetEditorDialog(
                 stepGrams = initialStepGrams,
                 offers = offers,
                 timed = draft.timed,
+                bodyweight = initialBodyweight,
             )
         },
         confirmButton = {
@@ -141,6 +144,7 @@ private fun SetEditingFields(
     stepGrams: Long?,
     offers: (SetType) -> Boolean,
     timed: Boolean,
+    bodyweight: Boolean,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // **The same gate the log path applies** (N145). This picker offered Drop and Cluster at every
@@ -154,6 +158,7 @@ private fun SetEditingFields(
         )
         SetEntryNumbers(
             timed = timed,
+            bodyweight = bodyweight,
             draft = draft,
             onDraftChange = onDraftChange,
             unit = unit,
