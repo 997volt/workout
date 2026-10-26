@@ -767,13 +767,16 @@ the rule; that one argues it.
   start**. Starting empty moved into the body rather than being duplicated there, because the same action
   twice on one screen is what N42 removed the last time it happened.
 
-- **The day's block leads when it holds no workout, and the day's record row is never absent** (B182). The
-  ways-in sit above a *scheduled* day because that day's work belongs under the thumb (N115, N124) — but with
-  nothing scheduled there is no work to put there, and four full-width cards pushed the day's line and its
-  record row off a compact screen, which read as the row going missing. So the block leads when the plan is
-  empty and stays at the foot when it is not. The record row itself no longer disappears once the day is
-  written: it opens **that entry** for editing, because the blank daily form's save replaces the day through
-  `findOnDay` — hiding the row was the safer rule while a blank form was the only thing it could open.
+- **The day's block sits at the foot, always, and the day's record row is never absent** (B182, amended by
+  B239). The ways-in sit above the day because that day's work belongs under the thumb (N115, N124), and the
+  record row and the "nothing scheduled" line are part of that block rather than a header over the
+  destinations: a lifter who asks "what am I training" and "what did I weigh" finds both in one place on any
+  day. B182 led with the block when the plan was empty, because four full-width cards pushed the day's line
+  and its record row off a compact screen and that read as the row going missing — but it made the same two
+  rows change ends with the calendar, so the block is at the foot again and the scroll is the cost. The
+  record row itself no longer disappears once the day is written: it opens **that entry** for editing,
+  because the blank daily form's save replaces the day through `findOnDay` — hiding the row was the safer
+  rule while a blank form was the only thing it could open.
 
 ## The app's data
 

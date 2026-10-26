@@ -37,6 +37,17 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   chip, and the hidden row no longer carries its own *Hidden* marker, because a hidden row never stands
   beside a live one any more.
 
+### Fixed
+
+- **The day's block keeps its place at the foot of the main screen** (B239). A day with nothing scheduled
+  led with the no-plan line and *Record today's measurements*, while a day with a workout kept them under
+  the ways in (B182) — so the two rows a lifter checks most moved from the top of the screen to the bottom
+  as the calendar changed. The day's block now always comes last: the workout, the rest line and the record
+  row in one place, under the ways in. What that costs is the compact-screen reachability B182 bought — on a
+  short screen the day's rows are a scroll away — and the trade is deliberate, because a row that moves is
+  worse than one that is consistently below the fold. The rest of B182 stands: the record row is never
+  absent, and it opens the day's own entry rather than a blank form.
+
 ## [2.15] — 2026-10-25 (versionCode 35)
 
 ### Added
