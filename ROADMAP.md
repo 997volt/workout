@@ -17,7 +17,17 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The post-2.14 review's findings (B222–B238) are fixed and in [CHANGELOG.md](CHANGELOG.md).
+**The templates list keeps what was put away out of sight.** A delete hides the row rather than removing it — the
+row, its planned exercises and its sets stay, which is what lets a backup written before the delete restore it — yet
+no screen can un-hide one: Templates filters it out, a program's day list joins only live workouts so the day it
+named goes with it, and a program document never carries one. Hiding is the reversible version of the same move, and
+its filter shows the hidden ones *beside* the live ones rather than instead of them. Both ways back stay quiet,
+because putting a workout away should still read as a decision.
+
+| # | What it changes | Why now |
+| --- | --- | --- |
+| N216 | **A deleted workout can be restored.** The control sits where N214's hidden filter already does: a second filter chip the list shows only when something is deleted — *Deleted (n)* — which draws only the soft-deleted workouts, each with *Restore*, rather than a menu entry that advertises the state on every visit. The write is clearing `deletedAt` on the workout alone: its planned exercises and sets were never deleted, and a program day whose slot survived reappears with no second write because the day list joins the workout again. It returns as it was, hidden included. A slot removed on its own is not rescheduled with it, and nothing is offered automatically — undoing a delete the lifter meant stays the backup's job. | A deleted plan was wanted back, and it was not deleted deliberately enough to reach for a backup written before it. |
+| N217 | **The hidden filter draws only the hidden workouts.** *Hidden (n)* is a reveal today: it adds the hidden rows to every live one (N214), so the list a lifter opened to see what they put away is longer than the one they left. Make the chips modes — *All*, *Hidden (n)* and, with N216, *Deleted (n)* — each drawing its group alone: the counts read off the whole library, so a group that empties while it is selected falls back to *All* rather than leaving a blank list. N214's mark on a hidden row, and the "every workout is hidden" empty state, stop earning their place, because a hidden row no longer stands beside a live one. | The filter meant to narrow the list answers with a longer one, and N216's chip needs the same rule as its neighbour. |
 
 ## Later — decided, and not being started
 
