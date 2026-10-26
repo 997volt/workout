@@ -162,7 +162,7 @@ class PreferencesSettingsRepositoryTest {
         repository.setBackupEnabled(true)
         repository.setBackupSchedule(BackupSchedule.MONTHLY)
         repository.setBackupFolder(folder)
-        repository.recordBackupResult(at, failed = false)
+        repository.recordBackupResult(at = at, attemptAt = at, failed = false)
 
         val stored = repository.observeBackupSettings().first()
         assertThat(stored.enabled).isTrue()
@@ -199,9 +199,9 @@ class PreferencesSettingsRepositoryTest {
         // with the moment the first happened would lose the one the user needs.
         val repository = repository()
         val at = Instant.parse("2026-10-26T10:00:00Z")
-        repository.recordBackupResult(at, failed = false)
+        repository.recordBackupResult(at = at, attemptAt = at, failed = false)
 
-        repository.recordBackupResult(at = null, failed = true)
+        repository.recordBackupResult(at = null, attemptAt = at, failed = true)
 
         val stored = repository.observeBackupSettings().first()
         assertThat(stored.failed).isTrue()

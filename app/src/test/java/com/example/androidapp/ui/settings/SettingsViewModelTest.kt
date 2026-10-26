@@ -233,6 +233,10 @@ private class FakeSettingsRepository(
         return DataResult.Success(Unit)
     }
 
-    override suspend fun recordBackupResult(at: Instant?, failed: Boolean): DataResult<Unit> =
+    override suspend fun recordBackupResult(
+        at: Instant?,
+        attemptAt: Instant,
+        failed: Boolean,
+    ): DataResult<Unit> =
         DataResult.Success(Unit)
 }

@@ -89,7 +89,7 @@ class AutomaticBackup @Inject constructor(
                     // The record's own failure is not reported as the backup's: the file is in the folder,
                     // which is what an automatic backup promises. A lost timestamp costs one extra copy next
                     // launch, and the prune keeps that bounded.
-                    settings.recordBackupResult(now, failed = false)
+                    settings.recordBackupResult(at = now, attemptAt = now, failed = false)
                     BackupRun.Written(written)
                 } else {
                     failed(DataError.Storage(IllegalStateException("the backup file was not written")))
@@ -105,7 +105,7 @@ class AutomaticBackup @Inject constructor(
      * fails, the file situation it describes is unchanged, and the next launch retries the backup itself.
      */
     private suspend fun failed(error: DataError): BackupRun {
-        settings.recordBackupResult(at = null, failed = true)
+        settings.recordBackupResult(at = null, attemptAt = time.now(), failed = true)
         return BackupRun.Failed(error)
     }
 }
@@ -143,7 +143,16 @@ internal fun isBackupDue(settings: BackupSettings, now: Instant): Boolean {
     val last = settings.lastSuccessAt
     // Never written, or written "after" now because the clock moved back (B255): due either way, since a
     // future timestamp would otherwise stop backups silently until real time caught up with it.
-    return last == null || now.isBefore(last) || !now.isBefore(last.plus(settings.schedule.period))
+    val successDue = last == null || now.isBefore(last) || !now.isBefore(last.plus(settings.schedule.period))
+    // **A failure waits for the period too** (B249). The export is the whole database, so retrying it on
+    // every foregrounding is work nobody asked for; the folder that is gone stays gone until someone
+    // fixes it, and the settings row already says when a copy last landed.
+    val attemptDue = settings.lastAttemptAt.let { tried ->
+        tried == null ||
+            now.isBefore(tried) ||
+            !now.isBefore(tried.plus(settings.schedule.period))
+    }
+    return successDue && attemptDue
 }
 
 /** The file this launch would write. */

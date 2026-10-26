@@ -12,6 +12,7 @@ import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.ImportSummary
 import com.example.androidapp.platform.BackupFolderFiles
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -147,16 +148,25 @@ class AutomaticBackupTest {
     }
 
     @Test
-    fun aRefusedWrite_isRecorded_andThePeriodStaysDue() = runTest {
-        // A revoked grant or a deleted folder is the realistic failure. It must not record a success: the next
-        // launch has to try again, not wait a week.
+    fun aRefusedWrite_isRecorded_andRetriedAtThePeriodsPace() = runTest {
+        // A revoked grant or a deleted folder is the realistic failure. It must not record a success — and
+        // it must not export the whole database on every foregrounding either (B249): the attempt is the
+        // retry's clock, so the next try is a period later rather than the next time the app opens.
         enable()
         files.refusing = true
 
         assertThat(backup().runIfDue()).isInstanceOf(BackupRun.Failed::class.java)
 
-        assertThat(settings.observeBackupSettings().first().failed).isTrue()
-        assertThat(settings.observeBackupSettings().first().lastSuccessAt).isNull()
+        val stored = settings.observeBackupSettings().first()
+        assertThat(stored.failed).isTrue()
+        assertThat(stored.lastSuccessAt).isNull()
+        assertWithMessage("the attempt is what the retry waits on").that(stored.lastAttemptAt).isEqualTo(now)
+
+        clock = now.plus(Duration.ofDays(1))
+        assertWithMessage("a day later is not a period").that(backup().runIfDue()).isEqualTo(BackupRun.NotDue)
+
+        clock = now.plus(Duration.ofDays(7))
+        assertThat(backup().runIfDue()).isInstanceOf(BackupRun.Failed::class.java)
     }
 
     @Test
@@ -166,7 +176,7 @@ class AutomaticBackupTest {
         backup().runIfDue()
 
         files.refusing = false
-        clock = now.plus(Duration.ofDays(1))
+        clock = now.plus(Duration.ofDays(7))
         backup().runIfDue()
 
         val stored = settings.observeBackupSettings().first()

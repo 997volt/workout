@@ -301,19 +301,26 @@ class PreferencesSettingsRepository @Inject constructor(
         }
     }
 
-    override suspend fun recordBackupResult(at: Instant?, failed: Boolean): DataResult<Unit> =
-        withContext(Dispatchers.IO) {
-            preferences.edit(commit = true) {
-                if (at != null) putLong(KEY_BACKUP_LAST_SUCCESS, at.toEpochMilli())
-                putBoolean(KEY_BACKUP_LAST_FAILED, failed)
-            }
-            val stored = currentBackupSettings()
-            if (stored.failed == failed && (at == null || stored.lastSuccessAt == at)) {
-                DataResult.Success(Unit)
-            } else {
-                DataResult.Failure(DataError.Storage(IllegalStateException("the backup result was not stored")))
-            }
+    override suspend fun recordBackupResult(
+        at: Instant?,
+        attemptAt: Instant,
+        failed: Boolean,
+    ): DataResult<Unit> = withContext(Dispatchers.IO) {
+        preferences.edit(commit = true) {
+            if (at != null) putLong(KEY_BACKUP_LAST_SUCCESS, at.toEpochMilli())
+            putLong(KEY_BACKUP_LAST_ATTEMPT, attemptAt.toEpochMilli())
+            putBoolean(KEY_BACKUP_LAST_FAILED, failed)
         }
+        val stored = currentBackupSettings()
+        val confirmed = stored.failed == failed &&
+            stored.lastAttemptAt == attemptAt &&
+            (at == null || stored.lastSuccessAt == at)
+        if (confirmed) {
+            DataResult.Success(Unit)
+        } else {
+            DataResult.Failure(DataError.Storage(IllegalStateException("the backup result was not stored")))
+        }
+    }
 
     /**
      * The stored backup answer, defaulted field by field.
@@ -326,17 +333,15 @@ class PreferencesSettingsRepository @Inject constructor(
     private fun currentBackupSettings(): BackupSettings {
         val uri = preferences.getString(KEY_BACKUP_FOLDER_URI, null)
         val label = preferences.getString(KEY_BACKUP_FOLDER_LABEL, null)
-        val lastSuccess = if (preferences.contains(KEY_BACKUP_LAST_SUCCESS)) {
-            Instant.ofEpochMilli(preferences.getLong(KEY_BACKUP_LAST_SUCCESS, 0L))
-        } else {
-            null
-        }
+        val lastSuccess = preferences.instant(KEY_BACKUP_LAST_SUCCESS)
+        val lastAttempt = preferences.instant(KEY_BACKUP_LAST_ATTEMPT)
         return BackupSettings(
             enabled = preferences.getBoolean(KEY_BACKUP_ENABLED, false),
             schedule = BackupSchedule.named(preferences.getString(KEY_BACKUP_SCHEDULE, null))
                 ?: BackupSchedule.DEFAULT,
             folder = if (uri.isNullOrBlank()) null else BackupFolder(uri = uri, label = label.orEmpty()),
             lastSuccessAt = lastSuccess,
+            lastAttemptAt = lastAttempt,
             failed = preferences.getBoolean(KEY_BACKUP_LAST_FAILED, false),
         )
     }
@@ -409,6 +414,7 @@ class PreferencesSettingsRepository @Inject constructor(
         const val KEY_BACKUP_FOLDER_URI = "backup_folder_uri"
         const val KEY_BACKUP_FOLDER_LABEL = "backup_folder_label"
         const val KEY_BACKUP_LAST_SUCCESS = "backup_last_success"
+        const val KEY_BACKUP_LAST_ATTEMPT = "backup_last_attempt"
         const val KEY_BACKUP_LAST_FAILED = "backup_last_failed"
 
         /** The three keys that together are one value. */
@@ -421,6 +427,7 @@ class PreferencesSettingsRepository @Inject constructor(
             KEY_BACKUP_FOLDER_URI,
             KEY_BACKUP_FOLDER_LABEL,
             KEY_BACKUP_LAST_SUCCESS,
+            KEY_BACKUP_LAST_ATTEMPT,
             KEY_BACKUP_LAST_FAILED,
         )
     }
@@ -512,3 +519,7 @@ internal fun moveLegacyGoals(db: SupportSQLiteDatabase, context: Context, movedA
 private const val INSERT_LEGACY_GOAL =
     "INSERT OR IGNORE INTO metric_goals " +
         "(id, metricId, kind, value, startedAt, createdAt, updatedAt) VALUES (?, ?, ?, ?, NULL, ?, ?)"
+
+/** A stored instant, or null when the key was never written. */
+private fun SharedPreferences.instant(key: String): Instant? =
+    if (contains(key)) Instant.ofEpochMilli(getLong(key, 0L)) else null

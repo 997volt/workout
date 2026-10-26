@@ -3092,7 +3092,11 @@ private class FakeSettingsRepository(
     override suspend fun setBackupSchedule(schedule: BackupSchedule): DataResult<Unit> =
         DataResult.Success(Unit)
     override suspend fun setBackupFolder(folder: BackupFolder?): DataResult<Unit> = DataResult.Success(Unit)
-    override suspend fun recordBackupResult(at: Instant?, failed: Boolean): DataResult<Unit> =
+    override suspend fun recordBackupResult(
+        at: Instant?,
+        attemptAt: Instant,
+        failed: Boolean,
+    ): DataResult<Unit> =
         DataResult.Success(Unit)
 }
 

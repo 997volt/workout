@@ -33,6 +33,14 @@ data class BackupSettings(
     val folder: BackupFolder? = null,
     /** When a backup last succeeded, or null for never. */
     val lastSuccessAt: Instant? = null,
+    /**
+     * When a backup was last attempted, success or failure — the retry's own clock (B249).
+     *
+     * The period measures *copies*, and a failure does not produce one, so due-ness alone would retry a
+     * broken folder on every foregrounding, each time running the whole export. This is the brake: an attempt
+     * is made at the period's pace, however the last one ended.
+     */
+    val lastAttemptAt: Instant? = null,
     /** Whether the last attempt failed. Cleared by the next success. */
     val failed: Boolean = false,
 )

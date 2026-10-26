@@ -132,12 +132,15 @@ interface SettingsRepository {
     suspend fun setBackupFolder(folder: BackupFolder?): DataResult<Unit>
 
     /**
-     * Records how an attempt ended: [at] is when one succeeded, or null for a failure.
+     * Records how an attempt ended: [at] is when one succeeded, or null for a failure, and [attemptAt] is
+     * when it was tried either way.
      *
      * A failure leaves the last success alone — the point of the row is "when did a copy last land", and
-     * overwriting that with the moment it stopped working would answer a different question.
+     * overwriting that with the moment it stopped working would answer a different question. The attempt is
+     * recorded for both endings because it is the retry's clock (B249): a folder that is gone is tried at the
+     * period's pace rather than on every launch.
      */
-    suspend fun recordBackupResult(at: Instant?, failed: Boolean): DataResult<Unit>
+    suspend fun recordBackupResult(at: Instant?, attemptAt: Instant, failed: Boolean): DataResult<Unit>
 
     companion object {
         /**
