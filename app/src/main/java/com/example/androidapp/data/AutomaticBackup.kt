@@ -9,6 +9,8 @@ import com.example.androidapp.domain.repository.BackupRepository
 import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.platform.BackupFolderFiles
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -50,7 +52,16 @@ class AutomaticBackup @Inject constructor(
     private val time: TimeSource,
 ) {
 
-    suspend fun runIfDue(): BackupRun {
+    /**
+     * One run at a time (B248).
+     *
+     * `onStart` fires on every foregrounding and the activity's scope outlives a stop, so two runs can overlap
+     * — a slow provider on a large database is the case where they do. The mutex costs nothing when they do
+     * not, and turns "two writes to one folder" into "a second read of the settings", which is a no-op.
+     */
+    private val running = Mutex()
+
+    suspend fun runIfDue(): BackupRun = running.withLock {
         val current = settings.observeBackupSettings().first()
         val folder = current.folder
         val now = time.now()
@@ -69,14 +80,20 @@ class AutomaticBackup @Inject constructor(
         return when (val exported = backup.export()) {
             is DataResult.Failure -> failed(exported.error)
 
-            is DataResult.Success -> if (files.write(folder.uri, fileName, exported.data)) {
-                // Pruned only after the new file is on disk: a folder that cannot take the new copy must not
-                // also lose an old one, which is the one way this feature could make a user worse off.
-                backupsToDelete(files.names(folder.uri)).forEach { files.delete(folder.uri, it) }
-                settings.recordBackupResult(now, failed = false)
-                BackupRun.Written(fileName)
-            } else {
-                failed(DataError.Storage(IllegalStateException("the backup file was not written")))
+            is DataResult.Success -> {
+                val written = files.write(folder.uri, fileName, exported.data)
+                if (written != null) {
+                    // Pruned only after the new file is on disk: a folder that cannot take the new copy must
+                    // not also lose an old one, which is the one way this feature could make a user worse off.
+                    backupsToDelete(files.names(folder.uri)).forEach { files.delete(folder.uri, it) }
+                    // The record's own failure is not reported as the backup's: the file is in the folder,
+                    // which is what an automatic backup promises. A lost timestamp costs one extra copy next
+                    // launch, and the prune keeps that bounded.
+                    settings.recordBackupResult(now, failed = false)
+                    BackupRun.Written(written)
+                } else {
+                    failed(DataError.Storage(IllegalStateException("the backup file was not written")))
+                }
             }
         }
     }
@@ -100,18 +117,33 @@ private const val BACKUP_PREFIX = "workout-backup-"
 private const val BACKUP_SUFFIX = ".json"
 
 /**
+ * A name this app writes, and nothing else: the stamp, an optional `-2` collision suffix, and the extension.
+ *
+ * Prefix and suffix alone were too loose (B255): the changelog promises that only files this app named are
+ * ever deleted, and `workout-backup-notes.json` is a name a person could type.
+ */
+private val BACKUP_NAME = Regex("""^workout-backup-\d{4}-\d{2}-\d{2}-\d{6}-\d{3}(-\d+)?\.json$""")
+
+/**
  * The name a backup takes: the instant in UTC, so names sort the way time does.
  *
  * UTC rather than the device's zone on purpose — the sort is what prunes the right files, and a device that
  * changes zone must not reorder its own history. The name is a timestamp, not a promise about a local date.
  */
 private val FILE_STAMP: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss").withZone(ZoneOffset.UTC)
+    DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss-SSS").withZone(ZoneOffset.UTC)
 
-/** Whether the period has run out, or nothing has ever been written (ROADMAP N218). */
+/**
+ * Whether the period has run out, or nothing has ever been written (ROADMAP N218).
+ *
+ * **A clock that went backwards is due** (B255): `lastSuccessAt` in the future would otherwise stop backups
+ * silently until real time caught up with a timestamp nobody can reset from the app.
+ */
 internal fun isBackupDue(settings: BackupSettings, now: Instant): Boolean {
-    val last = settings.lastSuccessAt ?: return true
-    return !now.isBefore(last.plus(settings.schedule.period))
+    val last = settings.lastSuccessAt
+    // Never written, or written "after" now because the clock moved back (B255): due either way, since a
+    // future timestamp would otherwise stop backups silently until real time caught up with it.
+    return last == null || now.isBefore(last) || !now.isBefore(last.plus(settings.schedule.period))
 }
 
 /** The file this launch would write. */
@@ -124,6 +156,6 @@ internal fun backupFileName(now: Instant): String = "$BACKUP_PREFIX${FILE_STAMP.
  * was in it would be a worse bug than the one pruning solves.
  */
 internal fun backupsToDelete(names: List<String>): List<String> =
-    names.filter { it.startsWith(BACKUP_PREFIX) && it.endsWith(BACKUP_SUFFIX) }
+    names.filter { BACKUP_NAME.matches(it) }
         .sortedDescending()
         .drop(KEEP_BACKUPS)

@@ -175,6 +175,42 @@ class AutomaticBackupTest {
     }
 
     @Test
+    fun theWrittenFile_isTheExportItself() = runTest {
+        // The claim the feature rests on: the file in the folder is a backup somebody can import. Asserting
+        // the name alone would pass for a file holding "hello".
+        enable()
+
+        backup(FakeBackupRepository(text = "{\"schemaVersion\":6}")).runIfDue()
+
+        assertThat(files.files.values).containsExactly("{\"schemaVersion\":6}")
+    }
+
+    @Test
+    fun aFileThatMerelyStartsWithOurName_isKept() = runTest {
+        // B255: the prune matched a prefix and a suffix, so "workout-backup-notes.json" — a name a person
+        // could type — was deleted from their own folder.
+        enable()
+        files.files["workout-backup-notes.json"] = "not ours"
+        (1..5).forEach { files.files[backupFileName(now.minus(Duration.ofDays(it.toLong())))] = "old" }
+
+        backup().runIfDue()
+
+        assertThat(files.files).containsKey("workout-backup-notes.json")
+    }
+
+    @Test
+    fun aClockThatWentBackwards_isDue() = runTest {
+        // B255: lastSuccess in the future stopped backups silently until real time caught up, with no way
+        // to reset it from the app.
+        enable()
+        backup().runIfDue()
+
+        clock = now.minus(Duration.ofDays(1))
+
+        assertThat(backup().runIfDue()).isInstanceOf(BackupRun.Written::class.java)
+    }
+
+    @Test
     fun onlyTheNewestFive_areKept() = runTest {
         // The folder is the user's, and a backup that filled it one file a week forever is the feature becoming
         // a problem. Five is the number the roadmap names.
@@ -219,10 +255,18 @@ private class FakeBackupFiles : BackupFolderFiles {
     val files = linkedMapOf<String, String>()
     var refusing = false
 
-    override suspend fun write(treeUri: String, fileName: String, text: String): Boolean {
-        if (refusing) return false
-        files[fileName] = text
-        return true
+    override suspend fun write(treeUri: String, fileName: String, text: String): String? {
+        if (refusing) return null
+        // A taken name is written beside, as the SAF port does (B248) — the fake models the collision so a
+        // test can see the app report the name that actually landed.
+        var name = fileName
+        var attempt = 2
+        while (name in files) {
+            name = fileName.removeSuffix(".json") + "-" + attempt + ".json"
+            attempt++
+        }
+        files[name] = text
+        return name
     }
 
     override suspend fun names(treeUri: String): List<String> = files.keys.toList()
@@ -231,12 +275,15 @@ private class FakeBackupFiles : BackupFolderFiles {
 }
 
 /** The database's own answer, chosen by the test: a JSON document, or the reason there is none. */
-private class FakeBackupRepository(private val failing: Boolean = false) : BackupRepository {
+private class FakeBackupRepository(
+    private val failing: Boolean = false,
+    private val text: String = """{"schemaVersion":1}""",
+) : BackupRepository {
 
     override suspend fun export(): DataResult<String> = if (failing) {
         DataResult.Failure(DataError.Storage(IllegalStateException("the database could not be read")))
     } else {
-        DataResult.Success("""{"schemaVersion":1}""")
+        DataResult.Success(text)
     }
 
     override suspend fun import(text: String): DataResult<ImportSummary> =

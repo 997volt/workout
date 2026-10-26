@@ -860,7 +860,7 @@
          settings row could not back up. -->
     <string name="settings_backup_title">Automatic backup</string>
     <string name="settings_backup_enable">Back up automatically</string>
-    <string name="settings_backup_enable_hint">A copy of everything is written to a folder you choose, the next time the app is opened once the period has run out. Nothing leaves the device.</string>
+    <string name="settings_backup_enable_hint">A copy of everything is written to a folder you choose, the next time the app is opened once the period has run out. The app has no network access of its own; a folder another app syncs will carry the copy off the device.</string>
     <string name="settings_backup_schedule">How often</string>
     <string name="settings_backup_daily">Daily</string>
     <string name="settings_backup_weekly">Weekly</string>

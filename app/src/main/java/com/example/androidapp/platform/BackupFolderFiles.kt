@@ -20,8 +20,14 @@ import javax.inject.Inject
  */
 interface BackupFolderFiles {
 
-    /** Writes [text] as [fileName] in the tree, answering whether it landed. */
-    suspend fun write(treeUri: String, fileName: String, text: String): Boolean
+    /**
+     * Writes [text] as [fileName] in the tree, answering the name it landed under, or null on failure.
+     *
+     * The answer is a name rather than a boolean because a name may already be taken (B248): the folder is
+     * shared, and reopening an existing document would truncate the copy that is already there. The
+     * implementation picks a free name beside it and says which one it used.
+     */
+    suspend fun write(treeUri: String, fileName: String, text: String): String?
 
     /** Every display name in the tree, in provider order. */
     suspend fun names(treeUri: String): List<String>
@@ -42,34 +48,76 @@ class SafBackupFolderFiles @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : BackupFolderFiles {
 
-    override suspend fun write(treeUri: String, fileName: String, text: String): Boolean = try {
+    override suspend fun write(treeUri: String, fileName: String, text: String): String? = try {
         withContext(Dispatchers.IO) {
             val tree = treeUri.toUri()
             val children = DocumentsContract.buildChildDocumentsUriUsingTree(
                 tree,
                 DocumentsContract.getTreeDocumentId(tree),
             )
-            val existing = documentNamed(children, fileName)
-            val document = existing ?: DocumentsContract.createDocument(
+            // **Never reopen a backup** (B248). An existing document is not the one to write: opening it
+            // would truncate the copy already in the folder, and two writers would interleave. The name is
+            // taken, so the copy lands beside it.
+            val name = freeName(children, fileName)
+            val document = DocumentsContract.createDocument(
                 context.contentResolver,
                 children,
                 JSON_MIME_TYPE,
-                fileName,
+                name,
             )
-            document?.let { uri ->
-                context.contentResolver.openOutputStream(uri)?.use { stream ->
-                    stream.write(text.toByteArray())
-                    true
-                } ?: false
+            val landed = document?.let { uri ->
+                try {
+                    context.contentResolver.openOutputStream(uri)?.use { stream ->
+                        stream.write(text.toByteArray())
+                        true
+                    } ?: false
+                } catch (_: Throwable) {
+                    // A half-written file must not be left looking like a backup. Deleting it is the only
+                    // cleanup this port can do, and failing to delete is the failure it already reports.
+                    runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
+                    false
+                }
             } ?: false
+            if (landed) name else null
         }
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (_: Throwable) {
         // A provider that went away, a folder the user deleted, a revoked grant: all one answer here, and the
         // settings row says which, rather than three failure types nobody can act on differently.
-        false
+        null
     }
+
+    /**
+     * A name in [children] that nothing holds: [fileName], or the same name with `-2`, `-3` … appended.
+     *
+     * A second-resolution stamp made two writes in one second the same file; the same-instant case is still
+     * possible across devices and clock changes, so the folder is asked rather than assumed (B248).
+     */
+    private fun freeName(children: Uri, fileName: String): String {
+        val taken = namesIn(children).toSet()
+        if (fileName !in taken) return fileName
+        val base = fileName.removeSuffix(JSON_SUFFIX)
+        var attempt = 2
+        while ("$base-$attempt$JSON_SUFFIX" in taken) attempt++
+        return "$base-$attempt$JSON_SUFFIX"
+    }
+
+    /** Every display name in one children collection. */
+    private fun namesIn(children: Uri): List<String> =
+        context.contentResolver.query(
+            children,
+            arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+            null,
+            null,
+            null,
+        )?.use { cursor ->
+            buildList {
+                while (cursor.moveToNext()) {
+                    cursor.getString(0)?.let { add(it) }
+                }
+            }
+        }.orEmpty()
 
     override suspend fun names(treeUri: String): List<String> = try {
         withContext(Dispatchers.IO) {
@@ -140,5 +188,6 @@ class SafBackupFolderFiles @Inject constructor(
 
     private companion object {
         const val JSON_MIME_TYPE = "application/json"
+        const val JSON_SUFFIX = ".json"
     }
 }
