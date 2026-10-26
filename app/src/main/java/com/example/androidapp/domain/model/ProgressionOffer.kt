@@ -77,6 +77,8 @@ data class ProgressionPerformance(
     val assistanceGrams: Long = 0L,
     val rpeHalves: Int? = null,
     val role: SetType = SetType.NORMAL,
+    /** How long the set was held, or null for a counted set (ROADMAP N220, B243). */
+    val durationSeconds: Int? = null,
 )
 
 /**
@@ -96,6 +98,14 @@ enum class ProgressionMiss {
 
     /** The set names no reps, so there is nothing to check the work against or to raise. */
     NO_REP_TARGET,
+
+    /**
+     * The set was held, and a hold is not measured in reps (ROADMAP N220, B243).
+     *
+     * The plan's rep target does not apply to it — a timed movement inside a plan ignores that target — so
+     * this says why no step was earned rather than reporting the hold as "zero reps done".
+     */
+    HOLD,
 
     /** The exercise names no target RPE, so the app cannot tell whether there was room in hand. */
     NO_TARGET_RPE,
@@ -278,6 +288,7 @@ private fun ProgressionPlanSet.answeredMiss(done: ProgressionPerformance?): Prog
     val rpeTarget = targetRpeHalves
     return when {
         done == null -> ProgressionMiss.NOT_DONE
+        done.durationSeconds != null -> ProgressionMiss.HOLD
         reps == null -> ProgressionMiss.NO_REP_TARGET
         rpeTarget == null -> ProgressionMiss.NO_TARGET_RPE
         done.rpeHalves == null -> ProgressionMiss.UNRATED
@@ -304,6 +315,10 @@ private fun ProgressionPlanSet.offerFor(
     val ceiling = targetRepsMax
     val load = addedWeightGrams?.let { ProgressionStep(it, it + stepGrams) }
     return when {
+        // A hold has no rep target to move and no ceiling to climb (B243): the plan's rep target does not
+        // apply to a timed set, so it earns no step.
+        done.durationSeconds != null -> null
+
         ceiling == null -> ProgressionOffer(
             set = this,
             reps = ProgressionStep(reps, reps + REPS_PER_STEP),

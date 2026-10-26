@@ -39,6 +39,8 @@ data class PerformedSetSpec(
      * is the whole of what this comparison had to decide.
      */
     val rpeHalves: Int? = null,
+    /** How long the set was held, or null for a counted set (ROADMAP N220, B243). */
+    val durationSeconds: Int? = null,
 )
 
 /**
@@ -109,6 +111,14 @@ data class PlanComparison(
     val performedTopAssistanceGrams: Long? = null,
     /** Performed minus prescribed on the heaviest working set, or null if either is unknown. */
     val topSetDeltaGrams: Long?,
+    /**
+     * The last hold the exercise performed, in seconds, or null when it was counted (ROADMAP N220, B243).
+     *
+     * A hold states a duration instead of reps, so the two lines that read reps — the performed shape and
+     * the plan's rep target — say nothing true about it. This is the fact that lets them say the hold
+     * instead, and it is what tells the dialog the plan's rep target is ignored here rather than missed.
+     */
+    val performedHoldSeconds: Int? = null,
     /** The plan's one effort for this exercise, in half-points, or null (ROADMAP N59, N131). */
     val prescribedRpeHalves: Int? = null,
     /**
@@ -220,6 +230,7 @@ private fun comparisonOf(
             performedTop - prescribedTop
         },
         prescribedRpeHalves = targetRpeHalves,
+        performedHoldSeconds = performedWork.mapNotNull { it.durationSeconds }.lastOrNull(),
         performedAverageRpeHalves = performedWork.averageRpeHalves(),
         // Null unless both sides state one, for the reason the weight delta is: a difference from
         // nothing is not a comparison.

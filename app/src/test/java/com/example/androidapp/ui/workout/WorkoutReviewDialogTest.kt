@@ -40,14 +40,53 @@ class WorkoutReviewDialogTest {
     private fun review(
         comparisons: List<PlanComparison> = emptyList(),
         ratings: List<ExerciseRating> = emptyList(),
+        totalSets: Int = 8,
+        totalReps: Int = 40,
+        totalHolds: Int = 0,
     ) = WorkoutReview(
         note = null,
         readinessNote = null,
-        totalSets = 8,
-        totalReps = 40,
+        totalSets = totalSets,
+        totalHolds = totalHolds,
+        totalReps = totalReps,
         totalVolumeGrams = 1_000_000L,
         ratings = ratings,
         comparisons = comparisons,
+    )
+
+    @Test
+    fun aHold_readsAsItsDuration_notAsZeroReps() {
+        // B243: the line a lifter saw after a carry said "3×0 at 100 kg" — the "0 × 45" lie the feature
+        // removed, reappearing at the finish.
+        show(
+            review(
+                comparisons = listOf(
+                    holdComparison(),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText("3×0:45", substring = true).assertExists()
+        composeTestRule.onNodeWithText("3×0 at", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun aSessionOfHolds_countsHolds_inTheTotals() {
+        show(review(totalSets = 3, totalReps = 0, totalHolds = 3))
+
+        composeTestRule.onNodeWithText("Sets 3 · holds 3 · 1000 kg").assertExists()
+    }
+
+    private fun holdComparison() = PlanComparison(
+        name = "Carry",
+        prescribedSets = 3,
+        performedSets = 3,
+        prescribedReps = 5,
+        performedReps = 0,
+        prescribedTopWeightGrams = 100_000L,
+        performedTopWeightGrams = 100_000L,
+        topSetDeltaGrams = 0L,
+        performedHoldSeconds = 45,
     )
 
     @Test

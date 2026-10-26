@@ -242,6 +242,19 @@ class ProgressionOfferTest {
     }
 
     @Test
+    fun aHold_earnsNoStep_andSaysWhy() {
+        // B243: a timed movement's plan target is in reps, which a hold does not have. The old rule read
+        // its zero reps as "5 reps short" and offered nothing without saying why.
+        val set = singleSet(
+            planned = listOf(planSet(repsMin = 5, repsMax = 8)),
+            performed = listOf(done(reps = 0, weight = 0L, durationSeconds = 45)),
+        )
+
+        assertThat(set.offer).isNull()
+        assertThat(set.miss).isEqualTo(ProgressionMiss.HOLD)
+    }
+
+    @Test
     fun aBodyweightSetAtItsCeiling_isToppedOut() {
         // No rep is left inside the range and there is no weight to raise, so the app says exactly
         // that rather than offering a rep past the plan (N74).
@@ -483,5 +496,12 @@ class ProgressionOfferTest {
         rpe: Int? = 7,
         role: SetType = SetType.NORMAL,
         weight: Long = 100_000L,
-    ) = ProgressionPerformance(reps = reps, weightGrams = weight, rpeHalves = rpe, role = role)
+        durationSeconds: Int? = null,
+    ) = ProgressionPerformance(
+        reps = reps,
+        weightGrams = weight,
+        rpeHalves = rpe,
+        role = role,
+        durationSeconds = durationSeconds,
+    )
 }

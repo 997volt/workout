@@ -1402,6 +1402,8 @@ data class WorkoutReview(
     val note: String?,
     val readinessNote: String?,
     val totalSets: Int,
+    /** How many of them were holds rather than counted sets (ROADMAP N220, B243). */
+    val totalHolds: Int = 0,
     val totalReps: Int,
     val totalVolumeGrams: Long,
     /** Only the exercises that were rated — an unrated one is not a zero. */
@@ -1418,6 +1420,47 @@ data class ExerciseRating(
     val joints: List<JointPain>,
 )
 
+/** One performed exercise as the comparison reads it. */
+private fun SessionExerciseRow.toActual(): ExerciseActual = ExerciseActual(
+    exerciseId = exerciseId,
+    name = name,
+    // The row already carries its exercise's effective unit (N64).
+    weightUnit = weightUnit,
+    sets = sets.map {
+        PerformedSetSpec(
+            role = it.setType,
+            weightGrams = it.weightGrams,
+            assistanceGrams = it.assistanceGrams,
+            reps = it.reps,
+            // What the set felt like, so the review can compare the effort with the plan's target
+            // (ROADMAP N131). Null stays null: RPE is skippable (N6).
+            rpeHalves = it.rpeHalves,
+            // A hold states a duration instead of reps (N220), and the comparison says the hold rather
+            // than "0 reps" (B243).
+            durationSeconds = it.durationSeconds,
+        )
+    },
+)
+
+/** One prescribed exercise as the comparison reads it. */
+private fun TemplateExercise.toPlan(appUnit: WeightUnit): ExercisePlan = ExercisePlan(
+    exerciseId = exerciseId,
+    name = exerciseName,
+    weightUnit = weightUnit ?: appUnit,
+    sets = sets.map {
+        PlannedSetSpec(
+            role = it.role,
+            weightGrams = it.targetWeightGrams,
+            assistanceGrams = it.targetAssistanceGrams,
+            minReps = it.targetRepsMin,
+            maxReps = it.targetRepsMax,
+        )
+    },
+    // The exercise's one target, read from the plan rather than from a set: N59's number is carried
+    // onto every prescribed set, and the review compares against the exercise (N131).
+    targetRpeHalves = targetRpeHalves,
+)
+
 /**
  * The review, assembled from what is already in memory (ROADMAP N20).
  *
@@ -1431,49 +1474,15 @@ private fun buildSummary(
     note: String?,
     appUnit: WeightUnit,
 ): WorkoutReview {
-    val actual = state.exercises.map { row ->
-        ExerciseActual(
-            exerciseId = row.exerciseId,
-            name = row.name,
-            // The row already carries its exercise's effective unit (N64).
-            weightUnit = row.weightUnit,
-            sets = row.sets.map {
-                PerformedSetSpec(
-                    role = it.setType,
-                    weightGrams = it.weightGrams,
-                    assistanceGrams = it.assistanceGrams,
-                    reps = it.reps,
-                    // What the set felt like, so the review can compare the effort with the plan's
-                    // target (ROADMAP N131). Null stays null: RPE is skippable (N6).
-                    rpeHalves = it.rpeHalves,
-                )
-            },
-        )
-    }
-    val planned = plan.map { plannedExercise ->
-        ExercisePlan(
-            exerciseId = plannedExercise.exerciseId,
-            name = plannedExercise.exerciseName,
-            weightUnit = plannedExercise.weightUnit ?: appUnit,
-            sets = plannedExercise.sets.map {
-                PlannedSetSpec(
-                    role = it.role,
-                    weightGrams = it.targetWeightGrams,
-                    assistanceGrams = it.targetAssistanceGrams,
-                    minReps = it.targetRepsMin,
-                    maxReps = it.targetRepsMax,
-                )
-            },
-            // The exercise's one target, read from the plan rather than from a set: N59's number is
-            // carried onto every prescribed set, and the review compares against the exercise (N131).
-            targetRpeHalves = plannedExercise.targetRpeHalves,
-        )
-    }
+    val actual = state.exercises.map { it.toActual() }
+    val planned = plan.map { it.toPlan(appUnit) }
     val allSets = state.exercises.flatMap { it.sets }
     return WorkoutReview(
         note = note?.takeIf { it.isNotBlank() },
         readinessNote = state.readinessNote,
         totalSets = allSets.size,
+        // A hold is counted as a hold, not as zero of anything (B243).
+        totalHolds = allSets.count { it.durationSeconds != null },
         totalReps = allSets.sumOf { it.reps },
         // The same definition the history and the database use (ROADMAP B10, N219): the load the set was
         // performed at, times its reps. A bodyweight set's load includes the lifter, so a summary that
@@ -1700,6 +1709,7 @@ private fun SetRow.toProgressionPerformance(): ProgressionPerformance = Progress
     assistanceGrams = assistanceGrams,
     rpeHalves = rpeHalves,
     role = setType,
+    durationSeconds = durationSeconds,
 )
 
 /**

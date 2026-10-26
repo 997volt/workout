@@ -16,6 +16,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
+import com.example.androidapp.domain.DurationFormat
+import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.PlanComparison
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.label
@@ -54,16 +56,7 @@ fun WorkoutReviewDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    text = stringResource(
-                        R.string.summary_totals,
-                        summary.totalSets,
-                        summary.totalReps,
-                        Weight.display(summary.totalVolumeGrams, 0, appUnit),
-                        appUnit.label(),
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                TotalsLine(summary = summary, appUnit = appUnit)
                 summary.readinessNote?.let {
                     Text(stringResource(R.string.summary_readiness, it))
                 }
@@ -102,6 +95,44 @@ fun WorkoutReviewDialog(
 }
 
 /** One exercise's plan next to what happened, as a sentence. */
+/**
+ * The workout's totals, in the units the session actually used (ROADMAP B10, N220).
+ *
+ * A session of holds says holds; one with both says both (B243). "reps 0" under a plank is the lie the
+ * set row stopped telling, and it would be repeated here in the one sentence that summarises the session.
+ */
+@Composable
+private fun TotalsLine(summary: WorkoutReview, appUnit: WeightUnit) {
+    val volume = Weight.display(summary.totalVolumeGrams, 0, appUnit)
+    val text = when {
+        summary.totalHolds > 0 && summary.totalReps == 0 -> stringResource(
+            R.string.summary_totals_holds,
+            summary.totalSets,
+            summary.totalHolds,
+            volume,
+            appUnit.label(),
+        )
+
+        summary.totalHolds > 0 -> stringResource(
+            R.string.summary_totals_mixed,
+            summary.totalSets,
+            summary.totalReps,
+            summary.totalHolds,
+            volume,
+            appUnit.label(),
+        )
+
+        else -> stringResource(
+            R.string.summary_totals,
+            summary.totalSets,
+            summary.totalReps,
+            volume,
+            appUnit.label(),
+        )
+    }
+    Text(text = text, style = MaterialTheme.typography.titleMedium)
+}
+
 @Composable
 private fun PlanComparisonRow(comparison: PlanComparison) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -170,7 +201,9 @@ private fun effortVerdictText(comparison: PlanComparison): String? {
 @Composable
 private fun prescribedText(comparison: PlanComparison): String? {
     if (!comparison.wasPlanned) return null
-    val reps = comparison.prescribedReps
+    // A timed movement ignores the plan's rep target (N220, B243): stating it would name a number the
+    // session never measured and the lifter never followed.
+    val reps = comparison.prescribedReps.takeIf { comparison.performedHoldSeconds == null }
     val weight = comparison.prescribedTopWeightGrams
     val unit = exerciseWeightUnit(comparison.weightUnit)
     val load = weight?.let {
@@ -201,7 +234,15 @@ private fun prescribedText(comparison: PlanComparison): String? {
 private fun performedText(comparison: PlanComparison): String {
     if (comparison.performedSets == 0) return stringResource(R.string.summary_not_performed)
     val weight = comparison.performedTopWeightGrams
-    val shape = stringResource(R.string.summary_shape, comparison.performedSets, comparison.performedReps)
+    val shape = if (comparison.performedHoldSeconds != null) {
+        stringResource(
+            R.string.summary_shape_hold,
+            comparison.performedSets,
+            DurationFormat.ofSeconds(comparison.performedHoldSeconds.toLong()),
+        )
+    } else {
+        stringResource(R.string.summary_shape, comparison.performedSets, comparison.performedReps)
+    }
     val unit = exerciseWeightUnit(comparison.weightUnit)
     // An assisted set's own line names its help too (N144), which is why the comparison carries it: a
     // performed `-20` is a load, not an absent one, and `weight > 0` alone would hide it.

@@ -276,21 +276,32 @@ private fun missLine(set: PendingProgression.PendingSet, miss: ProgressionMiss):
         ProgressionMiss.NO_REP_TARGET -> stringResource(R.string.progression_miss_no_reps)
         ProgressionMiss.NO_TARGET_RPE -> stringResource(R.string.progression_miss_no_rpe)
         ProgressionMiss.UNRATED -> stringResource(R.string.progression_miss_unrated)
-        ProgressionMiss.REPS_SHORT -> {
-            val asked = planned?.targetReps ?: 0
-            val short = (asked - (set.prompt.performed?.reps ?: 0)).coerceAtLeast(1)
-            pluralStringResource(R.plurals.progression_miss_reps_short, short, short)
-        }
-
-        ProgressionMiss.OVER_TARGET_RPE ->
-            stringResource(R.string.progression_miss_over_rpe, rpeMarker(planned?.targetRpeHalves ?: 0))
-
+        ProgressionMiss.HOLD -> stringResource(R.string.progression_miss_hold)
+        ProgressionMiss.REPS_SHORT -> repsShortLine(set, planned)
+        ProgressionMiss.OVER_TARGET_RPE -> overRpeLine(planned)
         ProgressionMiss.RUNG_OF_A_GROUP -> stringResource(R.string.progression_miss_rung)
-        ProgressionMiss.TOPPED_OUT -> {
-            val top = planned?.targetRepsMax ?: 0
-            pluralStringResource(R.plurals.progression_miss_topped_out, top, top)
-        }
+        ProgressionMiss.TOPPED_OUT -> toppedOutLine(planned)
     }
+}
+
+/** "N reps short of the plan", with the number the app measured (N74). */
+@Composable
+private fun repsShortLine(set: PendingProgression.PendingSet, planned: ProgressionPlanSet?): String {
+    val asked = planned?.targetReps ?: 0
+    val short = (asked - (set.prompt.performed?.reps ?: 0)).coerceAtLeast(1)
+    return pluralStringResource(R.plurals.progression_miss_reps_short, short, short)
+}
+
+/** The effort the set went over, stated in the halves a lifter could have logged (N131). */
+@Composable
+private fun overRpeLine(planned: ProgressionPlanSet?): String =
+    stringResource(R.string.progression_miss_over_rpe, rpeMarker(planned?.targetRpeHalves ?: 0))
+
+/** The range's own ceiling: there is nowhere left to go (N74). */
+@Composable
+private fun toppedOutLine(planned: ProgressionPlanSet?): String {
+    val top = planned?.targetRepsMax ?: 0
+    return pluralStringResource(R.plurals.progression_miss_topped_out, top, top)
 }
 
 /** One planned set as a line: "5 reps · 100 kg · RPE 8", with whichever parts the plan wrote. */

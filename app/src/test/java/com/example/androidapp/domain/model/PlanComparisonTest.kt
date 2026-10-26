@@ -25,8 +25,19 @@ class PlanComparisonTest {
     private fun working(weightGrams: Long?, reps: Int) =
         PlannedSetSpec(role = SetType.NORMAL, weightGrams = weightGrams, maxReps = reps)
 
-    private fun did(weightGrams: Long, reps: Int, role: SetType = SetType.NORMAL, rpeHalves: Int? = null) =
-        PerformedSetSpec(role = role, weightGrams = weightGrams, reps = reps, rpeHalves = rpeHalves)
+    private fun did(
+        weightGrams: Long,
+        reps: Int,
+        role: SetType = SetType.NORMAL,
+        rpeHalves: Int? = null,
+        durationSeconds: Int? = null,
+    ) = PerformedSetSpec(
+        role = role,
+        weightGrams = weightGrams,
+        reps = reps,
+        rpeHalves = rpeHalves,
+        durationSeconds = durationSeconds,
+    )
 
     /** A plan that names the one effort N59 gives an exercise, with no load to confuse the question. */
     private fun plannedAt(name: String, targetRpeHalves: Int?, vararg sets: PlannedSetSpec) =
@@ -121,6 +132,20 @@ class PlanComparisonTest {
         assertNull("nothing was rated", noRating.rpeDeltaHalves)
         assertNull(noRating.performedAverageRpeHalves)
         assertEquals(16, noRating.prescribedRpeHalves)
+    }
+
+    @Test
+    fun aHold_isCarriedAsAHold_ratherThanAsZeroReps() {
+        // B243: reps are zero by definition, so the review read "3×0" for a timed movement. The comparison
+        // keeps the plan's target as written and carries the hold the exercise actually performed.
+        val comparison = comparePlanToActual(
+            planned = listOf(planned("Carry", working(weightGrams = 100_000L, reps = 5))),
+            performed = listOf(performed("Carry", did(100_000L, reps = 0, durationSeconds = 45))),
+        ).single()
+
+        assertEquals(45, comparison.performedHoldSeconds)
+        assertEquals("the plan's target stays what the plan wrote", 5, comparison.prescribedReps)
+        assertEquals(0, comparison.performedReps)
     }
 
     @Test

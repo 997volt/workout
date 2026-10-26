@@ -662,6 +662,7 @@
     <string name="progression_miss_no_reps">The plan names no reps for this set</string>
     <string name="progression_miss_no_rpe">The plan names no target RPE for this exercise</string>
     <string name="progression_miss_unrated">How it felt was not recorded</string>
+    <string name="progression_miss_hold">A hold is not measured in reps, so the plan\'s rep target does not apply</string>
     <plurals name="progression_miss_reps_short">
         <item quantity="one">%1$d rep short of the plan</item>
         <item quantity="other">%1$d reps short of the plan</item>
@@ -779,6 +780,9 @@
     <!-- The review a finished workout gets (ROADMAP N20). -->
     <string name="summary_title">Workout complete</string>
     <string name="summary_totals">Sets %1$d · reps %2$d · %3$s %4$s</string>
+    <!-- A session of holds is counted in holds, not in zero reps (B243); a mixed one says both. -->
+    <string name="summary_totals_holds">Sets %1$d · holds %2$d · %3$s %4$s</string>
+    <string name="summary_totals_mixed">Sets %1$d · reps %2$d · holds %3$d · %4$s %5$s</string>
     <string name="summary_readiness">Readiness: %1$s</string>
     <string name="summary_note">Note: %1$s</string>
     <string name="summary_ratings_title">How it felt</string>
@@ -790,6 +794,8 @@
     <string name="summary_prescribed">prescribed %1$s</string>
     <string name="summary_performed">performed %1$s</string>
     <string name="summary_shape">%1$d×%2$d</string>
+    <!-- Sets × hold, for a movement that is timed rather than counted (B243). -->
+    <string name="summary_shape_hold">%1$d×%2$s</string>
     <string name="summary_shape_weight">%1$s at %2$s %3$s</string>
     <!-- N144: a prescribed load with no rep target is still a load, and its unit is what says whether it is
          kilograms or pounds. "at" is left out because there is no shape to be at. -->
