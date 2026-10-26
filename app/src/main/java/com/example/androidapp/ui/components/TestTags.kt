@@ -417,14 +417,16 @@ object TestTags {
     fun templateRow(id: String) = "template_row_$id"
 
     /**
-     * Hiding a workout from the choices, and the two controls that undo it (ROADMAP N214).
+     * The list's filter chips, and the two controls that bring a workout back (ROADMAP N214, N216, N217).
      *
-     * The filter is one control in the list's own header; the row's marker says a visible row is a hidden
-     * one being shown, and its own button is the way back without opening the editor.
+     * The chips are modes — All, Hidden and Deleted — so a chip's selected state and the rows it stands
+     * for are one question; a row's own button is the way back without opening the editor.
      */
+    const val TEMPLATES_FILTER_ALL = "templates_filter_all"
     const val TEMPLATES_HIDDEN_FILTER = "templates_hidden_filter"
-    fun templateHidden(id: String) = "template_hidden_$id"
+    const val TEMPLATES_DELETED_FILTER = "templates_deleted_filter"
     fun templateUnhide(id: String) = "template_unhide_$id"
+    fun templateRestore(id: String) = "template_restore_$id"
 
     /** The editor's overflow item that hides or brings back the plan (ROADMAP N214). */
     const val TEMPLATE_HIDE = "template_hide"

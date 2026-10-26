@@ -66,6 +66,15 @@ class RoomTemplateRepository @Inject constructor(
     override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> =
         dao.observeTemplate(templateId).map { it?.toDomain() }
 
+    /**
+     * The workouts this device deleted, mapped through the same row type as the live list (N216).
+     *
+     * Nothing is filtered here: the group is the whole of the read, and the one caller that wants it is
+     * the list that can bring one back.
+     */
+    override fun observeDeletedTemplates(): Flow<List<WorkoutTemplate>> =
+        dao.observeDeletedTemplates().map { rows -> rows.map { it.toDomain() } }
+
     override fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>> =
         dao.observeVersions(templateId).map { rows -> rows.map { it.toDomain() } }
 
@@ -217,6 +226,18 @@ class RoomTemplateRepository @Inject constructor(
     override suspend fun deleteTemplate(templateId: String): DataResult<Unit> = dataResultOf {
         // A soft delete, so the rows stay for the export to carry (P1.12).
         if (dao.softDeleteTemplate(id = templateId, at = timeSource.nowEpochMillis()) == 0) {
+            throw NotFoundException("template $templateId")
+        }
+    }
+
+    /**
+     * Clears the delete flag on one workout (ROADMAP N216).
+     *
+     * The row count is the existence check, exactly as a rename's is: a live, missing or version id is
+     * "not found", never a silent success.
+     */
+    override suspend fun restoreTemplate(templateId: String): DataResult<Unit> = dataResultOf {
+        if (dao.restoreTemplate(id = templateId, at = timeSource.nowEpochMillis()) == 0) {
             throw NotFoundException("template $templateId")
         }
     }

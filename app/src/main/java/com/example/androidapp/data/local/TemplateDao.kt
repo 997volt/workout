@@ -57,6 +57,34 @@ interface TemplateDao {
     fun observeTemplates(): Flow<List<TemplateSummaryRow>>
 
     /**
+     * The workouts this device deleted, name-ordered, with their planned exercise counts (ROADMAP N216).
+     *
+     * The other side of [observeTemplates]' `deletedAt` predicate. A **kept version** is not here
+     * (ROADMAP N134): a group only the lifters' own put-away workouts can appear in must not offer a
+     * version as one of them, and a version never sat in the list to be deleted.
+     *
+     * The count reads `template_exercises` live rows, which a delete never touched: it flags the
+     * template alone, so a restored workout comes back with its plan rather than as an empty shell.
+     */
+    @Query(
+        """
+        SELECT t.id AS id,
+               t.name AS name,
+               (
+                   SELECT COUNT(*) FROM template_exercises te
+                   WHERE te.templateId = t.id AND te.deletedAt IS NULL
+               ) AS exerciseCount,
+               t.versionOf AS versionOf,
+               t.createdAt AS createdAt,
+               t.hiddenAt AS hiddenAt
+        FROM templates t
+        WHERE t.deletedAt IS NOT NULL AND t.versionOf IS NULL
+        ORDER BY t.name ASC
+        """,
+    )
+    fun observeDeletedTemplates(): Flow<List<TemplateSummaryRow>>
+
+    /**
      * Every live kept version of one template, newest first (ROADMAP N134).
      *
      * The other side of [observeTemplates]' predicate: these are the rows it hides, read back where
@@ -136,6 +164,26 @@ interface TemplateDao {
 
     @Query("UPDATE templates SET deletedAt = :at, updatedAt = :at WHERE id = :id AND deletedAt IS NULL")
     suspend fun softDeleteTemplate(id: String, at: Long): Int
+
+    /**
+     * Brings a deleted workout back, plan untouched (ROADMAP N216).
+     *
+     * Rows updated: 0 means the id is not a deleted workout — live, a kept version, or absent — which
+     * the caller reports as not found. **`updatedAt` moves**, because the delete moved it: the clock
+     * N171 reads must see a restore as a change, or a program document exported before it would merge
+     * into a definition that had in fact shifted.
+     *
+     * It writes no other column: `hiddenAt` is the lifter's own view of the row and survives the round
+     * trip, so a workout deleted while hidden comes back hidden.
+     */
+    @Query(
+        """
+        UPDATE templates
+        SET deletedAt = NULL, updatedAt = :at
+        WHERE id = :id AND deletedAt IS NOT NULL AND versionOf IS NULL
+        """,
+    )
+    suspend fun restoreTemplate(id: String, at: Long): Int
 
     /**
      * Hides a template from the choices, or brings it back (ROADMAP N214). Rows updated: 0 when it is gone.

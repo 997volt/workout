@@ -82,12 +82,12 @@ class TemplatesViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals("only the offered workout is drawn", listOf("Push day"), state.templates.map { it.name })
-        assertEquals("and the filter can say there is one", 1, state.hiddenCount)
-        assertFalse("with the filter off", state.showHidden)
+        assertEquals("and the chip can say there is one", 1, state.hiddenCount)
+        assertEquals("with the list on All", TemplatesFilter.ALL, state.filter)
     }
 
     @Test
-    fun showingHidden_drawsThemInTheSameList() = runTest(dispatcher) {
+    fun theHiddenChip_drawsOnlyTheHiddenOnes() = runTest(dispatcher) {
         val repository = FakeTemplateRepository().apply {
             templates.value = listOf(
                 WorkoutTemplate(id = "t1", name = "Push day"),
@@ -98,17 +98,80 @@ class TemplatesViewModelTest {
         observe(viewModel)
         advanceUntilIdle()
 
-        viewModel.onShowHiddenChange(true)
+        viewModel.onFilterChange(TemplatesFilter.HIDDEN)
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
-        assertTrue(state.showHidden)
+        assertEquals(TemplatesFilter.HIDDEN, state.filter)
         assertEquals(
-            "one list, name-ordered, hidden ones included rather than a second section",
-            listOf("Push day", "Autumn plan"),
+            "the group, and not the live workout beside it (ROADMAP N217)",
+            listOf("Autumn plan"),
             state.templates.map { it.name },
         )
         assertEquals(1, state.hiddenCount)
+    }
+
+    @Test
+    fun theDeletedChip_drawsOnlyTheDeletedOnes_andTheCountsComeFromTheLibrary() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            templates.value = listOf(
+                WorkoutTemplate(id = "t1", name = "Push day"),
+                WorkoutTemplate(id = "t2", name = "Autumn plan", hiddenAt = Instant.EPOCH),
+            )
+            deleted.value = listOf(WorkoutTemplate(id = "t3", name = "Test", exerciseCount = 5))
+        }
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onFilterChange(TemplatesFilter.DELETED)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(listOf("Test"), state.templates.map { it.name })
+        assertEquals("the hidden count is still the library's", 1, state.hiddenCount)
+        assertEquals(1, state.deletedCount)
+    }
+
+    @Test
+    fun restoring_writesTheChoice_andReturnsTheWorkoutToAll() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            deleted.value = listOf(WorkoutTemplate(id = "t3", name = "Test", exerciseCount = 5))
+        }
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
+        observe(viewModel)
+        advanceUntilIdle()
+        viewModel.onFilterChange(TemplatesFilter.DELETED)
+        advanceUntilIdle()
+
+        viewModel.onRestore("t3")
+        advanceUntilIdle()
+
+        assertEquals(listOf("t3"), repository.restoredIds)
+        val state = viewModel.uiState.value
+        assertEquals(
+            "the last restore empties the group, so the list falls back (N217)",
+            TemplatesFilter.ALL,
+            state.filter,
+        )
+        assertEquals("and the workout is live again", listOf("t3"), state.templates.map { it.id })
+        assertEquals(0, state.deletedCount)
+    }
+
+    @Test
+    fun aFailedRestore_isSurfaced_ratherThanSwallowed() = runTest(dispatcher) {
+        val repository = FakeTemplateRepository().apply {
+            failWrites = true
+            deleted.value = listOf(WorkoutTemplate(id = "t3", name = "Test"))
+        }
+        val viewModel = TemplatesViewModel(repository, FakeWorkoutRepository())
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onRestore("t3")
+        advanceUntilIdle()
+
+        assertNotNull("the failure reaches the screen's message host", viewModel.uiState.value.error)
     }
 
     @Test
@@ -247,6 +310,9 @@ class TemplatesViewModelTest {
 
     private class FakeTemplateRepository : TemplateRepository {
         val templates = MutableStateFlow<List<WorkoutTemplate>>(emptyList())
+
+        /** The rows in the deleted group (ROADMAP N216), apart from the live ones as the reads are. */
+        val deleted = MutableStateFlow<List<WorkoutTemplate>>(emptyList())
         val exercises = MutableStateFlow<List<TemplateExercise>>(emptyList())
         var createdId = "t-new"
         var createdName: String? = null
@@ -255,7 +321,12 @@ class TemplatesViewModelTest {
         /** Every hide or unhide, as the id and the state asked for (ROADMAP N214). */
         val hiddenWrites = mutableListOf<Pair<String, Boolean>>()
 
+        /** Every restore, in the order it was asked for (ROADMAP N216). */
+        val restoredIds = mutableListOf<String>()
+
         override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = templates
+
+        override fun observeDeletedTemplates(): Flow<List<WorkoutTemplate>> = deleted
 
         override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> =
             templates.map { rows -> rows.firstOrNull { it.id == templateId } }
@@ -328,8 +399,28 @@ class TemplatesViewModelTest {
             group: Int?,
         ): DataResult<Unit> = DataResult.Success(Unit)
 
-        override suspend fun deleteTemplate(templateId: String): DataResult<Unit> =
-            writeFailureOrSuccess()
+        override suspend fun deleteTemplate(templateId: String): DataResult<Unit> {
+            val result = writeFailureOrSuccess()
+            if (result is DataResult.Success) {
+                val row = templates.value.firstOrNull { it.id == templateId } ?: return result
+                templates.value = templates.value.filterNot { it.id == templateId }
+                deleted.value = deleted.value + row
+            }
+            return result
+        }
+
+        override suspend fun restoreTemplate(templateId: String): DataResult<Unit> {
+            val result = writeFailureOrSuccess()
+            if (result is DataResult.Success) {
+                restoredIds += templateId
+                val row = deleted.value.firstOrNull { it.id == templateId }
+                if (row != null) {
+                    deleted.value = deleted.value.filterNot { it.id == templateId }
+                    templates.value = templates.value + row
+                }
+            }
+            return result
+        }
 
         override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> {
             val result = writeFailureOrSuccess()

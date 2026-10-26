@@ -492,6 +492,7 @@ class TemplateEditorViewModelTest {
         val supersetGroups = mutableListOf<List<String>>()
 
         override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = templates
+        override fun observeDeletedTemplates(): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
 
         override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> =
             templates.map { rows -> rows.firstOrNull { it.id == templateId } }
@@ -595,6 +596,11 @@ class TemplateEditorViewModelTest {
         override suspend fun deleteTemplate(templateId: String): DataResult<Unit> {
             if (failWrites) return failure()
             deleted += templateId
+            return DataResult.Success(Unit)
+        }
+
+        override suspend fun restoreTemplate(templateId: String): DataResult<Unit> {
+            if (failWrites) return failure()
             return DataResult.Success(Unit)
         }
 

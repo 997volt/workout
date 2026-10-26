@@ -3,6 +3,7 @@ package com.example.androidapp.ui.templates
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -36,8 +37,9 @@ class TemplatesScreenTest {
         onOpen: (String) -> Unit = {},
         onStart: (String) -> Unit = {},
         onOpenPrograms: () -> Unit = {},
-        onShowHiddenChange: (Boolean) -> Unit = {},
+        onFilterChange: (TemplatesFilter) -> Unit = {},
         onUnhide: (String) -> Unit = {},
+        onRestore: (String) -> Unit = {},
     ) {
         composeTestRule.setContent {
             TemplatesScreen(
@@ -47,8 +49,9 @@ class TemplatesScreenTest {
                 onStartTemplate = onStart,
                 onBack = {},
                 onOpenPrograms = onOpenPrograms,
-                onShowHiddenChange = onShowHiddenChange,
+                onFilterChange = onFilterChange,
                 onUnhide = onUnhide,
+                onRestore = onRestore,
             )
         }
     }
@@ -101,6 +104,8 @@ class TemplatesScreenTest {
         setScreen(TemplatesUiState(isLoading = false, templates = emptyList()))
 
         composeTestRule.onNodeWithTag(TestTags.TEMPLATES_EMPTY).assertIsDisplayed()
+        // An empty library is not a library whose workouts are merely put away (ROADMAP N217).
+        composeTestRule.onNodeWithText("No workouts in this view").assertDoesNotExist()
     }
 
     @Test
@@ -136,49 +141,100 @@ class TemplatesScreenTest {
     }
 
     @Test
-    fun nothingHidden_offersNoFilter_atAll() {
+    fun nothingPutAway_offersNoFilter_atAll() {
         // A clean list should not gain a control it never needed (ROADMAP N214).
         setScreen()
 
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_FILTER_ALL).assertDoesNotExist()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATES_HIDDEN_FILTER).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_DELETED_FILTER).assertDoesNotExist()
     }
 
     @Test
-    fun aHiddenWorkout_drawsWithItsMarker_andTheFilterTurnsOff() {
-        var shown: Boolean? = null
-        setScreen(hiddenTemplate.copy(hiddenCount = 1), onShowHiddenChange = { shown = it })
+    fun theChips_askForTheirOwnGroup() {
+        // Modes, not a reveal: each chip names one group (ROADMAP N217), and the deleted one is N216's.
+        var asked: TemplatesFilter? = null
+        setScreen(
+            twoTemplates.copy(hiddenCount = 1, deletedCount = 2),
+            onFilterChange = { asked = it },
+        )
 
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_FILTER_ALL).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TestTags.TEMPLATES_HIDDEN_FILTER).assertIsDisplayed().performClick()
-        composeTestRule.onNodeWithTag(TestTags.templateHidden("t2"), useUnmergedTree = true)
-            .assertExists()
+        assertEquals("the hidden chip asks for the hidden group", TemplatesFilter.HIDDEN, asked)
 
-        assertEquals("the state was on, so one tap asks for them to be put away", false, shown)
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_DELETED_FILTER).assertIsDisplayed().performClick()
+        assertEquals("and the deleted chip for its own", TemplatesFilter.DELETED, asked)
     }
 
     @Test
-    fun aHiddenRowsOwnButton_bringsItBack() {
-        var unhidden: String? = null
-        setScreen(hiddenTemplate, onUnhide = { unhidden = it })
+    fun aChipWithNothingInItsGroup_isNotOffered() {
+        // The count is also the control's reason to exist (ROADMAP N214, N217).
+        setScreen(twoTemplates.copy(hiddenCount = 1))
 
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_HIDDEN_FILTER).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_DELETED_FILTER).assertDoesNotExist()
+    }
+
+    @Test
+    fun aHiddenRow_carriesNoMarker_onlyItsWayBack() {
+        // The selected chip says which group is drawn, so the row needs no badge (ROADMAP N217); its own
+        // button is still the way back without opening the editor (N214).
+        var unhidden: String? = null
+        setScreen(hiddenGroup, onUnhide = { unhidden = it })
+
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_HIDDEN_FILTER).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_HIDDEN_FILTER).assertIsSelected()
         composeTestRule.onNodeWithTag(TestTags.templateUnhide("t2")).performClick()
 
         assertEquals("t2", unhidden)
     }
 
     @Test
-    fun whenEveryWorkoutIsHidden_theListSaysTheFilterBringsOneBack() {
-        // "No templates yet" over a library the lifter tidied would read as data loss.
-        setScreen(TemplatesUiState(isLoading = false, templates = emptyList(), hiddenCount = 3))
+    fun aDeletedRow_offersRestore_andNoStart() {
+        // A deleted workout resolves by no read, so it cannot be started: the row's one action is
+        // bringing it back (ROADMAP N216).
+        var restored: String? = null
+        setScreen(deletedGroup, onRestore = { restored = it })
 
-        composeTestRule.onNodeWithText("Every workout is hidden").assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATES_DELETED_FILTER).assertIsSelected()
+        composeTestRule.onNodeWithTag(TestTags.templateStart("t3")).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.templateRestore("t3")).performClick()
+
+        assertEquals("t3", restored)
+    }
+
+    @Test
+    fun whenTheRestIsPutAway_theListSaysWhereItWent() {
+        // "No templates yet" over a library the lifter tidied would read as data loss (ROADMAP N217).
+        setScreen(
+            TemplatesUiState(
+                isLoading = false,
+                templates = emptyList(),
+                hiddenCount = 2,
+                deletedCount = 1,
+            ),
+        )
+
+        composeTestRule.onNodeWithText("No workouts in this view").assertIsDisplayed()
     }
 
     private companion object {
-        val hiddenTemplate = TemplatesUiState(
+        val hiddenGroup = TemplatesUiState(
             isLoading = false,
-            showHidden = true,
+            filter = TemplatesFilter.HIDDEN,
+            hiddenCount = 1,
             templates = listOf(
                 WorkoutTemplate(id = "t2", name = "Autumn plan", exerciseCount = 4, hiddenAt = Instant.EPOCH),
+            ),
+        )
+
+        val deletedGroup = TemplatesUiState(
+            isLoading = false,
+            filter = TemplatesFilter.DELETED,
+            deletedCount = 1,
+            templates = listOf(
+                WorkoutTemplate(id = "t3", name = "Test", exerciseCount = 5),
             ),
         )
 

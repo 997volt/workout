@@ -121,6 +121,65 @@ class TemplateRepositoryTest {
     }
 
     @Test
+    fun aDeletedTemplate_isListedApart_andRestoringBringsItsPlanBack() = runTest {
+        val id = create("Push day")
+        repository.addExercise(id, "back-squat")
+        repository.deleteTemplate(id)
+
+        val deleted = repository.observeDeletedTemplates().first()
+        assertEquals(
+            "the deleted group holds it, and only it (ROADMAP N216)",
+            listOf(id),
+            deleted.map { it.id },
+        )
+        assertEquals("with the plan a delete never touched", 1, deleted.single().exerciseCount)
+        assertTrue("while the live list does not", repository.observeTemplates().first().isEmpty())
+
+        assertTrue(repository.restoreTemplate(id) is DataResult.Success)
+
+        assertTrue("nothing is deleted any more", repository.observeDeletedTemplates().first().isEmpty())
+        assertEquals(
+            "and the workout is live again",
+            listOf(id),
+            repository.observeTemplates().first().map { it.id },
+        )
+        assertEquals(1, repository.observeTemplate(id).first()?.exerciseCount)
+    }
+
+    @Test
+    fun restoring_aWorkoutDeletedWhileHidden_comesBackHidden() = runTest {
+        val id = create("Push day")
+        repository.setTemplateHidden(id, true)
+        repository.deleteTemplate(id)
+
+        repository.restoreTemplate(id)
+
+        assertTrue(
+            "the restore writes the delete flag alone, so the lifter's view of the row survives",
+            repository.observeTemplates().first().isEmpty(),
+        )
+        assertEquals(
+            "and it is back in the group that shows hidden ones",
+            listOf(id),
+            repository.observeTemplates(includeHidden = true).first().map { it.id },
+        )
+    }
+
+    @Test
+    fun restoringAWorkoutThatIsNotDeleted_isNotFound() = runTest {
+        val id = create("Push day")
+
+        assertEquals(
+            DataError.NotFound,
+            (repository.restoreTemplate(id) as DataResult.Failure).error,
+        )
+        assertEquals(
+            DataError.NotFound,
+            (repository.restoreTemplate("missing") as DataResult.Failure).error,
+        )
+    }
+
+    @Test
     fun exercises_areAppendedInTheOrderTheyAreAdded() = runTest {
         val id = create("Push day")
 

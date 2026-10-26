@@ -1,9 +1,12 @@
 package com.example.androidapp.ui.templates
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -101,8 +104,9 @@ fun TemplatesRoute(
             )
         },
         onDismissMessage = viewModel::onErrorShown,
-        onShowHiddenChange = viewModel::onShowHiddenChange,
+        onFilterChange = viewModel::onFilterChange,
         onUnhide = viewModel::onUnhide,
+        onRestore = viewModel::onRestore,
         onBack = onBack,
         onOpenPrograms = onOpenPrograms,
         modifier = modifier,
@@ -160,10 +164,12 @@ fun TemplatesScreen(
     /** A sentence from the point-of-start question, shown on the same host (ROADMAP P3.3). */
     message: String? = null,
     onDismissGateMessage: () -> Unit = {},
-    /** The list's own filter (ROADMAP N214): false draws only the workouts a picker would offer. */
-    onShowHiddenChange: (Boolean) -> Unit = {},
+    /** The list's own filter (ROADMAP N217): which group of the library this list draws. */
+    onFilterChange: (TemplatesFilter) -> Unit = {},
     /** Puts a workout back in the choices from its row, without opening the editor (N214). */
     onUnhide: (String) -> Unit = {},
+    /** Brings a deleted workout back, with its plan (ROADMAP N216). */
+    onRestore: (String) -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val defaultName = stringResource(R.string.template_default_name)
@@ -198,7 +204,8 @@ fun TemplatesScreen(
             onOpenTemplate = onOpenTemplate,
             onStartTemplate = onStartTemplate,
             onUnhide = onUnhide,
-            onShowHiddenChange = onShowHiddenChange,
+            onRestore = onRestore,
+            onFilterChange = onFilterChange,
             modifier = Modifier.padding(innerPadding),
             startEnabled = !state.hasActiveWorkout,
         )
@@ -211,22 +218,17 @@ private fun TemplatesContent(
     onOpenTemplate: (String) -> Unit,
     onStartTemplate: (String) -> Unit,
     onUnhide: (String) -> Unit,
-    onShowHiddenChange: (Boolean) -> Unit,
+    onRestore: (String) -> Unit,
+    onFilterChange: (TemplatesFilter) -> Unit,
     modifier: Modifier = Modifier,
     /** False while a session is open, which one template list cannot start (ROADMAP N78). */
     startEnabled: Boolean = true,
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        // Only when there is something to reveal: a list with nothing hidden gains no control it never
-        // needed, and the filter is the one place the hidden rows come back (ROADMAP N214).
-        if (state.hiddenCount > 0) {
-            AppFilterChip(
-                selected = state.showHidden,
-                onClick = { onShowHiddenChange(!state.showHidden) },
-                label = stringResource(R.string.templates_hidden_filter, state.hiddenCount),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                testTag = TestTags.TEMPLATES_HIDDEN_FILTER,
-            )
+        // Only when there is a group to reach: a library with nothing put away gains no control it never
+        // needed, and these chips are the one place the put-away rows come back (ROADMAP N214, N217).
+        if (state.hiddenCount > 0 || state.deletedCount > 0) {
+            TemplatesFilterRow(state = state, onFilterChange = onFilterChange)
         }
         when {
             state.isLoading -> CenteredMessage(
@@ -234,36 +236,108 @@ private fun TemplatesContent(
                 modifier = Modifier.fillMaxSize(),
             )
 
-            // Empty because everything is hidden is not empty: saying "no templates yet" over a library
-            // the lifter tidied would read as data loss (ROADMAP N214).
-            state.templates.isEmpty() && state.hiddenCount > 0 && !state.showHidden -> CenteredMessage(
-                text = stringResource(R.string.templates_all_hidden),
-                hint = stringResource(R.string.templates_all_hidden_hint),
-                modifier = Modifier.fillMaxSize().testTag(TestTags.TEMPLATES_EMPTY),
-            )
+            state.templates.isEmpty() -> TemplatesEmpty(state)
 
-            state.templates.isEmpty() -> CenteredMessage(
-                text = stringResource(R.string.templates_empty),
-                hint = stringResource(R.string.templates_empty_hint),
-                modifier = Modifier.fillMaxSize().testTag(TestTags.TEMPLATES_EMPTY),
+            else -> TemplateRows(
+                state = state,
+                onOpenTemplate = onOpenTemplate,
+                onStartTemplate = onStartTemplate,
+                onUnhide = onUnhide,
+                onRestore = onRestore,
+                startEnabled = startEnabled,
             )
+        }
+    }
+}
 
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                // Leaves room for the extended FAB so it cannot cover the last row.
-                contentPadding = PaddingValues(bottom = 96.dp),
-            ) {
-                items(items = state.templates, key = { it.id }) { template ->
-                    TemplateRow(
-                        template = template,
-                        onOpen = { onOpenTemplate(template.id) },
-                        onStart = { onStartTemplate(template.id) },
-                        onUnhide = { onUnhide(template.id) },
-                        startEnabled = startEnabled,
-                    )
-                    HorizontalDivider()
-                }
-            }
+/**
+ * The three modes, each drawing its own group (ROADMAP N217), with N216's deleted chip beside them.
+ *
+ * A chip is drawn only when its group holds something: the count is the control's reason to exist, and
+ * a filter that can only draw nothing is a question with no answer.
+ */
+@Composable
+private fun TemplatesFilterRow(
+    state: TemplatesUiState,
+    onFilterChange: (TemplatesFilter) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        AppFilterChip(
+            selected = state.filter == TemplatesFilter.ALL,
+            onClick = { onFilterChange(TemplatesFilter.ALL) },
+            label = stringResource(R.string.templates_filter_all),
+            testTag = TestTags.TEMPLATES_FILTER_ALL,
+        )
+        if (state.hiddenCount > 0) {
+            AppFilterChip(
+                selected = state.filter == TemplatesFilter.HIDDEN,
+                onClick = { onFilterChange(TemplatesFilter.HIDDEN) },
+                label = stringResource(R.string.templates_hidden_filter, state.hiddenCount),
+                testTag = TestTags.TEMPLATES_HIDDEN_FILTER,
+            )
+        }
+        if (state.deletedCount > 0) {
+            AppFilterChip(
+                selected = state.filter == TemplatesFilter.DELETED,
+                onClick = { onFilterChange(TemplatesFilter.DELETED) },
+                label = stringResource(R.string.templates_deleted_filter, state.deletedCount),
+                testTag = TestTags.TEMPLATES_DELETED_FILTER,
+            )
+        }
+    }
+}
+
+/** What an empty list says: a library with nothing in it, or one whose workouts are all put away. */
+@Composable
+private fun TemplatesEmpty(state: TemplatesUiState, modifier: Modifier = Modifier) {
+    // "No templates yet" over a library the lifter tidied would read as data loss (ROADMAP N214, N217).
+    val putAway = state.hiddenCount > 0 || state.deletedCount > 0
+    CenteredMessage(
+        text = stringResource(if (putAway) R.string.templates_filter_empty else R.string.templates_empty),
+        hint = stringResource(
+            if (putAway) R.string.templates_filter_empty_hint else R.string.templates_empty_hint,
+        ),
+        modifier = modifier.fillMaxSize().testTag(TestTags.TEMPLATES_EMPTY),
+    )
+}
+
+/** The rows of whichever group is drawn; a deleted row's one action is *Restore* (ROADMAP N216). */
+@Composable
+private fun TemplateRows(
+    state: TemplatesUiState,
+    onOpenTemplate: (String) -> Unit,
+    onStartTemplate: (String) -> Unit,
+    onUnhide: (String) -> Unit,
+    onRestore: (String) -> Unit,
+    startEnabled: Boolean,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        // Leaves room for the extended FAB so it cannot cover the last row.
+        contentPadding = PaddingValues(bottom = 96.dp),
+    ) {
+        items(items = state.templates, key = { it.id }) { template ->
+            TemplateRow(
+                template = template,
+                onOpen = { onOpenTemplate(template.id) },
+                onStart = { onStartTemplate(template.id) },
+                onUnhide = { onUnhide(template.id) },
+                // Only the deleted group's rows are deleted rows: one mode is drawn at a time, so the
+                // group is the fact the row needs (ROADMAP N216).
+                onRestore = if (state.filter == TemplatesFilter.DELETED) {
+                    { onRestore(template.id) }
+                } else {
+                    null
+                },
+                startEnabled = startEnabled,
+            )
+            HorizontalDivider()
         }
     }
 }
@@ -275,9 +349,14 @@ private fun TemplateRow(
     onStart: () -> Unit,
     onUnhide: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Non-null only in the deleted group, where the row's one action is bringing the plan back (N216). */
+    onRestore: (() -> Unit)? = null,
     startEnabled: Boolean = true,
 ) {
     val hidden = template.hiddenAt != null
+    // A deleted workout resolves by no read, so it can be neither opened nor started: its row carries
+    // Restore and nothing else (ROADMAP N216).
+    val deleted = onRestore != null
     ListItem(
         headlineContent = { Text(template.name) },
         supportingContent = {
@@ -289,16 +368,9 @@ private fun TemplateRow(
                         template.exerciseCount,
                     ),
                 )
-                // A row drawn while the filter is on is hidden, and saying so is what keeps it from
-                // reading as an ordinary workout (ROADMAP N214). Its own button is the way back without
-                // opening the editor.
-                if (hidden) {
-                    Text(
-                        text = stringResource(R.string.template_hidden_marker),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.testTag(TestTags.templateHidden(template.id)),
-                    )
+                // The chip above the list names the group, so the hidden row needs no marker of its own
+                // (ROADMAP N217) — only the button that is the way back without opening the editor.
+                if (hidden && !deleted) {
                     AppTextButton(
                         onClick = onUnhide,
                         modifier = Modifier.testTag(TestTags.templateUnhide(template.id)),
@@ -306,9 +378,17 @@ private fun TemplateRow(
                         Text(stringResource(R.string.template_unhide))
                     }
                 }
+                if (onRestore != null) {
+                    AppTextButton(
+                        onClick = onRestore,
+                        modifier = Modifier.testTag(TestTags.templateRestore(template.id)),
+                    ) {
+                        Text(stringResource(R.string.template_restore))
+                    }
+                }
                 // Greying alone would leave "why" to be guessed, and a Start that resumes a workout
                 // from another template is exactly what needs saying (N78).
-                if (!startEnabled) {
+                if (!startEnabled && !deleted) {
                     Text(
                         text = stringResource(R.string.templates_start_blocked),
                         style = MaterialTheme.typography.labelSmall,
@@ -319,19 +399,21 @@ private fun TemplateRow(
             }
         },
         trailingContent = {
-            AppTextButton(
-                onClick = onStart,
-                enabled = startEnabled,
-                // Starting is the point of a template, so it gets the row's own
-                // button; tapping the row itself edits it instead.
-                modifier = Modifier.testTag(TestTags.templateStart(template.id)),
-            ) {
-                Text(stringResource(R.string.template_start))
+            if (!deleted) {
+                AppTextButton(
+                    onClick = onStart,
+                    enabled = startEnabled,
+                    // Starting is the point of a template, so it gets the row's own
+                    // button; tapping the row itself edits it instead.
+                    modifier = Modifier.testTag(TestTags.templateStart(template.id)),
+                ) {
+                    Text(stringResource(R.string.template_start))
+                }
             }
         },
         modifier = modifier
             .testTag(TestTags.templateRow(template.id))
-            .clickable(onClick = onOpen),
+            .then(if (deleted) Modifier else Modifier.clickable(onClick = onOpen)),
     )
 }
 

@@ -528,6 +528,7 @@ class ExercisePickerViewModelTest {
         var failAdds = false
 
         override fun observeTemplates(includeHidden: Boolean): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
+        override fun observeDeletedTemplates(): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
         override fun observeTemplate(templateId: String): Flow<WorkoutTemplate?> = flowOf(null)
         override fun observeTemplateName(templateId: String): Flow<String?> = flowOf(null)
         override fun observeVersions(templateId: String): Flow<List<WorkoutTemplate>> = flowOf(emptyList())
@@ -589,6 +590,7 @@ class ExercisePickerViewModelTest {
         override suspend fun createTemplate(name: String): DataResult<String> = unused()
         override suspend fun renameTemplate(templateId: String, name: String): DataResult<Unit> = unused()
         override suspend fun deleteTemplate(templateId: String): DataResult<Unit> = unused()
+        override suspend fun restoreTemplate(templateId: String): DataResult<Unit> = unused()
         override suspend fun setTemplateHidden(templateId: String, hidden: Boolean): DataResult<Unit> =
             unused()
 

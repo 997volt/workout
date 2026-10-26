@@ -27,6 +27,16 @@ interface TemplateRepository {
      */
     fun observeTemplates(includeHidden: Boolean = false): Flow<List<WorkoutTemplate>>
 
+    /**
+     * The workouts this device deleted, name-ordered, with their planned exercise counts (ROADMAP N216).
+     *
+     * Its own read rather than `includeDeleted` beside `includeHidden` in [observeTemplates]: the list
+     * that can bring a deleted one back is the one surface that wants them, and a caller that asked for
+     * the deleted ones would be asking for workouts no read by id resolves — they can be neither
+     * edited, started, nor offered.
+     */
+    fun observeDeletedTemplates(): Flow<List<WorkoutTemplate>>
+
     /** One template, re-emitting when it is renamed. Null when it is gone. */
     fun observeTemplate(templateId: String): Flow<WorkoutTemplate?>
 
@@ -119,6 +129,21 @@ interface TemplateRepository {
 
     /** Soft-deletes the template; its rows stay for an export to carry. */
     suspend fun deleteTemplate(templateId: String): DataResult<Unit>
+
+    /**
+     * Brings a deleted workout back, with its plan (ROADMAP N216).
+     *
+     * **One write.** The delete flagged the template row alone, so its planned exercises and sets were
+     * never hidden: clearing `deletedAt` returns them with it, and a program slot that still names the
+     * workout reappears on its day because the day list joins live workouts. `hiddenAt` is left as it
+     * was, so a workout deleted while hidden comes back hidden, and **`updatedAt` moves**, because the
+     * delete moved it — a program document exported before the restore is refused as stale (N171)
+     * rather than merged into a definition that changed.
+     *
+     * Not automatic, and not an undo: undoing a delete the lifter meant stays the backup's job, which
+     * is the rule [deleteTemplate]'s soft delete exists for.
+     */
+    suspend fun restoreTemplate(templateId: String): DataResult<Unit>
 
     /**
      * Plans this exercise into a superset with another, or leaves one (ROADMAP B16).
