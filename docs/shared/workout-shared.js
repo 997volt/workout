@@ -2844,7 +2844,7 @@
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    tmp.$childSerializers_1 = [null, null, null, lazy(tmp_0, ExerciseDto$Companion$$childSerializers$_anonymous__falojn), null, null, null, null, null, null, null, null, null, null, null];
+    tmp.$childSerializers_1 = [null, null, null, lazy(tmp_0, ExerciseDto$Companion$$childSerializers$_anonymous__falojn), null, null, null, null, null, null, null, null, null, null, null, null, null];
   }
   var Companion_instance_10;
   function Companion_getInstance_9() {
@@ -2854,7 +2854,7 @@
   }
   function $serializer_11() {
     $serializer_instance_11 = this;
-    var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ExerciseDto', this, 15);
+    var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ExerciseDto', this, 17);
     tmp0_serialDesc.addElement_5pzumi_k$('id', false);
     tmp0_serialDesc.addElement_5pzumi_k$('name', false);
     tmp0_serialDesc.addElement_5pzumi_k$('primaryMuscle', false);
@@ -2870,6 +2870,8 @@
     tmp0_serialDesc.addElement_5pzumi_k$('stepGrams', true);
     tmp0_serialDesc.addElement_5pzumi_k$('parentId', true);
     tmp0_serialDesc.addElement_5pzumi_k$('rowKind', true);
+    tmp0_serialDesc.addElement_5pzumi_k$('isBodyweight', true);
+    tmp0_serialDesc.addElement_5pzumi_k$('isTimed', true);
     this.descriptor_1 = tmp0_serialDesc;
   }
   protoOf($serializer_11).serialize_viznsy_k$ = function (encoder, value) {
@@ -2905,6 +2907,12 @@
     if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 14) ? true : !(value.rowKind_1 === 'MOVEMENT')) {
       tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 14, value.rowKind_1);
     }
+    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 15) ? true : !(value.isBodyweight_1 === false)) {
+      tmp1_output.encodeBooleanElement_ydht7q_k$(tmp0_desc, 15, value.isBodyweight_1);
+    }
+    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 16) ? true : !(value.isTimed_1 === false)) {
+      tmp1_output.encodeBooleanElement_ydht7q_k$(tmp0_desc, 16, value.isTimed_1);
+    }
     tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
   };
   protoOf($serializer_11).serialize_5ase3y_k$ = function (encoder, value) {
@@ -2930,112 +2938,126 @@
     var tmp16_local12 = null;
     var tmp17_local13 = null;
     var tmp18_local14 = null;
-    var tmp19_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp20_cached = Companion_getInstance_9().$childSerializers_1;
-    if (tmp19_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp19_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp19_local15 = false;
+    var tmp20_local16 = false;
+    var tmp21_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
+    var tmp22_cached = Companion_getInstance_9().$childSerializers_1;
+    if (tmp21_input.decodeSequentially_xlblqy_k$()) {
+      tmp4_local0 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp19_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+      tmp6_local2 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
-      tmp7_local3 = tmp19_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp20_cached[3].get_value_j01efc_k$(), tmp7_local3);
+      tmp7_local3 = tmp21_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp22_cached[3].get_value_j01efc_k$(), tmp7_local3);
       tmp3_bitMask0 = tmp3_bitMask0 | 8;
-      tmp8_local4 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, StringSerializer_getInstance(), tmp8_local4);
+      tmp8_local4 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, StringSerializer_getInstance(), tmp8_local4);
       tmp3_bitMask0 = tmp3_bitMask0 | 16;
-      tmp9_local5 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
+      tmp9_local5 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
       tmp3_bitMask0 = tmp3_bitMask0 | 32;
-      tmp10_local6 = tmp19_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
+      tmp10_local6 = tmp21_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
       tmp3_bitMask0 = tmp3_bitMask0 | 64;
-      tmp11_local7 = tmp19_input.decodeLongElement_994anb_k$(tmp0_desc, 7);
+      tmp11_local7 = tmp21_input.decodeLongElement_994anb_k$(tmp0_desc, 7);
       tmp3_bitMask0 = tmp3_bitMask0 | 128;
-      tmp12_local8 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
+      tmp12_local8 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
       tmp3_bitMask0 = tmp3_bitMask0 | 256;
-      tmp13_local9 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 9, IntSerializer_getInstance(), tmp13_local9);
+      tmp13_local9 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 9, IntSerializer_getInstance(), tmp13_local9);
       tmp3_bitMask0 = tmp3_bitMask0 | 512;
-      tmp14_local10 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
+      tmp14_local10 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
       tmp3_bitMask0 = tmp3_bitMask0 | 1024;
-      tmp15_local11 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 11, StringSerializer_getInstance(), tmp15_local11);
+      tmp15_local11 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 11, StringSerializer_getInstance(), tmp15_local11);
       tmp3_bitMask0 = tmp3_bitMask0 | 2048;
-      tmp16_local12 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 12, LongSerializer_getInstance(), tmp16_local12);
+      tmp16_local12 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 12, LongSerializer_getInstance(), tmp16_local12);
       tmp3_bitMask0 = tmp3_bitMask0 | 4096;
-      tmp17_local13 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 13, StringSerializer_getInstance(), tmp17_local13);
+      tmp17_local13 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 13, StringSerializer_getInstance(), tmp17_local13);
       tmp3_bitMask0 = tmp3_bitMask0 | 8192;
-      tmp18_local14 = tmp19_input.decodeStringElement_3oenpg_k$(tmp0_desc, 14);
+      tmp18_local14 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 14);
       tmp3_bitMask0 = tmp3_bitMask0 | 16384;
+      tmp19_local15 = tmp21_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 15);
+      tmp3_bitMask0 = tmp3_bitMask0 | 32768;
+      tmp20_local16 = tmp21_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 16);
+      tmp3_bitMask0 = tmp3_bitMask0 | 65536;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp19_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp21_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp19_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp19_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+            tmp6_local2 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           case 3:
-            tmp7_local3 = tmp19_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp20_cached[3].get_value_j01efc_k$(), tmp7_local3);
+            tmp7_local3 = tmp21_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp22_cached[3].get_value_j01efc_k$(), tmp7_local3);
             tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           case 4:
-            tmp8_local4 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, StringSerializer_getInstance(), tmp8_local4);
+            tmp8_local4 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, StringSerializer_getInstance(), tmp8_local4);
             tmp3_bitMask0 = tmp3_bitMask0 | 16;
             break;
           case 5:
-            tmp9_local5 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
+            tmp9_local5 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
             tmp3_bitMask0 = tmp3_bitMask0 | 32;
             break;
           case 6:
-            tmp10_local6 = tmp19_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
+            tmp10_local6 = tmp21_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
             tmp3_bitMask0 = tmp3_bitMask0 | 64;
             break;
           case 7:
-            tmp11_local7 = tmp19_input.decodeLongElement_994anb_k$(tmp0_desc, 7);
+            tmp11_local7 = tmp21_input.decodeLongElement_994anb_k$(tmp0_desc, 7);
             tmp3_bitMask0 = tmp3_bitMask0 | 128;
             break;
           case 8:
-            tmp12_local8 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
+            tmp12_local8 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
             tmp3_bitMask0 = tmp3_bitMask0 | 256;
             break;
           case 9:
-            tmp13_local9 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 9, IntSerializer_getInstance(), tmp13_local9);
+            tmp13_local9 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 9, IntSerializer_getInstance(), tmp13_local9);
             tmp3_bitMask0 = tmp3_bitMask0 | 512;
             break;
           case 10:
-            tmp14_local10 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
+            tmp14_local10 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
             tmp3_bitMask0 = tmp3_bitMask0 | 1024;
             break;
           case 11:
-            tmp15_local11 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 11, StringSerializer_getInstance(), tmp15_local11);
+            tmp15_local11 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 11, StringSerializer_getInstance(), tmp15_local11);
             tmp3_bitMask0 = tmp3_bitMask0 | 2048;
             break;
           case 12:
-            tmp16_local12 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 12, LongSerializer_getInstance(), tmp16_local12);
+            tmp16_local12 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 12, LongSerializer_getInstance(), tmp16_local12);
             tmp3_bitMask0 = tmp3_bitMask0 | 4096;
             break;
           case 13:
-            tmp17_local13 = tmp19_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 13, StringSerializer_getInstance(), tmp17_local13);
+            tmp17_local13 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 13, StringSerializer_getInstance(), tmp17_local13);
             tmp3_bitMask0 = tmp3_bitMask0 | 8192;
             break;
           case 14:
-            tmp18_local14 = tmp19_input.decodeStringElement_3oenpg_k$(tmp0_desc, 14);
+            tmp18_local14 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 14);
             tmp3_bitMask0 = tmp3_bitMask0 | 16384;
+            break;
+          case 15:
+            tmp19_local15 = tmp21_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 15);
+            tmp3_bitMask0 = tmp3_bitMask0 | 32768;
+            break;
+          case 16:
+            tmp20_local16 = tmp21_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 16);
+            tmp3_bitMask0 = tmp3_bitMask0 | 65536;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp19_input.endStructure_1xqz0n_k$(tmp0_desc);
-    return ExerciseDto_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, tmp8_local4, tmp9_local5, tmp10_local6, tmp11_local7, tmp12_local8, tmp13_local9, tmp14_local10, tmp15_local11, tmp16_local12, tmp17_local13, tmp18_local14, null);
+    tmp21_input.endStructure_1xqz0n_k$(tmp0_desc);
+    return ExerciseDto_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, tmp8_local4, tmp9_local5, tmp10_local6, tmp11_local7, tmp12_local8, tmp13_local9, tmp14_local10, tmp15_local11, tmp16_local12, tmp17_local13, tmp18_local14, tmp19_local15, tmp20_local16, null);
   };
   protoOf($serializer_11).get_descriptor_wjt6a0_k$ = function () {
     return this.descriptor_1;
@@ -3045,7 +3067,7 @@
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    return [StringSerializer_getInstance(), StringSerializer_getInstance(), get_nullable(StringSerializer_getInstance()), tmp0_cached[3].get_value_j01efc_k$(), get_nullable(StringSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance()), get_nullable(IntSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), get_nullable(LongSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), StringSerializer_getInstance()];
+    return [StringSerializer_getInstance(), StringSerializer_getInstance(), get_nullable(StringSerializer_getInstance()), tmp0_cached[3].get_value_j01efc_k$(), get_nullable(StringSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance()), get_nullable(IntSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), get_nullable(LongSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), StringSerializer_getInstance(), BooleanSerializer_getInstance(), BooleanSerializer_getInstance()];
   };
   var $serializer_instance_11;
   function $serializer_getInstance_11() {
@@ -3053,7 +3075,7 @@
       new $serializer_11();
     return $serializer_instance_11;
   }
-  function ExerciseDto_init_$Init$(seen0, id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, createdAt, updatedAt, deletedAt, restSeconds, techniqueNote, weightUnit, stepGrams, parentId, rowKind, serializationConstructorMarker, $this) {
+  function ExerciseDto_init_$Init$(seen0, id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, createdAt, updatedAt, deletedAt, restSeconds, techniqueNote, weightUnit, stepGrams, parentId, rowKind, isBodyweight, isTimed, serializationConstructorMarker, $this) {
     if (!(255 === (255 & seen0))) {
       throwMissingFieldException(seen0, 255, $serializer_getInstance_11().descriptor_1);
     }
@@ -3093,15 +3115,23 @@
       $this.rowKind_1 = 'MOVEMENT';
     else
       $this.rowKind_1 = rowKind;
+    if (0 === (seen0 & 32768))
+      $this.isBodyweight_1 = false;
+    else
+      $this.isBodyweight_1 = isBodyweight;
+    if (0 === (seen0 & 65536))
+      $this.isTimed_1 = false;
+    else
+      $this.isTimed_1 = isTimed;
     return $this;
   }
-  function ExerciseDto_init_$Create$(seen0, id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, createdAt, updatedAt, deletedAt, restSeconds, techniqueNote, weightUnit, stepGrams, parentId, rowKind, serializationConstructorMarker) {
-    return ExerciseDto_init_$Init$(seen0, id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, createdAt, updatedAt, deletedAt, restSeconds, techniqueNote, weightUnit, stepGrams, parentId, rowKind, serializationConstructorMarker, objectCreate(protoOf(ExerciseDto)));
+  function ExerciseDto_init_$Create$(seen0, id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, createdAt, updatedAt, deletedAt, restSeconds, techniqueNote, weightUnit, stepGrams, parentId, rowKind, isBodyweight, isTimed, serializationConstructorMarker) {
+    return ExerciseDto_init_$Init$(seen0, id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, createdAt, updatedAt, deletedAt, restSeconds, techniqueNote, weightUnit, stepGrams, parentId, rowKind, isBodyweight, isTimed, serializationConstructorMarker, objectCreate(protoOf(ExerciseDto)));
   }
   function ExerciseDto() {
   }
   protoOf(ExerciseDto).toString = function () {
-    return 'ExerciseDto(id=' + this.id_1 + ', name=' + this.name_1 + ', primaryMuscle=' + this.primaryMuscle_1 + ', secondaryMuscles=' + toString(this.secondaryMuscles_1) + ', equipment=' + this.equipment_1 + ', movementPattern=' + this.movementPattern_1 + ', createdAt=' + this.createdAt_1.toString() + ', updatedAt=' + this.updatedAt_1.toString() + ', deletedAt=' + toString_0(this.deletedAt_1) + ', restSeconds=' + this.restSeconds_1 + ', techniqueNote=' + this.techniqueNote_1 + ', weightUnit=' + this.weightUnit_1 + ', stepGrams=' + toString_0(this.stepGrams_1) + ', parentId=' + this.parentId_1 + ', rowKind=' + this.rowKind_1 + ')';
+    return 'ExerciseDto(id=' + this.id_1 + ', name=' + this.name_1 + ', primaryMuscle=' + this.primaryMuscle_1 + ', secondaryMuscles=' + toString(this.secondaryMuscles_1) + ', equipment=' + this.equipment_1 + ', movementPattern=' + this.movementPattern_1 + ', createdAt=' + this.createdAt_1.toString() + ', updatedAt=' + this.updatedAt_1.toString() + ', deletedAt=' + toString_0(this.deletedAt_1) + ', restSeconds=' + this.restSeconds_1 + ', techniqueNote=' + this.techniqueNote_1 + ', weightUnit=' + this.weightUnit_1 + ', stepGrams=' + toString_0(this.stepGrams_1) + ', parentId=' + this.parentId_1 + ', rowKind=' + this.rowKind_1 + ', isBodyweight=' + this.isBodyweight_1 + ', isTimed=' + this.isTimed_1 + ')';
   };
   protoOf(ExerciseDto).hashCode = function () {
     var result = getStringHashCode(this.id_1);
@@ -3119,6 +3149,8 @@
     result = imul(result, 31) + (this.stepGrams_1 == null ? 0 : this.stepGrams_1.hashCode()) | 0;
     result = imul(result, 31) + (this.parentId_1 == null ? 0 : getStringHashCode(this.parentId_1)) | 0;
     result = imul(result, 31) + getStringHashCode(this.rowKind_1) | 0;
+    result = imul(result, 31) + getBooleanHashCode(this.isBodyweight_1) | 0;
+    result = imul(result, 31) + getBooleanHashCode(this.isTimed_1) | 0;
     return result;
   };
   protoOf(ExerciseDto).equals = function (other) {
@@ -3155,6 +3187,10 @@
     if (!(this.parentId_1 == other.parentId_1))
       return false;
     if (!(this.rowKind_1 === other.rowKind_1))
+      return false;
+    if (!(this.isBodyweight_1 === other.isBodyweight_1))
+      return false;
+    if (!(this.isTimed_1 === other.isTimed_1))
       return false;
     return true;
   };

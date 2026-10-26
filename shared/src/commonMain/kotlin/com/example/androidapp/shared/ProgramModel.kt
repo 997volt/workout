@@ -140,6 +140,15 @@ data class ExerciseDto(
     val stepGrams: Long? = null,
     val parentId: String? = null,
     val rowKind: String = ROW_KIND_MOVEMENT,
+    /**
+     * Whether the movement is loaded by the body, or held rather than counted (ROADMAP N219, N220).
+     *
+     * Defaulted, like every added field, so a document written before them decodes as the ordinary,
+     * counted movements it described. Carried because the document brings an exercise *whole* (N47): a
+     * pull-up arriving as an ordinary lift would have its sets read at their added weight alone (B247).
+     */
+    val isBodyweight: Boolean = false,
+    val isTimed: Boolean = false,
 )
 
 /** A day of the week, by name, as the app's `java.time.DayOfWeek` serializes (ROADMAP N170). */

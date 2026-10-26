@@ -9,6 +9,7 @@ import com.google.common.truth.Truth.assertThat
 import java.time.DayOfWeek
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -26,6 +27,22 @@ class ProgramDocumentCodecTest {
         val decoded = ProgramDocumentCodec.decode(ProgramDocumentCodec.encode(document))
 
         assertThat(decoded).isEqualTo(document)
+    }
+
+    @Test
+    fun aDocument_keepsWhatAMovementIs() {
+        // B247: the shared model had no field for either flag, so a program shared with a document
+        // recreated a pull-up as an ordinary movement and a plank as a counted lift. The document brings
+        // an exercise whole (N47); these two are part of what it is.
+        val document = document().copy(
+            exercises = listOf(exercise().copy(isBodyweight = true, isTimed = true)),
+        )
+
+        val decoded = ProgramDocumentCodec.decode(ProgramDocumentCodec.encode(document))
+
+        val movement = decoded.exercises.single()
+        assertTrue("a pull-up stays loaded by the body", movement.isBodyweight)
+        assertTrue("and a hold stays a hold", movement.isTimed)
     }
 
     @Test

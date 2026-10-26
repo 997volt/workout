@@ -199,6 +199,10 @@ private fun ExerciseDto.toShared() = SharedExerciseDto(
     stepGrams = stepGrams,
     parentId = parentId,
     rowKind = rowKind.name,
+    // The two flags that change what a set means (ROADMAP N219, N220, B247). Dropped here, a document
+    // would recreate a pull-up as an ordinary movement and a plank as a counted lift.
+    isBodyweight = isBodyweight,
+    isTimed = isTimed,
 )
 
 private fun SharedExerciseDto.toApp() = ExerciseDto(
@@ -217,6 +221,8 @@ private fun SharedExerciseDto.toApp() = ExerciseDto(
     stepGrams = stepGrams,
     parentId = parentId,
     rowKind = RowKind.valueOf(rowKind),
+    isBodyweight = isBodyweight,
+    isTimed = isTimed,
 )
 
 private fun DayOfWeek.toShared(): Weekday = Weekday.valueOf(name)

@@ -35,6 +35,21 @@ class ProgramCoreTest {
     }
 
     @Test
+    fun a_document_keeps_what_a_movement_is() {
+        // B247: both flags are defaulted additions, so an older document decodes as the counted,
+        // ordinary movements it described — and a newer one keeps a pull-up loaded by the body and a
+        // plank held rather than counted.
+        val document = baseDocument(
+            exercises = listOf(exerciseRow("ex_a", "Pull-up").copy(isBodyweight = true, isTimed = true)),
+        )
+
+        val decoded = ProgramDocumentCodec.decode(ProgramDocumentCodec.encode(document))
+
+        assertTrue(decoded.exercises.single().isBodyweight)
+        assertTrue(decoded.exercises.single().isTimed)
+    }
+
+    @Test
     fun an_ordinary_document_is_encoded_without_an_edit_marker() {
         // The format's one compatibility claim (N171): an export is a proposal to add, so its JSON
         // says nothing about an edit at all. A build that wrote `"edit": null` would be asking every
