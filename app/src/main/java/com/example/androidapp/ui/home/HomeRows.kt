@@ -86,13 +86,12 @@ internal fun HomeBody(
             onSkipBlock = onSkipBlock,
             onOpenPlannedWorkout = onOpenPlannedWorkout,
         )
-        // **The day leads when it holds no workout** (B182). The foot-of-list placement (N115, N124) is
-        // about the day's *work*, which belongs under the thumb; with nothing scheduled there is no such
-        // work, and on a compact screen the four ways in filled the viewport — the "no plan" line and the
-        // day's record row were only reachable by scrolling, and nothing said the list continued. With a
-        // workout, the destinations stay first and the day keeps its place at the foot.
-        val dayHasWork = state.todaysPlan.isNotEmpty()
-        if (!dayHasWork) planItems(state, actions)
+        // **The day is always at the foot** (N115, amended by B239). The day's work belongs under the
+        // thumb, and the record row and the rest-day line are the same block rather than a header, so they
+        // travel with it: a lifter who checks "what am I training" and "what did I weigh" finds both in one
+        // place, every day. B182 led with the block when the plan was empty, to keep those rows on a compact
+        // screen; the cost of this rule is that scroll, and the trade accepts it, because two rows that swap
+        // ends from one day to the next are worse than two rows consistently below the fold.
         wayInItems(
             // Starting is offered only while nothing is running (B101): the bar's Resume pill is the same
             // action, and a second row for it would be the pill under the wrong label.
@@ -104,7 +103,7 @@ internal fun HomeBody(
                 onOpenMeasurements = onOpenMeasurements,
             ),
         )
-        if (dayHasWork) planItems(state, actions)
+        planItems(state, actions)
     }
 }
 
@@ -118,9 +117,10 @@ internal fun HomeBody(
  * with no weekday, and every rest day of one that has them, is reached through the Programs screen now
  * (P3.9's home surface is superseded).
  *
- * It sits at the **foot** of the list when there is work (N115), and **leads** when there is none (B182):
- * the foot is where the day's workout belongs under the thumb, while a day with nothing scheduled has no
- * workout to put there — and the record row was what a compact screen pushed out of sight.
+ * It sits at the **foot** of the list, always (N115, B239): the day's work belongs under the thumb, and the
+ * record row and the "nothing scheduled" line are part of that block rather than a header above the ways in.
+ * B182 led with it on an empty day so a compact screen could not push the record row out of sight; that made
+ * the same two rows change ends with the calendar, and this rule pays the scroll instead.
  *
  * An empty day used to draw nothing at all, which read as a screen that simply ended; it says which kind of
  * empty it is now, because "nothing is followed" and "followed, and today is rest" are different facts

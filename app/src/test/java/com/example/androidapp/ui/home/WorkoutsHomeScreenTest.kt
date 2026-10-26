@@ -516,8 +516,8 @@ class WorkoutsHomeScreenTest {
      * rather than asking which of N113's two records was meant, and it is drawn on the evidence — what is
      * stored for today — rather than on whether the lifter was ever asked.
      *
-     * It is the day's block (B182): under the day's own workout when there is one (N138), and leading the
-     * list when there is not — the scroll below is a no-op in the second case.
+     * It is the day's block (N138, B239): under the day's own workout when there is one, and under the ways
+     * in when there is not — the foot either way, so the scroll below is the same scroll.
      */
     @Test
     fun whileTodayHasNoEntry_theMeasureTodayRow_isOffered_andOpensTheForm() {
@@ -554,18 +554,33 @@ class WorkoutsHomeScreenTest {
     }
 
     @Test
-    fun withNoPlan_theDayBlock_leadsTheWaysIn() {
-        // B182: on a compact screen the four ways-in cards filled the viewport, so the day's own block —
-        // the no-plan line and the record row — was only reachable by scrolling and nothing said the list
-        // continued. With nothing scheduled the day leads; with a workout it keeps its place at the foot
-        // (todaysPlan_sitsBelowTheWaysIn).
+    fun withNoPlan_theDayBlock_keepsItsPlaceAtTheFoot() {
+        // B239: the no-plan line and the record row led the list when nothing was scheduled (B182), so the
+        // two rows a lifter checks most swapped ends of the screen with the calendar. The day's block is
+        // always last now; with a workout it keeps the same place (todaysPlan_sitsBelowTheWaysIn).
         setScreen(WorkoutsHomeUiState(isLoading = false, todayIsMeasured = false))
 
+        scrollTo(TestTags.HOME_MEASURE_TODAY)
         val row = composeTestRule.onNodeWithTag(TestTags.HOME_MEASURE_TODAY).getUnclippedBoundsInRoot()
-        val programs = composeTestRule.onNodeWithTag(TestTags.HOME_PROGRAMS).getUnclippedBoundsInRoot()
+        val start = composeTestRule.onNodeWithTag(TestTags.HOME_START).getUnclippedBoundsInRoot()
 
-        assertWithMessage("the day's row must come before the ways in when there is no workout")
-            .that(row.bottom <= programs.top)
+        assertWithMessage("the day's rows must come after the last way in, plan or no plan")
+            .that(row.top >= start.bottom)
+            .isTrue()
+    }
+
+    @Test
+    fun onARestDay_theDayBlock_keepsItsPlaceAtTheFoot_too() {
+        // A rest day is the same block, so it keeps the same place: the rest line above the record row,
+        // both under the ways in (N115, B239).
+        setScreen(WorkoutsHomeUiState(isLoading = false, hasActiveProgram = true))
+
+        scrollTo(TestTags.HOME_MEASURE_TODAY)
+        val rest = composeTestRule.onNodeWithTag(TestTags.HOME_NO_PLAN).getUnclippedBoundsInRoot()
+        val start = composeTestRule.onNodeWithTag(TestTags.HOME_START).getUnclippedBoundsInRoot()
+
+        assertWithMessage("a rest day's line sits under the ways in, with the record row")
+            .that(rest.top >= start.bottom)
             .isTrue()
     }
 
