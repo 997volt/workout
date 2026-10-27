@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.statistics
 
+import android.content.Context
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -22,7 +23,9 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
@@ -85,6 +88,14 @@ class StatisticsScreenTest {
             .that(foot)
             .isGreaterThan(figure.top + figureHeight * 0.75f)
     }
+
+    private val collapsedReadings: String
+        get() = ApplicationProvider.getApplicationContext<Context>()
+            .getString(R.string.statistics_readings_collapsed)
+
+    private val expandedReadings: String
+        get() = ApplicationProvider.getApplicationContext<Context>()
+            .getString(R.string.statistics_readings_expanded)
 
     private fun setScreen(
         state: StatisticsUiState = StatisticsUiState(
@@ -651,35 +662,74 @@ class StatisticsScreenTest {
     @Test
     fun theReadingsAreCollapsed_untilTheyAreAskedFor() {
         // The chart is what the screen is for; a year of readings is a wall of numbers to anyone who has not
-        // asked for one.
+        // asked for one — but the summaries are not behind that fold any more (N221).
         setScreen()
 
         composeTestRule.onNodeWithTag(TestTags.Statistics.READINGS_TOGGLE).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.reading(0)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.SUMMARY_AVERAGE).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.SUMMARY_TREND).assertExists()
     }
 
     @Test
-    fun expanding_putsTheAverageOnTop_andTheReadingsNewestFirst() {
+    fun expanding_showsTheReadingsNewestFirst() {
         setScreen()
 
         // The screen scrolls and the chart's labels sit above this, so the control may be below the fold:
         // Compose dispatches a click at coordinates, and a node that is not on screen is not clickable.
         composeTestRule.onNodeWithTag(TestTags.Statistics.READINGS_TOGGLE).performScrollTo().performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.READINGS_AVERAGE).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.reading(0)).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.reading(1)).assertExists()
         composeTestRule.onNodeWithTag(TestTags.Statistics.reading(2)).assertDoesNotExist()
     }
 
     @Test
-    fun expanding_showsTheTrendBesideTheAverage() {
-        // The row N36 deliberately left out, arriving with the line that gives it a number (N39).
+    fun theReadingsHeader_statesWhetherItIsOpen() {
+        // N221: the label carries the count and the icon carries the direction, and neither reaches a screen
+        // reader — so the disclosure says which state it is in.
         setScreen()
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.READINGS_TOGGLE).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.READINGS_TOGGLE)
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    collapsedReadings,
+                ),
+            )
+            .performScrollTo()
+            .performClick()
 
-        composeTestRule.onNodeWithTag(TestTags.Statistics.READINGS_TREND).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.Statistics.READINGS_TOGGLE)
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    expandedReadings,
+                ),
+            )
+    }
+
+    @Test
+    fun theSummary_comesBeforeTheTargetAndTheEvidence() {
+        // N221's order: what the series says, then the target it is measured against, then the totals, then the
+        // rows it is made of.
+        setScreen()
+
+        val average = composeTestRule.onNodeWithTag(TestTags.Statistics.SUMMARY_AVERAGE)
+            .getUnclippedBoundsInRoot().top
+        val trend = composeTestRule.onNodeWithTag(TestTags.Statistics.SUMMARY_TREND)
+            .getUnclippedBoundsInRoot().top
+        val targetRate = composeTestRule.onNodeWithTag(TestTags.Statistics.ENERGY)
+            .getUnclippedBoundsInRoot().top
+        val overview = composeTestRule.onNodeWithTag(TestTags.Statistics.OVERVIEW_WORKOUTS)
+            .getUnclippedBoundsInRoot().top
+        val readings = composeTestRule.onNodeWithTag(TestTags.Statistics.READINGS_TOGGLE)
+            .getUnclippedBoundsInRoot().top
+
+        assertWithMessage("the average comes before the trend").that(average).isLessThan(trend)
+        assertWithMessage("and the trend before the target").that(trend).isLessThan(targetRate)
+        assertWithMessage("the target before the totals").that(targetRate).isLessThan(overview)
+        assertWithMessage("and the evidence last").that(overview).isLessThan(readings)
     }
 
     @Test

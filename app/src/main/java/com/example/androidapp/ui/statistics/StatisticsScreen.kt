@@ -38,6 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -232,9 +234,10 @@ private fun StatisticsBody(
                 planTargets = state.planTargets,
                 onZoom = onPinch,
             )
-            // Under the chart, and the literal answer to "see everything" — which is also the accessible
-            // counterpart to a canvas this app blanks out for screen readers (ROADMAP N36).
-            ReadingsSection(series = series, metric = entry)
+            // The summaries come before the evidence (N221): what the series says, then the target it is
+            // measured against, then the totals, then the rows it is made of. The average and the trend used to
+            // live inside the readings' disclosure, so the page hid its own answer behind a list of weigh-ins.
+            SeriesSummary(series = series, metric = entry)
             // A weight goal is set on the measurements screen now, where the body is recorded (a request in
             // use; no roadmap id covers the move) — the chart still draws it from the goal's periods.
             if (entry.key != MetricKey.Body(BodyMetric.WEIGHT)) {
@@ -256,7 +259,13 @@ private fun StatisticsBody(
         }
         // The three numbers sit after the figure rather than above it (N208): they summarise the window, and the
         // window is what the chart is for — a card between the metric and the chart is a row the figure pays for.
+        // They are outside the series block because they read the sessions, not the series; N221 puts the
+        // readings after them so the page ends on its evidence, which is also the accessible counterpart to a
+        // canvas this app blanks out.
         Overview(overview = state.overview)
+        series?.let { current ->
+            ReadingsSection(series = current, metric = MetricRegistry.entryFor(current.key))
+        }
     }
 }
 
@@ -419,22 +428,64 @@ private fun Number(labelRes: Int, value: String, testTag: String) {
 }
 
 /**
- * The readings, newest first, with the average on top (ROADMAP N36).
+ * What the series says, before the rows it is made of (N221, amending N36).
+ *
+ * The average and the trend are summaries of the whole window rather than evidence for it, so they no longer
+ * live behind the readings' disclosure: they sit under the figure and the target follows them. Two rows rather
+ * than a card of their own, because they are two facts about the same series and the figure's card is the room
+ * the line is drawn in.
+ */
+@Composable
+private fun SeriesSummary(series: MetricSeries, metric: MetricEntry) {
+    Column {
+        series.average()?.let { average ->
+            ReadingRow(
+                label = stringResource(R.string.statistics_average),
+                value = metric.unit.format(average),
+                testTag = TestTags.Statistics.SUMMARY_AVERAGE,
+            )
+        }
+        // The Trend row the roadmap puts beside the average (N36, N39). It arrives with the fitted line rather
+        // than before it: a slope is a reading of the series, and there was nothing to read.
+        series.trend()?.let { trend ->
+            ReadingRow(
+                label = stringResource(R.string.statistics_trend),
+                value = stringResource(
+                    R.string.statistics_per_week,
+                    slopeText(trend.perWeek) { metric.unit.formatRate(it) },
+                    stringResource(metric.unit.labelRes),
+                ),
+                testTag = TestTags.Statistics.SUMMARY_TREND,
+            )
+        }
+    }
+}
+
+/**
+ * The readings as evidence: newest first, behind a disclosure (ROADMAP N36, N221).
  *
  * Collapsed by default: the chart is what the screen is for, and a year of readings is a wall of numbers to
- * anyone who has not asked for one. Nothing at all when there is nothing recorded — a disclosure control
- * that opens onto emptiness is worse than no control.
+ * anyone who has not asked for one. **The summaries are no longer in here** (N221) — the average and the trend
+ * say what the series means, so they sit above this row, and what opens is the list they were computed from.
+ * Nothing at all when there is nothing recorded: a disclosure control that opens onto emptiness is worse than
+ * no control.
  */
 @Composable
 private fun ReadingsSection(series: MetricSeries, metric: MetricEntry) {
     val readings = series.asReadings()
     if (readings.isEmpty()) return
     var expanded by rememberSaveable { mutableStateOf(false) }
+    val collapsedState = stringResource(R.string.statistics_readings_collapsed)
+    val expandedState = stringResource(R.string.statistics_readings_expanded)
 
     Column {
         AppTextButton(
             onClick = { expanded = !expanded },
-            modifier = Modifier.testTag(TestTags.Statistics.READINGS_TOGGLE),
+            modifier = Modifier
+                .testTag(TestTags.Statistics.READINGS_TOGGLE)
+                // N221: the label says how many readings there are and the icon shows which way it opens, and
+                // neither is said to a screen reader — so the disclosure states its state itself.
+                .semantics { stateDescription = if (expanded) expandedState else collapsedState },
         ) {
             Text(stringResource(R.string.statistics_readings, readings.size))
             Icon(
@@ -449,26 +500,6 @@ private fun ReadingsSection(series: MetricSeries, metric: MetricEntry) {
         }
 
         if (expanded) {
-            series.average()?.let { average ->
-                ReadingRow(
-                    label = stringResource(R.string.statistics_average),
-                    value = metric.unit.format(average),
-                    testTag = TestTags.Statistics.READINGS_AVERAGE,
-                )
-            }
-            // The Trend row the roadmap puts beside the average (N36, N39). It arrives with the fitted line
-            // rather than before it: a slope is a reading of the series, and there was nothing to read.
-            series.trend()?.let { trend ->
-                ReadingRow(
-                    label = stringResource(R.string.statistics_trend),
-                    value = stringResource(
-                        R.string.statistics_per_week,
-                        slopeText(trend.perWeek) { metric.unit.formatRate(it) },
-                        stringResource(metric.unit.labelRes),
-                    ),
-                    testTag = TestTags.Statistics.READINGS_TREND,
-                )
-            }
             readings.forEachIndexed { index, reading ->
                 ReadingRow(
                     label = HistoryFormat.date(reading.at, zone = ZoneId.systemDefault()),

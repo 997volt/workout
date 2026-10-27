@@ -361,6 +361,9 @@
     <string name="statistics_custom_to">To</string>
     <string name="statistics_custom_apply">Apply</string>
     <string name="statistics_readings">Readings (%1$d)</string>
+    <!-- The disclosure's state, which its label does not say and its icon does not read out (N221). -->
+    <string name="statistics_readings_collapsed">Collapsed</string>
+    <string name="statistics_readings_expanded">Expanded</string>
     <string name="statistics_average">Average</string>
     <string name="statistics_trend">Trend</string>
     <string name="statistics_moving_average">Average of last</string>

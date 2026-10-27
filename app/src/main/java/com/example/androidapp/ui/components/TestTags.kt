@@ -978,8 +978,10 @@ object TestTags {
         /** The other screen this tab pushes: adherence over a month (ROADMAP P3.5). */
         const val ADHERENCE = "statistics_adherence"
         const val READINGS_TOGGLE = "statistics_readings_toggle"
-        const val READINGS_AVERAGE = "statistics_readings_average"
-        const val READINGS_TREND = "statistics_readings_trend"
+
+        /** The series's average and its fitted slope, which sit above the readings rather than inside (N221). */
+        const val SUMMARY_AVERAGE = "statistics_summary_average"
+        const val SUMMARY_TREND = "statistics_summary_trend"
         const val MOVING_AVERAGE = "statistics_moving_average"
         const val GOAL = "statistics_goal"
         const val GOAL_SET = "statistics_goal_set"
