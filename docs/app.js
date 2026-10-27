@@ -5326,11 +5326,17 @@
           updatedAt: time,
           deletedAt: null
         });
-        for (var setIndex = 1; setIndex <= exercise.sets; setIndex += 1) {
+        // A plan's `setIndex` is its place, and the app stores places from 0 — `addSet` appends
+        // `max + 1` and a ramp takes `0..n-1` (B34) — so the document says what the app would hold
+        // (B257). Numbering from 1 instead made the app's first set find no target at all and every
+        // later set wear the row above it. The id keeps its original 1-based seed, so a program
+        // loaded from the old output is recognised when the same table is loaded again rather than
+        // arriving twice.
+        for (var setIndex = 0; setIndex < exercise.sets; setIndex += 1) {
           setCount += 1;
           templateSets.push({
             id: 'tset_' + fnv1a64Hex(
-              'template-set|' + programName + '|' + day.name + '|' + exercise.row + '|' + setIndex
+              'template-set|' + programName + '|' + day.name + '|' + exercise.row + '|' + (setIndex + 1)
             ),
             templateExerciseId: templateExerciseId,
             setIndex: setIndex,

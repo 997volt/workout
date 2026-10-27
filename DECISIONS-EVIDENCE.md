@@ -2932,3 +2932,30 @@ there is one — and the row closes with the premise corrected rather than a red
 
 **Covered by** the template editor's tests: a plan with an RPE and a load states "+2.5 kg", one without an
 RPE says why it cannot progress, and the existing block tests keep the line inside the expanded block.
+
+## B257
+
+**What was run.** A one-block program built by the import helper's own `buildProgramDocument` (the table
+path), loaded through Programs' *Load*, and started from home. Its first set showed "3 planned sets left"
+and no `Plan …` line, with the weight and reps fields on 8 × 20 kg — the fallback — and logging it made the
+second set read `Plan 5 reps @ 100 kg, RPE 8` with 100 × 5 in the fields. The database showed why: the same
+kind of block loaded from a hand-made backup held `setIndex` 0, 1, 2 for one exercise, the imported one 1, 2,
+3.
+
+**Why the plan is read by place.** B72 already says a plan is read by position — a plan's order *is* the
+plan, and `setIndex` is how the app records that order rather than a durable id — and the session side of the
+lookup was already a place (`nextIndex = loggedSets.size`). Only the plan side compared a stored number, so a
+document with a different base broke it silently. Reading an ordered list makes either base land on the row a
+session means, and it costs nothing for the plans the app writes, because there the number and the place are
+the same.
+
+**Why not renumber.** A migration, or a rewrite on import, would have to decide which plans are shifted and
+cannot: the validator tolerates a plan whose rows are not contiguous (a hole is a legal shape in a file
+written elsewhere), so "begins at 1" is not proof of a base. Rewriting prescriptions the lifter did not touch
+on that guess is worse than reading the order that is already there, which is the rule B72 settled.
+
+**Why the page was fixed anyway.** A document carries raw storage (N47), so it should say what the app would
+hold; the N173 evidence already describes an added editor row as keeping "the app's zero-based set indices",
+so the 1-based table output had the page disagreeing with itself. `ProgramDocumentFixtureTest` pinned those
+sets' targets and never their indices, which is how a fixture with `setIndex: 1..N` passed the app's gate for
+a release; it now pins the indices too.

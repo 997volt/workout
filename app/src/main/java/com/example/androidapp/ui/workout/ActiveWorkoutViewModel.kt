@@ -150,11 +150,14 @@ data class SessionExerciseRow(
     /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
     val stepGrams: Long? = null,
     /**
-     * The plan's set indexes whose run carries on into the next row (ROADMAP N79).
+     * The plan's places whose run carries on into the next row (ROADMAP N79, B257).
      *
-     * The rest is the group's, so it starts after the run's last rung rather than between its rungs —
-     * and the decision is made while a set is being logged, where the plan is no longer in hand. Empty
-     * for a plan with no runs in it, which is every plan before this and most after it.
+     * A place rather than a stored `setIndex`, because the reader asks "is the run still open after
+     * the sets logged so far" — a count — and a plan imported from a document numbered from one used
+     * to answer one set late (B257). The rest is the group's, so it starts after the run's last rung
+     * rather than between its rungs — and the decision is made while a set is being logged, where the
+     * plan is no longer in hand. Empty for a plan with no runs in it, which is every plan before this
+     * and most after it.
      */
     val runContinuesAfter: Set<Int> = emptySet(),
     /**

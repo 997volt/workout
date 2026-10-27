@@ -1229,6 +1229,21 @@ the rule; that one argues it.
   and overwrites nothing**, and the program arrives **inactive and last**. Rejected: restoring a row
   this device has deleted, as the backup does, because this is an additive share (B51).
   ([evidence](DECISIONS-EVIDENCE.md#n47))
+- **A plan is read by its order, never by the number a row was stored under** (B72, B257). The app keeps its
+  own plans contiguous from 0 (`addSet` appends `max + 1`, a ramp takes `0..n-1`, B34), so the two are the
+  same number for anything this app wrote — which is what let a program document number a table's sets from
+  1 and still pass every test. The workout finds a plan's next row by how many sets are logged, so matching
+  the *stored* number gave a plan loaded from such a document no target at all for its first set and the row
+  above it for every later one: the first set fell back to history or the default, a ramp prescribed the
+  wrong load, a warm-up landed on the second set, and the plan's last row was never used. **Both places that
+  pair a plan row with a session's sets read an ordered list**: `plannedTargetFor` takes a place, and
+  `runContinuesAfter` answers with places rather than indices. That makes a document written the old way —
+  and a plan already imported from one — read correctly as it stands. The helper writes the app's indices
+  now, and the document fixture pins them, which is the assertion whose absence let both hosts stay green
+  while disagreeing. Rejected: renumbering on import or in a migration, because a plan's rows are places
+  either way and rewriting prescriptions the lifter did not touch is a worse answer than reading the order
+  that is already there.
+  ([evidence](DECISIONS-EVIDENCE.md#b257))
 - **History that predates the app is converted outside it, by a page the app never talks to** (N159). The app
   reads only its own formats, and it must: the backup's import is one transaction that names no row when it
   refuses, and its merge never overwrites, so a generated file either fails opaquely or lands unchecked and

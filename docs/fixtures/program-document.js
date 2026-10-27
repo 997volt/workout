@@ -142,7 +142,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_b372a2be89bcf9bb",
       "templateExerciseId": "tex_d796a97e73240212",
-      "setIndex": 1,
+      "setIndex": 0,
       "role": "NORMAL",
       "targetWeightGrams": 82500,
       "targetAssistanceGrams": null,
@@ -158,7 +158,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_b372a3be89bcfb6e",
       "templateExerciseId": "tex_d796a97e73240212",
-      "setIndex": 2,
+      "setIndex": 1,
       "role": "NORMAL",
       "targetWeightGrams": 82500,
       "targetAssistanceGrams": null,
@@ -174,7 +174,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_b372a4be89bcfd21",
       "templateExerciseId": "tex_d796a97e73240212",
-      "setIndex": 3,
+      "setIndex": 2,
       "role": "NORMAL",
       "targetWeightGrams": 82500,
       "targetAssistanceGrams": null,
@@ -190,7 +190,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_b372a5be89bcfed4",
       "templateExerciseId": "tex_d796a97e73240212",
-      "setIndex": 4,
+      "setIndex": 3,
       "role": "NORMAL",
       "targetWeightGrams": 82500,
       "targetAssistanceGrams": null,
@@ -206,7 +206,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_b372a6be89bd0087",
       "templateExerciseId": "tex_d796a97e73240212",
-      "setIndex": 5,
+      "setIndex": 4,
       "role": "NORMAL",
       "targetWeightGrams": 82500,
       "targetAssistanceGrams": null,
@@ -222,7 +222,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_bad5bbbe8d8f8f40",
       "templateExerciseId": "tex_d796aa7e732403c5",
-      "setIndex": 1,
+      "setIndex": 0,
       "role": "NORMAL",
       "targetWeightGrams": 70000,
       "targetAssistanceGrams": null,
@@ -238,7 +238,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_bad5bebe8d8f9459",
       "templateExerciseId": "tex_d796aa7e732403c5",
-      "setIndex": 2,
+      "setIndex": 1,
       "role": "NORMAL",
       "targetWeightGrams": 70000,
       "targetAssistanceGrams": null,
@@ -254,7 +254,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_bad5bdbe8d8f92a6",
       "templateExerciseId": "tex_d796aa7e732403c5",
-      "setIndex": 3,
+      "setIndex": 2,
       "role": "NORMAL",
       "targetWeightGrams": 70000,
       "targetAssistanceGrams": null,
@@ -270,7 +270,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_bad5c0be8d8f97bf",
       "templateExerciseId": "tex_d796aa7e732403c5",
-      "setIndex": 4,
+      "setIndex": 3,
       "role": "NORMAL",
       "targetWeightGrams": 70000,
       "targetAssistanceGrams": null,
@@ -286,7 +286,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_a17cccbe7f62d175",
       "templateExerciseId": "tex_d796a37e7323f7e0",
-      "setIndex": 1,
+      "setIndex": 0,
       "role": "NORMAL",
       "targetWeightGrams": 82500,
       "targetAssistanceGrams": null,
@@ -302,7 +302,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_a17cc9be7f62cc5c",
       "templateExerciseId": "tex_d796a37e7323f7e0",
-      "setIndex": 2,
+      "setIndex": 1,
       "role": "NORMAL",
       "targetWeightGrams": 82500,
       "targetAssistanceGrams": null,
@@ -318,7 +318,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_a17ccabe7f62ce0f",
       "templateExerciseId": "tex_d796a37e7323f7e0",
-      "setIndex": 3,
+      "setIndex": 2,
       "role": "NORMAL",
       "targetWeightGrams": 82500,
       "targetAssistanceGrams": null,
@@ -334,7 +334,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_a17cc7be7f62c8f6",
       "templateExerciseId": "tex_d796a37e7323f7e0",
-      "setIndex": 4,
+      "setIndex": 3,
       "role": "NORMAL",
       "targetWeightGrams": 82500,
       "targetAssistanceGrams": null,
@@ -350,7 +350,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_a17cc8be7f62caa9",
       "templateExerciseId": "tex_d796a37e7323f7e0",
-      "setIndex": 5,
+      "setIndex": 4,
       "role": "NORMAL",
       "targetWeightGrams": 82500,
       "targetAssistanceGrams": null,
@@ -366,7 +366,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_c9a9750b5cc1aacb",
       "templateExerciseId": "tex_5eed94e3e3b3cfa6",
-      "setIndex": 1,
+      "setIndex": 0,
       "role": "NORMAL",
       "targetWeightGrams": 100000,
       "targetAssistanceGrams": null,
@@ -382,7 +382,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_c9a9760b5cc1ac7e",
       "templateExerciseId": "tex_5eed94e3e3b3cfa6",
-      "setIndex": 2,
+      "setIndex": 1,
       "role": "NORMAL",
       "targetWeightGrams": 100000,
       "targetAssistanceGrams": null,
@@ -398,7 +398,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_c9a9770b5cc1ae31",
       "templateExerciseId": "tex_5eed94e3e3b3cfa6",
-      "setIndex": 3,
+      "setIndex": 2,
       "role": "NORMAL",
       "targetWeightGrams": 100000,
       "targetAssistanceGrams": null,
@@ -414,7 +414,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_c9a9780b5cc1afe4",
       "templateExerciseId": "tex_5eed94e3e3b3cfa6",
-      "setIndex": 4,
+      "setIndex": 3,
       "role": "NORMAL",
       "targetWeightGrams": 100000,
       "targetAssistanceGrams": null,
@@ -430,7 +430,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_c9a9790b5cc1b197",
       "templateExerciseId": "tex_5eed94e3e3b3cfa6",
-      "setIndex": 5,
+      "setIndex": 4,
       "role": "NORMAL",
       "targetWeightGrams": 100000,
       "targetAssistanceGrams": null,
@@ -446,7 +446,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_e302e40b6aef4216",
       "templateExerciseId": "tex_5eed93e3e3b3cdf3",
-      "setIndex": 1,
+      "setIndex": 0,
       "role": "NORMAL",
       "targetWeightGrams": 30000,
       "targetAssistanceGrams": null,
@@ -462,7 +462,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_e302e30b6aef4063",
       "templateExerciseId": "tex_5eed93e3e3b3cdf3",
-      "setIndex": 2,
+      "setIndex": 1,
       "role": "NORMAL",
       "targetWeightGrams": 30000,
       "targetAssistanceGrams": null,
@@ -478,7 +478,7 @@ window.PROGRAM_DOCUMENT_FIXTURE = {
     {
       "id": "tset_e302e20b6aef3eb0",
       "templateExerciseId": "tex_5eed93e3e3b3cdf3",
-      "setIndex": 3,
+      "setIndex": 2,
       "role": "NORMAL",
       "targetWeightGrams": 30000,
       "targetAssistanceGrams": null,

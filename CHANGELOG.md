@@ -13,6 +13,20 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Fixed
+
+- **A plan imported as a document starts on the right set** (B257). The import helper numbered a program
+  table's planned sets from 1 while the app keeps them from 0, and the workout finds a plan's row by how
+  many sets are logged — so a program loaded from the helper opened its first workout with the first set's
+  target missing (no *Plan* line, the fields on history's fallback or the default) and every later set
+  wearing the row above it: a ramp prescribed the load of the set before, a plan opening with a warm-up
+  armed its first set as work, and its last row was never used. A plan is now read by its **order**, the
+  place B72 already gave it, so a set is prefilled from the row that is actually next. The helper writes the
+  app's indices now, and an already-imported plan reads correctly as it stands — nothing is renumbered
+  under the lifter.
+
 ## [2.16] — 2026-10-26 (versionCode 36)
 
 ### Added

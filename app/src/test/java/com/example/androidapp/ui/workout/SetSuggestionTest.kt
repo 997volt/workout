@@ -407,6 +407,81 @@ class SetSuggestionTest {
     }
 
     @Test
+    fun aPlanNumberedFromOne_isReadByPlace_notByItsStoredIndex() {
+        // B257: the import helper numbered a program table's rows from one, and the lookup matched the
+        // stored number against the count of logged sets — so the first set found nothing at all and
+        // each later set wore the row above it. The plan's order is what a session reads; the number is
+        // how the app happens to record it.
+        val plan = planNumberedFromOne()
+
+        assertEquals("the first set takes the plan's first row", 100_000L, plannedTargetFor(plan, 0)?.weightGrams)
+        assertEquals(5, plannedTargetFor(plan, 0)?.reps)
+        assertEquals("and the second takes the second", 105_000L, plannedTargetFor(plan, 1)?.weightGrams)
+        assertEquals(3, plannedTargetFor(plan, 1)?.reps)
+        assertNull("the plan is only as long as it says", plannedTargetFor(plan, 2))
+    }
+
+    @Test
+    fun aRungPlanNumberedFromOne_stillDerivesItsLoadFromTheRowAbove() {
+        // The same read feeds `rungLoadAt`, which takes a place: a ladder whose rows are numbered from
+        // one must still find its anchor by adjacency (B257).
+        val plan = planNumberedFromOne(
+            second = TemplateSet(
+                id = "ts2",
+                templateExerciseId = "te1",
+                setIndex = 2,
+                role = SetType.DROP,
+                dropValueGrams = 20_000L,
+            ),
+        )
+
+        val rung = plannedTargetFor(plan, nextIndex = 1, anchorLoad = Load(100_000L, 0L))
+
+        assertEquals(80_000L, rung?.weightGrams)
+        assertEquals(SetType.DROP, rung?.role)
+    }
+
+    @Test
+    fun aPlanArrivingOutOfOrder_isStillReadInItsOwnOrder() {
+        // The place is a place in the *plan*, not in the list the rows came back in: read in arrival
+        // order, a reversed plan would give the first set the last row's targets.
+        val plan = planNumberedFromOne()
+        val reversed = plan.copy(sets = plan.sets.reversed())
+
+        assertEquals(100_000L, plannedTargetFor(reversed, 0)?.weightGrams)
+        assertEquals(105_000L, plannedTargetFor(reversed, 1)?.weightGrams)
+    }
+
+    /** A two-row plan stored from 1, which is what a program document written before B257 held. */
+    private fun planNumberedFromOne(
+        second: TemplateSet = TemplateSet(
+            id = "ts2",
+            templateExerciseId = "te1",
+            setIndex = 2,
+            targetWeightGrams = 105_000L,
+            targetRepsMax = 3,
+        )
+    ) = TemplateExercise(
+        id = "te1",
+        templateId = "t1",
+        exerciseId = "back-squat",
+        position = 0,
+        exerciseName = "Back Squat",
+        primaryMuscle = MuscleGroup.QUADS,
+        equipment = Equipment.BARBELL,
+        sets = listOf(
+            TemplateSet(
+                id = "ts1",
+                templateExerciseId = "te1",
+                setIndex = 1,
+                targetWeightGrams = 100_000L,
+                targetRepsMax = 5,
+            ),
+            second,
+        ),
+    )
+
+    @Test
     fun aRungIsOfferedOnlyWhereTheSetAboveItStandsOnItsOwn() {
         // ROADMAP B63, B64: the picker's question, answered by the rule the write boundary holds. The
         // first set of an exercise has nothing above it and a warm-up is not an anchor, so neither can

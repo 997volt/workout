@@ -165,8 +165,11 @@ Walk the rows in order, keeping the current date and the current exercise:
 3. **A non-blank exercise starts an exercise block** in the current session.
 4. **A blank date means the current session; a blank exercise means the current block.** A non-blank value
    always wins.
-5. **A row with reps or weight is a set**, with `setIndex` counting from 1 **including warm-ups**, because
-   that is how the app stores them; it numbers the work sets separately when it displays them.
+5. **A row with reps or weight is a set**, with `setIndex` counting from 1 **including warm-ups** — a logged
+   set is read by its **place** in the exercise's list rather than by this number (B72), so the only job it
+   has in a history file is stating that order. **A plan's sets are the other way round**: the app stores
+   them from 0 and the program document carries that (B257), because the workout asks the plan for the set
+   at a place. The app numbers the work sets separately when it displays them.
 6. **A row with neither is context, not a set.** A date-only row opens the session and an exercise heading
    opens the block; the row's note joins the session's, and no set is written (N162). A row with a date and
    nothing else therefore neither blocks the file nor becomes an empty workout — it is left out with a

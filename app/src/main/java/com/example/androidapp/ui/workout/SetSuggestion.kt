@@ -290,6 +290,12 @@ internal fun RungRefusal.sentence(role: SetType): String {
  * session's rows with the plan's is [planEntriesFor]'s one job, and it matches by movement instead.
  * A plan that has nothing to say about this set — or no entry at all — is null, which leaves the
  * older rule below to decide.
+ *
+ * **[nextIndex] names a place in the plan, not a stored `setIndex`** (B72, B257). The two are the same
+ * number for every plan this app writes, because it keeps them contiguous from zero — but a plan can
+ * arrive from a document that numbered its rows from one, and matching the stored number against the
+ * count of logged sets then found nothing for the first set and the row above it for every later one:
+ * the first set lost its targets and each set wore the previous one's.
  */
 fun plannedTargetFor(
     planned: TemplateExercise?,
@@ -303,8 +309,10 @@ fun plannedTargetFor(
      */
     anchorLoad: Load? = null,
 ): PlannedTarget? {
-    val sets = planned?.sets.orEmpty()
-    val index = sets.indexOfFirst { it.setIndex == nextIndex }
+    // The plan's order, stated once: a rung's ladder and its anchor are read by adjacency, so anything
+    // below reads the same ordered list rather than the order the rows happened to arrive in.
+    val sets = planned?.sets.orEmpty().sortedBy { it.setIndex }
+    val index = nextIndex
     val set = sets.getOrNull(index) ?: return null
 
     // A rung carries no targets of its own (ROADMAP N79): its load is derived, and its reps are the

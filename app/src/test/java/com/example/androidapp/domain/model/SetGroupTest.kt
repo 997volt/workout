@@ -162,6 +162,34 @@ class SetGroupTest {
     }
 
     @Test
+    fun aPlanNumberedFromOne_continuesItsRunAtItsPlaces() {
+        // B257: the answer is a place, because the caller compares it with the number of sets logged.
+        // Rows stored from one used to make a run read as open one set too late, which put the rest
+        // wait between the wrong pair; the plan's own order is what the answer is made of.
+        val sets = listOf(
+            set(1),
+            set(2, role = SetType.DROP, weightGrams = null, dropValueGrams = 20_000L),
+            set(3, role = SetType.DROP, weightGrams = null),
+        )
+
+        assertEquals(setOf(0, 1), sets.runContinuesAfter())
+    }
+
+    @Test
+    fun aPlanArrivingOutOfOrder_isReadInItsOwnOrder() {
+        // The adjacency is between neighbours in the plan, not in the list the rows happened to arrive
+        // in: read in arrival order the drop at `setIndex` 3 would follow the anchor with nothing above
+        // it, and the run would answer with the wrong places.
+        val sets = listOf(
+            set(3, role = SetType.DROP, weightGrams = null),
+            set(1),
+            set(2, role = SetType.DROP, weightGrams = null, dropValueGrams = 20_000L),
+        )
+
+        assertEquals(setOf(0, 1), sets.runContinuesAfter())
+    }
+
+    @Test
     fun aDifferentKindOfRung_doesNotContinueTheRun() {
         // A drop followed by a cluster is two runs, so the drop closes its own (ROADMAP N79).
         val sets = listOf(

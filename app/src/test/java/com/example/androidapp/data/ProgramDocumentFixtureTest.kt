@@ -87,5 +87,18 @@ class ProgramDocumentFixtureTest {
         assertThat(created.primaryMuscle).isNull()
         assertThat(created.equipment).isNull()
         assertThat(created.deletedAt).isNull()
+
+        // **A plan's indices are places, and the app stores them contiguous from zero** (B257). The
+        // workout reads the plan's next row by how many sets are logged, so a document numbered from one
+        // gave the first set no target at all and every later set the row above it. Pinned here because
+        // this file is the app's reading of what the helper writes — the target values above were pinned
+        // and the indices were not, which is how both sides stayed green while disagreeing.
+        document.templateExercises.forEach { exercise ->
+            val indexes = document.templateSets
+                .filter { it.templateExerciseId == exercise.id }
+                .map { it.setIndex }
+                .sorted()
+            assertThat(indexes).isEqualTo(List(indexes.size) { it })
+        }
     }
 }

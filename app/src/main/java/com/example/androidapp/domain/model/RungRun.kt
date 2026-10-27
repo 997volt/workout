@@ -138,10 +138,20 @@ fun List<TemplateSet>.continuesItsRunAt(index: Int): Boolean {
 }
 
 /**
- * The set indexes whose run carries on into the next planned row (ROADMAP N79).
+ * The places in the plan whose run carries on into the next planned row (ROADMAP N79, B257).
+ *
+ * A **place**, not the row's stored `setIndex`: the caller asks whether the run carries on after the
+ * sets logged so far, which is a position, and a plan imported from a document that numbered its rows
+ * from one stored its first row as 1 — so the stored index answered "carry on" one set too late and the
+ * rest wait landed between the wrong pair. Places are identical to the stored numbers for every plan
+ * this app authored, which is why the answer is unchanged there.
  *
  * Precomputed where the plan is in hand, because the rest is decided while a set is being logged and
  * that path has the row rather than the plan.
  */
-fun List<TemplateSet>.runContinuesAfter(): Set<Int> =
-    indices.filter { continuesItsRunAt(it) }.map { this[it].setIndex }.toSet()
+fun List<TemplateSet>.runContinuesAfter(): Set<Int> {
+    // The adjacency is read on the ordered list, not on whatever order the rows arrived in: a plan is
+    // its order (B72), and `continuesItsRunAt` looks at the row above and below.
+    val ordered = sortedBy { it.setIndex }
+    return ordered.indices.filter { ordered.continuesItsRunAt(it) }.toSet()
+}
