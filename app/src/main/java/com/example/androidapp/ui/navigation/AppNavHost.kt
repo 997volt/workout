@@ -7,9 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,10 +58,10 @@ fun AppNavHost(
     val destination = backStackEntry?.destination
 
     // A pushed detail keeps its tab highlighted, which is what makes the bar a map of where you are
-    // rather than five buttons that forget the moment you open something.
-    var lastTab by rememberSaveable { mutableStateOf(AppTab.WORKOUTS) }
-    val tabRoot = AppTab.forRoute(destination?.route)
-    LaunchedEffect(tabRoot) { tabRoot?.let { lastTab = it } }
+    // rather than five buttons that forget the moment you open something. The rule lives in
+    // `TabHighlight` rather than here so it can be asserted without the application graph (B264).
+    val highlight = rememberSaveable(saver = TabHighlight.Saver) { TabHighlight() }
+    LaunchedEffect(destination?.route) { highlight.onRoute(destination?.route) }
 
     // The unit every weight is read in, provided once here rather than threaded through every
     // screen between this and the field that shows a number (ROADMAP N64).
@@ -76,17 +74,12 @@ fun AppNavHost(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (showBar) {
-                // The bar's own selected tab is what tells a re-tap apart from a switch (N223): the stack cannot,
-                // because a detail inside a tab is not a tab. **The choice updates it here as well as from the
-                // route below**, and that is load-bearing: a tab restored at a detail leaves `tabRoot` null, so
-                // the route would keep the previous tab and the next tap on this one would read as a switch.
                 AppTabBar(
-                    selected = lastTab,
-                    onSelect = { tab ->
-                        val selected = lastTab
-                        if (tab != selected) lastTab = tab
-                        navController.switchTab(tab, selected = selected)
-                    },
+                    selected = highlight.selected,
+                    // The tap writes the highlight before the navigation does (N223): a tab restored at a
+                    // detail settles on a route that names no tab, so the route cannot say which tab is
+                    // showing, and the switch has to be told what was showing to tell a re-tap from a switch.
+                    onSelect = { tab -> navController.switchTab(tab, selected = highlight.onTap(tab)) },
                 )
             }
         },

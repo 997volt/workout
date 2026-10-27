@@ -17,16 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The rest of the post-2.16 review.** The statistics reorder (N221/N222), the figure's size, scale and clip
-(B259–B261, B263), the tab button that floors its own tab (N223) and the plan and progression fixes (B257, B258)
-are in; reading them against the code turned up the rows below. The tab button has wiring and a test gap behind it
-(B264, B265). The gate is green — unit tests, the shared JVM and JS tests, lint, detekt, the debug and R8
-assemblies — so these are wiring the tests do not reach, not build failures.
-
-| # | What it changes |
-| --- | --- |
-| B264 | **N223's host wiring has no test.** `AppNavHost` reconciles the optimistically-updated `lastTab` with `LaunchedEffect(tabRoot)` — the comment calls the click-handler write load-bearing, because a tab restored at a detail leaves `tabRoot` null and the route would keep the previous tab — while `AppTabTest` drives `switchTab` only on a bare graph. Pin both ends at the host: a bar tap that switches, and a tab restored at a detail where the next tap must read as a re-tap rather than a switch. The rule is argued in three KDoc blocks and exercised in none of them. |
-| B265 | **A whole-route question is answered by any non-null argument.** `switchTab` decides "this is a lift, not the tab's front page" with `currentEntryCarriesArguments`, which asks whether *any* key holds a non-null value. That is right only while `Statistics(exerciseId = null)` is the one tab root carrying an argument: a root with a non-null default — the shape `Measurements(openDaily = false)` already has — would make every re-tap on that tab take the switch branch instead of the no-op one. Ask the tab's own route what it carries, or assert the answer per `AppTab.route` so a new root argument cannot quietly change what the button means. |
+**Nothing.** The post-2.16 review's findings (B262–B265) are fixed and in the unreleased section of
+[CHANGELOG.md](CHANGELOG.md).
 
 ## Later — decided, and not being started
 

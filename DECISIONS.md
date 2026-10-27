@@ -682,9 +682,18 @@ the rule; that one argues it.
   Library search and scroll, the Statistics selection and any typed-but-unconfirmed editor field, and would leave
   a wrong tap with no way back. A root that arrived with arguments — `Statistics(exerciseId)` pushed from a
   workout, which the bar highlights as Statistics but which is a reading of one lift — falls through to the
-  ordinary switch rather than counting as the front page. The rule needs **the tab the bar is showing** supplied:
-  a screen pushed inside a tab is not a tab, and the back stack is a restricted API from app code, so `switchTab`
-  takes it from the caller, which is also what keeps the button and the answer from disagreeing.
+  ordinary switch rather than counting as the front page. **"Arrived with arguments" is asked against the tab's
+  own route** (B265): the front page is the entry that route builds, and every tab route is constructed with its
+  parameters at their defaults, so the test is whether an argument differs from its declared default. "Does any
+  argument hold a non-null value" was the earlier reading, and it was right only while `Statistics(exerciseId =
+  null)` was the one tab root carrying an argument — a root with a non-null default, the shape
+  `Measurements(openDaily = false)` already has, would have read as a screen pushed on top of its own tab. The rule
+  needs **the tab the bar is showing** supplied: a screen pushed inside a tab is not a tab, and the back stack is a
+  restricted API from app code, so `switchTab` takes it from the caller, which is also what keeps the button and
+  the answer from disagreeing. **That tab is one piece of state with two writers** (B264): the route the stack
+  settles on, and the tap itself — because a tab **restored at a detail** settles on a route that names no tab at
+  all, and without the tap's write the next tap on that tab would read as a switch. `TabHighlight` holds it, saves
+  it by name, and is asserted on its own, because rendering the host needs Hilt and every screen.
   ([evidence](DECISIONS-EVIDENCE.md#n223))
 
 - **The moving average's period counts readings, not days** (N40). A seven-day window for

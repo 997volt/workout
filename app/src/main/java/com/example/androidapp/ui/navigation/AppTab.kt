@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.navigation
 
+import android.os.Bundle
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
@@ -18,6 +19,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavArgument
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import com.example.androidapp.R
@@ -198,7 +201,7 @@ private const val SELECTED_WASH = 0.22f
 fun NavHostController.switchTab(tab: AppTab, selected: AppTab) {
     if (tab == selected) {
         popBackStack(tab.route, inclusive = false)
-        if (!currentEntryCarriesArguments()) return
+        if (currentBackStackEntry?.isFrontPageOf(tab) == true) return
     }
     navigate(tab.route) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
@@ -207,15 +210,34 @@ fun NavHostController.switchTab(tab: AppTab, selected: AppTab) {
     }
 }
 
+/** Whether the entry on top is [tab]'s front page rather than the same destination pushed with arguments (B265). */
+private fun NavBackStackEntry.isFrontPageOf(tab: AppTab): Boolean =
+    isFrontPage(tab, destination.route, destination.arguments, arguments)
+
 /**
- * Whether the entry on top was opened with arguments of its own — a lift chosen, not the series index.
+ * Whether an entry on [route] carrying [arguments] is the front page of [tab] — the decision itself, apart from
+ * the navigation types so it can be pinned with a synthetic route (B265).
  *
- * A route's optional arguments are written into the bundle even when they were not given, so "empty" is the
- * wrong question: the values are what matter. `get` is deprecated on a `Bundle` for the typed accessors, and
- * there is no generic typed one — the loop is what asks "does any argument hold a value".
+ * **The front page is the entry the tab's own route builds**, and every tab route is constructed with its
+ * parameters at their defaults, so the question is "does any argument differ from its declared default". The
+ * earlier test asked whether any argument held a **non-null value**, which was right only while
+ * `Statistics(exerciseId = null)` was the one tab root carrying an argument: a root with a non-null default — the
+ * shape `Measurements(openDaily = false)` already has — would have read as a screen pushed on top of its own tab
+ * and taken the switch branch on every re-tap.
+ *
+ * A route's optional arguments are written into the bundle even when they were not given, so "empty" is the wrong
+ * question and the values are the right one. `get` is deprecated on a `Bundle` for the typed accessors, and there
+ * is no generic typed one — the loop is what asks it.
  */
 @Suppress("DEPRECATION")
-private fun NavHostController.currentEntryCarriesArguments(): Boolean =
-    currentBackStackEntry?.arguments?.let { arguments ->
-        arguments.keySet().any { key -> arguments.get(key) != null }
-    } ?: false
+internal fun isFrontPage(
+    tab: AppTab,
+    route: String?,
+    declared: Map<String, NavArgument>,
+    arguments: Bundle?,
+): Boolean {
+    if (!tab.isCurrent(route)) return false
+    return arguments == null || declared.all { (key, argument) ->
+        !arguments.containsKey(key) || arguments.get(key) == argument.defaultValue
+    }
+}

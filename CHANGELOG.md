@@ -91,6 +91,22 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   instead of inverting the two reads. The test's range ran from 480 dp with a comment claiming that was smaller
   than any phone; it runs from 280 now.
 
+- **A tab's front page is asked for by its own route** (B265). Returning to the tab you are in decided whether the
+  entry on top was a pushed screen by asking whether *any* of its arguments held a non-null value, which was right
+  only while `Statistics(exerciseId = null)` was the one tab root with an argument: a root whose parameter has a
+  non-null default — the shape `Measurements(openDaily = false)` already has — would have read as a screen pushed
+  on top of its own tab, so the tap took the switch branch instead of doing nothing. The question is whether an
+  argument differs from its declared default now, which is the same as "is this the entry the tab's own route
+  builds"; the lift reading is still not the Statistics front page, and both answers are pinned.
+
+- **The bar's selected tab is a tested rule rather than a host detail** (B264). Two things write it — the route the
+  stack settles on, and the tap itself — and the tap's write is the one that matters: a tab **restored at a
+  detail** settles on a route that names no tab, so without it the next tap on that tab reads as a switch. Both
+  writes lived in `AppNavHost`, where nothing could reach them without Hilt and every screen. They are
+  `TabHighlight` now, saved by name: the route path, the restored-detail path, the switch and the re-tap, and the
+  save-and-restore are each asserted, and every tab's own route is pinned as its front page so a sixth root with a
+  parameter fails a test rather than a button.
+
 ## [2.16] — 2026-10-26 (versionCode 36)
 
 ### Added

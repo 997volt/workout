@@ -1,12 +1,15 @@
 package com.example.androidapp.ui.navigation
 
+import androidx.core.os.bundleOf
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.navigation.NavArgument
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -201,6 +204,64 @@ class AppTabTest {
         assertWithMessage("the lift it was opened for is not the tab's front page")
             .that(navController.currentBackStackEntry?.arguments?.getString("exerciseId"))
             .isNull()
+    }
+
+    @Test
+    fun everyTabsOwnRoute_isItsFrontPage_soAReTapChangesNothing() {
+        // B265: the question "is the entry on top this tab's front page" is now asked of the tab's own route
+        // instead of "does any argument hold a value", and this pins the answer for every tab the bar offers —
+        // a sixth tab root with a parameter is what would make this test the place the rule fails.
+        val navController = graph()
+
+        AppTab.entries.forEach { tab ->
+            val other = AppTab.entries.first { it != tab }
+            composeTestRule.runOnIdle { navController.switchTab(tab, selected = other) }
+            composeTestRule.waitForIdle()
+            val before = navController.currentBackStackEntry
+
+            composeTestRule.runOnIdle { navController.switchTab(tab, selected = tab) }
+            composeTestRule.waitForIdle()
+            val after = navController.currentBackStackEntry
+
+            assertWithMessage("${tab.name}'s own route survives a re-tap")
+                .that(after?.id)
+                .isEqualTo(before?.id)
+            assertWithMessage("and it is still the same screen")
+                .that(after?.destination?.route)
+                .isEqualTo(before?.destination?.route)
+        }
+    }
+
+    @Test
+    fun aRootWithANonNullDefault_isItsOwnFrontPage() {
+        // B265, the case the earlier rule got wrong. `openDaily` stands in for a tab root whose parameter has a
+        // non-null default — `Measurements` is that shape already: asking for "any non-null argument" would read
+        // the front page as a pushed screen and take the switch branch on every re-tap.
+        val openDaily = mapOf(
+            "openDaily" to NavArgument.Builder().setType(NavType.BoolType).setDefaultValue(false).build(),
+        )
+
+        assertThat(isFrontPage(AppTab.STATISTICS, statistics, openDaily, bundleOf("openDaily" to false))).isTrue()
+        assertWithMessage("a value of its own is what makes it a pushed screen")
+            .that(isFrontPage(AppTab.STATISTICS, statistics, openDaily, bundleOf("openDaily" to true)))
+            .isFalse()
+    }
+
+    @Test
+    fun theLiftReading_isNotTheStatisticsFrontPage() {
+        val exerciseId = mapOf(
+            "exerciseId" to NavArgument.Builder().setType(NavType.StringType).setIsNullable(true).build(),
+        )
+
+        assertWithMessage("the series index, with its argument at the default")
+            .that(isFrontPage(AppTab.STATISTICS, statistics, exerciseId, bundleOf("exerciseId" to null)))
+            .isTrue()
+        assertWithMessage("one lift, which is what falls through to the tab's own stack")
+            .that(isFrontPage(AppTab.STATISTICS, statistics, exerciseId, bundleOf("exerciseId" to "e1")))
+            .isFalse()
+        assertWithMessage("and a screen that is not the tab at all is never its front page")
+            .that(isFrontPage(AppTab.STATISTICS, detail, exerciseId, bundleOf("exerciseId" to "e1")))
+            .isFalse()
     }
 
     /** The five tab roots and two pushed screens, which is what the rules below are about. */
