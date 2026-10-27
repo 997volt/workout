@@ -88,6 +88,32 @@ APP_BASE_NAME=${0##*/}
 # Discard cd standard output in case $CDPATH is set (https://github.com/gradle/gradle/issues/25036)
 APP_HOME=$( cd -P "${APP_HOME:-./}" > /dev/null && printf '%s\n' "$PWD" ) || exit
 
+# Workspace-local toolchain bootstrap.
+# If the repo carries a .toolchain/ install (JDK + Android SDK + Gradle caches),
+# source the helper so `./gradlew <task>` works with no manual environment set
+# up. This is a no-op on machines with a system-wide JDK/SDK.
+#
+# **A `gradle-wrapper` bump regenerates this script from the distribution and
+# drops this block with it** (B262): the 9.8.2 bump did, and nothing could see
+# it, because CI has a writable $HOME and a JDK on PATH while .toolchain/ is
+# gitignored. `GradlewToolchainTest` pins it so the next bump fails loudly —
+# re-apply the block, do not delete the test.
+if [ -f "$APP_HOME/tools/android-env.sh" ]; then
+    ANDROID_ENV_ROOT=$APP_HOME
+    export ANDROID_ENV_ROOT
+    # adb -- including the copy Gradle's own ADB bridge invokes for
+    # connectedAndroidTest -- insists on $HOME/.android for its keys, and the
+    # emulator writes its key there too. Scope the redirect to this build
+    # process so an interactive shell's HOME, and therefore git/ssh's ~/.ssh,
+    # is never affected.
+    if [ -d "$APP_HOME/.toolchain" ]; then
+        HOME="$APP_HOME/.toolchain/home"
+        mkdir -p "$HOME/.android" 2>/dev/null || true
+        export HOME
+    fi
+    . "$APP_HOME/tools/android-env.sh"
+fi
+
 # Use the maximum available, or set MAX_FD != -1 to use that value.
 MAX_FD=maximum
 

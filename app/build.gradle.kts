@@ -328,4 +328,13 @@ tasks.withType<Test>().configureEach {
         rootProject.file("RELEASING.md"),
         rootProject.file(".github/workflows/android.yml"),
     ).withPropertyName("documentation").withPathSensitivity(PathSensitivity.RELATIVE)
+
+    // GradlewToolchainTest reads the wrapper and the helper it sources, for the same reason: a
+    // gradle-wrapper bump rewrites `gradlew` and nothing else in the build graph, so without this
+    // the guard that exists to catch the deleted bootstrap would be UP-TO-DATE on exactly that
+    // change and pass (B262).
+    inputs.files(
+        rootProject.file("gradlew"),
+        rootProject.file("tools/android-env.sh"),
+    ).withPropertyName("wrapper").withPathSensitivity(PathSensitivity.RELATIVE)
 }

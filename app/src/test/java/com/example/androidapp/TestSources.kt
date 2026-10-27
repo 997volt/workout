@@ -5,9 +5,9 @@ import java.io.File
 /**
  * The project's own files, for the tests that assert on them rather than on behaviour.
  *
- * Two tests now read the source tree — the documentation gate and D4's tag coverage — and both
- * need the same walk up to `settings.gradle.kts`, because Gradle runs tests from the module
- * directory rather than from the repository root.
+ * Three tests now read the source tree — the documentation gate, D4's tag coverage and the
+ * wrapper's toolchain bootstrap (B262) — and all need the same walk up to `settings.gradle.kts`,
+ * because Gradle runs tests from the module directory rather than from the repository root.
  */
 internal val repoRoot: File by lazy {
     var dir: File? = File(System.getProperty("user.dir") ?: ".").absoluteFile
