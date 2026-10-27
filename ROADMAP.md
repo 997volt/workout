@@ -17,8 +17,15 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The post-2.15 review's findings (B240–B256) are fixed and in the unreleased section of
-[CHANGELOG.md](CHANGELOG.md).
+**A plan imported as a program document numbers its sets differently from the app.** Run end to end, a program
+written by the import helper's table and loaded through Programs → Load opens its first workout with the first set's
+target missing — no `Plan …` line, the fallback values in the fields — and every later set wearing the set *before*
+it. Both hosts are green, because the page's test rebuilds the document and the app's decodes the same one, and
+neither asserts the number the two disagree on.
+
+| # | What it changes |
+| --- | --- |
+| B257 | **An imported plan's first set has no target, and every later set takes the previous one.** The helper numbers a program table's `templateSets` from 1 (`buildProgramDocument` in `docs/app.js`) while the app stores and reads plan indexes from 0: `addSet` appends `max + 1`, a ramp takes `0..n-1` (B34), and `ProgramValidation` states that the floor is zero rather than one. `SetSuggestion.plannedTargetFor` matches `setIndex == loggedSets.size`, so on an imported plan the first set finds nothing — no target, no role, no `Plan …` line, the prefill's fallback in the fields — and set *k* takes row *k−1*'s numbers, a plan that opens with a warm-up arms its first set as work and its second as the warm-up, and the plan's last row is never applied. Fix at the boundary and record which way: the document the page writes carries the app's indices, and a 1-based plan already imported must not stay silently shifted — normalize on import (the committed fixture is 1-based, so these are real files) or refuse and explain. Regenerate `docs/fixtures/program-document.js` and pin `setIndex` in `ProgramDocumentFixtureTest`, which today asserts the sets' targets and never their indices: the reason both sides pass while disagreeing. |
 
 ## Later — decided, and not being started
 
