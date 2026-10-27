@@ -457,6 +457,26 @@ class StatisticsScreenTest {
     }
 
     @Test
+    fun theMovingAverageWindow_sharesARowWithExpand() {
+        // N222: the card reads figure, dates, actions. The window the average is taken over and the way into the
+        // full-height view are its two "how much do I read" controls, so they cost one row between them.
+        setScreen()
+
+        val dates = composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_FIRST_DATE)
+            .getUnclippedBoundsInRoot()
+        val picker = composeTestRule.onNodeWithTag(TestTags.Statistics.MOVING_AVERAGE)
+            .getUnclippedBoundsInRoot()
+        val expand = composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPAND)
+            .getUnclippedBoundsInRoot()
+
+        assertThat(picker.top).isGreaterThan(dates.top)
+        assertThat(picker.left).isLessThan(expand.left)
+        assertWithMessage("one row: the two overlap vertically")
+            .that(picker.top < expand.bottom && expand.top < picker.bottom)
+            .isTrue()
+    }
+
+    @Test
     fun aQuantityMetric_anchorsItsAxisAtZero() {
         // The visible half of N38: a volume bar starts where volume starts, and the label says so. The bars
         // themselves are a canvas, which the app blanks out for screen readers — so this is the assertion

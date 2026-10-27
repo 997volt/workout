@@ -213,6 +213,10 @@ internal fun ChartExpandedDialog(
  *
  * One composable for the card and the expanded view, because the two are the same reading: a dialog that dropped
  * the dates or the plans would be a second, thinner answer to the same question.
+ *
+ * **The window and the way into the full-height view share a row** (N222). They are the card's two ways of
+ * changing how much of the figure is read, and each on a line of its own spent a row of a small phone on nothing
+ * between the dates and the actions.
  */
 @Composable
 internal fun ChartExtras(
@@ -223,7 +227,6 @@ internal fun ChartExtras(
     onExpand: (() -> Unit)? = null,
 ) {
     Column {
-        MovingAveragePicker(period = period, onSelect = onSelectPeriod)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             dates.forEachIndexed { index, date ->
                 Text(
@@ -247,8 +250,13 @@ internal fun ChartExtras(
                 modifier = Modifier.testTag(TestTags.Statistics.PLAN_TARGETS),
             )
         }
-        if (onExpand != null) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            MovingAveragePicker(period = period, onSelect = onSelectPeriod)
+            if (onExpand != null) {
                 AppTextButton(
                     onClick = onExpand,
                     modifier = Modifier.testTag(TestTags.Statistics.CHART_EXPAND),
