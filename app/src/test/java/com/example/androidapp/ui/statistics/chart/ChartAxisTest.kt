@@ -1,6 +1,8 @@
 package com.example.androidapp.ui.statistics.chart
 
+import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
 /**
@@ -196,5 +198,26 @@ class ChartAxisTest {
         val withTheLine = axisBounds(listOf(100.0, 100.0, 0.0) + (-20.0), fromZero = false)
 
         assertThat(withTheLine.min).isLessThan(-20.0)
+    }
+
+    @Test
+    fun theInlineFigure_takesAShareOfTheWindow_insideItsBounds() {
+        // B261: the figure was a fixed 180 dp - a fifth of a phone's screen - while the expanded view sized
+        // itself from the window. It takes a share now, with bounds so a short window keeps the card's other
+        // rows and a tall one does not get a second expanded view by default.
+        assertThat(inlineFigureHeight(600.dp)).isEqualTo(INLINE_CHART_MIN_HEIGHT)
+        assertThat(inlineFigureHeight(914.dp).value).isWithin(0.01f).of(274.2f)
+        assertThat(inlineFigureHeight(1200.dp)).isEqualTo(INLINE_CHART_MAX_HEIGHT)
+    }
+
+    @Test
+    fun theExpandedFigure_isAlwaysTheLargerOfTheTwo() {
+        // What makes *Expand* mean something: whatever the window, the dialog is the bigger read. The smallest
+        // window here is already larger than any phone this app runs on.
+        listOf(480, 600, 733, 914, 1133, 1200, 1600).forEach { height ->
+            assertWithMessage("expanded is larger at $height dp")
+                .that(expandedFigureHeight(height.dp))
+                .isGreaterThan(inlineFigureHeight(height.dp))
+        }
     }
 }

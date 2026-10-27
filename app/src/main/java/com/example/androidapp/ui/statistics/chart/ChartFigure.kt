@@ -141,7 +141,7 @@ internal fun ChartExpandedDialog(
     // can disagree with the window a dialog is actually drawn in.
     val density = LocalDensity.current
     val windowHeight = LocalWindowInfo.current.containerSize.height
-    val height = with(density) { (windowHeight * EXPANDED_CHART_FRACTION).toDp() }
+    val height = with(density) { expandedFigureHeight(windowHeight.toDp()) }
     // The dialog may use most of the window, and its **body** scrolls rather than clipping (B219): the figure is
     // still a fraction of the window, but a short one would push the extras off the bottom of a window that has
     // nowhere to go. The header stays put so the way out is never scrolled away.

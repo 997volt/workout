@@ -16,12 +16,24 @@ import androidx.compose.ui.unit.dp
 import com.example.androidapp.ui.components.TestTags
 
 /**
- * The height the statistics figure is drawn at (N196).
+ * How much of the window the inline figure takes (B261, amending N196).
  *
- * A presentation constant rather than a metric's: the same figure draws a month of weight and a year of
- * volume, and the height is the room the screen gives the figure, not something the series decides.
+ * The height is the room the screen gives the figure, not something the series decides — and for years that
+ * room was a fixed 180 dp, chosen when the card still carried a row of window chips. The chips became one
+ * control (N211) and that control moved onto *Expand*'s line (N222), so the figure was the one thing in the
+ * card that never grew: a fifth of a phone's screen, for the screen whose subject it is.
+ *
+ * **The bounds are the point of the fraction.** Below them the card would squeeze the dates and the actions on
+ * a short window; above them a tall one would turn the inline figure into a second expanded view and leave the
+ * page underneath it with nowhere to be read. 30 % is N201's own reasoning applied to the small figure.
  */
-internal val CHART_FIGURE_HEIGHT = 180.dp
+internal const val INLINE_CHART_FRACTION = 0.30f
+
+/** The shortest the inline figure may be drawn, whatever the window says. */
+internal val INLINE_CHART_MIN_HEIGHT = 220.dp
+
+/** The tallest, so a tablet does not get a second expanded view by default. */
+internal val INLINE_CHART_MAX_HEIGHT = 340.dp
 
 /**
  * How much of the screen the expanded figure takes (N201).
@@ -30,6 +42,19 @@ internal val CHART_FIGURE_HEIGHT = 180.dp
  * would be a second, larger sparkline on a small phone and a small figure on a tablet.
  */
 internal const val EXPANDED_CHART_FRACTION = 0.55f
+
+/** The inline figure's height for a window of [windowHeight] (B261). */
+internal fun inlineFigureHeight(windowHeight: Dp): Dp =
+    (windowHeight * INLINE_CHART_FRACTION).coerceIn(INLINE_CHART_MIN_HEIGHT, INLINE_CHART_MAX_HEIGHT)
+
+/**
+ * The expanded figure's height for the same window.
+ *
+ * A function rather than the multiplication at the call site so the two sizes can be compared in one test: the
+ * expanded view is the larger of the two on every window the app can be drawn in, which is what makes *Expand*
+ * mean something.
+ */
+internal fun expandedFigureHeight(windowHeight: Dp): Dp = windowHeight * EXPANDED_CHART_FRACTION
 
 /**
  * How much of the window the expanded dialog itself may take (B219).

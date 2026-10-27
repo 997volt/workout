@@ -41,6 +41,7 @@ import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.WeightGoal
 import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.TestTags
+import com.example.androidapp.ui.statistics.chart.INLINE_CHART_MIN_HEIGHT
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -547,6 +548,26 @@ class StatisticsScreenTest {
         composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_AXIS)
             .onChildren()
             .assertCountEquals(3)
+    }
+
+    @Test
+    fun theFigureTakesItsSizeFromTheWindow_andExpandIsStillBigger() {
+        // B261: the inline figure was a fixed 180 dp regardless of the window, so the screen whose subject it is
+        // drew a fifth of a phone. It takes a share of the window now, and the guarantee the two sizes keep is
+        // that the expanded one is larger.
+        setScreen()
+
+        val inline = composeTestRule.onNodeWithTag(TestTags.Statistics.CHART).getUnclippedBoundsInRoot()
+        val inlineHeight = inline.bottom - inline.top
+        assertThat(inlineHeight).isAtLeast(INLINE_CHART_MIN_HEIGHT)
+
+        composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPAND).performScrollTo().performClick()
+
+        val expanded = composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_EXPANDED_FIGURE)
+            .getUnclippedBoundsInRoot()
+        assertWithMessage("expanded is the bigger read")
+            .that(expanded.bottom - expanded.top)
+            .isGreaterThan(inlineHeight)
     }
 
     @Test

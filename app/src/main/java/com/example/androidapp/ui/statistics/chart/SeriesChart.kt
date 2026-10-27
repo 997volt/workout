@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import com.example.androidapp.R
 import com.example.androidapp.domain.model.PlanTarget
@@ -43,12 +45,16 @@ internal fun SeriesChart(
     // control look like a setting rather than part of the figure.
     var expanded by remember { mutableStateOf(false) }
 
+    // The room this window has, which is the figure's size (B261): a fixed height was a fifth of a phone's
+    // screen and did not change when the card's other rows did.
+    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+
     AppCard {
         ChartFigure(
             overlay = overlay,
             series = series,
             metric = metric,
-            height = CHART_FIGURE_HEIGHT,
+            height = inlineFigureHeight(windowHeight),
             testTag = TestTags.Statistics.CHART,
             onZoom = onZoom,
         )
