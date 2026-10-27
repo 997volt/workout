@@ -10,6 +10,11 @@ package com.example.androidapp.domain.model
  * target RPE for the exercise and the set met it, so the app states a step it can read out of the plan
  * and the log rather than guessing from history.
  *
+ * **The plan's terms include its load** (B258). A set performed lighter than the plan named did not do
+ * the prescribed set, so it earns no step at all rather than a heavier target on top of a bar nobody
+ * loaded; and the weight step lands above what the session actually lifted, because the plan is what
+ * moves and it must not move backwards past the work that earned it.
+ *
  * **N74 made that step per set, and held it inside the plan's rep range.** Every prescribed working
  * set is judged on its own rather than the exercise as a whole, so a set that was answered earns its
  * step even when a sibling missed. The range a set was authored with — "Reps from"/"Reps to" — is
@@ -118,6 +123,16 @@ enum class ProgressionMiss {
 
     /** Performed above the effort the plan asked for. */
     OVER_TARGET_RPE,
+
+    /**
+     * Performed below the load the plan named, so the plan's set was not done (B258).
+     *
+     * The plan's targets are reps, a load and an effort; a set that met the first two at a lighter bar
+     * moved everything except the prescription. Stated with the difference the app measured, because
+     * "no step" on its own reads as a bug — and it is the reason a lifter who dropped the weight for
+     * the day is told so rather than being pushed heavier on top of a plan they did not load.
+     */
+    LOAD_SHORT,
 
     /**
      * Answered at the top of the range with no load to raise (N74).
@@ -277,15 +292,19 @@ private fun ProgressionPlanSet.toPrompt(
 }
 
 /**
- * Why the plan's own terms were not met, or null when they were (N74).
+ * Why the plan's own terms were not met, or null when they were (N74, B258).
  *
  * Every check the old exercise-wide rule made, made against one set: the plan has to name reps and
  * one target effort for the exercise, the session has to have recorded an effort, and the work has to
- * have met the reps without going over that effort.
+ * have met the reps without going over that effort. **The load is one of the plan's terms too**: a set
+ * performed lighter than the plan named did not do the prescribed set, so it earns nothing at all —
+ * not the load, and not a rep climbed on a bar the plan never asked for.
  */
 private fun ProgressionPlanSet.answeredMiss(done: ProgressionPerformance?): ProgressionMiss? {
     val reps = targetReps
     val rpeTarget = targetRpeHalves
+    val plannedLoad = addedWeightGrams
+    val lifted = done?.addedWeightGrams
     return when {
         done == null -> ProgressionMiss.NOT_DONE
         done.durationSeconds != null -> ProgressionMiss.HOLD
@@ -294,18 +313,25 @@ private fun ProgressionPlanSet.answeredMiss(done: ProgressionPerformance?): Prog
         done.rpeHalves == null -> ProgressionMiss.UNRATED
         done.reps < reps -> ProgressionMiss.REPS_SHORT
         done.rpeHalves > rpeTarget -> ProgressionMiss.OVER_TARGET_RPE
+        // Last, so the sentences the rule already stated keep their precedence: a set that was also
+        // short or over its effort is explained by that first, and this is the fact that remains.
+        plannedLoad != null && lifted != null && lifted < plannedLoad -> ProgressionMiss.LOAD_SHORT
         else -> null
     }
 }
 
 /**
- * The step an answered set earned, or null when the range has nothing left to give (N74).
+ * The step an answered set earned, or null when the range has nothing left to give (N74, B258).
  *
  * **Below the range's ceiling the reps move and the weight waits**, and the target becomes one past
  * what was actually done rather than one past the number the plan asked for — asked 5, did 7 of an 8
  * ceiling, next target 8, so the plan tracks the lifter. **At the ceiling the weight moves instead**,
  * and a plan that wrote no ceiling is the case that keeps both directions, as it always did. A set at
  * the ceiling with no load to raise returns null, which [toPrompt] states as [ProgressionMiss.TOPPED_OUT].
+ *
+ * The weight step lands **above what the session lifted**, not one step above the stored number
+ * (B258): the plan is 140 kg and the set was 150, so the plan follows to 152.5 — where the old
+ * arithmetic offered 142.5, a target below the work the lifter had already done.
  */
 private fun ProgressionPlanSet.offerFor(
     done: ProgressionPerformance,
@@ -313,7 +339,9 @@ private fun ProgressionPlanSet.offerFor(
 ): ProgressionOffer? {
     val reps = targetReps ?: return null
     val ceiling = targetRepsMax
-    val load = addedWeightGrams?.let { ProgressionStep(it, it + stepGrams) }
+    val load = addedWeightGrams?.let { planned ->
+        ProgressionStep(planned, stepAbove(planned, done.addedWeightGrams ?: planned, stepGrams))
+    }
     return when {
         // A hold has no rep target to move and no ceiling to climb (B243): the plan's rep target does not
         // apply to a timed set, so it earns no step.
@@ -335,6 +363,21 @@ private fun ProgressionPlanSet.offerFor(
 }
 
 /**
+ * The plan's next load, always above the load the session actually lifted (B258).
+ *
+ * The step moves the plan, so one measured from the stored number alone can land *below* the work
+ * already done — 140 kg beaten by a 150 kg set became 142.5 kg, a target the lifter had just beaten
+ * before they accepted it. The smallest value of the plan's own grid above both is what it takes:
+ * snapped onto the plan's step rather than `performed + one`, because a typed load can sit between
+ * steps while every other row of the plan is on it.
+ */
+private fun stepAbove(planned: Long, performed: Long, stepGrams: Long): Long {
+    val step = stepGrams.coerceAtLeast(1L)
+    val steps = ((performed - planned) / step) + 1
+    return planned + steps.coerceAtLeast(1L) * step
+}
+
+/**
  * The **added** weight this set names, or null (N15).
  *
  * A load a step can raise is a bar's kilograms, and only that. An assisted set stores its number as
@@ -346,6 +389,17 @@ private fun ProgressionPlanSet.offerFor(
  */
 private val ProgressionPlanSet.addedWeightGrams: Long?
     get() = targetWeightGrams?.takeIf { it > 0L && targetAssistanceGrams == null }
+
+/**
+ * The **load** the set was performed at, or null when it is not the shape a plan's load is (B258).
+ *
+ * The plan's number is added weight with no help (see [addedWeightGrams]); a set that states
+ * assistance is a machine carrying part of the bar, so the two numbers do not describe the same thing
+ * and comparing them would call an assisted set "below" a plan it may match exactly. Null leaves the
+ * load out of the judgement, which is the answer the rule gave before it read loads at all.
+ */
+private val ProgressionPerformance.addedWeightGrams: Long?
+    get() = weightGrams.takeIf { assistanceGrams <= 0L }
 
 /** The sets that are work: a warm-up is not what a target is measured against (N17, N20, N22). */
 private fun List<ProgressionPlanSet>.plannedWork(): List<ProgressionPlanSet> =

@@ -273,6 +273,83 @@ class ProgressionOfferTest {
     }
 
     @Test
+    fun aSetPerformedLighterThanThePlan_earnsNoStepAtAll() {
+        // B258: reps and effort answered the plan, the bar did not. A heavier target on top of a set
+        // that never loaded the plan pushes work the prescription has not reached — and the rep is not
+        // offered either, because that is a climb on a bar the plan never asked for.
+        val set = singleSet(
+            planned = listOf(planSet(weight = 95_000L)),
+            performed = listOf(done(reps = 5, weight = 70_000L)),
+        )
+
+        assertThat(set.offer).isNull()
+        assertThat(set.miss).isEqualTo(ProgressionMiss.LOAD_SHORT)
+    }
+
+    @Test
+    fun aSetLighterAndShortOfItsReps_saysTheRepsFirst() {
+        // Both facts are true; the rep shortfall is the one the lifter can act on inside the range, and
+        // the load line is what remains when everything else was met (B258).
+        val set = singleSet(
+            planned = listOf(planSet(weight = 95_000L)),
+            performed = listOf(done(reps = 3, weight = 70_000L)),
+        )
+
+        assertThat(set.miss).isEqualTo(ProgressionMiss.REPS_SHORT)
+    }
+
+    @Test
+    fun aPlanWithNoCeiling_stillWithholdsEverythingWhenTheLoadWasShort() {
+        // The one plan shape that offers both directions keeps neither when the set did not load it.
+        val set = singleSet(
+            planned = listOf(planSet(weight = 95_000L, repsMin = 5, repsMax = null)),
+            performed = listOf(done(reps = 5, weight = 70_000L)),
+        )
+
+        assertThat(set.offer).isNull()
+        assertThat(set.miss).isEqualTo(ProgressionMiss.LOAD_SHORT)
+    }
+
+    @Test
+    fun aSetAboveThePlan_earnsAStepAboveWhatItLifted() {
+        // B258: the step moves the plan, and the plan may not move to a target the session has already
+        // beaten — 140 kg done at 150 used to be raised to 142.5.
+        val offer = singleOffer(
+            planned = listOf(planSet(weight = 140_000L)),
+            performed = listOf(done(reps = 5, weight = 150_000L)),
+        )!!
+
+        assertThat(offer.load).isEqualTo(ProgressionStep(140_000L, 152_500L))
+        assertThat(offer.accepted(ProgressionDirection.LOAD)!!.targetWeightGrams).isEqualTo(152_500L)
+    }
+
+    @Test
+    fun aLoadBetweenThePlansSteps_landsOnThePlansOwnGrid() {
+        // A typed 101 kg is not one of the plan's steps, so the step snaps to the first one above it
+        // (102.5) instead of writing 103.5 and dragging the row off the grid the others sit on (B258).
+        val offer = singleOffer(
+            planned = listOf(planSet(weight = 95_000L)),
+            performed = listOf(done(reps = 5, weight = 101_000L)),
+        )!!
+
+        assertThat(offer.load).isEqualTo(ProgressionStep(95_000L, 102_500L))
+    }
+
+    @Test
+    fun anAssistedSet_isNotReadAsBelowThePlan() {
+        // A machine carrying part of the bar states a different quantity: 0 added beside 20 kg of help
+        // is not "60 kg short" of a 60 kg plan, so the load is left out of the judgement entirely and
+        // the answer is the one the rule gave before it read loads (B258).
+        val set = singleSet(
+            planned = listOf(planSet(weight = 60_000L)),
+            performed = listOf(done(reps = 5, weight = 0L).copy(assistanceGrams = 20_000L)),
+        )
+
+        assertThat(set.miss).isNull()
+        assertThat(set.offer?.load).isEqualTo(ProgressionStep(60_000L, 62_500L))
+    }
+
+    @Test
     fun anAssistedSetBelowItsCeiling_stillOffersTheRep() {
         // The shape both plan editors write for `-20`: zero added weight beside 20 kg of help, so a
         // weight step would put 2.5 kg on a machine doing 20 kg of the work (N15).
@@ -358,7 +435,6 @@ class ProgressionOfferTest {
 
         assertThat(prompt.earned).isEqualTo(1)
     }
-
 
     @Test
     fun anAdHocRung_doesNotDisplaceTheWorkSetsAfterIt() {

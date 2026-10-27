@@ -668,6 +668,9 @@
         <item quantity="other">%1$d reps short of the plan</item>
     </plurals>
     <string name="progression_miss_over_rpe">Over the target %1$s</string>
+    <!-- A set performed lighter than the plan named earns nothing (B258), and the sentence states the
+         difference the app measured — the load in the exercise's own unit, then its label. -->
+    <string name="progression_miss_load_short">%1$s %2$s short of the plan\'s load</string>
     <plurals name="progression_miss_topped_out">
         <item quantity="one">At the top of %1$d rep, with no weight to raise</item>
         <item quantity="other">At the top of %1$d reps, with no weight to raise</item>

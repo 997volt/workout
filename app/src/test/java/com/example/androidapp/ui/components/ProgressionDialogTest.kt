@@ -127,6 +127,27 @@ class ProgressionDialogTest {
     }
 
     @Test
+    fun aSetLighterThanItsPlan_statesTheDifference_andOffersNothing() {
+        // B258: a lighter bar earns no step, and the row says how much lighter — "no step" on its own
+        // reads as a bug rather than as an answer, which is N74's rule for every unearned row.
+        show(
+            question(
+                row(
+                    "ts-0",
+                    performed = done(reps = 5).copy(weightGrams = 70_000L),
+                    offer = null,
+                    miss = ProgressionMiss.LOAD_SHORT,
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithText(text(R.string.progression_miss_load_short, "30", "kg"))
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.Progression.load("ts-0")).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TestTags.Progression.reps("ts-0")).assertDoesNotExist()
+    }
+
+    @Test
     fun pickingAStep_reportsTheSetAndTheDirection() {
         show(question(row("ts-0")))
 

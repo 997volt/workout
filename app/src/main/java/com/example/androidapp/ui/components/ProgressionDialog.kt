@@ -214,7 +214,7 @@ private fun SetRow(
             set.prompt.offer != null && planId != null ->
                 ChoiceChips(set = set, planId = planId, unit = unit, onToggle = onToggle)
 
-            else -> set.prompt.miss?.let { miss -> Text(missLine(set, miss)) }
+            else -> set.prompt.miss?.let { miss -> Text(missLine(set, miss, unit)) }
         }
     }
 }
@@ -261,14 +261,18 @@ private fun ChoiceChips(
 }
 
 /**
- * Why a set earned nothing, as a sentence a lifter can act on (N74).
+ * Why a set earned nothing, as a sentence a lifter can act on (N74, B258).
  *
  * The alternatives are stated with the number the app actually measured — how many reps short, which
- * effort the set went over, where the range tops out — because "no step" on its own reads as a bug
- * rather than as an answer.
+ * effort the set went over, how much lighter the bar was, where the range tops out — because "no step"
+ * on its own reads as a bug rather than as an answer.
  */
 @Composable
-private fun missLine(set: PendingProgression.PendingSet, miss: ProgressionMiss): String {
+private fun missLine(
+    set: PendingProgression.PendingSet,
+    miss: ProgressionMiss,
+    unit: WeightUnit,
+): String {
     val planned = set.prompt.planned
     return when (miss) {
         ProgressionMiss.NOT_DONE -> stringResource(R.string.progression_miss_not_done)
@@ -279,9 +283,26 @@ private fun missLine(set: PendingProgression.PendingSet, miss: ProgressionMiss):
         ProgressionMiss.HOLD -> stringResource(R.string.progression_miss_hold)
         ProgressionMiss.REPS_SHORT -> repsShortLine(set, planned)
         ProgressionMiss.OVER_TARGET_RPE -> overRpeLine(planned)
+        ProgressionMiss.LOAD_SHORT -> loadShortLine(set, planned, unit)
         ProgressionMiss.RUNG_OF_A_GROUP -> stringResource(R.string.progression_miss_rung)
         ProgressionMiss.TOPPED_OUT -> toppedOutLine(planned)
     }
+}
+
+/** "25 kg short of the plan's load", with the difference the app measured (B258). */
+@Composable
+private fun loadShortLine(
+    set: PendingProgression.PendingSet,
+    planned: ProgressionPlanSet?,
+    unit: WeightUnit,
+): String {
+    val asked = planned?.targetWeightGrams ?: 0L
+    val short = (asked - (set.prompt.performed?.weightGrams ?: 0L)).coerceAtLeast(1L)
+    return stringResource(
+        R.string.progression_miss_load_short,
+        Weight.format(short, unit),
+        unit.label(),
+    )
 }
 
 /** "N reps short of the plan", with the number the app measured (N74). */
