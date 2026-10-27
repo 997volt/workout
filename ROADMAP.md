@@ -17,9 +17,14 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The statistics page's items — summaries before evidence (N221), the averaging window on Expand's
-row (N222), the scale read along the figure and the bars that painted over it (B259, B260) — are fixed and in the
-unreleased section of [CHANGELOG.md](CHANGELOG.md).
+**The statistics figure is a fifth of the screen it is the subject of.** Inline it is a fixed 180 dp — 473 px of
+a 914 dp phone, and 168 dp of plot once the inset is taken — while the expanded view takes 55 % of the window and
+is nearly three times the size (B261). Not a regression from N221/N222/B259: the constant predates all three, and
+the rows that were removed around it were the ones it was chosen for.
+
+| # | What it changes |
+| --- | --- |
+| B261 | **The inline figure is a constant, not the room the screen has.** `CHART_FIGURE_HEIGHT` is 180 dp, passed by `SeriesChart` to a component that already takes its height as a parameter, and it was picked when the card also carried a row of window chips. N211 collapsed those chips into one control and N222 put that control on Expansion's line, so the figure is the only thing in the card that never changed — on a 914 dp phone it draws 19.7 % of the screen while the expanded view draws 55 %, and N196's own rule ("the height is the screen's … statistics' subject *is* the figure") is what the constant quietly breaks. Give it a share of the window the way the expanded view has one — a fraction clamped so a short phone still shows the card and a tall one does not get a second expanded view, e.g. 30 % between 220 and 340 dp: about 275 dp on that phone, which is +53 % — or, if the clamp is too much machinery, raise the constant to 240 dp and say so. Either way the expanded view must stay the larger of the two, the axis and the row of dates and actions move with the height, and the tests pin both sizes: the inline figure against the window, and expanded above inline. |
 
 ## Later — decided, and not being started
 
