@@ -82,6 +82,15 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   block is back, and a test pins it with the reason and the repair, so the next bump fails the pull request that
   deletes it rather than a build on someone's machine.
 
+- ***Expand* is still the bigger read on a short window** (B263). The inline figure's 220 dp floor was unconditional
+  and the expanded one is 55 % of the window, so below 400 dp the floor overtook it: a 360 dp landscape phone drew
+  the card at 220 dp and *Expand* at 198, so the button that promises a larger figure made it smaller — and the
+  floor's own reason failed with it, a figure taking 61 % of a short window being what pushes the dates and the
+  actions out of it. The floor now bounds the *preferred* size only: the answer is capped below the expanded
+  figure, so a window with room for 220 dp draws exactly what it drew before, and a shorter one gives the floor up
+  instead of inverting the two reads. The test's range ran from 480 dp with a comment claiming that was smaller
+  than any phone; it runs from 280 now.
+
 ## [2.16] — 2026-10-26 (versionCode 36)
 
 ### Added

@@ -655,9 +655,14 @@ the rule; that one argues it.
   top, naming no height at all. A scale has to be given the height it reads against. **And the figure's own
   height is the window's** (B261): statistics drew it at a fixed 180 dp for years — a fifth of a phone's screen,
   on the screen whose subject it is — because the constant was picked when the card carried a row of window
-  chips. It takes 30 % of the window now, clamped to 220–340 dp so a short one keeps the dates and the actions
-  and a tall one does not get a second expanded view; the expanded figure's 55 % is the one that must stay
-  larger, which is what makes *Expand* mean something.
+  chips. It takes 30 % of the window now, inside 220–340 dp so a short one keeps the dates and the actions and a
+  tall one does not get a second expanded view; the expanded figure's 55 % is the one that must stay larger,
+  which is what makes *Expand* mean something. **That promise outranks the floor** (B263): held at 220 dp
+  unconditionally, the inline figure was the larger read on every window under 400 dp — 220 against the expanded
+  198 on a 360 dp landscape phone — so *Expand* shrank the figure, and the floor's own reason (keeping the card's
+  dates and actions visible) failed with it, because a figure that takes 61 % of a short window costs exactly
+  those rows. The 220 dp bound is therefore a bound on the *preferred* height: the answer is capped below the
+  expanded figure, and a window too short for the floor gives it up.
 
 - **The statistics page states the series before its evidence** (N221, amending N36 and N208). The average and
   the trend are summaries of the whole window rather than evidence for it, so they do not live behind the

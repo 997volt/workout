@@ -211,10 +211,29 @@ class ChartAxisTest {
     }
 
     @Test
+    fun aShortWindow_givesUpTheFloor_ratherThanOvertakingTheExpandedFigure() {
+        // B263: the 220 dp floor was unconditional, so on any window shorter than 400 dp the inline figure was
+        // the *bigger* read and *Expand* shrank it - 220 dp against the expanded 198 dp on a 360 dp landscape
+        // phone. The floor is a bound on the preferred size now; on a window with no room for it the fraction
+        // wins, and the expanded view keeps a fifth of the margin.
+        val inline = inlineFigureHeight(360.dp)
+        val expanded = expandedFigureHeight(360.dp)
+
+        assertThat(inline).isLessThan(INLINE_CHART_MIN_HEIGHT)
+        assertThat(expanded).isGreaterThan(inline)
+        assertThat(inline.value / expanded.value).isWithin(0.001f).of(0.80f)
+        // And it is sized from the window rather than pinned to a constant, which is what stops the card's
+        // dates and actions being squeezed by a figure the screen cannot afford.
+        assertThat(inlineFigureHeight(320.dp)).isLessThan(inline)
+    }
+
+    @Test
     fun theExpandedFigure_isAlwaysTheLargerOfTheTwo() {
-        // What makes *Expand* mean something: whatever the window, the dialog is the bigger read. The smallest
-        // window here is already larger than any phone this app runs on.
-        listOf(480, 600, 733, 914, 1133, 1200, 1600).forEach { height ->
+        // What makes *Expand* mean something: whatever the window, the dialog is the bigger read. The list runs
+        // down to 280 dp, a landscape phone on a short device or a split-screen pane (B263): the old range
+        // started at 480 and its comment claimed that was smaller than any phone, which is where the inversion
+        // lived unnoticed.
+        listOf(280, 320, 360, 400, 480, 600, 733, 914, 1133, 1200, 1600).forEach { height ->
             assertWithMessage("expanded is larger at $height dp")
                 .that(expandedFigureHeight(height.dp))
                 .isGreaterThan(inlineFigureHeight(height.dp))

@@ -23,13 +23,17 @@ import com.example.androidapp.ui.components.TestTags
  * control (N211) and that control moved onto *Expand*'s line (N222), so the figure was the one thing in the
  * card that never grew: a fifth of a phone's screen, for the screen whose subject it is.
  *
- * **The bounds are the point of the fraction.** Below them the card would squeeze the dates and the actions on
- * a short window; above them a tall one would turn the inline figure into a second expanded view and leave the
- * page underneath it with nowhere to be read. 30 % is N201's own reasoning applied to the small figure.
+ * **The bounds are the point of the fraction, and the lower one is conditional** (B261, B263). Above the ceiling a
+ * tall window would turn the inline figure into a second expanded view and leave the page underneath it with
+ * nowhere to be read. Below the floor the card would squeeze the dates and the actions — but a floor cannot be
+ * honoured on a window that has no room for it: held at 220 dp, the inline figure overtook the expanded one on
+ * every window shorter than 400 dp (198 dp at 360 dp), so *Expand* made the figure **smaller**. There the fraction
+ * wins and the floor gives way, which is why the floor is a bound on the preferred size rather than on the answer.
+ * 30 % is N201's own reasoning applied to the small figure.
  */
 internal const val INLINE_CHART_FRACTION = 0.30f
 
-/** The shortest the inline figure may be drawn, whatever the window says. */
+/** The shortest the inline figure is drawn where the window has room for it. */
 internal val INLINE_CHART_MIN_HEIGHT = 220.dp
 
 /** The tallest, so a tablet does not get a second expanded view by default. */
@@ -43,9 +47,29 @@ internal val INLINE_CHART_MAX_HEIGHT = 340.dp
  */
 internal const val EXPANDED_CHART_FRACTION = 0.55f
 
-/** The inline figure's height for a window of [windowHeight] (B261). */
-internal fun inlineFigureHeight(windowHeight: Dp): Dp =
-    (windowHeight * INLINE_CHART_FRACTION).coerceIn(INLINE_CHART_MIN_HEIGHT, INLINE_CHART_MAX_HEIGHT)
+/**
+ * How much of the expanded figure the inline one may take (B263).
+ *
+ * The margin is what keeps *Expand* a visible change rather than a tie: on a window where the 220 dp floor would
+ * otherwise meet or pass the expanded height, this ratio is the only thing separating the two, so the dialog keeps
+ * a fifth of the room to read as the larger view. Above 500 dp the floor never reaches it, so those windows draw
+ * exactly the size B261 gave them.
+ */
+private const val INLINE_OF_EXPANDED = 0.80f
+
+/**
+ * The inline figure's height for a window of [windowHeight] (B261).
+ *
+ * The preferred size is the fraction between its bounds; the answer is that, **capped below the expanded figure**
+ * (B263). Every window tall enough for the 220 dp floor to fit under the cap — anything above 500 dp, which is every
+ * phone in portrait — is untouched by the cap, and on a shorter one it is what stops *Expand* from shrinking the
+ * figure.
+ */
+internal fun inlineFigureHeight(windowHeight: Dp): Dp {
+    val preferred = (windowHeight * INLINE_CHART_FRACTION)
+        .coerceIn(INLINE_CHART_MIN_HEIGHT, INLINE_CHART_MAX_HEIGHT)
+    return minOf(preferred, expandedFigureHeight(windowHeight) * INLINE_OF_EXPANDED)
+}
 
 /**
  * The expanded figure's height for the same window.
