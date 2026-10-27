@@ -3014,7 +3014,10 @@ halves by reading the strings the screen uses rather than copies of them.
 `Column.verticalScroll`, where the height constraint is infinite, so the modifier resolved to wrap-content and
 the three numbers sat in a line at the plot's top — on the emulator inside about a hundred pixels of a 180 dp
 figure. The gutter now takes the figure's height, which is the one it was always meant to read against, and the
-test asserts the spread rather than the presence of the labels: reverting to `fillMaxHeight()` fails it.
+test asserts the spread rather than the presence of the labels: reverting to `fillMaxHeight()` fails it. Spreading
+them exposed the other half (B260): a bar is centred on its reading, so the first one was painted half outside the
+plot and covered the numbers in the gutter — measured at 77 px left of the figure's own edge. The frame clips now,
+which cuts the bar at the plot's edge rather than the axis.
 
 **The window and Expand on one row.** Both controls change how much of the figure is read; the picker was the
 card's first row and *Expand* its last, so on a small phone each spent a row between the dates and the actions.

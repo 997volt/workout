@@ -17,9 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The statistics page's three items — summaries before evidence (N221), the averaging window on
-Expand's row (N222) and the scale read along the figure (B259) — are fixed and in the unreleased section of
-[CHANGELOG.md](CHANGELOG.md).
+**Nothing.** The statistics page's items — summaries before evidence (N221), the averaging window on Expand's
+row (N222), the scale read along the figure and the bars that painted over it (B259, B260) — are fixed and in the
+unreleased section of [CHANGELOG.md](CHANGELOG.md).
 
 ## Later — decided, and not being started
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -187,6 +188,9 @@ fun TrendChartFrame(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
+            // The figure's own frame clips (B260): a bar centred on the first reading is half outside the plot,
+            // and without this it painted over whatever sits beside it — on statistics, the scale's numbers.
+            .clipToBounds()
             .then(semanticsModifier)
             .testTag(testTag),
     ) {

@@ -55,6 +55,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   nothing said which height a value belonged to. The gutter is given the figure's height, which is the height it
   was always meant to read against, in the card and in the expanded view alike.
 
+- **A bar stays inside the figure** (B260). A bar is centred on its reading, so the first one was drawn half outside
+  the plot and, with nothing clipping the canvas, painted over the scale's numbers in the gutter beside it — which
+  is how 722.5 and 361.25 came back partly hidden after the scale itself was fixed. The figure's frame clips now, so
+  a bar is cut at the plot's edge instead of covering the axis; the adherence breakdown shares the frame and the
+  same fix.
+
 ## [2.16] — 2026-10-26 (versionCode 36)
 
 ### Added
