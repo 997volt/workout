@@ -20,33 +20,33 @@
   //region block: imports
   var imul = Math.imul;
   var Unit_instance = kotlin_kotlin.$_$.o2;
-  var Enum = kotlin_kotlin.$_$.v9;
-  var protoOf = kotlin_kotlin.$_$.b8;
-  var initMetadataForClass = kotlin_kotlin.$_$.h7;
+  var Enum = kotlin_kotlin.$_$.r9;
+  var protoOf = kotlin_kotlin.$_$.a8;
+  var initMetadataForClass = kotlin_kotlin.$_$.g7;
   var VOID = kotlin_kotlin.$_$.b;
-  var getStringHashCode = kotlin_kotlin.$_$.f7;
-  var Exception = kotlin_kotlin.$_$.w9;
-  var Exception_init_$Init$ = kotlin_kotlin.$_$.f3;
-  var captureStack = kotlin_kotlin.$_$.u6;
+  var getStringHashCode = kotlin_kotlin.$_$.e7;
+  var Exception = kotlin_kotlin.$_$.s9;
+  var Exception_init_$Init$ = kotlin_kotlin.$_$.g3;
+  var captureStack = kotlin_kotlin.$_$.t6;
   var Default_getInstance = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_json.$_$.a;
   var SerializationException = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.h2;
   var JsonObject = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_json.$_$.b;
   var JsonPrimitive = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_json.$_$.c;
   var get_intOrNull = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_json.$_$.e;
-  var getKClass = kotlin_kotlin.$_$.m8;
-  var arrayOf = kotlin_kotlin.$_$.ma;
-  var createKType = kotlin_kotlin.$_$.k8;
-  var serializer = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.l2;
-  var THROW_CCE = kotlin_kotlin.$_$.ba;
+  var getKClass = kotlin_kotlin.$_$.l8;
+  var arrayOf = kotlin_kotlin.$_$.ia;
+  var createKType = kotlin_kotlin.$_$.j8;
+  var serializer = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.j2;
+  var THROW_CCE = kotlin_kotlin.$_$.x9;
   var KSerializer = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.e2;
-  var isInterface = kotlin_kotlin.$_$.u7;
+  var isInterface = kotlin_kotlin.$_$.t7;
   var Json = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_json.$_$.d;
-  var initMetadataForObject = kotlin_kotlin.$_$.m7;
-  var collectionSizeOrDefault = kotlin_kotlin.$_$.d4;
+  var initMetadataForObject = kotlin_kotlin.$_$.l7;
+  var collectionSizeOrDefault = kotlin_kotlin.$_$.e4;
   var ArrayList_init_$Create$ = kotlin_kotlin.$_$.p2;
   var listOf = kotlin_kotlin.$_$.g5;
-  var noWhenBranchMatchedException = kotlin_kotlin.$_$.va;
-  var initMetadataForCompanion = kotlin_kotlin.$_$.i7;
+  var noWhenBranchMatchedException = kotlin_kotlin.$_$.ra;
+  var initMetadataForCompanion = kotlin_kotlin.$_$.h7;
   var PluginGeneratedSerialDescriptor = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.u1;
   var StringSerializer_getInstance = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.l;
   var UnknownFieldException_init_$Create$ = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.o;
@@ -54,43 +54,43 @@
   var typeParametersSerializers = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.q1;
   var GeneratedSerializer = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.r1;
   var throwMissingFieldException = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.z1;
-  var objectCreate = kotlin_kotlin.$_$.a8;
+  var objectCreate = kotlin_kotlin.$_$.z7;
   var ArrayListSerializer = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.o1;
   var LazyThreadSafetyMode_PUBLICATION_getInstance = kotlin_kotlin.$_$.u1;
-  var lazy = kotlin_kotlin.$_$.ta;
-  var toString = kotlin_kotlin.$_$.d8;
-  var hashCode = kotlin_kotlin.$_$.g7;
-  var equals = kotlin_kotlin.$_$.c7;
-  var emptyList = kotlin_kotlin.$_$.t4;
+  var lazy = kotlin_kotlin.$_$.pa;
+  var toString = kotlin_kotlin.$_$.c8;
+  var hashCode = kotlin_kotlin.$_$.f7;
+  var equals = kotlin_kotlin.$_$.b7;
+  var emptyList = kotlin_kotlin.$_$.u4;
   var BooleanSerializer_getInstance = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.i;
-  var getBooleanHashCode = kotlin_kotlin.$_$.d7;
+  var getBooleanHashCode = kotlin_kotlin.$_$.c7;
   var SerializableWith = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.g2;
-  var Long = kotlin_kotlin.$_$.y9;
+  var Long = kotlin_kotlin.$_$.u9;
   var IntSerializer_getInstance = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.j;
   var LongSerializer_getInstance = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.k;
-  var toString_0 = kotlin_kotlin.$_$.xa;
-  var equalsLong = kotlin_kotlin.$_$.h6;
+  var toString_0 = kotlin_kotlin.$_$.ta;
+  var equalsLong = kotlin_kotlin.$_$.g6;
   var createSimpleEnumSerializer = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.w1;
   var Companion_instance = kotlin_kotlin.$_$.h2;
   var SerializerFactory = kotlin_org_jetbrains_kotlinx_kotlinx_serialization_core.$_$.v1;
   var ArrayList_init_$Create$_0 = kotlin_kotlin.$_$.q2;
-  var compare = kotlin_kotlin.$_$.d6;
+  var compare = kotlin_kotlin.$_$.c6;
   var mapCapacity = kotlin_kotlin.$_$.h5;
-  var coerceAtLeast = kotlin_kotlin.$_$.f8;
+  var coerceAtLeast = kotlin_kotlin.$_$.e8;
   var LinkedHashMap_init_$Create$ = kotlin_kotlin.$_$.y2;
-  var toSet = kotlin_kotlin.$_$.u5;
-  var addAll = kotlin_kotlin.$_$.z3;
-  var distinct = kotlin_kotlin.$_$.r4;
-  var plus = kotlin_kotlin.$_$.k5;
-  var isBlank = kotlin_kotlin.$_$.u8;
-  var checkIndexOverflow = kotlin_kotlin.$_$.c4;
+  var toSet = kotlin_kotlin.$_$.t5;
+  var addAll = kotlin_kotlin.$_$.b4;
+  var distinct = kotlin_kotlin.$_$.s4;
+  var plus = kotlin_kotlin.$_$.j5;
+  var isBlank = kotlin_kotlin.$_$.t8;
+  var checkIndexOverflow = kotlin_kotlin.$_$.d4;
   var LinkedHashMap_init_$Create$_0 = kotlin_kotlin.$_$.z2;
-  var sortedWith = kotlin_kotlin.$_$.o5;
+  var sortedWith = kotlin_kotlin.$_$.n5;
   var getOrNull = kotlin_kotlin.$_$.w4;
-  var eachCount = kotlin_kotlin.$_$.s4;
-  var FunctionAdapter = kotlin_kotlin.$_$.r6;
-  var Comparator = kotlin_kotlin.$_$.s9;
-  var compareValues = kotlin_kotlin.$_$.x5;
+  var eachCount = kotlin_kotlin.$_$.t4;
+  var FunctionAdapter = kotlin_kotlin.$_$.q6;
+  var Comparator = kotlin_kotlin.$_$.o9;
+  var compareValues = kotlin_kotlin.$_$.w5;
   //endregion
   //region block: pre-declaration
   initMetadataForClass(ProblemCode, 'ProblemCode', VOID, Enum);
@@ -211,17 +211,17 @@
   function ProgramProblem(code, path, detail) {
     path = path === VOID ? '' : path;
     detail = detail === VOID ? null : detail;
-    this.code_1 = code;
-    this.path_1 = path;
-    this.detail_1 = detail;
+    this.o1b_1 = code;
+    this.p1b_1 = path;
+    this.q1b_1 = detail;
   }
   protoOf(ProgramProblem).toString = function () {
-    return 'ProgramProblem(code=' + this.code_1.toString() + ', path=' + this.path_1 + ', detail=' + this.detail_1 + ')';
+    return 'ProgramProblem(code=' + this.o1b_1.toString() + ', path=' + this.p1b_1 + ', detail=' + this.q1b_1 + ')';
   };
   protoOf(ProgramProblem).hashCode = function () {
-    var result = this.code_1.hashCode();
-    result = imul(result, 31) + getStringHashCode(this.path_1) | 0;
-    result = imul(result, 31) + (this.detail_1 == null ? 0 : getStringHashCode(this.detail_1)) | 0;
+    var result = this.o1b_1.hashCode();
+    result = imul(result, 31) + getStringHashCode(this.p1b_1) | 0;
+    result = imul(result, 31) + (this.q1b_1 == null ? 0 : getStringHashCode(this.q1b_1)) | 0;
     return result;
   };
   protoOf(ProgramProblem).equals = function (other) {
@@ -229,24 +229,24 @@
       return true;
     if (!(other instanceof ProgramProblem))
       return false;
-    if (!this.code_1.equals(other.code_1))
+    if (!this.o1b_1.equals(other.o1b_1))
       return false;
-    if (!(this.path_1 === other.path_1))
+    if (!(this.p1b_1 === other.p1b_1))
       return false;
-    if (!(this.detail_1 == other.detail_1))
+    if (!(this.q1b_1 == other.q1b_1))
       return false;
     return true;
   };
   function ProgramFormatException(problem, cause) {
     cause = cause === VOID ? null : cause;
-    Exception_init_$Init$(problem.code_1.name_1, cause, this);
+    Exception_init_$Init$(problem.o1b_1.j2_1, cause, this);
     captureStack(this, ProgramFormatException);
-    this.problem_1 = problem;
+    this.r1b_1 = problem;
   }
   function parseOrRefuse($this, text) {
     var tmp;
     try {
-      tmp = Default_getInstance().parseToJsonElement_rqvr2k_k$(text);
+      tmp = Default_getInstance().oz(text);
     } catch ($p) {
       var tmp_0;
       if ($p instanceof SerializationException) {
@@ -260,7 +260,7 @@
   }
   function versionOf($this, element) {
     var tmp0_safe_receiver = element instanceof JsonObject ? element : null;
-    var tmp = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.get_6bo4tg_k$('formatVersion');
+    var tmp = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.y11('formatVersion');
     var tmp1_safe_receiver = tmp instanceof JsonPrimitive ? tmp : null;
     var tmp2_elvis_lhs = tmp1_safe_receiver == null ? null : get_intOrNull(tmp1_safe_receiver);
     var tmp_0;
@@ -287,13 +287,13 @@
     var tmp;
     try {
       // Inline function 'kotlinx.serialization.json.decodeFromJsonElement' call
-      var this_0 = $this.json_1;
+      var this_0 = $this.u1b_1;
       // Inline function 'kotlinx.serialization.serializer' call
-      var this_1 = this_0.get_serializersModule_piitvg_k$();
+      var this_1 = this_0.fj();
       // Inline function 'kotlinx.serialization.internal.cast' call
       var this_2 = serializer(this_1, createKType(getKClass(ProgramDocument), arrayOf([]), false));
       var tmp$ret$1 = isInterface(this_2, KSerializer) ? this_2 : THROW_CCE();
-      tmp = this_0.decodeFromJsonElement_tsogwj_k$(tmp$ret$1, element);
+      tmp = this_0.nz(tmp$ret$1, element);
     } catch ($p) {
       var tmp_0;
       if ($p instanceof SerializationException) {
@@ -306,19 +306,19 @@
     return tmp;
   }
   function ProgramDocumentCodec$json$lambda($this$Json) {
-    $this$Json.prettyPrint_1 = true;
-    $this$Json.ignoreUnknownKeys_1 = true;
-    $this$Json.encodeDefaults_1 = true;
+    $this$Json.j10_1 = true;
+    $this$Json.h10_1 = true;
+    $this$Json.f10_1 = true;
     return Unit_instance;
   }
   function ProgramDocumentCodec() {
     ProgramDocumentCodec_instance = this;
-    this.CURRENT_FORMAT_VERSION_1 = 5;
-    this.MINIMUM_FORMAT_VERSION_1 = 4;
+    this.s1b_1 = 5;
+    this.t1b_1 = 4;
     var tmp = this;
-    tmp.json_1 = Json(VOID, ProgramDocumentCodec$json$lambda);
+    tmp.u1b_1 = Json(VOID, ProgramDocumentCodec$json$lambda);
   }
-  protoOf(ProgramDocumentCodec).decode_gmof1w_k$ = function (text) {
+  protoOf(ProgramDocumentCodec).v1b = function (text) {
     var element = parseOrRefuse(this, text);
     refuseUnreadable(this, versionOf(this, element));
     return bodyOrRefuse(this, element);
@@ -443,21 +443,21 @@
     var tmp;
     try {
       // Inline function 'kotlin.collections.map' call
-      var this_0 = validate(ProgramDocumentCodec_getInstance().decode_gmof1w_k$(documentJson));
+      var this_0 = validate(ProgramDocumentCodec_getInstance().v1b(documentJson));
       // Inline function 'kotlin.collections.mapTo' call
       var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
-      var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
-      while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-        var item = _iterator__ex2g4s.next_20eer_k$();
+      var _iterator__ex2g4s = this_0.r();
+      while (_iterator__ex2g4s.s()) {
+        var item = _iterator__ex2g4s.t();
         var tmp$ret$2 = toOut(item);
-        destination.add_utx5q5_k$(tmp$ret$2);
+        destination.w(tmp$ret$2);
       }
       tmp = destination;
     } catch ($p) {
       var tmp_0;
       if ($p instanceof ProgramFormatException) {
         var refused = $p;
-        tmp_0 = listOf(toOut(refused.problem_1));
+        tmp_0 = listOf(toOut(refused.r1b_1));
       } else {
         throw $p;
       }
@@ -468,30 +468,30 @@
     // Inline function 'kotlinx.serialization.json.Json.encodeToString' call
     var value = new ValidateOut(problems);
     // Inline function 'kotlinx.serialization.serializer' call
-    var this_1 = tmp0.get_serializersModule_piitvg_k$();
+    var this_1 = tmp0.fj();
     // Inline function 'kotlinx.serialization.internal.cast' call
     var this_2 = serializer(this_1, createKType(getKClass(ValidateOut), arrayOf([]), false));
     var tmp$ret$4 = isInterface(this_2, KSerializer) ? this_2 : THROW_CCE();
-    return tmp0.encodeToString_k0apqx_k$(tmp$ret$4, value);
+    return tmp0.lz(tmp$ret$4, value);
   }
   function planJson(snapshotJson, editJson) {
     _init_properties_ProgramJson_kt__8o3jdm();
     var tmp;
     try {
-      tmp = plan(ProgramDocumentCodec_getInstance().decode_gmof1w_k$(snapshotJson), ProgramDocumentCodec_getInstance().decode_gmof1w_k$(editJson));
+      tmp = plan(ProgramDocumentCodec_getInstance().v1b(snapshotJson), ProgramDocumentCodec_getInstance().v1b(editJson));
     } catch ($p) {
       var tmp_0;
       if ($p instanceof ProgramFormatException) {
         var refused = $p;
         var tmp0 = get_json();
         // Inline function 'kotlinx.serialization.json.Json.encodeToString' call
-        var value = new PlanOut(false, VOID, VOID, listOf(toOut(refused.problem_1)));
+        var value = new PlanOut(false, VOID, VOID, listOf(toOut(refused.r1b_1)));
         // Inline function 'kotlinx.serialization.serializer' call
-        var this_0 = tmp0.get_serializersModule_piitvg_k$();
+        var this_0 = tmp0.fj();
         // Inline function 'kotlinx.serialization.internal.cast' call
         var this_1 = serializer(this_0, createKType(getKClass(PlanOut), arrayOf([]), false));
         var tmp$ret$1 = isInterface(this_1, KSerializer) ? this_1 : THROW_CCE();
-        return tmp0.encodeToString_k0apqx_k$(tmp$ret$1, value);
+        return tmp0.lz(tmp$ret$1, value);
       } else {
         throw $p;
       }
@@ -501,55 +501,55 @@
     if (result instanceof Refused) {
       var tmp0_0 = get_json();
       // Inline function 'kotlin.collections.map' call
-      var this_2 = result.problems_1;
+      var this_2 = result.f1c_1;
       // Inline function 'kotlin.collections.mapTo' call
       var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_2, 10));
-      var _iterator__ex2g4s = this_2.iterator_jk1svi_k$();
-      while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-        var item = _iterator__ex2g4s.next_20eer_k$();
+      var _iterator__ex2g4s = this_2.r();
+      while (_iterator__ex2g4s.s()) {
+        var item = _iterator__ex2g4s.t();
         var tmp$ret$5 = toOut(item);
-        destination.add_utx5q5_k$(tmp$ret$5);
+        destination.w(tmp$ret$5);
       }
       // Inline function 'kotlinx.serialization.json.Json.encodeToString' call
       var value_0 = new PlanOut(false, VOID, VOID, destination);
       // Inline function 'kotlinx.serialization.serializer' call
-      var this_3 = tmp0_0.get_serializersModule_piitvg_k$();
+      var this_3 = tmp0_0.fj();
       // Inline function 'kotlinx.serialization.internal.cast' call
       var this_4 = serializer(this_3, createKType(getKClass(PlanOut), arrayOf([]), false));
       var tmp$ret$7 = isInterface(this_4, KSerializer) ? this_4 : THROW_CCE();
-      tmp_1 = tmp0_0.encodeToString_k0apqx_k$(tmp$ret$7, value_0);
+      tmp_1 = tmp0_0.lz(tmp$ret$7, value_0);
     } else {
       if (result instanceof Ready) {
         var tmp0_1 = get_json();
         // Inline function 'kotlin.collections.map' call
-        var this_5 = result.changes_1;
+        var this_5 = result.w1b_1;
         // Inline function 'kotlin.collections.mapTo' call
         var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(this_5, 10));
-        var _iterator__ex2g4s_0 = this_5.iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-          var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
-          var tmp$ret$11 = new ChangeOut(item_0.kind_1.name_1, item_0.id_1, item_0.name_1, item_0.detail_1);
-          destination_0.add_utx5q5_k$(tmp$ret$11);
+        var _iterator__ex2g4s_0 = this_5.r();
+        while (_iterator__ex2g4s_0.s()) {
+          var item_0 = _iterator__ex2g4s_0.t();
+          var tmp$ret$11 = new ChangeOut(item_0.y1b_1.j2_1, item_0.z1b_1, item_0.a1c_1, item_0.b1c_1);
+          destination_0.w(tmp$ret$11);
         }
         var tmp_2 = destination_0;
         // Inline function 'kotlin.collections.map' call
-        var this_6 = result.warnings_1;
+        var this_6 = result.x1b_1;
         // Inline function 'kotlin.collections.mapTo' call
         var destination_1 = ArrayList_init_$Create$(collectionSizeOrDefault(this_6, 10));
-        var _iterator__ex2g4s_1 = this_6.iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-          var item_1 = _iterator__ex2g4s_1.next_20eer_k$();
-          var tmp$ret$14 = new WarningOut(item_1.code_1.name_1, item_1.id_1, item_1.name_1);
-          destination_1.add_utx5q5_k$(tmp$ret$14);
+        var _iterator__ex2g4s_1 = this_6.r();
+        while (_iterator__ex2g4s_1.s()) {
+          var item_1 = _iterator__ex2g4s_1.t();
+          var tmp$ret$14 = new WarningOut(item_1.c1c_1.j2_1, item_1.d1c_1, item_1.e1c_1);
+          destination_1.w(tmp$ret$14);
         }
         // Inline function 'kotlinx.serialization.json.Json.encodeToString' call
         var value_1 = new PlanOut(true, tmp_2, destination_1);
         // Inline function 'kotlinx.serialization.serializer' call
-        var this_7 = tmp0_1.get_serializersModule_piitvg_k$();
+        var this_7 = tmp0_1.fj();
         // Inline function 'kotlinx.serialization.internal.cast' call
         var this_8 = serializer(this_7, createKType(getKClass(PlanOut), arrayOf([]), false));
         var tmp$ret$16 = isInterface(this_8, KSerializer) ? this_8 : THROW_CCE();
-        tmp_1 = tmp0_1.encodeToString_k0apqx_k$(tmp$ret$16, value_1);
+        tmp_1 = tmp0_1.lz(tmp$ret$16, value_1);
       } else {
         noWhenBranchMatchedException();
       }
@@ -565,70 +565,70 @@
   function $serializer() {
     $serializer_instance = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ProblemOut', this, 3);
-    tmp0_serialDesc.addElement_5pzumi_k$('code', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('path', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('detail', true);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('code', false);
+    tmp0_serialDesc.zp('path', false);
+    tmp0_serialDesc.zp('detail', true);
+    this.g1c_1 = tmp0_serialDesc;
   }
-  protoOf($serializer).serialize_75di7i_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.code_1);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.path_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 2) ? true : !(value.detail_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 2, StringSerializer_getInstance(), value.detail_1);
+  protoOf($serializer).h1c = function (encoder, value) {
+    var tmp0_desc = this.g1c_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    tmp1_output.fk(tmp0_desc, 0, value.i1c_1);
+    tmp1_output.fk(tmp0_desc, 1, value.j1c_1);
+    if (tmp1_output.nk(tmp0_desc, 2) ? true : !(value.k1c_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 2, StringSerializer_getInstance(), value.k1c_1);
     }
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_75di7i_k$(encoder, value instanceof ProblemOut ? value : THROW_CCE());
+  protoOf($serializer).pf = function (encoder, value) {
+    return this.h1c(encoder, value instanceof ProblemOut ? value : THROW_CCE());
   };
-  protoOf($serializer).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer).qf = function (decoder) {
+    var tmp0_desc = this.g1c_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
     var tmp4_local0 = null;
     var tmp5_local1 = null;
     var tmp6_local2 = null;
-    var tmp7_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    if (tmp7_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp7_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp7_input = decoder.qi(tmp0_desc);
+    if (tmp7_input.gj()) {
+      tmp4_local0 = tmp7_input.aj(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp7_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp7_input.aj(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp7_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+      tmp6_local2 = tmp7_input.ej(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp7_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp7_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp7_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp7_input.aj(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp7_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp7_input.aj(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp7_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+            tmp6_local2 = tmp7_input.ej(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp7_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp7_input.ri(tmp0_desc);
     return ProblemOut_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, null);
   };
-  protoOf($serializer).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer).of = function () {
+    return this.g1c_1;
   };
-  protoOf($serializer).childSerializers_5ghqw5_k$ = function () {
+  protoOf($serializer).oq = function () {
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
@@ -642,14 +642,14 @@
   }
   function ProblemOut_init_$Init$(seen0, code, path, detail, serializationConstructorMarker, $this) {
     if (!(3 === (3 & seen0))) {
-      throwMissingFieldException(seen0, 3, $serializer_getInstance().descriptor_1);
+      throwMissingFieldException(seen0, 3, $serializer_getInstance().g1c_1);
     }
-    $this.code_1 = code;
-    $this.path_1 = path;
+    $this.i1c_1 = code;
+    $this.j1c_1 = path;
     if (0 === (seen0 & 4))
-      $this.detail_1 = null;
+      $this.k1c_1 = null;
     else
-      $this.detail_1 = detail;
+      $this.k1c_1 = detail;
     return $this;
   }
   function ProblemOut_init_$Create$(seen0, code, path, detail, serializationConstructorMarker) {
@@ -657,17 +657,17 @@
   }
   function ProblemOut(code, path, detail) {
     detail = detail === VOID ? null : detail;
-    this.code_1 = code;
-    this.path_1 = path;
-    this.detail_1 = detail;
+    this.i1c_1 = code;
+    this.j1c_1 = path;
+    this.k1c_1 = detail;
   }
   protoOf(ProblemOut).toString = function () {
-    return 'ProblemOut(code=' + this.code_1 + ', path=' + this.path_1 + ', detail=' + this.detail_1 + ')';
+    return 'ProblemOut(code=' + this.i1c_1 + ', path=' + this.j1c_1 + ', detail=' + this.k1c_1 + ')';
   };
   protoOf(ProblemOut).hashCode = function () {
-    var result = getStringHashCode(this.code_1);
-    result = imul(result, 31) + getStringHashCode(this.path_1) | 0;
-    result = imul(result, 31) + (this.detail_1 == null ? 0 : getStringHashCode(this.detail_1)) | 0;
+    var result = getStringHashCode(this.i1c_1);
+    result = imul(result, 31) + getStringHashCode(this.j1c_1) | 0;
+    result = imul(result, 31) + (this.k1c_1 == null ? 0 : getStringHashCode(this.k1c_1)) | 0;
     return result;
   };
   protoOf(ProblemOut).equals = function (other) {
@@ -675,11 +675,11 @@
       return true;
     if (!(other instanceof ProblemOut))
       return false;
-    if (!(this.code_1 === other.code_1))
+    if (!(this.i1c_1 === other.i1c_1))
       return false;
-    if (!(this.path_1 === other.path_1))
+    if (!(this.j1c_1 === other.j1c_1))
       return false;
-    if (!(this.detail_1 == other.detail_1))
+    if (!(this.k1c_1 == other.k1c_1))
       return false;
     return true;
   };
@@ -692,30 +692,30 @@
   function $serializer_0() {
     $serializer_instance_0 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ChangeOut', this, 4);
-    tmp0_serialDesc.addElement_5pzumi_k$('kind', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('id', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('name', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('detail', true);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('kind', false);
+    tmp0_serialDesc.zp('id', false);
+    tmp0_serialDesc.zp('name', true);
+    tmp0_serialDesc.zp('detail', true);
+    this.l1c_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_0).serialize_9drw3r_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.kind_1);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.id_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 2) ? true : !(value.name_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 2, StringSerializer_getInstance(), value.name_1);
+  protoOf($serializer_0).m1c = function (encoder, value) {
+    var tmp0_desc = this.l1c_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    tmp1_output.fk(tmp0_desc, 0, value.n1c_1);
+    tmp1_output.fk(tmp0_desc, 1, value.o1c_1);
+    if (tmp1_output.nk(tmp0_desc, 2) ? true : !(value.p1c_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 2, StringSerializer_getInstance(), value.p1c_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 3) ? true : !(value.detail_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 3, StringSerializer_getInstance(), value.detail_1);
+    if (tmp1_output.nk(tmp0_desc, 3) ? true : !(value.q1c_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 3, StringSerializer_getInstance(), value.q1c_1);
     }
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_0).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_9drw3r_k$(encoder, value instanceof ChangeOut ? value : THROW_CCE());
+  protoOf($serializer_0).pf = function (encoder, value) {
+    return this.m1c(encoder, value instanceof ChangeOut ? value : THROW_CCE());
   };
-  protoOf($serializer_0).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_0).qf = function (decoder) {
+    var tmp0_desc = this.l1c_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
@@ -723,50 +723,50 @@
     var tmp5_local1 = null;
     var tmp6_local2 = null;
     var tmp7_local3 = null;
-    var tmp8_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    if (tmp8_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp8_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp8_input = decoder.qi(tmp0_desc);
+    if (tmp8_input.gj()) {
+      tmp4_local0 = tmp8_input.aj(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp8_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp8_input.aj(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp8_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+      tmp6_local2 = tmp8_input.ej(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
-      tmp7_local3 = tmp8_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 3, StringSerializer_getInstance(), tmp7_local3);
+      tmp7_local3 = tmp8_input.ej(tmp0_desc, 3, StringSerializer_getInstance(), tmp7_local3);
       tmp3_bitMask0 = tmp3_bitMask0 | 8;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp8_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp8_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp8_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp8_input.aj(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp8_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp8_input.aj(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp8_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+            tmp6_local2 = tmp8_input.ej(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           case 3:
-            tmp7_local3 = tmp8_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 3, StringSerializer_getInstance(), tmp7_local3);
+            tmp7_local3 = tmp8_input.ej(tmp0_desc, 3, StringSerializer_getInstance(), tmp7_local3);
             tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp8_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp8_input.ri(tmp0_desc);
     return ChangeOut_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, null);
   };
-  protoOf($serializer_0).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_0).of = function () {
+    return this.l1c_1;
   };
-  protoOf($serializer_0).childSerializers_5ghqw5_k$ = function () {
+  protoOf($serializer_0).oq = function () {
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
@@ -780,18 +780,18 @@
   }
   function ChangeOut_init_$Init$(seen0, kind, id, name, detail, serializationConstructorMarker, $this) {
     if (!(3 === (3 & seen0))) {
-      throwMissingFieldException(seen0, 3, $serializer_getInstance_0().descriptor_1);
+      throwMissingFieldException(seen0, 3, $serializer_getInstance_0().l1c_1);
     }
-    $this.kind_1 = kind;
-    $this.id_1 = id;
+    $this.n1c_1 = kind;
+    $this.o1c_1 = id;
     if (0 === (seen0 & 4))
-      $this.name_1 = null;
+      $this.p1c_1 = null;
     else
-      $this.name_1 = name;
+      $this.p1c_1 = name;
     if (0 === (seen0 & 8))
-      $this.detail_1 = null;
+      $this.q1c_1 = null;
     else
-      $this.detail_1 = detail;
+      $this.q1c_1 = detail;
     return $this;
   }
   function ChangeOut_init_$Create$(seen0, kind, id, name, detail, serializationConstructorMarker) {
@@ -800,19 +800,19 @@
   function ChangeOut(kind, id, name, detail) {
     name = name === VOID ? null : name;
     detail = detail === VOID ? null : detail;
-    this.kind_1 = kind;
-    this.id_1 = id;
-    this.name_1 = name;
-    this.detail_1 = detail;
+    this.n1c_1 = kind;
+    this.o1c_1 = id;
+    this.p1c_1 = name;
+    this.q1c_1 = detail;
   }
   protoOf(ChangeOut).toString = function () {
-    return 'ChangeOut(kind=' + this.kind_1 + ', id=' + this.id_1 + ', name=' + this.name_1 + ', detail=' + this.detail_1 + ')';
+    return 'ChangeOut(kind=' + this.n1c_1 + ', id=' + this.o1c_1 + ', name=' + this.p1c_1 + ', detail=' + this.q1c_1 + ')';
   };
   protoOf(ChangeOut).hashCode = function () {
-    var result = getStringHashCode(this.kind_1);
-    result = imul(result, 31) + getStringHashCode(this.id_1) | 0;
-    result = imul(result, 31) + (this.name_1 == null ? 0 : getStringHashCode(this.name_1)) | 0;
-    result = imul(result, 31) + (this.detail_1 == null ? 0 : getStringHashCode(this.detail_1)) | 0;
+    var result = getStringHashCode(this.n1c_1);
+    result = imul(result, 31) + getStringHashCode(this.o1c_1) | 0;
+    result = imul(result, 31) + (this.p1c_1 == null ? 0 : getStringHashCode(this.p1c_1)) | 0;
+    result = imul(result, 31) + (this.q1c_1 == null ? 0 : getStringHashCode(this.q1c_1)) | 0;
     return result;
   };
   protoOf(ChangeOut).equals = function (other) {
@@ -820,13 +820,13 @@
       return true;
     if (!(other instanceof ChangeOut))
       return false;
-    if (!(this.kind_1 === other.kind_1))
+    if (!(this.n1c_1 === other.n1c_1))
       return false;
-    if (!(this.id_1 === other.id_1))
+    if (!(this.o1c_1 === other.o1c_1))
       return false;
-    if (!(this.name_1 == other.name_1))
+    if (!(this.p1c_1 == other.p1c_1))
       return false;
-    if (!(this.detail_1 == other.detail_1))
+    if (!(this.q1c_1 == other.q1c_1))
       return false;
     return true;
   };
@@ -839,72 +839,72 @@
   function $serializer_1() {
     $serializer_instance_1 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.WarningOut', this, 3);
-    tmp0_serialDesc.addElement_5pzumi_k$('code', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('id', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('name', true);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('code', false);
+    tmp0_serialDesc.zp('id', true);
+    tmp0_serialDesc.zp('name', true);
+    this.r1c_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_1).serialize_rn7xv5_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.code_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 1) ? true : !(value.id_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 1, StringSerializer_getInstance(), value.id_1);
+  protoOf($serializer_1).s1c = function (encoder, value) {
+    var tmp0_desc = this.r1c_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    tmp1_output.fk(tmp0_desc, 0, value.t1c_1);
+    if (tmp1_output.nk(tmp0_desc, 1) ? true : !(value.u1c_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 1, StringSerializer_getInstance(), value.u1c_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 2) ? true : !(value.name_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 2, StringSerializer_getInstance(), value.name_1);
+    if (tmp1_output.nk(tmp0_desc, 2) ? true : !(value.v1c_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 2, StringSerializer_getInstance(), value.v1c_1);
     }
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_1).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_rn7xv5_k$(encoder, value instanceof WarningOut ? value : THROW_CCE());
+  protoOf($serializer_1).pf = function (encoder, value) {
+    return this.s1c(encoder, value instanceof WarningOut ? value : THROW_CCE());
   };
-  protoOf($serializer_1).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_1).qf = function (decoder) {
+    var tmp0_desc = this.r1c_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
     var tmp4_local0 = null;
     var tmp5_local1 = null;
     var tmp6_local2 = null;
-    var tmp7_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    if (tmp7_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp7_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp7_input = decoder.qi(tmp0_desc);
+    if (tmp7_input.gj()) {
+      tmp4_local0 = tmp7_input.aj(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp7_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 1, StringSerializer_getInstance(), tmp5_local1);
+      tmp5_local1 = tmp7_input.ej(tmp0_desc, 1, StringSerializer_getInstance(), tmp5_local1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp7_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+      tmp6_local2 = tmp7_input.ej(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp7_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp7_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp7_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp7_input.aj(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp7_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 1, StringSerializer_getInstance(), tmp5_local1);
+            tmp5_local1 = tmp7_input.ej(tmp0_desc, 1, StringSerializer_getInstance(), tmp5_local1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp7_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+            tmp6_local2 = tmp7_input.ej(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp7_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp7_input.ri(tmp0_desc);
     return WarningOut_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, null);
   };
-  protoOf($serializer_1).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_1).of = function () {
+    return this.r1c_1;
   };
-  protoOf($serializer_1).childSerializers_5ghqw5_k$ = function () {
+  protoOf($serializer_1).oq = function () {
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
@@ -918,17 +918,17 @@
   }
   function WarningOut_init_$Init$(seen0, code, id, name, serializationConstructorMarker, $this) {
     if (!(1 === (1 & seen0))) {
-      throwMissingFieldException(seen0, 1, $serializer_getInstance_1().descriptor_1);
+      throwMissingFieldException(seen0, 1, $serializer_getInstance_1().r1c_1);
     }
-    $this.code_1 = code;
+    $this.t1c_1 = code;
     if (0 === (seen0 & 2))
-      $this.id_1 = null;
+      $this.u1c_1 = null;
     else
-      $this.id_1 = id;
+      $this.u1c_1 = id;
     if (0 === (seen0 & 4))
-      $this.name_1 = null;
+      $this.v1c_1 = null;
     else
-      $this.name_1 = name;
+      $this.v1c_1 = name;
     return $this;
   }
   function WarningOut_init_$Create$(seen0, code, id, name, serializationConstructorMarker) {
@@ -937,17 +937,17 @@
   function WarningOut(code, id, name) {
     id = id === VOID ? null : id;
     name = name === VOID ? null : name;
-    this.code_1 = code;
-    this.id_1 = id;
-    this.name_1 = name;
+    this.t1c_1 = code;
+    this.u1c_1 = id;
+    this.v1c_1 = name;
   }
   protoOf(WarningOut).toString = function () {
-    return 'WarningOut(code=' + this.code_1 + ', id=' + this.id_1 + ', name=' + this.name_1 + ')';
+    return 'WarningOut(code=' + this.t1c_1 + ', id=' + this.u1c_1 + ', name=' + this.v1c_1 + ')';
   };
   protoOf(WarningOut).hashCode = function () {
-    var result = getStringHashCode(this.code_1);
-    result = imul(result, 31) + (this.id_1 == null ? 0 : getStringHashCode(this.id_1)) | 0;
-    result = imul(result, 31) + (this.name_1 == null ? 0 : getStringHashCode(this.name_1)) | 0;
+    var result = getStringHashCode(this.t1c_1);
+    result = imul(result, 31) + (this.u1c_1 == null ? 0 : getStringHashCode(this.u1c_1)) | 0;
+    result = imul(result, 31) + (this.v1c_1 == null ? 0 : getStringHashCode(this.v1c_1)) | 0;
     return result;
   };
   protoOf(WarningOut).equals = function (other) {
@@ -955,11 +955,11 @@
       return true;
     if (!(other instanceof WarningOut))
       return false;
-    if (!(this.code_1 === other.code_1))
+    if (!(this.t1c_1 === other.t1c_1))
       return false;
-    if (!(this.id_1 == other.id_1))
+    if (!(this.u1c_1 == other.u1c_1))
       return false;
-    if (!(this.name_1 == other.name_1))
+    if (!(this.v1c_1 == other.v1c_1))
       return false;
     return true;
   };
@@ -973,7 +973,7 @@
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    tmp.$childSerializers_1 = [lazy(tmp_0, ValidateOut$Companion$$childSerializers$_anonymous__swzrou)];
+    tmp.w1c_1 = [lazy(tmp_0, ValidateOut$Companion$$childSerializers$_anonymous__swzrou)];
   }
   var Companion_instance_3;
   function Companion_getInstance_2() {
@@ -984,56 +984,56 @@
   function $serializer_2() {
     $serializer_instance_2 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ValidateOut', this, 1);
-    tmp0_serialDesc.addElement_5pzumi_k$('problems', false);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('problems', false);
+    this.x1c_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_2).serialize_w3ybf7_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp2_cached = Companion_getInstance_2().$childSerializers_1;
-    tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 0, tmp2_cached[0].get_value_j01efc_k$(), value.problems_1);
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+  protoOf($serializer_2).y1c = function (encoder, value) {
+    var tmp0_desc = this.x1c_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    var tmp2_cached = Companion_getInstance_2().w1c_1;
+    tmp1_output.hk(tmp0_desc, 0, tmp2_cached[0].y1(), value.z1c_1);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_2).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_w3ybf7_k$(encoder, value instanceof ValidateOut ? value : THROW_CCE());
+  protoOf($serializer_2).pf = function (encoder, value) {
+    return this.y1c(encoder, value instanceof ValidateOut ? value : THROW_CCE());
   };
-  protoOf($serializer_2).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_2).qf = function (decoder) {
+    var tmp0_desc = this.x1c_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
     var tmp4_local0 = null;
-    var tmp5_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp6_cached = Companion_getInstance_2().$childSerializers_1;
-    if (tmp5_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp5_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 0, tmp6_cached[0].get_value_j01efc_k$(), tmp4_local0);
+    var tmp5_input = decoder.qi(tmp0_desc);
+    var tmp6_cached = Companion_getInstance_2().w1c_1;
+    if (tmp5_input.gj()) {
+      tmp4_local0 = tmp5_input.cj(tmp0_desc, 0, tmp6_cached[0].y1(), tmp4_local0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp5_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp5_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp5_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 0, tmp6_cached[0].get_value_j01efc_k$(), tmp4_local0);
+            tmp4_local0 = tmp5_input.cj(tmp0_desc, 0, tmp6_cached[0].y1(), tmp4_local0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp5_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp5_input.ri(tmp0_desc);
     return ValidateOut_init_$Create$(tmp3_bitMask0, tmp4_local0, null);
   };
-  protoOf($serializer_2).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_2).of = function () {
+    return this.x1c_1;
   };
-  protoOf($serializer_2).childSerializers_5ghqw5_k$ = function () {
+  protoOf($serializer_2).oq = function () {
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    return [Companion_getInstance_2().$childSerializers_1[0].get_value_j01efc_k$()];
+    return [Companion_getInstance_2().w1c_1[0].y1()];
   };
   var $serializer_instance_2;
   function $serializer_getInstance_2() {
@@ -1043,9 +1043,9 @@
   }
   function ValidateOut_init_$Init$(seen0, problems, serializationConstructorMarker, $this) {
     if (!(1 === (1 & seen0))) {
-      throwMissingFieldException(seen0, 1, $serializer_getInstance_2().descriptor_1);
+      throwMissingFieldException(seen0, 1, $serializer_getInstance_2().x1c_1);
     }
-    $this.problems_1 = problems;
+    $this.z1c_1 = problems;
     return $this;
   }
   function ValidateOut_init_$Create$(seen0, problems, serializationConstructorMarker) {
@@ -1053,20 +1053,20 @@
   }
   function ValidateOut(problems) {
     Companion_getInstance_2();
-    this.problems_1 = problems;
+    this.z1c_1 = problems;
   }
   protoOf(ValidateOut).toString = function () {
-    return 'ValidateOut(problems=' + toString(this.problems_1) + ')';
+    return 'ValidateOut(problems=' + toString(this.z1c_1) + ')';
   };
   protoOf(ValidateOut).hashCode = function () {
-    return hashCode(this.problems_1);
+    return hashCode(this.z1c_1);
   };
   protoOf(ValidateOut).equals = function (other) {
     if (this === other)
       return true;
     if (!(other instanceof ValidateOut))
       return false;
-    if (!equals(this.problems_1, other.problems_1))
+    if (!equals(this.z1c_1, other.z1c_1))
       return false;
     return true;
   };
@@ -1090,7 +1090,7 @@
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    tmp.$childSerializers_1 = [null, tmp_1, tmp_3, lazy(tmp_4, PlanOut$Companion$$childSerializers$_anonymous__dlb285_1)];
+    tmp.a1d_1 = [null, tmp_1, tmp_3, lazy(tmp_4, PlanOut$Companion$$childSerializers$_anonymous__dlb285_1)];
   }
   var Companion_instance_4;
   function Companion_getInstance_3() {
@@ -1101,33 +1101,33 @@
   function $serializer_3() {
     $serializer_instance_3 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.PlanOut', this, 4);
-    tmp0_serialDesc.addElement_5pzumi_k$('ok', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('changes', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('warnings', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('problems', true);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('ok', false);
+    tmp0_serialDesc.zp('changes', true);
+    tmp0_serialDesc.zp('warnings', true);
+    tmp0_serialDesc.zp('problems', true);
+    this.b1d_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_3).serialize_2fyv7k_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp2_cached = Companion_getInstance_3().$childSerializers_1;
-    tmp1_output.encodeBooleanElement_ydht7q_k$(tmp0_desc, 0, value.ok_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 1) ? true : !equals(value.changes_1, emptyList())) {
-      tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 1, tmp2_cached[1].get_value_j01efc_k$(), value.changes_1);
+  protoOf($serializer_3).c1d = function (encoder, value) {
+    var tmp0_desc = this.b1d_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    var tmp2_cached = Companion_getInstance_3().a1d_1;
+    tmp1_output.xj(tmp0_desc, 0, value.d1d_1);
+    if (tmp1_output.nk(tmp0_desc, 1) ? true : !equals(value.e1d_1, emptyList())) {
+      tmp1_output.hk(tmp0_desc, 1, tmp2_cached[1].y1(), value.e1d_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 2) ? true : !equals(value.warnings_1, emptyList())) {
-      tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 2, tmp2_cached[2].get_value_j01efc_k$(), value.warnings_1);
+    if (tmp1_output.nk(tmp0_desc, 2) ? true : !equals(value.f1d_1, emptyList())) {
+      tmp1_output.hk(tmp0_desc, 2, tmp2_cached[2].y1(), value.f1d_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 3) ? true : !equals(value.problems_1, emptyList())) {
-      tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 3, tmp2_cached[3].get_value_j01efc_k$(), value.problems_1);
+    if (tmp1_output.nk(tmp0_desc, 3) ? true : !equals(value.g1d_1, emptyList())) {
+      tmp1_output.hk(tmp0_desc, 3, tmp2_cached[3].y1(), value.g1d_1);
     }
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_3).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_2fyv7k_k$(encoder, value instanceof PlanOut ? value : THROW_CCE());
+  protoOf($serializer_3).pf = function (encoder, value) {
+    return this.c1d(encoder, value instanceof PlanOut ? value : THROW_CCE());
   };
-  protoOf($serializer_3).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_3).qf = function (decoder) {
+    var tmp0_desc = this.b1d_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
@@ -1135,56 +1135,56 @@
     var tmp5_local1 = null;
     var tmp6_local2 = null;
     var tmp7_local3 = null;
-    var tmp8_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp9_cached = Companion_getInstance_3().$childSerializers_1;
-    if (tmp8_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp8_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 0);
+    var tmp8_input = decoder.qi(tmp0_desc);
+    var tmp9_cached = Companion_getInstance_3().a1d_1;
+    if (tmp8_input.gj()) {
+      tmp4_local0 = tmp8_input.si(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp8_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 1, tmp9_cached[1].get_value_j01efc_k$(), tmp5_local1);
+      tmp5_local1 = tmp8_input.cj(tmp0_desc, 1, tmp9_cached[1].y1(), tmp5_local1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp8_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 2, tmp9_cached[2].get_value_j01efc_k$(), tmp6_local2);
+      tmp6_local2 = tmp8_input.cj(tmp0_desc, 2, tmp9_cached[2].y1(), tmp6_local2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
-      tmp7_local3 = tmp8_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp9_cached[3].get_value_j01efc_k$(), tmp7_local3);
+      tmp7_local3 = tmp8_input.cj(tmp0_desc, 3, tmp9_cached[3].y1(), tmp7_local3);
       tmp3_bitMask0 = tmp3_bitMask0 | 8;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp8_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp8_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp8_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp8_input.si(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp8_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 1, tmp9_cached[1].get_value_j01efc_k$(), tmp5_local1);
+            tmp5_local1 = tmp8_input.cj(tmp0_desc, 1, tmp9_cached[1].y1(), tmp5_local1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp8_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 2, tmp9_cached[2].get_value_j01efc_k$(), tmp6_local2);
+            tmp6_local2 = tmp8_input.cj(tmp0_desc, 2, tmp9_cached[2].y1(), tmp6_local2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           case 3:
-            tmp7_local3 = tmp8_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp9_cached[3].get_value_j01efc_k$(), tmp7_local3);
+            tmp7_local3 = tmp8_input.cj(tmp0_desc, 3, tmp9_cached[3].y1(), tmp7_local3);
             tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp8_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp8_input.ri(tmp0_desc);
     return PlanOut_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, null);
   };
-  protoOf($serializer_3).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_3).of = function () {
+    return this.b1d_1;
   };
-  protoOf($serializer_3).childSerializers_5ghqw5_k$ = function () {
-    var tmp0_cached = Companion_getInstance_3().$childSerializers_1;
+  protoOf($serializer_3).oq = function () {
+    var tmp0_cached = Companion_getInstance_3().a1d_1;
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    return [BooleanSerializer_getInstance(), tmp0_cached[1].get_value_j01efc_k$(), tmp0_cached[2].get_value_j01efc_k$(), tmp0_cached[3].get_value_j01efc_k$()];
+    return [BooleanSerializer_getInstance(), tmp0_cached[1].y1(), tmp0_cached[2].y1(), tmp0_cached[3].y1()];
   };
   var $serializer_instance_3;
   function $serializer_getInstance_3() {
@@ -1194,21 +1194,21 @@
   }
   function PlanOut_init_$Init$(seen0, ok, changes, warnings, problems, serializationConstructorMarker, $this) {
     if (!(1 === (1 & seen0))) {
-      throwMissingFieldException(seen0, 1, $serializer_getInstance_3().descriptor_1);
+      throwMissingFieldException(seen0, 1, $serializer_getInstance_3().b1d_1);
     }
-    $this.ok_1 = ok;
+    $this.d1d_1 = ok;
     if (0 === (seen0 & 2))
-      $this.changes_1 = emptyList();
+      $this.e1d_1 = emptyList();
     else
-      $this.changes_1 = changes;
+      $this.e1d_1 = changes;
     if (0 === (seen0 & 4))
-      $this.warnings_1 = emptyList();
+      $this.f1d_1 = emptyList();
     else
-      $this.warnings_1 = warnings;
+      $this.f1d_1 = warnings;
     if (0 === (seen0 & 8))
-      $this.problems_1 = emptyList();
+      $this.g1d_1 = emptyList();
     else
-      $this.problems_1 = problems;
+      $this.g1d_1 = problems;
     return $this;
   }
   function PlanOut_init_$Create$(seen0, ok, changes, warnings, problems, serializationConstructorMarker) {
@@ -1219,19 +1219,19 @@
     changes = changes === VOID ? emptyList() : changes;
     warnings = warnings === VOID ? emptyList() : warnings;
     problems = problems === VOID ? emptyList() : problems;
-    this.ok_1 = ok;
-    this.changes_1 = changes;
-    this.warnings_1 = warnings;
-    this.problems_1 = problems;
+    this.d1d_1 = ok;
+    this.e1d_1 = changes;
+    this.f1d_1 = warnings;
+    this.g1d_1 = problems;
   }
   protoOf(PlanOut).toString = function () {
-    return 'PlanOut(ok=' + this.ok_1 + ', changes=' + toString(this.changes_1) + ', warnings=' + toString(this.warnings_1) + ', problems=' + toString(this.problems_1) + ')';
+    return 'PlanOut(ok=' + this.d1d_1 + ', changes=' + toString(this.e1d_1) + ', warnings=' + toString(this.f1d_1) + ', problems=' + toString(this.g1d_1) + ')';
   };
   protoOf(PlanOut).hashCode = function () {
-    var result = getBooleanHashCode(this.ok_1);
-    result = imul(result, 31) + hashCode(this.changes_1) | 0;
-    result = imul(result, 31) + hashCode(this.warnings_1) | 0;
-    result = imul(result, 31) + hashCode(this.problems_1) | 0;
+    var result = getBooleanHashCode(this.d1d_1);
+    result = imul(result, 31) + hashCode(this.e1d_1) | 0;
+    result = imul(result, 31) + hashCode(this.f1d_1) | 0;
+    result = imul(result, 31) + hashCode(this.g1d_1) | 0;
     return result;
   };
   protoOf(PlanOut).equals = function (other) {
@@ -1239,24 +1239,24 @@
       return true;
     if (!(other instanceof PlanOut))
       return false;
-    if (!(this.ok_1 === other.ok_1))
+    if (!(this.d1d_1 === other.d1d_1))
       return false;
-    if (!equals(this.changes_1, other.changes_1))
+    if (!equals(this.e1d_1, other.e1d_1))
       return false;
-    if (!equals(this.warnings_1, other.warnings_1))
+    if (!equals(this.f1d_1, other.f1d_1))
       return false;
-    if (!equals(this.problems_1, other.problems_1))
+    if (!equals(this.g1d_1, other.g1d_1))
       return false;
     return true;
   };
   function toOut(_this__u8e3s4) {
     _init_properties_ProgramJson_kt__8o3jdm();
-    return new ProblemOut(_this__u8e3s4.code_1.name_1, _this__u8e3s4.path_1, _this__u8e3s4.detail_1);
+    return new ProblemOut(_this__u8e3s4.o1b_1.j2_1, _this__u8e3s4.p1b_1, _this__u8e3s4.q1b_1);
   }
   function json$lambda($this$Json) {
     _init_properties_ProgramJson_kt__8o3jdm();
-    $this$Json.encodeDefaults_1 = true;
-    $this$Json.ignoreUnknownKeys_1 = true;
+    $this$Json.f10_1 = true;
+    $this$Json.h10_1 = true;
     return Unit_instance;
   }
   var properties_initialized_ProgramJson_kt_82zw1w;
@@ -1296,7 +1296,7 @@
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    tmp.$childSerializers_1 = [null, null, null, tmp_1, tmp_3, tmp_5, tmp_7, lazy(tmp_8, ProgramDocument$Companion$$childSerializers$_anonymous__p8b42d_3), null];
+    tmp.h1d_1 = [null, null, null, tmp_1, tmp_3, tmp_5, tmp_7, lazy(tmp_8, ProgramDocument$Companion$$childSerializers$_anonymous__p8b42d_3), null];
   }
   var Companion_instance_5;
   function Companion_getInstance_4() {
@@ -1307,49 +1307,49 @@
   function $serializer_4() {
     $serializer_instance_4 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ProgramDocument', this, 9);
-    tmp0_serialDesc.addElement_5pzumi_k$('formatVersion', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('exportedAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('program', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('slots', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('templates', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('templateExercises', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('templateSets', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('exercises', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('edit', true);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('formatVersion', false);
+    tmp0_serialDesc.zp('exportedAt', false);
+    tmp0_serialDesc.zp('program', false);
+    tmp0_serialDesc.zp('slots', true);
+    tmp0_serialDesc.zp('templates', true);
+    tmp0_serialDesc.zp('templateExercises', true);
+    tmp0_serialDesc.zp('templateSets', true);
+    tmp0_serialDesc.zp('exercises', true);
+    tmp0_serialDesc.zp('edit', true);
+    this.i1d_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_4).serialize_sw7m5i_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp2_cached = Companion_getInstance_4().$childSerializers_1;
-    tmp1_output.encodeIntElement_krhhce_k$(tmp0_desc, 0, value.formatVersion_1);
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 1, value.exportedAt_1);
-    tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 2, $serializer_getInstance_6(), value.program_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 3) ? true : !equals(value.slots_1, emptyList())) {
-      tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 3, tmp2_cached[3].get_value_j01efc_k$(), value.slots_1);
+  protoOf($serializer_4).j1d = function (encoder, value) {
+    var tmp0_desc = this.i1d_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    var tmp2_cached = Companion_getInstance_4().h1d_1;
+    tmp1_output.ak(tmp0_desc, 0, value.k1d_1);
+    tmp1_output.bk(tmp0_desc, 1, value.l1d_1);
+    tmp1_output.hk(tmp0_desc, 2, $serializer_getInstance_6(), value.m1d_1);
+    if (tmp1_output.nk(tmp0_desc, 3) ? true : !equals(value.n1d_1, emptyList())) {
+      tmp1_output.hk(tmp0_desc, 3, tmp2_cached[3].y1(), value.n1d_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 4) ? true : !equals(value.templates_1, emptyList())) {
-      tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 4, tmp2_cached[4].get_value_j01efc_k$(), value.templates_1);
+    if (tmp1_output.nk(tmp0_desc, 4) ? true : !equals(value.o1d_1, emptyList())) {
+      tmp1_output.hk(tmp0_desc, 4, tmp2_cached[4].y1(), value.o1d_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 5) ? true : !equals(value.templateExercises_1, emptyList())) {
-      tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 5, tmp2_cached[5].get_value_j01efc_k$(), value.templateExercises_1);
+    if (tmp1_output.nk(tmp0_desc, 5) ? true : !equals(value.p1d_1, emptyList())) {
+      tmp1_output.hk(tmp0_desc, 5, tmp2_cached[5].y1(), value.p1d_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 6) ? true : !equals(value.templateSets_1, emptyList())) {
-      tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 6, tmp2_cached[6].get_value_j01efc_k$(), value.templateSets_1);
+    if (tmp1_output.nk(tmp0_desc, 6) ? true : !equals(value.q1d_1, emptyList())) {
+      tmp1_output.hk(tmp0_desc, 6, tmp2_cached[6].y1(), value.q1d_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 7) ? true : !equals(value.exercises_1, emptyList())) {
-      tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 7, tmp2_cached[7].get_value_j01efc_k$(), value.exercises_1);
+    if (tmp1_output.nk(tmp0_desc, 7) ? true : !equals(value.r1d_1, emptyList())) {
+      tmp1_output.hk(tmp0_desc, 7, tmp2_cached[7].y1(), value.r1d_1);
     }
-    if (!(value.edit_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 8, $serializer_getInstance_5(), value.edit_1);
+    if (!(value.s1d_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 8, $serializer_getInstance_5(), value.s1d_1);
     }
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_4).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_sw7m5i_k$(encoder, value instanceof ProgramDocument ? value : THROW_CCE());
+  protoOf($serializer_4).pf = function (encoder, value) {
+    return this.j1d(encoder, value instanceof ProgramDocument ? value : THROW_CCE());
   };
-  protoOf($serializer_4).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_4).qf = function (decoder) {
+    var tmp0_desc = this.i1d_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
@@ -1362,86 +1362,86 @@
     var tmp10_local6 = null;
     var tmp11_local7 = null;
     var tmp12_local8 = null;
-    var tmp13_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp14_cached = Companion_getInstance_4().$childSerializers_1;
-    if (tmp13_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp13_input.decodeIntElement_941u6a_k$(tmp0_desc, 0);
+    var tmp13_input = decoder.qi(tmp0_desc);
+    var tmp14_cached = Companion_getInstance_4().h1d_1;
+    if (tmp13_input.gj()) {
+      tmp4_local0 = tmp13_input.vi(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp13_input.decodeLongElement_994anb_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp13_input.wi(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 2, $serializer_getInstance_6(), tmp6_local2);
+      tmp6_local2 = tmp13_input.cj(tmp0_desc, 2, $serializer_getInstance_6(), tmp6_local2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
-      tmp7_local3 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp14_cached[3].get_value_j01efc_k$(), tmp7_local3);
+      tmp7_local3 = tmp13_input.cj(tmp0_desc, 3, tmp14_cached[3].y1(), tmp7_local3);
       tmp3_bitMask0 = tmp3_bitMask0 | 8;
-      tmp8_local4 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 4, tmp14_cached[4].get_value_j01efc_k$(), tmp8_local4);
+      tmp8_local4 = tmp13_input.cj(tmp0_desc, 4, tmp14_cached[4].y1(), tmp8_local4);
       tmp3_bitMask0 = tmp3_bitMask0 | 16;
-      tmp9_local5 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 5, tmp14_cached[5].get_value_j01efc_k$(), tmp9_local5);
+      tmp9_local5 = tmp13_input.cj(tmp0_desc, 5, tmp14_cached[5].y1(), tmp9_local5);
       tmp3_bitMask0 = tmp3_bitMask0 | 32;
-      tmp10_local6 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 6, tmp14_cached[6].get_value_j01efc_k$(), tmp10_local6);
+      tmp10_local6 = tmp13_input.cj(tmp0_desc, 6, tmp14_cached[6].y1(), tmp10_local6);
       tmp3_bitMask0 = tmp3_bitMask0 | 64;
-      tmp11_local7 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 7, tmp14_cached[7].get_value_j01efc_k$(), tmp11_local7);
+      tmp11_local7 = tmp13_input.cj(tmp0_desc, 7, tmp14_cached[7].y1(), tmp11_local7);
       tmp3_bitMask0 = tmp3_bitMask0 | 128;
-      tmp12_local8 = tmp13_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, $serializer_getInstance_5(), tmp12_local8);
+      tmp12_local8 = tmp13_input.ej(tmp0_desc, 8, $serializer_getInstance_5(), tmp12_local8);
       tmp3_bitMask0 = tmp3_bitMask0 | 256;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp13_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp13_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp13_input.decodeIntElement_941u6a_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp13_input.vi(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp13_input.decodeLongElement_994anb_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp13_input.wi(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 2, $serializer_getInstance_6(), tmp6_local2);
+            tmp6_local2 = tmp13_input.cj(tmp0_desc, 2, $serializer_getInstance_6(), tmp6_local2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           case 3:
-            tmp7_local3 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp14_cached[3].get_value_j01efc_k$(), tmp7_local3);
+            tmp7_local3 = tmp13_input.cj(tmp0_desc, 3, tmp14_cached[3].y1(), tmp7_local3);
             tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           case 4:
-            tmp8_local4 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 4, tmp14_cached[4].get_value_j01efc_k$(), tmp8_local4);
+            tmp8_local4 = tmp13_input.cj(tmp0_desc, 4, tmp14_cached[4].y1(), tmp8_local4);
             tmp3_bitMask0 = tmp3_bitMask0 | 16;
             break;
           case 5:
-            tmp9_local5 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 5, tmp14_cached[5].get_value_j01efc_k$(), tmp9_local5);
+            tmp9_local5 = tmp13_input.cj(tmp0_desc, 5, tmp14_cached[5].y1(), tmp9_local5);
             tmp3_bitMask0 = tmp3_bitMask0 | 32;
             break;
           case 6:
-            tmp10_local6 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 6, tmp14_cached[6].get_value_j01efc_k$(), tmp10_local6);
+            tmp10_local6 = tmp13_input.cj(tmp0_desc, 6, tmp14_cached[6].y1(), tmp10_local6);
             tmp3_bitMask0 = tmp3_bitMask0 | 64;
             break;
           case 7:
-            tmp11_local7 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 7, tmp14_cached[7].get_value_j01efc_k$(), tmp11_local7);
+            tmp11_local7 = tmp13_input.cj(tmp0_desc, 7, tmp14_cached[7].y1(), tmp11_local7);
             tmp3_bitMask0 = tmp3_bitMask0 | 128;
             break;
           case 8:
-            tmp12_local8 = tmp13_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, $serializer_getInstance_5(), tmp12_local8);
+            tmp12_local8 = tmp13_input.ej(tmp0_desc, 8, $serializer_getInstance_5(), tmp12_local8);
             tmp3_bitMask0 = tmp3_bitMask0 | 256;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp13_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp13_input.ri(tmp0_desc);
     return ProgramDocument_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, tmp8_local4, tmp9_local5, tmp10_local6, tmp11_local7, tmp12_local8, null);
   };
-  protoOf($serializer_4).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_4).of = function () {
+    return this.i1d_1;
   };
-  protoOf($serializer_4).childSerializers_5ghqw5_k$ = function () {
-    var tmp0_cached = Companion_getInstance_4().$childSerializers_1;
+  protoOf($serializer_4).oq = function () {
+    var tmp0_cached = Companion_getInstance_4().h1d_1;
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    return [IntSerializer_getInstance(), LongSerializer_getInstance(), $serializer_getInstance_6(), tmp0_cached[3].get_value_j01efc_k$(), tmp0_cached[4].get_value_j01efc_k$(), tmp0_cached[5].get_value_j01efc_k$(), tmp0_cached[6].get_value_j01efc_k$(), tmp0_cached[7].get_value_j01efc_k$(), get_nullable($serializer_getInstance_5())];
+    return [IntSerializer_getInstance(), LongSerializer_getInstance(), $serializer_getInstance_6(), tmp0_cached[3].y1(), tmp0_cached[4].y1(), tmp0_cached[5].y1(), tmp0_cached[6].y1(), tmp0_cached[7].y1(), get_nullable($serializer_getInstance_5())];
   };
   var $serializer_instance_4;
   function $serializer_getInstance_4() {
@@ -1451,35 +1451,35 @@
   }
   function ProgramDocument_init_$Init$(seen0, formatVersion, exportedAt, program, slots, templates, templateExercises, templateSets, exercises, edit, serializationConstructorMarker, $this) {
     if (!(7 === (7 & seen0))) {
-      throwMissingFieldException(seen0, 7, $serializer_getInstance_4().descriptor_1);
+      throwMissingFieldException(seen0, 7, $serializer_getInstance_4().i1d_1);
     }
-    $this.formatVersion_1 = formatVersion;
-    $this.exportedAt_1 = exportedAt;
-    $this.program_1 = program;
+    $this.k1d_1 = formatVersion;
+    $this.l1d_1 = exportedAt;
+    $this.m1d_1 = program;
     if (0 === (seen0 & 8))
-      $this.slots_1 = emptyList();
+      $this.n1d_1 = emptyList();
     else
-      $this.slots_1 = slots;
+      $this.n1d_1 = slots;
     if (0 === (seen0 & 16))
-      $this.templates_1 = emptyList();
+      $this.o1d_1 = emptyList();
     else
-      $this.templates_1 = templates;
+      $this.o1d_1 = templates;
     if (0 === (seen0 & 32))
-      $this.templateExercises_1 = emptyList();
+      $this.p1d_1 = emptyList();
     else
-      $this.templateExercises_1 = templateExercises;
+      $this.p1d_1 = templateExercises;
     if (0 === (seen0 & 64))
-      $this.templateSets_1 = emptyList();
+      $this.q1d_1 = emptyList();
     else
-      $this.templateSets_1 = templateSets;
+      $this.q1d_1 = templateSets;
     if (0 === (seen0 & 128))
-      $this.exercises_1 = emptyList();
+      $this.r1d_1 = emptyList();
     else
-      $this.exercises_1 = exercises;
+      $this.r1d_1 = exercises;
     if (0 === (seen0 & 256))
-      $this.edit_1 = null;
+      $this.s1d_1 = null;
     else
-      $this.edit_1 = edit;
+      $this.s1d_1 = edit;
     return $this;
   }
   function ProgramDocument_init_$Create$(seen0, formatVersion, exportedAt, program, slots, templates, templateExercises, templateSets, exercises, edit, serializationConstructorMarker) {
@@ -1493,29 +1493,29 @@
     templateSets = templateSets === VOID ? emptyList() : templateSets;
     exercises = exercises === VOID ? emptyList() : exercises;
     edit = edit === VOID ? null : edit;
-    this.formatVersion_1 = formatVersion;
-    this.exportedAt_1 = exportedAt;
-    this.program_1 = program;
-    this.slots_1 = slots;
-    this.templates_1 = templates;
-    this.templateExercises_1 = templateExercises;
-    this.templateSets_1 = templateSets;
-    this.exercises_1 = exercises;
-    this.edit_1 = edit;
+    this.k1d_1 = formatVersion;
+    this.l1d_1 = exportedAt;
+    this.m1d_1 = program;
+    this.n1d_1 = slots;
+    this.o1d_1 = templates;
+    this.p1d_1 = templateExercises;
+    this.q1d_1 = templateSets;
+    this.r1d_1 = exercises;
+    this.s1d_1 = edit;
   }
   protoOf(ProgramDocument).toString = function () {
-    return 'ProgramDocument(formatVersion=' + this.formatVersion_1 + ', exportedAt=' + this.exportedAt_1.toString() + ', program=' + this.program_1.toString() + ', slots=' + toString(this.slots_1) + ', templates=' + toString(this.templates_1) + ', templateExercises=' + toString(this.templateExercises_1) + ', templateSets=' + toString(this.templateSets_1) + ', exercises=' + toString(this.exercises_1) + ', edit=' + toString_0(this.edit_1) + ')';
+    return 'ProgramDocument(formatVersion=' + this.k1d_1 + ', exportedAt=' + this.l1d_1.toString() + ', program=' + this.m1d_1.toString() + ', slots=' + toString(this.n1d_1) + ', templates=' + toString(this.o1d_1) + ', templateExercises=' + toString(this.p1d_1) + ', templateSets=' + toString(this.q1d_1) + ', exercises=' + toString(this.r1d_1) + ', edit=' + toString_0(this.s1d_1) + ')';
   };
   protoOf(ProgramDocument).hashCode = function () {
-    var result = this.formatVersion_1;
-    result = imul(result, 31) + this.exportedAt_1.hashCode() | 0;
-    result = imul(result, 31) + this.program_1.hashCode() | 0;
-    result = imul(result, 31) + hashCode(this.slots_1) | 0;
-    result = imul(result, 31) + hashCode(this.templates_1) | 0;
-    result = imul(result, 31) + hashCode(this.templateExercises_1) | 0;
-    result = imul(result, 31) + hashCode(this.templateSets_1) | 0;
-    result = imul(result, 31) + hashCode(this.exercises_1) | 0;
-    result = imul(result, 31) + (this.edit_1 == null ? 0 : this.edit_1.hashCode()) | 0;
+    var result = this.k1d_1;
+    result = imul(result, 31) + this.l1d_1.hashCode() | 0;
+    result = imul(result, 31) + this.m1d_1.hashCode() | 0;
+    result = imul(result, 31) + hashCode(this.n1d_1) | 0;
+    result = imul(result, 31) + hashCode(this.o1d_1) | 0;
+    result = imul(result, 31) + hashCode(this.p1d_1) | 0;
+    result = imul(result, 31) + hashCode(this.q1d_1) | 0;
+    result = imul(result, 31) + hashCode(this.r1d_1) | 0;
+    result = imul(result, 31) + (this.s1d_1 == null ? 0 : this.s1d_1.hashCode()) | 0;
     return result;
   };
   protoOf(ProgramDocument).equals = function (other) {
@@ -1523,73 +1523,73 @@
       return true;
     if (!(other instanceof ProgramDocument))
       return false;
-    if (!(this.formatVersion_1 === other.formatVersion_1))
+    if (!(this.k1d_1 === other.k1d_1))
       return false;
-    if (!equalsLong(this.exportedAt_1, other.exportedAt_1))
+    if (!equalsLong(this.l1d_1, other.l1d_1))
       return false;
-    if (!this.program_1.equals(other.program_1))
+    if (!this.m1d_1.equals(other.m1d_1))
       return false;
-    if (!equals(this.slots_1, other.slots_1))
+    if (!equals(this.n1d_1, other.n1d_1))
       return false;
-    if (!equals(this.templates_1, other.templates_1))
+    if (!equals(this.o1d_1, other.o1d_1))
       return false;
-    if (!equals(this.templateExercises_1, other.templateExercises_1))
+    if (!equals(this.p1d_1, other.p1d_1))
       return false;
-    if (!equals(this.templateSets_1, other.templateSets_1))
+    if (!equals(this.q1d_1, other.q1d_1))
       return false;
-    if (!equals(this.exercises_1, other.exercises_1))
+    if (!equals(this.r1d_1, other.r1d_1))
       return false;
-    if (!equals(this.edit_1, other.edit_1))
+    if (!equals(this.s1d_1, other.s1d_1))
       return false;
     return true;
   };
   function $serializer_5() {
     $serializer_instance_5 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.EditMarker', this, 1);
-    tmp0_serialDesc.addElement_5pzumi_k$('baseExportedAt', false);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('baseExportedAt', false);
+    this.t1d_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_5).serialize_gts1x9_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 0, value.baseExportedAt_1);
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+  protoOf($serializer_5).u1d = function (encoder, value) {
+    var tmp0_desc = this.t1d_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    tmp1_output.bk(tmp0_desc, 0, value.v1d_1);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_5).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_gts1x9_k$(encoder, value instanceof EditMarker ? value : THROW_CCE());
+  protoOf($serializer_5).pf = function (encoder, value) {
+    return this.u1d(encoder, value instanceof EditMarker ? value : THROW_CCE());
   };
-  protoOf($serializer_5).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_5).qf = function (decoder) {
+    var tmp0_desc = this.t1d_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
     var tmp4_local0 = new Long(0, 0);
-    var tmp5_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    if (tmp5_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp5_input.decodeLongElement_994anb_k$(tmp0_desc, 0);
+    var tmp5_input = decoder.qi(tmp0_desc);
+    if (tmp5_input.gj()) {
+      tmp4_local0 = tmp5_input.wi(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp5_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp5_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp5_input.decodeLongElement_994anb_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp5_input.wi(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp5_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp5_input.ri(tmp0_desc);
     return EditMarker_init_$Create$(tmp3_bitMask0, tmp4_local0, null);
   };
-  protoOf($serializer_5).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_5).of = function () {
+    return this.t1d_1;
   };
-  protoOf($serializer_5).childSerializers_5ghqw5_k$ = function () {
+  protoOf($serializer_5).oq = function () {
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
@@ -1603,9 +1603,9 @@
   }
   function EditMarker_init_$Init$(seen0, baseExportedAt, serializationConstructorMarker, $this) {
     if (!(1 === (1 & seen0))) {
-      throwMissingFieldException(seen0, 1, $serializer_getInstance_5().descriptor_1);
+      throwMissingFieldException(seen0, 1, $serializer_getInstance_5().t1d_1);
     }
-    $this.baseExportedAt_1 = baseExportedAt;
+    $this.v1d_1 = baseExportedAt;
     return $this;
   }
   function EditMarker_init_$Create$(seen0, baseExportedAt, serializationConstructorMarker) {
@@ -1614,22 +1614,22 @@
   function EditMarker() {
   }
   protoOf(EditMarker).toString = function () {
-    return 'EditMarker(baseExportedAt=' + this.baseExportedAt_1.toString() + ')';
+    return 'EditMarker(baseExportedAt=' + this.v1d_1.toString() + ')';
   };
   protoOf(EditMarker).hashCode = function () {
-    return this.baseExportedAt_1.hashCode();
+    return this.v1d_1.hashCode();
   };
   protoOf(EditMarker).equals = function (other) {
     if (this === other)
       return true;
     if (!(other instanceof EditMarker))
       return false;
-    if (!equalsLong(this.baseExportedAt_1, other.baseExportedAt_1))
+    if (!equalsLong(this.v1d_1, other.v1d_1))
       return false;
     return true;
   };
   function ProgramDto$Companion$$childSerializers$_anonymous__lqadm7() {
-    return Companion_getInstance_6().serializer_9w0wvi_k$();
+    return Companion_getInstance_6().b12();
   }
   function Companion_5() {
     Companion_instance_6 = this;
@@ -1638,7 +1638,7 @@
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    tmp.$childSerializers_1 = [null, null, null, null, lazy(tmp_0, ProgramDto$Companion$$childSerializers$_anonymous__lqadm7), null, null, null, null];
+    tmp.x1d_1 = [null, null, null, null, lazy(tmp_0, ProgramDto$Companion$$childSerializers$_anonymous__lqadm7), null, null, null, null];
   }
   var Companion_instance_6;
   function Companion_getInstance_5() {
@@ -1649,47 +1649,47 @@
   function $serializer_6() {
     $serializer_instance_6 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ProgramDto', this, 9);
-    tmp0_serialDesc.addElement_5pzumi_k$('id', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('name', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('isActive', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('position', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('kind', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('startDate', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('createdAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('updatedAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('deletedAt', true);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('id', false);
+    tmp0_serialDesc.zp('name', false);
+    tmp0_serialDesc.zp('isActive', true);
+    tmp0_serialDesc.zp('position', true);
+    tmp0_serialDesc.zp('kind', true);
+    tmp0_serialDesc.zp('startDate', true);
+    tmp0_serialDesc.zp('createdAt', false);
+    tmp0_serialDesc.zp('updatedAt', false);
+    tmp0_serialDesc.zp('deletedAt', true);
+    this.y1d_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_6).serialize_1hczuu_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp2_cached = Companion_getInstance_5().$childSerializers_1;
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.id_1);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.name_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 2) ? true : !(value.isActive_1 === false)) {
-      tmp1_output.encodeBooleanElement_ydht7q_k$(tmp0_desc, 2, value.isActive_1);
+  protoOf($serializer_6).z1d = function (encoder, value) {
+    var tmp0_desc = this.y1d_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    var tmp2_cached = Companion_getInstance_5().x1d_1;
+    tmp1_output.fk(tmp0_desc, 0, value.a1e_1);
+    tmp1_output.fk(tmp0_desc, 1, value.b1e_1);
+    if (tmp1_output.nk(tmp0_desc, 2) ? true : !(value.c1e_1 === false)) {
+      tmp1_output.xj(tmp0_desc, 2, value.c1e_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 3) ? true : !(value.position_1 === 0)) {
-      tmp1_output.encodeIntElement_krhhce_k$(tmp0_desc, 3, value.position_1);
+    if (tmp1_output.nk(tmp0_desc, 3) ? true : !(value.d1e_1 === 0)) {
+      tmp1_output.ak(tmp0_desc, 3, value.d1e_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 4) ? true : !value.kind_1.equals(ProgramKind_WEEKLY_getInstance())) {
-      tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 4, tmp2_cached[4].get_value_j01efc_k$(), value.kind_1);
+    if (tmp1_output.nk(tmp0_desc, 4) ? true : !value.e1e_1.equals(ProgramKind_WEEKLY_getInstance())) {
+      tmp1_output.hk(tmp0_desc, 4, tmp2_cached[4].y1(), value.e1e_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 5) ? true : !(value.startDate_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 5, LongSerializer_getInstance(), value.startDate_1);
+    if (tmp1_output.nk(tmp0_desc, 5) ? true : !(value.f1e_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 5, LongSerializer_getInstance(), value.f1e_1);
     }
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 6, value.createdAt_1);
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 7, value.updatedAt_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 8) ? true : !(value.deletedAt_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 8, LongSerializer_getInstance(), value.deletedAt_1);
+    tmp1_output.bk(tmp0_desc, 6, value.g1e_1);
+    tmp1_output.bk(tmp0_desc, 7, value.h1e_1);
+    if (tmp1_output.nk(tmp0_desc, 8) ? true : !(value.i1e_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 8, LongSerializer_getInstance(), value.i1e_1);
     }
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_6).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_1hczuu_k$(encoder, value instanceof ProgramDto ? value : THROW_CCE());
+  protoOf($serializer_6).pf = function (encoder, value) {
+    return this.z1d(encoder, value instanceof ProgramDto ? value : THROW_CCE());
   };
-  protoOf($serializer_6).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_6).qf = function (decoder) {
+    var tmp0_desc = this.y1d_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
@@ -1702,86 +1702,86 @@
     var tmp10_local6 = new Long(0, 0);
     var tmp11_local7 = new Long(0, 0);
     var tmp12_local8 = null;
-    var tmp13_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp14_cached = Companion_getInstance_5().$childSerializers_1;
-    if (tmp13_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp13_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp13_input = decoder.qi(tmp0_desc);
+    var tmp14_cached = Companion_getInstance_5().x1d_1;
+    if (tmp13_input.gj()) {
+      tmp4_local0 = tmp13_input.aj(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp13_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp13_input.aj(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp13_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 2);
+      tmp6_local2 = tmp13_input.si(tmp0_desc, 2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
-      tmp7_local3 = tmp13_input.decodeIntElement_941u6a_k$(tmp0_desc, 3);
+      tmp7_local3 = tmp13_input.vi(tmp0_desc, 3);
       tmp3_bitMask0 = tmp3_bitMask0 | 8;
-      tmp8_local4 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 4, tmp14_cached[4].get_value_j01efc_k$(), tmp8_local4);
+      tmp8_local4 = tmp13_input.cj(tmp0_desc, 4, tmp14_cached[4].y1(), tmp8_local4);
       tmp3_bitMask0 = tmp3_bitMask0 | 16;
-      tmp9_local5 = tmp13_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
+      tmp9_local5 = tmp13_input.ej(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
       tmp3_bitMask0 = tmp3_bitMask0 | 32;
-      tmp10_local6 = tmp13_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
+      tmp10_local6 = tmp13_input.wi(tmp0_desc, 6);
       tmp3_bitMask0 = tmp3_bitMask0 | 64;
-      tmp11_local7 = tmp13_input.decodeLongElement_994anb_k$(tmp0_desc, 7);
+      tmp11_local7 = tmp13_input.wi(tmp0_desc, 7);
       tmp3_bitMask0 = tmp3_bitMask0 | 128;
-      tmp12_local8 = tmp13_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
+      tmp12_local8 = tmp13_input.ej(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
       tmp3_bitMask0 = tmp3_bitMask0 | 256;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp13_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp13_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp13_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp13_input.aj(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp13_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp13_input.aj(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp13_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 2);
+            tmp6_local2 = tmp13_input.si(tmp0_desc, 2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           case 3:
-            tmp7_local3 = tmp13_input.decodeIntElement_941u6a_k$(tmp0_desc, 3);
+            tmp7_local3 = tmp13_input.vi(tmp0_desc, 3);
             tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           case 4:
-            tmp8_local4 = tmp13_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 4, tmp14_cached[4].get_value_j01efc_k$(), tmp8_local4);
+            tmp8_local4 = tmp13_input.cj(tmp0_desc, 4, tmp14_cached[4].y1(), tmp8_local4);
             tmp3_bitMask0 = tmp3_bitMask0 | 16;
             break;
           case 5:
-            tmp9_local5 = tmp13_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
+            tmp9_local5 = tmp13_input.ej(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
             tmp3_bitMask0 = tmp3_bitMask0 | 32;
             break;
           case 6:
-            tmp10_local6 = tmp13_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
+            tmp10_local6 = tmp13_input.wi(tmp0_desc, 6);
             tmp3_bitMask0 = tmp3_bitMask0 | 64;
             break;
           case 7:
-            tmp11_local7 = tmp13_input.decodeLongElement_994anb_k$(tmp0_desc, 7);
+            tmp11_local7 = tmp13_input.wi(tmp0_desc, 7);
             tmp3_bitMask0 = tmp3_bitMask0 | 128;
             break;
           case 8:
-            tmp12_local8 = tmp13_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
+            tmp12_local8 = tmp13_input.ej(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
             tmp3_bitMask0 = tmp3_bitMask0 | 256;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp13_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp13_input.ri(tmp0_desc);
     return ProgramDto_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, tmp8_local4, tmp9_local5, tmp10_local6, tmp11_local7, tmp12_local8, null);
   };
-  protoOf($serializer_6).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_6).of = function () {
+    return this.y1d_1;
   };
-  protoOf($serializer_6).childSerializers_5ghqw5_k$ = function () {
-    var tmp0_cached = Companion_getInstance_5().$childSerializers_1;
+  protoOf($serializer_6).oq = function () {
+    var tmp0_cached = Companion_getInstance_5().x1d_1;
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    return [StringSerializer_getInstance(), StringSerializer_getInstance(), BooleanSerializer_getInstance(), IntSerializer_getInstance(), tmp0_cached[4].get_value_j01efc_k$(), get_nullable(LongSerializer_getInstance()), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance())];
+    return [StringSerializer_getInstance(), StringSerializer_getInstance(), BooleanSerializer_getInstance(), IntSerializer_getInstance(), tmp0_cached[4].y1(), get_nullable(LongSerializer_getInstance()), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance())];
   };
   var $serializer_instance_6;
   function $serializer_getInstance_6() {
@@ -1791,32 +1791,32 @@
   }
   function ProgramDto_init_$Init$(seen0, id, name, isActive, position, kind, startDate, createdAt, updatedAt, deletedAt, serializationConstructorMarker, $this) {
     if (!(195 === (195 & seen0))) {
-      throwMissingFieldException(seen0, 195, $serializer_getInstance_6().descriptor_1);
+      throwMissingFieldException(seen0, 195, $serializer_getInstance_6().y1d_1);
     }
-    $this.id_1 = id;
-    $this.name_1 = name;
+    $this.a1e_1 = id;
+    $this.b1e_1 = name;
     if (0 === (seen0 & 4))
-      $this.isActive_1 = false;
+      $this.c1e_1 = false;
     else
-      $this.isActive_1 = isActive;
+      $this.c1e_1 = isActive;
     if (0 === (seen0 & 8))
-      $this.position_1 = 0;
+      $this.d1e_1 = 0;
     else
-      $this.position_1 = position;
+      $this.d1e_1 = position;
     if (0 === (seen0 & 16))
-      $this.kind_1 = ProgramKind_WEEKLY_getInstance();
+      $this.e1e_1 = ProgramKind_WEEKLY_getInstance();
     else
-      $this.kind_1 = kind;
+      $this.e1e_1 = kind;
     if (0 === (seen0 & 32))
-      $this.startDate_1 = null;
+      $this.f1e_1 = null;
     else
-      $this.startDate_1 = startDate;
-    $this.createdAt_1 = createdAt;
-    $this.updatedAt_1 = updatedAt;
+      $this.f1e_1 = startDate;
+    $this.g1e_1 = createdAt;
+    $this.h1e_1 = updatedAt;
     if (0 === (seen0 & 256))
-      $this.deletedAt_1 = null;
+      $this.i1e_1 = null;
     else
-      $this.deletedAt_1 = deletedAt;
+      $this.i1e_1 = deletedAt;
     return $this;
   }
   function ProgramDto_init_$Create$(seen0, id, name, isActive, position, kind, startDate, createdAt, updatedAt, deletedAt, serializationConstructorMarker) {
@@ -1825,18 +1825,18 @@
   function ProgramDto() {
   }
   protoOf(ProgramDto).toString = function () {
-    return 'ProgramDto(id=' + this.id_1 + ', name=' + this.name_1 + ', isActive=' + this.isActive_1 + ', position=' + this.position_1 + ', kind=' + this.kind_1.toString() + ', startDate=' + toString_0(this.startDate_1) + ', createdAt=' + this.createdAt_1.toString() + ', updatedAt=' + this.updatedAt_1.toString() + ', deletedAt=' + toString_0(this.deletedAt_1) + ')';
+    return 'ProgramDto(id=' + this.a1e_1 + ', name=' + this.b1e_1 + ', isActive=' + this.c1e_1 + ', position=' + this.d1e_1 + ', kind=' + this.e1e_1.toString() + ', startDate=' + toString_0(this.f1e_1) + ', createdAt=' + this.g1e_1.toString() + ', updatedAt=' + this.h1e_1.toString() + ', deletedAt=' + toString_0(this.i1e_1) + ')';
   };
   protoOf(ProgramDto).hashCode = function () {
-    var result = getStringHashCode(this.id_1);
-    result = imul(result, 31) + getStringHashCode(this.name_1) | 0;
-    result = imul(result, 31) + getBooleanHashCode(this.isActive_1) | 0;
-    result = imul(result, 31) + this.position_1 | 0;
-    result = imul(result, 31) + this.kind_1.hashCode() | 0;
-    result = imul(result, 31) + (this.startDate_1 == null ? 0 : this.startDate_1.hashCode()) | 0;
-    result = imul(result, 31) + this.createdAt_1.hashCode() | 0;
-    result = imul(result, 31) + this.updatedAt_1.hashCode() | 0;
-    result = imul(result, 31) + (this.deletedAt_1 == null ? 0 : this.deletedAt_1.hashCode()) | 0;
+    var result = getStringHashCode(this.a1e_1);
+    result = imul(result, 31) + getStringHashCode(this.b1e_1) | 0;
+    result = imul(result, 31) + getBooleanHashCode(this.c1e_1) | 0;
+    result = imul(result, 31) + this.d1e_1 | 0;
+    result = imul(result, 31) + this.e1e_1.hashCode() | 0;
+    result = imul(result, 31) + (this.f1e_1 == null ? 0 : this.f1e_1.hashCode()) | 0;
+    result = imul(result, 31) + this.g1e_1.hashCode() | 0;
+    result = imul(result, 31) + this.h1e_1.hashCode() | 0;
+    result = imul(result, 31) + (this.i1e_1 == null ? 0 : this.i1e_1.hashCode()) | 0;
     return result;
   };
   protoOf(ProgramDto).equals = function (other) {
@@ -1844,28 +1844,28 @@
       return true;
     if (!(other instanceof ProgramDto))
       return false;
-    if (!(this.id_1 === other.id_1))
+    if (!(this.a1e_1 === other.a1e_1))
       return false;
-    if (!(this.name_1 === other.name_1))
+    if (!(this.b1e_1 === other.b1e_1))
       return false;
-    if (!(this.isActive_1 === other.isActive_1))
+    if (!(this.c1e_1 === other.c1e_1))
       return false;
-    if (!(this.position_1 === other.position_1))
+    if (!(this.d1e_1 === other.d1e_1))
       return false;
-    if (!this.kind_1.equals(other.kind_1))
+    if (!this.e1e_1.equals(other.e1e_1))
       return false;
-    if (!equals(this.startDate_1, other.startDate_1))
+    if (!equals(this.f1e_1, other.f1e_1))
       return false;
-    if (!equalsLong(this.createdAt_1, other.createdAt_1))
+    if (!equalsLong(this.g1e_1, other.g1e_1))
       return false;
-    if (!equalsLong(this.updatedAt_1, other.updatedAt_1))
+    if (!equalsLong(this.h1e_1, other.h1e_1))
       return false;
-    if (!equals(this.deletedAt_1, other.deletedAt_1))
+    if (!equals(this.i1e_1, other.i1e_1))
       return false;
     return true;
   };
   function _get_$cachedSerializer__te6jhj($this) {
-    return $this.$cachedSerializer$delegate_1.get_value_j01efc_k$();
+    return $this.w1d_1.y1();
   }
   function ProgramKind$Companion$_anonymous__fa263t() {
     return createSimpleEnumSerializer('com.example.androidapp.shared.ProgramKind', values());
@@ -1892,13 +1892,13 @@
     Companion_instance_7 = this;
     var tmp = this;
     var tmp_0 = LazyThreadSafetyMode_PUBLICATION_getInstance();
-    tmp.$cachedSerializer$delegate_1 = lazy(tmp_0, ProgramKind$Companion$_anonymous__fa263t);
+    tmp.w1d_1 = lazy(tmp_0, ProgramKind$Companion$_anonymous__fa263t);
   }
-  protoOf(Companion_6).serializer_9w0wvi_k$ = function () {
+  protoOf(Companion_6).b12 = function () {
     return _get_$cachedSerializer__te6jhj(this);
   };
-  protoOf(Companion_6).serializer_nv39qc_k$ = function (typeParamsSerializers) {
-    return this.serializer_9w0wvi_k$();
+  protoOf(Companion_6).br = function (typeParamsSerializers) {
+    return this.b12();
   };
   var Companion_instance_7;
   function Companion_getInstance_6() {
@@ -1909,7 +1909,7 @@
     Enum.call(this, name, ordinal);
   }
   function ProgramSlotDto$Companion$$childSerializers$_anonymous__iuzt59() {
-    return Companion_getInstance_10().serializer_9w0wvi_k$();
+    return Companion_getInstance_10().b12();
   }
   function Companion_7() {
     Companion_instance_8 = this;
@@ -1918,7 +1918,7 @@
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    tmp.$childSerializers_1 = [null, null, null, null, lazy(tmp_0, ProgramSlotDto$Companion$$childSerializers$_anonymous__iuzt59), null, null, null];
+    tmp.k1e_1 = [null, null, null, null, lazy(tmp_0, ProgramSlotDto$Companion$$childSerializers$_anonymous__iuzt59), null, null, null];
   }
   var Companion_instance_8;
   function Companion_getInstance_7() {
@@ -1929,39 +1929,39 @@
   function $serializer_7() {
     $serializer_instance_7 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ProgramSlotDto', this, 8);
-    tmp0_serialDesc.addElement_5pzumi_k$('id', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('programId', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('templateId', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('position', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('weekday', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('createdAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('updatedAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('deletedAt', true);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('id', false);
+    tmp0_serialDesc.zp('programId', false);
+    tmp0_serialDesc.zp('templateId', false);
+    tmp0_serialDesc.zp('position', false);
+    tmp0_serialDesc.zp('weekday', true);
+    tmp0_serialDesc.zp('createdAt', false);
+    tmp0_serialDesc.zp('updatedAt', false);
+    tmp0_serialDesc.zp('deletedAt', true);
+    this.l1e_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_7).serialize_cdcbhg_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp2_cached = Companion_getInstance_7().$childSerializers_1;
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.id_1);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.programId_1);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 2, value.templateId_1);
-    tmp1_output.encodeIntElement_krhhce_k$(tmp0_desc, 3, value.position_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 4) ? true : !(value.weekday_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 4, tmp2_cached[4].get_value_j01efc_k$(), value.weekday_1);
+  protoOf($serializer_7).m1e = function (encoder, value) {
+    var tmp0_desc = this.l1e_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    var tmp2_cached = Companion_getInstance_7().k1e_1;
+    tmp1_output.fk(tmp0_desc, 0, value.n1e_1);
+    tmp1_output.fk(tmp0_desc, 1, value.o1e_1);
+    tmp1_output.fk(tmp0_desc, 2, value.p1e_1);
+    tmp1_output.ak(tmp0_desc, 3, value.q1e_1);
+    if (tmp1_output.nk(tmp0_desc, 4) ? true : !(value.r1e_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 4, tmp2_cached[4].y1(), value.r1e_1);
     }
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 5, value.createdAt_1);
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 6, value.updatedAt_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 7) ? true : !(value.deletedAt_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 7, LongSerializer_getInstance(), value.deletedAt_1);
+    tmp1_output.bk(tmp0_desc, 5, value.s1e_1);
+    tmp1_output.bk(tmp0_desc, 6, value.t1e_1);
+    if (tmp1_output.nk(tmp0_desc, 7) ? true : !(value.u1e_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 7, LongSerializer_getInstance(), value.u1e_1);
     }
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_7).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_cdcbhg_k$(encoder, value instanceof ProgramSlotDto ? value : THROW_CCE());
+  protoOf($serializer_7).pf = function (encoder, value) {
+    return this.m1e(encoder, value instanceof ProgramSlotDto ? value : THROW_CCE());
   };
-  protoOf($serializer_7).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_7).qf = function (decoder) {
+    var tmp0_desc = this.l1e_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
@@ -1973,80 +1973,80 @@
     var tmp9_local5 = new Long(0, 0);
     var tmp10_local6 = new Long(0, 0);
     var tmp11_local7 = null;
-    var tmp12_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp13_cached = Companion_getInstance_7().$childSerializers_1;
-    if (tmp12_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp12_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp12_input = decoder.qi(tmp0_desc);
+    var tmp13_cached = Companion_getInstance_7().k1e_1;
+    if (tmp12_input.gj()) {
+      tmp4_local0 = tmp12_input.aj(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp12_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp12_input.aj(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp12_input.decodeStringElement_3oenpg_k$(tmp0_desc, 2);
+      tmp6_local2 = tmp12_input.aj(tmp0_desc, 2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
-      tmp7_local3 = tmp12_input.decodeIntElement_941u6a_k$(tmp0_desc, 3);
+      tmp7_local3 = tmp12_input.vi(tmp0_desc, 3);
       tmp3_bitMask0 = tmp3_bitMask0 | 8;
-      tmp8_local4 = tmp12_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, tmp13_cached[4].get_value_j01efc_k$(), tmp8_local4);
+      tmp8_local4 = tmp12_input.ej(tmp0_desc, 4, tmp13_cached[4].y1(), tmp8_local4);
       tmp3_bitMask0 = tmp3_bitMask0 | 16;
-      tmp9_local5 = tmp12_input.decodeLongElement_994anb_k$(tmp0_desc, 5);
+      tmp9_local5 = tmp12_input.wi(tmp0_desc, 5);
       tmp3_bitMask0 = tmp3_bitMask0 | 32;
-      tmp10_local6 = tmp12_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
+      tmp10_local6 = tmp12_input.wi(tmp0_desc, 6);
       tmp3_bitMask0 = tmp3_bitMask0 | 64;
-      tmp11_local7 = tmp12_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 7, LongSerializer_getInstance(), tmp11_local7);
+      tmp11_local7 = tmp12_input.ej(tmp0_desc, 7, LongSerializer_getInstance(), tmp11_local7);
       tmp3_bitMask0 = tmp3_bitMask0 | 128;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp12_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp12_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp12_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp12_input.aj(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp12_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp12_input.aj(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp12_input.decodeStringElement_3oenpg_k$(tmp0_desc, 2);
+            tmp6_local2 = tmp12_input.aj(tmp0_desc, 2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           case 3:
-            tmp7_local3 = tmp12_input.decodeIntElement_941u6a_k$(tmp0_desc, 3);
+            tmp7_local3 = tmp12_input.vi(tmp0_desc, 3);
             tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           case 4:
-            tmp8_local4 = tmp12_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, tmp13_cached[4].get_value_j01efc_k$(), tmp8_local4);
+            tmp8_local4 = tmp12_input.ej(tmp0_desc, 4, tmp13_cached[4].y1(), tmp8_local4);
             tmp3_bitMask0 = tmp3_bitMask0 | 16;
             break;
           case 5:
-            tmp9_local5 = tmp12_input.decodeLongElement_994anb_k$(tmp0_desc, 5);
+            tmp9_local5 = tmp12_input.wi(tmp0_desc, 5);
             tmp3_bitMask0 = tmp3_bitMask0 | 32;
             break;
           case 6:
-            tmp10_local6 = tmp12_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
+            tmp10_local6 = tmp12_input.wi(tmp0_desc, 6);
             tmp3_bitMask0 = tmp3_bitMask0 | 64;
             break;
           case 7:
-            tmp11_local7 = tmp12_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 7, LongSerializer_getInstance(), tmp11_local7);
+            tmp11_local7 = tmp12_input.ej(tmp0_desc, 7, LongSerializer_getInstance(), tmp11_local7);
             tmp3_bitMask0 = tmp3_bitMask0 | 128;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp12_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp12_input.ri(tmp0_desc);
     return ProgramSlotDto_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, tmp8_local4, tmp9_local5, tmp10_local6, tmp11_local7, null);
   };
-  protoOf($serializer_7).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_7).of = function () {
+    return this.l1e_1;
   };
-  protoOf($serializer_7).childSerializers_5ghqw5_k$ = function () {
-    var tmp0_cached = Companion_getInstance_7().$childSerializers_1;
+  protoOf($serializer_7).oq = function () {
+    var tmp0_cached = Companion_getInstance_7().k1e_1;
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    return [StringSerializer_getInstance(), StringSerializer_getInstance(), StringSerializer_getInstance(), IntSerializer_getInstance(), get_nullable(tmp0_cached[4].get_value_j01efc_k$()), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance())];
+    return [StringSerializer_getInstance(), StringSerializer_getInstance(), StringSerializer_getInstance(), IntSerializer_getInstance(), get_nullable(tmp0_cached[4].y1()), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance())];
   };
   var $serializer_instance_7;
   function $serializer_getInstance_7() {
@@ -2056,22 +2056,22 @@
   }
   function ProgramSlotDto_init_$Init$(seen0, id, programId, templateId, position, weekday, createdAt, updatedAt, deletedAt, serializationConstructorMarker, $this) {
     if (!(111 === (111 & seen0))) {
-      throwMissingFieldException(seen0, 111, $serializer_getInstance_7().descriptor_1);
+      throwMissingFieldException(seen0, 111, $serializer_getInstance_7().l1e_1);
     }
-    $this.id_1 = id;
-    $this.programId_1 = programId;
-    $this.templateId_1 = templateId;
-    $this.position_1 = position;
+    $this.n1e_1 = id;
+    $this.o1e_1 = programId;
+    $this.p1e_1 = templateId;
+    $this.q1e_1 = position;
     if (0 === (seen0 & 16))
-      $this.weekday_1 = null;
+      $this.r1e_1 = null;
     else
-      $this.weekday_1 = weekday;
-    $this.createdAt_1 = createdAt;
-    $this.updatedAt_1 = updatedAt;
+      $this.r1e_1 = weekday;
+    $this.s1e_1 = createdAt;
+    $this.t1e_1 = updatedAt;
     if (0 === (seen0 & 128))
-      $this.deletedAt_1 = null;
+      $this.u1e_1 = null;
     else
-      $this.deletedAt_1 = deletedAt;
+      $this.u1e_1 = deletedAt;
     return $this;
   }
   function ProgramSlotDto_init_$Create$(seen0, id, programId, templateId, position, weekday, createdAt, updatedAt, deletedAt, serializationConstructorMarker) {
@@ -2080,17 +2080,17 @@
   function ProgramSlotDto() {
   }
   protoOf(ProgramSlotDto).toString = function () {
-    return 'ProgramSlotDto(id=' + this.id_1 + ', programId=' + this.programId_1 + ', templateId=' + this.templateId_1 + ', position=' + this.position_1 + ', weekday=' + toString_0(this.weekday_1) + ', createdAt=' + this.createdAt_1.toString() + ', updatedAt=' + this.updatedAt_1.toString() + ', deletedAt=' + toString_0(this.deletedAt_1) + ')';
+    return 'ProgramSlotDto(id=' + this.n1e_1 + ', programId=' + this.o1e_1 + ', templateId=' + this.p1e_1 + ', position=' + this.q1e_1 + ', weekday=' + toString_0(this.r1e_1) + ', createdAt=' + this.s1e_1.toString() + ', updatedAt=' + this.t1e_1.toString() + ', deletedAt=' + toString_0(this.u1e_1) + ')';
   };
   protoOf(ProgramSlotDto).hashCode = function () {
-    var result = getStringHashCode(this.id_1);
-    result = imul(result, 31) + getStringHashCode(this.programId_1) | 0;
-    result = imul(result, 31) + getStringHashCode(this.templateId_1) | 0;
-    result = imul(result, 31) + this.position_1 | 0;
-    result = imul(result, 31) + (this.weekday_1 == null ? 0 : this.weekday_1.hashCode()) | 0;
-    result = imul(result, 31) + this.createdAt_1.hashCode() | 0;
-    result = imul(result, 31) + this.updatedAt_1.hashCode() | 0;
-    result = imul(result, 31) + (this.deletedAt_1 == null ? 0 : this.deletedAt_1.hashCode()) | 0;
+    var result = getStringHashCode(this.n1e_1);
+    result = imul(result, 31) + getStringHashCode(this.o1e_1) | 0;
+    result = imul(result, 31) + getStringHashCode(this.p1e_1) | 0;
+    result = imul(result, 31) + this.q1e_1 | 0;
+    result = imul(result, 31) + (this.r1e_1 == null ? 0 : this.r1e_1.hashCode()) | 0;
+    result = imul(result, 31) + this.s1e_1.hashCode() | 0;
+    result = imul(result, 31) + this.t1e_1.hashCode() | 0;
+    result = imul(result, 31) + (this.u1e_1 == null ? 0 : this.u1e_1.hashCode()) | 0;
     return result;
   };
   protoOf(ProgramSlotDto).equals = function (other) {
@@ -2098,55 +2098,55 @@
       return true;
     if (!(other instanceof ProgramSlotDto))
       return false;
-    if (!(this.id_1 === other.id_1))
+    if (!(this.n1e_1 === other.n1e_1))
       return false;
-    if (!(this.programId_1 === other.programId_1))
+    if (!(this.o1e_1 === other.o1e_1))
       return false;
-    if (!(this.templateId_1 === other.templateId_1))
+    if (!(this.p1e_1 === other.p1e_1))
       return false;
-    if (!(this.position_1 === other.position_1))
+    if (!(this.q1e_1 === other.q1e_1))
       return false;
-    if (!equals(this.weekday_1, other.weekday_1))
+    if (!equals(this.r1e_1, other.r1e_1))
       return false;
-    if (!equalsLong(this.createdAt_1, other.createdAt_1))
+    if (!equalsLong(this.s1e_1, other.s1e_1))
       return false;
-    if (!equalsLong(this.updatedAt_1, other.updatedAt_1))
+    if (!equalsLong(this.t1e_1, other.t1e_1))
       return false;
-    if (!equals(this.deletedAt_1, other.deletedAt_1))
+    if (!equals(this.u1e_1, other.u1e_1))
       return false;
     return true;
   };
   function $serializer_8() {
     $serializer_instance_8 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.TemplateDto', this, 6);
-    tmp0_serialDesc.addElement_5pzumi_k$('id', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('name', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('versionOf', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('createdAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('updatedAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('deletedAt', true);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('id', false);
+    tmp0_serialDesc.zp('name', false);
+    tmp0_serialDesc.zp('versionOf', true);
+    tmp0_serialDesc.zp('createdAt', false);
+    tmp0_serialDesc.zp('updatedAt', false);
+    tmp0_serialDesc.zp('deletedAt', true);
+    this.v1e_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_8).serialize_qsxyow_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.id_1);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.name_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 2) ? true : !(value.versionOf_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 2, StringSerializer_getInstance(), value.versionOf_1);
+  protoOf($serializer_8).w1e = function (encoder, value) {
+    var tmp0_desc = this.v1e_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    tmp1_output.fk(tmp0_desc, 0, value.x1e_1);
+    tmp1_output.fk(tmp0_desc, 1, value.y1e_1);
+    if (tmp1_output.nk(tmp0_desc, 2) ? true : !(value.z1e_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 2, StringSerializer_getInstance(), value.z1e_1);
     }
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 3, value.createdAt_1);
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 4, value.updatedAt_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 5) ? true : !(value.deletedAt_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 5, LongSerializer_getInstance(), value.deletedAt_1);
+    tmp1_output.bk(tmp0_desc, 3, value.a1f_1);
+    tmp1_output.bk(tmp0_desc, 4, value.b1f_1);
+    if (tmp1_output.nk(tmp0_desc, 5) ? true : !(value.c1f_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 5, LongSerializer_getInstance(), value.c1f_1);
     }
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_8).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_qsxyow_k$(encoder, value instanceof TemplateDto ? value : THROW_CCE());
+  protoOf($serializer_8).pf = function (encoder, value) {
+    return this.w1e(encoder, value instanceof TemplateDto ? value : THROW_CCE());
   };
-  protoOf($serializer_8).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_8).qf = function (decoder) {
+    var tmp0_desc = this.v1e_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
@@ -2156,62 +2156,62 @@
     var tmp7_local3 = new Long(0, 0);
     var tmp8_local4 = new Long(0, 0);
     var tmp9_local5 = null;
-    var tmp10_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    if (tmp10_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp10_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp10_input = decoder.qi(tmp0_desc);
+    if (tmp10_input.gj()) {
+      tmp4_local0 = tmp10_input.aj(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp10_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp10_input.aj(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp10_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+      tmp6_local2 = tmp10_input.ej(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
-      tmp7_local3 = tmp10_input.decodeLongElement_994anb_k$(tmp0_desc, 3);
+      tmp7_local3 = tmp10_input.wi(tmp0_desc, 3);
       tmp3_bitMask0 = tmp3_bitMask0 | 8;
-      tmp8_local4 = tmp10_input.decodeLongElement_994anb_k$(tmp0_desc, 4);
+      tmp8_local4 = tmp10_input.wi(tmp0_desc, 4);
       tmp3_bitMask0 = tmp3_bitMask0 | 16;
-      tmp9_local5 = tmp10_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
+      tmp9_local5 = tmp10_input.ej(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
       tmp3_bitMask0 = tmp3_bitMask0 | 32;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp10_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp10_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp10_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp10_input.aj(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp10_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp10_input.aj(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp10_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+            tmp6_local2 = tmp10_input.ej(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           case 3:
-            tmp7_local3 = tmp10_input.decodeLongElement_994anb_k$(tmp0_desc, 3);
+            tmp7_local3 = tmp10_input.wi(tmp0_desc, 3);
             tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           case 4:
-            tmp8_local4 = tmp10_input.decodeLongElement_994anb_k$(tmp0_desc, 4);
+            tmp8_local4 = tmp10_input.wi(tmp0_desc, 4);
             tmp3_bitMask0 = tmp3_bitMask0 | 16;
             break;
           case 5:
-            tmp9_local5 = tmp10_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
+            tmp9_local5 = tmp10_input.ej(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
             tmp3_bitMask0 = tmp3_bitMask0 | 32;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp10_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp10_input.ri(tmp0_desc);
     return TemplateDto_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, tmp8_local4, tmp9_local5, null);
   };
-  protoOf($serializer_8).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_8).of = function () {
+    return this.v1e_1;
   };
-  protoOf($serializer_8).childSerializers_5ghqw5_k$ = function () {
+  protoOf($serializer_8).oq = function () {
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
@@ -2225,20 +2225,20 @@
   }
   function TemplateDto_init_$Init$(seen0, id, name, versionOf, createdAt, updatedAt, deletedAt, serializationConstructorMarker, $this) {
     if (!(27 === (27 & seen0))) {
-      throwMissingFieldException(seen0, 27, $serializer_getInstance_8().descriptor_1);
+      throwMissingFieldException(seen0, 27, $serializer_getInstance_8().v1e_1);
     }
-    $this.id_1 = id;
-    $this.name_1 = name;
+    $this.x1e_1 = id;
+    $this.y1e_1 = name;
     if (0 === (seen0 & 4))
-      $this.versionOf_1 = null;
+      $this.z1e_1 = null;
     else
-      $this.versionOf_1 = versionOf;
-    $this.createdAt_1 = createdAt;
-    $this.updatedAt_1 = updatedAt;
+      $this.z1e_1 = versionOf;
+    $this.a1f_1 = createdAt;
+    $this.b1f_1 = updatedAt;
     if (0 === (seen0 & 32))
-      $this.deletedAt_1 = null;
+      $this.c1f_1 = null;
     else
-      $this.deletedAt_1 = deletedAt;
+      $this.c1f_1 = deletedAt;
     return $this;
   }
   function TemplateDto_init_$Create$(seen0, id, name, versionOf, createdAt, updatedAt, deletedAt, serializationConstructorMarker) {
@@ -2247,15 +2247,15 @@
   function TemplateDto() {
   }
   protoOf(TemplateDto).toString = function () {
-    return 'TemplateDto(id=' + this.id_1 + ', name=' + this.name_1 + ', versionOf=' + this.versionOf_1 + ', createdAt=' + this.createdAt_1.toString() + ', updatedAt=' + this.updatedAt_1.toString() + ', deletedAt=' + toString_0(this.deletedAt_1) + ')';
+    return 'TemplateDto(id=' + this.x1e_1 + ', name=' + this.y1e_1 + ', versionOf=' + this.z1e_1 + ', createdAt=' + this.a1f_1.toString() + ', updatedAt=' + this.b1f_1.toString() + ', deletedAt=' + toString_0(this.c1f_1) + ')';
   };
   protoOf(TemplateDto).hashCode = function () {
-    var result = getStringHashCode(this.id_1);
-    result = imul(result, 31) + getStringHashCode(this.name_1) | 0;
-    result = imul(result, 31) + (this.versionOf_1 == null ? 0 : getStringHashCode(this.versionOf_1)) | 0;
-    result = imul(result, 31) + this.createdAt_1.hashCode() | 0;
-    result = imul(result, 31) + this.updatedAt_1.hashCode() | 0;
-    result = imul(result, 31) + (this.deletedAt_1 == null ? 0 : this.deletedAt_1.hashCode()) | 0;
+    var result = getStringHashCode(this.x1e_1);
+    result = imul(result, 31) + getStringHashCode(this.y1e_1) | 0;
+    result = imul(result, 31) + (this.z1e_1 == null ? 0 : getStringHashCode(this.z1e_1)) | 0;
+    result = imul(result, 31) + this.a1f_1.hashCode() | 0;
+    result = imul(result, 31) + this.b1f_1.hashCode() | 0;
+    result = imul(result, 31) + (this.c1f_1 == null ? 0 : this.c1f_1.hashCode()) | 0;
     return result;
   };
   protoOf(TemplateDto).equals = function (other) {
@@ -2263,67 +2263,67 @@
       return true;
     if (!(other instanceof TemplateDto))
       return false;
-    if (!(this.id_1 === other.id_1))
+    if (!(this.x1e_1 === other.x1e_1))
       return false;
-    if (!(this.name_1 === other.name_1))
+    if (!(this.y1e_1 === other.y1e_1))
       return false;
-    if (!(this.versionOf_1 == other.versionOf_1))
+    if (!(this.z1e_1 == other.z1e_1))
       return false;
-    if (!equalsLong(this.createdAt_1, other.createdAt_1))
+    if (!equalsLong(this.a1f_1, other.a1f_1))
       return false;
-    if (!equalsLong(this.updatedAt_1, other.updatedAt_1))
+    if (!equalsLong(this.b1f_1, other.b1f_1))
       return false;
-    if (!equals(this.deletedAt_1, other.deletedAt_1))
+    if (!equals(this.c1f_1, other.c1f_1))
       return false;
     return true;
   };
   function $serializer_9() {
     $serializer_instance_9 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.TemplateExerciseDto', this, 11);
-    tmp0_serialDesc.addElement_5pzumi_k$('id', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('templateId', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('exerciseId', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('position', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('restSeconds', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('techniqueNote', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('targetRpeHalves', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('supersetGroup', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('createdAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('updatedAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('deletedAt', true);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('id', false);
+    tmp0_serialDesc.zp('templateId', false);
+    tmp0_serialDesc.zp('exerciseId', false);
+    tmp0_serialDesc.zp('position', false);
+    tmp0_serialDesc.zp('restSeconds', true);
+    tmp0_serialDesc.zp('techniqueNote', true);
+    tmp0_serialDesc.zp('targetRpeHalves', true);
+    tmp0_serialDesc.zp('supersetGroup', true);
+    tmp0_serialDesc.zp('createdAt', false);
+    tmp0_serialDesc.zp('updatedAt', false);
+    tmp0_serialDesc.zp('deletedAt', true);
+    this.d1f_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_9).serialize_qlz960_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.id_1);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.templateId_1);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 2, value.exerciseId_1);
-    tmp1_output.encodeIntElement_krhhce_k$(tmp0_desc, 3, value.position_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 4) ? true : !(value.restSeconds_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 4, IntSerializer_getInstance(), value.restSeconds_1);
+  protoOf($serializer_9).e1f = function (encoder, value) {
+    var tmp0_desc = this.d1f_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    tmp1_output.fk(tmp0_desc, 0, value.f1f_1);
+    tmp1_output.fk(tmp0_desc, 1, value.g1f_1);
+    tmp1_output.fk(tmp0_desc, 2, value.h1f_1);
+    tmp1_output.ak(tmp0_desc, 3, value.i1f_1);
+    if (tmp1_output.nk(tmp0_desc, 4) ? true : !(value.j1f_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 4, IntSerializer_getInstance(), value.j1f_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 5) ? true : !(value.techniqueNote_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 5, StringSerializer_getInstance(), value.techniqueNote_1);
+    if (tmp1_output.nk(tmp0_desc, 5) ? true : !(value.k1f_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 5, StringSerializer_getInstance(), value.k1f_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 6) ? true : !(value.targetRpeHalves_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 6, IntSerializer_getInstance(), value.targetRpeHalves_1);
+    if (tmp1_output.nk(tmp0_desc, 6) ? true : !(value.l1f_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 6, IntSerializer_getInstance(), value.l1f_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 7) ? true : !(value.supersetGroup_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 7, IntSerializer_getInstance(), value.supersetGroup_1);
+    if (tmp1_output.nk(tmp0_desc, 7) ? true : !(value.m1f_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 7, IntSerializer_getInstance(), value.m1f_1);
     }
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 8, value.createdAt_1);
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 9, value.updatedAt_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 10) ? true : !(value.deletedAt_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 10, LongSerializer_getInstance(), value.deletedAt_1);
+    tmp1_output.bk(tmp0_desc, 8, value.n1f_1);
+    tmp1_output.bk(tmp0_desc, 9, value.o1f_1);
+    if (tmp1_output.nk(tmp0_desc, 10) ? true : !(value.p1f_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 10, LongSerializer_getInstance(), value.p1f_1);
     }
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_9).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_qlz960_k$(encoder, value instanceof TemplateExerciseDto ? value : THROW_CCE());
+  protoOf($serializer_9).pf = function (encoder, value) {
+    return this.e1f(encoder, value instanceof TemplateExerciseDto ? value : THROW_CCE());
   };
-  protoOf($serializer_9).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_9).qf = function (decoder) {
+    var tmp0_desc = this.d1f_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
@@ -2338,92 +2338,92 @@
     var tmp12_local8 = new Long(0, 0);
     var tmp13_local9 = new Long(0, 0);
     var tmp14_local10 = null;
-    var tmp15_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    if (tmp15_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp15_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp15_input = decoder.qi(tmp0_desc);
+    if (tmp15_input.gj()) {
+      tmp4_local0 = tmp15_input.aj(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp15_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp15_input.aj(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp15_input.decodeStringElement_3oenpg_k$(tmp0_desc, 2);
+      tmp6_local2 = tmp15_input.aj(tmp0_desc, 2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
-      tmp7_local3 = tmp15_input.decodeIntElement_941u6a_k$(tmp0_desc, 3);
+      tmp7_local3 = tmp15_input.vi(tmp0_desc, 3);
       tmp3_bitMask0 = tmp3_bitMask0 | 8;
-      tmp8_local4 = tmp15_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, IntSerializer_getInstance(), tmp8_local4);
+      tmp8_local4 = tmp15_input.ej(tmp0_desc, 4, IntSerializer_getInstance(), tmp8_local4);
       tmp3_bitMask0 = tmp3_bitMask0 | 16;
-      tmp9_local5 = tmp15_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
+      tmp9_local5 = tmp15_input.ej(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
       tmp3_bitMask0 = tmp3_bitMask0 | 32;
-      tmp10_local6 = tmp15_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 6, IntSerializer_getInstance(), tmp10_local6);
+      tmp10_local6 = tmp15_input.ej(tmp0_desc, 6, IntSerializer_getInstance(), tmp10_local6);
       tmp3_bitMask0 = tmp3_bitMask0 | 64;
-      tmp11_local7 = tmp15_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 7, IntSerializer_getInstance(), tmp11_local7);
+      tmp11_local7 = tmp15_input.ej(tmp0_desc, 7, IntSerializer_getInstance(), tmp11_local7);
       tmp3_bitMask0 = tmp3_bitMask0 | 128;
-      tmp12_local8 = tmp15_input.decodeLongElement_994anb_k$(tmp0_desc, 8);
+      tmp12_local8 = tmp15_input.wi(tmp0_desc, 8);
       tmp3_bitMask0 = tmp3_bitMask0 | 256;
-      tmp13_local9 = tmp15_input.decodeLongElement_994anb_k$(tmp0_desc, 9);
+      tmp13_local9 = tmp15_input.wi(tmp0_desc, 9);
       tmp3_bitMask0 = tmp3_bitMask0 | 512;
-      tmp14_local10 = tmp15_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 10, LongSerializer_getInstance(), tmp14_local10);
+      tmp14_local10 = tmp15_input.ej(tmp0_desc, 10, LongSerializer_getInstance(), tmp14_local10);
       tmp3_bitMask0 = tmp3_bitMask0 | 1024;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp15_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp15_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp15_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp15_input.aj(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp15_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp15_input.aj(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp15_input.decodeStringElement_3oenpg_k$(tmp0_desc, 2);
+            tmp6_local2 = tmp15_input.aj(tmp0_desc, 2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           case 3:
-            tmp7_local3 = tmp15_input.decodeIntElement_941u6a_k$(tmp0_desc, 3);
+            tmp7_local3 = tmp15_input.vi(tmp0_desc, 3);
             tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           case 4:
-            tmp8_local4 = tmp15_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, IntSerializer_getInstance(), tmp8_local4);
+            tmp8_local4 = tmp15_input.ej(tmp0_desc, 4, IntSerializer_getInstance(), tmp8_local4);
             tmp3_bitMask0 = tmp3_bitMask0 | 16;
             break;
           case 5:
-            tmp9_local5 = tmp15_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
+            tmp9_local5 = tmp15_input.ej(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
             tmp3_bitMask0 = tmp3_bitMask0 | 32;
             break;
           case 6:
-            tmp10_local6 = tmp15_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 6, IntSerializer_getInstance(), tmp10_local6);
+            tmp10_local6 = tmp15_input.ej(tmp0_desc, 6, IntSerializer_getInstance(), tmp10_local6);
             tmp3_bitMask0 = tmp3_bitMask0 | 64;
             break;
           case 7:
-            tmp11_local7 = tmp15_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 7, IntSerializer_getInstance(), tmp11_local7);
+            tmp11_local7 = tmp15_input.ej(tmp0_desc, 7, IntSerializer_getInstance(), tmp11_local7);
             tmp3_bitMask0 = tmp3_bitMask0 | 128;
             break;
           case 8:
-            tmp12_local8 = tmp15_input.decodeLongElement_994anb_k$(tmp0_desc, 8);
+            tmp12_local8 = tmp15_input.wi(tmp0_desc, 8);
             tmp3_bitMask0 = tmp3_bitMask0 | 256;
             break;
           case 9:
-            tmp13_local9 = tmp15_input.decodeLongElement_994anb_k$(tmp0_desc, 9);
+            tmp13_local9 = tmp15_input.wi(tmp0_desc, 9);
             tmp3_bitMask0 = tmp3_bitMask0 | 512;
             break;
           case 10:
-            tmp14_local10 = tmp15_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 10, LongSerializer_getInstance(), tmp14_local10);
+            tmp14_local10 = tmp15_input.ej(tmp0_desc, 10, LongSerializer_getInstance(), tmp14_local10);
             tmp3_bitMask0 = tmp3_bitMask0 | 1024;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp15_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp15_input.ri(tmp0_desc);
     return TemplateExerciseDto_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, tmp8_local4, tmp9_local5, tmp10_local6, tmp11_local7, tmp12_local8, tmp13_local9, tmp14_local10, null);
   };
-  protoOf($serializer_9).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_9).of = function () {
+    return this.d1f_1;
   };
-  protoOf($serializer_9).childSerializers_5ghqw5_k$ = function () {
+  protoOf($serializer_9).oq = function () {
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
@@ -2437,34 +2437,34 @@
   }
   function TemplateExerciseDto_init_$Init$(seen0, id, templateId, exerciseId, position, restSeconds, techniqueNote, targetRpeHalves, supersetGroup, createdAt, updatedAt, deletedAt, serializationConstructorMarker, $this) {
     if (!(783 === (783 & seen0))) {
-      throwMissingFieldException(seen0, 783, $serializer_getInstance_9().descriptor_1);
+      throwMissingFieldException(seen0, 783, $serializer_getInstance_9().d1f_1);
     }
-    $this.id_1 = id;
-    $this.templateId_1 = templateId;
-    $this.exerciseId_1 = exerciseId;
-    $this.position_1 = position;
+    $this.f1f_1 = id;
+    $this.g1f_1 = templateId;
+    $this.h1f_1 = exerciseId;
+    $this.i1f_1 = position;
     if (0 === (seen0 & 16))
-      $this.restSeconds_1 = null;
+      $this.j1f_1 = null;
     else
-      $this.restSeconds_1 = restSeconds;
+      $this.j1f_1 = restSeconds;
     if (0 === (seen0 & 32))
-      $this.techniqueNote_1 = null;
+      $this.k1f_1 = null;
     else
-      $this.techniqueNote_1 = techniqueNote;
+      $this.k1f_1 = techniqueNote;
     if (0 === (seen0 & 64))
-      $this.targetRpeHalves_1 = null;
+      $this.l1f_1 = null;
     else
-      $this.targetRpeHalves_1 = targetRpeHalves;
+      $this.l1f_1 = targetRpeHalves;
     if (0 === (seen0 & 128))
-      $this.supersetGroup_1 = null;
+      $this.m1f_1 = null;
     else
-      $this.supersetGroup_1 = supersetGroup;
-    $this.createdAt_1 = createdAt;
-    $this.updatedAt_1 = updatedAt;
+      $this.m1f_1 = supersetGroup;
+    $this.n1f_1 = createdAt;
+    $this.o1f_1 = updatedAt;
     if (0 === (seen0 & 1024))
-      $this.deletedAt_1 = null;
+      $this.p1f_1 = null;
     else
-      $this.deletedAt_1 = deletedAt;
+      $this.p1f_1 = deletedAt;
     return $this;
   }
   function TemplateExerciseDto_init_$Create$(seen0, id, templateId, exerciseId, position, restSeconds, techniqueNote, targetRpeHalves, supersetGroup, createdAt, updatedAt, deletedAt, serializationConstructorMarker) {
@@ -2473,20 +2473,20 @@
   function TemplateExerciseDto() {
   }
   protoOf(TemplateExerciseDto).toString = function () {
-    return 'TemplateExerciseDto(id=' + this.id_1 + ', templateId=' + this.templateId_1 + ', exerciseId=' + this.exerciseId_1 + ', position=' + this.position_1 + ', restSeconds=' + this.restSeconds_1 + ', techniqueNote=' + this.techniqueNote_1 + ', targetRpeHalves=' + this.targetRpeHalves_1 + ', supersetGroup=' + this.supersetGroup_1 + ', createdAt=' + this.createdAt_1.toString() + ', updatedAt=' + this.updatedAt_1.toString() + ', deletedAt=' + toString_0(this.deletedAt_1) + ')';
+    return 'TemplateExerciseDto(id=' + this.f1f_1 + ', templateId=' + this.g1f_1 + ', exerciseId=' + this.h1f_1 + ', position=' + this.i1f_1 + ', restSeconds=' + this.j1f_1 + ', techniqueNote=' + this.k1f_1 + ', targetRpeHalves=' + this.l1f_1 + ', supersetGroup=' + this.m1f_1 + ', createdAt=' + this.n1f_1.toString() + ', updatedAt=' + this.o1f_1.toString() + ', deletedAt=' + toString_0(this.p1f_1) + ')';
   };
   protoOf(TemplateExerciseDto).hashCode = function () {
-    var result = getStringHashCode(this.id_1);
-    result = imul(result, 31) + getStringHashCode(this.templateId_1) | 0;
-    result = imul(result, 31) + getStringHashCode(this.exerciseId_1) | 0;
-    result = imul(result, 31) + this.position_1 | 0;
-    result = imul(result, 31) + (this.restSeconds_1 == null ? 0 : this.restSeconds_1) | 0;
-    result = imul(result, 31) + (this.techniqueNote_1 == null ? 0 : getStringHashCode(this.techniqueNote_1)) | 0;
-    result = imul(result, 31) + (this.targetRpeHalves_1 == null ? 0 : this.targetRpeHalves_1) | 0;
-    result = imul(result, 31) + (this.supersetGroup_1 == null ? 0 : this.supersetGroup_1) | 0;
-    result = imul(result, 31) + this.createdAt_1.hashCode() | 0;
-    result = imul(result, 31) + this.updatedAt_1.hashCode() | 0;
-    result = imul(result, 31) + (this.deletedAt_1 == null ? 0 : this.deletedAt_1.hashCode()) | 0;
+    var result = getStringHashCode(this.f1f_1);
+    result = imul(result, 31) + getStringHashCode(this.g1f_1) | 0;
+    result = imul(result, 31) + getStringHashCode(this.h1f_1) | 0;
+    result = imul(result, 31) + this.i1f_1 | 0;
+    result = imul(result, 31) + (this.j1f_1 == null ? 0 : this.j1f_1) | 0;
+    result = imul(result, 31) + (this.k1f_1 == null ? 0 : getStringHashCode(this.k1f_1)) | 0;
+    result = imul(result, 31) + (this.l1f_1 == null ? 0 : this.l1f_1) | 0;
+    result = imul(result, 31) + (this.m1f_1 == null ? 0 : this.m1f_1) | 0;
+    result = imul(result, 31) + this.n1f_1.hashCode() | 0;
+    result = imul(result, 31) + this.o1f_1.hashCode() | 0;
+    result = imul(result, 31) + (this.p1f_1 == null ? 0 : this.p1f_1.hashCode()) | 0;
     return result;
   };
   protoOf(TemplateExerciseDto).equals = function (other) {
@@ -2494,32 +2494,32 @@
       return true;
     if (!(other instanceof TemplateExerciseDto))
       return false;
-    if (!(this.id_1 === other.id_1))
+    if (!(this.f1f_1 === other.f1f_1))
       return false;
-    if (!(this.templateId_1 === other.templateId_1))
+    if (!(this.g1f_1 === other.g1f_1))
       return false;
-    if (!(this.exerciseId_1 === other.exerciseId_1))
+    if (!(this.h1f_1 === other.h1f_1))
       return false;
-    if (!(this.position_1 === other.position_1))
+    if (!(this.i1f_1 === other.i1f_1))
       return false;
-    if (!(this.restSeconds_1 == other.restSeconds_1))
+    if (!(this.j1f_1 == other.j1f_1))
       return false;
-    if (!(this.techniqueNote_1 == other.techniqueNote_1))
+    if (!(this.k1f_1 == other.k1f_1))
       return false;
-    if (!(this.targetRpeHalves_1 == other.targetRpeHalves_1))
+    if (!(this.l1f_1 == other.l1f_1))
       return false;
-    if (!(this.supersetGroup_1 == other.supersetGroup_1))
+    if (!(this.m1f_1 == other.m1f_1))
       return false;
-    if (!equalsLong(this.createdAt_1, other.createdAt_1))
+    if (!equalsLong(this.n1f_1, other.n1f_1))
       return false;
-    if (!equalsLong(this.updatedAt_1, other.updatedAt_1))
+    if (!equalsLong(this.o1f_1, other.o1f_1))
       return false;
-    if (!equals(this.deletedAt_1, other.deletedAt_1))
+    if (!equals(this.p1f_1, other.p1f_1))
       return false;
     return true;
   };
   function TemplateSetDto$Companion$$childSerializers$_anonymous__so0lp() {
-    return Companion_getInstance_11().serializer_9w0wvi_k$();
+    return Companion_getInstance_11().b12();
   }
   function Companion_8() {
     Companion_instance_9 = this;
@@ -2528,7 +2528,7 @@
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    tmp.$childSerializers_1 = [null, null, null, lazy(tmp_0, TemplateSetDto$Companion$$childSerializers$_anonymous__so0lp), null, null, null, null, null, null, null, null, null, null];
+    tmp.r1f_1 = [null, null, null, lazy(tmp_0, TemplateSetDto$Companion$$childSerializers$_anonymous__so0lp), null, null, null, null, null, null, null, null, null, null];
   }
   var Companion_instance_9;
   function Companion_getInstance_8() {
@@ -2539,63 +2539,63 @@
   function $serializer_10() {
     $serializer_instance_10 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.TemplateSetDto', this, 14);
-    tmp0_serialDesc.addElement_5pzumi_k$('id', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('templateExerciseId', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('setIndex', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('role', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('targetWeightGrams', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('targetAssistanceGrams', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('targetRepsMin', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('targetRepsMax', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('targetRepsCurrent', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('dropValueGrams', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('note', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('createdAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('updatedAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('deletedAt', true);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('id', false);
+    tmp0_serialDesc.zp('templateExerciseId', false);
+    tmp0_serialDesc.zp('setIndex', false);
+    tmp0_serialDesc.zp('role', false);
+    tmp0_serialDesc.zp('targetWeightGrams', true);
+    tmp0_serialDesc.zp('targetAssistanceGrams', true);
+    tmp0_serialDesc.zp('targetRepsMin', true);
+    tmp0_serialDesc.zp('targetRepsMax', true);
+    tmp0_serialDesc.zp('targetRepsCurrent', true);
+    tmp0_serialDesc.zp('dropValueGrams', true);
+    tmp0_serialDesc.zp('note', true);
+    tmp0_serialDesc.zp('createdAt', false);
+    tmp0_serialDesc.zp('updatedAt', false);
+    tmp0_serialDesc.zp('deletedAt', true);
+    this.s1f_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_10).serialize_bg5ncm_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp2_cached = Companion_getInstance_8().$childSerializers_1;
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.id_1);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.templateExerciseId_1);
-    tmp1_output.encodeIntElement_krhhce_k$(tmp0_desc, 2, value.setIndex_1);
-    tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 3, tmp2_cached[3].get_value_j01efc_k$(), value.role_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 4) ? true : !(value.targetWeightGrams_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 4, LongSerializer_getInstance(), value.targetWeightGrams_1);
+  protoOf($serializer_10).t1f = function (encoder, value) {
+    var tmp0_desc = this.s1f_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    var tmp2_cached = Companion_getInstance_8().r1f_1;
+    tmp1_output.fk(tmp0_desc, 0, value.u1f_1);
+    tmp1_output.fk(tmp0_desc, 1, value.v1f_1);
+    tmp1_output.ak(tmp0_desc, 2, value.w1f_1);
+    tmp1_output.hk(tmp0_desc, 3, tmp2_cached[3].y1(), value.x1f_1);
+    if (tmp1_output.nk(tmp0_desc, 4) ? true : !(value.y1f_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 4, LongSerializer_getInstance(), value.y1f_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 5) ? true : !(value.targetAssistanceGrams_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 5, LongSerializer_getInstance(), value.targetAssistanceGrams_1);
+    if (tmp1_output.nk(tmp0_desc, 5) ? true : !(value.z1f_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 5, LongSerializer_getInstance(), value.z1f_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 6) ? true : !(value.targetRepsMin_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 6, IntSerializer_getInstance(), value.targetRepsMin_1);
+    if (tmp1_output.nk(tmp0_desc, 6) ? true : !(value.a1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 6, IntSerializer_getInstance(), value.a1g_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 7) ? true : !(value.targetRepsMax_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 7, IntSerializer_getInstance(), value.targetRepsMax_1);
+    if (tmp1_output.nk(tmp0_desc, 7) ? true : !(value.b1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 7, IntSerializer_getInstance(), value.b1g_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 8) ? true : !(value.targetRepsCurrent_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 8, IntSerializer_getInstance(), value.targetRepsCurrent_1);
+    if (tmp1_output.nk(tmp0_desc, 8) ? true : !(value.c1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 8, IntSerializer_getInstance(), value.c1g_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 9) ? true : !(value.dropValueGrams_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 9, LongSerializer_getInstance(), value.dropValueGrams_1);
+    if (tmp1_output.nk(tmp0_desc, 9) ? true : !(value.d1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 9, LongSerializer_getInstance(), value.d1g_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 10) ? true : !(value.note_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 10, StringSerializer_getInstance(), value.note_1);
+    if (tmp1_output.nk(tmp0_desc, 10) ? true : !(value.e1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 10, StringSerializer_getInstance(), value.e1g_1);
     }
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 11, value.createdAt_1);
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 12, value.updatedAt_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 13) ? true : !(value.deletedAt_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 13, LongSerializer_getInstance(), value.deletedAt_1);
+    tmp1_output.bk(tmp0_desc, 11, value.f1g_1);
+    tmp1_output.bk(tmp0_desc, 12, value.g1g_1);
+    if (tmp1_output.nk(tmp0_desc, 13) ? true : !(value.h1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 13, LongSerializer_getInstance(), value.h1g_1);
     }
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_10).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_bg5ncm_k$(encoder, value instanceof TemplateSetDto ? value : THROW_CCE());
+  protoOf($serializer_10).pf = function (encoder, value) {
+    return this.t1f(encoder, value instanceof TemplateSetDto ? value : THROW_CCE());
   };
-  protoOf($serializer_10).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_10).qf = function (decoder) {
+    var tmp0_desc = this.s1f_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
@@ -2613,116 +2613,116 @@
     var tmp15_local11 = new Long(0, 0);
     var tmp16_local12 = new Long(0, 0);
     var tmp17_local13 = null;
-    var tmp18_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp19_cached = Companion_getInstance_8().$childSerializers_1;
-    if (tmp18_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp18_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp18_input = decoder.qi(tmp0_desc);
+    var tmp19_cached = Companion_getInstance_8().r1f_1;
+    if (tmp18_input.gj()) {
+      tmp4_local0 = tmp18_input.aj(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp18_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp18_input.aj(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp18_input.decodeIntElement_941u6a_k$(tmp0_desc, 2);
+      tmp6_local2 = tmp18_input.vi(tmp0_desc, 2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
-      tmp7_local3 = tmp18_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp19_cached[3].get_value_j01efc_k$(), tmp7_local3);
+      tmp7_local3 = tmp18_input.cj(tmp0_desc, 3, tmp19_cached[3].y1(), tmp7_local3);
       tmp3_bitMask0 = tmp3_bitMask0 | 8;
-      tmp8_local4 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, LongSerializer_getInstance(), tmp8_local4);
+      tmp8_local4 = tmp18_input.ej(tmp0_desc, 4, LongSerializer_getInstance(), tmp8_local4);
       tmp3_bitMask0 = tmp3_bitMask0 | 16;
-      tmp9_local5 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
+      tmp9_local5 = tmp18_input.ej(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
       tmp3_bitMask0 = tmp3_bitMask0 | 32;
-      tmp10_local6 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 6, IntSerializer_getInstance(), tmp10_local6);
+      tmp10_local6 = tmp18_input.ej(tmp0_desc, 6, IntSerializer_getInstance(), tmp10_local6);
       tmp3_bitMask0 = tmp3_bitMask0 | 64;
-      tmp11_local7 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 7, IntSerializer_getInstance(), tmp11_local7);
+      tmp11_local7 = tmp18_input.ej(tmp0_desc, 7, IntSerializer_getInstance(), tmp11_local7);
       tmp3_bitMask0 = tmp3_bitMask0 | 128;
-      tmp12_local8 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, IntSerializer_getInstance(), tmp12_local8);
+      tmp12_local8 = tmp18_input.ej(tmp0_desc, 8, IntSerializer_getInstance(), tmp12_local8);
       tmp3_bitMask0 = tmp3_bitMask0 | 256;
-      tmp13_local9 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 9, LongSerializer_getInstance(), tmp13_local9);
+      tmp13_local9 = tmp18_input.ej(tmp0_desc, 9, LongSerializer_getInstance(), tmp13_local9);
       tmp3_bitMask0 = tmp3_bitMask0 | 512;
-      tmp14_local10 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
+      tmp14_local10 = tmp18_input.ej(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
       tmp3_bitMask0 = tmp3_bitMask0 | 1024;
-      tmp15_local11 = tmp18_input.decodeLongElement_994anb_k$(tmp0_desc, 11);
+      tmp15_local11 = tmp18_input.wi(tmp0_desc, 11);
       tmp3_bitMask0 = tmp3_bitMask0 | 2048;
-      tmp16_local12 = tmp18_input.decodeLongElement_994anb_k$(tmp0_desc, 12);
+      tmp16_local12 = tmp18_input.wi(tmp0_desc, 12);
       tmp3_bitMask0 = tmp3_bitMask0 | 4096;
-      tmp17_local13 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 13, LongSerializer_getInstance(), tmp17_local13);
+      tmp17_local13 = tmp18_input.ej(tmp0_desc, 13, LongSerializer_getInstance(), tmp17_local13);
       tmp3_bitMask0 = tmp3_bitMask0 | 8192;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp18_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp18_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp18_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp18_input.aj(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp18_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp18_input.aj(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp18_input.decodeIntElement_941u6a_k$(tmp0_desc, 2);
+            tmp6_local2 = tmp18_input.vi(tmp0_desc, 2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           case 3:
-            tmp7_local3 = tmp18_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp19_cached[3].get_value_j01efc_k$(), tmp7_local3);
+            tmp7_local3 = tmp18_input.cj(tmp0_desc, 3, tmp19_cached[3].y1(), tmp7_local3);
             tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           case 4:
-            tmp8_local4 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, LongSerializer_getInstance(), tmp8_local4);
+            tmp8_local4 = tmp18_input.ej(tmp0_desc, 4, LongSerializer_getInstance(), tmp8_local4);
             tmp3_bitMask0 = tmp3_bitMask0 | 16;
             break;
           case 5:
-            tmp9_local5 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
+            tmp9_local5 = tmp18_input.ej(tmp0_desc, 5, LongSerializer_getInstance(), tmp9_local5);
             tmp3_bitMask0 = tmp3_bitMask0 | 32;
             break;
           case 6:
-            tmp10_local6 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 6, IntSerializer_getInstance(), tmp10_local6);
+            tmp10_local6 = tmp18_input.ej(tmp0_desc, 6, IntSerializer_getInstance(), tmp10_local6);
             tmp3_bitMask0 = tmp3_bitMask0 | 64;
             break;
           case 7:
-            tmp11_local7 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 7, IntSerializer_getInstance(), tmp11_local7);
+            tmp11_local7 = tmp18_input.ej(tmp0_desc, 7, IntSerializer_getInstance(), tmp11_local7);
             tmp3_bitMask0 = tmp3_bitMask0 | 128;
             break;
           case 8:
-            tmp12_local8 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, IntSerializer_getInstance(), tmp12_local8);
+            tmp12_local8 = tmp18_input.ej(tmp0_desc, 8, IntSerializer_getInstance(), tmp12_local8);
             tmp3_bitMask0 = tmp3_bitMask0 | 256;
             break;
           case 9:
-            tmp13_local9 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 9, LongSerializer_getInstance(), tmp13_local9);
+            tmp13_local9 = tmp18_input.ej(tmp0_desc, 9, LongSerializer_getInstance(), tmp13_local9);
             tmp3_bitMask0 = tmp3_bitMask0 | 512;
             break;
           case 10:
-            tmp14_local10 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
+            tmp14_local10 = tmp18_input.ej(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
             tmp3_bitMask0 = tmp3_bitMask0 | 1024;
             break;
           case 11:
-            tmp15_local11 = tmp18_input.decodeLongElement_994anb_k$(tmp0_desc, 11);
+            tmp15_local11 = tmp18_input.wi(tmp0_desc, 11);
             tmp3_bitMask0 = tmp3_bitMask0 | 2048;
             break;
           case 12:
-            tmp16_local12 = tmp18_input.decodeLongElement_994anb_k$(tmp0_desc, 12);
+            tmp16_local12 = tmp18_input.wi(tmp0_desc, 12);
             tmp3_bitMask0 = tmp3_bitMask0 | 4096;
             break;
           case 13:
-            tmp17_local13 = tmp18_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 13, LongSerializer_getInstance(), tmp17_local13);
+            tmp17_local13 = tmp18_input.ej(tmp0_desc, 13, LongSerializer_getInstance(), tmp17_local13);
             tmp3_bitMask0 = tmp3_bitMask0 | 8192;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp18_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp18_input.ri(tmp0_desc);
     return TemplateSetDto_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, tmp8_local4, tmp9_local5, tmp10_local6, tmp11_local7, tmp12_local8, tmp13_local9, tmp14_local10, tmp15_local11, tmp16_local12, tmp17_local13, null);
   };
-  protoOf($serializer_10).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_10).of = function () {
+    return this.s1f_1;
   };
-  protoOf($serializer_10).childSerializers_5ghqw5_k$ = function () {
-    var tmp0_cached = Companion_getInstance_8().$childSerializers_1;
+  protoOf($serializer_10).oq = function () {
+    var tmp0_cached = Companion_getInstance_8().r1f_1;
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    return [StringSerializer_getInstance(), StringSerializer_getInstance(), IntSerializer_getInstance(), tmp0_cached[3].get_value_j01efc_k$(), get_nullable(LongSerializer_getInstance()), get_nullable(LongSerializer_getInstance()), get_nullable(IntSerializer_getInstance()), get_nullable(IntSerializer_getInstance()), get_nullable(IntSerializer_getInstance()), get_nullable(LongSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance())];
+    return [StringSerializer_getInstance(), StringSerializer_getInstance(), IntSerializer_getInstance(), tmp0_cached[3].y1(), get_nullable(LongSerializer_getInstance()), get_nullable(LongSerializer_getInstance()), get_nullable(IntSerializer_getInstance()), get_nullable(IntSerializer_getInstance()), get_nullable(IntSerializer_getInstance()), get_nullable(LongSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance())];
   };
   var $serializer_instance_10;
   function $serializer_getInstance_10() {
@@ -2732,46 +2732,46 @@
   }
   function TemplateSetDto_init_$Init$(seen0, id, templateExerciseId, setIndex, role, targetWeightGrams, targetAssistanceGrams, targetRepsMin, targetRepsMax, targetRepsCurrent, dropValueGrams, note, createdAt, updatedAt, deletedAt, serializationConstructorMarker, $this) {
     if (!(6159 === (6159 & seen0))) {
-      throwMissingFieldException(seen0, 6159, $serializer_getInstance_10().descriptor_1);
+      throwMissingFieldException(seen0, 6159, $serializer_getInstance_10().s1f_1);
     }
-    $this.id_1 = id;
-    $this.templateExerciseId_1 = templateExerciseId;
-    $this.setIndex_1 = setIndex;
-    $this.role_1 = role;
+    $this.u1f_1 = id;
+    $this.v1f_1 = templateExerciseId;
+    $this.w1f_1 = setIndex;
+    $this.x1f_1 = role;
     if (0 === (seen0 & 16))
-      $this.targetWeightGrams_1 = null;
+      $this.y1f_1 = null;
     else
-      $this.targetWeightGrams_1 = targetWeightGrams;
+      $this.y1f_1 = targetWeightGrams;
     if (0 === (seen0 & 32))
-      $this.targetAssistanceGrams_1 = null;
+      $this.z1f_1 = null;
     else
-      $this.targetAssistanceGrams_1 = targetAssistanceGrams;
+      $this.z1f_1 = targetAssistanceGrams;
     if (0 === (seen0 & 64))
-      $this.targetRepsMin_1 = null;
+      $this.a1g_1 = null;
     else
-      $this.targetRepsMin_1 = targetRepsMin;
+      $this.a1g_1 = targetRepsMin;
     if (0 === (seen0 & 128))
-      $this.targetRepsMax_1 = null;
+      $this.b1g_1 = null;
     else
-      $this.targetRepsMax_1 = targetRepsMax;
+      $this.b1g_1 = targetRepsMax;
     if (0 === (seen0 & 256))
-      $this.targetRepsCurrent_1 = null;
+      $this.c1g_1 = null;
     else
-      $this.targetRepsCurrent_1 = targetRepsCurrent;
+      $this.c1g_1 = targetRepsCurrent;
     if (0 === (seen0 & 512))
-      $this.dropValueGrams_1 = null;
+      $this.d1g_1 = null;
     else
-      $this.dropValueGrams_1 = dropValueGrams;
+      $this.d1g_1 = dropValueGrams;
     if (0 === (seen0 & 1024))
-      $this.note_1 = null;
+      $this.e1g_1 = null;
     else
-      $this.note_1 = note;
-    $this.createdAt_1 = createdAt;
-    $this.updatedAt_1 = updatedAt;
+      $this.e1g_1 = note;
+    $this.f1g_1 = createdAt;
+    $this.g1g_1 = updatedAt;
     if (0 === (seen0 & 8192))
-      $this.deletedAt_1 = null;
+      $this.h1g_1 = null;
     else
-      $this.deletedAt_1 = deletedAt;
+      $this.h1g_1 = deletedAt;
     return $this;
   }
   function TemplateSetDto_init_$Create$(seen0, id, templateExerciseId, setIndex, role, targetWeightGrams, targetAssistanceGrams, targetRepsMin, targetRepsMax, targetRepsCurrent, dropValueGrams, note, createdAt, updatedAt, deletedAt, serializationConstructorMarker) {
@@ -2780,23 +2780,23 @@
   function TemplateSetDto() {
   }
   protoOf(TemplateSetDto).toString = function () {
-    return 'TemplateSetDto(id=' + this.id_1 + ', templateExerciseId=' + this.templateExerciseId_1 + ', setIndex=' + this.setIndex_1 + ', role=' + this.role_1.toString() + ', targetWeightGrams=' + toString_0(this.targetWeightGrams_1) + ', targetAssistanceGrams=' + toString_0(this.targetAssistanceGrams_1) + ', targetRepsMin=' + this.targetRepsMin_1 + ', targetRepsMax=' + this.targetRepsMax_1 + ', targetRepsCurrent=' + this.targetRepsCurrent_1 + ', dropValueGrams=' + toString_0(this.dropValueGrams_1) + ', note=' + this.note_1 + ', createdAt=' + this.createdAt_1.toString() + ', updatedAt=' + this.updatedAt_1.toString() + ', deletedAt=' + toString_0(this.deletedAt_1) + ')';
+    return 'TemplateSetDto(id=' + this.u1f_1 + ', templateExerciseId=' + this.v1f_1 + ', setIndex=' + this.w1f_1 + ', role=' + this.x1f_1.toString() + ', targetWeightGrams=' + toString_0(this.y1f_1) + ', targetAssistanceGrams=' + toString_0(this.z1f_1) + ', targetRepsMin=' + this.a1g_1 + ', targetRepsMax=' + this.b1g_1 + ', targetRepsCurrent=' + this.c1g_1 + ', dropValueGrams=' + toString_0(this.d1g_1) + ', note=' + this.e1g_1 + ', createdAt=' + this.f1g_1.toString() + ', updatedAt=' + this.g1g_1.toString() + ', deletedAt=' + toString_0(this.h1g_1) + ')';
   };
   protoOf(TemplateSetDto).hashCode = function () {
-    var result = getStringHashCode(this.id_1);
-    result = imul(result, 31) + getStringHashCode(this.templateExerciseId_1) | 0;
-    result = imul(result, 31) + this.setIndex_1 | 0;
-    result = imul(result, 31) + this.role_1.hashCode() | 0;
-    result = imul(result, 31) + (this.targetWeightGrams_1 == null ? 0 : this.targetWeightGrams_1.hashCode()) | 0;
-    result = imul(result, 31) + (this.targetAssistanceGrams_1 == null ? 0 : this.targetAssistanceGrams_1.hashCode()) | 0;
-    result = imul(result, 31) + (this.targetRepsMin_1 == null ? 0 : this.targetRepsMin_1) | 0;
-    result = imul(result, 31) + (this.targetRepsMax_1 == null ? 0 : this.targetRepsMax_1) | 0;
-    result = imul(result, 31) + (this.targetRepsCurrent_1 == null ? 0 : this.targetRepsCurrent_1) | 0;
-    result = imul(result, 31) + (this.dropValueGrams_1 == null ? 0 : this.dropValueGrams_1.hashCode()) | 0;
-    result = imul(result, 31) + (this.note_1 == null ? 0 : getStringHashCode(this.note_1)) | 0;
-    result = imul(result, 31) + this.createdAt_1.hashCode() | 0;
-    result = imul(result, 31) + this.updatedAt_1.hashCode() | 0;
-    result = imul(result, 31) + (this.deletedAt_1 == null ? 0 : this.deletedAt_1.hashCode()) | 0;
+    var result = getStringHashCode(this.u1f_1);
+    result = imul(result, 31) + getStringHashCode(this.v1f_1) | 0;
+    result = imul(result, 31) + this.w1f_1 | 0;
+    result = imul(result, 31) + this.x1f_1.hashCode() | 0;
+    result = imul(result, 31) + (this.y1f_1 == null ? 0 : this.y1f_1.hashCode()) | 0;
+    result = imul(result, 31) + (this.z1f_1 == null ? 0 : this.z1f_1.hashCode()) | 0;
+    result = imul(result, 31) + (this.a1g_1 == null ? 0 : this.a1g_1) | 0;
+    result = imul(result, 31) + (this.b1g_1 == null ? 0 : this.b1g_1) | 0;
+    result = imul(result, 31) + (this.c1g_1 == null ? 0 : this.c1g_1) | 0;
+    result = imul(result, 31) + (this.d1g_1 == null ? 0 : this.d1g_1.hashCode()) | 0;
+    result = imul(result, 31) + (this.e1g_1 == null ? 0 : getStringHashCode(this.e1g_1)) | 0;
+    result = imul(result, 31) + this.f1g_1.hashCode() | 0;
+    result = imul(result, 31) + this.g1g_1.hashCode() | 0;
+    result = imul(result, 31) + (this.h1g_1 == null ? 0 : this.h1g_1.hashCode()) | 0;
     return result;
   };
   protoOf(TemplateSetDto).equals = function (other) {
@@ -2804,33 +2804,33 @@
       return true;
     if (!(other instanceof TemplateSetDto))
       return false;
-    if (!(this.id_1 === other.id_1))
+    if (!(this.u1f_1 === other.u1f_1))
       return false;
-    if (!(this.templateExerciseId_1 === other.templateExerciseId_1))
+    if (!(this.v1f_1 === other.v1f_1))
       return false;
-    if (!(this.setIndex_1 === other.setIndex_1))
+    if (!(this.w1f_1 === other.w1f_1))
       return false;
-    if (!this.role_1.equals(other.role_1))
+    if (!this.x1f_1.equals(other.x1f_1))
       return false;
-    if (!equals(this.targetWeightGrams_1, other.targetWeightGrams_1))
+    if (!equals(this.y1f_1, other.y1f_1))
       return false;
-    if (!equals(this.targetAssistanceGrams_1, other.targetAssistanceGrams_1))
+    if (!equals(this.z1f_1, other.z1f_1))
       return false;
-    if (!(this.targetRepsMin_1 == other.targetRepsMin_1))
+    if (!(this.a1g_1 == other.a1g_1))
       return false;
-    if (!(this.targetRepsMax_1 == other.targetRepsMax_1))
+    if (!(this.b1g_1 == other.b1g_1))
       return false;
-    if (!(this.targetRepsCurrent_1 == other.targetRepsCurrent_1))
+    if (!(this.c1g_1 == other.c1g_1))
       return false;
-    if (!equals(this.dropValueGrams_1, other.dropValueGrams_1))
+    if (!equals(this.d1g_1, other.d1g_1))
       return false;
-    if (!(this.note_1 == other.note_1))
+    if (!(this.e1g_1 == other.e1g_1))
       return false;
-    if (!equalsLong(this.createdAt_1, other.createdAt_1))
+    if (!equalsLong(this.f1g_1, other.f1g_1))
       return false;
-    if (!equalsLong(this.updatedAt_1, other.updatedAt_1))
+    if (!equalsLong(this.g1g_1, other.g1g_1))
       return false;
-    if (!equals(this.deletedAt_1, other.deletedAt_1))
+    if (!equals(this.h1g_1, other.h1g_1))
       return false;
     return true;
   };
@@ -2844,7 +2844,7 @@
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    tmp.$childSerializers_1 = [null, null, null, lazy(tmp_0, ExerciseDto$Companion$$childSerializers$_anonymous__falojn), null, null, null, null, null, null, null, null, null, null, null, null, null];
+    tmp.i1g_1 = [null, null, null, lazy(tmp_0, ExerciseDto$Companion$$childSerializers$_anonymous__falojn), null, null, null, null, null, null, null, null, null, null, null, null, null];
   }
   var Companion_instance_10;
   function Companion_getInstance_9() {
@@ -2855,71 +2855,71 @@
   function $serializer_11() {
     $serializer_instance_11 = this;
     var tmp0_serialDesc = new PluginGeneratedSerialDescriptor('com.example.androidapp.shared.ExerciseDto', this, 17);
-    tmp0_serialDesc.addElement_5pzumi_k$('id', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('name', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('primaryMuscle', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('secondaryMuscles', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('equipment', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('movementPattern', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('createdAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('updatedAt', false);
-    tmp0_serialDesc.addElement_5pzumi_k$('deletedAt', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('restSeconds', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('techniqueNote', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('weightUnit', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('stepGrams', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('parentId', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('rowKind', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('isBodyweight', true);
-    tmp0_serialDesc.addElement_5pzumi_k$('isTimed', true);
-    this.descriptor_1 = tmp0_serialDesc;
+    tmp0_serialDesc.zp('id', false);
+    tmp0_serialDesc.zp('name', false);
+    tmp0_serialDesc.zp('primaryMuscle', false);
+    tmp0_serialDesc.zp('secondaryMuscles', false);
+    tmp0_serialDesc.zp('equipment', false);
+    tmp0_serialDesc.zp('movementPattern', false);
+    tmp0_serialDesc.zp('createdAt', false);
+    tmp0_serialDesc.zp('updatedAt', false);
+    tmp0_serialDesc.zp('deletedAt', true);
+    tmp0_serialDesc.zp('restSeconds', true);
+    tmp0_serialDesc.zp('techniqueNote', true);
+    tmp0_serialDesc.zp('weightUnit', true);
+    tmp0_serialDesc.zp('stepGrams', true);
+    tmp0_serialDesc.zp('parentId', true);
+    tmp0_serialDesc.zp('rowKind', true);
+    tmp0_serialDesc.zp('isBodyweight', true);
+    tmp0_serialDesc.zp('isTimed', true);
+    this.j1g_1 = tmp0_serialDesc;
   }
-  protoOf($serializer_11).serialize_viznsy_k$ = function (encoder, value) {
-    var tmp0_desc = this.descriptor_1;
-    var tmp1_output = encoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp2_cached = Companion_getInstance_9().$childSerializers_1;
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 0, value.id_1);
-    tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 1, value.name_1);
-    tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 2, StringSerializer_getInstance(), value.primaryMuscle_1);
-    tmp1_output.encodeSerializableElement_isqxcl_k$(tmp0_desc, 3, tmp2_cached[3].get_value_j01efc_k$(), value.secondaryMuscles_1);
-    tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 4, StringSerializer_getInstance(), value.equipment_1);
-    tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 5, StringSerializer_getInstance(), value.movementPattern_1);
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 6, value.createdAt_1);
-    tmp1_output.encodeLongElement_ovnxxh_k$(tmp0_desc, 7, value.updatedAt_1);
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 8) ? true : !(value.deletedAt_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 8, LongSerializer_getInstance(), value.deletedAt_1);
+  protoOf($serializer_11).k1g = function (encoder, value) {
+    var tmp0_desc = this.j1g_1;
+    var tmp1_output = encoder.qi(tmp0_desc);
+    var tmp2_cached = Companion_getInstance_9().i1g_1;
+    tmp1_output.fk(tmp0_desc, 0, value.l1g_1);
+    tmp1_output.fk(tmp0_desc, 1, value.m1g_1);
+    tmp1_output.jk(tmp0_desc, 2, StringSerializer_getInstance(), value.n1g_1);
+    tmp1_output.hk(tmp0_desc, 3, tmp2_cached[3].y1(), value.o1g_1);
+    tmp1_output.jk(tmp0_desc, 4, StringSerializer_getInstance(), value.p1g_1);
+    tmp1_output.jk(tmp0_desc, 5, StringSerializer_getInstance(), value.q1g_1);
+    tmp1_output.bk(tmp0_desc, 6, value.r1g_1);
+    tmp1_output.bk(tmp0_desc, 7, value.s1g_1);
+    if (tmp1_output.nk(tmp0_desc, 8) ? true : !(value.t1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 8, LongSerializer_getInstance(), value.t1g_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 9) ? true : !(value.restSeconds_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 9, IntSerializer_getInstance(), value.restSeconds_1);
+    if (tmp1_output.nk(tmp0_desc, 9) ? true : !(value.u1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 9, IntSerializer_getInstance(), value.u1g_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 10) ? true : !(value.techniqueNote_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 10, StringSerializer_getInstance(), value.techniqueNote_1);
+    if (tmp1_output.nk(tmp0_desc, 10) ? true : !(value.v1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 10, StringSerializer_getInstance(), value.v1g_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 11) ? true : !(value.weightUnit_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 11, StringSerializer_getInstance(), value.weightUnit_1);
+    if (tmp1_output.nk(tmp0_desc, 11) ? true : !(value.w1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 11, StringSerializer_getInstance(), value.w1g_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 12) ? true : !(value.stepGrams_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 12, LongSerializer_getInstance(), value.stepGrams_1);
+    if (tmp1_output.nk(tmp0_desc, 12) ? true : !(value.x1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 12, LongSerializer_getInstance(), value.x1g_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 13) ? true : !(value.parentId_1 == null)) {
-      tmp1_output.encodeNullableSerializableElement_5lquiv_k$(tmp0_desc, 13, StringSerializer_getInstance(), value.parentId_1);
+    if (tmp1_output.nk(tmp0_desc, 13) ? true : !(value.y1g_1 == null)) {
+      tmp1_output.jk(tmp0_desc, 13, StringSerializer_getInstance(), value.y1g_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 14) ? true : !(value.rowKind_1 === 'MOVEMENT')) {
-      tmp1_output.encodeStringElement_1n5wu2_k$(tmp0_desc, 14, value.rowKind_1);
+    if (tmp1_output.nk(tmp0_desc, 14) ? true : !(value.z1g_1 === 'MOVEMENT')) {
+      tmp1_output.fk(tmp0_desc, 14, value.z1g_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 15) ? true : !(value.isBodyweight_1 === false)) {
-      tmp1_output.encodeBooleanElement_ydht7q_k$(tmp0_desc, 15, value.isBodyweight_1);
+    if (tmp1_output.nk(tmp0_desc, 15) ? true : !(value.a1h_1 === false)) {
+      tmp1_output.xj(tmp0_desc, 15, value.a1h_1);
     }
-    if (tmp1_output.shouldEncodeElementDefault_x8eyid_k$(tmp0_desc, 16) ? true : !(value.isTimed_1 === false)) {
-      tmp1_output.encodeBooleanElement_ydht7q_k$(tmp0_desc, 16, value.isTimed_1);
+    if (tmp1_output.nk(tmp0_desc, 16) ? true : !(value.b1h_1 === false)) {
+      tmp1_output.xj(tmp0_desc, 16, value.b1h_1);
     }
-    tmp1_output.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp1_output.ri(tmp0_desc);
   };
-  protoOf($serializer_11).serialize_5ase3y_k$ = function (encoder, value) {
-    return this.serialize_viznsy_k$(encoder, value instanceof ExerciseDto ? value : THROW_CCE());
+  protoOf($serializer_11).pf = function (encoder, value) {
+    return this.k1g(encoder, value instanceof ExerciseDto ? value : THROW_CCE());
   };
-  protoOf($serializer_11).deserialize_sy6x50_k$ = function (decoder) {
-    var tmp0_desc = this.descriptor_1;
+  protoOf($serializer_11).qf = function (decoder) {
+    var tmp0_desc = this.j1g_1;
     var tmp1_flag = true;
     var tmp2_index = 0;
     var tmp3_bitMask0 = 0;
@@ -2940,134 +2940,134 @@
     var tmp18_local14 = null;
     var tmp19_local15 = false;
     var tmp20_local16 = false;
-    var tmp21_input = decoder.beginStructure_yljocp_k$(tmp0_desc);
-    var tmp22_cached = Companion_getInstance_9().$childSerializers_1;
-    if (tmp21_input.decodeSequentially_xlblqy_k$()) {
-      tmp4_local0 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+    var tmp21_input = decoder.qi(tmp0_desc);
+    var tmp22_cached = Companion_getInstance_9().i1g_1;
+    if (tmp21_input.gj()) {
+      tmp4_local0 = tmp21_input.aj(tmp0_desc, 0);
       tmp3_bitMask0 = tmp3_bitMask0 | 1;
-      tmp5_local1 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+      tmp5_local1 = tmp21_input.aj(tmp0_desc, 1);
       tmp3_bitMask0 = tmp3_bitMask0 | 2;
-      tmp6_local2 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+      tmp6_local2 = tmp21_input.ej(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
       tmp3_bitMask0 = tmp3_bitMask0 | 4;
-      tmp7_local3 = tmp21_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp22_cached[3].get_value_j01efc_k$(), tmp7_local3);
+      tmp7_local3 = tmp21_input.cj(tmp0_desc, 3, tmp22_cached[3].y1(), tmp7_local3);
       tmp3_bitMask0 = tmp3_bitMask0 | 8;
-      tmp8_local4 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, StringSerializer_getInstance(), tmp8_local4);
+      tmp8_local4 = tmp21_input.ej(tmp0_desc, 4, StringSerializer_getInstance(), tmp8_local4);
       tmp3_bitMask0 = tmp3_bitMask0 | 16;
-      tmp9_local5 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
+      tmp9_local5 = tmp21_input.ej(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
       tmp3_bitMask0 = tmp3_bitMask0 | 32;
-      tmp10_local6 = tmp21_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
+      tmp10_local6 = tmp21_input.wi(tmp0_desc, 6);
       tmp3_bitMask0 = tmp3_bitMask0 | 64;
-      tmp11_local7 = tmp21_input.decodeLongElement_994anb_k$(tmp0_desc, 7);
+      tmp11_local7 = tmp21_input.wi(tmp0_desc, 7);
       tmp3_bitMask0 = tmp3_bitMask0 | 128;
-      tmp12_local8 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
+      tmp12_local8 = tmp21_input.ej(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
       tmp3_bitMask0 = tmp3_bitMask0 | 256;
-      tmp13_local9 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 9, IntSerializer_getInstance(), tmp13_local9);
+      tmp13_local9 = tmp21_input.ej(tmp0_desc, 9, IntSerializer_getInstance(), tmp13_local9);
       tmp3_bitMask0 = tmp3_bitMask0 | 512;
-      tmp14_local10 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
+      tmp14_local10 = tmp21_input.ej(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
       tmp3_bitMask0 = tmp3_bitMask0 | 1024;
-      tmp15_local11 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 11, StringSerializer_getInstance(), tmp15_local11);
+      tmp15_local11 = tmp21_input.ej(tmp0_desc, 11, StringSerializer_getInstance(), tmp15_local11);
       tmp3_bitMask0 = tmp3_bitMask0 | 2048;
-      tmp16_local12 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 12, LongSerializer_getInstance(), tmp16_local12);
+      tmp16_local12 = tmp21_input.ej(tmp0_desc, 12, LongSerializer_getInstance(), tmp16_local12);
       tmp3_bitMask0 = tmp3_bitMask0 | 4096;
-      tmp17_local13 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 13, StringSerializer_getInstance(), tmp17_local13);
+      tmp17_local13 = tmp21_input.ej(tmp0_desc, 13, StringSerializer_getInstance(), tmp17_local13);
       tmp3_bitMask0 = tmp3_bitMask0 | 8192;
-      tmp18_local14 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 14);
+      tmp18_local14 = tmp21_input.aj(tmp0_desc, 14);
       tmp3_bitMask0 = tmp3_bitMask0 | 16384;
-      tmp19_local15 = tmp21_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 15);
+      tmp19_local15 = tmp21_input.si(tmp0_desc, 15);
       tmp3_bitMask0 = tmp3_bitMask0 | 32768;
-      tmp20_local16 = tmp21_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 16);
+      tmp20_local16 = tmp21_input.si(tmp0_desc, 16);
       tmp3_bitMask0 = tmp3_bitMask0 | 65536;
     } else
       while (tmp1_flag) {
-        tmp2_index = tmp21_input.decodeElementIndex_bstkhp_k$(tmp0_desc);
+        tmp2_index = tmp21_input.hj(tmp0_desc);
         switch (tmp2_index) {
           case -1:
             tmp1_flag = false;
             break;
           case 0:
-            tmp4_local0 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 0);
+            tmp4_local0 = tmp21_input.aj(tmp0_desc, 0);
             tmp3_bitMask0 = tmp3_bitMask0 | 1;
             break;
           case 1:
-            tmp5_local1 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 1);
+            tmp5_local1 = tmp21_input.aj(tmp0_desc, 1);
             tmp3_bitMask0 = tmp3_bitMask0 | 2;
             break;
           case 2:
-            tmp6_local2 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
+            tmp6_local2 = tmp21_input.ej(tmp0_desc, 2, StringSerializer_getInstance(), tmp6_local2);
             tmp3_bitMask0 = tmp3_bitMask0 | 4;
             break;
           case 3:
-            tmp7_local3 = tmp21_input.decodeSerializableElement_uahnnv_k$(tmp0_desc, 3, tmp22_cached[3].get_value_j01efc_k$(), tmp7_local3);
+            tmp7_local3 = tmp21_input.cj(tmp0_desc, 3, tmp22_cached[3].y1(), tmp7_local3);
             tmp3_bitMask0 = tmp3_bitMask0 | 8;
             break;
           case 4:
-            tmp8_local4 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 4, StringSerializer_getInstance(), tmp8_local4);
+            tmp8_local4 = tmp21_input.ej(tmp0_desc, 4, StringSerializer_getInstance(), tmp8_local4);
             tmp3_bitMask0 = tmp3_bitMask0 | 16;
             break;
           case 5:
-            tmp9_local5 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
+            tmp9_local5 = tmp21_input.ej(tmp0_desc, 5, StringSerializer_getInstance(), tmp9_local5);
             tmp3_bitMask0 = tmp3_bitMask0 | 32;
             break;
           case 6:
-            tmp10_local6 = tmp21_input.decodeLongElement_994anb_k$(tmp0_desc, 6);
+            tmp10_local6 = tmp21_input.wi(tmp0_desc, 6);
             tmp3_bitMask0 = tmp3_bitMask0 | 64;
             break;
           case 7:
-            tmp11_local7 = tmp21_input.decodeLongElement_994anb_k$(tmp0_desc, 7);
+            tmp11_local7 = tmp21_input.wi(tmp0_desc, 7);
             tmp3_bitMask0 = tmp3_bitMask0 | 128;
             break;
           case 8:
-            tmp12_local8 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
+            tmp12_local8 = tmp21_input.ej(tmp0_desc, 8, LongSerializer_getInstance(), tmp12_local8);
             tmp3_bitMask0 = tmp3_bitMask0 | 256;
             break;
           case 9:
-            tmp13_local9 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 9, IntSerializer_getInstance(), tmp13_local9);
+            tmp13_local9 = tmp21_input.ej(tmp0_desc, 9, IntSerializer_getInstance(), tmp13_local9);
             tmp3_bitMask0 = tmp3_bitMask0 | 512;
             break;
           case 10:
-            tmp14_local10 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
+            tmp14_local10 = tmp21_input.ej(tmp0_desc, 10, StringSerializer_getInstance(), tmp14_local10);
             tmp3_bitMask0 = tmp3_bitMask0 | 1024;
             break;
           case 11:
-            tmp15_local11 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 11, StringSerializer_getInstance(), tmp15_local11);
+            tmp15_local11 = tmp21_input.ej(tmp0_desc, 11, StringSerializer_getInstance(), tmp15_local11);
             tmp3_bitMask0 = tmp3_bitMask0 | 2048;
             break;
           case 12:
-            tmp16_local12 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 12, LongSerializer_getInstance(), tmp16_local12);
+            tmp16_local12 = tmp21_input.ej(tmp0_desc, 12, LongSerializer_getInstance(), tmp16_local12);
             tmp3_bitMask0 = tmp3_bitMask0 | 4096;
             break;
           case 13:
-            tmp17_local13 = tmp21_input.decodeNullableSerializableElement_k2y6ab_k$(tmp0_desc, 13, StringSerializer_getInstance(), tmp17_local13);
+            tmp17_local13 = tmp21_input.ej(tmp0_desc, 13, StringSerializer_getInstance(), tmp17_local13);
             tmp3_bitMask0 = tmp3_bitMask0 | 8192;
             break;
           case 14:
-            tmp18_local14 = tmp21_input.decodeStringElement_3oenpg_k$(tmp0_desc, 14);
+            tmp18_local14 = tmp21_input.aj(tmp0_desc, 14);
             tmp3_bitMask0 = tmp3_bitMask0 | 16384;
             break;
           case 15:
-            tmp19_local15 = tmp21_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 15);
+            tmp19_local15 = tmp21_input.si(tmp0_desc, 15);
             tmp3_bitMask0 = tmp3_bitMask0 | 32768;
             break;
           case 16:
-            tmp20_local16 = tmp21_input.decodeBooleanElement_vuyhtj_k$(tmp0_desc, 16);
+            tmp20_local16 = tmp21_input.si(tmp0_desc, 16);
             tmp3_bitMask0 = tmp3_bitMask0 | 65536;
             break;
           default:
             throw UnknownFieldException_init_$Create$(tmp2_index);
         }
       }
-    tmp21_input.endStructure_1xqz0n_k$(tmp0_desc);
+    tmp21_input.ri(tmp0_desc);
     return ExerciseDto_init_$Create$(tmp3_bitMask0, tmp4_local0, tmp5_local1, tmp6_local2, tmp7_local3, tmp8_local4, tmp9_local5, tmp10_local6, tmp11_local7, tmp12_local8, tmp13_local9, tmp14_local10, tmp15_local11, tmp16_local12, tmp17_local13, tmp18_local14, tmp19_local15, tmp20_local16, null);
   };
-  protoOf($serializer_11).get_descriptor_wjt6a0_k$ = function () {
-    return this.descriptor_1;
+  protoOf($serializer_11).of = function () {
+    return this.j1g_1;
   };
-  protoOf($serializer_11).childSerializers_5ghqw5_k$ = function () {
-    var tmp0_cached = Companion_getInstance_9().$childSerializers_1;
+  protoOf($serializer_11).oq = function () {
+    var tmp0_cached = Companion_getInstance_9().i1g_1;
     // Inline function 'kotlin.arrayOf' call
     // Inline function 'kotlin.js.unsafeCast' call
     // Inline function 'kotlin.js.asDynamic' call
-    return [StringSerializer_getInstance(), StringSerializer_getInstance(), get_nullable(StringSerializer_getInstance()), tmp0_cached[3].get_value_j01efc_k$(), get_nullable(StringSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance()), get_nullable(IntSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), get_nullable(LongSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), StringSerializer_getInstance(), BooleanSerializer_getInstance(), BooleanSerializer_getInstance()];
+    return [StringSerializer_getInstance(), StringSerializer_getInstance(), get_nullable(StringSerializer_getInstance()), tmp0_cached[3].y1(), get_nullable(StringSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), LongSerializer_getInstance(), LongSerializer_getInstance(), get_nullable(LongSerializer_getInstance()), get_nullable(IntSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), get_nullable(LongSerializer_getInstance()), get_nullable(StringSerializer_getInstance()), StringSerializer_getInstance(), BooleanSerializer_getInstance(), BooleanSerializer_getInstance()];
   };
   var $serializer_instance_11;
   function $serializer_getInstance_11() {
@@ -3077,52 +3077,52 @@
   }
   function ExerciseDto_init_$Init$(seen0, id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, createdAt, updatedAt, deletedAt, restSeconds, techniqueNote, weightUnit, stepGrams, parentId, rowKind, isBodyweight, isTimed, serializationConstructorMarker, $this) {
     if (!(255 === (255 & seen0))) {
-      throwMissingFieldException(seen0, 255, $serializer_getInstance_11().descriptor_1);
+      throwMissingFieldException(seen0, 255, $serializer_getInstance_11().j1g_1);
     }
-    $this.id_1 = id;
-    $this.name_1 = name;
-    $this.primaryMuscle_1 = primaryMuscle;
-    $this.secondaryMuscles_1 = secondaryMuscles;
-    $this.equipment_1 = equipment;
-    $this.movementPattern_1 = movementPattern;
-    $this.createdAt_1 = createdAt;
-    $this.updatedAt_1 = updatedAt;
+    $this.l1g_1 = id;
+    $this.m1g_1 = name;
+    $this.n1g_1 = primaryMuscle;
+    $this.o1g_1 = secondaryMuscles;
+    $this.p1g_1 = equipment;
+    $this.q1g_1 = movementPattern;
+    $this.r1g_1 = createdAt;
+    $this.s1g_1 = updatedAt;
     if (0 === (seen0 & 256))
-      $this.deletedAt_1 = null;
+      $this.t1g_1 = null;
     else
-      $this.deletedAt_1 = deletedAt;
+      $this.t1g_1 = deletedAt;
     if (0 === (seen0 & 512))
-      $this.restSeconds_1 = null;
+      $this.u1g_1 = null;
     else
-      $this.restSeconds_1 = restSeconds;
+      $this.u1g_1 = restSeconds;
     if (0 === (seen0 & 1024))
-      $this.techniqueNote_1 = null;
+      $this.v1g_1 = null;
     else
-      $this.techniqueNote_1 = techniqueNote;
+      $this.v1g_1 = techniqueNote;
     if (0 === (seen0 & 2048))
-      $this.weightUnit_1 = null;
+      $this.w1g_1 = null;
     else
-      $this.weightUnit_1 = weightUnit;
+      $this.w1g_1 = weightUnit;
     if (0 === (seen0 & 4096))
-      $this.stepGrams_1 = null;
+      $this.x1g_1 = null;
     else
-      $this.stepGrams_1 = stepGrams;
+      $this.x1g_1 = stepGrams;
     if (0 === (seen0 & 8192))
-      $this.parentId_1 = null;
+      $this.y1g_1 = null;
     else
-      $this.parentId_1 = parentId;
+      $this.y1g_1 = parentId;
     if (0 === (seen0 & 16384))
-      $this.rowKind_1 = 'MOVEMENT';
+      $this.z1g_1 = 'MOVEMENT';
     else
-      $this.rowKind_1 = rowKind;
+      $this.z1g_1 = rowKind;
     if (0 === (seen0 & 32768))
-      $this.isBodyweight_1 = false;
+      $this.a1h_1 = false;
     else
-      $this.isBodyweight_1 = isBodyweight;
+      $this.a1h_1 = isBodyweight;
     if (0 === (seen0 & 65536))
-      $this.isTimed_1 = false;
+      $this.b1h_1 = false;
     else
-      $this.isTimed_1 = isTimed;
+      $this.b1h_1 = isTimed;
     return $this;
   }
   function ExerciseDto_init_$Create$(seen0, id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, createdAt, updatedAt, deletedAt, restSeconds, techniqueNote, weightUnit, stepGrams, parentId, rowKind, isBodyweight, isTimed, serializationConstructorMarker) {
@@ -3131,26 +3131,26 @@
   function ExerciseDto() {
   }
   protoOf(ExerciseDto).toString = function () {
-    return 'ExerciseDto(id=' + this.id_1 + ', name=' + this.name_1 + ', primaryMuscle=' + this.primaryMuscle_1 + ', secondaryMuscles=' + toString(this.secondaryMuscles_1) + ', equipment=' + this.equipment_1 + ', movementPattern=' + this.movementPattern_1 + ', createdAt=' + this.createdAt_1.toString() + ', updatedAt=' + this.updatedAt_1.toString() + ', deletedAt=' + toString_0(this.deletedAt_1) + ', restSeconds=' + this.restSeconds_1 + ', techniqueNote=' + this.techniqueNote_1 + ', weightUnit=' + this.weightUnit_1 + ', stepGrams=' + toString_0(this.stepGrams_1) + ', parentId=' + this.parentId_1 + ', rowKind=' + this.rowKind_1 + ', isBodyweight=' + this.isBodyweight_1 + ', isTimed=' + this.isTimed_1 + ')';
+    return 'ExerciseDto(id=' + this.l1g_1 + ', name=' + this.m1g_1 + ', primaryMuscle=' + this.n1g_1 + ', secondaryMuscles=' + toString(this.o1g_1) + ', equipment=' + this.p1g_1 + ', movementPattern=' + this.q1g_1 + ', createdAt=' + this.r1g_1.toString() + ', updatedAt=' + this.s1g_1.toString() + ', deletedAt=' + toString_0(this.t1g_1) + ', restSeconds=' + this.u1g_1 + ', techniqueNote=' + this.v1g_1 + ', weightUnit=' + this.w1g_1 + ', stepGrams=' + toString_0(this.x1g_1) + ', parentId=' + this.y1g_1 + ', rowKind=' + this.z1g_1 + ', isBodyweight=' + this.a1h_1 + ', isTimed=' + this.b1h_1 + ')';
   };
   protoOf(ExerciseDto).hashCode = function () {
-    var result = getStringHashCode(this.id_1);
-    result = imul(result, 31) + getStringHashCode(this.name_1) | 0;
-    result = imul(result, 31) + (this.primaryMuscle_1 == null ? 0 : getStringHashCode(this.primaryMuscle_1)) | 0;
-    result = imul(result, 31) + hashCode(this.secondaryMuscles_1) | 0;
-    result = imul(result, 31) + (this.equipment_1 == null ? 0 : getStringHashCode(this.equipment_1)) | 0;
-    result = imul(result, 31) + (this.movementPattern_1 == null ? 0 : getStringHashCode(this.movementPattern_1)) | 0;
-    result = imul(result, 31) + this.createdAt_1.hashCode() | 0;
-    result = imul(result, 31) + this.updatedAt_1.hashCode() | 0;
-    result = imul(result, 31) + (this.deletedAt_1 == null ? 0 : this.deletedAt_1.hashCode()) | 0;
-    result = imul(result, 31) + (this.restSeconds_1 == null ? 0 : this.restSeconds_1) | 0;
-    result = imul(result, 31) + (this.techniqueNote_1 == null ? 0 : getStringHashCode(this.techniqueNote_1)) | 0;
-    result = imul(result, 31) + (this.weightUnit_1 == null ? 0 : getStringHashCode(this.weightUnit_1)) | 0;
-    result = imul(result, 31) + (this.stepGrams_1 == null ? 0 : this.stepGrams_1.hashCode()) | 0;
-    result = imul(result, 31) + (this.parentId_1 == null ? 0 : getStringHashCode(this.parentId_1)) | 0;
-    result = imul(result, 31) + getStringHashCode(this.rowKind_1) | 0;
-    result = imul(result, 31) + getBooleanHashCode(this.isBodyweight_1) | 0;
-    result = imul(result, 31) + getBooleanHashCode(this.isTimed_1) | 0;
+    var result = getStringHashCode(this.l1g_1);
+    result = imul(result, 31) + getStringHashCode(this.m1g_1) | 0;
+    result = imul(result, 31) + (this.n1g_1 == null ? 0 : getStringHashCode(this.n1g_1)) | 0;
+    result = imul(result, 31) + hashCode(this.o1g_1) | 0;
+    result = imul(result, 31) + (this.p1g_1 == null ? 0 : getStringHashCode(this.p1g_1)) | 0;
+    result = imul(result, 31) + (this.q1g_1 == null ? 0 : getStringHashCode(this.q1g_1)) | 0;
+    result = imul(result, 31) + this.r1g_1.hashCode() | 0;
+    result = imul(result, 31) + this.s1g_1.hashCode() | 0;
+    result = imul(result, 31) + (this.t1g_1 == null ? 0 : this.t1g_1.hashCode()) | 0;
+    result = imul(result, 31) + (this.u1g_1 == null ? 0 : this.u1g_1) | 0;
+    result = imul(result, 31) + (this.v1g_1 == null ? 0 : getStringHashCode(this.v1g_1)) | 0;
+    result = imul(result, 31) + (this.w1g_1 == null ? 0 : getStringHashCode(this.w1g_1)) | 0;
+    result = imul(result, 31) + (this.x1g_1 == null ? 0 : this.x1g_1.hashCode()) | 0;
+    result = imul(result, 31) + (this.y1g_1 == null ? 0 : getStringHashCode(this.y1g_1)) | 0;
+    result = imul(result, 31) + getStringHashCode(this.z1g_1) | 0;
+    result = imul(result, 31) + getBooleanHashCode(this.a1h_1) | 0;
+    result = imul(result, 31) + getBooleanHashCode(this.b1h_1) | 0;
     return result;
   };
   protoOf(ExerciseDto).equals = function (other) {
@@ -3158,44 +3158,44 @@
       return true;
     if (!(other instanceof ExerciseDto))
       return false;
-    if (!(this.id_1 === other.id_1))
+    if (!(this.l1g_1 === other.l1g_1))
       return false;
-    if (!(this.name_1 === other.name_1))
+    if (!(this.m1g_1 === other.m1g_1))
       return false;
-    if (!(this.primaryMuscle_1 == other.primaryMuscle_1))
+    if (!(this.n1g_1 == other.n1g_1))
       return false;
-    if (!equals(this.secondaryMuscles_1, other.secondaryMuscles_1))
+    if (!equals(this.o1g_1, other.o1g_1))
       return false;
-    if (!(this.equipment_1 == other.equipment_1))
+    if (!(this.p1g_1 == other.p1g_1))
       return false;
-    if (!(this.movementPattern_1 == other.movementPattern_1))
+    if (!(this.q1g_1 == other.q1g_1))
       return false;
-    if (!equalsLong(this.createdAt_1, other.createdAt_1))
+    if (!equalsLong(this.r1g_1, other.r1g_1))
       return false;
-    if (!equalsLong(this.updatedAt_1, other.updatedAt_1))
+    if (!equalsLong(this.s1g_1, other.s1g_1))
       return false;
-    if (!equals(this.deletedAt_1, other.deletedAt_1))
+    if (!equals(this.t1g_1, other.t1g_1))
       return false;
-    if (!(this.restSeconds_1 == other.restSeconds_1))
+    if (!(this.u1g_1 == other.u1g_1))
       return false;
-    if (!(this.techniqueNote_1 == other.techniqueNote_1))
+    if (!(this.v1g_1 == other.v1g_1))
       return false;
-    if (!(this.weightUnit_1 == other.weightUnit_1))
+    if (!(this.w1g_1 == other.w1g_1))
       return false;
-    if (!equals(this.stepGrams_1, other.stepGrams_1))
+    if (!equals(this.x1g_1, other.x1g_1))
       return false;
-    if (!(this.parentId_1 == other.parentId_1))
+    if (!(this.y1g_1 == other.y1g_1))
       return false;
-    if (!(this.rowKind_1 === other.rowKind_1))
+    if (!(this.z1g_1 === other.z1g_1))
       return false;
-    if (!(this.isBodyweight_1 === other.isBodyweight_1))
+    if (!(this.a1h_1 === other.a1h_1))
       return false;
-    if (!(this.isTimed_1 === other.isTimed_1))
+    if (!(this.b1h_1 === other.b1h_1))
       return false;
     return true;
   };
   function _get_$cachedSerializer__te6jhj_0($this) {
-    return $this.$cachedSerializer$delegate_1.get_value_j01efc_k$();
+    return $this.j1e_1.y1();
   }
   function Weekday$Companion$_anonymous__wjgbbt() {
     return createSimpleEnumSerializer('com.example.androidapp.shared.Weekday', values_0());
@@ -3232,13 +3232,13 @@
     Companion_instance_11 = this;
     var tmp = this;
     var tmp_0 = LazyThreadSafetyMode_PUBLICATION_getInstance();
-    tmp.$cachedSerializer$delegate_1 = lazy(tmp_0, Weekday$Companion$_anonymous__wjgbbt);
+    tmp.j1e_1 = lazy(tmp_0, Weekday$Companion$_anonymous__wjgbbt);
   }
-  protoOf(Companion_10).serializer_9w0wvi_k$ = function () {
+  protoOf(Companion_10).b12 = function () {
     return _get_$cachedSerializer__te6jhj_0(this);
   };
-  protoOf(Companion_10).serializer_nv39qc_k$ = function (typeParamsSerializers) {
-    return this.serializer_9w0wvi_k$();
+  protoOf(Companion_10).br = function (typeParamsSerializers) {
+    return this.b12();
   };
   var Companion_instance_11;
   function Companion_getInstance_10() {
@@ -3249,7 +3249,7 @@
     Enum.call(this, name, ordinal);
   }
   function _get_$cachedSerializer__te6jhj_1($this) {
-    return $this.$cachedSerializer$delegate_1.get_value_j01efc_k$();
+    return $this.q1f_1.y1();
   }
   function ProgramSetRole$Companion$_anonymous__csnl4r() {
     return createSimpleEnumSerializer('com.example.androidapp.shared.ProgramSetRole', values_1());
@@ -3282,13 +3282,13 @@
     Companion_instance_12 = this;
     var tmp = this;
     var tmp_0 = LazyThreadSafetyMode_PUBLICATION_getInstance();
-    tmp.$cachedSerializer$delegate_1 = lazy(tmp_0, ProgramSetRole$Companion$_anonymous__csnl4r);
+    tmp.q1f_1 = lazy(tmp_0, ProgramSetRole$Companion$_anonymous__csnl4r);
   }
-  protoOf(Companion_11).serializer_9w0wvi_k$ = function () {
+  protoOf(Companion_11).b12 = function () {
     return _get_$cachedSerializer__te6jhj_1(this);
   };
-  protoOf(Companion_11).serializer_nv39qc_k$ = function (typeParamsSerializers) {
-    return this.serializer_9w0wvi_k$();
+  protoOf(Companion_11).br = function (typeParamsSerializers) {
+    return this.b12();
   };
   var Companion_instance_12;
   function Companion_getInstance_11() {
@@ -3298,7 +3298,7 @@
   function ProgramSetRole(name, ordinal) {
     Enum.call(this, name, ordinal);
   }
-  protoOf(ProgramSetRole).get_isRung_ew5llb_k$ = function () {
+  protoOf(ProgramSetRole).e1h = function () {
     return this.equals(ProgramSetRole_DROP_getInstance()) || this.equals(ProgramSetRole_CLUSTER_getInstance());
   };
   function ProgramKind_WEEKLY_getInstance() {
@@ -3399,19 +3399,19 @@
   function Change(kind, id, name, detail) {
     name = name === VOID ? null : name;
     detail = detail === VOID ? null : detail;
-    this.kind_1 = kind;
-    this.id_1 = id;
-    this.name_1 = name;
-    this.detail_1 = detail;
+    this.y1b_1 = kind;
+    this.z1b_1 = id;
+    this.a1c_1 = name;
+    this.b1c_1 = detail;
   }
   protoOf(Change).toString = function () {
-    return 'Change(kind=' + this.kind_1.toString() + ', id=' + this.id_1 + ', name=' + this.name_1 + ', detail=' + this.detail_1 + ')';
+    return 'Change(kind=' + this.y1b_1.toString() + ', id=' + this.z1b_1 + ', name=' + this.a1c_1 + ', detail=' + this.b1c_1 + ')';
   };
   protoOf(Change).hashCode = function () {
-    var result = this.kind_1.hashCode();
-    result = imul(result, 31) + getStringHashCode(this.id_1) | 0;
-    result = imul(result, 31) + (this.name_1 == null ? 0 : getStringHashCode(this.name_1)) | 0;
-    result = imul(result, 31) + (this.detail_1 == null ? 0 : getStringHashCode(this.detail_1)) | 0;
+    var result = this.y1b_1.hashCode();
+    result = imul(result, 31) + getStringHashCode(this.z1b_1) | 0;
+    result = imul(result, 31) + (this.a1c_1 == null ? 0 : getStringHashCode(this.a1c_1)) | 0;
+    result = imul(result, 31) + (this.b1c_1 == null ? 0 : getStringHashCode(this.b1c_1)) | 0;
     return result;
   };
   protoOf(Change).equals = function (other) {
@@ -3419,13 +3419,13 @@
       return true;
     if (!(other instanceof Change))
       return false;
-    if (!this.kind_1.equals(other.kind_1))
+    if (!this.y1b_1.equals(other.y1b_1))
       return false;
-    if (!(this.id_1 === other.id_1))
+    if (!(this.z1b_1 === other.z1b_1))
       return false;
-    if (!(this.name_1 == other.name_1))
+    if (!(this.a1c_1 == other.a1c_1))
       return false;
-    if (!(this.detail_1 == other.detail_1))
+    if (!(this.b1c_1 == other.b1c_1))
       return false;
     return true;
   };
@@ -3445,17 +3445,17 @@
   function PlanWarning(code, id, name) {
     id = id === VOID ? null : id;
     name = name === VOID ? null : name;
-    this.code_1 = code;
-    this.id_1 = id;
-    this.name_1 = name;
+    this.c1c_1 = code;
+    this.d1c_1 = id;
+    this.e1c_1 = name;
   }
   protoOf(PlanWarning).toString = function () {
-    return 'PlanWarning(code=' + this.code_1.toString() + ', id=' + this.id_1 + ', name=' + this.name_1 + ')';
+    return 'PlanWarning(code=' + this.c1c_1.toString() + ', id=' + this.d1c_1 + ', name=' + this.e1c_1 + ')';
   };
   protoOf(PlanWarning).hashCode = function () {
-    var result = this.code_1.hashCode();
-    result = imul(result, 31) + (this.id_1 == null ? 0 : getStringHashCode(this.id_1)) | 0;
-    result = imul(result, 31) + (this.name_1 == null ? 0 : getStringHashCode(this.name_1)) | 0;
+    var result = this.c1c_1.hashCode();
+    result = imul(result, 31) + (this.d1c_1 == null ? 0 : getStringHashCode(this.d1c_1)) | 0;
+    result = imul(result, 31) + (this.e1c_1 == null ? 0 : getStringHashCode(this.e1c_1)) | 0;
     return result;
   };
   protoOf(PlanWarning).equals = function (other) {
@@ -3463,24 +3463,24 @@
       return true;
     if (!(other instanceof PlanWarning))
       return false;
-    if (!this.code_1.equals(other.code_1))
+    if (!this.c1c_1.equals(other.c1c_1))
       return false;
-    if (!(this.id_1 == other.id_1))
+    if (!(this.d1c_1 == other.d1c_1))
       return false;
-    if (!(this.name_1 == other.name_1))
+    if (!(this.e1c_1 == other.e1c_1))
       return false;
     return true;
   };
   function Ready(changes, warnings) {
-    this.changes_1 = changes;
-    this.warnings_1 = warnings;
+    this.w1b_1 = changes;
+    this.x1b_1 = warnings;
   }
   protoOf(Ready).toString = function () {
-    return 'Ready(changes=' + toString(this.changes_1) + ', warnings=' + toString(this.warnings_1) + ')';
+    return 'Ready(changes=' + toString(this.w1b_1) + ', warnings=' + toString(this.x1b_1) + ')';
   };
   protoOf(Ready).hashCode = function () {
-    var result = hashCode(this.changes_1);
-    result = imul(result, 31) + hashCode(this.warnings_1) | 0;
+    var result = hashCode(this.w1b_1);
+    result = imul(result, 31) + hashCode(this.x1b_1) | 0;
     return result;
   };
   protoOf(Ready).equals = function (other) {
@@ -3488,27 +3488,27 @@
       return true;
     if (!(other instanceof Ready))
       return false;
-    if (!equals(this.changes_1, other.changes_1))
+    if (!equals(this.w1b_1, other.w1b_1))
       return false;
-    if (!equals(this.warnings_1, other.warnings_1))
+    if (!equals(this.x1b_1, other.x1b_1))
       return false;
     return true;
   };
   function Refused(problems) {
-    this.problems_1 = problems;
+    this.f1c_1 = problems;
   }
   protoOf(Refused).toString = function () {
-    return 'Refused(problems=' + toString(this.problems_1) + ')';
+    return 'Refused(problems=' + toString(this.f1c_1) + ')';
   };
   protoOf(Refused).hashCode = function () {
-    return hashCode(this.problems_1);
+    return hashCode(this.f1c_1);
   };
   protoOf(Refused).equals = function (other) {
     if (this === other)
       return true;
     if (!(other instanceof Refused))
       return false;
-    if (!equals(this.problems_1, other.problems_1))
+    if (!equals(this.f1c_1, other.f1c_1))
       return false;
     return true;
   };
@@ -3527,18 +3527,18 @@
     // Inline function 'kotlin.collections.buildListInternal' call
     // Inline function 'kotlin.apply' call
     var this_0 = ArrayList_init_$Create$_0();
-    this_0.addAll_h3ej1q_k$(planProgram(snapshot, edit));
-    this_0.addAll_h3ej1q_k$(planSlots(snapshot, edit, warnings));
-    this_0.addAll_h3ej1q_k$(planTemplates(snapshot, edit));
-    this_0.addAll_h3ej1q_k$(planTemplateExercises(snapshot, edit));
-    this_0.addAll_h3ej1q_k$(planSets(snapshot, edit));
-    this_0.addAll_h3ej1q_k$(planExercises(snapshot, edit, warnings));
-    var changes = this_0.build_nmwvly_k$();
+    this_0.c1(planProgram(snapshot, edit));
+    this_0.c1(planSlots(snapshot, edit, warnings));
+    this_0.c1(planTemplates(snapshot, edit));
+    this_0.c1(planTemplateExercises(snapshot, edit));
+    this_0.c1(planSets(snapshot, edit));
+    this_0.c1(planExercises(snapshot, edit, warnings));
+    var changes = this_0.f4();
     return new Ready(changes, warnings);
   }
   function refusalProblems(snapshot, edit, deviceNewestWrite) {
-    var marker = edit.edit_1;
-    var shape = marker == null ? new ProgramProblem(ProblemCode_NO_EDIT_MARKER_getInstance(), 'edit') : !(edit.program_1.id_1 === snapshot.program_1.id_1) ? new ProgramProblem(ProblemCode_PROGRAM_MISMATCH_getInstance(), 'program.id', edit.program_1.id_1) : !(snapshot.program_1.deletedAt_1 == null) ? new ProgramProblem(ProblemCode_PROGRAM_MISSING_getInstance(), 'program.id', edit.program_1.id_1) : !(edit.program_1.deletedAt_1 == null) ? new ProgramProblem(ProblemCode_MALFORMED_getInstance(), 'program.deletedAt') : null;
+    var marker = edit.s1d_1;
+    var shape = marker == null ? new ProgramProblem(ProblemCode_NO_EDIT_MARKER_getInstance(), 'edit') : !(edit.m1d_1.a1e_1 === snapshot.m1d_1.a1e_1) ? new ProgramProblem(ProblemCode_PROGRAM_MISMATCH_getInstance(), 'program.id', edit.m1d_1.a1e_1) : !(snapshot.m1d_1.i1e_1 == null) ? new ProgramProblem(ProblemCode_PROGRAM_MISSING_getInstance(), 'program.id', edit.m1d_1.a1e_1) : !(edit.m1d_1.i1e_1 == null) ? new ProgramProblem(ProblemCode_MALFORMED_getInstance(), 'program.deletedAt') : null;
     var invalid = validate(edit);
     var tmp;
     if (marker == null) {
@@ -3561,7 +3561,7 @@
       // Inline function 'kotlin.takeIf' call
       var tmp_2;
       // Inline function 'kotlin.collections.isNotEmpty' call
-      if (!invalid.isEmpty_y1axqb_k$()) {
+      if (!invalid.p()) {
         tmp_2 = invalid;
       } else {
         tmp_2 = null;
@@ -3597,7 +3597,7 @@
     }
     var newestWrite = tmp;
     var tmp_0;
-    if (compare(newestWrite, marker.baseExportedAt_1) > 0) {
+    if (compare(newestWrite, marker.v1d_1) > 0) {
       tmp_0 = new ProgramProblem(ProblemCode_STALE_BASE_getInstance(), 'edit.baseExportedAt', newestWrite.toString());
     } else {
       tmp_0 = null;
@@ -3607,22 +3607,22 @@
   function planProgram(snapshot, edit) {
     // Inline function 'kotlin.collections.mutableListOf' call
     var changes = ArrayList_init_$Create$_0();
-    if (!(snapshot.program_1.name_1 === edit.program_1.name_1)) {
+    if (!(snapshot.m1d_1.b1e_1 === edit.m1d_1.b1e_1)) {
       // Inline function 'kotlin.collections.plusAssign' call
-      var element = new Change(ChangeKind_PROGRAM_RENAMED_getInstance(), edit.program_1.id_1, edit.program_1.name_1);
-      changes.add_utx5q5_k$(element);
+      var element = new Change(ChangeKind_PROGRAM_RENAMED_getInstance(), edit.m1d_1.a1e_1, edit.m1d_1.b1e_1);
+      changes.w(element);
     }
-    if (!snapshot.program_1.kind_1.equals(edit.program_1.kind_1)) {
+    if (!snapshot.m1d_1.e1e_1.equals(edit.m1d_1.e1e_1)) {
       // Inline function 'kotlin.collections.plusAssign' call
-      var element_0 = new Change(ChangeKind_PROGRAM_KIND_getInstance(), edit.program_1.id_1, edit.program_1.name_1, edit.program_1.kind_1.name_1);
-      changes.add_utx5q5_k$(element_0);
+      var element_0 = new Change(ChangeKind_PROGRAM_KIND_getInstance(), edit.m1d_1.a1e_1, edit.m1d_1.b1e_1, edit.m1d_1.e1e_1.j2_1);
+      changes.w(element_0);
     }
-    if (!equals(snapshot.program_1.startDate_1, edit.program_1.startDate_1)) {
+    if (!equals(snapshot.m1d_1.f1e_1, edit.m1d_1.f1e_1)) {
       var tmp = ChangeKind_PROGRAM_START_getInstance();
-      var tmp0_safe_receiver = edit.program_1.startDate_1;
+      var tmp0_safe_receiver = edit.m1d_1.f1e_1;
       // Inline function 'kotlin.collections.plusAssign' call
-      var element_1 = new Change(tmp, edit.program_1.id_1, edit.program_1.name_1, tmp0_safe_receiver == null ? null : tmp0_safe_receiver.toString());
-      changes.add_utx5q5_k$(element_1);
+      var element_1 = new Change(tmp, edit.m1d_1.a1e_1, edit.m1d_1.b1e_1, tmp0_safe_receiver == null ? null : tmp0_safe_receiver.toString());
+      changes.w(element_1);
     }
     return changes;
   }
@@ -3630,41 +3630,41 @@
     // Inline function 'kotlin.collections.mutableListOf' call
     var changes = ArrayList_init_$Create$_0();
     // Inline function 'kotlin.collections.associateBy' call
-    var this_0 = snapshot.slots_1;
+    var this_0 = snapshot.n1d_1;
     var capacity = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_0, 10)), 16);
     // Inline function 'kotlin.collections.associateByTo' call
     var destination = LinkedHashMap_init_$Create$(capacity);
-    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$3 = element.id_1;
-      destination.put_4fpzoq_k$(tmp$ret$3, element);
+    var _iterator__ex2g4s = this_0.r();
+    while (_iterator__ex2g4s.s()) {
+      var element = _iterator__ex2g4s.t();
+      var tmp$ret$3 = element.n1e_1;
+      destination.h2(tmp$ret$3, element);
     }
     var snapshotSlots = destination;
     // Inline function 'kotlin.collections.map' call
-    var this_1 = edit.slots_1;
+    var this_1 = edit.n1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
-    var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s_0.next_20eer_k$();
-      var tmp$ret$6 = item.id_1;
-      destination_0.add_utx5q5_k$(tmp$ret$6);
+    var _iterator__ex2g4s_0 = this_1.r();
+    while (_iterator__ex2g4s_0.s()) {
+      var item = _iterator__ex2g4s_0.t();
+      var tmp$ret$6 = item.n1e_1;
+      destination_0.w(tmp$ret$6);
     }
     var editSlotIds = toSet(destination_0);
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_1 = edit.slots_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var element_0 = _iterator__ex2g4s_1.next_20eer_k$();
-      var old = snapshotSlots.get_wei43m_k$(element_0.id_1);
-      var tmp0 = edit.templates_1;
+    var _iterator__ex2g4s_1 = edit.n1d_1.r();
+    while (_iterator__ex2g4s_1.s()) {
+      var element_0 = _iterator__ex2g4s_1.t();
+      var old = snapshotSlots.b2(element_0.n1e_1);
+      var tmp0 = edit.o1d_1;
       var tmp$ret$9;
       $l$block: {
         // Inline function 'kotlin.collections.firstOrNull' call
-        var _iterator__ex2g4s_2 = tmp0.iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-          var element_1 = _iterator__ex2g4s_2.next_20eer_k$();
-          if (element_1.id_1 === element_0.templateId_1) {
+        var _iterator__ex2g4s_2 = tmp0.r();
+        while (_iterator__ex2g4s_2.s()) {
+          var element_1 = _iterator__ex2g4s_2.t();
+          if (element_1.x1e_1 === element_0.p1e_1) {
             tmp$ret$9 = element_1;
             break $l$block;
           }
@@ -3672,40 +3672,40 @@
         tmp$ret$9 = null;
       }
       var tmp0_safe_receiver = tmp$ret$9;
-      var name = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.name_1;
+      var name = tmp0_safe_receiver == null ? null : tmp0_safe_receiver.y1e_1;
       if (old == null) {
         // Inline function 'kotlin.collections.plusAssign' call
-        var element_2 = new Change(ChangeKind_SLOT_ADDED_getInstance(), element_0.id_1, name);
-        changes.add_utx5q5_k$(element_2);
+        var element_2 = new Change(ChangeKind_SLOT_ADDED_getInstance(), element_0.n1e_1, name);
+        changes.w(element_2);
       } else if (!sameSlot(old, element_0)) {
         // Inline function 'kotlin.collections.plusAssign' call
-        var element_3 = new Change(ChangeKind_SLOT_UPDATED_getInstance(), element_0.id_1, name);
-        changes.add_utx5q5_k$(element_3);
+        var element_3 = new Change(ChangeKind_SLOT_UPDATED_getInstance(), element_0.n1e_1, name);
+        changes.w(element_3);
       }
     }
     // Inline function 'kotlin.collections.filter' call
-    var tmp0_0 = snapshot.slots_1;
+    var tmp0_0 = snapshot.n1d_1;
     // Inline function 'kotlin.collections.filterTo' call
     var destination_1 = ArrayList_init_$Create$_0();
-    var _iterator__ex2g4s_3 = tmp0_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
-      var element_4 = _iterator__ex2g4s_3.next_20eer_k$();
-      if (!editSlotIds.contains_aljjnj_k$(element_4.id_1)) {
-        destination_1.add_utx5q5_k$(element_4);
+    var _iterator__ex2g4s_3 = tmp0_0.r();
+    while (_iterator__ex2g4s_3.s()) {
+      var element_4 = _iterator__ex2g4s_3.t();
+      if (!editSlotIds.v1(element_4.n1e_1)) {
+        destination_1.w(element_4);
       }
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_4 = destination_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
-      var element_5 = _iterator__ex2g4s_4.next_20eer_k$();
-      var tmp0_1 = snapshot.templates_1;
+    var _iterator__ex2g4s_4 = destination_1.r();
+    while (_iterator__ex2g4s_4.s()) {
+      var element_5 = _iterator__ex2g4s_4.t();
+      var tmp0_1 = snapshot.o1d_1;
       var tmp$ret$18;
       $l$block_0: {
         // Inline function 'kotlin.collections.firstOrNull' call
-        var _iterator__ex2g4s_5 = tmp0_1.iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
-          var element_6 = _iterator__ex2g4s_5.next_20eer_k$();
-          if (element_6.id_1 === element_5.templateId_1) {
+        var _iterator__ex2g4s_5 = tmp0_1.r();
+        while (_iterator__ex2g4s_5.s()) {
+          var element_6 = _iterator__ex2g4s_5.t();
+          if (element_6.x1e_1 === element_5.p1e_1) {
             tmp$ret$18 = element_6;
             break $l$block_0;
           }
@@ -3713,10 +3713,10 @@
         tmp$ret$18 = null;
       }
       var tmp0_safe_receiver_0 = tmp$ret$18;
-      var name_0 = tmp0_safe_receiver_0 == null ? null : tmp0_safe_receiver_0.name_1;
+      var name_0 = tmp0_safe_receiver_0 == null ? null : tmp0_safe_receiver_0.y1e_1;
       // Inline function 'kotlin.collections.plusAssign' call
-      var element_7 = new Change(ChangeKind_SLOT_REMOVED_getInstance(), element_5.id_1, name_0);
-      changes.add_utx5q5_k$(element_7);
+      var element_7 = new Change(ChangeKind_SLOT_REMOVED_getInstance(), element_5.n1e_1, name_0);
+      changes.w(element_7);
     }
     // Inline function 'kotlin.collections.plusAssign' call
     var elements = keptWorkoutWarnings(snapshot, edit, editSlotIds);
@@ -3725,62 +3725,62 @@
   }
   function keptWorkoutWarnings(snapshot, edit, editSlotIds) {
     // Inline function 'kotlin.collections.map' call
-    var this_0 = edit.slots_1;
+    var this_0 = edit.n1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
-    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$2 = item.templateId_1;
-      destination.add_utx5q5_k$(tmp$ret$2);
+    var _iterator__ex2g4s = this_0.r();
+    while (_iterator__ex2g4s.s()) {
+      var item = _iterator__ex2g4s.t();
+      var tmp$ret$2 = item.p1e_1;
+      destination.w(tmp$ret$2);
     }
     var keptTemplateIds = toSet(destination);
     // Inline function 'kotlin.collections.filter' call
-    var tmp0 = snapshot.slots_1;
+    var tmp0 = snapshot.n1d_1;
     // Inline function 'kotlin.collections.filterTo' call
     var destination_0 = ArrayList_init_$Create$_0();
-    var _iterator__ex2g4s_0 = tmp0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s_0.next_20eer_k$();
-      if (!editSlotIds.contains_aljjnj_k$(element.id_1)) {
-        destination_0.add_utx5q5_k$(element);
+    var _iterator__ex2g4s_0 = tmp0.r();
+    while (_iterator__ex2g4s_0.s()) {
+      var element = _iterator__ex2g4s_0.t();
+      if (!editSlotIds.v1(element.n1e_1)) {
+        destination_0.w(element);
       }
     }
     // Inline function 'kotlin.collections.map' call
     // Inline function 'kotlin.collections.mapTo' call
     var destination_1 = ArrayList_init_$Create$(collectionSizeOrDefault(destination_0, 10));
-    var _iterator__ex2g4s_1 = destination_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var item_0 = _iterator__ex2g4s_1.next_20eer_k$();
-      var tmp$ret$8 = item_0.templateId_1;
-      destination_1.add_utx5q5_k$(tmp$ret$8);
+    var _iterator__ex2g4s_1 = destination_0.r();
+    while (_iterator__ex2g4s_1.s()) {
+      var item_0 = _iterator__ex2g4s_1.t();
+      var tmp$ret$8 = item_0.p1e_1;
+      destination_1.w(tmp$ret$8);
     }
     // Inline function 'kotlin.collections.filter' call
     // Inline function 'kotlin.collections.filterTo' call
     var destination_2 = ArrayList_init_$Create$_0();
-    var _iterator__ex2g4s_2 = destination_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-      var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
-      if (!keptTemplateIds.contains_aljjnj_k$(element_0)) {
-        destination_2.add_utx5q5_k$(element_0);
+    var _iterator__ex2g4s_2 = destination_1.r();
+    while (_iterator__ex2g4s_2.s()) {
+      var element_0 = _iterator__ex2g4s_2.t();
+      if (!keptTemplateIds.v1(element_0)) {
+        destination_2.w(element_0);
       }
     }
     // Inline function 'kotlin.collections.map' call
     var this_1 = distinct(destination_2);
     // Inline function 'kotlin.collections.mapTo' call
     var destination_3 = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
-    var _iterator__ex2g4s_3 = this_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
-      var item_1 = _iterator__ex2g4s_3.next_20eer_k$();
+    var _iterator__ex2g4s_3 = this_1.r();
+    while (_iterator__ex2g4s_3.s()) {
+      var item_1 = _iterator__ex2g4s_3.t();
       var tmp = WarningCode_WORKOUT_KEPT_getInstance();
-      var tmp0_0 = snapshot.templates_1;
+      var tmp0_0 = snapshot.o1d_1;
       var tmp$ret$15;
       $l$block: {
         // Inline function 'kotlin.collections.firstOrNull' call
-        var _iterator__ex2g4s_4 = tmp0_0.iterator_jk1svi_k$();
-        while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
-          var element_1 = _iterator__ex2g4s_4.next_20eer_k$();
-          if (element_1.id_1 === item_1) {
+        var _iterator__ex2g4s_4 = tmp0_0.r();
+        while (_iterator__ex2g4s_4.s()) {
+          var element_1 = _iterator__ex2g4s_4.t();
+          if (element_1.x1e_1 === item_1) {
             tmp$ret$15 = element_1;
             break $l$block;
           }
@@ -3788,280 +3788,280 @@
         tmp$ret$15 = null;
       }
       var tmp0_safe_receiver = tmp$ret$15;
-      var tmp$ret$14 = new PlanWarning(tmp, item_1, tmp0_safe_receiver == null ? null : tmp0_safe_receiver.name_1);
-      destination_3.add_utx5q5_k$(tmp$ret$14);
+      var tmp$ret$14 = new PlanWarning(tmp, item_1, tmp0_safe_receiver == null ? null : tmp0_safe_receiver.y1e_1);
+      destination_3.w(tmp$ret$14);
     }
     return destination_3;
   }
   function planTemplates(snapshot, edit) {
     // Inline function 'kotlin.collections.associateBy' call
-    var this_0 = snapshot.templates_1;
+    var this_0 = snapshot.o1d_1;
     var capacity = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_0, 10)), 16);
     // Inline function 'kotlin.collections.associateByTo' call
     var destination = LinkedHashMap_init_$Create$(capacity);
-    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$2 = element.id_1;
-      destination.put_4fpzoq_k$(tmp$ret$2, element);
+    var _iterator__ex2g4s = this_0.r();
+    while (_iterator__ex2g4s.s()) {
+      var element = _iterator__ex2g4s.t();
+      var tmp$ret$2 = element.x1e_1;
+      destination.h2(tmp$ret$2, element);
     }
     var snapshotTemplates = destination;
     // Inline function 'kotlin.collections.mapNotNull' call
-    var tmp0 = edit.templates_1;
+    var tmp0 = edit.o1d_1;
     // Inline function 'kotlin.collections.mapNotNullTo' call
     var destination_0 = ArrayList_init_$Create$_0();
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_0 = tmp0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var element_0 = _iterator__ex2g4s_0.next_20eer_k$();
-      var old = snapshotTemplates.get_wei43m_k$(element_0.id_1);
-      var tmp0_safe_receiver = old == null ? new Change(ChangeKind_TEMPLATE_ADDED_getInstance(), element_0.id_1, element_0.name_1) : !sameTemplate(old, element_0) ? new Change(ChangeKind_TEMPLATE_UPDATED_getInstance(), element_0.id_1, element_0.name_1) : null;
+    var _iterator__ex2g4s_0 = tmp0.r();
+    while (_iterator__ex2g4s_0.s()) {
+      var element_0 = _iterator__ex2g4s_0.t();
+      var old = snapshotTemplates.b2(element_0.x1e_1);
+      var tmp0_safe_receiver = old == null ? new Change(ChangeKind_TEMPLATE_ADDED_getInstance(), element_0.x1e_1, element_0.y1e_1) : !sameTemplate(old, element_0) ? new Change(ChangeKind_TEMPLATE_UPDATED_getInstance(), element_0.x1e_1, element_0.y1e_1) : null;
       if (tmp0_safe_receiver == null)
         null;
       else {
         // Inline function 'kotlin.let' call
-        destination_0.add_utx5q5_k$(tmp0_safe_receiver);
+        destination_0.w(tmp0_safe_receiver);
       }
     }
     return destination_0;
   }
   function planTemplateExercises(snapshot, edit) {
     // Inline function 'kotlin.collections.map' call
-    var this_0 = edit.templates_1;
+    var this_0 = edit.o1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
-    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$2 = item.id_1;
-      destination.add_utx5q5_k$(tmp$ret$2);
+    var _iterator__ex2g4s = this_0.r();
+    while (_iterator__ex2g4s.s()) {
+      var item = _iterator__ex2g4s.t();
+      var tmp$ret$2 = item.x1e_1;
+      destination.w(tmp$ret$2);
     }
     var editTemplateIds = toSet(destination);
     // Inline function 'kotlin.collections.map' call
-    var this_1 = edit.templateExercises_1;
+    var this_1 = edit.p1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
-    var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
-      var tmp$ret$5 = item_0.id_1;
-      destination_0.add_utx5q5_k$(tmp$ret$5);
+    var _iterator__ex2g4s_0 = this_1.r();
+    while (_iterator__ex2g4s_0.s()) {
+      var item_0 = _iterator__ex2g4s_0.t();
+      var tmp$ret$5 = item_0.f1f_1;
+      destination_0.w(tmp$ret$5);
     }
     var editIds = toSet(destination_0);
     // Inline function 'kotlin.collections.associateBy' call
-    var this_2 = snapshot.templateExercises_1;
+    var this_2 = snapshot.p1d_1;
     var capacity = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_2, 10)), 16);
     // Inline function 'kotlin.collections.associateByTo' call
     var destination_1 = LinkedHashMap_init_$Create$(capacity);
-    var _iterator__ex2g4s_1 = this_2.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s_1.next_20eer_k$();
-      var tmp$ret$8 = element.id_1;
-      destination_1.put_4fpzoq_k$(tmp$ret$8, element);
+    var _iterator__ex2g4s_1 = this_2.r();
+    while (_iterator__ex2g4s_1.s()) {
+      var element = _iterator__ex2g4s_1.t();
+      var tmp$ret$8 = element.f1f_1;
+      destination_1.h2(tmp$ret$8, element);
     }
     var snapshotRows = destination_1;
     // Inline function 'kotlin.collections.mapNotNull' call
-    var tmp0 = edit.templateExercises_1;
+    var tmp0 = edit.p1d_1;
     // Inline function 'kotlin.collections.mapNotNullTo' call
     var destination_2 = ArrayList_init_$Create$_0();
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_2 = tmp0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-      var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
-      var old = snapshotRows.get_wei43m_k$(element_0.id_1);
-      var tmp0_safe_receiver = old == null ? new Change(ChangeKind_TEMPLATE_EXERCISE_ADDED_getInstance(), element_0.id_1, null) : !sameTemplateExercise(old, element_0) ? new Change(ChangeKind_TEMPLATE_EXERCISE_UPDATED_getInstance(), element_0.id_1, null) : null;
+    var _iterator__ex2g4s_2 = tmp0.r();
+    while (_iterator__ex2g4s_2.s()) {
+      var element_0 = _iterator__ex2g4s_2.t();
+      var old = snapshotRows.b2(element_0.f1f_1);
+      var tmp0_safe_receiver = old == null ? new Change(ChangeKind_TEMPLATE_EXERCISE_ADDED_getInstance(), element_0.f1f_1, null) : !sameTemplateExercise(old, element_0) ? new Change(ChangeKind_TEMPLATE_EXERCISE_UPDATED_getInstance(), element_0.f1f_1, null) : null;
       if (tmp0_safe_receiver == null)
         null;
       else {
         // Inline function 'kotlin.let' call
-        destination_2.add_utx5q5_k$(tmp0_safe_receiver);
+        destination_2.w(tmp0_safe_receiver);
       }
     }
     var changed = destination_2;
     // Inline function 'kotlin.collections.filter' call
-    var tmp0_0 = snapshot.templateExercises_1;
+    var tmp0_0 = snapshot.p1d_1;
     // Inline function 'kotlin.collections.filterTo' call
     var destination_3 = ArrayList_init_$Create$_0();
-    var _iterator__ex2g4s_3 = tmp0_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
-      var element_1 = _iterator__ex2g4s_3.next_20eer_k$();
-      if (!editIds.contains_aljjnj_k$(element_1.id_1) && editTemplateIds.contains_aljjnj_k$(element_1.templateId_1)) {
-        destination_3.add_utx5q5_k$(element_1);
+    var _iterator__ex2g4s_3 = tmp0_0.r();
+    while (_iterator__ex2g4s_3.s()) {
+      var element_1 = _iterator__ex2g4s_3.t();
+      if (!editIds.v1(element_1.f1f_1) && editTemplateIds.v1(element_1.g1f_1)) {
+        destination_3.w(element_1);
       }
     }
     // Inline function 'kotlin.collections.map' call
     // Inline function 'kotlin.collections.mapTo' call
     var destination_4 = ArrayList_init_$Create$(collectionSizeOrDefault(destination_3, 10));
-    var _iterator__ex2g4s_4 = destination_3.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
-      var item_1 = _iterator__ex2g4s_4.next_20eer_k$();
-      var tmp$ret$21 = new Change(ChangeKind_TEMPLATE_EXERCISE_REMOVED_getInstance(), item_1.id_1, null);
-      destination_4.add_utx5q5_k$(tmp$ret$21);
+    var _iterator__ex2g4s_4 = destination_3.r();
+    while (_iterator__ex2g4s_4.s()) {
+      var item_1 = _iterator__ex2g4s_4.t();
+      var tmp$ret$21 = new Change(ChangeKind_TEMPLATE_EXERCISE_REMOVED_getInstance(), item_1.f1f_1, null);
+      destination_4.w(tmp$ret$21);
     }
     var removed = destination_4;
     return plus(changed, removed);
   }
   function planSets(snapshot, edit) {
     // Inline function 'kotlin.collections.map' call
-    var this_0 = edit.templateExercises_1;
+    var this_0 = edit.p1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
-    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$2 = item.id_1;
-      destination.add_utx5q5_k$(tmp$ret$2);
+    var _iterator__ex2g4s = this_0.r();
+    while (_iterator__ex2g4s.s()) {
+      var item = _iterator__ex2g4s.t();
+      var tmp$ret$2 = item.f1f_1;
+      destination.w(tmp$ret$2);
     }
     var editExerciseIds = toSet(destination);
     // Inline function 'kotlin.collections.map' call
-    var this_1 = edit.templateSets_1;
+    var this_1 = edit.q1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
-    var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
-      var tmp$ret$5 = item_0.id_1;
-      destination_0.add_utx5q5_k$(tmp$ret$5);
+    var _iterator__ex2g4s_0 = this_1.r();
+    while (_iterator__ex2g4s_0.s()) {
+      var item_0 = _iterator__ex2g4s_0.t();
+      var tmp$ret$5 = item_0.u1f_1;
+      destination_0.w(tmp$ret$5);
     }
     var editIds = toSet(destination_0);
     // Inline function 'kotlin.collections.associateBy' call
-    var this_2 = snapshot.templateSets_1;
+    var this_2 = snapshot.q1d_1;
     var capacity = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_2, 10)), 16);
     // Inline function 'kotlin.collections.associateByTo' call
     var destination_1 = LinkedHashMap_init_$Create$(capacity);
-    var _iterator__ex2g4s_1 = this_2.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s_1.next_20eer_k$();
-      var tmp$ret$8 = element.id_1;
-      destination_1.put_4fpzoq_k$(tmp$ret$8, element);
+    var _iterator__ex2g4s_1 = this_2.r();
+    while (_iterator__ex2g4s_1.s()) {
+      var element = _iterator__ex2g4s_1.t();
+      var tmp$ret$8 = element.u1f_1;
+      destination_1.h2(tmp$ret$8, element);
     }
     var snapshotSets = destination_1;
     // Inline function 'kotlin.collections.mapNotNull' call
-    var tmp0 = edit.templateSets_1;
+    var tmp0 = edit.q1d_1;
     // Inline function 'kotlin.collections.mapNotNullTo' call
     var destination_2 = ArrayList_init_$Create$_0();
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_2 = tmp0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-      var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
-      var old = snapshotSets.get_wei43m_k$(element_0.id_1);
-      var tmp0_safe_receiver = old == null ? new Change(ChangeKind_SET_ADDED_getInstance(), element_0.id_1, null) : !sameSet(old, element_0) ? new Change(ChangeKind_SET_UPDATED_getInstance(), element_0.id_1, null) : null;
+    var _iterator__ex2g4s_2 = tmp0.r();
+    while (_iterator__ex2g4s_2.s()) {
+      var element_0 = _iterator__ex2g4s_2.t();
+      var old = snapshotSets.b2(element_0.u1f_1);
+      var tmp0_safe_receiver = old == null ? new Change(ChangeKind_SET_ADDED_getInstance(), element_0.u1f_1, null) : !sameSet(old, element_0) ? new Change(ChangeKind_SET_UPDATED_getInstance(), element_0.u1f_1, null) : null;
       if (tmp0_safe_receiver == null)
         null;
       else {
         // Inline function 'kotlin.let' call
-        destination_2.add_utx5q5_k$(tmp0_safe_receiver);
+        destination_2.w(tmp0_safe_receiver);
       }
     }
     var changed = destination_2;
     // Inline function 'kotlin.collections.filter' call
-    var tmp0_0 = snapshot.templateSets_1;
+    var tmp0_0 = snapshot.q1d_1;
     // Inline function 'kotlin.collections.filterTo' call
     var destination_3 = ArrayList_init_$Create$_0();
-    var _iterator__ex2g4s_3 = tmp0_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
-      var element_1 = _iterator__ex2g4s_3.next_20eer_k$();
-      if (!editIds.contains_aljjnj_k$(element_1.id_1) && editExerciseIds.contains_aljjnj_k$(element_1.templateExerciseId_1)) {
-        destination_3.add_utx5q5_k$(element_1);
+    var _iterator__ex2g4s_3 = tmp0_0.r();
+    while (_iterator__ex2g4s_3.s()) {
+      var element_1 = _iterator__ex2g4s_3.t();
+      if (!editIds.v1(element_1.u1f_1) && editExerciseIds.v1(element_1.v1f_1)) {
+        destination_3.w(element_1);
       }
     }
     // Inline function 'kotlin.collections.map' call
     // Inline function 'kotlin.collections.mapTo' call
     var destination_4 = ArrayList_init_$Create$(collectionSizeOrDefault(destination_3, 10));
-    var _iterator__ex2g4s_4 = destination_3.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
-      var item_1 = _iterator__ex2g4s_4.next_20eer_k$();
-      var tmp$ret$21 = new Change(ChangeKind_SET_REMOVED_getInstance(), item_1.id_1, null);
-      destination_4.add_utx5q5_k$(tmp$ret$21);
+    var _iterator__ex2g4s_4 = destination_3.r();
+    while (_iterator__ex2g4s_4.s()) {
+      var item_1 = _iterator__ex2g4s_4.t();
+      var tmp$ret$21 = new Change(ChangeKind_SET_REMOVED_getInstance(), item_1.u1f_1, null);
+      destination_4.w(tmp$ret$21);
     }
     var removed = destination_4;
     return plus(changed, removed);
   }
   function planExercises(snapshot, edit, warnings) {
     // Inline function 'kotlin.collections.map' call
-    var this_0 = snapshot.exercises_1;
+    var this_0 = snapshot.r1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
-    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$2 = item.id_1;
-      destination.add_utx5q5_k$(tmp$ret$2);
+    var _iterator__ex2g4s = this_0.r();
+    while (_iterator__ex2g4s.s()) {
+      var item = _iterator__ex2g4s.t();
+      var tmp$ret$2 = item.l1g_1;
+      destination.w(tmp$ret$2);
     }
     var known = toSet(destination);
     // Inline function 'kotlin.collections.filter' call
-    var tmp0 = edit.exercises_1;
+    var tmp0 = edit.r1d_1;
     // Inline function 'kotlin.collections.filterTo' call
     var destination_0 = ArrayList_init_$Create$_0();
-    var _iterator__ex2g4s_0 = tmp0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s_0.next_20eer_k$();
-      if (!known.contains_aljjnj_k$(element.id_1)) {
-        destination_0.add_utx5q5_k$(element);
+    var _iterator__ex2g4s_0 = tmp0.r();
+    while (_iterator__ex2g4s_0.s()) {
+      var element = _iterator__ex2g4s_0.t();
+      if (!known.v1(element.l1g_1)) {
+        destination_0.w(element);
       }
     }
     var added = destination_0;
     // Inline function 'kotlin.collections.map' call
     // Inline function 'kotlin.collections.mapTo' call
     var destination_1 = ArrayList_init_$Create$(collectionSizeOrDefault(added, 10));
-    var _iterator__ex2g4s_1 = added.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var item_0 = _iterator__ex2g4s_1.next_20eer_k$();
-      var tmp$ret$8 = new PlanWarning(WarningCode_NEW_MOVEMENT_getInstance(), item_0.id_1, item_0.name_1);
-      destination_1.add_utx5q5_k$(tmp$ret$8);
+    var _iterator__ex2g4s_1 = added.r();
+    while (_iterator__ex2g4s_1.s()) {
+      var item_0 = _iterator__ex2g4s_1.t();
+      var tmp$ret$8 = new PlanWarning(WarningCode_NEW_MOVEMENT_getInstance(), item_0.l1g_1, item_0.m1g_1);
+      destination_1.w(tmp$ret$8);
     }
     // Inline function 'kotlin.collections.plusAssign' call
     addAll(warnings, destination_1);
     // Inline function 'kotlin.collections.map' call
     // Inline function 'kotlin.collections.mapTo' call
     var destination_2 = ArrayList_init_$Create$(collectionSizeOrDefault(added, 10));
-    var _iterator__ex2g4s_2 = added.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-      var item_1 = _iterator__ex2g4s_2.next_20eer_k$();
-      var tmp$ret$12 = new Change(ChangeKind_EXERCISE_ADDED_getInstance(), item_1.id_1, item_1.name_1);
-      destination_2.add_utx5q5_k$(tmp$ret$12);
+    var _iterator__ex2g4s_2 = added.r();
+    while (_iterator__ex2g4s_2.s()) {
+      var item_1 = _iterator__ex2g4s_2.t();
+      var tmp$ret$12 = new Change(ChangeKind_EXERCISE_ADDED_getInstance(), item_1.l1g_1, item_1.m1g_1);
+      destination_2.w(tmp$ret$12);
     }
     return destination_2;
   }
   function latestWrite(document) {
-    var latest = {_v: document.program_1.updatedAt_1};
+    var latest = {_v: document.m1d_1.h1e_1};
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s = document.slots_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s.next_20eer_k$();
-      latestWrite$consider(latest, element.updatedAt_1);
+    var _iterator__ex2g4s = document.n1d_1.r();
+    while (_iterator__ex2g4s.s()) {
+      var element = _iterator__ex2g4s.t();
+      latestWrite$consider(latest, element.t1e_1);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_0 = document.templates_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var element_0 = _iterator__ex2g4s_0.next_20eer_k$();
-      latestWrite$consider(latest, element_0.updatedAt_1);
+    var _iterator__ex2g4s_0 = document.o1d_1.r();
+    while (_iterator__ex2g4s_0.s()) {
+      var element_0 = _iterator__ex2g4s_0.t();
+      latestWrite$consider(latest, element_0.b1f_1);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_1 = document.templateExercises_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var element_1 = _iterator__ex2g4s_1.next_20eer_k$();
-      latestWrite$consider(latest, element_1.updatedAt_1);
+    var _iterator__ex2g4s_1 = document.p1d_1.r();
+    while (_iterator__ex2g4s_1.s()) {
+      var element_1 = _iterator__ex2g4s_1.t();
+      latestWrite$consider(latest, element_1.o1f_1);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_2 = document.templateSets_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-      var element_2 = _iterator__ex2g4s_2.next_20eer_k$();
-      latestWrite$consider(latest, element_2.updatedAt_1);
+    var _iterator__ex2g4s_2 = document.q1d_1.r();
+    while (_iterator__ex2g4s_2.s()) {
+      var element_2 = _iterator__ex2g4s_2.t();
+      latestWrite$consider(latest, element_2.g1g_1);
     }
     return latest._v;
   }
   function sameSlot(a, b) {
-    return a.programId_1 === b.programId_1 && a.templateId_1 === b.templateId_1 && a.position_1 === b.position_1 && equals(a.weekday_1, b.weekday_1);
+    return a.o1e_1 === b.o1e_1 && a.p1e_1 === b.p1e_1 && a.q1e_1 === b.q1e_1 && equals(a.r1e_1, b.r1e_1);
   }
   function sameTemplate(a, b) {
-    return a.name_1 === b.name_1 && a.versionOf_1 == b.versionOf_1;
+    return a.y1e_1 === b.y1e_1 && a.z1e_1 == b.z1e_1;
   }
   function sameTemplateExercise(a, b) {
-    return a.templateId_1 === b.templateId_1 && a.exerciseId_1 === b.exerciseId_1 && a.position_1 === b.position_1 && a.restSeconds_1 == b.restSeconds_1 && a.techniqueNote_1 == b.techniqueNote_1 && a.targetRpeHalves_1 == b.targetRpeHalves_1 && a.supersetGroup_1 == b.supersetGroup_1;
+    return a.g1f_1 === b.g1f_1 && a.h1f_1 === b.h1f_1 && a.i1f_1 === b.i1f_1 && a.j1f_1 == b.j1f_1 && a.k1f_1 == b.k1f_1 && a.l1f_1 == b.l1f_1 && a.m1f_1 == b.m1f_1;
   }
   function sameSet(a, b) {
-    return a.templateExerciseId_1 === b.templateExerciseId_1 && a.setIndex_1 === b.setIndex_1 && a.role_1.equals(b.role_1) && equals(a.targetWeightGrams_1, b.targetWeightGrams_1) && equals(a.targetAssistanceGrams_1, b.targetAssistanceGrams_1) && a.targetRepsMin_1 == b.targetRepsMin_1 && a.targetRepsMax_1 == b.targetRepsMax_1 && a.targetRepsCurrent_1 == b.targetRepsCurrent_1 && equals(a.dropValueGrams_1, b.dropValueGrams_1) && a.note_1 == b.note_1;
+    return a.v1f_1 === b.v1f_1 && a.w1f_1 === b.w1f_1 && a.x1f_1.equals(b.x1f_1) && equals(a.y1f_1, b.y1f_1) && equals(a.z1f_1, b.z1f_1) && a.a1g_1 == b.a1g_1 && a.b1g_1 == b.b1g_1 && a.c1g_1 == b.c1g_1 && equals(a.d1g_1, b.d1g_1) && a.e1g_1 == b.e1g_1;
   }
   function latestWrite$consider(latest, time) {
     if (compare(time, latest._v) > 0) {
@@ -4137,20 +4137,20 @@
     return WarningCode_WORKOUT_KEPT_instance;
   }
   function Refusal(sink) {
-    this.sink_1 = sink;
+    this.f1h_1 = sink;
   }
-  protoOf(Refusal).invoke_kookoy_k$ = function (code, path, detail) {
-    this.sink_1(code, path, detail);
+  protoOf(Refusal).g1h = function (code, path, detail) {
+    this.f1h_1(code, path, detail);
   };
-  protoOf(Refusal).invoke$default_jiat1m_k$ = function (code, path, detail, $super) {
+  protoOf(Refusal).h1h = function (code, path, detail, $super) {
     path = path === VOID ? '' : path;
     detail = detail === VOID ? null : detail;
     var tmp;
     if ($super === VOID) {
-      this.invoke_kookoy_k$(code, path, detail);
+      this.g1h(code, path, detail);
       tmp = Unit_instance;
     } else {
-      tmp = $super.invoke_kookoy_k$.call(this, code, path, detail);
+      tmp = $super.g1h.call(this, code, path, detail);
     }
     return tmp;
   };
@@ -4158,11 +4158,11 @@
     // Inline function 'kotlin.collections.mutableListOf' call
     var problems = ArrayList_init_$Create$_0();
     var refuse = new Refusal(validate$lambda(problems));
-    if (isBlank(document.program_1.id_1)) {
-      refuse.invoke$default_jiat1m_k$(ProblemCode_MALFORMED_getInstance(), 'program.id');
+    if (isBlank(document.m1d_1.a1e_1)) {
+      refuse.h1h(ProblemCode_MALFORMED_getInstance(), 'program.id');
     }
-    if (isBlank(document.program_1.name_1)) {
-      refuse.invoke$default_jiat1m_k$(ProblemCode_EMPTY_NAME_getInstance(), 'program.name');
+    if (isBlank(document.m1d_1.b1e_1)) {
+      refuse.h1h(ProblemCode_EMPTY_NAME_getInstance(), 'program.name');
     }
     validateDuplicates(document, refuse);
     validateTemplates(document, refuse);
@@ -4174,269 +4174,269 @@
   }
   function validateDuplicates(document, refuse) {
     // Inline function 'kotlin.collections.map' call
-    var this_0 = document.templates_1;
+    var this_0 = document.o1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
-    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$2 = item.id_1;
-      destination.add_utx5q5_k$(tmp$ret$2);
+    var _iterator__ex2g4s = this_0.r();
+    while (_iterator__ex2g4s.s()) {
+      var item = _iterator__ex2g4s.t();
+      var tmp$ret$2 = item.x1e_1;
+      destination.w(tmp$ret$2);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_0 = duplicates(destination).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s_0.next_20eer_k$();
-      refuse.invoke_kookoy_k$(ProblemCode_DUPLICATE_ID_getInstance(), 'templates', element);
+    var _iterator__ex2g4s_0 = duplicates(destination).r();
+    while (_iterator__ex2g4s_0.s()) {
+      var element = _iterator__ex2g4s_0.t();
+      refuse.g1h(ProblemCode_DUPLICATE_ID_getInstance(), 'templates', element);
     }
     // Inline function 'kotlin.collections.map' call
-    var this_1 = document.slots_1;
+    var this_1 = document.n1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
-    var _iterator__ex2g4s_1 = this_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var item_0 = _iterator__ex2g4s_1.next_20eer_k$();
-      var tmp$ret$7 = item_0.id_1;
-      destination_0.add_utx5q5_k$(tmp$ret$7);
+    var _iterator__ex2g4s_1 = this_1.r();
+    while (_iterator__ex2g4s_1.s()) {
+      var item_0 = _iterator__ex2g4s_1.t();
+      var tmp$ret$7 = item_0.n1e_1;
+      destination_0.w(tmp$ret$7);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_2 = duplicates(destination_0).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-      var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
-      refuse.invoke_kookoy_k$(ProblemCode_DUPLICATE_ID_getInstance(), 'slots', element_0);
+    var _iterator__ex2g4s_2 = duplicates(destination_0).r();
+    while (_iterator__ex2g4s_2.s()) {
+      var element_0 = _iterator__ex2g4s_2.t();
+      refuse.g1h(ProblemCode_DUPLICATE_ID_getInstance(), 'slots', element_0);
     }
     // Inline function 'kotlin.collections.map' call
-    var this_2 = document.templateExercises_1;
+    var this_2 = document.p1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination_1 = ArrayList_init_$Create$(collectionSizeOrDefault(this_2, 10));
-    var _iterator__ex2g4s_3 = this_2.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
-      var item_1 = _iterator__ex2g4s_3.next_20eer_k$();
-      var tmp$ret$12 = item_1.id_1;
-      destination_1.add_utx5q5_k$(tmp$ret$12);
+    var _iterator__ex2g4s_3 = this_2.r();
+    while (_iterator__ex2g4s_3.s()) {
+      var item_1 = _iterator__ex2g4s_3.t();
+      var tmp$ret$12 = item_1.f1f_1;
+      destination_1.w(tmp$ret$12);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_4 = duplicates(destination_1).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
-      var element_1 = _iterator__ex2g4s_4.next_20eer_k$();
-      refuse.invoke_kookoy_k$(ProblemCode_DUPLICATE_ID_getInstance(), 'templateExercises', element_1);
+    var _iterator__ex2g4s_4 = duplicates(destination_1).r();
+    while (_iterator__ex2g4s_4.s()) {
+      var element_1 = _iterator__ex2g4s_4.t();
+      refuse.g1h(ProblemCode_DUPLICATE_ID_getInstance(), 'templateExercises', element_1);
     }
     // Inline function 'kotlin.collections.map' call
-    var this_3 = document.templateSets_1;
+    var this_3 = document.q1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination_2 = ArrayList_init_$Create$(collectionSizeOrDefault(this_3, 10));
-    var _iterator__ex2g4s_5 = this_3.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
-      var item_2 = _iterator__ex2g4s_5.next_20eer_k$();
-      var tmp$ret$17 = item_2.id_1;
-      destination_2.add_utx5q5_k$(tmp$ret$17);
+    var _iterator__ex2g4s_5 = this_3.r();
+    while (_iterator__ex2g4s_5.s()) {
+      var item_2 = _iterator__ex2g4s_5.t();
+      var tmp$ret$17 = item_2.u1f_1;
+      destination_2.w(tmp$ret$17);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_6 = duplicates(destination_2).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_6.hasNext_bitz1p_k$()) {
-      var element_2 = _iterator__ex2g4s_6.next_20eer_k$();
-      refuse.invoke_kookoy_k$(ProblemCode_DUPLICATE_ID_getInstance(), 'templateSets', element_2);
+    var _iterator__ex2g4s_6 = duplicates(destination_2).r();
+    while (_iterator__ex2g4s_6.s()) {
+      var element_2 = _iterator__ex2g4s_6.t();
+      refuse.g1h(ProblemCode_DUPLICATE_ID_getInstance(), 'templateSets', element_2);
     }
     // Inline function 'kotlin.collections.map' call
-    var this_4 = document.exercises_1;
+    var this_4 = document.r1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination_3 = ArrayList_init_$Create$(collectionSizeOrDefault(this_4, 10));
-    var _iterator__ex2g4s_7 = this_4.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_7.hasNext_bitz1p_k$()) {
-      var item_3 = _iterator__ex2g4s_7.next_20eer_k$();
-      var tmp$ret$22 = item_3.id_1;
-      destination_3.add_utx5q5_k$(tmp$ret$22);
+    var _iterator__ex2g4s_7 = this_4.r();
+    while (_iterator__ex2g4s_7.s()) {
+      var item_3 = _iterator__ex2g4s_7.t();
+      var tmp$ret$22 = item_3.l1g_1;
+      destination_3.w(tmp$ret$22);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_8 = duplicates(destination_3).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_8.hasNext_bitz1p_k$()) {
-      var element_3 = _iterator__ex2g4s_8.next_20eer_k$();
-      refuse.invoke_kookoy_k$(ProblemCode_DUPLICATE_ID_getInstance(), 'exercises', element_3);
+    var _iterator__ex2g4s_8 = duplicates(destination_3).r();
+    while (_iterator__ex2g4s_8.s()) {
+      var element_3 = _iterator__ex2g4s_8.t();
+      refuse.g1h(ProblemCode_DUPLICATE_ID_getInstance(), 'exercises', element_3);
     }
   }
   function validateTemplates(document, refuse) {
     // Inline function 'kotlin.collections.forEachIndexed' call
     var index = 0;
-    var _iterator__ex2g4s = document.templates_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s.next_20eer_k$();
+    var _iterator__ex2g4s = document.o1d_1.r();
+    while (_iterator__ex2g4s.s()) {
+      var item = _iterator__ex2g4s.t();
       var _unary__edvuaz = index;
       index = _unary__edvuaz + 1 | 0;
       var index_0 = checkIndexOverflow(_unary__edvuaz);
-      if (isBlank(item.name_1)) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_EMPTY_NAME_getInstance(), 'templates[' + index_0 + '].name');
+      if (isBlank(item.y1e_1)) {
+        refuse.h1h(ProblemCode_EMPTY_NAME_getInstance(), 'templates[' + index_0 + '].name');
       }
     }
   }
   function validateExercises(document, refuse) {
     // Inline function 'kotlin.collections.forEachIndexed' call
     var index = 0;
-    var _iterator__ex2g4s = document.exercises_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s.next_20eer_k$();
+    var _iterator__ex2g4s = document.r1d_1.r();
+    while (_iterator__ex2g4s.s()) {
+      var item = _iterator__ex2g4s.t();
       var _unary__edvuaz = index;
       index = _unary__edvuaz + 1 | 0;
       var index_0 = checkIndexOverflow(_unary__edvuaz);
-      if (isBlank(item.name_1)) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_EMPTY_NAME_getInstance(), 'exercises[' + index_0 + '].name');
+      if (isBlank(item.m1g_1)) {
+        refuse.h1h(ProblemCode_EMPTY_NAME_getInstance(), 'exercises[' + index_0 + '].name');
       }
-      if (!(item.rowKind_1 === 'MOVEMENT') && !(item.rowKind_1 === 'CATEGORY')) {
-        refuse.invoke_kookoy_k$(ProblemCode_MALFORMED_getInstance(), 'exercises[' + index_0 + '].rowKind', item.rowKind_1);
+      if (!(item.z1g_1 === 'MOVEMENT') && !(item.z1g_1 === 'CATEGORY')) {
+        refuse.g1h(ProblemCode_MALFORMED_getInstance(), 'exercises[' + index_0 + '].rowKind', item.z1g_1);
       }
     }
   }
   function validateSlots(document, refuse) {
     // Inline function 'kotlin.collections.map' call
-    var this_0 = document.templates_1;
+    var this_0 = document.o1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
-    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$2 = item.id_1;
-      destination.add_utx5q5_k$(tmp$ret$2);
+    var _iterator__ex2g4s = this_0.r();
+    while (_iterator__ex2g4s.s()) {
+      var item = _iterator__ex2g4s.t();
+      var tmp$ret$2 = item.x1e_1;
+      destination.w(tmp$ret$2);
     }
     var templateIds = toSet(destination);
     // Inline function 'kotlin.collections.forEachIndexed' call
     var index = 0;
-    var _iterator__ex2g4s_0 = document.slots_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
+    var _iterator__ex2g4s_0 = document.n1d_1.r();
+    while (_iterator__ex2g4s_0.s()) {
+      var item_0 = _iterator__ex2g4s_0.t();
       var _unary__edvuaz = index;
       index = _unary__edvuaz + 1 | 0;
       var index_0 = checkIndexOverflow(_unary__edvuaz);
-      if (!(item_0.programId_1 === document.program_1.id_1)) {
-        refuse.invoke_kookoy_k$(ProblemCode_MALFORMED_getInstance(), 'slots[' + index_0 + '].programId', item_0.programId_1);
+      if (!(item_0.o1e_1 === document.m1d_1.a1e_1)) {
+        refuse.g1h(ProblemCode_MALFORMED_getInstance(), 'slots[' + index_0 + '].programId', item_0.o1e_1);
       }
-      if (!templateIds.contains_aljjnj_k$(item_0.templateId_1)) {
-        refuse.invoke_kookoy_k$(ProblemCode_DANGLING_SLOT_TEMPLATE_getInstance(), 'slots[' + index_0 + '].templateId', item_0.templateId_1);
+      if (!templateIds.v1(item_0.p1e_1)) {
+        refuse.g1h(ProblemCode_DANGLING_SLOT_TEMPLATE_getInstance(), 'slots[' + index_0 + '].templateId', item_0.p1e_1);
       }
-      if (item_0.position_1 < 0) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_POSITION_getInstance(), 'slots[' + index_0 + '].position');
+      if (item_0.q1e_1 < 0) {
+        refuse.h1h(ProblemCode_INVALID_POSITION_getInstance(), 'slots[' + index_0 + '].position');
       }
     }
     // Inline function 'kotlin.collections.map' call
-    var this_1 = document.slots_1;
+    var this_1 = document.n1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
-    var _iterator__ex2g4s_1 = this_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var item_1 = _iterator__ex2g4s_1.next_20eer_k$();
-      var tmp$ret$7 = item_1.position_1;
-      destination_0.add_utx5q5_k$(tmp$ret$7);
+    var _iterator__ex2g4s_1 = this_1.r();
+    while (_iterator__ex2g4s_1.s()) {
+      var item_1 = _iterator__ex2g4s_1.t();
+      var tmp$ret$7 = item_1.q1e_1;
+      destination_0.w(tmp$ret$7);
     }
     // Inline function 'kotlin.collections.forEach' call
-    var _iterator__ex2g4s_2 = duplicates(destination_0).iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s_2.next_20eer_k$();
-      refuse.invoke_kookoy_k$(ProblemCode_INVALID_POSITION_getInstance(), 'slots', element);
+    var _iterator__ex2g4s_2 = duplicates(destination_0).r();
+    while (_iterator__ex2g4s_2.s()) {
+      var element = _iterator__ex2g4s_2.t();
+      refuse.g1h(ProblemCode_INVALID_POSITION_getInstance(), 'slots', element);
     }
   }
   function validateTemplateExercises(document, refuse) {
     // Inline function 'kotlin.collections.map' call
-    var this_0 = document.templates_1;
+    var this_0 = document.o1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
-    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$2 = item.id_1;
-      destination.add_utx5q5_k$(tmp$ret$2);
+    var _iterator__ex2g4s = this_0.r();
+    while (_iterator__ex2g4s.s()) {
+      var item = _iterator__ex2g4s.t();
+      var tmp$ret$2 = item.x1e_1;
+      destination.w(tmp$ret$2);
     }
     var templateIds = toSet(destination);
     // Inline function 'kotlin.collections.associateBy' call
-    var this_1 = document.exercises_1;
+    var this_1 = document.r1d_1;
     var capacity = coerceAtLeast(mapCapacity(collectionSizeOrDefault(this_1, 10)), 16);
     // Inline function 'kotlin.collections.associateByTo' call
     var destination_0 = LinkedHashMap_init_$Create$(capacity);
-    var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s_0.next_20eer_k$();
-      var tmp$ret$5 = element.id_1;
-      destination_0.put_4fpzoq_k$(tmp$ret$5, element);
+    var _iterator__ex2g4s_0 = this_1.r();
+    while (_iterator__ex2g4s_0.s()) {
+      var element = _iterator__ex2g4s_0.t();
+      var tmp$ret$5 = element.l1g_1;
+      destination_0.h2(tmp$ret$5, element);
     }
     var exerciseById = destination_0;
     // Inline function 'kotlin.collections.forEachIndexed' call
     var index = 0;
-    var _iterator__ex2g4s_1 = document.templateExercises_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-      var item_0 = _iterator__ex2g4s_1.next_20eer_k$();
+    var _iterator__ex2g4s_1 = document.p1d_1.r();
+    while (_iterator__ex2g4s_1.s()) {
+      var item_0 = _iterator__ex2g4s_1.t();
       var _unary__edvuaz = index;
       index = _unary__edvuaz + 1 | 0;
       var path = 'templateExercises[' + checkIndexOverflow(_unary__edvuaz) + ']';
-      if (!templateIds.contains_aljjnj_k$(item_0.templateId_1)) {
-        refuse.invoke_kookoy_k$(ProblemCode_DANGLING_TEMPLATE_EXERCISE_getInstance(), path + '.templateId', item_0.templateId_1);
+      if (!templateIds.v1(item_0.g1f_1)) {
+        refuse.g1h(ProblemCode_DANGLING_TEMPLATE_EXERCISE_getInstance(), path + '.templateId', item_0.g1f_1);
       }
-      var tmp0_safe_receiver = exerciseById.get_wei43m_k$(item_0.exerciseId_1);
-      if (!((tmp0_safe_receiver == null ? null : tmp0_safe_receiver.rowKind_1) === 'MOVEMENT')) {
-        refuse.invoke_kookoy_k$(ProblemCode_DANGLING_EXERCISE_getInstance(), path + '.exerciseId', item_0.exerciseId_1);
+      var tmp0_safe_receiver = exerciseById.b2(item_0.h1f_1);
+      if (!((tmp0_safe_receiver == null ? null : tmp0_safe_receiver.z1g_1) === 'MOVEMENT')) {
+        refuse.g1h(ProblemCode_DANGLING_EXERCISE_getInstance(), path + '.exerciseId', item_0.h1f_1);
       }
-      if (item_0.position_1 < 0) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_POSITION_getInstance(), path + '.position');
+      if (item_0.i1f_1 < 0) {
+        refuse.h1h(ProblemCode_INVALID_POSITION_getInstance(), path + '.position');
       }
-      var tmp1_safe_receiver = item_0.restSeconds_1;
+      var tmp1_safe_receiver = item_0.j1f_1;
       if (tmp1_safe_receiver == null)
         null;
       else {
         // Inline function 'kotlin.let' call
         if (tmp1_safe_receiver < 0 || tmp1_safe_receiver > 3600) {
-          refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REST_getInstance(), path + '.restSeconds');
+          refuse.h1h(ProblemCode_INVALID_REST_getInstance(), path + '.restSeconds');
         }
       }
-      var tmp2_safe_receiver = item_0.targetRpeHalves_1;
+      var tmp2_safe_receiver = item_0.l1f_1;
       if (tmp2_safe_receiver == null)
         null;
       else {
         // Inline function 'kotlin.let' call
         if (!(1 <= tmp2_safe_receiver ? tmp2_safe_receiver <= 20 : false)) {
-          refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_RPE_getInstance(), path + '.targetRpeHalves');
+          refuse.h1h(ProblemCode_INVALID_RPE_getInstance(), path + '.targetRpeHalves');
         }
       }
     }
     // Inline function 'kotlin.collections.groupBy' call
-    var tmp0 = document.templateExercises_1;
+    var tmp0 = document.p1d_1;
     // Inline function 'kotlin.collections.groupByTo' call
     var destination_1 = LinkedHashMap_init_$Create$_0();
-    var _iterator__ex2g4s_2 = tmp0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-      var element_0 = _iterator__ex2g4s_2.next_20eer_k$();
-      var key = element_0.templateId_1;
+    var _iterator__ex2g4s_2 = tmp0.r();
+    while (_iterator__ex2g4s_2.s()) {
+      var element_0 = _iterator__ex2g4s_2.t();
+      var key = element_0.g1f_1;
       // Inline function 'kotlin.collections.getOrPut' call
-      var value = destination_1.get_wei43m_k$(key);
+      var value = destination_1.b2(key);
       var tmp;
       if (value == null) {
         var answer = ArrayList_init_$Create$_0();
-        destination_1.put_4fpzoq_k$(key, answer);
+        destination_1.h2(key, answer);
         tmp = answer;
       } else {
         tmp = value;
       }
       var list = tmp;
-      list.add_utx5q5_k$(element_0);
+      list.w(element_0);
     }
     // Inline function 'kotlin.collections.forEach' call
     // Inline function 'kotlin.collections.iterator' call
-    var _iterator__ex2g4s_3 = destination_1.get_entries_p20ztl_k$().iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_3.hasNext_bitz1p_k$()) {
-      var element_1 = _iterator__ex2g4s_3.next_20eer_k$();
+    var _iterator__ex2g4s_3 = destination_1.e2().r();
+    while (_iterator__ex2g4s_3.s()) {
+      var element_1 = _iterator__ex2g4s_3.t();
       // Inline function 'kotlin.collections.component1' call
-      var templateId = element_1.get_key_18j28a_k$();
+      var templateId = element_1.x1();
       // Inline function 'kotlin.collections.component2' call
-      var rows = element_1.get_value_j01efc_k$();
+      var rows = element_1.y1();
       // Inline function 'kotlin.collections.map' call
       // Inline function 'kotlin.collections.mapTo' call
       var destination_2 = ArrayList_init_$Create$(collectionSizeOrDefault(rows, 10));
-      var _iterator__ex2g4s_4 = rows.iterator_jk1svi_k$();
-      while (_iterator__ex2g4s_4.hasNext_bitz1p_k$()) {
-        var item_1 = _iterator__ex2g4s_4.next_20eer_k$();
-        var tmp$ret$24 = item_1.position_1;
-        destination_2.add_utx5q5_k$(tmp$ret$24);
+      var _iterator__ex2g4s_4 = rows.r();
+      while (_iterator__ex2g4s_4.s()) {
+        var item_1 = _iterator__ex2g4s_4.t();
+        var tmp$ret$24 = item_1.i1f_1;
+        destination_2.w(tmp$ret$24);
       }
       // Inline function 'kotlin.collections.forEach' call
-      var _iterator__ex2g4s_5 = duplicates(destination_2).iterator_jk1svi_k$();
-      while (_iterator__ex2g4s_5.hasNext_bitz1p_k$()) {
-        var element_2 = _iterator__ex2g4s_5.next_20eer_k$();
-        refuse.invoke_kookoy_k$(ProblemCode_INVALID_POSITION_getInstance(), 'templateExercises', templateId + '/' + element_2);
+      var _iterator__ex2g4s_5 = duplicates(destination_2).r();
+      while (_iterator__ex2g4s_5.s()) {
+        var element_2 = _iterator__ex2g4s_5.t();
+        refuse.g1h(ProblemCode_INVALID_POSITION_getInstance(), 'templateExercises', templateId + '/' + element_2);
       }
     }
   }
@@ -4446,130 +4446,130 @@
   }
   function validateSetTargets(document, refuse) {
     // Inline function 'kotlin.collections.map' call
-    var this_0 = document.templateExercises_1;
+    var this_0 = document.p1d_1;
     // Inline function 'kotlin.collections.mapTo' call
     var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_0, 10));
-    var _iterator__ex2g4s = this_0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s.next_20eer_k$();
-      var tmp$ret$2 = item.id_1;
-      destination.add_utx5q5_k$(tmp$ret$2);
+    var _iterator__ex2g4s = this_0.r();
+    while (_iterator__ex2g4s.s()) {
+      var item = _iterator__ex2g4s.t();
+      var tmp$ret$2 = item.f1f_1;
+      destination.w(tmp$ret$2);
     }
     var plannedIds = toSet(destination);
     // Inline function 'kotlin.collections.forEachIndexed' call
     var index = 0;
-    var _iterator__ex2g4s_0 = document.templateSets_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var item_0 = _iterator__ex2g4s_0.next_20eer_k$();
+    var _iterator__ex2g4s_0 = document.q1d_1.r();
+    while (_iterator__ex2g4s_0.s()) {
+      var item_0 = _iterator__ex2g4s_0.t();
       var _unary__edvuaz = index;
       index = _unary__edvuaz + 1 | 0;
       var path = 'templateSets[' + checkIndexOverflow(_unary__edvuaz) + ']';
-      if (!plannedIds.contains_aljjnj_k$(item_0.templateExerciseId_1)) {
-        refuse.invoke_kookoy_k$(ProblemCode_DANGLING_SET_getInstance(), path + '.templateExerciseId', item_0.templateExerciseId_1);
+      if (!plannedIds.v1(item_0.v1f_1)) {
+        refuse.g1h(ProblemCode_DANGLING_SET_getInstance(), path + '.templateExerciseId', item_0.v1f_1);
       }
-      if (item_0.setIndex_1 < 0) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_SET_INDEX_getInstance(), path + '.setIndex');
+      if (item_0.w1f_1 < 0) {
+        refuse.h1h(ProblemCode_INVALID_SET_INDEX_getInstance(), path + '.setIndex');
       }
-      var tmp0_elvis_lhs = item_0.targetWeightGrams_1;
+      var tmp0_elvis_lhs = item_0.y1f_1;
       if (compare(tmp0_elvis_lhs == null ? new Long(0, 0) : tmp0_elvis_lhs, new Long(0, 0)) < 0) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_LOAD_getInstance(), path + '.targetWeightGrams');
+        refuse.h1h(ProblemCode_INVALID_LOAD_getInstance(), path + '.targetWeightGrams');
       }
-      var tmp1_elvis_lhs = item_0.targetAssistanceGrams_1;
+      var tmp1_elvis_lhs = item_0.z1f_1;
       if (compare(tmp1_elvis_lhs == null ? new Long(0, 0) : tmp1_elvis_lhs, new Long(0, 0)) < 0) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_LOAD_getInstance(), path + '.targetAssistanceGrams');
+        refuse.h1h(ProblemCode_INVALID_LOAD_getInstance(), path + '.targetAssistanceGrams');
       }
-      var tmp2_elvis_lhs = item_0.dropValueGrams_1;
+      var tmp2_elvis_lhs = item_0.d1g_1;
       if (compare(tmp2_elvis_lhs == null ? new Long(0, 0) : tmp2_elvis_lhs, new Long(0, 0)) < 0) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_LOAD_getInstance(), path + '.dropValueGrams');
+        refuse.h1h(ProblemCode_INVALID_LOAD_getInstance(), path + '.dropValueGrams');
       }
       validateReps(item_0, path, refuse);
     }
   }
   function validateReps(set, path, refuse) {
-    var tmp0_safe_receiver = set.targetRepsMin_1;
+    var tmp0_safe_receiver = set.a1g_1;
     if (tmp0_safe_receiver == null)
       null;
     else {
       // Inline function 'kotlin.let' call
       if (tmp0_safe_receiver < 1) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsMin');
+        refuse.h1h(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsMin');
       }
     }
-    var tmp1_safe_receiver = set.targetRepsMax_1;
+    var tmp1_safe_receiver = set.b1g_1;
     if (tmp1_safe_receiver == null)
       null;
     else {
       // Inline function 'kotlin.let' call
       if (tmp1_safe_receiver < 1) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsMax');
+        refuse.h1h(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsMax');
       }
     }
-    var min = set.targetRepsMin_1;
-    var max = set.targetRepsMax_1;
+    var min = set.a1g_1;
+    var max = set.b1g_1;
     if (!(min == null) && !(max == null) && min > max) {
-      refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path);
+      refuse.h1h(ProblemCode_INVALID_REPS_getInstance(), path);
     }
-    var tmp2_safe_receiver = set.targetRepsCurrent_1;
+    var tmp2_safe_receiver = set.c1g_1;
     if (tmp2_safe_receiver == null)
       null;
     else {
       // Inline function 'kotlin.let' call
       if (tmp2_safe_receiver < 1) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsCurrent');
+        refuse.h1h(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsCurrent');
       }
       if (!(max == null) && tmp2_safe_receiver > max) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsCurrent');
+        refuse.h1h(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsCurrent');
       }
       if (!(min == null) && tmp2_safe_receiver < min) {
-        refuse.invoke$default_jiat1m_k$(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsCurrent');
+        refuse.h1h(ProblemCode_INVALID_REPS_getInstance(), path + '.targetRepsCurrent');
       }
     }
   }
   function validateSetIndexes(document, refuse) {
     // Inline function 'kotlin.collections.groupBy' call
-    var tmp0 = document.templateSets_1;
+    var tmp0 = document.q1d_1;
     // Inline function 'kotlin.collections.groupByTo' call
     var destination = LinkedHashMap_init_$Create$_0();
-    var _iterator__ex2g4s = tmp0.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var element = _iterator__ex2g4s.next_20eer_k$();
-      var key = element.templateExerciseId_1;
+    var _iterator__ex2g4s = tmp0.r();
+    while (_iterator__ex2g4s.s()) {
+      var element = _iterator__ex2g4s.t();
+      var key = element.v1f_1;
       // Inline function 'kotlin.collections.getOrPut' call
-      var value = destination.get_wei43m_k$(key);
+      var value = destination.b2(key);
       var tmp;
       if (value == null) {
         var answer = ArrayList_init_$Create$_0();
-        destination.put_4fpzoq_k$(key, answer);
+        destination.h2(key, answer);
         tmp = answer;
       } else {
         tmp = value;
       }
       var list = tmp;
-      list.add_utx5q5_k$(element);
+      list.w(element);
     }
     // Inline function 'kotlin.collections.forEach' call
     // Inline function 'kotlin.collections.iterator' call
-    var _iterator__ex2g4s_0 = destination.get_entries_p20ztl_k$().iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var element_0 = _iterator__ex2g4s_0.next_20eer_k$();
+    var _iterator__ex2g4s_0 = destination.e2().r();
+    while (_iterator__ex2g4s_0.s()) {
+      var element_0 = _iterator__ex2g4s_0.t();
       // Inline function 'kotlin.collections.component1' call
-      var plannedId = element_0.get_key_18j28a_k$();
+      var plannedId = element_0.x1();
       // Inline function 'kotlin.collections.component2' call
-      var rows = element_0.get_value_j01efc_k$();
+      var rows = element_0.y1();
       // Inline function 'kotlin.collections.map' call
       // Inline function 'kotlin.collections.mapTo' call
       var destination_0 = ArrayList_init_$Create$(collectionSizeOrDefault(rows, 10));
-      var _iterator__ex2g4s_1 = rows.iterator_jk1svi_k$();
-      while (_iterator__ex2g4s_1.hasNext_bitz1p_k$()) {
-        var item = _iterator__ex2g4s_1.next_20eer_k$();
-        var tmp$ret$12 = item.setIndex_1;
-        destination_0.add_utx5q5_k$(tmp$ret$12);
+      var _iterator__ex2g4s_1 = rows.r();
+      while (_iterator__ex2g4s_1.s()) {
+        var item = _iterator__ex2g4s_1.t();
+        var tmp$ret$12 = item.w1f_1;
+        destination_0.w(tmp$ret$12);
       }
       // Inline function 'kotlin.collections.forEach' call
-      var _iterator__ex2g4s_2 = duplicates(destination_0).iterator_jk1svi_k$();
-      while (_iterator__ex2g4s_2.hasNext_bitz1p_k$()) {
-        var element_1 = _iterator__ex2g4s_2.next_20eer_k$();
-        refuse.invoke_kookoy_k$(ProblemCode_INVALID_SET_INDEX_getInstance(), 'templateSets', plannedId + '/' + element_1);
+      var _iterator__ex2g4s_2 = duplicates(destination_0).r();
+      while (_iterator__ex2g4s_2.s()) {
+        var element_1 = _iterator__ex2g4s_2.t();
+        refuse.g1h(ProblemCode_INVALID_SET_INDEX_getInstance(), 'templateSets', plannedId + '/' + element_1);
       }
       // Inline function 'kotlin.collections.sortedBy' call
       // Inline function 'kotlin.comparisons.compareBy' call
@@ -4582,38 +4582,38 @@
   function validateRuns(ordered, plannedId, refuse) {
     // Inline function 'kotlin.collections.forEachIndexed' call
     var index = 0;
-    var _iterator__ex2g4s = ordered.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s.next_20eer_k$();
+    var _iterator__ex2g4s = ordered.r();
+    while (_iterator__ex2g4s.s()) {
+      var item = _iterator__ex2g4s.t();
       var _unary__edvuaz = index;
       index = _unary__edvuaz + 1 | 0;
       var tmp0 = checkIndexOverflow(_unary__edvuaz);
       $l$block: {
-        if (!item.role_1.get_isRung_ew5llb_k$()) {
+        if (!item.x1f_1.e1h()) {
           break $l$block;
         }
         var path = 'templateSets(' + plannedId + ')[' + tmp0 + ']';
         if (carriesTargets(item)) {
-          refuse.invoke_kookoy_k$(ProblemCode_RUNG_CARRIES_TARGETS_getInstance(), path, null);
+          refuse.g1h(ProblemCode_RUNG_CARRIES_TARGETS_getInstance(), path, null);
         }
         var above = getOrNull(ordered, tmp0 - 1 | 0);
         if (above == null) {
-          refuse.invoke_kookoy_k$(ProblemCode_RUNG_WITHOUT_ANCHOR_getInstance(), path, null);
-        } else if (above.role_1.equals(ProgramSetRole_WARMUP_getInstance())) {
-          refuse.invoke_kookoy_k$(ProblemCode_RUNG_UNDER_WARMUP_getInstance(), path, null);
-        } else if (!above.role_1.get_isRung_ew5llb_k$()) {
+          refuse.g1h(ProblemCode_RUNG_WITHOUT_ANCHOR_getInstance(), path, null);
+        } else if (above.x1f_1.equals(ProgramSetRole_WARMUP_getInstance())) {
+          refuse.g1h(ProblemCode_RUNG_UNDER_WARMUP_getInstance(), path, null);
+        } else if (!above.x1f_1.e1h()) {
           var tmp;
-          if (item.role_1.equals(ProgramSetRole_DROP_getInstance())) {
-            var tmp0_elvis_lhs = item.dropValueGrams_1;
+          if (item.x1f_1.equals(ProgramSetRole_DROP_getInstance())) {
+            var tmp0_elvis_lhs = item.d1g_1;
             tmp = compare(tmp0_elvis_lhs == null ? new Long(0, 0) : tmp0_elvis_lhs, new Long(0, 0)) <= 0;
           } else {
             tmp = false;
           }
           if (tmp) {
-            refuse.invoke_kookoy_k$(ProblemCode_RUNG_WITHOUT_VALUE_getInstance(), path, null);
+            refuse.g1h(ProblemCode_RUNG_WITHOUT_VALUE_getInstance(), path, null);
           }
-        } else if (!above.role_1.equals(item.role_1)) {
-          refuse.invoke_kookoy_k$(ProblemCode_RUN_MIXES_KINDS_getInstance(), path, null);
+        } else if (!above.x1f_1.equals(item.x1f_1)) {
+          refuse.g1h(ProblemCode_RUN_MIXES_KINDS_getInstance(), path, null);
         }
       }
     }
@@ -4622,10 +4622,10 @@
     return carriesLoad(_this__u8e3s4) || carriesReps(_this__u8e3s4);
   }
   function carriesLoad(_this__u8e3s4) {
-    return !(_this__u8e3s4.targetWeightGrams_1 == null) || !(_this__u8e3s4.targetAssistanceGrams_1 == null);
+    return !(_this__u8e3s4.y1f_1 == null) || !(_this__u8e3s4.z1f_1 == null);
   }
   function carriesReps(_this__u8e3s4) {
-    return !(_this__u8e3s4.targetRepsMin_1 == null) || !(_this__u8e3s4.targetRepsMax_1 == null);
+    return !(_this__u8e3s4.a1g_1 == null) || !(_this__u8e3s4.b1g_1 == null);
   }
   function duplicates(ids) {
     // Inline function 'kotlin.collections.groupingBy' call
@@ -4634,43 +4634,43 @@
     var this_0 = eachCount(tmp$ret$0);
     var result = LinkedHashMap_init_$Create$_0();
     // Inline function 'kotlin.collections.iterator' call
-    var _iterator__ex2g4s = this_0.get_entries_p20ztl_k$().iterator_jk1svi_k$();
-    while (_iterator__ex2g4s.hasNext_bitz1p_k$()) {
-      var entry = _iterator__ex2g4s.next_20eer_k$();
-      if (entry.get_value_j01efc_k$() > 1) {
-        result.put_4fpzoq_k$(entry.get_key_18j28a_k$(), entry.get_value_j01efc_k$());
+    var _iterator__ex2g4s = this_0.e2().r();
+    while (_iterator__ex2g4s.s()) {
+      var entry = _iterator__ex2g4s.t();
+      if (entry.y1() > 1) {
+        result.h2(entry.x1(), entry.y1());
       }
     }
     // Inline function 'kotlin.collections.map' call
-    var this_1 = result.get_keys_wop4xp_k$();
+    var this_1 = result.c2();
     // Inline function 'kotlin.collections.mapTo' call
     var destination = ArrayList_init_$Create$(collectionSizeOrDefault(this_1, 10));
-    var _iterator__ex2g4s_0 = this_1.iterator_jk1svi_k$();
-    while (_iterator__ex2g4s_0.hasNext_bitz1p_k$()) {
-      var item = _iterator__ex2g4s_0.next_20eer_k$();
+    var _iterator__ex2g4s_0 = this_1.r();
+    while (_iterator__ex2g4s_0.s()) {
+      var item = _iterator__ex2g4s_0.t();
       var tmp$ret$6 = toString(item);
-      destination.add_utx5q5_k$(tmp$ret$6);
+      destination.w(tmp$ret$6);
     }
     return destination;
   }
   function sam$kotlin_Comparator$0(function_0) {
-    this.function_1 = function_0;
+    this.i1h_1 = function_0;
   }
-  protoOf(sam$kotlin_Comparator$0).compare_bczr_k$ = function (a, b) {
-    return this.function_1(a, b);
+  protoOf(sam$kotlin_Comparator$0).t9 = function (a, b) {
+    return this.i1h_1(a, b);
   };
   protoOf(sam$kotlin_Comparator$0).compare = function (a, b) {
-    return this.compare_bczr_k$(a, b);
+    return this.t9(a, b);
   };
-  protoOf(sam$kotlin_Comparator$0).getFunctionDelegate_jtodtf_k$ = function () {
-    return this.function_1;
+  protoOf(sam$kotlin_Comparator$0).t2 = function () {
+    return this.i1h_1;
   };
   protoOf(sam$kotlin_Comparator$0).equals = function (other) {
     var tmp;
     if (!(other == null) ? isInterface(other, Comparator) : false) {
       var tmp_0;
       if (!(other == null) ? isInterface(other, FunctionAdapter) : false) {
-        tmp_0 = equals(this.getFunctionDelegate_jtodtf_k$(), other.getFunctionDelegate_jtodtf_k$());
+        tmp_0 = equals(this.t2(), other.t2());
       } else {
         tmp_0 = false;
       }
@@ -4681,49 +4681,49 @@
     return tmp;
   };
   protoOf(sam$kotlin_Comparator$0).hashCode = function () {
-    return hashCode(this.getFunctionDelegate_jtodtf_k$());
+    return hashCode(this.t2());
   };
   function validate$lambda($problems) {
     return function (code, path, detail) {
       var tmp0 = $problems;
       // Inline function 'kotlin.collections.plusAssign' call
       var element = new ProgramProblem(code, path, detail);
-      tmp0.add_utx5q5_k$(element);
+      tmp0.w(element);
       return Unit_instance;
     };
   }
   function validateSetIndexes$lambda(a, b) {
     // Inline function 'kotlin.comparisons.compareValuesBy' call
-    var tmp = a.setIndex_1;
-    var tmp$ret$2 = b.setIndex_1;
+    var tmp = a.w1f_1;
+    var tmp$ret$2 = b.w1f_1;
     return compareValues(tmp, tmp$ret$2);
   }
   function duplicates$$inlined$groupingBy$1($this) {
-    this.$this_1 = $this;
+    this.j1h_1 = $this;
   }
-  protoOf(duplicates$$inlined$groupingBy$1).sourceIterator_2zqxcn_k$ = function () {
-    return this.$this_1.iterator_jk1svi_k$();
+  protoOf(duplicates$$inlined$groupingBy$1).e3 = function () {
+    return this.j1h_1.r();
   };
-  protoOf(duplicates$$inlined$groupingBy$1).keyOf_qdhuon_k$ = function (element) {
+  protoOf(duplicates$$inlined$groupingBy$1).k1h = function (element) {
     return element;
   };
-  protoOf(duplicates$$inlined$groupingBy$1).keyOf_d1fr09_k$ = function (element) {
-    return this.keyOf_qdhuon_k$(element);
+  protoOf(duplicates$$inlined$groupingBy$1).f3 = function (element) {
+    return this.k1h(element);
   };
   //region block: post-declaration
-  protoOf($serializer).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_0).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_1).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_2).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_3).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_4).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_5).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_6).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_7).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_8).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_9).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_10).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
-  protoOf($serializer_11).typeParametersSerializers_fr94fx_k$ = typeParametersSerializers;
+  protoOf($serializer).pq = typeParametersSerializers;
+  protoOf($serializer_0).pq = typeParametersSerializers;
+  protoOf($serializer_1).pq = typeParametersSerializers;
+  protoOf($serializer_2).pq = typeParametersSerializers;
+  protoOf($serializer_3).pq = typeParametersSerializers;
+  protoOf($serializer_4).pq = typeParametersSerializers;
+  protoOf($serializer_5).pq = typeParametersSerializers;
+  protoOf($serializer_6).pq = typeParametersSerializers;
+  protoOf($serializer_7).pq = typeParametersSerializers;
+  protoOf($serializer_8).pq = typeParametersSerializers;
+  protoOf($serializer_9).pq = typeParametersSerializers;
+  protoOf($serializer_10).pq = typeParametersSerializers;
+  protoOf($serializer_11).pq = typeParametersSerializers;
   //endregion
   //region block: init
   Companion_instance_0 = new Companion();
