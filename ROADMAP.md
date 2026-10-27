@@ -17,8 +17,15 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The imported-plan set-index defect (B257) is fixed and in the unreleased section of
-[CHANGELOG.md](CHANGELOG.md).
+**A progression step is suggested from a load the session did not perform.** Found while checking the imported-plan
+defect: a set done lighter than its plan still earns *increase*, and a set done heavier earns a step that is lower
+than what was lifted, so accepting writes a plan the session has already beaten (B258). The shape is agreed; what the
+row still has to settle is whether a lighter set earns nothing at all or only no load, and where an off-grid number
+rounds to.
+
+| # | What it changes |
+| --- | --- |
+| B258 | **A step is suggested from a load the session did not perform.** Observed on the running app: a set at the top of its range, reps met and RPE at the plan's target, done at 70 kg against a 95 kg plan, is offered *Increase to 97.5 kg*; done at 150 kg against a 140 kg plan, it is offered *Increase to 142.5 kg* — a decrease the lifter can accept. The gate reads reps and the plan's target RPE only (`ProgressionPlanSet.answeredMiss`), and the load step's base is the plan's stored number (`addedWeightGrams + step`), so `ProgressionPerformance.weightGrams` is carried into the rule and never read; DECISIONS N50/N74 state that gate, so this amends them rather than repairing a slip. The shape: refuse the step when the set was performed below the plan's load and say why — a new `ProgressionMiss`, because N74 requires every unearned row to state its cause — and, at or above it, start the step from what was performed rather than from the plan, the base the rep direction already uses ("one past what was actually done"). Two choices first: whether a lighter set withholds the whole step or only the load half (a rep climb on a lighter bar is still a step the set did not earn, to me), and whether an off-grid performed value is written as performed + step or snapped onto the plan's own step. Compare like with like — a plan naming an added weight against a set that states assistance is not "below the plan" — and leave bodyweight sets and plans naming no load on today's answer, since neither has a load to raise (N15). Then the tests: below, equal, above, off-grid, assisted, and that `accepted(LOAD)` still puts the range back on its floor. Independent of B257: it reproduces on a plan authored in the app. |
 
 ## Later — decided, and not being started
 
