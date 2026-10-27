@@ -15,6 +15,20 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ## [Unreleased]
 
+### Changed
+
+- **The statistics page says what the series means before it lists what it is** (N221). The average and the trend
+  lived inside the readings disclosure, so the one screen that exists to say what a series means hid that answer
+  behind the rows it summarises — with the target rate below the fold those rows lived in. They are drawn under the
+  figure now, Average then Trend, and the metric's target follows them: *Target rate* for weight, *Target* for a
+  metric with no rate. The window totals keep their place after the figure and move above the readings, so the page
+  ends on its evidence, and the disclosure states whether it is open — its label carries the count and its icon the
+  direction, and TalkBack reads neither.
+
+- **The averaging window shares a row with Expand** (N222). *Average of last: N* and *Expand* were two rows under
+  the dates for two controls that both decide how much of the figure is read; they share the line, so the card
+  reads figure, dates, actions.
+
 ### Fixed
 
 - **A plan imported as a document starts on the right set** (B257). The import helper numbered a program
@@ -34,6 +48,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   now earns nothing and says how much lighter; at or above it, the step is the plan's next step above both,
   so 150 against a 140 plan becomes 152.5. A set that states assistance is not compared — the machine's help
   is a different quantity — and bodyweight plans, holds, warm-ups and rungs are unchanged.
+
+- **The figure's scale reads along it, not across its top** (B259). The axis gutter asked for `fillMaxHeight()` on a
+  page that scrolls, where the height constraint is infinite and the modifier resolves to wrap-content: the row took
+  its height from the canvas, and the three numbers — max, middle, min — stacked in a line at the plot's top, so
+  nothing said which height a value belonged to. The gutter is given the figure's height, which is the height it
+  was always meant to read against, in the card and in the expanded view alike.
 
 ## [2.16] — 2026-10-26 (versionCode 36)
 

@@ -649,7 +649,20 @@ the rule; that one argues it.
   axis's numbers moved from a row *under* the chart, where "min" and "max" said nothing about which end of
   the line they meant, into a gutter against the figure, and gained the middle. They stay real `Text` rather
   than paint inside the canvas: the canvas is blanked for a screen reader, and three numbers are the part of a
-  chart that is a sentence.
+  chart that is a sentence. **Their height is handed to them rather than filled** (B259): the gutter asked for
+  `fillMaxHeight()` on a page that scrolls, where the constraint is infinite and the modifier resolves to
+  wrap-content — the row took its height from the canvas and the three numbers stacked in a line at the plot's
+  top, naming no height at all. A scale has to be given the height it reads against.
+
+- **The statistics page states the series before its evidence** (N221, amending N36 and N208). The average and
+  the trend are summaries of the whole window rather than evidence for it, so they do not live behind the
+  readings' disclosure: they sit under the figure, Average then Trend, and the metric's target follows them —
+  *Target rate* for weight, where the goal itself is set on Measurements, and *Target* for a metric with no
+  rate. The window total keeps N208's place after the figure and moves above the readings, so the page ends on
+  the rows it is made of. **The disclosure states its state**, because a label that carries the count and an
+  icon that carries the direction reach a screen reader as neither. **The figure's two "how much do I read"
+  controls share a row** (N222): the window the average is taken over and *Expand* each had a line of their own
+  under the dates, and one row now holds both, which is the card reading figure, dates, actions.
 
 - **The moving average's period counts readings, not days** (N40). A seven-day window for
   a lift trained twice a week would often average one reading, and a window that is

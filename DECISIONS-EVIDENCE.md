@@ -2991,3 +2991,32 @@ loads at all, and it keeps the change from reaching bodyweight sets, holds, warm
 **Covered by** `ProgressionOfferTest` — below, equal, above, off-grid, no-ceiling, assisted, and the
 precedence of a rep shortfall over a light bar — and `ProgressionDialogTest`, which pins the sentence the
 row states and that neither chip is drawn.
+
+## N221
+
+**What the page was.** Read from the top: figure, `Readings (N)`, the target, the target rate, the three
+totals — and the average and the trend only existed *inside* those readings, so the screen that exists to say
+what a series means hid that answer behind the list of weigh-ins that produced it, with the target rate below
+the fold those rows lived in. The reorder is the same argument N208 made for the totals (a summary after the
+thing it summarises is a row the figure pays for), applied to the summaries the readings had swallowed.
+
+**Where the totals went.** They read the sessions rather than the series, so they stay outside the series
+block and keep N208's place after the figure; N221 puts them above the readings, which leaves the page closing
+on its evidence. The alternative — totals after the readings — was rejected because the disclosure would then
+open in the middle of the page rather than at its end, and the rows it reveals would have the page's last word.
+
+**Why the disclosure states its state.** The label carries the count (`Readings (2)`) and the icon carries the
+direction; TalkBack reads the label and not the arrow, so the control announced "Readings (2), button" whether
+it was open or closed. It now carries a state description ("Collapsed" / "Expanded") and the test asserts both
+halves by reading the strings the screen uses rather than copies of them.
+
+**The axis, found while making the summaries visible.** The scale's gutter asked for `fillMaxHeight()` inside a
+`Column.verticalScroll`, where the height constraint is infinite, so the modifier resolved to wrap-content and
+the three numbers sat in a line at the plot's top — on the emulator inside about a hundred pixels of a 180 dp
+figure. The gutter now takes the figure's height, which is the one it was always meant to read against, and the
+test asserts the spread rather than the presence of the labels: reverting to `fillMaxHeight()` fails it.
+
+**The window and Expand on one row.** Both controls change how much of the figure is read; the picker was the
+card's first row and *Expand* its last, so on a small phone each spent a row between the dates and the actions.
+The picker keeps its dropdown (N40, N211) and its label, and the expanded dialog — which has no *Expand* — keeps
+the picker on the same row, alone.
