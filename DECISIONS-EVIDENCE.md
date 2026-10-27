@@ -2959,3 +2959,35 @@ hold; the N173 evidence already describes an added editor row as keeping "the ap
 so the 1-based table output had the page disagreeing with itself. `ProgramDocumentFixtureTest` pinned those
 sets' targets and never their indices, which is how a fixture with `setIndex: 1..N` passed the app's gate for
 a release; it now pins the indices too.
+
+## B258
+
+**What was run.** On the emulator, a session against a plan of 5 reps at 95 kg with a target RPE of 8: a
+set done at 5 reps, 70 kg, RPE 8 was offered *Increase to 97.5 kg*. Against a plan of 5 at 140 kg, a set
+done at 5, 150 kg, RPE 8 was offered *Increase to 142.5 kg* — a target below the work that had just
+earned it. Both were reachable with no import involved, so this is the rule, not B257: `answeredMiss`
+read reps and effort only, and `offerFor` built the load step from `addedWeightGrams` — the plan's stored
+number — while `ProgressionPerformance.weightGrams` was carried into the rule and never read.
+
+**Why the whole step, not just the load.** The plan's targets are a rep range, a load and an effort; a
+set that met two of the three at a bar the plan never asked for did something, but not the prescribed
+set. Offering the rep step there would push a climb on that lighter bar, which is the same mistake in a
+smaller size. The row states the difference instead, because N74's rule is that every unearned row says
+why; "no step" alone reads as a bug.
+
+**Why the step is snapped to the plan's grid.** The simplest rule — performed plus one step — writes
+103.5 kg from a typed 101 kg, and the plan's own rows then sit on a grid the new one does not share. The
+smallest value of `plan + k × step` above both keeps the plan readable as a plan and still never lands at
+or below what was lifted. It is also the same shape the rep direction takes (one past what was actually
+done, capped by the ceiling), so the two halves of the offer follow evidence rather than the authored
+number.
+
+**Why only like is compared.** A plan's load is a bar's kilograms: `addedWeightGrams` already refuses to
+raise an assisted or bodyweight row. The performed side can be a machine carrying part of the load — 0
+added beside 20 kg of help — and comparing those columns would call a set "60 kg short" of a plan it may
+match exactly. Leaving the load out of the judgement there is the answer the rule gave before it read
+loads at all, and it keeps the change from reaching bodyweight sets, holds, warm-ups and rungs.
+
+**Covered by** `ProgressionOfferTest` — below, equal, above, off-grid, no-ceiling, assisted, and the
+precedence of a rep shortfall over a light bar — and `ProgressionDialogTest`, which pins the sentence the
+row states and that neither chip is drawn.

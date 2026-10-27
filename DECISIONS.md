@@ -366,6 +366,19 @@ the rule; that one argues it.
   ceiling a set earns the **rep**, at the ceiling the **weight** and the climb restarts on the floor.
   Rejected: N50's single exercise-wide step on the last set, because a set that answered the plan earned
   nothing when a sibling missed. ([evidence](DECISIONS-EVIDENCE.md#n74))
+- **A plan's terms include its load, and a step starts from what was actually lifted** (B258, amending N50
+  and N74). The offer was gated on reps and the exercise's target RPE alone, so a set answered at a bar
+  lighter than the plan named earned a heavier target on top of work the prescription never reached; and
+  the load step was the plan's stored number plus one, which for a set done above the plan wrote a target
+  the lifter had already beaten — 140 kg beaten by 150 offered 142.5. **A set performed below the plan's
+  load earns nothing**, not even the rep, because a climb on a bar the plan did not ask for is still a
+  step the set did not earn, and the row states the difference it measured. **At or above it the step is
+  the smallest value of the plan's own grid above both**, so the plan follows the lifter without leaving
+  the grid its other rows sit on — the principle the rep direction already holds ("one past what was
+  actually done"). Only like is compared: a set that states assistance carries a machine's help rather
+  than a bar's kilograms, so its load is left out of the judgement and the answer is the one the rule gave
+  before it read loads, which also leaves bodyweight and load-less plans, holds, warm-ups and rungs where
+  they were. ([evidence](DECISIONS-EVIDENCE.md#b258))
 
 - **A superset is a group of exercises performed in rounds** (N24). The model is a
   nullable `supersetGroup: Int?` ordinal on `session_exercises` and `template_exercises`; a

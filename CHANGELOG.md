@@ -27,6 +27,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   app's indices now, and an already-imported plan reads correctly as it stands — nothing is renumbered
   under the lifter.
 
+- **The next step is earned from the load actually lifted** (B258). *Done* judged a set on its reps and its
+  effort and never read the weight, so a set answered at a lighter bar than the plan named was told to add
+  weight — on top of a prescription it had not loaded — and a set done *above* the plan was offered a step
+  below what it had just lifted (140 kg beaten by 150 offered 142.5). A set performed lighter than the plan
+  now earns nothing and says how much lighter; at or above it, the step is the plan's next step above both,
+  so 150 against a 140 plan becomes 152.5. A set that states assistance is not compared — the machine's help
+  is a different quantity — and bodyweight plans, holds, warm-ups and rungs are unchanged.
+
 ## [2.16] — 2026-10-26 (versionCode 36)
 
 ### Added
