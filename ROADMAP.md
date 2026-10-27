@@ -17,8 +17,14 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The imported-plan set-index defect (B257) and the progression step measured from the wrong
-load (B258) are fixed and in the unreleased section of [CHANGELOG.md](CHANGELOG.md).
+**The statistics page states its summaries before its evidence.** Requested order under the chart: *Average*,
+then *Trend*, then *Target rate*, with the readings list behind its own disclosure underneath (N221). Today the
+average and the trend only exist once the readings are expanded, and the target rate — which its own comment
+already calls "the family the average and the trend belong to" — sits below the thing that hides them.
+
+| # | What it changes |
+| --- | --- |
+| N221 | **The statistics screen reads chart, summary, then evidence.** The two summaries are promoted out of the readings disclosure and drawn under the figure in that order — *Average* (the mean of the window, not the chart's moving average) and *Trend* (the fitted line, stated per week) — and the metric's target follows them: *Target rate* for weight, where the goal itself is set on Measurements, and *Target* for every other metric, since the target is the same fact read for a metric with no rate. Below them the readings keep their disclosure, now as the evidence rather than as the way in: header with the count, newest first, `rememberSaveable` as today. What the row has to decide is where *Overview*'s three numbers land — they follow the target rate now, and "readings last" leaves them between the two — and whether the readings header should announce its expanded state, which today it does not. It amends N36 ("the readings, newest first, with the average on top") and N208 ("the three numbers after the figure"), stays addressable by tag so the existing tests follow the content rather than the fold, and is the same kind of reorder as the one that moved the figure above the cards: the chart is what the screen is for, and the page should say what it shows before listing it. |
 
 ## Later — decided, and not being started
 
