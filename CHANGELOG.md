@@ -29,6 +29,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   the dates for two controls that both decide how much of the figure is read; they share the line, so the card
   reads figure, dates, actions.
 
+- **Tapping the tab you are in shows that tab's front page** (N223). Selecting a different tab still restores it —
+  the exercise you looked up, the workout you opened, the metric you were comparing — but the tab already showing
+  now returns to its root, keeping its own state: the thing the bar's button never did. At the root the tap does
+  nothing, and always-reset was not taken: it would drop the Library search and the Statistics selection with the
+  rest of the tab.
+
 ### Fixed
 
 - **A plan imported as a document starts on the right set** (B257). The import helper numbered a program
@@ -54,6 +60,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   its height from the canvas, and the three numbers — max, middle, min — stacked in a line at the plot's top, so
   nothing said which height a value belonged to. The gutter is given the figure's height, which is the height it
   was always meant to read against, in the card and in the expanded view alike.
+
+- **The statistics figure takes the room its window has** (B261). It was a fixed 180 dp — a fifth of a phone's
+  screen, on the screen whose subject it is — because the constant was picked when the card still carried a row of
+  window chips. It now takes 30 % of the window clamped to 220–340 dp: about 274 dp on a 914 dp phone, with a floor
+  that keeps the dates and the actions and a ceiling that stops a tablet getting a second expanded view by default.
+  The expanded view stays the larger of the two, which is what makes *Expand* mean something.
 
 - **A bar stays inside the figure** (B260). A bar is centred on its reading, so the first one was drawn half outside
   the plot and, with nothing clipping the canvas, painted over the scale's numbers in the gutter beside it — which

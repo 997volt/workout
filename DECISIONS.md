@@ -652,7 +652,12 @@ the rule; that one argues it.
   chart that is a sentence. **Their height is handed to them rather than filled** (B259): the gutter asked for
   `fillMaxHeight()` on a page that scrolls, where the constraint is infinite and the modifier resolves to
   wrap-content — the row took its height from the canvas and the three numbers stacked in a line at the plot's
-  top, naming no height at all. A scale has to be given the height it reads against.
+  top, naming no height at all. A scale has to be given the height it reads against. **And the figure's own
+  height is the window's** (B261): statistics drew it at a fixed 180 dp for years — a fifth of a phone's screen,
+  on the screen whose subject it is — because the constant was picked when the card carried a row of window
+  chips. It takes 30 % of the window now, clamped to 220–340 dp so a short one keeps the dates and the actions
+  and a tall one does not get a second expanded view; the expanded figure's 55 % is the one that must stay
+  larger, which is what makes *Expand* mean something.
 
 - **The statistics page states the series before its evidence** (N221, amending N36 and N208). The average and
   the trend are summaries of the whole window rather than evidence for it, so they do not live behind the
@@ -663,6 +668,19 @@ the rule; that one argues it.
   icon that carries the direction reach a screen reader as neither. **The figure's two "how much do I read"
   controls share a row** (N222): the window the average is taken over and *Expand* each had a line of their own
   under the dates, and one row now holds both, which is the card reading figure, dates, actions.
+- **The tab you are in is the way back to its own front page** (N223). Selecting a **different** tab keeps
+  N34's behaviour: its saved back stack and its destinations' saved state come back, so an exercise looked up in
+  Library, a workout opened in History or the Statistics lift being compared all survive the round trip. Selecting
+  the tab **already showing** pops to that tab's root instead, keeping the root's own entry — and with it the
+  ViewModel, so the metric and the scroll are still there — and saving nothing, so switching away cannot restore
+  what the tap closed; at the root the tap changes nothing. **Always-reset was rejected**: it would drop the
+  Library search and scroll, the Statistics selection and any typed-but-unconfirmed editor field, and would leave
+  a wrong tap with no way back. A root that arrived with arguments — `Statistics(exerciseId)` pushed from a
+  workout, which the bar highlights as Statistics but which is a reading of one lift — falls through to the
+  ordinary switch rather than counting as the front page. The rule needs **the tab the bar is showing** supplied:
+  a screen pushed inside a tab is not a tab, and the back stack is a restricted API from app code, so `switchTab`
+  takes it from the caller, which is also what keeps the button and the answer from disagreeing.
+  ([evidence](DECISIONS-EVIDENCE.md#n223))
 
 - **The moving average's period counts readings, not days** (N40). A seven-day window for
   a lift trained twice a week would often average one reading, and a window that is

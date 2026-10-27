@@ -3023,3 +3023,26 @@ which cuts the bar at the plot's edge rather than the axis.
 card's first row and *Expand* its last, so on a small phone each spent a row between the dates and the actions.
 The picker keeps its dropdown (N40, N211) and its label, and the expanded dialog — which has no *Expand* — keeps
 the picker on the same row, alone.
+
+## N223
+
+**What the bar did.** Selecting the tab already showing re-entered its saved stack, which at a tab root is the
+same screen and so looked like nothing happened. The case that made it visible: Library → a category → an
+exercise → Statistics → Library restored the *exercise*, and a second Library tap left it there — a bar that
+reads as a map with a button that behaves like a place you are already standing on.
+
+**What the rule buys, and what always-reset would cost.** The useful half of the saved stacks is the round trip:
+an exercise looked up in Library, a workout opened in History, the Statistics lift being compared. Flattening the
+tab on *every* selection deletes all of that, deletes the Library search and scroll with it, and — because the
+bar is visible on the template and program editors — can drop a typed-but-unconfirmed rename or an open dialog.
+It also removes the only way back from a wrong tap. Flooring on the tab already showing keeps both: the hop
+restores, the button returns home. The pop is `inclusive = false`, so the root entry survives with its
+ViewModel, and nothing is saved, so the closed screens cannot be restored by a later visit.
+
+**Why the caller supplies the selected tab.** Deciding "is this a re-tap" needs the tab the bar is showing, and a
+screen pushed inside a tab is not a tab (`AppTab.forRoute` is null for it). The back stack would answer it, but
+`currentBackStack` is a restricted API from app code — lint refused it — so the value travels from the bar, which
+already knows it. The first cut left the host's remembered tab updated only from the route; restoring a tab at a
+detail left that value stale, and the next tap read as a switch. The host updates it on selection as well, and
+the emulator walk-through is what caught it: detail → Statistics → Library restores the detail, Library again
+floors to the search list, and back from there reaches Workouts.
