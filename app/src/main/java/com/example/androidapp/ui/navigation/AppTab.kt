@@ -169,18 +169,53 @@ fun AppTabBar(
  */
 private const val SELECTED_WASH = 0.22f
 
-
 /**
- * Switches tabs (ROADMAP N34).
+ * Switches tabs (ROADMAP N34), and floors the one you are already in (N223).
  *
- * `popUpTo(start) { saveState = true }` with `restoreState` is what gives each tab its own back stack:
- * leaving History and coming back finds it where it was, and back from a tab root lands on Workouts
- * rather than walking through the tabs in the order they were visited.
+ * Selecting a *different* tab keeps the behaviour N34 settled: `popUpTo(start) { saveState = true }` with
+ * `restoreState` gives each tab its own back stack — leaving History and coming back finds it where it was —
+ * and back from a tab root lands on Workouts rather than walking through the tabs in the order they were
+ * visited.
+ *
+ * **Selecting the tab you are in returns to its root.** The button is the one control that can mean "this
+ * section's front page", and it did nothing before: Library → an exercise → Statistics → Library came back to
+ * the exercise, and a second Library tap left it there. The pop keeps the root's own entry — and with it the
+ * ViewModel, so the Statistics metric you chose and the list you had scrolled are still there — and closes only
+ * what was pushed above it; nothing is saved, so switching away and back cannot restore what this closed.
+ * A re-tap on the root itself changes nothing.
+ *
+ * [selected] is **the tab the bar is showing**, which the caller has rather than the stack: a screen pushed
+ * inside a tab is not a tab (`AppTab.forRoute` answers null for it) while the bar keeps highlighting the one it
+ * came from, and the back stack itself is a restricted API from app code. It is the same value the bar passes
+ * as `selected`, so the button and the answer cannot disagree.
+ *
+ * **A root that arrived carrying arguments is not the tab's front page.** `Statistics(exerciseId)` pushed from
+ * a workout is the Statistics destination, so it is the tab the bar highlights — but it is a reading of one
+ * lift, not the series index. Tapping there falls through to the ordinary switch, which brings the tab's own
+ * stack back; a tap that landed on the lift it already showed would be the same do-nothing tap this rule is
+ * here to remove.
  */
-fun NavHostController.switchTab(tab: AppTab) {
+fun NavHostController.switchTab(tab: AppTab, selected: AppTab) {
+    if (tab == selected) {
+        popBackStack(tab.route, inclusive = false)
+        if (!currentEntryCarriesArguments()) return
+    }
     navigate(tab.route) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
     }
 }
+
+/**
+ * Whether the entry on top was opened with arguments of its own — a lift chosen, not the series index.
+ *
+ * A route's optional arguments are written into the bundle even when they were not given, so "empty" is the
+ * wrong question: the values are what matter. `get` is deprecated on a `Bundle` for the typed accessors, and
+ * there is no generic typed one — the loop is what asks "does any argument hold a value".
+ */
+@Suppress("DEPRECATION")
+private fun NavHostController.currentEntryCarriesArguments(): Boolean =
+    currentBackStackEntry?.arguments?.let { arguments ->
+        arguments.keySet().any { key -> arguments.get(key) != null }
+    } ?: false

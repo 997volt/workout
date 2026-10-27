@@ -1,7 +1,5 @@
 package com.example.androidapp.ui.navigation
 
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -15,6 +13,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,6 +36,7 @@ class AppTabTest {
     private val library = ExerciseLibrary.serializer().descriptor.serialName
     private val workouts = WorkoutsHome.serializer().descriptor.serialName
     private val statistics = Statistics.serializer().descriptor.serialName
+    private val detail = ExerciseDetail.serializer().descriptor.serialName
 
     @Test
     fun theBar_offersFiveNamedTabs_inTheEnumsOrder_andSaysWhichIsSelected() {
@@ -117,6 +118,93 @@ class AppTabTest {
 
     @Test
     fun switchingTabs_leavesOneBackEntry_andBackReturnsToWorkouts() {
+        val navController = graph()
+
+        composeTestRule.runOnIdle { navController.switchTab(AppTab.HISTORY, selected = AppTab.WORKOUTS) }
+        composeTestRule.waitForIdle()
+        assertThat(navController.currentDestination?.route).isEqualTo(history)
+
+        composeTestRule.runOnIdle { navController.switchTab(AppTab.LIBRARY, selected = AppTab.HISTORY) }
+        composeTestRule.waitForIdle()
+        assertThat(navController.currentDestination?.route).isEqualTo(library)
+
+        // Coming back finds the tab rather than rebuilding a path through the one in between.
+        composeTestRule.runOnIdle { navController.switchTab(AppTab.HISTORY, selected = AppTab.LIBRARY) }
+        composeTestRule.waitForIdle()
+        assertThat(navController.currentDestination?.route).isEqualTo(history)
+
+        // And back from a tab root lands on Workouts, not on the tab visited before it.
+        composeTestRule.runOnIdle { navController.popBackStack() }
+        composeTestRule.waitForIdle()
+        assertThat(navController.currentDestination?.route).isEqualTo(workouts)
+    }
+
+    @Test
+    fun reTappingTheActiveTab_returnsToItsRoot() {
+        // N223: the tab you are in is also the way back to its front page. Library → an exercise → the Library
+        // button used to leave the exercise on screen.
+        val navController = graph()
+
+        composeTestRule.runOnIdle { navController.switchTab(AppTab.LIBRARY, selected = AppTab.WORKOUTS) }
+        composeTestRule.waitForIdle()
+        composeTestRule.runOnIdle { navController.navigate(ExerciseDetail("e1")) }
+        composeTestRule.waitForIdle()
+        assertThat(navController.currentDestination?.route).startsWith(detail)
+
+        // The bar still says Library while the detail is open, which is what makes this a re-tap.
+        composeTestRule.runOnIdle { navController.switchTab(AppTab.LIBRARY, selected = AppTab.LIBRARY) }
+        composeTestRule.waitForIdle()
+        assertThat(navController.currentDestination?.route).isEqualTo(library)
+
+        // And back from the floored root still reaches Workouts, as it did before.
+        composeTestRule.runOnIdle { navController.popBackStack() }
+        composeTestRule.waitForIdle()
+        assertThat(navController.currentDestination?.route).isEqualTo(workouts)
+    }
+
+    @Test
+    fun reTappingTheRoot_changesNothing() {
+        // A tap on the button with nothing above it must not rebuild the screen under it: the entry keeps its
+        // id, so the list's scroll and the ViewModel's state are the ones already on screen.
+        val navController = graph()
+
+        composeTestRule.runOnIdle { navController.switchTab(AppTab.STATISTICS, selected = AppTab.WORKOUTS) }
+        composeTestRule.waitForIdle()
+        val before = navController.currentBackStackEntry?.id
+
+        composeTestRule.runOnIdle { navController.switchTab(AppTab.STATISTICS, selected = AppTab.STATISTICS) }
+        composeTestRule.waitForIdle()
+
+        assertThat(navController.currentBackStackEntry?.id).isEqualTo(before)
+        assertThat(navController.currentDestination?.route).startsWith(statistics)
+    }
+
+    @Test
+    fun reTappingStatisticsOpenedFromAWorkout_reachesTheTabsOwnStack() {
+        // A Statistics pushed from a workout is the destination the bar highlights as Statistics, but it is a
+        // reading of one lift rather than the tab's front page: tapping the tab brings the tab's own stack back
+        // instead of leaving that tap doing nothing.
+        val navController = graph()
+
+        composeTestRule.runOnIdle { navController.switchTab(AppTab.HISTORY, selected = AppTab.WORKOUTS) }
+        composeTestRule.waitForIdle()
+        composeTestRule.runOnIdle { navController.navigate(WorkoutDetail("s1")) }
+        composeTestRule.runOnIdle { navController.navigate(Statistics(exerciseId = "e1")) }
+        composeTestRule.waitForIdle()
+        assertThat(navController.currentBackStackEntry?.arguments?.getString("exerciseId")).isEqualTo("e1")
+
+        // The bar says Statistics for the pushed screen, so the tap is a re-tap on the tab it highlights.
+        composeTestRule.runOnIdle { navController.switchTab(AppTab.STATISTICS, selected = AppTab.STATISTICS) }
+        composeTestRule.waitForIdle()
+
+        assertThat(navController.currentDestination?.route).startsWith(statistics)
+        assertWithMessage("the lift it was opened for is not the tab's front page")
+            .that(navController.currentBackStackEntry?.arguments?.getString("exerciseId"))
+            .isNull()
+    }
+
+    /** The five tab roots and two pushed screens, which is what the rules below are about. */
+    private fun graph(): NavHostController {
         lateinit var navController: NavHostController
         composeTestRule.setContent {
             navController = rememberNavController()
@@ -126,25 +214,10 @@ class AppTabTest {
                 composable<ExerciseLibrary> { Text("library") }
                 composable<Statistics> { Text("statistics") }
                 composable<Settings> { Text("settings") }
+                composable<ExerciseDetail> { Text("exercise") }
+                composable<WorkoutDetail> { Text("workout") }
             }
         }
-
-        composeTestRule.runOnIdle { navController.switchTab(AppTab.HISTORY) }
-        composeTestRule.waitForIdle()
-        assertThat(navController.currentDestination?.route).isEqualTo(history)
-
-        composeTestRule.runOnIdle { navController.switchTab(AppTab.LIBRARY) }
-        composeTestRule.waitForIdle()
-        assertThat(navController.currentDestination?.route).isEqualTo(library)
-
-        // Coming back finds the tab rather than rebuilding a path through the one in between.
-        composeTestRule.runOnIdle { navController.switchTab(AppTab.HISTORY) }
-        composeTestRule.waitForIdle()
-        assertThat(navController.currentDestination?.route).isEqualTo(history)
-
-        // And back from a tab root lands on Workouts, not on the tab visited before it.
-        composeTestRule.runOnIdle { navController.popBackStack() }
-        composeTestRule.waitForIdle()
-        assertThat(navController.currentDestination?.route).isEqualTo(workouts)
+        return navController
     }
 }

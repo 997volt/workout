@@ -75,7 +75,20 @@ fun AppNavHost(
         // status-bar inset, which is what stops the two from padding the same content twice.
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            if (showBar) AppTabBar(selected = lastTab, onSelect = navController::switchTab)
+            if (showBar) {
+                // The bar's own selected tab is what tells a re-tap apart from a switch (N223): the stack cannot,
+                // because a detail inside a tab is not a tab. **The choice updates it here as well as from the
+                // route below**, and that is load-bearing: a tab restored at a detail leaves `tabRoot` null, so
+                // the route would keep the previous tab and the next tap on this one would read as a switch.
+                AppTabBar(
+                    selected = lastTab,
+                    onSelect = { tab ->
+                        val selected = lastTab
+                        if (tab != selected) lastTab = tab
+                        navController.switchTab(tab, selected = selected)
+                    },
+                )
+            }
         },
         modifier = modifier,
     ) { innerPadding ->
