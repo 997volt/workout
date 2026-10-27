@@ -2,7 +2,7 @@ package com.example.androidapp.ui.statistics.chart
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.ui.components.TestTags
 
@@ -42,18 +43,23 @@ internal const val EXPANDED_DIALOG_MAX_FRACTION = 0.9f
 private val CHART_AXIS_WIDTH = 52.dp
 
 /**
- * The figure's scale, written against its own top, middle and foot (N196).
+ * The figure's scale, written against its own top, middle and foot (N196, B259).
  *
  * A column rather than labels inside the canvas: the canvas is blanked for a screen reader, and three numbers
  * in the metric's own unit are the part of a chart that is a sentence rather than a picture. The **middle** is
  * new with the gutter — min and max sat in a row under the chart, where nothing said which end of the line
  * they were.
+ *
+ * **The height is handed in rather than filled** (B259). Asking for `fillMaxHeight()` looked right and did
+ * nothing on the screen this gutter lives on: the statistics page scrolls, so the constraint it filled was
+ * infinite and the modifier resolved to wrap-content — the row then took its height from the canvas, and the
+ * three numbers stacked in a line at the top where they named no height at all.
  */
 @Composable
-internal fun ChartAxis(axis: AxisBounds, format: (Double) -> String) {
+internal fun ChartAxis(height: Dp, axis: AxisBounds, format: (Double) -> String) {
     Column(
         modifier = Modifier
-            .fillMaxHeight()
+            .height(height)
             .width(CHART_AXIS_WIDTH)
             .padding(top = 12.dp, end = 8.dp)
             .testTag(TestTags.Statistics.CHART_AXIS),

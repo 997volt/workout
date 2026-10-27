@@ -77,7 +77,7 @@ internal fun ChartFigure(
     }
 
     Row(modifier = Modifier.fillMaxWidth()) {
-        ChartAxis(axis = overlay.axis, format = { metric.unit.format(it) })
+        ChartAxis(height = height, axis = overlay.axis, format = { metric.unit.format(it) })
         TrendChartFrame(
             points = overlay.projected,
             goals = overlay.goals,

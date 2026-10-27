@@ -40,6 +40,7 @@ import com.example.androidapp.domain.repository.GoalPeriod
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -62,6 +63,28 @@ class StatisticsScreenTest {
             MetricReading(Instant.parse("2026-09-15T08:00:00Z"), 82_000.0),
         ),
     )
+
+    @Test
+    fun theScaleReadsAlongTheFigure_ratherThanStackingAtItsTop() {
+        // B259: the gutter asked for fillMaxHeight() inside a scrollable page, where the height constraint is
+        // infinite and the modifier resolves to wrap-content — so the row took its height from the canvas and
+        // the three numbers sat in a line at the top, naming no height at all.
+        setScreen()
+
+        val figure = composeTestRule.onNodeWithTag(TestTags.Statistics.CHART).getUnclippedBoundsInRoot()
+        val figureHeight = figure.bottom - figure.top
+        val top = composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_MAX)
+            .getUnclippedBoundsInRoot().top
+        val foot = composeTestRule.onNodeWithTag(TestTags.Statistics.CHART_MIN)
+            .getUnclippedBoundsInRoot().top
+
+        assertWithMessage("the numbers are spread down the figure, not gathered at its top")
+            .that(foot - top)
+            .isGreaterThan(figureHeight / 2f)
+        assertWithMessage("and the smallest one sits at the figure's foot")
+            .that(foot)
+            .isGreaterThan(figure.top + figureHeight * 0.75f)
+    }
 
     private fun setScreen(
         state: StatisticsUiState = StatisticsUiState(
