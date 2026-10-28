@@ -48,6 +48,9 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -682,14 +685,24 @@ private fun WorkoutBody(
     Column(modifier = modifier.fillMaxSize()) {
         // The record sits above the work, not in a dialog: it happens *between* sets, and
         // anything that has to be dismissed is in the way there (ROADMAP N23).
-        personalRecord?.let { PersonalRecordBanner(record = it) }
+        personalRecord?.let {
+            PersonalRecordBanner(
+                record = it,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
 
         state.error?.let { error ->
             Text(
                 text = dataErrorMessage(error),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                // Said, not only drawn (B290): a write that failed is a state change, and the rest of the
+                // app's failures go through a snackbar, which is a polite live region.
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .semantics { liveRegion = LiveRegionMode.Polite },
             )
         }
 

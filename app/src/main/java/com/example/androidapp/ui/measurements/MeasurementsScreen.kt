@@ -728,7 +728,9 @@ private fun NumberField(
         onValueChange = onValueChange,
         singleLine = true,
         label = { Text(label) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        // Every field this renders is decimal — 82.5 kg, 18.3 %, 86.4 cm — and a digits-only keyboard
+        // offers no separator on the IMEs that honour it (B290).
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         modifier = Modifier.fillMaxWidth().testTag(testTag),
     )
 }

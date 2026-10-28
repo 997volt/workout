@@ -17,6 +17,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The workout screen says what it draws, and the chart keeps its gesture** (B290). A failed write and a new
+  record were drawn but never announced, while every other screen routes a failure through a snackbar — a polite
+  live region; both are live regions now, and an edit or a delete clears the record banner instead of leaving a
+  claim that is no longer true. The chart's gesture loop keyed on the zoom callback while reading the scrub one, so
+  a scrub after a range change read a stale chart, or the loop restarted mid-gesture. The measurement fields ask for
+  a decimal keyboard for values that are decimal, and the review's verdict is drawn in the label colour rather than
+  the fill colour N49 measured below body-text contrast.
+
 - **The docs state facts the code agrees with** (B288). One pass corrected the claims the review found stale: the
   formatting measurement (276 findings across 97 files now that the task's report is formatting-only), the backup
   ceiling (7, not 6), and the migration rule, which named a `MigrationTestHelper` this repository does not carry and

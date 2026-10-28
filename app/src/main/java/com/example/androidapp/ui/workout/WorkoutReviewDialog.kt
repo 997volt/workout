@@ -152,7 +152,7 @@ private fun PlanComparisonRow(comparison: PlanComparison) {
         Text(
             text = verdictText(comparison),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         // The effort's own verdict, on its own line (ROADMAP N131): the plan answers two questions
         // here — how heavy, and how hard — and a single line carrying both would read as one claim.
@@ -160,7 +160,7 @@ private fun PlanComparisonRow(comparison: PlanComparison) {
             Text(
                 text = effort,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

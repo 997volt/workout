@@ -1080,6 +1080,8 @@ class ActiveWorkoutViewModel @Inject constructor(
             // An edit moves a set a log's comparison may be reading, so it takes its turn with logging
             // (ROADMAP B129). The edit itself compares nothing.
             writingASet.withLock {
+                // The banner names the record the set was; an edit or a delete can make that false (B290).
+                _personalRecord.value = null
                 handle(
                     workoutRepository.updateSet(
                         setId = setId,
@@ -1101,6 +1103,8 @@ class ActiveWorkoutViewModel @Inject constructor(
         viewModelScope.launch {
             // A delete removes a set a log's comparison may be reading, for the same reason (ROADMAP B129).
             writingASet.withLock {
+                // Deleting the set can delete the record it announced (B290).
+                _personalRecord.value = null
                 when (val result = workoutRepository.deleteSet(set.id)) {
                     is DataResult.Success -> pendingUndo.value = set
                     is DataResult.Failure -> lastError.value = result.error

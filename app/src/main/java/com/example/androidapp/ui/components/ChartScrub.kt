@@ -4,6 +4,8 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -34,26 +36,34 @@ internal fun scrubDirection(total: Offset, slop: Float): Boolean? {
  * drag. Nothing is consumed until the drag is known to be the figure's (B211), and a second finger hands the
  * gesture to [onZoom] (N213).
  */
+@Composable
 internal fun Modifier.scrubbable(
     onScrub: (Float?) -> Unit,
     onZoom: ((scale: Float, focus: Float) -> Unit)? = null,
-): Modifier = pointerInput(onZoom) {
-    awaitEachGesture {
-        val down = awaitFirstDown(requireUnconsumed = false)
-        onScrub(down.fraction(size.width))
-        val gesture = ChartGesture(
-            down = down,
-            onScrub = onScrub,
-            onZoom = onZoom,
-            slop = viewConfiguration.touchSlop,
-            width = size.width,
-        )
-        var event = awaitPointerEvent()
-        while (event.changes.any { it.pressed }) {
-            gesture.apply(event)
-            event = awaitPointerEvent()
+): Modifier {
+    // The pointer loop is started once and keeps the callbacks it captured (B290). It used to key on
+    // `onZoom` while reading `onScrub`, which the figure rebuilds on every composition with the current
+    // overlay and series — so a scrub either read a stale chart or the loop restarted mid-gesture.
+    val scrub = rememberUpdatedState(onScrub)
+    val zoom = rememberUpdatedState(onZoom)
+    return pointerInput(Unit) {
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            scrub.value(down.fraction(size.width))
+            val gesture = ChartGesture(
+                down = down,
+                onScrub = { fraction -> scrub.value(fraction) },
+                onZoom = { scale, focus -> zoom.value?.invoke(scale, focus) },
+                slop = viewConfiguration.touchSlop,
+                width = size.width,
+            )
+            var event = awaitPointerEvent()
+            while (event.changes.any { it.pressed }) {
+                gesture.apply(event)
+                event = awaitPointerEvent()
+            }
+            scrub.value(null)
         }
-        onScrub(null)
     }
 }
 
