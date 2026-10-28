@@ -650,9 +650,18 @@ private suspend fun buildProgramDocument(
 ): ProgramDocument {
     val programDao = database.programDao()
     val program = programDao.findProgram(programId) ?: throw NotFoundException("program $programId")
-    val slots = programDao.findSlots(programId)
+    // **A day whose workout is hidden is not exported** (B287). A template's delete is a soft delete, so the
+    // slot survives it while `findById` hides the row — and a document carrying the slot without its workout is
+    // one the app's own validator refuses (`DANGLING_SLOT_TEMPLATE`), which the receiving merge then drops in
+    // silence. The screen does not show that day either: the document says what the program is.
+    val liveTemplates = programDao.findSlots(programId)
+        .map { it.templateId }
+        .distinct()
+        .mapNotNull { database.templateDao().findById(it) }
+    val kept = liveTemplates.mapTo(mutableSetOf()) { it.id }
+    val slots = programDao.findSlots(programId).filter { it.templateId in kept }
     val templateIds = slots.map { it.templateId }.distinct()
-    val templates = templateIds.mapNotNull { database.templateDao().findById(it) }
+    val templates = liveTemplates
     val templateExercises = templateIds.flatMap { database.templateDao().findTemplateExercises(it) }
     val templateSets = templateIds.flatMap { database.templateSetDao().findTemplateSets(it) }
     // The definition of every exercise the plan names, so a receiving device can create the ones it

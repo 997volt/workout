@@ -543,14 +543,7 @@ private fun NextSetEditor(
     val values = draft.values(unit)
 
     Column(modifier = modifier) {
-        PlanProgressNotice(row = row)
-        row.suggestion.reason?.let { reason ->
-            SuggestionReasonLine(
-                reason = reason,
-                unit = unit,
-                modifier = Modifier.testTag(TestTags.exerciseSuggestionReason(row.id)),
-            )
-        }
+        NextSetHeader(row = row, unit = unit)
         Column(
             modifier = Modifier.padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -601,20 +594,7 @@ private fun NextSetEditor(
                     targetRpeHalves = suggestion.targetRpeHalves,
                 )
             }
-            FilledTonalButton(
-                onClick = { onLogSet(draft.toEdit(unit)) },
-                enabled = values.isComplete,
-                modifier = Modifier.fillMaxWidth().testTag(TestTags.SET_LOG),
-            ) {
-                // The plan's work is done, so the label stops promising a target the plan no
-                // longer names (ROADMAP N52). Logging an extra set is what the control still
-                // does — nothing closes, and the way to end the exercise is Done.
-                Text(
-                    stringResource(
-                        if (row.isPastPlan) R.string.set_log_extra else R.string.set_log,
-                    ),
-                )
-            }
+            LogSetButton(row = row, edit = draft.toEdit(unit), enabled = values.isComplete, onLogSet = onLogSet)
         }
     }
 }
@@ -852,3 +832,41 @@ internal fun reseeded(
     unit: WeightUnit,
     timed: Boolean,
 ): SetEntryDraft = if (edited) current else suggestion.initialDraft(unit, timed)
+
+/** What the block says above its fields: the plan's progress and why the next set opens how it does. */
+@Composable
+private fun NextSetHeader(row: SessionExerciseRow, unit: WeightUnit) {
+    PlanProgressNotice(row = row)
+    row.suggestion.reason?.let { reason ->
+        SuggestionReasonLine(
+            reason = reason,
+            unit = unit,
+            modifier = Modifier.testTag(TestTags.exerciseSuggestionReason(row.id)),
+        )
+    }
+}
+
+/**
+ * The control that writes the set above it (N59, N68, N52).
+ *
+ * Extracted because the block it sits in is at the length this project allows: the label is the one part
+ * of that block that reads the plan's state rather than the draft.
+ */
+@Composable
+private fun LogSetButton(
+    row: SessionExerciseRow,
+    edit: SetEdit,
+    enabled: Boolean,
+    onLogSet: (SetEdit) -> Unit,
+) {
+    FilledTonalButton(
+        onClick = { onLogSet(edit) },
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth().testTag(TestTags.SET_LOG),
+    ) {
+        // The plan's work is done, so the label stops promising a target the plan no longer names
+        // (ROADMAP N52). Logging an extra set is what the control still does — nothing closes, and the
+        // way to end the exercise is Done.
+        Text(stringResource(if (row.isPastPlan) R.string.set_log_extra else R.string.set_log))
+    }
+}

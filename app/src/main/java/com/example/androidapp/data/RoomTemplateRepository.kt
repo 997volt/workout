@@ -86,13 +86,16 @@ class RoomTemplateRepository @Inject constructor(
      * nothing on the screen could tell that apart from one authored that way.
      */
     override suspend fun keepVersion(templateId: String): DataResult<Unit> = dataResultOf {
-        // `findById` hides a version, so a version of a version is refused here rather than at the UI.
-        val template = dao.findById(templateId) ?: throw NotFoundException("template $templateId")
-        val exercises = dao.findTemplateExercises(templateId)
-        val sets = setDao.findTemplateSets(templateId).groupBy { it.templateExerciseId }
         val now = timeSource.nowEpochMillis()
 
         database.withTransaction {
+            // **The reads are inside the transaction too** (B287). Outside it, an edit landing between a
+            // read and the copy produced a version of a plan that never existed: a set added concurrently
+            // missing from it, or exercises and sets read from two different moments.
+            // `findById` hides a version, so a version of a version is refused here rather than at the UI.
+            val template = dao.findById(templateId) ?: throw NotFoundException("template $templateId")
+            val exercises = dao.findTemplateExercises(templateId)
+            val sets = setDao.findTemplateSets(templateId).groupBy { it.templateExerciseId }
             val versionId = UUID.randomUUID().toString()
             dao.insertTemplate(
                 TemplateEntity(

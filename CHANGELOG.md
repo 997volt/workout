@@ -17,6 +17,18 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A statistics write and the record count tell the truth** (B281). Two writes on the statistics screen dropped
+  their result — a target and the recents row — while their own KDoc said a failure has to be visible; both report
+  through the screen's settings-error channel now, which carries every write on that screen rather than only the
+  range. And the record count filtered on the *added* weight being positive, so a weighted pull-up counted as a
+  record the live announce and `personalRecords` both refuse: it asks `bodyweightGrams IS NULL` on both sides now.
+
+- **A program's version and its export keep their promises** (B287). `keepVersion` read the plan outside the
+  transaction its own comment says spans the reads and the copy, so an edit landing between them produced a version
+  of a plan that never existed; the reads are inside it now. And the document export carried every slot but only live
+  workouts, so a program using a deleted workout exported a document its own validator refuses — and the receiving
+  merge dropped the day in silence. A day whose workout is hidden is not exported, which is what the screen shows.
+
 - **The next set's fields take the history when it arrives** (B272). The draft was keyed on the row and its
   set count, and neither changes when the asynchronous previous-performance read returns — so the fields kept
   their 8 × 20 kg fallback while the reason line beside them read "Last time …", and *Log set* wrote the fallback.

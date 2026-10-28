@@ -819,13 +819,13 @@ class StatisticsViewModelTest {
         viewModel.onPinch(scale = 2f, focus = 0.5f)
         advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.rangeError).isNotNull()
+        assertThat(viewModel.uiState.value.settingsError).isNotNull()
         assertThat(viewModel.uiState.value.range.kind).isEqualTo(RangeKind.LAST_7_DAYS)
         assertThat(settings.stored.value.kind).isEqualTo(RangeKind.LAST_7_DAYS)
 
-        viewModel.onDismissRangeError()
+        viewModel.onDismissSettingsError()
         advanceUntilIdle()
-        assertThat(viewModel.uiState.value.rangeError).isNull()
+        assertThat(viewModel.uiState.value.settingsError).isNull()
     }
 
     @Test

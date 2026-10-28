@@ -84,7 +84,7 @@ fun StatisticsRoute(
         onSetGoal = viewModel::onSetGoal,
         onOpenMeasurements = onOpenMeasurements,
         onOpenAdherence = onOpenAdherence,
-        onDismissRangeError = viewModel::onDismissRangeError,
+        onDismissSettingsError = viewModel::onDismissSettingsError,
     )
 }
 
@@ -109,7 +109,7 @@ fun StatisticsScreen(
     /** Sets or clears the chosen metric's target (ROADMAP N39). */
     onSetGoal: (Double?) -> Unit = {},
     /** Takes a failed range write away once its snackbar has been read (B229). */
-    onDismissRangeError: () -> Unit = {},
+    onDismissSettingsError: () -> Unit = {},
     /**
      * Opens body measurements (ROADMAP N35).
      *
@@ -129,7 +129,7 @@ fun StatisticsScreen(
 ) {
     var choosingDates by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    RangeErrorSnackbar(state, snackbarHostState, onDismissRangeError)
+    SettingsErrorSnackbar(state, snackbarHostState, onDismissSettingsError)
     if (choosingDates) {
         CustomRangeDialog(
             initial = state.range,
@@ -271,9 +271,9 @@ private fun StatisticsBody(
 
 /** A failed range write, said once rather than silently reverting the window (B229). */
 @Composable
-private fun RangeErrorSnackbar(state: StatisticsUiState, host: SnackbarHostState, onDismiss: () -> Unit) {
+private fun SettingsErrorSnackbar(state: StatisticsUiState, host: SnackbarHostState, onDismiss: () -> Unit) {
     MessageSnackbar(
-        message = state.rangeError?.let { dataErrorMessage(it) },
+        message = state.settingsError?.let { dataErrorMessage(it) },
         hostState = host,
         onDismiss = onDismiss,
     )

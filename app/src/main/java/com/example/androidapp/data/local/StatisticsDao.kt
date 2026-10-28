@@ -35,9 +35,12 @@ interface StatisticsDao {
      * divergence means the live path merging the whole session's sets for the exercise rather than one row.
      *
      * Warm-ups are excluded on both sides, which is B17's rule — a heavy warm-up is not a record — and a
-     * bodyweight set has no weight to compare, so it is excluded by the same `weightGrams > 0` the domain
-     * rule uses rather than being counted as one. `reps > 0` matches `PersonalRecords.from`, which drops a
-     * set with no reps; only a restored backup file can produce one, since every write path clamps.
+     * bodyweight set is excluded by `bodyweightGrams IS NULL` (B281). It used to rely on `weightGrams > 0`
+     * for that, which is the *added* weight: a weighted pull-up passes it, while `personalRecords` and the
+     * live announce both refuse it, so the count included a record the app never told the lifter about.
+     *
+     * `reps > 0` matches `PersonalRecords.from`, which drops a set with no reps; only a restored
+     * backup file can produce one, since every write path clamps.
      *
      * **The roles whose effort counts come from the caller, not from a literal here** (B155). This predicate
      * named `'WARMUP'` alone, so a DROP or CLUSTER rung — which the domain rule refuses
@@ -56,6 +59,7 @@ interface StatisticsDao {
         WHERE s.deletedAt IS NULL AND se.deletedAt IS NULL AND ws.deletedAt IS NULL
           AND ws.finishedAt IS NOT NULL
           AND s.setType IN (:recordableRoles) AND s.weightGrams > 0 AND s.reps > 0
+          AND s.bodyweightGrams IS NULL
           AND ws.startedAt >= :from AND ws.startedAt < :to
           AND NOT EXISTS (
               SELECT 1 FROM set_entries earlier
@@ -66,6 +70,7 @@ interface StatisticsDao {
                 AND earlier.deletedAt IS NULL AND ese.deletedAt IS NULL AND ews.deletedAt IS NULL
                 AND ews.finishedAt IS NOT NULL
                 AND earlier.setType IN (:recordableRoles) AND earlier.weightGrams >= s.weightGrams
+                AND earlier.bodyweightGrams IS NULL
                 AND (
                     ews.startedAt < ws.startedAt
                     OR (ews.startedAt = ws.startedAt AND ese.position < se.position)
