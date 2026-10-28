@@ -117,6 +117,15 @@
     return Object.prototype.hasOwnProperty.call(object, key);
   }
 
+  /* What a loaded row list says, without the markers `reconcileSources` writes onto it (B279). The
+   * same-list guard compared the annotated copies, so its signature never matched again and re-dropping
+   * a file doubled the model instead of refusing it. */
+  function sourceSignature(rows) {
+    return JSON.stringify(rows, function (key, value) {
+      return key === '__source' || key === '__row' ? undefined : value;
+    });
+  }
+
   /* True unless the row carries a soft delete (B179).
    *
    * The app keeps a deleted row under its id — an export carries it, and an import can restore it —
@@ -3359,9 +3368,9 @@
 
     /* A list is loaded once: the same rows twice would double every session, and
      * the ids would not even collide to hide it (N161). */
-    var signature = JSON.stringify(rows);
+    var signature = sourceSignature(rows);
     for (var i = 0; i < state.sources.length; i++) {
-      if (JSON.stringify(state.sources[i].rows) === signature) {
+      if (sourceSignature(state.sources[i].rows) === signature) {
         ui.elements.sourceStatus.textContent =
           'That list is already loaded. Remove it first to replace it.';
         announce('That list is already loaded.');
@@ -7855,6 +7864,9 @@
       RUNG_WITHOUT_VALUE: 'The first drop of a run needs its drop value.',
       RUN_MIXES_KINDS: 'A run of drops or clusters cannot change kind part-way.',
       RUNG_CARRIES_TARGETS: 'A drop or cluster set takes its load and reps from the set above it.',
+      DROP_VALUE_ON_NOT_DROP: 'Only a drop set takes a value off the set above it.',
+      DROP_VALUE_ON_LATER_RUNG: 'A run\'s drop value is written on its first drop.',
+      DROP_WITHOUT_LOAD: 'That drop leaves the set above it nothing to take off.',
       INVALID_REPS: 'A rep target is not usable.',
       INVALID_LOAD: 'A load is not usable.',
       INVALID_RPE: 'An effort target must be between 1 and 10.',
@@ -7936,6 +7948,12 @@
     if (isObject(parsed) && typeof parsed.formatVersion === 'number' && isObject(parsed.program)) {
       if (isObject(parsed.edit)) {
         editorClear('That is an edit, not a program. Open the program\'s export, or a draft.');
+        return;
+      }
+      if (parsed.formatVersion > programFormatVersion()) {
+        // The add path re-stamps the working copy at the current version (B198), so a newer document used
+        // to be refused as an edit and silently written as an older add (B279).
+        editorClear('That program was written by a newer version of the editor than this page carries.');
         return;
       }
       editorLoadDocument(parsed, fileName);
@@ -8394,6 +8412,7 @@
     roleIsWork: roleIsWork,
     MAX_ESTIMATED_REPS: MAX_ESTIMATED_REPS,
     estimatedOneRepMax: estimatedOneRepMax,
+    sourceSignature: sourceSignature,
     liftTrendPoints: liftTrendPoints,
     movementsWithHistory: movementsWithHistory,
     exportSnapshot: exportSnapshot,

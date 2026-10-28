@@ -17,6 +17,15 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The helper refuses what the app refuses** (B279). The same-list guard compared rows as stored, and the page
+  writes `__source`/`__row` onto them, so its signature never matched again and re-dropping a file doubled the
+  model instead of refusing it. The shared validator was also weaker than the app's own write boundary: the RPE
+  floor was one half-point low, a rung could carry a current rep target, and the three run rules the template
+  editor enforces were absent — a value on a set that is not a drop, a value on a later rung, and a drop under
+  nothing to take off. Those are codes now, with the app's own sentences on the page. And a document newer than
+  the page's core is refused when it is opened, instead of being refused as an edit and silently written as an
+  older add.
+
 - **A statistics write and the record count tell the truth** (B281). Two writes on the statistics screen dropped
   their result — a target and the recents row — while their own KDoc said a failure has to be visible; both report
   through the screen's settings-error channel now, which carries every write on that screen rather than only the

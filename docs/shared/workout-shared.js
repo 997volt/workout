@@ -179,6 +179,9 @@
     ProblemCode_RUNG_WITHOUT_VALUE_instance = new ProblemCode('RUNG_WITHOUT_VALUE', 22);
     ProblemCode_RUN_MIXES_KINDS_instance = new ProblemCode('RUN_MIXES_KINDS', 23);
     ProblemCode_RUNG_CARRIES_TARGETS_instance = new ProblemCode('RUNG_CARRIES_TARGETS', 24);
+    ProblemCode_DROP_VALUE_ON_NOT_DROP_instance = new ProblemCode('DROP_VALUE_ON_NOT_DROP', 25);
+    ProblemCode_DROP_VALUE_ON_LATER_RUNG_instance = new ProblemCode('DROP_VALUE_ON_LATER_RUNG', 26);
+    ProblemCode_DROP_WITHOUT_LOAD_instance = new ProblemCode('DROP_WITHOUT_LOAD', 27);
   }
   var ProblemCode_MALFORMED_instance;
   var ProblemCode_MISSING_VERSION_instance;
@@ -205,6 +208,9 @@
   var ProblemCode_RUNG_WITHOUT_VALUE_instance;
   var ProblemCode_RUN_MIXES_KINDS_instance;
   var ProblemCode_RUNG_CARRIES_TARGETS_instance;
+  var ProblemCode_DROP_VALUE_ON_NOT_DROP_instance;
+  var ProblemCode_DROP_VALUE_ON_LATER_RUNG_instance;
+  var ProblemCode_DROP_WITHOUT_LOAD_instance;
   function ProblemCode(name, ordinal) {
     Enum.call(this, name, ordinal);
   }
@@ -428,6 +434,18 @@
   function ProblemCode_RUNG_CARRIES_TARGETS_getInstance() {
     static_init();
     return ProblemCode_RUNG_CARRIES_TARGETS_instance;
+  }
+  function ProblemCode_DROP_VALUE_ON_NOT_DROP_getInstance() {
+    static_init();
+    return ProblemCode_DROP_VALUE_ON_NOT_DROP_instance;
+  }
+  function ProblemCode_DROP_VALUE_ON_LATER_RUNG_getInstance() {
+    static_init();
+    return ProblemCode_DROP_VALUE_ON_LATER_RUNG_instance;
+  }
+  function ProblemCode_DROP_WITHOUT_LOAD_getInstance() {
+    static_init();
+    return ProblemCode_DROP_WITHOUT_LOAD_instance;
   }
   function get_json() {
     _init_properties_ProgramJson_kt__8o3jdm();
@@ -4394,7 +4412,7 @@
         null;
       else {
         // Inline function 'kotlin.let' call
-        if (!(1 <= tmp2_safe_receiver ? tmp2_safe_receiver <= 20 : false)) {
+        if (!(2 <= tmp2_safe_receiver ? tmp2_safe_receiver <= 20 : false)) {
           refuse.h1h(ProblemCode_INVALID_RPE_getInstance(), path + '.targetRpeHalves');
         }
       }
@@ -4595,32 +4613,49 @@
       index = _unary__edvuaz + 1 | 0;
       var tmp0 = checkIndexOverflow(_unary__edvuaz);
       $l$block: {
+        var path = 'templateSets(' + plannedId + ')[' + tmp0 + ']';
+        var tmp;
+        var tmp0_elvis_lhs = item.d1g_1;
+        if (compare(tmp0_elvis_lhs == null ? new Long(0, 0) : tmp0_elvis_lhs, new Long(0, 0)) > 0) {
+          tmp = !item.x1f_1.equals(ProgramSetRole_DROP_getInstance());
+        } else {
+          tmp = false;
+        }
+        if (tmp) {
+          refuse.g1h(ProblemCode_DROP_VALUE_ON_NOT_DROP_getInstance(), path, null);
+        }
         if (!item.x1f_1.e1h()) {
           break $l$block;
         }
-        var path = 'templateSets(' + plannedId + ')[' + tmp0 + ']';
         if (carriesTargets(item)) {
           refuse.g1h(ProblemCode_RUNG_CARRIES_TARGETS_getInstance(), path, null);
         }
-        var above = getOrNull(ordered, tmp0 - 1 | 0);
-        if (above == null) {
-          refuse.g1h(ProblemCode_RUNG_WITHOUT_ANCHOR_getInstance(), path, null);
-        } else if (above.x1f_1.equals(ProgramSetRole_WARMUP_getInstance())) {
-          refuse.g1h(ProblemCode_RUNG_UNDER_WARMUP_getInstance(), path, null);
-        } else if (!above.x1f_1.e1h()) {
-          var tmp;
-          if (item.x1f_1.equals(ProgramSetRole_DROP_getInstance())) {
-            var tmp0_elvis_lhs = item.d1g_1;
-            tmp = compare(tmp0_elvis_lhs == null ? new Long(0, 0) : tmp0_elvis_lhs, new Long(0, 0)) <= 0;
-          } else {
-            tmp = false;
-          }
-          if (tmp) {
-            refuse.g1h(ProblemCode_RUNG_WITHOUT_VALUE_getInstance(), path, null);
-          }
-        } else if (!above.x1f_1.equals(item.x1f_1)) {
-          refuse.g1h(ProblemCode_RUN_MIXES_KINDS_getInstance(), path, null);
-        }
+        refuseRungShape(item, getOrNull(ordered, tmp0 - 1 | 0), path, refuse);
+      }
+    }
+  }
+  function refuseRungShape(set, above, path, refuse) {
+    var tmp0_elvis_lhs = set.d1g_1;
+    var value = tmp0_elvis_lhs == null ? new Long(0, 0) : tmp0_elvis_lhs;
+    if (above == null) {
+      refuse.g1h(ProblemCode_RUNG_WITHOUT_ANCHOR_getInstance(), path, null);
+    } else if (above.x1f_1.equals(ProgramSetRole_WARMUP_getInstance())) {
+      refuse.g1h(ProblemCode_RUNG_UNDER_WARMUP_getInstance(), path, null);
+    } else if (!above.x1f_1.e1h()) {
+      if (!set.x1f_1.equals(ProgramSetRole_DROP_getInstance()))
+        return Unit_instance;
+      if (compare(value, new Long(0, 0)) <= 0) {
+        refuse.g1h(ProblemCode_RUNG_WITHOUT_VALUE_getInstance(), path, null);
+      }
+      if (!carriesLoad(above)) {
+        refuse.g1h(ProblemCode_DROP_WITHOUT_LOAD_getInstance(), path, null);
+      }
+    } else {
+      if (compare(value, new Long(0, 0)) > 0) {
+        refuse.g1h(ProblemCode_DROP_VALUE_ON_LATER_RUNG_getInstance(), path, null);
+      }
+      if (!above.x1f_1.equals(set.x1f_1)) {
+        refuse.g1h(ProblemCode_RUN_MIXES_KINDS_getInstance(), path, null);
       }
     }
   }
@@ -4631,7 +4666,7 @@
     return !(_this__u8e3s4.y1f_1 == null) || !(_this__u8e3s4.z1f_1 == null);
   }
   function carriesReps(_this__u8e3s4) {
-    return !(_this__u8e3s4.a1g_1 == null) || !(_this__u8e3s4.b1g_1 == null);
+    return !(_this__u8e3s4.a1g_1 == null) || !(_this__u8e3s4.b1g_1 == null) || !(_this__u8e3s4.c1g_1 == null);
   }
   function duplicates(ids) {
     // Inline function 'kotlin.collections.groupingBy' call

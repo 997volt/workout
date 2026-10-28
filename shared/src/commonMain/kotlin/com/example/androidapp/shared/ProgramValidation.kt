@@ -17,7 +17,7 @@ private class Refusal(private val sink: (ProblemCode, String, String?) -> Unit) 
 private const val MAX_REST_SECONDS = 3600
 
 /** RPE is half-points, so 1.0–10.0 is 1..20 (N6). */
-private const val RPE_HALVES_MIN = 1
+private const val RPE_HALVES_MIN = 2
 private const val RPE_HALVES_MAX = 20
 
 /**
@@ -207,30 +207,45 @@ private fun validateRuns(
     refuse: Refusal,
 ) {
     ordered.forEachIndexed { index, set ->
-        if (!set.role.isRung) return@forEachIndexed
         val path = "templateSets($plannedId)[$index]"
+        // A drop value belongs to a drop, and only to one (B279) — a plain set's value is a number
+        // nothing reads, and the app's write boundary refuses it. Checked before the rung-only rules,
+        // because the set this catches is precisely one that is not a rung.
+        if ((set.dropValueGrams ?: 0L) > 0L && set.role != ProgramSetRole.DROP) {
+            refuse(ProblemCode.DROP_VALUE_ON_NOT_DROP, path, null)
+        }
+        if (!set.role.isRung) return@forEachIndexed
         if (set.carriesTargets()) {
             // A rung's load and reps are derived from its anchor, so writing either back would put a
             // number on the row that nothing reads (N79).
             refuse(ProblemCode.RUNG_CARRIES_TARGETS, path, null)
         }
-        val above = ordered.getOrNull(index - 1)
-        when {
-            above == null -> refuse(ProblemCode.RUNG_WITHOUT_ANCHOR, path, null)
-            above.role == ProgramSetRole.WARMUP -> {
-                refuse(ProblemCode.RUNG_UNDER_WARMUP, path, null)
-            }
+        refuseRungShape(set, ordered.getOrNull(index - 1), path, refuse)
+    }
+}
 
-            !above.role.isRung -> {
-                // The run starts here: a drop has to name the value it takes off.
-                if (set.role == ProgramSetRole.DROP && (set.dropValueGrams ?: 0L) <= 0L) {
-                    refuse(ProblemCode.RUNG_WITHOUT_VALUE, path, null)
-                }
-            }
+/** What a rung needs from the set above it, in the app's own order of answers (N79, B186, B279). */
+private fun refuseRungShape(
+    set: TemplateSetDto,
+    above: TemplateSetDto?,
+    path: String,
+    refuse: Refusal,
+) {
+    val value = set.dropValueGrams ?: 0L
+    when {
+        above == null -> refuse(ProblemCode.RUNG_WITHOUT_ANCHOR, path, null)
+        above.role == ProgramSetRole.WARMUP -> refuse(ProblemCode.RUNG_UNDER_WARMUP, path, null)
+        !above.role.isRung -> {
+            if (set.role != ProgramSetRole.DROP) return
+            // The run starts here: a drop has to name the value it takes off, and the set above it has to
+            // have a load for the value to come off.
+            if (value <= 0L) refuse(ProblemCode.RUNG_WITHOUT_VALUE, path, null)
+            if (!above.carriesLoad()) refuse(ProblemCode.DROP_WITHOUT_LOAD, path, null)
+        }
 
-            above.role != set.role -> {
-                refuse(ProblemCode.RUN_MIXES_KINDS, path, null)
-            }
+        else -> {
+            if (value > 0L) refuse(ProblemCode.DROP_VALUE_ON_LATER_RUNG, path, null)
+            if (above.role != set.role) refuse(ProblemCode.RUN_MIXES_KINDS, path, null)
         }
     }
 }
@@ -241,7 +256,8 @@ private fun TemplateSetDto.carriesTargets(): Boolean = carriesLoad() || carriesR
 private fun TemplateSetDto.carriesLoad(): Boolean =
     targetWeightGrams != null || targetAssistanceGrams != null
 
-private fun TemplateSetDto.carriesReps(): Boolean = targetRepsMin != null || targetRepsMax != null
+private fun TemplateSetDto.carriesReps(): Boolean =
+    targetRepsMin != null || targetRepsMax != null || targetRepsCurrent != null
 
 private fun duplicates(ids: List<Any>): List<String> =
     ids.groupingBy { it }.eachCount().filterValues { it > 1 }.keys.map { it.toString() }

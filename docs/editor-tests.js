@@ -808,6 +808,67 @@
       t.eq(points[1].heaviestSetGrams, 40000, '60 kg less the 20 kg the machine took is 40 kg');
     });
 
+    check('a list dropped twice is compared without its tags (B279)', function () {
+      // The guard compared the rows as stored, and `reconcileSources` writes `__source`/`__row` onto them,
+      // so the signature never matched again and a second drop doubled the model.
+      var rows = [{ date: '2024-03-04', exercise: 'Back Squat', reps: 5 }];
+      var annotated = [Object.assign({ __source: 0, __row: 1 }, rows[0])];
+
+      t.eq(H.sourceSignature(annotated), H.sourceSignature(rows),
+        'the markers a list gains are not part of what it says');
+    });
+
+    check('the validator refuses what the app\'s write boundary refuses (B279)', function () {
+      function problemsFor(sets) {
+        var document = baseDocument();
+        document.templateSets = sets;
+        return JSON.parse(shared.validateJson(JSON.stringify(document))).problems;
+      }
+      function set(overrides) {
+        var base = {
+          id: 'set_' + Math.random(), templateExerciseId: 'te_a', setIndex: 0, role: 'NORMAL',
+          targetWeightGrams: 100000, targetAssistanceGrams: null, targetRepsMin: null,
+          targetRepsMax: 5, targetRepsCurrent: null, dropValueGrams: null, note: null,
+          createdAt: 1, updatedAt: 2, deletedAt: null
+        };
+        Object.keys(overrides).forEach(function (key) { base[key] = overrides[key]; });
+        return base;
+      }
+
+      var valueOnNormal = problemsFor([set({ role: 'NORMAL', dropValueGrams: 10000 })]);
+      t.ok(valueOnNormal.some(function (p) { return p.code === 'DROP_VALUE_ON_NOT_DROP'; }),
+        'only a drop takes a value off the set above it');
+
+      var laterRung = problemsFor([
+        set({ id: 'a', setIndex: 0, role: 'NORMAL' }),
+        set({ id: 'b', setIndex: 1, role: 'DROP', dropValueGrams: 10000, targetWeightGrams: null }),
+        set({ id: 'c', setIndex: 2, role: 'DROP', dropValueGrams: 5000, targetWeightGrams: null })
+      ]);
+      t.ok(laterRung.some(function (p) { return p.code === 'DROP_VALUE_ON_LATER_RUNG'; }),
+        'a later rung carries no value of its own');
+
+      var noLoad = problemsFor([
+        set({ id: 'a', setIndex: 0, role: 'NORMAL', targetWeightGrams: null, targetAssistanceGrams: null }),
+        set({ id: 'b', setIndex: 1, role: 'DROP', dropValueGrams: 10000, targetWeightGrams: null })
+      ]);
+      t.ok(noLoad.some(function (p) { return p.code === 'DROP_WITHOUT_LOAD'; }),
+        'a drop under nothing has nothing to take off');
+
+      var rungReps = problemsFor([
+        set({ id: 'a', setIndex: 0, role: 'NORMAL' }),
+        set({ id: 'b', setIndex: 1, role: 'CLUSTER', targetRepsCurrent: 5, targetRepsMax: null })
+      ]);
+      t.ok(rungReps.some(function (p) { return p.code === 'RUNG_CARRIES_TARGETS'; }),
+        'a rung takes its reps from its anchor, a current target included');
+
+      // The effort lives on the planned exercise, not the set.
+      var halfPointDocument = baseDocument();
+      halfPointDocument.templateExercises[0].targetRpeHalves = 1;
+      var halfPoint = JSON.parse(shared.validateJson(JSON.stringify(halfPointDocument))).problems;
+      t.ok(halfPoint.some(function (p) { return p.code === 'INVALID_RPE'; }),
+        '0.5 is below the scale the app stores');
+    });
+
     return ran;
   }
 

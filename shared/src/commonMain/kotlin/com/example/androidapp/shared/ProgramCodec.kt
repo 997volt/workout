@@ -90,6 +90,15 @@ enum class ProblemCode {
 
     /** A rung carries a load or a rep target, which it has to take from the set above it instead. */
     RUNG_CARRIES_TARGETS,
+
+    /** A set that is not a drop names a drop value, which nothing reads. */
+    DROP_VALUE_ON_NOT_DROP,
+
+    /** A drop value is written on a later rung, and only the run's first one is read. */
+    DROP_VALUE_ON_LATER_RUNG,
+
+    /** A drop hangs off an anchor that states no load, so there is nothing to take the value off. */
+    DROP_WITHOUT_LOAD,
 }
 
 /** One refusal, located where the reader can act on it. */
