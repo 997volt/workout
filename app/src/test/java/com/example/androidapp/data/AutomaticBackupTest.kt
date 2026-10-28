@@ -248,6 +248,30 @@ class AutomaticBackupTest {
     }
 
     @Test
+    fun aCollisionCopy_isNewerThanTheFileItLandedBeside() {
+        // B285: `…-000-2.json` sorts below `…-000.json` as a string, because '-' sorts before '.', so the
+        // copy written on a backwards clock read as older than the file it collided with.
+        val original = backupFileName(now)
+        val copy = original.removeSuffix(".json") + "-2.json"
+        val older = (1..4).map { backupFileName(now.minus(Duration.ofDays(it.toLong()))) }
+
+        val pruned = backupsToDelete(older + original + copy)
+
+        assertThat(pruned).containsExactly(older.last())
+    }
+
+    @Test
+    fun theFileJustWritten_isNeverPruned() {
+        // Even if a clock and its suffixes say otherwise, the prune cannot take the copy the run just made.
+        val justWritten = backupFileName(now)
+        val newer = (1..5).map { backupFileName(now.plus(Duration.ofDays(it.toLong()))) }
+
+        val pruned = backupsToDelete(newer + justWritten, keep = justWritten)
+
+        assertThat(pruned).doesNotContain(justWritten)
+    }
+
+    @Test
     fun thePrunedSet_isTheOldestOnes() {
         // Named as the launcher names them, so the order is time: a backup named for a later instant is newer,
         // and the list is built newest-first to match what the folder holds.

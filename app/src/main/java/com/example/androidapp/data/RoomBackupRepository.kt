@@ -327,6 +327,10 @@ class RoomBackupRepository @Inject constructor(
                 Instant.ofEpochMilli(it.measuredAt).localDayBounds(zone).first to it.kind
             }
         return filter { row ->
+            // A soft-deleted row cannot be the second *live* entry on a day, so it never reserves one
+            // (B269). It used to: the hidden row came first in rowid order, took the day, and filtered out
+            // the live row beside it — so restoring a save/delete/re-enter history left the day empty.
+            if (row.deletedAt != null) return@filter true
             val day = Instant.ofEpochMilli(row.measuredAt).localDayBounds(zone).first to row.kind
             // `add` answers "was this day new": a false is the row that would have been the second entry.
             taken.add(day)
@@ -340,8 +344,13 @@ class RoomBackupRepository @Inject constructor(
      *
      * Parents before children, so the foreign keys hold as rows go in.
      */
-    private suspend fun insertMissing(file: BackupFile): Int =
-        dao.insertExercises(file.exercises.map { it.toEntity() }).count { it != SKIPPED } +
+    private suspend fun insertMissing(file: BackupFile): Int {
+        val attemptedMeasurements = file.measurements.withoutAnExistingDay()
+        val measurementParents = attemptedMeasurements.mapTo(mutableSetOf()) { it.id }
+        measurementParents += measurements.allForExport()
+            .filter { it.deletedAt == null }
+            .map { it.id }
+        return dao.insertExercises(file.exercises.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertSessions(file.sessions.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertSessionExercises(file.sessionExercises.map { it.toEntity() }).count { it != SKIPPED } +
             // The joint rows go in after the exercises they hang off, which the line above wrote (N63).
@@ -353,11 +362,17 @@ class RoomBackupRepository @Inject constructor(
             dao.insertTemplateExercises(file.templateExercises.map { it.toEntity() }).count { it != SKIPPED } +
             dao.insertTemplateSets(file.templateSets.map { it.toEntity() }).count { it != SKIPPED } +
             // One entry of each kind per day, so a file's row yields to the day this device already has (B178).
-            measurements.insertAll(file.measurements.withoutAnExistingDay().map { it.toEntity() })
+            measurements.insertAll(attemptedMeasurements.map { it.toEntity() })
                 .count { it != SKIPPED } +
-            // The sore rows hang off a daily measurement, so they go in after the entries above (N113).
-            measurementSore.insert(file.measurementSoreMuscles.map { it.toEntity() })
-                .count { it != SKIPPED }
+            // The sore rows hang off a daily measurement, so they go in after the entries above, and only
+            // for a measurement that is actually here afterwards (B269): inserting one whose entry yielded
+            // to the device's own day violates the foreign key, and the whole import rolls back with it.
+            measurementSore.insert(
+                file.measurementSoreMuscles
+                    .filter { it.measurementId in measurementParents }
+                    .map { it.toEntity() },
+            ).count { it != SKIPPED }
+    }
 
     /**
      * Restores and adds the program tables (ROADMAP P3.3), returning what each step did.

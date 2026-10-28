@@ -17,6 +17,19 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A restore cannot refuse or lose a body measurement** (B269). Two defects in one path. The sore rows were
+  inserted after the measurements passed a day filter, so a file entry that yielded to a day the device already held
+  took its sore rows' foreign key with it and the whole import transaction rolled back — a valid file refused. And a
+  file's own soft-deleted entry reserved its day before the live one was reached, so restoring a save/delete/re-enter
+  history into an empty store inserted the hidden row and dropped the live one. The sore rows go in only for a
+  measurement that is actually there, and only a live row reserves its day.
+
+- **A backup prune cannot take the copy it just wrote** (B285). Files were ranked by their raw names, and a
+  collision copy (`…-000-2.json`) sorts *below* the file it collided with, because `-` sorts before `.`. A clock
+  moved backwards could therefore name a copy with an older stamp, put it past the five-file mark, and have it
+  deleted in the same call that recorded the success. The prune ranks by the stamp and the suffix now, and never
+  touches the name the run just wrote.
+
 - **History's *Do it now* starts the missed day** (B271). The missed-day question returns one of two
   shapes — the repeat that was asked for, or the missed day's template — and the history host handled only the
   first, so answering *Do it now* closed the question and started nothing. Both shapes go to their own

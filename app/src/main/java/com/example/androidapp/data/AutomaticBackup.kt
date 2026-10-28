@@ -85,7 +85,8 @@ class AutomaticBackup @Inject constructor(
                 if (written != null) {
                     // Pruned only after the new file is on disk: a folder that cannot take the new copy must
                     // not also lose an old one, which is the one way this feature could make a user worse off.
-                    backupsToDelete(files.names(folder.uri)).forEach { files.delete(folder.uri, it) }
+                    backupsToDelete(files.names(folder.uri), keep = written)
+                        .forEach { files.delete(folder.uri, it) }
                     // The record's own failure is not reported as the backup's: the file is in the folder,
                     // which is what an automatic backup promises. A lost timestamp costs one extra copy next
                     // launch, and the prune keeps that bounded.
@@ -127,7 +128,21 @@ private const val BACKUP_SUFFIX = ".json"
  * Prefix and suffix alone were too loose (B255): the changelog promises that only files this app named are
  * ever deleted, and `workout-backup-notes.json` is a name a person could type.
  */
-private val BACKUP_NAME = Regex("""^workout-backup-\d{4}-\d{2}-\d{2}-\d{6}-\d{3}(-\d+)?\.json$""")
+private val BACKUP_NAME =
+    Regex("""^workout-backup-(\d{4}-\d{2}-\d{2}-\d{6}-\d{3})(?:-(\d+))?\.json$""")
+
+/** One file this app named, split into the part that sorts by time and the collision suffix. */
+private data class BackupName(val name: String, val stamp: String, val suffix: Long) {
+    companion object {
+        fun of(name: String): BackupName? = BACKUP_NAME.matchEntire(name)?.let { match ->
+            BackupName(
+                name = name,
+                stamp = match.groupValues[1],
+                suffix = match.groupValues[2].toLongOrNull() ?: 0L,
+            )
+        }
+    }
+}
 
 /**
  * The name a backup takes: the instant in UTC, so names sort the way time does.
@@ -164,12 +179,21 @@ internal fun isBackupDue(settings: BackupSettings, now: Instant): Boolean {
 internal fun backupFileName(now: Instant): String = "$BACKUP_PREFIX${FILE_STAMP.format(now)}$BACKUP_SUFFIX"
 
 /**
- * The files to prune, oldest first, keeping the newest [KEEP_BACKUPS].
+ * The files to prune, oldest first, keeping the newest [KEEP_BACKUPS] and never [keep].
  *
  * Only files this app named are touched: the folder is the user's, and a backup that deleted whatever else
  * was in it would be a worse bug than the one pruning solves.
+ *
+ * **Sorted by what the name means, not by the name** (B285). A raw descending sort put a collision copy
+ * (`…-000-2.json`) *below* the file it collided with, because `-` sorts before `.` — so a clock moved
+ * backwards could put the copy just written past the keep line, and the prune would delete it in the same
+ * call that recorded the success. [keep] makes that impossible even if the sort is ever wrong again.
  */
-internal fun backupsToDelete(names: List<String>): List<String> =
-    names.filter { BACKUP_NAME.matches(it) }
-        .sortedDescending()
+internal fun backupsToDelete(names: List<String>, keep: String? = null): List<String> =
+    names.mapNotNull(BackupName::of)
+        .sortedWith(compareByDescending<BackupName> { it.stamp }.thenByDescending { it.suffix })
         .drop(KEEP_BACKUPS)
+        .map { it.name }
+        // The count is what is kept, so [keep] is ranked with the rest and only spared at the end: if it
+        // were filtered out first it would not count, and the folder would keep six.
+        .filter { it != keep }
