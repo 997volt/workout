@@ -66,9 +66,11 @@ fun planTargets(sets: List<PlannedSetTarget>): List<PlanTarget> =
  * would be the "plausible rather than true" this app keeps refusing.
  */
 fun PlanTarget.levelFor(metric: ExerciseTrendMetric): Double? = when (metric) {
-    ExerciseTrendMetric.HEAVIEST_SET -> weightGrams?.toDouble()
+    // An assisted plan stores no added weight (N15, N144), so its weight column is a zero that means
+    // "nothing", not "an empty bar" (B274). Drawing it put the line at 0 kg beside an assistance series.
+    ExerciseTrendMetric.HEAVIEST_SET -> weightLevel()?.toDouble()
     ExerciseTrendMetric.ESTIMATED_1RM ->
-        weightGrams?.let { weight -> reps?.let { estimate -> estimatedOneRepMax(weight, estimate) } }?.toDouble()
+        weightLevel()?.let { weight -> reps?.let { estimate -> estimatedOneRepMax(weight, estimate) } }?.toDouble()
 
     ExerciseTrendMetric.ASSISTANCE -> assistanceGrams?.toDouble()
     // The series carries a *point* value where the plan states half-points, so the line is drawn in the unit
@@ -80,3 +82,11 @@ fun PlanTarget.levelFor(metric: ExerciseTrendMetric): Double? = when (metric) {
     ExerciseTrendMetric.JOINT_PAIN,
     -> null
 }
+
+/**
+ * The weight column, or null when the plan is assisted and the column is a zero that means nothing (B274).
+ *
+ * One function rather than a `takeUnless` at each of the two level-shaped metrics: the assistance check is
+ * the same question, and the second copy is where the first one drifts.
+ */
+private fun PlanTarget.weightLevel(): Long? = weightGrams?.takeUnless { assistanceGrams != null }

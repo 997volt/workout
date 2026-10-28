@@ -83,13 +83,14 @@ internal fun SeriesChart(
 }
 
 /**
- * The first and last moments that recorded something, which is what the axis labels span.
+ * The moments the time axis spans: the first and last **readings**, gaps included.
  *
- * A gap means "not recorded", so an empty reading at either end is not the end of the window. One function
- * rather than two because the pair is only ever used together, and the file is at its function ceiling.
+ * It used to be the first and last reading that *recorded* something, while the plot projected every reading
+ * (B282): a series ending in a gap put its right-hand date on a day that was not where the axis ended. The
+ * axis is one span, so it is read from one place.
  */
-private fun recordedSpan(series: MetricSeries): Pair<Instant, Instant> =
-    series.readings.first { it.value != null }.at to series.readings.last { it.value != null }.at
+private fun axisSpan(series: MetricSeries): Pair<Instant, Instant> =
+    series.readings.first().at to series.readings.last().at
 
 /** Where the time axis puts its ticks: its two ends and the middle between them (N209). */
 private const val AXIS_START = 0.0
@@ -98,8 +99,8 @@ private const val AXIS_END = 1.0
 private val CHART_TICKS = listOf(AXIS_START, AXIS_MIDDLE, AXIS_END)
 
 /** The three moments the time axis names: its ends and the middle between them (N209). */
-private fun tickDates(series: MetricSeries): List<String> {
-    val span = recordedSpan(series)
+internal fun tickDates(series: MetricSeries): List<String> {
+    val span = axisSpan(series)
     val from = span.first.toEpochMilli()
     val length = span.second.toEpochMilli() - from
     return CHART_TICKS.map { fraction ->

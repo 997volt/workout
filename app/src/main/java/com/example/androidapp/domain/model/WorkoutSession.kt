@@ -12,8 +12,11 @@ import java.time.ZoneOffset
  * every screen showed before this existed. Two readers want slightly different things from it, so it
  * is a function rather than a property: a row's own time, and the month or day it belongs to.
  */
-fun WorkoutSession.zoneIdOrNull(): ZoneId? =
-    zoneOffsetMinutes?.let { ZoneOffset.ofTotalSeconds(it * SECONDS_PER_MINUTE) }
+fun WorkoutSession.zoneIdOrNull(): ZoneId? = zoneOffsetMinutes?.let { minutes ->
+    // Total, as the name promises (B282): `ZoneOffset.ofTotalSeconds` throws outside ±18:00, and a backup
+    // can carry any integer — one such session killed the history flow instead of failing the import.
+    runCatching { ZoneOffset.ofTotalSeconds(minutes * SECONDS_PER_MINUTE) }.getOrNull()
+}
 
 /** Minutes to seconds, the unit [ZoneOffset] wants. */
 private const val SECONDS_PER_MINUTE = 60

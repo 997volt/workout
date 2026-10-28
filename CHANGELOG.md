@@ -17,6 +17,20 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The plan review pairs by occurrence and judges the load** (B274). A session may hold the same movement twice,
+  and the review keyed performed rows by exercise id, so one row's sets vanished from the comparison while the
+  totals counted both — the loss B20 fixed for the name key, still there under the id. It also compared only the
+  added weight, which is zero on both sides of an assisted plan, so an assisted review always said *Matched*
+  whatever the machine took. One planned row consumes one performed row in order now, the surplus is the
+  improvisation it is, and the verdict is the signed load — which also stops the chart drawing a plan line at 0 kg
+  beside an assistance series.
+
+- **Three window bugs** (B282). `zoneIdOrNull` promised null and threw outside ±18:00, so one imported session
+  with a nonsense offset killed the history flow instead of failing the import. The chart's date labels spanned the
+  readings that recorded something while the plot projected every reading, so a series ending in a gap named a day
+  that was not where the axis ended. And the next-session line read this week's deload plans for candidate days in
+  the next week, so the Sunday of a deload week named the deload it was leaving.
+
 - **A restore cannot refuse or lose a body measurement** (B269). Two defects in one path. The sore rows were
   inserted after the measurements passed a day filter, so a file entry that yielded to a day the device already held
   took its sore rows' foreign key with it and the whole import transaction rolled back — a valid file refused. And a

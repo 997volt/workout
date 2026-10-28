@@ -76,6 +76,29 @@ class NextSessionTest {
     }
 
     @Test
+    fun aDeloadWeek_doesNotNameTheWeekAfterIt() {
+        // B282: the deload list read for the line is *this* week's. A candidate in the next week used to be
+        // answered with it, so the Sunday of a deload week named the deload day it was leaving instead of
+        // the slot that is actually coming.
+        val sunday = LocalDate.of(2026, 10, 11)
+        val sessions = listOf(
+            slot("a0", DayOfWeek.MONDAY, name = "Push"),
+        )
+        val deload = DeloadWeek(
+            programId = "weekly",
+            weekStart = sunday.minusDays(6),
+            days = listOf(
+                deloadDay("dd1", templateId = "tpl_a0", weekday = DayOfWeek.MONDAY, name = "Push (deload)"),
+            ),
+        )
+
+        val next = nextWeeklySession(listOf(program("weekly")), sessions, sunday, listOf(deload))!!
+
+        assertThat(next.date).isEqualTo(sunday.plusDays(1))
+        assertThat(next.name).isEqualTo("Push")
+    }
+
+    @Test
     fun aWeeklyProgram_namesTheNextWeekdayWithASlot() {
         val sessions = listOf(
             slot("a0", DayOfWeek.MONDAY, name = "Push"),

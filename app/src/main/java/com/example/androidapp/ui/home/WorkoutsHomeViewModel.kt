@@ -148,8 +148,15 @@ internal fun nextWeeklySession(
 ): NextSession? {
     for (offset in 1..DAYS_IN_WEEK) {
         val date = today.plusDays(offset.toLong())
-        val plan = todaysPlanFor(programs, slots, date.dayOfWeek, deloadWeeks).firstOrNull()
-            ?: continue
+        // A built deload week belongs to the week it was made for (B282): the list read here is *this*
+        // week's, so a candidate day in the next one asks the slots — otherwise the last day of a deload
+        // week names the deload it is leaving.
+        val plans = if (ProgramSchedule.weekStartOf(date) == ProgramSchedule.weekStartOf(today)) {
+            deloadWeeks
+        } else {
+            emptyList()
+        }
+        val plan = todaysPlanFor(programs, slots, date.dayOfWeek, plans).firstOrNull() ?: continue
         return NextSession(date = date, weekday = date.dayOfWeek, name = plan.name)
     }
     return null

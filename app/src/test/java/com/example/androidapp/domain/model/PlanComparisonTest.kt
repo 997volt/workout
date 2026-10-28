@@ -1,5 +1,6 @@
 package com.example.androidapp.domain.model
 
+import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -40,6 +41,49 @@ class PlanComparisonTest {
     )
 
     /** A plan that names the one effort N59 gives an exercise, with no load to confuse the question. */
+    @Test
+    fun theSameMovementTwice_isStillTwoComparisons() {
+        // B274: a session may hold the same exercise twice, and a map keyed by exercise id kept only the
+        // last row — so the review showed one row's sets while the totals counted both. The first planned
+        // row takes the first performed row now, and the leftover is the improvisation it is.
+        val comparisons = comparePlanToActual(
+            planned = listOf(planned("Bench", working(100_000L, 5))),
+            performed = listOf(
+                performed("Bench", did(100_000L, 5)),
+                performed("Bench", did(90_000L, 5)),
+            ),
+        )
+
+        assertThat(comparisons).hasSize(2)
+        assertThat(comparisons[0].matchedPlan).isTrue()
+        assertThat(comparisons[1].wasPlanned).isFalse()
+        assertThat(comparisons[1].performedSets).isEqualTo(1)
+        assertThat(comparisons.sumOf { it.performedSets }).isEqualTo(2)
+    }
+
+    @Test
+    fun anAssistedPlan_isJudgedOnTheHelpItAskedFor() {
+        // B274: both sides stored no added weight, so both top sets read 0 and the verdict was "Matched"
+        // whatever the machine took. The load is negative for assistance, and the difference is the answer.
+        val comparisons = comparePlanToActual(
+            planned = listOf(
+                planned(
+                    "Assisted Pull-Up",
+                    PlannedSetSpec(role = SetType.NORMAL, weightGrams = 0L, assistanceGrams = 20_000L, maxReps = 5),
+                ),
+            ),
+            performed = listOf(
+                performed(
+                    "Assisted Pull-Up",
+                    PerformedSetSpec(role = SetType.NORMAL, weightGrams = 0L, assistanceGrams = 30_000L, reps = 5),
+                ),
+            ),
+        )
+
+        assertThat(comparisons.single().matchedPlan).isFalse()
+        assertThat(comparisons.single().topSetDeltaGrams).isEqualTo(-10_000L)
+    }
+
     private fun plannedAt(name: String, targetRpeHalves: Int?, vararg sets: PlannedSetSpec) =
         ExercisePlan(
             exerciseId = name.lowercase().replace(" ", "-"),

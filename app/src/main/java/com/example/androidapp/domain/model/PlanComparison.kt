@@ -1,5 +1,6 @@
 package com.example.androidapp.domain.model
 
+import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.WeightUnit
 import kotlin.math.roundToInt
 
@@ -151,20 +152,32 @@ fun comparePlanToActual(
     planned: List<ExercisePlan>,
     performed: List<ExerciseActual>,
 ): List<PlanComparison> {
-    val actualById = performed.associateBy { it.exerciseId }
-    val plannedIds = planned.map { it.exerciseId }.toSet()
+    // **Paired by occurrence, not by key** (B274). A session may hold the same movement twice — nothing
+    // stops it — and a map keyed by exercise id keeps only the last row, dropping the other's sets from the
+    // review while the totals still count them. That is the loss B20 fixed for the *name* key; the id key
+    // had the same hole. One planned row consumes one performed row, in the order they were done.
+    val remaining = performed.indices
+        .groupBy { performed[it].exerciseId }
+        .mapValues { (_, indices) -> indices.toMutableList() }
+    val consumed = BooleanArray(performed.size)
+
+    fun take(exerciseId: String): ExerciseActual? {
+        val index = remaining[exerciseId]?.removeFirstOrNull() ?: return null
+        consumed[index] = true
+        return performed[index]
+    }
 
     val answered = planned.map { plan ->
         comparisonOf(
             name = plan.name,
             plannedSets = plan.sets,
-            performedSets = actualById[plan.exerciseId]?.sets.orEmpty(),
+            performedSets = take(plan.exerciseId)?.sets.orEmpty(),
             weightUnit = plan.weightUnit,
             targetRpeHalves = plan.targetRpeHalves,
         )
     }
     val improvised = performed
-        .filterNot { it.exerciseId in plannedIds }
+        .filterIndexed { index, _ -> !consumed[index] }
         .map {
             comparisonOf(
                 name = it.name,
@@ -191,7 +204,11 @@ private fun comparisonOf(
     val performedWork = performedSets.filter { working(it.role) }
 
     // The heaviest working set on each side: a light back-off set must not stand in for the
-    // top set any more than a warm-up may.
+    // top set any more than a warm-up may. The *load* decides, not the weight column (B274): an assisted
+    // set stores no added weight, so two assisted top sets at different help both read zero and the verdict
+    // was "Matched" whatever the machine took.
+    val prescribedTopLoad = plannedWork.mapNotNull { signedLoad(it.weightGrams, it.assistanceGrams) }.maxOrNull()
+    val performedTopLoad = performedWork.mapNotNull { signedLoad(it.weightGrams, it.assistanceGrams) }.maxOrNull()
     val prescribedTop = plannedWork.mapNotNull { it.weightGrams }.maxOrNull()
     val performedTop = performedWork.maxOfOrNull { it.weightGrams }
 
@@ -224,10 +241,10 @@ private fun comparisonOf(
         performedTopWeightGrams = performedTop,
         prescribedTopAssistanceGrams = prescribedTopAssistance?.takeIf { it > 0L },
         performedTopAssistanceGrams = performedTopAssistance,
-        topSetDeltaGrams = if (prescribedTop == null || performedTop == null) {
+        topSetDeltaGrams = if (prescribedTopLoad == null || performedTopLoad == null) {
             null
         } else {
-            performedTop - prescribedTop
+            performedTopLoad - prescribedTopLoad
         },
         prescribedRpeHalves = targetRpeHalves,
         performedHoldSeconds = performedWork.mapNotNull { it.durationSeconds }.lastOrNull(),
@@ -261,3 +278,12 @@ private fun List<PerformedSetSpec>.averageRpeHalves(): Int? {
     if (rated.isEmpty()) return null
     return rated.average().roundToInt()
 }
+
+/**
+ * A set's load as one signed number, or null when it states no weight at all (B274).
+ *
+ * The app's rule, not a second one: [Load] is what the steppers and the rows read. An assisted set is
+ * negative — `-20` is twenty kilos of help — which is what lets two assisted top sets be compared.
+ */
+private fun signedLoad(weightGrams: Long?, assistanceGrams: Long?): Long? =
+    weightGrams?.let { Load(it, assistanceGrams ?: 0L).signedGrams }

@@ -21,6 +21,17 @@ class PlanTargetTest {
     ) = PlannedSetTarget(templateId, templateName, weightGrams, assistanceGrams, reps, rpeHalves)
 
     @Test
+    fun anAssistedPlan_drawsNoHeaviestSet() {
+        // B274: an assisted plan stores no added weight, so its weight column is a zero that means nothing.
+        // Drawing it put the plan's line at 0 kg beside an assistance series; only the help is a level.
+        val target = planTargets(listOf(planned(weightGrams = 0L, assistanceGrams = 20_000L, reps = 5))).single()
+
+        assertThat(target.levelFor(ExerciseTrendMetric.HEAVIEST_SET)).isNull()
+        assertThat(target.levelFor(ExerciseTrendMetric.ESTIMATED_1RM)).isNull()
+        assertThat(target.levelFor(ExerciseTrendMetric.ASSISTANCE)).isEqualTo(20_000.0)
+    }
+
+    @Test
     fun theHeaviestSet_decidesTheWeight_andTheRepsThatGoWithIt() {
         // Two numbers from one row: a 1RM estimated from one set's weight and another's reps would be a lifter
         // the plan never described.
