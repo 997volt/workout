@@ -85,6 +85,9 @@ class ActiveWorkoutScreenTest {
         val onSetActivity: (Activity?) -> Unit = {},
     )
 
+    /** The last set edit's answer, or null for "nothing has been written yet" (B284). */
+    private val setWriteOutcome = mutableStateOf<SetWrite?>(null)
+
     private fun setScreen(
         state: ActiveWorkoutUiState,
         actions: Actions = Actions(),
@@ -106,6 +109,7 @@ class ActiveWorkoutScreenTest {
     ) {
         composeTestRule.setContent {
             ActiveWorkoutScreen(
+                setWriteOutcome = setWriteOutcome.value,
                 state = state,
                 clock = remember { mutableStateOf(WorkoutClock()) },
                 onAddExercise = actions.onAddExercise,

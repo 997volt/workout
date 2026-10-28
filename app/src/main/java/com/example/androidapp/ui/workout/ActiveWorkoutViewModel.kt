@@ -104,6 +104,19 @@ data class SetRow(
 )
 
 /**
+ * The answer to one set edit (ROADMAP B284).
+ *
+ * The editor closes on this rather than on the tap: a refusal — a rung boundary, a load the plan refuses —
+ * must leave the dialog and the values where they are, which is the rule the goal editor already follows
+ * (B234).
+ */
+sealed interface SetWrite {
+    data class Written(val setId: String) : SetWrite
+
+    data class Refused(val setId: String, val error: DataError) : SetWrite
+}
+
+/**
  * A bodyweight set held while the lifter says what they weigh (ROADMAP N219).
  *
  * The edit travels with it, because the tap that started it was the *Log set* the fields stated — asking
@@ -475,6 +488,10 @@ class ActiveWorkoutViewModel @Inject constructor(
     /** Emits true once a finish or discard succeeds, so the screen can leave. */
     private val _closed = MutableStateFlow(false)
     val closed: StateFlow<Boolean> = _closed
+
+    /** The last set edit's answer, so its editor closes on success and stays on a refusal (B284). */
+    private val setWrite = MutableStateFlow<SetWrite?>(null)
+    val setWriteOutcome: StateFlow<SetWrite?> = setWrite.asStateFlow()
 
     /**
      * Shared so the session is not queried once per downstream flow.
@@ -1082,18 +1099,21 @@ class ActiveWorkoutViewModel @Inject constructor(
             writingASet.withLock {
                 // The banner names the record the set was; an edit or a delete can make that false (B290).
                 _personalRecord.value = null
-                handle(
-                    workoutRepository.updateSet(
-                        setId = setId,
-                        reps = reps,
-                        weightGrams = weightGrams,
-                        rpeHalves = rpeHalves,
-                        note = note,
-                        setType = setType,
-                        assistanceGrams = assistanceGrams,
-                        durationSeconds = durationSeconds,
-                    ),
+                val result = workoutRepository.updateSet(
+                    setId = setId,
+                    reps = reps,
+                    weightGrams = weightGrams,
+                    rpeHalves = rpeHalves,
+                    note = note,
+                    setType = setType,
+                    assistanceGrams = assistanceGrams,
+                    durationSeconds = durationSeconds,
                 )
+                handle(result)
+                setWrite.value = when (result) {
+                    is DataResult.Success -> SetWrite.Written(setId)
+                    is DataResult.Failure -> SetWrite.Refused(setId, result.error)
+                }
             }
         }
     }

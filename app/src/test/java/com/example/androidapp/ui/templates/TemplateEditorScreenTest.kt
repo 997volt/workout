@@ -102,6 +102,10 @@ class TemplateEditorScreenTest {
         composeTestRule.onNodeWithTag(TestTags.templatePlanAdd("te1")).performClick()
     }
 
+    /** The last planned-set write's answer; null is "nothing has been written yet" (B284). */
+    private val setSaveOutcome = mutableStateOf<Boolean?>(null)
+    private val onDismissSetSave: () -> Unit = { setSaveOutcome.value = null }
+
     private fun setScreen(
         state: TemplateEditorUiState = twoExercises,
         actions: Actions = Actions(),
@@ -111,6 +115,8 @@ class TemplateEditorScreenTest {
     ) {
         composeTestRule.setContent {
             TemplateEditorScreen(
+                setSaveOutcome = setSaveOutcome.value,
+                onDismissSetSave = onDismissSetSave,
                 state = state,
                 onRename = actions.onRename,
                 onRemoveExercise = actions.onRemoveExercise,
@@ -138,6 +144,21 @@ class TemplateEditorScreenTest {
                 onBack = {},
             )
         }
+    }
+
+    @Test
+    fun aWrittenSet_closesTheEditor_andARefusedOneKeepsIt() {
+        // B284: the editor closes on the write's answer, not on the tap, so a refusal keeps the values.
+        setScreen()
+        openBlock("te1")
+        addSet()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsDisplayed()
+
+        composeTestRule.runOnIdle { setSaveOutcome.value = false }
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsDisplayed()
+
+        composeTestRule.runOnIdle { setSaveOutcome.value = true }
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertDoesNotExist()
     }
 
     @Test
@@ -326,6 +347,8 @@ class TemplateEditorScreenTest {
         )
         composeTestRule.setContent {
             TemplateEditorScreen(
+                setSaveOutcome = setSaveOutcome.value,
+                onDismissSetSave = onDismissSetSave,
                 state = state.value,
                 onRename = {},
                 onRemoveExercise = {},
@@ -357,6 +380,8 @@ class TemplateEditorScreenTest {
         val state = mutableStateOf(twoExercises.copy(exercises = emptyList()))
         composeTestRule.setContent {
             TemplateEditorScreen(
+                setSaveOutcome = setSaveOutcome.value,
+                onDismissSetSave = onDismissSetSave,
                 state = state.value,
                 onRename = {},
                 onRemoveExercise = {},

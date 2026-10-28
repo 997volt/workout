@@ -149,7 +149,7 @@ class TemplateEditorViewModel @Inject constructor(
     }
 
     /** Appends a planned set to an exercise (ROADMAP N14). */
-    fun onAddSet(templateExerciseId: String, edit: TemplateSetEdit) = write {
+    fun onAddSet(templateExerciseId: String, edit: TemplateSetEdit) = writeSet {
         repository.addSet(templateExerciseId, edit)
     }
 
@@ -201,7 +201,7 @@ class TemplateEditorViewModel @Inject constructor(
         repository.prependSets(templateExerciseId, ramp)
     }
 
-    fun onUpdateSet(templateSetId: String, edit: TemplateSetEdit) = write {
+    fun onUpdateSet(templateSetId: String, edit: TemplateSetEdit) = writeSet {
         repository.updateSet(templateSetId, edit)
     }
 
@@ -388,6 +388,23 @@ class TemplateEditorViewModel @Inject constructor(
     private fun write(action: suspend () -> DataResult<Unit>) {
         viewModelScope.launch {
             error.value = (action() as? DataResult.Failure)?.error
+        }
+    }
+
+    /** The last planned-set write's answer, so its editor closes on success only (B284). */
+    private val setSave = MutableStateFlow<Boolean?>(null)
+    val setSaveOutcome: StateFlow<Boolean?> = setSave.asStateFlow()
+
+    /** Takes the outcome once its editor has closed, so the next one does not close itself. */
+    fun onDismissSetSave() {
+        setSave.value = null
+    }
+
+    private fun writeSet(action: suspend () -> DataResult<Unit>) {
+        viewModelScope.launch {
+            val result = action()
+            error.value = (result as? DataResult.Failure)?.error
+            setSave.value = result is DataResult.Success
         }
     }
 

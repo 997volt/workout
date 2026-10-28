@@ -107,7 +107,7 @@ fun ActiveWorkoutRoute(
     RestCueAndScreenOn(clock, restCueEnabled, keepScreenOn, restTimerEnabled)
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val personalRecord by viewModel.personalRecord.collectAsStateWithLifecycle()
-    val bodyweightPrompt by viewModel.bodyweightPrompt.collectAsStateWithLifecycle()
+    val setWriteOutcome by viewModel.setWriteOutcome.collectAsStateWithLifecycle()
 
     ActiveWorkoutScreen(
         state = state,
@@ -119,10 +119,11 @@ fun ActiveWorkoutRoute(
         summary = summary,
         onDismissSummary = viewModel::onDismissSummary,
         personalRecord = personalRecord,
-        bodyweightPrompt = bodyweightPrompt,
+        bodyweightPrompt = viewModel.bodyweightPrompt.collectAsStateWithLifecycle().value,
         onEnterBodyweight = viewModel::onBodyweightTaken,
         onDismissBodyweight = viewModel::onDismissBodyweightPrompt,
         onUpdateSet = viewModel::onUpdateSet,
+        setWriteOutcome = setWriteOutcome,
         onRemoveExercise = viewModel::onRemoveExercise,
         onMoveExercise = viewModel::onMoveExercise,
         onDeleteSet = viewModel::onDeleteSet,
@@ -163,6 +164,8 @@ fun ActiveWorkoutScreen(
     state: ActiveWorkoutUiState,
     clock: State<WorkoutClock>,
     onAddExercise: () -> Unit,
+    /** The last set edit's answer, so its editor closes on success only (B284). */
+    setWriteOutcome: SetWrite?,
     /** Makes the session an activity, or a workout again (ROADMAP N141). */
     onSetActivity: (Activity?) -> Unit,
     onLogSet: (String, SetEdit) -> Unit,
@@ -283,7 +286,7 @@ fun ActiveWorkoutScreen(
 
     ActivityPicker(open = choosingActivity, onPick = onSetActivity, onDismiss = { choosingActivity = false })
 
-    SetEditorSection(editing, state.exercises, onUpdateSet) { editingSetId = null }
+    SetEditorSection(editing, state.exercises, onUpdateSet, setWriteOutcome) { editingSetId = null }
 
     // One host, from the frozen state, so a rotation mid-answer reopens it on the picks (N74).
     pendingProgression?.let {
@@ -326,9 +329,22 @@ internal fun SetEditorSection(
     /** The session's exercises, so the row being edited can be placed among them (N145). */
     exercises: List<SessionExerciseRow>,
     onUpdateSet: (String, Int, Long, Int?, String?, SetType, Long, Int?) -> Unit,
+    /** The last set edit's answer, so its editor closes on success only (B284). */
+    setWriteOutcome: SetWrite? = null,
     onDismiss: () -> Unit,
 ) {
     val set = editing ?: return
+    // Only an answer to *this* opening of the dialog closes it (B284): the outcome stays on the ViewModel
+    // after a written set, so an effect keyed by the value alone would close the next opening on its first
+    // frame. `saving` is set by the tap and cleared by the answer.
+    var saving by remember(set.id) { mutableStateOf(false) }
+    val dismiss by rememberUpdatedState(onDismiss)
+    LaunchedEffect(setWriteOutcome) {
+        if (saving && setWriteOutcome == SetWrite.Written(set.id)) {
+            saving = false
+            dismiss()
+        }
+    }
     // The live sets **above** the one being edited, in stored order — which is what a rung's anchor question is
     // asked of. The exercise is whichever one holds the row, since a row carries no back-reference to it.
     val exercise = exercises.firstOrNull { exercise -> exercise.sets.any { it.id == set.id } }
@@ -358,6 +374,9 @@ internal fun SetEditorSection(
         offers = { role -> above.refusalForLoggingAs(role) == null },
         onDismiss = onDismiss,
         onSave = { edit ->
+            saving = true
+            // No dismiss here (B284): the write answers through `setWriteOutcome`, so a refusal keeps the
+            // dialog and its values — the goal editor's rule (B234).
             onUpdateSet(
                 set.id,
                 edit.reps,
@@ -368,7 +387,6 @@ internal fun SetEditorSection(
                 edit.assistanceGrams,
                 edit.durationSeconds,
             )
-            onDismiss()
         },
     )
 }
@@ -937,6 +955,7 @@ internal fun EmptyWorkout(modifier: Modifier = Modifier) {
 private fun ActiveWorkoutScreenPreview() {
     AndroidAppTheme {
         ActiveWorkoutScreen(
+            setWriteOutcome = null,
             state = ActiveWorkoutUiState(
                 isLoading = false,
                 sessionId = "s1",

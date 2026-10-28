@@ -23,11 +23,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   its row's id now (a `SetRow` is not saveable), and the flags are saveable. The row keeps what is left: callbacks a
   screen cannot work without that still default to empty lambdas.
 
-- **A refusal is not a silent no-op, on two screens** (B284). The target dialog's Save was always enabled and did
-  nothing at all when the text did not parse, so a typo looked like a dead button; it is disabled until the number
-  reads, as the period editor beside it already does. And the adherence day read reported its failure through the
-  write channel while opening the dialog on an empty occurrence list — a claim that nothing was scheduled, when
-  the truth was that the day could not be read. It says so now and keeps the dialog closed.
+- **A refusal is not a silent no-op, and an editor waits for its answer** (B284). The target dialog's Save was
+  always enabled and did nothing at all when the text did not parse, so a typo looked like a dead button; it is
+  disabled until the number reads, as the period editor beside it already does. The adherence day read reported its
+  failure through the write channel while opening the dialog on an empty occurrence list — a claim that nothing was
+  scheduled, when the truth was that the day could not be read; it says so and keeps the dialog closed. And both
+  set editors — the workout's and the template editor's — fired their write and dismissed, so a refusal arrived
+  after the values were gone and a correction had to be retyped. They close on the write's own answer now, the rule
+  the goal editor already followed (B234): a written set closes, a refused one keeps the dialog and the values.
 
 - **No dead weight, and two figures that could lie** (B291). What nothing calls is gone: a test tag with no
   control, an empty slot no caller passes, a plan field written and never read, a transfer outcome carrying a

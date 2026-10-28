@@ -1368,6 +1368,48 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun anEditedSet_answersWritten_soItsEditorCanClose() = runTest(dispatcher) {
+        // B284: the editor closes on this answer rather than on the tap, so a refusal can keep the dialog.
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
+        settle()
+        val logged = repository.sets.value.single()
+
+        viewModel.onUpdateSet(logged.id, reps = 3, weightGrams = 90_000)
+        settle()
+
+        assertEquals(SetWrite.Written(logged.id), viewModel.setWriteOutcome.value)
+    }
+
+    @Test
+    fun aRefusedSetEdit_answersRefused_andKeepsTheEditor() = runTest(dispatcher) {
+        // The counterpart: a write that fails must not answer success, or the dialog would close and lose
+        // what the lifter typed (B284).
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        viewModel.onLogSet(viewModel.uiState.value.exercises.single().id, offeredSet(viewModel))
+        settle()
+        val logged = repository.sets.value.single()
+        repository.failWrites = true
+
+        viewModel.onUpdateSet(logged.id, reps = 3, weightGrams = 90_000)
+        settle()
+
+        val outcome = viewModel.setWriteOutcome.value
+        assertEquals(SetWrite.Refused::class.java, outcome?.javaClass)
+        assertEquals(logged.id, (outcome as SetWrite.Refused).setId)
+    }
+
+    @Test
     fun twoTapsOnLogSet_beforeTheFirstLands_writeOneSet() = runTest(dispatcher) {
         // B273: the button stays enabled until the write returns, and the write mutex only orders the
         // turns it is handed. A second tap inside the first is the same set, not a second row.

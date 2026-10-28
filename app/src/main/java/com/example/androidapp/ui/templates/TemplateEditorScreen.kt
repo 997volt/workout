@@ -92,6 +92,9 @@ import com.example.androidapp.ui.components.summary
 import com.example.androidapp.ui.components.warmUpActionFor
 import com.example.androidapp.ui.theme.AndroidAppTheme
 
+/** The [TemplateExerciseBlock] open-dialog value that means "a new set"; a set id means an edit (B284). */
+private const val ADDING = "__adding__"
+
 /**
  * One template: its name and its ordered exercises (ROADMAP N3).
  *
@@ -120,6 +123,7 @@ fun TemplateEditorRoute(
     val hiddenChange by viewModel.hiddenChange.collectAsStateWithLifecycle()
     val currentOnBack by rememberUpdatedState(onBack)
     val templateId = state.template?.id
+    val setSaveOutcome by viewModel.setSaveOutcome.collectAsStateWithLifecycle()
 
     // Deleting — or opening a template that is already gone — leaves the editor,
     // rather than leaving an empty shell behind with a live Delete button.
@@ -136,6 +140,8 @@ fun TemplateEditorRoute(
         onMoveExercise = viewModel::onMoveExercise,
         onDeleteTemplate = viewModel::onDeleteTemplate,
         onAddExercise = { templateId?.let(onAddExercise) },
+        setSaveOutcome = setSaveOutcome,
+        onDismissSetSave = viewModel::onDismissSetSave,
         onAddSet = viewModel::onAddSet,
         onUpdateSet = viewModel::onUpdateSet,
         onRemoveSet = viewModel::onRemoveSet,
@@ -173,6 +179,9 @@ fun TemplateEditorScreen(
     onAddExercise: () -> Unit,
     onBack: () -> Unit,
     onAddWarmUpSets: (String, Long) -> Unit,
+    /** The last planned-set write's answer, so its editor closes on success only (B284). */
+    setSaveOutcome: Boolean?,
+    onDismissSetSave: () -> Unit,
     modifier: Modifier = Modifier,
     onDismissMessage: () -> Unit = {},
     onAddSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
@@ -230,6 +239,8 @@ fun TemplateEditorScreen(
             onOpenExercise = onOpenExercise,
             onToggleSuperset = onToggleSuperset,
             onMoveExercise = onMoveExercise,
+            setSaveOutcome = setSaveOutcome,
+            onDismissSetSave = onDismissSetSave,
             onAddSet = onAddSet,
             onAddSets = onAddSets,
             onUpdateSet = onUpdateSet,
@@ -368,6 +379,9 @@ private fun TemplateEditorBody(
     onRemoveExercise: (String) -> Unit,
     onOpenExercise: (String) -> Unit,
     onMoveExercise: (String, Int) -> Unit,
+    /** The last planned-set write's answer, so its editor closes on success only (B284). */
+    setSaveOutcome: Boolean?,
+    onDismissSetSave: () -> Unit,
     onAddSet: (String, TemplateSetEdit) -> Unit,
     onAddSets: (String, Int, TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
@@ -424,6 +438,8 @@ private fun TemplateEditorBody(
                         // exercise above it to pair with (ROADMAP B28).
                         onToggleSuperset = if (index == 0) null else { { onToggleSuperset(exercise.id) } },
                         supersetLabels = state.supersetLabels,
+                        setSaveOutcome = setSaveOutcome,
+                        onDismissSetSave = onDismissSetSave,
                         onAddSet = { edit -> onAddSet(exercise.id, edit) },
                         onAddSets = { count, edit -> onAddSets(exercise.id, count, edit) },
                         onUpdateSet = onUpdateSet,
@@ -507,6 +523,9 @@ private fun TemplateExerciseBlock(
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
     onOpenExercise: () -> Unit,
+    /** The last planned-set write's answer, so the editor closes on success only (B284). */
+    setSaveOutcome: Boolean?,
+    onDismissSetSave: () -> Unit,
     onAddSet: (TemplateSetEdit) -> Unit,
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
@@ -520,10 +539,17 @@ private fun TemplateExerciseBlock(
 ) {
     // This exercise's display unit, resolved once: every load it names reads in it (ROADMAP N64).
     val unit = exerciseWeightUnit(exercise.weightUnit)
-    var editing by rememberSaveable { mutableStateOf<String?>(null) }
-    var adding by rememberSaveable { mutableStateOf(false) }
-
-    val addWarmUps = warmUpActionFor(exercise, unit, onAddWarmUpSets)
+    // The dialog that is open: a set's id, [ADDING] for a new one, or null for none — one saveable value
+    // rather than two flags that could disagree. It closes on the write's answer, not on the tap (B284): a
+    // refusal — a rung boundary, a load the plan refuses — keeps the dialog and the values the lifter typed.
+    var open by rememberSaveable { mutableStateOf<String?>(null) }
+    val edited = exercise.sets.firstOrNull { it.id == open }
+    LaunchedEffect(setSaveOutcome, onDismissSetSave, open) {
+        if (setSaveOutcome == true && open != null) {
+            open = null
+            onDismissSetSave()
+        }
+    }
 
     Column(modifier = modifier) {
         TemplateExerciseRow(
@@ -538,7 +564,7 @@ private fun TemplateExerciseBlock(
             onRemove = onRemove,
             onOpenExercise = onOpenExercise,
             onToggleSuperset = onToggleSuperset,
-            addWarmUps = addWarmUps,
+            addWarmUps = warmUpActionFor(exercise, unit, onAddWarmUpSets),
             supersetLabels = supersetLabels,
         )
         // Everything below the row folds together (N91): the sets, the control that adds one, and the
@@ -548,7 +574,7 @@ private fun TemplateExerciseBlock(
                 exerciseId = exercise.id,
                 sets = exercise.sets,
                 unit = unit,
-                onEdit = { editing = it.id },
+                onEdit = { open = it.id },
                 onRemove = onRemoveSet,
             )
             // The plan's quick entry sits with the sets it extends (P3.18): a block that is one shape
@@ -559,25 +585,20 @@ private fun TemplateExerciseBlock(
                 unit = unit,
                 onAdd = onAddSets,
             )
-            AddSetButton(exerciseId = exercise.id, onClick = { adding = true })
+            AddSetButton(exerciseId = exercise.id, onClick = { open = ADDING })
             ExercisePlanFields(exercise = exercise, onSave = onSavePlan)
         }
     }
 
-    val edited = exercise.sets.firstOrNull { it.id == editing }
-    if (adding || edited != null) {
+    if (open != null) {
         TemplateSetEditor(
             exercise = exercise,
             edited = edited,
             unit = unit,
-            onDismiss = {
-                adding = false
-                editing = null
-            },
+            onDismiss = { open = null },
             onSave = { edit ->
+                // No close here (B284): the block's effect above closes on a written set.
                 if (edited == null) onAddSet(edit) else onUpdateSet(edited.id, edit)
-                adding = false
-                editing = null
             },
         )
     }
@@ -1077,6 +1098,8 @@ private fun DeleteTemplateDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
 private fun TemplateEditorScreenPreview() {
     AndroidAppTheme {
         TemplateEditorScreen(
+            setSaveOutcome = null,
+            onDismissSetSave = {},
             state = TemplateEditorUiState(
                 isLoading = false,
                 template = WorkoutTemplate(id = "a", name = "Push day", exerciseCount = 2),
