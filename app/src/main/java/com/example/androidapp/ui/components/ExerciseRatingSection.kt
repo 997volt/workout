@@ -9,7 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -49,7 +49,8 @@ fun ExerciseRatingSection(
     onRate: ((muscleFeel: Int?, joints: List<JointPain>) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    var editing by remember { mutableStateOf(false) }
+    // A rotation must not close the dialog the joints are saved in (B283).
+    var editing by rememberSaveable { mutableStateOf(false) }
     val editLabel = stringResource(R.string.rating_edit_title)
     val rating = ratingSummary(muscleFeel, joints)
     // Read-only, with nothing recorded: draw nothing at all (N101). A title with nothing under it is a label

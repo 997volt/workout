@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The dialogs survive a rotation** (B283). The flags that open the set editor, the rating dialog, the note field,
+  the readiness field and the bodyweight prompt were plain `remember` state while the fields inside them were
+  `rememberSaveable` — so a rotation closed the dialog and threw the draft away with it. The set editor is held by
+  its row's id now (a `SetRow` is not saveable), and the flags are saveable. The row keeps what is left: callbacks a
+  screen cannot work without that still default to empty lambdas.
+
 - **A refusal is not a silent no-op, on two screens** (B284). The target dialog's Save was always enabled and did
   nothing at all when the text did not parse, so a typo looked like a dead button; it is disabled until the number
   reads, as the period editor beside it already does. And the adherence day read reported its failure through the

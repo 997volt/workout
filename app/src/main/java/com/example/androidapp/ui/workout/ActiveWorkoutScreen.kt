@@ -225,8 +225,10 @@ fun ActiveWorkoutScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // The set being edited, held here so the caller does not have to track it.
-    var editing by remember { mutableStateOf<SetRow?>(null) }
+    // The set being edited, by id (B283): a `SetRow` is not saveable, and a rotation must not close a
+    // dialog whose own fields are `rememberSaveable`. The row is looked up from the state that has it.
+    var editingSetId by rememberSaveable { mutableStateOf<String?>(null) }
+    val editing = state.exercises.flatMap { it.sets }.firstOrNull { it.id == editingSetId }
 
     if (summary != null) WorkoutReviewDialog(summary = summary, onDismiss = onDismissSummary)
     BodyweightPrompt(prompt = bodyweightPrompt, onSave = onEnterBodyweight, onDismiss = onDismissBodyweight)
@@ -255,7 +257,7 @@ fun ActiveWorkoutScreen(
             onLogSet = onLogSet,
             onRemoveExercise = onRemoveExercise,
             onMoveExercise = onMoveExercise,
-            onEditSet = { row -> editing = row },
+            onEditSet = { row -> editingSetId = row.id },
             onDeleteSet = onDeleteSet,
             onSkipRest = onSkipRest,
             onAdjustRest = onAdjustRest,
@@ -281,7 +283,7 @@ fun ActiveWorkoutScreen(
 
     ActivityPicker(open = choosingActivity, onPick = onSetActivity, onDismiss = { choosingActivity = false })
 
-    SetEditorSection(editing, state.exercises, onUpdateSet) { editing = null }
+    SetEditorSection(editing, state.exercises, onUpdateSet) { editingSetId = null }
 
     // One host, from the frozen state, so a rotation mid-answer reopens it on the picks (N74).
     pendingProgression?.let {
@@ -487,7 +489,7 @@ internal fun WorkoutTopBar(
 ) {
     // Whether the finish prompt is up. Dismissing it finishes without a comment
     // (ROADMAP N11): the user asked to finish, and the comment is optional.
-    var commenting by remember { mutableStateOf(false) }
+    var commenting by rememberSaveable { mutableStateOf(false) }
     // The discard lives behind the overflow rather than beside Finish: it is the destructive
     // action, and the top bar's visible slot is the one the user reaches for mid-workout.
     var confirmingDiscard by remember { mutableStateOf(false) }
@@ -844,7 +846,7 @@ private fun ReadinessSection(
     onSave: (String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var editing by remember { mutableStateOf(false) }
+    var editing by rememberSaveable { mutableStateOf(false) }
 
     ReadinessRow(note = note, onEdit = { editing = true }, modifier = modifier)
     // **Only the row opens it** (N140). There is no prompt to dismiss, so the dialog's own dismiss is the
