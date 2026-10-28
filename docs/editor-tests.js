@@ -627,7 +627,7 @@
       H.editorAddExercise(program, template.id, exerciseId);
       H.editorAddSet(program, program.templateExercises[0].id);
 
-      t.eq(program.formatVersion, 5);
+      t.eq(program.formatVersion, shared.programFormatVersion());
       t.ok(!('edit' in program), 'a new program is a proposal to add');
       t.eq(JSON.parse(shared.validateJson(JSON.stringify(program))).problems.length, 0);
     });
@@ -699,7 +699,7 @@
       opened.working.program.startDate = 20731;
 
       var written = JSON.parse(H.editorDownloadPayload(opened).text);
-      t.eq(written.formatVersion, 5, 'the file carries the version this build reads');
+      t.eq(written.formatVersion, shared.programFormatVersion(), 'the file carries the version this build reads');
       t.eq(written.program.kind, 'SEQUENCE');
       t.eq(JSON.parse(shared.validateJson(JSON.stringify(written))).problems.length, 0);
     });

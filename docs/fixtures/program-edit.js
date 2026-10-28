@@ -9,7 +9,7 @@ window.PROGRAM_EDIT_CASES = [
   {
     "name": "rename the program",
     "snapshot": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -552,7 +552,7 @@ window.PROGRAM_EDIT_CASES = [
       ]
     },
     "edit": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -1107,7 +1107,7 @@ window.PROGRAM_EDIT_CASES = [
   {
     "name": "make the program a block that starts on a day",
     "snapshot": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -1650,7 +1650,7 @@ window.PROGRAM_EDIT_CASES = [
       ]
     },
     "edit": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -2210,7 +2210,7 @@ window.PROGRAM_EDIT_CASES = [
   {
     "name": "a base older than the program",
     "snapshot": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -2753,7 +2753,7 @@ window.PROGRAM_EDIT_CASES = [
       ]
     },
     "edit": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -3308,7 +3308,7 @@ window.PROGRAM_EDIT_CASES = [
   {
     "name": "remove every day",
     "snapshot": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -3851,7 +3851,7 @@ window.PROGRAM_EDIT_CASES = [
       ]
     },
     "edit": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -4381,7 +4381,7 @@ window.PROGRAM_EDIT_CASES = [
   {
     "name": "add a set",
     "snapshot": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -4924,7 +4924,7 @@ window.PROGRAM_EDIT_CASES = [
       ]
     },
     "edit": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -5495,7 +5495,7 @@ window.PROGRAM_EDIT_CASES = [
   {
     "name": "a day naming a workout the file does not carry",
     "snapshot": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",
@@ -6038,7 +6038,7 @@ window.PROGRAM_EDIT_CASES = [
       ]
     },
     "edit": {
-      "formatVersion": 5,
+      "formatVersion": 6,
       "exportedAt": 1790000000000,
       "program": {
         "id": "pgm_2a06bc2cd386d9ae",

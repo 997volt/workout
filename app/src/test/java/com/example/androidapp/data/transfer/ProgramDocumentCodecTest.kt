@@ -46,6 +46,20 @@ class ProgramDocumentCodecTest {
     }
 
     @Test
+    fun aPlannedFailure_survivesTheFormat() {
+        // B276: the shared role enum listed five of the app's six, so exporting a program whose plan
+        // held a failure set threw and was reported as a generic storage failure, while a document
+        // naming one was refused as corrupt. It is a role a plan can prescribe.
+        val document = document().copy(
+            templateSets = listOf(templateSet().copy(role = SetType.FAILURE)),
+        )
+
+        val decoded = ProgramDocumentCodec.decode(ProgramDocumentCodec.encode(document))
+
+        assertThat(decoded.templateSets.single().role).isEqualTo(SetType.FAILURE)
+    }
+
+    @Test
     fun theVersionIsItsOwn_notTheBackupSchemaVersion() {
         // A document written by this build names the document format, not the database schema: the
         // two change for different reasons, and reusing one number for both would make a new backup

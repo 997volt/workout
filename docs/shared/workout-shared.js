@@ -273,7 +273,7 @@
   }
   function refuseUnreadable($this, version) {
     var tmp;
-    if (version > 5) {
+    if (version > 6) {
       tmp = new ProgramProblem(ProblemCode_NEWER_VERSION_getInstance(), VOID, version.toString());
     } else if (version < 4) {
       tmp = new ProgramProblem(ProblemCode_OLDER_VERSION_getInstance(), VOID, version.toString());
@@ -313,7 +313,7 @@
   }
   function ProgramDocumentCodec() {
     ProgramDocumentCodec_instance = this;
-    this.s1b_1 = 5;
+    this.s1b_1 = 6;
     this.t1b_1 = 4;
     var tmp = this;
     tmp.u1b_1 = Json(VOID, ProgramDocumentCodec$json$lambda);
@@ -436,7 +436,7 @@
   var json;
   function programFormatVersion() {
     _init_properties_ProgramJson_kt__8o3jdm();
-    return 5;
+    return 6;
   }
   function validateJson(documentJson) {
     _init_properties_ProgramJson_kt__8o3jdm();
@@ -3264,6 +3264,7 @@
     ProgramSetRole_TOP_SET_instance = new ProgramSetRole('TOP_SET', 2);
     ProgramSetRole_DROP_instance = new ProgramSetRole('DROP', 3);
     ProgramSetRole_CLUSTER_instance = new ProgramSetRole('CLUSTER', 4);
+    ProgramSetRole_FAILURE_instance = new ProgramSetRole('FAILURE', 5);
     if (Companion_instance_12 == null) {
       Companion_instance;
       new Companion_11();
@@ -3274,9 +3275,10 @@
   var ProgramSetRole_TOP_SET_instance;
   var ProgramSetRole_DROP_instance;
   var ProgramSetRole_CLUSTER_instance;
+  var ProgramSetRole_FAILURE_instance;
   function values_1() {
     static_init_2();
-    return [ProgramSetRole_NORMAL_getInstance(), ProgramSetRole_WARMUP_getInstance(), ProgramSetRole_TOP_SET_getInstance(), ProgramSetRole_DROP_getInstance(), ProgramSetRole_CLUSTER_getInstance()];
+    return [ProgramSetRole_NORMAL_getInstance(), ProgramSetRole_WARMUP_getInstance(), ProgramSetRole_TOP_SET_getInstance(), ProgramSetRole_DROP_getInstance(), ProgramSetRole_CLUSTER_getInstance(), ProgramSetRole_FAILURE_getInstance()];
   }
   function Companion_11() {
     Companion_instance_12 = this;
@@ -3356,6 +3358,10 @@
   function ProgramSetRole_CLUSTER_getInstance() {
     static_init_2();
     return ProgramSetRole_CLUSTER_instance;
+  }
+  function ProgramSetRole_FAILURE_getInstance() {
+    static_init_2();
+    return ProgramSetRole_FAILURE_instance;
   }
   var static_init_called_3;
   function static_init_3() {

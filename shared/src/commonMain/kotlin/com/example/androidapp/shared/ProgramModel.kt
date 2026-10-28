@@ -155,7 +155,14 @@ data class ExerciseDto(
 @Serializable
 enum class Weekday { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY }
 
-/** The app's `SetType`, by name (ROADMAP N170). */
+/**
+ * The app's `SetType`, by name (ROADMAP N170).
+ *
+ * **Every constant the app has, and nothing else** (B276). The list was the five roles a session can
+ * log, so a program whose plan prescribed the sixth — a failure set, which the plan editor offers
+ * wherever a rung is not the answer — could not be exported at all, and a document naming one was
+ * refused as corrupt by both hosts.
+ */
 @Serializable
 enum class ProgramSetRole {
     NORMAL,
@@ -163,6 +170,7 @@ enum class ProgramSetRole {
     TOP_SET,
     DROP,
     CLUSTER,
+    FAILURE,
     ;
 
     /** A rung of the group above it, never judged or loaded on its own (N79). */

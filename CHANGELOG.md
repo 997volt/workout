@@ -17,6 +17,15 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A program can carry a failure set** (B276). The shared role enum listed five of the app's six roles, so a
+  program whose plan prescribed a failure set could not be exported at all — the encode threw and the lifter was
+  told a generic storage failure — and a document naming one was refused as corrupt by both hosts. The plan editor
+  offers that role wherever a rung is not the answer, so this was a plan the app could make and the format could not
+  write. The document's version moves to 6 with the role and its floor stays at 4 (N185's split: a v5 document still
+  means what it says, and a v5 build reading a v6 one would have taken the failure set for an ordinary one). The
+  page's editor gains the role, and its own tests read the version from the core rather than spelling a number that
+  has now moved once.
+
 - **The gates run what they claim to check** (B289). Five holes, each small and each in a check that exists to
   catch someone else's work. The docs gate read three documents Gradle was never told about, so editing
   `IMPORT-HELPER.md`, the 1.x changelog or the device-loop skill left it UP-TO-DATE. The formatting task loaded the

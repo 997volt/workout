@@ -6607,7 +6607,9 @@
    * ------------------------------------------------------------------------------------------- */
 
   var EDITOR_WEEKDAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-  var EDITOR_ROLES = ['NORMAL', 'WARMUP', 'TOP_SET', 'DROP', 'CLUSTER'];
+  /* Every role the app's own plan editor offers (B276). This list was five of six, so the page could
+   * not author a failure set — and a document the app exported with one did not validate here. */
+  var EDITOR_ROLES = ['NORMAL', 'WARMUP', 'TOP_SET', 'DROP', 'CLUSTER', 'FAILURE'];
   var EDITOR_DRAFT_KIND = 'workout-program-draft';
   var editorIdCounter = 0;
 
