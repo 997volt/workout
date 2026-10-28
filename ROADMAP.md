@@ -17,8 +17,18 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**Nothing.** The post-2.16 review's findings (B262–B265) are fixed and in the unreleased section of
-[CHANGELOG.md](CHANGELOG.md).
+**A program's identity is not its name.** 2.17 was reported with a second, different program built in the import
+helper arriving under the first one's `pgm_…` id: the app answered *That program is already here.* and added
+nothing. The table path mints the id from the program's name and nothing else, so a name **is** the identity — two
+different tables that both say *Push Pull Legs* collide, and every table without a `Program` column collides on
+*My program*. The editor path already mints a unique id, which is why the report only arrives from a dropped
+table. B266 gives a dropped file an identity of its own; B267 stops the app calling a different program "already
+here", which is the half pasted tables still need, because a paste has no file name to seed.
+
+| # | What it changes |
+| --- | --- |
+| B266 | **A dropped table's program id is a hash of its name, so two programs cannot share one.** `buildProgramDocument` mints `pgm_` plus `fnv1a64Hex` of a `program`-prefixed seed and the program's name (`docs/app.js:5247`), and `programName` falls back to `My program` when the column is absent or blank (`5246`) — so a second table named *Push Pull Legs* carries the first one's id, every unnamed table carries `pgm_200c7fe71197adaf`, and `mergeProgramDocument` ends the merge on the live id (`RoomProgramRepository.kt:740`), reports a zero summary and says *That program is already here.* about a program the device has never seen. **Seed the id with the document's source**: `parseProgramSheet` already receives `options.fileName` (`docs/app.js:1033`), so the sheet records it and the seed carries the source as well as the name — a different file with the same program name is a different program, while re-dropping the same file stays a no-op. The accepted cost is stated rather than hidden: renaming or *Save as* makes a second program, and a **pasted** table has no file name to seed, so it keeps the name-only identity and needs B267. Rejected: hashing the content too, because every spreadsheet edit would then arrive as a new program and duplicate the plan the lifter is training; minting a fresh id per download, because re-downloading a draft would import it twice. Pin all three cases — same file twice, a second file with the same name, and a paste — in the page's own gate. |
+| B267 | **"That program is already here" is said of a program the device has never seen.** With a name-derived id an id match *guarantees* a name match, so the early return has nothing to compare and cannot tell a re-import from a different program carrying that name; a pasted table therefore still loses its program silently, and so does any collision the page cannot see. Compare the document's shape against the stored program's — the slots' template ids are enough, and the rows are not yet written at that point — and when it differs say that a *different* program with that name is already here and nothing was added, instead of the idempotent sentence. Leave the true no-op silent. Rejected: reporting every id match as a clash, because re-importing the same document is the common case and must stay silent. |
 
 ## Later — decided, and not being started
 
