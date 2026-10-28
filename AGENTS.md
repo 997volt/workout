@@ -35,7 +35,7 @@ Three layers sit around those:
   [build.gradle.kts](app/build.gradle.kts) (`warningsAsErrors`),
   [.editorconfig](.editorconfig), [android.yml](.github/workflows/android.yml),
   [dependabot.yml](.github/dependabot.yml), [gradle.properties](gradle.properties),
-  [ci-check-instrumented.py](tools/ci-check-instrumented.py),
+  [ci-check-tests.py](tools/ci-check-tests.py),
   [proguard-rules.pro](app/proguard-rules.pro), [LICENSE](LICENSE).
 
 Neither list is complete: the commit convention lives in git history, and an inventory of
@@ -107,8 +107,11 @@ tools/format-changed.py --fix      # let the rules rewrite those files
 
 The instrumented job is not the default — `connectedDebugAndroidTest` needs a device — and
 a green report is not proof it ran: no failures looks like a complete run, so
-`tools/ci-check-instrumented.py` fails the job when the executed count disagrees with the
-declared one.
+`tools/ci-check-tests.py instrumented` fails the job when the executed count disagrees with
+the declared one, when anything was skipped, or when the report is older than the sources.
+The same check runs over the unit suite in the build job (`tools/ci-check-tests.py unit`),
+because a test JUnit cannot see is not an instrumented-only failure: B268's two superset
+tests had never run at all.
 
 ## Hard constraints — do not break these
 

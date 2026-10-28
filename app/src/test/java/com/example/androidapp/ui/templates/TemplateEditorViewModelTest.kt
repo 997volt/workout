@@ -353,7 +353,8 @@ class TemplateEditorViewModelTest {
         advanceUntilIdle()
 
         assertNull(viewModel.uiState.value.error)
-    
+    }
+
     @Test
     fun pairing_plansBothExercisesTogether() = runTest(dispatcher) {
         // ROADMAP B16: a plan could not express a superset at all, so the grouping only ever
@@ -375,8 +376,13 @@ class TemplateEditorViewModelTest {
         assertEquals("and the one above it comes with it", groups.first(), groups.last())
         assertEquals(
             "ROADMAP B27: the plan is paired in one write, so it cannot end up half-paired",
-            2,
+            1,
             repository.supersetGroups.size,
+        )
+        assertEquals(
+            "and that one write covers both rows, the tapped one and the one above it",
+            listOf("te2", "te1"),
+            repository.supersetGroups.single(),
         )
         assertEquals("which is A1/A2", listOf("A1", "A2"), viewModel.uiState.value.supersetLabels.values.toList())
     }
@@ -400,7 +406,6 @@ class TemplateEditorViewModelTest {
             viewModel.uiState.value.exercises.all { it.supersetGroup == null },
         )
     }
-}
 
     private fun exercise(id: String, position: Int, name: String) = TemplateExercise(
         id = id,

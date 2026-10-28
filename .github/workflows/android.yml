@@ -99,6 +99,13 @@ jobs:
           --configuration-cache
           --console=plain
 
+      # B268. The same rule the instrumented job applies, over the suite that runs here: a
+      # green task is not proof the tests ran. A report with no failures looks exactly like a
+      # complete one — and an @Test declared inside a function is invisible to JUnit, which is
+      # how the plan-side superset tests never executed.
+      - name: Every declared unit test executed
+        run: python3 tools/ci-check-tests.py unit
+
       # N173. The page's copy of the core is generated, not hand-kept: the sync task rewrites
       # docs/shared from the Kotlin source, and a diff means the committed copy is stale. The
       # JS/node toolchain is the machine's (gradle.properties turns the download off).
@@ -273,12 +280,14 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -accel auto
           script: ./gradlew connectedDebugAndroidTest --console=plain
 
-      # B8. A green run whose XML records fewer tests than the source declares is the
-      # failure this job is least able to notice: no failures, no skipped tests, just a
-      # short report. This compares the two counts and fails when they differ.
+      # B8, B275. A green run whose XML records fewer tests than the source declares is the
+      # failure this job is least able to notice: no failures, just a short report. The check
+      # also reads `skipped` (a skipped case is counted in `tests`), compares per class rather
+      # than in total, and refuses a report older than the newest test source, because an
+      # UP-TO-DATE task replays the previous XML.
       - name: Every declared test executed
         if: always()
-        run: python3 tools/ci-check-instrumented.py
+        run: python3 tools/ci-check-tests.py instrumented
 
       # F18. Gradle prints only "There were failing tests" with --console=plain; the
       # names live in the JUnit XML. Without this a red run says nothing about what

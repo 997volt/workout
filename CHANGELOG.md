@@ -17,6 +17,20 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The unit suite proves what it ran** (B268). The plan-side superset tests were local functions: a missing
+  closing brace put both `@Test` methods inside the test above them, which compiles, is invisible to JUnit and
+  meant they had never executed since the change that added them. Both run now, and the one written against the
+  pre-B27 two-write pairing was corrected to the single write B27 shipped — a stale expectation the dead test had
+  hidden. Nothing compared the JVM suite's declared tests with its result XML; the check existed for the
+  instrumented job only, so it was generalised: `tools/ci-check-tests.py` reads both suites, and a `@Test` that
+  sits inside a function rather than at its class's own body depth is a failure rather than a silent omission.
+
+- **A green suite now has to prove it was complete** (B275). The instrumented count read `tests` alone, so a
+  suite whose cases were all skipped still reported every test executed; it compared one grand total, so an old
+  report could supply the number for a class that never ran; and its "replayed report" guard compared the XML
+  against the top-level test directory's mtime, which a content edit never changes. The check now reads
+  `skipped`, compares class by class, and takes the newest test source's mtime.
+
 - **A dropped table is its own program** (B266). A program table's ids were a slug of the program's *name*, so a
   second, different spreadsheet that happened to say *Push Pull Legs* carried the first one's `pgm_…` id — the app
   answered *That program is already here.* and added nothing — and every table without a `Program` column collided
