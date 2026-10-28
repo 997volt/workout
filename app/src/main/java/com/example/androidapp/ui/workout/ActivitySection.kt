@@ -66,16 +66,13 @@ internal fun ActivityBody(activity: Activity, onClear: () -> Unit) {
 /**
  * The empty slot: the activity, or the line a session with nothing in it says.
  *
- * [empty] defaults to the screen's own line so the call site is one expression, which is what keeps the
- * screen's body inside the length this project allows.
- */
+*/
 @Composable
 internal fun ActivityBodyOrEmpty(
     activity: Activity?,
     onClearActivity: () -> Unit,
-    empty: @Composable () -> Unit = { EmptyWorkout() },
 ) {
-    if (activity != null) ActivityBody(activity = activity, onClear = onClearActivity) else empty()
+    if (activity != null) ActivityBody(activity = activity, onClear = onClearActivity) else EmptyWorkout()
 }
 
 /**

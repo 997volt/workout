@@ -1,5 +1,6 @@
 package com.example.androidapp.domain.model
 
+import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -79,6 +80,13 @@ class ExerciseTrendPointTest {
 
         assertEquals(0L, points.single().volumeGrams)
         assertNull(points.single().heaviestSetGrams)
+    }
+
+    @Test
+    fun aLoadBelowTheRoundingStep_estimatesAtLeastItself() {
+        // B291: the rounding could take a sub-step load to zero, and the chart drew an estimate of 0 kg for
+        // a set that was actually lifted.
+        assertThat(estimatedOneRepMax(100L, 3)).isEqualTo(100L)
     }
 
     @Test

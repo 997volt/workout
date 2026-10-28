@@ -88,7 +88,7 @@ enum class ExerciseTrendMetric {
      * forward rather than drawing a climb that reads as improvement. The number itself
      * is plotted as recorded; only the label changes.
      */
-    val higherIsBetter: Boolean get() = this != ASSISTANCE
+    val higherIsBetter: Boolean get() = this != ASSISTANCE && this != JOINT_PAIN
 
     /** Whether this metric is a load, and so drawn from zero rather than on 1–10. */
     val isLoad: Boolean
@@ -123,9 +123,13 @@ fun estimatedOneRepMax(weightGrams: Long, reps: Int): Long? = when {
     reps == 1 -> weightGrams
     // Rounded to the nearest half-kilo: the estimate is not precise to the gram, and
     // printing 25.333 kg would dress a formula's output as a measurement.
-    reps in 2..MAX_ESTIMATED_REPS ->
+    reps in 2..MAX_ESTIMATED_REPS -> maxOf(
+        // Never below the weight lifted (B291): a load under the rounding step rounded to zero, which the
+        // chart drew as an estimate of 0 kg for a real set.
+        weightGrams,
         (weightGrams * (1.0 + reps / EPLEY_REPS_DIVISOR) / ESTIMATE_STEP_GRAMS)
-            .roundToLong() * ESTIMATE_STEP_GRAMS
+            .roundToLong() * ESTIMATE_STEP_GRAMS,
+    )
 
     else -> null
 }

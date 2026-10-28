@@ -17,6 +17,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **No dead weight, and two figures that could lie** (B291). What nothing calls is gone: a test tag with no
+  control, an empty slot no caller passes, a plan field written and never read, a transfer outcome carrying a
+  message nobody reads, a DAO read that duplicated the one production uses, and a goal-timeline helper only its
+  test called. The one-rep estimate is floored at the weight that produced it, because the half-kilo rounding
+  could take a sub-step load to zero; `higherIsBetter` is the model's answer for joint pain rather than a patch at
+  each call site; the newest-weight read asks for a daily entry, which is what a weigh-in is; and adding a movement
+  to a session reads and writes its position in one transaction.
+
 - **The workout screen says what it draws, and the chart keeps its gesture** (B290). A failed write and a new
   record were drawn but never announced, while every other screen routes a failure through a snackbar — a polite
   live region; both are live regions now, and an edit or a delete clears the record banner instead of leaving a

@@ -29,7 +29,6 @@ class GoalTimelineTest {
     fun aMidnightStartAndAClockBoundary_onOneDay_areTheSameBoundary() {
         val rows = listOf(GoalBoundary(id = "old", startedAt = clockOnMarch, kind = "TARGET", value = 80_000.0))
 
-        assertThat(GoalTimeline.boundaryOn(rows, march, zone)?.id).isEqualTo("old")
         assertThat(GoalTimeline.isTaken(rows, id = "new", day = march, zone = zone)).isTrue()
         assertThat(GoalTimeline.isTaken(rows, id = "old", day = march, zone = zone)).isFalse()
     }

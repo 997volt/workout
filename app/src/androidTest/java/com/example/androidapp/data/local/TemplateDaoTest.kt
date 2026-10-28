@@ -112,7 +112,6 @@ class TemplateDaoTest {
 
         assertEquals(listOf("te1", "te2"), rows.map { it.id })
         assertEquals(listOf("Back Squat", "Bench Press"), rows.map { it.exerciseName })
-        assertEquals(listOf("back-squat", "bench-press"), dao.findExerciseIdsInOrder("t1"))
     }
 
     @Test
@@ -166,7 +165,6 @@ class TemplateDaoTest {
         assertEquals(1, dao.softDeleteTemplateExercise("te1", at = 5_000L))
 
         assertEquals(listOf("te2"), dao.observeTemplateExercises("t1").first().map { it.id })
-        assertEquals(listOf("bench-press"), dao.findExerciseIdsInOrder("t1"))
     }
 
     @Test

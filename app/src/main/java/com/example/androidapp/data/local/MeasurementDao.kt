@@ -35,7 +35,7 @@ interface MeasurementDao {
     @Query(
         """
         SELECT weightGrams, measuredAt FROM measurements
-        WHERE weightGrams IS NOT NULL AND deletedAt IS NULL
+        WHERE weightGrams IS NOT NULL AND deletedAt IS NULL AND kind = 'DAILY'
         ORDER BY measuredAt DESC
         LIMIT 1
         """,

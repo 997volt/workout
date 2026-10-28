@@ -189,10 +189,14 @@ class RoomWorkoutRepository @Inject constructor(
 
     override suspend fun addExercise(sessionId: String, exerciseId: String): DataResult<Unit> =
         dataResultOf {
-            if (dao.findSession(sessionId) == null) {
-                throw NotFoundException("session $sessionId is not open")
+            // The position is a read then a write, so both are in one transaction (B291): two adds in quick
+            // succession could otherwise both read the same maximum and share a place in the order.
+            database.withTransaction {
+                if (dao.findSession(sessionId) == null) {
+                    throw NotFoundException("session $sessionId is not open")
+                }
+                appendExercise(dao, timeSource.nowEpochMillis(), sessionId, exerciseId)
             }
-            appendExercise(dao, timeSource.nowEpochMillis(), sessionId, exerciseId)
         }
 
     override suspend fun removeExercise(sessionExerciseId: String): DataResult<Unit> =

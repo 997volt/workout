@@ -232,18 +232,6 @@ interface TemplateDao {
     fun observeTemplateExercises(templateId: String): Flow<List<TemplateExerciseDetail>>
 
     /** The same list, one shot — what starting a workout from a template needs. */
-    @Query(
-        """
-        SELECT te.exerciseId AS exerciseId
-        FROM template_exercises te
-        JOIN exercises e ON e.id = te.exerciseId
-        WHERE te.templateId = :templateId
-          AND te.deletedAt IS NULL
-          AND e.deletedAt IS NULL
-        ORDER BY te.position ASC
-        """,
-    )
-    suspend fun findExerciseIdsInOrder(templateId: String): List<String>
 
     /**
      * The same list with what the plan prescribes for each exercise (ROADMAP N14),

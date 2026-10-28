@@ -1064,8 +1064,6 @@ object TestTags {
          * The picker had no headings until two series could share a label, so this is what makes the two
          * *Left knee* entries — a workout series and a per-lift one — tellable apart.
          */
-        fun metricGroup(groupName: String) = "statistics_group_${groupName.lowercase()}"
-
         /** One period the moving average can be taken over. */
         fun movingAveragePeriod(period: Int) = "statistics_moving_average_$period"
 

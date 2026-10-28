@@ -393,7 +393,7 @@ private fun exerciseEntry(metric: ExerciseTrendMetric): MetricEntry {
         // A rating keeps the scale's ends; a load does not have ends to keep (ROADMAP N39).
         fixedRange = if (unit == MetricUnit.RATING) RATING_SCALE else null,
         // The direction the app already knows (ROADMAP N17), plus pain, which works the same way.
-        higherIsBetter = metric.higherIsBetter && metric != ExerciseTrendMetric.JOINT_PAIN,
+        higherIsBetter = metric.higherIsBetter,
         // A load starts at zero; a rating does not (ROADMAP N17, N38).
         fromZero = metric.isLoad,
         needsExercise = true,

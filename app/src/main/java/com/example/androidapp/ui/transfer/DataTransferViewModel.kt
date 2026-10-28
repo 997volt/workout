@@ -2,10 +2,8 @@ package com.example.androidapp.ui.transfer
 
 import android.content.Context
 import android.net.Uri
-import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.androidapp.R
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.repository.BackupRepository
@@ -33,7 +31,7 @@ sealed interface ImportOutcome {
  */
 sealed interface TransferOutcome {
     /** The file was written, or read and merged: the sentence is a plain string. */
-    data class Done(@StringRes val message: Int, val count: Int = 0) : TransferOutcome
+    data object Exported : TransferOutcome
 
     /** Nothing was written, or nothing was read: the storage failure's own sentence. */
     data object StorageFailure : TransferOutcome
@@ -96,7 +94,7 @@ class DataTransferViewModel @Inject constructor(
         viewModelScope.launch {
             _outcome.value = when (val produced = export()) {
                 is ExportOutcome.Ready -> if (documentIo.write(context, uri, produced.json)) {
-                    TransferOutcome.Done(R.string.transfer_exported)
+                    TransferOutcome.Exported
                 } else {
                     TransferOutcome.StorageFailure
                 }

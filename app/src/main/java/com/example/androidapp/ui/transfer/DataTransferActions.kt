@@ -86,7 +86,6 @@ fun rememberDataTransferActions(
             messages.sentence(
                 outcome = reported,
                 storageFailure = if (transferIsAnExport) messages.exportFailed else messages.readFailed,
-                plural = resources::getQuantityString,
             ),
         )
         viewModel.onOutcomeShown()
@@ -118,13 +117,8 @@ class TransferMessages(
     fun sentence(
         outcome: TransferOutcome,
         storageFailure: String,
-        plural: (Int, Int) -> String,
     ): String = when (outcome) {
-        is TransferOutcome.Done -> if (outcome.count > 0) {
-            plural(R.plurals.transfer_imported, outcome.count)
-        } else {
-            exported
-        }
+        TransferOutcome.Exported -> exported
 
         TransferOutcome.StorageFailure -> storageFailure
         is TransferOutcome.Merged -> if (outcome.summary.wasAlreadyComplete) {
