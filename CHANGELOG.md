@@ -17,6 +17,16 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **History's *Do it now* starts the missed day** (B271). The missed-day question returns one of two
+  shapes — the repeat that was asked for, or the missed day's template — and the history host handled only the
+  first, so answering *Do it now* closed the question and started nothing. Both shapes go to their own
+  navigation now, through a pure branch the tests assert.
+
+- **A second tap inside a write is not a second row** (B273). *Log set* stays enabled until the write returns, and
+  the mutex only orders the turns it is handed, so two taps in one frame wrote two identical sets — the volume, the
+  record comparison and the plan progress all counted both. The row is claimed before the write is queued now, and
+  the picker's append does the same for the movement it is adding.
+
 - **A rating's target is one scale** (B270). `MetricUnit.RATING` parsed a typed target by doubling it into the
   half-points the tables store an RPE in, while formatting and every series read the same number as a point on the
   1–10 scale. A target of 7 was stored as 14, printed as "14.0" and drawn at 14 on an axis that stops at 10; every

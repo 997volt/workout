@@ -305,6 +305,23 @@ class ExercisePickerViewModelTest {
     }
 
     @Test
+    fun twoTapsOnAMovement_beforeTheFirstLands_appendItOnce() = runTest(dispatcher) {
+        // B273: the picker closes on `added`, which the first tap only publishes after its write. A
+        // second tap inside that window is the same movement, not a second plan row.
+        val exercises = FakeExerciseRepository(listOf(seeded))
+        val templates = FakeTemplateRepository()
+        val viewModel = viewModelFor(exercises, FakeWorkoutRepository(), templates, templateId = "t1")
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onExerciseSelected("back-squat")
+        viewModel.onExerciseSelected("back-squat")
+        advanceUntilIdle()
+
+        assertEquals("one tap and its echo are one append", listOf("t1" to "back-squat"), templates.added)
+    }
+
+    @Test
     fun pickingForATemplate_appendsToTheTemplate_insteadOfTheSession() = runTest(dispatcher) {
         // The same picker fills a template (N3): only the destination changes.
         val exercises = FakeExerciseRepository(listOf(seeded))

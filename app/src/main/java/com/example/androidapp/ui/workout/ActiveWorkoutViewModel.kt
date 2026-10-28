@@ -856,8 +856,21 @@ class ActiveWorkoutViewModel @Inject constructor(
      */
     fun onLogSet(sessionExerciseId: String, edit: SetEdit) {
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId } ?: return
-        viewModelScope.launch { writeLoggedSet(row, edit) }
+        // A tap inside the write is the same set, not a second one (B273). The write's own mutex orders
+        // the turn it takes; this is what stops two identical rows being queued for that turn.
+        if (loggingSetFor == sessionExerciseId) return
+        loggingSetFor = sessionExerciseId
+        viewModelScope.launch {
+            try {
+                writeLoggedSet(row, edit)
+            } finally {
+                loggingSetFor = null
+            }
+        }
     }
+
+    /** The row whose set is being written, so a second tap before it lands is ignored (B273). */
+    private var loggingSetFor: String? = null
 
     /**
      * Resolves the snapshot once, then writes the set (ROADMAP N219, B251).

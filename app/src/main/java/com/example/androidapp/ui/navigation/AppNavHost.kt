@@ -268,6 +268,10 @@ private fun NavGraphBuilder.historyDestinations(navController: NavHostController
             onRepeatWorkout = { sessionId ->
                 navController.navigate(ActiveWorkout(repeatSessionId = sessionId))
             },
+            // The missed day's own start, which the question can answer instead of the repeat (B271).
+            onStartTemplate = { templateId, slotId ->
+                navController.navigate(ActiveWorkout(templateId = templateId, slotId = slotId))
+            },
             onBack = { navController.popBackStack() },
         )
     }

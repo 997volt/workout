@@ -68,6 +68,8 @@ import java.time.ZoneId
 fun WorkoutHistoryRoute(
     onOpenWorkout: (String) -> Unit,
     onRepeatWorkout: (String) -> Unit,
+    /** The missed day answered with *Do it now* (B271): the workout the question named. */
+    onStartTemplate: (templateId: String, slotId: String?) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WorkoutHistoryViewModel = hiltViewModel(),
@@ -79,7 +81,16 @@ fun WorkoutHistoryRoute(
     // could not be recorded is shown on the screen's own host, because the workout still starts.
     var message by remember { mutableStateOf<String?>(null) }
     val requestStart = programStartGate(
-        onStart = { intent -> intent.repeatSessionId?.let(onRepeatWorkout) },
+        // Both shapes the question can hand back (B271): *Continue* returns the repeat that was asked
+        // for, and *Do it now* replaces it with the missed day's template. Handling only the first
+        // made the second a dialog that closed and started nothing.
+        onStart = { intent ->
+            when (val start = historyStartFor(intent)) {
+                is HistoryStart.Repeat -> onRepeatWorkout(start.sessionId)
+                is HistoryStart.Template -> onStartTemplate(start.templateId, start.slotId)
+                HistoryStart.None -> Unit
+            }
+        },
         onError = { message = it },
     )
 
@@ -450,4 +461,25 @@ private fun WorkoutHistoryScreenPreview() {
             onBack = {},
         )
     }
+}
+
+/**
+ * Where a settled start goes on the history screen (ROADMAP B271).
+ *
+ * The missed-day question returns one of two shapes and this decides between them, extracted so the
+ * branch can be asserted without a device. [None] is not a third meaning: this host only ever starts a
+ * start it asked for, so an intent with neither id is a gate bug, and doing nothing is the safe answer.
+ */
+internal sealed interface HistoryStart {
+    data class Repeat(val sessionId: String) : HistoryStart
+
+    data class Template(val templateId: String, val slotId: String?) : HistoryStart
+
+    data object None : HistoryStart
+}
+
+internal fun historyStartFor(intent: StartIntent): HistoryStart = when {
+    intent.repeatSessionId != null -> HistoryStart.Repeat(intent.repeatSessionId)
+    intent.templateId != null -> HistoryStart.Template(intent.templateId, intent.slotId)
+    else -> HistoryStart.None
 }

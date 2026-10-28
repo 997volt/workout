@@ -1368,6 +1368,26 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun twoTapsOnLogSet_beforeTheFirstLands_writeOneSet() = runTest(dispatcher) {
+        // B273: the button stays enabled until the write returns, and the write mutex only orders the
+        // turns it is handed. A second tap inside the first is the same set, not a second row.
+        val repository = FakeWorkoutRepository()
+        val viewModel = viewModelFor(repository)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+
+        val id = viewModel.uiState.value.exercises.single().id
+        val offered = offeredSet(viewModel)
+        viewModel.onLogSet(id, offered)
+        viewModel.onLogSet(id, offered)
+        settle()
+
+        assertEquals("one tap and its echo are one set", 1, repository.sets.value.size)
+    }
+
+    @Test
     fun loggingASet_storesTheSuggestion_andArmsTheRestAlert() = runTest(dispatcher) {
         val repository = FakeWorkoutRepository()
         val viewModel = viewModelFor(repository)

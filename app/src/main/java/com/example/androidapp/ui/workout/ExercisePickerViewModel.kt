@@ -133,7 +133,7 @@ class ExercisePickerViewModel @Inject constructor(
     }
 
     fun onExerciseSelected(exerciseId: String) {
-        viewModelScope.launch { add(exerciseId) }
+        launchAdd(exerciseId)
     }
 
     /**
@@ -147,7 +147,7 @@ class ExercisePickerViewModel @Inject constructor(
     fun onCreateExercise(name: String) {
         viewModelScope.launch {
             when (val created = exerciseRepository.createCustomExercise(name)) {
-                is DataResult.Success -> add(created.data.id)
+                is DataResult.Success -> launchAdd(created.data.id)
                 is DataResult.Failure -> _error.value = created.error
             }
         }
@@ -180,6 +180,27 @@ class ExercisePickerViewModel @Inject constructor(
     /** The exercise a failed prefill already appended, so a second tap cannot add it twice (N168). */
     private var appendedExerciseId: String? = null
 
+    /** The exercise a tap is already adding, so a second tap inside the write is not a second row (B273). */
+    private var adding: String? = null
+
+    /**
+     * Starts one add, and refuses a second for the same movement while the first is in flight.
+     *
+     * The flag is taken **here**, before the coroutine is queued: two taps land in one main-thread turn,
+     * so a check inside the write would see both of them before either had begun (B273).
+     */
+    private fun launchAdd(exerciseId: String) {
+        if (adding == exerciseId) return
+        adding = exerciseId
+        viewModelScope.launch {
+            try {
+                add(exerciseId)
+            } finally {
+                adding = null
+            }
+        }
+    }
+
     private suspend fun add(exerciseId: String) {
         // The append already happened when its targets failed; a second tap is not a retry of a failed
         // write, so it is answered as the add it already is rather than duplicating the plan row.
@@ -188,6 +209,10 @@ class ExercisePickerViewModel @Inject constructor(
             _added.value = true
             return
         }
+        addOnce(exerciseId)
+    }
+
+    private suspend fun addOnce(exerciseId: String) {
         val id = templateId
         val outcome = if (id != null) addToTemplate(id, exerciseId) else addToSession(exerciseId)
         when (outcome) {
