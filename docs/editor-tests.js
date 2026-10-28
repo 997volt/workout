@@ -148,6 +148,36 @@
       t.eq(weekly.program.kind, 'WEEKLY');
     });
 
+    check('a dropped table is its own program, and a paste keeps the id it had (B266)', function () {
+      var text = [
+        'Program\tDay\tWeekday\tExercise\tSets\tReps\tLoad',
+        'Push Pull Legs\tPush\tMonday\tBench Press\t3\t5\t100'
+      ].join('\n');
+      function build(fileName) {
+        return H.buildProgramDocument(H.parseProgramSheet(text, { fileName: fileName }), {}).document;
+      }
+
+      var first = build('ppl.csv');
+      var again = build('ppl.csv');
+      var other = build('ppl-v2.csv');
+
+      // The same file is the same document, which is what makes re-dropping it a no-op (B180).
+      t.eq(again.program.id, first.program.id, 'one file, one program');
+      t.eq(again.templates[0].id, first.templates[0].id, 'with the same workouts');
+      t.eq(again.templateSets[0].id, first.templateSets[0].id, 'and the same sets');
+
+      // A different spreadsheet that happens to name the same program is a different program — the
+      // report that opened B266. Its ids must not be the first one's, or the app answers "already
+      // here" to a program the device has never seen.
+      t.ok(other.program.id !== first.program.id, 'another file, another program');
+      t.ok(other.templates[0].id !== first.templates[0].id, 'with its own workouts');
+      t.ok(other.templateSets[0].id !== first.templateSets[0].id, 'and its own sets');
+
+      // A paste has no file to name it, so its seed is the name alone and the id is the one every
+      // pasted program has carried: pinning it keeps programs imported before this change stable.
+      t.eq(build('').program.id, 'pgm_219a652524971005', 'a pasted table keeps the id it had');
+    });
+
     check('a table that names two program kinds is refused', function () {
       var text = [
         'Day\tExercise\tSets\tReps\tKind',

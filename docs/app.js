@@ -4979,6 +4979,15 @@
     }
     var sheet = {
       name: 'My program',
+      /**
+       * The file the table came from, or '' when it was pasted (B266).
+       *
+       * It is what gives a dropped table its own identity: two spreadsheets that name the same program
+       * are two programs, and a paste — which has no file — keeps the name-only identity it always had.
+       * Carried on the sheet rather than read again at build time so the id cannot depend on which of
+       * the two entry points happened to call.
+       */
+      source: typeof options.fileName === 'string' ? options.fileName : '',
       unit: 'kg',
       days: [],
       problems: [],
@@ -5244,7 +5253,15 @@
     var problems = (sheet.problems || []).slice();
 
     var programName = String(sheet.name || 'My program').trim() || 'My program';
-    var programId = 'pgm_' + fnv1a64Hex('program|' + programName);
+    // **The document's own file names it** (B266). A table's id used to be a slug of the program's
+    // name alone, so a second, different table that said "Push Pull Legs" carried the first one's id
+    // and the app answered "already here" to a program it had never seen. The source file is part of
+    // the seed now: two spreadsheets are two programs, and re-dropping the same file is still one.
+    // A **pasted** table has no file to name it, so its seed is the name alone — exactly what it was
+    // before this change, which keeps every program imported from a paste stable, and is why the app
+    // still has to say when a name is taken by another plan (B267).
+    var documentName = sheet.source ? sheet.source + '|' + programName : programName;
+    var programId = 'pgm_' + fnv1a64Hex('program|' + documentName);
     var templates = [];
     var slots = [];
     var templateExercises = [];
@@ -5256,7 +5273,7 @@
     var exerciseCount = 0;
 
     (sheet.days || []).forEach(function (day) {
-      var templateId = 'tpl_' + fnv1a64Hex('template|' + programName + '|' + day.name);
+      var templateId = 'tpl_' + fnv1a64Hex('template|' + documentName + '|' + day.name);
       templateByDay[day.name] = templateId;
       templates.push({
         id: templateId,
@@ -5270,7 +5287,7 @@
       if (weekdays.length === 0) { weekdays.push(null); }
       weekdays.forEach(function (weekday) {
         slots.push({
-          id: 'slot_' + fnv1a64Hex('slot|' + programName + '|' + day.name + '|' + (weekday || 'none')),
+          id: 'slot_' + fnv1a64Hex('slot|' + documentName + '|' + day.name + '|' + (weekday || 'none')),
           programId: programId,
           templateId: templateId,
           position: slots.length,
@@ -5309,7 +5326,7 @@
         }
         exerciseCount += 1;
         var templateExerciseId = 'tex_' + fnv1a64Hex(
-          'template-exercise|' + programName + '|' + day.name + '|' + exercise.row
+          'template-exercise|' + documentName + '|' + day.name + '|' + exercise.row
         );
         templateExercises.push({
           id: templateExerciseId,
@@ -5336,7 +5353,7 @@
           setCount += 1;
           templateSets.push({
             id: 'tset_' + fnv1a64Hex(
-              'template-set|' + programName + '|' + day.name + '|' + exercise.row + '|' + (setIndex + 1)
+              'template-set|' + documentName + '|' + day.name + '|' + exercise.row + '|' + (setIndex + 1)
             ),
             templateExerciseId: templateExerciseId,
             setIndex: setIndex,

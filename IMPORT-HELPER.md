@@ -521,14 +521,22 @@ tab-separated paste from a spreadsheet is the intended input.
 - **Names resolve against the lifter's library, then the seeded library.** A name in neither is created as a
   movement, carried in the document with no taxonomy and listed in the preview.
 - **Loads are kilograms**, converted to whole grams.
-- **Create, not edit.** A sheet-derived program's id is a slug of its name, and the app ends the merge when a
-  live program already holds that id — so re-importing the sheet adds nothing, and a sheet changed after it
-  was imported (a new day, a different load) changes nothing either. A program that exists is changed with the
-  **program editor** above (N172) or in the app (B180). A program the lifter deleted comes back when its sheet
-  is loaded again, un-hidden but not re-followed.
+- **Create, not edit.** A sheet-derived program's id is a slug of **the file it came from and its name** (B266), and
+  the app ends the merge when a live program already holds that id — so re-importing the sheet adds nothing, and a
+  sheet changed after it was imported (a new day, a different load) changes nothing either. A program that exists
+  is changed with the **program editor** above (N172) or in the app (B180). A program the lifter deleted comes back
+  when its sheet is loaded again, un-hidden but not re-followed.
+- **The file is the document's identity, not the program's name** (B266). Two spreadsheets that both say *Push Pull
+  Legs* are two programs, because each carries its own file; re-dropping one file is still one program. The cost is
+  stated rather than hidden: renaming the file, or *Save as* under a new name, makes a second program, so a file
+  that is meant to be the same one should keep its name. A **pasted** table has no file to name it, so it keeps
+  the name-only identity it always had — every program imported from a paste keeps its id — and the app is what
+  says when a name is already taken (B267).
 - **A same name is not always the same program.** With an export loaded, the preview says which case applies:
   this program is already there (nothing to add), it is there as deleted (the load restores it), or a
-  *different* program carries the name (the load adds a second one, because it never renames or overwrites).
+  *different* program carries the name (the load adds a second one, because it never renames or overwrites). A
+  table is the same question one step earlier: dropping a second file is a second program, and pasting a table
+  whose program name is already on the device is answered by the app, not by the page.
 
 The fixture `fixtures/program-document.js` is **generated** by `fixtures/generate.js` from the sheet it
 carries, so it cannot be a hand-kept copy of what the page used to write: the test page parses the sheet,

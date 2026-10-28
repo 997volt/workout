@@ -1359,7 +1359,11 @@ the rule; that one argues it.
   neither is created as a movement, and loads are kilograms. It creates and never edits — the app inserts by
   id and never overwrites, and a live program under the document's id ends the merge rather than letting the
   document's new day attach to it (B180), so a re-imported edit is a no-op — and the page says which case a
-  same-named program is: unchanged, restored, or a second one. The document is the same format the seeded
+  same-named program is: unchanged, restored, or a second one. **A table's identity is the file it came from as
+  well as its name** (B266): the id is a slug of both, so two spreadsheets that name the same program are two
+  programs while re-dropping one file stays a no-op. The cost is accepted and stated — renaming the file makes a
+  second program — and a **pasted** table has no file, so it keeps the name-only identity it always had, which is
+  what leaves the app to say when a name is already taken (B267). The document is the same format the seeded
   examples use (P3.19), so one codec and one fixture cover both.
   ([evidence](DECISIONS-EVIDENCE.md#n167))
 - **The app offers three example programs, and they are documents** (P3.19). A new install's Programs screen

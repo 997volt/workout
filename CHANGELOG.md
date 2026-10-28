@@ -13,6 +13,19 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Fixed
+
+- **A dropped table is its own program** (B266). A program table's ids were a slug of the program's *name*, so a
+  second, different spreadsheet that happened to say *Push Pull Legs* carried the first one's `pgm_…` id — the app
+  answered *That program is already here.* and added nothing — and every table without a `Program` column collided
+  on *My program*. The page seeds a table's ids with **the file it came from** as well as the name now: two
+  spreadsheets are two programs, and re-dropping the same file is still a no-op. The cost is stated rather than
+  hidden: renaming the file, or *Save as* under a new name, makes a second program. A **pasted** table has no file
+  to name it, so its ids are exactly what they were — every program imported from a paste keeps its id — and a
+  paste whose program name is already on the device is still answered by the app (B267).
+
 ## [2.17] — 2026-10-27 (versionCode 37)
 
 ### Changed
