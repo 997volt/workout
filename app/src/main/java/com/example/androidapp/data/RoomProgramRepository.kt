@@ -19,7 +19,9 @@ import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.data.local.toProgramSession
 import com.example.androidapp.data.local.toRunSession
+import com.example.androidapp.data.transfer.PlannedDay
 import com.example.androidapp.data.transfer.PlannedMovement
+import com.example.androidapp.data.transfer.PlannedWork
 import com.example.androidapp.data.transfer.ProgramDocument
 import com.example.androidapp.data.transfer.ProgramDocumentCodec
 import com.example.androidapp.data.transfer.counted
@@ -803,19 +805,22 @@ private suspend fun mergeProgramDocument(
 }
 
 /**
- * The planned movements the device holds for [programId], in the shape [plansTheSameWorkAs] compares (B267).
+ * The work the device holds for [programId], in the shape [plansTheSameWorkAs] compares (B267).
  *
  * Read only on the path where the document's id is already here, so a first import pays nothing for it. The days
  * come from the program's own slots rather than the whole library for the same reason: this answers a question
  * about one program.
  */
-private suspend fun heldWork(database: WorkoutDatabase, programId: String): Map<PlannedMovement, Int> =
-    database.programDao().findSlots(programId)
-        .map { it.templateId }
-        .distinct()
-        .flatMap { database.templateDao().findTemplateExercises(it) }
-        .map { PlannedMovement(it.templateId, it.exerciseId, it.position) }
-        .counted()
+private suspend fun heldWork(database: WorkoutDatabase, programId: String): PlannedWork {
+    val slots = database.programDao().findSlots(programId)
+    return PlannedWork(
+        days = slots.map { PlannedDay(it.templateId, it.weekday, it.position) }.counted(),
+        movements = slots.map { it.templateId }.distinct()
+            .flatMap { database.templateDao().findTemplateExercises(it) }
+            .map { PlannedMovement(it.templateId, it.exerciseId, it.position) }
+            .counted(),
+    )
+}
 
 /**
  * Applies one program edit, planned by the shared core (ROADMAP N171).

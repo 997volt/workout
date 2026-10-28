@@ -2,31 +2,29 @@ package com.example.androidapp.data.transfer
 
 import com.example.androidapp.domain.model.SetType
 import com.google.common.truth.Truth.assertThat
+import java.time.DayOfWeek
 import org.junit.Test
 
 /**
- * Whether a document is the plan the device holds under its id (B267).
+ * Whether a document is the work the device holds under its id (B267).
  *
  * The question exists because an id that is already here has two causes — the same document loaded twice, or a
- * different document that the seed happened to give the same id — and the import card used to call both "already
- * here". Plain JUnit: it reads two values and compares them, which is the whole decision.
+ * different document the seed gave the same id — and the import card used to call both "already here". Both halves
+ * matter: movements alone miss a day a second program has, days alone miss a changed movement inside one. Plain
+ * JUnit: it compares two values, which is the whole decision.
  */
 class ProgramPlanShapeTest {
 
-    private fun plan(vararg rows: Triple<String, String, Int>): ProgramDocument = document(
-        rows.map { (templateId, exerciseId, position) ->
-            TemplateExerciseDto(
-                id = "te_$templateId$exerciseId$position",
-                templateId = templateId,
-                exerciseId = exerciseId,
-                position = position,
-                createdAt = 1,
-                updatedAt = 1,
-            )
-        },
-    )
+    private fun day(templateId: String, weekday: DayOfWeek? = null, position: Int = 0) =
+        PlannedDay(templateId = templateId, weekday = weekday, position = position)
 
-    private fun document(templateExercises: List<TemplateExerciseDto>) = ProgramDocument(
+    private fun movement(templateId: String, exerciseId: String, position: Int = 0) =
+        PlannedMovement(templateId = templateId, exerciseId = exerciseId, position = position)
+
+    private fun document(
+        days: List<PlannedDay> = emptyList(),
+        movements: List<PlannedMovement> = emptyList(),
+    ) = ProgramDocument(
         formatVersion = ProgramDocumentCodec.CURRENT_FORMAT_VERSION,
         exportedAt = 1,
         program = ProgramDto(
@@ -37,95 +35,119 @@ class ProgramPlanShapeTest {
             createdAt = 1,
             updatedAt = 1,
         ),
-        templateExercises = templateExercises,
+        slots = days.mapIndexed { index, slot ->
+            ProgramSlotDto(
+                id = "slot_$index",
+                programId = "pgm_1",
+                templateId = slot.templateId,
+                position = slot.position,
+                weekday = slot.weekday,
+                createdAt = 1,
+                updatedAt = 1,
+            )
+        },
+        templateExercises = movements.map { planned ->
+            TemplateExerciseDto(
+                id = "te_${planned.templateId}_${planned.exerciseId}_${planned.position}",
+                templateId = planned.templateId,
+                exerciseId = planned.exerciseId,
+                position = planned.position,
+                createdAt = 1,
+                updatedAt = 1,
+            )
+        },
     )
 
-    private fun List<Triple<String, String, Int>>.stored(): Map<PlannedMovement, Int> =
-        map { PlannedMovement(it.first, it.second, it.third) }.counted()
+    private fun held(
+        days: List<PlannedDay> = emptyList(),
+        movements: List<PlannedMovement> = emptyList(),
+    ) = PlannedWork(days = days.counted(), movements = movements.counted())
 
     @Test
     fun theSameDaysAndMovements_areTheSameWork() {
-        val rows = listOf(
-            Triple("tpl_push", "bench-press", 0),
-            Triple("tpl_push", "overhead-press", 1),
-            Triple("tpl_pull", "deadlift", 0),
+        val days = listOf(day("tpl_push", DayOfWeek.MONDAY, 0), day("tpl_pull", DayOfWeek.WEDNESDAY, 1))
+        val movements = listOf(
+            movement("tpl_push", "bench-press", 0),
+            movement("tpl_push", "overhead-press", 1),
+            movement("tpl_pull", "deadlift", 0),
         )
 
-        assertThat(plan(*rows.toTypedArray()).plansTheSameWorkAs(rows.stored())).isTrue()
+        assertThat(document(days, movements).plansTheSameWorkAs(held(days, movements))).isTrue()
     }
 
     @Test
     fun aDifferentMovementInTheSameDay_isNotTheSameWork() {
-        // The case a same-named paste produces: one program says Push/Pull/Legs too, with different lifts.
-        val document = plan(
-            Triple("tpl_push", "bench-press", 0),
-            Triple("tpl_pull", "deadlift", 0),
-        )
-        val stored = listOf(
-            Triple("tpl_push", "incline-press", 0),
-            Triple("tpl_pull", "deadlift", 0),
-        )
+        val days = listOf(day("tpl_push", DayOfWeek.MONDAY))
+        val stored = held(days, listOf(movement("tpl_push", "incline-press")))
 
-        assertThat(document.plansTheSameWorkAs(stored.stored())).isFalse()
+        assertThat(document(days, listOf(movement("tpl_push", "bench-press"))).plansTheSameWorkAs(stored))
+            .isFalse()
     }
 
     @Test
     fun aMovementInAnotherOrder_isNotTheSameWork() {
-        val document = plan(
-            Triple("tpl_push", "bench-press", 0),
-            Triple("tpl_push", "overhead-press", 1),
+        val stored = held(
+            listOf(day("tpl_push", DayOfWeek.MONDAY)),
+            listOf(movement("tpl_push", "overhead-press", 0), movement("tpl_push", "bench-press", 1)),
         )
-        val stored = listOf(
-            Triple("tpl_push", "overhead-press", 0),
-            Triple("tpl_push", "bench-press", 1),
+        val document = document(
+            listOf(day("tpl_push", DayOfWeek.MONDAY)),
+            listOf(movement("tpl_push", "bench-press", 0), movement("tpl_push", "overhead-press", 1)),
         )
 
-        assertThat(document.plansTheSameWorkAs(stored.stored())).isFalse()
+        assertThat(document.plansTheSameWorkAs(stored)).isFalse()
     }
 
     @Test
     fun aDayTheDeviceDoesNotHave_isNotTheSameWork() {
-        val document = plan(
-            Triple("tpl_push", "bench-press", 0),
-            Triple("tpl_legs", "back-squat", 0),
+        // The shape that got a first cut of this wrong: a second program can add a day and no movement at all,
+        // so a comparison that read only movements called it the same plan.
+        val stored = held(listOf(day("tpl_push", DayOfWeek.MONDAY)), listOf(movement("tpl_push", "bench-press")))
+        val document = document(
+            listOf(day("tpl_push", DayOfWeek.MONDAY), day("tpl_second", DayOfWeek.FRIDAY, 1)),
+            listOf(movement("tpl_push", "bench-press")),
         )
 
-        assertThat(document.plansTheSameWorkAs(listOf(Triple("tpl_push", "bench-press", 0)).stored())).isFalse()
-        assertThat(document.plansTheSameWorkAs(emptyMap())).isFalse()
+        assertThat(document.plansTheSameWorkAs(stored)).isFalse()
+    }
+
+    @Test
+    fun theSameDayOnAnotherWeekday_isNotTheSameWork() {
+        val stored = held(listOf(day("tpl_push", DayOfWeek.MONDAY)), emptyList())
+
+        assertThat(document(listOf(day("tpl_push", DayOfWeek.TUESDAY)), emptyList()).plansTheSameWorkAs(stored))
+            .isFalse()
+    }
+
+    @Test
+    fun anEmptyProgram_isNotTheSameWorkAsANamedDay() {
+        assertThat(document().plansTheSameWorkAs(held(listOf(day("tpl_push"))))).isFalse()
+        assertThat(document().plansTheSameWorkAs(held())).isTrue()
     }
 
     @Test
     fun aRepeatedRow_countsAsADifference() {
         // A malformed document can name the same movement twice; one row is not two.
-        val document = plan(
-            Triple("tpl_push", "bench-press", 0),
-            Triple("tpl_push", "bench-press", 0),
+        val stored = held(emptyList(), listOf(movement("tpl_push", "bench-press")))
+        val document = document(
+            emptyList(),
+            listOf(movement("tpl_push", "bench-press"), movement("tpl_push", "bench-press")),
         )
 
-        assertThat(document.plansTheSameWorkAs(listOf(Triple("tpl_push", "bench-press", 0)).stored())).isFalse()
+        assertThat(document.plansTheSameWorkAs(stored)).isFalse()
     }
 
     @Test
     fun aDifferentLoadOnTheSameWork_isNotReportedAsAnotherProgram() {
         // Stated boundary: the comparison is the days and their movements, not what they load. A weight the
         // import cannot merge over a live program must not turn a re-import of the same plan into a warning.
-        val stored = listOf(Triple("tpl_push", "bench-press", 0)).stored()
-        val document = document(
-            listOf(
-                TemplateExerciseDto(
-                    id = "te_a",
-                    templateId = "tpl_push",
-                    exerciseId = "bench-press",
-                    position = 0,
-                    createdAt = 1,
-                    updatedAt = 1,
-                ),
-            ),
-        ).copy(
+        val days = listOf(day("tpl_push", DayOfWeek.MONDAY))
+        val movements = listOf(movement("tpl_push", "bench-press"))
+        val document = document(days, movements).copy(
             templateSets = listOf(
                 TemplateSetDto(
                     id = "set_a",
-                    templateExerciseId = "te_a",
+                    templateExerciseId = "te_tpl_push_bench-press_0",
                     setIndex = 0,
                     role = SetType.NORMAL,
                     targetWeightGrams = 120_000,
@@ -136,6 +158,6 @@ class ProgramPlanShapeTest {
             ),
         )
 
-        assertThat(document.plansTheSameWorkAs(stored)).isTrue()
+        assertThat(document.plansTheSameWorkAs(held(days, movements))).isTrue()
     }
 }
