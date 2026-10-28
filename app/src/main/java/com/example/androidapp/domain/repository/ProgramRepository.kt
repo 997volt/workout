@@ -54,8 +54,9 @@ interface ProgramRepository {
     /**
      * Makes this program a week that repeats, or an order that ends (ROADMAP N174, N178).
      *
-     * The app's editor authors both halves of a program's schedule; a document's values are honored
-     * when the program is created and ignored by an edit, like isActive and position.
+     * The app's editor authors both halves of a program's schedule, and so may a document: an edit's
+     * kind and start are applied (N186). Only `isActive` and `position` stay the device's, because they
+     * are the program's place among programs rather than its plan.
      */
     suspend fun setProgramKind(programId: String, kind: ProgramKind): DataResult<Unit>
 

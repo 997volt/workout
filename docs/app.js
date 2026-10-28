@@ -1,8 +1,9 @@
 /*
  * Workout import helper.
  *
- * Turns a flat list of rows (JSON, or CSV/TSV) into a workout-backup.json at
- * schemaVersion 5, the only file the Android app imports.
+ * Turns a flat list of rows (JSON, or CSV/TSV) into a workout-backup.json at the schema version
+ * the app reads, and authors the program documents the app imports. The backup it writes is at
+ * `schemaVersion` 5, the floor that build reads rather than the newest ceiling (B288).
  *
  * Constraints this file keeps, because they are the product:
  *  - Zero dependencies. Classic script, not a module, so it runs from file://.

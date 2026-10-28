@@ -17,6 +17,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The docs state facts the code agrees with** (B288). One pass corrected the claims the review found stale: the
+  formatting measurement (276 findings across 97 files now that the task's report is formatting-only), the backup
+  ceiling (7, not 6), and the migration rule, which named a `MigrationTestHelper` this repository does not carry and
+  now names the test that exists. README repeats the Gradle and Kotlin versions it points at the catalog for, and
+  they were both behind. The program contract said a document's kind and start are ignored by an edit, which N186
+  reversed. The Robolectric pin says what was measured — 36 and 37 fail on this toolchain — instead of "the newest
+  it supports", which was not true. And the instrumented transfer test no longer claims the minified release runs.
+
 - **The helper refuses what the app refuses** (B279). The same-list guard compared rows as stored, and the page
   writes `__source`/`__row` onto them, so its signature never matched again and re-dropping a file doubled the
   model instead of refusing it. The shared validator was also weaker than the app's own write boundary: the RPE

@@ -21,8 +21,8 @@ import java.io.File
  * the composition's scope (B159) is only safe if this half behaves. A `FileProvider` URI is a content URI the app
  * has write access to, which is exactly the shape the Storage Access Framework hands over.
  *
- * The release build runs this code minified, so a green instrumented run is also the check that R8 has not
- * dropped or renamed anything the transfer needs.
+ * The instrumented job builds the **debug** variant, so this is not a check that R8 kept anything: the
+ * minified build is exercised by the signed release smoke test in RELEASING.md.
  */
 @RunWith(AndroidJUnit4::class)
 class DocumentIoTest {
