@@ -47,6 +47,9 @@ import androidx.room.TypeConverters
  * to counted) and a set can carry a duration (nullable, because every set on disk was a counted one). See
  * [MIGRATION_10_11].
  *
+ * **Schema 12 is B270**, and it is a data migration: a rating's target was stored in half-points while every
+ * reading of it was in points, so the stored values are halved. See [MIGRATION_11_12].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -73,7 +76,7 @@ import androidx.room.TypeConverters
         MeasurementSoreMuscleEntity::class,
         MetricGoalEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

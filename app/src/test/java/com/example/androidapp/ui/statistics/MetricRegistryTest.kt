@@ -94,8 +94,19 @@ class MetricRegistryTest {
         assertThat(MetricUnit.KILOGRAMS.parse("80")).isEqualTo(80_000.0)
         assertThat(MetricUnit.CENTIMETRES.parse("82.5")).isEqualTo(825.0)
         assertThat(MetricUnit.PERCENT.parse("18")).isEqualTo(180.0)
-        assertThat(MetricUnit.RATING.parse("7.5")).isEqualTo(15.0)
+        assertThat(MetricUnit.RATING.parse("7.5")).isEqualTo(7.5)
         assertThat(MetricUnit.REPS.parse("5")).isEqualTo(5.0)
+    }
+
+    @Test
+    fun everyUnit_roundTripsWhatItFormats() {
+        // B270: the rating unit parsed into halves and formatted points, so the two never agreed. A unit is
+        // one scale, and the assertion is the pair rather than one direction of it.
+        assertThat(MetricUnit.KILOGRAMS.format(MetricUnit.KILOGRAMS.parse("82.5")!!)).isEqualTo("82.5")
+        assertThat(MetricUnit.CENTIMETRES.format(MetricUnit.CENTIMETRES.parse("82.5")!!)).isEqualTo("82.5")
+        assertThat(MetricUnit.PERCENT.format(MetricUnit.PERCENT.parse("18.3")!!)).isEqualTo("18.3")
+        assertThat(MetricUnit.RATING.format(MetricUnit.RATING.parse("7.5")!!)).isEqualTo("7.5")
+        assertThat(MetricUnit.REPS.format(MetricUnit.REPS.parse("5")!!)).isEqualTo("5")
     }
 
     @Test
@@ -122,8 +133,9 @@ class MetricRegistryTest {
         assertThat(MetricUnit.KILOGRAMS.parse("1e308")).isNull()
         assertThat(MetricUnit.CENTIMETRES.parse("1e308")).isNull()
         assertThat(MetricUnit.PERCENT.parse("1e308")).isNull()
-        assertThat(MetricUnit.RATING.parse("1e308")).isNull()
-        // A bare count stores what was typed, so finite is all that is asked of it.
+        // A rating and a count store what was typed (B270: the rating is a point, not a value doubled into
+        // halves), so finite is all that is asked of them.
+        assertThat(MetricUnit.RATING.parse("1e308")).isEqualTo(1e308)
         assertThat(MetricUnit.REPS.parse("1e308")).isEqualTo(1e308)
     }
 
@@ -148,9 +160,10 @@ class MetricRegistryTest {
         assertThat(MetricUnit.CENTIMETRES.formatRate(1.5)).isEqualTo("1.5")
         // The units that are already fractional in display keep their own formatter.
         assertThat(MetricUnit.KILOGRAMS.formatRate(2500.0)).isEqualTo("2.5")
-        // A rating arrives in halves, so its rate converts to points like its readings do.
-        assertThat(MetricUnit.RATING.formatRate(15.0)).isEqualTo("7.5")
-        assertThat(MetricUnit.RATING.formatRate(1.0)).isEqualTo("0.5")
+        // A rating is a point on the 1–10 scale in its rate too (B270): the series is in points, so a
+        // slope of 0.5 a week is "0.5", not the half of it.
+        assertThat(MetricUnit.RATING.formatRate(0.5)).isEqualTo("0.5")
+        assertThat(MetricUnit.RATING.formatRate(-1.0)).isEqualTo("-1")
     }
 
     @Test

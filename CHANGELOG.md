@@ -17,6 +17,13 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A rating's target is one scale** (B270). `MetricUnit.RATING` parsed a typed target by doubling it into the
+  half-points the tables store an RPE in, while formatting and every series read the same number as a point on the
+  1–10 scale. A target of 7 was stored as 14, printed as "14.0" and drawn at 14 on an axis that stops at 10; every
+  rating trend was reported at half its slope. The unit is points throughout now, and **schema 12** halves the
+  targets already stored that way — only the rating series, because a weight target in grams and a body-fat target
+  in tenths must not move. The tests that pinned the old convention now assert the round trip instead.
+
 - **A program document carries the whole movement** (B277). The page's sheet builder copied eleven of the seventeen
   fields the format holds, so a program authored there recreated a weighted pull-up as an ordinary lift, a
   pound-display movement as kilograms, and lost its cue and default rest — B247's bug, on the other host. It copies

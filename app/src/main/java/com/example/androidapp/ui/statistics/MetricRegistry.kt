@@ -136,14 +136,17 @@ enum class MetricUnit(
             signed(text) { it.times(GRAMS_PER_KILOGRAM) }
     },
     RATING(R.string.unit_rating) {
+        // **Points, because that is what every read produces** (B270). A series divides the stored halves
+        // by two on its way in (`RoomTrendsRepository`), and the chart's own range is 1–10 — so a value
+        // here is a point on that scale, and `format`, `parse` and `formatRate` all say so. `parse` used
+        // to double a typed target into halves while `format` read the same number as points: a target of
+        // 7 was stored as 14, printed as "14.0" and drawn at 14 on a 1–10 axis, and every rate printed at
+        // half its size. `MIGRATION_11_12` halves the targets already stored that way.
         override fun format(value: Double): String = value.asRating()
 
-        // A rate arrives in *stored* units like every other value here — halves, for a rating — so it
-        // converts the same way `format` does before deciding how many decimals a rate needs.
-        override fun formatRate(value: Double): String = (value / HALVES_PER_POINT).asTenthsOrWhole()
+        override fun formatRate(value: Double): String = value.asTenthsOrWhole()
 
-        override fun parse(text: String): Double? =
-            measure(text) { it.times(HALVES_PER_POINT) }
+        override fun parse(text: String): Double? = measure(text) { it }
     },
     REPS(R.string.unit_reps) {
         // A count is whole, so a tip is not a measurement — but a *rate* of one can be fractional, and
@@ -514,7 +517,6 @@ private fun ExerciseTrendMetric.labelRes(): Int = when (this) {
 private const val GRAMS_PER_KILOGRAM = 1000.0
 private const val MILLIMETRES_PER_CENTIMETRE = 10.0
 private const val TENTHS_PER_PERCENT = 10.0
-private const val HALVES_PER_POINT = 2.0
 
 /**
  * Every rating in the app is 1–10.
