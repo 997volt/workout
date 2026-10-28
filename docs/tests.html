@@ -1325,7 +1325,7 @@
     eq(built.stats.sets, 22);
     eq(built.stats.newExercises.length, 1);
     eq(built.stats.newExercises[0], 'Machine Curl Call');
-    eq(built.document.formatVersion, 4);
+    eq(built.document.formatVersion, window['workout:shared'].programFormatVersion());
     eq(built.document.program.name, 'Autumn block');
     eq(built.document.program.isActive, false);
     eq(built.document.slots.length, 3);

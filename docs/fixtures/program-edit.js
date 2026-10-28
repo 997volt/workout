@@ -504,8 +504,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -520,8 +526,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -533,8 +545,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",
@@ -1047,8 +1065,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -1063,8 +1087,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -1076,8 +1106,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",
@@ -1602,8 +1638,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -1618,8 +1660,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -1631,8 +1679,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",
@@ -2145,8 +2199,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -2161,8 +2221,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -2174,8 +2240,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",
@@ -2705,8 +2777,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -2721,8 +2799,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -2734,8 +2818,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",
@@ -3248,8 +3338,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -3264,8 +3360,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -3277,8 +3379,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",
@@ -3803,8 +3911,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -3819,8 +3933,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -3832,8 +3952,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",
@@ -4315,8 +4441,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -4331,8 +4463,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -4344,8 +4482,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",
@@ -4876,8 +5020,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -4892,8 +5042,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -4905,8 +5061,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",
@@ -5435,8 +5597,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -5451,8 +5619,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -5464,8 +5638,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",
@@ -5990,8 +6170,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -6006,8 +6192,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -6019,8 +6211,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",
@@ -6525,8 +6723,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "bench-press",
           "rowKind": "MOVEMENT",
-          "parentId": "bench-press"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "barbell-row",
@@ -6541,8 +6745,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "row",
           "rowKind": "MOVEMENT",
-          "parentId": "row"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "back-squat",
@@ -6554,8 +6764,14 @@ window.PROGRAM_EDIT_CASES = [
           "createdAt": 0,
           "updatedAt": 0,
           "deletedAt": null,
+          "restSeconds": null,
+          "techniqueNote": null,
+          "weightUnit": null,
+          "stepGrams": null,
+          "parentId": "squat",
           "rowKind": "MOVEMENT",
-          "parentId": "squat"
+          "isBodyweight": false,
+          "isTimed": false
         },
         {
           "id": "ex_99d2eab48e357913",

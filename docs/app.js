@@ -609,6 +609,16 @@
    * never finished, an exercise the session holds as deleted, and a deleted set are all
    * absent from `TrendsDao`, so counting them here would draw a point the phone never
    * shows — a deleted 300 kg typo would become the movement's best session. */
+  /* The load a set was performed at (B278), the same rule as the app's `loadGrams`: a bodyweight set
+   * carries the lifter, an assisted one leaves what the machine did not take, and a set that states
+   * no bodyweight was loaded at its added weight. The floor at zero is deliberate there and here. */
+  function setLoadGrams(set) {
+    var weight = typeof set.weightGrams === 'number' ? set.weightGrams : 0;
+    if (typeof set.bodyweightGrams !== 'number') { return weight; }
+    var assistance = typeof set.assistanceGrams === 'number' ? set.assistanceGrams : 0;
+    return Math.max(0, set.bodyweightGrams + weight - assistance);
+  }
+
   function liftTrendPoints(backup, exerciseId) {
     if (!isObject(backup) || !Array.isArray(backup.sessions)) { return []; }
     var sessionsById = {};
@@ -643,15 +653,19 @@
       var bucket = bySession[sessionId];
       var heaviest = null;
       bucket.sets.forEach(function (set) {
-        if (typeof set.weightGrams !== 'number' || !(set.weightGrams > 0)) { return; }
+        if (typeof set.weightGrams !== 'number') { return; }
         if (!roleIsWork(set.setType || 'NORMAL')) { return; }
-        if (heaviest === null || set.weightGrams > heaviest.weightGrams) { heaviest = set; }
+        var load = setLoadGrams(set);
+        if (!(load > 0)) { return; }
+        if (heaviest === null || load > heaviest.loadGrams) {
+          heaviest = { loadGrams: load, reps: set.reps };
+        }
       });
       return {
         startedAt: bucket.startedAt,
-        heaviestSetGrams: heaviest ? heaviest.weightGrams : null,
+        heaviestSetGrams: heaviest ? heaviest.loadGrams : null,
         estimatedOneRepMaxGrams: heaviest
-          ? estimatedOneRepMax(heaviest.weightGrams, heaviest.reps)
+          ? estimatedOneRepMax(heaviest.loadGrams, heaviest.reps)
           : null
       };
     }).sort(function (a, b) { return a.startedAt - b.startedAt; });
@@ -5229,6 +5243,10 @@
     return byName;
   }
 
+  /* The movement as the app holds it, whole (B277): every field of the shared `ExerciseDto`, so a
+   * program document cannot silently recreate a weighted pull-up as an ordinary lift or a pound
+   * movement as kilograms. A field this list forgets is a field the document loses, which is why the
+   * page's tests build a movement that carries all of them. */
   function programExerciseDto(row, time) {
     return {
       id: row.id,
@@ -5240,8 +5258,14 @@
       createdAt: typeof row.createdAt === 'number' ? row.createdAt : time,
       updatedAt: typeof row.updatedAt === 'number' ? row.updatedAt : time,
       deletedAt: null,
+      restSeconds: typeof row.restSeconds === 'number' ? row.restSeconds : null,
+      techniqueNote: typeof row.techniqueNote === 'string' ? row.techniqueNote : null,
+      weightUnit: typeof row.weightUnit === 'string' ? row.weightUnit : null,
+      stepGrams: typeof row.stepGrams === 'number' ? row.stepGrams : null,
+      parentId: row.parentId || null,
       rowKind: row.rowKind || 'MOVEMENT',
-      parentId: row.parentId || null
+      isBodyweight: row.isBodyweight === true,
+      isTimed: row.isTimed === true
     };
   }
 
@@ -5596,11 +5620,12 @@
         formatChartDate(heaviest.at));
     }
     if (!bestEstimate) {
-      // Two reasons the estimate can be missing, and naming the wrong one is a lie about the lift: a
-      // bodyweight movement has no added weight to estimate from, which is not a set above twelve reps (N169).
+      // Two reasons the estimate can be missing, and naming the wrong one is a lie about the lift: no
+      // working set at all is not a set above twelve reps (N169). The load is the whole figure now
+      // (B278), so "no added weight" would be wrong for a bodyweight movement the chart does count.
       parts.push(heaviest
         ? 'no set at 12 reps or fewer, so no estimate'
-        : 'no added weight, so no estimate');
+        : 'no working set, so no estimate');
     }
     return parts.join(' · ');
   }

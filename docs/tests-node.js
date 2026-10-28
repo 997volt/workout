@@ -41,7 +41,7 @@ var EXPECTED_FIXTURE_CASES = 6;
  * checks executed, not of cases handed in, so a block of `check` calls behind an early return is a
  * failure here rather than a number that quietly fell.
  */
-var EXPECTED_CHECKS = 42;  // +1 for B266's dropped-file identity case
+var EXPECTED_CHECKS = 44;  // +2 for B277's movement copy and B278's load
 if (!Array.isArray(globalThis.PROGRAM_EDIT_CASES)) {
   console.error('the edit fixture did not load: PROGRAM_EDIT_CASES is not an array');
   process.exit(1);

@@ -17,6 +17,21 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A program document carries the whole movement** (B277). The page's sheet builder copied eleven of the seventeen
+  fields the format holds, so a program authored there recreated a weighted pull-up as an ordinary lift, a
+  pound-display movement as kilograms, and lost its cue and default rest — B247's bug, on the other host. It copies
+  the row whole now, and a page test builds a movement carrying every field and asserts each one survives.
+
+- **The helper's progress chart reads the load, not the added weight** (B278). It filtered and ordered on the added
+  weight alone, so a weighted pull-up charted at the belt instead of the lifter plus the belt, and an assisted set
+  charted nothing. It uses the app's `loadGrams` rule now — the lifter, plus what was added, less what the machine
+  took — and the node suite pins both shapes to the numbers the app would read.
+
+- **The page's browser tests assert the version the core writes** (B280). `docs/tests.html` still expected document
+  version 4 after the format reached 5, so the file failed — and no gate ran it, because the docs job runs the node
+  runner only. The assertion reads `programFormatVersion()` now, as the node checks already do, so the next bump
+  cannot make it stale again; the sheet it checks is the one the node fixture covers, which is the gated copy.
+
 - **A program can carry a failure set** (B276). The shared role enum listed five of the app's six roles, so a
   program whose plan prescribed a failure set could not be exported at all — the encode threw and the lifter was
   told a generic storage failure — and a document naming one was refused as corrupt by both hosts. The plan editor

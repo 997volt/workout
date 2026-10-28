@@ -736,6 +736,78 @@
         'a 4000-second rest is a rest problem, not a malformed file');
     });
 
+    check('a movement copied into a document keeps everything the app holds (B277)', function () {
+      // The builder copies a loaded movement into the program document. It copied eleven of the
+      // seventeen fields the format carries, so a weighted pull-up arrived as an ordinary lift and a
+      // pound movement as kilograms — the B247 bug, on this host.
+      var movement = {
+        id: 'ex_pullup',
+        name: 'Weighted Pull-Up',
+        primaryMuscle: 'BACK',
+        secondaryMuscles: ['BICEPS'],
+        equipment: 'BODYWEIGHT',
+        movementPattern: 'PULL',
+        createdAt: 1,
+        updatedAt: 2,
+        deletedAt: null,
+        restSeconds: 240,
+        techniqueNote: 'pause at the top',
+        weightUnit: 'POUNDS',
+        stepGrams: 2500,
+        parentId: null,
+        rowKind: 'MOVEMENT',
+        isBodyweight: true,
+        isTimed: false
+      };
+      var sheet = H.parseProgramSheet([
+        ['Program', 'Day', 'Weekday', 'Exercise', 'Sets', 'Reps', 'Load', 'Rest', 'RPE', 'Note'].join('\t'),
+        ['Flags', 'Day A', 'Mon', 'Weighted Pull-Up', '3', '5', '20', '240', '8', ''].join('\t')
+      ].join('\n'));
+
+      var built = H.buildProgramDocument(sheet, { exportedAt: 1, exercises: [movement] });
+      t.ok(built.ok, 'the sheet should write');
+
+      var mapped = built.document.exercises[0];
+      t.eq(mapped.isBodyweight, true, 'the body loads it');
+      t.eq(mapped.isTimed, false, 'and it is counted, not held');
+      t.eq(mapped.weightUnit, 'POUNDS', 'the unit it reads in');
+      t.eq(mapped.stepGrams, 2500, 'its own step');
+      t.eq(mapped.restSeconds, 240, 'its default rest');
+      t.eq(mapped.techniqueNote, 'pause at the top', 'its cue');
+    });
+
+    check('the progress chart reads the load, not the added weight (B278)', function () {
+      // The app's `loadGrams`: a bodyweight set carries the lifter, an assisted one leaves what the
+      // machine did not take. The page used the added weight alone, so a weighted pull-up charted at
+      // 10 kg and an assisted set charted nothing.
+      var backup = {
+        sessions: [
+          { id: 's1', startedAt: 1000, finishedAt: 2000, zoneOffsetMinutes: 0, deletedAt: null },
+          { id: 's2', startedAt: 3000, finishedAt: 4000, zoneOffsetMinutes: 0, deletedAt: null }
+        ],
+        sessionExercises: [
+          { id: 'se1', sessionId: 's1', exerciseId: 'ex_pullup', position: 0, deletedAt: null },
+          { id: 'se2', sessionId: 's2', exerciseId: 'ex_pullup', position: 0, deletedAt: null }
+        ],
+        sets: [
+          {
+            id: 'set1', sessionExerciseId: 'se1', setIndex: 0, reps: 5, weightGrams: 10000,
+            bodyweightGrams: 80000, assistanceGrams: 0, setType: 'NORMAL', deletedAt: null
+          },
+          {
+            id: 'set2', sessionExerciseId: 'se2', setIndex: 0, reps: 5, weightGrams: 0,
+            bodyweightGrams: 60000, assistanceGrams: 20000, setType: 'NORMAL', deletedAt: null
+          }
+        ]
+      };
+
+      var points = H.liftTrendPoints(backup, 'ex_pullup');
+
+      t.eq(points.length, 2, 'one point per session');
+      t.eq(points[0].heaviestSetGrams, 90000, '80 kg of lifter and 10 kg added is 90 kg');
+      t.eq(points[1].heaviestSetGrams, 40000, '60 kg less the 20 kg the machine took is 40 kg');
+    });
+
     return ran;
   }
 
