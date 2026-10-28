@@ -19,8 +19,11 @@ import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.data.local.toProgramSession
 import com.example.androidapp.data.local.toRunSession
+import com.example.androidapp.data.transfer.PlannedMovement
 import com.example.androidapp.data.transfer.ProgramDocument
 import com.example.androidapp.data.transfer.ProgramDocumentCodec
+import com.example.androidapp.data.transfer.counted
+import com.example.androidapp.data.transfer.plansTheSameWorkAs
 import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
 import com.example.androidapp.data.transfer.toShared
@@ -738,7 +741,17 @@ private suspend fun mergeProgramDocument(
     // Live means this exact program is already here; nothing in the document is new (B180). The read
     // filters `deletedAt`, so a deleted one falls through to the restore below rather than stopping here.
     if (programDao.findProgram(document.program.id) != null) {
-        return ProgramImportSummary(programs = 0, templates = 0, exercises = 0, droppedMovements = 0)
+        return ProgramImportSummary(
+            programs = 0,
+            templates = 0,
+            exercises = 0,
+            droppedMovements = 0,
+            // **"Already here" is only true of the same work** (B267). A document whose days or movements
+            // differ carries an id the seed produced rather than one this program earned — a pasted table's
+            // id is a slug of its name — and the card has to say the name is taken rather than that this
+            // program arrived.
+            nameTakenByAnotherPlan = !document.plansTheSameWorkAs(heldWork(database, document.program.id)),
+        )
     }
 
     // One statement, before the inserts: a hidden program comes back, a live or absent one is
@@ -788,6 +801,21 @@ private suspend fun mergeProgramDocument(
         droppedMovements = document.templateExercises.size - planned.size,
     )
 }
+
+/**
+ * The planned movements the device holds for [programId], in the shape [plansTheSameWorkAs] compares (B267).
+ *
+ * Read only on the path where the document's id is already here, so a first import pays nothing for it. The days
+ * come from the program's own slots rather than the whole library for the same reason: this answers a question
+ * about one program.
+ */
+private suspend fun heldWork(database: WorkoutDatabase, programId: String): Map<PlannedMovement, Int> =
+    database.programDao().findSlots(programId)
+        .map { it.templateId }
+        .distinct()
+        .flatMap { database.templateDao().findTemplateExercises(it) }
+        .map { PlannedMovement(it.templateId, it.exerciseId, it.position) }
+        .counted()
 
 /**
  * Applies one program edit, planned by the shared core (ROADMAP N171).

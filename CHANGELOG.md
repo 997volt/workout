@@ -26,6 +26,16 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   to name it, so its ids are exactly what they were — every program imported from a paste keeps its id — and a
   paste whose program name is already on the device is still answered by the app (B267).
 
+- **A name taken by another plan is said, not called "already here"** (B267). The load's idempotent sentence was
+  decided by the counts alone, and an id that is already here has two causes: the same document loaded twice, or a
+  different document the seed happened to give the same id — a pasted table's id is a slug of its program name, so a
+  second table that also says *Push Pull Legs* carries the first one's id. The second case answered *That program is
+  already here.* about a program the device had never seen. The merge compares the document's planned movements —
+  day, movement and place — with the plan it already holds under that id, and when they differ the card says *A
+  different plan is already here under that name, so nothing was added.* The load still writes nothing either way
+  (B180): what changed is only which true sentence it ends with. Loads, rep ranges, rests and notes are not part of
+  the comparison, because the import would not have merged them over a live program either.
+
 ## [2.17] — 2026-10-27 (versionCode 37)
 
 ### Changed

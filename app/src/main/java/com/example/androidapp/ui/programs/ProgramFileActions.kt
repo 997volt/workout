@@ -81,6 +81,7 @@ fun rememberProgramImport(
     val loaded = stringResource(R.string.program_loaded)
     val updated = stringResource(R.string.program_updated)
     val alreadyLoaded = stringResource(R.string.program_already_loaded)
+    val nameTaken = stringResource(R.string.program_name_taken)
 
     val openDocument = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -100,7 +101,7 @@ fun rememberProgramImport(
                 if (edited) {
                     updated
                 } else {
-                    importSentence(reported.data, loaded, alreadyLoaded) { count ->
+                    importSentence(reported.data, loaded, alreadyLoaded, nameTaken) { count ->
                         resources.getQuantityString(R.plurals.program_load_dropped, count, count)
                     }
                 },
@@ -131,15 +132,25 @@ fun rememberProgramImport(
  * already present. A dropped movement is appended because it is the one thing a successful load can
  * be missing. [dropped] resolves the plural, which needs the count and so cannot be read during
  * composition.
+ *
+ * **A name taken by another plan is not the idempotent case** (B267). Both add nothing, so both used
+ * to say "already here" — but the second is a document this device has never seen, and the lifter
+ * needs to know the file is not the program they thought it was. It wins over "already here" because
+ * it is the stronger statement, and the load genuinely added nothing in either case.
  */
-private fun importSentence(
+internal fun importSentence(
     summary: ProgramImportSummary,
     loaded: String,
     alreadyLoaded: String,
+    nameTaken: String,
     dropped: (Int) -> String,
 ): String {
     val droppedText = if (summary.droppedMovements > 0) dropped(summary.droppedMovements) else null
-    val first = if (summary.addedNothing) alreadyLoaded else loaded
+    val first = when {
+        summary.nameTakenByAnotherPlan -> nameTaken
+        summary.addedNothing -> alreadyLoaded
+        else -> loaded
+    }
     return listOfNotNull(first, droppedText).joinToString(" ")
 }
 

@@ -995,6 +995,9 @@
     <string name="program_balance_sets_many">%1$s sets</string>
     <string name="program_loaded">Program loaded.</string>
     <string name="program_already_loaded">That program is already here.</string>
+    <!-- The idempotent sentence is false about a program the device has never seen (B267): a pasted table's
+         id is a slug of its program name, so a second table named the same carries the first one's id. -->
+    <string name="program_name_taken">A different plan is already here under that name, so nothing was added.</string>
     <!-- What a load could not place (ROADMAP B51). "Not in your library" rather than "not on this
          device": an exercise the user deleted here is still held as a hidden row, and saying the
          device does not have it would be false. -->

@@ -153,6 +153,8 @@ class ProgramDocumentTest {
         assertEquals("nothing was added the second time", 0, second.programs)
         assertEquals(0, second.templates)
         assertEquals(0, second.exercises)
+        // B267: the same plan under the same id is the idempotent case, and stays silent.
+        assertFalse("and it is the plan already here", second.nameTakenByAnotherPlan)
         assertEquals(1, programs.observePrograms().first().size)
     }
 
@@ -183,6 +185,9 @@ class ProgramDocumentTest {
 
         assertEquals("nothing was merged into the program", 0, summary.programs)
         assertEquals(0, summary.templates)
+        // B267: a document whose days differ is not the plan the device holds, so the card says the name
+        // is taken instead of claiming this program is already here.
+        assertTrue("and the card says the name is taken", summary.nameTakenByAnotherPlan)
         val program = programs.observePrograms().first().single()
         assertEquals(
             "the program still has the one day it had",

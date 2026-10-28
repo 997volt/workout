@@ -243,6 +243,16 @@ data class ProgramImportSummary(
     val templates: Int,
     val exercises: Int,
     val droppedMovements: Int,
+    /**
+     * True when the document's id was already here **and the plan under it is not this document's** (B267).
+     *
+     * The load adds nothing either way — the merge is insert-only and never edits a program (B180) — but the
+     * two causes are not the same sentence: one is a re-import of the same document, the other is a name a
+     * different plan already holds (a pasted table's id is a slug of its program name, so a second table that
+     * says *Push Pull Legs* produces the first one's id). Saying "already here" about the second would be
+     * false about a program the device has never seen.
+     */
+    val nameTakenByAnotherPlan: Boolean = false,
 ) {
     /**
      * True when the load added no row at all, which is the same file loaded a second time (B57).

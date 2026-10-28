@@ -531,7 +531,9 @@ tab-separated paste from a spreadsheet is the intended input.
   stated rather than hidden: renaming the file, or *Save as* under a new name, makes a second program, so a file
   that is meant to be the same one should keep its name. A **pasted** table has no file to name it, so it keeps
   the name-only identity it always had — every program imported from a paste keeps its id — and the app is what
-  says when a name is already taken (B267).
+  says when a name is already taken: it compares the document's planned work with the program holding that id and
+  answers *A different plan is already here under that name, so nothing was added.* rather than *already here*
+  (B267).
 - **A same name is not always the same program.** With an export loaded, the preview says which case applies:
   this program is already there (nothing to add), it is there as deleted (the load restores it), or a
   *different* program carries the name (the load adds a second one, because it never renames or overwrites). A

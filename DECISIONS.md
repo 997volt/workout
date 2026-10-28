@@ -1363,7 +1363,12 @@ the rule; that one argues it.
   well as its name** (B266): the id is a slug of both, so two spreadsheets that name the same program are two
   programs while re-dropping one file stays a no-op. The cost is accepted and stated — renaming the file makes a
   second program — and a **pasted** table has no file, so it keeps the name-only identity it always had, which is
-  what leaves the app to say when a name is already taken (B267). The document is the same format the seeded
+  what leaves the app to say when a name is already taken (B267). **That sentence is a comparison, not a count**
+  (B267): when the document's id is already here the app reads the plan it holds under that id and compares the
+  document's planned movements — day, movement and place — with it, because the idempotent sentence and "a
+  different plan has this name" both add nothing and only one of them is true. Loads, rep ranges, rests and notes
+  are left out: the import would not have merged them over a live program either, so silence about them is not a
+  loss. The document is the same format the seeded
   examples use (P3.19), so one codec and one fixture cover both.
   ([evidence](DECISIONS-EVIDENCE.md#n167))
 - **The app offers three example programs, and they are documents** (P3.19). A new install's Programs screen
