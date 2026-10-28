@@ -559,7 +559,10 @@ private fun NextSetEditor(
                 role = draft.setType,
                 // A planned warm-up opens with no effort at all (N67), so the picker is what states
                 // the plan's number again when the role comes back to one that records an effort.
-                onSelect = { role -> edited = true; draft = draft.withRole(role, suggestion.targetRpeHalves) },
+                onSelect = { role ->
+                    edited = true
+                    draft = draft.withRole(role, suggestion.targetRpeHalves)
+                },
                 // Tagged for this row: a test reaches the picker through the flow it actually takes.
                 testTag = TestTags.exercisePendingRole(row.id),
                 optionTag = { role -> TestTags.exercisePendingRole(row.id, role) },
@@ -570,7 +573,10 @@ private fun NextSetEditor(
             )
             SetEntryNumbers(
                 draft = draft,
-                onDraftChange = { edited = true; draft = it },
+                onDraftChange = { changed ->
+                    edited = true
+                    draft = changed
+                },
                 unit = unit,
                 stepGrams = row.stepGrams,
                 // A timed movement's fields state a hold instead of a rep count (N220), and a bodyweight
@@ -588,7 +594,10 @@ private fun NextSetEditor(
                 // is the row below, and every value it writes is still above it.
                 SetRpeField(
                     draft = draft,
-                    onDraftChange = { edited = true; draft = it },
+                    onDraftChange = { changed ->
+                        edited = true
+                        draft = changed
+                    },
                     targetRpeHalves = suggestion.targetRpeHalves,
                 )
             }
