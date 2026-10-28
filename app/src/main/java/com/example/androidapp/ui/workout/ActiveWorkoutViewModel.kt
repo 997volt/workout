@@ -653,6 +653,11 @@ class ActiveWorkoutViewModel @Inject constructor(
                         } ?: workoutRepository.previousPerformance(exerciseId, sessionId)
                         if (result is DataResult.Success) {
                             previousByExercise.update { it + (exerciseId to result.data) }
+                        } else if (result is DataResult.Failure) {
+                            // The fields fall back to the app's defaults when history cannot be read (B272);
+                            // saying so is what keeps that fallback from being a silent claim about a lift
+                            // the lifter has actually done before.
+                            lastError.value = result.error
                         }
                     }
             }

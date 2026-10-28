@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The next set's fields take the history when it arrives** (B272). The draft was keyed on the row and its
+  set count, and neither changes when the asynchronous previous-performance read returns — so the fields kept
+  their 8 × 20 kg fallback while the reason line beside them read "Last time …", and *Log set* wrote the fallback.
+  An untouched draft is re-seeded from the suggestion now, and one the lifter has edited is left alone. A read
+  that fails is said rather than swallowed, so the fallback is not a silent claim about a lift.
+
 - **The plan review pairs by occurrence and judges the load** (B274). A session may hold the same movement twice,
   and the review keyed performed rows by exercise id, so one row's sets vanished from the comparison while the
   totals counted both — the loss B20 fixed for the name key, still there under the id. It also compared only the

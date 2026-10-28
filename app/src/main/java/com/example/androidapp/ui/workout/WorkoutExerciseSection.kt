@@ -20,6 +20,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -428,7 +429,7 @@ internal fun SetEntryDraft.withRole(role: SetType, planRpeHalves: Int?): SetEntr
  * carries one; a planned warm-up opens it empty instead, since a warm-up carries no effort to show.
  * Extracted from [NextSetEditor] at the length this project allows.
  */
-private fun SetSuggestion.initialDraft(unit: WeightUnit, timed: Boolean): SetEntryDraft = SetEntryDraft(
+internal fun SetSuggestion.initialDraft(unit: WeightUnit, timed: Boolean): SetEntryDraft = SetEntryDraft(
     repsText = if (timed) "" else reps.toString(),
     // A hold opens on the last one, or on a minute where there is none — never on "reps" it does not have.
     durationText = if (timed) DurationFormat.ofSeconds((durationSeconds ?: DEFAULT_HOLD_SECONDS).toLong()) else "",
@@ -533,6 +534,12 @@ private fun NextSetEditor(
     var draft by remember(row.id, row.sets.size) {
         mutableStateOf(suggestion.initialDraft(unit, row.isTimed))
     }
+    // The history read lands after the first frame (B272), and the keys above do not change when it does:
+    // an untouched draft is re-seeded from the suggestion, and one the lifter has edited is left alone.
+    var edited by remember(row.id, row.sets.size) { mutableStateOf(false) }
+    LaunchedEffect(suggestion) {
+        draft = reseeded(edited, draft, suggestion, unit, row.isTimed)
+    }
     val values = draft.values(unit)
 
     Column(modifier = modifier) {
@@ -552,7 +559,7 @@ private fun NextSetEditor(
                 role = draft.setType,
                 // A planned warm-up opens with no effort at all (N67), so the picker is what states
                 // the plan's number again when the role comes back to one that records an effort.
-                onSelect = { role -> draft = draft.withRole(role, suggestion.targetRpeHalves) },
+                onSelect = { role -> edited = true; draft = draft.withRole(role, suggestion.targetRpeHalves) },
                 // Tagged for this row: a test reaches the picker through the flow it actually takes.
                 testTag = TestTags.exercisePendingRole(row.id),
                 optionTag = { role -> TestTags.exercisePendingRole(row.id, role) },
@@ -563,7 +570,7 @@ private fun NextSetEditor(
             )
             SetEntryNumbers(
                 draft = draft,
-                onDraftChange = { draft = it },
+                onDraftChange = { edited = true; draft = it },
                 unit = unit,
                 stepGrams = row.stepGrams,
                 // A timed movement's fields state a hold instead of a rep count (N220), and a bodyweight
@@ -581,7 +588,7 @@ private fun NextSetEditor(
                 // is the row below, and every value it writes is still above it.
                 SetRpeField(
                     draft = draft,
-                    onDraftChange = { draft = it },
+                    onDraftChange = { edited = true; draft = it },
                     targetRpeHalves = suggestion.targetRpeHalves,
                 )
             }
@@ -820,3 +827,19 @@ private fun SetExtrasMarker(set: SetRow, modifier: Modifier = Modifier) {
         )
     }
 }
+
+/**
+ * The draft the next-set fields should hold after a suggestion arrives (ROADMAP B272).
+ *
+ * Extracted so the rule can be asserted without a device: a draft the lifter has touched is theirs, and one
+ * they have not is the suggestion's — which is what lets the history read, arriving after the first frame,
+ * replace the fallback the fields opened on. The row's own id and set count are the other half: a different
+ * row or a logged set starts a new draft, and Compose's keys handle that.
+ */
+internal fun reseeded(
+    edited: Boolean,
+    current: SetEntryDraft,
+    suggestion: SetSuggestion,
+    unit: WeightUnit,
+    timed: Boolean,
+): SetEntryDraft = if (edited) current else suggestion.initialDraft(unit, timed)
