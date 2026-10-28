@@ -186,6 +186,9 @@ def _imports_ordered(imports: list[str]) -> bool:
 
 def analyse(files: list[str], fix: bool) -> None:
     """Runs the Gradle task over [files], which is where the ruleset is configured."""
+    # A task that is UP-TO-DATE replays its previous report, so the file this run reads is proved to
+    # be this run's by deleting it first (B289).
+    REPORT.unlink(missing_ok=True)
     command = [
         "./gradlew",
         ":app:detektFormattingCheck",
@@ -201,14 +204,23 @@ def analyse(files: list[str], fix: bool) -> None:
         )
 
 
-def findings() -> list[tuple[str, str, str, int, str]]:
-    """The report as (rule, file, message, line, where), non-formatting rules dropped."""
+def findings() -> tuple[list[tuple[str, str, str, int, str]], set[str]]:
+    """The report as (rule, file, message, line, where), plus any rule this file does not know.
+
+    A rule outside [FORMATTING_RULES] is not dropped silently: the report is supposed to contain
+    formatting findings only, and a name that is not in the set means either a new rule (the set
+    needs it) or a ruleset that loaded where it should not have (B289). Both are worth failing on.
+    """
     if not REPORT.is_file():
         raise Failure(f"no report at {REPORT}: the task did not run")
     parsed = []
+    unknown = set()
     for line in REPORT.read_text().splitlines():
         match = FINDING.match(line)
-        if not match or match.group("rule") not in FORMATTING_RULES:
+        if not match:
+            continue
+        if match.group("rule") not in FORMATTING_RULES:
+            unknown.add(match.group("rule"))
             continue
         number = int(match.group("line"))
         parsed.append(
@@ -220,7 +232,7 @@ def findings() -> list[tuple[str, str, str, int, str]]:
                 "{number}:{column}".format(number=number, column=match.group("col")),
             ),
         )
-    return parsed
+    return parsed, unknown
 
 
 def main() -> int:
@@ -236,7 +248,14 @@ def main() -> int:
             print("no Kotlin files changed -- nothing to check")
             return 0
         analyse(sorted(touched), fix=args.fix)
-        reported = findings()
+        reported, unknown = findings()
+        if unknown:
+            raise Failure(
+                "the report contains rules this script does not know: "
+                + ", ".join(sorted(unknown))
+                + " — a new formatting rule (add it to FORMATTING_RULES) or a ruleset that loaded "
+                "where it should not have",
+            )
     except Failure as failure:
         print(f"\nFAIL: {failure}", file=sys.stderr)
         return 1
@@ -254,12 +273,13 @@ def main() -> int:
             # The ruleset reads comments and KDoc too, so a file can carry a finding on a line the
             # diff never named even when the file is in the list.
             continue
-        if args.all or line in lines:
-            # ImportOrdering anchors at the file's first import, not at the import that is out of
-            # order, so the line test alone cannot tell a new misordering from one the base already
-            # had — that needs the base block (B132).
-            if not args.all and rule == "ImportOrdering" and not base_imports_are_ordered(head, relative):
-                continue
+        # ImportOrdering anchors at the file's first import, not at the import that is out of order,
+        # so it cannot go through the changed-line test at all: the line it reports is usually one the
+        # change never touched. It is decided by the base block instead (B132, B289).
+        imports = rule == "ImportOrdering"
+        if not args.all and imports and not base_imports_are_ordered(head, relative):
+            continue
+        if args.all or imports or line in lines:
             kept.append((relative, where, rule, message))
 
     if not kept:

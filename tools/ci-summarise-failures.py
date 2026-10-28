@@ -23,40 +23,63 @@ DEFAULT_ROOTS = [
 ]
 
 
-def failing(path: str) -> list[str]:
+def failing(path: str) -> tuple[list[str], str | None]:
+    """The failing cases in one report, and why the file could not be read when it could not.
+
+    A parse error is reported rather than swallowed: a corrupt report read as "no failures" is the
+    same green-that-means-nothing this script exists to prevent (B289).
+    """
     try:
         root = ET.parse(path).getroot()
-    except ET.ParseError:
-        return []
+    except ET.ParseError as error:
+        return [], f"{path}: {error}"
     names = []
     for case in root.iter("testcase"):
         if list(case.iter("failure")) or list(case.iter("error")):
             klass = case.get("classname", "?")
             names.append(f"{klass}.{case.get('name')}")
-    return names
+    return names, None
 
 
 def main(argv: list[str]) -> int:
     roots = argv[1:] or DEFAULT_ROOTS
     found: list[tuple[str, str]] = []
+    broken: list[str] = []
     scanned = 0
 
     for root in roots:
         for path in sorted(glob.glob(os.path.join(root, "**", "*.xml"), recursive=True)):
             scanned += 1
-            for name in failing(path):
-                found.append((path, name))
+            names, error = failing(path)
+            if error is not None:
+                broken.append(error)
+            found.extend((path, name) for name in names)
 
-    print("### Failing tests")
+    lines = ["### Failing tests"]
     if found:
-        for _, name in sorted(set(found)):
-            print(f"- `{name}`")
+        lines.extend(f"- `{name}`" for _, name in sorted(set(found)))
     elif scanned:
-        print(f"- No failures in {scanned} result file(s).")
+        lines.append(f"- No failures in {scanned} result file(s).")
     else:
-        print("- No JUnit XML found — the failure was probably earlier than the tests.")
+        lines.append("- No JUnit XML found — the failure was probably earlier than the tests.")
+
+    if broken:
+        lines.append("")
+        lines.append("### Reports that could not be read")
+        lines.extend(f"- `{item}`" for item in broken)
+
+    report = "\n".join(lines)
+    print(report)
+
+    # The job summary is where F18 wanted these names; stdout alone leaves them in the log (B289).
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        with open(summary, "a", encoding="utf-8") as handle:
+            handle.write(report + "\n")
+
+    if broken:
         return 1
-    return 0
+    return 0 if scanned else 1
 
 
 if __name__ == "__main__":

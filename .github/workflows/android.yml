@@ -112,7 +112,15 @@ jobs:
       - name: The page's copy of the shared core is current
         run: |
           ./gradlew :shared:syncSharedJs --console=plain
-          git diff --exit-code -- docs/shared
+          # `git diff` says nothing about an untracked file, so a generator that starts writing a new
+          # one would pass this (B289). The status check covers added, modified and untracked alike.
+          stale="$(git status --porcelain -- docs/shared)"
+          if [ -n "$stale" ]; then
+            echo "$stale"
+            git diff -- docs/shared
+            echo "docs/shared is stale: run ./gradlew :shared:syncSharedJs and commit the result" >&2
+            exit 1
+          fi
 
       # N128. The mechanical half of the release checklist, run on every change rather than by hand at
       # the tag: the built APK's versionCode/versionName against version.properties, and the hash the
@@ -173,7 +181,14 @@ jobs:
       - name: The generated fixtures are current
         run: |
           node docs/fixtures/generate.js
-          git diff --exit-code -- docs/fixtures
+          # The same reason as docs/shared above: an untracked new fixture is a diff git will not show.
+          stale="$(git status --porcelain -- docs/fixtures)"
+          if [ -n "$stale" ]; then
+            echo "$stale"
+            git diff -- docs/fixtures
+            echo "docs/fixtures is stale: run node docs/fixtures/generate.js and commit the result" >&2
+            exit 1
+          fi
 
       - name: The program editor's tests
         run: node docs/tests-node.js

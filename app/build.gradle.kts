@@ -175,6 +175,19 @@ android {
     }
 }
 
+/**
+ * The formatting ruleset, loaded **only** by [detektFormattingCheck] (B289).
+ *
+ * `detektPlugins` applies the plugins to every Detekt task, so the Compose rules loaded into this one
+ * too and the report carried a finding from the gate — exactly what its own comment says must not
+ * happen, because a caller reading the report then cannot tell which rule spoke. This configuration
+ * exists so that task can be given the one ruleset it checks.
+ */
+val detektFormattingRules: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -235,6 +248,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     detektPlugins(libs.detekt.rules.compose)
+    detektFormattingRules(libs.detekt.formatting)
     // N129: not loaded by the gate above — see detektFormattingCheck below.
     detektPlugins(libs.detekt.formatting)
 }
@@ -271,9 +285,10 @@ val detektFormattingCheck by tasks.registering(io.gitlab.arturbosch.detekt.Detek
     )
     config.setFrom(rootProject.files("config/detekt/detekt-formatting.yml"))
     // The formatting rules are inactive in detekt's own defaults, so the plugin's own configuration
-    // has to be laid under this file for them to be active at all. The library rulesets are switched
-    // off in the same breath: they are the gate's job, and this run's report must contain formatting
-    // findings only, or a caller reading it cannot tell which rule spoke.
+    // has to be laid under this file for them to be active at all. **Only** this ruleset is on the
+    // classpath (B289): the library rulesets are the gate's job, and this run's report must contain
+    // formatting findings only, or a caller reading it cannot tell which rule spoke.
+    pluginClasspath.setFrom(detektFormattingRules)
     buildUponDefaultConfig = true
     disableDefaultRuleSets = true
     // Off unless asked for: this task reports, and the caller decides. A rule that rewrites the file
@@ -325,8 +340,11 @@ tasks.withType<Test>().configureEach {
         rootProject.file("DECISIONS-EVIDENCE.md"),
         rootProject.file("ROADMAP.md"),
         rootProject.file("CHANGELOG.md"),
+        rootProject.file("CHANGELOG-1.x.md"),
+        rootProject.file("IMPORT-HELPER.md"),
         rootProject.file("RELEASING.md"),
         rootProject.file(".github/workflows/android.yml"),
+        rootProject.file(".dsh/skills/android-device-loop/SKILL.md"),
     ).withPropertyName("documentation").withPathSensitivity(PathSensitivity.RELATIVE)
 
     // GradlewToolchainTest reads the wrapper and the helper it sources, for the same reason: a

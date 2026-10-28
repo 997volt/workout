@@ -79,7 +79,7 @@ def sdk_tool(name: str) -> str:
     if sdk:
         build_tools = pathlib.Path(sdk) / "build-tools"
         if build_tools.is_dir():
-            for version in sorted(build_tools.iterdir(), reverse=True):
+            for version in sorted(build_tools.iterdir(), key=version_key, reverse=True):
                 candidate = version / name
                 if candidate.is_file():
                     return str(candidate)
@@ -189,6 +189,20 @@ def keystore_certificate(properties: dict[str, str]) -> str:
     return digest.group(1).replace(":", "").upper()
 
 
+def on_ci() -> bool:
+    """Whether this is a CI run — a *truthy* CI, not merely a name in the environment (B289).
+
+    GitHub sets CI=true. A shell may export CI=false to mean the opposite, and reading presence
+    alone turned the one check that matters most into a silent pass there.
+    """
+    return os.environ.get("CI", "").strip().lower() not in ("", "0", "false")
+
+
+def version_key(path: pathlib.Path) -> tuple[int, ...]:
+    """A build-tools directory name as numbers, so 36.0.0 beats 9.0.0 (B289)."""
+    return tuple(int(part) for part in re.findall(r"\d+", path.name)) or (0,)
+
+
 def sha256(apk: pathlib.Path) -> str:
     digest = hashlib.sha256()
     with apk.open("rb") as stream:
@@ -204,6 +218,7 @@ def verify_asset(
     expected: str,
     badging: str,
     apksigner: str,
+    expected_certificate: str | None,
 ) -> None:
     """The published asset against the APK just checked (opt-in, needs `gh` and a token)."""
     if not shutil.which("gh"):
@@ -231,7 +246,10 @@ def verify_asset(
         # the release the notes describe rather than merely the same file under a different name.
         if apk_version(published, badging) != (expected_name, expected_code):
             raise CheckFailed(f"the published {asset} is not {expected_name} ({expected_code})")
-        apk_certificate(published, apksigner)
+        if expected_certificate is not None and apk_certificate(published, apksigner) != expected_certificate:
+            raise CheckFailed(
+                f"the published {asset} is signed by a different key than the one it was built with",
+            )
 
 
 def main() -> int:
@@ -267,11 +285,12 @@ def main() -> int:
             )
         print(f"version     {name} ({code}) — matches version.properties")
 
+        verified_certificate: str | None = None
         signing = read_properties(KEYSTORE_FILE) if KEYSTORE_FILE.is_file() else {}
         if not signing:
             # CI has no keystore and signs nothing, so the *absence* is not a defect there — but it
             # is on the machine cutting the release, which is where this refuses rather than warns.
-            if "CI" not in os.environ:
+            if not on_ci():
                 raise CheckFailed(
                     "keystore.properties is missing, so the certificate cannot be checked "
                     "(see README: Install on your own phone)",
@@ -285,6 +304,7 @@ def main() -> int:
                     "the APK is signed with a different key than the keystore — every phone "
                     "would refuse it as an update, and an uninstall would delete the history",
                 )
+            verified_certificate = expected
             print("certificate matches the keystore")
 
         # CI reaches the hash too (B131): the version and the hash are the two things an unsigned
@@ -301,6 +321,7 @@ def main() -> int:
                 expected=digest,
                 badging=badging,
                 apksigner=apksigner,
+                expected_certificate=verified_certificate,
             )
             print(f"published   {ASSET.format(version=expected_name)} on {args.remote} is this APK")
     except CheckFailed as failure:

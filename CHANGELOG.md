@@ -17,6 +17,19 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **The gates run what they claim to check** (B289). Five holes, each small and each in a check that exists to
+  catch someone else's work. The docs gate read three documents Gradle was never told about, so editing
+  `IMPORT-HELPER.md`, the 1.x changelog or the device-loop skill left it UP-TO-DATE. The formatting task loaded the
+  Compose ruleset beside the formatting one, so its report carried a finding from the gate and the measurement
+  DECISIONS quotes included it; it now has a classpath of its own and the report is formatting findings only.
+  `tools/format-changed.py` applied its ImportOrdering exception *after* the changed-line filter, so the exception
+  could never fire — detekt anchors that rule at the file's first import, which a change rarely touches — and it
+  could read a report the task did not write; it decides imports from the base block now, deletes the report first,
+  and fails on a rule name it does not know. `tools/verify-release.py` treated `CI=false` as CI, so the certificate
+  check it exists for was skipped, and sorted build-tools names as strings, so `9.0.0` beat `36.0.0`. CI's
+  generated-file checks now use `git status` rather than `git diff`, because a diff says nothing about an untracked
+  file, and the failure summariser writes the job summary it has always claimed to write.
+
 - **A migration is checked against the schema it ships** (B286). Each migration's test built the tables it touched
   by hand and called the migration object directly, so Room's post-migration validation never ran — a migration
   producing the wrong type, constraint or index would pass there and refuse to open on the first device after an
