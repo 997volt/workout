@@ -17,6 +17,12 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A refusal is not a silent no-op, on two screens** (B284). The target dialog's Save was always enabled and did
+  nothing at all when the text did not parse, so a typo looked like a dead button; it is disabled until the number
+  reads, as the period editor beside it already does. And the adherence day read reported its failure through the
+  write channel while opening the dialog on an empty occurrence list — a claim that nothing was scheduled, when
+  the truth was that the day could not be read. It says so now and keeps the dialog closed.
+
 - **No dead weight, and two figures that could lie** (B291). What nothing calls is gone: a test tag with no
   control, an empty slot no caller passes, a plan field written and never read, a transfer outcome carrying a
   message nobody reads, a DAO read that duplicated the one production uses, and a goal-timeline helper only its

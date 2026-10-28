@@ -704,6 +704,9 @@ private fun GoalDialog(metric: MetricEntry, goal: Double?, onSet: (Double?) -> U
                     // typed so the mistake is visible instead of silently becoming a target.
                     metric.unit.parse(typed)?.let(onSet)
                 },
+                // Disabled rather than a button that does nothing (B284): the period editor beside this
+                // one already refuses a draft it cannot save, and a control that looks live must act.
+                enabled = metric.unit.parse(typed) != null,
                 modifier = Modifier.testTag(TestTags.Statistics.GOAL_CONFIRM),
             ) {
                 Text(stringResource(R.string.statistics_goal_confirm))

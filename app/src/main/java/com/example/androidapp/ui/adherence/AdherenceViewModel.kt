@@ -136,6 +136,10 @@ class AdherenceViewModel @Inject constructor(
     /** A write failure, kept apart from a read failure so it clears on the next action. */
     private val writeError = MutableStateFlow<DataError?>(null)
 
+    /** A failed read of the open day (B284): a read is not a write, and the dialog must not claim a day
+     * had nothing scheduled when the truth is that it could not be read. */
+    private val readError = MutableStateFlow<DataError?>(null)
+
     /** The day whose correction dialog is open, or null (P3.13). */
     private val selectedDay = MutableStateFlow<LocalDate?>(null)
 
@@ -158,10 +162,11 @@ class AdherenceViewModel @Inject constructor(
     val uiState: StateFlow<AdherenceUiState> = combine(
         shownMonth.mapLatest { month -> load(month) },
         writeError,
+        readError,
         day,
         blockProgress,
-    ) { loaded, failure, openDay, blocks ->
-        loaded.copy(error = failure ?: loaded.error, day = openDay, blocks = blocks)
+    ) { loaded, failure, unread, openDay, blocks ->
+        loaded.copy(error = failure ?: unread ?: loaded.error, day = openDay, blocks = blocks)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -201,6 +206,7 @@ class AdherenceViewModel @Inject constructor(
 
     fun onErrorShown() {
         writeError.value = null
+        readError.value = null
     }
 
     /** Opens the correction dialog for one day of the calendar (ROADMAP P3.13). */
@@ -238,13 +244,19 @@ class AdherenceViewModel @Inject constructor(
         }
     }
 
-    private suspend fun loadDay(date: LocalDate): DayCorrection {
+    private suspend fun loadDay(date: LocalDate): DayCorrection? {
         val zone = ZoneId.systemDefault()
         return when (val result = adherence.occurrencesOn(date, today(zone), zone)) {
-            is DataResult.Success -> DayCorrection(date = date, occurrences = result.data)
+            is DataResult.Success -> {
+                readError.value = null
+                DayCorrection(date = date, occurrences = result.data)
+            }
+
             is DataResult.Failure -> {
-                writeError.value = result.error
-                DayCorrection(date = date, occurrences = emptyList())
+                // The dialog stays closed: an empty day is a claim about the schedule, and this is a
+                // failure to read it (B284).
+                readError.value = result.error
+                null
             }
         }
     }
