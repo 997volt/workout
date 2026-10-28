@@ -17,6 +17,17 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
+- **A migration is checked against the schema it ships** (B286). Each migration's test built the tables it touched
+  by hand and called the migration object directly, so Room's post-migration validation never ran — a migration
+  producing the wrong type, constraint or index would pass there and refuse to open on the first device after an
+  upgrade, with no destructive fallback. `MigrationSchemaTest` builds each old store from its exported JSON, puts a
+  row in every table, runs the whole chain and lets Room validate the result; a no-op 10 → 11 is refused, which is
+  the proof that validation is live rather than assumed. The chain itself is one `ALL_MIGRATIONS` list now, and
+  `AllMigrationsTest` asserts it is contiguous from 1 to the newest exported schema, so a forgotten migration is a
+  red test rather than `A migration from 11 to 12 was required but not found` on every upgrade. Schema 10 is the one
+  version the harness does not upgrade: it was current only while two changes shared an unreleased cycle, its
+  `createAllTables` lacked a default that `MIGRATION_9_10` adds (B240), and no store at 10 ever left the repository.
+
 - **The unit suite proves what it ran** (B268). The plan-side superset tests were local functions: a missing
   closing brace put both `@Test` methods inside the test above them, which compiles, is invisible to JUnit and
   meant they had never executed since the change that added them. Both run now, and the one written against the

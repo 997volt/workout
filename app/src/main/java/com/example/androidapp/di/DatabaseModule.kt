@@ -4,16 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.example.androidapp.data.local.MIGRATION_1_2
-import com.example.androidapp.data.local.MIGRATION_2_3
-import com.example.androidapp.data.local.MIGRATION_3_4
-import com.example.androidapp.data.local.MIGRATION_4_5
-import com.example.androidapp.data.local.MIGRATION_5_6
-import com.example.androidapp.data.local.MIGRATION_6_7
-import com.example.androidapp.data.local.MIGRATION_7_8
-import com.example.androidapp.data.local.MIGRATION_8_9
-import com.example.androidapp.data.local.MIGRATION_10_11
-import com.example.androidapp.data.local.MIGRATION_9_10
+import com.example.androidapp.data.local.ALL_MIGRATIONS
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.seedMissingExercises
 import com.example.androidapp.data.moveLegacyGoals
@@ -34,30 +25,20 @@ object DatabaseModule {
 
     @Provides
     @Singleton
+    // The builder takes varargs and B286 requires the migrations to be one list a test can read, so
+    // the single copy this costs is paid once, when the database is created. Suppressed here rather
+    // than by excluding the rule for the file: the suppression is the whole exception, and it is this
+    // call's.
+    @Suppress("SpreadOperator")
     fun provideDatabase(
         @ApplicationContext context: Context,
         timeSource: TimeSource,
     ): WorkoutDatabase =
         Room.databaseBuilder(context, WorkoutDatabase::class.java, WorkoutDatabase.NAME)
-            // 2.0's store was created at schema 1 and 1.x's file is a different one this build never
-            // opens, so there are six migrations: N110's, which re-files the rows a variation created
-            // when the library became a category over movements; N113's, which splits the body's
-            // record in two and lets a measurement weigh nothing; N134's, one nullable column that
-            // lets a template keep a version; N137's, one table that gives a goal a past; N141's, one
-            // column that lets a session be an activity; and N147's, one table that lets a marked
-            // deload week prescribe its own days.
-            .addMigrations(
-                MIGRATION_1_2,
-                MIGRATION_2_3,
-                MIGRATION_3_4,
-                MIGRATION_4_5,
-                MIGRATION_5_6,
-                MIGRATION_6_7,
-                MIGRATION_7_8,
-                MIGRATION_8_9,
-                MIGRATION_9_10,
-                MIGRATION_10_11,
-            )
+            // The chain itself lives in ALL_MIGRATIONS, one list the tests can inspect; what each step
+            // did to the schema is on WorkoutDatabase. A migration this list forgets fails a test before
+            // it can fail an upgrade.
+            .addMigrations(*ALL_MIGRATIONS.toTypedArray())
             .addCallback(
                 object : RoomDatabase.Callback() {
                     /**

@@ -91,7 +91,12 @@ class TimedSetMigrationTest {
     }
 
     private companion object {
-        /** `10.json`'s shape for `exercises`, minus the column this migration adds. */
+        /**
+         * Enough of a schema-10 `exercises` for the two ALTERs and the assertions, and no more.
+         *
+         * The full schema-10 store is built from `10.json` by the unit suite's `MigrationSchemaTest`,
+         * which is where Room validates the result; these reduced tables are for the row-level checks.
+         */
         const val V10_EXERCISES = """
             CREATE TABLE IF NOT EXISTS `exercises` (
                 `id` TEXT NOT NULL,
@@ -100,7 +105,7 @@ class TimedSetMigrationTest {
             )
         """
 
-        /** `10.json`'s shape for `set_entries`, minus the column this migration adds. */
+        /** Enough of a schema-10 `set_entries` for the row-level checks, and no more (see above). */
         const val V10_SET_ENTRIES = """
             CREATE TABLE IF NOT EXISTS `set_entries` (
                 `id` TEXT NOT NULL,
