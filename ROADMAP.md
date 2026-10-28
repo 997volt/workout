@@ -17,15 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-**The whole-codebase review.** One pass over the tree on 2026-10-28 — the app, the shared program core, the
-import helper's page and the tooling — read against the settled rules and exercised on this checkout. The gate is
-green (unit tests, the shared JVM and JS tests, lint, detekt, the debug and R8 assemblies), so these are wiring,
-arithmetic, format and coverage gaps the tests do not reach, not build failures. The rows are ordered by severity;
-the two format defects (B276, B277) are the sharpest, because they make a legal plan unexportable and re-create
-B247 on the helper's host.
-
-| # | What it changes |
-| --- | --- |
+Nothing. The whole-codebase review's batch (B268–B291) shipped, and every row of it left this file for
+[CHANGELOG.md](CHANGELOG.md) as it landed.
 
 ## Later — decided, and not being started
 
