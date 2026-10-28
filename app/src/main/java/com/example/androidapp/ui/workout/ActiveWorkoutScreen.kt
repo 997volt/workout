@@ -185,16 +185,23 @@ fun ActiveWorkoutScreen(
     onFinish: (String?) -> Unit,
     onDiscard: () -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier,
     /** Moves one exercise one place in the session's own order (ROADMAP N54). */
-    onMoveExercise: (String, Int) -> Unit = { _, _ -> },
-    onToggleSuperset: (String) -> Unit = {},
-    summary: WorkoutReview? = null,
-    onDismissSummary: () -> Unit = {},
-    personalRecord: PersonalRecordMoment? = null,
-    bodyweightPrompt: PendingBodyweight? = null,
-    onEnterBodyweight: (Long) -> Unit = {},
-    onDismissBodyweight: () -> Unit = {},
+    onMoveExercise: (String, Int) -> Unit,
+    onToggleSuperset: (String) -> Unit,
+    onDismissSummary: () -> Unit,
+    onEnterBodyweight: (Long) -> Unit,
+    onDismissBodyweight: () -> Unit,
+    /** Picks one set's step, or takes the pick back when it is already there (ROADMAP N74). */
+    onToggleProgression: (String, ProgressionDirection) -> Unit,
+    /** Picks one direction on every set of the question that offers it (ROADMAP N74). */
+    onSelectAllProgression: (ProgressionDirection) -> Unit,
+    /** Picks each set's own step, whatever direction it earned (P3.17). */
+    onSelectEveryProgression: () -> Unit,
+    /** Writes every pick and closes the exercise (ROADMAP N74). */
+    onConfirmProgression: () -> Unit,
+    /** Declines the whole question and closes the exercise (ROADMAP N74). */
+    onDismissProgression: () -> Unit,
+    modifier: Modifier = Modifier,
     /**
      * True when dropping out is recorded against a program rather than reading as no workout at
      * all (ROADMAP N41): the discard prompt says so, because only a finished session settles a
@@ -208,6 +215,9 @@ fun ActiveWorkoutScreen(
     restTimerEnabled: Boolean = true,
     /** The fallback the static prescription label uses when an exercise prescribes no rest (N44). */
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
+    summary: WorkoutReview? = null,
+    personalRecord: PersonalRecordMoment? = null,
+    bodyweightPrompt: PendingBodyweight? = null,
     /**
      * The progression question a *Done* froze, or null while none is open (ROADMAP N74).
      *
@@ -215,16 +225,6 @@ fun ActiveWorkoutScreen(
      * neither the setting (N66) nor "there is no plan" (N50) is re-decided here.
      */
     pendingProgression: PendingProgression? = null,
-    /** Picks one set's step, or takes the pick back when it is already there (ROADMAP N74). */
-    onToggleProgression: (String, ProgressionDirection) -> Unit = { _, _ -> },
-    /** Picks one direction on every set of the question that offers it (ROADMAP N74). */
-    onSelectAllProgression: (ProgressionDirection) -> Unit = {},
-    /** Picks each set's own step, whatever direction it earned (P3.17). */
-    onSelectEveryProgression: () -> Unit = {},
-    /** Writes every pick and closes the exercise (ROADMAP N74). */
-    onConfirmProgression: () -> Unit = {},
-    /** Declines the whole question and closes the exercise (ROADMAP N74). */
-    onDismissProgression: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -696,9 +696,9 @@ private fun WorkoutBody(
     onAddExercise: () -> Unit,
     onSetActivity: (Activity?) -> Unit,
     onAddActivity: () -> Unit,
+    onToggleSuperset: (String) -> Unit,
     modifier: Modifier = Modifier,
     personalRecord: PersonalRecordMoment? = null,
-    onToggleSuperset: (String) -> Unit = {},
     restTimerEnabled: Boolean = true,
     defaultRestSeconds: Int = RestTimer.DEFAULT_SECONDS,
 ) {
@@ -950,33 +950,41 @@ internal fun EmptyWorkout(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * The preview's session: one exercise with two logged sets.
+ *
+ * A property rather than a literal inside the preview, because the sample data plus the screen's now-required
+ * callbacks is longer than the function length this project allows.
+ */
+private val previewWorkoutState = ActiveWorkoutUiState(
+    isLoading = false,
+    sessionId = "s1",
+    startedAt = "07:42",
+    readinessNote = "Shoulders still sore from Monday",
+    exercises = listOf(
+        SessionExerciseRow(
+            id = "a",
+            exerciseId = "back-squat",
+            name = "Back Squat",
+            subtitle = "Quads · Barbell",
+            techniqueNote = "Brace, sit back, drive the floor away",
+            restSeconds = 180,
+            sets = listOf(
+                SetRow("s1", 1, reps = 8, weightGrams = 60_000),
+                SetRow("s2", 2, reps = 8, weightGrams = 60_000),
+            ),
+            suggestion = SetSuggestion(reps = 8, weightGrams = 60_000),
+        ),
+    ),
+)
+
 @Preview(showBackground = true)
 @Composable
 private fun ActiveWorkoutScreenPreview() {
     AndroidAppTheme {
         ActiveWorkoutScreen(
             setWriteOutcome = null,
-            state = ActiveWorkoutUiState(
-                isLoading = false,
-                sessionId = "s1",
-                startedAt = "07:42",
-                readinessNote = "Shoulders still sore from Monday",
-                exercises = listOf(
-                    SessionExerciseRow(
-                        id = "a",
-                        exerciseId = "back-squat",
-                        name = "Back Squat",
-                        subtitle = "Quads · Barbell",
-                        techniqueNote = "Brace, sit back, drive the floor away",
-                        restSeconds = 180,
-                        sets = listOf(
-                            SetRow("s1", 1, reps = 8, weightGrams = 60_000),
-                            SetRow("s2", 2, reps = 8, weightGrams = 60_000),
-                        ),
-                        suggestion = SetSuggestion(reps = 8, weightGrams = 60_000),
-                    ),
-                ),
-            ),
+            state = previewWorkoutState,
             clock = remember {
                 mutableStateOf(WorkoutClock(elapsed = "12:05", restSecondsRemaining = 83))
             },
@@ -999,6 +1007,16 @@ private fun ActiveWorkoutScreenPreview() {
             onFinish = {},
             onDiscard = {},
             onBack = {},
+            onMoveExercise = { _, _ -> },
+            onToggleSuperset = { _ -> },
+            onDismissSummary = {},
+            onEnterBodyweight = { _ -> },
+            onDismissBodyweight = {},
+            onToggleProgression = { _, _ -> },
+            onSelectAllProgression = { _ -> },
+            onSelectEveryProgression = {},
+            onConfirmProgression = {},
+            onDismissProgression = {},
         )
     }
 }

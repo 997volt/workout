@@ -102,6 +102,7 @@ class WorkoutsHomeScreenTest {
                     onOpenMeasurements = actions.onOpenMeasurements,
                     onMeasureToday = actions.onMeasureToday,
                     message = message,
+                    onDismissMessage = {},
                 )
             }
         }

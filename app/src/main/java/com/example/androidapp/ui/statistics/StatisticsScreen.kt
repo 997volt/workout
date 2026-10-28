@@ -67,10 +67,10 @@ import java.time.ZoneId
 /** The Statistics tab (ROADMAP N35). */
 @Composable
 fun StatisticsRoute(
+    onOpenMeasurements: () -> Unit,
+    onOpenAdherence: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: StatisticsViewModel = hiltViewModel(),
-    onOpenMeasurements: () -> Unit = {},
-    onOpenAdherence: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     StatisticsScreen(
@@ -100,16 +100,16 @@ fun StatisticsScreen(
     state: StatisticsUiState,
     onSelectRange: (StatisticsRange) -> Unit,
     onSelectMetric: (MetricKey) -> Unit,
-    modifier: Modifier = Modifier,
-    onSelectExercise: (String) -> Unit = {},
+    onSelectExercise: (String) -> Unit,
     /** Restores one series from the recents row, lift and all (N212, B226). */
-    onSelectRecent: (StatisticsSelection) -> Unit = {},
+    onSelectRecent: (StatisticsSelection) -> Unit,
     /** A two-finger pinch over the figure, which narrows or widens the window (N213). */
-    onPinch: (scale: Float, focus: Float) -> Unit = { _, _ -> },
+    onPinch: (scale: Float, focus: Float) -> Unit,
     /** Sets or clears the chosen metric's target (ROADMAP N39). */
-    onSetGoal: (Double?) -> Unit = {},
+    onSetGoal: (Double?) -> Unit,
     /** Takes a failed range write away once its snackbar has been read (B229). */
-    onDismissSettingsError: () -> Unit = {},
+    onDismissSettingsError: () -> Unit,
+    modifier: Modifier = Modifier,
     /**
      * Opens body measurements (ROADMAP N35).
      *

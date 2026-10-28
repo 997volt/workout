@@ -52,6 +52,8 @@ class TemplatesScreenTest {
                 onFilterChange = onFilterChange,
                 onUnhide = onUnhide,
                 onRestore = onRestore,
+                onDismissMessage = {},
+                onDismissGateMessage = {},
             )
         }
     }

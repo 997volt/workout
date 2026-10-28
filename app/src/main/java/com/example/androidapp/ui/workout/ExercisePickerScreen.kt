@@ -53,9 +53,9 @@ fun ExercisePickerScreen(
     onQueryChange: (String) -> Unit,
     onExerciseClick: (String) -> Unit,
     onBack: () -> Unit,
+    onDismissMessage: () -> Unit,
     modifier: Modifier = Modifier,
     message: String? = null,
-    onDismissMessage: () -> Unit = {},
     onNewExercise: (() -> Unit)? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }

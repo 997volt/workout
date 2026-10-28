@@ -270,6 +270,7 @@ class ExerciseLibraryScreenTest {
                 },
                 onExerciseClick = onExerciseClick,
                 onNewCategory = onNewCategory,
+                onDismissMessage = {},
             )
         }
     }

@@ -104,10 +104,10 @@ fun ProgramDeloadScreen(
     onLoadPercentChange: (Int) -> Unit,
     onWeekday: (String, DayOfWeek?) -> Unit,
     onCreate: () -> Unit,
+    onUseLastDeload: () -> Unit,
+    onOpenWorkouts: () -> Unit,
+    onDismissError: () -> Unit,
     modifier: Modifier = Modifier,
-    onUseLastDeload: () -> Unit = {},
-    onOpenWorkouts: () -> Unit = {},
-    onDismissError: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     // A failed load has its own persistent message, so the generic storage wording is not shown twice (B164).

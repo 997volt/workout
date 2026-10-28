@@ -101,6 +101,7 @@ class MeasurementsScreenTest {
                     onSaveGoalPeriod = onSaveGoalPeriod,
                     onRemoveGoalPeriod = onRemoveGoalPeriod,
                     goalPeriodUi = goalPeriodUi,
+                    onDismissGoalSave = {},
                 )
             }
         }

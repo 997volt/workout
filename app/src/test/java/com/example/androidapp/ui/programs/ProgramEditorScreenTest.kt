@@ -82,6 +82,8 @@ class ProgramEditorScreenTest {
                 onDeleteProgram = onDeleteProgram,
                 onExportProgram = onExportProgram,
                 onBack = {},
+                onDismissMessage = {},
+                onDismissTransferMessage = {},
             )
         }
     }

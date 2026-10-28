@@ -65,9 +65,9 @@ import com.example.androidapp.ui.theme.AndroidAppTheme
 fun ProgramsRoute(
     onOpenProgram: (String) -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier,
     /** The sibling list (ROADMAP N93): the two are one tap apart, from either one's own bar. */
-    onOpenTemplates: () -> Unit = {},
+    onOpenTemplates: () -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: ProgramsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -126,16 +126,16 @@ fun ProgramsScreen(
     onBack: () -> Unit,
     /** Required rather than defaulted, so a route that forgets it fails the build (B49, B52). */
     onLoadProgram: () -> Unit,
-    modifier: Modifier = Modifier,
     /** Inserts one of the shipped examples, by asset name (P3.19). */
-    onUseExample: (String) -> Unit = {},
+    onUseExample: (String) -> Unit,
     /** The way across to Templates (ROADMAP N93), in this screen's own bar. */
-    onOpenTemplates: () -> Unit = {},
-    onSetActive: (String) -> Unit = {},
-    onMoveProgram: (String, Int) -> Unit = { _, _ -> },
+    onOpenTemplates: () -> Unit,
+    onSetActive: (String) -> Unit,
+    onMoveProgram: (String, Int) -> Unit,
+    onDismissTransferMessage: () -> Unit,
+    onDismissMessage: () -> Unit,
+    modifier: Modifier = Modifier,
     transferMessage: String? = null,
-    onDismissTransferMessage: () -> Unit = {},
-    onDismissMessage: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val defaultName = stringResource(R.string.program_default_name)
@@ -398,8 +398,8 @@ private fun ProgramsContent(
     onOpenProgram: (String) -> Unit,
     onSetActive: (String) -> Unit,
     onMoveProgram: (String, Int) -> Unit,
+    onUseExample: (String) -> Unit,
     modifier: Modifier = Modifier,
-    onUseExample: (String) -> Unit = {},
 ) {
     when {
         state.isLoading -> CenteredMessage(
@@ -535,6 +535,12 @@ private fun ProgramsScreenPreview() {
             onOpenProgram = {},
             onBack = {},
             onLoadProgram = {},
+            onUseExample = { _ -> },
+            onOpenTemplates = {},
+            onSetActive = { _ -> },
+            onMoveProgram = { _, _ -> },
+            onDismissTransferMessage = {},
+            onDismissMessage = {},
         )
     }
 }

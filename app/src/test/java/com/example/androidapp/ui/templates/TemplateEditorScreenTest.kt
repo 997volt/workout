@@ -78,6 +78,12 @@ class TemplateEditorScreenTest {
         /** Hiding the plan from the choices, or bringing it back (ROADMAP N214). */
         val onToggleHide: () -> Unit = {},
         val onDismissHiddenNotice: () -> Unit = {},
+        /** The fields the screen cannot work without (B283), passed explicitly by every case. */
+        val onDismissMessage: () -> Unit = {},
+        val onAddSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
+        val onUpdateSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
+        val onDismissUndo: () -> Unit = {},
+        val onToggleSuperset: (String) -> Unit = {},
     )
 
     /**
@@ -129,6 +135,11 @@ class TemplateEditorScreenTest {
                 onSaveExercisePlan = actions.onSaveExercisePlan,
                 onRemoveSet = actions.onRemoveSet,
                 onUndoRemoveSet = actions.onUndoRemoveSet,
+                onDismissMessage = actions.onDismissMessage,
+                onAddSet = actions.onAddSet,
+                onUpdateSet = actions.onUpdateSet,
+                onDismissUndo = actions.onDismissUndo,
+                onToggleSuperset = actions.onToggleSuperset,
                 versionUi = TemplateVersionUi(
                     versions = state.versions,
                     openVersion = openVersion,
@@ -347,6 +358,17 @@ class TemplateEditorScreenTest {
         )
         composeTestRule.setContent {
             TemplateEditorScreen(
+                onDismissMessage = {},
+                onAddSet = { _, _ -> },
+                onAddSets = { _, _, _ -> },
+                onUpdateSet = { _, _ -> },
+                onRemoveSet = { _ -> },
+                onUndoRemoveSet = {},
+                onDismissUndo = {},
+                onToggleSuperset = {},
+                onToggleHide = {},
+                onDismissHiddenNotice = {},
+
                 setSaveOutcome = setSaveOutcome.value,
                 onDismissSetSave = onDismissSetSave,
                 state = state.value,
@@ -380,6 +402,17 @@ class TemplateEditorScreenTest {
         val state = mutableStateOf(twoExercises.copy(exercises = emptyList()))
         composeTestRule.setContent {
             TemplateEditorScreen(
+                onDismissMessage = {},
+                onAddSet = { _, _ -> },
+                onAddSets = { _, _, _ -> },
+                onUpdateSet = { _, _ -> },
+                onRemoveSet = { _ -> },
+                onUndoRemoveSet = {},
+                onDismissUndo = {},
+                onToggleSuperset = {},
+                onToggleHide = {},
+                onDismissHiddenNotice = {},
+
                 setSaveOutcome = setSaveOutcome.value,
                 onDismissSetSave = onDismissSetSave,
                 state = state.value,

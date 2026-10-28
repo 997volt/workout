@@ -64,9 +64,9 @@ fun TemplatesRoute(
     onOpenTemplate: (String) -> Unit,
     onStartTemplate: (String) -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier,
     /** The sibling list (ROADMAP N93): the two are one tap apart, from either one's own bar. */
-    onOpenPrograms: () -> Unit = {},
+    onOpenPrograms: () -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: TemplatesViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -157,19 +157,19 @@ fun TemplatesScreen(
     onOpenTemplate: (String) -> Unit,
     onStartTemplate: (String) -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier,
     /** The way across to Programs (ROADMAP N93), in this screen's own bar. */
-    onOpenPrograms: () -> Unit = {},
-    onDismissMessage: () -> Unit = {},
+    onOpenPrograms: () -> Unit,
+    onDismissMessage: () -> Unit,
+    onDismissGateMessage: () -> Unit,
+    /** The list's own filter (ROADMAP N217): which group of the library this list draws. */
+    onFilterChange: (TemplatesFilter) -> Unit,
+    /** Puts a workout back in the choices from its row, without opening the editor (N214). */
+    onUnhide: (String) -> Unit,
+    /** Brings a deleted workout back, with its plan (ROADMAP N216). */
+    onRestore: (String) -> Unit,
+    modifier: Modifier = Modifier,
     /** A sentence from the point-of-start question, shown on the same host (ROADMAP P3.3). */
     message: String? = null,
-    onDismissGateMessage: () -> Unit = {},
-    /** The list's own filter (ROADMAP N217): which group of the library this list draws. */
-    onFilterChange: (TemplatesFilter) -> Unit = {},
-    /** Puts a workout back in the choices from its row, without opening the editor (N214). */
-    onUnhide: (String) -> Unit = {},
-    /** Brings a deleted workout back, with its plan (ROADMAP N216). */
-    onRestore: (String) -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val defaultName = stringResource(R.string.template_default_name)
@@ -433,6 +433,12 @@ private fun TemplatesScreenPreview() {
             onOpenTemplate = {},
             onStartTemplate = {},
             onBack = {},
+            onOpenPrograms = {},
+            onDismissMessage = {},
+            onDismissGateMessage = {},
+            onFilterChange = {},
+            onUnhide = {},
+            onRestore = {},
         )
     }
 }

@@ -99,11 +99,11 @@ fun AdherenceScreen(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onBack: () -> Unit,
+    onToggleDeload: (String, LocalDate, Boolean) -> Unit,
+    onSelectDay: (LocalDate) -> Unit,
+    onDismissDay: () -> Unit,
+    onSkipToggle: (DayOccurrence, Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    onToggleDeload: (String, LocalDate, Boolean) -> Unit = { _, _, _ -> },
-    onSelectDay: (LocalDate) -> Unit = {},
-    onDismissDay: () -> Unit = {},
-    onSkipToggle: (DayOccurrence, Boolean) -> Unit = { _, _ -> },
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),

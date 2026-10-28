@@ -89,11 +89,11 @@ fun ExerciseDetailRoute(
 fun ExerciseDetailScreen(
     state: ExerciseDetailUiState,
     onBack: () -> Unit,
+    onOpenTrends: (String) -> Unit,
+    onEdit: () -> Unit,
+    onCancelEdit: () -> Unit,
+    onSave: (ExerciseEdit) -> Unit,
     modifier: Modifier = Modifier,
-    onOpenTrends: (String) -> Unit = {},
-    onEdit: () -> Unit = {},
-    onCancelEdit: () -> Unit = {},
-    onSave: (ExerciseEdit) -> Unit = {},
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -903,6 +903,10 @@ private fun ExerciseDetailScreenPreview() {
                 ),
             ),
             onBack = {},
+            onOpenTrends = {},
+            onEdit = {},
+            onCancelEdit = {},
+            onSave = { _ -> },
         )
     }
 }
@@ -924,6 +928,10 @@ private fun ExerciseDetailEditPreview() {
                 ),
             ),
             onBack = {},
+            onOpenTrends = {},
+            onEdit = {},
+            onCancelEdit = {},
+            onSave = { _ -> },
         )
     }
 }

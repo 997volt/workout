@@ -50,6 +50,7 @@ class WorkoutHistoryScreenTest {
                     onQueryChange = { typed = it },
                     onFilterChange = { picked = it },
                     onBack = {},
+                    onDismissMessage = {},
                 )
             }
         }

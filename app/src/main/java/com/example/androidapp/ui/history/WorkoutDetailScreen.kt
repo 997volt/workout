@@ -80,12 +80,12 @@ import java.time.ZoneId
 @Composable
 fun WorkoutDetailRoute(
     onBack: () -> Unit,
+    onOpenExerciseTrends: (String) -> Unit,
+    onOpenTemplate: (String) -> Unit,
+    /** P3.18: where the schedule offer lands, the program the plan was just added to. */
+    onOpenProgram: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WorkoutDetailViewModel = hiltViewModel(),
-    onOpenExerciseTrends: (String) -> Unit = {},
-    onOpenTemplate: (String) -> Unit = {},
-    /** P3.18: where the schedule offer lands, the program the plan was just added to. */
-    onOpenProgram: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
@@ -145,16 +145,16 @@ fun WorkoutDetailScreen(
     onRateExercise: (String, Int?, List<JointPain>) -> Unit,
     onDeleteWorkout: () -> Unit,
     onBack: () -> Unit,
+    onOpenExerciseTrends: (String) -> Unit,
+    onSaveAsTemplate: (String) -> Unit,
+    onDismissSavedTemplate: () -> Unit,
+    onOpenTemplate: (String) -> Unit,
+    onScheduleTemplate: (String, DayOfWeek?) -> Unit,
     modifier: Modifier = Modifier,
-    onOpenExerciseTrends: (String) -> Unit = {},
     /** ROADMAP N31: the plan this workout was saved as, or null while there is nothing to offer. */
     savedTemplate: String? = null,
-    onSaveAsTemplate: (String) -> Unit = {},
-    onDismissSavedTemplate: () -> Unit = {},
-    onOpenTemplate: (String) -> Unit = {},
     /** P3.18: the programs the saved plan can be scheduled into. */
     programs: List<WorkoutProgram> = emptyList(),
-    onScheduleTemplate: (String, DayOfWeek?) -> Unit = { _, _ -> },
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     DetailErrorEffect(error = state.error, host = snackbarHostState)
@@ -745,6 +745,11 @@ private fun WorkoutDetailScreenPreview() {
             onRateExercise = { _, _, _ -> },
             onDeleteWorkout = {},
             onBack = {},
+            onOpenExerciseTrends = {},
+            onSaveAsTemplate = { _ -> },
+            onDismissSavedTemplate = {},
+            onOpenTemplate = {},
+            onScheduleTemplate = { _, _ -> },
         )
     }
 }

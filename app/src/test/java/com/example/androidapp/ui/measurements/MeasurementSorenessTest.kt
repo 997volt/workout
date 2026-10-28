@@ -44,6 +44,13 @@ class MeasurementSorenessTest {
                     onSave = { saved = it },
                     onDelete = {},
                     onBack = {},
+                    onDismissError = {},
+                    onUndo = {},
+                    onDismissUndo = {},
+                    onDismissRateVerdict = {},
+                    onSaveGoalPeriod = { _, _, _, _ -> },
+                    onRemoveGoalPeriod = { _ -> },
+                    onDismissGoalSave = {},
                 )
             }
         }

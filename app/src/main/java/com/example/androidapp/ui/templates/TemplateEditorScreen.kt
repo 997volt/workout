@@ -143,6 +143,7 @@ fun TemplateEditorRoute(
         setSaveOutcome = setSaveOutcome,
         onDismissSetSave = viewModel::onDismissSetSave,
         onAddSet = viewModel::onAddSet,
+        onAddSets = viewModel::onAddSets,
         onUpdateSet = viewModel::onUpdateSet,
         onRemoveSet = viewModel::onRemoveSet,
         onUndoRemoveSet = viewModel::onUndoRemoveSet,
@@ -182,24 +183,24 @@ fun TemplateEditorScreen(
     /** The last planned-set write's answer, so its editor closes on success only (B284). */
     setSaveOutcome: Boolean?,
     onDismissSetSave: () -> Unit,
-    modifier: Modifier = Modifier,
-    onDismissMessage: () -> Unit = {},
-    onAddSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
+    onDismissMessage: () -> Unit,
+    onAddSet: (String, TemplateSetEdit) -> Unit,
     /** Writes several planned sets with one shape (P3.18). */
-    onAddSets: (String, Int, TemplateSetEdit) -> Unit = { _, _, _ -> },
-    onUpdateSet: (String, TemplateSetEdit) -> Unit = { _, _ -> },
-    onRemoveSet: (String) -> Unit = {},
+    onAddSets: (String, Int, TemplateSetEdit) -> Unit,
+    onUpdateSet: (String, TemplateSetEdit) -> Unit,
+    onRemoveSet: (String) -> Unit,
     /** Puts a just-removed planned set back where it was (ROADMAP N90). */
-    onUndoRemoveSet: () -> Unit = {},
-    onDismissUndo: () -> Unit = {},
-    onToggleSuperset: (String) -> Unit = {},
-    onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit = { _, _, _, _ -> },
+    onUndoRemoveSet: () -> Unit,
+    onDismissUndo: () -> Unit,
+    onToggleSuperset: (String) -> Unit,
+    onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit,
+    /** Hiding: the action, the one-shot sentence, and nothing to say with null (ROADMAP N214). */
+    onToggleHide: () -> Unit,
+    onDismissHiddenNotice: () -> Unit,
+    modifier: Modifier = Modifier,
     /** The versions kept of this plan, and what may be done with them (ROADMAP N134). */
     versionUi: TemplateVersionUi = TemplateVersionUi(),
-    /** Hiding: the action, the one-shot sentence, and nothing to say with null (ROADMAP N214). */
-    onToggleHide: () -> Unit = {},
     hiddenChange: Boolean? = null,
-    onDismissHiddenNotice: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
@@ -388,8 +389,8 @@ private fun TemplateEditorBody(
     onRemoveSet: (String) -> Unit,
     onSaveExercisePlan: (String, Int?, String?, Int?) -> Unit,
     onAddWarmUpSets: (String, Long) -> Unit,
+    onToggleSuperset: (String) -> Unit,
     modifier: Modifier = Modifier,
-    onToggleSuperset: (String) -> Unit = {},
 ) {
     if (state.isLoading) {
         CenteredMessage(
@@ -530,8 +531,8 @@ private fun TemplateExerciseBlock(
     onUpdateSet: (String, TemplateSetEdit) -> Unit,
     onRemoveSet: (String) -> Unit,
     onSavePlan: (Int?, String?, Int?) -> Unit,
+    onAddSets: (Int, TemplateSetEdit) -> Unit,
     modifier: Modifier = Modifier,
-    onAddSets: (Int, TemplateSetEdit) -> Unit = { _, _ -> },
     onToggleSuperset: (() -> Unit)? = null,
     /** Adds a ramp rounded to the unit's step (ROADMAP N64), or null when there is none. */
     onAddWarmUpSets: ((Long) -> Unit)? = null,
@@ -1132,6 +1133,17 @@ private fun TemplateEditorScreenPreview() {
             onAddExercise = {},
             onBack = {},
             onAddWarmUpSets = { _, _ -> },
+            onDismissMessage = {},
+            onAddSet = { _, _ -> },
+            onAddSets = { _, _, _ -> },
+            onUpdateSet = { _, _ -> },
+            onRemoveSet = { _ -> },
+            onUndoRemoveSet = {},
+            onDismissUndo = {},
+            onToggleSuperset = {},
+            onSaveExercisePlan = { _, _, _, _ -> },
+            onToggleHide = {},
+            onDismissHiddenNotice = {},
         )
     }
 }

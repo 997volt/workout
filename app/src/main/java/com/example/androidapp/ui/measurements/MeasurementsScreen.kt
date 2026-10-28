@@ -164,10 +164,17 @@ fun MeasurementsScreen(
     onSave: (BodyMeasurement) -> Unit,
     onDelete: (String) -> Unit,
     onBack: () -> Unit,
+    onDismissError: () -> Unit,
+    onUndo: () -> Unit,
+    onDismissUndo: () -> Unit,
+    onDismissRateVerdict: () -> Unit,
+    /** Writes one goal period — the row [id] names, or a new one from [start]; null [goal] is *No goal* (N215). */
+    onSaveGoalPeriod: (String?, LocalDate?, LocalDate?, WeightGoal?) -> Unit,
+    onRemoveGoalPeriod: (String) -> Unit,
+    onDismissGoalSave: () -> Unit,
     modifier: Modifier = Modifier,
     /** A write that failed, or null (B102) — shown as a snackbar, like every other screen's. */
     error: DataError? = null,
-    onDismissError: () -> Unit = {},
     /**
      * The blank form to open on arrival, or null (ROADMAP N114).
      *
@@ -185,17 +192,10 @@ fun MeasurementsScreen(
     initialEdit: BodyMeasurement? = null,
     /** The entry a delete just took, awaiting the snackbar's undo, or null (ROADMAP N133). */
     pendingUndo: BodyMeasurement? = null,
-    onUndo: () -> Unit = {},
-    onDismissUndo: () -> Unit = {},
     /** What a weigh-in said about the goal's rate, or null (N136): a line after the save, not a dialog. */
     rateVerdict: EnergyAdjustment? = null,
-    onDismissRateVerdict: () -> Unit = {},
-    /** Writes one goal period — the row [id] names, or a new one from [start]; null [goal] is *No goal* (N215). */
-    onSaveGoalPeriod: (String?, LocalDate?, LocalDate?, WeightGoal?) -> Unit = { _, _, _, _ -> },
-    onRemoveGoalPeriod: (String) -> Unit = {},
     /** The last goal-period save's result, so its editor can wait for it (B234). */
     goalSave: Boolean? = null,
-    onDismissGoalSave: () -> Unit = {},
     goalPeriodUi: GoalPeriodUi = GoalPeriodUi(),
 ) {
     // Two steps rather than one: the record is two records, so *Add* asks which before it opens a form

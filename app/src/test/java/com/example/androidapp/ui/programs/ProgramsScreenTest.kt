@@ -50,6 +50,8 @@ class ProgramsScreenTest {
                 onLoadProgram = onLoadProgram,
                 onOpenTemplates = onOpenTemplates,
                 onUseExample = onUseExample,
+                onDismissTransferMessage = {},
+                onDismissMessage = {},
             )
         }
     }

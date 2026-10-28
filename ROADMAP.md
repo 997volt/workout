@@ -26,7 +26,6 @@ B247 on the helper's host.
 
 | # | What it changes |
 | --- | --- |
-| B283 | **Required callbacks still default to empty lambdas.** The rotation half is fixed: the set editor is held by its id, and the rating, note, readiness and bodyweight dialogs survive a rotation, so the `rememberSaveable` drafts inside them are no longer discarded by the flag above them. What is left is the defaults — a required action with an empty lambda compiles a forgotten wire-up into a silent no-op, which is the B49 failure the rule exists to prevent. Several screens still do it, including the callback that dismisses a finished workout and the one that saves a goal period, and `TemplateEditorScreen` carries the "Required rather than defaulted" comment two lines above a defaulted sibling. Delete the defaults from required actions; keep them for optional slots, `modifier` and previews. |
 
 ## Later — decided, and not being started
 

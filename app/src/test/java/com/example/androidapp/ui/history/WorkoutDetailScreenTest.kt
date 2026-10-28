@@ -326,6 +326,7 @@ class WorkoutDetailScreenTest {
                 programs = programs,
                 onScheduleTemplate = onScheduleTemplate,
                 onBack = {},
+                onDismissSavedTemplate = {},
             )
         }
     }

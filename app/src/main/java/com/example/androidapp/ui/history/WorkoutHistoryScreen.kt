@@ -113,13 +113,13 @@ fun WorkoutHistoryScreen(
     state: WorkoutHistoryUiState,
     onOpenWorkout: (String) -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-    onRepeatWorkout: (String) -> Unit = {},
+    onRepeatWorkout: (String) -> Unit,
     /** N146's query and chip, owned by the ViewModel so a rotation does not lose them. */
-    onQueryChange: (String) -> Unit = {},
-    onFilterChange: (HistoryFilter) -> Unit = {},
+    onQueryChange: (String) -> Unit,
+    onFilterChange: (HistoryFilter) -> Unit,
+    onDismissMessage: () -> Unit,
+    modifier: Modifier = Modifier,
     message: String? = null,
-    onDismissMessage: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     MessageSnackbar(message, snackbarHostState, onDismissMessage)
@@ -459,6 +459,10 @@ private fun WorkoutHistoryScreenPreview() {
             ),
             onOpenWorkout = {},
             onBack = {},
+            onRepeatWorkout = {},
+            onQueryChange = {},
+            onFilterChange = {},
+            onDismissMessage = {},
         )
     }
 }

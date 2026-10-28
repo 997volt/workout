@@ -66,6 +66,7 @@ class ExerciseDetailScreenTest {
                 onEdit = onEdit,
                 onCancelEdit = onCancelEdit,
                 onSave = onSave,
+                onOpenTrends = { _ -> },
             )
         }
     }

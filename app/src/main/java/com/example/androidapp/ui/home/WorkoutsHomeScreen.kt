@@ -191,11 +191,10 @@ fun WorkoutsHomeScreen(
     state: WorkoutsHomeUiState,
     clock: State<WorkoutClock>,
     onStartWorkout: () -> Unit,
-    modifier: Modifier = Modifier,
-    onOpenTemplates: () -> Unit = {},
-    onStartTemplate: (TodayPlan) -> Unit = {},
-    onOpenPrograms: () -> Unit = {},
-    onOpenMeasurements: () -> Unit = {},
+    onOpenTemplates: () -> Unit,
+    onStartTemplate: (TodayPlan) -> Unit,
+    onOpenPrograms: () -> Unit,
+    onOpenMeasurements: () -> Unit,
     /**
      * Opens the measurements screen with today's daily form already up (ROADMAP N114).
      *
@@ -203,16 +202,15 @@ fun WorkoutsHomeScreen(
      * different reasons — reading the record, and answering today — and the row that answers is drawn only
      * while today has no entry to read.
      */
-    onMeasureToday: () -> Unit = {},
+    onMeasureToday: () -> Unit,
     /**
      * Opens what a card has planned, without starting it (ROADMAP N55, N127).
      *
      * Looking and starting stopped being the same gesture: the card's own name opens the plan, and *Start*
      * keeps starting it.
      */
-    onOpenPlannedWorkout: (TodayPlan) -> Unit = {},
-    message: String? = null,
-    onDismissMessage: () -> Unit = {},
+    onOpenPlannedWorkout: (TodayPlan) -> Unit,
+    onDismissMessage: () -> Unit,
     /**
      * Records the workout that stands in for one occurrence, then starts it (ROADMAP P3.11).
      *
@@ -220,9 +218,11 @@ fun WorkoutsHomeScreen(
      * template's **name**, so the start's own question can name the workout it is about to begin rather than
      * the one that was scheduled (B93).
      */
-    onSubstituteTemplate: (TodayPlan, String?, String?) -> Unit = { _, _, _ -> },
+    onSubstituteTemplate: (TodayPlan, String?, String?) -> Unit,
     /** Lets a block's next session go, which is the only way past one that cannot be trained (B195). */
-    onSkipBlock: (TodayPlan) -> Unit = {},
+    onSkipBlock: (TodayPlan) -> Unit,
+    modifier: Modifier = Modifier,
+    message: String? = null,
 ) {
     // The card whose substitute picker is open, or null (P3.11). `substituting?.plan` is what the dialog draws.
     var substituting by remember { mutableStateOf<SubstituteRequest?>(null) }
@@ -492,6 +492,12 @@ private fun WorkoutsHomeScreenPreview() {
             onOpenTemplates = {},
             onOpenPrograms = {},
             onOpenMeasurements = {},
+            onStartTemplate = { _ -> },
+            onMeasureToday = {},
+            onOpenPlannedWorkout = {},
+            onDismissMessage = {},
+            onSubstituteTemplate = { _, _, _ -> },
+            onSkipBlock = {},
         )
     }
 }

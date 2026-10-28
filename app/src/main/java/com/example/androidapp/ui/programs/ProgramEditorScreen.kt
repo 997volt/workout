@@ -174,12 +174,12 @@ fun ProgramEditorScreen(
     onBack: () -> Unit,
     /** Required rather than defaulted, so a route that forgets it fails the build (B49, B52). */
     onExportProgram: () -> Unit,
-    modifier: Modifier = Modifier,
     /** Creates a workout and adds it as a slot, then opens it (P3.18). */
-    onAddNewSlot: (String) -> Unit = {},
-    onDismissMessage: () -> Unit = {},
+    onAddNewSlot: (String) -> Unit,
+    onDismissMessage: () -> Unit,
+    onDismissTransferMessage: () -> Unit,
+    modifier: Modifier = Modifier,
     transferMessage: String? = null,
-    onDismissTransferMessage: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmingDelete by rememberSaveable { mutableStateOf(false) }
@@ -1031,6 +1031,9 @@ private fun ProgramEditorScreenPreview() {
             onDeleteProgram = {},
             onBack = {},
             onExportProgram = {},
+            onAddNewSlot = { _ -> },
+            onDismissMessage = {},
+            onDismissTransferMessage = {},
         )
     }
 }

@@ -17,11 +17,16 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Fixed
 
-- **The dialogs survive a rotation** (B283). The flags that open the set editor, the rating dialog, the note field,
-  the readiness field and the bodyweight prompt were plain `remember` state while the fields inside them were
-  `rememberSaveable` — so a rotation closed the dialog and threw the draft away with it. The set editor is held by
-  its row's id now (a `SetRow` is not saveable), and the flags are saveable. The row keeps what is left: callbacks a
-  screen cannot work without that still default to empty lambdas.
+- **A required action cannot be forgotten, and the dialogs survive a rotation** (B283). Every screen's required
+  callbacks lost their empty-lambda defaults: a screen that calls an action the caller never wired used to compile
+  into a silent no-op, the B49 failure the rule exists to prevent. Optional slots keep their defaults, and previews
+  now pass explicit no-ops, which is what makes them look like the call sites they stand in for. The parameter
+  order follows the platform's rule (required actions, then `modifier`, then optional ones), and the workout
+  preview's sample state moved to a property so the preview stays inside the function length this project allows.
+  The rotation half: the flags that open the set editor, the rating dialog, the note field, the readiness field and
+  the bodyweight prompt were plain `remember` state while the fields inside them were `rememberSaveable`, so a
+  rotation closed the dialog and threw the draft away; they are saveable now, and the set editor is held by its
+  row's id because a `SetRow` is not.
 
 - **A refusal is not a silent no-op, and an editor waits for its answer** (B284). The target dialog's Save was
   always enabled and did nothing at all when the text did not parse, so a typo looked like a dead button; it is

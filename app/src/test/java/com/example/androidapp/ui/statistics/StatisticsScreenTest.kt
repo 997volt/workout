@@ -113,6 +113,7 @@ class StatisticsScreenTest {
         onOpenMeasurements: (() -> Unit)? = null,
         onOpenAdherence: (() -> Unit)? = null,
         onSetGoal: (Double?) -> Unit = {},
+        onDismissSettingsError: () -> Unit = {},
     ) {
         composeTestRule.setContent {
             AndroidAppTheme {
@@ -126,6 +127,7 @@ class StatisticsScreenTest {
                     onOpenMeasurements = onOpenMeasurements,
                     onOpenAdherence = onOpenAdherence,
                     onSetGoal = onSetGoal,
+                    onDismissSettingsError = onDismissSettingsError,
                 )
             }
         }

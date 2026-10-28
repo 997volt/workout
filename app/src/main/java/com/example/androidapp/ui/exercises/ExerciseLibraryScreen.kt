@@ -113,10 +113,10 @@ fun ExerciseLibraryScreen(
     title: String,
     onQueryChange: (String) -> Unit,
     onExerciseClick: (String) -> Unit,
+    onDismissMessage: () -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
     message: String? = null,
-    onDismissMessage: () -> Unit = {},
     /** Makes a family (ROADMAP N95). Set on the library, which is where the library's shape is kept. */
     onNewCategory: ((String) -> Unit)? = null,
 ) {
@@ -539,6 +539,7 @@ private fun ExerciseLibraryScreenPreview() {
             title = "Exercise library",
             onQueryChange = {},
             onExerciseClick = {},
+            onDismissMessage = {},
         )
     }
 }
@@ -552,6 +553,7 @@ private fun ExerciseLibraryEmptyPreview() {
             title = "Exercise library",
             onQueryChange = {},
             onExerciseClick = {},
+            onDismissMessage = {},
         )
     }
 }

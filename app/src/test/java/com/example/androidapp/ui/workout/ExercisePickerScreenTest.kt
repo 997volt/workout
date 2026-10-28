@@ -113,6 +113,7 @@ class ExercisePickerScreenTest {
                 onQueryChange = { current.value = current.value.copy(query = it) },
                 onExerciseClick = onExerciseClick,
                 onBack = {},
+                onDismissMessage = {},
             )
         }
     }

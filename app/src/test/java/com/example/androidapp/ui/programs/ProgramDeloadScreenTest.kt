@@ -115,6 +115,7 @@ class ProgramDeloadScreenTest {
                 onCreate = onCreate,
                 onUseLastDeload = onUseLastDeload,
                 onOpenWorkouts = onOpenWorkouts,
+                onDismissError = {},
             )
         }
     }

@@ -83,6 +83,10 @@ class ActiveWorkoutScreenTest {
         val onDiscard: () -> Unit = {},
         val onAddExercise: () -> Unit = {},
         val onSetActivity: (Activity?) -> Unit = {},
+        val onDismissSummary: () -> Unit = {},
+        val onEnterBodyweight: (Long) -> Unit = {},
+        val onDismissBodyweight: () -> Unit = {},
+        val onSelectEveryProgression: () -> Unit = {},
     )
 
     /** The last set edit's answer, or null for "nothing has been written yet" (B284). */
@@ -142,6 +146,10 @@ class ActiveWorkoutScreenTest {
                 onSelectAllProgression = actions.onSelectAllProgression,
                 onConfirmProgression = actions.onConfirmProgression,
                 onDismissProgression = actions.onDismissProgression,
+                onDismissSummary = actions.onDismissSummary,
+                onEnterBodyweight = actions.onEnterBodyweight,
+                onDismissBodyweight = actions.onDismissBodyweight,
+                onSelectEveryProgression = actions.onSelectEveryProgression,
             )
         }
     }

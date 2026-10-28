@@ -62,6 +62,9 @@ class SettingsScreenTest {
                 onImportData = { imported++ },
                 onClearData = { cleared++ },
                 message = message,
+                onSetRestCue = { _ -> },
+                onSetKeepScreenOn = { _ -> },
+                onDismissMessage = {},
             )
         }
     }
