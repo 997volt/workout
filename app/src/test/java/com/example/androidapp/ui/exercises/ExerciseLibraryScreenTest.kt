@@ -110,6 +110,22 @@ class ExerciseLibraryScreenTest {
     }
 
     @Test
+    fun aFamilyASearchNarrowed_saysWhatItFoundOfWhatItHolds() {
+        // ROADMAP N225: the head used to count the matched children, so a family of three read "1 exercise"
+        // beside the one row the search found. Both numbers are stated now.
+        val wide = listOf(
+            bench,
+            exercise("barbell-bench-press", "Barbell Bench Press", "Chest", "Barbell", parent = "cat-bench"),
+            exercise("dumbbell-bench-press", "Dumbbell Bench Press", "Chest", "Dumbbell", parent = "cat-bench"),
+            exercise("incline-bench-press", "Incline Bench Press", "Chest", "Barbell", parent = "cat-bench"),
+        )
+
+        setScreen(ExerciseLibraryUiState(isLoading = false, exercises = wide, query = "dumbbell"))
+
+        composeTestRule.onNodeWithText("1 of 3 exercises").assertExists()
+    }
+
+    @Test
     fun aCategory_isNotOfferedByThePicker() {
         // The same composable serves both screens, and only the library is given the action: the gap a lifter
         // feels mid-workout is a missing *movement*, and a head can never be logged against (N95).

@@ -250,7 +250,38 @@ class ExerciseLibraryTest {
             "Bench Press",
             "Speed Day",
         ).inOrder()
-        assertThat(rows.single { it.id == "cat-bench" }.childCount).isEqualTo(1)
+        // The family's own size, and how much of it the query is showing (N225): the head states a fact
+        // about the library, not about the search.
+        assertThat(rows.single { it.id == "cat-bench" }.childCount).isEqualTo(3)
+        assertThat(rows.single { it.id == "cat-bench" }.matchedChildCount).isEqualTo(1)
+        assertThat(rows.single { it.id == "cat-bench" }.isNarrowed).isTrue()
+    }
+
+    @Test
+    fun aFamilyWithNoSearch_statesOneNumber() {
+        // The other half of N225: the two counts agree when nothing is narrowing the list, which is what lets
+        // the head print a single number without knowing whether a query is on.
+        val rows = libraryRows(library, query = "")
+
+        assertThat(rows.single { it.id == "cat-bench" }.matchedChildCount).isEqualTo(3)
+        assertThat(rows.single { it.id == "cat-bench" }.isNarrowed).isFalse()
+    }
+
+    @Test
+    fun aFamilyItsOwnNameMatched_showsItsWholeFamily() {
+        // N95's inheritance, read on the count (N225): a query that names the family reaches every movement
+        // filed under it, so the head shows all of them and has no second number to state.
+        val fresh = category("cat-fresh", "Fresh Family")
+        val rows = libraryRows(
+            library + fresh + movement("fresh-lift", "Lift", parent = "cat-fresh"),
+            query = "fresh",
+        )
+
+        val head = rows.single { it.id == "cat-fresh" }
+        assertThat(head.childCount).isEqualTo(1)
+        assertThat(head.matchedChildCount).isEqualTo(1)
+        assertThat(head.isNarrowed).isFalse()
+        assertThat(rows.map { it.name }).containsExactly("Fresh Family", "Lift").inOrder()
     }
 
     @Test

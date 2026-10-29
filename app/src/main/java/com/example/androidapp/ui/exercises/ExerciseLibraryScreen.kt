@@ -427,6 +427,25 @@ internal fun ExerciseList(
     }
 }
 
+/**
+ * What a family head states about how much it holds (ROADMAP N225).
+ *
+ * One number where the search shows the whole family, and both where it shows part of it: "6 exercises" and
+ * "1 of 6 exercises" are two different claims, and the second is what a narrowed family has to make.
+ */
+@Composable
+private fun libraryCount(row: LibraryRow): String =
+    if (row.isNarrowed) {
+        pluralStringResource(
+            R.plurals.library_exercises_of,
+            row.childCount,
+            row.matchedChildCount,
+            row.childCount,
+        )
+    } else {
+        pluralStringResource(R.plurals.library_exercises, row.childCount, row.childCount)
+    }
+
 @Composable
 private fun CategoryRow(
     row: LibraryRow,
@@ -440,8 +459,9 @@ private fun CategoryRow(
     AppRow(
         headline = row.name,
         // The count is the whole point of a folded head: it says a family is there without spending the
-        // room to show it.
-        supporting = pluralStringResource(R.plurals.library_exercises, row.childCount, row.childCount),
+        // room to show it. **And it is the family's own count**, so a search that found one of six says so
+        // rather than claiming the family is one movement (N225).
+        supporting = libraryCount(row),
         leading = {
             IconTile(icon = Icons.Filled.FitnessCenter, accent = TileAccent.Indigo)
         },

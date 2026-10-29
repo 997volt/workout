@@ -37,6 +37,14 @@
         <item quantity="other">%1$d exercises</item>
     </plurals>
 
+    <!-- A family a search narrowed: what it found, and how much of the family that is (ROADMAP N225). The
+         quantity is the family's own size, because the noun agrees with the 6 and not with the 1: "1 of 6
+         exercises", never "1 of 6 exercise". -->
+    <plurals name="library_exercises_of">
+        <item quantity="one">%1$d of %2$d exercise</item>
+        <item quantity="other">%1$d of %2$d exercises</item>
+    </plurals>
+
     <!-- What tapping an exercise row does, with the lift's own name in it: "Open Back Squat"
          rather than "Open exercise", so a screen-reader user knows which row they are on. -->
     <string name="library_open_exercise">Open %1$s</string>

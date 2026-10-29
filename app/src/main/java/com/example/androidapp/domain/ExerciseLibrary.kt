@@ -102,9 +102,10 @@ private fun familyRows(
     drawn: MutableSet<String>,
 ): List<LibraryRow> {
     val isFolded = category.id in shape.folded
-    val children = shape.exercises
-        .filter { it.parentId == category.id && it.rowKind == RowKind.MOVEMENT && it.id in shape.matched }
-        .sortedBy { it.name }
+    // What the family holds, before the query is asked (N225): the head states its own size, and the matched
+    // count is what a search is showing of it.
+    val filed = shape.exercises.filter { it.parentId == category.id && it.rowKind == RowKind.MOVEMENT }
+    val children = filed.filter { it.id in shape.matched }.sortedBy { it.name }
     if (children.isEmpty() && category.id !in shape.matched) return emptyList()
 
     drawn += category.id
@@ -114,7 +115,8 @@ private fun familyRows(
         subtitle = null,
         depth = 0,
         isCategory = true,
-        childCount = children.size,
+        childCount = filed.size,
+        matchedChildCount = children.size,
         isExpanded = !isFolded,
     )
     val rows = mutableListOf(head)
