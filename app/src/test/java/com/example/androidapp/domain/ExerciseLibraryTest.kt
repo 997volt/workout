@@ -127,6 +127,67 @@ class ExerciseLibraryTest {
         assertThat(rows.single().subtitle).isEqualTo("Hamstrings · Barbell")
     }
 
+    @Test
+    fun aMovementFiledIntoAFamily_namesThatFamily() {
+        // N228: the screen opens what changed. A movement that had no family and now has one is a change to
+        // the family it joined.
+        val filed = library.filter { it.rowKind == RowKind.MOVEMENT }.associate { it.id to it.parentId }
+        val before = filed + ("barbell-bench-press" to null)
+
+        assertThat(changedFamilies(before, library)).containsExactly("cat-bench")
+    }
+
+    @Test
+    fun aMovementFiledOutOfAFamily_namesTheOneItLeft() {
+        val before = library.filter { it.rowKind == RowKind.MOVEMENT }.associate { it.id to it.parentId }
+        val after = library.map {
+            if (it.id == "barbell-bench-press") it.copy(parentId = null) else it
+        }
+
+        assertThat(changedFamilies(before, after)).containsExactly("cat-bench")
+    }
+
+    @Test
+    fun aMovementRefiledBetweenFamilies_namesBoth() {
+        val squash = category("cat-squat", "Squat Family")
+        val before = library.filter { it.rowKind == RowKind.MOVEMENT }.associate { it.id to it.parentId }
+        val after = (library + squash).map {
+            if (it.id == "barbell-bench-press") it.copy(parentId = "cat-squat") else it
+        }
+
+        assertThat(changedFamilies(before, after)).containsExactly("cat-bench", "cat-squat")
+    }
+
+    @Test
+    fun theFirstComposition_changesNothing() {
+        // The library arriving is not the library changing: an empty map is the screen's first look, and it
+        // opens nothing (N228).
+        assertThat(changedFamilies(emptyMap(), library)).isEmpty()
+    }
+
+    @Test
+    fun aListThatDidNotChange_namesNothing() {
+        val parents = library.filter { it.rowKind == RowKind.MOVEMENT }.associate { it.id to it.parentId }
+
+        assertThat(changedFamilies(parents, library)).isEmpty()
+    }
+
+    @Test
+    fun aMovementThatArrivedUnfiled_namesNoFamily() {
+        val before = library.filter { it.rowKind == RowKind.MOVEMENT }.associate { it.id to it.parentId }
+        val after = library + movement("new-lift", "New Lift")
+
+        assertThat(changedFamilies(before, after)).isEmpty()
+    }
+
+    @Test
+    fun aMovementThatLeftTheLibrary_namesTheFamilyItWasIn() {
+        val before = library.filter { it.rowKind == RowKind.MOVEMENT }.associate { it.id to it.parentId }
+        val after = library.filterNot { it.id == "barbell-bench-press" }
+
+        assertThat(changedFamilies(before, after)).containsExactly("cat-bench")
+    }
+
     private fun category(id: String, name: String) = Exercise(
         id = id,
         name = name,

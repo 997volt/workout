@@ -67,6 +67,14 @@ class RowFold(
     fun toggle(id: String) = onToggle(id)
 
     /**
+     * Opens [id] without folding a row that is already open — what a change the screen did not make asks
+     * for, and the reason the fold needs a verb other than a toggle (ROADMAP N228).
+     */
+    fun open(id: String) {
+        if (!isExpanded(id)) onToggle(id)
+    }
+
+    /**
      * The ids the lifter has closed, for a caller that derives something from the folds (ROADMAP N95).
      *
      * N91's own caller asks row by row and needs no such list; the library's grouping has to know the whole

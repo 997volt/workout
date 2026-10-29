@@ -267,6 +267,37 @@ class ExerciseLibraryScreenTest {
         )
     }
 
+    /**
+     * The screen with a state the test can replace, which is what a change looks like from here (N228).
+     *
+     * Every call hands the screen a new list, so the row a test asserts on is drawn by the state it just
+     * supplied rather than by the one before it.
+     */
+    private lateinit var updateState: (ExerciseLibraryUiState) -> Unit
+
+    private fun showChanging(exercises: List<com.example.androidapp.domain.model.Exercise>) {
+        if (!::updateState.isInitialized) {
+            composeTestRule.setContent {
+                val current = remember {
+                    mutableStateOf(ExerciseLibraryUiState(isLoading = false, exercises = exercises))
+                }
+                updateState = { next -> current.value = next }
+                ExerciseLibraryScreen(
+                    state = current.value,
+                    title = "Exercise library",
+                    onQueryChange = {},
+                    onExerciseClick = {},
+                    onDismissMessage = {},
+                )
+            }
+            return
+        }
+        composeTestRule.runOnIdle {
+            updateState(ExerciseLibraryUiState(isLoading = false, exercises = exercises))
+        }
+        composeTestRule.waitForIdle()
+    }
+
     private fun setScreen(
         state: ExerciseLibraryUiState,
         onQueryChange: (String) -> Unit = {},
@@ -289,6 +320,39 @@ class ExerciseLibraryScreenTest {
                 onDismissMessage = {},
             )
         }
+    }
+
+    @Test
+    fun filingAMovement_opensTheFamilyItJoined() {
+        // ROADMAP N228: the library folds every family, so a movement filed from its own editor used to
+        // change a count on a folded row and nothing else. The family it joined opens, once.
+        val unfiled = groupedLibrary.map {
+            if (it.id == "barbell-bench-press") it.copy(parentId = null) else it
+        }
+        showChanging(unfiled)
+
+        // The movement starts at the top level, and the family it will join is folded.
+        composeTestRule.onNodeWithText("Barbell Bench Press").assertExists()
+
+        showChanging(groupedLibrary)
+
+        // Filed and folded would have drawn neither row; filed and opened draws it under its head.
+        composeTestRule.onNodeWithText("Barbell Bench Press").assertExists()
+    }
+
+    @Test
+    fun aChangeThatNamesNoFamily_opensNothing() {
+        // The other half of N228: an unrelated list is not a change, and a movement that arrived unfiled
+        // names no family to open.
+        showChanging(groupedLibrary)
+
+        val withNew = groupedLibrary + exercise("push-up", "Push-Up", "Chest", "Bodyweight")
+        showChanging(withNew)
+
+        // The family is still folded, so the one movement inside it is not drawn; only the new top-level
+        // row appeared.
+        composeTestRule.onNodeWithText("Barbell Bench Press").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Push-Up").assertExists()
     }
 
     @Test

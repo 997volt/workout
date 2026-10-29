@@ -131,6 +131,45 @@ private fun familyRows(
 }
 
 /**
+ * The families whose membership changed since [previous], given the movements now (ROADMAP N228).
+ *
+ * The library folds every family on load and remembers the folds, so filing a movement from its own editor
+ * changed a count on a folded row and nothing else — the one place the change happened was the one place it
+ * could not be seen. This names the families a lifter would want opened, and the screen opens each once.
+ *
+ * [previous] is the parent every movement had on the previous composition, or **empty when there is none**:
+ * the first composition is the library arriving rather than changing, so it opens nothing and seeds the map
+ * instead. A movement that appeared is a change to the family it arrived in; one that was re-filed is a change
+ * to both families, because one lost a movement and the other gained it.
+ */
+fun changedFamilies(
+    previous: Map<String, String?>,
+    exercises: List<Exercise>,
+): Set<String> {
+    if (previous.isEmpty()) return emptySet()
+    val now = exercises
+        .filter { it.rowKind == RowKind.MOVEMENT }
+        .associate { it.id to it.parentId }
+    val changed = mutableSetOf<String>()
+    now.forEach { (id, parent) ->
+        val before = previous[id]
+        when {
+            // Arrived, and filed somewhere: that family gained a movement.
+            id !in previous -> parent?.let { changed += it }
+            before != parent -> {
+                before?.let { changed += it }
+                parent?.let { changed += it }
+            }
+        }
+    }
+    // Gone entirely: the family it was in lost a movement.
+    previous.forEach { (id, before) ->
+        if (id !in now) before?.let { changed += it }
+    }
+    return changed
+}
+
+/**
  * The movements drawn at the top level: one in no category, and one whose category the library no longer
  * has.
  *

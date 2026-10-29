@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +53,7 @@ import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
+import com.example.androidapp.domain.changedFamilies
 import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.ui.components.AppRow
 import com.example.androidapp.ui.components.CenteredMessage
@@ -133,6 +135,9 @@ fun ExerciseLibraryScreen(
     // wanted here: this list loads asynchronously, so nothing would look "already there" (RowFold.kt). A
     // **query** opens what it draws, and `libraryRows` is where that rule lives.
     val fold = rememberRowFold(ids = state.exercises.map { it.id }, newRowsOpen = false)
+    // A family whose membership changed opens, once, so filing a movement is not a count changing on a
+    // folded row and nothing else (N228).
+    OpenFamiliesThatChanged(exercises = state.exercises, fold = fold)
     val rows = remember(state.exercises, state.query, fold.foldedIds, state.removedHeads) {
         libraryRows(
             exercises = state.exercises,
@@ -195,6 +200,27 @@ fun ExerciseLibraryScreen(
     )
 }
 
+
+/**
+ * Opens the family a movement joined or left (ROADMAP N228).
+ *
+ * The comparison runs on the composition after the change, which is why the previous memberships are kept
+ * here rather than derived: what the screen needs is the difference from what it drew, and the library's list
+ * arrives from the database already grouped.
+ *
+ * **`remember` rather than `rememberSaveable`**: the folds are what survive a rotation (N84), and a compare
+ * map restored across one would describe a screen that no longer exists — an empty map is the honest answer,
+ * because after a rotation nothing has changed yet.
+ */
+@Composable
+private fun OpenFamiliesThatChanged(exercises: List<Exercise>, fold: RowFold) {
+    var previous by remember { mutableStateOf<Map<String, String?>>(emptyMap()) }
+    LaunchedEffect(exercises) {
+        val changed = changedFamilies(previous, exercises)
+        previous = exercises.filter { it.rowKind == RowKind.MOVEMENT }.associate { it.id to it.parentId }
+        changed.forEach(fold::open)
+    }
+}
 
 /** The screen's bar, split out so the screen stays inside the length this project allows. */
 @OptIn(ExperimentalMaterial3Api::class)
