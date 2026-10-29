@@ -104,6 +104,15 @@ enum class MovementPattern(val label: String) {
     CARRY("Carry"),
     ISOLATION("Isolation"),
     CORE("Core"),
+
+    /**
+     * A movement whose point is the jump rather than the load (ROADMAP N241).
+     *
+     * Additive like every constant here — the document format carries a pattern as a string, and this app
+     * stores names — but an older build has no constant for it, which is the cost N141 accepted for
+     * `activity`: a movement with this pattern reads as an unstated one rather than refusing the whole file.
+     */
+    JUMP("Jump"),
     OTHER("Other"),
 }
 

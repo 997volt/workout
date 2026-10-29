@@ -44,15 +44,16 @@ class ExerciseTaxonomyTest {
     }
 
     @Test
-    fun thePatterns_areTheNineAndNoLegacyValue() {
+    fun thePatterns_areTheTenAndNoLegacyValue() {
         // ROADMAP N96's merge, made final by N104: the four directional names are gone from the enum, and the
         // offered list is the enum itself again — 2.0 refuses the 1.x file that could have carried one before
-        // the decoder, so there is nothing left for a legacy value to serve.
+        // the decoder, so there is nothing left for a legacy value to serve. N241 adds the one value a
+        // plyometric movement needed, and this pins the list so a constant cannot arrive unnoticed.
         assertEquals(
-            listOf("PRESS", "PULL", "SQUAT", "HINGE", "LUNGE", "CARRY", "ISOLATION", "CORE", "OTHER"),
+            listOf("PRESS", "PULL", "SQUAT", "HINGE", "LUNGE", "CARRY", "ISOLATION", "CORE", "JUMP", "OTHER"),
             MovementPattern.entries.map { it.name },
         )
-        assertEquals(9, MovementPattern.entries.size)
+        assertEquals(10, MovementPattern.entries.size)
         // LUNGE stays out of SQUAT: both are knee-dominant, but "have I been squatting?" has an answer and
         // lunges are not it.
         assertTrue(MovementPattern.entries.contains(MovementPattern.LUNGE))

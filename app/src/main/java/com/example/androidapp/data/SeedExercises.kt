@@ -241,6 +241,26 @@ internal object SeedExercises {
         movement("turkish-get-up", "Turkish Get-Up", Equipment.KETTLEBELL, secondary = listOf(MuscleGroup.SHOULDERS)),
         movement("farmers-carry", "Farmer's Carry", Equipment.DUMBBELL, timed = true),
         movement("suitcase-carry", "Suitcase Carry", Equipment.DUMBBELL, timed = true),
+
+        // ---- Plyometric ----
+        // The jumps the seed had no movement for (N241): body-loaded, so they are prefilled as "added weight"
+        // and a set at their rep ceiling earns nothing rather than a heavier bar it does not load (N74, B293).
+        movement("box-jump", "Box Jump", Equipment.OTHER, bodyweight = true),
+        movement("jump-squat", "Jump Squat", Equipment.BODYWEIGHT, bodyweight = true),
+        movement("broad-jump", "Broad Jump", Equipment.BODYWEIGHT, bodyweight = true),
+        movement("depth-jump", "Depth Jump", Equipment.OTHER, bodyweight = true),
+        movement("pogo-hop", "Pogo Hop", Equipment.BODYWEIGHT, bodyweight = true),
+        movement("skater-bound", "Skater Bound", Equipment.BODYWEIGHT, bodyweight = true),
+        // The one throw, and the one that states its own taxonomy: a medicine-ball throw is upper-body power,
+        // so the family's quads would be a fact invented about the movement (N103, own-if-stated).
+        movement(
+            "medicine-ball-throw",
+            "Medicine-Ball Throw",
+            Equipment.OTHER,
+            MuscleGroup.SHOULDERS,
+            listOf(MuscleGroup.CHEST, MuscleGroup.CORE),
+            pattern = MovementPattern.JUMP
+        ),
     )
 
     /**
@@ -351,6 +371,16 @@ internal object SeedExercises {
         ),
         SeedCategory("calf-raise-family", "Calf Raise", MovementPattern.ISOLATION, MuscleGroup.CALVES, emptyList()),
         SeedCategory("core", "Core", MovementPattern.CORE, MuscleGroup.CORE, emptyList()),
+        // **The one family whose pattern is the jump** (N241). A family states one muscle and one pattern, and
+        // a box jump has an honest claim on the squat pattern, on the calves, the quads and the glutes - so the
+        // pattern is the movement's own answer and the glide-and-land work files under it.
+        SeedCategory(
+            "plyometric",
+            "Plyometric",
+            MovementPattern.JUMP,
+            MuscleGroup.QUADS,
+            listOf(MuscleGroup.GLUTES, MuscleGroup.CALVES)
+        ),
         // The families added with the strength and bodybuilding set. Each holds a cluster that had no home:
         // the rear delts are not lateral raises, a shrug is not a row, and a carry is the one family whose
         // pattern is `CARRY`.
@@ -512,6 +542,13 @@ internal object SeedExercises {
         "seated-leg-curl" to "leg-curl",
         "nordic-curl" to "leg-curl",
         "leg-extension" to "leg-extension-family",
+        "box-jump" to "plyometric",
+        "jump-squat" to "plyometric",
+        "broad-jump" to "plyometric",
+        "depth-jump" to "plyometric",
+        "pogo-hop" to "plyometric",
+        "skater-bound" to "plyometric",
+        "medicine-ball-throw" to "plyometric",
         // **One movement stays unfiled on purpose** (N229): every press family is a *lift's* family, so a
         // push-up is none of them. One loose movement the seed can stand behind is a different thing from
         // eight of them sitting there because nothing was done.

@@ -150,6 +150,22 @@ class SeedExercisesTest {
     }
 
     @Test
+    fun thePlyometricFamily_holdsTheJumpsAndTheOneThrow() {
+        // N241: the seed shipped strength and bodybuilding work and no jump, so a program with plyometrics in
+        // it authored every movement by hand. The family is where they file, and its pattern is the reason the
+        // enum gained one: a jump is not a press, a squat or an isolation.
+        val family = SeedExercises.categories.single { it.id == "plyometric" }
+
+        assertThat(family.pattern).isEqualTo(MovementPattern.JUMP)
+        assertThat(family.primaryMuscle).isEqualTo(MuscleGroup.QUADS)
+        assertThat(SeedExercises.parentOf.filterValues { it == "plyometric" }.keys)
+            .containsAtLeast("box-jump", "jump-squat", "broad-jump", "depth-jump", "pogo-hop", "skater-bound")
+        assertWithMessage("and the throw states its own muscles, because the family's quads are not its")
+            .that(SeedExercises.all.single { it.id == "medicine-ball-throw" }.primaryMuscle)
+            .isEqualTo(MuscleGroup.SHOULDERS)
+    }
+
+    @Test
     fun everyMovementTheSeedCanFile_isFiled_exceptThePushUp() {
         // N229: eight movements sat at the top level, so a fresh install drew a flat alphabetical pile of
         // loose lifts under its families. One stays loose on purpose - a push-up is none of the press
