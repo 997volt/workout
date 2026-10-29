@@ -96,6 +96,18 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   blades. Both corrections are written behind the insert, matched on the list the seed shipped before, so a lifter who
   set their own list keeps it — and because a family's muscles are what its members read live, the whole family moves
   and the balance numbers of plans already authored are reshaped.
+### Added
+
+- **A refused program load can arrive under a name of its own** (N243). A program document whose id is already
+  here carrying a *different* plan could only be refused: the merge is insert-only and never edits a program, so
+  the lifter's ways out were renaming the program already on the device or editing the file by hand. The load now
+  stops at a question instead — a name the list does not hold, offered as "Push Pull Legs (2)" and editable, with
+  a name another program holds refused while the lifter is looking at the field. Confirming writes a **copy**: the
+  plan as the document describes it, with an id of its own for the program and new ids for its workouts, planned
+  exercises and sets, because a copy that shared its days with the original would not be a separate program —
+  editing one day would rewrite both, and a document exported before the copy would then be refused as stale. The
+  movements keep their library ids, which name rows rather than copying them.
+
 ## [2.18] — 2026-10-29 (versionCode 38)
 
 ### Fixed

@@ -131,6 +131,59 @@ class ProgramsViewModelTest {
         assertThat(repository.importedTexts).isEmpty()
     }
 
+    @Test
+    fun aLoadWhoseNameIsTaken_asksForANameRatherThanFailing() = runTest(dispatcher) {
+        // N243: the merge cannot add a document whose id another plan holds, so the refusal becomes a question
+        // — and nothing is written until the lifter answers it.
+        val repository = FakeProgramRepository(preview = DataResult.Success(aTakenName()))
+        val model = newViewModel(repository)
+
+        model.openDocument("twin")
+        advanceUntilIdle()
+
+        assertThat(model.pendingRename.value?.text).isEqualTo("twin")
+        assertThat(model.pendingRename.value?.preview?.name).isEqualTo("Push Pull Legs")
+        assertThat(model.pendingRename.value?.preview?.suggestion).isEqualTo("Push Pull Legs (2)")
+        assertThat(model.imported.value).isNull()
+        assertThat(repository.copiedTexts).isEmpty()
+    }
+
+    @Test
+    fun confirming_theRename_loadsTheCopy_underTheNameTyped() = runTest(dispatcher) {
+        val repository = FakeProgramRepository(preview = DataResult.Success(aTakenName()))
+        val model = newViewModel(repository)
+        model.openDocument("twin")
+        advanceUntilIdle()
+
+        model.confirmRename("Push Pull Legs B")
+        advanceUntilIdle()
+
+        assertThat(model.pendingRename.value).isNull()
+        assertThat(repository.copiedTexts).containsExactly("twin" to "Push Pull Legs B")
+        assertThat(model.imported.value).isEqualTo(DataResult.Success(repository.summary))
+        assertThat(model.edited.value).isFalse()
+    }
+
+    @Test
+    fun dismissing_theRename_writesNothing() = runTest(dispatcher) {
+        val repository = FakeProgramRepository(preview = DataResult.Success(aTakenName()))
+        val model = newViewModel(repository)
+        model.openDocument("twin")
+        advanceUntilIdle()
+
+        model.dismissRename()
+        advanceUntilIdle()
+
+        assertThat(model.pendingRename.value).isNull()
+        assertThat(repository.copiedTexts).isEmpty()
+        assertThat(model.imported.value).isNull()
+    }
+
+    private fun aTakenName() = ProgramDocumentPreview.NameTaken(
+        name = "Push Pull Legs",
+        suggestion = "Push Pull Legs (2)",
+    )
+
     private fun anEdit() = ProgramDocumentPreview.Edit(
         programName = "Heavy lower",
         changes = emptyList(),
@@ -162,6 +215,17 @@ class ProgramsViewModelTest {
 
         override suspend fun skipBlockSession(slotId: String, day: LocalDate): DataResult<Unit> =
             error("this test does not skip a block")
+
+        /** Every copy the load was asked for, as the text it kept and the name it was given (N243). */
+        val copiedTexts = mutableListOf<Pair<String, String>>()
+
+        override suspend fun importProgramDocumentCopy(
+            text: String,
+            name: String,
+        ): DataResult<ProgramImportSummary> {
+            copiedTexts += text to name
+            return DataResult.Success(summary)
+        }
 
         override suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary> {
             importedTexts += text

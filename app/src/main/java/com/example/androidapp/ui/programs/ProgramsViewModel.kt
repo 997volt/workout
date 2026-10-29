@@ -33,6 +33,15 @@ data class ProgramsUiState(
 data class PendingProgramEdit(val text: String, val preview: ProgramDocumentPreview.Edit)
 
 /**
+ * The document whose name another plan holds, waiting for the lifter to give it its own (ROADMAP N243).
+ *
+ * The text rather than the decoded document, for the edit's reason (N171): the repository decodes and merges
+ * inside its transaction, so a device that changed between the question and the answer is a refusal rather
+ * than a merge into something nobody read.
+ */
+data class PendingProgramRename(val text: String, val preview: ProgramDocumentPreview.NameTaken)
+
+/**
  * The program list (ROADMAP P3.3).
  *
  * Creating a program takes a name from the screen — a ViewModel cannot read a string
@@ -90,6 +99,11 @@ class ProgramsViewModel @Inject constructor(
                     _imported.value = importDocument(text)
                 }
 
+                is ProgramDocumentPreview.NameTaken -> {
+                    _edited.value = false
+                    _pendingRename.value = PendingProgramRename(text, value)
+                }
+
                 is ProgramDocumentPreview.Edit -> {
                     _edited.value = false
                     _pendingEdit.value = PendingProgramEdit(text, value)
@@ -134,6 +148,31 @@ class ProgramsViewModel @Inject constructor(
     /** Leaves the program as it is; the preview wrote nothing. */
     fun dismissEdit() {
         _pendingEdit.value = null
+    }
+
+    private val _pendingRename = MutableStateFlow<PendingProgramRename?>(null)
+
+    /** The load waiting for a name of its own, or null (N243). */
+    val pendingRename: StateFlow<PendingProgramRename?> = _pendingRename
+
+    /**
+     * Loads the held document as a second program under [name] (ROADMAP N243).
+     *
+     * The copy is an add, so nothing the device already holds changes — the plan that took the name keeps
+     * it, and the arriving one gets an id of its own.
+     */
+    fun confirmRename(name: String) {
+        val pending = _pendingRename.value ?: return
+        _pendingRename.value = null
+        viewModelScope.launch {
+            _edited.value = false
+            _imported.value = repository.importProgramDocumentCopy(pending.text, name)
+        }
+    }
+
+    /** Leaves the document unloaded rather than arriving as a second program. */
+    fun dismissRename() {
+        _pendingRename.value = null
     }
 
     /** The merge has been reported, so it is not reported twice. */

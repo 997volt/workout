@@ -251,6 +251,12 @@ class ProgramStartGateViewModelTest {
         override suspend fun exportProgramDocument(programId: String): DataResult<String> =
             error("the start gate does not carry a program")
 
+        override suspend fun importProgramDocumentCopy(
+            text: String,
+            name: String,
+        ): DataResult<ProgramImportSummary> =
+            error("these tests do not load a program as a copy")
+
         override suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary> =
             error("the start gate does not carry a program")
 

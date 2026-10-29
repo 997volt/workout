@@ -3320,6 +3320,12 @@ private class FakeProgramRepository : ProgramRepository {
     override suspend fun exportProgramDocument(programId: String): DataResult<String> =
         error("the workout screen does not carry a program")
 
+    override suspend fun importProgramDocumentCopy(
+        text: String,
+        name: String,
+    ): DataResult<ProgramImportSummary> =
+        error("these tests do not load a program as a copy")
+
     override suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary> =
         error("the workout screen does not carry a program")
 

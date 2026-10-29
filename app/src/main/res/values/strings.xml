@@ -1025,6 +1025,16 @@
     <!-- The confirmation an edit document stops at (ROADMAP N171). It states the diff the shared
          planner produced, not a promise: the app applies exactly those changes. -->
     <string name="program_updated">Program updated.</string>
+    <!-- A load refused because another plan holds the name and the work differs (ROADMAP N243). The copy is
+         the way out of a refusal the merge cannot resolve, and the body says what happens rather than what
+         failed: nothing on the device changes and the file arrives as a second program. -->
+    <string name="program_rename_title">Load it as a new program</string>
+    <string name="program_rename_text">“%1$s” is already a program here, and this file is a different plan. Give it a name of its own and it arrives as a second program; nothing on this device changes.</string>
+    <string name="program_rename_label">New name</string>
+    <string name="program_rename_taken">Another program is already called that.</string>
+    <string name="program_rename_confirm">Load as a copy</string>
+    <string name="program_rename_cancel">Cancel</string>
+
     <string name="program_edit_dialog_title">Update “%1$s”?</string>
     <string name="program_edit_intro">This changes the program on this device. Your logged history is not touched.</string>
     <string name="program_edit_renamed">Renamed to “%1$s”.</string>

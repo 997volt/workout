@@ -21,6 +21,10 @@ import java.time.DayOfWeek
  * week's sessions. It lives here rather than in `WorkoutDao` because the program is the
  * thing being resolved; the session is the evidence.
  */
+// The number of reads this repository needs, and it reached the ceiling when a refused load gained a name to
+// check (N243). Grouping them into nested DAOs would move the count rather than the reads: every query here
+// answers a question about one program, and the file is written to be read as that list.
+@Suppress("TooManyFunctions")
 @Dao
 interface ProgramDao {
 
@@ -142,6 +146,16 @@ interface ProgramDao {
 
     @Query("SELECT * FROM programs WHERE id = :id AND deletedAt IS NULL")
     suspend fun findProgram(id: String): ProgramEntity?
+
+    /**
+     * Every live program's name (ROADMAP N243).
+     *
+     * What a renamed load is checked against: two programs a lifter cannot tell apart are worse than the
+     * refusal the rename exists to get past. A deleted program's name is left out, because the list does not
+     * show it and a name is free once nothing answers to it.
+     */
+    @Query("SELECT name FROM programs WHERE deletedAt IS NULL")
+    suspend fun names(): List<String>
 
     /**
      * A program's own slots as rows, in order (ROADMAP N47).

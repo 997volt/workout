@@ -26,6 +26,7 @@ import com.example.androidapp.data.transfer.ProgramDocument
 import com.example.androidapp.data.transfer.ProgramDocumentCodec
 import com.example.androidapp.data.transfer.counted
 import com.example.androidapp.data.transfer.plansTheSameWorkAs
+import com.example.androidapp.data.transfer.programDocumentCopy
 import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
 import com.example.androidapp.data.transfer.toShared
@@ -46,6 +47,7 @@ import com.example.androidapp.domain.model.RecordedSkip
 import com.example.androidapp.domain.model.RecordedSubstitution
 import com.example.androidapp.domain.model.SequenceSchedule
 import com.example.androidapp.domain.model.WorkoutProgram
+import com.example.androidapp.domain.model.freeProgramName
 import com.example.androidapp.domain.model.programRun
 import com.example.androidapp.domain.model.sequenceSchedule
 import com.example.androidapp.domain.nowEpochMillis
@@ -556,11 +558,36 @@ class RoomProgramRepository @Inject constructor(
             }
         }
 
+    override suspend fun importProgramDocumentCopy(
+        text: String,
+        name: String,
+    ): DataResult<ProgramImportSummary> = dataResultOf {
+        val document = ProgramDocumentCodec.decode(text)
+        // The copy is an add: an edit is a proposal to change a program this device holds, and the question a
+        // rename answers is which program the arriving document is (N243).
+        if (document.edit != null) throw InvalidInputException("An edit cannot be loaded as a copy.")
+        val wanted = name.trim()
+        if (wanted.isEmpty()) throw InvalidInputException("A program needs a name.")
+        if (dao.names().any { it.equals(wanted, ignoreCase = true) }) {
+            throw InvalidInputException("A program is already called \"$wanted\".")
+        }
+        // One timestamp inside the transaction, like the add it is (B177).
+        val now = timeSource.nowEpochMillis()
+        database.withTransaction {
+            mergeProgramDocument(
+                database = database,
+                programDao = dao,
+                document = programDocumentCopy(document, wanted) { UUID.randomUUID().toString() },
+                now = now,
+            )
+        }
+    }
+
     override suspend fun previewProgramDocument(text: String): DataResult<ProgramDocumentPreview> =
         dataResultOf {
             val document = ProgramDocumentCodec.decode(text)
             if (document.edit == null) {
-                return@dataResultOf ProgramDocumentPreview.Add
+                return@dataResultOf addPreview(document)
             }
             val snapshot = editSnapshot(database, timeSource, document.program.id)
             // The device's own newest write, soft-deleted rows included: a deletion after the export
@@ -578,6 +605,27 @@ class RoomProgramRepository @Inject constructor(
                 )
             }
         }
+
+    /**
+     * What adding this document would do, without writing it (N243).
+     *
+     * A document whose id is already here is only a clash when the plan under that id is a **different** one
+     * (B267): loading the same file twice is the idempotent case the merge already answers. When it is a
+     * different plan there is nothing the load can do — the merge never edits a program (B180) — so the question
+     * becomes the lifter's, and the suggestion is a name the list does not hold.
+     */
+    private suspend fun addPreview(document: ProgramDocument): ProgramDocumentPreview {
+        if (dao.findProgram(document.program.id) == null) return ProgramDocumentPreview.Add
+        val sameWork = document.plansTheSameWorkAs(heldWork(database, document.program.id))
+        return if (sameWork) {
+            ProgramDocumentPreview.Add
+        } else {
+            ProgramDocumentPreview.NameTaken(
+                name = document.program.name,
+                suggestion = freeProgramName(document.program.name, dao.names()),
+            )
+        }
+    }
 
     private companion object {
         /** One day of slack at each end of the week, for sessions in another zone. */

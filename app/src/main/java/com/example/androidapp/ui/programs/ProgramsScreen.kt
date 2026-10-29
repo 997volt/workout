@@ -73,6 +73,7 @@ fun ProgramsRoute(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val created by viewModel.createdProgramId.collectAsStateWithLifecycle()
     val pendingEdit by viewModel.pendingEdit.collectAsStateWithLifecycle()
+    val pendingRename by viewModel.pendingRename.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val currentOnOpenProgram by rememberUpdatedState(onOpenProgram)
 
@@ -113,6 +114,17 @@ fun ProgramsRoute(
             edit = pending.preview,
             onConfirm = viewModel::confirmEdit,
             onDismiss = viewModel::dismissEdit,
+        )
+    }
+
+    // A load whose name another plan holds stops here too (N243): the copy is a decision about a second
+    // program, not something a file does on its own.
+    pendingRename?.let { pending ->
+        ProgramRenameDialog(
+            rename = pending.preview,
+            takenNames = state.programs.map { it.name },
+            onConfirm = viewModel::confirmRename,
+            onDismiss = viewModel::dismissRename,
         )
     }
 }

@@ -143,6 +143,74 @@ class ProgramDocumentTest {
     }
 
     @Test
+    fun aRefusedDocument_canArriveAsACopyUnderItsOwnName() = runTest {
+        // N243: the load cannot add a document whose id another plan holds with different work, so the refusal
+        // is a question. The copy is a second program — its workouts are its own — and the one here is
+        // untouched, which is the whole reason the ids are minted rather than reused.
+        val file = exportOf(seedProgram())
+        wipe()
+        importOf(file)
+        val document = ProgramDocumentCodec.decode(file)
+        val changed = ProgramDocumentCodec.encode(
+            document.copy(
+                templates = document.templates + document.templates.single().copy(
+                    id = "tpl-second",
+                    name = "Second day",
+                ),
+                slots = document.slots + document.slots.single().copy(
+                    id = "slot-second",
+                    templateId = "tpl-second",
+                ),
+            ),
+        )
+        val original = programs.observePrograms().first().single()
+
+        val summary = importOfCopy(changed, "Heavy lower B")
+
+        assertEquals("a second program arrived", 1, summary.programs)
+        assertEquals(2, summary.templates)
+        val both = programs.observePrograms().first()
+        assertEquals(2, both.size)
+        val copy = both.single { it.id != original.id }
+        assertEquals("Heavy lower B", copy.name)
+        assertEquals("and it is not followed for the lifter", false, copy.isActive)
+        assertEquals(2, programs.observeSlots(copy.id).first().size)
+        assertEquals(
+            "the original keeps the one day it had",
+            1,
+            programs.observeSlots(original.id).first().size,
+        )
+        assertTrue(
+            "the copy's days are its own rather than the original's",
+            programs.observeSlots(copy.id).first().map { it.templateId }
+                .intersect(programs.observeSlots(original.id).first().map { it.templateId }.toSet())
+                .isEmpty(),
+        )
+        assertEquals("nothing was added to the library twice", 0, summary.exercises)
+    }
+
+    @Test
+    fun aCopyOfADocument_isRefusedWhenTheNameIsAlreadyHere() = runTest {
+        // Two programs a lifter cannot tell apart are worse than the refusal the copy exists to get past, so
+        // the write boundary checks the name the dialog checked.
+        val file = exportOf(seedProgram())
+        wipe()
+        importOf(file)
+        val document = ProgramDocumentCodec.decode(file)
+        val changed = ProgramDocumentCodec.encode(
+            document.copy(
+                templates = document.templates + document.templates.single().copy(id = "tpl-x", name = "X"),
+            ),
+        )
+        val original = programs.observePrograms().first().single().name
+
+        val result = programs.importProgramDocumentCopy(changed, original)
+
+        assertTrue("the copy is refused", result is DataResult.Failure)
+        assertEquals("and no second program arrived", 1, programs.observePrograms().first().size)
+    }
+
+    @Test
     fun loadingTheSameDocumentTwice_isANoOp() = runTest {
         val file = exportOf(seedProgram())
         wipe()
@@ -283,6 +351,12 @@ class ProgramDocumentTest {
 
     private suspend fun exportOf(programId: String): String =
         (programs.exportProgramDocument(programId) as DataResult.Success).data
+
+    private suspend fun importOfCopy(file: String, name: String): ProgramImportSummary {
+        val result = programs.importProgramDocumentCopy(file, name)
+        if (result is DataResult.Failure) error("copy refused: ${result.error}")
+        return (result as DataResult.Success).data
+    }
 
     private suspend fun importOf(file: String): ProgramImportSummary {
         val result = programs.importProgramDocument(file)

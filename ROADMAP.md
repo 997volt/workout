@@ -17,8 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing. The library's read-only rows (N224–N228) and its own data (B292, B293, N229, N240, N241) shipped to the
-unreleased section of [CHANGELOG.md](CHANGELOG.md); the queue below starts with the rows the library works with.
+Nothing. The library's read-only rows (N224–N228), its own data (B292, B293, N229, N240, N241) and the program
+load's rename (N243) shipped to the unreleased section of [CHANGELOG.md](CHANGELOG.md); the queue below starts with
+the library's working rows.
 
 ## Later — decided, and not being started
 
@@ -35,30 +36,6 @@ reads history, and last the migrations that need their author's word on every ro
 where it waits for anything; a row that says nothing waits for nothing but the one before it. The numbers quoted
 here are the measurements the work was planned from, not facts to keep up to date: a row that ships leaves this
 file.
-
-### Bringing a program in
-
-**N243 — a refused program load offers to arrive under another name.** A program document is refused when its id is
-already here and the plan under it is not the same one: a pasted table's id is a slug of its name, so a second
-*Push Pull Legs* table carries the first one's id, and the app answers *A different plan is already here under that
-name, so nothing was added* (B267). The sentence is right, and the lifter then has nowhere to go inside the app —
-the ways out are renaming the program already on the device or editing the file by hand. The load becomes **read,
-ask, write**: the document preview gains the case it is missing — the id is held **and the work differs** — and the
-screen answers it with a dialog that names the clash and offers **Load it under another name**, pre-filled with a
-name the list does not hold ("Push Pull Legs (2)"), with *Cancel* as the other answer and a typed name refused
-while another program holds it, because telling two programs apart is the point. Confirming writes a **copy**: a
-minted id and the typed name for the program, and **new ids for its templates, planned exercises and sets**,
-because a program that shares its days with the original is not a separate one — editing one day would rewrite
-both, and N171's staleness check would then refuse documents for the other. **Exercise ids are kept**, because
-those name library movements rather than copying them. The copy arrives **inactive and last**, like every add (N47,
-P3.3), and it is faithful in everything else, a block's start included, which the lifter can edit afterwards
-(N186). The original is never touched, and the rename lives in the app rather than in the file, so the document on
-disk keeps its id and its name. Rejected: **sharing the original's templates**, which N73 allows on purpose for two
-programs that *mean* one workout and which is exactly wrong for a copy whose point is to diverge; **renaming the
-program already on the device**, which would take the identity of the plan that is there and trained; and sending
-the lifter back to the helper to mint a new id, because the file is what they have. The same copy write is what a
-*Duplicate* entry in the programs list would need, which is not part of this row — it is where the helper would be
-extracted, at its second caller.
 
 ### The library as a place you work
 

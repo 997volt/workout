@@ -767,6 +767,12 @@ object TestTags {
         const val EDIT_CONFIRM = "program_edit_confirm"
         const val EDIT_CANCEL = "program_edit_cancel"
 
+        /** The name a refused load is asked for, and its two answers (ROADMAP N243). */
+        const val RENAME_DIALOG = "program_rename_dialog"
+        const val RENAME_NAME = "program_rename_name"
+        const val RENAME_CONFIRM = "program_rename_confirm"
+        const val RENAME_CANCEL = "program_rename_cancel"
+
         /**
          * The way across to Templates, in this screen's own bar (ROADMAP N93).
          *

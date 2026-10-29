@@ -201,6 +201,16 @@ interface ProgramRepository {
     suspend fun importProgramDocument(text: String): DataResult<ProgramImportSummary>
 
     /**
+     * Adds [text] as a **copy** under [name], for a document whose program id another plan holds (N243).
+     *
+     * The plan arriving is the document's own and every row id is minted, so the copy is a second program
+     * rather than a second view of the one already here: the original's workouts are not touched, and its
+     * days keep their own targets. The name must be one this device does not hold, so the list stays two
+     * programs a lifter can tell apart rather than two of one name.
+     */
+    suspend fun importProgramDocumentCopy(text: String, name: String): DataResult<ProgramImportSummary>
+
+    /**
      * What [importProgramDocument] would do, without writing anything (ROADMAP N171).
      *
      * A document without an edit marker is [ProgramDocumentPreview.Add] — the insert-only load needs
@@ -220,6 +230,19 @@ interface ProgramRepository {
  */
 sealed interface ProgramDocumentPreview {
     data object Add : ProgramDocumentPreview
+
+    /**
+     * A document to add whose id is already here, holding a different plan (B267, N243).
+     *
+     * The load adds nothing and cannot be applied — the merge is insert-only (B180) — so the question moves
+     * to the lifter: arrive as a second program under a name of its own, or leave the one here alone.
+     */
+    data class NameTaken(
+        /** The name the document asks for, which another plan holds. */
+        val name: String,
+        /** A name the list does not hold, offered as the rename's starting point. */
+        val suggestion: String,
+    ) : ProgramDocumentPreview
 
     data class Edit(
         /** The program as this device names it — what the list and the lifter call it, not the edit's name. */
