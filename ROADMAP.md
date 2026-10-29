@@ -20,20 +20,10 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 N237 is the row in hand: the rule that notices one plan's prescription stalling, so the app can suggest a deload
 instead of saying nothing about a pattern it can already measure set by set.
 
-**N237 — three misses on one plan suggest a deload, and the lifter decides.** The app can already say what each set
-missed and why, and it says nothing about the pattern. The rule: for one template **inside one program**, take the
-sessions in order and count, per movement, the prescribed sets that earned no step; **three consecutive sessions in
-which the same kind repeats** is a stall, and the app says so where progression already speaks. Only
-`REPS_SHORT`, `OVER_TARGET_RPE` and `LOAD_SHORT` count: `NOT_DONE` is absence, and a session that was skipped is
-not a session that was failed. The scope is the template in the program — the same movement trained on another day
-of the same program does not count, because the two days prescribe different work, and a session started outside
-any program counts for nothing, because a deload is a program's week. The counting is per prescription rather than
-per exercise, so a plan whose second set is always the one that fails says that; and because the offer reports one
-miss per set by precedence, the counter records the kinds it can still measure rather than only the reported one,
-or "over the target" would silently become "short". **It only suggests**: nothing is written, and the lifter
-decides. The suggestion opens the existing deload creator with the program already chosen, because a deload is
-already a marked week with days and a kept percentage (N147) and a second deload concept would be a second place
-for one idea. Waits for N226, which is where the sentences live.
+## Next
+
+Nothing is in flight. The deload rule (N237) shipped: the app now says when one of a program's prescriptions has
+stopped moving, and offers the deload creator the program already has.
 
 ## Later — decided, and not being started
 

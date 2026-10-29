@@ -17,6 +17,17 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **Three misses on one plan suggest a deload** (N237). The app could already say what each set missed and why, and
+  said nothing about the pattern. For one plan, the sessions are taken in order and each prescribed set is paired
+  with the session's own, so a plan whose *second* set is always the one that fails says that rather than blaming
+  the exercise. **Three sessions in which the same measurable kind repeats** is a stall, and the program's screen
+  suggests a deload with the creator it already has. Only the kinds the rule can measure count — short reps, over
+  the target effort, under the plan's load, a hold shorter than prescribed — because the offer states one reason by
+  precedence and counting the *reported* one would let "over the target" silently become "short" between two
+  sessions failing the same way. `NOT_DONE` is absence, not failure: a set nobody logged cannot start or break a
+  streak. It only suggests, and nothing is written.
+
+
 - **A plan can prescribe a hold, and a hold can progress** (N242, schema 15). A timed set already recorded seconds
   and wrote no reps, but a plan prescribed **reps**: a hold inside a plan ignored its target, a session saved as a
   plan wrote no rep target at all, and the next-step question answered a hold with "a hold is not measured in reps",

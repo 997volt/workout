@@ -2,13 +2,16 @@ package com.example.androidapp.data
 
 import com.example.androidapp.data.local.JointPainSiteRow
 import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.local.toTemplateSessions
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.dataResultOf
 import com.example.androidapp.domain.model.ExerciseTrendPoint
 import com.example.androidapp.domain.model.ExerciseTrendRow
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
+import com.example.androidapp.domain.model.TemplateSession
 import com.example.androidapp.domain.model.TrendPoint
 import com.example.androidapp.domain.model.jointSiteKey
 import com.example.androidapp.domain.model.toExerciseTrendPoints
@@ -117,6 +120,13 @@ class RoomTrendsRepository @Inject constructor(
                 if (throwable is CancellationException) throw throwable
                 emit(DataResult.Failure(throwable.toDataError()))
             }
+
+    override suspend fun templateSessions(
+        templateId: String,
+        limit: Int,
+    ): DataResult<List<TemplateSession>> = dataResultOf {
+        dao.findTemplateSessionSets(templateId, limit).toTemplateSessions()
+    }
 }
 
 /**

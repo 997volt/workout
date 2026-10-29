@@ -2,7 +2,12 @@ package com.example.androidapp.data.local
 
 import androidx.room.Dao
 import androidx.room.Query
+import com.example.androidapp.domain.model.PerformedExercise
+import com.example.androidapp.domain.model.ProgressionPerformance
+import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.TemplateSession
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 /**
  * Per-workout averages of what the app collects (ROADMAP N13).
@@ -213,7 +218,61 @@ interface TrendsDao {
         exerciseIds: List<String>,
         limit: Int,
     ): Flow<List<ExerciseTrendRowEntity>>
+
+    /**
+     * The last [limit] finished sessions started from [templateId], one row per logged set (ROADMAP N237).
+     *
+     * The narrow question a stall asks: *this* plan's own sessions, oldest first, whatever the movements were.
+     * The window is a count of **sessions** rather than of rows, by the same subquery the trend read uses — a
+     * `LIMIT` on the join would cut a workout in half and make a set look absent.
+     */
+    @Query(
+        """
+        SELECT ws.id AS sessionId,
+               ws.startedAt AS startedAt,
+               se.exerciseId AS exerciseId,
+               se.position AS position,
+               s.weightGrams AS weightGrams,
+               s.assistanceGrams AS assistanceGrams,
+               s.reps AS reps,
+               s.rpeHalves AS rpeHalves,
+               s.durationSeconds AS durationSeconds,
+               s.setType AS setType
+        FROM workout_sessions ws
+        JOIN session_exercises se
+          ON se.sessionId = ws.id AND se.deletedAt IS NULL
+        LEFT JOIN set_entries s
+          ON s.sessionExerciseId = se.id AND s.deletedAt IS NULL
+        WHERE ws.templateId = :templateId
+          AND ws.deletedAt IS NULL
+          AND ws.finishedAt IS NOT NULL
+          AND ws.id IN (
+              SELECT ws2.id FROM workout_sessions ws2
+              WHERE ws2.templateId = :templateId
+                AND ws2.deletedAt IS NULL
+                AND ws2.finishedAt IS NOT NULL
+              ORDER BY ws2.startedAt DESC
+              LIMIT :limit
+          )
+        ORDER BY ws.startedAt ASC, se.position ASC, s.setIndex ASC
+        """,
+    )
+    suspend fun findTemplateSessionSets(templateId: String, limit: Int): List<TemplateSessionSetRow>
 }
+
+/** One logged set of one exercise in one template session, as the stall rule reads it (ROADMAP N237). */
+data class TemplateSessionSetRow(
+    val sessionId: String,
+    val startedAt: Long,
+    val exerciseId: String,
+    val position: Int,
+    val weightGrams: Long?,
+    val assistanceGrams: Long?,
+    val reps: Int?,
+    val rpeHalves: Int?,
+    val durationSeconds: Int?,
+    val setType: String?,
+)
 
 /** One workout's average RPE. */
 data class RpeTrendRow(
@@ -286,3 +345,48 @@ data class ExerciseTrendRowEntity(
     /** How long the set was held, or null for a counted set (ROADMAP N233, N220). */
     val durationSeconds: Int? = null,
 )
+
+/**
+ * One logged set as the stall rule reads it (ROADMAP N237), or null for a session exercise with no sets.
+ *
+ * The projection keeps `setType` as its stored name, so the name is resolved here — the same rule the record
+ * read follows, and an unknown name reads as a working set rather than being dropped.
+ */
+internal fun TemplateSessionSetRow.toPerformance(): ProgressionPerformance? {
+    val held = durationSeconds
+    val counted = reps ?: if (held == null) return null else 0
+    return ProgressionPerformance(
+        reps = counted,
+        weightGrams = weightGrams ?: 0L,
+        assistanceGrams = assistanceGrams ?: 0L,
+        rpeHalves = rpeHalves,
+        role = SetType.entries.firstOrNull { it.name == setType } ?: SetType.NORMAL,
+        durationSeconds = held,
+    )
+}
+
+/**
+ * The stall read's rows as sessions (ROADMAP N237): grouped by session, oldest first, and inside each one by
+ * the position the plan prescribed, with the sets in the order they were logged.
+ *
+ * Grouped here rather than in SQL because the grouping *is* the shape the rule reads — one entry per session
+ * that trained the movement, in order — and a `Map` built in Kotlin keeps that order explicit.
+ */
+internal fun List<TemplateSessionSetRow>.toTemplateSessions(): List<TemplateSession> =
+    groupBy { it.sessionId to it.startedAt }
+        .toSortedMap(compareBy({ it.second }, { it.first }))
+        .map { (session, sets) ->
+            TemplateSession(
+                sessionId = session.first,
+                startedAt = Instant.ofEpochMilli(session.second),
+                performed = sets
+                    .groupBy { it.exerciseId to it.position }
+                    .toSortedMap(compareBy({ it.second }, { it.first }))
+                    .map { (exercise, logged) ->
+                        PerformedExercise(
+                            exerciseId = exercise.first,
+                            sets = logged.mapNotNull { it.toPerformance() },
+                        )
+                    },
+            )
+        }

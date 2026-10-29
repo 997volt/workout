@@ -792,6 +792,14 @@ object TestTags {
         const val ACTIVE_CARD = "program_active_card"
         const val ADD_SLOT = "program_add_slot"
         const val NO_SLOTS = "program_no_slots"
+
+        /** A plan that stopped moving, and the way to a deload (ROADMAP N237). */
+        const val STALL = "program_stall"
+        const val STALL_DELOAD = "program_stall_deload"
+
+        /** A plan that stopped moving, and the way to a deload (ROADMAP N237). */
+        const val PROGRAM_STALL = "program_stall"
+        const val PROGRAM_STALL_DELOAD = "program_stall_deload"
         const val DELETE = "program_delete"
         const val DELETE_CONFIRM = "program_delete_confirm"
         const val PICKER = "program_template_picker"

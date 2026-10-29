@@ -25,6 +25,7 @@ import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.StatisticsRange
 import com.example.androidapp.domain.model.TapeSite
+import com.example.androidapp.domain.model.TemplateSession
 import com.example.androidapp.domain.model.TrendMetric
 import com.example.androidapp.domain.model.TrendPoint
 import com.example.androidapp.domain.model.WeightGoal
@@ -959,6 +960,12 @@ private class FakeTrendsRepository(
 
     override fun observeTrends(limit: Int): Flow<DataResult<List<TrendPoint>>> =
         flowOf(DataResult.Success(points))
+
+    /** The stall rule's read (ROADMAP N237), which this screen never asks for. */
+    override suspend fun templateSessions(
+        templateId: String,
+        limit: Int,
+    ): DataResult<List<TemplateSession>> = DataResult.Success(emptyList())
 
     override fun observeExerciseTrends(
         exerciseIds: List<String>,

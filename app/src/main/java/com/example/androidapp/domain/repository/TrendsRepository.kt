@@ -2,6 +2,7 @@ package com.example.androidapp.domain.repository
 
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.model.ExerciseTrendPoint
+import com.example.androidapp.domain.model.TemplateSession
 import com.example.androidapp.domain.model.TrendPoint
 import kotlinx.coroutines.flow.Flow
 
@@ -26,7 +27,6 @@ interface TrendsRepository {
         limit: Int = TREND_WINDOW,
     ): Flow<DataResult<List<ExerciseTrendPoint>>>
 
-
     /**
      * The most recent [limit] finished workouts that carry at least one signal,
      * **oldest first** — the order a chart is drawn in.
@@ -35,6 +35,19 @@ interface TrendsRepository {
      * message on the screen, not an exception lost inside the flow.
      */
     fun observeTrends(limit: Int = DEFAULT_LIMIT): Flow<DataResult<List<TrendPoint>>>
+
+    /**
+     * The last [limit] finished sessions started from [templateId], with the sets each exercise logged
+     * (ROADMAP N237).
+     *
+     * The stall rule's read: one plan's own sessions, oldest first. A session started from no template has no
+     * row here at all, which is the rule's own scope — the plan is what a deload is about, so a session that
+     * belongs to no plan cannot count for one.
+     */
+    suspend fun templateSessions(
+        templateId: String,
+        limit: Int = 12,
+    ): DataResult<List<TemplateSession>>
 
     companion object {
         /**

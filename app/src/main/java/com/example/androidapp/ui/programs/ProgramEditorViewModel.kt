@@ -8,13 +8,19 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.PlanStall
+import com.example.androidapp.domain.model.PrescriptionHistory
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.STALL_SESSIONS
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.model.progressionSets
+import com.example.androidapp.domain.model.stall
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
+import com.example.androidapp.domain.repository.TrendsRepository
 import com.example.androidapp.platform.DocumentIo
 import com.example.androidapp.ui.navigation.ProgramEditor
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,9 +31,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -74,6 +82,14 @@ data class ProgramEditorUiState(
      */
     val preview: SlotPreview? = null,
     val error: DataError? = null,
+    /**
+     * The first prescription in this program that has stopped moving, or null (ROADMAP N237).
+     *
+     * One sentence, not a list: the app is suggesting a week off, and a screen full of stalls would be a
+     * diagnosis where a suggestion was asked for. The button beside it opens the deload creator the program
+     * already has.
+     */
+    val stall: PlanStall? = null,
 ) {
     /** The program was deleted, or never existed — either way there is no editor. */
     val notFound: Boolean get() = !isLoading && program == null
@@ -91,6 +107,7 @@ data class ProgramEditorUiState(
 class ProgramEditorViewModel @Inject constructor(
     private val repository: ProgramRepository,
     private val templateRepository: TemplateRepository,
+    private val trends: TrendsRepository,
     private val documentIo: DocumentIo,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
@@ -172,11 +189,48 @@ class ProgramEditorViewModel @Inject constructor(
             preview = open.preview,
             error = currentError,
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-        initialValue = ProgramEditorUiState(),
-    )
+    }
+        // The stall is read from history rather than from a stored flag (N237): it is a pattern in the last few
+        // sessions, so it has to be recomputed after every one of them.
+        .combine(stallForProgram()) { state, stall -> state.copy(stall = stall) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = ProgramEditorUiState(),
+        )
+
+    /**
+     * The first stall among this program's plans, or null (ROADMAP N237).
+     *
+     * Read per slot's template rather than per movement, because the scope of the rule is the plan: the same
+     * movement on another day of the same program prescribes different work, and a session started from no
+     * template is not one of these.
+     */
+    private fun stallForProgram(): Flow<PlanStall?> =
+        repository.observeSlots(programId).mapLatest { slots ->
+            slots.mapNotNull { slot -> slot.templateId }
+                .distinct()
+                .firstNotNullOfOrNull { templateId -> stallForTemplate(templateId) }
+        }
+
+    /** One template's first stalled prescription, or null when none of its plans has stopped moving. */
+    private suspend fun stallForTemplate(templateId: String): PlanStall? {
+        val planned = templateRepository.observeExercises(templateId).first()
+        val sessions = (trends.templateSessions(templateId) as? DataResult.Success)?.data.orEmpty()
+        // Three sessions is the rule's own threshold (N237), and a plan with fewer cannot have one yet.
+        return planned.takeIf { it.isNotEmpty() && sessions.size >= STALL_SESSIONS }
+            ?.firstNotNullOfOrNull { exercise ->
+                // One entry per session that **trained** the movement: absence is not a failure (N237).
+                val performed = sessions.mapNotNull { session ->
+                    session.performed.firstOrNull { it.exerciseId == exercise.exerciseId }?.sets
+                }
+                PrescriptionHistory(
+                    exerciseName = exercise.exerciseName,
+                    planned = exercise.progressionSets(),
+                    performedBySession = performed,
+                ).stall()
+            }
+    }
 
     fun onRename(name: String) = write { repository.renameProgram(programId, name) }
 

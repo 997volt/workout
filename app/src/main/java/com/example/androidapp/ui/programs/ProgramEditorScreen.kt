@@ -218,6 +218,7 @@ fun ProgramEditorScreen(
             onRemoveSlot = onRemoveSlot,
             onOpenTemplate = onOpenTemplate,
             onPreviewSlot = onPreviewSlot,
+            onOpenDeload = onOpenDeload,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -426,6 +427,8 @@ private fun ProgramEditorBody(
     onRemoveSlot: (String) -> Unit,
     onOpenTemplate: (String) -> Unit,
     onPreviewSlot: (String, String) -> Unit,
+    /** Opens the deload creator this program already has (ROADMAP N237). */
+    onOpenDeload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (state.isLoading) {
@@ -452,6 +455,10 @@ private fun ProgramEditorBody(
             )
         }
         HorizontalDivider()
+
+        // A prescription that stopped moving, said where the program is read (N237). Nothing is written: the
+        // deload is a decision about a week of training, and this is the question.
+        state.stall?.let { stall -> PlanStallCard(stall = stall, onOpenDeload = onOpenDeload) }
 
         if (state.slots.isEmpty()) {
             CenteredMessage(

@@ -12,8 +12,10 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.PlanStall
 import com.example.androidapp.domain.model.ProgramKind
 import com.example.androidapp.domain.model.ProgramSlot
+import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutProgram
@@ -86,6 +88,39 @@ class ProgramEditorScreenTest {
                 onDismissTransferMessage = {},
             )
         }
+    }
+
+    @Test
+    fun aStalledPrescription_isSuggestedWithAWayToTheDeload() {
+        // ROADMAP N237: the app can already say what each set missed; this is the first thing it says about a
+        // pattern. It suggests — nothing is written — and the answer is the deload creator the program has.
+        var deload = false
+        setScreen(
+            state = twoSlots.copy(
+                stall = PlanStall(
+                    exerciseName = "Back Squat",
+                    setNumber = 2,
+                    kind = ProgressionMiss.REPS_SHORT,
+                    sessions = 3,
+                ),
+            ),
+            onOpenDeload = { deload = true },
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.STALL).assertExists()
+        composeTestRule.onNodeWithText("Set 2 came up short 3 sessions running.", substring = true)
+            .assertExists()
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.STALL_DELOAD).performClick()
+
+        assertThat(deload).isTrue()
+    }
+
+    @Test
+    fun aProgramWithNoStall_saysNothingAboutDeloading() {
+        setScreen(state = twoSlots)
+
+        composeTestRule.onNodeWithTag(TestTags.Programs.STALL).assertDoesNotExist()
     }
 
     @Test

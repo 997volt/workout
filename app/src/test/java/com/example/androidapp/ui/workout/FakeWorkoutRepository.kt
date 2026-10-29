@@ -71,6 +71,7 @@ internal class FakeWorkoutRepository : WorkoutRepository {
         muscleFeel: Int?,
         joints: List<JointPain>,
     ): DataResult<Unit> = unused()
+
     override suspend fun personalRecords(
         exerciseId: String,
         excludingSessionId: String?,
