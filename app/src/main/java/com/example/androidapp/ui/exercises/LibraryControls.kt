@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
@@ -122,16 +123,6 @@ private fun LibrarySort.label(): Int = when (this) {
     LibrarySort.LAST_TRAINED -> R.string.library_sort_last_trained
 }
 
-/** What one group is called, before its window and its count are read out (N231). */
-@StringRes
-private fun LibraryFilter.label(): Int = when (this) {
-    LibraryFilter.ALL -> R.string.library_filter_all
-    LibraryFilter.NOT_TRAINED -> R.string.library_filter_not_trained
-    LibraryFilter.BODYWEIGHT -> R.string.library_filter_bodyweight
-    LibraryFilter.TIMED -> R.string.library_filter_timed
-    LibraryFilter.UNFILED -> R.string.library_filter_unfiled
-}
-
 /**
  * What one group is called on its chip (ROADMAP N231).
  *
@@ -140,6 +131,15 @@ private fun LibraryFilter.label(): Int = when (this) {
  */
 @Composable
 private fun filterLabel(filter: LibraryFilter): String = when (filter) {
-    LibraryFilter.NOT_TRAINED -> stringResource(R.string.library_filter_not_trained, LIBRARY_NOT_TRAINED_DAYS)
-    else -> stringResource(filter.label())
+    LibraryFilter.ALL -> stringResource(R.string.library_filter_all)
+    // A plural rather than a string with a number in it: the window is a count of days, and a translation
+    // has to be able to say one of them (N231).
+    LibraryFilter.NOT_TRAINED -> pluralStringResource(
+        R.plurals.library_filter_not_trained,
+        LIBRARY_NOT_TRAINED_DAYS.toInt(),
+        LIBRARY_NOT_TRAINED_DAYS,
+    )
+    LibraryFilter.BODYWEIGHT -> stringResource(R.string.library_filter_bodyweight)
+    LibraryFilter.TIMED -> stringResource(R.string.library_filter_timed)
+    LibraryFilter.UNFILED -> stringResource(R.string.library_filter_unfiled)
 }

@@ -10,7 +10,6 @@
     <string name="exercise_category_none">Not filed under anything</string>
     <!-- The library's order (ROADMAP N230). The button says the order it is rather than "Sort", so the
          control's state is on screen and the menu is the only thing that opens. -->
-    <string name="library_sort_label">Order</string>
     <string name="library_sort_name">Name</string>
     <string name="library_sort_last_trained">Last trained</string>
     <string name="library_sort_menu">Choose the library\'s order</string>
@@ -18,7 +17,10 @@
     <!-- The groups the library is narrowed by (ROADMAP N231). The chip states the window it means, and the
          number is the group's size from the whole library rather than the search's result. -->
     <string name="library_filter_all">All</string>
-    <string name="library_filter_not_trained">Not trained in %1$d days</string>
+    <plurals name="library_filter_not_trained">
+        <item quantity="one">Not trained in %1$d day</item>
+        <item quantity="other">Not trained in %1$d days</item>
+    </plurals>
     <string name="library_filter_bodyweight">Bodyweight</string>
     <string name="library_filter_timed">Timed</string>
     <string name="library_filter_unfiled">Unfiled</string>
@@ -79,6 +81,12 @@
     <string name="exercise_new">New exercise</string>
     <string name="exercise_name_label">Name</string>
     <string name="exercise_new_add">Add</string>
+    <!-- A movement made from the library, which is where a plan is authored (ROADMAP N232). -->
+    <string name="exercise_new_movement">New movement</string>
+    <string name="library_create">Create</string>
+    <string name="exercise_new_family">File under</string>
+    <string name="exercise_new_family_none">No family</string>
+    <string name="exercise_new_from_search">Create “%1$s”</string>
     <string name="exercise_new_hint">You can set the muscle, equipment and pattern later.</string>
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>

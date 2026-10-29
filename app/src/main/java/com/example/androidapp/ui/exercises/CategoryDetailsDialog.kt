@@ -12,6 +12,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.LibraryRow
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.TestTags
@@ -90,4 +91,22 @@ private fun CategoryFact(label: String, value: String) {
         )
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
+}
+
+/**
+ * The details dialog for one family, or nothing when the row is gone (ROADMAP N117, N228).
+ *
+ * Split from the screen because resolving what to show is the list's question rather than the screen's: a
+ * family that was removed, or filtered out by a query, simply draws nothing.
+ */
+@Composable
+internal fun CategoryDetailsHost(
+    rows: List<LibraryRow>,
+    exercises: List<Exercise>,
+    id: String?,
+    onDismiss: () -> Unit,
+) {
+    val row = id?.let { wanted -> rows.firstOrNull { it.id == wanted } } ?: return
+    val exercise = id.let { wanted -> exercises.firstOrNull { it.id == wanted } } ?: return
+    CategoryDetailsDialog(exercise = exercise, movementCount = row.childCount, onDismiss = onDismiss)
 }

@@ -3,6 +3,7 @@ package com.example.androidapp.ui.exercises
 import android.content.Context
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasSetTextAction
@@ -103,6 +104,7 @@ class ExerciseLibraryScreenTest {
             onNewCategory = { created = it },
         )
 
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_CREATE).performClick()
         composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_CATEGORY).performClick()
         composeTestRule.onNodeWithTag(TestTags.NEW_CATEGORY_NAME).performTextInput("Press")
         composeTestRule.onNodeWithTag(TestTags.NEW_CATEGORY_SAVE).performClick()
@@ -149,6 +151,7 @@ class ExerciseLibraryScreenTest {
                 onDismissMessage = {},
                 onSortChange = { chosen = it },
                 onFilterChange = {},
+                onCreateMovement = { _, _ -> },
             )
         }
 
@@ -182,6 +185,7 @@ class ExerciseLibraryScreenTest {
                 onDismissMessage = {},
                 onSortChange = {},
                 onFilterChange = { chosen = it },
+                onCreateMovement = { _, _ -> },
             )
         }
 
@@ -350,6 +354,7 @@ class ExerciseLibraryScreenTest {
                     onDismissMessage = {},
                     onSortChange = {},
                     onFilterChange = {},
+                    onCreateMovement = { _, _ -> },
                 )
             }
             return
@@ -382,6 +387,7 @@ class ExerciseLibraryScreenTest {
                 onDismissMessage = {},
                 onSortChange = {},
                 onFilterChange = {},
+                onCreateMovement = { _, _ -> },
             )
         }
     }
@@ -456,16 +462,66 @@ class ExerciseLibraryScreenTest {
     }
 
     @Test
-    fun theLibrary_neverOffersANewMovement() {
-        // Making a movement is the in-workout picker's action now (B94): the library is where the library's
-        // shape is kept, and its one action is a category.
-        setScreen(
-            ExerciseLibraryUiState(isLoading = false, exercises = items),
-            onNewCategory = {},
-        )
+    fun theLibrary_offersAMovement_andTheNameTheSearchDidNotFind() {
+        // ROADMAP N232, which reverses B94: planning a lift you have never trained is where the gap is felt
+        // second, and the library is the screen you are on. The name in the search is the movement's name.
+        var made: Pair<String, String?>? = null
+        composeTestRule.setContent {
+            val current = remember { mutableStateOf(ExerciseLibraryUiState(isLoading = false, exercises = items)) }
+            ExerciseLibraryScreen(
+                state = current.value,
+                title = "Exercise library",
+                onQueryChange = { typed -> current.value = current.value.copy(query = typed) },
+                onExerciseClick = {},
+                onDismissMessage = {},
+                onSortChange = {},
+                onFilterChange = {},
+                onCreateMovement = { name, family -> made = name to family },
+                onNewCategory = {},
+            )
+        }
 
-        composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_EXERCISE).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_CATEGORY).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_CREATE).performClick()
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_NEW_EXERCISE).performClick()
+
+        // The dialog opens on nothing where the search is empty, and Create is the way through it.
+        composeTestRule.onNodeWithTag(TestTags.NEW_MOVEMENT_NAME).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.NEW_MOVEMENT_NAME).performTextInput("Sled Push")
+        composeTestRule.onNodeWithTag(TestTags.NEW_MOVEMENT_SAVE).performClick()
+
+        assertEquals("Sled Push" to null, made)
+    }
+
+    @Test
+    fun aSearchWithNoHits_offersToMakeWhatWasTyped() {
+        var made: Pair<String, String?>? = null
+        composeTestRule.setContent {
+            val current = remember { mutableStateOf(ExerciseLibraryUiState(isLoading = false, exercises = items)) }
+            ExerciseLibraryScreen(
+                state = current.value,
+                title = "Exercise library",
+                onQueryChange = { typed -> current.value = current.value.copy(query = typed) },
+                onExerciseClick = {},
+                onDismissMessage = {},
+                onSortChange = {},
+                onFilterChange = {},
+                onCreateMovement = { name, family -> made = name to family },
+            )
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_SEARCH_FIELD).performTextInput("front squat")
+        composeTestRule.onNodeWithTag(TestTags.LIBRARY_CREATE_FROM_SEARCH).performClick()
+
+        // The field already holds the name, so one tap and Create is the whole gesture.
+        assertEquals("front squat", nameInDialog())
+        composeTestRule.onNodeWithTag(TestTags.NEW_MOVEMENT_SAVE).performClick()
+        assertEquals("front squat" to null, made)
+    }
+
+    /** The new movement dialog's name field, read back as the text it opened on (N232). */
+    private fun nameInDialog(): String {
+        val node = composeTestRule.onNodeWithTag(TestTags.NEW_MOVEMENT_NAME).fetchSemanticsNode()
+        return node.config[SemanticsProperties.EditableText].text
     }
 
     @Test

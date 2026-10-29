@@ -17,35 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-The library's three working rows (N230–N232) are being built: a sort that reads the last trained date, filter chips
-that narrow the same list the search narrows, and a movement made from the library rather than from a workout.
-
-**N230 — the library can be sorted, and says when a lift was last trained.** Order is alphabetical by family and
-then by movement, and nothing offers another order. A sort control adds *Last trained*, backed by one new read: the
-newest finished session that names each movement — the trends read already answers this for the lifts it was asked
-about, but only for those ids, so the library needs its own grouped query. A family takes its most recently trained
-member, and a lift never trained sorts last rather than first, so the answer to "what have I not done" is a list
-you can read from the bottom. The default stays alphabetical, so a lifter who never opens the control sees the
-library they have. This read is what N231's chip and N233's section need too, which is why it lands first.
-
-**N231 — filters narrow the library, and compose with the search.** A row of chips above the list: *All*,
-*Not trained in 30 days*, *Bodyweight*, *Timed*, *Unfiled*. Each carries its count from the whole library, an empty
-selection falls back to *All* rather than drawing a blank list under a selected chip, and **the search applies
-inside the chosen chip** — the two narrow the same list rather than replacing one another, so "bench" inside
-*Bodyweight* is the question a lifter actually has. The chip states the window it means ("Not trained in 30 days")
-rather than being called *Stale*, and *Unfiled* is the one group an earlier row (N229) shrinks rather than empties.
-Rejected: the templates list's rule, where a mode draws its group *instead of* the live list (N217) — a filter and
-a search answer the same question, and a list that replaced itself would make the other one disappear without
-saying so.
-
-**N232 — a movement can be made from the library.** Making a movement lives in the workout picker (N2, B94) because
-the gap is felt mid-session, and the library only makes families — so planning a lift you have never trained, which
-is the one place you would want it, forces a workout first. The library's action gains *New movement*, reusing the
-picker's dialog, and when the query found nothing the action offers to create exactly what was typed: "no exercises
-match *front squat*" becomes one tap. The dialog also takes an optional family, because an unfiled movement is the
-shape N229 exists to clean up and creating more of them in silence is the wrong direction. Rejected: leaving
-creation to the picker alone, which is a rule about where the gap is *felt* and not a claim that it is never felt
-while planning.
+Nothing is in flight. The last group (N230–N232) shipped: the library can be sorted by when a lift was last
+trained, narrowed by filters that compose with its search, and it can make a movement as well as a family.
 
 ## Later — decided, and not being started
 

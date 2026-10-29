@@ -223,6 +223,32 @@ class ExerciseLibraryViewModel @Inject constructor(
     }
 
     /**
+     * Makes a movement, filed while it is made (ROADMAP N232).
+     *
+     * Two writes rather than one, in the order that keeps the library valid: the movement exists before
+     * anything points at it, so a failed filing leaves a usable unfiled movement rather than a dangling
+     * reference — and the failure is said, because the movement a lifter asked for did arrive.
+     */
+    fun onCreateMovement(name: String, familyId: String?) {
+        viewModelScope.launch {
+            when (val created = exerciseRepository.createCustomExercise(name)) {
+                is DataResult.Failure -> error.value = created.error
+                is DataResult.Success -> {
+                    error.value = when (
+                        val filed = familyId?.let {
+                            exerciseRepository.updateExercise(created.data.copy(parentId = it))
+                        }
+                    ) {
+                        null -> null
+                        is DataResult.Success -> null
+                        is DataResult.Failure -> filed.error
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Makes a family for the lifter's own movements (ROADMAP N95).
      *
      * The seeded families are a starting set rather than a closed one, so without this a custom movement

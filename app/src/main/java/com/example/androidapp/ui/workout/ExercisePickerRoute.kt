@@ -66,7 +66,7 @@ fun ExercisePickerRoute(
                 naming = false
                 viewModel.onErrorShown()
             },
-            onCreate = viewModel::onCreateExercise,
+            onCreate = { name, _ -> viewModel.onCreateExercise(name) },
         )
     }
 }

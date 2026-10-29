@@ -10,11 +10,16 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
-import java.io.IOException
+import com.example.androidapp.domain.model.Equipment
+import com.example.androidapp.domain.model.Exercise
+import com.example.androidapp.domain.model.MovementPattern
+import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.RowKind
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
 
 /**
  * The name-only creation dialog (ROADMAP N2).
@@ -29,6 +34,7 @@ class NewExerciseDialogTest {
     val composeTestRule = createComposeRule()
 
     private var created: String? = null
+    private var createdFamily: String? = null
     private var dismissed = false
 
     private fun show(error: DataError? = null) {
@@ -36,7 +42,10 @@ class NewExerciseDialogTest {
             NewExerciseDialog(
                 error = error,
                 onDismiss = { dismissed = true },
-                onCreate = { created = it },
+                onCreate = { name, family ->
+                    created = name
+                    createdFamily = family
+                },
             )
         }
     }
@@ -69,6 +78,42 @@ class NewExerciseDialogTest {
         composeTestRule.onNodeWithTag(TestTags.NEW_EXERCISE_SAVE).performClick()
 
         assertEquals("Sled Push", created)
+    }
+
+    @Test
+    fun aFamilyCanBeChosen_whileTheMovementIsMade() {
+        // ROADMAP N232: filing happens here rather than after, because an unfiled movement is the shape the
+        // library's filters exist for.
+        composeTestRule.setContent {
+            NewExerciseDialog(
+                error = null,
+                onDismiss = { dismissed = true },
+                onCreate = { name, family ->
+                    created = name
+                    createdFamily = family
+                },
+                families = listOf(
+                    Exercise(
+                        id = "cat-bench",
+                        name = "Bench Press",
+                        primaryMuscle = MuscleGroup.CHEST,
+                        equipment = Equipment.OTHER,
+                        movementPattern = MovementPattern.PRESS,
+                        rowKind = RowKind.CATEGORY,
+                    ),
+                ),
+            )
+        }
+
+        composeTestRule.onNodeWithTag(TestTags.NEW_EXERCISE_NAME).performTextInput("Front Squat")
+        // Nothing chosen is the default, and it means "no family" rather than "not decided".
+        composeTestRule.onNodeWithTag(TestTags.NEW_EXERCISE_FAMILY_NONE).assertIsDisplayed()
+        // A family is one tap, and choosing it is what the two writes are for.
+        composeTestRule.onNodeWithTag(TestTags.newExerciseFamily("cat-bench")).performClick()
+        composeTestRule.onNodeWithTag(TestTags.NEW_EXERCISE_SAVE).performClick()
+
+        assertEquals("Front Squat", created)
+        assertEquals("cat-bench", createdFamily)
     }
 
     @Test

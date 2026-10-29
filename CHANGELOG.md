@@ -17,6 +17,30 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **The library can be sorted by when a lift was last trained** (N230). Order was alphabetical by family and then
+  by movement, and nothing offered another, so the one question the list could not answer was "what have I not
+  done". A control names the order it is — *Name* or *Last trained* — and the default stays alphabetical, so a
+  lifter who never opens it sees the library they have. Last trained is one new read for the whole library: the
+  newest **finished** session naming each movement, because a session opened and abandoned is not training. A
+  family takes its most recently trained member's place, a lift never trained sorts last, and a tie falls back to
+  the name so the order does not depend on what the database returned. A read that failed is a message rather
+  than the page — but it is never shown as "never trained", which would be a claim about the training.
+
+- **Filters narrow the library inside its search** (N231). A row of chips over the list: *All*, *Not trained in 30
+  days*, *Bodyweight*, *Timed*, *Unfiled*, each carrying its group's size from the whole library so the number does
+  not move while a query is typed. The search applies **inside** the chosen group, because "bench" inside
+  *Bodyweight* is the question a lifter actually has, and the two controls narrow one list rather than replacing
+  one another. The group applies to movements, so a family is a row when the movements under it matched — a family
+  is not bodyweight and is never trained. A chip whose group is empty is not drawn, and a group that empties while
+  selected falls back to *All* rather than leaving a blank list under a chosen chip.
+
+- **A movement can be made from the library** (N232). Creation lived in the workout picker alone, on the rule that
+  the gap is felt mid-session — but planning a lift you have never trained is the other place it is felt, and there
+  the library is the screen in front of you. The library's action is now a menu: a movement, and the family it has
+  always made. A search that found nothing offers to create exactly what was typed, so "no exercises match *front
+  squat*" is one tap from the movement. The dialog also files it while it is made, because an unfiled movement is
+  the shape the library's filters exist to clean up.
+
 - **A lift is found by how it is said, not only by its name** (N224). Search was substring containment over the name
   and the taxonomy, so *Barbell Bench Press* answered "bench" and not "bench pr", "bbp" or "pullup" — and the words a
   lifter types are the ones that come out of a session. Three rules now share one normalised query: the name compared
@@ -60,6 +84,10 @@ id a 1.x commit names is still looked up by it. This file carries the current re
   power and the family's quads would be a fact invented about the movement.
 
 ### Changed
+
+- **The library makes movements, which it used to refuse** (N232, reversing B94). The old rule sent creation to the
+  workout picker alone; planning a lift you have never trained is where it is felt second, and that screen is the
+  library.
 
 - **The seeded library files its movements, and one deadlift means one lift** (N229). Eight of the seed's movements sat
   at the top level, so a fresh install drew a flat alphabetical pile of loose lifts under its families. A face pull is

@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -19,22 +18,14 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,28 +38,22 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.androidapp.R
-import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.LibraryFilter
 import com.example.androidapp.domain.LibraryRow
 import com.example.androidapp.domain.LibrarySort
-import com.example.androidapp.domain.changedFamilies
-import com.example.androidapp.domain.libraryRows
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.ui.components.AppRow
+import com.example.androidapp.ui.components.AppTextButton
 import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.IconTile
-import com.example.androidapp.ui.components.MessageSnackbar
-import com.example.androidapp.ui.components.NewExerciseDialog
-import com.example.androidapp.ui.components.NewRowTags
 import com.example.androidapp.ui.components.RowFold
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.TopBarTitle
 import com.example.androidapp.ui.components.dataErrorMessage
-import com.example.androidapp.ui.components.rememberRowFold
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.theme.TileAccent
 
@@ -99,6 +84,7 @@ fun ExerciseLibraryRoute(
         message = (state.writeError ?: state.lastTrainedError)?.let { dataErrorMessage(it) },
         onSortChange = viewModel::onSortChange,
         onFilterChange = viewModel::onFilterChange,
+        onCreateMovement = viewModel::onCreateMovement,
         onNewCategory = viewModel::onCreateCategory,
         onDismissMessage = viewModel::onErrorShown,
         modifier = modifier,
@@ -126,108 +112,34 @@ fun ExerciseLibraryScreen(
     onSortChange: (LibrarySort) -> Unit,
     /** The group the list is narrowed to (ROADMAP N231). */
     onFilterChange: (LibraryFilter) -> Unit,
+    /** Makes a movement, filed under the family or nowhere (ROADMAP N232). */
+    onCreateMovement: (String, String?) -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
     message: String? = null,
     /** Makes a family (ROADMAP N95). Set on the library, which is where the library's shape is kept. */
     onNewCategory: ((String) -> Unit)? = null,
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
-    var namingCategory by remember { mutableStateOf(false) }
-    // Which family's details are open, if any (ROADMAP N117). Held by id rather than by row so a delete or a
-    // rename behind the dialog cannot leave it showing a stale copy.
-    var detailsFor by rememberSaveable { mutableStateOf<String?>(null) }
-
-    // Which families are open is screen state (N95), and `rememberRowFold` is the sharing state N91 built:
-    // no `configChanges`, so a rotation would otherwise fold what the lifter opened. **Every family starts
-    // folded**, so the library opens as the list of families it is rather than as a wall of movements —
-    // which is also why the editor's "what was already there is folded, what arrives opens" seed is not
-    // wanted here: this list loads asynchronously, so nothing would look "already there" (RowFold.kt). A
-    // **query** opens what it draws, and `libraryRows` is where that rule lives.
-    val fold = rememberRowFold(ids = state.exercises.map { it.id }, newRowsOpen = false)
-    // A family whose membership changed opens, once, so filing a movement is not a count changing on a
-    // folded row and nothing else (N228).
-    OpenFamiliesThatChanged(exercises = state.exercises, fold = fold)
-    val rows = rememberLibraryRows(state = state, fold = fold)
-    MessageSnackbar(message, snackbarHostState, onDismissMessage)
-
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            // Only the picker offers creation: the library is a reference you navigate to, while the gap
-            // is felt mid-workout (ROADMAP N2). A composable rather than an `if` here, because the screen
-            // is at the length this project allows.
-            NewExerciseButton(
-                onNewCategory = onNewCategory?.let { { namingCategory = true } },
-            )
-        },
-        topBar = { LibraryTopBar(title = title, onBack = onBack) },
-    ) { innerPadding ->
-        LibraryBody(
-            state = state,
-            rows = rows,
-            fold = fold,
-            onQueryChange = onQueryChange,
-            onSortChange = onSortChange,
-            onFilterChange = onFilterChange,
-            onExerciseClick = onExerciseClick,
-            onCategoryDetails = { detailsFor = it },
-            modifier = Modifier.padding(innerPadding),
-        )
-    }
-
-    // The row the hold was made on, resolved from what the list is showing: a family that has gone since —
-    // removed, or filtered out by a query — simply draws nothing.
-    val detailed = detailsFor?.let { id -> rows.firstOrNull { it.id == id } }
-    val detailedExercise = detailsFor?.let { id -> state.exercises.firstOrNull { it.id == id } }
-    if (detailed != null && detailedExercise != null) {
-        CategoryDetailsDialog(
-            exercise = detailedExercise,
-            movementCount = detailed.childCount,
-            onDismiss = { detailsFor = null },
-        )
-    }
-
-    NamingDialog(
-        isOpen = namingCategory,
-        error = state.writeError,
-        onDismiss = {
-            namingCategory = false
-            onDismissMessage()
-        },
-        onCreate = { name ->
-            namingCategory = false
-            onNewCategory?.invoke(name)
-        },
+    LibraryContentHost(
+        state = state,
+        title = title,
+        message = message,
+        onBack = onBack,
+        onQueryChange = onQueryChange,
+        onSortChange = onSortChange,
+        onFilterChange = onFilterChange,
+        onExerciseClick = onExerciseClick,
+        onDismissMessage = onDismissMessage,
+        onCreateMovement = onCreateMovement,
+        onNewCategory = onNewCategory,
+        modifier = modifier,
     )
-}
-
-/**
- * Opens the family a movement joined or left (ROADMAP N228).
- *
- * The comparison runs on the composition after the change, which is why the previous memberships are kept
- * here rather than derived: what the screen needs is the difference from what it drew, and the library's list
- * arrives from the database already grouped.
- *
- * **`remember` rather than `rememberSaveable`**: the folds are what survive a rotation (N84), and a compare
- * map restored across one would describe a screen that no longer exists — an empty map is the honest answer,
- * because after a rotation nothing has changed yet.
- */
-@Composable
-private fun OpenFamiliesThatChanged(exercises: List<Exercise>, fold: RowFold) {
-    var previous by remember { mutableStateOf<Map<String, String?>>(emptyMap()) }
-    LaunchedEffect(exercises) {
-        val changed = changedFamilies(previous, exercises)
-        previous = exercises.filter { it.rowKind == RowKind.MOVEMENT }.associate { it.id to it.parentId }
-        changed.forEach(fold::open)
-    }
 }
 
 /** The screen's bar, split out so the screen stays inside the length this project allows. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LibraryTopBar(title: String, onBack: (() -> Unit)?) {
+internal fun LibraryTopBar(title: String, onBack: (() -> Unit)?) {
     CenterAlignedTopAppBar(
         title = { TopBarTitle(text = title, testTag = TestTags.LIBRARY_TITLE) },
         navigationIcon = {
@@ -251,13 +163,14 @@ private fun LibraryTopBar(title: String, onBack: (() -> Unit)?) {
  * states, or a broken read would be reported as an empty library (B4).
  */
 @Composable
-private fun LibraryBody(
+internal fun LibraryBody(
     state: ExerciseLibraryUiState,
     rows: List<LibraryRow>,
     fold: RowFold,
     onQueryChange: (String) -> Unit,
     onSortChange: (LibrarySort) -> Unit,
     onFilterChange: (LibraryFilter) -> Unit,
+    onNewMovement: () -> Unit,
     onExerciseClick: (String) -> Unit,
     onCategoryDetails: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -280,7 +193,12 @@ private fun LibraryBody(
                 modifier = Modifier.testTag(TestTags.LIBRARY_READ_ERROR),
             )
 
-            state.isEmpty -> EmptyState(query = state.query, libraryIsEmpty = state.libraryIsEmpty)
+            state.isEmpty -> EmptyState(
+                query = state.query,
+                libraryIsEmpty = state.libraryIsEmpty,
+                // One tap from "no exercises match front squat" to making it (N232).
+                onCreate = if (state.query.isBlank()) null else { { onNewMovement() } },
+            )
 
             else -> ExerciseList(
                 items = rows,
@@ -290,42 +208,6 @@ private fun LibraryBody(
             )
         }
     }
-}
-
-/** The one dialog this screen opens, split out so the screen stays inside the length this project allows. */
-@Composable
-private fun NamingDialog(
-    isOpen: Boolean,
-    error: DataError?,
-    onDismiss: () -> Unit,
-    onCreate: (String) -> Unit,
-) {
-    if (!isOpen) return
-    NewExerciseDialog(
-        error = error,
-        onDismiss = onDismiss,
-        onCreate = onCreate,
-        title = stringResource(R.string.exercise_new_category),
-        hint = stringResource(R.string.exercise_new_category_hint),
-        testTags = NewRowTags(TestTags.NEW_CATEGORY_NAME, TestTags.NEW_CATEGORY_SAVE),
-    )
-}
-
-/**
- * The library's one action: a new category (ROADMAP N95).
- *
- * Making a *movement* moved to the picker (B94): the library is where the library's shape is kept, and the
- * gap a new movement fills is felt mid-workout, which is the picker's screen now.
- */
-@Composable
-private fun NewExerciseButton(onNewCategory: (() -> Unit)?) {
-    if (onNewCategory == null) return
-    ExtendedFloatingActionButton(
-        onClick = onNewCategory,
-        text = { Text(stringResource(R.string.exercise_new_category)) },
-        icon = { Icon(imageVector = Icons.Filled.Add, contentDescription = null) },
-        modifier = Modifier.testTag(TestTags.LIBRARY_NEW_CATEGORY),
-    )
 }
 
 @Composable
@@ -349,6 +231,8 @@ internal fun EmptyState(
     query: String,
     libraryIsEmpty: Boolean,
     modifier: Modifier = Modifier,
+    /** Offered where the search named a movement that is not there — the name is what would be made (N232). */
+    onCreate: (() -> Unit)? = null,
 ) {
     // An empty library and a search with no hits look the same unless the screen
     // distinguishes them, and the user's next move differs: one wants the search
@@ -364,6 +248,17 @@ internal fun EmptyState(
             text = stringResource(R.string.exercise_library_empty, query),
             textStyle = MaterialTheme.typography.bodyLarge,
             modifier = modifier.testTag(TestTags.LIBRARY_NO_MATCH),
+            // The message's own slot: a control beside it would be drawn off the bottom of the screen.
+            action = onCreate?.let { create ->
+                {
+                    AppTextButton(
+                        onClick = create,
+                        modifier = Modifier.testTag(TestTags.LIBRARY_CREATE_FROM_SEARCH),
+                    ) {
+                        Text(stringResource(R.string.exercise_new_from_search, query))
+                    }
+                }
+            },
         )
     }
 }
@@ -374,38 +269,6 @@ internal fun EmptyState(
  * Reads the clock — and is the only composable here that does, so the one-second
  * tick stops at this button instead of rebuilding the list beneath it.
  */
-/**
- * The grouped rows for this state, recomputed only when something that decides them changes.
- *
- * Split out of the screen because the screen is at the length this project allows and because this is the
- * list-builder's one call: the folds, the search, the order and the read are all inputs to one pure function.
- */
-@Composable
-private fun rememberLibraryRows(state: ExerciseLibraryUiState, fold: RowFold): List<LibraryRow> =
-    remember(
-        state.exercises,
-        state.query,
-        fold.foldedIds,
-        state.removedHeads,
-        state.sort,
-        state.lastTrained,
-        state.filter,
-        state.notTrainedSince,
-    ) {
-        libraryRows(
-            exercises = state.exercises,
-            query = state.query,
-            foldedCategories = fold.foldedIds,
-            // The fuller map, so a child reads what a head passed down even after that head is removed. The
-            // list still draws only what `state.exercises` holds: a removed row is never a row (N95).
-            headResolver = state.exercises + state.removedHeads.values,
-            sort = state.sort,
-            lastTrained = state.lastTrained,
-            filter = state.filter,
-            notTrainedSince = state.notTrainedSince,
-        )
-    }
-
 /** The library's search box, split out so the screen composable stays readable. */
 @Composable
 internal fun LibrarySearchField(
@@ -631,6 +494,7 @@ private fun ExerciseLibraryScreenPreview() {
             onDismissMessage = {},
             onSortChange = {},
             onFilterChange = {},
+            onCreateMovement = { _, _ -> },
         )
     }
 }
@@ -647,6 +511,7 @@ private fun ExerciseLibraryEmptyPreview() {
             onDismissMessage = {},
             onSortChange = {},
             onFilterChange = {},
+            onCreateMovement = { _, _ -> },
         )
     }
 }

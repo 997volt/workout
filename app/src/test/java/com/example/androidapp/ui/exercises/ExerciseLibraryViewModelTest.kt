@@ -138,8 +138,24 @@ class ExerciseLibraryViewModelTest {
                 DataResult.Success(state.value.firstOrNull { it.id == id })
             }
 
-        override suspend fun createCustomExercise(name: String): DataResult<Exercise> =
-            error("the library screen must not create exercises")
+        /** Every movement the screen asked for, as the name and the family it was filed under (N232). */
+        val created = mutableListOf<Pair<String, String?>>()
+
+        /** Lets a test drive a filing that did not land: the movement exists, the family does not (N232). */
+        var failFiling = false
+
+        override suspend fun createCustomExercise(name: String): DataResult<Exercise> {
+            val exercise = Exercise(
+                id = "custom-new",
+                name = name,
+                primaryMuscle = MuscleGroup.OTHER,
+                equipment = Equipment.OTHER,
+                movementPattern = MovementPattern.OTHER,
+            )
+            created += name to null
+            state.value = state.value + exercise
+            return DataResult.Success(exercise)
+        }
 
         override suspend fun createCategory(name: String): DataResult<Exercise> =
             if (failWrites) {
@@ -173,8 +189,16 @@ class ExerciseLibraryViewModelTest {
         override suspend fun getAllIncludingDeleted(): DataResult<List<Exercise>> =
             DataResult.Success(state.value)
 
-        override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> =
-            error("the library screen must not edit exercises")
+        override suspend fun updateExercise(exercise: Exercise): DataResult<Unit> = when {
+            // A filing is a write to the library: the row it changed replaces the one the fake held.
+            exercise.parentId == null -> DataResult.Success(Unit)
+            failFiling -> DataResult.Failure(DataError.Storage(IOException("disk full")))
+            else -> {
+                created[created.lastIndex] = created.last().first to exercise.parentId
+                state.value = state.value.map { if (it.id == exercise.id) exercise else it }
+                DataResult.Success(Unit)
+            }
+        }
     }
 
     private companion object {
@@ -191,6 +215,14 @@ class ExerciseLibraryViewModelTest {
             primaryMuscle = MuscleGroup.CHEST,
             equipment = Equipment.BARBELL,
             movementPattern = MovementPattern.PRESS,
+        )
+        val cat = Exercise(
+            id = "cat-bench",
+            name = "Bench Press",
+            primaryMuscle = MuscleGroup.CHEST,
+            equipment = Equipment.OTHER,
+            movementPattern = MovementPattern.PRESS,
+            rowKind = RowKind.CATEGORY,
         )
         val custom = Exercise(
             id = "custom-1",
@@ -262,6 +294,55 @@ class ExerciseLibraryViewModelTest {
 
         assertNotNull(viewModel.uiState.value.lastTrainedError)
         assertTrue("nothing is claimed about any lift", viewModel.uiState.value.lastTrained.isEmpty())
+    }
+
+    @Test
+    fun aMovementMadeFromTheLibrary_isFiledWhileItIsMade() = runTest(dispatcher) {
+        // ROADMAP N232: two writes in the order that keeps the library valid, and the family is the second.
+        val repository = FakeRepository(listOf(cat))
+        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository, timeSource = { Instant.EPOCH })
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onCreateMovement("Front Squat", familyId = "cat-bench")
+        advanceUntilIdle()
+
+        assertEquals(listOf("Front Squat" to "cat-bench"), repository.created)
+        assertNull("nothing failed", viewModel.uiState.value.writeError)
+        assertTrue(
+            "and the library holds it filed",
+            viewModel.uiState.value.exercises.any { it.id == "custom-new" && it.parentId == "cat-bench" },
+        )
+    }
+
+    @Test
+    fun aMovementWithNoFamily_isMadeAndLeftUnfiled() = runTest(dispatcher) {
+        val repository = FakeRepository(listOf(cat))
+        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository, timeSource = { Instant.EPOCH })
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onCreateMovement("Sled Push", familyId = null)
+        advanceUntilIdle()
+
+        assertEquals(listOf("Sled Push" to null), repository.created)
+        assertTrue(viewModel.uiState.value.exercises.any { it.id == "custom-new" && it.parentId == null })
+    }
+
+    @Test
+    fun aFilingThatFails_isSaid_andTheMovementStays() = runTest(dispatcher) {
+        // The movement is the action the lifter took; a family that did not land leaves a usable unfiled row
+        // rather than losing it — and the failure is a message, not a silent no-op (B88's rule).
+        val repository = FakeRepository(listOf(cat)).apply { failFiling = true }
+        val viewModel = ExerciseLibraryViewModel(exerciseRepository = repository, timeSource = { Instant.EPOCH })
+        observe(viewModel)
+        advanceUntilIdle()
+
+        viewModel.onCreateMovement("Front Squat", familyId = "cat-bench")
+        advanceUntilIdle()
+
+        assertNotNull("the failure is said", viewModel.uiState.value.writeError)
+        assertTrue("and the movement arrived", viewModel.uiState.value.exercises.any { it.id == "custom-new" })
     }
 
     private fun viewModelFor(vararg exercises: Exercise) = ExerciseLibraryViewModel(

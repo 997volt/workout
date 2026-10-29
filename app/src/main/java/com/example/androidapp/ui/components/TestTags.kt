@@ -311,6 +311,10 @@ object TestTags {
     const val LIBRARY_NEW_EXERCISE = "library_new_exercise"
     const val NEW_EXERCISE_NAME = "new_exercise_name"
     const val NEW_EXERCISE_SAVE = "new_exercise_save"
+
+    /** The family a new movement is filed under while it is made (ROADMAP N232). */
+    const val NEW_EXERCISE_FAMILY_NONE = "new_exercise_family_none"
+    fun newExerciseFamily(familyId: String) = "new_exercise_family_$familyId"
     const val NEW_EXERCISE_CANCEL = "new_exercise_cancel"
 
     /** The exercise detail screen's edit mode (ROADMAP N2, N5). */
@@ -338,6 +342,14 @@ object TestTags {
 
     /** Makes a category of the lifter's own (ROADMAP N95): the action, its name field and its save. */
     const val LIBRARY_NEW_CATEGORY = "library_new_category"
+
+    /** The action that makes a movement or a family (ROADMAP N232), and the movement dialog it opens. */
+    const val LIBRARY_CREATE = "library_create"
+
+    /** The empty search that offers to make what was typed (ROADMAP N232). */
+    const val LIBRARY_CREATE_FROM_SEARCH = "library_create_from_search"
+    const val NEW_MOVEMENT_NAME = "new_movement_name"
+    const val NEW_MOVEMENT_SAVE = "new_movement_save"
     const val NEW_CATEGORY_NAME = "new_category_name"
     const val NEW_CATEGORY_SAVE = "new_category_save"
 
