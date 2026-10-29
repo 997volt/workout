@@ -110,6 +110,26 @@ class SeedExercisesTest {
     }
 
     @Test
+    fun theSeedDeclaresWhichMovementsAreBodyweightAndTimed() {
+        // B293: the seeder wrote neither column, so every seeded movement arrived as an ordinary loaded one
+        // — a weighted pull-up was recorded as its belt alone, and a plank offered reps. The two flags are
+        // the movement's own, so the seed is where they live.
+        assertWithMessage("a movement performed with the body is loaded by it")
+            .that(SeedExercises.all.filter { it.equipment == Equipment.BODYWEIGHT && !it.isBodyweight }.map { it.id })
+            .isEmpty()
+        // Loaded by the body even where something else takes weight off it, or is the wheel it rolls on.
+        assertThat(SeedExercises.all.single { it.id == "assisted-pull-up" }.isBodyweight).isTrue()
+        assertThat(SeedExercises.all.single { it.id == "ab-wheel-rollout" }.isBodyweight).isTrue()
+
+        // A hold is the movement's shape rather than a choice on the day.
+        assertThat(SeedExercises.all.filter { it.isTimed }.map { it.id })
+            .containsAtLeast("plank", "side-plank", "copenhagen-plank", "farmers-carry", "suitcase-carry")
+        assertWithMessage("a counted movement is not a hold")
+            .that(SeedExercises.all.single { it.id == "barbell-bench-press" }.isTimed)
+            .isFalse()
+    }
+
+    @Test
     fun everyMovementStatesItsEquipment() {
         // The one fact a category cannot supply (N110): a family spans equipment, so a movement without one
         // would read as nothing at all.

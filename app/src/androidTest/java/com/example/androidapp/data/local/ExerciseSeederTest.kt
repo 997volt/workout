@@ -118,6 +118,53 @@ class ExerciseSeederTest {
     }
 
     @Test
+    fun aSeededMovement_arrivesWithTheFlagsItStates() = runTest {
+        // B293: the insert wrote ten columns and the two that say how a movement is loaded were not among
+        // them, so every seeded row arrived as an ordinary counted lift. This is the raw column list proving
+        // the seed, the entity and the statement still agree.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+
+            assertEquals(true, dao.findById("pull-up")?.isBodyweight)
+            // Assisted work is body-loaded too: the machine takes weight off rather than adding it (N15).
+            assertEquals(true, dao.findById("assisted-pull-up")?.isBodyweight)
+            assertEquals(true, dao.findById("plank")?.isTimed)
+            assertEquals(false, dao.findById("barbell-bench-press")?.isBodyweight)
+            assertEquals(false, dao.findById("barbell-bench-press")?.isTimed)
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
+    fun aDeviceFromBeforeTheFlags_isToldWhatTheSeedDeclares_andKeepsItsOwnAnswer() = runTest {
+        // The upgrade path (B293). A row already on the device says "not bodyweight" because no seeder ever
+        // wrote the column, so the repair raises it to what the seed declares — and it only ever raises, so a
+        // movement the lifter marked themselves is left exactly as they left it.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+            val raw = database.openHelper.writableDatabase
+
+            raw.execSQL("UPDATE exercises SET isBodyweight = 0 WHERE id = 'pull-up'")
+            raw.execSQL("UPDATE exercises SET isBodyweight = 1 WHERE id = 'barbell-bench-press'")
+            assertEquals(false, dao.findById("pull-up")?.isBodyweight)
+
+            seedMissingExercises(raw, SEEDED_AT + 1_000L)
+
+            assertEquals("the seed's own truth is restored", true, dao.findById("pull-up")?.isBodyweight)
+            assertEquals(
+                "and a flag the lifter set is never lowered",
+                true,
+                dao.findById("barbell-bench-press")?.isBodyweight,
+            )
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
     fun theBackExtensionMovement_isSeededAndFiledUnderItsFamily() = runTest {
         // B148, on the shape the fix produces: the movement is a movement (so every picker offers it and a
         // logged set may name it) and it is filed under the family, which is where its muscles come from.
@@ -140,12 +187,10 @@ class ExerciseSeederTest {
     }
 
     @Test
-    fun aDatabaseHoldingTheCollidedCategory_movesItAsideAndKeepsItsChildren() = runTest {
-        // The upgrade path. A 2.6 file holds the *category* under `back-extension` with a self-parent, and
-        // `INSERT OR IGNORE` would keep it there for ever — so the seeder moves the id aside before it tops
-        // up, and the movement the corrected seed declares can land. The self-parent is planted with raw SQL
-        // on purpose: no write path can produce one (`requireValidLibraryShape` refuses it), and this is the
-        // only faithful reproduction of what 2.6 wrote.
+    fun aDatabaseHoldingTheCollidedCategory_freesTheIdAndKeepsTheFamilysChildren() = runTest {
+        // The upgrade path (B292, replacing B148's repair). A 2.6 file holds the *category* under
+        // `back-extension`, and `INSERT OR IGNORE` would keep it there for ever — so the seeder resolves the
+        // impostor before it tops up, and the movement the corrected seed declares can land.
         val database = databaseWithSeeding()
         try {
             val dao = database.exerciseDao()
@@ -153,24 +198,30 @@ class ExerciseSeederTest {
 
             // The movement has to go first: 2.6 could not hold both rows under one id, because that is the
             // primary key the collision was resolved against — the movement is the one `INSERT OR IGNORE`
-            // discarded. Only then can the category take the freed id.
+            // discarded. Only then can the category take the freed id, and it is planted with no parent,
+            // which is the shape B148's guard asked about and never matched.
             raw.execSQL("DELETE FROM exercises WHERE id = 'back-extension' AND rowKind = 'MOVEMENT'")
             raw.execSQL(
-                "UPDATE exercises SET id = 'back-extension', parentId = 'back-extension' " +
+                "UPDATE exercises SET id = 'back-extension', parentId = NULL " +
                     "WHERE id = 'back-extension-family'",
             )
             assertNull("the broken shape is the starting point", dao.findById("back-extension-family"))
 
             seedMissingExercises(raw, SEEDED_AT + 1_000L)
 
-            val repaired = dao.findById("back-extension-family")
-            assertNotNull("the family kept the row, under the id the seed now declares", repaired)
-            assertEquals(RowKind.CATEGORY, repaired?.rowKind)
-            assertNull("a category sits at the top level", repaired?.parentId)
-
             val movement = dao.findById("back-extension")
-            assertEquals("and the movement is the row that id now names", RowKind.MOVEMENT, movement?.rowKind)
-            assertNotNull("the family's other child is untouched", dao.findById("reverse-hyperextension"))
+            assertEquals("the id now names the movement", RowKind.MOVEMENT, movement?.rowKind)
+            assertEquals("and it is filed under its family", "back-extension-family", movement?.parentId)
+            assertEquals(
+                "while the family is the one the seed declares",
+                RowKind.CATEGORY,
+                dao.findById("back-extension-family")?.rowKind,
+            )
+            assertEquals(
+                "the family's child is re-filed onto it rather than lost with the impostor",
+                "back-extension-family",
+                dao.findById("reverse-hyperextension")?.parentId,
+            )
         } finally {
             database.close()
         }

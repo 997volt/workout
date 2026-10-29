@@ -84,6 +84,7 @@ internal object SeedExercises {
             Equipment.BODYWEIGHT,
             MuscleGroup.CHEST,
             listOf(MuscleGroup.TRICEPS, MuscleGroup.CORE),
+            bodyweight = true
         ),
 
         // ---- Back ----
@@ -101,22 +102,36 @@ internal object SeedExercises {
         movement("romanian-deadlift", "Romanian Deadlift", Equipment.BARBELL),
         movement("good-morning", "Good Morning", Equipment.BARBELL),
         movement("kettlebell-swing", "Kettlebell Swing", Equipment.KETTLEBELL),
-        movement("pull-up", "Pull-Up", Equipment.BODYWEIGHT, secondary = listOf(MuscleGroup.BICEPS, MuscleGroup.FOREARMS)),
-        movement("chin-up", "Chin-Up", Equipment.BODYWEIGHT),
+        movement(
+            "pull-up",
+            "Pull-Up",
+            Equipment.BODYWEIGHT,
+            secondary = listOf(MuscleGroup.BICEPS, MuscleGroup.FOREARMS),
+            bodyweight = true
+        ),
+        movement("chin-up", "Chin-Up", Equipment.BODYWEIGHT, bodyweight = true),
+        // Loaded by the body with the machine taking weight off it (N15, N219), so it is bodyweight even
+        // though its equipment is the stack that helps.
         movement(
             "assisted-pull-up",
             "Assisted Pull-Up",
             Equipment.MACHINE,
+            bodyweight = true
         ),
         movement("lat-pulldown", "Lat Pulldown", Equipment.CABLE),
         movement("straight-arm-pulldown", "Straight-Arm Pulldown", Equipment.CABLE),
-        movement("barbell-row", "Barbell Row", Equipment.BARBELL, secondary = listOf(MuscleGroup.BICEPS, MuscleGroup.FOREARMS)),
+        movement(
+            "barbell-row",
+            "Barbell Row",
+            Equipment.BARBELL,
+            secondary = listOf(MuscleGroup.BICEPS, MuscleGroup.FOREARMS)
+        ),
         movement("pendlay-row", "Pendlay Row", Equipment.BARBELL),
         movement("t-bar-row", "T-Bar Row", Equipment.BARBELL),
         movement("seated-cable-row", "Seated Cable Row", Equipment.CABLE),
         movement("chest-supported-row", "Chest-Supported Row", Equipment.MACHINE),
         movement("single-arm-dumbbell-row", "Single-Arm Dumbbell Row", Equipment.DUMBBELL),
-        movement("inverted-row", "Inverted Row", Equipment.BODYWEIGHT),
+        movement("inverted-row", "Inverted Row", Equipment.BODYWEIGHT, bodyweight = true),
         movement("barbell-shrug", "Barbell Shrug", Equipment.BARBELL),
         movement("dumbbell-shrug", "Dumbbell Shrug", Equipment.DUMBBELL),
         movement("back-extension", "Back Extension", Equipment.MACHINE),
@@ -154,9 +169,16 @@ internal object SeedExercises {
         movement("overhead-triceps-extension", "Overhead Triceps Extension", Equipment.DUMBBELL),
         movement("cable-overhead-triceps-extension", "Cable Overhead Triceps Extension", Equipment.CABLE),
         movement("dumbbell-skullcrusher", "Dumbbell Skullcrusher", Equipment.DUMBBELL),
-        movement("bench-dip", "Bench Dip", Equipment.BODYWEIGHT),
-        movement("diamond-push-up", "Diamond Push-Up", Equipment.BODYWEIGHT),
-        movement("dip", "Dip", Equipment.BODYWEIGHT, MuscleGroup.TRICEPS, listOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS)),
+        movement("bench-dip", "Bench Dip", Equipment.BODYWEIGHT, bodyweight = true),
+        movement("diamond-push-up", "Diamond Push-Up", Equipment.BODYWEIGHT, bodyweight = true),
+        movement(
+            "dip",
+            "Dip",
+            Equipment.BODYWEIGHT,
+            MuscleGroup.TRICEPS,
+            listOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS),
+            bodyweight = true
+        ),
         movement("wrist-curl", "Wrist Curl", Equipment.DUMBBELL),
         movement("reverse-wrist-curl", "Reverse Wrist Curl", Equipment.DUMBBELL),
         movement("reverse-curl", "Reverse Curl", Equipment.BARBELL),
@@ -190,26 +212,39 @@ internal object SeedExercises {
         movement("leg-extension", "Leg Extension", Equipment.MACHINE, MuscleGroup.QUADS),
         movement("lying-leg-curl", "Lying Leg Curl", Equipment.MACHINE, MuscleGroup.HAMSTRINGS),
         movement("seated-leg-curl", "Seated Leg Curl", Equipment.MACHINE, MuscleGroup.HAMSTRINGS),
-        movement("nordic-curl", "Nordic Curl", Equipment.BODYWEIGHT, MuscleGroup.HAMSTRINGS),
+        movement("nordic-curl", "Nordic Curl", Equipment.BODYWEIGHT, MuscleGroup.HAMSTRINGS, bodyweight = true),
         movement("hip-thrust", "Hip Thrust", Equipment.BARBELL),
         movement("glute-bridge", "Glute Bridge", Equipment.BARBELL),
         movement("cable-kickback", "Cable Kickback", Equipment.CABLE),
         movement("hip-adduction", "Hip Adduction", Equipment.MACHINE),
-        movement("copenhagen-plank", "Copenhagen Plank", Equipment.BODYWEIGHT, secondary = listOf(MuscleGroup.CORE)),
+        movement(
+            "copenhagen-plank",
+            "Copenhagen Plank",
+            Equipment.BODYWEIGHT,
+            secondary = listOf(MuscleGroup.CORE),
+            bodyweight = true,
+            timed = true
+        ),
         movement("standing-calf-raise", "Standing Calf Raise", Equipment.MACHINE),
         movement("seated-calf-raise", "Seated Calf Raise", Equipment.MACHINE),
         movement("donkey-calf-raise", "Donkey Calf Raise", Equipment.MACHINE),
 
         // ---- Core and carries ----
-        movement("plank", "Plank", Equipment.BODYWEIGHT),
-        movement("side-plank", "Side Plank", Equipment.BODYWEIGHT),
-        movement("hanging-leg-raise", "Hanging Leg Raise", Equipment.BODYWEIGHT, secondary = listOf(MuscleGroup.FOREARMS)),
+        movement("plank", "Plank", Equipment.BODYWEIGHT, bodyweight = true, timed = true),
+        movement("side-plank", "Side Plank", Equipment.BODYWEIGHT, bodyweight = true, timed = true),
+        movement(
+            "hanging-leg-raise",
+            "Hanging Leg Raise",
+            Equipment.BODYWEIGHT,
+            secondary = listOf(MuscleGroup.FOREARMS),
+            bodyweight = true
+        ),
         movement("cable-crunch", "Cable Crunch", Equipment.CABLE),
-        movement("ab-wheel-rollout", "Ab Wheel Rollout", Equipment.OTHER),
+        movement("ab-wheel-rollout", "Ab Wheel Rollout", Equipment.OTHER, bodyweight = true),
         movement("pallof-press", "Pallof Press", Equipment.CABLE),
         movement("turkish-get-up", "Turkish Get-Up", Equipment.KETTLEBELL, secondary = listOf(MuscleGroup.SHOULDERS)),
-        movement("farmers-carry", "Farmer's Carry", Equipment.DUMBBELL),
-        movement("suitcase-carry", "Suitcase Carry", Equipment.DUMBBELL),
+        movement("farmers-carry", "Farmer's Carry", Equipment.DUMBBELL, timed = true),
+        movement("suitcase-carry", "Suitcase Carry", Equipment.DUMBBELL, timed = true),
     )
 
     /**
@@ -222,25 +257,85 @@ internal object SeedExercises {
      * The slugs are permanent for [all]'s reason — a movement filed under a category references its id.
      */
     val categories: List<SeedCategory> = listOf(
-        SeedCategory("bench-press", "Bench Press", MovementPattern.PRESS, MuscleGroup.CHEST, listOf(MuscleGroup.TRICEPS, MuscleGroup.SHOULDERS)),
-        SeedCategory("incline-press", "Incline Press", MovementPattern.PRESS, MuscleGroup.CHEST, listOf(MuscleGroup.SHOULDERS, MuscleGroup.TRICEPS)),
-        SeedCategory("overhead-press-family", "Overhead Press", MovementPattern.PRESS, MuscleGroup.SHOULDERS, listOf(MuscleGroup.TRICEPS, MuscleGroup.CORE)),
-        SeedCategory("squat", "Squat", MovementPattern.SQUAT, MuscleGroup.QUADS, listOf(MuscleGroup.GLUTES, MuscleGroup.CORE)),
-        SeedCategory("deadlift-family", "Deadlift", MovementPattern.HINGE, MuscleGroup.HAMSTRINGS, listOf(MuscleGroup.GLUTES, MuscleGroup.LOWER_BACK)),
+        SeedCategory(
+            "bench-press",
+            "Bench Press",
+            MovementPattern.PRESS,
+            MuscleGroup.CHEST,
+            listOf(MuscleGroup.TRICEPS, MuscleGroup.SHOULDERS)
+        ),
+        SeedCategory(
+            "incline-press",
+            "Incline Press",
+            MovementPattern.PRESS,
+            MuscleGroup.CHEST,
+            listOf(MuscleGroup.SHOULDERS, MuscleGroup.TRICEPS)
+        ),
+        SeedCategory(
+            "overhead-press-family",
+            "Overhead Press",
+            MovementPattern.PRESS,
+            MuscleGroup.SHOULDERS,
+            listOf(MuscleGroup.TRICEPS, MuscleGroup.CORE)
+        ),
+        SeedCategory(
+            "squat",
+            "Squat",
+            MovementPattern.SQUAT,
+            MuscleGroup.QUADS,
+            listOf(MuscleGroup.GLUTES, MuscleGroup.CORE)
+        ),
+        SeedCategory(
+            "deadlift-family",
+            "Deadlift",
+            MovementPattern.HINGE,
+            MuscleGroup.HAMSTRINGS,
+            listOf(MuscleGroup.GLUTES, MuscleGroup.LOWER_BACK)
+        ),
         SeedCategory("lunge", "Lunge", MovementPattern.LUNGE, MuscleGroup.QUADS, listOf(MuscleGroup.GLUTES)),
-        SeedCategory("hip-thrust-family", "Hip Thrust", MovementPattern.HINGE, MuscleGroup.GLUTES, listOf(MuscleGroup.HAMSTRINGS)),
+        SeedCategory(
+            "hip-thrust-family",
+            "Hip Thrust",
+            MovementPattern.HINGE,
+            MuscleGroup.GLUTES,
+            listOf(MuscleGroup.HAMSTRINGS)
+        ),
         SeedCategory("row", "Row", MovementPattern.PULL, MuscleGroup.UPPER_BACK, listOf(MuscleGroup.BICEPS)),
-        SeedCategory("lat-pulldown-family", "Lat Pulldown", MovementPattern.PULL, MuscleGroup.LATS, listOf(MuscleGroup.BICEPS)),
+        SeedCategory(
+            "lat-pulldown-family",
+            "Lat Pulldown",
+            MovementPattern.PULL,
+            MuscleGroup.LATS,
+            listOf(MuscleGroup.BICEPS)
+        ),
         SeedCategory("fly", "Fly", MovementPattern.PRESS, MuscleGroup.CHEST, listOf(MuscleGroup.SHOULDERS)),
         SeedCategory("curl", "Curl", MovementPattern.ISOLATION, MuscleGroup.BICEPS, listOf(MuscleGroup.FOREARMS)),
-        SeedCategory("triceps-extension", "Triceps Extension", MovementPattern.ISOLATION, MuscleGroup.TRICEPS, emptyList()),
-        SeedCategory("lateral-raise-family", "Lateral Raise", MovementPattern.ISOLATION, MuscleGroup.SHOULDERS, emptyList()),
+        SeedCategory(
+            "triceps-extension",
+            "Triceps Extension",
+            MovementPattern.ISOLATION,
+            MuscleGroup.TRICEPS,
+            emptyList()
+        ),
+        SeedCategory(
+            "lateral-raise-family",
+            "Lateral Raise",
+            MovementPattern.ISOLATION,
+            MuscleGroup.SHOULDERS,
+            emptyList()
+        ),
         SeedCategory("calf-raise-family", "Calf Raise", MovementPattern.ISOLATION, MuscleGroup.CALVES, emptyList()),
         SeedCategory("core", "Core", MovementPattern.CORE, MuscleGroup.CORE, emptyList()),
         // The families added with the strength and bodybuilding set. Each holds a cluster that had no home:
         // the rear delts are not lateral raises, a shrug is not a row, and a carry is the one family whose
         // pattern is `CARRY`.
-        SeedCategory("rear-delt", "Rear Delt", MovementPattern.ISOLATION, MuscleGroup.SHOULDERS, listOf(MuscleGroup.UPPER_BACK)),
+        SeedCategory(
+            "rear-delt",
+            "Rear Delt",
+            MovementPattern.ISOLATION,
+            MuscleGroup.SHOULDERS,
+            listOf(MuscleGroup.UPPER_BACK)
+        ),
         SeedCategory("shrug", "Shrug", MovementPattern.ISOLATION, MuscleGroup.UPPER_BACK, listOf(MuscleGroup.FOREARMS)),
         // B148: a slug in **both** lists is a movement `INSERT OR IGNORE` silently drops, so the family
         // must not take the movement's bare name. `SeedExercisesTest` asserts they never intersect.
@@ -253,7 +348,13 @@ internal object SeedExercises {
         ),
         SeedCategory("forearm", "Forearm", MovementPattern.ISOLATION, MuscleGroup.FOREARMS, emptyList()),
         SeedCategory("adductor", "Adductor", MovementPattern.ISOLATION, MuscleGroup.ADDUCTORS, emptyList()),
-        SeedCategory("carry", "Carry", MovementPattern.CARRY, MuscleGroup.CORE, listOf(MuscleGroup.FOREARMS, MuscleGroup.UPPER_BACK)),
+        SeedCategory(
+            "carry",
+            "Carry",
+            MovementPattern.CARRY,
+            MuscleGroup.CORE,
+            listOf(MuscleGroup.FOREARMS, MuscleGroup.UPPER_BACK)
+        ),
     )
 
     /**
@@ -400,12 +501,26 @@ internal object SeedExercises {
         equipment: Equipment,
         primary: MuscleGroup? = null,
         secondary: List<MuscleGroup> = emptyList(),
+        /**
+         * Whether the movement is loaded by the body, or held rather than counted (ROADMAP N219, N220, B293).
+         *
+         * The seeder did not write either column, so every seeded row arrived as an ordinary loaded movement:
+         * a weighted pull-up was read as its belt alone, and a plank could not be logged as a hold. The two
+         * flags are the movement's own, which is exactly what a seed has to state.
+         */
+        bodyweight: Boolean = false,
+        timed: Boolean = false,
+        /** The pattern this movement states when its family's is wrong for it, or null (N103, N241). */
+        pattern: MovementPattern? = null,
     ) = Exercise(
         id = id,
         name = name,
         primaryMuscle = primary,
         secondaryMuscles = secondary,
         equipment = equipment,
+        movementPattern = pattern,
+        isBodyweight = bodyweight,
+        isTimed = timed,
     )
 }
 

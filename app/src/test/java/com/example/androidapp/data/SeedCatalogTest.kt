@@ -36,6 +36,15 @@ class SeedCatalogTest {
         val movementPattern: String?,
         val parentId: String?,
         val rowKind: String,
+        /**
+         * The two flags the seeder writes (B293).
+         *
+         * Carried because the page brings a movement *whole* when it creates one from a name (B247): a
+         * pull-up resolved from this catalog and written as an ordinary lift has its sets read at their added
+         * weight alone, which is the bug B277 fixed for every other field.
+         */
+        val isBodyweight: Boolean,
+        val isTimed: Boolean,
         val createdAt: Long,
         val updatedAt: Long,
     )
@@ -54,6 +63,8 @@ class SeedCatalogTest {
                 movementPattern = category.pattern.name,
                 parentId = null,
                 rowKind = RowKind.CATEGORY.name,
+                isBodyweight = false,
+                isTimed = false,
                 createdAt = 0L,
                 updatedAt = 0L,
             )
@@ -68,6 +79,8 @@ class SeedCatalogTest {
                 movementPattern = exercise.movementPattern?.name,
                 parentId = SeedExercises.parentOf[exercise.id],
                 rowKind = exercise.rowKind.name,
+                isBodyweight = exercise.isBodyweight,
+                isTimed = exercise.isTimed,
                 createdAt = 0L,
                 updatedAt = 0L,
             )

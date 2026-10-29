@@ -32,10 +32,10 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
 
     db.beginTransaction()
     try {
-        // **The repair runs first, so the corrected seed can use the id it frees** (B148): a 2.6 database
-        // holds the *category* under `back-extension`, and `INSERT OR IGNORE` would keep it there, so the
-        // movement this releases is inserted by the loop below, in this same transaction.
-        repairSeededCategoryCollision(db)
+        // **The repair runs first, so the seed can use the ids it frees** (B148, B292): a database written by
+        // an older seed can hold a row under an id the seed now claims for a *movement*, and `INSERT OR IGNORE`
+        // would keep it there for ever — so the impostor is resolved before the inserts, in this transaction.
+        releaseSeededMovementIds(db, seededAt)
 
         // The families first (ROADMAP N95). A category is a row of the library like any other, so it is
         // seeded by the same statement with the same conflict rule — which is what keeps a lifter's rename
@@ -56,6 +56,10 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                     converters.fromMovementPattern(category.pattern),
                     null, // parentId: a category sits at the top level
                     RowKind.CATEGORY.name,
+                    // A family is never loaded by the body and is never held: the two flags belong to the
+                    // movements a set is logged against (B293).
+                    0,
+                    0,
                     seededAt,
                     seededAt,
                 ),
@@ -83,10 +87,35 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                     // The enum's name rather than the column's SQL default, so the value keeps one home; a
                     // DEFAULT in SQL would be a second copy of a name that lives in the enum.
                     RowKind.MOVEMENT.name,
+                    // The two flags the seeder did not write, so every seeded movement arrived as an ordinary
+                    // loaded one (B293): a weighted pull-up read as its belt alone, a plank offered reps.
+                    if (exercise.isBodyweight) 1 else 0,
+                    if (exercise.isTimed) 1 else 0,
                     // One timestamp per batch, so seeded rows are recognisable as
                     // seed rather than as something the user created.
                     seededAt,
                     seededAt,
+                ),
+            )
+        }
+        // **A device that already holds the row keeps what it states**, and only the seed's own truth is
+        // filled in behind it (B293): the flags were never written by an older seeder, so a row that says
+        // "loaded" when the seed says "by the body" is the seed's omission rather than the lifter's choice.
+        // Only ever raised, never lowered, so a movement a lifter marked bodyweight themselves stays marked.
+        SeedExercises.all.forEach { exercise ->
+            if (!exercise.isBodyweight && !exercise.isTimed) return@forEach
+            val bodyweight = if (exercise.isBodyweight) 1 else 0
+            val timed = if (exercise.isTimed) 1 else 0
+            db.execSQL(
+                UPDATE_SEEDED_FLAGS,
+                arrayOf<Any?>(
+                    bodyweight,
+                    timed,
+                    exercise.id,
+                    exercise.name,
+                    RowKind.MOVEMENT.name,
+                    bodyweight,
+                    timed,
                 ),
             )
         }
@@ -97,42 +126,63 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
 }
 
 /**
- * Moves the category a 2.6 database filed under a movement's own id (B148).
+ * Frees an id the seed claims for a movement when something else holds it (B292, replacing B148's repair).
  *
- * The seed declared *Back Extension* twice — once as a movement, once as a family — and because the
- * families are seeded first and `INSERT OR IGNORE` keeps what exists, the row a database holds under
- * `back-extension` is the **category**, with a `parentId` pointing at itself. Nothing can be done about
- * the movement on that file by re-seeding: the id is taken, so the corrected seed still cannot insert it.
- * The id has to be freed, and the row holding it has to become the family it was meant to be.
+ * A database written by an older seed can hold the **category** under an id this seed uses for a movement —
+ * `back-extension` is the surviving case, where 2.6 declared the lift twice and the families, inserted first,
+ * kept the id. `INSERT OR IGNORE` cannot take a taken id, so the movement never arrives: a picker offers
+ * movements, so the lift cannot be logged at all, and the stale family is drawn beside the corrected one.
  *
- * **Guarded, because the row may not be the seed's any more.** A lifter can rename a category and re-file
- * its children (N95's rule, which `INSERT OR IGNORE` exists to protect), and this runs on every open. The
- * id is only moved while the row still looks like the seed's: a category, still named *Back Extension*, and
- * still its own parent — the last being the one field no write path can produce, since
- * `requireValidLibraryShape` refuses a self-parent. A row a lifter has touched in any other way fails at
- * least one of those and is left alone.
+ * B148 tried to move that row aside, and its guard asked for one that was still its own parent — a shape the
+ * row on disk does not have, so the repair never fired. **This one matches what is actually there and what no
+ * write path can produce**: a row the seed claims for a movement, under that movement's id, of another kind,
+ * still carrying that movement's name. A category made in the app is minted with a UUID, and a lifter's rename
+ * breaks the name match, so neither is touched.
  *
- * The secondary list and the muscles are the seed's own values, so the move does not rewrite them: only the
- * key and the link that key broke.
- *
- * The replacement family arrives from the corrected seed in the same [seedMissingExercises] transaction,
- * which is why this runs before the inserts rather than after them.
+ * What it does with the impostor: its children are re-filed onto the family the seed files that movement
+ * under, which is what a family is for (N95), and the row is **deleted** rather than soft-deleted — a
+ * soft-deleted row keeps its id and would block the movement exactly as it does now.
  */
-internal fun repairSeededCategoryCollision(db: SupportSQLiteDatabase) {
-    db.execSQL(
-        """
-        UPDATE exercises
-        SET id = 'back-extension-family', parentId = NULL
-        WHERE id = 'back-extension'
-          AND name = 'Back Extension'
-          AND rowKind = 'CATEGORY'
-          AND parentId = 'back-extension'
-        """.trimIndent(),
-    )
+internal fun releaseSeededMovementIds(db: SupportSQLiteDatabase, now: Long) {
+    val claimed = SeedExercises.all.associateBy { it.id }
+    val impostors = mutableListOf<String>()
+    db.query(
+        "SELECT id, name FROM exercises WHERE rowKind <> ?",
+        arrayOf<Any?>(RowKind.MOVEMENT.name),
+    ).use { cursor ->
+        while (cursor.moveToNext()) {
+            val id = cursor.getString(0)
+            val claimedByTheSeed = claimed[id] ?: continue
+            // The name is the seed's own, so a lifted-before rename is a row the lifter owns.
+            if (claimedByTheSeed.name == cursor.getString(1)) impostors += id
+        }
+    }
+    impostors.forEach { id ->
+        db.execSQL(
+            "UPDATE exercises SET parentId = ?, updatedAt = ? WHERE parentId = ? AND parentId <> ?",
+            arrayOf<Any?>(SeedExercises.parentOf[id], now, id, id),
+        )
+        db.execSQL(
+            "DELETE FROM exercises WHERE id = ? AND rowKind <> ?",
+            arrayOf<Any?>(id, RowKind.MOVEMENT.name),
+        )
+    }
 }
+
+/**
+ * Fills in the two flags an older seeder never wrote (B293).
+ *
+ * The two trailing comparisons are what makes the repair one-way: a row is only touched where its own value is
+ * below the seed's, so a flag a lifter set themselves is never cleared, and a row that already says what the
+ * seed says is not rewritten on every open. The `name` match is the same guard the id repair uses — a row the
+ * lifter renamed is theirs.
+ */
+internal const val UPDATE_SEEDED_FLAGS =
+    "UPDATE exercises SET isBodyweight = ?, isTimed = ? " +
+        "WHERE id = ? AND name = ? AND rowKind = ? AND (isBodyweight < ? OR isTimed < ?)"
 
 /** `deletedAt` is omitted so it keeps its NULL default. */
 internal const val INSERT_EXERCISE =
     "INSERT OR IGNORE INTO exercises " +
         "(id, name, primaryMuscle, secondaryMuscles, equipment, movementPattern, " +
-        "parentId, rowKind, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "parentId, rowKind, isBodyweight, isTimed, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
