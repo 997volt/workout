@@ -17,28 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-The *Later* queue is being worked through in its own build order: the exercise's own screen (N233, N234), a
-movement's own answer to *Done* (N235, schema 13), a declined step being recorded (N236, schema 14) and a plan
-prescribing a hold (N242, schema 15) are done. What remains starts with the rule that reads history.
-
-## Later — decided, and not being started
-
-Agreed work that is not next: the design is settled so it does not have to be re-argued, and nothing here is being
-built. It is **not** *Parked* — a parked row is a decision not to plan something, while these are planned and
-simply not now — and it is not *Next*, which is what is actually being worked on. Each row names **what brings it
-forward**, for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a
-graveyard. **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for
-the changelog.
-
-**The order below is the build order**, and it is chosen so each row starts with the least it can depend on: the
-schema changes first, then the prescription a hold needs, then the rule that reads history, and last the merge that
-needs the lifter's own list. Each row says what it waits for where it waits for anything; a row that
-says nothing waits for nothing but the one before it. The numbers quoted here are the measurements the work was
-planned from, not facts to keep up to date: a row that ships leaves this file.
-
-### A plan's progression, stored
-
-### A plan's progression, learned
+N237 is the row in hand: the rule that notices one plan's prescription stalling, so the app can suggest a deload
+instead of saying nothing about a pattern it can already measure set by set.
 
 **N237 — three misses on one plan suggest a deload, and the lifter decides.** The app can already say what each set
 missed and why, and it says nothing about the pattern. The rule: for one template **inside one program**, take the
@@ -54,6 +34,20 @@ or "over the target" would silently become "short". **It only suggests**: nothin
 decides. The suggestion opens the existing deload creator with the program already chosen, because a deload is
 already a marked week with days and a kept percentage (N147) and a second deload concept would be a second place
 for one idea. Waits for N226, which is where the sentences live.
+
+## Later — decided, and not being started
+
+Agreed work that is not next: the design is settled so it does not have to be re-argued, and nothing here is being
+built. It is **not** *Parked* — a parked row is a decision not to plan something, while these are planned and
+simply not now — and it is not *Next*, which is what is actually being worked on. Each row names **what brings it
+forward**, for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a
+graveyard. **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for
+the changelog.
+
+**The order below is the build order**: the two library rows, because the merge has to settle which movements
+exist before the ones that remain can be given a taxonomy. Each row says what it waits for where it waits for
+anything. The numbers quoted here are the measurements the work was planned from, not facts to keep up to date: a
+row that ships leaves this file.
 
 ### The lifter's own library joins the seed
 
