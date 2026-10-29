@@ -259,6 +259,36 @@ class ExerciseSeederTest {
     }
 
     @Test
+    fun aFamilyWhoseMusclesWereCorrected_isRewritten_onlyWhereTheSeedLeftIt() = runTest {
+        // N240: a correction to a family is a write behind the insert, because the row is already there. The
+        // guard is the value the seed shipped before, so a lifter's own list survives.
+        val database = databaseWithSeeding()
+        try {
+            val dao = database.exerciseDao()
+            val raw = database.openHelper.writableDatabase
+
+            // A device from before the audit: the row family names upper back and biceps only.
+            raw.execSQL("UPDATE exercises SET secondaryMuscles = 'BICEPS' WHERE id = 'row'")
+            // And a lifter's own list on the pulldown family, which the repair must not touch.
+            raw.execSQL("UPDATE exercises SET secondaryMuscles = 'FOREARMS' WHERE id = 'lat-pulldown-family'")
+
+            seedMissingExercises(raw, SEEDED_AT + 1_000L)
+
+            assertEquals(
+                listOf(MuscleGroup.BICEPS, MuscleGroup.LATS),
+                dao.findById("row")?.secondaryMuscles,
+            )
+            assertEquals(
+                "a list the lifter set is theirs",
+                listOf(MuscleGroup.FOREARMS),
+                dao.findById("lat-pulldown-family")?.secondaryMuscles,
+            )
+        } finally {
+            database.close()
+        }
+    }
+
+    @Test
     fun anUnfiledMovement_isFiledByTheNextTopUp() = runTest {
         // N229: the seed left eight movements loose, and a row already on a device was never updated by the
         // filing — `INSERT OR IGNORE` keeps what is there. The repair moves the family and nothing else.

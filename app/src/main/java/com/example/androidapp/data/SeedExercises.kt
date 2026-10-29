@@ -296,13 +296,23 @@ internal object SeedExercises {
             MuscleGroup.GLUTES,
             listOf(MuscleGroup.HAMSTRINGS)
         ),
-        SeedCategory("row", "Row", MovementPattern.PULL, MuscleGroup.UPPER_BACK, listOf(MuscleGroup.BICEPS)),
+        // **The lats are half of what a row is for** (N240): the family named upper back and biceps only, so a
+        // plan's balance figure counted no lat work for the rows that train them most.
+        SeedCategory(
+            "row",
+            "Row",
+            MovementPattern.PULL,
+            MuscleGroup.UPPER_BACK,
+            listOf(MuscleGroup.BICEPS, MuscleGroup.LATS)
+        ),
+        // The mirror of the row family's correction (N240): a pulldown retracts the shoulder blades, and the
+        // upper back that does it was missing from the one family that trains the lats hardest.
         SeedCategory(
             "lat-pulldown-family",
             "Lat Pulldown",
             MovementPattern.PULL,
             MuscleGroup.LATS,
-            listOf(MuscleGroup.BICEPS)
+            listOf(MuscleGroup.BICEPS, MuscleGroup.UPPER_BACK)
         ),
         SeedCategory("fly", "Fly", MovementPattern.PRESS, MuscleGroup.CHEST, listOf(MuscleGroup.SHOULDERS)),
         SeedCategory("curl", "Curl", MovementPattern.ISOLATION, MuscleGroup.BICEPS, listOf(MuscleGroup.FOREARMS)),

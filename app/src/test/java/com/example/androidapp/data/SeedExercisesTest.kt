@@ -110,6 +110,46 @@ class SeedExercisesTest {
     }
 
     @Test
+    fun aFamilyThatTrainsLatsNamesThem_andOneThatTrainsUpperBackNamesThat() {
+        // N240: the audit's two findings. The row family named upper back and biceps and not the lats, which
+        // is half of what a row is for; the pulldown family was the mirror image, missing the upper back that
+        // retracts the shoulder blades.
+        val row = SeedExercises.categories.single { it.id == "row" }
+        val pulldown = SeedExercises.categories.single { it.id == "lat-pulldown-family" }
+
+        assertThat(row.primaryMuscle).isEqualTo(MuscleGroup.UPPER_BACK)
+        assertThat(row.secondaryMuscles).contains(MuscleGroup.LATS)
+        assertThat(pulldown.primaryMuscle).isEqualTo(MuscleGroup.LATS)
+        assertThat(pulldown.secondaryMuscles).contains(MuscleGroup.UPPER_BACK)
+    }
+
+    @Test
+    fun noFamilyNamesItsOwnPrimaryMuscleAsASecondaryOne() {
+        // The rule the audit reads by: a family states what it trains *besides* its primary, so a muscle in
+        // both lists would count one set twice in the balance figure (N119, N122).
+        val doubled = SeedExercises.categories
+            .filter { it.primaryMuscle in it.secondaryMuscles }
+            .map { it.id }
+
+        assertThat(doubled).isEmpty()
+    }
+
+    @Test
+    fun everySeededRowResolvesToAPrimaryMuscle() {
+        // A movement filed under a family reads its muscle from there (N103, N110), so a family that states
+        // none would leave every movement under it training nothing - which the balance figure cannot say.
+        // The one movement in no family states its own, which is why the answer is "none" rather than "push-up".
+        val byId = SeedExercises.categories.associateBy { it.id }
+        val unresolved = SeedExercises.all
+            .filter { movement ->
+                movement.primaryMuscle == null && byId[SeedExercises.parentOf[movement.id]]?.primaryMuscle == null
+            }
+            .map { it.id }
+
+        assertThat(unresolved).isEmpty()
+    }
+
+    @Test
     fun everyMovementTheSeedCanFile_isFiled_exceptThePushUp() {
         // N229: eight movements sat at the top level, so a fresh install drew a flat alphabetical pile of
         // loose lifts under its families. One stays loose on purpose - a push-up is none of the press

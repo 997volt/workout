@@ -98,15 +98,17 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                 ),
             )
         }
-        // **A device that already holds the row keeps what it states**, and only the seed's own truth is
-        // filled in behind it (B293): a row that is on the device is never re-inserted, so each change the
-        // seed makes to how a movement is read has to be written behind the insert.
+        // **Everything below writes behind the insert, because `INSERT OR IGNORE` never updates a row.** A
+        // change the seed makes to how a movement already on a device is read has to be written there, guarded
+        // by what the seed shipped so a lifter's own edit is never undone.
+
+        // A movement the seed now files (N229).
         fileMovementsTheSeedNowFiles(db, seededAt)
 
-        // **A device that already holds the row keeps what it states**, and only the seed's own truth is
-        // filled in behind it (B293): the flags were never written by an older seeder, so a row that says
-        // "loaded" when the seed says "by the body" is the seed's omission rather than the lifter's choice.
-        // Only ever raised, never lowered, so a movement a lifter marked bodyweight themselves stays marked.
+        // A family's muscles the audit corrected (N240).
+        correctSeededTaxonomy(db, seededAt)
+
+        // The two flags the seeder never wrote (B293), only ever raised so a lifter's own answer survives.
         SeedExercises.all.forEach { exercise ->
             if (!exercise.isBodyweight && !exercise.isTimed) return@forEach
             val bodyweight = if (exercise.isBodyweight) 1 else 0
@@ -124,7 +126,8 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
                 ),
             )
         }
-        // Last, because the row a movement is merged into has just been inserted (N229).
+        // A movement the seed retired, merged into the one that means it (N229). Last, because the row it
+        // merges into has just been inserted.
         mergeRetiredMovements(db, seededAt)
 
         db.setTransactionSuccessful()
@@ -193,6 +196,48 @@ internal const val UPDATE_SEEDED_FAMILY =
 internal const val UPDATE_SEEDED_FLAGS =
     "UPDATE exercises SET isBodyweight = ?, isTimed = ? " +
         "WHERE id = ? AND name = ? AND rowKind = ? AND (isBodyweight < ? OR isTimed < ?)"
+
+/**
+ * The families whose taxonomy a later seed corrected, with the list it shipped before (N240).
+ *
+ * A correction is not a new row: the family is on the device already and `INSERT OR IGNORE` will not touch it,
+ * so the value it shipped is the only thing that says the row is still the seed's rather than one a lifter
+ * edited. Two entries, because the audit found two: the row family was missing the lats, and the pulldown
+ * family the upper back.
+ */
+internal data class CorrectedFamily(val id: String, val wasSecondaryMuscles: String)
+
+/** The audits' corrections, each with the value it replaces (N240). */
+internal val CORRECTED_FAMILIES = listOf(
+    CorrectedFamily(id = "row", wasSecondaryMuscles = "BICEPS"),
+    CorrectedFamily(id = "lat-pulldown-family", wasSecondaryMuscles = "BICEPS"),
+)
+
+/**
+ * Writes the audited taxonomy onto a family that still carries the value the seed shipped before (N240).
+ *
+ * **The whole family moves**, because a family's muscles are what its members read (N103, N110): every
+ * movement under it that states nothing of its own now reports the corrected muscle, which is the point.
+ * The repair is guarded on the old list rather than on the id alone, so a lifter who set their own list keeps
+ * it, and it is a no-op after the first open.
+ */
+private fun correctSeededTaxonomy(db: SupportSQLiteDatabase, now: Long) {
+    val converters = Converters()
+    CORRECTED_FAMILIES.forEach { corrected ->
+        val category = SeedExercises.categories.firstOrNull { it.id == corrected.id } ?: return@forEach
+        db.execSQL(
+            "UPDATE exercises SET secondaryMuscles = ?, updatedAt = ? " +
+                "WHERE id = ? AND rowKind = ? AND secondaryMuscles = ?",
+            arrayOf<Any?>(
+                converters.fromMuscleGroups(category.secondaryMuscles),
+                now,
+                category.id,
+                RowKind.CATEGORY.name,
+                corrected.wasSecondaryMuscles,
+            ),
+        )
+    }
+}
 
 /**
  * Files the movements the seed now files, on a device whose rows predate the filing (N229).
