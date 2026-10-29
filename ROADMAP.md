@@ -17,27 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing. The library's read-only rows (N224–N228), its own data (B292, B293, N229, N240, N241) and the program
-load's rename (N243) shipped to the unreleased section of [CHANGELOG.md](CHANGELOG.md); the queue below starts with
-the library's working rows.
-
-## Later — decided, and not being started
-
-Agreed work that is not next: the design is settled so it does not have to be re-argued, and nothing here is being
-built. It is **not** *Parked* — a parked row is a decision not to plan something, while these are planned and
-simply not now — and it is not *Next*, which is what is actually being worked on. Each row names **what brings it
-forward**, for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a
-graveyard. **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for
-the changelog.
-
-**The order below is the build order**, and it is chosen so each row starts with the least it can depend on: the
-rows the library works with first, then the exercise's own screen, then the schema changes, then the rule that
-reads history, and last the migrations that need their author's word on every row. Each row says what it waits for
-where it waits for anything; a row that says nothing waits for nothing but the one before it. The numbers quoted
-here are the measurements the work was planned from, not facts to keep up to date: a row that ships leaves this
-file.
-
-### The library as a place you work
+The library's three working rows (N230–N232) are being built: a sort that reads the last trained date, filter chips
+that narrow the same list the search narrows, and a movement made from the library rather than from a workout.
 
 **N230 — the library can be sorted, and says when a lift was last trained.** Order is alphabetical by family and
 then by movement, and nothing offers another order. A sort control adds *Last trained*, backed by one new read: the
@@ -65,6 +46,21 @@ match *front squat*" becomes one tap. The dialog also takes an optional family, 
 shape N229 exists to clean up and creating more of them in silence is the wrong direction. Rejected: leaving
 creation to the picker alone, which is a rule about where the gap is *felt* and not a claim that it is never felt
 while planning.
+
+## Later — decided, and not being started
+
+Agreed work that is not next: the design is settled so it does not have to be re-argued, and nothing here is being
+built. It is **not** *Parked* — a parked row is a decision not to plan something, while these are planned and
+simply not now — and it is not *Next*, which is what is actually being worked on. Each row names **what brings it
+forward**, for the reason a parked row names its revisit trigger: a queue that cannot say why it is waiting is a
+graveyard. **It drains like every other section**: a row picked up moves to *Next*, and one that ships leaves for
+the changelog.
+
+**The order below is the build order**, and it is chosen so each row starts with the least it can depend on: the
+exercise's own screen first, then the schema changes, then the rule that reads history, and last the migrations
+that need their author's word on every row. Each row says what it waits for where it waits for anything; a row that
+says nothing waits for nothing but the one before it. The numbers quoted here are the measurements the work was
+planned from, not facts to keep up to date: a row that ships leaves this file.
 
 ### The exercise's own screen
 
