@@ -17,49 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-The library's five read-only rows (N224–N228) are being built: the search learns how a lift is said, a
-searched family says how much of itself it is showing, the next-step dialog stops repeating one reason, the
-exercise states what its plan will do with the set, and a family that changed opens. None of them stores
-anything, and each lands with the JVM tests the rule it touches already has.
-
-**N224 — the search finds a lift by how you say it.** Search is substring containment over a movement's name and
-the taxonomy it inherits (P1.1a), so *Barbell Bench Press* cannot be found from "bench pr", "bbp" or "ohp". Three
-additions, all inside the one pure matcher: **every word of the query must start a word of the name** (so "bench
-pr" finds both, in order); **initials match** ("bbp" for Barbell Bench Press); and **a small alias table shipped
-with the seed** is searched beside the name ("ohp", "rdl"), because the words a lifter says for a lift are the
-seed's to know rather than a row's. Nothing is stored per movement, so a lifter's own movement simply has no alias,
-and the taxonomy and family words the search already reaches keep working. Rejected: edit-distance or fuzzy
-matching, which needs a threshold this app would then have to defend and finds the wrong lift as often as the right
-one.
-
-**N225 — a family the search narrowed says how many it found.** A head's count is the number of children the
-*query* matched, so a family holding six movements reads "1 exercise" while a search is on — next to the one row it
-found, which is why it reads as a claim rather than an omission. The head carries the family's own size as well and
-states both — "1 of 6" — and with no query the two numbers agree so the plain count stays. A folded head keeps its
-full count, which is the whole reason a folded family draws one.
-
-**N226 — the next step's dialog says one reason once.** When every prescribed set missed for the same cause the
-dialog repeats one sentence per set, three times over. It gains an exercise-wide statement above the sets when one
-reason covers all of them, and the per-set rows keep their own detail only where they differ. `NOT_DONE`,
-`NOT_IN_PLAN` and `RUNG_OF_A_GROUP` never take part in it: they describe work that is missing or extra rather than
-a set that failed the plan, so a session whose plan was never logged would otherwise be summarised as a refusal.
-The dialog must not claim the plan is broken either — the plan editor already says a plan that cannot progress and
-the reasons why (B181), and it is the screen that can fix it. What the dialog says is what the sets did.
-
-**N227 — the exercise says what the plan will do with the set.** The block's small print carries the taxonomy, the
-cue, and the rest prescription when the timer is off — facts worth reading mid-session — and nothing about the step
-the plan's own numbers can earn. It gains one line, read from the rule the plan editor prints (`ProgressionRule`'s
-cases, shortened): the rep below the range's ceiling, the weight at it, and nothing at all where the plan cannot
-progress. It sits **with the small print and never on the prefill's reason line**, because P3.17 settles that line
-as where the numbers came from and deliberately not the app's opinion of what to do next (N33); this is the plan's
-own rule, drawn as a fact about the exercise the way the rest prescription is. Because both read one rule, the
-session and the plan editor cannot promise different steps.
-
-**N228 — a family that changed opens.** The library folds every family on load and remembers the folds (N95, N91),
-so filing a movement into a family from its own editor changes a count on a folded row and nothing else. The screen
-compares each movement's family with the one it had on the previous composition and opens the family that gained or
-lost one, once; the same covers a movement made from the library and one whose category was cleared. No other
-family's fold is touched, and the state stays saveable so a rotation keeps it (N84).
+Nothing. The library's five read-only rows (N224–N228) shipped to the unreleased section of
+[CHANGELOG.md](CHANGELOG.md); the queue below starts at the library's own data.
 
 ## Later — decided, and not being started
 
@@ -74,8 +33,8 @@ the changelog.
 library's own data first, then the rows it works with, then the exercise's own screen, then the schema changes,
 then the rule that reads history, and last the migrations that need their author's word on every row. Each row says
 what it waits for where it waits for anything; a row that says nothing waits for nothing but the one before it. The
-rows the library only reads with (N224–N228) have left for *Next*. The numbers quoted here are the measurements the
-work was planned from, not facts to keep up to date: a row that ships leaves this file.
+numbers quoted here are the measurements the work was planned from, not facts to keep up to date: a row that ships
+leaves this file.
 
 ### The library's own data
 

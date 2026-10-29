@@ -13,6 +13,46 @@ repeated here.
 **1.0–1.18 live in [CHANGELOG-1.x.md](CHANGELOG-1.x.md)**, kept whole rather than deleted because the
 id a 1.x commit names is still looked up by it. This file carries the current release.
 
+## [Unreleased]
+
+### Added
+
+- **A lift is found by how it is said, not only by its name** (N224). Search was substring containment over the name
+  and the taxonomy, so *Barbell Bench Press* answered "bench" and not "bench pr", "bbp" or "pullup" — and the words a
+  lifter types are the ones that come out of a session. Three rules now share one normalised query: the name compared
+  with its separators removed (so "pullup" and "pull up" are one movement), the initials of its words ("bbp", "cgbp"),
+  and an alias table for the words a name cannot carry ("ohp", "rdl", "bent over row"). The aliases live beside the
+  search rather than on a row, so nothing is stored per movement and a movement a lifter makes has none.
+
+- **A family says how much of itself a search is showing** (N225). A head's count was the number of children the query
+  matched, so a family of six read "1 exercise" beside the one row it found — a claim about the library that the
+  library does not support. The row carries the family's own size and the matched count, and the head states both only
+  where they differ: "1 of 6 exercises", while a list nothing is narrowing keeps its plain count. The hidden-spot
+  detail is the plural's quantity, which is the family's size: "1 of 6 exercises", never "1 of 6 exercise".
+
+- **The next step's question states one shared reason once** (N226). When every prescribed set missed for the same
+  cause the dialog repeated the same sentence per row: a plan with no target RPE printed it three times, and one whose
+  sets all came up the same two reps short printed that line three times. The question now names the reason above the
+  rows, which keep the plan and what was done. Two conditions make the collapsed line true of every set it replaces:
+  only a reason about the sets themselves counts — `NOT_DONE`, `NOT_IN_PLAN` and `RUNG_OF_A_GROUP` describe work that
+  is missing or extra, so a plan nobody logged is not one refusal — and the number has to agree, because two reps
+  short and one are two facts.
+
+- **The exercise states what its plan will do with the set** (N227). The workout block's small print carried the
+  taxonomy, the cue and the rest prescription, and nothing about the step the plan's own numbers can earn. It gains a
+  line reading the same rule the plan editor prints — the rep below the range's ceiling, the weight at it, or the
+  weight alone where the reps are fixed — and a plan that cannot progress says nothing here, because the plan editor
+  is where that sentence belongs. It sits with the small print and never on the prefill's reason line, which is where
+  the numbers came from rather than the app's opinion of what to do next (N33). The rule moved to the model for this,
+  so the session and the plan editor are one function reading one mapping of the same sets.
+
+- **A family a movement joined or left opens once** (N228). The library folds every family on load and remembers the
+  folds, so filing a movement from its own editor changed a count on a folded row and nothing else: the one place the
+  change happened was the one place it could not be seen. The screen compares each movement's family with the one it
+  had on the previous composition and opens what changed — the family joined, the one left, both when a movement
+  moves between them. The library arriving is not the library changing, so the first composition opens nothing, and a
+  movement that arrived unfiled names no family at all.
+
 ## [2.18] — 2026-10-29 (versionCode 38)
 
 ### Fixed
