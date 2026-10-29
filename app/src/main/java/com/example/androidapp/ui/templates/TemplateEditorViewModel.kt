@@ -6,11 +6,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
 import com.example.androidapp.domain.model.warmUpRampFor
+import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.TemplateSetEdit
 import com.example.androidapp.ui.navigation.TemplateEditor
@@ -37,6 +39,13 @@ data class TemplateEditorUiState(
     val pendingUndo: TemplateSet? = null,
     /** The versions kept of this template, newest first (ROADMAP N134). */
     val versions: List<WorkoutTemplate> = emptyList(),
+    /**
+     * The app's own answer to *Done*, which a movement may override (ROADMAP N235).
+     *
+     * In the state rather than read in the composable: the plan's sentence has to say when a movement
+     * answers for itself, and "overrides" means *differs from this*.
+     */
+    val appProgressionMode: ProgressionMode = ProgressionMode.SUGGEST,
 ) {
     /** The template was deleted, or never existed — either way there is no editor. */
     val notFound: Boolean get() = !isLoading && template == null
@@ -75,6 +84,7 @@ data class TemplateVersionPlan(
 @HiltViewModel
 class TemplateEditorViewModel @Inject constructor(
     private val repository: TemplateRepository,
+    private val settingsRepository: SettingsRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -131,11 +141,17 @@ class TemplateEditorViewModel @Inject constructor(
             pendingUndo = undo,
             versions = versions,
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-        initialValue = TemplateEditorUiState(),
-    )
+    }
+        // The app's own answer to Done, combined on top rather than as a sixth flow: `combine` has no typed
+        // overload past five, and a movement's override is checked against this one value (N235).
+        .combine(settingsRepository.observeProgressionMode()) { state, appMode ->
+            state.copy(appProgressionMode = appMode)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = TemplateEditorUiState(),
+        )
 
     fun onRename(name: String) = write { repository.renameTemplate(templateId, name) }
 

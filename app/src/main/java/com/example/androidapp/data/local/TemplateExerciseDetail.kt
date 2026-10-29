@@ -1,9 +1,9 @@
 package com.example.androidapp.data.local
 
-
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 
@@ -36,6 +36,8 @@ data class TemplateExerciseDetail(
     val weightUnit: String?,
     /** The library exercise's own weight step, or null for the unit's (ROADMAP N77). */
     val stepGrams: Long?,
+    /** The movement's own answer to *Done* by name, or null to follow the app (ROADMAP N235). */
+    val progressionMode: String?,
     val supersetGroup: Int?,
 )
 
@@ -54,6 +56,7 @@ internal fun TemplateExerciseDetail.toDomain(
     targetRpeHalves = targetRpeHalves,
     weightUnit = WeightUnit.fromName(weightUnit),
     stepGrams = stepGrams,
+    progressionMode = ProgressionMode.fromName(progressionMode),
     supersetGroup = supersetGroup,
     sets = sets,
 )

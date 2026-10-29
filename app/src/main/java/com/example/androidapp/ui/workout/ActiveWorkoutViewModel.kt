@@ -179,6 +179,8 @@ data class SessionExerciseRow(
      * What the *next* set's fields state: a duration instead of a rep count.
      */
     val isTimed: Boolean = false,
+    /** The movement's own answer to *Done*, or null to follow the app setting (ROADMAP N235). */
+    val progressionMode: ProgressionMode? = null,
     /**
      * Whether this movement is loaded by the body (ROADMAP N219).
      *
@@ -721,7 +723,10 @@ class ActiveWorkoutViewModel @Inject constructor(
     fun onFinishExercise(sessionExerciseId: String) {
         val questionOpen = _pendingProgression.value?.sessionExerciseId == sessionExerciseId
         val row = uiState.value.exercises.firstOrNull { it.id == sessionExerciseId }
-        val mode = progressionMode.value
+        // **The one place the mode is resolved** (ROADMAP N235): the movement's own answer when it has
+        // one, the app setting otherwise. A movement that says *Off* is not asked, and one that says
+        // *Apply at Done* is asked pre-filled, whatever the device is set to.
+        val mode = row?.progressionMode ?: progressionMode.value
         when {
             questionOpen -> {
                 _pendingProgression.value = null
@@ -1611,6 +1616,7 @@ private fun SessionExercise.toRow(
         stepGrams = stepGrams,
         isTimed = isTimed,
         isBodyweight = isBodyweight,
+        progressionMode = progressionMode,
         runContinuesAfter = plan.plannedEntry?.sets?.runContinuesAfter().orEmpty(),
         plannedSetCount = plan.plannedSetCount,
         isFinished = isFinished,

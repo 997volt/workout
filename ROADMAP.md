@@ -17,8 +17,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-The *Later* queue is being worked through in its own build order: the exercise's own screen (N233, N234) is
-done, and what remains starts with the schema changes a movement's own progression answer needs.
+The *Later* queue is being worked through in its own build order: the exercise's own screen (N233, N234) and a
+movement's own answer to *Done* (N235, schema 13) are done. What remains starts with the second schema change.
 
 ## Later — decided, and not being started
 
@@ -36,20 +36,6 @@ says nothing waits for nothing but the one before it. The numbers quoted here ar
 planned from, not facts to keep up to date: a row that ships leaves this file.
 
 ### A plan's progression, stored
-
-**N235 — a movement can answer *Done* its own way.** The progression mode is one device preference for the whole
-app (*Ask*, *Apply at Done*, *Off*), so a 5/3/1 squat and a movement being gently worked back are told the same
-thing. The movement gains its own answer, **null meaning *follow the app setting***, drawn in its editor as a
-four-way choice; the settings control keeps its three and its hint says it is the default. It is stored on the
-movement rather than in the settings, because **it decides what the app writes into a plan**, and this project's
-rule is that a setting is a device preference while a metric target is training data: a restore must not silently
-return a movement to *Ask*. Schema 13, a nullable column read by name, with the exported schema as the contract.
-The backup carries it as a defaulted field, so the transfer format's version does not move. A **program document
-does not carry it** — a document describes a plan, while this is the receiving library's view of a movement, the
-same split `hiddenAt` follows. The Done flow resolves it in the one place it reads the mode, and the plan editor's
-sentence gains a clause when the movement's answer overrides the setting, because otherwise it promises a question
-that will not be asked. Rejected: a column on a plan's exercise, which P3.17 already refused as a second place to
-say one thing.
 
 **N236 — a step that was offered and not taken is recorded.** *Not now* drops the question and writes nothing, so a
 week later History cannot say a step was there to take — the offer is frozen from the plan as it was, and the plan

@@ -258,6 +258,7 @@
     <string name="plan_progression_step">Progresses by +%1$s %2$s when a set meets the plan\'s RPE</string>
     <string name="plan_progression_reps_then_load">Progresses by +1 rep below the rep ceiling, then by +%1$s %2$s at it, when a set meets the plan\'s RPE</string>
     <string name="plan_progression_reps_only">Progresses by +1 rep below the rep ceiling; a set at the ceiling has no weight to raise.</string>
+    <string name="plan_progression_movement_answer">This movement answers Done itself: %1$s.</string>
     <string name="plan_progression_no_gate">No progression: the plan names no target RPE.</string>
     <string name="plan_progression_no_reps">No progression: the plan names no reps.</string>
     <string name="plan_progression_nothing_to_move">No progression: its reps are a single target and it names no weight.</string>
@@ -932,6 +933,11 @@
     <string name="settings_backup_kept">The newest five backups are kept; older ones are removed.</string>
     <!-- A bodyweight movement (ROADMAP N219): the weight field is what was *added*. -->
     <string name="exercise_detail_bodyweight">Bodyweight exercise</string>
+    <!-- A movement's own answer to Done (ROADMAP N235). Four chips, because "follow the app" is a real
+         answer and the settings screen's three cannot express it. -->
+    <string name="exercise_detail_progression">When you press Done</string>
+    <string name="exercise_detail_progression_hint">Ask about the next step, have every earned step already picked for one Done, or finish without asking. The app\'s own answer is in settings.</string>
+    <string name="exercise_progression_default">App default</string>
     <string name="exercise_detail_timed">Timed exercise</string>
     <string name="exercise_detail_timed_hint">Sets record how long they were held instead of reps. Load stays available, for a carry.</string>
     <string name="exercise_detail_bodyweight_hint">The weight field is what you add — a belt, a dumbbell. Your own weight is added when the set is logged.</string>

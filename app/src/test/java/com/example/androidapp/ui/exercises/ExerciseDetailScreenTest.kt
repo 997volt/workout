@@ -26,6 +26,7 @@ import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PersonalRecords
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.ui.components.TestTags
@@ -72,6 +73,34 @@ class ExerciseDetailScreenTest {
                 onOpenTrends = { _ -> },
             )
         }
+    }
+
+    @Test
+    fun theMovementsOwnAnswerToDoneIsOffered_andReported() {
+        // ROADMAP N235: null is *App default*, which is why there are four chips rather than the settings
+        // screen's three — a three-way control would have to express "follow the app" as one of the answers,
+        // which is what an override is not.
+        var saved: ExerciseEdit? = null
+        show(
+            ExerciseDetailUiState(isLoading = false, isEditing = true, exercise = custom),
+            onSave = { saved = it },
+        )
+
+        // All four are offered, and the two that are not the default are real chips rather than labels.
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_PROGRESSION_DEFAULT)
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_PROGRESSION_SUGGEST)
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_PROGRESSION_APPLY)
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_PROGRESSION_OFF).performScrollTo().performClick()
+
+        composeTestRule.onNodeWithTag(TestTags.EXERCISE_EDIT_SAVE).performScrollTo().performClick()
+
+        assertEquals(ProgressionMode.OFF, saved?.progressionMode)
     }
 
     @Test

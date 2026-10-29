@@ -109,6 +109,18 @@ data class ExerciseEntity(
      */
     @ColumnInfo(defaultValue = "0")
     val isTimed: Boolean = false,
+    /**
+     * How *Done* answers for this movement, or null to follow the app setting (ROADMAP N235).
+     *
+     * A nullable TEXT column holding the enum's **name**, so a build that does not know a name reads it as
+     * "follow the app" rather than as a different answer. Nullable with no default, so the migration that
+     * adds it is a plain ALTER and every existing row reads as unset.
+     *
+     * **On the movement rather than in the settings** because it decides what the app writes into a plan,
+     * and this project's rule is that a setting is a device preference while a metric target is training
+     * data: a restore must not silently return a movement to *Ask*.
+     */
+    val progressionMode: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

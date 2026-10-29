@@ -50,6 +50,10 @@ import androidx.room.TypeConverters
  * **Schema 12 is B270**, and it is a data migration: a rating's target was stored in half-points while every
  * reading of it was in points, so the stored values are halved. See [MIGRATION_11_12].
  *
+ * **Schema 13** lets a movement answer *Done* its own way (N235): a nullable `progressionMode` holding the
+ * answer's name, where null means "follow the app setting" — which is what every row meant before the column
+ * existed. See [MIGRATION_12_13].
+ *
  * There is deliberately **no** `fallbackToDestructiveMigration()`: it would turn
  * a forgotten migration into silent, total data loss for a user's training
  * history. A missing migration must fail loudly in development instead — which is exactly why 2.0
@@ -76,7 +80,7 @@ import androidx.room.TypeConverters
         MeasurementSoreMuscleEntity::class,
         MetricGoalEntity::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

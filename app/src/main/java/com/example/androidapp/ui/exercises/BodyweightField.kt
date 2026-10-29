@@ -14,7 +14,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.ui.components.TestTags
 
 /**
@@ -63,6 +65,34 @@ fun TimedField(
         testTag = TestTags.EXERCISE_EDIT_TIMED,
         modifier = modifier,
     )
+}
+
+/**
+ * What a set of this movement **means**: body-loaded, held, and how *Done* answers (N219, N220, N235).
+ *
+ * One composable because they are one question — what kind of thing is this movement when it is logged — and
+ * because the editor is at the length this project allows. The third field is drawn only for a movement: a
+ * category is never trained, so it has no Done to answer.
+ */
+@Composable
+fun MovementBehaviourFields(
+    isBodyweight: Boolean,
+    onBodyweightChange: (Boolean) -> Unit,
+    isTimed: Boolean,
+    onTimedChange: (Boolean) -> Unit,
+    progressionMode: ProgressionMode?,
+    onProgressionModeChange: (ProgressionMode?) -> Unit,
+    /** False for a category, which is never logged. */
+    isMovement: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        BodyweightField(checked = isBodyweight, onCheckedChange = onBodyweightChange)
+        TimedField(checked = isTimed, onCheckedChange = onTimedChange)
+        if (isMovement) {
+            ProgressionModeField(selected = progressionMode, onSelect = onProgressionModeChange)
+        }
+    }
 }
 
 /** A labelled switch with one sentence saying what it changes. */

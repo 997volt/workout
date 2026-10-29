@@ -64,6 +64,7 @@ import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
@@ -426,6 +427,7 @@ private fun TemplateEditorBody(
                 itemsIndexed(items = state.exercises, key = { _, exercise -> exercise.id }) { index, exercise ->
                     TemplateExerciseBlock(
                         exercise = exercise,
+                        appProgressionMode = state.appProgressionMode,
                         position = index + 1,
                         isFirst = index == 0,
                         isLast = index == state.exercises.lastIndex,
@@ -515,6 +517,8 @@ private fun TemplateNameField(
 @Composable
 private fun TemplateExerciseBlock(
     exercise: TemplateExercise,
+    /** The app's own answer to Done, which this movement may override (ROADMAP N235). */
+    appProgressionMode: ProgressionMode,
     position: Int,
     isFirst: Boolean,
     isLast: Boolean,
@@ -587,7 +591,7 @@ private fun TemplateExerciseBlock(
                 onAdd = onAddSets,
             )
             AddSetButton(exerciseId = exercise.id, onClick = { open = ADDING })
-            ExercisePlanFields(exercise = exercise, onSave = onSavePlan)
+            ExercisePlanFields(exercise, appProgressionMode, onSavePlan)
         }
     }
 
@@ -817,6 +821,7 @@ private fun PlanSetRow(
 @Composable
 private fun ExercisePlanFields(
     exercise: TemplateExercise,
+    appProgressionMode: ProgressionMode,
     onSave: (Int?, String?, Int?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -837,7 +842,7 @@ private fun ExercisePlanFields(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ProgressionStepNotice(exercise = exercise)
+        ProgressionStepNotice(exercise = exercise, appProgressionMode = appProgressionMode)
         PlanCueField(cue = cue, onCueChange = { cue = it })
         Row(
             modifier = Modifier.fillMaxWidth(),

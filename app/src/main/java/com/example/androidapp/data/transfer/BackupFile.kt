@@ -234,6 +234,15 @@ data class ExerciseDto(
      * default would turn an older file's whole library into heads, which are never offered.
      */
     val rowKind: RowKind = RowKind.MOVEMENT,
+    /**
+     * How *Done* answers for this movement, by name, or null to follow the app setting (ROADMAP N235).
+     *
+     * Defaulted and unbumped, like the fields above: a file written before a movement could answer for itself
+     * decodes with every row following the setting, which is exactly what it was. It is in the **backup** and
+     * not in a program document, because a document describes a plan while this is the receiving library's
+     * view of a movement.
+     */
+    val progressionMode: String? = null,
 )
 
 /**

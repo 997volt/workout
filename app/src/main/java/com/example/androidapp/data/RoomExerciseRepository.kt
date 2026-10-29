@@ -181,6 +181,10 @@ class RoomExerciseRepository @Inject constructor(
             // the screen became a lie: the edit is the only way a movement is ever marked (B240).
             isBodyweight = exercise.isBodyweight,
             isTimed = exercise.isTimed,
+            // The movement's own answer to Done by name, or null for the app setting (ROADMAP N235).
+            // `stored.copy` keeps what it is not told, so leaving this out would silently put back the
+            // old answer while the screen showed the new one — the failure B240 recorded for the flags.
+            progressionMode = exercise.progressionMode?.name,
             updatedAt = timeSource.nowEpochMillis(),
         )
         if (dao.update(updated) == 0) throw NotFoundException("exercise ${exercise.id}")

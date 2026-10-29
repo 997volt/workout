@@ -613,4 +613,26 @@ class BackupCodecTest {
 
         assertNull(restored.templates.first().versionOf)
     }
+
+    @Test
+    fun aFileWrittenBeforeAMovementCouldAnswerDone_decodesAsFollowingTheApp() {
+        // ROADMAP N235: the field is defaulted and the format's version does not move, so a backup written
+        // before this existed still decodes — with every movement following the setting, which is what it did.
+        val dto = Json.decodeFromString<ExerciseDto>(
+            """
+            {
+              "id": "ex1",
+              "name": "Back Squat",
+              "primaryMuscle": null,
+              "secondaryMuscles": [],
+              "equipment": "BARBELL",
+              "movementPattern": "SQUAT",
+              "createdAt": 1,
+              "updatedAt": 1
+            }
+            """.trimIndent(),
+        )
+
+        assertNull(dto.progressionMode)
+    }
 }

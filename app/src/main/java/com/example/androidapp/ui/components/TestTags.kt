@@ -694,6 +694,12 @@ object TestTags {
     /** One exercise's own trends (ROADMAP N17). */
     const val EXERCISE_TRENDS = "exercise_trends"
 
+    /** The monitor's own answer to Done, or *App default* (ROADMAP N235). */
+    const val EXERCISE_EDIT_PROGRESSION_DEFAULT = "exercise_edit_progression_default"
+    const val EXERCISE_EDIT_PROGRESSION_SUGGEST = "exercise_edit_progression_suggest"
+    const val EXERCISE_EDIT_PROGRESSION_APPLY = "exercise_edit_progression_apply"
+    const val EXERCISE_EDIT_PROGRESSION_OFF = "exercise_edit_progression_off"
+
     /** The exercise's own history section (ROADMAP N233). */
     const val EXERCISE_HISTORY = "exercise_history"
     const val EXERCISE_HISTORY_LAST_TRAINED = "exercise_history_last_trained"

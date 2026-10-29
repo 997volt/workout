@@ -17,6 +17,19 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A movement can answer *Done* its own way** (N235, schema 13). The progression mode was one device preference
+  for the whole app, so a 5/3/1 squat and a movement being gently worked back were told the same thing. A movement
+  now has its own answer — *App default*, *Ask*, *Apply at Done* or *Off* — drawn in its editor as a four-way
+  choice, while the settings control keeps its three and says it is the default. It is stored on the movement
+  rather than in the settings because it **decides what the app writes into a plan**, and this project's rule is
+  that a setting is a device preference while a metric target is training data: a restore must not silently return
+  a movement to *Ask*. The Done flow resolves it in the one place it reads the mode, and the plan editor's sentence
+  gains a clause when the movement's answer differs from the setting — otherwise it promises a question that will
+  not be asked. The backup carries it as a defaulted field, so the transfer format's version does not move, and a
+  program document does not carry it, because a document describes a plan while this is the receiving library's
+  view of a movement.
+
+
 - **The workout's ⋮ opens the exercise** (N234, reversing N121). The shared menu already carried an *Open exercise*
   entry that the template editor supplied, and the live workout withheld it on purpose — with a test that asserted
   its absence. The alternative was left unstated: to look at a lift mid-session you switched to Library, found the

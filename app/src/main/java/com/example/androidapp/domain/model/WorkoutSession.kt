@@ -152,6 +152,14 @@ data class SessionExercise(
      */
     val isTimed: Boolean = false,
     /**
+     * The movement's own answer to *Done*, or null to follow the app setting (ROADMAP N235).
+     *
+     * Read from the library like [isTimed]: it decides whether *Done* opens the next-step question or
+     * closes the exercise, which is a fact about the movement today rather than something the session
+     * agreed to when it started.
+     */
+    val progressionMode: ProgressionMode? = null,
+    /**
      * When this exercise was marked done (ROADMAP N7), or null while it is open.
      *
      * Deliberately not a delete: [finishedAt] set means no more sets are added and

@@ -425,6 +425,9 @@ class BackupCodecRoundTripTest {
             isBodyweight = true,
             // And N220's: dropped, a plank comes back as a movement whose sets ask for reps.
             isTimed = true,
+            // And N235's: dropped, a movement the app deliberately never asks comes back as one it asks
+            // every session — the override this field exists for.
+            progressionMode = "APPLY_AT_DONE",
             createdAt = 1_600_000_000_000L,
             updatedAt = 1_600_000_000_001L,
             deletedAt = null,

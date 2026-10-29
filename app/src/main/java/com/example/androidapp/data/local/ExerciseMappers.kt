@@ -2,6 +2,7 @@ package com.example.androidapp.data.local
 
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Exercise
+import com.example.androidapp.domain.model.ProgressionMode
 
 /**
  * Translation between the room entity and the domain model.
@@ -27,6 +28,9 @@ internal fun ExerciseEntity.toDomain(): Exercise = Exercise(
     stepGrams = stepGrams,
     isBodyweight = isBodyweight,
     isTimed = isTimed,
+    // A stored name this build does not know reads as "follow the app", which is the default rather than a
+    // different answer the lifter did not give.
+    progressionMode = ProgressionMode.fromName(progressionMode),
 )
 
 /**
@@ -50,6 +54,7 @@ internal fun Exercise.toEntity(now: Long): ExerciseEntity = ExerciseEntity(
     stepGrams = stepGrams,
     isBodyweight = isBodyweight,
     isTimed = isTimed,
+    progressionMode = progressionMode?.name,
     createdAt = now,
     updatedAt = now,
     deletedAt = null,

@@ -87,4 +87,12 @@ data class Exercise(
      * records — seconds instead of reps — and the weight field stays, because a carry is loaded *and* timed.
      */
     val isTimed: Boolean = false,
+    /**
+     * This movement's own answer to *Done*, or null to follow the app setting (ROADMAP N235).
+     *
+     * Null is *follow the app*, which is what every row was before this existed and what a movement with no
+     * opinion still is. It is a member of the movement rather than a device preference because it decides
+     * what the app **writes into a plan**: a restore must not quietly return a movement to *Ask*.
+     */
+    val progressionMode: ProgressionMode? = null,
 )

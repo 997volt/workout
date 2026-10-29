@@ -98,6 +98,7 @@ internal fun ExerciseEntity.toDto() = ExerciseDto(
     isTimed = isTimed,
     parentId = parentId,
     rowKind = rowKind,
+    progressionMode = progressionMode,
 )
 
 internal fun ExerciseDto.toEntity() = ExerciseEntity(
@@ -124,6 +125,9 @@ internal fun ExerciseDto.toEntity() = ExerciseEntity(
     // feature that a round trip has to carry or it is not a round trip.
     parentId = parentId,
     rowKind = rowKind,
+    // The movement's own answer to Done (ROADMAP N235). Dropping it would restore a movement the app
+    // deliberately never asks as one it asks every session, which is the override this field exists for.
+    progressionMode = progressionMode,
     createdAt = createdAt,
     updatedAt = updatedAt,
     deletedAt = deletedAt,

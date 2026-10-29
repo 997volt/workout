@@ -95,6 +95,14 @@ data class TemplateExercise(
      * ramp built on a step the machine does not have is a plan nobody can load.
      */
     val stepGrams: Long? = null,
+    /**
+     * The movement's own answer to *Done*, or null to follow the app setting (ROADMAP N235).
+     *
+     * Read from the library rather than prescribed by the plan: the sentence this block draws about
+     * progression has to know that the movement answers for itself, or it promises a question that will not
+     * be asked.
+     */
+    val progressionMode: ProgressionMode? = null,
     /** The planned sets, in order (ROADMAP N14). Empty for a template with none. */
     val sets: List<TemplateSet> = emptyList(),
 )

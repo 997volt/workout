@@ -26,6 +26,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
@@ -36,10 +37,10 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import java.time.Instant
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
 
 /**
  * One template's editor (ROADMAP N3).
@@ -155,6 +156,48 @@ class TemplateEditorScreenTest {
                 onBack = {},
             )
         }
+    }
+
+    @Test
+    fun aMovementsOwnAnswerToDone_isNamedInThePlansSentence() {
+        // ROADMAP N235: the sentence promises a question, so a movement that answers for itself has to say
+        // so — otherwise the plan describes a prompt that Done will not show.
+        setScreen(
+            state = twoExercises.copy(
+                appProgressionMode = ProgressionMode.SUGGEST,
+                exercises = twoExercises.exercises.map { exercise ->
+                    exercise.copy(progressionMode = ProgressionMode.OFF, targetRpeHalves = 14)
+                },
+            ),
+        )
+
+        // The block's own fields are inside the fold, so reading the sentence goes through the
+        // control a lifter uses (N91).
+        openBlock("te1")
+
+        composeTestRule.onNodeWithText(
+            "This movement answers Done itself: Off.",
+            substring = true,
+        ).assertExists()
+    }
+
+    @Test
+    fun aMovementThatAgreesWithTheSetting_getsNoSecondSentence() {
+        setScreen(
+            state = twoExercises.copy(
+                appProgressionMode = ProgressionMode.OFF,
+                exercises = twoExercises.exercises.map { exercise ->
+                    exercise.copy(progressionMode = ProgressionMode.OFF, targetRpeHalves = 14)
+                },
+            ),
+        )
+
+        openBlock("te1")
+
+        composeTestRule.onNodeWithText(
+            "This movement answers Done itself",
+            substring = true,
+        ).assertDoesNotExist()
     }
 
     @Test

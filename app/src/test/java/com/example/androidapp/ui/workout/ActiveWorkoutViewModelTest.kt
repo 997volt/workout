@@ -640,6 +640,91 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun aMovementThatSaysOff_isNotAsked_evenWhenTheAppSaysAsk() = runTest(dispatcher) {
+        // ROADMAP N235, and the reason the answer lives on the movement: a 5/3/1 squat and a movement being
+        // gently worked back are not the same question, and one device preference cannot tell them apart.
+        val repository = FakeWorkoutRepository().apply {
+            progressionModeForNextExercise = ProgressionMode.OFF
+        }
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            settings = FakeSettingsRepository().apply { progressionMode.value = ProgressionMode.SUGGEST },
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertNull("the movement's own answer withdraws the question", viewModel.pendingProgression.value)
+        assertTrue(viewModel.uiState.value.exercises.single().isFinished)
+        assertEquals(
+            "and nothing is written to the plan",
+            emptyList<Pair<String, TemplateSetEdit>>(),
+            templates.updates
+        )
+    }
+
+    @Test
+    fun aMovementThatSaysApplyAtDone_opensTheQuestionAnswered_evenWhenTheAppSaysAsk() = runTest(dispatcher) {
+        val repository = FakeWorkoutRepository().apply {
+            progressionModeForNextExercise = ProgressionMode.APPLY_AT_DONE
+        }
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            settings = FakeSettingsRepository().apply { progressionMode.value = ProgressionMode.SUGGEST },
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        val pending = viewModel.pendingProgression.value
+        assertNotNull("the movement's answer decides, not the setting", pending)
+        assertTrue("and it arrives already answered", pending!!.chosen.isNotEmpty())
+        assertTrue("nothing is written before Done", templates.updates.isEmpty())
+    }
+
+    @Test
+    fun aMovementWithNoAnswer_followsTheAppSetting() = runTest(dispatcher) {
+        // Null is "follow the app", which is what every row meant before a movement could answer (N235).
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(
+            repository,
+            templateId = "t1",
+            templates = templates,
+            settings = FakeSettingsRepository().apply { progressionMode.value = ProgressionMode.OFF },
+        )
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertNull(viewModel.pendingProgression.value)
+    }
+
+    @Test
     fun withApplyAtDone_theQuestionOpensWithEveryEarnedStepPicked() = runTest(dispatcher) {
         // P3.17: the middle answer a switch could not express — the question still opens, so the lifter
         // reads what the plan would become, but every earned step is already picked and one Done writes it.
@@ -2007,6 +2092,9 @@ class ActiveWorkoutViewModelTest {
         /** Whether the next added exercise is a hold, so N220's path can be reached. */
         var isTimedForNextExercise = false
 
+        /** The answer the *movement* gives Done, which overrides the app setting (ROADMAP N235). */
+        var progressionModeForNextExercise: ProgressionMode? = null
+
         /** The rest length the ViewModel actually asked for, or null if never asked. */
         var lastRestSeconds: Int? = null
 
@@ -2076,6 +2164,7 @@ class ActiveWorkoutViewModelTest {
                 stepGrams = stepGramsForNextExercise,
                 isBodyweight = isBodyweightForNextExercise,
                 isTimed = isTimedForNextExercise,
+                progressionMode = progressionModeForNextExercise,
             )
             return DataResult.Success(Unit)
         }

@@ -1,25 +1,26 @@
 package com.example.androidapp.ui.templates
 
-import com.example.androidapp.domain.Weight
-import com.example.androidapp.domain.model.SetType
-import kotlinx.coroutines.flow.flowOf
-import java.time.Instant
-import com.example.androidapp.domain.repository.TemplateSetEdit
-import com.example.androidapp.domain.model.TemplateSet
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
+import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgressionMode
+import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateExercise
+import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
+import com.example.androidapp.domain.repository.SettingsRepository
 import com.example.androidapp.domain.repository.TemplateRepository
-import java.io.IOException
+import com.example.androidapp.domain.repository.TemplateSetEdit
+import com.example.androidapp.ui.EmptySettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -37,6 +38,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.IOException
+import java.time.Instant
 
 /**
  * Under Robolectric rather than plain JVM: the editor reads its template id out of
@@ -63,8 +66,27 @@ class TemplateEditorViewModelTest {
         backgroundScope.launch { viewModel.uiState.collect {} }
     }
 
-    private fun viewModelFor(repository: TemplateRepository, templateId: String = "t1") =
-        TemplateEditorViewModel(repository, SavedStateHandle(mapOf("templateId" to templateId)))
+    private fun viewModelFor(
+        repository: TemplateRepository,
+        templateId: String = "t1",
+        settings: SettingsRepository = FakeEditorSettings(),
+    ) = TemplateEditorViewModel(
+        repository,
+        settings,
+        SavedStateHandle(mapOf("templateId" to templateId)),
+    )
+
+    /**
+     * The app's own answer to *Done* (ROADMAP N235).
+     *
+     * One question and one reader here, so the fake answers exactly that rather than growing into a second
+     * settings screen: what a test needs is the mode the plan's sentence compares a movement's answer to.
+     */
+    private class FakeEditorSettings(
+        private val mode: ProgressionMode = ProgressionMode.SUGGEST,
+    ) : SettingsRepository by EmptySettings {
+        override fun observeProgressionMode(): Flow<ProgressionMode> = flowOf(mode)
+    }
 
     /** One planned exercise carrying [sets], which is what a removal's undo is about. */
     private fun exerciseWithSets(id: String, vararg sets: TemplateSet) =
@@ -482,6 +504,7 @@ class TemplateEditorViewModelTest {
         val exercises = MutableStateFlow<List<TemplateExercise>>(emptyList())
         val renamed = mutableListOf<Pair<String, String>>()
         val removed = mutableListOf<String>()
+
         /** The planned sets a removal took, and the ones an undo put back (ROADMAP N90). */
         val removedSets = mutableListOf<String>()
         val restoredSets = mutableListOf<String>()
@@ -493,6 +516,7 @@ class TemplateEditorViewModelTest {
 
         /** Every hide or unhide, as the id and the state asked for (ROADMAP N214). */
         val hiddenWrites = mutableListOf<Pair<String, Boolean>>()
+
         /** Every group write, as the ids it covered — one entry per call, which is the point. */
         val supersetGroups = mutableListOf<List<String>>()
 
@@ -524,6 +548,7 @@ class TemplateEditorViewModelTest {
 
         override fun observeExercises(templateId: String): Flow<List<TemplateExercise>> = exercises
         override fun observeSets(templateId: String): Flow<List<TemplateSet>> = flowOf(emptyList())
+
         /** Recorded as one call, since writing the ramp in front is a single write (B34). */
         val prependedSets = mutableListOf<Pair<String, List<TemplateSetEdit>>>()
 
@@ -597,7 +622,6 @@ class TemplateEditorViewModelTest {
             return DataResult.Success(Unit)
         }
 
-
         override suspend fun deleteTemplate(templateId: String): DataResult<Unit> {
             if (failWrites) return failure()
             deleted += templateId
@@ -635,7 +659,6 @@ class TemplateEditorViewModelTest {
 
         private fun failure() = DataResult.Failure(DataError.Storage(IOException("disk full")))
     }
-
 
     @Test
     fun addingAPlannedSet_passesItsTargetsToTheRepository() = runTest(dispatcher) {

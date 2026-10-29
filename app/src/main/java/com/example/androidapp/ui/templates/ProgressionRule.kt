@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.templates
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -10,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionRule
 import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.progressionRuleFor
@@ -28,7 +30,12 @@ import com.example.androidapp.ui.components.exerciseWeightUnit
  * long form; the session's is a clause in the block's small print.
  */
 @Composable
-internal fun ProgressionStepNotice(exercise: TemplateExercise, modifier: Modifier = Modifier) {
+internal fun ProgressionStepNotice(
+    exercise: TemplateExercise,
+    /** The app's own answer to *Done*, which [exercise]'s movement may override (ROADMAP N235). */
+    appProgressionMode: ProgressionMode,
+    modifier: Modifier = Modifier,
+) {
     val unit = exerciseWeightUnit(exercise.weightUnit)
     val step = Weight.format(Weight.stepGramsFor(exercise.stepGrams, unit), unit)
     val unitLabel = stringResource(
@@ -44,10 +51,25 @@ internal fun ProgressionStepNotice(exercise: TemplateExercise, modifier: Modifie
         ProgressionRule.LOAD_ONLY -> stringResource(R.string.plan_progression_step, step, unitLabel)
         ProgressionRule.NOTHING_TO_MOVE -> stringResource(R.string.plan_progression_nothing_to_move)
     }
+    // **The movement's own answer wins, and the sentence has to say so** (N235): otherwise it promises a
+    // question that Done will not ask. The clause appears only where it changes what happens — a movement
+    // that agrees with the setting needs no second sentence.
+    val own = exercise.progressionMode
+    val clause = own?.takeIf { it != appProgressionMode }?.let {
+        stringResource(R.string.plan_progression_movement_answer, stringResource(it.answerLabel()))
+    }
     Text(
-        text = text,
+        text = if (clause == null) text else "$text $clause",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.padding(top = 4.dp),
     )
+}
+
+/** What one answer is called in the plan's own sentence (ROADMAP N235). */
+@StringRes
+private fun ProgressionMode.answerLabel(): Int = when (this) {
+    ProgressionMode.SUGGEST -> R.string.settings_progression_suggest
+    ProgressionMode.APPLY_AT_DONE -> R.string.settings_progression_apply
+    ProgressionMode.OFF -> R.string.settings_progression_off
 }

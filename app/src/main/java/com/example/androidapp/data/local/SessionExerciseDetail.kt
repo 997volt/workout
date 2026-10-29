@@ -4,6 +4,7 @@ import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.SessionExercise
 import java.time.Instant
 
@@ -49,6 +50,8 @@ data class SessionExerciseDetail(
     val isBodyweight: Boolean,
     /** Whether a set of this movement is held rather than counted (ROADMAP N220). */
     val isTimed: Boolean,
+    /** The movement's own answer to *Done* by name, or null to follow the app setting (ROADMAP N235). */
+    val progressionMode: String?,
     /** When this exercise was marked done, or null (ROADMAP N7). */
     val finishedAt: Long?,
     /** How well the target muscle was worked, 1–10, or null (ROADMAP N8). */
@@ -79,6 +82,7 @@ internal fun SessionExerciseDetail.toDomain(
     stepGrams = stepGrams,
     isBodyweight = isBodyweight,
     isTimed = isTimed,
+    progressionMode = ProgressionMode.fromName(progressionMode),
     finishedAt = finishedAt?.let(Instant::ofEpochMilli),
     muscleFeel = muscleFeel,
     joints = joints.map { it.toDomain() },

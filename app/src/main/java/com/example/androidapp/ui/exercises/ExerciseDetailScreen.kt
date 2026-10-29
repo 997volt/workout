@@ -52,6 +52,7 @@ import com.example.androidapp.domain.model.Equipment
 import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.ui.components.AppFilterChip
 import com.example.androidapp.ui.components.AppTextButton
@@ -399,6 +400,8 @@ private data class ExerciseDraft(
     val isBodyweight: Boolean = false,
     /** Whether a set of the movement is held rather than counted (ROADMAP N220). */
     val isTimed: Boolean = false,
+    /** This movement's own answer to *Done*, or null to follow the app setting (ROADMAP N235). */
+    val progressionMode: ProgressionMode? = null,
     /**
      * The unit in force when the form opened, carried because a draft cannot read the ambient.
      *
@@ -463,6 +466,7 @@ private data class ExerciseDraft(
         weightUnit = weightUnit,
         isBodyweight = isBodyweight,
         isTimed = isTimed,
+        progressionMode = progressionMode,
         parentId = parentId,
     )
 }
@@ -479,6 +483,7 @@ private fun Exercise.toDraft(appUnit: WeightUnit) = ExerciseDraft(
     weightUnit = weightUnit,
     isBodyweight = isBodyweight,
     isTimed = isTimed,
+    progressionMode = progressionMode,
     appUnit = appUnit,
     parentId = parentId,
 )
@@ -520,7 +525,11 @@ private fun ExerciseEditForm(
             ancestors = ancestors,
             categoryOptions = categoryOptions.takeIf { exercise.rowKind == RowKind.MOVEMENT },
         )
-        ExercisePrescriptionFields(draft = draft, onDraftChange = { draft = it })
+        ExercisePrescriptionFields(
+            draft = draft,
+            onDraftChange = { draft = it },
+            isMovement = exercise.rowKind == RowKind.MOVEMENT,
+        )
 
         error?.let { failure ->
             Text(
@@ -672,19 +681,22 @@ private fun ExercisePrescriptionFields(
     draft: ExerciseDraft,
     onDraftChange: (ExerciseDraft) -> Unit,
     modifier: Modifier = Modifier,
+    /** False for a category, which is never logged and so never answers Done (ROADMAP N235). */
+    isMovement: Boolean = true,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Offered once per movement rather than per set (N219): it changes what the weight field means.
-        BodyweightField(
-            checked = draft.isBodyweight,
-            onCheckedChange = { onDraftChange(draft.copy(isBodyweight = it)) },
-        )
-        TimedField(
-            checked = draft.isTimed,
-            onCheckedChange = { onDraftChange(draft.copy(isTimed = it)) },
+        // What a set of this movement means, offered once per movement rather than per set (N219, N220, N235).
+        MovementBehaviourFields(
+            isBodyweight = draft.isBodyweight,
+            onBodyweightChange = { onDraftChange(draft.copy(isBodyweight = it)) },
+            isTimed = draft.isTimed,
+            onTimedChange = { onDraftChange(draft.copy(isTimed = it)) },
+            progressionMode = draft.progressionMode,
+            onProgressionModeChange = { onDraftChange(draft.copy(progressionMode = it)) },
+            isMovement = isMovement,
         )
 
         OutlinedTextField(

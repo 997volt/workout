@@ -12,6 +12,7 @@ import com.example.androidapp.domain.model.Exercise
 import com.example.androidapp.domain.model.MovementPattern
 import com.example.androidapp.domain.model.MuscleGroup
 import com.example.androidapp.domain.model.PersonalRecords
+import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.RowKind
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.repository.ExerciseRepository
@@ -58,6 +59,8 @@ data class ExerciseEdit(
     val isBodyweight: Boolean = false,
     /** Whether a set of the movement is held rather than counted (ROADMAP N220). */
     val isTimed: Boolean = false,
+    /** This movement's own answer to *Done*, or null to follow the app setting (ROADMAP N235). */
+    val progressionMode: ProgressionMode? = null,
     /**
      * The category this row is filed under, or null for none (ROADMAP N95, N110).
      *
@@ -335,6 +338,8 @@ class ExerciseDetailViewModel @Inject constructor(
         stepGrams = edit.stepGrams,
         isBodyweight = edit.isBodyweight,
         isTimed = edit.isTimed,
+        // The movement's own answer to Done, or null for the app setting (N235).
+        progressionMode = edit.progressionMode,
         // The one field that makes this write *move to category* as well as an edit (N95).
         parentId = edit.parentId,
     )

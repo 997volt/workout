@@ -219,6 +219,7 @@ interface TemplateDao {
                te.targetRpeHalves AS targetRpeHalves,
                e.weightUnit AS weightUnit,
                e.stepGrams AS stepGrams,
+               e.progressionMode AS progressionMode,
                te.supersetGroup AS supersetGroup
         FROM template_exercises te
         JOIN exercises e ON e.id = te.exerciseId
