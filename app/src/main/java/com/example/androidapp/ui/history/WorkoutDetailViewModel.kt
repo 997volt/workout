@@ -8,10 +8,11 @@ import com.example.androidapp.domain.DataError
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.JointPain
+import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SetType
-import com.example.androidapp.domain.model.loadGrams
 import com.example.androidapp.domain.model.WorkoutProgram
 import com.example.androidapp.domain.model.WorkoutSession
+import com.example.androidapp.domain.model.loadGrams
 import com.example.androidapp.domain.repository.ProgramRepository
 import com.example.androidapp.domain.repository.TemplateRepository
 import com.example.androidapp.domain.repository.WorkoutRepository
@@ -90,6 +91,8 @@ data class HistoryExercise(
     val muscleFeel: Int? = null,
     /** The joints that hurt, each with its side and own score (ROADMAP N63), or empty. */
     val joints: List<JointPain> = emptyList(),
+    /** The directions of a step offered and not taken (ROADMAP N236), or empty. */
+    val declinedDirections: Set<ProgressionDirection> = emptySet(),
 )
 
 data class WorkoutDetailUiState(
@@ -261,6 +264,7 @@ class WorkoutDetailViewModel @Inject constructor(
                         weightUnit = row.weightUnit,
                         muscleFeel = row.muscleFeel,
                         joints = row.joints,
+                        declinedDirections = row.declinedDirections,
                         sets = logged
                             .filter { it.sessionExerciseId == row.id }
                             .sortedBy { it.setIndex }

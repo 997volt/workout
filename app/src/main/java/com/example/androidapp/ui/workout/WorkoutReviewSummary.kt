@@ -22,6 +22,8 @@ private fun SessionExerciseRow.toActual(): ExerciseActual = ExerciseActual(
     name = name,
     // The row already carries its exercise's effective unit (N64).
     weightUnit = weightUnit,
+    // The step the lifter was offered and passed on (ROADMAP N236), which the review states.
+    declinedDirections = declinedDirections,
     sets = sets.map {
         PerformedSetSpec(
             role = it.setType,

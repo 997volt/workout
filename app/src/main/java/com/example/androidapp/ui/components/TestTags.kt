@@ -694,6 +694,10 @@ object TestTags {
     /** One exercise's own trends (ROADMAP N17). */
     const val EXERCISE_TRENDS = "exercise_trends"
 
+    /** The review's line about a step offered and not taken (ROADMAP N236). */
+    const val REVIEW_STEP_DECLINED = "review_step_declined"
+    const val HISTORY_STEP_DECLINED = "history_step_declined"
+
     /** The monitor's own answer to Done, or *App default* (ROADMAP N235). */
     const val EXERCISE_EDIT_PROGRESSION_DEFAULT = "exercise_edit_progression_default"
     const val EXERCISE_EDIT_PROGRESSION_SUGGEST = "exercise_edit_progression_suggest"

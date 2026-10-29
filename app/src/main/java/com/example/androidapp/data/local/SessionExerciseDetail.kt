@@ -57,6 +57,8 @@ data class SessionExerciseDetail(
     /** How well the target muscle was worked, 1–10, or null (ROADMAP N8). */
     val muscleFeel: Int?,
     val supersetGroup: Int?,
+    /** The directions of a step offered and not taken, by name, or null (ROADMAP N236). */
+    val declinedDirections: String?,
 )
 
 /**
@@ -85,6 +87,7 @@ internal fun SessionExerciseDetail.toDomain(
     progressionMode = ProgressionMode.fromName(progressionMode),
     finishedAt = finishedAt?.let(Instant::ofEpochMilli),
     muscleFeel = muscleFeel,
+    declinedDirections = declaredDirections(declinedDirections),
     joints = joints.map { it.toDomain() },
     supersetGroup = supersetGroup,
 )

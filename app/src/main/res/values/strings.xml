@@ -669,6 +669,11 @@
          ceiling offers the rep, a set at the ceiling the weight that restarts the range, and a set
          that earned nothing says why. Picking a chip is not writing: "Done" writes every pick,
          "Not now" writes none, and the rating stays reachable behind it (N8, N10). -->
+    <!-- A step that was offered and not taken (ROADMAP N236). Stated rather than judged: declining is a
+         decision, and nothing about it says the work was short. -->
+    <string name="summary_step_declined">Step offered, not taken: %1$s</string>
+    <string name="progression_direction_load">load</string>
+    <string name="progression_direction_reps">reps</string>
     <string name="progression_title">%1$s — next step</string>
     <string name="progression_set">Set %1$d of %2$d</string>
     <string name="progression_plan">Plan: %1$s</string>

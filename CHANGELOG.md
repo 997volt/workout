@@ -17,6 +17,14 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A step that was offered and not taken is recorded** (N236, schema 14). *Not now* dropped the question and
+  wrote nothing, so a week later History could not say a step was there to take — and it cannot be recomputed,
+  because the offer is frozen from the plan as it stood and the plan has moved on since. The session exercise now
+  records the directions it declined, written the moment the lifter declines, and both the workout's review and
+  History's detail state it as *step offered, not taken*. **A declined step is not a miss**: the sets failed
+  nothing, the lifter declined the answer, which is why the deload rule counts the work rather than this column.
+
+
 - **A movement can answer *Done* its own way** (N235, schema 13). The progression mode was one device preference
   for the whole app, so a 5/3/1 squat and a movement being gently worked back were told the same thing. A movement
   now has its own answer — *App default*, *Ask*, *Apply at Done* or *Off* — drawn in its editor as a four-way

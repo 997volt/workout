@@ -7,6 +7,7 @@ import com.example.androidapp.data.local.SessionExerciseJointEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.WorkoutDao
 import com.example.androidapp.data.local.WorkoutDatabase
+import com.example.androidapp.data.local.encodedDirections
 import com.example.androidapp.data.local.toDomain
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.InvalidInputException
@@ -19,6 +20,7 @@ import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PerformedSetSpec
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
@@ -270,6 +272,18 @@ class RoomWorkoutRepository @Inject constructor(
         val updated = dao.setSessionExerciseFinished(
             id = sessionExerciseId,
             finishedAt = null,
+            at = timeSource.nowEpochMillis(),
+        )
+        if (updated == 0) throw NotFoundException("session exercise $sessionExerciseId")
+    }
+
+    override suspend fun declineProgression(
+        sessionExerciseId: String,
+        directions: Set<ProgressionDirection>,
+    ): DataResult<Unit> = dataResultOf {
+        val updated = database.sessionExerciseDao().setDeclinedDirections(
+            id = sessionExerciseId,
+            directions = encodedDirections(directions),
             at = timeSource.nowEpochMillis(),
         )
         if (updated == 0) throw NotFoundException("session exercise $sessionExerciseId")

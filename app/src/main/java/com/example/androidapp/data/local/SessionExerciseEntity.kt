@@ -68,6 +68,17 @@ data class SessionExerciseEntity(
      * are performed in rounds, and nothing else needs to be known about the group.
      */
     val supersetGroup: Int? = null,
+    /**
+     * The directions of a step this exercise was **offered and did not take**, by name, or null (N236).
+     *
+     * Written when the lifter answers *Not now*: the offer is frozen from the plan as it was, and the plan has
+     * moved on since, so what was there to take cannot be recomputed. Names rather than ordinals, so a build
+     * that does not know one skips it instead of reading a different direction.
+     *
+     * **A declined step is not a miss**: the sets failed nothing, the lifter declined the answer — which is
+     * why the deload rule counts misses from the work and not from this column (N237).
+     */
+    val declinedDirections: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

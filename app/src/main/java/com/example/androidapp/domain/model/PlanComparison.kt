@@ -74,6 +74,13 @@ data class ExerciseActual(
     val sets: List<PerformedSetSpec>,
     /** The same as [ExercisePlan.weightUnit], for an exercise the plan never named (N64). */
     val weightUnit: WeightUnit? = null,
+    /**
+     * The directions of a step this exercise was offered and did not take (ROADMAP N236).
+     *
+     * Carried through the comparison because the review is the one place the whole session is read back, and
+     * "there was a step here and you passed" is the fact the log cannot otherwise state.
+     */
+    val declinedDirections: Set<ProgressionDirection> = emptySet(),
 )
 
 /**
@@ -131,6 +138,8 @@ data class PlanComparison(
     val performedAverageRpeHalves: Int? = null,
     /** Performed minus prescribed on effort, or null when either side is unknown (N131). */
     val rpeDeltaHalves: Int? = null,
+    /** The directions of a step that was offered and not taken, or empty (ROADMAP N236). */
+    val declinedDirections: Set<ProgressionDirection> = emptySet(),
 ) {
     /** True when the plan had nothing to compare — an exercise added mid-workout. */
     val wasPlanned: Boolean get() = prescribedSets > 0
@@ -168,10 +177,13 @@ fun comparePlanToActual(
     }
 
     val answered = planned.map { plan ->
+        // The taken row carries both halves of what the plan is compared with: what was performed, and
+        // whether a step was offered and passed (N236).
+        val actual = take(plan.exerciseId)
         comparisonOf(
             name = plan.name,
             plannedSets = plan.sets,
-            performedSets = take(plan.exerciseId)?.sets.orEmpty(),
+            performed = actual,
             weightUnit = plan.weightUnit,
             targetRpeHalves = plan.targetRpeHalves,
         )
@@ -182,7 +194,7 @@ fun comparePlanToActual(
             comparisonOf(
                 name = it.name,
                 plannedSets = emptyList(),
-                performedSets = it.sets,
+                performed = it,
                 weightUnit = it.weightUnit,
                 // The plan never named this lift, so it named no effort for it either (N131).
                 targetRpeHalves = null,
@@ -195,13 +207,14 @@ fun comparePlanToActual(
 private fun comparisonOf(
     name: String,
     plannedSets: List<PlannedSetSpec>,
-    performedSets: List<PerformedSetSpec>,
+    /** The taken row, or null when the plan named an exercise nobody performed. */
+    performed: ExerciseActual?,
     weightUnit: WeightUnit?,
     targetRpeHalves: Int?,
 ): PlanComparison {
     val working = { role: SetType -> role != SetType.WARMUP }
     val plannedWork = plannedSets.filter { working(it.role) }
-    val performedWork = performedSets.filter { working(it.role) }
+    val performedWork = performed?.sets.orEmpty().filter { working(it.role) }
 
     // The heaviest working set on each side: a light back-off set must not stand in for the
     // top set any more than a warm-up may. The *load* decides, not the weight column (B274): an assisted
@@ -254,6 +267,8 @@ private fun comparisonOf(
         rpeDeltaHalves = performedWork.averageRpeHalves()?.let { performed ->
             targetRpeHalves?.let { performed - it }
         },
+        // A step offered and not taken, carried rather than computed (N236).
+        declinedDirections = performed?.declinedDirections.orEmpty(),
     )
 }
 

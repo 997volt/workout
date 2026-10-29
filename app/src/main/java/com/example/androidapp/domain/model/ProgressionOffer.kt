@@ -27,7 +27,16 @@ package com.example.androidapp.domain.model
  */
 
 /** The directions a lifter can accept (N50). Enums by name, never ordinal. */
-enum class ProgressionDirection { LOAD, REPS }
+enum class ProgressionDirection {
+    LOAD,
+    REPS,
+    ;
+
+    companion object {
+        /** The direction a stored name means, or null for one this build does not know (ROADMAP N236). */
+        fun fromName(name: String): ProgressionDirection? = entries.firstOrNull { it.name == name }
+    }
+}
 
 /** One target and the raised one (N50). */
 data class ProgressionStep<T>(val from: T, val to: T)
@@ -249,6 +258,18 @@ data class ProgressionOffer(
     /** The load step, or null where the plan names no added weight to raise (N15, N74). */
     val load: ProgressionStep<Long>? = null,
 ) {
+    /**
+     * The directions this offer could be taken in, in the order the dialog draws them (ROADMAP N236).
+     *
+     * What a *declined* step records: the offer is frozen from the plan as it was, so the direction it
+     * named cannot be recomputed later — the plan has moved on since.
+     */
+    val directions: Set<ProgressionDirection>
+        get() = buildSet {
+            if (reps != null) add(ProgressionDirection.REPS)
+            if (load != null) add(ProgressionDirection.LOAD)
+        }
+
     /**
      * The set as accepting [direction] would leave the plan, or null when that direction is not
      * offered.

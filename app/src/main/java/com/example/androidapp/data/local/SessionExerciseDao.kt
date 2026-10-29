@@ -83,6 +83,21 @@ interface SessionExerciseDao {
     @Query("SELECT * FROM session_exercises WHERE id = :id AND deletedAt IS NULL")
     suspend fun findSessionExercise(id: String): SessionExerciseEntity?
 
+    /**
+     * Records the directions of a step that was offered and not taken (ROADMAP N236).
+     *
+     * A whole-value write rather than an append: the record is what this exercise declined, and a second
+     * decline after a reopen replaces the first because the offer it describes is gone.
+     */
+    @Query(
+        """
+        UPDATE session_exercises
+        SET declinedDirections = :directions, updatedAt = :at
+        WHERE id = :id AND deletedAt IS NULL
+        """,
+    )
+    suspend fun setDeclinedDirections(id: String, directions: String?, at: Long): Int
+
     /** The session's live exercises in their stored order (ROADMAP N54). */
     @Query(
         """

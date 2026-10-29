@@ -39,10 +39,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -61,7 +61,6 @@ import com.example.androidapp.ui.components.CenteredMessage
 import com.example.androidapp.ui.components.ExerciseRatingSection
 import com.example.androidapp.ui.components.LocalWeightUnit
 import com.example.androidapp.ui.components.SetEditorDialog
-import com.example.androidapp.ui.components.setSummaryText
 import com.example.androidapp.ui.components.SetNumber
 import com.example.androidapp.ui.components.TestTags
 import com.example.androidapp.ui.components.dataErrorMessage
@@ -70,9 +69,11 @@ import com.example.androidapp.ui.components.label
 import com.example.androidapp.ui.components.rpeMarker
 import com.example.androidapp.ui.components.setNumbers
 import com.example.androidapp.ui.components.setRoleMarker
+import com.example.androidapp.ui.components.setSummaryText
 import com.example.androidapp.ui.theme.AndroidAppTheme
 import com.example.androidapp.ui.workout.WorkoutFormat
 import com.example.androidapp.ui.workout.activityLabel
+import com.example.androidapp.ui.workout.declinedStepText
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
@@ -573,6 +574,16 @@ private fun ExerciseBlock(
                 editable = editing,
                 onEditSet = onEditSet,
                 onDeleteSet = onDeleteSet,
+            )
+        }
+
+        // A step was there and the lifter passed (ROADMAP N236), in the same sentence the review uses.
+        declinedStepText(exercise.declinedDirections)?.let { declined ->
+            Text(
+                text = declined,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag(TestTags.HISTORY_STEP_DECLINED),
             )
         }
 

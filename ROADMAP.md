@@ -17,8 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-The *Later* queue is being worked through in its own build order: the exercise's own screen (N233, N234) and a
-movement's own answer to *Done* (N235, schema 13) are done. What remains starts with the second schema change.
+The *Later* queue is being worked through in its own build order: the exercise's own screen (N233, N234), a
+movement's own answer to *Done* (N235, schema 13) and a declined step being recorded (N236, schema 14) are done.
+What remains starts with the prescription a hold needs.
 
 ## Later — decided, and not being started
 
@@ -36,14 +37,6 @@ says nothing waits for nothing but the one before it. The numbers quoted here ar
 planned from, not facts to keep up to date: a row that ships leaves this file.
 
 ### A plan's progression, stored
-
-**N236 — a step that was offered and not taken is recorded.** *Not now* drops the question and writes nothing, so a
-week later History cannot say a step was there to take — the offer is frozen from the plan as it was, and the plan
-has moved since, so it cannot be recomputed. The session exercise records what was offered and declined: the
-directions, written when the lifter declines, drawn on the workout's review and on History's detail as *step
-offered, not taken*. Schema 14. **A declined step is not a miss**: the deload rule (N237) counts the sets that
-failed the plan, not the answer the lifter gave, and a lift that declined a step every week is not a lift that is
-stalling.
 
 **N242 — a plan can prescribe a hold, and a hold can progress.** A timed set already works: it records seconds,
 writes no reps, keeps its load, and the editor offers both (N220). Two things still do not, and N220 wrote down

@@ -181,6 +181,8 @@ data class SessionExerciseRow(
     val isTimed: Boolean = false,
     /** The movement's own answer to *Done*, or null to follow the app setting (ROADMAP N235). */
     val progressionMode: ProgressionMode? = null,
+    /** The directions of a step offered and not taken, for the review (ROADMAP N236). */
+    val declinedDirections: Set<ProgressionDirection> = emptySet(),
     /**
      * Whether this movement is loaded by the body (ROADMAP N219).
      *
@@ -729,8 +731,22 @@ class ActiveWorkoutViewModel @Inject constructor(
         val mode = row?.progressionMode ?: progressionMode.value
         when {
             questionOpen -> {
+                // *Not now* finishes the exercise, and **records what was offered** (ROADMAP N236): the offer
+                // was frozen from the plan as it stood, so nothing can recompute it once the plan moves on.
+                val declined = _pendingProgression.value?.sets
+                    .orEmpty()
+                    .flatMap { it.prompt.offer?.directions.orEmpty() }
+                    .toSet()
                 _pendingProgression.value = null
-                viewModelScope.launch { finishExercise(sessionExerciseId) }
+                viewModelScope.launch {
+                    if (declined.isNotEmpty()) {
+                        val written = workoutRepository.declineProgression(sessionExerciseId, declined)
+                        // A failed record does not stop the finish: the lifter declined, and the exercise is
+                        // done either way — but the failure is said rather than swallowed.
+                        if (written is DataResult.Failure) lastError.value = written.error
+                    }
+                    finishExercise(sessionExerciseId)
+                }
             }
 
             mode != ProgressionMode.OFF && row?.progression?.hasPlan == true -> {
@@ -1617,6 +1633,7 @@ private fun SessionExercise.toRow(
         isTimed = isTimed,
         isBodyweight = isBodyweight,
         progressionMode = progressionMode,
+        declinedDirections = declinedDirections,
         runContinuesAfter = plan.plannedEntry?.sets?.runContinuesAfter().orEmpty(),
         plannedSetCount = plan.plannedSetCount,
         isFinished = isFinished,

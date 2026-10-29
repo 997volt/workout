@@ -25,6 +25,7 @@ import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.MuscleGroup
+import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.domain.model.SoreMuscle
@@ -69,6 +70,26 @@ class WorkoutDetailScreenTest {
             ),
         ),
     )
+
+    @Test
+    fun aStepOfferedAndNotTaken_isStatedOnThePastWorkout() {
+        // ROADMAP N236: the sentence the review uses, on the screen the same session is read from later.
+        setScreen(
+            state.copy(
+                exercises = listOf(state.exercises.single().copy(declinedDirections = setOf(ProgressionDirection.REPS)))
+            )
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_STEP_DECLINED).assertExists()
+        composeTestRule.onNodeWithText("Step offered, not taken: reps", substring = true).assertExists()
+    }
+
+    @Test
+    fun aSessionThatDeclinedNothing_saysNothingAboutAStep() {
+        setScreen(state)
+
+        composeTestRule.onNodeWithTag(TestTags.HISTORY_STEP_DECLINED).assertDoesNotExist()
+    }
 
     @Test
     fun aHold_readsAsItsDuration_andIsSpokenInWords() {

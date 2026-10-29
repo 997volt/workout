@@ -725,6 +725,37 @@ class ActiveWorkoutViewModelTest {
     }
 
     @Test
+    fun decliningTheQuestion_recordsWhatWasOffered_andIsNotAMiss() = runTest(dispatcher) {
+        // ROADMAP N236: *Not now* used to drop the question and write nothing, so a week later history could
+        // not say a step was there to take — and the offer cannot be recomputed, because it was frozen from
+        // the plan as it stood.
+        val repository = FakeWorkoutRepository()
+        val templates = answeredPlan()
+        val viewModel = viewModelFor(repository, templateId = "t1", templates = templates)
+        observe(viewModel)
+        settle()
+        viewModel.onAddExercise("back-squat")
+        settle()
+        val id = viewModel.uiState.value.exercises.single().id
+        logAnsweredSet(viewModel, repository, reps = 5, weightGrams = 100_000L, rpe = 7)
+        viewModel.onFinishExercise(id)
+        settle()
+        assertNotNull("the question opens first", viewModel.pendingProgression.value)
+
+        // The second *Done* is *Not now*.
+        viewModel.onFinishExercise(id)
+        settle()
+
+        assertEquals(
+            "the offered direction is recorded",
+            setOf(ProgressionDirection.LOAD),
+            repository.declined.single().second
+        )
+        assertTrue("and Done still finishes the exercise", viewModel.uiState.value.exercises.single().isFinished)
+        assertTrue("nothing is written to the plan", templates.updates.isEmpty())
+    }
+
+    @Test
     fun withApplyAtDone_theQuestionOpensWithEveryEarnedStepPicked() = runTest(dispatcher) {
         // P3.17: the middle answer a switch could not express — the question still opens, so the lifter
         // reads what the plan would become, but every earned step is already picked and one Done writes it.
@@ -2204,6 +2235,21 @@ class ActiveWorkoutViewModelTest {
             if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
             exercises.value = exercises.value.map {
                 if (it.id == sessionExerciseId) it.copy(finishedAt = null) else it
+            }
+            return DataResult.Success(Unit)
+        }
+
+        /** The declines the view model wrote, in the order it wrote them (ROADMAP N236). */
+        val declined = mutableListOf<Pair<String, Set<ProgressionDirection>>>()
+
+        override suspend fun declineProgression(
+            sessionExerciseId: String,
+            directions: Set<ProgressionDirection>,
+        ): DataResult<Unit> {
+            if (failWrites) return DataResult.Failure(DataError.Storage(IOException("disk full")))
+            declined += sessionExerciseId to directions
+            exercises.value = exercises.value.map {
+                if (it.id == sessionExerciseId) it.copy(declinedDirections = directions) else it
             }
             return DataResult.Success(Unit)
         }

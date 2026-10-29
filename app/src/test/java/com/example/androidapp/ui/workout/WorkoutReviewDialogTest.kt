@@ -8,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.Joint
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PlanComparison
+import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.Side
 import com.example.androidapp.ui.components.TestTags
 import org.junit.Assert.assertEquals
@@ -53,6 +54,55 @@ class WorkoutReviewDialogTest {
         ratings = ratings,
         comparisons = comparisons,
     )
+
+    @Test
+    fun aStepOfferedAndNotTaken_isStatedAndNotJudged() {
+        // ROADMAP N236: the review is the one place the whole session is read back, and "there was a step
+        // here and you passed" is the fact the log cannot otherwise state. It says *stated*, not *missed*:
+        // declining is a decision, and nothing about it says the work was short.
+        show(
+            review(
+                comparisons = listOf(
+                    PlanComparison(
+                        name = "Back Squat",
+                        prescribedSets = 3,
+                        performedSets = 3,
+                        prescribedReps = 15,
+                        performedReps = 15,
+                        prescribedTopWeightGrams = 100_000L,
+                        performedTopWeightGrams = 100_000L,
+                        topSetDeltaGrams = 0L,
+                        declinedDirections = setOf(ProgressionDirection.LOAD, ProgressionDirection.REPS),
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.REVIEW_STEP_DECLINED).assertExists()
+        composeTestRule.onNodeWithText("Step offered, not taken: load, reps", substring = true).assertExists()
+    }
+
+    @Test
+    fun aComparisonWithNoDecline_saysNothingAboutOne() {
+        show(
+            review(
+                comparisons = listOf(
+                    PlanComparison(
+                        name = "Back Squat",
+                        prescribedSets = 3,
+                        performedSets = 3,
+                        prescribedReps = 15,
+                        performedReps = 15,
+                        prescribedTopWeightGrams = 100_000L,
+                        performedTopWeightGrams = 100_000L,
+                        topSetDeltaGrams = 0L,
+                    ),
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.REVIEW_STEP_DECLINED).assertDoesNotExist()
+    }
 
     @Test
     fun aHold_readsAsItsDuration_notAsZeroReps() {

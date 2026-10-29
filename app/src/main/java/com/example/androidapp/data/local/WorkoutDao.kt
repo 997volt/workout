@@ -129,7 +129,8 @@ interface WorkoutDao {
                e.progressionMode AS progressionMode,
                se.finishedAt AS finishedAt,
                se.muscleFeel AS muscleFeel,
-               se.supersetGroup AS supersetGroup
+               se.supersetGroup AS supersetGroup,
+               se.declinedDirections AS declinedDirections
         FROM session_exercises se
         JOIN exercises e ON e.id = se.exerciseId
         -- The category, not filtered by `deletedAt`: a removed head still supplies its children

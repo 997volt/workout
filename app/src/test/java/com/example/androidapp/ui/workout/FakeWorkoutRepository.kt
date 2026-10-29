@@ -6,6 +6,7 @@ import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
@@ -60,6 +61,11 @@ internal class FakeWorkoutRepository : WorkoutRepository {
     override suspend fun moveExercise(sessionExerciseId: String, delta: Int): DataResult<Unit> = unused()
     override suspend fun finishExercise(sessionExerciseId: String): DataResult<Unit> = unused()
     override suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit> = unused()
+
+    override suspend fun declineProgression(
+        sessionExerciseId: String,
+        directions: Set<ProgressionDirection>,
+    ): DataResult<Unit> = unused()
     override suspend fun rateExercise(
         sessionExerciseId: String,
         muscleFeel: Int?,

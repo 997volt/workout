@@ -6,6 +6,7 @@ import com.example.androidapp.domain.model.Activity
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.PersonalRecords
 import com.example.androidapp.domain.model.PreviousPerformance
+import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.SessionExercise
 import com.example.androidapp.domain.model.SetEntry
 import com.example.androidapp.domain.model.SetType
@@ -141,6 +142,18 @@ interface WorkoutRepository {
 
     /** Reopens a done exercise (ROADMAP N7), restoring logging and editing. */
     suspend fun reopenExercise(sessionExerciseId: String): DataResult<Unit>
+
+    /**
+     * Records the step this exercise was offered and did not take (ROADMAP N236).
+     *
+     * Written when the lifter answers *Not now*, before the exercise finishes: the offer was computed from the
+     * plan as it stood, and the plan has moved on since, so nothing can recompute what was there to take. An
+     * empty list clears the record, which is what a second decline replaces.
+     */
+    suspend fun declineProgression(
+        sessionExerciseId: String,
+        directions: Set<ProgressionDirection>,
+    ): DataResult<Unit>
 
     /**
      * Writes how an exercise felt — muscle feel and the joints that hurt (ROADMAP N8, N63).

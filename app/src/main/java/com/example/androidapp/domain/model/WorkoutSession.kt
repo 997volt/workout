@@ -160,6 +160,13 @@ data class SessionExercise(
      */
     val progressionMode: ProgressionMode? = null,
     /**
+     * The directions of a step this exercise was offered and did not take (ROADMAP N236).
+     *
+     * Written when the lifter answers *Not now*, and empty for every exercise that was never offered one. A
+     * decline is **not a miss**: the sets failed nothing, so the deload rule counts the work rather than this.
+     */
+    val declinedDirections: Set<ProgressionDirection> = emptySet(),
+    /**
      * When this exercise was marked done (ROADMAP N7), or null while it is open.
      *
      * Deliberately not a delete: [finishedAt] set means no more sets are added and

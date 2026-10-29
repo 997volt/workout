@@ -1,5 +1,6 @@
 package com.example.androidapp.ui.workout
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,10 +16,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
-import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.DurationFormat
+import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.PlanComparison
+import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.Rpe
 import com.example.androidapp.domain.model.label
 import com.example.androidapp.ui.components.AppTextButton
@@ -163,7 +165,37 @@ private fun PlanComparisonRow(comparison: PlanComparison) {
                 color = MaterialTheme.colorScheme.onSurface,
             )
         }
+        // A step was there and the lifter passed (ROADMAP N236). Stated rather than judged: declining is a
+        // decision, and nothing about it says the work was short.
+        declinedStepText(comparison.declinedDirections)?.let { declined ->
+            Text(
+                text = declined,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag(TestTags.REVIEW_STEP_DECLINED),
+            )
+        }
     }
+}
+
+/**
+ * *Step offered, not taken*, naming the directions the offer named, or null when nothing was declined.
+ *
+ * Its own function because the review and the history detail say the same sentence about the same fact
+ * (ROADMAP N236), and two copies of it would be two chances to word it differently.
+ */
+@Composable
+internal fun declinedStepText(directions: Set<ProgressionDirection>): String? {
+    if (directions.isEmpty()) return null
+    val named = directions.map { stringResource(it.label()) }
+    return stringResource(R.string.summary_step_declined, named.joinToString(", "))
+}
+
+/** What one direction is called in a sentence (ROADMAP N236). */
+@StringRes
+private fun ProgressionDirection.label(): Int = when (this) {
+    ProgressionDirection.LOAD -> R.string.progression_direction_load
+    ProgressionDirection.REPS -> R.string.progression_direction_reps
 }
 
 /**
