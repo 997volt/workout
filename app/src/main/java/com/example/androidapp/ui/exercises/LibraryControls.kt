@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -37,14 +38,13 @@ import com.example.androidapp.ui.components.TestTags
 /**
  * The two controls that decide what the library shows: its order and its group (ROADMAP N230, N231).
  *
- * One row, because two rows of controls over a list is a header the list has to fit under. The order button is
- * pinned at the start and names the order it *is*, so its state is on screen and the menu is the only thing that
- * opens; the chips scroll, because the group names are sentences ("Not trained in 30 days") and a row that had
- * to fit them all would be a row of ellipses.
+ * **Two rows, and the order is the short one**: the chips are sentences ("Not trained in 30 days") and a row
+ * shared with a pinned button cuts them off mid-word, which is what the first version did. The order is set
+ * once and read at a glance, so it names itself on a line above the groups.
  *
- * **A chip whose group is empty is not drawn** (N231's neighbour rule from the templates list, N217): a control
- * that can only answer "nothing" is not a control. The search stays above both, and it narrows what the chosen
- * group holds rather than replacing it.
+ * **A chip whose group is empty is not drawn** (N217's rule from the templates list): a control that can only
+ * answer "nothing" is not a control. The search stays above both, and it narrows what the chosen group holds
+ * rather than replacing it.
  */
 @Composable
 internal fun LibraryControls(
@@ -55,13 +55,23 @@ internal fun LibraryControls(
     onFilterChange: (LibraryFilter) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        LibrarySortControl(sort = sort, onSortChange = onSortChange)
+    Column(modifier = modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.library_sort_label),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            LibrarySortControl(sort = sort, onSortChange = onSortChange)
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
