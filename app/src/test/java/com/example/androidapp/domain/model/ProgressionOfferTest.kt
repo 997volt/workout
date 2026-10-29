@@ -2,6 +2,9 @@ package com.example.androidapp.domain.model
 
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
@@ -653,6 +656,8 @@ class ProgressionOfferTest {
         /** The exercise's one target RPE, which the caller carries onto each set (N59, amended). */
         rpe: Int? = 8,
         note: String? = null,
+        /** The hold the plan prescribes, in seconds, or null (ROADMAP N242). */
+        durationSeconds: Int? = null,
     ) = ProgressionPlanSet(
         setId = id,
         setIndex = index,
@@ -663,6 +668,7 @@ class ProgressionOfferTest {
         targetRepsMax = repsMax,
         targetRepsCurrent = repsCurrent,
         targetRpeHalves = rpe,
+        targetDurationSeconds = durationSeconds,
         note = note,
     )
 
@@ -679,4 +685,44 @@ class ProgressionOfferTest {
         role = role,
         durationSeconds = durationSeconds,
     )
+
+    @Test
+    fun aPlanThatPrescribesAHold_earnsSeconds_andNothingElse() {
+        // ROADMAP N242: a timed set used to earn nothing at all — its plan's rep target did not apply and
+        // the offer said "a hold is not measured in reps". A plan that prescribes seconds is answered in
+        // seconds, and the exclusivity holds: a hold earns seconds or a set earns reps, never both.
+        val planned = planSet(repsMin = null, repsMax = null, weight = null, rpe = 14, durationSeconds = 45)
+        val held = done(reps = 0, weight = 20_000L, rpe = 14, durationSeconds = 45)
+
+        val prompt = progressionPromptFor(listOf(planned), listOf(held))
+
+        val offer = prompt.sets.single().offer
+        assertNotNull("the hold is answered", offer)
+        assertEquals(setOf(ProgressionDirection.SECONDS), offer!!.directions)
+        assertEquals(45, offer.seconds!!.from)
+        assertEquals("one hold step above what was held", 60, offer.seconds!!.to)
+    }
+
+    @Test
+    fun aHoldShorterThanThePlan_isAMiss_ratherThanAStep() {
+        val planned = planSet(repsMin = null, repsMax = null, weight = null, rpe = 14, durationSeconds = 45)
+        val held = done(reps = 0, weight = 0L, rpe = 14, durationSeconds = 30)
+
+        val prompt = progressionPromptFor(listOf(planned), listOf(held))
+
+        assertNull(prompt.sets.single().offer)
+        assertEquals(ProgressionMiss.HOLD_SHORT, prompt.sets.single().miss)
+    }
+
+    @Test
+    fun aCountedPlanAgainstAHold_stillSaysAHoldIsNotMeasuredInReps() {
+        // The old answer survives where it is still true: a plan that counts and a set that was held.
+        val planned = planSet(repsMin = 5, repsMax = 5, rpe = 14)
+        val held = done(reps = 0, weight = 0L, rpe = 14, durationSeconds = 60)
+
+        val prompt = progressionPromptFor(listOf(planned), listOf(held))
+
+        assertNull(prompt.sets.single().offer)
+        assertEquals(ProgressionMiss.HOLD, prompt.sets.single().miss)
+    }
 }

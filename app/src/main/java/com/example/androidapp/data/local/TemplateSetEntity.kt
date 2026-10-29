@@ -63,6 +63,14 @@ data class TemplateSetEntity(
      * migration has to say anything, and the ALTER is plain because the column is nullable.
      */
     val dropValueGrams: Long? = null,
+    /**
+     * The hold this set prescribes, in seconds, or null for a counted set (ROADMAP N242).
+     *
+     * **One or the other, never both** with the rep target: a set is either counted or held, which is the
+     * exclusivity the write boundary already refuses on a performed set (N220). Nullable with a Kotlin default,
+     * so the migration that adds it is a plain ALTER and every plan written before it is counted.
+     */
+    val targetDurationSeconds: Int? = null,
     val note: String?,
     val createdAt: Long,
     val updatedAt: Long,

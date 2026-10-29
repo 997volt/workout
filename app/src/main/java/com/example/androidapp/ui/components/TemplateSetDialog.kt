@@ -20,9 +20,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.Load
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.HOLD_STEP_SECONDS
 import com.example.androidapp.domain.model.SetType
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.repository.TemplateSetEdit
@@ -134,6 +136,8 @@ data class TemplateSetDraft(
     val dropValueText: String = "",
     val repsMinText: String = "",
     val repsMaxText: String = "",
+    /** The hold this set prescribes, as typed (`m:ss`), or empty for a counted set (ROADMAP N242). */
+    val holdText: String = "",
     /**
      * Where in the range the lifter has climbed, passed through and clamped (ROADMAP N74).
      *
@@ -165,6 +169,7 @@ data class TemplateSetDraft(
         unit = unit,
         repsMinText = edit.targetRepsMin?.toString().orEmpty(),
         repsMaxText = edit.targetRepsMax?.toString().orEmpty(),
+        holdText = edit.targetDurationSeconds?.let { DurationFormat.ofSeconds(it.toLong()) }.orEmpty(),
         targetRepsCurrent = edit.targetRepsCurrent,
         note = edit.note.orEmpty(),
     )
@@ -176,6 +181,15 @@ data class TemplateSetDraft(
     val assistanceGrams: Long? get() = load?.assistanceGrams
     val repsMin: Int? get() = repsMinText.trim().ifEmpty { null }?.toIntOrNull()
     val repsMax: Int? get() = repsMaxText.trim().ifEmpty { null }?.toIntOrNull()
+
+    /**
+     * The hold as typed, in **seconds** (ROADMAP N242).
+     *
+     * Read in the form the set's own field shows — `m:ss` where a set is read back — so a plan prescribes a
+     * hold the same way a session records one. A number with no colon is read as seconds, which is what
+     * somebody typing "45" means.
+     */
+    val holdSeconds: Int? get() = DurationFormat.parseSeconds(holdText.trim())
 
     /** The drop value as typed, or null when the field is empty (ROADMAP N79). */
     val dropValueGrams: Long? get() = dropValueText.trim().ifEmpty { null }?.let { Weight.parse(it, unit) }
@@ -204,7 +218,14 @@ data class TemplateSetDraft(
     val dropValueIsValid: Boolean
         get() = if (!writesTheRunValue) true else (dropValueGrams ?: 0L) > 0L
 
-    val isValid: Boolean get() = weightIsValid && repsAreValid && dropValueIsValid
+    /**
+     * A set is either counted or held (ROADMAP N242): naming both would prescribe a number the set cannot
+     * answer, and the write boundary refuses it for the same reason.
+     */
+    val prescriptionIsValid: Boolean
+        get() = holdText.isBlank() || ((holdSeconds ?: 0) >= 1 && repsMinText.isBlank() && repsMaxText.isBlank())
+
+    val isValid: Boolean get() = weightIsValid && repsAreValid && dropValueIsValid && prescriptionIsValid
 
     fun toEdit() = TemplateSetEdit(
         role = role,
@@ -217,6 +238,7 @@ data class TemplateSetDraft(
         targetRepsMax = repsMax.takeIf { !role.isRung },
         targetRepsCurrent = currentRepsWithinRange(),
         dropValueGrams = dropValueGrams.takeIf { writesTheRunValue },
+        targetDurationSeconds = holdSeconds.takeIf { !role.isRung },
         note = note.trim().ifEmpty { null },
     )
 
@@ -418,6 +440,22 @@ private fun RepsFields(
             keyboardType = KeyboardType.Number,
             isError = !draft.repsAreValid,
             onStep = { delta -> onChange(draft.copy(repsMaxText = steppedReps(draft.repsMax, delta))) },
+        )
+        // The hold this set prescribes, if it is held rather than counted (ROADMAP N242). One field with
+        // its own ± pair, the same shape a hold's own field has on the session's set.
+        NumberStepper(
+            label = stringResource(R.string.template_set_hold),
+            testTag = TestTags.TEMPLATE_SET_HOLD,
+            increaseTag = TestTags.TEMPLATE_SET_INCREASE_HOLD,
+            decreaseTag = TestTags.TEMPLATE_SET_DECREASE_HOLD,
+            value = draft.holdText,
+            onValueChange = { onChange(draft.copy(holdText = it)) },
+            keyboardType = KeyboardType.Number,
+            isError = !draft.prescriptionIsValid,
+            onStep = { delta ->
+                val stepped = ((draft.holdSeconds ?: HOLD_STEP_SECONDS) + delta * HOLD_STEP_SECONDS)
+                onChange(draft.copy(holdText = DurationFormat.ofSeconds(stepped.coerceAtLeast(1).toLong())))
+            },
         )
     }
 }

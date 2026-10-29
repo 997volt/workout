@@ -39,6 +39,7 @@ import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.RestTimer
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.HOLD_STEP_SECONDS
 import com.example.androidapp.domain.model.JointPain
 import com.example.androidapp.domain.model.ProgressionRule
 import com.example.androidapp.domain.model.Rpe
@@ -363,6 +364,11 @@ private fun SessionExerciseRow.progressionStepLine(): String? {
         )
 
         ProgressionRule.REPS_ONLY -> stringResource(R.string.active_workout_progresses_reps_only)
+
+        ProgressionRule.HOLD -> stringResource(
+            R.string.active_workout_progresses_hold,
+            DurationFormat.ofSeconds(HOLD_STEP_SECONDS.toLong()),
+        )
         ProgressionRule.LOAD_ONLY -> stringResource(
             R.string.active_workout_progresses_load_only,
             step,

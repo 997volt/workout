@@ -30,6 +30,9 @@ package com.example.androidapp.domain.model
 enum class ProgressionDirection {
     LOAD,
     REPS,
+
+    /** A hold's own direction: the plan prescribes seconds and the step moves them (ROADMAP N242). */
+    SECONDS,
     ;
 
     companion object {
@@ -63,6 +66,13 @@ data class ProgressionPlanSet(
     val targetRepsMax: Int? = null,
     /** Where in the range the lifter has climbed, or null (ROADMAP N74). */
     val targetRepsCurrent: Int? = null,
+    /**
+     * The hold this set prescribes, in seconds, or null for a counted set (ROADMAP N242).
+     *
+     * A timed set records seconds and no reps, so a plan that named only reps ignored the hold entirely and
+     * *Done* answered it with "a hold is not measured in reps" — the workaround this replaces.
+     */
+    val targetDurationSeconds: Int? = null,
     val targetRpeHalves: Int? = null,
     val note: String? = null,
 ) {
@@ -106,6 +116,9 @@ data class ProgressionPerformance(
 enum class ProgressionMiss {
     /** The plan prescribed it and the session never logged it. */
     NOT_DONE,
+
+    /** The plan prescribes a hold and the set was held shorter than it (ROADMAP N242). */
+    HOLD_SHORT,
 
     /** Work the plan does not name — an extra set — so there is no target a step could move. */
     NOT_IN_PLAN,
@@ -257,6 +270,14 @@ data class ProgressionOffer(
     val reps: ProgressionStep<Int>? = null,
     /** The load step, or null where the plan names no added weight to raise (N15, N74). */
     val load: ProgressionStep<Long>? = null,
+    /**
+     * The hold step, or null when the plan prescribes no duration (ROADMAP N242).
+     *
+     * **A hold earns seconds or the set earns reps, never both**: the three directions above and this one are
+     * exclusive by construction, because [offerFor] returns a hold step only for a set the plan measured in
+     * seconds and a rep or load step only for one it measured in reps.
+     */
+    val seconds: ProgressionStep<Int>? = null,
 ) {
     /**
      * The directions this offer could be taken in, in the order the dialog draws them (ROADMAP N236).
@@ -268,6 +289,7 @@ data class ProgressionOffer(
         get() = buildSet {
             if (reps != null) add(ProgressionDirection.REPS)
             if (load != null) add(ProgressionDirection.LOAD)
+            if (seconds != null) add(ProgressionDirection.SECONDS)
         }
 
     /**
@@ -287,6 +309,8 @@ data class ProgressionOffer(
         }
 
         ProgressionDirection.REPS -> reps?.let { set.copy(targetRepsCurrent = it.to) }
+
+        ProgressionDirection.SECONDS -> seconds?.let { set.copy(targetDurationSeconds = it.to) }
     }
 }
 
@@ -380,8 +404,13 @@ private fun ProgressionPlanSet.answeredMiss(done: ProgressionPerformance?): Prog
     val rpeTarget = targetRpeHalves
     val plannedLoad = addedWeightGrams
     val lifted = done?.addedWeightGrams
+    val plannedHold = targetDurationSeconds
     return when {
         done == null -> ProgressionMiss.NOT_DONE
+        // The plan prescribes seconds: a hold is answered by the same gate the counted set is — the work has
+        // to reach the prescription and not exceed the effort (ROADMAP N242).
+        plannedHold != null -> holdMiss(done, plannedHold)
+
         done.durationSeconds != null -> ProgressionMiss.HOLD
         reps == null -> ProgressionMiss.NO_REP_TARGET
         rpeTarget == null -> ProgressionMiss.NO_TARGET_RPE
@@ -393,6 +422,26 @@ private fun ProgressionPlanSet.answeredMiss(done: ProgressionPerformance?): Prog
         plannedLoad != null && lifted != null && lifted < plannedLoad -> ProgressionMiss.LOAD_SHORT
         else -> null
     }
+}
+
+/**
+ * Why a hold the plan prescribes was not answered, or null when it was (ROADMAP N242).
+ *
+ * The same four questions the counted set's branch asks — was it logged, was an effort recorded on both
+ * sides, did the work reach the prescription, did it stay inside the effort — asked of a duration instead of
+ * a rep count. A counted set against a plan that prescribes seconds is the one case that reads as [HOLD]:
+ * the plan measured a hold and the set was not one.
+ */
+private fun ProgressionPlanSet.holdMiss(
+    done: ProgressionPerformance,
+    plannedHold: Int,
+): ProgressionMiss? = when {
+    done.durationSeconds == null -> ProgressionMiss.HOLD
+    targetRpeHalves == null -> ProgressionMiss.NO_TARGET_RPE
+    done.rpeHalves == null -> ProgressionMiss.UNRATED
+    done.durationSeconds < plannedHold -> ProgressionMiss.HOLD_SHORT
+    done.rpeHalves > targetRpeHalves -> ProgressionMiss.OVER_TARGET_RPE
+    else -> null
 }
 
 /**
@@ -412,15 +461,38 @@ private fun ProgressionPlanSet.offerFor(
     done: ProgressionPerformance,
     stepGrams: Long,
 ): ProgressionOffer? {
-    val reps = targetReps ?: return null
+    // **A hold is answered first**: a plan that prescribes seconds names no reps at all, so the rep branch
+    // below would say it has nowhere to go (ROADMAP N242).
+    val plannedHold = targetDurationSeconds
+    val held = done.durationSeconds
+    val seconds = if (plannedHold != null && held != null) {
+        ProgressionStep(
+            plannedHold,
+            stepAbove(
+                planned = plannedHold.toLong(),
+                performed = held.toLong(),
+                stepGrams = HOLD_STEP_SECONDS.toLong(),
+            ).toInt(),
+        )
+    } else {
+        null
+    }
+    val reps = targetReps
     val ceiling = targetRepsMax
     val load = addedWeightGrams?.let { planned ->
         ProgressionStep(planned, stepAbove(planned, done.addedWeightGrams ?: planned, stepGrams))
     }
     return when {
-        // A hold has no rep target to move and no ceiling to climb (B243): the plan's rep target does not
-        // apply to a timed set, so it earns no step.
-        done.durationSeconds != null -> null
+        // The plan prescribes seconds and the set was held: the step is time, and only time.
+        seconds != null -> ProgressionOffer(set = this, seconds = seconds)
+
+        // A hold against a plan that counts has no rep target to move (B243): it earns no step.
+        held != null -> null
+
+        // A plan that prescribes seconds but whose set was counted has nowhere to go either (N242).
+        plannedHold != null -> null
+
+        reps == null -> null
 
         ceiling == null -> ProgressionOffer(
             set = this,
@@ -446,7 +518,7 @@ private fun ProgressionPlanSet.offerFor(
  * snapped onto the plan's step rather than `performed + one`, because a typed load can sit between
  * steps while every other row of the plan is on it.
  */
-private fun stepAbove(planned: Long, performed: Long, stepGrams: Long): Long {
+internal fun stepAbove(planned: Long, performed: Long, stepGrams: Long): Long {
     val step = stepGrams.coerceAtLeast(1L)
     val steps = ((performed - planned) / step) + 1
     return planned + steps.coerceAtLeast(1L) * step
@@ -491,6 +563,14 @@ private fun List<ProgressionPerformance>.performedWork(): List<ProgressionPerfor
 private const val REPS_PER_STEP = 1
 
 /**
+ * The step a hold moves by, in seconds (ROADMAP N242).
+ *
+ * A hold has no grid to snap to — a machine's step is a load — so the plan moves by one fixed block of time,
+ * which is the resolution the set's own ±15 s buttons already use.
+ */
+const val HOLD_STEP_SECONDS: Int = 15
+
+/**
  * This plan's sets as the progression rule reads them (N227).
  *
  * The mapping the session already made, moved to the model because the plan editor needs the same shape: one
@@ -511,6 +591,8 @@ fun TemplateExercise.progressionSets(): List<ProgressionPlanSet> = sets.map { se
         targetRepsMax = set.targetRepsMax,
         // Where in the range the lifter has climbed (N74): the number the rule measures and a step moves.
         targetRepsCurrent = set.targetRepsCurrent,
+        // The hold the plan prescribes, which is what a timed set is measured in (N242).
+        targetDurationSeconds = set.targetDurationSeconds,
         targetRpeHalves = targetRpeHalves,
         note = set.note,
     )

@@ -34,6 +34,9 @@ enum class ProgressionRule {
 
     /** A fixed rep target and no weight: answered work has nowhere to go (N74's TOPPED_OUT). */
     NOTHING_TO_MOVE,
+
+    /** The plan prescribes a hold, so its step is seconds (ROADMAP N242). */
+    HOLD,
 }
 
 /**
@@ -52,8 +55,12 @@ fun progressionRuleFor(targetRpeHalves: Int?, sets: List<ProgressionPlanSet>): P
         it.targetRepsMin != null || it.targetRepsMax != null || it.targetRepsCurrent != null
     }
     val namesLoad = work.any { it.namesAddedLoad }
+    // A plan that prescribes a hold is measured in seconds rather than reps, so the rep half of this rule
+    // does not apply to it at all (ROADMAP N242).
+    val namesHold = work.any { it.targetDurationSeconds != null }
     return when {
         targetRpeHalves == null -> ProgressionRule.NO_TARGET_RPE
+        namesHold -> ProgressionRule.HOLD
         !namesReps -> ProgressionRule.NO_REPS
         // A range is what gives the rep step somewhere to climb, and its ceiling is where the weight moves.
         work.any { it.restartsAtFloor } -> if (namesLoad) {

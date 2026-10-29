@@ -1,8 +1,8 @@
 package com.example.androidapp.domain.repository
 
 import com.example.androidapp.domain.DataResult
-import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.SetType
+import com.example.androidapp.domain.model.TemplateExercise
 import com.example.androidapp.domain.model.TemplateSet
 import com.example.androidapp.domain.model.WorkoutTemplate
 import kotlinx.coroutines.flow.Flow
@@ -163,7 +163,7 @@ interface TemplateRepository {
 
     suspend fun removeExercise(templateExerciseId: String): DataResult<Unit>
 
-        /**
+    /**
      * Writes [edits] **in front of** what the plan already prescribes, in the order given (ROADMAP B34).
      *
      * `addSet` appends, which is right for authoring a plan top to bottom and wrong for a warm-up ramp
@@ -239,5 +239,7 @@ data class TemplateSetEdit(
      * rung: the rest inherit it, so a later rung's own value is not what the ladder reads.
      */
     val dropValueGrams: Long? = null,
+    /** The hold this set prescribes, in seconds, or null for a counted set (ROADMAP N242). */
+    val targetDurationSeconds: Int? = null,
     val note: String? = null,
 )

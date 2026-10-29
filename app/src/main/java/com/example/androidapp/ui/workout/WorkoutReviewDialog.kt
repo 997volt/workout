@@ -196,6 +196,7 @@ internal fun declinedStepText(directions: Set<ProgressionDirection>): String? {
 private fun ProgressionDirection.label(): Int = when (this) {
     ProgressionDirection.LOAD -> R.string.progression_direction_load
     ProgressionDirection.REPS -> R.string.progression_direction_reps
+    ProgressionDirection.SECONDS -> R.string.progression_direction_seconds
 }
 
 /**

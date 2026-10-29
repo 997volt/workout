@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.androidapp.domain.model.SetType
@@ -49,6 +50,32 @@ class TemplateSetDialogTest {
                 holdsTheRunValue = holdsTheRunValue,
             )
         }
+    }
+
+    @Test
+    fun aPlanCanPrescribeAHold_andRefusesBothHalves() {
+        // ROADMAP N242: a plan's set names reps or a hold, never both — the exclusivity the performed set's
+        // write boundary already refuses, asked here before the tap.
+        val initial = TemplateSetEdit(targetRepsMin = 5, targetRepsMax = 5)
+        show(initial = initial)
+
+        // The hold field is offered beside the range, and the ± pair steps it by 15 seconds. It sits at the
+        // foot of a scrolling column, so reaching it is a scroll — the same way a lifter reaches it.
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_HOLD).performScrollTo()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_INCREASE_HOLD).performScrollTo().performClick()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_HOLD).assertTextContains("0:30")
+
+        // With a rep target still in the range the row is refused rather than half-written.
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).assertIsNotEnabled()
+
+        // Clearing the range makes it a hold, and the save carries the seconds.
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MIN).performScrollTo().performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_REPS_MAX).performScrollTo().performTextClearance()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_DECREASE_HOLD).assertExists()
+        composeTestRule.onNodeWithTag(TestTags.TEMPLATE_SET_SAVE).performClick()
+
+        assertEquals("one tap of the hold step, in seconds", 30, saved?.targetDurationSeconds)
+        assertEquals(null, saved?.targetRepsMin)
     }
 
     @Test

@@ -80,7 +80,7 @@ import androidx.room.TypeConverters
         MeasurementSoreMuscleEntity::class,
         MetricGoalEntity::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

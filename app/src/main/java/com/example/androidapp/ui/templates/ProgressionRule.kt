@@ -9,8 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
+import com.example.androidapp.domain.model.HOLD_STEP_SECONDS
 import com.example.androidapp.domain.model.ProgressionMode
 import com.example.androidapp.domain.model.ProgressionRule
 import com.example.androidapp.domain.model.TemplateExercise
@@ -50,6 +52,11 @@ internal fun ProgressionStepNotice(
         ProgressionRule.REPS_ONLY -> stringResource(R.string.plan_progression_reps_only)
         ProgressionRule.LOAD_ONLY -> stringResource(R.string.plan_progression_step, step, unitLabel)
         ProgressionRule.NOTHING_TO_MOVE -> stringResource(R.string.plan_progression_nothing_to_move)
+
+        ProgressionRule.HOLD -> stringResource(
+            R.string.plan_progression_hold,
+            DurationFormat.ofSeconds(HOLD_STEP_SECONDS.toLong()),
+        )
     }
     // **The movement's own answer wins, and the sentence has to say so** (N235): otherwise it promises a
     // question that Done will not ask. The clause appears only where it changes what happens — a movement

@@ -17,6 +17,17 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A plan can prescribe a hold, and a hold can progress** (N242, schema 15). A timed set already recorded seconds
+  and wrote no reps, but a plan prescribed **reps**: a hold inside a plan ignored its target, a session saved as a
+  plan wrote no rep target at all, and the next-step question answered a hold with "a hold is not measured in reps",
+  so a lifter who trains carries and planks had a logged history and no prescription. A plan's set now names an
+  optional **hold** beside its reps — one or the other and never both, which the write boundary refuses — the
+  session's prefill opens a planned 45-second carry on 45, and the offer gains a **seconds** direction moved by the
+  hold's own step, under the same effort gate as the other two. A hold earns seconds or the set earns reps, never
+  both, which is the exclusivity the rep and weight directions already have. The plan editor's sentence states it,
+  the program document carries it (a document describes a plan), and a deload that copies a plan keeps it.
+
+
 - **A step that was offered and not taken is recorded** (N236, schema 14). *Not now* dropped the question and
   wrote nothing, so a week later History could not say a step was there to take — and it cannot be recomputed,
   because the offer is frozen from the plan as it stood and the plan has moved on since. The session exercise now

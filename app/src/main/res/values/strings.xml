@@ -252,6 +252,7 @@
          only: the gate is the plan's own effort, which the prefill's plan line states, and a plan that
          cannot progress says nothing here because the plan editor is where that sentence belongs (B181). -->
     <string name="active_workout_progresses_reps_then_load">Progresses by +1 rep, then +%1$s %2$s at the ceiling</string>
+    <string name="active_workout_progresses_hold">Holds progress by +%1$s</string>
     <string name="active_workout_progresses_reps_only">Progresses by +1 rep until the ceiling</string>
     <string name="active_workout_progresses_load_only">Progresses by +%1$s %2$s when the set meets the plan</string>
 
@@ -260,6 +261,7 @@
     <string name="plan_progression_reps_only">Progresses by +1 rep below the rep ceiling; a set at the ceiling has no weight to raise.</string>
     <string name="plan_progression_movement_answer">This movement answers Done itself: %1$s.</string>
     <string name="plan_progression_no_gate">No progression: the plan names no target RPE.</string>
+    <string name="plan_progression_hold">Progresses by +%1$s of hold when a set meets the plan\'s RPE</string>
     <string name="plan_progression_no_reps">No progression: the plan names no reps.</string>
     <string name="plan_progression_nothing_to_move">No progression: its reps are a single target and it names no weight.</string>
     <string name="suggestion_last_time">Last time %1$s</string>
@@ -302,6 +304,7 @@
     <string name="template_set_rung_no_load">no load to drop</string>
     <string name="template_set_weight">Target weight (%1$s)</string>
     <string name="template_set_reps_min">Reps from</string>
+    <string name="template_set_hold">Hold (m:ss)</string>
     <string name="template_set_reps_max">Reps to</string>
     <string name="template_set_note">Note</string>
     <string name="template_set_weight_value">%1$s %2$s</string>
@@ -674,6 +677,8 @@
     <string name="summary_step_declined">Step offered, not taken: %1$s</string>
     <string name="progression_direction_load">load</string>
     <string name="progression_direction_reps">reps</string>
+    <string name="progression_direction_seconds">seconds</string>
+    <string name="progression_miss_hold_short">%1$s short of the plan\'s hold</string>
     <string name="progression_title">%1$s — next step</string>
     <string name="progression_set">Set %1$d of %2$d</string>
     <string name="progression_plan">Plan: %1$s</string>

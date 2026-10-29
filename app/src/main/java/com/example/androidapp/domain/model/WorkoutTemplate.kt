@@ -142,5 +142,12 @@ data class TemplateSet(
      * A cluster rung carries none, because it repeats the anchor's load rather than a value off it.
      */
     val dropValueGrams: Long? = null,
+    /**
+     * The hold this set prescribes, in seconds, or null for a counted set (ROADMAP N242).
+     *
+     * One or the other, never both with [targetRepsMax]: a plan prescribes the number the set is measured
+     * in, and a 45-second carry measured in reps is the workaround this replaces.
+     */
+    val targetDurationSeconds: Int? = null,
     val note: String? = null,
 )

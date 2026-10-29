@@ -510,6 +510,13 @@ data class TemplateSetDto(
      * written before this decodes, and an absent value means exactly what it meant before.
      */
     val dropValueGrams: Long? = null,
+    /**
+     * The hold this set prescribes, in seconds, or null for a counted set (ROADMAP N242).
+     *
+     * Defaulted and unbumped: a file written before a plan could prescribe a hold decodes with every set
+     * counted, which is exactly what it was.
+     */
+    val targetDurationSeconds: Int? = null,
     val note: String? = null,
     val createdAt: Long,
     val updatedAt: Long,

@@ -14,6 +14,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.androidapp.R
+import com.example.androidapp.domain.DurationFormat
 import com.example.androidapp.domain.Weight
 import com.example.androidapp.domain.WeightUnit
 import com.example.androidapp.domain.model.PendingProgression
@@ -296,12 +297,24 @@ private fun missLine(
         ProgressionMiss.NO_TARGET_RPE -> stringResource(R.string.progression_miss_no_rpe)
         ProgressionMiss.UNRATED -> stringResource(R.string.progression_miss_unrated)
         ProgressionMiss.HOLD -> stringResource(R.string.progression_miss_hold)
+        ProgressionMiss.HOLD_SHORT -> holdShortLine(prompt, planned)
         ProgressionMiss.REPS_SHORT -> repsShortLine(prompt, planned)
         ProgressionMiss.OVER_TARGET_RPE -> overRpeLine(planned)
         ProgressionMiss.LOAD_SHORT -> loadShortLine(prompt, planned, unit)
         ProgressionMiss.RUNG_OF_A_GROUP -> stringResource(R.string.progression_miss_rung)
         ProgressionMiss.TOPPED_OUT -> toppedOutLine(planned)
     }
+}
+
+/** "15 seconds short of the plan's hold", with the difference the app measured (ROADMAP N242). */
+@Composable
+private fun holdShortLine(prompt: ProgressionSetPrompt, planned: ProgressionPlanSet?): String {
+    val asked = planned?.targetDurationSeconds ?: 0
+    val held = prompt.performed?.durationSeconds ?: 0
+    return stringResource(
+        R.string.progression_miss_hold_short,
+        DurationFormat.ofSeconds((asked - held).coerceAtLeast(1).toLong()),
+    )
 }
 
 /** "25 kg short of the plan's load", with the difference the app measured (B258). */

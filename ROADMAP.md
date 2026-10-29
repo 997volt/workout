@@ -18,8 +18,8 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 ## Next
 
 The *Later* queue is being worked through in its own build order: the exercise's own screen (N233, N234), a
-movement's own answer to *Done* (N235, schema 13) and a declined step being recorded (N236, schema 14) are done.
-What remains starts with the prescription a hold needs.
+movement's own answer to *Done* (N235, schema 13), a declined step being recorded (N236, schema 14) and a plan
+prescribing a hold (N242, schema 15) are done. What remains starts with the rule that reads history.
 
 ## Later — decided, and not being started
 
@@ -37,21 +37,6 @@ says nothing waits for nothing but the one before it. The numbers quoted here ar
 planned from, not facts to keep up to date: a row that ships leaves this file.
 
 ### A plan's progression, stored
-
-**N242 — a plan can prescribe a hold, and a hold can progress.** A timed set already works: it records seconds,
-writes no reps, keeps its load, and the editor offers both (N220). Two things still do not, and N220 wrote down
-why. **A plan prescribes reps**, so a hold inside a plan ignores its target and a session saved as a plan writes no
-rep target at all (B244); and **the next-step question answers a hold with "a hold is not measured in reps"**, so a
-timed movement never progresses — which is why a 45-second carry counts toward neither volume nor a record today. A
-lifter who trains carries and planks for time therefore has a logged history and no prescription, which is the one
-thing this app is for. The change: a plan's set gains an optional **duration** beside its reps, one or the other
-and never both, which is the shape the write boundary already refuses on a performed set; the session's prefill
-reads it, so a planned 45-second carry opens on 45; the offer gains a **third direction** — seconds, moved by the
-movement's own step — under the same gate as the other two, so a hold answered at or under the plan's effort earns
-its next step and nothing is written until it is accepted; and the plan editor's sentence states it. A hold earns
-seconds or the set earns reps, never both, which is the exclusivity the rep and weight directions already have
-(N74). Rejected: a rep target with a note saying "for time", which is what a lifter does today and is the reason
-the time is not in the plan.
 
 ### A plan's progression, learned
 

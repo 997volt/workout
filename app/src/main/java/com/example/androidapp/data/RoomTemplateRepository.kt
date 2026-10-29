@@ -5,8 +5,8 @@ import com.example.androidapp.data.local.SessionExerciseEntity
 import com.example.androidapp.data.local.SetEntryEntity
 import com.example.androidapp.data.local.TemplateDao
 import com.example.androidapp.data.local.TemplateEntity
-import com.example.androidapp.data.local.TemplateSetDao
 import com.example.androidapp.data.local.TemplateExerciseEntity
+import com.example.androidapp.data.local.TemplateSetDao
 import com.example.androidapp.data.local.TemplateSetEntity
 import com.example.androidapp.data.local.WorkoutDatabase
 import com.example.androidapp.data.local.toDomain
@@ -307,6 +307,7 @@ class RoomTemplateRepository @Inject constructor(
                         targetRepsMin = edit.targetRepsMin,
                         targetRepsMax = edit.targetRepsMax,
                         targetRepsCurrent = edit.targetRepsCurrent,
+                        targetDurationSeconds = edit.targetDurationSeconds,
                         note = edit.note,
                         createdAt = now,
                         updatedAt = now,
@@ -337,6 +338,7 @@ class RoomTemplateRepository @Inject constructor(
             targetRepsMax = edit.targetRepsMax,
             targetRepsCurrent = edit.targetRepsCurrent,
             dropValueGrams = edit.dropValueGrams,
+            targetDurationSeconds = edit.targetDurationSeconds,
             note = edit.note?.trim()?.ifEmpty { null },
             createdAt = now,
             updatedAt = now,
@@ -363,6 +365,9 @@ class RoomTemplateRepository @Inject constructor(
                 targetRepsMax = edit.targetRepsMax,
                 targetRepsCurrent = edit.targetRepsCurrent,
                 dropValueGrams = edit.dropValueGrams,
+                // `stored.copy` keeps what it is not told, so leaving this out would silently put back the
+                // old prescription while the screen showed the new one (B240, N242).
+                targetDurationSeconds = edit.targetDurationSeconds,
                 note = edit.note?.trim()?.ifEmpty { null },
                 updatedAt = timeSource.nowEpochMillis(),
             )
@@ -644,6 +649,28 @@ class RoomTemplateRepository @Inject constructor(
 private fun validate(edit: TemplateSetEdit) {
     validateLoad(edit)
     validateEffort(edit)
+    validatePrescription(edit)
+}
+
+/**
+ * A set is prescribed in **reps or in seconds, never both** (ROADMAP N242).
+ *
+ * The same exclusivity a performed set's write boundary refuses (N220): a hold records seconds and no reps, so
+ * a plan that named a rep target for one would be prescribing a number the set cannot answer. A duration has to
+ * be positive, because a hold of nothing is not a prescription.
+ */
+private fun validatePrescription(edit: TemplateSetEdit) {
+    val problem = when {
+        edit.targetDurationSeconds != null && edit.targetDurationSeconds < 1 ->
+            "A hold must be at least one second."
+
+        edit.targetDurationSeconds != null &&
+            (edit.targetRepsMin != null || edit.targetRepsMax != null) ->
+            "A set is either counted or held: it cannot name both reps and a hold."
+
+        else -> null
+    }
+    if (problem != null) throw InvalidInputException(problem)
 }
 
 /** A load is a weight or a magnitude of assistance, never a negative either way. */

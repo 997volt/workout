@@ -114,6 +114,8 @@ data class PlannedTarget(
     val role: SetType? = null,
     /** The RPE the plan asks for, in half-points, or null (ROADMAP N59). */
     val rpeHalves: Int? = null,
+    /** The hold the plan prescribes, in seconds, or null (ROADMAP N242). */
+    val durationSeconds: Int? = null,
 )
 
 /**
@@ -201,6 +203,9 @@ fun suggestionForNextSet(
         // tap per set (B48); with no plan the pending set stays a working set.
         setType = planned?.role ?: prefill.setType,
         targetRpeHalves = planned?.rpeHalves,
+        // The plan's hold wins over what the movement did last time, the way its reps do: a 45-second
+        // carry prescribed for this set opens on 45 (ROADMAP N242).
+        durationSeconds = planned?.durationSeconds ?: prefill.durationSeconds,
     )
 }
 
@@ -342,6 +347,9 @@ fun plannedTargetFor(
             role = set.role,
             // The exercise's one target RPE is what the stepper opens on (N59).
             rpeHalves = planned?.targetRpeHalves,
+            // A planned hold opens the session on its seconds, which is the whole point of prescribing
+            // one (ROADMAP N242).
+            durationSeconds = set.targetDurationSeconds,
         )
     }
 }

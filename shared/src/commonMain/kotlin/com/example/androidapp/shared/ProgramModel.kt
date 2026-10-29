@@ -117,6 +117,13 @@ data class TemplateSetDto(
     val targetRepsMax: Int? = null,
     val targetRepsCurrent: Int? = null,
     val dropValueGrams: Long? = null,
+    /**
+     * The hold this set prescribes, in seconds, or null for a counted set (ROADMAP N242).
+     *
+     * Defaulted, so a document written before a plan could prescribe a hold still decodes — with every set
+     * counted, which is what it said.
+     */
+    val targetDurationSeconds: Int? = null,
     val note: String? = null,
     val createdAt: Long,
     val updatedAt: Long,

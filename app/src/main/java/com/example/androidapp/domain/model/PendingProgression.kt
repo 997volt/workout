@@ -37,6 +37,7 @@ data class PendingProgression(
             return !applied && when (direction) {
                 ProgressionDirection.LOAD -> offer?.load != null
                 ProgressionDirection.REPS -> offer?.reps != null
+                ProgressionDirection.SECONDS -> offer?.seconds != null
             }
         }
     }
