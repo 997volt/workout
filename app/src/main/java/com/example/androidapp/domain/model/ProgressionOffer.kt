@@ -178,7 +178,61 @@ data class ProgressionPrompt(
 
     /** How many sets earned a step: what the screen says when nothing did (N74). */
     val earned: Int get() = sets.count { it.offer != null }
+
+    /**
+     * The one reason every prescribed working set missed for, with the set whose numbers state it, or null
+     * (ROADMAP N226).
+     *
+     * The question states one row per set, which is right until every row says the same thing: a plan with no
+     * target RPE printed that sentence once per set, and a plan whose sets all came up two reps short printed
+     * the same measured line three times. When one reason covers all of them the question states it once above
+     * the sets, and the rows keep their plan and done lines.
+     *
+     * **Only a reason about the sets themselves takes part.** `NOT_DONE`, `NOT_IN_PLAN` and `RUNG_OF_A_GROUP`
+     * describe work that is missing or extra rather than work the plan judged, so a plan nobody logged is not
+     * summarised as one refusal; and a single set that earned a step ends it, because then the reason no longer
+     * covers all of them.
+     *
+     * **The measurement has to agree too.** `REPS_SHORT`, `LOAD_SHORT` and `TOPPED_OUT` state a number in the
+     * row, and three different shortfalls are three facts rather than one — they collapse only when the number
+     * does, which is what makes the collapsed line true of every set it replaces.
+     */
+    val sharedMiss: ProgressionSetPrompt?
+        get() {
+            // A warm-up is not judged and a rung is judged through the set above it, so neither is what "every
+            // set" means here (N17, N79).
+            val work = sets.filter { set ->
+                val role = set.planned?.role ?: return@filter false
+                role.isWork && !role.isRung
+            }
+            // One set repeating itself is not a repetition: the row already states its reason.
+            if (work.size < MIN_SETS_FOR_ONE_REASON) return null
+            val first = work.first()
+            val miss = first.miss ?: return null
+            if (miss in MISSES_THAT_ARE_NOT_SHARED) return null
+            val number = first.statedNumber
+            return first.takeIf { set -> work.all { it.miss == miss && it.statedNumber == number } }
+        }
 }
+
+/** Two sets are the fewest that can say the same thing twice (N226). */
+private const val MIN_SETS_FOR_ONE_REASON = 2
+
+/** The misses that describe missing or extra work rather than a set the plan judged (N226). */
+private val MISSES_THAT_ARE_NOT_SHARED = setOf(
+    ProgressionMiss.NOT_DONE,
+    ProgressionMiss.NOT_IN_PLAN,
+    ProgressionMiss.RUNG_OF_A_GROUP,
+)
+
+/** The number this set's miss states in its sentence, or null where it states none (N226). */
+private val ProgressionSetPrompt.statedNumber: Long?
+    get() = when (miss) {
+        ProgressionMiss.REPS_SHORT -> (planned?.targetReps ?: 0).toLong() - (performed?.reps ?: 0)
+        ProgressionMiss.LOAD_SHORT -> (planned?.targetWeightGrams ?: 0L) - (performed?.weightGrams ?: 0L)
+        ProgressionMiss.TOPPED_OUT -> (planned?.targetRepsMax ?: 0).toLong()
+        else -> null
+    }
 
 /**
  * The step one set earned, and the plan set it would change (ROADMAP N50, N74).

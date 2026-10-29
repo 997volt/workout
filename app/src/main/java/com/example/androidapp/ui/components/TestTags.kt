@@ -167,6 +167,9 @@ object TestTags {
         /** Takes each row's own step, whatever direction it earned (P3.17). */
         const val EVERY = "progression_every"
 
+        /** The one reason every set missed for, stated above the rows rather than once per row (N226). */
+        const val SHARED_MISS = "progression_shared_miss"
+
         /** One set's row and the parts inside it. */
         fun set(setId: String) = "progression_set_$setId"
         fun plan(setId: String) = "progression_plan_$setId"
@@ -567,6 +570,7 @@ object TestTags {
     const val EXERCISE_WEIGHT_UNIT = "exercise_weight_unit"
     const val EXERCISE_WEIGHT_STEP = "exercise_weight_step"
     const val EXERCISE_EDIT_WEIGHT_UNIT_DEFAULT = "exercise_edit_weight_unit_default"
+
     /** The bodyweight switch in the exercise editor (ROADMAP N219). */
     const val EXERCISE_EDIT_BODYWEIGHT = "exercise_edit_bodyweight"
 

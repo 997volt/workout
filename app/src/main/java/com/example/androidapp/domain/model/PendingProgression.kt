@@ -52,6 +52,14 @@ data class PendingProgression(
     /** True once every picked step has been written, so the caller can close the question. */
     val isSettled: Boolean get() = chosen.isEmpty()
 
+    /**
+     * The one reason every prescribed set missed for, or null (ROADMAP N226).
+     *
+     * Read from the frozen rows rather than stored: the rule belongs to the prompt the question was built
+     * from, and a copy here would be a second place for one answer to live.
+     */
+    val sharedMiss: ProgressionSetPrompt? get() = ProgressionPrompt(sets.map { it.prompt }).sharedMiss
+
     /** How many rows could take [direction] — what the bulk control is offered against (N74). */
     fun offering(direction: ProgressionDirection): Int = sets.count { it.offers(direction) }
 

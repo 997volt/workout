@@ -20,6 +20,7 @@ import com.example.androidapp.domain.model.PendingProgression
 import com.example.androidapp.domain.model.ProgressionDirection
 import com.example.androidapp.domain.model.ProgressionMiss
 import com.example.androidapp.domain.model.ProgressionPlanSet
+import com.example.androidapp.domain.model.ProgressionSetPrompt
 
 /**
  * The next step each planned set earned, as the lifter's decision (ROADMAP N50, N74).
@@ -108,12 +109,23 @@ private fun ProgressionBody(
             onSelectAll = onSelectAll,
             onSelectEveryOffer = onSelectEveryOffer,
         )
+        // One reason every set missed for is stated once, above them (N226): the rows then carry only what
+        // the plan asked and what was done, which is what a lifter reads them for.
+        progression.sharedMiss?.let { shared ->
+            shared.miss?.let { miss ->
+                Text(
+                    text = missLine(prompt = shared, miss = miss, unit = progression.unit),
+                    modifier = Modifier.testTag(TestTags.Progression.SHARED_MISS),
+                )
+            }
+        }
         progression.sets.forEachIndexed { index, set ->
             SetRow(
                 number = index + 1,
                 total = progression.sets.size,
                 set = set,
                 unit = progression.unit,
+                sharedMiss = progression.sharedMiss?.miss,
                 onToggle = onToggle,
             )
         }
@@ -182,6 +194,8 @@ private fun SetRow(
     total: Int,
     set: PendingProgression.PendingSet,
     unit: WeightUnit,
+    /** The reason stated above every row, whose own sentence this row then leaves out (N226). */
+    sharedMiss: ProgressionMiss?,
     onToggle: (String, ProgressionDirection) -> Unit,
 ) {
     val planned = set.prompt.planned
@@ -214,7 +228,8 @@ private fun SetRow(
             set.prompt.offer != null && planId != null ->
                 ChoiceChips(set = set, planId = planId, unit = unit, onToggle = onToggle)
 
-            else -> set.prompt.miss?.let { miss -> Text(missLine(set, miss, unit)) }
+            // Stated once above the sets when it is the reason they all share (N226).
+            else -> set.prompt.miss?.takeIf { it != sharedMiss }?.let { miss -> Text(missLine(set.prompt, miss, unit)) }
         }
     }
 }
@@ -269,11 +284,11 @@ private fun ChoiceChips(
  */
 @Composable
 private fun missLine(
-    set: PendingProgression.PendingSet,
+    prompt: ProgressionSetPrompt,
     miss: ProgressionMiss,
     unit: WeightUnit,
 ): String {
-    val planned = set.prompt.planned
+    val planned = prompt.planned
     return when (miss) {
         ProgressionMiss.NOT_DONE -> stringResource(R.string.progression_miss_not_done)
         ProgressionMiss.NOT_IN_PLAN -> stringResource(R.string.progression_miss_not_in_plan)
@@ -281,9 +296,9 @@ private fun missLine(
         ProgressionMiss.NO_TARGET_RPE -> stringResource(R.string.progression_miss_no_rpe)
         ProgressionMiss.UNRATED -> stringResource(R.string.progression_miss_unrated)
         ProgressionMiss.HOLD -> stringResource(R.string.progression_miss_hold)
-        ProgressionMiss.REPS_SHORT -> repsShortLine(set, planned)
+        ProgressionMiss.REPS_SHORT -> repsShortLine(prompt, planned)
         ProgressionMiss.OVER_TARGET_RPE -> overRpeLine(planned)
-        ProgressionMiss.LOAD_SHORT -> loadShortLine(set, planned, unit)
+        ProgressionMiss.LOAD_SHORT -> loadShortLine(prompt, planned, unit)
         ProgressionMiss.RUNG_OF_A_GROUP -> stringResource(R.string.progression_miss_rung)
         ProgressionMiss.TOPPED_OUT -> toppedOutLine(planned)
     }
@@ -292,12 +307,12 @@ private fun missLine(
 /** "25 kg short of the plan's load", with the difference the app measured (B258). */
 @Composable
 private fun loadShortLine(
-    set: PendingProgression.PendingSet,
+    prompt: ProgressionSetPrompt,
     planned: ProgressionPlanSet?,
     unit: WeightUnit,
 ): String {
     val asked = planned?.targetWeightGrams ?: 0L
-    val short = (asked - (set.prompt.performed?.weightGrams ?: 0L)).coerceAtLeast(1L)
+    val short = (asked - (prompt.performed?.weightGrams ?: 0L)).coerceAtLeast(1L)
     return stringResource(
         R.string.progression_miss_load_short,
         Weight.format(short, unit),
@@ -307,9 +322,9 @@ private fun loadShortLine(
 
 /** "N reps short of the plan", with the number the app measured (N74). */
 @Composable
-private fun repsShortLine(set: PendingProgression.PendingSet, planned: ProgressionPlanSet?): String {
+private fun repsShortLine(prompt: ProgressionSetPrompt, planned: ProgressionPlanSet?): String {
     val asked = planned?.targetReps ?: 0
-    val short = (asked - (set.prompt.performed?.reps ?: 0)).coerceAtLeast(1)
+    val short = (asked - (prompt.performed?.reps ?: 0)).coerceAtLeast(1)
     return pluralStringResource(R.plurals.progression_miss_reps_short, short, short)
 }
 

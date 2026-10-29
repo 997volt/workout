@@ -529,6 +529,105 @@ class ProgressionOfferTest {
         assertThat(rung.miss).isEqualTo(ProgressionMiss.RUNG_OF_A_GROUP)
     }
 
+    @Test
+    fun aReasonEverySetShares_isOneStatement() {
+        // N226: a plan with no target RPE misses every set for the same reason, and that sentence was printed
+        // once per row. The prompt now names the reason once, with the set whose numbers state it.
+        val prompt = progressionPromptFor(
+            planned = listOf(planSet(id = "ts-0", index = 0, rpe = null), planSet(id = "ts-1", index = 1, rpe = null)),
+            performed = listOf(done(), done()),
+        )
+
+        assertThat(prompt.sets.map { it.miss })
+            .containsExactly(ProgressionMiss.NO_TARGET_RPE, ProgressionMiss.NO_TARGET_RPE)
+        assertThat(prompt.sharedMiss).isEqualTo(prompt.sets[0])
+        assertThat(prompt.sharedMiss?.miss).isEqualTo(ProgressionMiss.NO_TARGET_RPE)
+    }
+
+    @Test
+    fun twoDifferentReasons_areNotOneStatement() {
+        val prompt = progressionPromptFor(
+            planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1)),
+            performed = listOf(done(reps = 3), done(reps = 5, weight = 90_000L)),
+        )
+
+        assertThat(prompt.sets.map { it.miss })
+            .containsExactly(ProgressionMiss.REPS_SHORT, ProgressionMiss.LOAD_SHORT)
+        assertThat(prompt.sharedMiss).isNull()
+    }
+
+    @Test
+    fun theSameReasonWithDifferentNumbers_isNotOneStatement() {
+        // Two reps short and one rep short are two facts, not one: the sentence states the number, so the
+        // rows keep theirs (N226).
+        val prompt = progressionPromptFor(
+            planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1)),
+            performed = listOf(done(reps = 3), done(reps = 4)),
+        )
+
+        assertThat(prompt.sets.map { it.miss })
+            .containsExactly(ProgressionMiss.REPS_SHORT, ProgressionMiss.REPS_SHORT)
+        assertThat(prompt.sharedMiss).isNull()
+    }
+
+    @Test
+    fun theSameReasonWithTheSameNumber_isOneStatement() {
+        val prompt = progressionPromptFor(
+            planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1)),
+            performed = listOf(done(reps = 3), done(reps = 3)),
+        )
+
+        assertThat(prompt.sharedMiss?.miss).isEqualTo(ProgressionMiss.REPS_SHORT)
+    }
+
+    @Test
+    fun workThatNeverHappened_isNotAReasonToCollapse() {
+        // N226: a plan nobody logged is not one refusal. Every set says NOT_DONE, and the question states that
+        // per row because the row is where the missing work is.
+        val prompt = progressionPromptFor(
+            planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1)),
+            performed = emptyList(),
+        )
+
+        assertThat(prompt.sets.map { it.miss }).containsExactly(ProgressionMiss.NOT_DONE, ProgressionMiss.NOT_DONE)
+        assertThat(prompt.sharedMiss).isNull()
+    }
+
+    @Test
+    fun aSingleSet_isNotARepetition() {
+        val prompt = progressionPromptFor(planned = listOf(planSet(rpe = null)), performed = listOf(done()))
+
+        assertThat(prompt.sharedMiss).isNull()
+    }
+
+    @Test
+    fun aSetThatEarnedAStep_endsTheSharedReason() {
+        // The reason no longer covers every set, so there is nothing to state once.
+        val prompt = progressionPromptFor(
+            planned = listOf(planSet(id = "ts-0", index = 0), planSet(id = "ts-1", index = 1)),
+            performed = listOf(done()),
+        )
+
+        assertThat(prompt.sets[0].offer).isNotNull()
+        assertThat(prompt.sharedMiss).isNull()
+    }
+
+    @Test
+    fun aRungDoesNotDecideTheSharedReason() {
+        // A rung is judged through the set above it (N79), so it is neither a repetition of the work sets'
+        // reason nor a reason of its own.
+        val prompt = progressionPromptFor(
+            planned = listOf(
+                planSet(id = "ts-0", index = 0, rpe = null),
+                planSet(id = "ts-1", index = 1, rpe = null),
+                planSet(id = "ts-2", index = 2, role = SetType.DROP, rpe = null),
+            ),
+            performed = listOf(done(), done(), done(role = SetType.DROP, weight = 80_000L)),
+        )
+
+        assertThat(prompt.sharedMiss?.miss).isEqualTo(ProgressionMiss.NO_TARGET_RPE)
+    }
+
     private fun singleSet(
         planned: List<ProgressionPlanSet>,
         performed: List<ProgressionPerformance>,

@@ -1,10 +1,12 @@
 package com.example.androidapp.ui.components
 
 import android.content.Context
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -245,6 +247,40 @@ class ProgressionDialogTest {
         composeTestRule.onNodeWithTag(TestTags.Progression.NOT_NOW).assertIsDisplayed()
     }
 
+    @Test
+    fun oneReasonEverySetShares_isStatedOnce_andTheRowsLeaveItOut() {
+        // ROADMAP N226: a plan with no target RPE used to print the same sentence once per row.
+        show(
+            question(
+                row("ts-0", offer = null, miss = ProgressionMiss.NO_TARGET_RPE),
+                row("ts-1", offer = null, miss = ProgressionMiss.NO_TARGET_RPE),
+            ),
+        )
+
+        val sentence = text(R.string.progression_miss_no_rpe)
+        composeTestRule.onNodeWithTag(TestTags.Progression.SHARED_MISS).assertTextContains(sentence)
+        composeTestRule.onAllNodesWithText(sentence).assertCountEquals(1)
+        // The rows still state what the plan asked and what was done.
+        composeTestRule.onNodeWithTag(TestTags.Progression.done("ts-1")).assertIsDisplayed()
+    }
+
+    @Test
+    fun differentReasons_stayOnTheirOwnRows() {
+        show(
+            question(
+                row("ts-0", performed = done(reps = 3), offer = null, miss = ProgressionMiss.REPS_SHORT),
+                row(
+                    "ts-1",
+                    performed = done(reps = 5, weight = 90_000L),
+                    offer = null,
+                    miss = ProgressionMiss.LOAD_SHORT
+                ),
+            ),
+        )
+
+        composeTestRule.onNodeWithTag(TestTags.Progression.SHARED_MISS).assertDoesNotExist()
+    }
+
     private fun question(vararg sets: PendingProgression.PendingSet) = PendingProgression(
         sessionExerciseId = "se1",
         exerciseName = "Back Squat",
@@ -275,7 +311,8 @@ class ProgressionDialogTest {
         targetRpeHalves = 8,
     )
 
-    private fun done(reps: Int = 5) = ProgressionPerformance(reps = reps, weightGrams = 100_000L, rpeHalves = 7)
+    private fun done(reps: Int = 5, weight: Long = 100_000L) =
+        ProgressionPerformance(reps = reps, weightGrams = weight, rpeHalves = 7)
 
     private fun text(id: Int, vararg args: Any): String =
         ApplicationProvider.getApplicationContext<Context>().getString(id, *args)
