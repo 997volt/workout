@@ -17,6 +17,19 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **A movement the library holds twice is merged** (N238, schema 16). A program document that names a lift the
+  device does not have creates a movement of its own, so loading one leaves a second *Back Squat* beside the seeded
+  one with the history split across the two — and the same movement can be two rows under two of the author's names
+  (a *pec deck* and a *machine fly*). Both are settled by one write: the mechanical duplicates are recognised by
+  **shape** — a seeded movement's name, no taxonomy, no family, which nothing an edit produces — and the ruled ones
+  by the nineteen lines the roadmap's table states. A merge re-points the session's and the plan's rows onto the
+  survivor, so the sets, their loads and their records are untouched, then **deletes** the merged row rather than
+  soft-deleting it: after the re-point it holds nothing. The retired id is remembered, so a document exported
+  before the merge joins the survivor instead of creating the twin again, and the repair runs where the seed runs —
+  so an old backup is re-merged rather than left as a duplicate. Idempotent: a store with nothing to merge writes
+  nothing.
+
+
 - **Three misses on one plan suggest a deload** (N237). The app could already say what each set missed and why, and
   said nothing about the pattern. For one plan, the sessions are taken in order and each prescribed set is paired
   with the session's own, so a plan whose *second* set is always the one that fails says that rather than blaming

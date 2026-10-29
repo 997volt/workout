@@ -54,3 +54,22 @@ data class ProgramDocument(
      */
     val edit: EditMarker? = null,
 )
+
+/**
+ * The same document, naming the movements this library merged away by the rows they became (ROADMAP N238).
+ *
+ * A document exported before a merge carries an id the device no longer holds. Without this it would **create
+ * the duplicate again** — the very twin the merge removed — because a name that resolves to nothing is what makes
+ * the import mint a movement. Resolving through the retired map makes an old file join the one movement.
+ *
+ * The retired exercise's own definition is dropped rather than carried: the survivor is already here under
+ * another id, and carrying a second definition of it would be adding back the row the merge deleted.
+ */
+fun ProgramDocument.withResolvedExercises(retired: Map<String, String>): ProgramDocument {
+    if (retired.isEmpty()) return this
+    fun resolve(id: String): String = retired[id] ?: id
+    return copy(
+        exercises = exercises.filterNot { it.id in retired }.map { it.copy(id = resolve(it.id)) },
+        templateExercises = templateExercises.map { it.copy(exerciseId = resolve(it.exerciseId)) },
+    )
+}

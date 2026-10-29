@@ -39,6 +39,9 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
         insertCategories(db, converters, seededAt)
         insertMovements(db, converters, seededAt)
         writeBehindTheInsert(db, seededAt)
+        // **The duplicates are merged after the seed is whole** (N238): a seeded survivor has to be there to
+        // merge into, and a document loaded an hour ago may have left a twin beside it.
+        mergeDuplicateMovements(db, seededAt)
         db.setTransactionSuccessful()
     } finally {
         db.endTransaction()

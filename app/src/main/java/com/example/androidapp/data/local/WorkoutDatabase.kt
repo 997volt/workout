@@ -79,8 +79,9 @@ import androidx.room.TypeConverters
         SessionExerciseJointEntity::class,
         MeasurementSoreMuscleEntity::class,
         MetricGoalEntity::class,
+        RetiredMovementEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -110,6 +111,9 @@ abstract class WorkoutDatabase : RoomDatabase() {
 
     /** Programs and their slots (ROADMAP P3.3). */
     abstract fun programDao(): ProgramDao
+
+    /** The writes a duplicate merge makes, and the ids it retired (ROADMAP N238). */
+    abstract fun movementMergeDao(): MovementMergeDao
 
     /** The occurrences a lifter consciously passed over (ROADMAP P3.3, P3.13). */
     abstract fun programSkipDao(): ProgramSkipDao

@@ -30,6 +30,7 @@ import com.example.androidapp.data.transfer.programDocumentCopy
 import com.example.androidapp.data.transfer.toDto
 import com.example.androidapp.data.transfer.toEntity
 import com.example.androidapp.data.transfer.toShared
+import com.example.androidapp.data.transfer.withResolvedExercises
 import com.example.androidapp.data.transfer.withValidLibraryShape
 import com.example.androidapp.domain.DataResult
 import com.example.androidapp.domain.InvalidInputException
@@ -796,10 +797,15 @@ private suspend fun mergeProgramDocument(
 ): ProgramImportSummary {
     val backupDao = database.backupDao()
     val programBackup = database.programBackupDao()
+    // **An id this library merged away is read as the row it became** (ROADMAP N238). The document may have been
+    // exported before the merge, and a movement whose id resolves to nothing is exactly what makes the import
+    // mint a duplicate — the twin the merge removed.
+    val retired = database.movementMergeDao().retiredMovements().associate { it.id to it.survivorId }
+    val resolved = document.withResolvedExercises(retired)
 
     // Live means this exact program is already here; nothing in the document is new (B180). The read
     // filters `deletedAt`, so a deleted one falls through to the restore below rather than stopping here.
-    if (programDao.findProgram(document.program.id) != null) {
+    if (programDao.findProgram(resolved.program.id) != null) {
         return ProgramImportSummary(
             programs = 0,
             templates = 0,
@@ -809,55 +815,55 @@ private suspend fun mergeProgramDocument(
             // differ carries an id the seed produced rather than one this program earned — a pasted table's
             // id is a slug of its name — and the card has to say the name is taken rather than that this
             // program arrived.
-            nameTakenByAnotherPlan = !document.plansTheSameWorkAs(heldWork(database, document.program.id)),
+            nameTakenByAnotherPlan = !resolved.plansTheSameWorkAs(heldWork(database, resolved.program.id)),
         )
     }
 
     // One statement, before the inserts: a hidden program comes back, a live or absent one is
     // untouched (only rows with `deletedAt` set are updated), and the count says which happened.
-    val programsRestored = programBackup.restoreProgramVisibility(document.program.id, now)
+    val programsRestored = programBackup.restoreProgramVisibility(resolved.program.id, now)
 
     // The library's shape is enforced on the way in (B92): a document can carry a parent link the app would
     // never write, and a movement filed under a head the document does not carry keeps the link (the head may
     // exist here) while an illegal one is cleared.
     val exercisesAdded = backupDao.insertExercises(
-        document.exercises.withValidLibraryShape().map { it.toEntity() },
+        resolved.exercises.withValidLibraryShape().map { it.toEntity() },
     ).count { it != IGNORED_ROW }
 
-    val carriedTemplates = document.templates.map { it.id }.toSet()
-    val knownTemplates = (carriedTemplates + document.slots.map { it.templateId }).filter {
+    val carriedTemplates = resolved.templates.map { it.id }.toSet()
+    val knownTemplates = (carriedTemplates + resolved.slots.map { it.templateId }).filter {
         it in carriedTemplates || database.templateDao().findById(it) != null
     }.toSet()
-    val referenced = document.templateExercises.map { it.exerciseId }.toSet()
+    val referenced = resolved.templateExercises.map { it.exerciseId }.toSet()
     val presentExercises = referenced.filter { database.exerciseDao().findById(it) != null }.toSet()
 
-    val templatesAdded = backupDao.insertTemplates(document.templates.map { it.toEntity() })
+    val templatesAdded = backupDao.insertTemplates(resolved.templates.map { it.toEntity() })
         .count { it != IGNORED_ROW }
-    val planned = document.templateExercises.filter {
+    val planned = resolved.templateExercises.filter {
         it.templateId in knownTemplates && it.exerciseId in presentExercises
     }
     backupDao.insertTemplateExercises(planned.map { it.toEntity() })
     val plannedIds = planned.map { it.id }.toSet()
     backupDao.insertTemplateSets(
-        document.templateSets.filter { it.templateExerciseId in plannedIds }.map { it.toEntity() },
+        resolved.templateSets.filter { it.templateExerciseId in plannedIds }.map { it.toEntity() },
     )
 
     // Inactive and last: a document adds a program, it does not decide which one home follows
     // (P3.3's "a new program is not made active"), and the authored order stays the user's (P3.12).
-    val program = document.program.toEntity().copy(
+    val program = resolved.program.toEntity().copy(
         isActive = false,
         position = programDao.maxProgramPosition() + 1,
     )
     val programsAdded = programBackup.insertPrograms(listOf(program)).count { it != IGNORED_ROW }
 
-    val slots = document.slots.filter { it.templateId in knownTemplates }
+    val slots = resolved.slots.filter { it.templateId in knownTemplates }
     programBackup.insertProgramSlots(slots.map { it.toEntity() })
 
     return ProgramImportSummary(
         programs = programsAdded + programsRestored,
         templates = templatesAdded,
         exercises = exercisesAdded,
-        droppedMovements = document.templateExercises.size - planned.size,
+        droppedMovements = resolved.templateExercises.size - planned.size,
     )
 }
 

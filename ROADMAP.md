@@ -22,8 +22,7 @@ instead of saying nothing about a pattern it can already measure set by set.
 
 ## Next
 
-Nothing is in flight. The deload rule (N237) shipped: the app now says when one of a program's prescriptions has
-stopped moving, and offers the deload creator the program already has.
+Nothing is in flight. Two rows left the plan: the deload rule (N237) and the duplicate merge (N238, schema 16).
 
 ## Later — decided, and not being started
 
@@ -45,59 +44,6 @@ Both rows are driven by the same export and the same rulings, and both are measu
 library it was planned from holds 186 rows against the seed's 126, and of the 60 that the seed does not ship, 3 are
 names the seed retired on purpose, 15 are **duplicates of a seeded movement by name**, and 42 are movements the
 seed has never had.
-
-**N238 — a movement the library holds twice is merged.** There are two sources of duplicates and one write that
-settles both. **The mechanical ones** are the import's: it creates a movement whenever a name resolves to neither
-the library nor the seed and mints its own id, so a document that says *Back Squat* leaves a second *Back Squat*
-beside the seeded one — two rows of one name in one list, with the history split across them. Such a row is
-recognised by its shape rather than by a hand-written list: its name equals a seeded movement's, it states **no
-taxonomy**, and it has **no family** — nothing an edit produces, because the app writes whatever it is given and an
-imported row arrives blank. **The ruled ones** are the author's: a retired seed row whose twin is the same lift
-(*Deadlift* is *Conventional Deadlift*), and rows with different names that are one movement (*Machine Fly*, *Chest
-Fly (Machine)* and *Pec Deck*), which no rule can see and which the lifter's own list settles — that list is what
-this row waits on. The seed's note already calls `two-arm-cable-pushdown` and `machine-row` second names for
-movements it still ships, which is why both appear in the list. The write itself: the merged row's
-session exercises and planned exercises are re-pointed onto the survivor — **two columns**, because a plan's sets
-and a session's sets hang off those rows rather than off the movement — and the other row then goes, **deleted**
-rather than soft-deleted: after the re-point it holds nothing, and its id is one the seed will never ship, so a
-tombstone would only be a row the library must filter and every backup must carry. Where both rows hold history
-they merge into one movement rather than one being dropped. **The name is not copied into history**: a session
-exercise stores the movement's id and reads its name from the library, so a merged set reads the survivor's name
-rather than the one it was logged under — the sets, their loads and their records are untouched. **A re-pointed
-plan moves its own version**, so a program document exported before the merge is refused as stale rather than
-merged into a plan that changed (N171). **A merged-away id is not forgotten**: the repair keeps a retired-id to
-survivor map the document import resolves through, because a document naming an id the device no longer holds would
-otherwise create the duplicate again; and the repair runs where the seeder runs — every open, and after a restore —
-so an old backup is re-merged rather than left as a twin. Idempotent for the same reason.
-
-**The merge list**, as ruled: the name before the arrow goes, the one after it is the survivor, and `(seed)` marks a
-movement the seed already ships. Every line is a ruling about one gym's equipment, so each carries the condition it
-rests on.
-
-| Merge away | Into | Holds because |
-| --- | --- | --- |
-| `Deadlift` | `Conventional Deadlift` (seed) | decided: one deadlift, named for the way it is performed |
-| `Calf Press` | `Calf Press (Machine)` | one machine, two names |
-| `Single Leg Standing Calf Raise (Dumbbell)` | `Single-Leg Calf Raise` | the same lift, and the shorter name is the clearer |
-| `Bicep Curl (Dumbbell)` | `Dumbbell Curl` | the seed ships no dumbbell curl, and this is the one |
-| `Machine Arm Extension`, `Triceps Extension (Machine)` | `Machine Triceps Extension` | one machine under three names |
-| `Single Arm Tricep Extension (Dumbbell)` | `Dumbbell Single-Arm Extension` | the same lift, one phrasing |
-| `Dumbbell Flat Bench Press` | `Dumbbell Bench Press` (seed) | flat is the default press — there is no other to name |
-| `One-Arm Dumbbell Row` | `Single-Arm Dumbbell Row` (seed) | wording only |
-| `Rope Crunch` | `Cable Crunch` (seed) | a rope crunch is the cable crunch, on a rope |
-| `Dumbbell Overhead Triceps Extension` | `Overhead Triceps Extension` (seed) | the cable version has a row of its own, so the generic one is the dumbbell |
-| `Machine Fly`, `Chest Fly (Machine)` | `Pec Deck` (seed) | a pec deck is a machine fly, and the gym has one |
-| `Two-Arm Cable Pushdown` | `Triceps Pushdown` (seed) | the seed's own note calls it a second name for a movement it still ships |
-| `Machine Row` | `Seated Row (Machine)` | the lifter's own name is the clearer, so the retired seed row folds into it |
-| `Cable Row` | `Seated Cable Row` (seed) | the seated stack, confirmed |
-| `Calf Raise` | `Standing Calf Raise` (seed) | the standing machine, confirmed |
-| `Dumbbell Shoulder Press` | `Seated Dumbbell Press` (seed) | performed seated, confirmed |
-| `Forearm Flexion` | `Wrist Curl` (seed) | the seed's own wrist curl is a **dumbbell** movement, so this is the same lift rather than a bar one |
-
-**Two rows are kept rather than merged.** `Cable Seal Row` is its own setup — chest-supported on a bench, however
-close the name reads to *Cable Row* — and `EZ-Bar Forearm Extension` is a different implement from the seeded
-`Reverse Wrist Curl`, which is a dumbbell movement: it joins the seed as its own row under *Forearm*. The rows this
-table does not name are N239's, because they are new rather than duplicated.
 
 **N239 — the lifter's own movements join the seeded library.** What is left after N238 — the rows the seed does not
 ship and that are not a duplicate of anything — is the lifter's own training, and it is **bare**: an imported
