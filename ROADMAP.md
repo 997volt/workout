@@ -32,7 +32,7 @@ the changelog.
 
 **The order below is the build order**, and it is chosen so each row starts with the least it can depend on: the
 library's read-only additions first, then its own data, then its working controls, then the exercise's own screen,
-then the two columns, then the rule that reads history, and last the migration that needs its author's word on
+then the schema changes, then the rule that reads history, and last the migrations that need their author's word on
 every row. Each row says what it waits for where it waits for anything; a row that says nothing waits for nothing
 but the one before it. The numbers quoted here are the measurements the work was planned from, not facts to keep up
 to date: a row that ships leaves this file.
@@ -96,6 +96,19 @@ rather than soft-deleted — a soft-deleted row keeps its id and would block the
 and the seeder's ordinary insert then lands. The case is built from a 2.6-shaped store in the seeder's own test, so
 the guard is proved against the row that caused it rather than the shape B148 imagined.
 
+**B293 — the seed declares no movement bodyweight or timed.** The seed's movement helper takes a name, an equipment
+and a taxonomy, and the seeder's insert writes ten columns; `isBodyweight` and `isTimed` are not among them, so
+every seeded row takes the table's own default of false. Two shapes are therefore wrong on the first workout. A
+**pull-up, dip, push-up or inverted row** is read as an ordinary loaded movement: the field asks for *Weight*
+rather than *Added weight*, the bodyweight prompt never opens, and the set snapshots no bodyweight — so a set at
++20 kg is stored, charted and record-checked as 20 kg rather than 95, because N219's load rule cannot run without
+the snapshot. And a **plank, Copenhagen plank or farmer's carry** cannot be logged as a hold at all, because the
+editor offers reps. The fix is the seed's own: the helper takes both flags, the insert carries both columns, and
+each movement declares what it is — which is also what the plyometric rows need (N241), so it lands before them.
+**An existing device needs a guarded repair**, in the shape B148 and B292 established: filled only where the row
+still looks like the seed's, idempotent, and never over a row the lifter has edited, because the two flags are
+theirs to set.
+
 **N229 — every seeded movement is filed, or the seed says why it cannot be.** Eight of the seed's movements sit at
 the top level with no family, which is why a fresh install draws a flat alphabetical pile of loose lifts under its
 families: a shape that reads as the library's leftovers rather than as anything the lifter chose. *Face Pull* fits
@@ -112,6 +125,60 @@ re-file as well**: `INSERT OR IGNORE` never updates a row, so a movement already
 family until a repair moves it — only where it still looks like the seed's, idempotent, in the shape B148
 established. Rejected: a synthetic *Unfiled* head in the library, which would give the app's own leftovers a name
 and a count, and still leave the rows unfiled.
+
+**N240 — the seeded taxonomy is audited, and corrected where it is owned.** Every seeded movement's effective
+primary and secondary muscles are reviewed against what the movement trains, and each finding is fixed at the level
+that owns it: a **family** states what all of its members share, and a member that differs states its own (N103,
+N110 — read live, never copied). The inspection starts from a real gap: the *Row* family names upper back and
+biceps and **not the lats**, which is half of what a row is trained for, while the *Lat Pulldown* family names lats
+and biceps and not the upper back that does the retracting. Two consequences have to be stated rather than
+discovered. **A family's correction moves every member that states nothing**, because the walk is live — which is
+why a wrong fact belongs at the level that owns it, and a member's exception belongs on the member. And **the
+correction is retroactive**: the balance figure a program shows (N119, N122) is computed from effective muscles in
+half-sets, so a corrected family reshapes the numbers of plans already authored. That is what a correction is for,
+and it is why this is a review with the author rather than a mechanical pass. It lands after N229, which creates
+the families it reviews. Existing devices need the same guarded update, for B148's reason: `INSERT OR IGNORE` never
+rewrites a row.
+
+**N241 — plyometric movements are part of the seed.** The seed ships strength and bodybuilding work and no jump,
+hop or throw, so a program that includes plyometrics authors every one of them by hand — the same gap the seed's
+own note records for the Olympic lifts, and for a related reason: **a family states one movement pattern and one
+primary muscle**, and a box jump has an honest claim on the squat pattern, on the calves, the quads and the glutes.
+Three things are decided here, in this order. **What ships**: a box jump, a jump squat, a broad jump, a depth jump,
+a pogo hop, a bound or skater and a medicine-ball throw, with the equipment each needs. **How they are filed**: one
+*Plyometric* family whose stated pattern and primary muscle are the decision, or one family per pattern where the
+members disagree — and they can be filed at all only once B293 makes a bodyweight row true, because a plyometric
+movement that is not marked bodyweight is handled as a loaded one. **What progression does with them**: a jump
+carries no added load, so the offer gives reps below its ceiling and says *topped out* at it (N74) — honest, and it
+means a plyometric plan climbs by reps and then stops, unless the jump is a loaded one, where the ordinary rule
+applies. The movement pattern enum has no value for it — press, pull, squat, hinge, lunge, carry, isolation, core,
+other — so the family either states *other* or the enum gains one. Adding it is additive and safe for the document
+format, which carries a pattern as a string rather than an enum, but the pickers and the generated catalog see it,
+so it is named here rather than slipped in.
+
+### Bringing a program in
+
+**N243 — a refused program load offers to arrive under another name.** A program document is refused when its id is
+already here and the plan under it is not the same one: a pasted table's id is a slug of its name, so a second
+*Push Pull Legs* table carries the first one's id, and the app answers *A different plan is already here under that
+name, so nothing was added* (B267). The sentence is right, and the lifter then has nowhere to go inside the app —
+the ways out are renaming the program already on the device or editing the file by hand. The load becomes **read,
+ask, write**: the document preview gains the case it is missing — the id is held **and the work differs** — and the
+screen answers it with a dialog that names the clash and offers **Load it under another name**, pre-filled with a
+name the list does not hold ("Push Pull Legs (2)"), with *Cancel* as the other answer and a typed name refused
+while another program holds it, because telling two programs apart is the point. Confirming writes a **copy**: a
+minted id and the typed name for the program, and **new ids for its templates, planned exercises and sets**,
+because a program that shares its days with the original is not a separate one — editing one day would rewrite
+both, and N171's staleness check would then refuse documents for the other. **Exercise ids are kept**, because
+those name library movements rather than copying them. The copy arrives **inactive and last**, like every add (N47,
+P3.3), and it is faithful in everything else, a block's start included, which the lifter can edit afterwards
+(N186). The original is never touched, and the rename lives in the app rather than in the file, so the document on
+disk keeps its id and its name. Rejected: **sharing the original's templates**, which N73 allows on purpose for two
+programs that *mean* one workout and which is exactly wrong for a copy whose point is to diverge; **renaming the
+program already on the device**, which would take the identity of the plan that is there and trained; and sending
+the lifter back to the helper to mint a new id, because the file is what they have. The same copy write is what a
+*Duplicate* entry in the programs list would need, which is not part of this row — it is where the helper would be
+extracted, at its second caller.
 
 ### The library as a place you work
 
@@ -185,6 +252,21 @@ directions, written when the lifter declines, drawn on the workout's review and 
 offered, not taken*. Schema 14. **A declined step is not a miss**: the deload rule (N237) counts the sets that
 failed the plan, not the answer the lifter gave, and a lift that declined a step every week is not a lift that is
 stalling.
+
+**N242 — a plan can prescribe a hold, and a hold can progress.** A timed set already works: it records seconds,
+writes no reps, keeps its load, and the editor offers both (N220). Two things still do not, and N220 wrote down
+why. **A plan prescribes reps**, so a hold inside a plan ignores its target and a session saved as a plan writes no
+rep target at all (B244); and **the next-step question answers a hold with "a hold is not measured in reps"**, so a
+timed movement never progresses — which is why a 45-second carry counts toward neither volume nor a record today. A
+lifter who trains carries and planks for time therefore has a logged history and no prescription, which is the one
+thing this app is for. The change: a plan's set gains an optional **duration** beside its reps, one or the other
+and never both, which is the shape the write boundary already refuses on a performed set; the session's prefill
+reads it, so a planned 45-second carry opens on 45; the offer gains a **third direction** — seconds, moved by the
+movement's own step — under the same gate as the other two, so a hold answered at or under the plan's effort earns
+its next step and nothing is written until it is accepted; and the plan editor's sentence states it. A hold earns
+seconds or the set earns reps, never both, which is the exclusivity the rep and weight directions already have
+(N74). Rejected: a rep target with a note saying "for time", which is what a lifter does today and is the reason
+the time is not in the plan.
 
 ### A plan's progression, learned
 
