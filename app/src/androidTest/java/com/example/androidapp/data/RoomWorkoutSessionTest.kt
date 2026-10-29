@@ -202,7 +202,7 @@ class RoomWorkoutSessionTest {
         // The template is a plan, not a log: starting a workout must not consume it.
         assertEquals(
             listOf("back-squat"),
-            database.templateDao().findExerciseIdsInOrder("t1"),
+            database.templateDao().findTemplateExercises("t1").map { it.exerciseId },
         )
     }
 
@@ -221,7 +221,7 @@ class RoomWorkoutSessionTest {
         )
         assertEquals(
             listOf("back-squat", "bench-press"),
-            database.templateDao().findExerciseIdsInOrder("t1"),
+            database.templateDao().findTemplateExercises("t1").map { it.exerciseId },
         )
     }
 
@@ -242,7 +242,7 @@ class RoomWorkoutSessionTest {
         // every future run.
         assertEquals(
             listOf("back-squat", "bench-press", "deadlift"),
-            database.templateDao().findExerciseIdsInOrder("t1"),
+            database.templateDao().findTemplateExercises("t1").map { it.exerciseId },
         )
     }
 
