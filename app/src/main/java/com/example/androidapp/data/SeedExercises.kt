@@ -261,6 +261,51 @@ internal object SeedExercises {
             listOf(MuscleGroup.CHEST, MuscleGroup.CORE),
             pattern = MovementPattern.JUMP
         ),
+
+        // ---- The lifter's own movements (N239) ----
+        // The rows this library trained that the seed never shipped, taken with the ids they already had so
+        // no history has to move: the id is the link. Each states its **equipment** and nothing else, because
+        // the family holds the muscle and the pattern — the same rule every movement above follows (N103,
+        // N110). The names keep the order the device wrote them in, so a row is one name on both sides.
+        // upright-row
+        movement("imp_8086a19a6752b40e", "Upright Row (Barbell)", Equipment.BARBELL),
+        movement("imp_a43b06bb5ff803e4", "Cable Upright Row", Equipment.CABLE),
+        movement("imp_0ca33526f847d1cc", "Dumbbell Upright Row", Equipment.DUMBBELL),
+        movement("imp_b11e96fea4b809e6", "EZ-Bar Upright Row", Equipment.BARBELL),
+        // lateral-raise-family
+        movement("imp_14f403a0927f9f45", "Rotator Cable Up", Equipment.CABLE),
+        movement("super-rom-dumbbell-lateral-raise", "Super ROM Dumbbell Lateral Raise", Equipment.DUMBBELL),
+        // core
+        movement("imp_b9a336270ec33085", "Slant Board Situp", Equipment.BODYWEIGHT, bodyweight = true),
+        movement("imp_cba361b70e024188", "Leg Raise", Equipment.BODYWEIGHT, bodyweight = true),
+        movement("imp_662a50bfcaa027eb", "Leg Raise Parallel Bars", Equipment.BODYWEIGHT, bodyweight = true),
+        movement("imp_0c36bbb3e50ec4e9", "Crunch (Machine)", Equipment.MACHINE),
+        movement("imp_5f76178eb5bc83c1", "Abs Machine", Equipment.MACHINE),
+        // forearm
+        movement("imp_7207fdd9c2bc7cf6", "EZ-Bar Forearm Extension", Equipment.BARBELL),
+        // squat
+        movement("imp_d738c3a5560df96f", "Zercher Squat", Equipment.BARBELL),
+        // row
+        movement("imp_846f4a077f5624ae", "Cable Seal Row", Equipment.CABLE),
+        movement("imp_c7d640a920f9db64", "Seated Row (Machine)", Equipment.MACHINE),
+        // deadlift-family
+        movement("imp_147c31602ab8192d", "Dumbbell Stiff-Leg Deadlift", Equipment.DUMBBELL),
+        // lat-pulldown-family
+        movement("imp_04b7d1e3ac3b4ce2", "Cable Pullover", Equipment.CABLE),
+        // bench-press
+        movement("imp_2d98a670fccecd25", "Iso-Lateral Chest Press (Machine)", Equipment.MACHINE),
+        // triceps-extension
+        movement("imp_e4531b42b7c7a069", "One-Arm Triceps Pushdown", Equipment.CABLE),
+        movement("imp_66d004657b1dc84e", "Triceps Extension (Barbell)", Equipment.BARBELL),
+        movement("imp_a86a10ac78b2852c", "Skullcrusher (Barbell)", Equipment.BARBELL),
+        movement("imp_a4cc468f7d752383", "Seated Triceps Press", Equipment.DUMBBELL),
+        movement("imp_ea94c9b0f30ebb5c", "Machine Triceps Extension", Equipment.MACHINE),
+        movement("imp_bf971668343efa9d", "Dumbbell Single-Arm Extension", Equipment.DUMBBELL),
+        // curl
+        movement("imp_22e37a7908222f0d", "Dumbbell Curl", Equipment.DUMBBELL),
+        // calf-raise-family
+        movement("imp_62661a4a4e407435", "Single-Leg Calf Raise", Equipment.BODYWEIGHT, bodyweight = true),
+        movement("imp_d1852745d23612ad", "Calf Press (Machine)", Equipment.MACHINE),
     )
 
     /**
@@ -273,6 +318,16 @@ internal object SeedExercises {
      * The slugs are permanent for [all]'s reason — a movement filed under a category references its id.
      */
     val categories: List<SeedCategory> = listOf(
+        // The one family the seed gained without a movement to put in it until now (ROADMAP N239): four
+        // implements of one lift, which is what the seed's own rule asks for — a family is the implement's
+        // variants folded together rather than four unrelated rows.
+        SeedCategory(
+            id = "upright-row",
+            name = "Upright Row",
+            pattern = MovementPattern.PULL,
+            primaryMuscle = MuscleGroup.SHOULDERS,
+            secondaryMuscles = listOf(MuscleGroup.UPPER_BACK),
+        ),
         SeedCategory(
             "bench-press",
             "Bench Press",
@@ -428,6 +483,35 @@ internal object SeedExercises {
      * A movement absent from this map is unfiled, which is a real place to be.
      */
     val parentOf: Map<String, String> = mapOf(
+        // ---- The lifter's own movements (N239) ----
+        "imp_8086a19a6752b40e" to "upright-row",
+        "imp_a43b06bb5ff803e4" to "upright-row",
+        "imp_0ca33526f847d1cc" to "upright-row",
+        "imp_b11e96fea4b809e6" to "upright-row",
+        "imp_14f403a0927f9f45" to "lateral-raise-family",
+        "super-rom-dumbbell-lateral-raise" to "lateral-raise-family",
+        "imp_b9a336270ec33085" to "core",
+        "imp_cba361b70e024188" to "core",
+        "imp_662a50bfcaa027eb" to "core",
+        "imp_0c36bbb3e50ec4e9" to "core",
+        "imp_5f76178eb5bc83c1" to "core",
+        "imp_7207fdd9c2bc7cf6" to "forearm",
+        "imp_d738c3a5560df96f" to "squat",
+        "imp_846f4a077f5624ae" to "row",
+        "imp_c7d640a920f9db64" to "row",
+        "imp_147c31602ab8192d" to "deadlift-family",
+        "imp_04b7d1e3ac3b4ce2" to "lat-pulldown-family",
+        "imp_2d98a670fccecd25" to "bench-press",
+        "imp_e4531b42b7c7a069" to "triceps-extension",
+        "imp_66d004657b1dc84e" to "triceps-extension",
+        "imp_a86a10ac78b2852c" to "triceps-extension",
+        "imp_a4cc468f7d752383" to "triceps-extension",
+        "imp_ea94c9b0f30ebb5c" to "triceps-extension",
+        "imp_bf971668343efa9d" to "triceps-extension",
+        "imp_22e37a7908222f0d" to "curl",
+        "imp_62661a4a4e407435" to "calf-raise-family",
+        "imp_d1852745d23612ad" to "calf-raise-family",
+
         // Bench Press: the equipment variants, the competition, speed and paused lifts, and the press that
         // is trained for the triceps.
         "barbell-bench-press" to "bench-press",

@@ -39,6 +39,9 @@ internal fun seedMissingExercises(db: SupportSQLiteDatabase, seededAt: Long) {
         insertCategories(db, converters, seededAt)
         insertMovements(db, converters, seededAt)
         writeBehindTheInsert(db, seededAt)
+        // **The lifter's own movements gain the seed's taxonomy** (N239): their rows are already here under the
+        // ids the seed now ships, and `INSERT OR IGNORE` never updates a row.
+        fillSeededTaxonomy(db, seededAt)
         // **The duplicates are merged after the seed is whole** (N238): a seeded survivor has to be there to
         // merge into, and a document loaded an hour ago may have left a twin beside it.
         mergeDuplicateMovements(db, seededAt)
@@ -245,6 +248,62 @@ private fun correctSeededTaxonomy(db: SupportSQLiteDatabase, now: Long) {
         )
     }
 }
+
+/**
+ * Writes the seed's taxonomy onto a seeded row that states none (ROADMAP N239).
+ *
+ * The movements the seed took over from one device's library are already **on** that device, under the ids the
+ * seed now ships — which is the whole reason their history did not have to move. `INSERT OR IGNORE` never updates
+ * a row, so without this they would stay bare for ever: not found by "barbell", not rolled into a family's muscle
+ * total, not sorted among their siblings.
+ *
+ * **The guard is the shape, not the id alone**: a row whose facts a lifter has filled in is theirs, and the
+ * repair only touches one that states nothing — the same rule N238's mechanical merge reads. It is therefore a
+ * no-op after the first open, because the row it wrote now states its equipment.
+ */
+private fun fillSeededTaxonomy(db: SupportSQLiteDatabase, now: Long) {
+    val converters = Converters()
+    SeedExercises.all.forEach { exercise ->
+        // Only the movements the seed took over from a lifter: the rows it has always shipped were written with
+        // their taxonomy in the first place, so writing it again on every open would be churn.
+        if (exercise.id !in TAXONOMY_TAKEN_OVER) return@forEach
+        db.execSQL(
+            FILL_SEEDED_TAXONOMY,
+            arrayOf<Any?>(
+                // A movement states its muscle and pattern only where its family's is wrong (N103), so null is
+                // the ordinary answer and is written as null rather than as a value the family would not give.
+                exercise.primaryMuscle?.let(converters::fromMuscleGroup),
+                converters.fromMuscleGroups(exercise.secondaryMuscles),
+                exercise.equipment?.let(converters::fromEquipment),
+                exercise.movementPattern?.let(converters::fromMovementPattern),
+                now,
+                exercise.id,
+                exercise.name,
+                RowKind.MOVEMENT.name,
+            ),
+        )
+    }
+}
+
+/**
+ * The ids whose taxonomy the seed took over from one device's library (ROADMAP N239).
+ *
+ * Written out rather than derived: "this row was bare on one device" is not a fact the seed can recompute, and
+ * a list is what makes the repair readable next to the movements it describes.
+ */
+private val TAXONOMY_TAKEN_OVER: Set<String> by lazy {
+    SeedExercises.all.mapNotNull { exercise ->
+        // The rows the seed has always shipped state their equipment in the builder; the ones N239 took over are
+        // exactly those whose ids are one device's import. Their markers are the ids themselves.
+        exercise.id.takeIf { it.startsWith("imp_") || it == "super-rom-dumbbell-lateral-raise" }
+    }.toSet()
+}
+
+internal const val FILL_SEEDED_TAXONOMY =
+    "UPDATE exercises SET primaryMuscle = ?, secondaryMuscles = ?, equipment = ?, movementPattern = ?, " +
+        "updatedAt = ? WHERE id = ? AND name = ? AND rowKind = ? " +
+        "AND primaryMuscle IS NULL AND equipment IS NULL AND movementPattern IS NULL " +
+        "AND (secondaryMuscles IS NULL OR secondaryMuscles = '')"
 
 /**
  * Files the movements the seed now files, on a device whose rows predate the filing (N229).

@@ -17,6 +17,17 @@ id a 1.x commit names is still looked up by it. This file carries the current re
 
 ### Added
 
+- **The lifter's own movements join the seeded library** (N239). Twenty-seven rows this library trained — the ones
+  the seed never shipped and that N238's merge does not take away — were **bare**: no muscle, no equipment, no
+  pattern, so they were not found by "barbell", did not roll into a family's muscle total and could not be sorted
+  among their siblings. Each now states its equipment and is filed under a family, **under the id it already has**,
+  so no history moved: the id was the link. They ship with the seed too, which is what makes a fresh install and
+  this device read the same library. The run needed one new family — *Upright Row*, four implements of one lift
+  that had no head to hold them — and it ships with them rather than before they exist. A repair writes the
+  taxonomy onto a row that states none, guarded by the same shape rule the merge reads, so a movement a lifter has
+  filled in is theirs; the generated seed catalogue in `docs/` is regenerated with it.
+
+
 - **A movement the library holds twice is merged** (N238, schema 16). A program document that names a lift the
   device does not have creates a movement of its own, so loading one leaves a second *Back Squat* beside the seeded
   one with the history split across the two — and the same movement can be two rows under two of the author's names

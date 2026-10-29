@@ -17,9 +17,9 @@ shipped, with its entry in [CHANGELOG.md](CHANGELOG.md) for the current line or
 
 ## Next
 
-Nothing is in flight. Seven of the eight rows this queue held have shipped — the two library-working rows
-(N230–N232), the exercise's own screen (N233, N234), three schema steps (N235, N236, N242) and two rules that read
-history (N237, N238). What is left is N239, which waits for one file.
+Nothing is in flight. The *Later* queue drained: every row it held has shipped — the two library-working rows
+(N230–N232), the exercise's own screen (N233, N234), three schema steps (N235, N236, N242), two rules that read
+history (N237, N238), and the lifter's own movements joining the seed (N239).
 
 ## Later — decided, and not being started
 
@@ -41,40 +41,6 @@ Both rows are driven by the same export and the same rulings, and both are measu
 library it was planned from holds 186 rows against the seed's 126, and of the 60 that the seed does not ship, 3 are
 names the seed retired on purpose, 15 are **duplicates of a seeded movement by name**, and 42 are movements the
 seed has never had.
-
-**N239 — the lifter's own movements join the seeded library.** What is left after N238 — the rows the seed does not
-ship and that are not a duplicate of anything — is the lifter's own training, and it is **bare**: an imported
-movement states no muscle, no equipment and no pattern, so it is not found by "barbell", does not roll into a
-family's muscle total, and cannot be sorted among its siblings. Each gains a taxonomy and a family, and joins the
-seed **under the id it already has**, so no history has to move at all — the id is the link, which is the whole
-reason this is the safe half of the work. The seed's catalog in `docs/` is generated from the seed and pinned by a
-test, so it is regenerated in the same change. A retired name that survives N238 stays the lifter's row and does
-**not** re-enter the seed: a retired name is a change to what a fresh install ships, and re-adding one would give
-two installs two different libraries. Waits for N229, whose new families these rows are filed under, and for N238,
-because a row merged away is a row not worth naming. **It also waits for the lifter's export**: the rows this
-row names came from one device's library, and only 5 of them are pinned by this text — the rest cannot be derived
-from the seed, the app or the repo, so a table written without the file would be invented training data. **The upright rows need one more family** — four implements of
-one lift with no family to hold them today — and it ships with them rather than before they exist.
-
-**A movement is per implement the lifter loads separately**, and the equipment variants of one lift stay separate
-movements rather than one row with a note. The seed already ships them that way — three bench presses, three flies,
-four calf raises, a barbell and a dumbbell skullcrusher — because four of the facts a row owns are the implement's:
-its **load step**, since an EZ bar moves in 2.5 kg, a dumbbell pair per hand and a cable stack in 5 kg, and one
-step is wrong for the other two; its **display unit**, because a pound-stack machine and a kilogram bar are read
-differently; its **bodyweight and timed flags**, which are the movement's own; and its **history**, since a best
-set at eight reps across a bar and a pair of dumbbells describes neither. What keeps them one lift is the
-**family**: the variants file under one head, so the library folds them together, the statistics roll-up reads them
-as one series and the adherence breakdown counts them once (N97, N110). So the four upright rows are four movements
-under one new *Upright Row* family, and the barbell skullcrusher sits beside the seeded dumbbell one under *Triceps
-Extension*. The rule is not only the implement, either: the seed ships a paused bench press and a speed day that
-share their parent's numbers, because the lifter **prescribes** them separately. So a movement earns a row of its
-own where it would stand as its own line in a plan, and a grip or a stance that changes nothing else is a note on
-the movement rather than a movement. **A variant nobody trains is not kept**: one row per implement actually loaded
-is how the merge list was ruled, and a fourth row for a bell that is never picked up is the clutter N238 is
-removing. **The implement goes first in the name**, as every seeded variant does ("Dumbbell Bench Press", not
-"Bench Press (Dumbbell)"), which means the repair that files a row the seed now ships must **rename** it where it
-still carries the import's own name — or a device and a fresh install would ship one id under two names, the
-divergence B148 was.
 
 ## Parked — deliberately not planned
 
